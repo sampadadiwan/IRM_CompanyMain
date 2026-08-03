@@ -76,6 +76,29 @@
     padding: 0;
     line-height: 1;
     text-decoration: none;
+
+    // `.deals-list-view .ag-cell a` below pins every in-cell link to #5d87ff,
+    // and that beats Bootstrap's `.btn:hover` — so the caret stayed blue once
+    // the button filled with solid blue. Restating it here (one class deeper)
+    // wins the cascade back and keeps the arrow legible.
+    //
+    // Deliberately not `:focus`. Bootstrap's outline variant fills the button on
+    // hover and while the mouse is held down, but a *focused* button keeps a
+    // transparent background — and clicking the caret leaves it focused for as
+    // long as the menu is open, which painted a white arrow on white.
+    &:hover,
+    &:active {
+      color: #fff;
+      text-decoration: none;
+    }
+
+    // The menu is a detached div on document.body, so nothing else marks which
+    // caret it belongs to. Tinted rather than filled, so the arrow stays blue.
+    &.deals-row-actions--open:not(:hover) {
+      color: #5d87ff;
+      background-color: rgba(93, 135, 255, 0.12);
+      border-color: #5d87ff;
+    }
   }
 
   .deals-grid-scroll-container {

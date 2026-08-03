@@ -167,7 +167,6 @@ export default class extends BaseAgGrid {
             const logoUrl = params.data.investor_logo_url;
             const initials = params.data.investor_initials || '??';
             const tags = params.data.tags || '';
-            const notes = params.data.notes || '';
 
             const avatarHtml = logoUrl
               ? `<img src="${logoUrl}" class="rounded-circle" alt="user" width="50" height="50">`
@@ -179,8 +178,7 @@ export default class extends BaseAgGrid {
               return `<a href="${url.toString()}" class="badge rounded-pill bg-info-subtle text-primary border-info-subtle me-1 mb-1" style="font-weight: 500; text-decoration: none; font-size: 0.75rem !important; padding: 0.2rem 0.5rem !important;">${tag}</a>`;
             }).join('');
 
-            const tooltipAttr = notes ? `data-bs-toggle="tooltip" data-bs-html="true" title="${notes.replace(/"/g, '"')}"` : '';
-
+            // dont need to shoe remarks tooltip anymore
             // The row-actions caret carries no data-action: setupRowActionsMenu()
             // handles it with a delegated listener, since the menu it opens lives
             // on document.body. can_update rides along so the menu can hide Edit.
@@ -192,7 +190,7 @@ export default class extends BaseAgGrid {
                 <div class="comment-text w-100 d-flex flex-column justify-content-center">
                   <div class="d-flex align-items-center mb-1">
                     <h6 class="fw-medium mb-0 me-2">
-                      <a href="#" data-action="click->deals-list-ag-grid#openSidepanel" data-id="${params.data.id}" class="text-dark" ${tooltipAttr}>${params.value}</a>
+                      <a href="#" data-action="click->deals-list-ag-grid#openSidepanel" data-id="${params.data.id}" class="text-dark">${params.value}</a>
                     </h6>
                   </div>
 
@@ -447,6 +445,13 @@ export default class extends BaseAgGrid {
         columns.push({ field, headerName: label, enableRowGroup: true, editable: true });
       }
     });
+
+    // The grid's default order comes from the server sorted on this date, so showing
+    // it keeps the row order self-explanatory. Read-only: it is derived from notes'
+    // "On" dates and completed tasks, never typed in here.
+    if (!columns.some(c => c.field === 'last_interaction_date')) {
+      columns.push(this.dateFormatColumn(this, 'last_interaction_date', 'Last Interaction'));
+    }
 
     // When the deal has explicit column config:
     // - Base hardcoded + activity columns always show (investor_name, status, tier …)
@@ -1272,7 +1277,7 @@ export default class extends BaseAgGrid {
       menu.querySelectorAll('[data-row-action]').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
-          menu.style.display = 'none';
+          this.closeRowActionsMenu(menu);
           const id = menu.dataset.dealInvestorId;
           if (!id) return;
 
@@ -1297,6 +1302,12 @@ export default class extends BaseAgGrid {
       if (trigger) {
         e.preventDefault();
         e.stopPropagation();
+
+        // Queried from the document rather than remembered: AG Grid virtualises
+        // rows, so the caret that was open may already have been recycled away.
+        document.querySelectorAll('.deals-row-actions--open')
+                .forEach(el => el.classList.remove('deals-row-actions--open'));
+        trigger.classList.add('deals-row-actions--open');
 
         menu.dataset.dealInvestorId = trigger.dataset.id;
         // Editing is gated by the same policy the row JSON reports.
@@ -1323,11 +1334,18 @@ export default class extends BaseAgGrid {
       }
 
       if (!menu.contains(e.target)) {
-        menu.style.display = 'none';
+        this.closeRowActionsMenu(menu);
       }
     };
 
     document.addEventListener('click', this._rowActionsClickHandler);
+  }
+
+  // ensure the dropdown button is not left in the "open" state when the menu is closed by clicking outside
+  closeRowActionsMenu(menu) {
+    menu.style.display = 'none';
+    document.querySelectorAll('.deals-row-actions--open')
+            .forEach(el => el.classList.remove('deals-row-actions--open'));
   }
 
   initTooltips() {

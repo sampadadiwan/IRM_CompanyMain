@@ -34,11 +34,24 @@ class ImportDealInvestor < ImportUtil
     process_deal_investors(import_upload, deal_investors_sheet, ctx)
     process_deal_steps(import_upload, deal_steps_sheet)    if deal_steps_sheet
     process_notes(import_upload, notes_sheet)              if notes_sheet
+
+    # Once, after everything is uploaded — not per note. Imported notes arrive in
+    # arbitrary order and are can be backdated, so the incremental "only if larger"
+    # rule would settle on whichever row happened to come last instead of the true
+    # maximum "On" date.
+    recompute_note_owners_last_interaction
+
     import_upload.save!
     true
   end
 
   private
+
+  def recompute_note_owners_last_interaction
+    return if @note_owner_ids.blank?
+
+    DealInvestor.where(id: @note_owner_ids.to_a).find_each(&:recompute_last_interaction_date!)
+  end
 
   # -----------------------------------------------------------------------
   # Sheet 1 — Deal Investors
@@ -227,6 +240,9 @@ class ImportDealInvestor < ImportUtil
     entity_id = import_upload.entity_id
     headers   = sheet[:headers]
 
+    # Collected so save_data can recompute last_interaction_date once at the end.
+    @note_owner_ids = Set.new
+
     sheet[:data][1..].each do |row|
       user_data = headers.zip(row).to_h
       investor_name = user_data["Deal Investor"].to_s.strip
@@ -253,6 +269,7 @@ class ImportDealInvestor < ImportUtil
       )
       note.details = details_text
       note.save!
+      @note_owner_ids << deal_investor.id
 
       # Create a reminder if email or due_date is present
       reminder_email = user_data["Reminder Emails"].presence&.strip

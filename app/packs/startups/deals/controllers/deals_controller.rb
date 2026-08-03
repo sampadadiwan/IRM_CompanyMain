@@ -319,7 +319,7 @@ class DealsController < ApplicationController
     params.require(:deal).permit(:name, :amount, :status, :form_type_id, :clone_from_id, :tags,
                                  :start_date, :currency, :units, :activity_list, :archived, :skip_templates,
                                  :grid_columns, :deal_investor_status, :enable_notifications,
-                                 card_view_attrs: [], properties: {})
+                                 properties: {})
   end
 
   def find_or_initialize_deals_agent

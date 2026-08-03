@@ -364,9 +364,12 @@ export default class BaseAgGrid extends Controller {
         const bodyViewport = gridElement.querySelector('.ag-body-viewport');
         if (!bodyViewport) return;
 
-        // Only apply offset fix to deals grid and capital commitments grid
+        // Only apply offset fix to capital commitments grid. deals_list_grid is
+        // excluded: its header is a normal flex item, so the viewport already
+        // starts below it and the offset just pushed a header-height of blank
+        // space above the first row.
         const gridId = gridElement.id;
-        if (gridId !== 'deals_list_grid' && gridId !== 'capital_commitments_table') {
+        if (gridId !== 'capital_commitments_table') {
             return;
         }
 

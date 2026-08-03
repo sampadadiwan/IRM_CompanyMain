@@ -1,7 +1,8 @@
 <% turbo_tag ||= "deal_investor_show_#{deal_investor.id}"%>
 <%= turbo_frame_tag turbo_tag do %>
 
-  <%= render ToggleCard.new(title: "#{deal_investor.investor_name}", css_class: "show_deal_investor", state: "open") do %>
+  <%# collapsed is the correct state here  %>
+  <%= render ToggleCard.new(title: "#{deal_investor.investor_name}", css_class: "show_deal_investor", state: "collapsed") do %>
     <div class="card-body show_details">
         <table class="table table-bordered dataTable ">
           <%# Need to pass these params as they need current_user to compute and on turbo load give devise error %>

@@ -17,6 +17,11 @@ class DealInvestorsController < ApplicationController
     @deal_investors = @deal_investors.includes(:deal, :rich_text_notes, investor: :investor_entity, deal_activities: :rich_text_details)
     @deal_investors = @deal_investors.not_declined if [nil, "", "false", false].include?(params[:all])
     @deal_investors = @deal_investors.where(entity_id: params[:entity_id]) if params[:entity_id].present?
+    # Default ordering is by last_interaction_date desc — the date a user asserted on a
+    # note or on completing a task — unless the query specifies an order or a sort param.
+    # MySQL and SQLite both rank NULL lowest, so never-interacted rows fall to the bottom
+    # and updated_at breaks ties among them.
+    @deal_investors = @deal_investors.order(last_interaction_date: :desc, updated_at: :desc, created_at: :desc) if @deal_investors.arel.orders.blank? && !ransack_has_attr?(params[:q], 's')
 
     if params[:turbo] && params[:boards] && params[:board_id].present?
       @kanban_cards = KanbanCard.where(data_source_type: "DealInvestor", data_source_id: @deal_investors.pluck(:id))

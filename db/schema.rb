@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_03_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1278,6 +1278,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.bigint "investor_id", null: false
     t.string "investor_name"
     t.json "json_fields"
+    t.date "last_interaction_date"
     t.text "notes"
     t.decimal "pre_money_valuation_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "primary_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -1295,6 +1296,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.integer "unread_messages_investor", default: 0
     t.datetime "updated_at", null: false
     t.index ["deal_activity_id"], name: "index_deal_investors_on_deal_activity_id"
+    t.index ["deal_id", "last_interaction_date"], name: "index_deal_investors_on_deal_id_and_last_interaction_date"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_deal_investors_on_document_folder_id"
@@ -3792,6 +3794,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.integer "assigned_to_id"
     t.string "category", limit: 40
     t.boolean "completed", default: false
+    t.date "completed_on"
     t.datetime "created_at", null: false
     t.text "details"
     t.bigint "document_folder_id"
