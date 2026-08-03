@@ -142,7 +142,19 @@ class DealInvestorsController < ApplicationController
           turbo_stream.replace(frame, partial: "deal_investors/offcanvas_form", locals: { deal_investor: @deal_investor, belongs_to_entity: current_user.entity_id == @deal_investor.entity_id, update_allowed: DealInvestorPolicy.new(current_user, @deal_investor).update?, turbo_tag: frame, doc_owner_tag: @kanban_column&.name })
         ]
       end
-      format.html
+      format.html do
+        # Lets the deals grid row menu open the offcanvas straight into the form,
+        # the same way #show serves the read-only panel.
+        if params[:turbo_frame] == "deal_investor_frame"
+          render partial: "deal_investors/offcanvas_form", locals: {
+            deal_investor: @deal_investor,
+            belongs_to_entity: current_user.entity_id == @deal_investor.entity_id,
+            update_allowed: DealInvestorPolicy.new(current_user, @deal_investor).update?,
+            turbo_tag: "deal_investor_frame",
+            doc_owner_tag: @kanban_column&.name
+          }
+        end
+      end
     end
   end
 

@@ -1,10 +1,26 @@
 <% return_to ||= nil %>
+<%
+  # new.html.erb / edit.html.erb wrap this form in the new_note frame either way,
+  # so the Turbo-Frame header on submit cannot tell "loaded inline into the notes
+  # list" from "opened as its own /notes/new page" — both submit from inside that
+  # frame. Only the inline load *arrives* as a frame request, so decide here and
+  # carry the answer in the form.
+  inline_frame = turbo_frame_request_id == "new_note"
+%>
 <%= render FormCard.new(title: "Note") do %>
 
-<%= form_with(model: note, validate: true) do |form| %>
+<%# Standalone page: escape the frame so create's redirect navigates the page as
+    it always has. Turbo would otherwise hunt for a new_note frame in the
+    destination and find none. %>
+<%= form_with(model: note, validate: true, data: (inline_frame ? {} : { turbo_frame: "_top" })) do |form| %>
   <%= hidden_field_tag :return_to, return_to if return_to.present? %>
   <%= hidden_field_tag :embedded_note_context, params[:embedded_note_context] %>
   <%= hidden_field_tag :embedded_owner_id, params[:owner_id].presence || params.dig(:note, :owner_id) %>
+  <%# _note.html.erb reads params[:condensed] to pick its column set. Carry it
+      through the submit so the row prepended by create matches the table it
+      lands in (the dashboard widget renders this list condensed). %>
+  <%= hidden_field_tag :condensed, params[:condensed] if params[:condensed].present? %>
+  <%= hidden_field_tag :inline_frame, "new_note" if inline_frame %>
   <% if note.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(note.errors.count, "error") %> prohibited this note from being saved:</h2>
@@ -143,8 +159,16 @@
 
   <% end %>
 
-  <div class="form-group">
+  <div class="form-group d-flex gap-2">
     <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+    <%# Only the inline flow has a frame to clear — opened as a full page there is
+        nothing to cancel back to. %>
+    <% if inline_frame %>
+      <button type="button" class="btn btn-outline-secondary"
+              data-controller="frame-clear"
+              data-frame-clear-frame-value="new_note"
+              data-action="frame-clear#clear">Cancel</button>
+    <% end %>
   </div>
 <% end %>
 

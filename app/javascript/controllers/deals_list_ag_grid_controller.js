@@ -2,7 +2,17 @@ import BaseAgGrid from "controllers/base_ag_grid"
 import moment from 'moment'
 import * as bootstrap from "bootstrap"
 
+// Row-menu actions that open the offcanvas on a specific tab with that tab's
+// "new" form already popped. paneId/frameId mirror the ids rendered by
+// deal_investors/_deal_investor_deal_details.html.erb.
+const PANEL_ACTIONS = {
+  new_task: { paneId: "tasks-tab", tabFrameId: "tasks_frame", newRecordFrameId: "new_task" },
+  new_note: { paneId: "notes-tab", tabFrameId: "notes_frame", newRecordFrameId: "new_note" }
+};
+
 export default class extends BaseAgGrid {
+  static targets = ["search"]
+
   static values = {
     dealId: Number,
     investorLabel: String,
@@ -149,6 +159,9 @@ export default class extends BaseAgGrid {
         minWidth: 350,
         suppressSizeToFit: true,
         wrapText: true,
+        // Opts this column into the quick filter (defaultColDef opts every other
+        // one out). Tags are included so searching a tag surfaces the row too.
+        getQuickFilterText: (params) => [params.value, params.data?.tags].filter(Boolean).join(' '),
         cellRenderer: (params) => {
           if (params.data) {
             const logoUrl = params.data.investor_logo_url;
@@ -168,8 +181,11 @@ export default class extends BaseAgGrid {
 
             const tooltipAttr = notes ? `data-bs-toggle="tooltip" data-bs-html="true" title="${notes.replace(/"/g, '"')}"` : '';
 
+            // The row-actions caret carries no data-action: setupRowActionsMenu()
+            // handles it with a delegated listener, since the menu it opens lives
+            // on document.body. can_update rides along so the menu can hide Edit.
             return `
-              <div class="d-flex flex-row comment-row" style="white-space: normal !important; line-height: 1.2; padding: 12px 16px; gap: 12px; height: 100%;">
+              <div class="d-flex flex-row comment-row w-100" style="white-space: normal !important; line-height: 1.2; padding: 12px 16px; gap: 12px; height: 100%;">
                 <div class="flex-shrink-0 d-flex align-items-center">
                   <span>${avatarHtml}</span>
                 </div>
@@ -188,6 +204,16 @@ export default class extends BaseAgGrid {
                     <div class="d-flex align-items-center">
                     </div>
                   </div>
+                </div>
+                <div class="flex-shrink-0 d-flex align-items-center ms-auto">
+                  <a href="#"
+                     class="btn btn-outline-primary deals-row-actions"
+                     data-id="${params.data.id}"
+                     data-can-update="${params.data.can_update}"
+                     aria-label="Row actions"
+                     title="Actions">
+                    <i class="fa-solid fa-caret-down" aria-hidden="true"></i>
+                  </a>
                 </div>
               </div>
             `;
@@ -532,7 +558,12 @@ export default class extends BaseAgGrid {
         filter: 'agTextColumnFilter',
         sortable: true,
         minWidth: 120,
+        // Quick filter searches the investor name only; columns opt in by
+        // overriding this (see investor_name in columnDefs).
+        getQuickFilterText: () => '',
     };
+    // Search text is built once per row instead of on every keystroke.
+    this.gridOptions.cacheQuickFilter = true;
 
     // Capture the base class's onGridReady to wrap it
     const baseOnGridReady = (event) => {
@@ -803,7 +834,10 @@ export default class extends BaseAgGrid {
 
   updateFilterVisuals() {
     const filterModel = this.gridOptions.api.getFilterModel();
-    const hasFilters = Object.keys(filterModel).length > 0;
+    // The quick filter is not part of the filter model, so it is checked
+    // separately — otherwise searching would leave the clear "x" hidden.
+    const hasSearchTerm = this.hasSearchTarget && this.searchTarget.value.trim().length > 0;
+    const hasFilters = Object.keys(filterModel).length > 0 || hasSearchTerm;
 
     // Update cards visual state
     document.querySelectorAll('.analytics-card').forEach(card => {
@@ -835,15 +869,73 @@ export default class extends BaseAgGrid {
     }
   }
 
+  // Investor-name click. The URL building moved into showSidepanel() so the row
+  // menu's actions below can reuse it.
   openSidepanel(event) {
     event.preventDefault();
-    const id = event.currentTarget.dataset.id;
+    this.showSidepanel(`/deal_investors/${event.currentTarget.dataset.id}?turbo_frame=deal_investor_frame`);
+  }
+
+  // Loads url into the offcanvas turbo-frame and slides the panel open.
+  showSidepanel(url) {
     const sidepanelElement = document.getElementById('dealInvestorSidepanel');
     const sidepanel = bootstrap.Offcanvas.getInstance(sidepanelElement) || new bootstrap.Offcanvas(sidepanelElement);
-    const frame = document.getElementById('deal_investor_frame');
 
-    frame.src = `/deal_investors/${id}?turbo_frame=deal_investor_frame`;
+    document.getElementById('deal_investor_frame').src = url;
     sidepanel.show();
+  }
+
+  // Read-only panel — same as clicking the investor name.
+  viewInvestor(id) {
+    this.showSidepanel(`/deal_investors/${id}?turbo_frame=deal_investor_frame`);
+  }
+
+  // Skips the extra "Edit" click: the panel opens straight into the form.
+  editInvestor(id) {
+    this.showSidepanel(`/deal_investors/${id}/edit?turbo_frame=deal_investor_frame`);
+  }
+
+  // Opens the panel, switches to a tab and pops that tab's "new" form. Tasks and
+  // Notes work identically: the panel frame arrives first, then the tab's lazy
+  // frame once revealed, so both steps are driven by the turbo:frame-load
+  // listener wired up in gridReady() rather than by timers.
+  newTaskForInvestor(id) {
+    this.openPanelWithPendingAction(id, PANEL_ACTIONS.new_task);
+  }
+
+  newNoteForInvestor(id) {
+    this.openPanelWithPendingAction(id, PANEL_ACTIONS.new_note);
+  }
+
+  // Records what to do once the frames arrive, then opens the panel. The rest of
+  // the flow happens in the turbo:frame-load handler.
+  openPanelWithPendingAction(id, action) {
+    this._pendingPanelAction = action;
+    clearTimeout(this._pendingPanelActionTimer);
+    // Give up if a frame never loads, so a later panel open is not hijacked.
+    this._pendingPanelActionTimer = setTimeout(() => { this._pendingPanelAction = null; }, 15000);
+    this.showSidepanel(`/deal_investors/${id}?turbo_frame=deal_investor_frame`);
+  }
+
+  // Everything below is scoped to the offcanvas on purpose: this page also
+  // renders the deal-level details partial, which has its own #tasks-tab pane
+  // and its own turbo-frame called "tasks_frame". Selecting them globally would
+  // resolve by source order rather than by intent.
+  get sidepanelElement() {
+    return document.getElementById('dealInvestorSidepanel');
+  }
+
+  // Matched on href, not position, so the tabs can be reordered freely.
+  // The pane is a lazy turbo-frame: revealing it triggers the load.
+  openPanelTab(paneId) {
+    const tab = this.sidepanelElement?.querySelector(`a[href="#${paneId}"]`);
+    if (tab) tab.click();
+  }
+
+  // Absent when the user may not create this record for the owner — nothing to open.
+  clickNewRecordLink(paneId, frameId) {
+    const link = this.sidepanelElement?.querySelector(`#${paneId} a[data-turbo-frame="${frameId}"]`);
+    if (link) link.click();
   }
 
   addInvestor(event) {
@@ -979,7 +1071,26 @@ export default class extends BaseAgGrid {
     console.log("Deals List AG Grid Ready with Enhanced Features");
     this.initTooltips();
     this.setupActivityMenu();
+    this.setupRowActionsMenu();
     this.updateFilterVisuals();
+
+    // Drives the two-step "New Task" / "New Note" flow: the panel frame arrives
+    // first, then the tab's lazily loaded frame once that tab is revealed.
+    this._frameLoadHandler = (e) => {
+      const action = this._pendingPanelAction;
+      if (!action) return;
+      // The deal-level details section has a "tasks_frame" too — ignore it.
+      if (!this.sidepanelElement?.contains(e.target)) return;
+
+      if (e.target.id === 'deal_investor_frame') {
+        this.openPanelTab(action.paneId);
+      } else if (e.target.id === action.tabFrameId) {
+        this._pendingPanelAction = null;
+        clearTimeout(this._pendingPanelActionTimer);
+        this.clickNewRecordLink(action.paneId, action.newRecordFrameId);
+      }
+    };
+    document.addEventListener('turbo:frame-load', this._frameLoadHandler);
 
     // Listen for chart point clicks dispatched by charts_handler.js via the global
     // Highcharts event. No timing/polling needed — the handler fires on any click.
@@ -1005,6 +1116,21 @@ export default class extends BaseAgGrid {
   }
 
   disconnect() {
+    // Timers hold a reference to this controller and would fire against a grid
+    // api that no longer exists after a Turbo navigation.
+    clearTimeout(this._quickSearchTimer);
+    clearTimeout(this._pendingPanelActionTimer);
+
+    if (this._rowActionsClickHandler) {
+      document.removeEventListener('click', this._rowActionsClickHandler);
+      this._rowActionsClickHandler = null;
+    }
+
+    if (this._frameLoadHandler) {
+      document.removeEventListener('turbo:frame-load', this._frameLoadHandler);
+      this._frameLoadHandler = null;
+    }
+
     //Clean the listeners to be recreated on new page loads, which removes stale listeners from the page
     if (this._activityMenuClickHandler) {
       document.removeEventListener('click', this._activityMenuClickHandler);
@@ -1113,6 +1239,97 @@ export default class extends BaseAgGrid {
     document.addEventListener('click', this._activityMenuClickHandler);
   }
 
+  // Per-row View / Edit / Add Note / Add Task menu. Appended to document.body for
+  // the same reason as the activity menu: a dropdown rendered inside a cell is
+  // clipped by AG Grid's overflow:hidden viewport, and row transforms break
+  // position:fixed.
+  setupRowActionsMenu() {
+    const MENU_WIDTH = 170;
+    // One menu for the whole grid, reused across reconnects — the clicked row's
+    // id is stashed on it instead of building a menu per row.
+    let menu = document.getElementById('deals-row-actions-menu');
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.id = 'deals-row-actions-menu';
+      menu.className = 'dropdown-menu shadow-sm show';
+      menu.style.cssText = `position:fixed;z-index:99999;display:none;min-width:${MENU_WIDTH}px;`;
+      menu.innerHTML = `
+        <button class="dropdown-item" type="button" data-row-action="view">
+          <i class="ti ti-eye me-2"></i>View
+        </button>
+        <button class="dropdown-item" type="button" data-row-action="edit">
+          <i class="ti ti-pencil me-2"></i>Edit
+        </button>
+        <button class="dropdown-item" type="button" data-row-action="new_note">
+          <i class="ti ti-notes me-2"></i>Add Note
+        </button>
+        <button class="dropdown-item" type="button" data-row-action="new_task">
+          <i class="ti ti-plus me-2"></i>Add Task
+        </button>
+      `;
+      document.body.appendChild(menu);
+
+      menu.querySelectorAll('[data-row-action]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          menu.style.display = 'none';
+          const id = menu.dataset.dealInvestorId;
+          if (!id) return;
+
+          switch (btn.dataset.rowAction) {
+            case 'view': this.viewInvestor(id); break;
+            case 'edit': this.editInvestor(id); break;
+            case 'new_task': this.newTaskForInvestor(id); break;
+            case 'new_note': this.newNoteForInvestor(id); break;
+          }
+        });
+      });
+    }
+
+    if (this._rowActionsClickHandler) return;
+
+    // Delegated: AG Grid virtualises rows, so the carets come and go as you
+    // scroll and cannot each hold their own listener. This one also closes the
+    // menu on any outside click.
+    this._rowActionsClickHandler = (e) => {
+      const trigger = e.target.closest('.deals-row-actions');
+
+      if (trigger) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        menu.dataset.dealInvestorId = trigger.dataset.id;
+        // Editing is gated by the same policy the row JSON reports.
+        menu.querySelector('[data-row-action="edit"]').style.display =
+          trigger.dataset.canUpdate === 'true' ? '' : 'none';
+
+        const rect = trigger.getBoundingClientRect();
+        // Shown before measuring: a display:none element has no offsetHeight, and
+        // the height varies with how many items the row's policies leave visible.
+        menu.style.display = 'block';
+        const menuHeight = menu.offsetHeight;
+
+        let left = rect.right - MENU_WIDTH;
+        let top = rect.bottom + 4;
+
+        if (left < 8) left = 8;
+        // Flip above the caret when it would otherwise run off the bottom.
+        if (top + menuHeight > window.innerHeight) top = rect.top - menuHeight - 4;
+        if (top < 8) top = 8;
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+        return;
+      }
+
+      if (!menu.contains(e.target)) {
+        menu.style.display = 'none';
+      }
+    };
+
+    document.addEventListener('click', this._rowActionsClickHandler);
+  }
+
   initTooltips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -1120,7 +1337,25 @@ export default class extends BaseAgGrid {
     });
   }
 
+  // Client-side search over the rows already loaded — no server round-trip.
+  // Debounced because setQuickFilter re-evaluates every row, which is visible
+  // while typing on a large deal.
+  quickSearch(event) {
+    const term = event.target.value;
+    clearTimeout(this._quickSearchTimer);
+    this._quickSearchTimer = setTimeout(() => {
+      if (!this.gridOptions?.api) return;
+      this.gridOptions.api.setQuickFilter(term);
+    }, 200);
+  }
+
+  // The clear "x" now lives inside the search box, so it has to reset the search
+  // as well as the column filters — and cancel any debounced keystroke that
+  // would otherwise re-apply the term it just cleared.
   clearFilters() {
+    clearTimeout(this._quickSearchTimer);
+    if (this.hasSearchTarget) this.searchTarget.value = '';
+    this.gridOptions.api.setQuickFilter('');
     this.gridOptions.api.setFilterModel(null);
   }
 

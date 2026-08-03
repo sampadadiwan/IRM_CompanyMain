@@ -91,7 +91,11 @@ class NotesController < ApplicationController
     @note.owner_type = "Investor" if @note.owner_id.present? && @note.owner_type.blank?
     @note.user_id = current_user.id
     @note.entity_id = current_user.entity_id
-    if @note.reminder.email.present?
+    # Held on to for the failure branch below: a reminder with no email is
+    # dropped before saving, but fields_for renders nothing when the association
+    # is nil, so re-rendering the form would silently lose the reminder inputs.
+    submitted_reminder = @note.reminder
+    if @note.reminder&.email.present?
       @note.reminder.entity_id = @note.entity_id
       @note.reminder.note = "Reminder for #{@note}"
     else
@@ -104,9 +108,22 @@ class NotesController < ApplicationController
       if @note.save
         # Redirect back to the originating page (e.g. a deal) if a safe relative return_to was provided
         redirect_target = params[:return_to].presence&.then { |url| url.start_with?('/') ? url : nil } || note_url(@note)
+        # Turbo sends the turbo-stream Accept header on every form submission, so
+        # this branch is reached by the standalone /notes/new page too — where the
+        # stream's targets do not exist. Only the inline form gets the stream.
+        format.turbo_stream do
+          if params[:inline_frame] == "new_note"
+            render :create
+          else
+            redirect_to redirect_target, notice: "Note was successfully created."
+          end
+        end
         format.html { redirect_to redirect_target, notice: "Note was successfully created." }
         format.json { render :show, status: :created, location: @note }
       else
+        # Put the reminder back so the form keeps its inputs — and whatever the
+        # user had typed into them — instead of re-rendering without them.
+        @note.reminder ||= submitted_reminder
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @note.errors, status: :unprocessable_entity }
       end
@@ -130,6 +147,9 @@ class NotesController < ApplicationController
         format.html { redirect_to note_url(@note), notice: "Note was successfully updated." }
         format.json { render :show, status: :ok, location: @note }
       else
+        # Same as create: the reminder was cleared above when the email was left
+        # blank, and without it fields_for drops the reminder inputs.
+        @note.build_reminder(entity_id: @note.entity_id) unless @note.reminder
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @note.errors, status: :unprocessable_entity }
       end

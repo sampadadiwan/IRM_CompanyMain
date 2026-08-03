@@ -3,6 +3,81 @@
     display: none;
   }
 
+  // Single bordered field with the magnifier and the clear "x" sitting inside
+  // it, rather than a Bootstrap input-group (which renders the icon as a
+  // second bordered box butted against the field).
+  .deals-grid-search {
+    position: relative;
+    width: 240px;
+
+    .deals-grid-search__icon {
+      position: absolute;
+      top: 50%;
+      left: 0.6rem;
+      transform: translateY(-50%);
+      font-size: 0.95rem;
+      line-height: 1;
+      color: #7c8fac;
+      pointer-events: none;
+    }
+
+    .form-control {
+      padding-left: 1.9rem;
+      padding-right: 1.9rem;
+    }
+
+    // Shown by updateFilterVisuals() only when a search term or column
+    // filter is active.
+    .deals-grid-search__clear {
+      position: absolute;
+      top: 50%;
+      right: 0.35rem;
+      transform: translateY(-50%);
+      align-items: center;
+      justify-content: center;
+      width: 1.25rem;
+      height: 1.25rem;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: #7c8fac;
+      font-size: 0.85rem;
+      line-height: 1;
+
+      &:hover {
+        background: #eef1f6;
+        color: #2a3547;
+      }
+    }
+  }
+
+  // The name column sets checkboxSelection, so AG Grid wraps the cell renderer
+  // in .ag-cell-wrapper > .ag-cell-value. ag-grid.css makes the wrapper a flex
+  // container but stretches neither it nor the value, so both are content-width
+  // and the renderer's ms-auto has no free space to push the caret into.
+  .ag-cell-wrapper {
+    width: 100%;
+
+    > .ag-cell-value {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+  }
+
+  // Row actions caret in the investor-name cell. Sized to match the ToggleCard
+  // toggle it is modelled on, but compact enough to sit inside a grid row.
+  .deals-row-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    line-height: 1;
+    text-decoration: none;
+  }
+
   .deals-grid-scroll-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;

@@ -7,7 +7,10 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
   <div class="d-flex gap-2">
-    <%= link_to "New Note", new_note_path("note[owner_id]": owner_id, "note[owner_type]": owner_type, "note[entity_id]": current_user.entity_id, return_to: params[:return_to], from: from_source, embedded_note_context: embedded_note_context), {class: "btn btn-outline-primary ti ti-plus"} %>
+    <%# The enclosing notes_frame is target: "_top", so without an explicit
+        data-turbo-frame this link navigates the whole page away from the list.
+        Pointing it at new_note loads the form inline instead. %>
+    <%= link_to "New Note", new_note_path("note[owner_id]": owner_id, "note[owner_type]": owner_type, "note[entity_id]": current_user.entity_id, return_to: params[:return_to], from: from_source, embedded_note_context: embedded_note_context, condensed: params[:condensed]), {class: "btn btn-outline-primary ti ti-plus", data: { turbo_frame: "new_note" }} %>
     <% if owner_id.present? %>
       <% if current_user.entity.support_agents.set?(:note_summarization_agent) %>
       <button type="button" class="btn btn-outline-secondary"
@@ -37,10 +40,10 @@
   </div>
 </div>
 
+<%= render "notes/blank" %>
 <%=render SearchComponent.new(data_source: notes_path(params: params.to_unsafe_h), turbo_frame: "notes_frame") %>
 
 <div class="table-responsive">
-
   <table id="notes" class="table table-bordered dataTable ">
     <thead>
       <tr>
@@ -66,7 +69,7 @@
       </tr>
     </thead>
 
-    <tbody>
+    <tbody id="notes_table_body">
       <% notes.each do |note| %>
         <%= render partial: "/notes/note", locals: {note: note} %>
       <% end %>

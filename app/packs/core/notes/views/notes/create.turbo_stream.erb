@@ -1,0 +1,6 @@
+<%# Inline note creation: drop the new row at the top of the list and put the
+    form frame back to blank, rather than navigating away from the page that
+    opened it. Mirrors tasks/create.turbo_stream.erb. %>
+<%= turbo_stream.prepend("notes_table_body", partial: "notes/note", locals: { note: @note }) %>
+<%= turbo_stream.replace("new_note", partial: "notes/blank") %>
+<%= turbo_stream.update("user_alert", partial: "layouts/alerts", locals: { notice: "Note was successfully created." }) %>
