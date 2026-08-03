@@ -268,6 +268,30 @@ Fixture files generated via `script/generate_kpi_test_fixtures.rb` using rubyXL 
 
 ---
 
+### Fix 15: Child KPI Values Overwritten by Unmapped Parent Sections (2026-08-03)
+
+#### The Problem
+
+When the same child KPI name appears under multiple parent sections in the Excel — for example, "North" appears under both Revenue (row 12) and Contribution (row 33) — but only Revenue's children have configured mappings, the parser would silently overwrite the correct Revenue-North value with Contribution-North's value.
+
+This happened because the parser reads top-to-bottom:
+1. Hits Revenue → North (row 12) → saves correct value (254,637)
+2. Hits Contribution → North (row 33) → finds "Revenue - North" mapping (the only one for "North") → overwrites with 201,623
+
+#### The Fix
+
+The `resolve_mapping` method now checks parent context before returning a mapping:
+
+- **Single-mapping path:** If a child mapping exists but its parent doesn't match the current parent section being scanned, skip the row (return `nil`). E.g., "Revenue - North" won't be returned when the parser is inside Contribution's section.
+- **Multi-mapping fallback:** Same parent check — if parent context is set but no mapping matches, skip instead of returning the first available mapping.
+- **Parent KPIs are unaffected:** The check only applies when `mapping.parent_id` is present (child mappings). Parent KPIs like Revenue and Contribution themselves are never skipped.
+
+#### Note on Decimal Values
+
+Grid values like Revenue - North may show `254,636.50` instead of the Excel-displayed `254,637`. This is not a bug — Excel cells often contain raw decimal values (e.g., `254636.504552268`) displayed as whole numbers due to cell formatting. The parser reads the actual cell value, not the display format.
+
+---
+
 ## Known Issues
 
 1. **`KpiCumulateJob` missing `investor_kpi_mapping_id`:** The cumulation job creates Quarter/YTD KPI records without setting `investor_kpi_mapping_id`. These show as N/A in the grid view which groups by mapping ID. Pre-existing issue.
@@ -275,6 +299,8 @@ Fixture files generated via `script/generate_kpi_test_fixtures.rb` using rubyXL 
 2. **`detect_period_type` defaults to "Month" for date-format headers:** Headers like "6/30/2024" don't match any named period pattern and default to "Month". Excel files should use named headers (e.g., "Q1 2024", "Jun 2024") for correct period detection.
 
 3. **Children not collapsed by default:** The grid view shows all children expanded. Per product feedback, children should be collapsed by default with an expand toggle.
+
+4. **"Actual" tag badge invisible on blue grid header:** The Actual tag badge uses `bg-primary-subtle` (light blue) which is invisible against the blue grid header background. Forecast (cyan) and IC Case (orange) badges are visible. Pending fix: change Actual badge to `bg-light text-dark` for contrast.
 
 ---
 

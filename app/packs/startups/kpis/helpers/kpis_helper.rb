@@ -231,7 +231,9 @@ module KpisHelper
   # overrides the Bootstrap colours for Kedaara and keeps the brand palette there).
   def tag_badge_class(tag)
     case tag.to_s.strip.downcase
-    when "actual"    then "bg-primary-subtle text-primary badge-tag-actual"
+    # bg-light/text-dark instead of bg-primary-subtle — the primary-blue badge
+    # is invisible against the AG Grid's blue header row.
+    when "actual" then "bg-light text-dark badge-tag-actual"
     when "projected" then "bg-info-subtle text-info badge-tag-projected"
     when /^ic /      then "bg-warning-subtle text-warning badge-tag-ic-case"
     when /^audited/  then "bg-danger-subtle text-danger badge-tag-audited"

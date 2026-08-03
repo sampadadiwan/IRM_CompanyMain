@@ -123,13 +123,19 @@ Feature: KPI Workbook Reading
   # All parent-child mappings must be pre-configured via bulk import. Scenarios below
   # reflect this: they set up mappings explicitly and assert value import, not mapping creation.
 
+  # Scenario: ACT/BUDGET/IC tag row
+  # The fixture tag_columns.xlsx has raw tag labels "ACT", "BUDGET", "IC" in the tag row.
+  # Before Fix 12 (PR #1574), TAG_SYNONYMS mapped these to canonical values ("Actual", "Budget", "IC").
+  # After Fix 12, the parser preserves original Excel text — so "ACT" stays "ACT", not "Actual".
+  # The "Actual" tag in the expected list comes from the report-level fallback tag (set in test setup).
+  # Expected tags updated from "Actual, Budget, IC" to "ACT, Actual, BUDGET, IC" to match new behavior.
   Scenario: ACT/BUDGET/IC tag row creates separate KpiReports per tag
     Given there is a user "" for an entity "entity_type=Investment Fund"
     And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
     And the KPI workbook file "kpi_extraction/tag_columns.xlsx" for a "Actual" kpi report
     And the target KPIs are "Revenue, EBITDA"
     When the KpiWorkbookReader processes the file
-    Then KPI reports should exist with tags "Actual, Budget, IC"
+    Then KPI reports should exist with tags "ACT, Actual, BUDGET, IC"
     And each tag should have KPI reports for the same periods
 
   Scenario: Pre-configured parent-child mappings import values from indented Excel
