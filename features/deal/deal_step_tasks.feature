@@ -24,6 +24,7 @@ Feature: Tasks for Deal Steps
       | details         |
       | Verify Legal    |
       | Financial Audit |
+    And completing the step should have set the investor's last interaction date to today
 
   Scenario: Automatically generate tasks when a deal investor moves to a new step
     Given the deal step "Financial DD" has the following tasks:

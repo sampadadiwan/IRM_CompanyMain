@@ -14,15 +14,16 @@ SIDEPANEL = "#dealInvestorSidepanel".freeze
 # ---------------------------------------------------------------------------
 
 # Creates one deal investor per comma-separated name, each stamped a minute later
-# than the last. None of them has a last_interaction_date, so the grid falls back to
-# updated_at desc and the LAST name given starts at the top — which is what the
-# sort-order scenarios then flip with a dated note or a completed task.
+# than the last. None of them is left with a last_interaction_date, so the grid falls
+# back to updated_at desc and the LAST name given starts at the top — which is what
+# the sort-order scenarios then flip with a dated note or a completed task.
 Given('the deal has investors named {string}') do |names|
   @named_deal_investors ||= {}
 
   # Park anything the Background already created well behind the named ones, so
   # the top of the grid is decided only by the names in this step.
-  @deal.deal_investors.update_all(updated_at: 1.hour.ago, created_at: 1.hour.ago)
+  @deal.deal_investors.update_all(updated_at: 1.hour.ago, created_at: 1.hour.ago,
+                                  last_interaction_date: nil)
 
   names.split(",").map(&:strip).each_with_index do |name, index|
     investor_entity = FactoryBot.create(:entity, entity_type: "Investor", name: name)
@@ -37,9 +38,11 @@ Given('the deal has investors named {string}') do |names|
                                       status: "Active")
 
     # update_columns so the stagger is not undone by the timestamps this write
-    # would otherwise set.
+    # would otherwise set. last_interaction_date is cleared because creating the
+    # investor sets its status, which counts as an interaction and would otherwise
+    # put every row on today's date with nothing left for a note to outrank.
     stamp = (10 - index).minutes.ago
-    deal_investor.update_columns(created_at: stamp, updated_at: stamp)
+    deal_investor.update_columns(created_at: stamp, updated_at: stamp, last_interaction_date: nil)
 
     @named_deal_investors[name] = deal_investor
   end
@@ -230,7 +233,7 @@ When('I complete the task for {string} from the sidepanel') do |name|
   # Poll rather than sleep: the checkbox submits over turbo and the assertion that
   # follows reloads the page, which would otherwise race the write.
   Timeout.timeout(20) do
-    sleep(0.5) until Task.where(owner: deal_investor).where(completed: true).exists?
+    sleep(0.5) until Task.where(owner: deal_investor).exists?(completed: true)
   end
 end
 
@@ -271,7 +274,7 @@ def open_row_actions_menu_for(deal_investor)
   caret = find("#deals_list_grid .deals-row-actions[data-id='#{deal_investor.id}']", wait: 20)
   caret.click
 
-  expect(page).to have_selector("#{ROW_ACTIONS_MENU}", visible: true, wait: 10)
+  expect(page).to have_selector(ROW_ACTIONS_MENU, visible: true, wait: 10)
 end
 
 def fill_in_and_save_note(details, on: nil)

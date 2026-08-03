@@ -79,7 +79,25 @@ class DealInvestor < ApplicationRecord
   before_validation :calc_total_amount
   before_save :set_investor_entity_id
   before_save :track_status_change
-  after_save :touch_deal, if: -> { saved_change_to_status? || saved_change_to_primary_amount_cents? || saved_change_to_secondary_investment_cents? || saved_change_to_fee_cents? || saved_change_to_pre_money_valuation_cents? || saved_change_to_deal_activity_id? }
+  # Changes that mean someone actually worked this investor. deal_activity_id is
+  # how a completed step shows up here: PerformActivityAction moves the investor
+  # on to the next step and saves.
+  #
+  # Deliberately not "any save". WithFolder saves the record the first time its
+  # document folder is needed — that is, on merely opening the sidepanel — and
+  # messages_viewed writes read counters. Neither is an interaction, and both
+  # would otherwise shuffle the grid just for looking at it.
+  INTERACTION_ATTRIBUTES = %w[
+    status primary_amount_cents secondary_investment_cents
+    fee_cents pre_money_valuation_cents deal_activity_id
+  ].freeze
+
+  after_save :touch_deal, if: :interaction_change?
+  after_save :register_own_interaction, if: :interaction_change?
+
+  def interaction_change?
+    saved_changes.keys.intersect?(INTERACTION_ATTRIBUTES)
+  end
 
   def touch_deal
     deal&.touch
@@ -88,13 +106,23 @@ class DealInvestor < ApplicationRecord
   # ---------------------------------------------------------------------------
   # last_interaction_date — the deals grid's default sort key
   #
-  # It is a date the *user* asserts (a note's `on`, a task's completed_on), not a
-  # timestamp we observe, so a note typed today about a meeting in March must not
-  # move the investor. Both writers use update_column: a note/task save must not
-  # cascade back through this model's callbacks (touch_deal, Chewy indexing,
-  # calc_total_amount), and updated_at is the tiebreaker for rows that have no
-  # interaction date at all — bumping it here would defeat that.
+  # Three things count as an interaction:
+  #   * a note's `on` date          (Note#update_investor)
+  #   * a task's completed_on       (Task#register_owner_interaction)
+  #   * a meaningful edit to the investor itself, including completing a step,
+  #     which registers today (register_own_interaction above)
+  #
+  # The first two are dates the *user* asserts rather than timestamps we observe,
+  # so a note typed today about a meeting in March must not move the investor.
+  # All writers use update_column: a note/task save must not cascade back through
+  # this model's callbacks (touch_deal, Chewy indexing, calc_total_amount), and
+  # updated_at is the tiebreaker for rows that have no interaction date at all —
+  # bumping it here would defeat that.
   # ---------------------------------------------------------------------------
+
+  def register_own_interaction
+    register_interaction(Time.zone.today)
+  end
 
   # The incremental rule, used from the UI: only ever moves forward.
   def register_interaction(date)
@@ -110,6 +138,12 @@ class DealInvestor < ApplicationRecord
   # order and may be backdated, so "only if larger" would settle on whichever row
   # happened to be processed last rather than the true maximum. Writes nil when
   # nothing carries a date.
+  #
+  # Notes and completed tasks only — this deliberately does not fold in the
+  # today-stamp that register_own_interaction leaves. The same import writes the
+  # investor rows (statuses, amounts) moments earlier, so including it would put
+  # every imported investor on today's date and bury the historical "On" dates the
+  # upload exists to carry.
   def recompute_last_interaction_date!
     latest = [inv_notes.maximum(:on), tasks.completed.maximum(:completed_on)].compact.max
     update_column(:last_interaction_date, latest)

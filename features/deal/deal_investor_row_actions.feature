@@ -3,9 +3,11 @@ Feature: Deal Investor Row Actions
   It opens a menu with View / Edit / Add Note / Add Task, each of which drives the
   investor sidepanel.
 
-  The grid sorts on last_interaction_date — a date the user asserts, not a timestamp
-  we observe. A note moves its investor only when it carries an "On" date later than
-  the one already recorded; a task moves its investor only when it is completed.
+  The grid sorts on last_interaction_date. A note moves its investor only when it
+  carries an "On" date later than the one already recorded — the date the user
+  asserts, not the moment they typed it. A task moves its investor only when it is
+  completed. A meaningful edit to the investor itself, including completing a step,
+  counts as today; merely opening its sidepanel does not.
 
   Background:
     Given Im logged in as a user "" for an entity "entity_type=Company"
