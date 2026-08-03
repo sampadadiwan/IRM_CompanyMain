@@ -118,5 +118,13 @@
       <%= deal_investor.notes %>
     </td>
   </tr>
+  <tr>
+    <td>
+      Last Interaction Date
+    </td>
+    <td>
+      <%= l deal_investor.last_interaction_date if deal_investor.last_interaction_date %>
+    </td>
+  </tr>
   <%= display_custom_fields(@deal_investor) %>
 </table>
