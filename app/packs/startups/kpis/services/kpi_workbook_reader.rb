@@ -620,8 +620,22 @@ class KpiWorkbookReader
     mappings = @kpi_name_to_kpi_mappings[kpi_name]
     return nil if mappings.blank?
 
-    # Single mapping — no disambiguation needed (most common case)
-    return mappings.first if mappings.size == 1
+    # Single mapping — but still verify parent context when available.
+    # If @current_parent_mapping is set and this mapping belongs to a different
+    # parent, skip it. E.g., "North" has one mapping under Revenue, but the
+    # parser is currently inside Contribution — importing would overwrite
+    # Revenue-North's value with Contribution-North's value.
+    if mappings.size == 1
+      mapping = mappings.first
+      if @current_parent_mapping && mapping.parent_id.present? && mapping.parent_id != @current_parent_mapping.id
+        Rails.logger.debug do
+          "KpiWorkbookReader: Skipping '#{kpi_name}' — belongs to parent " \
+            "'#{mapping.parent&.standard_kpi_name}', not current parent '#{@current_parent_mapping.standard_kpi_name}'."
+        end
+        return nil
+      end
+      return mapping
+    end
 
     # Multiple mappings with same reported_kpi_name but different parents.
     # Use @current_parent_mapping to pick the correct one.
@@ -630,11 +644,21 @@ class KpiWorkbookReader
       return parent_match if parent_match
     end
 
-    # Fallback: no parent context available, or no mapping matched the current parent.
-    # Return the first mapping and log a warning since we can't disambiguate.
+    # Parent context exists but no mapping matched — this KPI name belongs to a
+    # different (unmapped) parent section. Skip it to avoid overwriting the correct
+    # mapped parent's child value. E.g., "North" under Contribution (unmapped)
+    # must not overwrite "Revenue - North" saved earlier from the Revenue section.
+    if @current_parent_mapping
+      Rails.logger.debug do
+        "KpiWorkbookReader: Skipping '#{kpi_name}' — current parent " \
+          "'#{@current_parent_mapping.standard_kpi_name}' has no matching child mapping."
+      end
+      return nil
+    end
+
+    # No parent context at all — genuinely ambiguous, use first match.
     Rails.logger.warn do
-      "KpiWorkbookReader: Multiple mappings for '#{kpi_name}' but could not disambiguate " \
-        "by parent (current_parent: #{@current_parent_mapping&.standard_kpi_name}). Using first match."
+      "KpiWorkbookReader: Multiple mappings for '#{kpi_name}' but no parent context. Using first match."
     end
     mappings.first
   end
