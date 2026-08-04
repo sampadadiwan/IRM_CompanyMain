@@ -69,7 +69,12 @@ class PortfolioCompanyAgent < SupportAgentService
       user_id: user_id,
       entity_id: entity_id,
       execution_mode: execution_mode
-    )
+    ) do |successes|
+      if successes.any?
+        processed_ids = successes.pluck(:id)
+        AgentChartJob.perform_later(user_id, portfolio_company_ids: processed_ids.uniq, execution_mode: execution_mode)
+      end
+    end
   end
 
   private

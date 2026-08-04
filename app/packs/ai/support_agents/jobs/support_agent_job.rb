@@ -155,7 +155,7 @@ class SupportAgentJob < ApplicationJob
             report = agent_instance.initialize_report_with_steps({}, model: target, support_agent: support_agent, user_id: user_id)
             support_agent.agent.call(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, support_agent_report: report, rta_pdf_document_id: rta_pdf_document_id)
           else
-            support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, batch_mode: is_batch_run, rta_pdf_document_id: rta_pdf_document_id)
+            support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, rta_pdf_document_id: rta_pdf_document_id)
           end
 
           # Track successes for batch summary

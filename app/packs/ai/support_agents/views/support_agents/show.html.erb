@@ -86,15 +86,7 @@
       <% if @support_agent.agent_type == "PortfolioCompanyAgent" %>
         <%# Portfolio Agent Reports Tab %>
         <div id="portfolio-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'portfolio_reports' %>">
-          <%= render 'portfolio_reports_tab',
-            support_agent: @support_agent,
-            portfolio_reports: @portfolio_reports,
-            portfolio_presenter: @portfolio_presenter,
-            paginated_portfolio_reports: @paginated_portfolio_reports,
-            pagy_portfolio: @pagy_portfolio,
-            portfolio_status_filter: @portfolio_status_filter,
-            portfolio_search_value: @portfolio_search_value %>
-
+          <%= render 'portfolio_reports_tab', support_agent: @support_agent, portfolio_reports: @portfolio_reports %>
         </div>
       <% end %>
 

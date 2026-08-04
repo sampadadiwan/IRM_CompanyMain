@@ -244,23 +244,20 @@ class SupportAgentService < Trailblazer::Operation
   # @param errors [Integer] count of failed targets so far
   # @return [void]
   def self.broadcast_batch_progress(support_agent:, current:, total:, target_name:, user_id:, successes: 0, errors: 0)
-    panel_locals = {
-      support_agent: support_agent,
-      current: current,
-      total: total,
-      target_name: target_name,
-      successes: successes,
-      errors: errors,
-      status: :running
-    }
-    %w[batch_progress_panel portfolio_batch_progress_panel].each do |target|
-      Turbo::StreamsChannel.broadcast_replace_to(
-        "batch_progress_#{support_agent.id}",
-        target: target,
-        partial: "support_agents/batch_progress_panel",
-        locals: panel_locals.merge(panel_id: target)
-      )
-    end
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "batch_progress_#{support_agent.id}",
+      target: "batch_progress_panel",
+      partial: "support_agents/batch_progress_panel",
+      locals: {
+        support_agent: support_agent,
+        current: current,
+        total: total,
+        target_name: target_name,
+        successes: successes,
+        errors: errors,
+        status: :running
+      }
+    )
   end
 
   # Broadcasts batch completion to update the progress panel
@@ -273,23 +270,20 @@ class SupportAgentService < Trailblazer::Operation
   # @param total [Integer] total targets processed
   # @return [void]
   def self.broadcast_batch_complete(support_agent:, user_id:, successes:, errors:, total:)
-    panel_locals = {
-      support_agent: support_agent,
-      current: total,
-      total: total,
-      target_name: nil,
-      successes: successes,
-      errors: errors,
-      status: :complete
-    }
-    %w[batch_progress_panel portfolio_batch_progress_panel].each do |target|
-      Turbo::StreamsChannel.broadcast_replace_to(
-        "batch_progress_#{support_agent.id}",
-        target: target,
-        partial: "support_agents/batch_progress_panel",
-        locals: panel_locals.merge(panel_id: target)
-      )
-    end
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "batch_progress_#{support_agent.id}",
+      target: "batch_progress_panel",
+      partial: "support_agents/batch_progress_panel",
+      locals: {
+        support_agent: support_agent,
+        current: total,
+        total: total,
+        target_name: nil,
+        successes: successes,
+        errors: errors,
+        status: :complete
+      }
+    )
   end
 
   # Shared batch runner for agents with process_batch.
