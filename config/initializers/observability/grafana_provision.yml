@@ -32,6 +32,11 @@ notification_policy:
   group_by:
     - grafana_folder
     - alertname
+    # region (in/us) is injected on every rule by rake grafana:provision:alert_rules —
+    # grouping by it puts the region into the email SUBJECT line (subjects are built
+    # from group labels, not annotations). All alerts from one instance share one
+    # region value, so this never actually splits a group.
+    - region
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
