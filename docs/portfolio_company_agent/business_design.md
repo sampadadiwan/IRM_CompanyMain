@@ -314,6 +314,15 @@ Reminders are sent once per agent run. If the agent is scheduled weekly, compani
 
 The dashboard's Send Reminders button shows when reminders were last sent (e.g., "Last sent: Jul 28, 2026 (1 day ago)"). When clicked, the confirm dialog warns: "Last reminders were sent on Jul 28, 2026 (1 day ago). Send again to 5 companies?" This prevents accidental over-reminding.
 
+The same last-sent info and confirm dialog appear on the footer's "Send Now" shortcut button (under Recommended Next Steps), so both reminder buttons behave consistently.
+
+### Feedback After Sending
+
+After clicking Send Reminders (from either button), the dashboard shows a clear message:
+- **"Reminders sent to N companies."** — emails were queued successfully
+- **"Reminders were already sent today. No new reminders sent."** — all companies were skipped (same-day dedup)
+- **"No overdue companies to send reminders to."** — no companies have blocking issues
+
 ---
 
 ## 10. What the Agent Checks

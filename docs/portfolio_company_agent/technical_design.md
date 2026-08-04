@@ -329,7 +329,7 @@ States:
 | `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_actions.html.erb` | Period dropdown, Send Reminders with last-sent warning, consistent hover styling |
 | `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_stats.html.erb` | 7 compact stat cards (h4 numbers, py-1 px-3 padding) |
 | `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/show.html.erb` | Active window indicator bar |
-| `app/packs/ai/portfolio_company_dashboard/controllers/portfolio_company_dashboard_controller.rb` | `run_validation` and `send_reminders` respond with `head :ok` (no page reload); accepts `check_as_on_date` |
+| `app/packs/ai/portfolio_company_dashboard/controllers/portfolio_company_dashboard_controller.rb` | `run_validation` responds with `head :ok` (no page reload); `send_reminders` responds with flash message + redirect (feedback: sent/skipped/no overdue); accepts `check_as_on_date` |
 | `app/packs/ai/portfolio_company_dashboard/services/portfolio_dashboard_presenter.rb` | Dashboard aggregations + `last_reminder_sent_at` for Send Reminders warning |
 
 ### Scheduler

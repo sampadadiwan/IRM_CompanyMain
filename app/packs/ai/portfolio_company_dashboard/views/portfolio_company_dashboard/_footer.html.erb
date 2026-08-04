@@ -10,11 +10,28 @@
             <div class="d-flex align-items-center justify-content-between">
               <div class="d-flex align-items-center gap-2">
                 <i class="ti ti-mail-forward text-primary"></i>
-                <span>Send reminder to <%= presenter.overdue_companies.size %> overdue companies</span>
+                <%# Send Now shortcut — mirrors the actions panel Send Reminders button.
+                     Shows last-sent date + days-ago below the label and includes
+                     the same warning in the confirm dialog to prevent accidental re-sends. %>
+                <div>
+                  <span>Send reminder to <%= presenter.overdue_companies.size %> overdue companies</span>
+                  <%
+                    footer_last_sent = presenter.last_reminder_sent_at
+                    footer_days_ago = footer_last_sent ? (Date.current - footer_last_sent).to_i : nil
+                    footer_confirm = if footer_last_sent
+                                       "Last reminders were sent on #{footer_last_sent.strftime('%b %d, %Y')} (#{footer_days_ago} #{'day'.pluralize(footer_days_ago)} ago). Send again to #{presenter.overdue_companies.size} companies?"
+                                     else
+                                       "Send reminders to #{presenter.overdue_companies.size} overdue companies?"
+                                     end
+                  %>
+                  <% if footer_last_sent %>
+                    <br><small class="text-muted">Last sent: <%= footer_last_sent.strftime('%b %d, %Y') %> (<%= footer_days_ago %> <%= 'day'.pluralize(footer_days_ago) %> ago)</small>
+                  <% end %>
+                </div>
               </div>
               <%= button_to "Send Now", send_reminders_portfolio_company_dashboard_path,
                     method: :post, class: "btn btn-sm btn-primary",
-                    data: { confirm: "Send reminders to #{presenter.overdue_companies.size} overdue companies?" } %>
+                    data: { confirm: footer_confirm } %>
             </div>
           <% end %>
           <% if presenter.total_issues > 0 %>

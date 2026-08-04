@@ -136,8 +136,10 @@ Every card is clickable — it filters the company table below to show only the 
 ### Actions
 
 - **Run Validation:** Triggers the agent across all portfolio companies as a batch. The dashboard auto-refreshes when the batch completes.
-- **Send Reminders:** Emails companies with any missing items (KPIs, documents, or valuations). Each email lists only what's missing for that company. Deduplicates — a company already reminded today is skipped. The button label shows the exact count of companies that will receive reminders.
+- **Send Reminders:** Emails companies with any missing items (KPIs, documents, or valuations). Each email lists only what's missing for that company. Deduplicates — a company already reminded today is skipped. The button label shows the exact count of companies that will receive reminders. After clicking, you'll see a confirmation message: "Reminders sent to N companies" if emails went out, or "Reminders were already sent today" if all companies were skipped.
 - **View Pending Issues:** Filters the table to show only companies with at least one blocking issue.
+
+There is also a **"Send Now"** shortcut in the **Recommended Next Steps** section at the bottom of the dashboard. It does exactly the same thing as the main Send Reminders button and shows the same last-sent date and confirmation dialog.
 
 ### Report Statuses
 
@@ -164,6 +166,9 @@ A: The company's category is probably not set to "Portfolio Company" (case-insen
 
 **Q: Can I change the KPI/valuation period from quarterly to monthly?**
 A: Yes — the "Reporting Period" dropdown on the agent edit page lets you choose Monthly, Quarterly, Half-Yearly, or Annually. KPIs and valuations both use the same period setting.
+
+**Q: I clicked "Send Reminders" but nothing seemed to happen. Why?**
+A: If reminders were already sent today, the system skips all companies and shows "Reminders were already sent today. No new reminders sent." This prevents companies from being emailed multiple times on the same day. Wait until tomorrow or run the agent again (which will re-send as part of its pipeline if items are still missing).
 
 **Q: Does running this agent for my whole fund show a live progress view?**
 A: No. Running against the whole portfolio, or from the Portfolio Agent Run screen, processes companies as a batch with no per-company progress view — you'll get a single summary notification once it's done. Only single-company runs (from a Portfolio Company's own page) show step-by-step progress.

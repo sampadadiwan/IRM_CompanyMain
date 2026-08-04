@@ -123,7 +123,17 @@ class PortfolioCompanyDashboardController < ApplicationController
       sent += 1
     end
 
-    head :ok
+    # Flash feedback so the FM knows what happened — sent, skipped (same-day
+    # dedup), or no overdue companies. Redirect renders the flash on the dashboard.
+    if sent.positive?
+      flash[:notice] = "Reminders sent to #{sent} #{'company'.pluralize(sent)}."
+    elsif skipped.positive?
+      flash[:alert] = "Reminders were already sent today. No new reminders sent."
+    else
+      flash[:alert] = "No overdue companies to send reminders to."
+    end
+
+    redirect_to portfolio_company_dashboard_path
   end
 
   private
