@@ -3,11 +3,13 @@ import moment from 'moment'
 import * as bootstrap from "bootstrap"
 
 // Row-menu actions that open the offcanvas on a specific tab with that tab's
-// "new" form already popped. paneId/frameId mirror the ids rendered by
-// deal_investors/_deal_investor_deal_details.html.erb.
+// "new" form already popped. panePrefix/frameId mirror the ids rendered by
+// deal_investors/_deal_investor_deal_details.html.erb, where the pane ids carry a
+// "-di-<deal_investor id>" suffix to stay unique against the deal's own tab strip
+// on the same page — the concrete id is built in openPanelWithPendingAction().
 const PANEL_ACTIONS = {
-  new_task: { paneId: "tasks-tab", tabFrameId: "tasks_frame", newRecordFrameId: "new_task" },
-  new_note: { paneId: "notes-tab", tabFrameId: "notes_frame", newRecordFrameId: "new_note" }
+  new_task: { panePrefix: "tasks-tab", tabFrameId: "tasks_frame", newRecordFrameId: "new_task" },
+  new_note: { panePrefix: "notes-tab", tabFrameId: "notes_frame", newRecordFrameId: "new_note" }
 };
 
 export default class extends BaseAgGrid {
@@ -506,9 +508,14 @@ export default class extends BaseAgGrid {
     window.DealsGrid = this;
 
     // Create a NEW gridOptions object that will be used by the base class
+    // We remove the range selection and cell focus features to avoid the persistent blue highlight on cells.
     this.gridOptions = {
         rowSelection: 'multiple',
         suppressRowClickSelection: true,
+        suppressCellFocus: true,
+        suppressRowHoverHighlight: true,
+        suppressRangeSelection: true,
+        enableRangeSelection: false,
         onCellValueChanged: (params) => {
             console.log("onCellValueChanged", params);
             this.onCellValueChanged(params);
@@ -604,8 +611,12 @@ export default class extends BaseAgGrid {
         }
     };
 
-    this.gridOptions.enableRangeSelection = true;
-    this.gridOptions.enableCharts = true;
+    // NOTE: enableRangeSelection/enableCharts are intentionally NOT enabled here.
+    // This grid disables range selection & cell focus highlighting above
+    // (suppressCellFocus, suppressRangeSelection, enableRangeSelection: false)
+    // to avoid the persistent blue range-selection highlight on cells. Charts
+    // aren't used on this grid, and enableCharts requires range selection to
+    // be enabled, so both are left off.
     this.gridOptions.rowGroupPanelShow = 'always';
     this.gridOptions.domLayout = 'normal';
     this.gridOptions.suppressHorizontalScroll = false;
@@ -878,16 +889,173 @@ export default class extends BaseAgGrid {
   // menu's actions below can reuse it.
   openSidepanel(event) {
     event.preventDefault();
+    event.stopPropagation();
     this.showSidepanel(`/deal_investors/${event.currentTarget.dataset.id}?turbo_frame=deal_investor_frame`);
   }
 
-  // Loads url into the offcanvas turbo-frame and slides the panel open.
-  showSidepanel(url) {
-    const sidepanelElement = document.getElementById('dealInvestorSidepanel');
-    const sidepanel = bootstrap.Offcanvas.getInstance(sidepanelElement) || new bootstrap.Offcanvas(sidepanelElement);
+  // Tears down the per-open 'hidden.bs.offcanvas' handler and aborts any in-flight
+  // fetch from loadSidepanelContent(). Called before every re-open and on
+  // disconnect so handlers/requests from a previous open never fire against the
+  // panel's new state.
+  cleanupSidepanelListeners() {
+    const sidepanelElement = this.sidepanelElement;
 
-    document.getElementById('deal_investor_frame').src = url;
-    sidepanel.show();
+    if (this._sidepanelHideHandler && sidepanelElement) {
+      sidepanelElement.removeEventListener('hidden.bs.offcanvas', this._sidepanelHideHandler);
+    }
+
+    if (this._sidepanelLoadController) {
+      this._sidepanelLoadController.abort();
+      this._sidepanelLoadController = null;
+    }
+
+    this._sidepanelHideHandler = null;
+  }
+
+  // Forces the offcanvas back to a fully-closed DOM/body state before reopening it.
+  // Needed because the panel can be reopened (e.g. clicking a different investor)
+  // before Bootstrap's own hide() transition/backdrop cleanup has finished, which
+  // otherwise leaves stray backdrops and body classes/styles behind.
+  resetSidepanelState() {
+    const sidepanelElement = this.sidepanelElement;
+    if (!sidepanelElement) return;
+
+    const existingInstance = bootstrap.Offcanvas.getInstance(sidepanelElement);
+    if (existingInstance) {
+      try { existingInstance.dispose(); } catch (_error) {}
+    }
+
+    sidepanelElement.classList.remove('show', 'hiding');
+    sidepanelElement.removeAttribute('aria-hidden');
+    sidepanelElement.style.display = '';
+    document.body.classList.remove('offcanvas-open');
+    document.body.style.removeProperty('overflow');
+    // Bootstrap's ScrollBarHelper adds an inline body padding-right on show() to
+    // offset the hidden scrollbar, caching the prior value in data-bs-padding-right
+    // to restore on hide(). Disposing the instance here skips that restore (we
+    // never let hide()'s transition-queued callback run), so without clearing it
+    // manually each reopen stacks another scrollbar-width on top of the last.
+    document.body.style.removeProperty('padding-right');
+    document.body.removeAttribute('data-bs-padding-right');
+    document.querySelectorAll('.offcanvas-backdrop').forEach((backdrop) => backdrop.remove());
+  }
+
+  // The offcanvas body is now a plain <div> (see _list_view_sidepanel.html.erb),
+  // not a <turbo-frame>, because loadSidepanelContent() populates it via a manual
+  // fetch rather than Turbo's frame navigation - see that method for why.
+  get sidepanelContentContainer() {
+    return document.getElementById('deal_investor_panel_content');
+  }
+
+  // Resets the panel body back to its loading spinner between opens/closes so
+  // stale content from the previous investor is never visible while new content loads.
+  resetSidepanelFrame() {
+    const container = this.sidepanelContentContainer;
+    if (!container) return null;
+
+    container.innerHTML = `
+      <div class="p-4 text-center">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    `;
+
+    return container;
+  }
+
+  // Fetches fresh HTML directly rather than relying on a persistent Turbo frame's
+  // src assignment, since the previous investor's navigation state (e.g. having
+  // followed a link inside the panel) could otherwise leak into the next open.
+  // Stale in-flight loads are aborted so an older investor's response cannot
+  // overwrite a newer one, and onLoaded only fires once the right content lands.
+  loadSidepanelContent(url, onLoaded) {
+    const container = this.sidepanelContentContainer;
+    if (!container) return;
+
+    if (this._sidepanelLoadController) {
+      this._sidepanelLoadController.abort();
+    }
+
+    this._sidepanelLoadController = new AbortController();
+    const controller = this._sidepanelLoadController;
+
+    this.resetSidepanelFrame();
+
+    fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'text/html' },
+      signal: controller.signal
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.text();
+      })
+      .then((html) => {
+        if (controller.signal.aborted) return;
+        container.innerHTML = html;
+        if (typeof onLoaded === 'function') onLoaded();
+      })
+      .catch((error) => {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load deal investor sidepanel content', error);
+        container.innerHTML = '<div class="p-4 text-danger">Unable to load investor details.</div>';
+        if (typeof onLoaded === 'function') onLoaded();
+      });
+  }
+
+  // Explicit close path used by the "All Documents" link (which navigates the
+  // grid page away via turbo_frame: "_top") and turbo:before-visit below, so the
+  // panel doesn't linger open/half-torn-down across a full-page Turbo navigation.
+  closeSidepanel() {
+    const sidepanelElement = this.sidepanelElement;
+    if (!sidepanelElement) return;
+
+    try {
+      const sidepanel = bootstrap.Offcanvas.getInstance(sidepanelElement) || new bootstrap.Offcanvas(sidepanelElement);
+      this.cleanupSidepanelListeners();
+      this.resetSidepanelState();
+      this.resetSidepanelFrame();
+      sidepanel.hide();
+      this.clearGridHighlight();
+    } catch (error) {
+      console.error('Failed to hide deal investor sidepanel', error);
+    }
+  }
+
+  // Loads url into the offcanvas panel and slides it open.
+  // Close the sidepanel by clicking the "x" or the default Bootstrap backdrop
+  // (non-static offcanvas already dismisses on backdrop click). We deliberately
+  // don't attach our own document-level click listener here — an earlier
+  // attempt at that intercepted/raced with clicks on the grid and was unreliable.
+  // onContentLoaded, when given, runs once the fetched HTML is in the panel and
+  // the panel has been told to open — see openPanelWithPendingAction().
+  showSidepanel(url, onContentLoaded) {
+    const sidepanelElement = document.getElementById('dealInvestorSidepanel');
+    if (!sidepanelElement) return;
+
+    this.resetSidepanelState();
+    this.cleanupSidepanelListeners();
+
+    const sidepanel = bootstrap.Offcanvas.getOrCreateInstance(sidepanelElement);
+    const container = this.resetSidepanelFrame();
+    if (!container) return;
+
+    this._sidepanelHideHandler = () => {
+      this.cleanupSidepanelListeners();
+      this.resetSidepanelFrame();
+      this.clearGridHighlight();
+    };
+
+    sidepanelElement.addEventListener('hidden.bs.offcanvas', this._sidepanelHideHandler);
+
+    const frameUrl = `${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`;
+    this.loadSidepanelContent(frameUrl, () => {
+      requestAnimationFrame(() => {
+        sidepanel.show();
+        if (typeof onContentLoaded === 'function') onContentLoaded();
+      });
+    });
   }
 
   // Read-only panel — same as clicking the investor name.
@@ -901,9 +1069,9 @@ export default class extends BaseAgGrid {
   }
 
   // Opens the panel, switches to a tab and pops that tab's "new" form. Tasks and
-  // Notes work identically: the panel frame arrives first, then the tab's lazy
-  // frame once revealed, so both steps are driven by the turbo:frame-load
-  // listener wired up in gridReady() rather than by timers.
+  // Notes work identically: the panel content lands first (which is when the tab
+  // is revealed), then the tab's lazy frame loads, and the turbo:frame-load
+  // listener wired up in gridReady() pops the form — no timers involved.
   newTaskForInvestor(id) {
     this.openPanelWithPendingAction(id, PANEL_ACTIONS.new_task);
   }
@@ -912,14 +1080,21 @@ export default class extends BaseAgGrid {
     this.openPanelWithPendingAction(id, PANEL_ACTIONS.new_note);
   }
 
-  // Records what to do once the frames arrive, then opens the panel. The rest of
-  // the flow happens in the turbo:frame-load handler.
+  // Records what to do once the tab's frame arrives, then opens the panel and
+  // reveals the tab as soon as its markup lands. The tab has to be revealed here
+  // rather than off a turbo:frame-load for the enclosing "deal_investor_frame":
+  // loadSidepanelContent() injects that frame via innerHTML with no src, and a
+  // frame that never loads a source never fires turbo:frame-load.
   openPanelWithPendingAction(id, action) {
-    this._pendingPanelAction = action;
+    const pendingAction = { ...action, paneId: `${action.panePrefix}-di-${id}` };
+    this._pendingPanelAction = pendingAction;
     clearTimeout(this._pendingPanelActionTimer);
     // Give up if a frame never loads, so a later panel open is not hijacked.
     this._pendingPanelActionTimer = setTimeout(() => { this._pendingPanelAction = null; }, 15000);
-    this.showSidepanel(`/deal_investors/${id}?turbo_frame=deal_investor_frame`);
+    this.showSidepanel(
+      `/deal_investors/${id}?turbo_frame=deal_investor_frame`,
+      () => this.openPanelTab(pendingAction.paneId)
+    );
   }
 
   // Everything below is scoped to the offcanvas on purpose: this page also
@@ -943,15 +1118,28 @@ export default class extends BaseAgGrid {
     if (link) link.click();
   }
 
+  // "Add Investor" link handler. Follows the same reset/fetch/show sequence as
+  // showSidepanel() rather than calling it directly, since this uses the link's
+  // own href (an add-investor form URL) instead of a `/deal_investors/:id` URL.
   addInvestor(event) {
     event.preventDefault();
     const url = event.currentTarget.href;
     const sidepanelElement = document.getElementById('dealInvestorSidepanel');
-    const sidepanel = bootstrap.Offcanvas.getInstance(sidepanelElement) || new bootstrap.Offcanvas(sidepanelElement);
-    const frame = document.getElementById('deal_investor_frame');
+    if (!sidepanelElement) return;
 
-    frame.src = url;
-    sidepanel.show();
+    this.resetSidepanelState();
+    this.cleanupSidepanelListeners();
+
+    const sidepanel = bootstrap.Offcanvas.getOrCreateInstance(sidepanelElement);
+    const container = this.resetSidepanelFrame();
+    if (!container) return;
+
+    const frameUrl = `${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`;
+    this.loadSidepanelContent(frameUrl, () => {
+      requestAnimationFrame(() => {
+        sidepanel.show();
+      });
+    });
   }
 
   appendNewRow(data) {
@@ -1072,35 +1260,128 @@ export default class extends BaseAgGrid {
     });
   }
 
+  // Used by the outside-click handler in connect() to tell a genuine grid
+  // cell/row/header interaction apart from a click that merely landed inside the
+  // grid's DOM subtree (e.g. a scrollbar or an empty area), so highlight-clearing
+  // only skips real interactions.
+  isTargetInsideGridInteraction(target) {
+    const gridElement = this.getGridElement();
+    if (!gridElement || !target) return false;
+
+    const element = target instanceof Element ? target : target.parentElement;
+    if (!element) return false;
+
+    const interactiveSelector = '.ag-cell, .ag-row, .ag-header-cell';
+    const interactiveElement = element.closest(interactiveSelector);
+
+    return !!interactiveElement && gridElement.contains(interactiveElement);
+  }
+
+  // AG Grid's cell-focus/range-selection styling persists a blue highlight on the
+  // last-interacted cell/row even with suppressCellFocus/suppressRangeSelection
+  // set (see the gridOptions comment near where those are configured), so on top
+  // of the API calls this also strips the relevant classes/inline vars by hand.
+  // Run on grid ready, on any click outside a real grid interaction, and whenever
+  // the investor sidepanel closes, so the highlight never lingers after those events.
+  clearGridHighlight() {
+    const gridElement = this.getGridElement();
+    const activeElement = document.activeElement;
+
+    if (activeElement && gridElement?.contains(activeElement)) {
+      activeElement.blur();
+    }
+
+    const api = this.gridOptions?.api;
+
+    try {
+      if (typeof api?.clearFocusedCell === 'function') api.clearFocusedCell();
+    } catch (error) {
+      console.warn('Unable to clear AG Grid focused cell', error);
+    }
+
+    try {
+      if (typeof api?.clearRangeSelection === 'function') api.clearRangeSelection();
+    } catch (error) {
+      console.warn('Unable to clear AG Grid range selection', error);
+    }
+
+    if (!gridElement) return;
+
+    requestAnimationFrame(() => {
+      gridElement.querySelectorAll('.ag-cell-focus, .ag-cell-selected, .ag-row-selected, .ag-row-focus, .ag-cell-range-selected, .ag-cell-range-selected-1, .ag-cell-range-single-cell').forEach((element) => {
+        element.classList.remove('ag-cell-focus', 'ag-cell-selected', 'ag-row-selected', 'ag-row-focus', 'ag-cell-range-selected', 'ag-cell-range-selected-1', 'ag-cell-range-single-cell');
+      });
+
+      gridElement.querySelectorAll('.ag-row').forEach((row) => {
+        row.classList.remove('ag-row-selected', 'ag-row-focus', 'ag-row-hovered');
+        row.style.removeProperty('--ag-selected-row-background-color');
+        row.style.removeProperty('background-color');
+      });
+
+      gridElement.querySelectorAll('.ag-cell').forEach((cell) => {
+        cell.classList.remove('ag-cell-focus', 'ag-cell-selected', 'ag-cell-range-selected', 'ag-cell-range-selected-1', 'ag-cell-range-single-cell');
+        cell.style.removeProperty('--ag-selected-row-background-color');
+        cell.style.removeProperty('background-color');
+      });
+
+      gridElement.style.removeProperty('--ag-selected-row-background-color');
+      gridElement.style.removeProperty('--ag-range-selection-background-color');
+      gridElement.style.removeProperty('--ag-row-hover-color');
+    });
+  }
+
   gridReady() {
     console.log("Deals List AG Grid Ready with Enhanced Features");
+    this.clearGridHighlight();
     this.initTooltips();
     this.setupActivityMenu();
     this.setupRowActionsMenu();
     this.updateFilterVisuals();
 
-    // Drives the two-step "New Task" / "New Note" flow: the panel frame arrives
-    // first, then the tab's lazily loaded frame once that tab is revealed.
+    // Second half of the "New Task" / "New Note" flow: openPanelWithPendingAction()
+    // reveals the tab, which starts its lazy frame loading, and this pops that
+    // tab's "new" form once the frame has rendered.
     this._frameLoadHandler = (e) => {
       const action = this._pendingPanelAction;
       if (!action) return;
       // The deal-level details section has a "tasks_frame" too — ignore it.
       if (!this.sidepanelElement?.contains(e.target)) return;
+      if (e.target.id !== action.tabFrameId) return;
 
-      if (e.target.id === 'deal_investor_frame') {
-        this.openPanelTab(action.paneId);
-      } else if (e.target.id === action.tabFrameId) {
-        this._pendingPanelAction = null;
-        clearTimeout(this._pendingPanelActionTimer);
-        this.clickNewRecordLink(action.paneId, action.newRecordFrameId);
-      }
+      this._pendingPanelAction = null;
+      clearTimeout(this._pendingPanelActionTimer);
+      this.clickNewRecordLink(action.paneId, action.newRecordFrameId);
     };
     document.addEventListener('turbo:frame-load', this._frameLoadHandler);
+
+    // Belt-and-braces for clearGridHighlight(): AG Grid's own focus/selection
+    // events don't reliably fire for every way a cell can lose "highlighted"
+    // status (e.g. clicking a button rendered inside a cell), so this also
+    // clears the highlight on any click/tap that lands outside a real grid
+    // interaction. Registered in the capture phase (the `true` argument) so it
+    // runs before the target's own click handler can stop propagation.
+    this._outsideGridClickHandler = (event) => {
+      const gridElement = this.getGridElement();
+      const target = event.target;
+
+      if (!gridElement) return;
+
+      if (!this.isTargetInsideGridInteraction(target)) {
+        requestAnimationFrame(() => this.clearGridHighlight());
+      }
+    };
+    document.addEventListener('click', this._outsideGridClickHandler, true);
+    document.addEventListener('pointerup', this._outsideGridClickHandler, true);
+    document.addEventListener('touchend', this._outsideGridClickHandler, true);
 
     // Listen for chart point clicks dispatched by charts_handler.js via the global
     // Highcharts event. No timing/polling needed — the handler fires on any click.
     this._chartFilterHandler = (e) => this.filterByChart(e.detail.type, e.detail.value);
     document.addEventListener('chart:grid-filter', this._chartFilterHandler);
+
+    // Close the sidepanel when navigating away from this page, so it doesn't persist across Turbo visits.
+    this._beforeVisitHandler = () => this.closeSidepanel();
+    document.addEventListener('turbo:before-visit', this._beforeVisitHandler);
 
     // Wire the Bulk Advance Activity confirm button directly, since the modal
     // may be outside the Stimulus controller's DOM scope when Bootstrap moves it.
@@ -1126,6 +1407,14 @@ export default class extends BaseAgGrid {
     clearTimeout(this._quickSearchTimer);
     clearTimeout(this._pendingPanelActionTimer);
 
+    // Bootstrap tooltips attach their own DOM elements/listeners independent of
+    // this controller's element; without disposing them here they'd leak (and
+    // their popper elements would keep floating on screen) across Turbo navigations.
+    if (this._tooltips) {
+      this._tooltips.forEach((tooltip) => tooltip.dispose());
+      this._tooltips.clear();
+    }
+
     if (this._rowActionsClickHandler) {
       document.removeEventListener('click', this._rowActionsClickHandler);
       this._rowActionsClickHandler = null;
@@ -1134,6 +1423,13 @@ export default class extends BaseAgGrid {
     if (this._frameLoadHandler) {
       document.removeEventListener('turbo:frame-load', this._frameLoadHandler);
       this._frameLoadHandler = null;
+    }
+
+    if (this._outsideGridClickHandler) {
+      document.removeEventListener('click', this._outsideGridClickHandler, true);
+      document.removeEventListener('pointerup', this._outsideGridClickHandler, true);
+      document.removeEventListener('touchend', this._outsideGridClickHandler, true);
+      this._outsideGridClickHandler = null;
     }
 
     //Clean the listeners to be recreated on new page loads, which removes stale listeners from the page
@@ -1146,20 +1442,30 @@ export default class extends BaseAgGrid {
       document.removeEventListener('chart:grid-filter', this._chartFilterHandler);
     }
 
+    // Remove the turbo:before-visit listener to avoid closing the sidepanel on future visits
+    if (this._beforeVisitHandler) {
+      document.removeEventListener('turbo:before-visit', this._beforeVisitHandler);
+      this._beforeVisitHandler = null;
+    }
+
+    this.cleanupSidepanelListeners();
+
     super.disconnect();
   }
 
   // Build a single floating menu appended to document.body so it is never clipped
   // by AG Grid's overflow:hidden cells or the horizontal-scroll viewport.
   setupActivityMenu() {
-    // Reuse an existing menu if the controller is re-initialized (turbo navigation)
-    let menu = document.getElementById('deals-activity-floating-menu');
-    if (!menu) {
-      menu = document.createElement('div');
-      menu.id = 'deals-activity-floating-menu';
-      menu.className = 'dropdown-menu shadow-sm show';
-      menu.style.cssText = 'position:fixed;z-index:99999;display:none;min-width:150px;';
-      menu.innerHTML = `
+    // Rebuilt, never reused: this menu lives on document.body, so Turbo snapshots
+    // it into the page cache and a restoration visit (back button) restores the
+    // markup as inert clones with none of the listeners attached below.
+    document.getElementById('deals-activity-floating-menu')?.remove();
+
+    const menu = document.createElement('div');
+    menu.id = 'deals-activity-floating-menu';
+    menu.className = 'dropdown-menu shadow-sm show';
+    menu.style.cssText = 'position:fixed;z-index:99999;display:none;min-width:150px;';
+    menu.innerHTML = `
         <button class="dropdown-item" type="button" data-status="complete">
           <i class="ti ti-circle-check text-success me-2"></i>Complete
         </button>
@@ -1176,19 +1482,18 @@ export default class extends BaseAgGrid {
         <a class="dropdown-item" id="deals-activity-menu-docs" href="#">
           <i class="ti ti-upload me-2"></i>Upload Docs
         </a>
-      `;
-      document.body.appendChild(menu);
+    `;
+    document.body.appendChild(menu);
 
-      // Status button clicks
-      menu.querySelectorAll('[data-status]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const id = parseInt(menu.dataset.activityId);
-          if (id) this.updateActivityStatus(id, btn.dataset.status);
-          menu.style.display = 'none';
-        });
+    // Status button clicks
+    menu.querySelectorAll('[data-status]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = parseInt(menu.dataset.activityId);
+        if (id) this.updateActivityStatus(id, btn.dataset.status);
+        menu.style.display = 'none';
       });
-    }
+    });
 
     // Delegate: open menu when any .activity-badge is clicked
     if (this._activityMenuClickHandler) return;
@@ -1250,46 +1555,48 @@ export default class extends BaseAgGrid {
   // position:fixed.
   setupRowActionsMenu() {
     const MENU_WIDTH = 170;
-    // One menu for the whole grid, reused across reconnects — the clicked row's
-    // id is stashed on it instead of building a menu per row.
-    let menu = document.getElementById('deals-row-actions-menu');
-    if (!menu) {
-      menu = document.createElement('div');
-      menu.id = 'deals-row-actions-menu';
-      menu.className = 'dropdown-menu shadow-sm show';
-      menu.style.cssText = `position:fixed;z-index:99999;display:none;min-width:${MENU_WIDTH}px;`;
-      menu.innerHTML = `
-        <button class="dropdown-item" type="button" data-row-action="view">
-          <i class="ti ti-eye me-2"></i>View
-        </button>
-        <button class="dropdown-item" type="button" data-row-action="edit">
-          <i class="ti ti-pencil me-2"></i>Edit
-        </button>
-        <button class="dropdown-item" type="button" data-row-action="new_note">
-          <i class="ti ti-notes me-2"></i>Add Note
-        </button>
-        <button class="dropdown-item" type="button" data-row-action="new_task">
-          <i class="ti ti-plus me-2"></i>Add Task
-        </button>
-      `;
-      document.body.appendChild(menu);
+    // One menu for the whole grid — the clicked row's id is stashed on it instead
+    // of building a menu per row. Rebuilt, never reused: this menu lives on
+    // document.body, so Turbo snapshots it into the page cache and a restoration
+    // visit (back button) restores the markup as inert clones with none of the
+    // listeners attached below.
+    document.getElementById('deals-row-actions-menu')?.remove();
 
-      menu.querySelectorAll('[data-row-action]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.closeRowActionsMenu(menu);
-          const id = menu.dataset.dealInvestorId;
-          if (!id) return;
+    const menu = document.createElement('div');
+    menu.id = 'deals-row-actions-menu';
+    menu.className = 'dropdown-menu shadow-sm show';
+    menu.style.cssText = `position:fixed;z-index:99999;display:none;min-width:${MENU_WIDTH}px;`;
+    menu.innerHTML = `
+      <button class="dropdown-item" type="button" data-row-action="view">
+        <i class="ti ti-eye me-2"></i>View
+      </button>
+      <button class="dropdown-item" type="button" data-row-action="edit">
+        <i class="ti ti-pencil me-2"></i>Edit
+      </button>
+      <button class="dropdown-item" type="button" data-row-action="new_note">
+        <i class="ti ti-notes me-2"></i>Add Note
+      </button>
+      <button class="dropdown-item" type="button" data-row-action="new_task">
+        <i class="ti ti-plus me-2"></i>Add Task
+      </button>
+    `;
+    document.body.appendChild(menu);
 
-          switch (btn.dataset.rowAction) {
-            case 'view': this.viewInvestor(id); break;
-            case 'edit': this.editInvestor(id); break;
-            case 'new_task': this.newTaskForInvestor(id); break;
-            case 'new_note': this.newNoteForInvestor(id); break;
-          }
-        });
+    menu.querySelectorAll('[data-row-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeRowActionsMenu(menu);
+        const id = menu.dataset.dealInvestorId;
+        if (!id) return;
+
+        switch (btn.dataset.rowAction) {
+          case 'view': this.viewInvestor(id); break;
+          case 'edit': this.editInvestor(id); break;
+          case 'new_task': this.newTaskForInvestor(id); break;
+          case 'new_note': this.newNoteForInvestor(id); break;
+        }
       });
-    }
+    });
 
     if (this._rowActionsClickHandler) return;
 
@@ -1348,10 +1655,31 @@ export default class extends BaseAgGrid {
             .forEach(el => el.classList.remove('deals-row-actions--open'));
   }
 
+  // Called repeatedly as the grid re-renders (scroll, column changes, first
+  // render) since AG Grid recycles/recreates cell DOM nodes, which would
+  // otherwise leave old Tooltip instances pointing at detached elements. Any
+  // existing instance on a trigger is disposed before creating a new one so
+  // re-renders don't stack duplicate tooltips on the same element; instances
+  // are tracked in this._tooltips so disconnect() can dispose whatever's left.
   initTooltips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl);
+
+    if (!this._tooltips) {
+      this._tooltips = new Set();
+    }
+
+    tooltipTriggerList.forEach((tooltipTriggerEl) => {
+      const existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+      if (existingTooltip) {
+        existingTooltip.dispose();
+        this._tooltips.delete(existingTooltip);
+      }
+
+      const title = tooltipTriggerEl.getAttribute('title');
+      if (!title) return;
+
+      const tooltip = new bootstrap.Tooltip(tooltipTriggerEl);
+      this._tooltips.add(tooltip);
     });
   }
 

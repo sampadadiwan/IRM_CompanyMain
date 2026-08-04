@@ -249,4 +249,86 @@ RSpec.describe DealInvestor, type: :model do
       expect(deal_investor.reload.last_interaction_date).to eq(Time.zone.today)
     end
   end
+
+  # The registration lives on DealActivity rather than on DealInvestor because
+  # CompleteDealActivity saves the investor only when the step just completed is its
+  # *current* one and another incomplete step follows. Completing the last step, or
+  # ticking one out of order, leaves the investor untouched — which is exactly how
+  # this stopped working through the grid.
+  describe "when a deal step is completed" do
+    # Investor activities are copies of a template, keyed back to it by template_id —
+    # and DealInvestor#deal_activity_id holds the *template* id, which is what
+    # CompleteDealActivity compares against to decide whether this is the current step.
+    def add_step(title)
+      template = DealActivity.create!(deal: deal, entity: entity, title: title, days: 5)
+      DealActivity.create!(deal: deal, entity: entity, deal_investor: deal_investor,
+                           template_id: template.id, title: title, days: 5,
+                           status: "Incomplete", docs_required_for_completion: false)
+    end
+
+    def complete(activity)
+      CompleteDealActivity.call(deal_activity: activity, params: { status: "Complete" }, user_id: user.id)
+    end
+
+    it "registers today" do
+      step = add_step("Financial DD")
+
+      step.Complete!
+
+      expect(deal_investor.reload.last_interaction_date).to eq(Time.zone.today)
+    end
+
+    it "ignores a step that is only created, not completed" do
+      add_step("Financial DD")
+
+      expect(deal_investor.reload.last_interaction_date).to be_nil
+    end
+
+    it "ignores a template, which has no investor" do
+      DealActivity.create!(deal: deal, entity: entity, title: "Term Sheet", days: 5)
+
+      expect(deal_investor.reload.last_interaction_date).to be_nil
+    end
+
+    it "does not pull a later note's date back to today" do
+      step = add_step("Financial DD")
+      deal_investor.update_column(:last_interaction_date, Date.new(2026, 12, 31))
+
+      step.Complete!
+
+      expect(deal_investor.reload.last_interaction_date).to eq(Date.new(2026, 12, 31))
+    end
+
+    # The grid's route in. The three cases below are the three branches of
+    # CompleteDealActivity#perform_next_action!.
+    it "registers today when the current step is completed and the investor moves on" do
+      current = add_step("Financial DD")
+      add_step("Legal DD")
+      deal_investor.update_column(:deal_activity_id, current.template_id)
+
+      complete(current)
+
+      expect(deal_investor.reload.last_interaction_date).to eq(Time.zone.today)
+    end
+
+    it "registers today when a step other than the current one is completed" do
+      earlier = add_step("Financial DD")
+      later = add_step("Legal DD")
+      deal_investor.update_column(:deal_activity_id, later.template_id)
+
+      complete(earlier)
+
+      expect(deal_investor.reload.deal_activity_id).to eq(later.template_id)
+      expect(deal_investor.last_interaction_date).to eq(Time.zone.today)
+    end
+
+    it "registers today when the last step is completed and there is nothing to move to" do
+      only = add_step("Financial DD")
+      deal_investor.update_column(:deal_activity_id, only.template_id)
+
+      complete(only)
+
+      expect(deal_investor.reload.last_interaction_date).to eq(Time.zone.today)
+    end
+  end
 end

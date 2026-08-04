@@ -5,28 +5,139 @@
   conversion = total_investors > 0 ? (active_investors.to_f / total_investors * 100).round : 0
   stagnant_count = deal.deal_investors.select(&:stagnant?).count
 
-  # Determine units for better readability (Millions or Crores)
+ # Determine units for better readability (Millions or Crores)
   currency_units = deal.currency == "INR" ? "Crores" : "Millions"
 
   target_display = money_to_currency(deal.amount, { units: currency_units, decimals: 1 })
   committed_display = money_to_currency(Money.new(active_total_cents, deal.currency), { units: currency_units, decimals: 1 })
 
-  stats_cards = [
-    { title: target_display, subtitle: "Total Target", color: "primary", icon: "ti ti-currency-dollar", action: "clearFilters",
-      explanation: "The deal's total fundraising target. Set when the deal is created and represents the full capital amount you are seeking to raise." },
-    { title: committed_display, subtitle: "Committed (Active)", color: "success", icon: "ti ti-chart-pie-2", action: "filterActive",
-      explanation: "Sum of investment amounts from all investors currently in Active status. Click to filter the table to Active investors only." },
-    { title: "#{conversion}%", subtitle: "Conversion Rate", color: "info", icon: "ti ti-users-group", action: "clearFilters",
-      explanation: "Active investors ÷ Total investors × 100. Measures what share of all investors in this deal have converted to Active (committed) status." },
-    { title: stagnant_count, subtitle: "Stagnant Leads (>7d)", color: "warning", icon: "ti ti-alert-triangle", action: "filterStagnant",
-      explanation: "Count of investors whose status has not changed in more than 7 days. These leads may need a follow-up nudge. Click to filter to stagnant investors." }
-  ]
+  completed_count = deal.deal_investors.where(status: ["Complete", "Completed"]).count
+  completed_percent = total_investors > 0 ? ((completed_count.to_f / total_investors) * 100).round : 0
+
+  primary_total_cents = deal.deal_investors.sum(:primary_amount_cents)
+  sum_total_amount_cents = deal.deal_investors.sum(:total_amount_cents)
+  secondary_total_cents = deal.deal_investors.sum(:secondary_investment_cents)
+
+  # Master map of every stat card the dashboard can show, keyed by the same
+  # field keys as Deal::ANALYTICS_STAT_OPTIONS. Previously this partial only ever
+  # rendered a fixed 4-card array; it's now a lookup table so the set actually
+  # displayed (selected_stats below) can be a per-deal admin-configured subset.
+  cards_by_key = {
+    "total_target_amount" => {
+      title: target_display,
+      subtitle: "Total Target",
+      color: "primary",
+      icon: "ti ti-currency-dollar",
+      action: "clearFilters",
+      explanation: "The deal's total fundraising target. Set when the deal is created and represents the full capital amount you are seeking to raise."
+    },
+    "committed_amount" => {
+      title: committed_display,
+      subtitle: "Committed (Active)",
+      color: "success",
+      icon: "ti ti-chart-pie-2",
+      action: "filterActive",
+      explanation: "Sum of investment amounts from all investors currently in Active status. Click to filter the table to Active investors only."
+    },
+    "conversion_rate" => {
+      title: "#{conversion}%",
+      subtitle: "Conversion Rate",
+      color: "info",
+      icon: "ti ti-users-group",
+      action: "clearFilters",
+      explanation: "Active investors ÷ Total investors × 100. Measures what share of all investors in this deal have converted to Active (committed) status."
+    },
+    "stagnant_count" => {
+      title: stagnant_count,
+      subtitle: "Stagnant Leads (>7d)",
+      color: "warning",
+      icon: "ti ti-alert-triangle",
+      action: "filterStagnant",
+      explanation: "Count of investors whose status has not changed in more than 7 days. These leads may need a follow-up nudge. Click to filter to stagnant investors."
+    },
+    "total_deal_amount" => {
+      title: money_to_currency(Money.new(sum_total_amount_cents, deal.currency), { units: currency_units, decimals: 1 }),
+      subtitle: "Total of Deal Amount",
+      color: "primary",
+      icon: "ti ti-currency-dollar",
+      action: "clearFilters",
+      explanation: "The deal's total fundraising target. Set when the deal is created and represents the full capital amount sought for this round."
+    },
+    "primary_amount" => {
+      title: money_to_currency(Money.new(primary_total_cents, deal.currency), { units: currency_units, decimals: 1 }),
+      subtitle: "Primary Amount",
+      color: "success",
+      icon: "ti ti-coins",
+      action: "clearFilters",
+      explanation: "Sum of primary investment amounts across all deal investors. This reflects the direct capital committed into the primary raise."
+    },
+    "secondary_amount" => {
+      title: money_to_currency(Money.new(secondary_total_cents, deal.currency), { units: currency_units, decimals: 1 }),
+      subtitle: "Secondary Amount",
+      color: "info",
+      icon: "ti ti-stack-2",
+      action: "clearFilters",
+      explanation: "Sum of secondary investment amounts across all deal investors. This captures secondary participation recorded on this deal."
+    },
+    "completed_percent" => {
+      title: "#{completed_percent}%",
+      subtitle: "Completed %",
+      color: "warning",
+      icon: "ti ti-checks",
+      action: "clearFilters",
+      explanation: "Completed investors ÷ Total investors × 100. Based on investors whose status is marked Complete/Completed (#{completed_count}/#{total_investors})."
+    },
+    "deal_investors_count" => {
+      title: total_investors,
+      subtitle: "Number of Deal Investors",
+      color: "primary",
+      icon: "ti ti-users-group",
+      action: "clearFilters",
+      explanation: "Total number of deal investor records linked to this deal, regardless of current status."
+    }
+  }
+
+  # cards_by_key holds every possible stat card; deal.analytics_stats (configured
+  # via the deal form's Analytics Stats picker) selects which subset to render,
+  # in the admin's chosen order, and can override each card's default subtitle
+  # with the custom label they set. Unknown fields are dropped defensively -
+  # normalize_analytics_stats already filters these out on save, but Deal#analytics_stats
+  # is read fresh here and could in principle carry a field key that has since been
+  # removed from ANALYTICS_STAT_OPTIONS/cards_by_key.
+  selected_stats = deal.analytics_stats
+  stats_cards = selected_stats.filter_map do |stat|
+    field = stat["field"].presence || stat[:field].presence
+    next unless field
+
+    card = cards_by_key[field]
+    next unless card
+
+    card.merge(subtitle: stat["label"].presence || stat[:label].presence || card[:subtitle])
+  end
+
+  # Falls back to showing every card if the deal has no valid selection, so a
+  # misconfigured or newly-created deal never renders an empty analytics row.
+  if stats_cards.blank?
+    stats_cards = cards_by_key.values
+  end
+
+  # Column width used to be a fixed col-lg-3 (assuming exactly 4 cards); now that
+  # admins can choose any number of cards, the column class scales with the count
+  # so the row still fills evenly instead of leaving a partial card on its own line.
+  card_column_class =
+    case stats_cards.size
+    when 1 then "col-12"
+    when 2 then "col-lg-6 col-md-6"
+    when 3 then "col-lg-4 col-md-6"
+    when 4 then "col-lg-3 col-md-6"
+    else "col-xl col-lg-4 col-md-6"
+    end
 %>
 <div class="row mb-4">
   <% stats_cards.each do |card| %>
-    <div class="col-lg-3 col-md-6 mb-4">
-      <div class="card shadow-none border h-100 analytics-card" 
-           style="cursor: pointer; transition: all 0.2s ease-in-out;" 
+    <div class="<%= card_column_class %> mb-4">
+      <div class="card shadow-none border h-100 analytics-card"
+           style="cursor: pointer; transition: all 0.2s ease-in-out;"
            data-action="click->deals-list-ag-grid#<%= card[:action] %>">
         <div class="card-body p-4">
           <div class="d-flex align-items-center">

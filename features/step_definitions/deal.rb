@@ -938,3 +938,71 @@ def _ensure_deal_statuses_present_in_form
   fallback_statuses = Array(@deal&.reload&.deal_investor_status).presence || DealInvestor::STATUS
   status_field.set(fallback_statuses.join(', '))
 end
+
+# ---------------------------------------------------------------------------
+# Deal List View analytics customization steps
+# ---------------------------------------------------------------------------
+
+When('I edit the deal analytics stats to {string}') do |labels_csv|
+  visit(edit_deal_path(@deal))
+  _ensure_deal_statuses_present_in_form
+
+  # Clear the existing stat rows so the scenario can define the exact set.
+  all("[data-deal-analytics-stats-target='row']").each do |row|
+    row.find("[data-action='click->deal-analytics-stats#removeRow']").click
+  end
+
+  labels_csv.split(',').map(&:strip).reject(&:blank?).each do |entry|
+    field_label, title = entry.split('=', 2).map { |part| part&.strip }
+    title ||= field_label
+
+    click_button('+ Add Stat')
+    row = all("[data-deal-analytics-stats-target='row']").last
+
+    within(row) do
+      field_select = find("[data-field='field']")
+      field_select.find("option", text: field_label).select_option
+      find("[data-field='label']").set(title)
+    end
+  end
+
+  click_button('Save')
+  sleep(1)
+end
+
+Then('the deal should have analytics stats {string}') do |keys_csv|
+  expected = keys_csv.split(',').map(&:strip)
+  actual = @deal.reload.analytics_stats.map { |stat| stat['field'] }
+  expect(actual).to eq(expected)
+end
+
+Then('the deal analytics card {string} should be visible') do |subtitle|
+  expect(page).to have_css('.analytics-card .fw-medium', text: subtitle, wait: 10)
+end
+
+Then('the deal analytics card {string} should not be visible') do |subtitle|
+  expect(page).not_to have_css('.analytics-card .fw-medium', text: subtitle, wait: 5)
+end
+
+Then('the deal analytics description should include {string}') do |text|
+  expect(page).to have_css('.analytics-card .text-muted', text: text, wait: 10)
+end
+
+# ---------------------------------------------------------------------------
+# Deal List View sidepanel/documents navigation steps
+# ---------------------------------------------------------------------------
+
+Then('the deal list sidepanel frame should target top') do
+  expect(page).to have_css('turbo-frame#deal_investor_frame[target="_top"]', visible: :all, wait: 10)
+end
+
+When('I visit the deal documents folder page') do
+  @deal.reload
+  visit(folder_documents_path(entity_id: @deal.entity_id, folder_id: @deal.document_folder.id))
+end
+
+Then('the All Documents button should target top and close the sidepanel') do
+  link = find('a.btn.btn-outline-primary', text: 'All Documents', wait: 10)
+  expect(link['data-turbo-frame']).to eq('_top')
+  expect(link['data-action'].to_s).to include('click->deals-list-ag-grid#closeSidepanel')
+end

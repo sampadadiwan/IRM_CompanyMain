@@ -1,5 +1,16 @@
 <% turbo_tag ||= "deal_investor_show_#{deal_investor.id}"%>
-<%= turbo_frame_tag turbo_tag do %>
+<% frame_options = {} %>
+<%# turbo_tag is "deal_investor_frame" specifically when this partial is fetched
+    into the list view's investor sidepanel (deals_list_ag_grid_controller.js
+    showSidepanel/loadSidepanelContent), which injects the response HTML into a
+    plain <div>, not a live turbo-frame with a src. Any link/form inside that's
+    rendered without its own target would otherwise try to resolve against that
+    fetched-but-disconnected frame id and silently fail to navigate; target: "_top"
+    makes those links/forms navigate the whole page instead. Other turbo_tag
+    values (the deal's own bottom "Investors" tab) keep the default frame-scoped
+    navigation. %>
+<% frame_options[:target] = "_top" if turbo_tag == "deal_investor_frame" %>
+<%= turbo_frame_tag turbo_tag, **frame_options do %>
 
   <%# collapsed is the correct state here  %>
   <%= render ToggleCard.new(title: "#{deal_investor.investor_name}", css_class: "show_deal_investor", state: "collapsed") do %>

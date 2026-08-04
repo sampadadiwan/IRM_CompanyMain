@@ -94,6 +94,58 @@
       <%= form.check_box :archived, class: "form-check-input"  %>
     </div>
 
+    <%# Lets admins pick which analytics cards show on the list view dashboard
+        (Deal#analytics_stats / ANALYTICS_STAT_OPTIONS) and customize each card's
+        title, instead of the previous hardcoded 4-card layout. Rows are edited
+        client-side (deal_analytics_stats_controller.js) and serialized as JSON
+        into a single hidden field on submit, since deal_params permits
+        analytics_stats as one scalar rather than an array of hashes. %>
+    <div class="form-group" data-controller="deal-analytics-stats">
+      <%= form.label :analytics_stats, "Analytics Stats" %>
+
+      <%= form.hidden_field :analytics_stats,
+            value: (deal.analytics_stats.presence || []).to_json,
+            data: { "deal-analytics-stats-target": "jsonField" } %>
+
+      <div class="mb-2" data-deal-analytics-stats-target="rows">
+        <% (deal.analytics_stats.presence || []).each do |stat| %>
+          <div class="d-flex gap-2 mb-2 align-items-center" data-deal-analytics-stats-target="row">
+            <select class="form-control" data-field="field">
+              <option value="">-- Stat --</option>
+              <% Deal::ANALYTICS_STAT_OPTIONS.each do |field, label| %>
+                <option value="<%= field %>" <%= "selected" if stat["field"] == field %>><%= label %></option>
+              <% end %>
+            </select>
+            <input type="text" class="form-control" data-field="label"
+                   value="<%= stat["label"] %>" placeholder="Title for stat">
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    data-action="click->deal-analytics-stats#removeRow">✕</button>
+          </div>
+        <% end %>
+      </div>
+
+      <button type="button" class="btn btn-outline-secondary btn-sm mt-1"
+              data-action="click->deal-analytics-stats#addRow">+ Add Stat</button>
+      <small class="text-muted d-block mt-1">Select the stat to show and the title to display on the card.</small>
+
+      <%# Mirrors the row markup rendered by the each loop above (minus the
+          selected/value state) so deal_analytics_stats_controller#addRow can
+          clone a fresh, empty row client-side without a server round trip. %>
+      <template data-deal-analytics-stats-target="template">
+        <div class="d-flex gap-2 mb-2 align-items-center" data-deal-analytics-stats-target="row">
+          <select class="form-control" data-field="field">
+            <option value="">-- Stat --</option>
+            <% Deal::ANALYTICS_STAT_OPTIONS.each do |field, label| %>
+              <option value="<%= field %>"><%= label %></option>
+            <% end %>
+          </select>
+          <input type="text" class="form-control" data-field="label" placeholder="Title for stat">
+          <button type="button" class="btn btn-outline-danger btn-sm"
+                  data-action="click->deal-analytics-stats#removeRow">✕</button>
+        </div>
+      </template>
+    </div>
+
     <% di_custom_fields = deal.entity.form_types.find_by(name: 'DealInvestor')&.form_custom_fields&.visible || [] %>
     <div class="form-group" data-controller="deal-grid-columns">
       <%= form.label :grid_columns, "Grid Columns" %>
