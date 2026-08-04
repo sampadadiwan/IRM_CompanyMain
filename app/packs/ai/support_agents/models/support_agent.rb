@@ -154,7 +154,7 @@ class SupportAgent < ApplicationRecord
   # Falls back to a "General" skill if no sector-specific one is configured.
   # Returns the matching Document record, or nil if no skill is configured at all.
   def skill_for_sector(sector)
-    skill_fields = form_custom_fields.select { |f| f.field_type == "File" && f.meta_data.to_s.match?(/skill/i) }
+    skill_fields = form_custom_fields.select(&:skill_tagged?)
 
     # Prefer exact sector match, then fall back to General
     fcf = skill_fields.find { |f| f.meta_data.to_s.match?(/sector[:\s=]+#{Regexp.escape(sector.to_s)}/i) } ||

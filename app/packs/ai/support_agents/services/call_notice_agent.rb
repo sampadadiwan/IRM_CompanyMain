@@ -59,6 +59,19 @@ class CallNoticeAgent < SupportAgentService
     CapitalCall.where(entity_id: entity_id)
   end
 
+  # Setup health check — call notices cannot be generated without a Call
+  # Template on the fund. Surfaced here because batch/scheduled runs skip the
+  # step-level validation that would otherwise catch it.
+  def self.config_issues(support_agent)
+    issues = []
+    support_agent.entity.funds.find_each do |fund|
+      unless fund.documents.templates.where(owner_tag: "Call Template").exists?
+        issues << "Fund '#{fund.name}' has no Call Template — upload one under Fund > Documents before sending call notices."
+      end
+    end
+    issues
+  end
+
   # Initializes the agent and sets up the issues tracking hash.
   #
   # @param ctx [Hash] the Trailblazer context

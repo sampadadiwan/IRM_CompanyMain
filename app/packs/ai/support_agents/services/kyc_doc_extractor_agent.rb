@@ -43,6 +43,25 @@ class KycDocExtractorAgent < SupportAgentService
     InvestorKyc.where(entity_id: entity_id)
   end
 
+  # Setup health check. With no extraction_rules the agent "succeeds" while
+  # extracting nothing, and it persists no report — this banner is the only
+  # place the gap becomes visible.
+  def self.config_issues(support_agent)
+    issues = []
+    rules  = (support_agent.json_fields || {})["extraction_rules"] || {}
+
+    if rules.blank?
+      issues << "No extraction rules configured — the agent will run but extract nothing. Re-run the support agent setup or add rules on the agent edit page."
+    else
+      # Rules are keyed by KYC FormType id; keys pointing at deleted form types extract nothing
+      known_ids = support_agent.entity.form_types.where(id: rules.keys.map(&:to_i)).pluck(:id)
+      stale     = rules.keys.map(&:to_i) - known_ids
+      issues << "Extraction rules reference form type id(s) #{stale.join(', ')} that no longer exist for this entity — re-run the support agent setup." if stale.any?
+    end
+
+    issues
+  end
+
   private
 
   def initialize_agent(ctx, target:, **)

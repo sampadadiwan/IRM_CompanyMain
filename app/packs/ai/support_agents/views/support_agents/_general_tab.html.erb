@@ -2,7 +2,19 @@
   agent_cls  = support_agent.agent_type.constantize rescue nil
   short_desc = (agent_cls.const_get(:DESCRIPTION)      if agent_cls&.const_defined?(:DESCRIPTION))      || support_agent.description
   long_desc  = (agent_cls.const_get(:LONG_DESCRIPTION) if agent_cls&.const_defined?(:LONG_DESCRIPTION))
+  # Setup health check — each agent service class reports its own issues via
+  # config_issues (base class returns []). Rescued so a malformed hand-edited
+  # config can degrade to "no banner" instead of breaking the whole show page.
+  config_issues = begin
+    (agent_cls.config_issues(support_agent) if agent_cls.respond_to?(:config_issues)) || []
+  rescue StandardError => e
+    Rails.logger.error { "[SupportAgent#show] config_issues failed for agent #{support_agent.id}: #{e.message}" }
+    []
+  end
 %>
+
+<%# ── Setup warning banner (renders nothing when the agent is healthy) ── %>
+<%= render "support_agents/config_issues_banner", config_issues: config_issues %>
 
 <%# ── Two-column layout: attributes left, description right ─────────── %>
 <div class="row g-4 align-items-start">

@@ -61,6 +61,11 @@
                 <span class="badge bg-success">Completed</span>
               <% elsif report.status.to_s == "failed" %>
                 <span class="badge bg-danger">Failed</span>
+                <%# Show the failure reason inline — previously only visible after
+                    expanding the row, which hid misconfiguration from end users %>
+                <% if report.json_fields["error"].present? %>
+                  <div class="text-danger mt-1"><%= report.json_fields["error"] %></div>
+                <% end %>
               <% else %>
                 <span class="badge bg-secondary"><%= report.status.to_s.titleize %></span>
               <% end %>

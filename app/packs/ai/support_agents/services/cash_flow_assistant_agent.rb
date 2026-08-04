@@ -53,6 +53,34 @@ class CashFlowAssistantAgent < SupportAgentService
     Entity.where(id: entity_id)
   end
 
+  # Setup health check. This agent is seeded with empty config — without a
+  # 'funds' list it analyses zero funds yet still finishes "ready", and without
+  # 'cash_tags' every fund is blocked with a misleading "no cash data" message.
+  def self.config_issues(support_agent)
+    fields = support_agent.json_fields || {}
+    issues = []
+
+    funds_cfg = fields["funds"] || []
+    if funds_cfg.blank?
+      issues << "No funds configured — the agent will analyse nothing and still report success. Add funds to the agent configuration."
+    else
+      # Configured fund ids that no longer exist (or moved to another entity)
+      # silently drop out of the analysis
+      ids     = funds_cfg.filter_map { |f| f["fund_id"].presence&.to_i }
+      missing = ids - Fund.where(id: ids, entity_id: support_agent.entity_id).pluck(:id)
+      issues << "Configured fund id(s) #{missing.join(', ')} no longer exist — remove or correct them in the agent configuration." if missing.any?
+    end
+
+    if fields["cash_tags"].to_s.strip.blank?
+      issues << "'cash_tags' is blank — every fund will be reported blocked with 'no cash data'. Configure the account entry types that represent cash."
+    end
+    if fields["report_recipients"].to_s.strip.blank?
+      issues << "'report_recipients' is blank — the cash flow report email will never be sent."
+    end
+
+    issues
+  end
+
   private
 
   # ─── Step 1: Initialize ─────────────────────────────────────

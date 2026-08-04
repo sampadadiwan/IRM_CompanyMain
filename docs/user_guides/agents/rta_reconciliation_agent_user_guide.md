@@ -46,6 +46,15 @@ The agent works on one Fund per run. When you upload a statement PDF, it:
 | Notify email | Text | (blank) | The recipient for the reconciliation report email. Required when "Email report after run" is set to Yes. |
 | Statement date override | Date | (blank) | Overrides the statement period-end date that was pulled from the PDF. Use this when the RTA's date format is unusual and the automatic extraction gets it wrong. |
 
+### Setup checklist and warnings
+
+The agent's **General** tab shows a yellow warning banner whenever setup would undermine a run. For this agent it flags:
+
+- **Both tolerance fields empty.** With neither set, tolerance is zero — every minor rounding difference in the RTA PDF is reported as a mismatch, drowning real breaks in noise.
+- **"Email report after run" set to Yes with a blank Notify email** — the report would never be emailed.
+- **Any unit type whose ISIN is not configured.** A unit type with no ISIN on its fund unit settings cannot be matched to any scheme in the statement, so its folios are invisible to every check. The banner names each affected unit type and fund.
+- **Either Yes/No toggle that has never been given a value** — an unset toggle counts as off, which silently skips that behaviour.
+
 ### Other data inputs
 
 | Input | Source | Notes |

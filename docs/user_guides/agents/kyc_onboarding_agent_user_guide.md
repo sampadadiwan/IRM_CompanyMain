@@ -39,7 +39,7 @@ For every investor KYC record that the investor has marked complete, the agent w
 | Validate Fields | Yes/No | Off (treated as disabled unless explicitly set to Yes) | Turns the "required fields filled in" check on or off. Note: by default this setting has no visible toggle on the configuration form — it must be turned on by your CapHive contact or it stays off. |
 | Validate Documents | Yes/No | Off (same as above) | Turns on both the "document matches its label" check and the "document content matches the form" check. Also has no visible toggle by default. |
 | Check Expiry | Yes / No | Yes | When on, checks the KYC's expiry date — adds a blocking issue if it's already expired, or a warning if it falls within any configured warning window. |
-| Expiry Warning Days | Text field | 60, 30, 15 | A comma-separated list of day counts before expiry that should trigger a warning (e.g. "warn me at 60, 30, and 15 days out"). If you leave this blank, the agent quietly falls back to the default 60/30/15 windows rather than turning warnings off. |
+| Expiry Warning Days | Text field | 60, 30, 15 | A comma-separated list of day counts before expiry that should trigger a warning (e.g. "warn me at 60, 30, and 15 days out"). Careful: **clearing this field to blank turns advance warnings off entirely** — the 60/30/15 fallback only applies when the setting was never created at all. The warning banner on the agent's page flags a blanked-out value. |
 | Send Reminder | Yes/No | Off (no visible toggle by default; off unless turned on) | Turns the expiry reminder email step on or off. |
 | Trigger AML | Yes/No | Off (no visible toggle by default; off unless turned on) | Turns the automatic AML screening step on or off. |
 | Required Docs | Comma-separated list (not shown on the standard form by default) | — | Extra document names required in addition to the document-upload fields already on the form — checked during the document-presence step. |
@@ -52,7 +52,16 @@ Other things the agent looks at directly on the record (not configuration, just 
 - The investor and entity linked to the record — the entity is needed to find an active team member to act as the AML requestor.
 - The record's expiry date and expired/not-expired status.
 
-> Note: Out of the box, only **Check Expiry** and **Expiry Warning Days** show up as visible toggles on the agent's configuration form. Validate Fields, Validate Documents, Send Reminder, Trigger AML, and Required Docs are real settings the agent reads, but they don't have a visible form control by default — they need to be set up behind the scenes (ask your CapHive contact, or they can be set during initial setup) to take effect. Because the agent treats anything other than an explicit "on" as "off," any of these left unset will silently behave as disabled.
+> Note: Out of the box, only **Check Expiry** and **Expiry Warning Days** show up as visible toggles on the agent's configuration form. Validate Fields, Validate Documents, Send Reminder, Trigger AML, and Required Docs are real settings the agent reads, but they don't have a visible form control by default. Because the agent treats anything other than an explicit "on" as "off," any of these left unset will silently behave as disabled.
+
+### Setup checklist and warnings
+
+Silent skips are now surfaced up front: the agent's **General** tab shows a yellow warning banner listing every one of the five toggles that has never been given a value, plus a blanked-out Expiry Warning Days field. An explicit "No" is respected as your choice and is not flagged.
+
+Two things fix most banner items:
+
+- **Re-run Setup All Agents.** It now fills in **Validate Fields** and **Validate Documents** as Yes automatically on existing agents that never had them — these are the agent's core checks and were the most common silent gap.
+- **Send Reminder and Trigger AML are deliberate opt-ins.** Setup never turns these on for you, because they send email and start AML screening. If you want them, set them to Yes explicitly; until you decide, the banner keeps reminding you they're off.
 
 ## 3. Enabling the Agent
 

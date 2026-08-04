@@ -51,6 +51,15 @@ Other things the agent reads (not configuration, just data):
 - The investor's uploaded documents, matched to each rule by an exact (trimmed) name match against the document label the rule expects.
 - The investor's existing field values, to decide whether "only fill blank fields" mode should skip a given rule.
 
+### Setup checklist and warnings
+
+This agent produces no report of its own, so a broken setup used to be completely invisible — an investor's form simply stayed empty. The agent's **General** tab now shows a yellow warning banner when:
+
+- **No extraction rules are configured at all** — the agent would run and extract nothing. Re-run **Setup All Agents** to seed the starter rules, or add rules in the configuration panel.
+- **Rules are tied to a KYC form type that no longer exists** — this happens when form types were rebuilt after the rules were seeded. Those rules silently apply to nothing; re-run **Setup All Agents** or re-create the rules against the current form types.
+
+Also double-check that each rule's document name exactly matches the upload label on the KYC form (for example "Upload Tax ID") — a near-miss name means that rule always reports "Document not uploaded."
+
 ## 3. Enabling the Agent
 
 - **Where to toggle:** Admin → Edit Entity → Support Agents section. Requires the **Company Admin** role.

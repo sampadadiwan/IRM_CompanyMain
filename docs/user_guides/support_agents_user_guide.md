@@ -72,6 +72,18 @@ For each agent type included in the platform:
 - A **schedule** where applicable (e.g. daily for E-Sign Monitor, monthly for Note Summarizer).
 - **Seed files** where required (e.g. the default investor scoring rubric for Deal Management Agent).
 
+### Verifying Setup — the Configuration Warning Banner
+
+After setup, open each agent you plan to use and check its **General** tab. If anything the agent needs is missing or misconfigured, a **yellow warning banner** appears at the top of the page listing every problem in plain language — for example an unset check toggle, a missing email recipient, a fund without a required template, or a skill file that has not been uploaded.
+
+Three rules of thumb:
+
+- **A clean page means the agent is ready to run.** No banner, no known setup gaps.
+- **Resolve every item in the banner before relying on the agent.** A run with unresolved items will either fail outright or — worse — silently skip the affected steps and still report success. The banner tells you which of the two will happen for each item.
+- **An unset Yes/No toggle counts as "off", not "on".** If a toggle was never given a value (for example on an agent set up before that option existed), the step it controls is silently skipped. The banner flags every unset toggle; setting it explicitly to Yes or No clears the warning. An explicit **No** is respected as your choice and is never flagged.
+
+Re-running **Setup All Agents** fills in most banner items automatically (missing fields, missing defaults, missing seed files). Items that depend on your data — recipients, fund templates, uploaded skill files — must be resolved by hand and the banner links out to where.
+
 ---
 
 ## 3. Configuring LLM Keys

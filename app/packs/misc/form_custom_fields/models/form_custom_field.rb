@@ -219,6 +219,14 @@ class FormCustomField < ApplicationRecord
     label.presence || name.humanize.titleize
   end
 
+  # File fields whose meta_data marks them as sector skill prompts
+  # (e.g. "skill: true, sector: D2C"). Single source of truth for the tag check —
+  # used by SupportAgent#skill_for_sector and agent config health checks, which
+  # must agree on what counts as a skill field.
+  def skill_tagged?
+    field_type == "File" && meta_data.to_s.match?(/skill/i)
+  end
+
   # This is no longer applicable as name cannot be changed on the UI
   # after_commit :change_name_job, on: :update, if: :saved_change_to_name?
 

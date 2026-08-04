@@ -36,13 +36,15 @@ class AgentReportsQuery
   end
 
   # Reports scoped to +Investor+ owners (PortfolioScoringAgent only).
-  # Includes a JSONB filter to only surface reports carrying a top-level +score+ key.
+  # Surfaces both successful runs ("score" key) and failed runs ("error" key) —
+  # filtering to "score" only would hide every failure from the UI. Step-tracking
+  # reports are excluded via their "steps" key, which scoring reports never have.
   # @return [ActiveRecord::Relation<SupportAgentReport>]
   def scoring_reports
     return SupportAgentReport.none unless agent_type?("PortfolioScoringAgent")
 
     apply_owner_filter(agent_reports("Investor"))
-      .where("json_fields LIKE '%\"score\":%'")
+      .where("(json_fields LIKE '%\"score\":%' OR json_fields LIKE '%\"error\":%') AND json_fields NOT LIKE '%\"steps\":%'")
       .order(created_at: :desc)
   end
 

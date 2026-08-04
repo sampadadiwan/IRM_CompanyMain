@@ -59,6 +59,14 @@ The actual settings stored behind the scenes are:
 
 Other things the agent looks at (not settings you configure): each open deal's investors (active, pending, or declined), each investor's committed amount, the deal's target amount, the pipeline template steps used to build the step distribution, and the most recent activity update tied to any investor (used to determine staleness).
 
+### Setup checklist and warnings
+
+The agent's **General** tab (under AI → Support Agents) shows a yellow warning banner when setup would silence or distort the report:
+
+- **No email recipients configured** — the summary email, this agent's main output, will never be sent. The run still completes and looks successful in the history.
+- **The staleness threshold set but left blank** — a blank value is treated as 0 days, which flags every deal as stale. Enter a day count or remove the value.
+- **A section toggle stored with an unexpected value.** The five section checkboxes are strict about how their on/off state is stored — if one holds anything other than a plain on/off value (which can happen when settings are edited outside the Deal page panel), that section silently drops out of the email. The banner names the affected section; re-saving the Agent Settings panel on the Deal page fixes it.
+
 ## 3. Enabling the Agent
 
 1. An administrator turns on the **Deals Report Agent** toggle for your organization from **Admin → Edit Entity → Support Agents**.

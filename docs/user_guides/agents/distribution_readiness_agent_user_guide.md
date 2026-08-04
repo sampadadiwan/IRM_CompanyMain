@@ -47,6 +47,16 @@ Other things the agent reads directly (not configuration, just data):
 - The distribution's payments, each with their linked investor (through the capital commitment and KYC record) and attached documents.
 - The fund's documents — specifically, whether a "Distribution Template" document exists. This is a fund-level prerequisite checked once per run, not separately for each payment.
 
+### Setup checklist and warnings
+
+The defaults in the table above apply to agents provisioned through **Setup All Agents**. A toggle that was never given a value at all — common on agents set up before an option existed — does **not** default to Yes: the check is silently skipped. Because a skipped check looks exactly like a passed one in day-to-day use, the agent's **General** tab shows a yellow warning banner whenever setup is incomplete. For this agent the banner flags:
+
+- **Any of the five check toggles that has never been set.** Set each one explicitly to Yes or No — an explicit No is respected and not flagged.
+- **All checks turned off.** The agent would mark distributions "ready to pay" without verifying anything.
+- **Any fund with no Distribution Template uploaded.** The notices-generated check will block every payment on that fund's distributions until a template exists under Fund → Documents.
+
+Resolve everything in the banner before trusting a "Ready" result.
+
 ## 3. Enabling the Agent
 
 - **Where to toggle:** Admin → Edit Entity → Support Agents section. Requires the **Company Admin** role.
@@ -95,7 +105,7 @@ Each step's outcome is recorded as one of: **Success**, **Failed**, **Skipped**,
 - **The approval check doesn't notice if no documents exist yet.** This step only looks at documents that already exist and aren't templates. If the notices-generated step was turned off and no notices exist at all, the approval check trivially passes with nothing to check — "Docs Approved: Success" here doesn't mean approved documents exist, only that none of the (zero) existing ones are pending.
 - **A distribution with no payments attached sails through as Ready.** Every payment-based check reports success when there's nothing to check ("All 0 payment(s) have..."). This can mask a setup mistake — like forgetting to add payments in the first place — rather than reflecting genuine readiness.
 - **Running it twice on the same distribution at once.** A manual run from the distribution's page and a batch Run Now from the agent's own page can both target the same distribution at the same time. Both write to the same report, and whichever finishes last wins.
-- **Turning off every check.** If you turn off all five toggles, the agent will sail through to "Ready to Pay" having validated nothing at all. The report will say Ready, but that simply reflects your configuration, not actual readiness — useful only as an emergency override, and worth double-checking before you trust it.
+- **Turning off every check.** If you turn off all five toggles, the agent will sail through to "Ready to Pay" having validated nothing at all. The report will say Ready, but that simply reflects your configuration, not actual readiness — useful only as an emergency override, and worth double-checking before you trust it. The agent's page shows a warning banner whenever it is in this state.
 
 ## 8. FAQ
 

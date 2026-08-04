@@ -1,0 +1,16 @@
+<%# Configuration health warning for agents whose service class reports setup issues.
+    Renders nothing when the agent's config_issues list is empty — which is the
+    permanent state for every agent type that does not override the base check. %>
+<% if config_issues.present? %>
+  <div class="alert alert-warning d-flex gap-2" role="alert">
+    <i class="ti ti-alert-triangle fs-5"></i>
+    <div>
+      <strong>This agent is not fully configured — runs will fail until fixed:</strong>
+      <ul class="mb-0 mt-1">
+        <% config_issues.each do |issue| %>
+          <li><%= issue %></li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>

@@ -96,6 +96,30 @@ class KycOnboardingAgent < SupportAgentService
     InvestorKyc.completed.where(entity_id: entity_id).includes(:documents, :investor, :entity)
   end
 
+  # Human descriptions of the steps each json_fields toggle gates.
+  CHECK_TOGGLES = {
+    "validate_fields"    => "the KYC field completeness check",
+    "validate_documents" => "the document presence/validity checks",
+    "check_expiry"       => "the KYC expiry check",
+    "send_reminder"      => "expiry reminder emails",
+    "trigger_aml"        => "automatic AML screening"
+  }.freeze
+
+  # Setup health check — unset toggles silently skip validations, letting a
+  # KYC report come back clean with nothing actually checked.
+  def self.config_issues(support_agent)
+    fields = support_agent.json_fields || {}
+    issues = missing_toggle_issues(support_agent, CHECK_TOGGLES)
+
+    # A key that is present but blank splits to an empty threshold list —
+    # advance warnings never fire (a missing key falls back to 60,30,15)
+    if toggle_on?(support_agent, "check_expiry") && fields.key?("expiry_warning_days") && fields["expiry_warning_days"].to_s.strip.blank?
+      issues << "'expiry_warning_days' is blank — no advance expiry warnings will ever be sent. Set day thresholds like '60,30,15' or remove the field."
+    end
+
+    issues
+  end
+
   private
 
   # Initializes the agent with the investor_kyc under review.

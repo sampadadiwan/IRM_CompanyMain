@@ -53,6 +53,17 @@ This agent does **not** have a standard settings form like most other agents. Co
 
 Because the "cash," "expenses," "reserve buffer," and "report recipients" settings have no on-screen panel anywhere in the product today, you can't get meaningful output from this agent through the standard interface alone — only the fund list and freshness thresholds are something you can configure yourself. Until CapHive sets up those other fields behind the scenes for you, every fund will show zero cash, zero expenses, and zero buffer, which can look like a clean bill of health rather than a sign that setup is incomplete.
 
+### Setup checklist and warnings
+
+Incomplete setup is no longer invisible: the agent's **General** tab shows a yellow warning banner whenever any of the following is true, and each item explains what will (or won't) happen until it's fixed:
+
+- **No funds configured** — the agent would analyse nothing and still report success.
+- **A configured fund no longer exists** (for example it was deleted or moved) — that row silently drops out of every run.
+- **The "cash" account types are not set** — every fund would be reported blocked with a misleading "no cash data" message.
+- **No report recipients** — the consolidated email would never be sent.
+
+A clean General tab means the run will produce real numbers and the email will go out.
+
 ### Other data inputs
 
 | Input | Source |
@@ -103,8 +114,8 @@ Each fund's report includes:
 - **The settings that actually drive the numbers have no on-screen panel.** Which account types count as "cash," "expenses," and "reserve buffer" must be set up before any of those figures can be anything other than zero — and there's no field for this anywhere in the product today; it has to be configured behind the scenes by CapHive. A fund manager who only fills in the Funds & Staleness Thresholds table will see every fund show zero cash available, zero estimated expenses (flagged "no data"), and zero buffer required — which can look like a perfectly healthy, fully reconciled fund rather than a sign that setup is incomplete.
 - **Stale cash data quietly excludes the whole fund.** If even one of the fund's entities (including a child SPV) has no cash-tagged account data at all, or its most recent entry is older than the configured threshold, the entire fund is excluded from that run's calculation — there's no partial result. The same applies independently for stale pending-investment data.
 - **Stale-but-plausible cash balances can still feed a misleading recommendation.** The freshness check only looks at how *recent* the latest data point is, not whether it's *accurate*. A fund can pass the freshness check on a balance that's recent but simply wrong, and still produce a shortfall or surplus recommendation that doesn't reflect reality.
-- **A blank report recipients list silently skips the email.** No error or warning is raised — the email step is just marked "skipped" — so a misconfigured or empty recipient list looks identical in the run history to an intentionally quiet test run.
-- **An empty fund list.** With no funds configured, the freshness check and the calculation both report zero funds processed, and the run completes "successfully" with nothing to show — easy to mistake for "everything's fine" rather than "nothing is set up yet."
+- **A blank report recipients list skips the email.** The email step is just marked "skipped" in the run history — but the agent's page now shows a warning banner ahead of time whenever the recipient list is empty, so check there rather than the run history.
+- **An empty fund list.** With no funds configured, the freshness check and the calculation both report zero funds processed, and the run completes "successfully" with nothing to show. The warning banner on the agent's page flags this state before you run.
 - **The quality of the expense estimate depends entirely on how much history you have.** A fund with only one month of tagged expense data gets a flat repeat of that one figure for the entire 90-day forecast, with no sense of trend at all — while a brand-new fund with no historical expense data at all gets an estimate of exactly zero, which understates true expected spending until enough history builds up.
 - **Combining a fund with its child entities assumes consistent tagging.** Cash, investment, and expense data is added up across the fund's main entity and every child entity; if account tagging is applied inconsistently between the parent and a child SPV, the combined total can double-count or miss a child's contribution with no visible warning.
 - **The saved report file is replaced, not versioned.** Each new run deletes and replaces the existing "Cash Flow Analysis" file in the fund's Reports folder rather than keeping a history of past versions — only the report history list preserves the run-by-run record.

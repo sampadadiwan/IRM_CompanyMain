@@ -68,6 +68,38 @@ class RtaReconciliationAgent < SupportAgentService
     Fund.where(entity_id: entity_id)
   end
 
+  # Human descriptions of the steps each json_fields toggle gates.
+  CHECK_TOGGLES = {
+    "send_report"            => "the reconciliation report email",
+    "check_pending_requests" => "the pending unit-request check"
+  }.freeze
+
+  # Setup health check — unset tolerances mean zero tolerance (every rounding
+  # difference becomes a break), and unit types without an ISIN are invisible
+  # to reconciliation entirely.
+  def self.config_issues(support_agent)
+    fields = support_agent.json_fields || {}
+    issues = missing_toggle_issues(support_agent, CHECK_TOGGLES)
+
+    if toggle_on?(support_agent, "send_report") && fields["notify_email"].to_s.strip.blank?
+      issues << "'send_report' is enabled but 'notify_email' is blank — the reconciliation report will never be emailed."
+    end
+
+    if fields["tolerance_units"].to_s.strip.blank? && fields["tolerance_pct"].to_s.strip.blank?
+      issues << "No reconciliation tolerance configured ('tolerance_units' / 'tolerance_pct') — tolerance is zero, so every rounding difference will be reported as a break."
+    end
+
+    # Unit settings that exist but lack an ISIN cannot be matched to RTA statement schemes
+    FundUnitSetting.joins(:fund)
+                   .where(funds: { entity_id: support_agent.entity_id })
+                   .where(isin: [nil, ""])
+                   .includes(:fund).find_each do |fus|
+      issues << "Unit type '#{fus.name}' of fund '#{fus.fund.name}' has no ISIN configured — it cannot be reconciled by this agent."
+    end
+
+    issues
+  end
+
   private
 
   def initialize_agent(ctx, target:, rta_pdf_document_id: nil, **)

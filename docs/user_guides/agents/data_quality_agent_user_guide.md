@@ -48,6 +48,14 @@ The agent always checks every fund that belongs to your entity. You run it from 
 | Stale FX rate threshold (days) | Number | 30 | Exchange rates are flagged if they haven't been updated within this many days. |
 | Report recipient email(s) | Text | blank | Who receives the email report. If you leave this blank, the report goes to every active employee in your entity instead. |
 
+### Setup checklist and warnings
+
+An unset Yes/No toggle counts as **off**, not on — if a toggle was never given a value (common on agents set up before the option existed), that check is silently skipped. The agent's **General** tab shows a yellow warning banner whenever setup needs attention. For this agent it flags:
+
+- **Any of the four toggles that has never been set.** Set each explicitly to Yes or No — an explicit No is respected and not flagged.
+- **All three data checks turned off.** The agent would report a perfect 100% health score having checked nothing at all.
+- **A threshold field that is present but blank.** A blank value is treated as 0 days — every valuation or FX rate would be flagged stale. Enter a number of days or remove the value.
+
 ### Other things that feed into the run
 
 - **Which funds get checked**: every fund belonging to the entity — there's currently no way to exclude a specific fund from these checks.

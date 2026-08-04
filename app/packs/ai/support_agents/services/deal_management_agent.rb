@@ -140,6 +140,37 @@ class DealManagementAgent < SupportAgentService
     []
   end
 
+  # Human descriptions of the steps each json_fields toggle gates.
+  CHECK_TOGGLES = {
+    "check_progress"    => "the deal progress / stagnation check",
+    "check_documents"   => "the document checklist check",
+    "extract_terms"     => "term extraction from deal documents",
+    "summarize_notes"   => "investor note summaries",
+    "score_investors"   => "investor scoring",
+    "weekly_summary"    => "the weekly summary email and charts",
+    "enable_ai_insight" => "the AI insight section of the weekly summary"
+  }.freeze
+
+  # Setup health check — unset toggles silently skip steps, and a blank
+  # notify_email means the digest (this agent's main output) never sends
+  # while the report still finishes green.
+  def self.config_issues(support_agent)
+    issues = missing_toggle_issues(support_agent, CHECK_TOGGLES)
+
+    if (support_agent.json_fields || {})["notify_email"].to_s.strip.blank?
+      issues << "'notify_email' is blank — the deal digest email (this agent's main output) will never be sent."
+    end
+
+    # Optional custom scoring rubric: field exists but no file uploaded means the
+    # built-in default rubric is silently used, which users often don't realize.
+    fcf = support_agent.form_custom_fields.find { |f| f.name == "scoring_skill_file" && f.field_type == "File" }
+    if fcf && !support_agent.documents.exists?(name: fcf.human_label)
+      issues << "No file uploaded for '#{fcf.human_label}' — investor scoring will use the built-in default rubric."
+    end
+
+    issues
+  end
+
   private
 
   # ── Step 1 ── Load agent + LLM, validate deal, initialise issues hash.

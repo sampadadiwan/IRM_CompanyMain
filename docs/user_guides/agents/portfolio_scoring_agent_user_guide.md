@@ -42,6 +42,16 @@ Companies with no sector set are left out of fund-wide runs entirely before the 
 
 **Data the agent reads (not configuration, just records it pulls in):** the company's "Actual"-tagged KPI reports and their attached documents (PDF, Excel, PowerPoint, Word, plain text, Markdown, and CSV files are accepted for upload, though Word documents are accepted by the upload screen but currently have no text-reading support — see below), valuations, investment history, and the company's own configuration field values.
 
+### Setup checklist and warnings
+
+The agent's **General** tab shows a yellow warning banner whenever the scoring-guide setup is broken, before you run anything. For this agent the banner flags:
+
+- **A scoring-guide field that is missing entirely** — re-run **Setup All Agents** to restore it.
+- **A scoring-guide field that has lost its sector tag** — the internal tag that tells the agent which sector the file scores. Without it the agent can never match the file, even though the upload looks fine on the edit page. Re-running **Setup All Agents** repairs the tag automatically.
+- **A scoring-guide field with no file uploaded** (including the General fallback) — upload a `.md` or `.txt` file named exactly after the field's label.
+
+If a run fails anyway, the failed report now names the specific setup problem (for example "the field is not tagged as a skill") rather than only saying no guide was found — and failed runs are listed in the Scoring Reports tab alongside successful ones, with the error shown in the Status column.
+
 ## 3. Enabling the Agent
 
 A Company Admin turns this agent on at **Admin → Edit Entity → Support Agents section**. While it's off, the **Run Now** button and the "Run Scoring Agent" / "Re-score" buttons on a Portfolio Company's page are disabled.
@@ -66,7 +76,7 @@ This agent's page does have the standard **Schedule** tab, but **Setup All Agent
 
 ## 6. Where to Find the Output
 
-- **Scoring Reports tab** (only on this agent's own page) — every scoring report, across all companies.
+- **Scoring Reports tab** (only on this agent's own page) — every scoring report, across all companies. Failed runs appear here too, marked with a red **Failed** badge and the reason shown right in the table — you don't need to expand the row to see why a score didn't generate.
 - **Execution History tab** — every run, with status and how long it took.
 - **Company Score widget** on the Portfolio Company page — shows the latest completed score, or the most recent failure's error message if the last run failed, or a "Run Scoring Agent" prompt if no report exists yet.
 - The score is **not** saved onto the portfolio company record itself — it lives entirely inside that company's scoring report. Every run creates a brand-new report rather than overwriting the last one, so your scoring history accumulates over time (the widget always shows the most recent one).

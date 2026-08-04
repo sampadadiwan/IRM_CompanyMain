@@ -48,6 +48,16 @@ The agent looks at the entity as a whole — not one document or fund — and on
 - **Who gets the email**: the agent looks for a list of employees tagged for e-sign notifications. There's currently no settings-page field to set that tag, so in practice it's usually empty — when it is, the agent falls back to sending the report to the entity's main contact email instead.
 - **No AI/LLM setup needed.** This agent works entirely off straightforward rule checks — it doesn't call out to any AI model.
 
+### Setup checklist and warnings
+
+The agent's **General** tab shows a yellow warning banner whenever the run's email could go nowhere. For this agent it flags:
+
+- **A notification tag that matches no employees** — if a tag has been configured behind the scenes but no employee carries it, the report email will never be sent.
+- **No tag and no entity contact email** — with neither in place there is no possible recipient at all.
+- **The "Flag expired/voided documents" toggle never set** — an unset toggle counts as off, so expired and failed documents would be silently ignored. Set it explicitly to Yes or No.
+
+Note that a run with no valid recipients still finishes and saves its report as "ready" — the banner is the only up-front signal that nobody will be emailed.
+
 ---
 
 ## 3. Enabling the Agent

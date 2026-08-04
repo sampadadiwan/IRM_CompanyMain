@@ -39,6 +39,13 @@ Investors with no qualifying notes in the period still get a report (with nothin
 
 **Data the agent reads (not configuration, just records it pulls in):** the investor's notes within your entity, filtered to those dated inside the computed period, including the full text of each note.
 
+### Setup checklist and warnings
+
+The agent's **General** tab shows a yellow warning banner for two setup traps:
+
+- **"Auto-tag untagged notes" never set** — an unset toggle counts as off, not Yes, so untagged notes are quietly left untagged. Set it explicitly to Yes or No.
+- **A tag filter set while auto-tagging is off** — untagged notes never gain a tag, so they can never match your filter. Depending on how your team tags notes, summaries may quietly cover nothing at all. Either turn auto-tagging on or clear the filter.
+
 ## 3. Enabling the Agent
 
 A Company Admin turns this agent on at **Admin → Edit Entity → Support Agents section**. While it's off, the **Run Now** button and the "Summarize Notes" trigger on an investor's page are disabled.

@@ -57,6 +57,65 @@ class PortfolioScoringAgent < SupportAgentService
   step :generate_score
   step :store_score
 
+  # Configuration health check for the skill-file setup this agent depends on.
+  # Compares the live agent against the seed template (the source of truth for
+  # which File fields are skills), because a drifted field with blank meta_data
+  # is indistinguishable from an ordinary File field by instance data alone.
+  #
+  # Only this agent overrides the base no-op — other agent types are unaffected.
+  #
+  # @param support_agent [SupportAgent]
+  # @return [Array<String>] human-readable problems (empty = healthy)
+  def self.config_issues(support_agent)
+    issues = []
+
+    # Skill fields the template says must exist, keyed by field name
+    template_fields = SupportAgentsSetupService.skill_field_templates(support_agent.agent_type)
+
+    live_fields = support_agent.form_custom_fields.where(field_type: "File")
+
+    template_fields.each do |tpl|
+      fcf = live_fields.find { |f| f.name == tpl[:name] }
+      unless fcf
+        issues << "Skill field '#{tpl[:label]}' is missing — re-run the support agent setup for this entity."
+        next
+      end
+
+      # Blank/untagged meta_data means skill_for_sector will never match this field
+      unless fcf.skill_tagged?
+        issues << "Field '#{fcf.human_label}' is not tagged as a skill — its meta data is blank. " \
+                  "Expected: '#{tpl[:meta_data]}'. Re-run the support agent setup or set it on the field."
+        next
+      end
+
+      if (msg = missing_upload_issue(support_agent, fcf))
+        issues << msg
+      end
+    end
+
+    # Also validate skill fields added on this instance beyond the template
+    # (e.g. a custom sector) — they still need an uploaded file to be usable.
+    extra_skill_fields = live_fields.select do |f|
+      f.skill_tagged? && template_fields.none? { |tpl| tpl[:name] == f.name }
+    end
+    extra_skill_fields.each do |fcf|
+      if (msg = missing_upload_issue(support_agent, fcf))
+        issues << msg
+      end
+    end
+
+    issues
+  end
+
+  # The uploaded document must be named exactly after the field label —
+  # mirrors skill_for_sector's documents.find_by(name: fcf.human_label) lookup.
+  def self.missing_upload_issue(support_agent, fcf)
+    return nil if support_agent.documents.exists?(name: fcf.human_label)
+
+    "No skill file uploaded for '#{fcf.human_label}'. Upload it on the agent edit page."
+  end
+  private_class_method :missing_upload_issue
+
   # Accepts a single Investor (for adhoc/widget runs) or an entity_id (for batch runs).
   # Only includes companies with a sector set — no sector means no skill file can be matched.
   def targets(entity_id)
@@ -133,8 +192,14 @@ class PortfolioScoringAgent < SupportAgentService
 
     skill_doc = @support_agent.skill_for_sector(sector)
     unless skill_doc
-      Rails.logger.warn { "[PortfolioScoringAgent] No skill configured for sector '#{sector}' on agent ID=#{@support_agent.id}" }
-      ctx[:skill_error] = "No skill file configured for sector: #{sector}"
+      # Diagnose WHY the lookup failed so the report tells the user the actual
+      # fix (blank meta_data, missing upload, …) instead of a generic message.
+      issues = self.class.config_issues(@support_agent)
+      error  = "No skill file configured for sector: #{sector}"
+      error += ". Configuration problems: #{issues.join(' ')}" if issues.any?
+
+      Rails.logger.warn { "[PortfolioScoringAgent] No skill configured for sector '#{sector}' on agent ID=#{@support_agent.id}: #{issues.join('; ').presence || 'no template issues detected'}" }
+      ctx[:skill_error] = error
       mark_step_failed(report, :load_sector_skill, message: "No skill for sector #{sector}") if report
       return true
     end

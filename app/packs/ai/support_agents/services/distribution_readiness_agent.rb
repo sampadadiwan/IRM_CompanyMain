@@ -58,6 +58,36 @@ class DistributionReadinessAgent < SupportAgentService
     CapitalDistribution.joins(:fund).where(funds: { entity_id: entity_id })
   end
 
+  # Human descriptions of the verification steps each json_fields toggle gates.
+  CHECK_TOGGLES = {
+    "check_kyc"            => "the investor KYC verification check",
+    "check_net_payable"    => "the net payable amount check",
+    "check_docs_generated" => "the distribution notice generation check",
+    "check_docs_approved"  => "the document approval check",
+    "check_bank_details"   => "the bank details check"
+  }.freeze
+
+  # Setup health check. Every verification step is gated by a fail-closed
+  # toggle — with none set, a distribution is finalized "ready to pay" having
+  # verified nothing, so unset toggles and template gaps are surfaced up front.
+  def self.config_issues(support_agent)
+    issues = missing_toggle_issues(support_agent, CHECK_TOGGLES)
+
+    # All checks off (unset or explicit No) — the run would verify nothing at all
+    if CHECK_TOGGLES.keys.none? { |k| toggle_on?(support_agent, k) }
+      issues << "All verification checks are disabled — distributions would be marked ready to pay without any verification."
+    end
+
+    # The notice-generation check blocks on a per-fund Distribution Template
+    support_agent.entity.funds.find_each do |fund|
+      unless fund.documents.templates.where(owner_tag: "Distribution Template").exists?
+        issues << "Fund '#{fund.name}' has no Distribution Template — upload one under Fund > Documents."
+      end
+    end
+
+    issues
+  end
+
   private
 
   def initialize_agent(ctx, **)

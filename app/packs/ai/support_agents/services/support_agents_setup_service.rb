@@ -255,7 +255,11 @@ class SupportAgentsSetupService
           "note_period"            => "Quarter",
           "score_investors"        => "Yes",
           "min_points_per_section" => "3",
-          "notify_email"           => ""
+          "notify_email"           => "",
+          # enabled? fails closed — these were previously unseeded, leaving the
+          # weekly summary email and AI insight permanently (and silently) off
+          "weekly_summary"         => "Yes",
+          "enable_ai_insight"      => "Yes"
         },
         # Bundled seed file for the scoring rubric — uploaded automatically on first setup.
         # Path is relative to Rails.root. Skipped silently if the file is absent.
@@ -554,6 +558,22 @@ class SupportAgentsSetupService
     AGENT_TYPE_TO_FLAG.fetch(agent_type) { agent_type.underscore.to_sym }
   end
 
+  # Returns the template definitions of skill File fields for the given agent type —
+  # the source of truth for which fields MUST be tagged "skill: true, sector: …".
+  # Used by config health checks (e.g. PortfolioScoringAgent.config_issues) to detect
+  # instances whose live fields drifted from the template (blank meta_data etc.).
+  # Agent types without skill fields in their template return [] — so checks driven
+  # by this method are automatically a no-op for every other agent.
+  #
+  # @param agent_type [String] e.g. "PortfolioScoringAgent"
+  # @return [Array<Hash>] template field attrs whose meta_data marks them as skills
+  def self.skill_field_templates(agent_type)
+    cfg = SUPPORT_AGENT_FORM_CONFIGS.find { |c| c[:tag] == agent_type }
+    return [] unless cfg
+
+    (cfg[:fields] || []).select { |f| f[:field_type] == "File" && f[:meta_data].to_s.match?(/skill/i) }
+  end
+
   private
 
   def log(msg)
@@ -609,10 +629,21 @@ class SupportAgentsSetupService
       else
         # Only propagate human-readable metadata — never overwrite structural fields set via UI
         updatable = field_attrs.slice(:label, :help_text)
-        changed   = updatable.any? { |k, v| fcf.send(k) != v }
+
+        # Exception: skill-tagged File fields (meta_data "skill: true, sector: …") are
+        # non-functional without their meta_data — skill_for_sector can never match them.
+        # Backfill it ONLY when the template tags the field as a skill AND the live value
+        # is blank (a blank skill tag is always drift, never a deliberate UI setting).
+        # Fields whose template meta_data is not skill-tagged — i.e. every other agent —
+        # are never touched.
+        if field_attrs[:field_type] == "File" && field_attrs[:meta_data].to_s.match?(/skill/i) && fcf.meta_data.blank?
+          updatable[:meta_data] = field_attrs[:meta_data]
+        end
+
+        changed = updatable.any? { |k, v| fcf.send(k) != v }
         if changed
           fcf.update!(updatable)
-          log "    [fcf] '#{field_attrs[:name]}' — updated label/help_text"
+          log "    [fcf] '#{field_attrs[:name]}' — updated #{updatable.keys.join('/')}"
         else
           log "    [fcf] '#{field_attrs[:name]}' — up to date"
         end
@@ -683,7 +714,12 @@ class SupportAgentsSetupService
   # Only adds keys that are missing — never overwrites UI-configured values.
   def backfill_extend_only_json_fields
     {
-      "KycOnboardingAgent"    => { "check_expiry" => "Yes", "expiry_warning_days" => "60,30,15" },
+      # validate_fields/validate_documents: enabled? fails closed, so without a
+      # seeded value the core KYC checks silently skip. send_reminder/trigger_aml
+      # are deliberately NOT seeded (outbound email / AML screening should be an
+      # explicit opt-in) — config_issues surfaces them instead.
+      "KycOnboardingAgent"    => { "check_expiry" => "Yes", "expiry_warning_days" => "60,30,15",
+                                   "validate_fields" => "Yes", "validate_documents" => "Yes" },
       "PortfolioCompanyAgent" => { "send_kpi_reminder" => "Yes", "reminder_days" => "7,14,21" }
     }.each do |agent_type, defaults|
       sa = SupportAgent.find_by(entity_id: @entity_id, agent_type: agent_type)

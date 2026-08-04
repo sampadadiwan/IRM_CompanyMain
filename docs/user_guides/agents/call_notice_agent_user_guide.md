@@ -47,6 +47,10 @@ This agent is always run against **one specific capital call** — the one you'r
 - **Notification setup**: an active, enabled email notification configured on the capital call.
 - **No AI/LLM key required.**
 
+### Setup checklist and warnings
+
+Although the checklist itself has no settings, the agent still depends on fund-level setup. The agent's **General** tab (under AI → Support Agents) shows a yellow warning banner listing **every fund that has no Call Notice template uploaded** — upload one under Fund → Documents before preparing a call for that fund. This matters especially for batch or scheduled runs, which do not walk through the step-by-step checks the way a run from the capital call's own page does, so a missing template would otherwise only surface at the moment you try to send.
+
 ---
 
 ## 3. Enabling the Agent

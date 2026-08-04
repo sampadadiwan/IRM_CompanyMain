@@ -57,6 +57,26 @@ class EsignMonitorAgent < SupportAgentService
     Entity.where(id: entity_id)
   end
 
+  # Setup health check — a run with unresolvable recipients still finalizes
+  # "ready", so a broken notify_tag/primary_email combo is surfaced up front.
+  def self.config_issues(support_agent)
+    fields = support_agent.json_fields || {}
+    issues = missing_toggle_issues(support_agent, { "flag_expired" => "flagging of expired/declined e-sign documents" })
+
+    # Mirrors the runtime recipient resolution: notify_tag employees, else entity primary_email
+    notify_tag = fields["notify_tag"].to_s.strip
+    if notify_tag.present?
+      # tag_list is a CSV string column on users — same match the mailer step uses
+      if support_agent.entity.employees.where("tag_list LIKE ?", "%#{notify_tag}%").where.not(email: [nil, ""]).none?
+        issues << "'notify_tag' is '#{notify_tag}' but no employee carries that tag — the e-sign report email will never be sent."
+      end
+    elsif support_agent.entity.primary_email.blank?
+      issues << "No recipients: 'notify_tag' is blank and the entity has no primary email — the e-sign report email will never be sent."
+    end
+
+    issues
+  end
+
   private
 
   def initialize_agent(ctx, target:, **)
@@ -187,7 +207,9 @@ class EsignMonitorAgent < SupportAgentService
     # Resolve recipients: notify_tag employees, fall back to entity primary_email
     notify_tag = @support_agent.json_fields["notify_tag"]
     recipients = if notify_tag.present?
-                   target.employees.where(tag: notify_tag).pluck(:email).compact
+                   # users have a tag_list CSV column, not a tag column — a
+                   # where(tag:) query raises StatementInvalid on first use
+                   target.employees.where("tag_list LIKE ?", "%#{notify_tag}%").pluck(:email).compact
                  else
                    [target.primary_email].compact
                  end

@@ -57,6 +57,38 @@ class DataQualityAgent < SupportAgentService
     Fund.where(entity_id: entity_id)
   end
 
+  # Human descriptions of the steps each json_fields toggle gates.
+  CHECK_TOGGLES = {
+    "check_commitment_overflows" => "the commitment overflow check",
+    "check_missing_valuations"   => "the missing/stale valuation check",
+    "check_stale_fx_rates"       => "the stale FX rate check",
+    "send_report"                => "the data quality report email"
+  }.freeze
+
+  # The three toggles that actually produce findings (send_report only emails them).
+  DATA_CHECK_KEYS = %w[check_commitment_overflows check_missing_valuations check_stale_fx_rates].freeze
+
+  # Setup health check — with all checks off the agent computes a perfect
+  # health score from zero checks; blank threshold strings parse to 0 days
+  # and flag everything as stale.
+  def self.config_issues(support_agent)
+    fields = support_agent.json_fields || {}
+    issues = missing_toggle_issues(support_agent, CHECK_TOGGLES)
+
+    if DATA_CHECK_KEYS.none? { |k| toggle_on?(support_agent, k) }
+      issues << "All data checks are disabled — the agent would report a perfect health score without checking anything."
+    end
+
+    # A key that is present but blank parses to 0 days (missing keys use sane defaults)
+    %w[stale_valuation_days stale_fx_days].each do |key|
+      if fields.key?(key) && fields[key].to_s.strip.blank?
+        issues << "'#{key}' is blank — a blank value means 0 days, so everything is flagged stale. Set a number of days or remove the field."
+      end
+    end
+
+    issues
+  end
+
   private
 
   # target can be an Entity (run_with_steps single-panel run) or a Fund (scheduled/batch run).

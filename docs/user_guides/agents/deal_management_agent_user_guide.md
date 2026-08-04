@@ -45,6 +45,8 @@ Every one of these checks (other than the final save) has its own on/off switch,
 | Score investors | Select (Yes/No) | Yes | Turns on AI scoring of each active investor from 0–100. Can still produce a score for investors with no documents at all — their activity history and notes provide enough signal on their own. |
 | Scoring Skill File | File | seeded default | The document that defines your scoring rubric. See the note below. |
 | Min bullet points per section | Number | 3 | The minimum number of bullet points the AI must write for each scoring rationale (positives/concerns) and for each top-level list (strengths/risks/recommendations). |
+| Weekly summary | Select (Yes/No) | Yes | Turns on the weekly summary content — charts, task lists, and the digest email itself. With this off, no digest is sent even when Notify email is set. Agents set up before this option existed may have it unset, which counts as off — see the setup checklist below. |
+| AI insight | Select (Yes/No) | Yes | Turns on the AI-written insight section inside the weekly summary. Only applies when Weekly summary is on. |
 | Notify email | Text | blank | Who receives the post-run pipeline digest. Leave blank and **no email at all** goes out for this agent. |
 
 **Scoring Skill File.** This should be a plain text or Markdown document describing your scoring dimensions and how much each one should count. The built-in default rubric uses four weighted dimensions: Engagement & Responsiveness (30%), Document Readiness (25%), Commitment Signals (25%), and Pipeline Health (20%). Running **Setup All Agents** uploads this default for you automatically. If you upload your own file, it completely replaces the default — the agent reads whatever text is in your document and hands it to the AI as scoring instructions, word for word. If the file you uploaded turns out to be empty or unreadable, the agent quietly falls back to the built-in default rubric instead of failing the run.
@@ -56,6 +58,16 @@ Every one of these checks (other than the final save) has its own on/off switch,
 - Investor notes, tier, status, and committed amount (used as extra context for scoring).
 
 Supported document formats throughout: PDF, TXT, Markdown, Excel (XLSX/XLS), PowerPoint (PPTX/PPT), Word (DOCX/DOC), and CSV. Anything in another format is silently left out of whatever the AI sees.
+
+### Setup checklist and warnings
+
+An unset Yes/No toggle counts as **off**, not on — a step whose toggle was never given a value is silently skipped, which is easy to mistake for the agent working normally. The agent's **General** tab shows a yellow warning banner listing anything in this state. For this agent it flags:
+
+- **Any of the seven check toggles that has never been set** (deal progress, document checklist, term extraction, note summaries, investor scoring, weekly summary, AI insight). Agents provisioned before the Weekly summary and AI insight options existed commonly have those two unset — re-running **Setup All Agents** fills them in as Yes.
+- **A blank Notify email** — the pipeline digest, this agent's main output, will never be sent.
+- **A Scoring Skill File field with no uploaded document** — scoring will quietly use the built-in default rubric instead of yours.
+
+Resolve the banner items before relying on the digest or on custom scoring.
 
 ## 3. Enabling the Agent
 

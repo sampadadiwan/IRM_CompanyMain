@@ -66,7 +66,9 @@ class AgentNotificationService
   def employees_by_tag(tag)
     return [] if tag.blank?
 
-    @entity.employees.where(tag: tag).pluck(:email).compact
+    # users have a tag_list CSV column, not a tag column — a where(tag:)
+    # query raises StatementInvalid on first use
+    @entity.employees.where("tag_list LIKE ?", "%#{tag}%").pluck(:email).compact
   end
 
   # Sends success email to recipients.
