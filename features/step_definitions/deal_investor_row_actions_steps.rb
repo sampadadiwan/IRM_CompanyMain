@@ -226,7 +226,11 @@ When('I complete the task for {string} from the sidepanel') do |name|
   step 'I choose "View" from the row actions menu'
 
   within(SIDEPANEL) do
-    find("a[href='#tasks-tab']", wait: 20).click
+    # The panel's pane ids are scoped with "-di-<deal investor id>" so they don't
+    # collide with the deal's own tab strip, which is in the DOM at the same time
+    # (see deal_investors/_deal_investor_deal_details.html.erb). The pane is a lazy
+    # turbo-frame, so revealing the tab is what loads the task list.
+    find("a[href='#tasks-tab-di-#{deal_investor.id}']", wait: 20).click
     find(".task-done-checkbox", wait: 30).click
   end
 
