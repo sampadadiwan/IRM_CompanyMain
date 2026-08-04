@@ -100,7 +100,9 @@ class PortfolioDashboardPresenter
   # @return [Array<String>] document type labels (e.g., ["Financial Statement", "Board Minutes"])
   def document_types
     @document_types ||= begin
-      form_type = FormType.find_by(entity_id: support_agent.entity_id, name: "PortfolioKpiReport")
+      # Resolve via KpiReport.name — mirrors WithCustomField#setup_form_type
+      # which uses self.class.name to find the entity's form type.
+      form_type = support_agent.entity.form_types.where(name: KpiReport.name).last
       labels = form_type&.form_custom_fields&.where(field_type: "File")&.map(&:label) || []
 
       agent_docs = support_agent.json_fields["required_docs"].to_s.split(",").map(&:strip).compact_blank
