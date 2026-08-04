@@ -79,10 +79,6 @@ class SupportAgentPolicy < ApplicationPolicy
     run?
   end
 
-  def send_reminders?
-    run?
-  end
-
   def status?
     show?
   end
