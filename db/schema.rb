@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_03_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1260,6 +1260,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_03_140000) do
   end
 
   create_table "deal_investors", force: :cascade do |t|
+    t.string "ai_grade", limit: 10
+    t.integer "ai_score"
     t.string "company_advisor", limit: 100
     t.datetime "created_at", null: false
     t.bigint "deal_activity_id"

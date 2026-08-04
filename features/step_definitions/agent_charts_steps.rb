@@ -72,11 +72,22 @@ Given('KPI data {string} exists for the portfolio company') do |args|
     period:               "Month"
   )
 
+  kpi_name = attrs["name"] || "Revenue"
+
+  # KPIs created after the mapping cutoff require an investor_kpi_mapping
+  mapping = InvestorKpiMapping.find_or_create_by!(
+    standard_kpi_name: kpi_name,
+    reported_kpi_name: kpi_name,
+    entity:            @entity,
+    investor:          @investor
+  )
+
   Kpi.create!(
-    entity:     @entity,
-    name:       attrs["name"]  || "Revenue",
-    value:      attrs["value"] || "100",
-    kpi_report: @kpi_report
+    entity:               @entity,
+    name:                 kpi_name,
+    value:                attrs["value"] || "100",
+    kpi_report:           @kpi_report,
+    investor_kpi_mapping: mapping
   )
 end
 
