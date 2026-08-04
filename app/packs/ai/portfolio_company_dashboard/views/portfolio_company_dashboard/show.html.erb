@@ -1,0 +1,36 @@
+<%# Portfolio Company Agent Dashboard — standalone compliance monitoring page. %>
+<%= render FormCard.new(title: "Portfolio Company Dashboard") do %>
+  <div class="portfolio-dashboard" data-controller="portfolio-dashboard-filter">
+    <%= turbo_stream_from "batch_progress_#{@support_agent.id}" %>
+
+    <%# Row 1: Stat Cards %>
+    <%= render "stats", presenter: @presenter, support_agent: @support_agent %>
+
+    <%# Row 2: Bar Chart + Actions %>
+    <div class="row g-4 mb-4">
+      <div class="col-md-6">
+        <%= render "chart", presenter: @presenter %>
+      </div>
+      <div class="col-md-6">
+        <%= render "actions", support_agent: @support_agent, presenter: @presenter %>
+      </div>
+    </div>
+
+    <%# Row 3: Company Table %>
+    <div class="mb-4">
+      <%= render "table",
+              portfolio_reports: @paginated_reports,
+              presenter: @presenter,
+              support_agent: @support_agent,
+              pagy: @pagy,
+              status_filter: @status_filter,
+              search_value: @search_value %>
+    </div>
+
+    <%# Footer: Recommended Next Steps %>
+    <%= render "footer",
+              presenter: @presenter,
+              support_agent: @support_agent,
+              portfolio_reports: @paginated_reports %>
+  </div>
+<% end %>

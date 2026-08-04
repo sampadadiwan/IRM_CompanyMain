@@ -13,33 +13,37 @@ class PortfolioCompanyAgent < SupportAgentService
 
     Steps:
     • KPI Submission Check — verifies that each portfolio company has submitted KPI reports for
-      expected periods. Sends a reminder email if a submission is overdue.
+      the most recently completed period (look-back window).
     • Document Presence — checks that all required documents are uploaded for each company.
     • Valuation Check — flags companies missing a valuation or with a stale valuation date.
+    • Send Reminders — sends a consolidated reminder listing only the missing items
+      (KPIs, documents, valuations) for each company. Skipped when everything is submitted.
 
     Batch processing: runs sequentially per portfolio company; one failure does not block others.
     A batch summary notification is sent after all companies are processed (suppressed for scheduled
     runs). Results are saved as SupportAgentReports and power the portfolio dashboard widget.
   DESC
 
-  # Used when launching for a single portfolio company investor (not a full entity batch).
   SINGLE_LONG_DESCRIPTION = <<~DESC
     Checks data health for this portfolio company — KPI submissions, required document
     presence, and valuation accuracy. Results are saved as a SupportAgentReport and
     displayed on the portfolio dashboard widget.
 
     Steps:
-    • KPI Submission Check — verifies KPI reports have been submitted for expected periods.
+    • KPI Submission Check — verifies KPI reports have been submitted for the most recently completed period.
     • Document Presence — checks that all required documents are uploaded.
     • Valuation Check — flags a missing or stale valuation entry.
+    • Send Reminders — sends a consolidated reminder for any missing items. Skipped when everything is submitted.
   DESC
 
   step :initialize_agent
-  # == Core Functions ==
+  # Ordering matters: all three checks must run before send_kpi_reminder
+  # so ctx[:issues] is fully populated and the consolidated reminder
+  # email can list exactly which items (KPIs, documents, valuations) are missing.
   step :check_kpi_submission
-  step :send_kpi_reminder
   step :check_document_presence
   step :check_valuations
+  step :send_kpi_reminder
   step :generate_progress_reports
 
   def targets(entity_id)
@@ -47,34 +51,159 @@ class PortfolioCompanyAgent < SupportAgentService
     if entity_id.is_a?(Investor) || entity_id.is_a?(ActiveRecord::Base)
       [entity_id]
     else
-      Investor.where(entity_id: entity_id, category: "Portfolio Company").includes(:kpi_reports, :valuations)
+      Investor.where(entity_id: entity_id).where("LOWER(category) = ?", "portfolio company").includes(:kpi_reports, :valuations)
     end
   end
 
-  # Batch processor for PortfolioCompanyAgent — delegates to the shared
-  # SupportAgentService.run_batch for progress broadcasting and error handling.
+  # Runs the agent across all portfolio companies in batch mode.
   #
-  # @param support_agent_id [Integer]
-  # @param targets [Array, ActiveRecord::Relation] Investor records to process
-  # @param user_id [Integer, nil] nil for scheduled runs
-  # @param entity_id [Integer]
-  # @param execution_mode [Symbol] :adhoc_batch or :scheduled
-  # @return [Hash] { successes: [...], errors: [...] }
-  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch)
-    targets = targets.includes(:portfolio_kpi_reports, :documents, :valuations) if targets.respond_to?(:includes)
-
-    run_batch(
-      support_agent_id: support_agent_id,
-      targets: targets,
-      user_id: user_id,
-      entity_id: entity_id,
-      execution_mode: execution_mode
-    ) do |successes|
-      if successes.any?
-        processed_ids = successes.pluck(:id)
-        AgentChartJob.perform_later(user_id, portfolio_company_ids: processed_ids.uniq, execution_mode: execution_mode)
+  # For scheduled runs, checks the active window gate first — if today is
+  # outside T+start to T+end, the entire batch is skipped silently. This
+  # prevents checking when companies haven't had time to submit (before T+start)
+  # or when the reminder deadline has passed (after T+end).
+  #
+  # Adhoc runs (Run Now from dashboard, support agents page, or investor page)
+  # bypass the window gate — the FM intentionally triggered the run.
+  #
+  # @param support_agent_id [Integer] the PortfolioCompanyAgent's SupportAgent record ID
+  # @param targets [ActiveRecord::Relation] portfolio company Investor records
+  # @param user_id [Integer] the FM who triggered the run
+  # @param entity_id [Integer] the entity scope
+  # @param with_steps [Boolean] whether to show step-by-step progress UI
+  # @param execution_mode [Symbol] :adhoc_batch, :single_company_with_steps, or :scheduled
+  # @param check_as_on_date [Date, nil] manual period-end date override from dashboard dropdown
+  # @return [Hash, nil] { successes: [...], errors: [...] } or nil if skipped
+  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch, check_as_on_date: nil)
+    # Window gate: scheduled runs skip if outside T+start..T+end.
+    # Adhoc runs always proceed regardless of window.
+    if execution_mode == :scheduled
+      support_agent = SupportAgent.find(support_agent_id)
+      agent_instance = new
+      agent_instance.instance_variable_set(:@support_agent, support_agent)
+      unless agent_instance.send(:within_active_window?)
+        period_info = agent_instance.send(:compute_check_period)
+        Rails.logger.info { "[PortfolioCompanyAgent] Skipping scheduled run — outside active window (#{period_info[:window_start]}..#{period_info[:window_end]}), today is #{Time.zone.today}" }
+        return nil
       end
     end
+
+    targets = targets.includes(:portfolio_kpi_reports, :documents, :valuations) if targets.respond_to?(:includes)
+
+    # When check_as_on_date is nil, delegate to the shared run_batch (which loops
+    # targets and calls .wtf? without any extra ctx keys — standard flow).
+    # When check_as_on_date is present (FM selected a specific period from the
+    # dashboard dropdown), we run a custom batch loop that injects check_as_on_date
+    # into the Trailblazer ctx so check_kpi_submission uses it instead of auto-computing.
+    # This avoids modifying the shared run_batch in support_agent_service.rb.
+    if check_as_on_date.present?
+      run_batch_with_check_date(
+        support_agent_id: support_agent_id,
+        targets: targets,
+        user_id: user_id,
+        entity_id: entity_id,
+        execution_mode: execution_mode,
+        check_as_on_date: check_as_on_date
+      )
+    else
+      run_batch(
+        support_agent_id: support_agent_id,
+        targets: targets,
+        user_id: user_id,
+        entity_id: entity_id,
+        execution_mode: execution_mode
+      )
+    end
+  end
+
+  # Custom batch loop that injects check_as_on_date into the Trailblazer ctx.
+  #
+  # This mirrors SupportAgentService.run_batch (the shared batch loop), but adds
+  # check_as_on_date: to the .wtf? call so that check_kpi_submission reads the
+  # FM-selected period-end date from ctx[:check_as_on_date] instead of auto-computing.
+  #
+  # Why not modify run_batch directly? Because run_batch lives in the shared
+  # SupportAgentService used by ALL agent types. Adding agent-specific params
+  # there would violate the framework's contract. This override keeps the change
+  # scoped to PortfolioCompanyAgent only.
+  #
+  # The loop logic (progress broadcasting, error handling, batch summary) is
+  # intentionally kept 1:1 with run_batch so behavior is identical — only the
+  # extra ctx key differs.
+  #
+  # @param support_agent_id [Integer] the SupportAgent record ID
+  # @param targets [Array<Investor>, ActiveRecord::Relation] portfolio companies to check
+  # @param user_id [Integer] the FM who triggered the run
+  # @param entity_id [Integer] the entity scope
+  # @param execution_mode [Symbol] :adhoc_batch or :scheduled
+  # @param check_as_on_date [Date] the period-end date selected from the dashboard dropdown
+  # @return [Hash] { successes: [...], errors: [...] }
+  def self.run_batch_with_check_date(support_agent_id:, targets:, user_id:, entity_id:, check_as_on_date:, execution_mode: :adhoc_batch)
+    support_agent = SupportAgent.find(support_agent_id)
+    targets_array = targets.to_a
+    total = targets_array.size
+
+    successes = []
+    errors = []
+
+    targets_array.each_with_index do |target, index|
+      target_name = target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"
+
+      # Broadcast progress to the Turbo Stream channel so the dashboard
+      # shows "Processing 3/15: Company Name" in real time.
+      broadcast_batch_progress(
+        support_agent: support_agent,
+        current: index + 1,
+        total: total,
+        target_name: target_name,
+        user_id: user_id,
+        successes: successes.size,
+        errors: errors.size
+      )
+
+      # Key difference from run_batch: check_as_on_date is injected into the
+      # Trailblazer ctx so check_kpi_submission uses the FM-selected period
+      # instead of auto-computing the most recently completed period.
+      result = support_agent.agent.wtf?(
+        support_agent_id: support_agent_id,
+        target: target,
+        user_id: user_id,
+        entity_id: entity_id,
+        batch_mode: true,
+        check_as_on_date: check_as_on_date
+      )
+
+      if result.failure?
+        Rails.logger.warn { "#{support_agent.agent_type}.run_batch_with_check_date pipeline failure for Target ID=#{target.id}" }
+        errors << { target_id: target.id, target_name: target_name, error: "Pipeline failure (step returned false)" }
+      else
+        successes << { id: target.id, name: target_name }
+      end
+    rescue StandardError => e
+      Rails.logger.error { "#{support_agent.agent_type}.run_batch_with_check_date error for Target ID=#{target.id}: #{e.message}" }
+      Rails.logger.error { e.backtrace.join("\n") }
+      errors << { target_id: target.id, target_name: target_name, error: e.message }
+    end
+
+    # Signal the Turbo Stream that the batch is complete (triggers page reload on dashboard).
+    broadcast_batch_complete(
+      support_agent: support_agent,
+      user_id: user_id,
+      successes: successes.size,
+      errors: errors.size,
+      total: total
+    )
+
+    # Send batch summary notification to the FM (skipped for scheduled runs).
+    if execution_mode != :scheduled
+      begin
+        batch_target_type = targets_array.first.class.name if targets_array.any?
+        SupportAgentJob.new.send(:send_batch_summary, support_agent, successes, errors, user_id, batch_target_type) if defined?(SupportAgentJob)
+      rescue StandardError => e
+        Rails.logger.error { "#{support_agent.agent_type}.run_batch_with_check_date: failed to send batch summary: #{e.message}" }
+      end
+    end
+
+    { successes: successes, errors: errors }
   end
 
   private
@@ -97,7 +226,7 @@ class PortfolioCompanyAgent < SupportAgentService
 
     # Returning false here tells Trailblazer to route to the failure track, skipping all
     # subsequent steps. Log explicitly so the silent halt is visible in the run log.
-    unless portfolio_company.category == "Portfolio Company"
+    unless portfolio_company.category&.downcase == "portfolio company"
       Rails.logger.info { "[#{self.class.name}] Skipping Investor ID=#{portfolio_company.id} — category is '#{portfolio_company.category}', expected 'Portfolio Company'" }
       mark_step_failed(report, :initialize_agent, message: "Not a Portfolio Company") if report
       return false
@@ -113,94 +242,111 @@ class PortfolioCompanyAgent < SupportAgentService
     true
   end
 
-  # Checks whether the portfolio company has submitted last quarter's KPIs.
-  # Adds issues to ctx[:issues][:kpi_issues] if submission is missing, incomplete, or delayed.
+  # Checks whether the portfolio company has submitted KPI reports for the
+  # look-back period (the most recently completed reporting period).
   #
-  # @param ctx [Hash] Trailblazer execution context
+  # Uses compute_check_period to determine which period to validate. Queries
+  # portfolio_kpi_reports where as_of falls within the period's date range
+  # (e.g., April 1 – June 30 for Q2). A range match is used rather than an
+  # exact date match because companies may tag reports with any date within
+  # the period, not necessarily the exact period-end date.
+  #
+  # Stores the period_info hash in ctx[:period_info] so downstream steps
+  # (check_document_presence, check_valuations, send_kpi_reminder) can reuse
+  # the same computed period without recalculating.
+
+  #
+  # @param ctx [Hash] Trailblazer context — receives :period_info and :issues updates
+  # @param portfolio_company [Investor] the portfolio company being checked
+  # @param support_agent_report [SupportAgentReport, nil] report for step-by-step UI progress
+  # @return [Boolean] always true (issues are recorded in ctx, not via return value)
   def check_kpi_submission(ctx, portfolio_company: nil, support_agent_report: nil, **)
     report = support_agent_report
     mark_step_running(report, :check_kpi_submission) if report
 
-    due_period = @support_agent.json_fields["due_period"] || "Quarter"
-    days_before_due_period_end = @support_agent.json_fields["days_before_due_period_end"]&.to_i || 15
-    due_date = Date.end_of_period(due_period) - days_before_due_period_end.days
-    prev_period = Date.previous_end_of_period(due_period, due_date)
+    # Compute the look-back period. Uses ctx[:check_as_on_date] when the FM
+    # runs adhoc with a manual period selection from the dashboard dropdown.
+    period_info = compute_check_period(check_as_on_date: ctx[:check_as_on_date])
+    ctx[:period_info] = period_info
 
-    kpi_report = portfolio_company.portfolio_kpi_reports.where(as_of: prev_period..due_date).order(as_of: :desc).last
+    # Query for KPI reports with as_of in the period's date range.
+    # Range match (not exact): any report tagged within Q2 (Apr 1 – Jun 30) counts.
+    # Ordered desc to get the most recent report first.
+    kpi_report = portfolio_company.portfolio_kpi_reports
+                                  .where(as_of: period_info[:period_start]..period_info[:period_end])
+                                  .order(as_of: :desc)
+                                  .first
+
+    # Store for downstream steps — check_document_presence uses this to verify
+    # that documents are attached to the KPI report.
     @last_kpi_report = kpi_report
+
     if kpi_report
       ctx[:issues][:kpi_issues] << {
         key: :kpi,
         type: :info,
-        message: "Last #{due_period} KPIs submitted on #{kpi_report.as_of}",
+        message: "#{period_info[:period_label]} KPIs submitted (as_of: #{kpi_report.as_of})",
         severity: :success
       }
-      Rails.logger.debug { "[#{self.class.name}] Last quarter KPIs submitted for Investor ID=#{portfolio_company.id}" }
-      mark_step_success(report, :check_kpi_submission, message: "KPIs found") if report
+      Rails.logger.debug { "[#{self.class.name}] #{period_info[:period_label]} KPIs found for Investor ID=#{portfolio_company.id} (as_of: #{kpi_report.as_of})" }
+      mark_step_success(report, :check_kpi_submission, message: "KPIs found for #{period_info[:period_label]}") if report
     else
       ctx[:issues][:kpi_issues] << {
         key: :kpi,
         type: :missing,
-        message: "Last #{due_period} KPIs not submitted between #{prev_period} and #{due_date}",
+        message: "#{period_info[:period_label]} KPIs not submitted (expected as_of between #{period_info[:period_start]} and #{period_info[:period_end]})",
         severity: :blocking
       }
-      Rails.logger.warn { "[#{self.class.name}] Last quarter KPIs missing for Investor ID=#{portfolio_company.id}" }
-      mark_step_failed(report, :check_kpi_submission, message: "KPIs missing") if report
+      Rails.logger.warn { "[#{self.class.name}] #{period_info[:period_label]} KPIs missing for Investor ID=#{portfolio_company.id} (checked #{period_info[:period_start]}..#{period_info[:period_end]})" }
+      mark_step_failed(report, :check_kpi_submission, message: "KPIs missing for #{period_info[:period_label]}") if report
     end
     true
   end
 
-  # Sends a KPI reminder email to the portfolio company when KPIs are missing,
-  # but only on configured day-offsets from the period start to avoid daily spam.
+  # Sends a consolidated reminder email listing all missing items (KPIs,
+  # documents, valuations) for the look-back period.
   #
-  # Configurable via json_fields:
-  #   send_kpi_reminder — "true"/"false" (default true)
-  #   reminder_days     — comma-separated offsets from period start, e.g. "7,14,21"
-  #   due_period        — reporting period, e.g. "Quarter" (shared with check_kpi_submission)
+  # Runs after all three checks so ctx[:issues] is fully populated.
+  # Checks each category for :blocking issues and builds a missing_items
+  # list. Sends one email per company listing only what's missing.
+  # Skipped when everything is submitted.
+  #
+  # Deduplication: prevents double-sending on the same calendar day by
+  # checking last_kpi_reminder_sent_at in the previous report's json_fields.
+  #
+  # @param ctx [Hash] Trailblazer context — reads :issues and :period_info
+  # @param portfolio_company [Investor] the portfolio company being checked
+  # @param support_agent [SupportAgent] the agent configuration record
+  # @param support_agent_report [SupportAgentReport, nil] report for step progress UI
+  # @return [Boolean] always true (issues are recorded in ctx, not via return value)
   def send_kpi_reminder(ctx, portfolio_company:, support_agent:, support_agent_report: nil, **)
     report = support_agent_report
     mark_step_running(report, :send_kpi_reminder) if report
 
+    # Guard: check if reminders are enabled via json_fields toggle.
     unless enabled?("send_kpi_reminder")
-      Rails.logger.debug { "[#{self.class.name}] KPI reminder disabled, skipping." }
+      Rails.logger.debug { "[#{self.class.name}] Reminders disabled, skipping." }
       mark_step_skipped(report, :send_kpi_reminder, message: "Disabled") if report
       return true
     end
 
-    kpi_missing = ctx[:issues][:kpi_issues].any? { |i| i[:severity] == :blocking }
-    unless kpi_missing
+    # Build the list of missing items across all three categories.
+    missing_items = []
+    missing_items << "KPIs" if ctx[:issues][:kpi_issues].any? { |i| i[:severity] == :blocking }
+    missing_items << "Documents" if ctx[:issues][:document_issues].any? { |i| i[:severity] == :blocking }
+    missing_items << "Valuations" if ctx[:issues][:valuation_issues].any? { |i| i[:severity] == :blocking }
+
+    # Guard: no reminder needed if everything is submitted.
+    if missing_items.empty?
       ctx[:issues][:kpi_issues] << {
         key: :reminder, type: :info,
-        message: "KPIs submitted — no reminder needed", severity: :success
+        message: "All items submitted — no reminder needed", severity: :success
       }
-      mark_step_skipped(report, :send_kpi_reminder, message: "KPIs submitted — no reminder needed") if report
+      mark_step_skipped(report, :send_kpi_reminder, message: "All items submitted — no reminder needed") if report
       return true
     end
 
-    due_period    = support_agent.json_fields["due_period"] || "Quarter"
-    reminder_days = support_agent.json_fields["reminder_days"]
-                                 &.split(",")&.map(&:to_i) || [7, 14, 21]
-    # Use Time.zone.today so period boundaries are evaluated in the Rails application
-    # timezone, not the OS system timezone (Date.today). Avoids off-by-one-day errors
-    # for deployments where server UTC offset differs from the configured app timezone.
-    today         = Time.zone.today
-    period_start  = case due_period.downcase
-                    when "month"   then today.beginning_of_month
-                    when "year"    then today.beginning_of_year
-                    else                today.beginning_of_quarter
-                    end
-    days_elapsed  = (today - period_start).to_i
-
-    unless reminder_days.include?(days_elapsed)
-      ctx[:issues][:kpi_issues] << {
-        key: :reminder, type: :info,
-        message: "Reminder not due today (day #{days_elapsed}; fires on days #{reminder_days.join(', ')})",
-        severity: :success
-      }
-      return true
-    end
-
-    # Avoid double-sending on the same calendar day
+    # Guard: prevent double-sending on the same calendar day.
     last_report = SupportAgentReport
                   .where(owner: portfolio_company, support_agent: support_agent)
                   .order(created_at: :desc).first
@@ -212,18 +358,23 @@ class PortfolioCompanyAgent < SupportAgentService
       return true
     end
 
+    # Send consolidated reminder with the missing items list.
+    period_info = ctx[:period_info]
     EntityMailer.with(
       entity_id: portfolio_company.entity_id,
-      requesting_entity_id: support_agent.entity_id
+      requesting_entity_id: support_agent.entity_id,
+      missing_items: missing_items,
+      period_label: period_info&.dig(:period_label)
     ).kpi_reminder.deliver_later
 
     ctx[:last_kpi_reminder_sent_at] = Time.zone.today.iso8601
     ctx[:issues][:kpi_issues] << {
       key: :reminder, type: :info,
-      message: "KPI reminder sent (day #{days_elapsed} of #{due_period})", severity: :success
+      message: "Reminder sent for #{period_info&.dig(:period_label) || 'current period'} — missing: #{missing_items.join(', ')}",
+      severity: :success
     }
-    Rails.logger.info { "[#{self.class.name}] KPI reminder sent for Investor ID=#{portfolio_company.id}" }
-    mark_step_success(report, :send_kpi_reminder, message: "Reminder sent") if report
+    Rails.logger.info { "[#{self.class.name}] Reminder sent for Investor ID=#{portfolio_company.id} (#{period_info&.dig(:period_label)}) — missing: #{missing_items.join(', ')}" }
+    mark_step_success(report, :send_kpi_reminder, message: "Reminder sent (#{missing_items.join(', ')})") if report
     true
   end
 
@@ -248,38 +399,54 @@ class PortfolioCompanyAgent < SupportAgentService
     true
   end
 
-  # Validates valuations reported for the portfolio_company.
-  # Adds issues to ctx[:issues][:valuation_issues] if there are missing valuations, stale entries, or anomalies.
+  # Validates whether a valuation exists for the look-back period.
   #
-  # @param ctx [Hash] Trailblazer execution context
+  # Uses the same period_info computed by check_kpi_submission (stored in
+  # ctx[:period_info]) so KPIs and valuations are checked against the same
+  # date range. This replaces the old separate valuation_period /
+  # days_before_valuation_period_end settings — one unified period for all checks.
+  #
+  # Queries valuations where valuation_date falls within the period's date range
+  # (e.g., April 1 – June 30 for Q2). Range match, same as KPI reports.
+  #
+  # @param ctx [Hash] Trailblazer context — reads :period_info set by check_kpi_submission
+  # @param portfolio_company [Investor] the portfolio company being checked
+  # @param support_agent_report [SupportAgentReport, nil] report for step-by-step UI progress
+  # @return [Boolean] always true (issues are recorded in ctx, not via return value)
   def check_valuations(ctx, portfolio_company: nil, support_agent_report: nil, **)
     report = support_agent_report
     mark_step_running(report, :check_valuations) if report
 
-    valuation_period = @support_agent.json_fields["valuation_period"] || "Quarter"
-    days_before_valuation_period_end = @support_agent.json_fields["days_before_valuation_period_end"]&.to_i || 15
-    valuation_due_date = Date.end_of_period(valuation_period) - days_before_valuation_period_end.days
-    prev_valuation_period = Date.previous_end_of_period(valuation_period, valuation_due_date)
+    # Reuse the same period computed by check_kpi_submission.
+    # Fallback to compute_check_period if check_kpi_submission hasn't run
+    # (shouldn't happen in normal flow, but guards against step reordering).
+    period_info = ctx[:period_info] || compute_check_period(check_as_on_date: ctx[:check_as_on_date])
 
-    valuation = portfolio_company.valuations.where(valuation_date: prev_valuation_period..valuation_due_date).order(valuation_date: :desc).last
+    # Query for valuations with valuation_date in the period's date range.
+    # Range match: any valuation dated within Q2 (Apr 1 – Jun 30) counts.
+    valuation = portfolio_company.valuations
+                                 .where(valuation_date: period_info[:period_start]..period_info[:period_end])
+                                 .order(valuation_date: :desc)
+                                 .first
+
     if valuation
       ctx[:issues][:valuation_issues] << {
         key: :valuation,
         type: :info,
-        message: "Recent valuation reported on #{valuation.valuation_date}",
+        message: "#{period_info[:period_label]} valuation reported on #{valuation.valuation_date}",
         severity: :success
       }
-      Rails.logger.debug { "[#{self.class.name}] Recent valuations found for Investor ID=#{portfolio_company.id}" }
-      mark_step_success(report, :check_valuations, message: "Valuation found") if report
+      Rails.logger.debug { "[#{self.class.name}] #{period_info[:period_label]} valuation found for Investor ID=#{portfolio_company.id} (date: #{valuation.valuation_date})" }
+      mark_step_success(report, :check_valuations, message: "Valuation found for #{period_info[:period_label]}") if report
     else
       ctx[:issues][:valuation_issues] << {
         key: :valuation,
         type: :missing,
-        message: "No valuations in the #{valuation_period} between #{prev_valuation_period} and #{valuation_due_date}",
+        message: "#{period_info[:period_label]} valuation missing (expected valuation_date between #{period_info[:period_start]} and #{period_info[:period_end]})",
         severity: :blocking
       }
-      Rails.logger.warn { "[#{self.class.name}] Missing valuations for Investor ID=#{portfolio_company.id}" }
-      mark_step_failed(report, :check_valuations, message: "Valuations missing") if report
+      Rails.logger.warn { "[#{self.class.name}] #{period_info[:period_label]} valuation missing for Investor ID=#{portfolio_company.id} (checked #{period_info[:period_start]}..#{period_info[:period_end]})" }
+      mark_step_failed(report, :check_valuations, message: "Valuation missing for #{period_info[:period_label]}") if report
     end
     true
   end
@@ -316,12 +483,113 @@ class PortfolioCompanyAgent < SupportAgentService
     finalize_report(report, status: has_blocking ? "blocked" : "ready") if report
 
     broadcast_portco_row(target: portfolio_company)
-    # Only enqueue an individual chart job when NOT running inside process_batch.
-    # process_batch enqueues a single bulk AgentChartJob for all companies at the end.
-    # ctx[:batch_mode] is set to true by process_batch to suppress per-company jobs.
-    AgentChartJob.perform_later(ctx[:user_id], portfolio_company_id: portfolio_company.id) unless ctx[:batch_mode]
-
     true
+  end
+
+  # Computes the look-back period for data validation.
+  #
+  # Instead of checking the current in-progress period (which has no data yet),
+  # this finds the most recently completed period and derives:
+  # - The date range to query for KPIs/valuations (period_start..period_end)
+  # - The active window (T+start to T+end) during which the agent should run
+  #
+  # The "T" in T+start / T+end refers to the period-end date (check_date).
+  # For example, with period=Quarterly and today=July 21:
+  #   check_date   = June 30 (last completed quarter)
+  #   period_start = April 1
+  #   period_end   = June 30
+  #   window_start = July 15 (T+15)
+  #   window_end   = August 29 (T+60)
+  #
+  # Reads new json_fields keys (start_days_after_period_end, end_days_after_period_end)
+  # with fallback to the legacy key (days_before_due_period_end) for backward compatibility
+  # during the transition period while old custom form fields are still present.
+  #
+  # @param check_as_on_date [Date, nil] explicit period-end date for adhoc runs;
+  #   when nil, auto-computes the most recently completed period
+  # @return [Hash] period computation result with keys:
+  #   :check_date   [Date]   — the period-end date being validated (e.g., June 30)
+  #   :window_start [Date]   — first day the agent should run (e.g., July 15)
+  #   :window_end   [Date]   — last day the agent should run (e.g., August 29)
+  #   :period_start [Date]   — start of the data range to query (e.g., April 1)
+  #   :period_end   [Date]   — end of the data range to query (e.g., June 30)
+  #   :period_label [String] — human-readable label (e.g., "Q2 2026")
+  def compute_check_period(check_as_on_date: nil)
+    period = @support_agent.json_fields["due_period"] || "Quarter"
+
+    # New field names with fallback to legacy field name during transition.
+    # Once the old custom form fields are removed, the fallback can be dropped.
+    start_days = (
+      @support_agent.json_fields["start_days_after_period_end"] ||
+      @support_agent.json_fields["days_before_due_period_end"] ||
+      15
+    ).to_i
+    end_days = (@support_agent.json_fields["end_days_after_period_end"] || 60).to_i
+
+    # Step 1: Determine the period-end date to validate against.
+    # For adhoc runs, the FM can override this via the dashboard dropdown.
+    # For scheduled runs, auto-compute the most recently completed period.
+    check_date = if check_as_on_date.present?
+                   check_as_on_date.to_date
+                 else
+                   Date.previous_end_of_period(period)
+                 end
+
+    # Step 2: Active window — the date range during which scheduled runs execute.
+    # Before window_start: too early, companies haven't had time to submit.
+    # After window_end: deadline passed, stop sending reminders.
+    window_start = check_date + start_days.days
+    window_end   = check_date + end_days.days
+
+    # Step 3: Data query range — the period we're checking data for.
+    # e.g., for Q2 ending June 30: period_start=April 1, period_end=June 30.
+    # KPI reports and valuations with as_of/valuation_date in this range are valid.
+    period_start = Date.previous_end_of_period(period, check_date) + 1.day
+    period_end   = check_date
+
+    # Step 4: Human-readable label for messages and UI display.
+    period_label = case period.to_s.downcase
+                   when "month"
+                     check_date.strftime("%B %Y") # e.g., "June 2026"
+                   when "quarter"
+                     quarter_num = ((check_date.month - 1) / 3) + 1
+                     "Q#{quarter_num} #{check_date.year}" # e.g., "Q2 2026"
+                   when "half year", "half_year", "halfyear"
+                     check_date.month <= 6 ? "H1 #{check_date.year}" : "H2 #{check_date.year}"
+                   when "year"
+                     check_date.year.to_s # e.g., "2026"
+                   else
+                     period
+                   end
+
+    {
+      check_date: check_date,
+      window_start: window_start,
+      window_end: window_end,
+      period_start: period_start,
+      period_end: period_end,
+      period_label: period_label
+    }
+  end
+
+  # Determines whether today falls within the active checking window
+  # (T+start to T+end) for the most recently completed period.
+  #
+  # Used as a gate for scheduled (cron) runs only. When the agent runs
+  # on schedule and today is outside the window, the run is skipped silently
+  # to avoid checking when companies haven't had time to submit (before T+start)
+  # or when the deadline has passed (after T+end).
+  #
+  # Adhoc runs (Run Now button from dashboard, support agents page, or
+  # investor page) bypass this gate entirely — the FM intentionally triggered
+  # the run and expects results regardless of the window.
+  #
+  # @return [Boolean] true if today is between window_start and window_end
+  # @see compute_check_period
+  def within_active_window?
+    period_info = compute_check_period
+    today = Time.zone.today
+    today.between?(period_info[:window_start], period_info[:window_end])
   end
 
   def broadcast_portco_row(target:)

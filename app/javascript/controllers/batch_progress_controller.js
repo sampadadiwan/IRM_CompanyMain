@@ -14,8 +14,16 @@ export default class extends Controller {
   /** @param {string} newStatus — triggered by Turbo Stream replacing the panel */
   statusValueChanged(newStatus) {
     if (newStatus === "complete") {
-      this.reloadReportsTab()
+      if (this.isDashboardPage()) {
+        setTimeout(() => window.location.reload(), 1500)
+      } else {
+        this.reloadReportsTab()
+      }
     }
+  }
+
+  isDashboardPage() {
+    return window.location.pathname.includes("portfolio_company_dashboard")
   }
 
   /** Fetches the current page with the active tab param and swaps in fresh content */
