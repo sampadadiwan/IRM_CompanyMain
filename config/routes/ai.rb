@@ -16,6 +16,7 @@ resources :support_agents do
     post 'run_with_steps'
     post 'run_batch'
     post 'cancel'
+    post 'send_reminders'
     get 'status'
     get 'step_details'
     get 'deal_steps'

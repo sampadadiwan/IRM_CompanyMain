@@ -1,6 +1,18 @@
+# frozen_string_literal: true
+
+# Stores the result of a single support agent run against a target (e.g. an Investor).
+#
+# Each report captures step-by-step execution data in json_fields and is marked
+# as `latest` for its (owner, support_agent) pair via {#mark_as_latest!}.
+#
+# @see SupportAgent
+# @see SupportAgentService
 class SupportAgentReport < ApplicationRecord
   belongs_to :owner, polymorphic: true
   belongs_to :support_agent
+  belongs_to :investor,
+             -> { where(support_agent_reports: { owner_type: "Investor" }) },
+             class_name: "Investor", foreign_key: :owner_id, optional: true
 
   enum :status, { pending: "Pending", completed: "Completed", failed: "Failed" }
 
@@ -81,5 +93,9 @@ class SupportAgentReport < ApplicationRecord
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[owner_id owner_name owner_type status support_agent_name updated_at]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[investor]
   end
 end

@@ -6,8 +6,11 @@
 # @see SupportAgent
 # @see SupportAgentJob
 # @see SupportAgentReport
+
+require "pagy/extras/array"
+
 class SupportAgentsController < ApplicationController
-  before_action :set_support_agent, only: %i[show edit update destroy]
+  before_action :set_support_agent, only: %i[show edit update destroy send_reminders]
 
   # Lists all support agents accessible by the current user.
   # Also computes a setup preview for the "Setup All Agents" modal when the user has permission.
@@ -91,8 +94,21 @@ class SupportAgentsController < ApplicationController
                       .limit(20)
 
     query = AgentReportsQuery.new(@support_agent, params)
-    @fund_reports         = query.fund_reports
-    @portfolio_reports    = query.portfolio_reports
+    @fund_reports = query.fund_reports
+    @portfolio_reports = query.portfolio_reports
+
+    if @support_agent.agent_type == "PortfolioCompanyAgent"
+      portfolio_all = @portfolio_reports.includes(:owner).to_a
+      @portfolio_presenter = PortfolioDashboardPresenter.new(portfolio_all, @support_agent)
+
+      table_scope = @portfolio_reports.joins(:investor)
+      table_scope = filter_portfolio_reports(table_scope, @portfolio_presenter, params[:status])
+      @portfolio_q = table_scope.ransack(params[:q])
+      @pagy_portfolio, @paginated_portfolio_reports = pagy(@portfolio_q.result.order(updated_at: :desc), limit: 10)
+      @portfolio_status_filter = params[:status]
+      @portfolio_search_value = params.dig(:q, :investor_investor_name_cont)
+    end
+
     @scoring_reports      = query.scoring_reports
     @note_summaries       = query.note_summaries
     @presentation_reports = query.presentation_reports
@@ -318,19 +334,23 @@ class SupportAgentsController < ApplicationController
         respond_to do |format|
           format.html { redirect_to(request.referer || support_agents_path, notice: "#{@support_agent.name} queued.") }
           format.turbo_stream do
-            render turbo_stream: turbo_stream.replace(
-              "batch_progress_panel",
-              partial: "support_agents/batch_progress_panel",
-              locals: {
-                support_agent: @support_agent,
-                current: 0,
-                total: target_count,
-                target_name: nil,
-                successes: 0,
-                errors: 0,
-                status: :queued
-              }
-            )
+            panel_locals = {
+              support_agent: @support_agent,
+              current: 0,
+              total: target_count,
+              target_name: nil,
+              successes: 0,
+              errors: 0,
+              status: :queued
+            }
+            render turbo_stream: [
+              turbo_stream.replace("batch_progress_panel",
+                                   partial: "support_agents/batch_progress_panel",
+                                   locals: panel_locals.merge(panel_id: "batch_progress_panel")),
+              turbo_stream.replace("portfolio_batch_progress_panel",
+                                   partial: "support_agents/batch_progress_panel",
+                                   locals: panel_locals.merge(panel_id: "portfolio_batch_progress_panel"))
+            ]
           end
         end
         return
@@ -513,6 +533,58 @@ class SupportAgentsController < ApplicationController
     end
   end
 
+  # Sends KPI reminder emails to all overdue portfolio companies.
+  # Skips companies that already submitted KPIs or were reminded today.
+  #
+  # @return [void]
+  def send_reminders
+    authorize @support_agent
+
+    overdue = PortfolioDashboardPresenter.new(
+      SupportAgentReport.where(support_agent: @support_agent, owner_type: "Investor")
+                        .includes(:owner).order(updated_at: :desc),
+      @support_agent
+    ).overdue_companies
+
+    owner_ids = overdue.map { |c| c[:owner_id] } # rubocop:disable Rails/Pluck -- overdue is an array of hashes, not AR
+    latest_reports = SupportAgentReport.where(support_agent: @support_agent, owner_id: owner_ids, owner_type: "Investor")
+                                       .order(created_at: :desc).index_by(&:owner_id)
+    investors = Investor.where(id: owner_ids).index_by(&:id)
+
+    sent = 0
+    skipped = 0
+    overdue.each do |company|
+      last_report = latest_reports[company[:owner_id]]
+      last_sent = last_report&.json_fields&.dig("last_kpi_reminder_sent_at")
+      if last_sent && Date.parse(last_sent) >= Time.zone.today
+        skipped += 1
+        next
+      end
+
+      investor = investors[company[:owner_id]]
+      next unless investor
+
+      EntityMailer.with(
+        entity_id: investor.entity_id,
+        requesting_entity_id: @support_agent.entity_id
+      ).kpi_reminder.deliver_later
+
+      if last_report
+        last_report.json_fields["last_kpi_reminder_sent_at"] = Time.zone.today.iso8601
+        last_report.save!
+      end
+      sent += 1
+    end
+
+    message = "Reminders sent to #{sent} overdue #{'company'.pluralize(sent)}."
+    message += " #{skipped} already reminded today." if skipped.positive?
+
+    respond_to do |format|
+      format.html { redirect_to support_agent_path(@support_agent, tab: "portfolio_reports"), notice: message }
+      format.turbo_stream { redirect_to support_agent_path(@support_agent, tab: "portfolio_reports"), notice: message }
+    end
+  end
+
   # Returns the current execution status for a target.
   #
   # @return [void]
@@ -581,6 +653,28 @@ class SupportAgentsController < ApplicationController
   end
 
   private
+
+  # Filters a portfolio reports scope by status using presenter-computed values.
+  #
+  # @param scope [ActiveRecord::Relation] base query scope
+  # @param presenter [PortfolioDashboardPresenter]
+  # @param status [String, nil] filter value ("Complete", "Pending", "Incomplete", "submitted", "issues")
+  # @return [ActiveRecord::Relation] filtered scope
+  def filter_portfolio_reports(scope, presenter, status)
+    return scope if status.blank?
+
+    matching_ids = presenter.reports.select do |r|
+      case status
+      when "Complete"   then presenter.report_status(r) == "Complete"
+      when "Pending"    then presenter.report_status(r) == "Pending"
+      when "Incomplete" then presenter.report_status(r) == "Incomplete"
+      when "submitted"  then presenter.report_status(r).in?(%w[Complete Incomplete])
+      when "issues"     then presenter.blocking_count(r).positive?
+      end
+    end.map(&:id)
+
+    scope.where(id: matching_ids)
+  end
 
   # Merges chat configuration params into the support agent's json_fields.
   # Chat config fields (enabled, model, provider_type, system_prompt) are submitted

@@ -4,7 +4,7 @@
 <% is_complete = status.to_sym == :complete %>
 <% has_errors = errors.to_i > 0 %>
 
-<div id="batch_progress_panel"
+<div id="<%= local_assigns[:panel_id] || 'batch_progress_panel' %>"
      class="card mb-3 mt-3 border"
      data-controller="batch-progress"
      data-batch-progress-support-agent-id-value="<%= support_agent.id %>"
