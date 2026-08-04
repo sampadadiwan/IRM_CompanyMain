@@ -247,7 +247,9 @@ class DealsController < ApplicationController
 
   # POST /deals or /deals.json
   def create
-    @deal = Deal.new(deal_params)
+    @deal = Deal.new
+    # Assign form parameters to the new deal instance
+    assign_deal_form_params(@deal)
     @deal.entity_id = current_user.entity_id
     authorize @deal
 
@@ -267,7 +269,8 @@ class DealsController < ApplicationController
   def update
     @frame = params[:deal][:turbo_frame_id] || "deal_form_#{@deal.id}"
     params[:deal].delete(:turbo_frame_id)
-    @deal.assign_attributes(deal_params)
+    # Assign form parameters to the existing deal instance
+    assign_deal_form_params(@deal)
     respond_to do |format|
       if UpdateDeal.call(deal: @deal).success?
         @success = true
@@ -319,7 +322,27 @@ class DealsController < ApplicationController
     params.require(:deal).permit(:name, :amount, :status, :form_type_id, :clone_from_id, :tags,
                                  :start_date, :currency, :units, :activity_list, :archived, :skip_templates,
                                  :grid_columns, :deal_investor_status, :enable_notifications,
-                                 properties: {})
+                                 :analytics_stats, properties: {})
+  end
+
+  # Shared by #create and #update so both actions apply the same param-assignment
+  # rules to the deal instance.
+  #
+  # analytics_stats is pulled out of the attrs hash and assigned separately
+  # because Deal#analytics_stats= falls back to DEFAULT_ANALYTICS_STATS whenever
+  # it's given a blank value. Passing it through assign_attributes unconditionally
+  # would silently reset a deal's saved stat selection to the defaults any time
+  # the form field is missing/blank, instead of leaving the existing value alone.
+  def assign_deal_form_params(deal)
+    attrs = deal_params.to_h
+    stats = attrs.delete("analytics_stats")
+    # deal_params permits analytics_stats as a scalar, but the hidden field's
+    # StimulusJS-serialized JSON can occasionally arrive un-permitted (e.g. as part
+    # of a nested structure); fall back to reading it straight off params in that case.
+    stats = params[:deal][:analytics_stats] if stats.blank? && params.dig(:deal, :analytics_stats).present?
+
+    deal.assign_attributes(attrs)
+    deal.analytics_stats = stats if stats.present?
   end
 
   def find_or_initialize_deals_agent

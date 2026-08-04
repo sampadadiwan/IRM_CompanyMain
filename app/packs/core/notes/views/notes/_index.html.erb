@@ -3,6 +3,9 @@
   title ||= params[:title] || "Notes"
   from_source = params[:from].presence
   embedded_note_context = params[:embedded_note_context].presence
+  # Hide the "Summarise Notes" button if the notes are being displayed in the context of a deal investor tab, as summarization may not be relevant in that context.
+  # But still show in normal notes view for the user
+  hide_summarize_btn = embedded_note_context == "deal_investor_tab"
 %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
@@ -11,7 +14,7 @@
         data-turbo-frame this link navigates the whole page away from the list.
         Pointing it at new_note loads the form inline instead. %>
     <%= link_to "New Note", new_note_path("note[owner_id]": owner_id, "note[owner_type]": owner_type, "note[entity_id]": current_user.entity_id, return_to: params[:return_to], from: from_source, embedded_note_context: embedded_note_context, condensed: params[:condensed]), {class: "btn btn-outline-primary ti ti-plus", data: { turbo_frame: "new_note" }} %>
-    <% if owner_id.present? %>
+    <% if owner_id.present? && !hide_summarize_btn %>
       <% if current_user.entity.support_agents.set?(:note_summarization_agent) %>
       <button type="button" class="btn btn-outline-secondary"
               data-bs-toggle="modal" data-bs-target="#run-note-summarizer-agent-modal">

@@ -1,15 +1,24 @@
 <div class="associated_entity" data-controller="offcanvastabs">
+  <%# Pane/nav ids are scoped with the deal_investor id below. They must stay
+      unique on the page: the deal's own bottom tab view (_deal_details.html.erb)
+      renders its own "#docs-tab"/"#tasks-tab" etc. at the same time this offcanvas
+      is open, and duplicate ids caused Bootstrap's native data-bs-toggle handling
+      to grab the FIRST matching element in the DOM (this offcanvas's pane, since
+      it's rendered earlier in list_view.html.erb) instead of the intended one.
+      data-bs-toggle is also dropped here since the offcanvastabs controller
+      already does the show/hide itself, scoped to this element only. %>
+  <% tab_ns = "di-#{deal_investor.id}" %>
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" href="#notes-tab"
+    <a class="nav-link active" href="#notes-tab-<%= tab_ns %>"
        data-action="click->offcanvastabs#switchTab"
       data-offcanvastabs-target="navLink">Notes</a>
-    <a class="nav-link" data-bs-toggle="pill" href="#tasks-tab"
+    <a class="nav-link" href="#tasks-tab-<%= tab_ns %>"
        data-action="click->offcanvastabs#switchTab"
       data-offcanvastabs-target="navLink">Tasks</a>
-    <a class="nav-link" data-bs-toggle="pill" href="#docs-tab"
+    <a class="nav-link" href="#docs-tab-<%= tab_ns %>"
        data-action="click->offcanvastabs#switchTab"
       data-offcanvastabs-target="navLink">Documents</a>
-    <a class="nav-link" data-bs-toggle="pill" href="#timeline-tab"
+    <a class="nav-link" href="#timeline-tab-<%= tab_ns %>"
        data-action="click->offcanvastabs#switchTab"
       data-offcanvastabs-target="navLink">Timeline</a>
   </nav>
@@ -17,32 +26,35 @@
     <%# Pane order mirrors the nav above. The first pane is the one that carries
         "show active", so it is also the only frame that loads on panel open —
         the rest stay lazy until their tab is revealed. %>
-    <div id="notes-tab" class="tab-pane fade show active" data-offcanvastabs-target="tabPane">
-      <div id="notes" class="associated_entity">
+    <div id="notes-tab-<%= tab_ns %>" class="tab-pane fade show active" data-offcanvastabs-target="tabPane">
+      <div id="notes-<%= tab_ns %>" class="associated_entity">
         <%= turbo_frame_tag "notes_frame",
                             src: notes_path(owner_id: deal_investor.id, owner_type: "DealInvestor", entity_id: deal_investor.entity_id, return_to: deal_path(deal_investor.deal), from: "deal_details", embedded_note_context: "deal_investor_tab"),
                             target: "_top", loading: :lazy do %>
         <% end %>
       </div>
     </div>
-    <div id="tasks-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
-      <div id="tasks" class="associated_entity">
+    <div id="tasks-tab-<%= tab_ns %>" class="tab-pane fade" data-offcanvastabs-target="tabPane">
+      <div id="tasks-<%= tab_ns %>" class="associated_entity">
         <%= turbo_frame_tag "tasks_frame",
                             src: tasks_path(owner_type: deal_investor.class, owner_id: deal_investor.id, embedded_task_context: "deal_investor_tab"),
                             target: "_top", loading: :lazy do %>
         <% end %>
       </div>
     </div>
-    <div id="docs-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
-      <div id="docs" class="associated_entity">
-        <%= turbo_frame_tag "documents_tree_frame",
-                            src: folder_documents_path(entity_id: deal_investor.entity_id, folder_id: deal_investor.document_folder.id),
+    <div id="docs-tab-<%= tab_ns %>" class="tab-pane fade" data-offcanvastabs-target="tabPane">
+      <div id="docs-<%= tab_ns %>" class="associated_entity">
+        <%# Scoped with a widget_id so this frame's id doesn't collide with the
+            "documents_tree_frame" rendered by the deal's own bottom tab view,
+            which can be present in the DOM at the same time as this offcanvas. %>
+        <%= turbo_frame_tag "documents_tree_frame_deal_investor_#{deal_investor.id}",
+                            src: folder_documents_path(entity_id: deal_investor.entity_id, folder_id: deal_investor.document_folder.id, widget_id: "deal_investor_#{deal_investor.id}"),
                             target: "_top", loading: :lazy do %>
         <% end %>
       </div>
     </div>
-    <div id="timeline-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
-      <div id="timeline" class="associated_entity">
+    <div id="timeline-tab-<%= tab_ns %>" class="tab-pane fade" data-offcanvastabs-target="tabPane">
+      <div id="timeline-<%= tab_ns %>" class="associated_entity">
         <%= render AuditTrail.new(deal_investor, title: "Step Movements Timeline", only_keys: ["status", "deal_activity_id"], graphical: true) %>
         <div class="mt-3 text-end">
           <%= link_to "View Full Audit Trail", deal_investor_path(deal_investor, audit_trail: true), {class: "btn btn-outline-info btn-sm", target: "_top"} %>
