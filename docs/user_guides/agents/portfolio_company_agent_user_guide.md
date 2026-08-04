@@ -48,9 +48,8 @@ There is also no on-screen toggle for the document-check setting described below
 The agent's **General** tab shows a yellow warning banner when reminder setup can't work:
 
 - **"Send KPI submission reminder" never set** — an unset toggle counts as off, so reminders silently never go out. Set it explicitly to Yes or No (an explicit No is not flagged).
-- **Reminders on, but "Reminder days" blank** — reminders only fire on the exact day counts listed, so an empty list means no reminder can ever be sent, even though the toggle says Yes. Enter values like `7,14,21`.
 
-Re-running **Setup All Agents** fills both fields with their defaults on agents that never had them.
+Reminder cadence needs no extra setup: reminders go out on each run inside the active checking window (at most once per day), so how often they fire is controlled by the agent's Schedule tab. Re-running **Setup All Agents** fills the reminder toggle with its default on agents that never had it.
 
 **Data the agent looks at (not configuration, just the records it reads):**
 

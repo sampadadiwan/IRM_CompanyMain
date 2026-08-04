@@ -46,14 +46,11 @@ class SupportAgentsSetupService
       fields: [
         { name: "send_kpi_reminder",
           field_type: "Select", label: "Send KPI submission reminder", meta_data: "Yes,No", position: 7,
-          help_text: "When Yes, sends a reminder email to the portfolio company when KPIs are overdue " \
-                     "for the current period. Emails are only fired on the specific days-elapsed values " \
-                     "configured in 'Reminder days', preventing duplicate sends across daily runs." },
-        { name: "reminder_days",
-          field_type: "TextField", label: "Reminder days (days elapsed in period)", meta_data: "", position: 8,
-          help_text: "Comma-separated number of days elapsed since the period started on which to send " \
-                     "a reminder, e.g. '7,14,21'. The agent checks today's elapsed day count against this " \
-                     "list — no email fires on days not in the list. A reminder already sent today is skipped." }
+          help_text: "When Yes, sends a consolidated reminder email to the portfolio company listing " \
+                     "missing items (KPIs, documents, valuations) on each run inside the active checking " \
+                     "window. At most one reminder is sent per day." }
+        # reminder_days was removed when reminders moved to the active-window model —
+        # cadence now follows the agent's run schedule, not a fixed day list.
       ]
     },
 
@@ -720,7 +717,8 @@ class SupportAgentsSetupService
       # explicit opt-in) — config_issues surfaces them instead.
       "KycOnboardingAgent"    => { "check_expiry" => "Yes", "expiry_warning_days" => "60,30,15",
                                    "validate_fields" => "Yes", "validate_documents" => "Yes" },
-      "PortfolioCompanyAgent" => { "send_kpi_reminder" => "Yes", "reminder_days" => "7,14,21" }
+      # reminder_days is gone — reminders follow the active-window model now
+      "PortfolioCompanyAgent" => { "send_kpi_reminder" => "Yes" }
     }.each do |agent_type, defaults|
       sa = SupportAgent.find_by(entity_id: @entity_id, agent_type: agent_type)
       next log "  [#{agent_type}] Not found — skipping json_fields update" unless sa

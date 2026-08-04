@@ -168,13 +168,21 @@ Feature: Support agent configuration health checks (all agents)
 
   # ── PortfolioCompanyAgent ────────────────────────────────────────────────
 
-  Scenario: Portfolio company agent warns when reminders can never fire
+  Scenario: Portfolio company agent warns when the reminder toggle is unset
     Given there is a support agent "agent_type=PortfolioCompanyAgent;name=PortCo Agent;enabled=true"
     And the agent json fields are:
       """
-      {"send_kpi_reminder":"Yes","reminder_days":""}
+      {}
       """
-    Then the agent config issues should include "no reminder will ever fire"
+    Then the agent config issues should include "'send_kpi_reminder' is not set"
+
+  Scenario: Portfolio company agent is healthy with the reminder toggle set
+    Given there is a support agent "agent_type=PortfolioCompanyAgent;name=PortCo Agent;enabled=true"
+    And the agent json fields are:
+      """
+      {"send_kpi_reminder":"Yes"}
+      """
+    Then the agent config issues should be empty
 
   # ── NoteSummarizerAgent ──────────────────────────────────────────────────
 

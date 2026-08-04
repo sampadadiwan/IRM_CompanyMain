@@ -206,18 +206,12 @@ class PortfolioCompanyAgent < SupportAgentService
     { successes: successes, errors: errors }
   end
 
-  # Setup health check — reminders only fire on the exact days listed in
-  # reminder_days, so a blank list means no reminder ever sends despite the
-  # toggle being on.
+  # Setup health check — the reminder toggle fails closed, so an unset value
+  # silently disables reminders. (Reminder cadence needs no check: reminders
+  # fire on every run within the active window, and the window settings all
+  # have sane defaults when missing.)
   def self.config_issues(support_agent)
-    fields = support_agent.json_fields || {}
-    issues = missing_toggle_issues(support_agent, { "send_kpi_reminder" => "KPI submission reminder emails" })
-
-    if toggle_on?(support_agent, "send_kpi_reminder") && fields["reminder_days"].to_s.strip.blank?
-      issues << "'send_kpi_reminder' is enabled but 'reminder_days' is blank — no reminder will ever fire. Set days elapsed like '7,14,21'."
-    end
-
-    issues
+    missing_toggle_issues(support_agent, { "send_kpi_reminder" => "KPI submission reminder emails" })
   end
 
   private
