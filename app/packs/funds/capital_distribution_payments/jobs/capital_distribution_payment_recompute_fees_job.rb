@@ -1,6 +1,6 @@
 class CapitalDistributionPaymentRecomputeFeesJob < BulkActionJob
   def perform(capital_distribution_id, user_id = nil)
-    send_notification("Recomputing fees for all payments for distribution #{@capital_distribution}", user_id, :info)
+    send_notification("Recomputing fees for all payments for distribution #{@capital_distribution}", user_id, :info) if user_id.present?
 
     @error_msg = []
     @capital_distribution = CapitalDistribution.find(capital_distribution_id)
@@ -11,7 +11,7 @@ class CapitalDistributionPaymentRecomputeFeesJob < BulkActionJob
         processed_count += 1
       rescue StandardError => e
         msg = "Error recomputing fees for capital distribution payment #{capital_distribution_payment.id}: #{e.message}"
-        send_notification(msg, user_id, :danger)
+        send_notification(msg, user_id, :danger) if user_id.present?
         @error_msg << { msg:, folio_id: capital_distribution_payment.folio_id, capital_distribution_payment_id: capital_distribution_payment.id, for: capital_distribution_payment.capital_distribution }
       end
     end
@@ -19,10 +19,11 @@ class CapitalDistributionPaymentRecomputeFeesJob < BulkActionJob
     if @error_msg.present?
       @main_error = "Recompute completed for #{processed_count} records, with #{@error_msg.length} errors"
       msg = "#{@main_error}. Errors will be sent via email"
-      send_notification(msg, user_id, :danger)
-      send_error_notifications(msg, @error_msg, user_id, :danger)
+      send_notification(msg, user_id, :danger) if user_id.present?
+      # send notification with errors to user if user_id is present
+      send_errors_notification(msg, @error_msg, user_id, :danger) if user_id.present?
       email_errors
-    else
+    elsif user_id.present?
       send_notification("Recomputed fees for all capital distribution payments successfully for distribution #{@capital_distribution}", user_id, :success)
     end
   end
