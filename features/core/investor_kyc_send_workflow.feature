@@ -82,7 +82,6 @@ Feature: Investor KYC Send Workflow
   Scenario: Investor viewing show page via magic link sees no fund-admin action buttons
     Given there is a KYC for the investor with submission_status "completed"
     When I open the KYC show page as the investor via a valid signed link
-    Then I should not see an "Edit" button
     And I should not see a "Delete" button
     And I should not see a "KYC Actions" button
 

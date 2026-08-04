@@ -13,6 +13,10 @@ class FundRatioPolicy < FundBasePolicy
     user.enable_funds
   end
 
+  def bulk_actions?
+    index?
+  end
+
   def show?
     permissioned_employee? ||
       # fund_id is nil for cross-fund/cross-portfolio rows — skip investor check.

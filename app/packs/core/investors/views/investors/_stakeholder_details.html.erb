@@ -66,7 +66,7 @@
 
         <div id="notes-tab" class="tab-pane fade">
           <div id="notes" class="associated_entity">
-            <%= turbo_frame_tag "notes_frame", target: "_top", src: notes_path(investor_id: investor.id), loading: :lazy do %>
+            <%= turbo_frame_tag "notes_frame", target: "_top", src: notes_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>
               <%= render "/layouts/loading" %>
             <% end %>
           </div>

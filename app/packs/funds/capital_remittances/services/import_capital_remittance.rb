@@ -1,8 +1,13 @@
 class ImportCapitalRemittance < ImportUtil
-  STANDARD_HEADERS = ["Stakeholder", "Fund", "Capital Call", "Call Amount (Inclusive Of Capital Fees, Folio Currency)", "Capital Fees (Folio Currency)", "Other Fees (Folio Currency)", "Call Amount (Inclusive Of Capital Fees, Fund Currency)", "Capital Fees (Fund Currency)", "Other Fees (Fund Currency)", "Investment Amount (Fund Currency)", "Remittance Date", "Verified", "Folio No"].freeze
+  STANDARD_HEADERS = ["Fund", "Capital Call", "Call Amount (Inclusive Of Capital Fees, Folio Currency)", "Capital Fees (Folio Currency)", "Other Fees (Folio Currency)", "Call Amount (Inclusive Of Capital Fees, Fund Currency)", "Capital Fees (Fund Currency)", "Other Fees (Fund Currency)", "Investment Amount (Fund Currency)", "Remittance Date", "Verified", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  # Older templates may still carry a Stakeholder column - ignore it so it does not become a custom field
+  def ignore_headers
+    ["Stakeholder"]
   end
 
   # Method to save a row of user data
@@ -13,7 +18,7 @@ class ImportCapitalRemittance < ImportUtil
     fund, capital_call, investor, folio_id, capital_commitment = inputs(import_upload, user_data)
 
     # Check if all required entities are present and valid
-    if fund && capital_call && investor && capital_commitment && capital_commitment.investor_id == investor.id
+    if fund && capital_call && capital_commitment && investor
 
       # Create a new CapitalRemittance object
       capital_remittance = CapitalRemittance.new(
@@ -48,9 +53,7 @@ class ImportCapitalRemittance < ImportUtil
       # Raise appropriate errors if any required entity is missing or invalid
       raise "Fund not found" unless fund
       raise "Capital Call not found" unless capital_call
-      raise "Stakeholder not found" unless investor
       raise "Capital Commitment not found" unless capital_commitment
-      raise "Stakeholder and Commitment do not match" if capital_commitment.investor_id != investor.id
     end
   end
 
@@ -75,15 +78,13 @@ class ImportCapitalRemittance < ImportUtil
     # Find the capital call associated with the fund based on the name provided in user data
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"]).first
 
-    # Find the investor based on the name provided in user data
-    investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
-    raise "Stakeholder not found" unless investor
-
     # Retrieve the folio ID from user data
     folio_id = user_data["Folio No"]&.to_s
+    raise "Folio No must be specified" if folio_id.blank?
 
-    # Find the capital commitment associated with the fund, investor, and folio ID
-    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first
+    # Find the capital commitment purely via the folio ID - the investor is derived from the commitment
+    capital_commitment = fund.capital_commitments.where(folio_id:).first
+    investor = capital_commitment&.investor
 
     # Return the retrieved inputs as an array
     [fund, capital_call, investor, folio_id, capital_commitment]

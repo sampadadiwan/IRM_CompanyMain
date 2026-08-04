@@ -29,7 +29,9 @@ class ConvertKpiToCsvJob < ApplicationJob
         csv_file_path = "#{File.dirname(tmp_file.path)}/#{File.basename(tmp_file.path, '.*')}.csv"
         Rails.logger.debug { "Converting KPI file to CSV: #{kpi_file.name} -> #{csv_file_path}" }
 
-        _, stderr, status = Open3.capture3("soffice --headless --convert-to csv --outdir #{File.dirname(csv_file_path)} #{tmp_file.path}")
+        # Args passed as an array so paths cannot be interpreted as shell syntax
+        _, stderr, status = Open3.capture3("soffice", "--headless", "--convert-to", "csv",
+                                           "--outdir", File.dirname(csv_file_path), tmp_file.path)
 
         unless status.success?
           Rails.logger.error "LibreOffice conversion failed for #{kpi_file.name}. Stderr: #{stderr}"

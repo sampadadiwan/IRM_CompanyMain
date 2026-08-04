@@ -4,10 +4,6 @@ class NotesController < ApplicationController
   # GET /notes or /notes.json
   def index
     @bread_crumbs = { Notes: notes_path }
-    if params[:investor_id]
-      @investor = Investor.find(params[:investor_id])
-      @bread_crumbs[@investor.investor_name.to_s] = investor_path(@investor, tab: 'notes-tab')
-    end
 
     @q = Note.ransack(params[:q])
     if params[:q].nil? || params[:q][:s].blank?
@@ -15,22 +11,31 @@ class NotesController < ApplicationController
     end
 
     @notes = policy_scope(@q.result)
+    # Backward compatibility: some pages still send investor_id instead of owner_id/owner_type.
+    owner_id = params[:owner_id].presence
+    owner_type = params[:owner_type].presence
 
-    if params[:investor_id]
-      if current_user.curr_role == "employee"
-        # Employees can only see notes for investors they have access to
-        @investor = Investor.find(params[:investor_id])
-        authorize @investor, :show?
+    if owner_id.present?
+      if owner_type.present?
+        owner = owner_type.safe_constantize&.find_by(id: owner_id)
+        @notes = if owner.present? && policy(owner).show?
+                   @notes.where(owner_id:, owner_type:)
+                 else
+                   @notes.none
+                 end
+      else
+        # If owner_type is not provided, treat as Investor for legacy callers.
+        owner = policy_scope(Investor).find_by(id: owner_id)
+        @notes = if owner.present? && policy(owner).show?
+                   @notes.where(owner_id:, owner_type: "Investor")
+                 else
+                   @notes.none
+                 end
       end
-      @notes = @notes.where(investor_id: params[:investor_id])
     end
-
     @notes = @notes.where(user_id: params[:user_id]) if params[:user_id]
-    @notes = @notes.where(investor_id: params[:owner_id]) if params[:owner_id].present? && params[:owner_type] == "Investor"
-    @notes = @notes.where(investor_id: params[:investor_id]) if params[:investor_id]
-
     @notes = NoteSearch.perform(@notes, current_user, params)
-    @pagy, @notes = pagy(@notes.with_all_rich_text.includes(:user, :investor))
+    @pagy, @notes = pagy(@notes.with_all_rich_text.includes(:user, :owner))
   end
 
   def search
@@ -54,18 +59,24 @@ class NotesController < ApplicationController
 
   # GET /notes/new
   def new
-    @note = Note.new(note_params)
-    @note.investor_id = note_params[:owner_id] if note_params[:owner_type] == "Investor"
-    @note.entity_id ||= @note.investor.entity_id
+    # Here we have added owner_type and owner_id for the notes
+    # embedded_note_context is for handling special requirements for notes in deal context
+    @note = params[:note] ? Note.new(normalized_note_params) : Note.new
+    @note.owner_id ||= params[:owner_id]
+    @note.owner_type ||= params[:owner_type]
+    @note.owner_type ||= "User" if params[:embedded_note_context].blank?
+    @note.owner_type = "Investor" if @note.owner_id.present? && @note.owner_type.blank?
+    @note.owner_id = current_user.id if @note.owner_type == "User"
+    @note.entity_id ||= @note.owner&.entity_id
     @note.user_id ||= current_user.id
-    @note.on = Time.zone.today
+    # On should be blank by default
     @note.reminder = Reminder.new(entity_id: @note.entity_id)
 
     @bread_crumbs = { Notes: notes_path }
-    @bread_crumbs[@note.investor.investor_name.to_s] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
+    @bread_crumbs[@note.owner.investor_name.to_s] = investor_path(@note.owner, tab: 'notes-tab') if @note.owner.is_a?(Investor)
     @bread_crumbs[:New] = nil
 
-    authorize @note
+    authorize_note!(@note)
   end
 
   # GET /notes/1/edit
@@ -76,25 +87,43 @@ class NotesController < ApplicationController
 
   # POST /notes or /notes.json
   def create
-    @note = Note.new(note_params)
+    @note = Note.new(normalized_note_params)
+    @note.owner_type = "Investor" if @note.owner_id.present? && @note.owner_type.blank?
     @note.user_id = current_user.id
     @note.entity_id = current_user.entity_id
-    if @note.reminder.email.present?
+    # Held on to for the failure branch below: a reminder with no email is
+    # dropped before saving, but fields_for renders nothing when the association
+    # is nil, so re-rendering the form would silently lose the reminder inputs.
+    submitted_reminder = @note.reminder
+    if @note.reminder&.email.present?
       @note.reminder.entity_id = @note.entity_id
       @note.reminder.note = "Reminder for #{@note}"
     else
       @note.reminder = nil
     end
 
-    authorize @note
+    authorize_note!(@note)
 
     respond_to do |format|
       if @note.save
         # Redirect back to the originating page (e.g. a deal) if a safe relative return_to was provided
         redirect_target = params[:return_to].presence&.then { |url| url.start_with?('/') ? url : nil } || note_url(@note)
+        # Turbo sends the turbo-stream Accept header on every form submission, so
+        # this branch is reached by the standalone /notes/new page too — where the
+        # stream's targets do not exist. Only the inline form gets the stream.
+        format.turbo_stream do
+          if params[:inline_frame] == "new_note"
+            render :create
+          else
+            redirect_to redirect_target, notice: "Note was successfully created."
+          end
+        end
         format.html { redirect_to redirect_target, notice: "Note was successfully created." }
         format.json { render :show, status: :created, location: @note }
       else
+        # Put the reminder back so the form keeps its inputs — and whatever the
+        # user had typed into them — instead of re-rendering without them.
+        @note.reminder ||= submitted_reminder
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @note.errors, status: :unprocessable_entity }
       end
@@ -103,7 +132,9 @@ class NotesController < ApplicationController
 
   # PATCH/PUT /notes/1 or /notes/1.json
   def update
-    np = note_params
+    np = normalized_note_params
+    # Owner is immutable after creation; keep persisted owner linkage on edit.
+    np = np.except(:owner_id, :owner_type)
     if params[:note] && params[:note][:reminder_attributes] && params[:note][:reminder_attributes][:email].present?
       @note.build_reminder(entity_id: @note.entity_id, note: "Reminder for #{@note}") unless @note.reminder
     else
@@ -116,6 +147,9 @@ class NotesController < ApplicationController
         format.html { redirect_to note_url(@note), notice: "Note was successfully updated." }
         format.json { render :show, status: :ok, location: @note }
       else
+        # Same as create: the reminder was cleared above when the email was left
+        # blank, and without it fields_for drops the reminder inputs.
+        @note.build_reminder(entity_id: @note.entity_id) unless @note.reminder
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @note.errors, status: :unprocessable_entity }
       end
@@ -125,7 +159,6 @@ class NotesController < ApplicationController
   # DELETE /notes/1 or /notes/1.json
   def destroy
     @note.destroy
-
     respond_to do |format|
       format.html { redirect_to notes_url, notice: "Note was successfully deleted." }
       format.json { head :no_content }
@@ -139,12 +172,40 @@ class NotesController < ApplicationController
     @note = Note.find(params[:id])
     authorize @note
     @bread_crumbs = { Notes: notes_path }
-    @bread_crumbs[@note.investor.investor_name.to_s] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
+    @bread_crumbs[@note.owner.investor_name.to_s] = investor_path(@note.owner, tab: 'notes-tab') if @note.owner.is_a?(Investor)
     @bread_crumbs[@note.to_s] = note_path(@note)
   end
 
   # Only allow a list of trusted parameters through.
   def note_params
-    params.require(:note).permit(:tags, :details, :entity_id, :user_id, :investor_id, :on, reminder_attributes: %i[due_date email])
+    params.require(:note).permit(:tags, :details, :entity_id, :user_id, :owner_id, :owner_type, :on, reminder_attributes: %i[due_date email])
+  end
+
+  def normalized_note_params
+    attrs = note_params.to_h
+
+    case params[:embedded_note_context].presence
+    when "deal_tab"
+      attrs["owner_type"] = "DealInvestor"
+    when "deal_investor_tab"
+      attrs["owner_type"] = "DealInvestor"
+      locked_owner_id = params[:embedded_owner_id].presence || params[:owner_id].presence || attrs["owner_id"]
+      attrs["owner_id"] = locked_owner_id if locked_owner_id.present?
+    end
+
+    attrs["owner_id"] = current_user.id if attrs["owner_type"] == "User"
+    attrs
+  end
+
+  def embedded_deal_investor_context?
+    params[:embedded_note_context].presence == "deal_investor_tab" || params[:from] == "deal_details"
+  end
+
+  def authorize_note!(note)
+    if embedded_deal_investor_context? && note.owner.is_a?(DealInvestor)
+      authorize note, :deal_note_create?
+    else
+      authorize note
+    end
   end
 end

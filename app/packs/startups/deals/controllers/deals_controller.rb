@@ -251,7 +251,7 @@ class DealsController < ApplicationController
     @deal.entity_id = current_user.entity_id
     authorize @deal
 
-    results = CreateDeal.call(deal: @deal)
+    results = CreateDeal.call(deal: @deal, current_user: current_user)
     respond_to do |format|
       if results.success?
         format.html { redirect_to deal_url(@deal), notice: "Deal was successfully created." }
@@ -319,7 +319,7 @@ class DealsController < ApplicationController
     params.require(:deal).permit(:name, :amount, :status, :form_type_id, :clone_from_id, :tags,
                                  :start_date, :currency, :units, :activity_list, :archived, :skip_templates,
                                  :grid_columns, :deal_investor_status, :enable_notifications,
-                                 card_view_attrs: [], properties: {})
+                                 properties: {})
   end
 
   def find_or_initialize_deals_agent

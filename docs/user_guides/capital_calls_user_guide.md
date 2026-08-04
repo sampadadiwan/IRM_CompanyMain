@@ -521,11 +521,11 @@ Each row creates a call. Key columns: Fund, Name (unique per fund), Percentage C
 
 ### Importing remittances
 
-Key columns: Stakeholder (investor), Fund, Capital Call, Call Amount in folio currency (inclusive of capital fees), Capital Fees, Other Fees, optional fund-currency overrides, Investment Amount, Remittance Date, Verified, and Folio No. The investor must already have a commitment in that fund under the given folio. Imported remittances use the "Upload" basis.
+Key columns: Fund, Capital Call, Call Amount in folio currency (inclusive of capital fees), Capital Fees, Other Fees, optional fund-currency overrides, Investment Amount, Remittance Date, Verified, and Folio No. Each row is matched to the investor through the Folio No, so a commitment must already exist in that fund under the given folio. Imported remittances use the "Upload" basis.
 
 ### Importing payments
 
-Key columns: Stakeholder, Fund, Capital Call, Amount (folio currency), Currency, optional fund-currency amount, Folio No *or* Virtual Bank Account, Verified, Reference No, Payment Date, Notes, and Update Only.
+Key columns: Fund, Capital Call, Amount (folio currency), Currency, optional fund-currency amount, Folio No *or* Virtual Bank Account, Verified, Reference No, Payment Date, Notes, and Update Only. Each row is matched to the investor through the Folio No (or Virtual Bank Account).
 
 - Either a Folio No or a Virtual Bank Account is required.
 - The currency must match the investor's commitment currency.

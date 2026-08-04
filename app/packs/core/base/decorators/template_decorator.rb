@@ -211,6 +211,12 @@ class TemplateDecorator < ApplicationDecorator
       return false unless object.respond_to?(:documents)
 
       return documents.exists?(name: doc_name_humanized)
+    elsif (match_data = method_name.to_s.match(/^div_(\d+)_(.+)/))
+      # This is used in the template to divide a number attribute by 10^N
+      # for example div_7_committed_amount divides committed_amount by 10,000,000 (1 crore)
+      divisor = 10**match_data[1].to_i
+      attr_name = match_data[2]
+      return send(attr_name).to_d / divisor
     end
     super
   rescue StandardError => e

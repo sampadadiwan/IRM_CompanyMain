@@ -42,8 +42,12 @@ class ImportKpiWorkbookJob < ApplicationJob
         ).send_report.deliver_now
       end
 
-      # Kick of percentage change job
-      KpiPercentageChangeJob.perform_later(portfolio_company.id, user.id)
+      # Kick off the percentage change job synchronously. extract_kpis above already ran cumulation
+      # (KpiCumulateJob.perform_now inside KpiWorkbookReader), so running this inline right after
+      # guarantees percentages cover the cumulated Quarter/YTD/Year KPIs too. Queuing it instead
+      # gave no ordering guarantee and imported KPIs could briefly show missing MoM/YoY changes.
+      # We're already in a background job, so there's no latency benefit to enqueuing another one.
+      KpiPercentageChangeJob.perform_now(portfolio_company.id, user.id)
 
       # Must run after extract_kpis: launch_portfolio_company_workflow checks kpis.none?
       # to decide whether anything was actually imported, so the Kpi rows need to exist first.

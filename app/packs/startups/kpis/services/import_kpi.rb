@@ -28,11 +28,18 @@ class ImportKpi < ImportUtil
 
     entity_id = import_upload.entity_id
     kpi_report = setup_kpi_report(entity_id, portfolio_company, user_data, import_upload)
-    investor_kpi_mapping = InvestorKpiMapping.find_by(reported_kpi_name: name)
-    name = investor_kpi_mapping&.standard_kpi_name || name
+    # The mapping lookup is scoped to this portfolio company (it used to be global, so a company
+    # could silently pick up another company's mapping for the same reported name) and is now
+    # REQUIRED: Kpi validates investor_kpi_mapping_id on new records, so importing without one
+    # would create rows that can never be approved. Raising here fails just this row and surfaces
+    # the missing mapping in the import results, telling the user to upload mappings first.
+    investor_kpi_mapping = InvestorKpiMapping.find_by(investor_id: portfolio_company.id, reported_kpi_name: name)
+    raise "InvestorKpiMapping not found for #{name} in #{portfolio_company&.name}" if investor_kpi_mapping.blank?
+
+    name = investor_kpi_mapping.standard_kpi_name || name
 
     # Look for existing approved KPI
-    existing_approved = Kpi.approved.find_by(name:, entity_id:, kpi_report_id: kpi_report.id, portfolio_company:)
+    existing_approved = Kpi.approved.find_by(name:, entity_id:, kpi_report_id: kpi_report.id, portfolio_company:, investor_kpi_mapping_id: investor_kpi_mapping&.id)
 
     # Don't create anything if the value is the same as already approved
     if existing_approved && existing_approved.value.to_d.round(6) == value.to_d.round(6)
@@ -41,7 +48,7 @@ class ImportKpi < ImportUtil
     end
 
     # Find or initialize an unapproved KPI
-    kpi = Kpi.unapproved.where(name:, entity_id:, kpi_report_id: kpi_report.id, portfolio_company:).first_or_initialize
+    kpi = Kpi.unapproved.where(name:, entity_id:, kpi_report_id: kpi_report.id, portfolio_company:, investor_kpi_mapping_id: investor_kpi_mapping&.id).first_or_initialize
 
     Rails.logger.debug user_data
     kpi.assign_attributes(notes:, value:, display_value: value, import_upload_id: import_upload.id, investor_kpi_mapping:)

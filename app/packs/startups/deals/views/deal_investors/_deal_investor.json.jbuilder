@@ -1,4 +1,5 @@
-json.extract! deal_investor, :id, :deal_id, :investor_id, :status, :entity_id, :created_at, :updated_at, :investor_name, :tier, :investor_advisor, :health_score, :tags, :deal_lead, :source
+json.extract! deal_investor, :id, :deal_id, :investor_id, :status, :entity_id, :created_at, :updated_at, :investor_name, :tier, :investor_advisor, :health_score, :tags, :deal_lead, :source, :last_interaction_date
+json.can_update policy(deal_investor).update?
 json.properties deal_investor.json_fields
 json.investor_logo_url deal_investor.investor&.investor_entity&.logo_url if deal_investor.investor&.investor_entity&.logo.present?
 json.investor_initials deal_investor.investor&.investor_name&.split&.map(&:first)&.join&.upcase if deal_investor.investor&.investor_name.present?

@@ -61,6 +61,33 @@ Given('there are {string} deal_investors for the deal') do |arg|
   @deal.reload
 end
 
+Given('the deal has {int} paginated investors') do |count|
+  count.times do |index|
+    investor_entity = FactoryBot.create(
+      :entity,
+      entity_type: 'Investor',
+      name: "Grid Fix Investor Entity #{index + 1}"
+    )
+    investor = FactoryBot.create(
+      :investor,
+      entity: @deal.entity,
+      investor_entity: investor_entity,
+      investor_name: "Grid Fix Investor #{index + 1}"
+    )
+
+    FactoryBot.create(
+      :deal_investor,
+      deal: @deal,
+      entity: @deal.entity,
+      investor: investor,
+      investor_name: investor.investor_name,
+      status: 'Active'
+    )
+  end
+
+  @deal.reload
+end
+
 Given('I should see the deal investors in the deal details page') do
   visit(deal_path(@deal))
   expect(page).to have_selector("#deals_list_grid .ag-root-wrapper", wait: 20)
@@ -211,4 +238,63 @@ Then('I {string} see the deal investors in the deal details page') do |should|
     # Employee has no access — grid container should not be rendered OR page redirected
     expect(page).not_to have_selector("#deals_list_grid", wait: 5)
   end
+end
+
+Then('the deal list grid should apply the first-row and pagination fixes') do
+  expect(page).to have_selector('#deals_list_grid.ag-fixed-layout-managed', wait: 20)
+  expect(page).to have_selector('#deals_list_grid .ag-root-wrapper', wait: 20)
+  expect(page).to have_selector('#deals_list_grid .ag-paging-panel', wait: 20)
+  expect(page).to have_selector("#deals_list_grid .ag-center-cols-container .ag-row[row-index='0']", wait: 20)
+
+  page.execute_script(<<~JS)
+    (() => {
+      const gridElement = document.getElementById('deals_list_grid');
+      const viewport = gridElement?.querySelector('.ag-body-viewport');
+      if (viewport) viewport.scrollTop = 600;
+
+      const api = window.DealsGrid?.gridOptions?.api;
+      if (window.DealsGrid && api) {
+        window.DealsGrid.ensureFirstRowVisible({ api });
+      }
+    })();
+  JS
+
+  deadline = Time.now + 5
+  grid_state = nil
+
+  loop do
+    grid_state = page.evaluate_script(<<~JS)
+      (() => {
+        const gridElement = document.getElementById('deals_list_grid');
+        const viewport = gridElement?.querySelector('.ag-body-viewport');
+        const pagination = gridElement?.querySelector('.ag-paging-panel');
+        const rowSummary = gridElement?.querySelector('.ag-paging-row-summary-panel');
+        const firstRow = gridElement?.querySelector(".ag-center-cols-container .ag-row[row-index='0']");
+        const header = gridElement?.querySelector('.ag-header');
+
+        return {
+          hasManagedClass: Boolean(gridElement?.classList.contains('ag-fixed-layout-managed')),
+          scrollTop: viewport?.scrollTop ?? null,
+          paginationWrap: pagination ? getComputedStyle(pagination).flexWrap : null,
+          paginationWhiteSpace: pagination ? getComputedStyle(pagination).whiteSpace : null,
+          rowSummaryWhiteSpace: rowSummary ? getComputedStyle(rowSummary).whiteSpace : null,
+          firstRowTop: firstRow ? firstRow.getBoundingClientRect().top : null,
+          headerBottom: header ? header.getBoundingClientRect().bottom : null
+        };
+      })();
+    JS
+
+    break if grid_state['scrollTop'] == 0
+    raise "Timed out waiting for AG Grid first-row visibility fix: #{grid_state.inspect}" if Time.now >= deadline
+
+    sleep(0.1)
+  end
+
+  expect(grid_state['hasManagedClass']).to eq(true)
+  expect(grid_state['paginationWrap']).to eq('nowrap')
+  expect(grid_state['paginationWhiteSpace']).to eq('nowrap')
+  expect(grid_state['rowSummaryWhiteSpace']).to eq('nowrap')
+  expect(grid_state['firstRowTop']).not_to be_nil
+  expect(grid_state['headerBottom']).not_to be_nil
+  expect(grid_state['firstRowTop']).to be >= grid_state['headerBottom']
 end

@@ -3,7 +3,7 @@ class FormCustomField < ApplicationRecord
 
   VALID_FIELD_TYPES = %w[TextField NumberField DateField TextArea CheckBox Radio Select
                          DataList MultiSelect Money File Header GridColumns Calculation].freeze
-  OPTION_FIELD_TYPES = %w[Select Radio CheckBox DataList MultiSelect].freeze
+  OPTION_FIELD_TYPES = %w[Select Radio DataList MultiSelect].freeze
   VALID_CONDITION_CRITERIAS = %w[eq not_eq contains lt lte gt gte].freeze
   VALID_CONDITION_STATES = %w[show].freeze
   VALID_FORMATS = %w[email phone url alphanumeric pan gstin ifsc].freeze
@@ -60,7 +60,21 @@ class FormCustomField < ApplicationRecord
 
   has_rich_text :info
 
-  RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select", CheckBox: "/form_custom_fields/display/check_box" }.freeze
+  RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select", CheckBox: "/form_custom_fields/display/check_box", NumberField: "/form_custom_fields/display/number" }.freeze
+
+  # NumberField meta_data holds "precision,separator", e.g. "2,comma" or "0,none".
+  # Blank meta_data means no formatting is applied (raw value is displayed).
+  NUMBER_FORMAT_DELIMITERS = { "comma" => ",", "none" => "" }.freeze
+
+  def number_format
+    return nil unless field_type == "NumberField" && meta_data.present?
+
+    precision_part, separator_part = meta_data.split(",", 2).map { |s| s.to_s.strip }
+    precision = Integer(precision_part, exception: false)
+    return nil if precision.nil? || precision.negative?
+
+    { precision: precision, delimiter: NUMBER_FORMAT_DELIMITERS.fetch(separator_part, ",") }
+  end
 
   UNFILTERABLE_TYPES = %w[File Header GridColumns Calculation].freeze
 
@@ -78,6 +92,7 @@ class FormCustomField < ApplicationRecord
 
   validate :meta_data_kosher?, if: -> { field_type == "Calculation" }
   validate :meta_data_present_for_option_types
+  validate :meta_data_currency_valid?, if: -> { field_type == "Money" }
   validate :name_normalizes_to_non_blank
   validate :validation_rules_consistent, if: -> { validation_rules.present? && VALID_FIELD_TYPES.include?(field_type) }
 
@@ -89,6 +104,18 @@ class FormCustomField < ApplicationRecord
     return unless OPTION_FIELD_TYPES.include?(field_type)
 
     errors.add(:meta_data, "must provide at least one option for #{field_type}") if meta_data.blank?
+  end
+
+  def meta_data_currency_valid?
+    return if meta_data.blank?
+
+    errors.add(:meta_data, "must be a valid ISO currency code, e.g. USD") if Money::Currency.find(meta_data.strip).nil?
+  end
+
+  # meta_data holds an ISO currency code (e.g. "USD") that overrides the model's own
+  # currency when displaying a Money field. Blank meta_data falls back to model.currency.
+  def money_currency(model)
+    meta_data.presence&.strip || (model.currency if model.respond_to?(:currency))
   end
 
   def name_normalizes_to_non_blank

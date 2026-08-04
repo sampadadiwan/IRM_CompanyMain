@@ -196,3 +196,21 @@ Scenario Outline: Import Fund Ratio with Scenario
   Examples:
       |user     |entity                                 |fund                 |
       |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |
+
+Scenario: Fund Ratio changes are recorded in the audit trail
+  Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  Given the fund has "1" Fund Ratios
+  Then the fund ratio should have a "create" audit trail entry
+  When the fund ratio notes is updated to "Updated Notes For Audit"
+  Then the fund ratio should have an "update" audit trail entry for "notes"
+
+Scenario: Fund Ratios deleted through bulk actions are recorded in the audit trail
+  Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  Given the fund has "3" Fund Ratios
+  Given I log in as user "Test"
+  When I bulk delete all fund ratios for the fund via the UI
+  Then all fund ratios for the fund should be soft deleted with a "destroy" audit trail entry

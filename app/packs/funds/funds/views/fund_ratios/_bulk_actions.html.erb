@@ -1,0 +1,22 @@
+<% if params[:q].present? %>
+
+<div class="btn-group">
+<div class="dropdown">
+    <button class="btn btn-outline-primary dropdown-toggle ti ti-checklist" type="button" id="fund_ratio_bulk_actions"
+            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Bulk Actions
+    </button>
+
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+    <% msg = "This will delete each fund ratio in the search results (including results on other pages) that you have permission to delete. This cannot be undone. Proceed?" %>
+    <%= button_to "Delete",
+    bulk_actions_fund_ratios_path("bulk_action": "Delete", q: params.to_unsafe_h[:q], fund_id: params[:fund_id]),
+    class: "dropdown-item ti ti-trash", form_class: "w-100",
+    data: {msg:, action: "click->confirm#popup", method: :post}  %>
+
+    </div>
+</div>
+</div>
+
+<% end %>

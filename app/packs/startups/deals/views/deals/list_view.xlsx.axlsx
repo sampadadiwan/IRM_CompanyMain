@@ -23,7 +23,7 @@ wb.styles do |style|
     "Deal Investor", "Status", "Tags", "Source", "Deal Lead", "Tier",
     "Primary Amount (#{currency})", "Secondary Amount (#{currency})",
     "Pre Money Valuation (#{currency})", "Fee (#{currency})", "Total Amount (#{currency})",
-    "Investor Advisor", "Company Advisor", "Notes", "Health Score"
+    "Investor Advisor", "Company Advisor", "Notes", "Health Score", "Last Interaction"
   ]
 
   wb.add_worksheet(name: "Deal Investors") do |sheet|
@@ -45,7 +45,8 @@ wb.styles do |style|
         di.investor_advisor,
         di.company_advisor,
         di.notes.to_plain_text.presence,
-        di.health_score
+        di.health_score,
+        di.last_interaction_date
       ], style: [
         nil,                          # Deal Investor
         status_styles[di.status],     # Status
@@ -61,11 +62,12 @@ wb.styles do |style|
         nil,                          # Investor Advisor
         nil,                          # Company Advisor
         nil,                          # Notes
-        centered_style                # Health Score
+        centered_style,               # Health Score
+        centered_style                # Last Interaction
       ])
     end
 
-    sheet.auto_filter = "A1:O1"
+    sheet.auto_filter = "A1:P1"
     sheet.sheet_view.pane do |pane|
       pane.top_left_cell = 'A2'
       pane.state = :frozen

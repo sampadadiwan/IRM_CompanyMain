@@ -43,8 +43,9 @@
       <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
       <!-- Tracking -->
+      <!-- NOTE: /js/clarity.js was deleted when the Clarity loader moved inline
+           (CDN) into the modernize layout — a local reference here just 404s. -->
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-4CPQNX69HM"></script>
-      <script src="/js/clarity.js"></script>
       <!-- PDFTron -->
       <script src='/lib/webviewer.min.js'></script>
       <script src='/lib/core/webviewer-core.min.js'></script>
@@ -54,12 +55,15 @@
       <script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
       <!-- Include the JS for AG Grid -->
       <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@30.2.1/dist/ag-grid-enterprise.min.js"></script>
-      <!-- Include the core CSS, this is needed by the grid -->
+      <!-- Include the core CSS, this is needed by the grid.
+           CSS pinned to 32.3.9: last release shipping the legacy quartz theme (grids get their
+           theme class from AgGridHelper#get_ag_theme, which always emits ag-theme-quartz);
+           v33+ removed legacy theme CSS and quartz does not exist in v30. -->
       <link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
+      href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.9/styles/ag-grid.css"/>
       <!-- Include the theme CSS, only need to import the theme you are going to use -->
       <link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>
+      href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.9/styles/ag-theme-quartz.css"/>
     </head>
     <body id="page-top" data-controller="confirm" data-turbo-prefetch="false" <%= 'data-turbo-testing' if Rails.env.test? %>>
 

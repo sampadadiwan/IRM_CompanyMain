@@ -194,7 +194,10 @@ class Document < ApplicationRecord
     self.owner ||= folder.owner
     # This marks the document as a template. Templates are used in document (mail merge) generation
     # Templates can also have optional e_signatures, which cause the generated documents to be signed
-    self.template ||= owner_tag&.include?("Template")
+    # Coerce to a strict boolean: owner_tag&.include? returns nil when owner_tag is nil, and
+    # assigning nil here violates the NOT NULL constraint on documents.template if this record
+    # is later persisted by a callbacks-skipping save (e.g. Shrine's post-promotion persist)
+    self.template ||= owner_tag&.include?("Template") || false
   end
 
   def setup_entity

@@ -44,6 +44,22 @@ class Task < ApplicationRecord
 
   # counter_culture :entity, column_name: proc { |t| t.completed ? nil : 'tasks_count' }
 
+  # Every completion route — the list-row checkbox, the form's `completed` box, and
+  # TasksController#completed — goes through save, so stamping here covers them all
+  # without a new form field.
+  before_save :stamp_completed_on, if: :will_save_change_to_completed?
+  after_save :register_owner_interaction, if: :saved_change_to_completed_on?
+
+  def stamp_completed_on
+    self.completed_on = completed? ? Time.zone.today : nil
+  end
+
+  def register_owner_interaction
+    return unless completed? && owner.is_a?(DealInvestor)
+
+    owner.register_interaction(completed_on)
+  end
+
   after_commit :send_notification, unless: :destroyed?
   def send_notification
     return if task_recurrence_rule_id.present? || send_notification_flag == false
@@ -66,7 +82,7 @@ class Task < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[category completed details due_date tags]
+    %w[category completed completed_on details due_date tags]
   end
 
   def self.ransackable_associations(_auth_object = nil)

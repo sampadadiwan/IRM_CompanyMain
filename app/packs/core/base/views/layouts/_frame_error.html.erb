@@ -1,0 +1,16 @@
+<%# Hidden template cloned into a <turbo-frame> by custom/turbo_frame_error_handler.js
+    when a frame response is broken (missing frame, 5xx, or network error).
+    data-sign-in-path lets the JS detect expired-session redirects without hardcoding routes. %>
+<template id="turbo-frame-error-template" data-sign-in-path="<%= new_user_session_path %>">
+  <div class="turbo-frame-error card" role="alert">
+    <div class="card-body d-flex align-items-center gap-3">
+      <i class="ti ti-alert-triangle turbo-frame-error-icon" aria-hidden="true"></i>
+      <div class="flex-grow-1">
+        <p class="mb-0"><%= t("turbo_frame_error.message") %></p>
+      </div>
+      <button type="button" class="btn btn-outline-primary" data-turbo-frame-error-retry>
+        <%= t("turbo_frame_error.retry") %>
+      </button>
+    </div>
+  </div>
+</template>

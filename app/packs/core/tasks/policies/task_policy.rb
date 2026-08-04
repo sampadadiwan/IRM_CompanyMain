@@ -36,8 +36,14 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def create?
-    permissioned_employee?(:create) ||
-      user.entity_id == record.for_entity_id
+    return true if support?
+    return false unless belongs_to_entity?(user, record)
+    return true if user.has_cached_role?(:company_admin)
+    return true if crud?(user, record, :create)
+    return true if record.owner.blank? && user.has_cached_role?(:employee)
+    return true if record.owner.blank? # Allow creation when owner not yet set
+
+    owner_policy.update?
   end
 
   def new?

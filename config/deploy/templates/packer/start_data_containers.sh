@@ -28,9 +28,16 @@ fi
 # Keep tags in sync with the `docker pull` lines in db_redis_es.ami.pkr.hcl.
 if ! docker ps --format '{{.Names}}' | grep -qx elasticsearch; then
   log "starting elasticsearch"
-  docker run -d --rm --name elasticsearch -p 9200:9200 -p 9300:9300 \
-    -e ES_JAVA_OPTS="-Xms512m -Xmx512m" \
-    -e "discovery.type=single-node" -e "xpack.security.enabled=false" \
+
+  docker run -d --rm \
+    --name elasticsearch \
+    --memory=4g \
+    -p 9200:9200 \
+    -p 9300:9300 \
+    -v elasticsearch-data:/usr/share/elasticsearch/data \
+    -e ES_JAVA_OPTS="-Xms2g -Xmx2g" \
+    -e "discovery.type=single-node" \
+    -e "xpack.security.enabled=false" \
     elasticsearch:8.19.0
 fi
 

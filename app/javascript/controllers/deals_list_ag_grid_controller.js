@@ -2,7 +2,17 @@ import BaseAgGrid from "controllers/base_ag_grid"
 import moment from 'moment'
 import * as bootstrap from "bootstrap"
 
+// Row-menu actions that open the offcanvas on a specific tab with that tab's
+// "new" form already popped. paneId/frameId mirror the ids rendered by
+// deal_investors/_deal_investor_deal_details.html.erb.
+const PANEL_ACTIONS = {
+  new_task: { paneId: "tasks-tab", tabFrameId: "tasks_frame", newRecordFrameId: "new_task" },
+  new_note: { paneId: "notes-tab", tabFrameId: "notes_frame", newRecordFrameId: "new_note" }
+};
+
 export default class extends BaseAgGrid {
+  static targets = ["search"]
+
   static values = {
     dealId: Number,
     investorLabel: String,
@@ -48,6 +58,45 @@ export default class extends BaseAgGrid {
       .filter((status) => status.length > 0);
 
     return cleanedStatuses.length ? cleanedStatuses : fallbackStatuses;
+  }
+
+  // Common method to check user has permission to update the row
+  canUpdateRow(data) {
+    return !!(data && data.can_update);
+  }
+
+  // Common method to show Access Denied message for user_alert configured on the page
+  showAccessDenied(message = 'Access denied: you do not have permission to update this deal investor.') {
+    const now = Date.now();
+    if (this._lastAccessDeniedAt && (now - this._lastAccessDeniedAt) < 1500) return;
+    this._lastAccessDeniedAt = now;
+
+    const host = document.getElementById('user_alert');
+    if (!host) {
+      alert(message);
+      return;
+    }
+
+    host.innerHTML = `
+      <div id="page_alerts" class="page_alerts">
+        <div class="alert alert-danger alert-dismissible border-0 fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      </div>
+    `;
+
+    // Timeout to let the turbo frame load completely for multiple turbo messages
+    setTimeout(() => {
+      const alertEl = host.querySelector('.alert');
+      if (!alertEl) return;
+      const dismiss = alertEl.querySelector('[data-bs-dismiss="alert"]');
+      if (dismiss) {
+        dismiss.click();
+      } else {
+        alertEl.remove();
+      }
+    }, 4000);
   }
 
   columnDefs() {
@@ -110,12 +159,14 @@ export default class extends BaseAgGrid {
         minWidth: 350,
         suppressSizeToFit: true,
         wrapText: true,
+        // Opts this column into the quick filter (defaultColDef opts every other
+        // one out). Tags are included so searching a tag surfaces the row too.
+        getQuickFilterText: (params) => [params.value, params.data?.tags].filter(Boolean).join(' '),
         cellRenderer: (params) => {
           if (params.data) {
             const logoUrl = params.data.investor_logo_url;
             const initials = params.data.investor_initials || '??';
             const tags = params.data.tags || '';
-            const notes = params.data.notes || '';
 
             const avatarHtml = logoUrl
               ? `<img src="${logoUrl}" class="rounded-circle" alt="user" width="50" height="50">`
@@ -127,17 +178,19 @@ export default class extends BaseAgGrid {
               return `<a href="${url.toString()}" class="badge rounded-pill bg-info-subtle text-primary border-info-subtle me-1 mb-1" style="font-weight: 500; text-decoration: none; font-size: 0.75rem !important; padding: 0.2rem 0.5rem !important;">${tag}</a>`;
             }).join('');
 
-            const tooltipAttr = notes ? `data-bs-toggle="tooltip" data-bs-html="true" title="${notes.replace(/"/g, '"')}"` : '';
-
+            // dont need to shoe remarks tooltip anymore
+            // The row-actions caret carries no data-action: setupRowActionsMenu()
+            // handles it with a delegated listener, since the menu it opens lives
+            // on document.body. can_update rides along so the menu can hide Edit.
             return `
-              <div class="d-flex flex-row comment-row" style="white-space: normal !important; line-height: 1.2; padding: 12px 16px; gap: 12px; height: 100%;">
+              <div class="d-flex flex-row comment-row w-100" style="white-space: normal !important; line-height: 1.2; padding: 12px 16px; gap: 12px; height: 100%;">
                 <div class="flex-shrink-0 d-flex align-items-center">
                   <span>${avatarHtml}</span>
                 </div>
                 <div class="comment-text w-100 d-flex flex-column justify-content-center">
                   <div class="d-flex align-items-center mb-1">
                     <h6 class="fw-medium mb-0 me-2">
-                      <a href="#" data-action="click->deals-list-ag-grid#openSidepanel" data-id="${params.data.id}" class="text-dark" ${tooltipAttr}>${params.value}</a>
+                      <a href="#" data-action="click->deals-list-ag-grid#openSidepanel" data-id="${params.data.id}" class="text-dark">${params.value}</a>
                     </h6>
                   </div>
 
@@ -149,6 +202,16 @@ export default class extends BaseAgGrid {
                     <div class="d-flex align-items-center">
                     </div>
                   </div>
+                </div>
+                <div class="flex-shrink-0 d-flex align-items-center ms-auto">
+                  <a href="#"
+                     class="btn btn-outline-primary deals-row-actions"
+                     data-id="${params.data.id}"
+                     data-can-update="${params.data.can_update}"
+                     aria-label="Row actions"
+                     title="Actions">
+                    <i class="fa-solid fa-caret-down" aria-hidden="true"></i>
+                  </a>
                 </div>
               </div>
             `;
@@ -281,14 +344,18 @@ export default class extends BaseAgGrid {
             const entityId = params.data.entity_id || '';
             const dealInvestorId = params.data.id || '';
             const activityName = encodeURIComponent(activity.title || '');
+            const canUpdate = this.canUpdateRow(params.data);
+            const chevron = canUpdate ? '<i class="ti ti-chevron-down" style="font-size:0.7rem; vertical-align:middle;"></i>' : '';
+
             return `<span class="badge ${badgeClass} activity-badge"
                           style="cursor:pointer; font-size:0.85rem;"
                           data-activity-id="${id}"
                           data-activity-status="${status}"
                           data-entity-id="${entityId}"
                           data-deal-investor-id="${dealInvestorId}"
-                          data-activity-name="${activityName}">
-                      ${status} <i class="ti ti-chevron-down" style="font-size:0.7rem; vertical-align:middle;"></i>
+                          data-activity-name="${activityName}"
+                          data-can-update="${canUpdate}">
+                      ${status} ${chevron}
                     </span>`;
           },
           valueGetter: (params) => {
@@ -379,6 +446,13 @@ export default class extends BaseAgGrid {
       }
     });
 
+    // The grid's default order comes from the server sorted on this date, so showing
+    // it keeps the row order self-explanatory. Read-only: it is derived from notes'
+    // "On" dates and completed tasks, never typed in here.
+    if (!columns.some(c => c.field === 'last_interaction_date')) {
+      columns.push(this.dateFormatColumn(this, 'last_interaction_date', 'Last Interaction'));
+    }
+
     // When the deal has explicit column config:
     // - Base hardcoded + activity columns always show (investor_name, status, tier …)
     // - Configured extra columns are added; unconfigured extras (primary_amount etc.) are hidden
@@ -453,7 +527,11 @@ export default class extends BaseAgGrid {
         },
         onVirtualColumnsChanged: () => { this.initTooltips(); this.setRowIds(); },
         onBodyScroll: () => { this.initTooltips(); this.setRowIds(); },
-        onFirstDataRendered: () => { this.initTooltips(); this.setRowIds(); },
+        onFirstDataRendered: (event) => {
+          this.ensureFirstRowVisible(event);
+          this.initTooltips();
+          this.setRowIds();
+        },
         getRowClass: (params) => {
             return params.data && params.data.id ? `deal_investor_${params.data.id}` : '';
         }
@@ -485,14 +563,21 @@ export default class extends BaseAgGrid {
         filter: 'agTextColumnFilter',
         sortable: true,
         minWidth: 120,
+        // Quick filter searches the investor name only; columns opt in by
+        // overriding this (see investor_name in columnDefs).
+        getQuickFilterText: () => '',
     };
+    // Search text is built once per row instead of on every keystroke.
+    this.gridOptions.cacheQuickFilter = true;
 
     // Capture the base class's onGridReady to wrap it
     const baseOnGridReady = (event) => {
         this.gridOptions.api = event.api;
         this.gridOptions.columnApi = event.columnApi;
+      this.configureFixedLayoutFixes();
         this.restoreColumnVisibilityState(this.gridOptions, this.tableNameValue);
         this.gridReady();
+      this.refreshGridLayout(event);
     };
 
     this.gridOptions.onGridReady = (event) => {
@@ -574,6 +659,7 @@ export default class extends BaseAgGrid {
     console.log("Initializing grid with manually merged options:", this.gridOptions);
 
     let gridDiv = document.querySelector(tableName);
+    this.gridElement = gridDiv;
     this.grid = new agGrid.Grid(gridDiv, this.gridOptions);
 
     this.loadData();
@@ -601,9 +687,22 @@ export default class extends BaseAgGrid {
   }
 
   onCellValueChanged(params) {
+    if (this._suppressCellValueChanged) return;
+
     const id = params.data.id;
     const field = params.colDef.field;
     const value = params.newValue;
+
+    if (!this.canUpdateRow(params.data)) {
+      this.showAccessDenied();
+      // Revert immediately for read-only rows without triggering another update loop.
+      if (typeof params.oldValue !== 'undefined' && params.oldValue !== value) {
+        this._suppressCellValueChanged = true;
+        params.node.setDataValue(field, params.oldValue);
+        setTimeout(() => { this._suppressCellValueChanged = false; }, 0);
+      }
+      return;
+    }
 
     if (field.startsWith('activity_')) {
       const templateId = field.split('_')[1];
@@ -616,7 +715,13 @@ export default class extends BaseAgGrid {
     }
   }
 
+  // Hook for sending Deal Investor Updates to the server
   updateDealInvestor(id, field, value, params) {
+    if (!this.canUpdateRow(params.data)) {
+      this.showAccessDenied();
+      return;
+    }
+
     const formData = new FormData();
     formData.append(`deal_investor[${field}]`, value);
 
@@ -631,18 +736,29 @@ export default class extends BaseAgGrid {
       headers: headers,
       body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok || response.redirected) throw new Error(`DealInvestor update failed: HTTP ${response.status}`);
+      return response.json();
+    })
     .then(data => {
       console.log('DealInvestor update success:', data);
       if (field === 'status') this.refreshRowData(params.node);
     })
     .catch(error => {
       console.error('DealInvestor update failed:', error);
+      // Prevent setDataValue from re-triggering a recursive update loop.
+      this._suppressCellValueChanged = true;
       params.node.setDataValue(field, params.oldValue);
+      setTimeout(() => { this._suppressCellValueChanged = false; }, 0);
     });
   }
 
   updateActivity(id, value, params) {
+    if (!this.canUpdateRow(params.data)) {
+      this.showAccessDenied();
+      return;
+    }
+
     const formData = new FormData();
     formData.append(`deal_activity[status]`, value);
 
@@ -657,7 +773,10 @@ export default class extends BaseAgGrid {
       headers: headers,
       body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok || response.redirected) throw new Error(`Activity update failed: HTTP ${response.status}`);
+      return response.json();
+    })
     .then(data => {
       console.log('Activity update success:', data);
       this.refreshRowData(params.node);
@@ -669,6 +788,12 @@ export default class extends BaseAgGrid {
 
   // Called from the inline dropdown in activity cells.
   updateActivityStatus(id, newStatus) {
+    // Do not attempt status updates from read-only users.
+    if (this._activityMenuCanUpdate !== true) {
+      this.showAccessDenied();
+      return;
+    }
+
     const formData = new FormData();
     formData.append('deal_activity[status]', newStatus);
 
@@ -681,7 +806,10 @@ export default class extends BaseAgGrid {
       headers,
       body: formData
     })
-    .then(r => r.json())
+    .then(r => {
+      if (!r.ok || r.redirected) throw new Error(`Activity status update failed: HTTP ${r.status}`);
+      return r.json();
+    })
     .then(() => {
       // Refresh the row that owns this activity
       if (this.gridOptions && this.gridOptions.api) {
@@ -711,7 +839,10 @@ export default class extends BaseAgGrid {
 
   updateFilterVisuals() {
     const filterModel = this.gridOptions.api.getFilterModel();
-    const hasFilters = Object.keys(filterModel).length > 0;
+    // The quick filter is not part of the filter model, so it is checked
+    // separately — otherwise searching would leave the clear "x" hidden.
+    const hasSearchTerm = this.hasSearchTarget && this.searchTarget.value.trim().length > 0;
+    const hasFilters = Object.keys(filterModel).length > 0 || hasSearchTerm;
 
     // Update cards visual state
     document.querySelectorAll('.analytics-card').forEach(card => {
@@ -743,15 +874,73 @@ export default class extends BaseAgGrid {
     }
   }
 
+  // Investor-name click. The URL building moved into showSidepanel() so the row
+  // menu's actions below can reuse it.
   openSidepanel(event) {
     event.preventDefault();
-    const id = event.currentTarget.dataset.id;
+    this.showSidepanel(`/deal_investors/${event.currentTarget.dataset.id}?turbo_frame=deal_investor_frame`);
+  }
+
+  // Loads url into the offcanvas turbo-frame and slides the panel open.
+  showSidepanel(url) {
     const sidepanelElement = document.getElementById('dealInvestorSidepanel');
     const sidepanel = bootstrap.Offcanvas.getInstance(sidepanelElement) || new bootstrap.Offcanvas(sidepanelElement);
-    const frame = document.getElementById('deal_investor_frame');
 
-    frame.src = `/deal_investors/${id}?turbo_frame=deal_investor_frame`;
+    document.getElementById('deal_investor_frame').src = url;
     sidepanel.show();
+  }
+
+  // Read-only panel — same as clicking the investor name.
+  viewInvestor(id) {
+    this.showSidepanel(`/deal_investors/${id}?turbo_frame=deal_investor_frame`);
+  }
+
+  // Skips the extra "Edit" click: the panel opens straight into the form.
+  editInvestor(id) {
+    this.showSidepanel(`/deal_investors/${id}/edit?turbo_frame=deal_investor_frame`);
+  }
+
+  // Opens the panel, switches to a tab and pops that tab's "new" form. Tasks and
+  // Notes work identically: the panel frame arrives first, then the tab's lazy
+  // frame once revealed, so both steps are driven by the turbo:frame-load
+  // listener wired up in gridReady() rather than by timers.
+  newTaskForInvestor(id) {
+    this.openPanelWithPendingAction(id, PANEL_ACTIONS.new_task);
+  }
+
+  newNoteForInvestor(id) {
+    this.openPanelWithPendingAction(id, PANEL_ACTIONS.new_note);
+  }
+
+  // Records what to do once the frames arrive, then opens the panel. The rest of
+  // the flow happens in the turbo:frame-load handler.
+  openPanelWithPendingAction(id, action) {
+    this._pendingPanelAction = action;
+    clearTimeout(this._pendingPanelActionTimer);
+    // Give up if a frame never loads, so a later panel open is not hijacked.
+    this._pendingPanelActionTimer = setTimeout(() => { this._pendingPanelAction = null; }, 15000);
+    this.showSidepanel(`/deal_investors/${id}?turbo_frame=deal_investor_frame`);
+  }
+
+  // Everything below is scoped to the offcanvas on purpose: this page also
+  // renders the deal-level details partial, which has its own #tasks-tab pane
+  // and its own turbo-frame called "tasks_frame". Selecting them globally would
+  // resolve by source order rather than by intent.
+  get sidepanelElement() {
+    return document.getElementById('dealInvestorSidepanel');
+  }
+
+  // Matched on href, not position, so the tabs can be reordered freely.
+  // The pane is a lazy turbo-frame: revealing it triggers the load.
+  openPanelTab(paneId) {
+    const tab = this.sidepanelElement?.querySelector(`a[href="#${paneId}"]`);
+    if (tab) tab.click();
+  }
+
+  // Absent when the user may not create this record for the owner — nothing to open.
+  clickNewRecordLink(paneId, frameId) {
+    const link = this.sidepanelElement?.querySelector(`#${paneId} a[data-turbo-frame="${frameId}"]`);
+    if (link) link.click();
   }
 
   addInvestor(event) {
@@ -887,7 +1076,26 @@ export default class extends BaseAgGrid {
     console.log("Deals List AG Grid Ready with Enhanced Features");
     this.initTooltips();
     this.setupActivityMenu();
+    this.setupRowActionsMenu();
     this.updateFilterVisuals();
+
+    // Drives the two-step "New Task" / "New Note" flow: the panel frame arrives
+    // first, then the tab's lazily loaded frame once that tab is revealed.
+    this._frameLoadHandler = (e) => {
+      const action = this._pendingPanelAction;
+      if (!action) return;
+      // The deal-level details section has a "tasks_frame" too — ignore it.
+      if (!this.sidepanelElement?.contains(e.target)) return;
+
+      if (e.target.id === 'deal_investor_frame') {
+        this.openPanelTab(action.paneId);
+      } else if (e.target.id === action.tabFrameId) {
+        this._pendingPanelAction = null;
+        clearTimeout(this._pendingPanelActionTimer);
+        this.clickNewRecordLink(action.paneId, action.newRecordFrameId);
+      }
+    };
+    document.addEventListener('turbo:frame-load', this._frameLoadHandler);
 
     // Listen for chart point clicks dispatched by charts_handler.js via the global
     // Highcharts event. No timing/polling needed — the handler fires on any click.
@@ -913,9 +1121,32 @@ export default class extends BaseAgGrid {
   }
 
   disconnect() {
+    // Timers hold a reference to this controller and would fire against a grid
+    // api that no longer exists after a Turbo navigation.
+    clearTimeout(this._quickSearchTimer);
+    clearTimeout(this._pendingPanelActionTimer);
+
+    if (this._rowActionsClickHandler) {
+      document.removeEventListener('click', this._rowActionsClickHandler);
+      this._rowActionsClickHandler = null;
+    }
+
+    if (this._frameLoadHandler) {
+      document.removeEventListener('turbo:frame-load', this._frameLoadHandler);
+      this._frameLoadHandler = null;
+    }
+
+    //Clean the listeners to be recreated on new page loads, which removes stale listeners from the page
+    if (this._activityMenuClickHandler) {
+      document.removeEventListener('click', this._activityMenuClickHandler);
+      this._activityMenuClickHandler = null;
+    }
+
     if (this._chartFilterHandler) {
       document.removeEventListener('chart:grid-filter', this._chartFilterHandler);
     }
+
+    super.disconnect();
   }
 
   // Build a single floating menu appended to document.body so it is never clipped
@@ -960,21 +1191,33 @@ export default class extends BaseAgGrid {
     }
 
     // Delegate: open menu when any .activity-badge is clicked
-    document.addEventListener('click', (e) => {
+    if (this._activityMenuClickHandler) return;
+
+    this._activityMenuClickHandler = (e) => {
       const badge = e.target.closest('.activity-badge');
 
       if (badge) {
         e.stopPropagation();
         const id = parseInt(badge.dataset.activityId);
         const backTo = encodeURIComponent(window.location.href);
+        const canUpdate = badge.dataset.canUpdate === 'true';
+
+        if (!canUpdate) this.showAccessDenied();
 
         menu.dataset.activityId = id;
+        this._activityMenuCanUpdate = canUpdate;
         menu.querySelector('#deals-activity-menu-show').href = `/deal_activities/${id}`;
         const entityId = badge.dataset.entityId;
         const dealInvestorId = badge.dataset.dealInvestorId;
         const activityName = badge.dataset.activityName || '';
         // Upload doc owner is DealInvestor; name preset to the deal activity title
         menu.querySelector('#deals-activity-menu-docs').href = `/documents/new?document[owner_id]=${dealInvestorId}&document[owner_type]=DealInvestor&document[entity_id]=${entityId}&document[name]=${activityName}&back_to=${backTo}`;
+
+        menu.querySelectorAll('[data-status]').forEach(btn => {
+          btn.style.display = canUpdate ? '' : 'none';
+        });
+        const divider = menu.querySelector('.dropdown-divider');
+        if (divider) divider.style.display = canUpdate ? '' : 'none';
 
         // Position menu below the badge using viewport coordinates
         const rect = badge.getBoundingClientRect();
@@ -996,7 +1239,113 @@ export default class extends BaseAgGrid {
       if (!menu.contains(e.target)) {
         menu.style.display = 'none';
       }
-    });
+    };
+
+    document.addEventListener('click', this._activityMenuClickHandler);
+  }
+
+  // Per-row View / Edit / Add Note / Add Task menu. Appended to document.body for
+  // the same reason as the activity menu: a dropdown rendered inside a cell is
+  // clipped by AG Grid's overflow:hidden viewport, and row transforms break
+  // position:fixed.
+  setupRowActionsMenu() {
+    const MENU_WIDTH = 170;
+    // One menu for the whole grid, reused across reconnects — the clicked row's
+    // id is stashed on it instead of building a menu per row.
+    let menu = document.getElementById('deals-row-actions-menu');
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.id = 'deals-row-actions-menu';
+      menu.className = 'dropdown-menu shadow-sm show';
+      menu.style.cssText = `position:fixed;z-index:99999;display:none;min-width:${MENU_WIDTH}px;`;
+      menu.innerHTML = `
+        <button class="dropdown-item" type="button" data-row-action="view">
+          <i class="ti ti-eye me-2"></i>View
+        </button>
+        <button class="dropdown-item" type="button" data-row-action="edit">
+          <i class="ti ti-pencil me-2"></i>Edit
+        </button>
+        <button class="dropdown-item" type="button" data-row-action="new_note">
+          <i class="ti ti-notes me-2"></i>Add Note
+        </button>
+        <button class="dropdown-item" type="button" data-row-action="new_task">
+          <i class="ti ti-plus me-2"></i>Add Task
+        </button>
+      `;
+      document.body.appendChild(menu);
+
+      menu.querySelectorAll('[data-row-action]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.closeRowActionsMenu(menu);
+          const id = menu.dataset.dealInvestorId;
+          if (!id) return;
+
+          switch (btn.dataset.rowAction) {
+            case 'view': this.viewInvestor(id); break;
+            case 'edit': this.editInvestor(id); break;
+            case 'new_task': this.newTaskForInvestor(id); break;
+            case 'new_note': this.newNoteForInvestor(id); break;
+          }
+        });
+      });
+    }
+
+    if (this._rowActionsClickHandler) return;
+
+    // Delegated: AG Grid virtualises rows, so the carets come and go as you
+    // scroll and cannot each hold their own listener. This one also closes the
+    // menu on any outside click.
+    this._rowActionsClickHandler = (e) => {
+      const trigger = e.target.closest('.deals-row-actions');
+
+      if (trigger) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Queried from the document rather than remembered: AG Grid virtualises
+        // rows, so the caret that was open may already have been recycled away.
+        document.querySelectorAll('.deals-row-actions--open')
+                .forEach(el => el.classList.remove('deals-row-actions--open'));
+        trigger.classList.add('deals-row-actions--open');
+
+        menu.dataset.dealInvestorId = trigger.dataset.id;
+        // Editing is gated by the same policy the row JSON reports.
+        menu.querySelector('[data-row-action="edit"]').style.display =
+          trigger.dataset.canUpdate === 'true' ? '' : 'none';
+
+        const rect = trigger.getBoundingClientRect();
+        // Shown before measuring: a display:none element has no offsetHeight, and
+        // the height varies with how many items the row's policies leave visible.
+        menu.style.display = 'block';
+        const menuHeight = menu.offsetHeight;
+
+        let left = rect.right - MENU_WIDTH;
+        let top = rect.bottom + 4;
+
+        if (left < 8) left = 8;
+        // Flip above the caret when it would otherwise run off the bottom.
+        if (top + menuHeight > window.innerHeight) top = rect.top - menuHeight - 4;
+        if (top < 8) top = 8;
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+        return;
+      }
+
+      if (!menu.contains(e.target)) {
+        this.closeRowActionsMenu(menu);
+      }
+    };
+
+    document.addEventListener('click', this._rowActionsClickHandler);
+  }
+
+  // ensure the dropdown button is not left in the "open" state when the menu is closed by clicking outside
+  closeRowActionsMenu(menu) {
+    menu.style.display = 'none';
+    document.querySelectorAll('.deals-row-actions--open')
+            .forEach(el => el.classList.remove('deals-row-actions--open'));
   }
 
   initTooltips() {
@@ -1006,7 +1355,25 @@ export default class extends BaseAgGrid {
     });
   }
 
+  // Client-side search over the rows already loaded — no server round-trip.
+  // Debounced because setQuickFilter re-evaluates every row, which is visible
+  // while typing on a large deal.
+  quickSearch(event) {
+    const term = event.target.value;
+    clearTimeout(this._quickSearchTimer);
+    this._quickSearchTimer = setTimeout(() => {
+      if (!this.gridOptions?.api) return;
+      this.gridOptions.api.setQuickFilter(term);
+    }, 200);
+  }
+
+  // The clear "x" now lives inside the search box, so it has to reset the search
+  // as well as the column filters — and cancel any debounced keystroke that
+  // would otherwise re-apply the term it just cleared.
   clearFilters() {
+    clearTimeout(this._quickSearchTimer);
+    if (this.hasSearchTarget) this.searchTarget.value = '';
+    this.gridOptions.api.setQuickFilter('');
     this.gridOptions.api.setFilterModel(null);
   }
 

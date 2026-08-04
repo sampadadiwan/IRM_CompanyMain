@@ -18,6 +18,7 @@ class CapitalDistributionPaymentDocGenerator
     end
 
     @fund_doc_template_name = fund_doc_template.name
+    @end_date = capital_distribution_payment.payment_date
 
     # Download the Word template and run the document generation pipeline
     fund_doc_template.file.download do |tempfile|
@@ -77,6 +78,7 @@ class CapitalDistributionPaymentDocGenerator
     capital_commitment = capital_distribution_payment.capital_commitment
     capital_commitment.json_fields["payment_date"] = capital_distribution_payment.payment_date
     fund_as_of.json_fields["capital_distribution_payment"] = capital_distribution_payment
+    investor_kyc = capital_commitment.investor_kyc
 
     context = {
       date: Time.zone.today.strftime("%d %B %Y"),
@@ -84,7 +86,11 @@ class CapitalDistributionPaymentDocGenerator
       fund: FundTemplateDecorator.decorate(fund_as_of),
       capital_distribution: TemplateDecorator.decorate(capital_distribution_payment.capital_distribution),
       capital_distribution_payment: TemplateDecorator.decorate(capital_distribution_payment),
-      investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
+      investor_kyc: TemplateDecorator.decorate(investor_kyc),
+      # Add kyc commitments context
+      kyc_commitments: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(fund_id: capital_distribution_payment.fund_id)),
+      kyc_commitments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(fund_id: capital_distribution_payment.fund_id, commitment_date: ..@end_date)),
+      kyc_commitments_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(fund_id: capital_distribution_payment.fund_id, commitment_date: ..@end_date)),
       capital_commitment: TemplateDecorator.decorate(capital_commitment),
       fund_unit_setting: TemplateDecorator.decorate(capital_commitment.fund_unit_setting),
       # All Commitments as of the payment date

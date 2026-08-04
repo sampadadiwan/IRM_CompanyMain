@@ -3,6 +3,23 @@ Given('I manually start the deal') do
   # activities are already created by CreateDeal service
 end
 
+Given('I am on the deal tasks page for {string}') do |deal_name|
+  @deal = Deal.find_by(name: deal_name)
+  visit(tasks_path(deal_id: @deal.id, embedded_task_context: "deal_tab"))
+  expect(page).to have_selector("#task_list", wait: 20)
+end
+
+When('I open the new task form') do
+  click_on("New Task", match: :first)
+  expect(page).to have_selector("#task_form", wait: 20)
+end
+
+Then('the task For field should have deal investor options') do
+  expect(page).to have_select("task_owner_id")
+  options = page.all("#task_owner_id option").map { |o| o.text.strip }.reject(&:blank?)
+  expect(options).not_to be_empty
+end
+
 Given('the deal step {string} has the following tasks:') do |step_title, tasks_csv|
   step_has_tasks(step_title, tasks_csv)
 end
@@ -129,6 +146,11 @@ When('I mark the activity {string} as completed for investor {string} in the gri
     visit(deal_path(@deal, grid_view: true))
   end
 
+  # That setup write is itself a step move, so it stamps last_interaction_date.
+  # Clear it, so a scenario asserting the date afterwards is proving the completion
+  # below did it rather than the scaffolding above.
+  @deal_investor.update_column(:last_interaction_date, nil)
+
   # --- START OF COPIED CODE FROM deal_investor.rb ---
 
   # 1. Wait for ag-grid to be completely mounted
@@ -177,6 +199,83 @@ When('I mark the activity {string} as completed for investor {string} in the gri
   # --- END OF COPIED CODE ---
 end
 
+When('I try to change the activity {string} for investor {string} from the grid') do |step_title, investor_name|
+  investor = @investor if @investor && (investor_name == "the other entity")
+  investor ||= Investor.find_by(investor_name: investor_name)
+  @deal_investor = DealInvestor.find_by(investor: investor, deal: @deal)
+
+  raise "DealInvestor not found for #{investor_name}" unless @deal_investor
+
+  @deal_activity = @deal_investor.deal_activities.find_by(title: step_title)
+  raise "DealActivity #{step_title} not found for investor" unless @deal_activity
+
+  if @deal_investor.deal_activity_id != @deal_activity.template_id
+    @deal_investor.update!(deal_activity_id: @deal_activity.template_id)
+    visit(deal_path(@deal, grid_view: true))
+  end
+
+  expect(page).to have_selector("#deals_list_grid .ag-root-wrapper", wait: 20)
+  expect(page).to have_selector("#deals_list_grid .ag-row", wait: 20)
+
+  page.execute_script(<<~JS)
+    window.__dealActivityPatchCount = 0;
+    if (!window.__dealActivityPatchSpyInstalled) {
+      var originalFetch = window.fetch;
+      window.fetch = function() {
+        try {
+          var input = arguments[0];
+          var init = arguments[1] || {};
+          var url = '';
+
+          if (typeof input === 'string') {
+            url = input;
+          } else if (input && input.url) {
+            url = input.url;
+          }
+
+          var method = (init.method || 'GET').toUpperCase();
+          if (url.indexOf('/deal_activities/') !== -1 && url.indexOf('.json') !== -1 && method === 'PATCH') {
+            window.__dealActivityPatchCount = (window.__dealActivityPatchCount || 0) + 1;
+          }
+        } catch (e) {
+        }
+
+        return originalFetch.apply(this, arguments);
+      };
+      window.__dealActivityPatchSpyInstalled = true;
+    }
+  JS
+
+  page.execute_script(%{
+    const gridApi = window.DealsGrid.gridOptions.api;
+    const rowId = 'deal_investor_#{@deal_investor.id}';
+    const rowNode = gridApi.getRowNode(rowId);
+    if (rowNode) {
+      gridApi.ensureNodeVisible(rowNode);
+      gridApi.ensureColumnVisible('activity_#{@deal_activity.template_id}');
+    } else {
+      window.rowNodeMissing = true;
+    }
+  })
+
+  raise "Row node not found in ag-grid for deal_investor_#{@deal_investor.id}" if page.evaluate_script("window.rowNodeMissing")
+
+  row_selector = ".ag-center-cols-container .ag-row[row-id='deal_investor_#{@deal_investor.id}']"
+  col_selector = "[col-id='activity_#{@deal_activity.template_id}']"
+  cell = find("#{row_selector} #{col_selector}")
+
+  badge = cell.find(".activity-badge", wait: 5)
+  badge.click
+
+  menu = find("#deals-activity-floating-menu", wait: 5)
+  expect(menu).to have_no_selector("[data-status='complete']", visible: true)
+end
+
+Then('no deal activity patch request should be sent from the grid') do
+  patch_count = page.evaluate_script('window.__dealActivityPatchCount || 0')
+  expect(patch_count).to eq(0)
+end
+
 Then('the current activity for investor {string} should be the next activity after {string}') do |investor_name, step_title|
   # Use @investor if it matches or it's "the other entity", otherwise find by name
   investor = @investor if @investor && (investor_name == "the other entity")
@@ -209,6 +308,13 @@ Given('the current activity for investor {string} is {string}') do |investor_nam
 
   activity = @deal_investor.deal_activities.find_by(title: step_title)
   @deal_investor.update!(deal_activity_id: activity.template_id)
+end
+
+# Completing a step is an interaction in its own right, alongside a note's "On" date
+# and a task's completed_on. It reaches DealInvestor as a change to deal_activity_id:
+# PerformActivityAction moves the investor to the next step and saves it.
+Then("completing the step should have set the investor's last interaction date to today") do
+  expect(@deal_investor.reload.last_interaction_date).to eq(Time.zone.today)
 end
 
 Then('the current activity for investor {string} should still be {string}') do |investor_name, step_title|

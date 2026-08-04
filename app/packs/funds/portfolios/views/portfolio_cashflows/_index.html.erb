@@ -13,7 +13,7 @@
           { class: "btn btn-outline-primary ti ti-upload"}   %>
 
 
-    <%= link_to "Download", portfolio_cashflows_path(params: params.to_unsafe_h, format: :xlsx), { class: "btn btn-outline-primary ti ti-download"}   %>
+    <%= link_to "Download", portfolio_cashflows_path(params: params.to_unsafe_h, aggregate_portfolio_investment_id: aggregate_portfolio_investment&.id, format: :xlsx), { class: "btn btn-outline-primary ti ti-download"}   %>
   </div>
 
 </div>

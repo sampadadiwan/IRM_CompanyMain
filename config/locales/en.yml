@@ -1,5 +1,9 @@
 ---
 en:
+  # Shown inside a turbo-frame when its content fails to load (see layouts/_frame_error)
+  turbo_frame_error:
+    message: "This section couldn't load."
+    retry: "Retry"
   date:
     formats:
       default: "%d/%m/%Y"

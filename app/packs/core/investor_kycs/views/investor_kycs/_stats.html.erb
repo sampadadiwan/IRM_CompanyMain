@@ -1,6 +1,8 @@
-<% cache_if(current_user != nil && params[:q].blank? && params[:support_agent_report].blank?, cache_key("kyc_stats"), expires_in: 5.day) do %>
+<%
+  records ||= @all_investor_kycs || @investor_kycs || policy_scope(current_user.entity.investor_kycs)
+%>
+<% cache_if(current_user != nil && params[:q].blank? && params[:support_agent_report].blank?, cache_key(["kyc_stats", records.cache_key_with_version]), expires_in: 5.day) do %>
   <%
-    records ||= @all_investor_kycs || @investor_kycs || policy_scope(current_user.entity.investor_kycs)
     kyc_types = {
       verified: { path: investor_kycs_path(q: ransack_query_params("verified", :eq, true)), subtitle: "Verified", progress_bar_color: "success", icon: "ti ti-check" },
       unverified: { path: investor_kycs_path(q: ransack_query_params("verified", :eq, false)), subtitle: "Unverified", progress_bar_color: "warning", icon: "ti ti-question-mark" },

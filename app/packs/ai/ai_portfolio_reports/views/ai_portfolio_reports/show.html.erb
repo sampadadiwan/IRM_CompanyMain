@@ -209,17 +209,17 @@
    </div>
 </div>
 <script>
-   if (typeof ChartDataLabels !== 'undefined') {
-     Chart.register(ChartDataLabels);
-   }
-   
-   
      const reportId      = <%= @report.id %>;
      const sectionId     = <%= @current_section.id %>;
-     
-   
+
+
      // Add this inside your existing <script> tag
      document.addEventListener('DOMContentLoaded', function() {
+     // Chart/ChartDataLabels are set by the charts_handler module, which runs after
+     // parse but before DOMContentLoaded — so the registration must happen in here.
+     if (typeof ChartDataLabels !== 'undefined') {
+       Chart.register(ChartDataLabels);
+     }
      renderAllCharts();
      });
    

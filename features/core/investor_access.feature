@@ -145,3 +145,23 @@ Scenario Outline: All Investor Accesses page turbo response checks
   	|entity              |investor                         |msg	|
   	|entity_type=Company |investor_name=Accelo3;primary_email=a@b3.c   |Stakeholder was successfully created|
 
+Scenario Outline: Investor Access form blocks a user who holds the Investor Advisor role
+  Given Im logged in as a user "first_name=Mohith" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor entity "<investor>"
+  And I am at the investor page
+  When I create a new investor "<investor>" for the existing investor entity
+  Then I should see the "<msg>"
+  And an investor should be created
+  And I should see the investor details on the details page
+  Given there is an existing investor advisor user
+  Given I click on "New Users"
+  Given I fill the investor access form with the existing investor advisor user's details
+  Given I click on "Save"
+  Then I should see the "belongs to a user with the Investor Advisor role and cannot be added as investor access from this page"
+  And no investor access should exist for the investor advisor user
+
+  Examples:
+  	|entity              |investor                         |msg	|
+  	|entity_type=Company |investor_name=Accelo4;primary_email=a@b4.c   |Stakeholder was successfully created|
+

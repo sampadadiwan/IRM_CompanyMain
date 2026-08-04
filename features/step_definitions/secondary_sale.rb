@@ -544,7 +544,7 @@ Given('we trigger a notification {string} for the sale') do |notification|
   puts "\nTriggering notification #{notification}"
   visit secondary_sale_path(@sale)
   sleep 1
-  click_on "Notifications"
+  click_button "Notifications"
   click_on notification
   sleep 1
   click_on "Proceed"

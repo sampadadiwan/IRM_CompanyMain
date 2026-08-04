@@ -201,9 +201,13 @@ export default class extends Controller {
     console.log("✅ useTabs:", useTabs, "📄 sheetNames:", sheetNames);
     console.log("💾 element.dataset:", this.element.dataset);
 
-    // The import job always reads sheet 0 server-side (Roo::Spreadsheet#sheet(0)),
-    // so header/STANDARD_COLUMNS validation must run against sheet 0 regardless of
+    // Most import jobs read sheet 0 server-side (Roo::Spreadsheet#sheet(0)), so
+    // header/STANDARD_COLUMNS validation must run against sheet 0 regardless of
     // how many sheets the workbook has or whether they're rendered as tabs.
+    // The KPI import is the exception — KpiWorkbookReader scans every sheet — and
+    // opts out with data-xlsx-preview-all-sheets so no sheet is named as "the"
+    // import sheet.
+    const scansAllSheets = this.element.dataset.xlsxPreviewAllSheets === "true";
     const firstSheet = workbook.Sheets[sheetNames[0]];
     if (firstSheet) this.capSheetRange(firstSheet);
     const missingOriginal = firstSheet ? this.checkHeaders(firstSheet, expectedHeaders) : [];
@@ -240,7 +244,10 @@ export default class extends Controller {
       // Only overwrite the "loaded N sheets" success message if header validation
       // didn't already report missing columns above.
       if (statusEl && !missingOriginal.length) {
-        statusEl.innerHTML = `<div class="alert alert-success">Loaded all ${sheetNames.length} sheets with tabs. All required columns exist on "${sheetNames[0]}" (used for import).</div>`;
+        const summary = scansAllSheets
+          ? `Loaded all ${sheetNames.length} sheets with tabs.`
+          : `Loaded all ${sheetNames.length} sheets with tabs. All required columns exist on "${sheetNames[0]}" (used for import).`;
+        statusEl.innerHTML = `<div class="alert alert-success">${summary}</div>`;
       }
       console.log("✅ [DEBUG] Multi-tab rendering complete.");
     } else {

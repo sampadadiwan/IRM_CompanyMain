@@ -34,11 +34,24 @@ class ImportDealInvestor < ImportUtil
     process_deal_investors(import_upload, deal_investors_sheet, ctx)
     process_deal_steps(import_upload, deal_steps_sheet)    if deal_steps_sheet
     process_notes(import_upload, notes_sheet)              if notes_sheet
+
+    # Once, after everything is uploaded — not per note. Imported notes arrive in
+    # arbitrary order and are can be backdated, so the incremental "only if larger"
+    # rule would settle on whichever row happened to come last instead of the true
+    # maximum "On" date.
+    recompute_note_owners_last_interaction
+
     import_upload.save!
     true
   end
 
   private
+
+  def recompute_note_owners_last_interaction
+    return if @note_owner_ids.blank?
+
+    DealInvestor.where(id: @note_owner_ids.to_a).find_each(&:recompute_last_interaction_date!)
+  end
 
   # -----------------------------------------------------------------------
   # Sheet 1 — Deal Investors
@@ -222,8 +235,13 @@ class ImportDealInvestor < ImportUtil
   #                   Reminder Emails, Reminder Date
   # -----------------------------------------------------------------------
   def process_notes(import_upload, sheet)
+    # Get the owner deal and entity_id for the notes
+    deal      = import_upload.owner
     entity_id = import_upload.entity_id
     headers   = sheet[:headers]
+
+    # Collected so save_data can recompute last_interaction_date once at the end.
+    @note_owner_ids = Set.new
 
     sheet[:data][1..].each do |row|
       user_data = headers.zip(row).to_h
@@ -233,18 +251,25 @@ class ImportDealInvestor < ImportUtil
       investor = Investor.where(investor_name:, entity_id:).first
       next if investor.nil?
 
+      # We need to find the DealInvestor record for this investor in the context of the current deal, because notes are associated with DealInvestor, not directly with Investor.
+      deal_investor = DealInvestor.find_by(deal_id: deal.id, investor_id: investor.id)
+      raise "DealInvestor for investor '#{investor_name}' not found in this deal" if deal_investor.nil?
+
       details_text = user_data["Details"].to_s.strip
       next if details_text.blank?
 
+      # Attach the note to the DealInvestor, and create a Reminder if either Reminder Emails or Reminder Date is present.
       note = Note.new(
         entity_id:,
-        investor_id: investor.id,
+        owner_id: deal_investor.id,
+        owner_type: "DealInvestor",
         user_id: import_upload.user_id,
         on: parse_date(user_data["On"]),
         tags: user_data["Tags"].presence&.strip
       )
       note.details = details_text
       note.save!
+      @note_owner_ids << deal_investor.id
 
       # Create a reminder if email or due_date is present
       reminder_email = user_data["Reminder Emails"].presence&.strip

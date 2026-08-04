@@ -1,8 +1,13 @@
 class ImportCapitalDistributionPayment < ImportUtil
-  STANDARD_HEADERS = ["Stakeholder", "Fund", "Capital Distribution", "Income", "Payment Date", "Completed", "Folio No", "Face Value For Redemption", "Reinvestment"].freeze
+  STANDARD_HEADERS = ["Fund", "Capital Distribution", "Income", "Payment Date", "Completed", "Folio No", "Face Value For Redemption", "Reinvestment"].freeze
 
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  # Older templates may still carry a Stakeholder column - ignore it so it does not become a custom field
+  def ignore_headers
+    ["Stakeholder"]
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
@@ -15,11 +20,12 @@ class ImportCapitalDistributionPayment < ImportUtil
     capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"].strip).first
     raise "Capital Distribution not found" unless capital_distribution
 
-    investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
+    # Find the capital commitment purely via the folio ID - the investor is derived from the commitment
     folio_id = user_data["Folio No"]&.to_s
-    capital_commitment = fund.capital_commitments.where(investor_id: investor&.id, folio_id:).first
+    capital_commitment = fund.capital_commitments.where(folio_id:).first
+    investor = capital_commitment&.investor
 
-    if fund && capital_distribution && investor && capital_commitment
+    if fund && capital_distribution && capital_commitment && investor
 
       # Make the capital_distribution_payment
       capital_distribution_payment = CapitalDistributionPayment.new(entity_id: import_upload.entity_id, fund:, capital_distribution:, investor:, investor_name: investor.investor_name, capital_commitment:, folio_id:, payment_date: user_data["Payment Date"])
@@ -43,7 +49,6 @@ class ImportCapitalDistributionPayment < ImportUtil
     else
       raise "Fund not found" unless fund
       raise "Capital Distribution not found" unless capital_distribution
-      raise "Stakeholder not found" unless investor
       raise "Capital Commitment not found" unless capital_commitment
     end
   end

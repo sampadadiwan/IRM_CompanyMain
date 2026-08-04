@@ -82,7 +82,9 @@ module WithFolder
     # Don't enque the job is document_folder is not present or path is not changed
     return if document_folder_id.blank? || document_folder&.full_path == folder_path
 
-    UpdateDocumentFolderPathJob.set(wait: 5.minutes).perform_later(self.class.name, id)
+    # Do not delay the job as a new folder with the updated path gets created and when the job runs to update the original folders path it fails the full path uniqueness validation
+    # Two folders then exist for the same object
+    UpdateDocumentFolderPathJob.perform_later(self.class.name, id)
   end
 
   # Given a folder path, create the folder tree

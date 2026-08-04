@@ -15,7 +15,12 @@ module Rack
 
     Rack::Attack.cache.store = Rails.cache
 
-    Rack::Attack.enabled = false if Rails.env.test?
+    # Enabled in ALL environments, including test: the @rack_attack cucumber
+    # scenarios exercise these rules end-to-end. This is safe for the rest of
+    # the test suite because Capybara/Playwright traffic originates from
+    # 127.0.0.1 with no X-Forwarded-For (covered by the localhost safelist
+    # below), and the test env's :null_store cache keeps all counters inert
+    # except where a scenario swaps in a real store.
 
     # SECURITY (finding M4): the previous global safelist exempted ANY request carrying a session
     # cookie from ALL throttles — including the login brute-force and 404-scanner throttles below —
@@ -23,8 +28,31 @@ module Rack
     # users are instead exempted only from the GENERAL per-IP throttle (see the `req/ip` rule), while
     # the login and 404 throttles now apply to everyone, authenticated or not.
     def self.logged_in?(req)
-      req.cookies[Rails.application.config.session_options[:key]].present?
+      # SECURITY: cookie PRESENCE is not proof of authentication — a scanner
+      # can attach any junk _caphive_session value and previously bypassed
+      # these exemption checks (and real users with stale/undecryptable
+      # cookies were misclassified). Rack::Attack runs after the session and
+      # Warden middleware, so Log404s.authenticated? can decrypt the actual
+      # session and require Devise's warden.user.* key, which only exists
+      # after a successful sign-in.
+      Log404s.authenticated?(req.env)
     end
+
+    # The exact IP the Log404s middleware keys its 404 counter by (it uses
+    # ActionDispatch::Request#remote_ip, which returns the value the RemoteIp
+    # middleware memoized here). The 404 rules below MUST read with the same
+    # derivation — Rack::Request#ip applies its own X-Forwarded-For logic and
+    # can disagree behind multi-hop proxies, silently splitting writer and
+    # reader onto different keys.
+    def self.client_ip(req)
+      (req.env['action_dispatch.remote_ip'] || req.ip).to_s
+    end
+
+    # Devise endpoints an anonymous user must always be able to reach to
+    # (re)establish a session. Shared by the login brute-force throttles and
+    # by the 404 scanner rules' skip-list below.
+    AUTH_PATHS = ['/users/sign_in', '/users/reset_password', '/users/confirmation',
+                  '/users/password', '/users/magic_link'].freeze
 
     # Loopback must never be throttled or blocked: puma sits behind nginx on a
     # unix socket, so requests WITHOUT X-Forwarded-For (ALB health checks,
@@ -76,7 +104,7 @@ module Rack
     #
     # Key: "rack::attack:#{Time.now.to_i/:period}:logins/ip:#{req.ip}"
     throttle('logins/ip', limit: 10, period: 30.seconds) do |req|
-      if req.ip && ['/users/sign_in', '/users/reset_password', '/users/confirmation', '/users/password', '/users/magic_link'].include?(req.path) && req.post?
+      if req.ip && AUTH_PATHS.include?(req.path) && req.post?
         # Rails.logger.info "🔍 Throttle check: IP #{req.ip} requested login page"
         # count_key = "rack::attack:#{(Time.now.to_i / 30)}:logins/ip:#{req.ip}"
         # current_count = Rails.cache.read(count_key) || 0
@@ -94,7 +122,7 @@ module Rack
     # denied, but that's not very common and shouldn't happen to you. (Knock
     # on wood!)
     throttle('block_bad_sign_ins', limit: 10, period: 30.seconds) do |req|
-      if ['/users/sign_in', '/users/reset_password', '/users/confirmation', '/users/password', '/users/magic_link'].include?(req.path) && req.post?
+      if AUTH_PATHS.include?(req.path) && req.post?
         # SECURITY (finding M4): Devise and the magic-link form submit the address as user[email],
         # so the previous req.params['email'] was always nil and this per-email throttle never fired.
         # Read the nested param (with a flat fallback) so per-account credential stuffing is limited.
@@ -117,19 +145,32 @@ module Rack
       # subject to the login brute-force throttle above, which is what finding M4 required.
       next nil if logged_in?(req)
 
-      bad_request_count = Rails.cache.fetch("rack::attack:404:#{req.ip}", raw: true) { 0 }.to_i
+      # A valid user with an EXPIRED session is anonymous until they sign in
+      # again. If their shared NAT/VPN IP is hot (a scanner on the same IP, or
+      # stale tabs spraying 404s), gating the auth endpoints here would lock
+      # them out of ever re-authenticating — the login endpoints have their
+      # own brute-force throttles above, so let them through.
+      next nil if AUTH_PATHS.include?(req.path)
+
+      ip = client_ip(req)
+
+      # read, NOT fetch-with-block: fetch writes its 0 default with no TTL on
+      # a miss, and since this runs on every request it pre-created the key
+      # before Log404s ever saw a 404 — which skipped Log404s' expiring first
+      # write and made every per-IP counter permanent (nil.to_i is 0 anyway).
+      bad_request_count = Rails.cache.read("rack::attack:404:#{ip}", raw: true).to_i
       throttle_request = bad_request_count > 5
 
       if throttle_request
-        Rails.logger.info "rack::attack: Throttling IP #{req.ip} after #{bad_request_count} 404s"
-        Rails.logger.debug { "rack::attack:throttled:#{req.ip} #{Rails.cache.read("rack::attack:throttled:#{req.ip}")}" }
+        Rails.logger.info "rack::attack: Throttling IP #{ip} after #{bad_request_count} 404s"
+        Rails.logger.debug { "rack::attack:throttled:#{ip} #{Rails.cache.read("rack::attack:throttled:#{ip}")}" }
 
         # Store a throttle flag for 5 minutes
-        Rails.cache.write("rack::attack:throttled:#{req.ip}", true, expires_in: 5.minutes)
+        Rails.cache.write("rack::attack:throttled:#{ip}", true, expires_in: 5.minutes)
       end
 
       # Return true if the IP is currently throttled
-      Rails.cache.read("rack::attack:throttled:#{req.ip}").present? ? req.ip : nil
+      Rails.cache.read("rack::attack:throttled:#{ip}").present? ? ip : nil
     end
 
     # Action	Effect
@@ -142,19 +183,29 @@ module Rack
       # login brute-force throttle still applies to them.
       next false if logged_in?(req)
 
-      bad_request_count = Rails.cache.fetch("rack::attack:404:#{req.ip}", raw: true) { 0 }.to_i
+      # Never 403 the auth endpoints — see limit_404_errors above: a blocked
+      # anonymous user must always be able to reach sign-in to become an
+      # authenticated (exempt) one. Login abuse is handled by the dedicated
+      # login throttles.
+      next false if AUTH_PATHS.include?(req.path)
+
+      ip = client_ip(req)
+
+      # read, NOT fetch-with-block — see limit_404_errors above: fetch's
+      # 0-default write had no TTL and made the counter permanent.
+      bad_request_count = Rails.cache.read("rack::attack:404:#{ip}", raw: true).to_i
       block_request = bad_request_count > 10
 
       if block_request
-        Rails.logger.info "rack::attack:Blocking IP #{req.ip} after #{bad_request_count} 404s"
-        Rails.logger.debug { "rack::attack:blocked:#{req.ip} #{Rails.cache.read("rack::attack:blocked:#{req.ip}")}" }
+        Rails.logger.info "rack::attack:Blocking IP #{ip} after #{bad_request_count} 404s"
+        Rails.logger.debug { "rack::attack:blocked:#{ip} #{Rails.cache.read("rack::attack:blocked:#{ip}")}" }
 
         # Store a block flag for 5 minutes
-        Rails.cache.write("rack::attack:blocked:#{req.ip}", true, expires_in: 5.minutes)
+        Rails.cache.write("rack::attack:blocked:#{ip}", true, expires_in: 5.minutes)
       end
 
       # Return true if IP is in the blocked list
-      Rails.cache.read("rack::attack:blocked:#{req.ip}").present?
+      Rails.cache.read("rack::attack:blocked:#{ip}").present?
     end
 
     ### Custom Throttle Response ###

@@ -10,6 +10,11 @@ Feature: Tasks for Deal Steps
     And another entity is an investor "category=Lead Investor" in entity
     And another entity is a deal_investor "status=Active" in the deal
 
+  Scenario: New deal task shows deal investors in For
+    Given I am on the deal tasks page for "Unicorn Series A"
+    When I open the new task form
+    Then the task For field should have deal investor options
+
   Scenario: Automatically generate tasks when a deal activity is completed in Grid View
     Given the deal step "Legal DD" has the following tasks: "Verify Legal, Financial Audit"
     And I am on the grid view of the deal "Unicorn Series A"
@@ -19,6 +24,7 @@ Feature: Tasks for Deal Steps
       | details         |
       | Verify Legal    |
       | Financial Audit |
+    And completing the step should have set the investor's last interaction date to today
 
   Scenario: Automatically generate tasks when a deal investor moves to a new step
     Given the deal step "Financial DD" has the following tasks:
@@ -64,3 +70,4 @@ Feature: Tasks for Deal Steps
       | ID Verification |
       | AML Check       |
       | Proof of Funds  |
+

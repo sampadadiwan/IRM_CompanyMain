@@ -47,7 +47,9 @@ class ImportServiceBase < Trailblazer::Operation
     FileUtils.mv(file.path, dest_file)
 
     # Some files were not getting uzipped by ruby zip, so we use the system unzip
-    `unzip -o #{dest_file} -d #{unzip_dir}`
+    # Array form bypasses the shell so paths cannot be interpreted as shell syntax.
+    # nil means the binary is missing - fail loudly (into the rescue below) like the old backticks did
+    raise Errno::ENOENT, "unzip" if system("unzip", "-o", dest_file, "-d", unzip_dir).nil?
   rescue StandardError => e
     Rails.logger.debug e.message
     raise e

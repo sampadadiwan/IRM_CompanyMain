@@ -1,12 +1,15 @@
 <% show_tags = params[:show_tags].to_s == "false" ? false : true %>
 <div class="table-responsive" data-controller="datatable">
-  <%
-    # Group all KPIs by report_id and then by name (lowercase) to avoid redundant map/to_h in loops
-    kpis_by_report_and_name = {}
-    kpi_reports.each do |kr|
-      kpis_by_report_and_name[kr.id] = kr.kpis.index_by { |k| k.name.downcase }
-    end
-  %>
+<%
+  # Group KPIs by report_id and investor_kpi_mapping_id instead of name to correctly
+  # handle duplicate child names under different parents (e.g., "Enterprise" under both
+  # Net Sales and Operating Cost). Matches the fix applied in _grid_view_table.html.erb.
+  kpis_by_report_and_mapping = {}
+  kpi_reports.each do |kr|
+    kpis_by_report_and_mapping[kr.id] = kr.kpis.index_by(&:investor_kpi_mapping_id)
+  end
+%>
+
   <table id="kpi_reports_grid" class="table table-bordered dataTable table-grey numberTable" data-controller="row-toggle">
     <thead>
       <tr>
@@ -35,19 +38,29 @@
               &nbsp;&nbsp;
               <i class="">&nbsp;&nbsp;</i>
             <% end %>
+            <%# Child rows show reported_kpi_name (raw Excel name, e.g., "Enterprise") instead of
+    the full prefixed standard_kpi_name ("Net Sales - Enterprise") because the indent
+    already communicates the parent-child relationship. The full prefixed name is retained
+    in the database (standard_kpi_name) for uniqueness, search, exports, and chart labels. %>
+            <% display_name = ikm.parent_id.present? ? ikm.reported_kpi_name : ikm.standard_kpi_name %>
             <% if ikm.json_fields&.[](InvestorKpiMapping::HIGHLIGHT_KPI_CF).to_s == "1" %>
               <%# used weight 1000 instead of bold as it was not noticable for kedaara %>
-              <span style="font-weight: 1000;"><%= ikm.standard_kpi_name %></span>
+              <span style="font-weight: 1000;"><%= display_name %></span>
             <% else %>
-            <%= ikm.standard_kpi_name %>
+            <%= display_name %>
             <% end %>
-            <% if ikm.child_count > 0 %>
+
+            <%# .to_i handles nil child_count for ad-hoc InvestorKpiMapping.new objects (non-fund entities) %>
+            <% if ikm.child_count.to_i > 0 %>
               <span class="expand">></span>
             <% end %>
           </td>
           <% kpi_reports.each do |kpi_report| %>
             <!-- Find the kpi with the name or an alias for the name and show its value-->
-            <% kpi = kpis_by_report_and_name.dig(kpi_report.id, ikm.standard_kpi_name.downcase)
+            <%# Look up KPI by investor_kpi_mapping_id instead of name to correctly handle
+                duplicate child names under different parents (e.g., "Enterprise" under both
+                Net Sales and Operating Cost). Matches the fix applied in _grid_view_table.html.erb. %>
+            <% kpi = kpis_by_report_and_mapping.dig(kpi_report.id, ikm.id)
               kpi_class = kpi&.value.to_f.negative? ? 'text-danger' : nil
               kpi_style = ikm.json_fields&.[](InvestorKpiMapping::HIGHLIGHT_KPI_CF).to_s == "1" ? "font-weight: 1000;" : nil
             %>

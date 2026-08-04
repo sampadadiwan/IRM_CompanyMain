@@ -30,6 +30,12 @@ Feature: Import Deal Investors
     Then notes should be created for the deal investor
 
   @import
+  Scenario: Import sets the last interaction date to the latest note date
+    Given there are "3" existing investor ""
+    When I import deal investors using the new template with notes on mixed dates
+    Then the deal investor last interaction date should be "2026-04-15"
+
+  @import
   Scenario: Import creates notes with a reminder
     Given there are "3" existing investor ""
     When I import deal investors using the new template with reminder notes

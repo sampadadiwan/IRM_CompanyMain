@@ -1,233 +1,152 @@
 class PortfolioReportJob < LlmReportJob
   queue_as :low
 
-  # This job is called to generate a portfolio report for a given date range
-  def perform(portfolio_report_id, start_date, end_date, user_id, portfolio_company_id: nil, kpi_reports_map: nil)
-    portfolio_report = PortfolioReport.find(portfolio_report_id)
+  # This job is called to generate a portfolio report for a given date range.
+  # A report is ALWAYS generated for every company: when a company has no extract and
+  # generate_missing_extracts is false, an empty extract is used and the report renders a
+  # single "No data available" section. Pass generate_missing_extracts: true to instead call
+  # the LLM to build an extract for companies that don't have one yet.
+  def perform(portfolio_report_id, template_id, start_date, end_date, user_id, portfolio_company_ids: nil,
+              generate_missing_extracts: false)
+    Chewy.strategy(:sidekiq) do
+      @errors = []
+      portfolio_report = PortfolioReport.find(portfolio_report_id)
 
-    # Get the portfolio_companies for the entity
-    portfolio_companies = portfolio_report.entity.investors.portfolio_companies
-    if portfolio_company_id.present?
-      portfolio_companies = portfolio_companies.where(id: portfolio_company_id)
-    elsif portfolio_report.tags
-      # Are we running this for specific tags?
-      portfolio_report_tags = portfolio_report.tags.split(",").map(&:strip)
-      portfolio_companies = portfolio_companies.select do |portfolio_company|
-        portfolio_company.tag_list.split(',').map(&:strip).intersect?(portfolio_report_tags)
-      end
-    end
-
-    portfolio_companies.each do |portfolio_company|
-      begin
-        # generate_section_extracts(portfolio_company, portfolio_report, start_date, end_date)
-        portfolio_report_extract = generate_report_extracts(portfolio_company, portfolio_report, start_date, end_date, user_id, kpi_reports_map)
-
-        next if portfolio_report_extract.blank?
-      rescue StandardError => e
-        msg = "Error generating report for #{portfolio_company.name} for report #{portfolio_report}: #{e.message}"
-        send_notification(msg, user_id, "danger")
-        raise e
+      # Get the portfolio_companies for the entity
+      portfolio_companies = portfolio_report.entity.investors.portfolio_companies
+      if portfolio_company_ids.present?
+        portfolio_companies = portfolio_companies.where(id: portfolio_company_ids)
+      elsif portfolio_report.tags
+        # Are we running this for specific tags?
+        # The new bulk UI always passes explicit portfolio_company_ids (the user finalizes the
+        # selection on screen), so this tag-based fallback only fires for callers that enqueue
+        # the job without ids. Kept for backwards compatibility with that older invocation style.
+        portfolio_report_tags = portfolio_report.tags.split(",").map(&:strip)
+        portfolio_companies = portfolio_companies.select do |portfolio_company|
+          portfolio_company.tag_list.split(',').map(&:strip).intersect?(portfolio_report_tags)
+        end
       end
 
-      # Now generate the actual report using the templates
-      PortfolioReportDocGenJob.perform_later(
-        portfolio_report_extract.id,
-        start_date, end_date, user_id
-      )
+      companies_without_extracts = []
+      generated_documents = []
+      portfolio_companies.each do |portfolio_company|
+        portfolio_report_extract = nil
+        begin
+          portfolio_report_extract = find_latest_extract(portfolio_company, portfolio_report, start_date, end_date)
+          if portfolio_report_extract.blank? || portfolio_report_extract.data.blank?
+            companies_without_extracts << portfolio_company.name
+            portfolio_report_extract =
+              if generate_missing_extracts
+                # Generate missing extracts synchronously as we are already in a job. This calls
+                # the per-company method rather than the job's bulk #perform so we get this
+                # company's error back here, without firing the extract job's own batch summary.
+                extract, msg = GeneratePortfolioReportExtractsJob.new.generate_extract(
+                  portfolio_company, portfolio_report, start_date, end_date, user_id
+                )
+                @errors << { msg: msg, model: portfolio_company.to_s } if msg.present?
+                extract
+              else
+                # Never skip: generate the report anyway with an empty extract. The doc renders a
+                # single "No data available" section the user can fill in.
+                PortfolioReportExtract.create!(
+                  entity_id: portfolio_report.entity_id,
+                  portfolio_company_id: portfolio_company.id,
+                  portfolio_report_id: portfolio_report.id,
+                  start_date:, end_date:, data: nil, source_document_ids: []
+                )
+              end
+          end
+        rescue StandardError => e
+          msg = "Error generating extract for report #{portfolio_report}: #{e.message}"
+          Rails.logger.error(msg)
+          @errors << { msg: msg, model: portfolio_company.to_s }
+          next
+        end
+
+        # Now generate the actual report using the template. Run synchronously (not perform_later)
+        # so that, once every company in the batch is done, we can merge the generated documents
+        # across companies below. The silent variant suppresses the doc gen job's own per-company
+        # toasts and error email so this job can report the whole batch once, below.
+        doc_gen_job = PortfolioReportDocGenSilentJob.new(portfolio_report_extract.id, template_id, start_date, end_date, user_id)
+        doc_gen_job.perform_now
+        # generated_documents is nil when the doc gen job bailed out on invalid inputs.
+        generated_documents.concat(doc_gen_job.generated_documents.to_a)
+        @errors.concat(doc_gen_job.error_msg.map { |error| { msg: error[:msg], model: error[:model].to_s } })
+      end
+
+      # All companies share a single output template, so the run always ends with exactly one
+      # document of interest: the merged one when several companies were generated, otherwise
+      # the single company's own document.
+      final_document =
+        if generated_documents.size > 1
+          begin
+            PortfolioReportDocumentMerger.call(generated_documents, portfolio_report:, start_date:, end_date:, user_id:)
+          rescue StandardError => e
+            # Merge failure shouldn't lose the fact that every company's own report already
+            # generated successfully — report it as an error and fall back to the first
+            # individual document so the completion notification still links somewhere useful.
+            msg = "Error merging portfolio report documents for report #{portfolio_report}: #{e.message}"
+            Rails.logger.error(msg)
+            @errors << { msg: msg, model: portfolio_report.to_s }
+            nil
+          end
+        else
+          generated_documents.first
+        end
+
+      # Only genuine failures raise the danger toast + error email. A company that simply had no
+      # extract is NOT an error — its report was still generated with a "No data available" section.
+      if @errors.any?
+        msg = "Portfolio Report Generation completed with the following #{@errors.count} errors.
+      <div>
+      #{@errors.pluck(:msg).join('<br>')}</div>"
+        send_notification("#{msg} #{document_location(final_document)}", user_id, "danger")
+        EntityMailer.with(entity_id: portfolio_report.entity_id, user_id:, error_msg: @errors).doc_gen_errors.deliver_now
+      else
+        detail = if companies_without_extracts.none?
+                   ""
+                 elsif generate_missing_extracts
+                   "Extracts were generated for: #{companies_without_extracts.join(', ')}."
+                 else
+                   "The following companies had no extract: #{companies_without_extracts.join(', ')}."
+                 end
+        msg = ["Portfolio Report Generation completed.", detail, document_location(final_document)]
+        send_notification(msg.compact_blank.join(" "), user_id, "success")
+      end
     end
   end
 
-  # Generates report extracts for a given portfolio company.
-  # This method retrieves relevant documents and notes, creates a PortfolioReportExtract record,
-  # calls the LLM to process the information, and saves the extracted data.
+  # A "saved in <folder path>: <link>" fragment for the run's single output document, so the
+  # completion toast tells the user both where the document landed and how to open it.
+  # Returns "" when nothing was generated (every company errored out).
   #
-  # @param portfolio_company [PortfolioCompany] The portfolio company for which to generate the extract.
-  # @param portfolio_report [PortfolioReport] The portfolio report being generated.
-  # @param start_date [Date] The start date for the report.
-  # @param end_date [Date] The end date for the report.
-  # @param user_id [Integer] The ID of the user initiating the report generation.
-  # @param kpi_reports_map [Array<Hash>] A map of KPI reports to include documents from.
-  # @return [PortfolioReportExtract, nil] The created PortfolioReportExtract object, or nil if no documents are found.
-  def generate_report_extracts(portfolio_company, portfolio_report, start_date, end_date, user_id, kpi_reports_map)
-    # Notify the user that extract generation has started
-    msg = "Generating extract for #{portfolio_company.name} for report #{portfolio_report}"
-    send_notification(msg, user_id)
+  # @param document [Document, nil]
+  # @return [String] An HTML fragment (user alerts are rendered html_safe).
+  def document_location(document)
+    return "" if document.blank?
 
-    # Retrieve and filter documents and notes using the helper method
-    filtered_documents, filtered_notes = get_docs_notes(portfolio_company, portfolio_report,
-                                                        start_date, end_date, kpi_reports_map)
+    link = ActionController::Base.helpers.link_to(
+      document.name, Rails.application.routes.url_helpers.document_path(document)
+    )
+    "Saved in #{folder_breadcrumb(document.folder)}: #{link}"
+  end
 
-    # If no filtered documents are found, log a debug message and return nil
-    if filtered_documents.empty?
-      msg = "No documents found for #{portfolio_company.name} for report #{portfolio_report}"
-      Rails.logger.debug { msg }
-      send_notification(msg, user_id, "danger")
-      nil
-    else
-      # Create a new PortfolioReportExtract record to store the generated output
-      portfolio_report_extract = PortfolioReportExtract.create!(
-        entity_id: portfolio_report.entity_id,
-        portfolio_company_id: portfolio_company.id,
-        portfolio_report_id: portfolio_report.id,
-        portfolio_report_section_id: nil, start_date: start_date, end_date: end_date
-      )
-
-      # Notify the user that information is being sent to the LLM
-      msg = "Sending the extracted information to the LLM for processing"
-      send_notification(msg, user_id)
-
-      # Define LLM instructions for formatting the output
-      llm_instructions = get_llm_instructions(portfolio_report)
-
-      # Call the LLM (Large Language Model) with the extracted documents, notes, and instructions
-      result = DocLlmContext.wtf?(model: portfolio_report_extract,
-                                  documents: filtered_documents,
-                                  notes: filtered_notes,
-                                  llm_instructions:)
-
-      # Log the LLM result for debugging purposes
-      Rails.logger.debug result
-      # Notify the user that information has been extracted
-      msg = "Extracted information from the documents and notes"
-      send_notification(msg, user_id)
-
-      # Update the portfolio report extract with the data received from the LLM
-      portfolio_report_extract.update(data: result[:extracted_info])
-      # Return the created and updated portfolio report extract
-      portfolio_report_extract
+  # "Investors / Generated Portfolio Reports" — walks up from the document's folder, dropping the
+  # root folder (named "/") so the path reads as the user sees it in the folder tree.
+  def folder_breadcrumb(folder)
+    names = []
+    while folder
+      names.unshift(folder.name)
+      folder = folder.parent
     end
+    names.compact_blank.reject { |name| name == "/" }.join(" / ")
   end
 
-  def get_llm_instructions(portfolio_report)
-    sections = portfolio_report.portfolio_report_sections
-
-    section_names = sections.map(&:name)
-
-    # Human-readable "what to do" per section
-    section_tasks_text = sections.map do |section|
-      %("#{section.name}": #{section.data.to_s.strip})
-    end.join("\n")
-
-    # JSON skeleton with the exact keys you want
-    json_skeleton = "{\n#{section_names.map { |name| %(  "#{name}": []) }.join(",\n")}\n}"
-
-    <<~INSTRUCTIONS
-      You are generating a JSON object for a portfolio report.
-
-      For each section, follow the described task:
-
-      #{section_tasks_text}
-
-      You MUST respond with a single JSON object with exactly the following keys:
-
-      #{section_names.map { |n| %(- "#{n}") }.join("\n")}
-
-      Rules:
-      - Do NOT rename, remove, or add any keys.
-      - The top-level structure MUST be a JSON object.
-      - Each value MUST be an array of strings (each string is one point).
-      - Do NOT nest JSON objects or arrays inside items.
-      - Do NOT include any newline (\\n) or tab (\\t) characters inside an item.
-      - Do NOT include markdown fences like ```json.
-
-      The JSON must follow this structure (values are examples only):
-
-      #{json_skeleton}
-    INSTRUCTIONS
-  end
-
-  # Retrieves and filters documents and notes for a portfolio report.
-  # This method orchestrates the calls to several helper methods to gather,
-  # filter, and prepare the necessary documents and notes for LLM processing.
+  # Finds the latest extract matching this portfolio company, report and date range, if any.
   #
-  # @param portfolio_company [PortfolioCompany] The portfolio company associated with the report.
-  # @param portfolio_report [PortfolioReport] The portfolio report being generated.
-  # @param start_date [Date] The start date for filtering documents and notes.
-  # @param end_date [Date] The end date for filtering documents and notes.
-  # @param kpi_reports_map [Array<Hash>] A map of KPI reports to include documents from.
-  # @return [Array<Array>] A tuple containing two arrays: [filtered_documents, filtered_notes].
-  def get_docs_notes(portfolio_company, portfolio_report, start_date, end_date, kpi_reports_map)
-    # Convert report tags from a comma-separated string to an array for filtering
-    report_tags = portfolio_report.tags.split(',').map(&:strip)
-
-    # Extract KPI-related documents based on the provided map
-    documents = extract_kpi_documents(portfolio_company, kpi_reports_map)
-    # If no documents are found, return empty arrays early to avoid further processing
-    return [[], []] if documents.blank?
-
-    # Retrieve notes for the portfolio company within the specified date range
-    notes = get_portfolio_notes(portfolio_company, start_date, end_date)
-
-    # Filter both documents and notes by the report's tags
-    filtered_documents = filter_by_report_tags(documents, report_tags)
-    filtered_notes = filter_by_report_tags(notes, report_tags)
-
-    # Further filter documents to include only PDF or CSV types
-    filtered_documents = filter_by_document_type(filtered_documents)
-
-    # Log the counts and IDs of the filtered documents and notes for debugging
-    Rails.logger.debug { "Filtered Documents: #{filtered_documents.count}, #{filtered_documents.map(&:id)}" }
-    Rails.logger.debug { "Filtered Notes: #{filtered_notes.count}, #{filtered_notes.map(&:id)}" }
-
-    # Return the filtered documents and notes
-    [filtered_documents, filtered_notes]
-  end
-
-  private
-
-  # Extracts KPI-related documents for a given portfolio company based on a map of KPI reports.
-  #
-  # @param portfolio_company [PortfolioCompany] The portfolio company to extract documents for.
-  # @param kpi_reports_map [Array<Hash>] A map of KPI reports with period, as_of, and add_docs flag.
-  # @return [Array<Document>] A list of filtered documents.
-  def extract_kpi_documents(portfolio_company, kpi_reports_map)
-    if kpi_reports_map.blank?
-      send_notification("No KPI reports provided for documents to include", user_id, "danger")
-      return []
-    end
-
-    kpi_reports_add_docs_or_clause = KpiReport.none
-    kpi_reports_map.each do |entry|
-      next if entry[:add_docs].blank?
-
-      as_of = Date.local_parse(entry[:as_of])
-      kpi_reports_add_docs_or_clause = kpi_reports_add_docs_or_clause.or(
-        KpiReport.where(period: entry[:period], as_of: as_of.all_month)
-      )
-    end
-
-    kpi_reports_add_docs = portfolio_company.portfolio_kpi_reports.merge(kpi_reports_add_docs_or_clause)
-    Document.where(owner_type: "KpiReport", owner_id: kpi_reports_add_docs.pluck(:id)).not_generated
-  end
-
-  # Retrieves notes for a given portfolio company within a specified date range.
-  #
-  # @param portfolio_company [PortfolioCompany] The portfolio company to retrieve notes for.
-  # @param start_date [Date] The start date for filtering notes.
-  # @param end_date [Date] The end date for filtering notes.
-  # @return [Array<Note>] A list of notes.
-  def get_portfolio_notes(portfolio_company, start_date, end_date)
-    portfolio_company.notes.where(created_at: start_date..end_date)
-  end
-
-  # Filters a collection of records (documents or notes) based on matching report tags.
-  #
-  # @param records [Array<ActiveRecord::Base>] The records to filter.
-  # @param report_tags [Array<String>] The tags to match against.
-  # @return [Array<ActiveRecord::Base>] A list of filtered records.
-  def filter_by_report_tags(records, report_tags)
-    return records if report_tags.blank?
-
-    records.select do |record|
-      record.tag_list.present? && record.tag_list.split(',').map(&:strip).intersect?(report_tags)
-    end
-  end
-
-  # Filters a collection of documents to include only PDF, CSV, Excel, or PPT types.
-  #
-  # @param documents [Array<Document>] The documents to filter.
-  # @return [Array<Document>] A list of filtered documents (PDF, CSV, Excel, or PPT).
-  def filter_by_document_type(documents)
-    documents.select { |doc| doc.pdf? || doc.csv? || doc.excel? || doc.ppt? }
+  # @return [PortfolioReportExtract, nil]
+  def find_latest_extract(portfolio_company, portfolio_report, start_date, end_date)
+    PortfolioReportExtract.matching(portfolio_report.id, portfolio_company.id, start_date, end_date)
+                          .order(created_at: :desc).first
   end
 end

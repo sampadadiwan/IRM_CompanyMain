@@ -72,6 +72,13 @@
           <i class="ti ti-settings"></i> <%= t_common(:actions) %>
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+          <% if policy(investor_access).show? %>
+            <%= link_to investor_access_path(investor_access, investor_id: investor_id), class: "dropdown-item" do %>
+              <i class="ti ti-eye"></i> <%= t_common(:view) %>
+            <% end %>
+          <% end %>
+
           <% if policy(investor_access).edit? %>
             <%= link_to edit_investor_access_path(investor_access, investor_id: investor_id),
                         data: { turbo_frame: 'new_investor_access' }, class: "dropdown-item" do %>

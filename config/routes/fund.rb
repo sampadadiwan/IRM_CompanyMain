@@ -72,9 +72,13 @@ resources :account_entry_reports, only: [] do
   post 'generate_commentary', on: :collection
 end
 
-resources :fund_units
+resources :fund_units do
+  post 'bulk_actions', on: :collection
+end
 
-resources :fund_ratios
+resources :fund_ratios do
+  post 'bulk_actions', on: :collection
+end
 
 resources :fund_ratio_runs, only: %i[index show]
 

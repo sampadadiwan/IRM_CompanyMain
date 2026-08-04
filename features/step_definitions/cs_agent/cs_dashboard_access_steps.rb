@@ -10,9 +10,12 @@ Then("I should not see the {string} link") do |link_text|
   expect(page).not_to have_link(link_text)
 end
 
+# Visits /cs_feedback_reviews and flags denial if Pundit redirects to root.
 When("I navigate to \\/cs_feedback_reviews") do
   visit "/cs_feedback_reviews"
+  @denied = !page.has_current_path?("/cs_feedback_reviews", ignore_query: true)
 end
+
 
 Then("I should see the feedback reviews dashboard") do
   expect(page).to have_current_path("/cs_feedback_reviews", ignore_query: true)

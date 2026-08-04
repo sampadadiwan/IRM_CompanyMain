@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>*,*::before,*::after{box-sizing:border-box}html{-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased}img,svg{max-width:100%}figure.diagram .frame{background:#FFFFFF !important}</style>
+<title>Fund Ops, Unstacked #2 — The Quarter-End That Explains Itself</title>
+</head>
+<body>
+<style>
+  :root {
+    --ground: #F4F2EE;
+    --paper: #FFFFFF;
+    --ink: #191919;
+    --muted: #666666;
+    --faint: #8C8C8C;
+    --accent: #0A66C2;
+    --accent-ink: #FFFFFF;
+    --border: #E8E5DF;
+    --border-strong: #D6D2CB;
+    --gate: #B24020;
+    --gate-bg: #FBF1EE;
+    --ok: #44712E;
+    --ok-bg: #F0F5EC;
+    --card-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.05);
+    --cover-a: #0B2E4F;
+    --cover-b: #103E6B;
+    --cover-line: rgba(255,255,255,0.08);
+    --code-bg: #F6F4F0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #111417;
+      --paper: #1B1F23;
+      --ink: #E9EAEB;
+      --muted: #A5A8AB;
+      --faint: #7E8286;
+      --accent: #70B5F9;
+      --accent-ink: #0E1116;
+      --border: #33383D;
+      --border-strong: #44494E;
+      --gate: #E8846A;
+      --gate-bg: #2A211E;
+      --ok: #9CC284;
+      --ok-bg: #20261C;
+      --card-shadow: 0 0 0 1px rgba(255,255,255,0.07);
+      --cover-a: #0A2540;
+      --cover-b: #0D3157;
+      --cover-line: rgba(255,255,255,0.07);
+      --code-bg: #22272C;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #F4F2EE; --paper: #FFFFFF; --ink: #191919; --muted: #666666; --faint: #8C8C8C;
+    --accent: #0A66C2; --accent-ink: #FFFFFF; --border: #E8E5DF; --border-strong: #D6D2CB;
+    --gate: #B24020; --gate-bg: #FBF1EE; --ok: #44712E; --ok-bg: #F0F5EC;
+    --card-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.05);
+    --cover-a: #0B2E4F; --cover-b: #103E6B; --cover-line: rgba(255,255,255,0.08); --code-bg: #F6F4F0;
+  }
+  :root[data-theme="dark"] {
+    --ground: #111417; --paper: #1B1F23; --ink: #E9EAEB; --muted: #A5A8AB; --faint: #7E8286;
+    --accent: #70B5F9; --accent-ink: #0E1116; --border: #33383D; --border-strong: #44494E;
+    --gate: #E8846A; --gate-bg: #2A211E; --ok: #9CC284; --ok-bg: #20261C;
+    --card-shadow: 0 0 0 1px rgba(255,255,255,0.07);
+    --cover-a: #0A2540; --cover-b: #0D3157; --cover-line: rgba(255,255,255,0.07); --code-bg: #22272C;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    max-width: 760px; margin: 0 auto; padding: 14px 20px 4px;
+    font-size: 12px; color: var(--muted);
+  }
+  .toolbar .draft {
+    background: var(--gate); color: #fff; font-weight: 700; letter-spacing: 0.08em;
+    padding: 2px 9px; border-radius: 999px; font-size: 11px;
+  }
+  :root[data-theme="dark"] .toolbar .draft, .toolbar .draft { text-transform: uppercase; }
+  .toolbar .series { font-weight: 600; color: var(--ink); }
+
+  .page { max-width: 760px; margin: 10px auto 60px; padding: 0 12px; }
+
+  .sheet {
+    background: var(--paper); border-radius: 10px; box-shadow: var(--card-shadow);
+    overflow: hidden;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    background:
+      repeating-linear-gradient(90deg, var(--cover-line) 0 1px, transparent 1px 56px),
+      repeating-linear-gradient(0deg, var(--cover-line) 0 1px, transparent 1px 56px),
+      linear-gradient(120deg, var(--cover-a), var(--cover-b));
+    color: #FFFFFF;
+    padding: 56px 48px 44px;
+  }
+  .cover .brand {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #9FC4E8; margin-bottom: 26px;
+  }
+  .cover h1 {
+    font-size: clamp(28px, 5vw, 42px); line-height: 1.12; margin: 0 0 14px;
+    font-weight: 800; letter-spacing: -0.015em; text-wrap: balance; max-width: 15em;
+  }
+  .cover .sub {
+    font-size: 16px; line-height: 1.55; color: #C9DCEF; max-width: 40em; margin: 0;
+  }
+
+  /* ── Author row ── */
+  .author { display: flex; align-items: center; gap: 12px; padding: 20px 48px; border-bottom: 1px solid var(--border); }
+  .avatar {
+    width: 48px; height: 48px; border-radius: 50%; flex: none;
+    background: linear-gradient(135deg, #0A66C2, #084E94);
+    color: #fff; font-weight: 800; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .author .who { min-width: 0; }
+  .author .name { font-size: 14px; font-weight: 700; }
+  .author .name span { font-weight: 400; color: var(--muted); }
+  .author .meta { font-size: 12px; color: var(--muted); }
+  .author .follow {
+    margin-left: auto; color: var(--accent); font-weight: 700; font-size: 15px;
+    border: 1px solid var(--accent); border-radius: 999px; padding: 5px 16px; white-space: nowrap;
+  }
+
+  /* ── Article body ── */
+  .article { padding: 8px 48px 20px; }
+  .article > * { max-width: 640px; margin-left: auto; margin-right: auto; }
+  .article p { font-size: 17px; line-height: 1.7; margin: 18px auto; }
+  .article h2 {
+    font-size: 23px; font-weight: 700; letter-spacing: -0.01em;
+    margin: 40px auto 6px; text-wrap: balance;
+  }
+  .article .lede { font-size: 19px; }
+  .article strong { font-weight: 700; }
+  .article em { color: inherit; }
+  .article ol.steps { font-size: 17px; line-height: 1.65; padding-left: 22px; margin: 18px auto; }
+  .article ol.steps li { margin: 9px 0; }
+  .article ul.plain { font-size: 17px; line-height: 1.65; padding-left: 22px; margin: 18px auto; }
+  .article ul.plain li { margin: 7px 0; }
+
+  /* Pull quote — magazine-style: tinted card, oversized serif quote mark, italic display text */
+  .pull {
+    position: relative;
+    background: color-mix(in srgb, var(--accent) 6%, var(--paper));
+    border-left: 4px solid var(--accent);
+    border-radius: 0 14px 14px 0;
+    padding: 24px 30px 24px 74px; margin: 36px auto;
+    font-size: 24px; line-height: 1.45; font-weight: 600; font-style: italic;
+    letter-spacing: -0.005em; text-wrap: balance;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .pull::before {
+    content: "\201C";
+    position: absolute; left: 20px; top: 30px;
+    font-family: Georgia, "Times New Roman", serif; font-style: normal;
+    font-size: 72px; line-height: 0.6; color: var(--accent); opacity: 0.85;
+  }
+  .pull .tag { display: block; font-size: 12px; font-weight: 700; font-style: normal; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+
+  .callout-gate {
+    background: var(--gate-bg); border: 1px solid color-mix(in srgb, var(--gate) 35%, transparent);
+    border-radius: 8px; padding: 16px 20px; margin: 22px auto;
+    font-size: 15.5px; line-height: 1.6;
+  }
+  .callout-gate .label { color: var(--gate); font-weight: 800; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+  .callout-gate code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; }
+
+  .formula {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 22px; margin: 22px auto; overflow-x: auto;
+  }
+  .formula table { border-collapse: collapse; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14.5px; line-height: 2; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .formula td { padding: 0 4px; }
+  .formula td.eq { color: var(--muted); }
+  .formula td.lhs { font-weight: 700; }
+
+  figure.diagram { margin: 26px auto; max-width: 100%; }
+  figure.diagram .frame {
+    background: var(--paper); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 12px; overflow-x: auto; display: flex; justify-content: center;
+  }
+  figure.diagram .frame svg { width: 100%; height: auto; max-width: none !important; min-width: 480px; }
+  figure.diagram figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; text-align: center; }
+  pre.mermaid { margin: 0; background: transparent; width: 100%; text-align: center; }
+
+  table.methods {
+    border-collapse: collapse; width: 100%; margin: 20px auto; font-size: 15.5px;
+  }
+  table.methods th, table.methods td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  table.methods th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  table.methods td:first-child { font-weight: 600; white-space: nowrap; }
+
+  .takeaways {
+    border: 1px solid var(--border-strong); border-radius: 10px; padding: 24px 28px; margin: 30px auto;
+  }
+  .takeaways .label { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .takeaways ol { margin: 8px 0 0; padding-left: 20px; font-size: 16.5px; line-height: 1.6; }
+  .takeaways li { margin: 12px 0; }
+
+  .signoff { font-size: 15px; color: var(--muted); font-style: italic; }
+
+  /* ── Stat band ── */
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; margin: 28px auto;
+  }
+  .stats .stat { background: var(--paper); padding: 18px 16px; text-align: center; }
+  .stats .num { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .stats .lbl { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+  @media (max-width: 560px) { .stats { grid-template-columns: 1fr; } }
+
+  /* ── Key point bands — navy quote cards with oversized watermark quote mark ── */
+  .keypoint {
+    position: relative; overflow: hidden;
+    background: linear-gradient(120deg, var(--cover-a), var(--cover-b));
+    color: #FFFFFF; border-radius: 12px; border-left: 4px solid #70B5F9;
+    padding: 28px 34px 28px 78px; margin: 36px auto;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  }
+  .keypoint::before {
+    content: "\201C";
+    position: absolute; left: 20px; top: 36px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 84px; line-height: 0.6; color: #70B5F9; opacity: 0.9;
+  }
+  .keypoint::after {
+    content: "\201D";
+    position: absolute; right: -6px; bottom: -34px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 160px; line-height: 1; color: rgba(255,255,255,0.06);
+    pointer-events: none;
+  }
+  .keypoint .kp-label { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9FC4E8; margin-bottom: 8px; }
+  .keypoint .kp-text { font-size: 22px; font-weight: 700; font-style: italic; line-height: 1.45; letter-spacing: -0.005em; text-wrap: balance; }
+
+  /* ── Screenshot placeholder ── */
+  .shot {
+    border: 2px dashed var(--border-strong); border-radius: 10px; margin: 24px auto;
+    padding: 34px 20px; text-align: center; color: var(--muted); background: var(--code-bg);
+  }
+  .shot .shot-icon { font-size: 26px; }
+  .shot .shot-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-top: 8px; }
+  .shot .shot-sub { font-size: 12.5px; margin-top: 4px; }
+
+  /* ── Email mock ── */
+  .email-mock { border: 1px solid var(--border-strong); border-radius: 10px; overflow: hidden; margin: 24px auto; font-size: 13px; }
+  .email-mock .em-chrome { background: var(--code-bg); border-bottom: 1px solid var(--border); padding: 8px 14px; font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+  .email-mock .em-chrome .dots { letter-spacing: 2px; color: var(--faint); }
+  .email-mock .em-banner { background: var(--gate); color: #fff; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px; padding: 10px 16px; }
+  .email-mock table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .email-mock th { text-align: left; font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); padding: 10px 14px 6px; border-bottom: 1px solid var(--border); }
+  .email-mock td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  .email-mock tr:last-child td { border-bottom: 0; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 800; padding: 2px 10px; border-radius: 999px; letter-spacing: 0.04em; }
+  .pill.shortfall { background: var(--gate-bg); color: var(--gate); }
+  .pill.watch { background: color-mix(in srgb, #B7791F 14%, var(--paper)); color: #B7791F; }
+  .pill.surplus { background: var(--ok-bg); color: var(--ok); }
+  .pill.blocked { background: var(--code-bg); color: var(--muted); }
+
+  /* ── CTA panel ── */
+  .cta {
+    background: linear-gradient(120deg, var(--cover-a), var(--cover-b));
+    border-radius: 10px; color: #FFFFFF; text-align: center;
+    padding: 40px 32px; margin: 34px auto;
+  }
+  .cta h3 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 10px; text-wrap: balance; }
+  .cta p { font-size: 15.5px; line-height: 1.6; color: #C9DCEF; max-width: 34em; margin: 0 auto 22px; }
+  .cta .btn {
+    display: inline-block; background: #FFFFFF; color: #0B2E4F; font-weight: 800; font-size: 15px;
+    border-radius: 999px; padding: 12px 30px;
+  }
+  .cta .alt { display: block; font-size: 13px; color: #9FC4E8; margin-top: 14px; }
+
+  hr.article-rule { border: 0; border-top: 1px solid var(--border); margin: 34px auto; max-width: 640px; }
+
+  /* ── Engagement bar ── */
+  .engage { border-top: 1px solid var(--border); padding: 10px 48px 14px; }
+  .engage .counts { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); padding: 6px 2px 10px; border-bottom: 1px solid var(--border); }
+  .engage .reax { letter-spacing: -3px; font-size: 14px; }
+  .engage .actions { display: flex; justify-content: space-around; padding-top: 6px; }
+  .engage .actions span { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: var(--muted); padding: 10px 14px; border-radius: 6px; }
+  .engage .actions svg { width: 18px; height: 18px; fill: currentColor; }
+
+  /* ── Section labels between sheets ── */
+  .rail-label {
+    font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 34px 6px 10px;
+  }
+
+  /* ── Feed teaser card ── */
+  .feed-card { max-width: 555px; margin: 0 auto; }
+  .feed-card .fhead { display: flex; gap: 10px; padding: 14px 16px 6px; }
+  .feed-card .avatar { width: 48px; height: 48px; border-radius: 50%; font-size: 17px; }
+  .feed-card .name { font-size: 14px; font-weight: 700; line-height: 1.3; }
+  .feed-card .meta { font-size: 12px; color: var(--muted); line-height: 1.35; }
+  .feed-card .body { padding: 6px 16px 12px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: break-word; }
+  .feed-card .body .tags { color: var(--accent); font-weight: 600; }
+  .fold {
+    display: flex; align-items: center; gap: 10px; margin: 10px 0;
+    color: var(--gate); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+  }
+  .fold::before, .fold::after { content: ""; flex: 1; border-top: 2px dashed color-mix(in srgb, var(--gate) 55%, transparent); }
+
+  /* ── Comment ── */
+  .comment { display: flex; gap: 10px; padding: 14px 16px 18px; max-width: 555px; margin: 0 auto; }
+  .comment .avatar { width: 36px; height: 36px; font-size: 13px; }
+  .comment .bubble { background: var(--ground); border-radius: 0 10px 10px 10px; padding: 10px 14px; font-size: 13.5px; line-height: 1.5; }
+  .comment .bubble .cname { font-weight: 700; font-size: 13px; }
+  .comment .bubble .chead { color: var(--muted); font-size: 11.5px; margin-bottom: 6px; }
+  .comment .bubble .link { color: var(--accent); font-weight: 600; }
+
+  /* ── Review rail ── */
+  .review { padding: 18px 22px 22px; }
+  .review .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border-strong); border-radius: 999px;
+    font-size: 12.5px; font-weight: 600; padding: 5px 12px; color: var(--ink);
+  }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+  .chip.info .dot { background: var(--accent); }
+  .review .note { font-size: 13px; color: var(--muted); margin: 14px 2px 0; line-height: 1.55; }
+
+  @media (max-width: 620px) {
+    .cover { padding: 36px 22px 30px; }
+    .author, .article, .engage { padding-left: 22px; padding-right: 22px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .sheet { transition: box-shadow 0.2s ease; }
+  }
+</style>
+<style>
+  /* Post-specific additions */
+  .email-mock .em-banner.navy { background: linear-gradient(120deg, var(--cover-a), var(--cover-b)); text-transform: none; letter-spacing: 0.02em; font-size: 13px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .email-mock .em-banner.navy .amt { font-size: 16px; font-variant-numeric: tabular-nums; }
+  .email-mock .rc-formula { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; padding: 12px 14px; background: var(--code-bg); border-bottom: 1px solid var(--border); overflow-x: auto; white-space: nowrap; }
+  .email-mock td.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
+  .email-mock td.val { text-align: right; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
+  .email-mock tr.total td { font-weight: 800; border-top: 2px solid var(--border-strong); }
+  .email-mock .rc-ai { padding: 12px 14px; font-size: 13.5px; font-style: italic; color: var(--muted); border-top: 1px solid var(--border); }
+  .email-mock .rc-ai .ai-tag { font-style: normal; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-right: 8px; }
+  .framework { border: 1px solid var(--border-strong); border-radius: 10px; padding: 24px 28px; margin: 30px auto; }
+  .framework .label { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .framework ol { margin: 8px 0 0; padding-left: 20px; font-size: 16.5px; line-height: 1.6; }
+  .framework li { margin: 10px 0; }
+  .framework li strong { color: var(--accent); }
+  .checklist { background: color-mix(in srgb, var(--accent) 5%, var(--paper)); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); border-radius: 10px; padding: 24px 28px; margin: 30px auto; }
+  .checklist .label { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  .checklist p.lead-in { font-size: 15px; margin: 4px 0 10px; color: var(--muted); }
+  .checklist ol { margin: 0; padding-left: 22px; font-size: 16px; line-height: 1.6; }
+  .checklist li { margin: 9px 0; }
+</style>
+
+<div class="toolbar">
+  <span class="draft">Draft preview</span>
+  <span class="series">Fund Ops, Unstacked #2</span>
+  <span>·</span>
+  <span>LinkedIn Article / blog — rendered as it will appear</span>
+</div>
+
+<div class="page">
+  <div class="sheet">
+
+    <header class="cover">
+      <div class="brand">CapHive · Fund Ops, Unstacked</div>
+      <h1>The Quarter-End That Explains Itself</h1>
+      <p class="sub">Fund economics as ordered, versioned rules — so every month, quarter, and year number is re-runnable, lockable, and carries its own receipt.</p>
+    </header>
+
+    <div class="author">
+      <div class="avatar">CH</div>
+      <div class="who">
+        <div class="name">CapHive <span>· Company</span></div>
+        <div class="meta">Fund administration, built for complex structures</div>
+        <div class="meta">8 min read · Fund Ops, Unstacked #2 · 🌐</div>
+      </div>
+      <div class="follow">+ Follow</div>
+    </div>
+
+    <article class="article">
+      <p class="lede">The email arrives mid-audit: <em>"Please walk us through the Q3 management fee charged to folio MC-0142."</em></p>
+
+      <p>One number. One investor. And in most funds, that question starts an excavation: the workbook with the fee logic, the person who built it (who left in March), the tab named <code>Q3_FINAL_v14(2)</code>, and the quiet hope that nobody re-sorted a range since.</p>
+
+      <p>The number is probably right. But <em>probably right</em> is not what audits, LP advisory committees, or your own sign-off are made of. What they need is a number that can show its work.</p>
+
+      <p>That is the design goal of CapHive's allocation engine: <strong>a quarter-end that explains itself.</strong></p>
+
+      <div class="stats">
+        <div class="stat"><div class="num">21</div><div class="lbl">formula rule types — from fee generation to master–feeder allocation</div></div>
+        <div class="stat"><div class="num">8</div><div class="lbl">decimal places of stored precision on every generated amount</div></div>
+        <div class="stat"><div class="num">100k+</div><div class="lbl">numbers generated in minutes in a single run</div></div>
+      </div>
+
+      <h2>Your fund's economics, written down once</h2>
+      <p>Every fund's economics live somewhere. Management fee schedules, admin cost splits, income allocations, master–feeder pass-throughs, portfolio expense allocations. Usually they live in spreadsheets — which means they live in <em>people</em>.</p>
+      <p>CapHive stores them as <strong>formula rules</strong>: named, ordered, versioned rules attached to the fund. Twenty-one rule types cover the spectrum — generate an entry per LP, allocate a fund-level cost across commitments, pull master-fund entries down into a feeder, compute ownership percentages, roll amounts up into cumulative totals.</p>
+      <p>Run a period — a month, a quarter, a year — and the engine executes the rules in sequence, computes every entry for every LP commitment, rolls per-LP entries up into fund-level totals, and hands back the statements, ratios, and reports built on top. For a real fund structure that is <strong>hundreds of thousands of generated numbers — in minutes</strong>, each one traceable to the rule and run that produced it.</p>
+
+      <figure class="diagram">
+        <div class="frame">
+<svg id="svg-alloc-pipeline" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="flowchart" style="max-width: 426.125px; background-color: transparent;" viewBox="0 0 426.125 783.7999877929688" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#svg-alloc-pipeline{font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#svg-alloc-pipeline .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#svg-alloc-pipeline .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#svg-alloc-pipeline .error-icon{fill:#552222;}#svg-alloc-pipeline .error-text{fill:#552222;stroke:#552222;}#svg-alloc-pipeline .edge-thickness-normal{stroke-width:1px;}#svg-alloc-pipeline .edge-thickness-thick{stroke-width:3.5px;}#svg-alloc-pipeline .edge-pattern-solid{stroke-dasharray:0;}#svg-alloc-pipeline .edge-thickness-invisible{stroke-width:0;fill:none;}#svg-alloc-pipeline .edge-pattern-dashed{stroke-dasharray:3;}#svg-alloc-pipeline .edge-pattern-dotted{stroke-dasharray:2;}#svg-alloc-pipeline .marker{fill:#666;stroke:#666;}#svg-alloc-pipeline .marker.cross{stroke:#666;}#svg-alloc-pipeline svg{font-size:16px;}#svg-alloc-pipeline p{margin:0;}#svg-alloc-pipeline .label{color:#000000;}#svg-alloc-pipeline .cluster-label text{fill:#333;}#svg-alloc-pipeline .cluster-label span{color:#333;}#svg-alloc-pipeline .cluster-label span p{background-color:transparent;}#svg-alloc-pipeline .label text,#svg-alloc-pipeline span{fill:#000000;color:#000000;}#svg-alloc-pipeline .node rect,#svg-alloc-pipeline .node circle,#svg-alloc-pipeline .node ellipse,#svg-alloc-pipeline .node polygon,#svg-alloc-pipeline .node path{fill:#eee;stroke:#999;stroke-width:1px;}#svg-alloc-pipeline .rough-node .label text,#svg-alloc-pipeline .node .label text,#svg-alloc-pipeline .image-shape .label,#svg-alloc-pipeline .icon-shape .label{text-anchor:middle;}#svg-alloc-pipeline .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#svg-alloc-pipeline .rough-node .label,#svg-alloc-pipeline .node .label,#svg-alloc-pipeline .image-shape .label,#svg-alloc-pipeline .icon-shape .label{text-align:center;}#svg-alloc-pipeline .node.clickable{cursor:pointer;}#svg-alloc-pipeline .root .anchor path{fill:#666!important;stroke-width:0;stroke:#666;}#svg-alloc-pipeline .arrowheadPath{fill:#333333;}#svg-alloc-pipeline .edgePath .path{stroke:#666;stroke-width:1px;}#svg-alloc-pipeline .flowchart-link{stroke:#666;fill:none;}#svg-alloc-pipeline .edgeLabel{background-color:white;text-align:center;}#svg-alloc-pipeline .edgeLabel p{background-color:white;}#svg-alloc-pipeline .edgeLabel rect{opacity:0.5;background-color:white;fill:white;}#svg-alloc-pipeline .labelBkg{background-color:rgba(255, 255, 255, 0.5);}#svg-alloc-pipeline .cluster rect{fill:hsl(0, 0%, 98.9215686275%);stroke:#707070;stroke-width:1px;}#svg-alloc-pipeline .cluster text{fill:#333;}#svg-alloc-pipeline .cluster span{color:#333;}#svg-alloc-pipeline div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-size:12px;background:hsl(-160, 0%, 93.3333333333%);border:1px solid #707070;border-radius:2px;pointer-events:none;z-index:100;}#svg-alloc-pipeline .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#000000;}#svg-alloc-pipeline rect.text{fill:none;stroke-width:0;}#svg-alloc-pipeline .icon-shape,#svg-alloc-pipeline .image-shape{background-color:white;text-align:center;}#svg-alloc-pipeline .icon-shape p,#svg-alloc-pipeline .image-shape p{background-color:white;padding:2px;}#svg-alloc-pipeline .icon-shape .label rect,#svg-alloc-pipeline .image-shape .label rect{opacity:0.5;background-color:white;fill:white;}#svg-alloc-pipeline .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#svg-alloc-pipeline .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#svg-alloc-pipeline .node .neo-node{stroke:#999;}#svg-alloc-pipeline [data-look="neo"].node rect,#svg-alloc-pipeline [data-look="neo"].cluster rect,#svg-alloc-pipeline [data-look="neo"].node polygon{stroke:url(#svg-alloc-pipeline-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-pipeline [data-look="neo"].swimlane.cluster rect{filter:none;}#svg-alloc-pipeline [data-look="neo"].node path{stroke:url(#svg-alloc-pipeline-gradient);stroke-width:1px;}#svg-alloc-pipeline [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-pipeline [data-look="neo"].node .neo-line path{stroke:#999;filter:none;}#svg-alloc-pipeline [data-look="neo"].node circle{stroke:url(#svg-alloc-pipeline-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-pipeline [data-look="neo"].node circle .state-start{fill:#000000;}#svg-alloc-pipeline [data-look="neo"].icon-shape .icon{fill:url(#svg-alloc-pipeline-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-pipeline [data-look="neo"].icon-shape .icon-neo path{stroke:url(#svg-alloc-pipeline-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-pipeline :root{--mermaid-font-family:Arial,'Liberation Sans',Helvetica,sans-serif;}</style><g><marker id="my-svg_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5;"/></marker><marker id="my-svg_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5; stroke-dasharray: 1, 0;"/></marker><g class="root"><g class="clusters"/><g class="edgePaths"><path d="M198.313,101.8L198.313,109.183C198.313,116.567,198.313,131.333,198.313,145.433C198.313,159.533,198.313,172.967,198.313,179.683L198.313,186.4" id="my-svg-L_F_S_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_F_S_0" data-points="W3sieCI6MTk4LjMxMjUsInkiOjEwMS44MDAwMDMwNTE3NTc4MX0seyJ4IjoxOTguMzEyNSwieSI6MTQ2LjEwMDAwMjI4ODgxODM2fSx7IngiOjE5OC4zMTI1LCJ5IjoxOTAuNDAwMDAxNTI1ODc4OX1d" data-look="classic" marker-end="url(#svg-alloc-pipeline_flowchart-v2-pointEnd)"/><path d="M198.313,266.6L198.313,270.767C198.313,274.933,198.313,283.267,198.313,290.933C198.313,298.6,198.313,305.6,198.313,309.1L198.313,312.6" id="my-svg-L_S_R_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_S_R_0" data-points="W3sieCI6MTk4LjMxMjUsInkiOjI2Ni41OTk5OTg0NzQxMjExfSx7IngiOjE5OC4zMTI1LCJ5IjoyOTEuNTk5OTk4NDc0MTIxMX0seyJ4IjoxOTguMzEyNSwieSI6MzE2LjU5OTk5ODQ3NDEyMTF9XQ==" data-look="classic" marker-end="url(#svg-alloc-pipeline_flowchart-v2-pointEnd)"/><path d="M198.313,392.8L198.313,396.967C198.313,401.133,198.313,409.467,198.313,417.133C198.313,424.8,198.313,431.8,198.313,435.3L198.313,438.8" id="my-svg-L_R_E_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_R_E_0" data-points="W3sieCI6MTk4LjMxMjUsInkiOjM5Mi43OTk5OTU0MjIzNjMzfSx7IngiOjE5OC4zMTI1LCJ5Ijo0MTcuNzk5OTk1NDIyMzYzM30seyJ4IjoxOTguMzEyNSwieSI6NDQyLjc5OTk5NTQyMjM2MzN9XQ==" data-look="classic" marker-end="url(#svg-alloc-pipeline_flowchart-v2-pointEnd)"/><path d="M198.313,519L198.313,527.85C198.313,536.7,198.313,554.4,198.313,571.433C198.313,588.467,198.313,604.833,198.313,613.017L198.313,621.2" id="my-svg-L_E_M_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_E_M_0" data-points="W3sieCI6MTk4LjMxMjUsInkiOjUxOC45OTk5OTIzNzA2MDU1fSx7IngiOjE5OC4zMTI1LCJ5Ijo1NzIuMDk5OTkwODQ0NzI2Nn0seyJ4IjoxOTguMzEyNSwieSI6NjI1LjE5OTk4OTMxODg0Nzd9XQ==" data-look="classic" marker-end="url(#svg-alloc-pipeline_flowchart-v2-pointEnd)"/><path d="M147.048,666.2L136.629,670.367C126.209,674.533,105.37,682.867,94.951,690.533C84.531,698.2,84.531,705.2,84.531,708.7L84.531,712.2" id="my-svg-L_M_O1_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_M_O1_0" data-points="W3sieCI6MTQ3LjA0ODQyMDMyOTY3MDM0LCJ5Ijo2NjYuMTk5OTg5MzE4ODQ3N30seyJ4Ijo4NC41MzEyNSwieSI6NjkxLjE5OTk4OTMxODg0Nzd9LHsieCI6ODQuNTMxMjUsInkiOjcxNi4xOTk5ODkzMTg4NDc3fV0=" data-look="classic" marker-end="url(#svg-alloc-pipeline_flowchart-v2-pointEnd)"/><path d="M249.577,666.2L259.996,670.367C270.416,674.533,291.255,682.867,301.674,690.533C312.094,698.2,312.094,705.2,312.094,708.7L312.094,712.2" id="my-svg-L_M_O2_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_M_O2_0" data-points="W3sieCI6MjQ5LjU3NjU3OTY3MDMyOTY2LCJ5Ijo2NjYuMTk5OTg5MzE4ODQ3N30seyJ4IjozMTIuMDkzNzUsInkiOjY5MS4xOTk5ODkzMTg4NDc3fSx7IngiOjMxMi4wOTM3NSwieSI6NzE2LjE5OTk4OTMxODg0Nzd9XQ==" data-look="classic" marker-end="url(#svg-alloc-pipeline_flowchart-v2-pointEnd)"/></g><g class="edgeLabels"><g class="edgeLabel" transform="translate(198.3125, 146.10000228881836)"><g class="label" data-id="L_F_S_0" transform="translate(0, -19.299999237060547)"><g><rect class="background" style="" x="-95.84375" y="0" width="191.6875" height="38.599998474121094"/><text y="-10.1" text-anchor="middle" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">clear</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> the</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> period</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> first</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">replaced,</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> never</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> duplicated</tspan></tspan></text></g></g></g><g class="edgeLabel"><g class="label" data-id="L_S_R_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_R_E_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel" transform="translate(198.3125, 572.0999908447266)"><g class="label" data-id="L_E_M_0" transform="translate(0, -28.099998474121094)"><g><rect class="background" style="" x="-85.1640625" y="0" width="170.328125" height="56.19999694824219"/><text y="-10.1" text-anchor="middle" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">verified</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> migration</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> back</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">5,000-row</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> transactional</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">batches</tspan></tspan></text></g></g></g><g class="edgeLabel"><g class="label" data-id="L_M_O1_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_M_O2_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g></g><g class="nodes"><g class="node default" id="my-svg-flowchart-F-0" data-look="classic" transform="translate(198.3125, 54.900001525878906)"><rect class="basic label-container" style="" x="-115.15625" y="-46.900001525878906" width="230.3125" height="93.80000305175781"/><g class="label" style="" transform="translate(0, -34.900001525878906)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Fund</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> formulas</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> —</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ordered</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">rules</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">the</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> fund's</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> economics,</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="3.2em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">written</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> once</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-S-1" data-look="classic" transform="translate(198.3125, 228.5)"><rect class="basic label-container" style="" x="-100.9453125" y="-38.099998474121094" width="201.890625" height="76.19999694824219"/><g class="label" style="" transform="translate(0, -26.099998474121094)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Sealed</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> compute</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> copy</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">isolated</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> from</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> the</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> live</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">system</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-R-3" data-look="classic" transform="translate(198.3125, 354.6999969482422)"><rect class="basic label-container" style="" x="-107.0078125" y="-38.099998474121094" width="214.015625" height="76.19999694824219"/><g class="label" style="" transform="translate(0, -26.099998474121094)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Run</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> rules</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> in</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> sequence</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">every</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> LP</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ·</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> every</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> entry</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ·</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">8-decimal</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> precision</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-E-5" data-look="classic" transform="translate(198.3125, 480.8999938964844)"><rect class="basic label-container" style="" x="-104.71875" y="-38.099998474121094" width="209.4375" height="76.19999694824219"/><g class="label" style="" transform="translate(0, -26.099998474121094)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Entries</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> with</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> receipts</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">formula</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> +</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> actual</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> inputs</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">stored</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> on</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> each</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-M-7" data-look="classic" transform="translate(198.3125, 645.6999893188477)"><rect class="basic label-container" style="" x="-76.3515625" y="-20.5" width="152.703125" height="41"/><g class="label" style="" transform="translate(0, -8.5)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Primary</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ledger</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-O1-9" data-look="classic" transform="translate(84.53125, 745.9999885559082)"><rect class="basic label-container" style="" x="-76.53125" y="-29.799999237060547" width="153.0625" height="59.599998474121094"/><g class="label" style="" transform="translate(0, -17.799999237060547)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">📒</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Run</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> record</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">+</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> period</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> report</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-O2-11" data-look="classic" transform="translate(312.09375, 745.9999885559082)"><rect class="basic label-container" style="" x="-106.03125" y="-29.799999237060547" width="212.0625" height="59.599998474121094"/><g class="label" style="" transform="translate(0, -17.799999237060547)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">📄</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Investor</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> statements</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">+</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> fund</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ratios</tspan></tspan></text></g></g></g></g></g></g><defs><filter id="my-svg-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><defs><filter id="my-svg-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><linearGradient id="my-svg-gradient" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="hsl(0, 0%, 83.3333333333%)" stop-opacity="1"/><stop offset="100%" stop-color="hsl(0, 0%, 88.9215686275%)" stop-opacity="1"/></linearGradient></svg>
+        </div>
+        <figcaption>One run: clear, compute in isolation, verify on the way back, deliver with receipts.</figcaption>
+      </figure>
+
+      <div class="pull">
+        <span class="tag">Key line</span>
+        A close you can re-run identically is a close you can defend.
+      </div>
+
+      <h2>Every number carries its own receipt</h2>
+      <p>Here is the part we think matters most.</p>
+      <p>When the engine computes an entry, it doesn't just store the amount. It stores, <strong>on the entry itself, at the moment of computation</strong>:</p>
+      <ul class="plain">
+        <li>the <strong>exact formula</strong> that produced it,</li>
+        <li>a <strong>plain description</strong> of what the rule does, and</li>
+        <li>a <strong>variable-by-variable breakdown</strong> — every input the formula used, with the actual value it had: committed capital, fee rate, day count, FX rate.</li>
+      </ul>
+
+      <div class="email-mock">
+        <div class="em-chrome"><span class="dots">●●●</span> Account entry · receipt view <span style="margin-left:auto;">fictional data</span></div>
+        <div class="em-banner navy"><span>Quarterly Management Fees — Folio MC-0142 · Meridian Capital Partners</span><span class="amt">$25,205.48</span></div>
+        <div class="rc-formula">@committed_capital&nbsp;*&nbsp;@fee_rate&nbsp;/&nbsp;365&nbsp;*&nbsp;@days_in_period</div>
+        <table>
+          <tr><th>Input</th><th style="text-align:right;">Value used</th></tr>
+          <tr><td class="mono">@committed_capital</td><td class="val">5,000,000.00</td></tr>
+          <tr><td class="mono">@fee_rate</td><td class="val">0.02</td></tr>
+          <tr><td class="mono">@days_in_period</td><td class="val">92</td></tr>
+          <tr class="total"><td class="mono">result</td><td class="val">25,205.48</td></tr>
+        </table>
+        <div class="rc-ai"><span class="ai-tag">AI explanation</span>"2% per annum on $5.0M of committed capital, accrued for 92 days of Q3: $25,205.48."</div>
+      </div>
+
+      <p>Not reconstructed after the fact. Not "we can probably rebuild it." Stored at creation, on the number, exactly where an auditor's question lands.</p>
+      <p>And because the breakdown is data, an AI layer can turn it into a sentence on demand. The AI explains the receipt — <strong>it never computes the number</strong>.</p>
+
+      <div class="keypoint">
+        <div class="kp-label">Key point 01</div>
+        <div class="kp-text">If a number reaches an LP statement, it must be able to show the formula — and the exact values — that produced it.</div>
+      </div>
+
+      <h2>Re-running is safe. Locking is final.</h2>
+      <p>Numbers change late. A restated invoice, a corrected commitment, a fee rebate agreed after the quarter ended. The real question is what a correction costs you.</p>
+      <p>In the engine, re-running a period <strong>replaces that period's entries rather than duplicating them</strong>. The run clears what its formulas generated last time, then regenerates from the current data. Correction becomes: fix the input, run again, compare.</p>
+      <p>Before touching a full fund, you can run in <strong>sample mode</strong> — three LP commitments, end to end — and read the results like a proof.</p>
+      <p>And every run is a record: who ran it, for what period, with which formulas, how long each formula took (to the millisecond), and whether it succeeded. The Previous Runs page is a run ledger; every entry links back to its run and its formula.</p>
+      <p>Then there's the other direction — a period you never want to change again. <strong>Lock the run</strong>, and the engine refuses to execute anything overlapping those dates. Not a policy. A refusal.</p>
+
+      <div class="shot">
+        <div class="shot-icon">🖼️</div>
+        <div class="shot-title">Product screenshot placeholder</div>
+        <div class="shot-sub">Drop in: the Previous Runs page — run ledger with a locked quarter, per-run status, and View Report links</div>
+      </div>
+
+      <div class="keypoint">
+        <div class="kp-label">Key point 02</div>
+        <div class="kp-text">Re-running replaces; locking refuses. Those two behaviours are what "closed books" means when software takes them seriously.</div>
+      </div>
+
+      <h2>⚙️ Under the hood: the close runs in a sealed room</h2>
+      <p>The engineering is what makes the guarantees above real:</p>
+      <ul class="plain">
+        <li><strong>A private compute copy.</strong> Each run snapshots the fund's data — 15 tables — into an isolated scratch database. The heavy quarter-end computation happens there, never contending with the live platform your team is using. Two funds can close simultaneously without touching each other.</li>
+        <li><strong>Fail-closed isolation.</strong> The scratch layer is physically unable to reach the primary database — the connection layer raises a safety violation rather than fall through. Not "instructed not to." Unable.</li>
+        <li><strong>Verified migration back.</strong> Finished entries return to the primary database in 5,000-row transactional batches, each batch flagged as migrated only after it lands — with a final sweep that catches anything a failure left behind.</li>
+        <li><strong>Numeric guardrails.</strong> A formula that divides by zero or produces a non-finite value fails loudly, naming the formula and the LP — it cannot silently write garbage.</li>
+        <li><strong>Attribution everywhere.</strong> Every generated row is attributed to the user who triggered the run, and the formulas themselves carry full change history — who edited what, when, from what to what.</li>
+      </ul>
+
+      <table class="methods">
+        <tr><th></th><th>The workbook close</th><th>The engine close</th></tr>
+        <tr><td>Where the logic lives</td><td>One person's spreadsheet</td><td>Named, ordered, versioned rules</td></tr>
+        <tr><td>Re-running a period</td><td>New tab, duplicate risk</td><td>Replaces its own entries</td></tr>
+        <tr><td>"Walk me through this number"</td><td>Archaeology</td><td>Receipt stored on the entry</td></tr>
+        <tr><td>Who changed the fee logic</td><td>Unknown</td><td>Full change history, attributed</td></tr>
+        <tr><td>A closed quarter</td><td>A promise</td><td>Locked — the engine refuses</td></tr>
+      </table>
+
+      <h2>One run, every period</h2>
+      <p>Month, quarter, and year are not three reporting projects. A formula can be flagged to emit its <strong>Quarterly, YTD, and Since-Inception</strong> variants automatically — same run, three period views, for every LP. Fiscal years are respected; an April-start year works out of the box.</p>
+      <p>And formulas consolidate. One multi-fee rule type generates entries for a whole list of fee types at once — the documented example collapsed a <strong>15-formula reporting setup into 3</strong>, producing the same entries and the same totals with a third of the surface area to maintain.</p>
+
+      <figure class="diagram">
+        <div class="frame">
+<svg id="svg-alloc-periods" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="flowchart" style="max-width: 650.219px; background-color: transparent;" viewBox="0 0 650.21875 309.39996337890625" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#svg-alloc-periods{font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#svg-alloc-periods .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#svg-alloc-periods .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#svg-alloc-periods .error-icon{fill:#552222;}#svg-alloc-periods .error-text{fill:#552222;stroke:#552222;}#svg-alloc-periods .edge-thickness-normal{stroke-width:1px;}#svg-alloc-periods .edge-thickness-thick{stroke-width:3.5px;}#svg-alloc-periods .edge-pattern-solid{stroke-dasharray:0;}#svg-alloc-periods .edge-thickness-invisible{stroke-width:0;fill:none;}#svg-alloc-periods .edge-pattern-dashed{stroke-dasharray:3;}#svg-alloc-periods .edge-pattern-dotted{stroke-dasharray:2;}#svg-alloc-periods .marker{fill:#666;stroke:#666;}#svg-alloc-periods .marker.cross{stroke:#666;}#svg-alloc-periods svg{font-size:16px;}#svg-alloc-periods p{margin:0;}#svg-alloc-periods .label{color:#000000;}#svg-alloc-periods .cluster-label text{fill:#333;}#svg-alloc-periods .cluster-label span{color:#333;}#svg-alloc-periods .cluster-label span p{background-color:transparent;}#svg-alloc-periods .label text,#svg-alloc-periods span{fill:#000000;color:#000000;}#svg-alloc-periods .node rect,#svg-alloc-periods .node circle,#svg-alloc-periods .node ellipse,#svg-alloc-periods .node polygon,#svg-alloc-periods .node path{fill:#eee;stroke:#999;stroke-width:1px;}#svg-alloc-periods .rough-node .label text,#svg-alloc-periods .node .label text,#svg-alloc-periods .image-shape .label,#svg-alloc-periods .icon-shape .label{text-anchor:middle;}#svg-alloc-periods .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#svg-alloc-periods .rough-node .label,#svg-alloc-periods .node .label,#svg-alloc-periods .image-shape .label,#svg-alloc-periods .icon-shape .label{text-align:center;}#svg-alloc-periods .node.clickable{cursor:pointer;}#svg-alloc-periods .root .anchor path{fill:#666!important;stroke-width:0;stroke:#666;}#svg-alloc-periods .arrowheadPath{fill:#333333;}#svg-alloc-periods .edgePath .path{stroke:#666;stroke-width:1px;}#svg-alloc-periods .flowchart-link{stroke:#666;fill:none;}#svg-alloc-periods .edgeLabel{background-color:white;text-align:center;}#svg-alloc-periods .edgeLabel p{background-color:white;}#svg-alloc-periods .edgeLabel rect{opacity:0.5;background-color:white;fill:white;}#svg-alloc-periods .labelBkg{background-color:rgba(255, 255, 255, 0.5);}#svg-alloc-periods .cluster rect{fill:hsl(0, 0%, 98.9215686275%);stroke:#707070;stroke-width:1px;}#svg-alloc-periods .cluster text{fill:#333;}#svg-alloc-periods .cluster span{color:#333;}#svg-alloc-periods div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-size:12px;background:hsl(-160, 0%, 93.3333333333%);border:1px solid #707070;border-radius:2px;pointer-events:none;z-index:100;}#svg-alloc-periods .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#000000;}#svg-alloc-periods rect.text{fill:none;stroke-width:0;}#svg-alloc-periods .icon-shape,#svg-alloc-periods .image-shape{background-color:white;text-align:center;}#svg-alloc-periods .icon-shape p,#svg-alloc-periods .image-shape p{background-color:white;padding:2px;}#svg-alloc-periods .icon-shape .label rect,#svg-alloc-periods .image-shape .label rect{opacity:0.5;background-color:white;fill:white;}#svg-alloc-periods .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#svg-alloc-periods .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#svg-alloc-periods .node .neo-node{stroke:#999;}#svg-alloc-periods [data-look="neo"].node rect,#svg-alloc-periods [data-look="neo"].cluster rect,#svg-alloc-periods [data-look="neo"].node polygon{stroke:url(#svg-alloc-periods-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-periods [data-look="neo"].swimlane.cluster rect{filter:none;}#svg-alloc-periods [data-look="neo"].node path{stroke:url(#svg-alloc-periods-gradient);stroke-width:1px;}#svg-alloc-periods [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-periods [data-look="neo"].node .neo-line path{stroke:#999;filter:none;}#svg-alloc-periods [data-look="neo"].node circle{stroke:url(#svg-alloc-periods-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-periods [data-look="neo"].node circle .state-start{fill:#000000;}#svg-alloc-periods [data-look="neo"].icon-shape .icon{fill:url(#svg-alloc-periods-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-periods [data-look="neo"].icon-shape .icon-neo path{stroke:url(#svg-alloc-periods-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-alloc-periods :root{--mermaid-font-family:Arial,'Liberation Sans',Helvetica,sans-serif;}</style><g><marker id="my-svg_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5;"/></marker><marker id="my-svg_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5; stroke-dasharray: 1, 0;"/></marker><g class="root"><g class="clusters"/><g class="edgePaths"><path d="M231.344,59.788L209.237,65.09C187.13,70.392,142.917,80.996,120.81,89.798C98.703,98.6,98.703,105.6,98.703,109.1L98.703,112.6" id="my-svg-L_F_Q_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_F_Q_0" data-points="W3sieCI6MjMxLjM0Mzc1LCJ5Ijo1OS43ODgyMTgzODI3ODg2NTZ9LHsieCI6OTguNzAzMTI1LCJ5Ijo5MS41OTk5OTg0NzQxMjExfSx7IngiOjk4LjcwMzEyNSwieSI6MTE2LjU5OTk5ODQ3NDEyMTF9XQ==" data-look="classic" marker-end="url(#svg-alloc-periods_flowchart-v2-pointEnd)"/><path d="M325.109,66.6L325.109,70.767C325.109,74.933,325.109,83.267,325.109,90.933C325.109,98.6,325.109,105.6,325.109,109.1L325.109,112.6" id="my-svg-L_F_Y_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_F_Y_0" data-points="W3sieCI6MzI1LjEwOTM3NSwieSI6NjYuNTk5OTk4NDc0MTIxMX0seyJ4IjozMjUuMTA5Mzc1LCJ5Ijo5MS41OTk5OTg0NzQxMjExfSx7IngiOjMyNS4xMDkzNzUsInkiOjExNi41OTk5OTg0NzQxMjExfV0=" data-look="classic" marker-end="url(#svg-alloc-periods_flowchart-v2-pointEnd)"/><path d="M418.875,59.788L440.982,65.09C463.089,70.392,507.302,80.996,529.409,89.798C551.516,98.6,551.516,105.6,551.516,109.1L551.516,112.6" id="my-svg-L_F_S_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_F_S_0" data-points="W3sieCI6NDE4Ljg3NSwieSI6NTkuNzg4MjE4MzgyNzg4NjU2fSx7IngiOjU1MS41MTU2MjUsInkiOjkxLjU5OTk5ODQ3NDEyMTF9LHsieCI6NTUxLjUxNTYyNSwieSI6MTE2LjU5OTk5ODQ3NDEyMTF9XQ==" data-look="classic" marker-end="url(#svg-alloc-periods_flowchart-v2-pointEnd)"/><path d="M98.703,175.2L98.703,179.367C98.703,183.533,98.703,191.867,118.629,201.587C138.555,211.307,178.408,222.414,198.334,227.967L218.26,233.521" id="my-svg-L_Q_L_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Q_L_0" data-points="W3sieCI6OTguNzAzMTI1LCJ5IjoxNzUuMTk5OTk2OTQ4MjQyMn0seyJ4Ijo5OC43MDMxMjUsInkiOjIwMC4xOTk5OTY5NDgyNDIyfSx7IngiOjIyMi4xMTMyODEyNSwieSI6MjM0LjU5NDcyMTc4OTM4OTY3fV0=" data-look="classic" marker-end="url(#svg-alloc-periods_flowchart-v2-pointEnd)"/><path d="M325.109,175.2L325.109,179.367C325.109,183.533,325.109,191.867,325.109,199.533C325.109,207.2,325.109,214.2,325.109,217.7L325.109,221.2" id="my-svg-L_Y_L_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Y_L_0" data-points="W3sieCI6MzI1LjEwOTM3NSwieSI6MTc1LjE5OTk5Njk0ODI0MjJ9LHsieCI6MzI1LjEwOTM3NSwieSI6MjAwLjE5OTk5Njk0ODI0MjJ9LHsieCI6MzI1LjEwOTM3NSwieSI6MjI1LjE5OTk5Njk0ODI0MjJ9XQ==" data-look="classic" marker-end="url(#svg-alloc-periods_flowchart-v2-pointEnd)"/><path d="M551.516,175.2L551.516,179.367C551.516,183.533,551.516,191.867,531.589,201.587C511.663,211.307,471.811,222.414,451.885,227.967L431.959,233.521" id="my-svg-L_S_L_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_S_L_0" data-points="W3sieCI6NTUxLjUxNTYyNSwieSI6MTc1LjE5OTk5Njk0ODI0MjJ9LHsieCI6NTUxLjUxNTYyNSwieSI6MjAwLjE5OTk5Njk0ODI0MjJ9LHsieCI6NDI4LjEwNTQ2ODc1LCJ5IjoyMzQuNTk0NzIxNzg5Mzg5Njd9XQ==" data-look="classic" marker-end="url(#svg-alloc-periods_flowchart-v2-pointEnd)"/></g><g class="edgeLabels"><g class="edgeLabel"><g class="label" data-id="L_F_Q_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_F_Y_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_F_S_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_Q_L_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_Y_L_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_S_L_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g></g><g class="nodes"><g class="node default" id="my-svg-flowchart-F-0" data-look="classic" transform="translate(325.109375, 37.29999923706055)"><rect class="basic label-container" style="" x="-93.765625" y="-29.299999237060547" width="187.53125" height="58.599998474121094"/><g class="label" style="" transform="translate(0, -17.299999237060547)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">One</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> formula</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">'Management</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Fees'</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-Q-1" data-look="classic" transform="translate(98.703125, 145.89999771118164)"><rect class="basic label-container" style="" x="-90.703125" y="-29.299999237060547" width="181.40625" height="58.599998474121094"/><g class="label" style="" transform="translate(0, -17.299999237060547)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Quarterly</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Management</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Fees</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-Y-3" data-look="classic" transform="translate(325.109375, 145.89999771118164)"><rect class="basic label-container" style="" x="-90.703125" y="-29.299999237060547" width="181.40625" height="58.599998474121094"/><g class="label" style="" transform="translate(0, -17.299999237060547)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">YTD</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Management</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Fees</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-S-5" data-look="classic" transform="translate(551.515625, 145.89999771118164)"><rect class="basic label-container" style="" x="-90.703125" y="-29.299999237060547" width="181.40625" height="58.599998474121094"/><g class="label" style="" transform="translate(0, -17.299999237060547)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Since</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Inception</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Management</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Fees</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-L-7" data-look="classic" transform="translate(325.109375, 263.2999954223633)"><rect class="basic label-container" style="" x="-102.99609375" y="-38.099998474121094" width="205.9921875" height="76.19999694824219"/><g class="label" style="" transform="translate(0, -26.099998474121094)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">One</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> entry</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> per</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> LP</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">commitment</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">+</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> one</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> fund-level</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> rollup</tspan></tspan></text></g></g></g></g></g></g><defs><filter id="my-svg-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><defs><filter id="my-svg-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><linearGradient id="my-svg-gradient" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="hsl(0, 0%, 83.3333333333%)" stop-opacity="1"/><stop offset="100%" stop-color="hsl(0, 0%, 88.9215686275%)" stop-opacity="1"/></linearGradient></svg>
+        </div>
+        <figcaption>One formula, three period views — generated for every LP in the same run.</figcaption>
+      </figure>
+
+      <p>When someone asks <em>"what happened this quarter?"</em>, the period report answers on the fly: totals, entry counts, composition by fee type, a trailing-quarters trend, and drill-down from fund level to any single LP's folio — the same report an investor can be given for their own folio. AI commentary is on demand and anomaly-aware: <em>"Management Fee is 42% above its trailing 4-quarter average"</em> is a sentence you want <strong>before</strong> the LP asks.</p>
+
+      <p>And the numbers don't stop at reports you read on screen. Every generated entry feeds the <strong>statement and report builders</strong>: the same run can produce bespoke investor statements from your own templates — one per LP, built from that LP's entries — and custom reports that pull any generated number, for any period, into exactly the layout your team and your LPs expect. No re-keying, no export-and-paste. <strong>The number on the statement is the number in the ledger</strong> — receipt and all.</p>
+
+      <div class="keypoint">
+        <div class="kp-label">Key point 03</div>
+        <div class="kp-text">Month, quarter, and year aren't three reporting projects. They're three outputs of the same run.</div>
+      </div>
+
+      <div class="framework">
+        <div class="label">A framework to steal — five properties of a defensible close</div>
+        <ol>
+          <li><strong>Repeatable</strong> — re-running a period replaces its entries; correction is cheap.</li>
+          <li><strong>Explainable</strong> — every number stores its formula and inputs at creation.</li>
+          <li><strong>Isolated</strong> — computation runs on a sealed copy, never the live system.</li>
+          <li><strong>Attributed</strong> — every row, and every formula edit, traced to a person.</li>
+          <li><strong>Locked</strong> — closed periods are refused by the engine, not by policy.</li>
+        </ol>
+      </div>
+
+      <div class="checklist">
+        <div class="label">Six questions for your next quarter-end</div>
+        <p class="lead-in">Can your team answer yes to all six?</p>
+        <ol>
+          <li>Could you re-run last quarter today and get the same entries?</li>
+          <li>Can any fee number on an LP statement show the formula that produced it?</li>
+          <li>…and the actual values that went into it?</li>
+          <li>Do you know who last changed the fee logic, and what it said before?</li>
+          <li>Is it <em>impossible</em> — not just forbidden — to overwrite a closed quarter?</li>
+          <li>Could you answer an auditor's "walk me through this" in one click?</li>
+        </ol>
+      </div>
+
+      <hr class="article-rule">
+
+      <div class="takeaways">
+        <div class="label">✅ Takeaways</div>
+        <ol>
+          <li><strong>Write fund economics as rules, not workbook cells.</strong> The logic must outlive its author — that's true whether or not you ever buy software for it.</li>
+          <li><strong>Make every generated number store its inputs at creation time.</strong> A receipt reconstructed later is an alibi, not evidence.</li>
+          <li><strong>Re-runs should replace, never duplicate.</strong> Idempotent periods are what make corrections cheap enough to actually do.</li>
+          <li><strong>Lock closed periods in software, not in policy.</strong> A promise can be broken at 11pm before a deadline; a refusal can't.</li>
+          <li><strong>Test the logic on a sample first</strong> — three LPs, read every receipt, then run the fund.</li>
+        </ol>
+      </div>
+
+      <div class="cta">
+        <h3>See your own fee schedule as rules</h3>
+        <p>Bring your gnarliest allocation — equalisation, mid-period fee changes, master–feeder pass-throughs — and we'll model it live on a demo fund, receipts included.</p>
+        <span class="btn">Call us for a demo</span>
+        <span class="alt">Or DM us — we'll set it up on your own fund structure.</span>
+      </div>
+
+      <p>One question before you go: if an auditor picked one number off your last quarterly statement, how long would the full walk-through take — and how many people would it involve?</p>
+
+      <p class="signoff">— Fund Ops, Unstacked #2: one CapHive feature, properly explained, each time.</p>
+    </article>
+
+    <div class="engage">
+      <div class="counts"><span class="reax">👍💡❤️</span> <span>96</span> <span style="margin-left:auto;">14 comments · 7 reposts</span></div>
+      <div class="actions">
+        <span><svg viewBox="0 0 24 24"><path d="M19.46 11l-3.91-3.91a7 7 0 01-1.69-2.74l-.49-1.47A2.76 2.76 0 0010.76 1 2.75 2.75 0 008 3.74v1.12a9.19 9.19 0 00.46 2.85L8.89 9H4.12A2.12 2.12 0 002 11.12a2.16 2.16 0 00.92 1.76A2.11 2.11 0 002 14.62a2.14 2.14 0 001.28 2 2 2 0 00-.28 1 2.12 2.12 0 002 2.12v.14A2.12 2.12 0 007.12 22h7.49a8.08 8.08 0 003.58-.84l.31-.16H21V11zM19 19h-1l-.73.37a6.14 6.14 0 01-2.69.63H7.72a1 1 0 01-1-.72l-.25-.87-.85-.41A1 1 0 015 17l.17-1-.76-.74A1 1 0 014.27 14l.66-1.09-.73-1.1a.49.49 0 01.08-.7.48.48 0 01.34-.11h7.05l-1.31-3.92A7 7 0 0110 4.86V3.75a.77.77 0 01.75-.75.75.75 0 01.71.51L12 5a9 9 0 002.13 3.5l4.5 4.5H19z"/></svg>Like</span>
+        <span><svg viewBox="0 0 24 24"><path d="M7 9h10v1H7zm0 4h7v-1H7zm16-2a6.78 6.78 0 01-2.84 5.61L12 22v-4H8A7 7 0 018 4h8a7 7 0 017 7zm-2 0a5 5 0 00-5-5H8a5 5 0 000 10h6v2.28L19 15a4.79 4.79 0 002-4z"/></svg>Comment</span>
+        <span><svg viewBox="0 0 24 24"><path d="M13.96 5H6c-.55 0-1 .45-1 1v10H3V6c0-1.66 1.34-3 3-3h7.96L12 .91 13.41.5l3.34 3.35-3.34 3.35L12 5.79zM10.04 19H18c.55 0 1-.45 1-1V8h2v10c0 1.66-1.34 3-3 3h-7.96L12 23.09l-1.41.41-3.34-3.35 3.34-3.35L12 18.21z"/></svg>Repost</span>
+        <span><svg viewBox="0 0 24 24"><path d="M21 3L0 10l7.66 4.26L16 8l-6.26 8.34L14 24l7-21z"/></svg>Send</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rail-label">Feed teaser — posted to the company page, links to the article</div>
+  <div class="sheet feed-card">
+    <div class="fhead">
+      <div class="avatar">CH</div>
+      <div>
+        <div class="name">CapHive</div>
+        <div class="meta">2,481 followers</div>
+        <div class="meta">1h · 🌐</div>
+      </div>
+    </div>
+    <div class="body">An auditor points at one management fee number on one LP's statement: "Walk me through this."
+
+In most funds, that question starts a spreadsheet excavation.
+
+In ours, the number answers it — 𝗲𝘃𝗲𝗿𝘆 𝗴𝗲𝗻𝗲𝗿𝗮𝘁𝗲𝗱 𝗻𝘂𝗺𝗯𝗲𝗿 𝗰𝗮𝗿𝗿𝗶𝗲𝘀 𝗶𝘁𝘀 𝗼𝘄𝗻 𝗿𝗲𝗰𝗲𝗶𝗽𝘁. 👇<div class="fold">…see more — fold: everything above is what a skimmer sees</div>Your fund's economics — fee schedules, cost allocations, master-feeder pass-throughs — written once as ordered, versioned formula rules instead of living in one person's workbook.
+
+Run a month, a quarter, a year: the engine computes every entry for every LP, and stores 𝗼𝗻 𝗲𝗮𝗰𝗵 𝗲𝗻𝘁𝗿𝘆 the formula that produced it and the actual values it used. Committed capital, fee rate, day count. At creation time — not reconstructed when someone asks.
+
+In the full write-up (link in comments):
+
+→ Re-running a period replaces its entries instead of duplicating them — and a locked period refuses to be overwritten at all. That's what "closed books" means in software.
+
+→ Why the close computes on a sealed copy of the fund's data (15 tables, snapshotted per run) and returns in verified 5,000-row batches — two funds can close at once without touching each other, or your live system.
+
+→ How one multi-fee rule collapsed a 15-formula reporting setup into 3 — and one flag emits Quarterly, YTD, and Since-Inception views from a single run.
+
+→ Every generated number flows straight into bespoke investor statements and custom reports — one statement per LP, from your own templates, in the same run. The number on the statement 𝗶𝘀 the number in the ledger.
+
+Test it like an engineer: sample mode runs the whole close on 3 LP commitments first, so you read the receipts before you run the fund.
+
+If an auditor picked one number off your last quarterly statement — how long would the full walk-through take, and how many people would it involve? 👇
+
+— Fund Ops, Unstacked #2: one CapHive feature, properly explained, each time.
+
+<span class="tags">#PrivateEquity #FundOperations #CFO #FundAccounting #FundAdministration</span></div>
+  </div>
+
+  <div class="rail-label">First comment — carries the link so the post body stays link-free</div>
+  <div class="sheet">
+    <div class="comment">
+      <div class="avatar">CH</div>
+      <div class="bubble">
+        <div class="cname">CapHive <span class="chead">· Author</span></div>
+        Full article: <span class="link">&lt;link&gt;</span><br>
+        It covers the receipt stored on every generated number, run locking, and the sealed-room architecture behind the close. If you'd like your own fee schedule modelled as rules on a demo fund, my DMs are open.
+      </div>
+    </div>
+  </div>
+
+  <div class="rail-label">Pre-publish review</div>
+  <div class="sheet review">
+    <div class="chips">
+      <span class="chip info"><span class="dot"></span>Persona: CFO / Head of Fund Finance</span>
+      <span class="chip info"><span class="dot"></span>Format: Article + feed teaser (1,710 chars)</span>
+      <span class="chip"><span class="dot"></span>Teaser hook survives the 3-line fold</span>
+      <span class="chip"><span class="dot"></span>Quantified: 21 rule types · 8 decimals · 100k+ numbers in minutes · 15→3 formulas</span>
+      <span class="chip"><span class="dot"></span>Tech depth = customer guarantee</span>
+      <span class="chip"><span class="dot"></span>Generous, product-independent takeaways + stealable framework</span>
+      <span class="chip"><span class="dot"></span>Compliance: "Meridian Capital Partners" is fictional; no return claims</span>
+    </div>
+    <p class="note">To publish: screenshot or export the two diagrams and the receipt card from this page as images for the article body, use the cover block above as the article cover, paste the teaser text to the feed, and add the link as the first comment. Engagement numbers shown are illustrative placeholders.</p>
+  </div>
+</div>
+
+</body>
+</html>

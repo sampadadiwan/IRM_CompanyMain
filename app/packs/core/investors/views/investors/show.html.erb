@@ -11,14 +11,14 @@
       <% end %>
     <% end %>
 
-    <%= link_to notes_path(investor_id: @investor.id),
+    <%= link_to notes_path(owner_id: @investor.id, owner_type: "Investor"),
                 class: "btn btn-outline-success d-inline-flex align-items-center",
                 data: { turbo: false } do %>
       <i class="ti ti-notes"></i> View Notes
     <% end %>
 
     <% if policy(@investor).update? %>
-      <%= link_to new_note_path("note[investor_id]": @investor.id),
+      <%= link_to new_note_path("note[owner_id]": @investor.id, "note[owner_type]": "Investor"),
                   class: "btn btn-outline-success d-inline-flex align-items-center",
                   data: { turbo: false } do %>
         <i class="ti ti-message-plus"></i> Add Note
@@ -76,10 +76,24 @@
           <% end %>
 
           <% if @investor.category == "Portfolio Company" %>
-            <%= link_to portfolio_report_extracts_path(portfolio_company_id: @investor.id),
+          <%# show company id in ransack filter %>
+            <%= link_to portfolio_report_extracts_path(portfolio_company_id: @investor.id, q: { portfolio_company_id_eq: @investor.id }),
                         class: "dropdown-item d-flex align-items-center",
                         data: { turbo: false, bs_toggle: "tooltip", bs_title: "View all portfolio report extracts for this portfolio company" } do %>
               <i class="ti ti-search"></i> Portfolio Report Extracts
+            <% end %>
+
+             <%# Jump straight to the legacy bulk-generate options step (second screen) with this
+                company pre-selected — no company-picking step, since we're already on its page.
+                Only offered when at least one portfolio report exists to generate against. %>
+            <% if policy_scope(PortfolioReport).exists? %>
+              <%= button_to legacy_bulk_generate_options_portfolio_reports_path,
+                            method: :post,
+                            params: { portfolio_company_ids: [@investor.id], back_to: investor_path(@investor) },
+                            class: "dropdown-item d-flex align-items-center",
+                            data: { turbo: false, bs_toggle: "tooltip", bs_title: "Generate a portfolio report for this company" } do %>
+                <i class="ti ti-report-analytics"></i> Portfolio Report (Legacy)
+              <% end %>
             <% end %>
           <% end %>
 

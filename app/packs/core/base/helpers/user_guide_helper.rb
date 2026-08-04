@@ -40,6 +40,9 @@ module UserGuideHelper
     'portfolio_reports' => 'portfolio_report_drafts_user_guide.md',
     'portfolio_report_templates' => 'portfolio_report_drafts_user_guide.md',
     'portfolio_report_drafts' => 'portfolio_report_drafts_user_guide.md',
+    # Explicit key (not a controller) for the legacy extract/report generation flow — linked
+    # via user_guide_icon_for on the legacy bulk-generate screens.
+    'portfolio_report_legacy' => 'portfolio_report_legacy_user_guide.md',
 
     # Portfolio & Valuations
     'portfolio_investments' => 'portfolio_investments_user_guide.md',

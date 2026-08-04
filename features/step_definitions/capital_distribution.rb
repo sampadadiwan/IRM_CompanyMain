@@ -412,13 +412,13 @@ Then('the capital distribution payments must have the data in the sheet {string}
     # create hash from headers and cells
     row_data = [headers, row].transpose.to_h
     capital_distribution = CapitalDistribution.where(title: row_data["Capital Distribution"].strip).first
-    investor = Investor.where(investor_name: row_data["Stakeholder"]).first
-    cdp = CapitalDistributionPayment.where(investor:, capital_distribution:).first
+    # The investor is now derived from the folio's commitment, so find the payment via the folio
+    cdp = CapitalDistributionPayment.where(folio_id: row_data["Folio No"].to_s, capital_distribution:).first
 
     puts "Checking import of #{cdp.to_json}"
 
-    cdp.investor_name.should
-    row_data["Stakeholder"]
+    cdp.folio_id.should
+    row_data["Folio No"].to_s
     cdp.income.to_d.should
     row_data["Income"].to_d
     cdp.cost_of_investment.to_d.should
@@ -768,14 +768,14 @@ Then('the new capital distribution payments must have the data in the sheet {str
     # create hash from headers and cells
     row_data = [headers, row].transpose.to_h
     capital_distribution = CapitalDistribution.where(title: row_data["Capital Distribution"].strip).first
-    investor = Investor.where(investor_name: row_data["Stakeholder"]).first
 
-    cdp = CapitalDistributionPayment.where(investor:, capital_distribution:).where.not(id: cdps.map(&:id)).first
+    # The investor is now derived from the folio's commitment, so find the payment via the folio
+    cdp = CapitalDistributionPayment.where(folio_id: row_data["Folio No"].to_s, capital_distribution:).where.not(id: cdps.map(&:id)).first
     cdps.add(cdp)
     puts "Checking import of #{cdp.to_json}"
 
-    cdp.investor_name.should
-    row_data["Stakeholder"]
+    cdp.folio_id.should
+    row_data["Folio No"].to_s
     cdp.income.to_d.should
     row_data["Income"].to_d
     cdp.cost_of_investment.to_d.should

@@ -1,22 +1,32 @@
 
 
-<%= render "/investor_notices/carousel" %>
-
 <% allowed_dashboards = ["cxo_dashboard", "vc_dashboard", "fm_dashboard", "investor_dashboard"] %>
 
-<% if current_user.entity %>
+<%
+  # Resolve which dashboard partial will render for this user/request so we can
+  # decide where the notices carousel goes (see below).
+  dashboard_partial = nil
+  if current_user.entity
+    dashboard_partial =
+      if params[:dashboard].present? && allowed_dashboards.include?(params[:dashboard])
+        params[:dashboard]
+      elsif current_user.curr_role && current_user.curr_role.to_sym == :investor
+        "vc_dashboard"
+      elsif current_user.entity_type == "Company"
+        "cxo_dashboard"
+      elsif current_user.entity.is_fund?
+        "fm_dashboard2"
+      elsif current_user.entity_type == "Family Office" || current_user.entity_type == "Investment Advisor"
+        "investment_advisor_dashboard"
+      end
+  end
+%>
 
-    <% if params[:dashboard].present? &&  allowed_dashboards.include?(params[:dashboard]) %>
-        <%= render params[:dashboard] %>
-    <% else %>   
-        <% if current_user.curr_role && current_user.curr_role.to_sym == :investor %>
-            <%= render "vc_dashboard" %>
-        <% elsif current_user.entity_type == "Company" %>
-            <%= render "cxo_dashboard" %>        
-        <% elsif current_user.entity.is_fund? %>
-            <%= render "fm_dashboard2" %>
-        <% elsif current_user.entity_type == "Family Office" || current_user.entity_type == "Investment Advisor" %>
-            <%= render "investment_advisor_dashboard" %>
-        <% end %>
-    <% end %>
+<%# The vc_dashboard renders the carousel itself (inside its GP-switcher turbo
+    frame) so notices are filtered by the selected GP and refresh when the LP
+    switches GPs. All other dashboards keep the unfiltered carousel here. %>
+<% unless dashboard_partial == "vc_dashboard" %>
+    <%= render "/investor_notices/carousel" %>
 <% end %>
+
+<%= render dashboard_partial if dashboard_partial %>

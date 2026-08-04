@@ -231,18 +231,36 @@ module KpisHelper
   # overrides the Bootstrap colours for Kedaara and keeps the brand palette there).
   def tag_badge_class(tag)
     case tag.to_s.strip.downcase
-    when "actual"    then "bg-primary-subtle text-primary badge-tag-actual"
+    # bg-light/text-dark instead of bg-primary-subtle — the primary-blue badge
+    # is invisible against the AG Grid's blue header row.
+    when "actual" then "bg-light text-dark badge-tag-actual"
     when "projected" then "bg-info-subtle text-info badge-tag-projected"
     when /^ic /      then "bg-warning-subtle text-warning badge-tag-ic-case"
     when /^audited/  then "bg-danger-subtle text-danger badge-tag-audited"
-    when "budget"    then "bg-success-subtle text-success badge-tag-budget"
-    else                  "bg-secondary-subtle text-secondary badge-tag-other"
+    when "budget" then "bg-success-subtle text-success badge-tag-budget"
+    # Forecast gets its own cyan/info badge to distinguish from Budget (green)
+    when "forecast" then "bg-info-subtle text-info badge-tag-forecast"
+    else "bg-secondary-subtle text-secondary badge-tag-other"
     end
   end
 
+  # Returns the investor KPI mappings for the grid view, sorted so children
+  # appear immediately after their parent using the ancestry gem's tree ordering.
+  #
+  # For fund entities (Investment Fund / Angel Fund), returns the portco's configured
+  # mappings. For other entity types (e.g., portco self-reporting), builds ad-hoc
+  # mappings from the KPI names found in the given reports.
+  #
+  # @param kpi_reports [ActiveRecord::Relation] the KPI reports being displayed
+  # @param investor [Investor] the portfolio company (investor record)
+  # @param current_user [User] the logged-in user
+  # @param category [String, nil] optional category filter (e.g., "Income Statement")
+  # @return [Array<InvestorKpiMapping>] ordered mappings with children after parents
   def set_investor_kpi_mappings(kpi_reports, investor, current_user, category: nil)
     mappings = if ["Investment Fund", "Angel Fund"].include? current_user.entity.entity_type
-                 investor&.investor_kpi_mappings || []
+                 # Sort by ancestry so children appear immediately after their parent
+                 raw = investor&.investor_kpi_mappings&.order(:position) || InvestorKpiMapping.none
+                 raw.sort_by_ancestry(raw)
                else
                  Kpi.where(kpi_report_id: kpi_reports.unscope(:order).pluck("kpi_reports.id")).pluck(:name).uniq.map do |kpi_name|
                    InvestorKpiMapping.new(standard_kpi_name: kpi_name, reported_kpi_name: kpi_name, category: "General")

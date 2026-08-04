@@ -1,3 +1,9 @@
-<%= render NewCard.new do %>
-    <%= render "form", note: @note %>
-<% end %>
+<%# Same new_note frame as new.html.erb, so editing can load inline over the
+    list the same way creating does. %>
+<div>
+    <%= turbo_frame_tag "new_note" do %>
+      <%= render NewCard.new do %>
+        <%= render "form", note: @note %>
+      <% end %>
+    <% end %>
+</div>

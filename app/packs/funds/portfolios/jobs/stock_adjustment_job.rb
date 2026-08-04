@@ -11,7 +11,12 @@ class StockAdjustmentJob < ApplicationJob
       Rails.logger.info("StockAdjustmentJob: #{@portfolio_company.investor_name} #{@stock_adjustment.investment_instrument} by #{@stock_adjustment.adjustment}")
 
       ActiveRecord::Base.transaction do
-        count = valuations.update_all("per_share_value_cents = (per_share_value_cents / #{@stock_adjustment.adjustment})")
+        # A nil adjustment would silently NULL the column via "/ NULL" - the old interpolated
+        # SQL raised a syntax error instead, so keep failing loudly for bad data
+        raise ArgumentError, "StockAdjustment##{@stock_adjustment.id} has no adjustment value" if @stock_adjustment.adjustment.nil?
+
+        # Parameterized to avoid interpolating the adjustment value into raw SQL
+        count = valuations.update_all(["per_share_value_cents = (per_share_value_cents / ?)", @stock_adjustment.adjustment])
         Rails.logger.info("StockAdjustmentJob: Adjusting #{count} valuations")
 
         Rails.logger.info("StockAdjustmentJob: Adjusting portfolio investments")

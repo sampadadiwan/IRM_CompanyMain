@@ -2,7 +2,8 @@
 
 <% unless params[:condensed].present? %>
 <td>
-    <%= link_to note.investor_name, investor_path(note.investor_id) %>
+    <% owner_name = note.to_s %>
+    <%= link_to owner_name, polymorphic_path(note.owner) if note.owner.present? %>
 </td>
 <td>
     <%= link_to note.user_full_name, notes_path(user_id: note.user_id) %>

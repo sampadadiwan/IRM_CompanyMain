@@ -79,7 +79,9 @@ class PermissionsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def permission_params
+    # granted_by_id is intentionally not permitted - it is always set server-side
+    # from current_user in create/update, so the client must not be able to spoof it
     params.require(:permission).permit(:user_id, :owner_id, :owner_type, :email, :role,
-                                       :entity_id, :granted_by_id, permissions: [])
+                                       :entity_id, permissions: [])
   end
 end

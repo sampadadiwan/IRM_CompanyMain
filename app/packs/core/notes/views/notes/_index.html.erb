@@ -1,11 +1,17 @@
-<% investor_id = params[:investor_id] || params[:owner_id]
+<% owner_id = params[:owner_id].presence
+  owner_type = params[:owner_type].presence
   title ||= params[:title] || "Notes"
+  from_source = params[:from].presence
+  embedded_note_context = params[:embedded_note_context].presence
 %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
   <div class="d-flex gap-2">
-    <%= link_to "New Note", new_note_path("note[investor_id]": investor_id, "note[entity_id]": current_user.entity_id, return_to: params[:return_to]), {class: "btn btn-outline-primary ti ti-plus"} %>
-    <% if investor_id.present? %>
+    <%# The enclosing notes_frame is target: "_top", so without an explicit
+        data-turbo-frame this link navigates the whole page away from the list.
+        Pointing it at new_note loads the form inline instead. %>
+    <%= link_to "New Note", new_note_path("note[owner_id]": owner_id, "note[owner_type]": owner_type, "note[entity_id]": current_user.entity_id, return_to: params[:return_to], from: from_source, embedded_note_context: embedded_note_context, condensed: params[:condensed]), {class: "btn btn-outline-primary ti ti-plus", data: { turbo_frame: "new_note" }} %>
+    <% if owner_id.present? %>
       <% if current_user.entity.support_agents.set?(:note_summarization_agent) %>
       <button type="button" class="btn btn-outline-secondary"
               data-bs-toggle="modal" data-bs-target="#run-note-summarizer-agent-modal">
@@ -15,8 +21,8 @@
       <%= render "support_agents/agent_run_modal",
                  modal_id:         "run-note-summarizer-agent-modal",
                  agent_type:       "NoteSummarizerAgent",
-                 target_type:      "Investor",
-                 target_id:        investor_id,
+                 target_type:      owner_type,
+                 target_id:        owner_id,
                  description:      NoteSummarizerAgent::DESCRIPTION,
                  long_description: NoteSummarizerAgent::SINGLE_LONG_DESCRIPTION,
                  btn_text:         "Run Summariser",
@@ -34,16 +40,16 @@
   </div>
 </div>
 
+<%= render "notes/blank" %>
 <%=render SearchComponent.new(data_source: notes_path(params: params.to_unsafe_h), turbo_frame: "notes_frame") %>
 
 <div class="table-responsive">
-
   <table id="notes" class="table table-bordered dataTable ">
     <thead>
       <tr>
         <% unless params[:condensed].present? %>
         <th>
-          <%= sort_link @q, :investor_investor_name, "Stakeholder" %>
+          <%= sort_link @q, :owner_name, "For" %>
         </th>
         <th>
           <%= sort_link @q, :user_first_name, "User" %>
@@ -63,7 +69,7 @@
       </tr>
     </thead>
 
-    <tbody>
+    <tbody id="notes_table_body">
       <% notes.each do |note| %>
         <%= render partial: "/notes/note", locals: {note: note} %>
       <% end %>

@@ -1,6 +1,7 @@
 <% if value.present? %>
-    <%if model.respond_to?(:currency)%>
-        <% money_val = Money.new(value.to_d * 100, model.currency) %>
+    <% currency = custom_field.money_currency(model) %>
+    <%if currency%>
+        <% money_val = Money.new(value.to_d * 100, currency) %>
         <%= money_to_currency(money_val, params) %>
     <%else%>
         <%= value %>

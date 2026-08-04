@@ -1,0 +1,5 @@
+<%# Empty landing spot for the inline note form. The notes list renders it so the
+    "New Note" link has a frame to load into, and create.turbo_stream.erb swaps
+    the submitted form back to this to reset the slot. %>
+<%= turbo_frame_tag "new_note" do %>
+<% end %>

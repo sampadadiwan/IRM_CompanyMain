@@ -972,6 +972,123 @@ select {
 .ag-overlay {
   position: unset !important;
 }
+
+/* Keep AG Grid pagination text on a single line for fixed-layout AG grids. */
+.ag-fixed-layout-managed .ag-paging-panel,
+[data-fixed-header-offset='true'] .ag-paging-panel {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+}
+
+[data-fixed-header-offset='true'] .ag-paging-row-summary-panel,
+[data-fixed-header-offset='true'] .ag-paging-page-summary-panel,
+.ag-fixed-layout-managed .ag-paging-row-summary-panel,
+.ag-fixed-layout-managed .ag-paging-page-summary-panel,
+[data-fixed-header-offset='true'] .ag-paging-page-summary-panel {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 2px !important;
+  white-space: nowrap !important;
+}
+
+[data-fixed-header-offset='true'] .ag-paging-row-summary-panel span,
+[data-fixed-header-offset='true'] .ag-paging-page-summary-panel span,
+[data-fixed-header-offset='true'] .ag-paging-description,
+.ag-fixed-layout-managed .ag-paging-row-summary-panel span,
+.ag-fixed-layout-managed .ag-paging-page-summary-panel span,
+.ag-fixed-layout-managed .ag-paging-description,
+[data-fixed-header-offset='true'] .ag-paging-page-summary-panel span,
+[data-fixed-header-offset='true'] .ag-paging-description {
+  display: inline !important;
+  white-space: nowrap !important;
+}
+
+// Ensure portfolio grid containers get proper flex sizing for height calculations
+.card {
+  &:has(.portfolio_investment_ag_grid) {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+
+    .card-body {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+    }
+  }
+}
+
+.table-responsive {
+  &.portfolio_investment_wrapper,
+  > .portfolio_investment_ag_grid {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+}
+
+.portfolio_investment_ag_grid {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: 100% !important;
+
+  // AG grid itself must fill the container and distribute space to children
+  [data-ag-fixed-layout] {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+
+  // Header takes natural height, doesn't grow or shrink
+  [data-ag-fixed-layout] .ag-header {
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    position: relative !important;
+  }
+
+  // Grid body takes all remaining space between header and bottom panels
+  [data-ag-fixed-layout] .ag-body {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+
+  // Viewport fills the body and scrolls content
+  [data-ag-fixed-layout] .ag-body-viewport {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+
+  // Paging and status panels take natural height, don't grow or shrink
+  [data-ag-fixed-layout] .ag-paging-panel {
+    flex: 0 0 auto !important;
+    position: relative !important;
+  }
+
+  [data-ag-fixed-layout] .ag-status-bar {
+    flex: 0 0 auto !important;
+    position: relative !important;
+  }
+}
+
 .small_logo {
   max-height: 100px;
 }

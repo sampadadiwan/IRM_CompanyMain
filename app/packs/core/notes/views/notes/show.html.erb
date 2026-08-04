@@ -1,11 +1,14 @@
-<%= render ToggleCard.new(title: "Note: #{@note.investor.investor_name}", css_class: "show_note") do %>
+<% owner_name = @note.to_s %>
+<%= render ToggleCard.new(title: "Note: #{owner_name}", css_class: "show_note") do %>
   <table class="table table-bordered dataTable ">
     <tr>
       <td>
-        Stakeholder
+        For
       </td>
       <td>
-        <%= link_to @note.investor %>
+        <% if @note.owner.present? %>
+          <%= link_to owner_name, polymorphic_path(@note.owner) %>
+        <% end %>
       </td>
     </tr>
     <tr>
@@ -14,7 +17,14 @@
       </td>
       <td>
         <%= @note.details %>
-        On: <%= l @note.on if @note.on%>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        On
+      </td>
+      <td>
+        <%= l @note.on if @note.on%>
       </td>
     </tr>
     <tr>
@@ -51,6 +61,14 @@
         </td>
       </tr>
     <% end %>
+    <tr>
+      <td>
+        Created At
+      </td>
+      <td>
+        <%= l @note.created_at %>
+      </td>
+    </tr>
   </table>
 <% end %>
 <div>

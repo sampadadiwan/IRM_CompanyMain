@@ -1,5 +1,5 @@
 <div class="table-responsive">
-    <table id="<%= @model.model_name.plural %>" class="table table-bordered dataTable action_table hover">
+    <table id="<%= @model.model_name.plural %>" class="table table-bordered dataTable action_table hover <%= @table_css_class %>">
     <%= render @ransack_table_header %>
 
     <tbody>

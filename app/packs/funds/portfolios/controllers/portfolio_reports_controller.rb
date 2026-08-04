@@ -132,6 +132,97 @@ class PortfolioReportsController < ApplicationController
     end
   end
 
+  # GET /portfolio_reports/legacy_bulk_generate — filter form + turbo-frame preview of matching portfolio companies.
+  # The `<select multiple>` always lists every portfolio company for the entity; a Preview click
+  # just re-syncs which ones are selected to match the current Fund/Tag/Sector filter.
+  def legacy_bulk_generate
+    authorize PortfolioReport.new(entity_id: current_user.entity_id), :bulk_generate?
+
+    @portfolio_companies = current_user.entity.investors.portfolio_companies.order(:investor_name)
+    @funds = Pundit.policy_scope(current_user, Fund)
+    @tags_for_select = @portfolio_companies.pluck(:tag_list).compact.flat_map { |t| t.split(",") }.map(&:strip).uniq.compact_blank.sort
+    @sectors_for_select = @portfolio_companies.pluck(:sector).compact.flat_map { |s| s.split(",") }.map(&:strip).uniq.compact_blank.sort
+
+    @matching_ids = []
+    if params[:previewed].present?
+      matching = @portfolio_companies
+      fund_ids = Array(params[:fund_ids]).compact_blank
+      matching = matching.joins(:portfolio_investments).where(portfolio_investments: { fund_id: fund_ids }).distinct if fund_ids.present?
+      matching = matching.with_tag_list(params[:tag_list]) if params[:tag_list].present?
+      matching = matching.in_sector(params[:sector]) if params[:sector].present?
+      @matching_ids = matching.pluck(:id)
+    end
+  end
+
+  # POST /portfolio_reports/legacy_bulk_generate_options
+  # First hit (hand-off from legacy_bulk_generate, no `mode` param): render the options form for
+  # the finalized portfolio_company_ids. Second hit (the options form's own submit, `mode` present):
+  # actually enqueue extract-only or full-report generation for those companies.
+  def legacy_bulk_generate_options
+    authorize PortfolioReport.new(entity_id: current_user.entity_id), :bulk_generate?
+
+    portfolio_company_ids = Array(params[:portfolio_company_ids]).map(&:to_i).reject(&:zero?)
+    @portfolio_companies = Investor.where(id: portfolio_company_ids, entity_id: current_user.entity_id, category: "Portfolio Company")
+
+    # Can't generate for nothing: bounce back to the company-selection step instead of rendering
+    # an options page (or queuing a job) for zero companies.
+    if @portfolio_companies.empty?
+      redirect_to legacy_bulk_generate_portfolio_reports_path,
+                  alert: "Select at least one portfolio company to continue." and return
+    end
+
+    if params[:mode].blank?
+      @portfolio_reports = policy_scope(PortfolioReport)
+      return
+    end
+
+    portfolio_report = policy_scope(PortfolioReport).find(params[:portfolio_report_id])
+    start_date = params[:start_date]
+    end_date = params[:end_date]
+    redirect_path = params[:back_to].presence || portfolio_reports_path
+    template_id = params[:report_template_id].presence
+
+    # The chosen template must belong to the chosen report (the UI already scopes the dropdown,
+    # but the form can be tampered with). Reject a mismatch rather than generating with a template
+    # from a different report.
+    if template_id.present? && !portfolio_report.documents.exists?(id: template_id)
+      redirect_to redirect_path,
+                  alert: "The selected template does not belong to the chosen report." and return
+    end
+
+    case params[:mode]
+    # generate extracts only (no full report) for the selected companies
+    when "extracts_only"
+      # generate extracts for companies that don't already have one for this report + date range, if the "only missing" checkbox is checked
+      only_missing = params[:only_missing_extracts].present?
+      company_ids = @portfolio_companies.reject do |pc|
+        extract = PortfolioReportExtract.matching(portfolio_report.id, pc.id, start_date, end_date).order(created_at: :desc).first
+        only_missing &&
+          extract.present? && extract.data.present?
+      end.map(&:id)
+
+      # One bulk job for the whole selection so the user gets a single completion message (and a
+      # single error email) instead of N independent jobs that each report only themselves.
+      if company_ids.present?
+        GeneratePortfolioReportExtractsJob.perform_later(company_ids, portfolio_report.id, start_date, end_date, current_user.id)
+        redirect_to redirect_path,
+                    notice: "Queued extract generation for #{company_ids.size} #{'company'.pluralize(company_ids.size)}."
+      else
+        redirect_to redirect_path,
+                    notice: "Skipped extract generation: all companies already have extracts for this report and date range."
+      end
+    # generate full report (with extracts if missing) for the selected companies
+    when "full_report"
+      PortfolioReportJob.perform_later(
+        portfolio_report.id, template_id, start_date, end_date, current_user.id,
+        portfolio_company_ids: @portfolio_companies.pluck(:id),
+        generate_missing_extracts: params[:generate_missing_extracts].present?
+      )
+      redirect_to redirect_path,
+                  notice: "Queued report generation for #{@portfolio_companies.size} #{'company'.pluralize(@portfolio_companies.size)}."
+    end
+  end
+
   # POST /portfolio_reports/1/clone
   def clone
     authorize @portfolio_report
@@ -166,6 +257,7 @@ class PortfolioReportsController < ApplicationController
   def set_portfolio_report
     @portfolio_report = PortfolioReport.find(params[:id])
     authorize @portfolio_report
+    @bread_crumbs = { "Portfolio Reports" => portfolio_reports_path, @portfolio_report.name => portfolio_report_path(@portfolio_report) }
   end
 
   # Only allow a list of trusted parameters through.

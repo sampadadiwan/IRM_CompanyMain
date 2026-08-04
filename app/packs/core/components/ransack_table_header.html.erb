@@ -10,7 +10,8 @@
         attribute, ignore = attribute.split(";").map(&:strip)
       %>
       <th class="<%= css_class %>">
-        <% if attribute.present? && !attribute.starts_with?("custom_field") %>
+        <%# Skip Ransack sort links when sorting is delegated to DataTables (sortable: false) %>
+        <% if @sortable && attribute.present? && !attribute.starts_with?("custom_field") %>
           <%= sortable_header @q, attribute, column_name, data: { turbo_frame: @turbo_frame } %>
         <% else %>
           <%= column_name %>

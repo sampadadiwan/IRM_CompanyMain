@@ -13,12 +13,15 @@
     <small class="text-muted">Select the category grouping for the stakeholder</small>
   </div>
 
+  <%# Email edits are blocked (server-side, in UpdateInvestor) once the stakeholder
+      has users, so don't offer the unlock button in that case %>
+  <% email_locked_by_users = investor.primary_email_locked? %>
   <% disabled = !investor.new_record? && investor.primary_email.present? && !params[:primary_email_edit].present? %>
   <div class="form-group" id="investor_name_group">
     <%= form.label :primary_email, "Primary Email" %>
     <div class="d-flex align-items-center gap-2">
       <%= form.text_field :primary_email, class: "form-control", required: true, disabled:, data: {validate: true, investor_target: "primaryEmailField"} %>
-      <% if disabled %>
+      <% if disabled && !email_locked_by_users %>
         <button type="button" id="editEmailBtn" class="btn btn-outline-warning btn-sm flex-shrink-0"
                 data-investor-target="editEmailButton" data-bs-toggle="modal" data-bs-target="#editEmailModal">
           <i class="ti ti-pencil"></i> Edit Email
@@ -30,7 +33,11 @@
         `disabled` is derived from params[:primary_email_edit] which a plain client-side
         DOM unlock never sends. %>
     <%= hidden_field_tag :primary_email_edit, params[:primary_email_edit].presence || "false", data: {investor_target: "primaryEmailEditFlag"} %>
-    <small class="text-muted">Primary email is the unique ID for creating the stakeholder. This is not used for any communications.</small>
+    <% if email_locked_by_users %>
+      <small class="text-muted">Primary email cannot be changed because this stakeholder has users linked to it. Remove the stakeholder's users first to change the primary email.</small>
+    <% else %>
+      <small class="text-muted">Primary email is the unique ID for creating the stakeholder. This is not used for any communications.</small>
+    <% end %>
   </div>
 
 

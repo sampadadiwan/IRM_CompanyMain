@@ -194,10 +194,11 @@ class SecondarySalesController < ApplicationController
 
   def send_notification
     if SecondarySale::NOTIFICATIONS.include? params[:notification]
+      # public_send (vs send) ensures a future mistake in NOTIFICATIONS can never reach private methods
       if params[:notification] == "adhoc_notification"
-        @secondary_sale.send(params[:notification], params[:notification_id])
+        @secondary_sale.public_send(params[:notification], params[:notification_id])
       else
-        @secondary_sale.send(params[:notification])
+        @secondary_sale.public_send(params[:notification])
       end
     end
     respond_to do |format|

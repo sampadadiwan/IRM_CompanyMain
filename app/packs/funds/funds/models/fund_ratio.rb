@@ -3,7 +3,7 @@
 class FundRatio < ApplicationRecord
   include WithValidationRules
 
-  # include Trackable.new
+  include Trackable.new
   include ForInvestor
 
   has_many :documents, as: :owner, dependent: :destroy

@@ -67,7 +67,10 @@ module WithCustomField
     # Custom ransacker for searching JSON fields
     ransacker :json_field_value, args: [:key] do |_parent, args|
       key = args.first
-      Arel.sql("(json_fields ->> '#{key}')")
+      # lease_connection.quote escapes the key (including embedded quotes) so a
+      # custom-field name cannot break out of the SQL string literal
+      # (lease_connection is the Rails 8.1 replacement for the soft-deprecated .connection)
+      Arel.sql("(json_fields ->> #{ActiveRecord::Base.lease_connection.quote(key.to_s)})")
     end
 
     # This is used to calculate the start of financial year based on the month offset set in models json fields
@@ -177,12 +180,31 @@ module WithCustomField
 
   def custom_fields_with_td
     struct = {}
+    currencies = []
     # We convert DateField to Date, Money to Money object, so that the template can use it
     form_type.form_custom_fields.visible.each do |cf|
       if cf.field_type == 'DateField'
         struct[cf.name] = Date.local_parse(json_fields[cf.name]) if json_fields[cf.name].present?
       elsif cf.field_type == 'Money'
-        struct[cf.name] = Money.new(json_fields[cf.name].to_d * 100, currency) if json_fields[cf.name].present?
+        # Fetch all valid currencies for the entity
+        currencies = if currencies.blank?
+                       res = entity.exchange_rates.pluck(:from).map(&:downcase) << entity.currency.downcase
+                       res << fund.currency.downcase if respond_to?(:fund) && fund&.currency.present?
+                       res
+                     else
+                       currencies
+                     end
+        # if meta_data has currency and it is a valid currency then use that as the currency for Money objects
+        if cf.meta_data.present? && currencies.include?(cf.meta_data.strip.downcase)
+          struct[cf.name] = Money.new(json_fields[cf.name].to_d * 100, cf.meta_data.strip.upcase) if json_fields[cf.name].present?
+        elsif respond_to?(:currency) && currency.present?
+          # If the model has a currency attribute, use that as the currency for Money objects.
+          struct[cf.name] = Money.new(json_fields[cf.name].to_d * 100, currency) if json_fields[cf.name].present?
+        elsif json_fields[cf.name].present?
+          # no currency set, so we use Entity Currency
+          # we dont expect the entity currency to be nil
+          struct[cf.name] = Money.new(json_fields[cf.name].to_d * 100, entity.currency)
+        end
       else
         struct[cf.name] = json_fields[cf.name]
       end

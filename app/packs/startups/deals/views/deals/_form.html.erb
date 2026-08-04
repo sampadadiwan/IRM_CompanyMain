@@ -94,11 +94,6 @@
       <%= form.check_box :archived, class: "form-check-input"  %>
     </div>
 
-    <div class="form-group" id="employee_form_group">
-      <%= form.label :card_view_attrs, "Show in Card View" %>
-      <%= form.select :card_view_attrs, DealInvestor::CARD_VIEW_ATTRS.to_a, {include_blank: false, include_hidden: false}, class: "form-control select2 select2-multiple", multiple: "multiple" %>
-    </div>
-
     <% di_custom_fields = deal.entity.form_types.find_by(name: 'DealInvestor')&.form_custom_fields&.visible || [] %>
     <div class="form-group" data-controller="deal-grid-columns">
       <%= form.label :grid_columns, "Grid Columns" %>

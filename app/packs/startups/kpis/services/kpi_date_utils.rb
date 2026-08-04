@@ -18,10 +18,12 @@ class KpiDateUtils
       # CY/FY + year, with optional space (e.g. CY2024, CY 2025, FY 2023)
       /\b(?:FY|CY)\s?\d{2,4}\b/i,
 
-      # Month + year (short and full)
+      # Month + year (short and full). [\s']* instead of \s* so that
+      # apostrophe-delimited formats like "Apr'25" or "May'25" match
+      # directly rather than falling through to the lenient Date.local_parse fallback.
       /(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|
-          Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|
-          Nov(?:ember)?|Dec(?:ember)?)\s*\d{2,4}/ix,
+    Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|
+    Nov(?:ember)?|Dec(?:ember)?)[\s']*\d{2,4}/ix,
 
       # Quarter shorthands like JFM 2021, AMJ 2022
       /(?:JFM|AMJ|JAS|OND)\s*\d{2,4}/i,
@@ -64,7 +66,12 @@ class KpiDateUtils
 
   def self.normalize_input(raw_period)
     str = raw_period.to_s.strip.upcase
-    str = str.gsub(/\s+/, ' ')
+    # Replace apostrophes with spaces so "Apr'25" becomes "APR 25",
+    # which then matches parse_month's \A(JAN|...)\s+(\d{2,4})\z regex.
+    # Without this, "APR'25" falls through all named parsers into the
+    # lenient Date.local_parse fallback.
+    str = str.tr("'", ' ')
+             .gsub(/\s+/, ' ')
              .gsub(/\s*([^\w\s])\s*/, '\1')
     str.gsub(/\ASEPT(\b|\s)/, 'SEP\1')
   end
@@ -295,18 +302,18 @@ class KpiDateUtils
     return "Year" if /\A(CY)?\d{2,4}\z/.match?(str)                  # CY2021 or 2021
 
     # === Month Formats ===
-    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2,4})\z/.match?(str)
-    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2,4})\z/.match?(str)
+    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2,4})\z/.match?(str) # e.g. JAN 2024
+    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2,4})\z/.match?(str) # e.g. JANUARY 2024
 
     # Special: 3-letter months with 2-digit years
-    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2})\z/.match?(str)
-    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2})\z/.match?(str)
+    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2})\z/.match?(str) # e.g. JAN 24
+    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2})\z/.match?(str) # e.g. JANUARY 24
 
     # === Quarter Formats ===
-    return "Quarter" if /\AQ([1-4])(FY|CY)?(\d{2,4})\z/.match?(str)
-    return "Quarter" if /\AQ([1-4])\s+(FY|CY)?(\d{2,4})\z/.match?(str)
-    return "Quarter" if /\A(JAN|APR|JUL|OCT)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str)
-    return "Quarter" if /\A(JFM|AMJ|JAS|OND)\s+(\d{2,4})\z/.match?(str)
+    return "Quarter" if /\AQ([1-4])(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1FY24 or Q1CY2024 or Q12024
+    return "Quarter" if /\AQ([1-4])\s+(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1 FY24 or Q1 2024
+    return "Quarter" if /\A(JAN|APR|JUL|OCT)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str) # e.g. JAN-MAR 2024
+    return "Quarter" if /\A(JFM|AMJ|JAS|OND)\s+(\d{2,4})\z/.match?(str) # e.g. JFM 2024
 
     # === Fallback ===
     "Month"

@@ -14,12 +14,24 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def show?
-    permissioned_employee? ||
-      (record.deal_investor && record.deal_investor.investor_entity_id == user.entity_id)
+    return true if support?
+
+    if record.deal_investor.present?
+      DealInvestorPolicy.new(user, record.deal_investor).show?
+    else
+      deal_show_permission?
+    end
   end
 
   def create?
-    permissioned_employee?(:create)
+    return true if support?
+    return permissioned_rm?(:create) if rm?
+
+    if record.deal_investor.present?
+      DealInvestorPolicy.new(user, record.deal_investor).update?
+    else
+      deal_update_permission?
+    end
   end
 
   def new?
@@ -27,7 +39,14 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update)
+    return true if support?
+    return permissioned_rm?(:update) if rm?
+
+    if record.deal_investor.present?
+      DealInvestorPolicy.new(user, record.deal_investor).update?
+    else
+      deal_update_permission?
+    end
   end
 
   def edit?
@@ -43,14 +62,35 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def update_sequences?
-    permissioned_employee?
+    deal_update_permission?
   end
 
   def update_sequence?
-    permissioned_employee?
+    deal_update_permission?
   end
 
   def destroy?
-    permissioned_employee?(:destroy)
+    return true if support?
+    return permissioned_rm?(:destroy) if rm?
+
+    if record.deal_investor.present?
+      DealInvestorPolicy.new(user, record.deal_investor).destroy?
+    else
+      deal_update_permission?
+    end
+  end
+
+  private
+
+  def deal_update_permission?
+    return false if record.deal.blank?
+
+    DealPolicy.new(user, record.deal).update?
+  end
+
+  def deal_show_permission?
+    return false if record.deal.blank?
+
+    DealPolicy.new(user, record.deal).show?
   end
 end

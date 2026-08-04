@@ -1,19 +1,33 @@
 
 <div class="card shadow mb-4">
-  <div class="card-header py-3 d-flex align-items-center justify-content-between">
+  <div class="card-header py-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
     <h6 class="m-0 font-weight-bold text-primary">Investors</h6>
-    <button id="clear-grid-filters"
-            class="btn btn-sm btn-outline-danger align-items-center gap-1"
-            style="display: none;"
-            data-action="click->deals-list-ag-grid#clearFilters">
-      <i class="ti ti-filter-off"></i> Clear Filters
-    </button>
+    <%# The old standalone "Clear Filters" button is now the "x" inside this box:
+        one control clears both the search term and the column filters, and
+        updateFilterVisuals() shows it only when something is actually filtered. %>
+    <div class="deals-grid-search ms-auto">
+      <i class="ti ti-search deals-grid-search__icon"></i>
+      <input type="text"
+             class="form-control form-control-sm"
+             placeholder="<%= investor_label %> name"
+             aria-label="Search by <%= investor_label.to_s.downcase %> name"
+             autocomplete="off"
+             data-deals-list-ag-grid-target="search"
+             data-action="input->deals-list-ag-grid#quickSearch">
+      <button type="button"
+              id="clear-grid-filters"
+              class="deals-grid-search__clear deals-clear-grid-filters"
+              aria-label="Clear search and filters"
+              data-action="click->deals-list-ag-grid#clearFilters">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
   </div>
-  <div class="card-body p-0" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+  <div class="card-body p-0 deals-grid-scroll-container">
     <div
       id="deals_list_grid"
-      class="<%= get_ag_theme %>"
-      style="height: 800px; min-height: 800px; width: 100%; min-width: 1500px;"
+      class="<%= get_ag_theme %> deals-list-grid"
+      data-ag-fixed-layout="true"
       data-source="<%= deal_investors_path(params.to_unsafe_h.merge(format: :json, deal_id: deal.id, all: params[:all])) %>"
     >
     </div>

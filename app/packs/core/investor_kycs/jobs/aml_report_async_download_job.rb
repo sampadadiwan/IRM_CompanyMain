@@ -39,7 +39,8 @@ class AmlReportAsyncDownloadJob < ApplicationJob
       UserAlert.new(user_id: user_id, message: "Downloaded Aml Report for #{name}", level: :success).broadcast if user_id.present?
       aml_report.match_status = json_res.dig("result", "match_status")&.titleize
       aml_report.save
-      if aml_report.match_status == "potential_match" || kyc.aml_status.blank?
+      # Skip if the fund has manually overridden the status, so a fresh IDFy result doesn't silently revert their decision.
+      if !kyc.aml_manual_override? && (aml_report.match_status == "potential_match" || kyc.aml_status.blank?)
         kyc.assign_attributes(aml_status: aml_report.match_status)
         kyc.save(validate: false)
       end

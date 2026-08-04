@@ -1,0 +1,86 @@
+<%
+  # Each template carries its owning report id (data-report-id) so the report-template-filter
+  # Stimulus controller can show only the templates belonging to the currently selected Report.
+  template_options = @current_user.entity.documents.where(owner_type: "PortfolioReport").includes(:owner).map do |d|
+    ["#{d.name} - #{d.owner}", d.id, { data: { report_id: d.owner_id } }]
+  end
+  start_date ||= params[:start_date] || (Date.today - 3.months).beginning_of_month
+  end_date ||= params[:end_date] || Date.today.end_of_month
+%>
+
+<%= render NewCard.new(col_md: "col-md-10") do %>
+  <%= render FormCard.new(header_css_class: "w-100", title: "<span class='d-flex align-items-center justify-content-between w-100 gap-2'>Bulk Generate Portfolio Reports (Legacy) — Options #{user_guide_icon_for('portfolio_report_legacy', tooltip: 'Portfolio Report (Legacy) User Guide')}</span>") do %>
+
+    <div class="alert alert-secondary small mb-4">
+      Generating for <strong><%= @portfolio_companies.size %></strong> portfolio
+      <%= 'company'.pluralize(@portfolio_companies.size) %>:
+      <%= @portfolio_companies.map(&:investor_name).join(', ') %>
+    </div>
+
+    <%= form_with url: legacy_bulk_generate_options_portfolio_reports_path, method: :post, data: { controller: "report-template-filter" } do |form| %>
+      <% @portfolio_companies.each do |pc| %>
+        <%= hidden_field_tag "portfolio_company_ids[]", pc.id %>
+      <% end %>
+      <%= hidden_field_tag :back_to, params[:back_to] if params[:back_to].present? %>
+
+      <div class="form-group">
+        <%= form.label :portfolio_report_id, "Report" %>
+        <%= form.select :portfolio_report_id, @portfolio_reports.map { |pr| [pr.name, pr.id] }, {}, class: "form-control", name: "portfolio_report_id",
+              data: { report_template_filter_target: "report", action: "change->report-template-filter#filter" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :report_template_id %>
+        <%= form.select :report_template_id, options_for_select(template_options, template_options.first&.dig(1)), {},
+              class: "form-control", name: "report_template_id",
+              data: { report_template_filter_target: "template" } %>
+        <small class="form-text text-muted">Select the template to use for the report. Only templates uploaded under the selected 'Portfolio Report' are shown.</small>
+      </div>
+
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <%= form.label :start_date %>
+            <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date %>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <%= form.label :end_date %>
+            <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
+          </div>
+        </div>
+      </div>
+
+      <%# Documents are chosen automatically from each company's latest documented KPI report,
+          so there are no period/as-of/add-docs inputs here anymore. %>
+
+      <hr class="my-4">
+
+      <div class="row">
+        <div class="col-md-6 border-end">
+          <h6>Generate Extracts Only</h6>
+          <div class="form-check mb-2">
+            <%= check_box_tag :only_missing_extracts, true, false, class: "form-check-input" %>
+            <%= label_tag :only_missing_extracts, "Only generate for companies missing an extract", class: "form-check-label" %>
+          </div>
+          <button type="submit" name="mode" value="extracts_only" class="btn btn-outline-primary" data-disable-with="Queuing…">
+            Generate Extracts Only
+          </button>
+        </div>
+        <div class="col-md-6">
+          <h6>Generate Report</h6>
+          <div class="form-check mb-2">
+            <%= check_box_tag :generate_missing_extracts, true, false, class: "form-check-input" %>
+            <%= label_tag :generate_missing_extracts, "Generate missing report extracts", class: "form-check-label" %>
+          </div>
+          <button type="submit" name="mode" value="full_report" class="btn btn-primary" data-disable-with="Queuing…">
+            Generate Report
+          </button>
+        </div>
+      </div>
+    <% end %>
+
+  <% end %>
+<% end %>

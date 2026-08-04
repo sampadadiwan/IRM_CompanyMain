@@ -8,6 +8,7 @@ class AccountEntryDeleteJob < ApplicationJob
       # Get the AEs for the query
       @account_entries = AccountEntryPolicy::Scope.new(user, @q.result).resolve
       @account_entries = @account_entries.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+      @account_entries = @account_entries.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
       count = @account_entries.count
       Audited.audit_class.as_user(user) do
         @account_entries.each(&:destroy)

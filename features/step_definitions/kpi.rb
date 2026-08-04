@@ -13,6 +13,7 @@ Given('Given I upload a kpis file for the company') do
 end
 
 Given('Given I upload a kpis file for the portfolio company') do
+  @portfolio_company ||= Investor.portfolio_companies.last
   visit(investor_path(@portfolio_company))
   page.execute_script("document.body.style.zoom = '80%'")
   click_on("Kpis")
@@ -26,15 +27,36 @@ Given('Given I upload a kpis file for the portfolio company') do
   sleep(5)
   click_on("Save")
   sleep(7)
-  ImportUploadJob.perform_now(ImportUpload.last.id)
+  @iu = ImportUpload.last
+  ImportUploadJob.perform_now(@iu.id)
   sleep(4)
+  expect(@iu.reload.failed_row_count == 0).to be true
+end
+
+# And Given I upload a kpi mappings file for the company
+And('Given I upload a kpi mappings file for the company') do
+  @portfolio_company ||= Investor.portfolio_companies.last
+  visit(investor_path(@portfolio_company))
+  page.execute_script("document.body.style.zoom = '80%'")
+  click_on("Kpi Mapping")
+  sleep(2)
+  click_on("Upload")
+  sleep(2)
+  fill_in('import_upload_name', with: "Mapping Upload")
+  @import_file = "investor_kpi_mappings_test_1.xlsx"
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  sleep(2)
+  @iu = ImportUpload.last
+  ImportUploadJob.perform_now(@iu.id)
+  sleep(4)
+  expect(@iu.reload.failed_row_count == 0).to be true
 end
 
 Then('There should be {string} Kpi Report with {string} Kpis created') do |kpi_report_count, kpi_count|
-  KpiReport.count.should
-  kpi_report_count.to_i
-  Kpi.count.should
-  kpi_count.to_i
+  KpiReport.count.should == kpi_report_count.to_i
+  Kpi.count.should == kpi_count.to_i
   Kpi.unapproved.count.should == kpi_count.to_i
 end
 
@@ -133,7 +155,8 @@ end
 Given('a KPI {string} exists for the kpi report') do |args|
   @kpi = Kpi.new(kpi_report: @kpi_report, entity: @entity, portfolio_company_id: @portfolio_company.id)
   key_values(@kpi, args)
-  @kpi.investor_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: @kpi.name, entity: @entity, investor: @portfolio_company)
+  mapping = InvestorKpiMapping.find_or_create_by(standard_kpi_name: @kpi.name, entity: @entity, investor: @portfolio_company, reported_kpi_name: @kpi.name)
+  @kpi.investor_kpi_mapping = mapping
   @kpi.save!
 end
 
@@ -316,6 +339,42 @@ end
 
 When('I run the KpiCumulateJob for the portfolio company') do
   KpiCumulateJob.perform_now(@portfolio_company.id, user_id: @user.id)
+end
+
+# Mirrors KpiApproveService's call: cumulation runs first, then the percentage-change job runs
+# inside the same perform — the ordering guarantee under test.
+When('I run the KpiCumulateJob with percentage change computation') do
+  KpiCumulateJob.perform_now(@portfolio_company.id, user_id: @user.id, compute_percentage_change: true)
+end
+
+Then('the {string} KPI {string} for {string} should have a percentage change') do |period, name, as_of|
+  date = Date.parse(as_of)
+  kpi = Kpi.joins(:kpi_report).where(name: name, entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, kpi_reports: { period: period, as_of: date }).last
+  expect(kpi).not_to be_nil
+  expect(kpi.percentage_change).to be_present
+end
+
+# The cumulative must carry the source KPI's mapping — a mapping-less cumulative would fail
+# Kpi's investor_kpi_mapping_id presence validation and never be written.
+Then('the {string} KPI {string} for {string} should be linked to the {string} mapping') do |period, name, as_of, mapping_name|
+  date = Date.parse(as_of)
+  kpi = Kpi.joins(:kpi_report).where(name: name, entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, kpi_reports: { period: period, as_of: date }).last
+  expect(kpi).not_to be_nil
+  expect(kpi.investor_kpi_mapping&.standard_kpi_name).to eq(mapping_name)
+end
+
+# Forces every Kpi#save during the job to fail, simulating a validation failure on the
+# cumulative records (the source KPIs in this scenario are already persisted, so only the
+# cumulatives save during the run). The job must report these, not swallow them.
+Given('cumulative KPI saves will fail') do
+  ActionMailer::Base.deliveries.clear
+  allow_any_instance_of(Kpi).to receive(:save).and_return(false)
+end
+
+Then('a KPI cumulation error email should be sent') do
+  mail = ActionMailer::Base.deliveries.last
+  expect(mail).to be_present
+  expect(mail.subject).to include("Errors in KPI cumulation")
 end
 
 Given('an Investor KPI Mapping for {string} with formula {string} and mode {string}') do |name, formula, mode|

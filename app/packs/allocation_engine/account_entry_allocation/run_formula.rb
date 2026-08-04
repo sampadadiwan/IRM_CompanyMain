@@ -74,7 +74,9 @@ module AccountEntryAllocation
 
       when "CumulateAccountEntry"
         AccountEntryAllocation::CumulateAccountEntries.call(ctx)
-      when "GenerateAccountEntry"
+      when "GenerateAccountEntry", "GenerateAccountEntryMultiple"
+        # Multiple uses the same generation operation; it branches internally to
+        # evaluate the formula once per name in the formula's names array.
         AccountEntryAllocation::GenerateAccountEntries.call(ctx)
       when "AllocateAggregatePortfolios"
         AccountEntryAllocation::AllocateAggregatePortfolios.call(ctx)

@@ -1,3 +1,11 @@
-<%= render NewCard.new do %>
-    <%= render "form", note: @note, return_to: params[:return_to] %>
-<% end %>
+<%# Wrapped in the new_note frame so this page can be pulled into the notes list
+    inline. Turbo only extracts a matching frame from the response, so without
+    this the "New Note" link would navigate the whole page instead.
+    Rendered as a full page too — the frame is just a passthrough there. %>
+<div>
+    <%= turbo_frame_tag "new_note" do %>
+      <%= render NewCard.new do %>
+        <%= render "form", note: @note, return_to: params[:return_to] %>
+      <% end %>
+    <% end %>
+</div>

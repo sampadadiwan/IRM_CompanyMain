@@ -13,6 +13,10 @@ class FundUnitPolicy < FundBasePolicy
     user.enable_funds
   end
 
+  def bulk_actions?
+    index?
+  end
+
   def show?
     permissioned_employee? ||
       (record.fund.show_fund_units && permissioned_investor?)

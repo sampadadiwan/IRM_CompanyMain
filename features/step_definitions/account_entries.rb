@@ -250,7 +250,8 @@ Then('the account_entries must have the data in the sheet') do
       puts "Checking import of #{cc.name}"
       cc.name.should == user_data["Name"].strip
       cc.fund.name.should == user_data["Fund"]
-      cc.investor.investor_name.should == user_data["Investor"]
+      # The investor is now derived from the folio's commitment, not from an Investor column
+      cc.investor.should == cc.capital_commitment&.investor
       cc.folio_id.should == user_data["Folio No"].to_s
       cc.amount_cents.should == user_data["Amount (Fund Currency)"].to_f * 100
       cc.folio_amount_cents.should == user_data["Amount (Folio Currency)"].to_f * 100 if user_data["Amount (Folio Currency)"].present?

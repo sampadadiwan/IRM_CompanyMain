@@ -11,6 +11,8 @@ Rails.application.routes.draw do
     collection do
       get  :bulk_generate       # form: select portcos + template
       post :bulk_generate       # submit: queue a draft job per portco
+      get  :legacy_bulk_generate           # legacy flow, step 1: fund/sector/tag filter + turbo preview
+      post :legacy_bulk_generate_options   # legacy flow, step 2: render options (1st hit) or run generation (2nd hit)
     end
   end
 

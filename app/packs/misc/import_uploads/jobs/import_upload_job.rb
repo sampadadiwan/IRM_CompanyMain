@@ -10,7 +10,8 @@ class ImportUploadJob < ApplicationJob
         import_upload.import_file.download do |file|
           result = "Import#{import_upload.import_type}Service".constantize.wtf?(import_file: file, import_upload:)
           if result.success?
-            import_upload.status = "Completed"
+            # Don't overwrite a status set during the import (eg the fail-fast "Import stopped" message)
+            import_upload.status = "Completed" if import_upload.status.blank?
           else
             import_upload.status ||= "Failed"
             import_upload.error_text = result[:errors]

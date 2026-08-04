@@ -98,4 +98,10 @@ class ImportPortfolioInvestment < ImportUtil
   def defer_counter_culture_updates
     true
   end
+
+  # Stop the import at the first failed row: later rows may be Sell transactions
+  # based on a Buy row that just failed, so importing them would corrupt positions
+  def fail_fast
+    true
+  end
 end

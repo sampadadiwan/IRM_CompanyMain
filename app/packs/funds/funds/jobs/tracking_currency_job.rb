@@ -142,10 +142,15 @@ class TrackingCurrencyJob < ApplicationJob
     # Distribution payments are converted based on their specific payment date
     scope.pluck(:payment_date).compact.uniq.each do |date|
       rate = fund.tracking_exchange_rate(exchange_rate_date: date).rate
+      # All tracking amounts are converted at the same payment_date rate
       scope.where(payment_date: date).update_all(
         "tracking_net_payable_cents = net_payable_cents * #{rate},
          tracking_gross_payable_cents = gross_payable_cents * #{rate},
-         tracking_reinvestment_with_fees_cents = reinvestment_with_fees_cents * #{rate}"
+         tracking_reinvestment_with_fees_cents = reinvestment_with_fees_cents * #{rate},
+         tracking_income_with_fees_cents = income_with_fees_cents * #{rate},
+         tracking_expense_with_fees_cents = expense_with_fees_cents * #{rate},
+         tracking_tax_with_fees_cents = tax_with_fees_cents * #{rate},
+         tracking_display_only_with_fees_cents = display_only_with_fees_cents * #{rate}"
       )
     rescue StandardError
       @missing_rates << "Distributions: #{fund.currency}->#{fund.tracking_currency} on #{date}"

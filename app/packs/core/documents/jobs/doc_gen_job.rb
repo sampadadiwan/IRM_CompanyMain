@@ -4,6 +4,10 @@ class DocGenJob < ApplicationJob
   queue_as :doc_gen
   sidekiq_options retry: 1
 
+  # The Document records successfully created by the most recent #generate call.
+  # Portfolio report gen needs this to combine all portfolio reports into one
+  attr_reader :generated_documents
+
   # Returns all the templates from which documents will be generated
   def templates(_model = nil)
     []
@@ -60,6 +64,7 @@ class DocGenJob < ApplicationJob
   # The actual process of generating the document
   def generate(start_date, end_date, user_id, options: nil)
     @error_msg ||= []
+    @generated_documents = []
     succeeded = 0
     failed = 0
 
@@ -80,7 +85,8 @@ class DocGenJob < ApplicationJob
           # Cleanup previously generated documents if required
           cleanup_previous_docs(model, template)
           # Generate the document
-          generator.new(model, template, start_date, end_date, user_id, options:)
+          gen = generator.new(model, template, start_date, end_date, user_id, options:)
+          @generated_documents << gen.generated_document if gen.respond_to?(:generated_document) && gen.generated_document
           # Send notification if the document is generated successfully
           count = (midx * templates_to_use.length) + tidx + 1
           send_notification("#{count}: Generated #{template.name} for #{model}", user_id, "success")

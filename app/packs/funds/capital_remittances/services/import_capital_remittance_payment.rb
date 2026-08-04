@@ -1,5 +1,5 @@
 class ImportCapitalRemittancePayment < ImportUtil
-  STANDARD_HEADERS = ["Stakeholder", "Fund", "Capital Call", "Amount (Folio Currency)", "Currency", "Amount (Fund Currency)", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes", "Update Only"].freeze
+  STANDARD_HEADERS = ["Fund", "Capital Call", "Amount (Folio Currency)", "Currency", "Amount (Fund Currency)", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes", "Update Only"].freeze
 
   step nil, delete: :create_custom_fields
 
@@ -10,6 +10,11 @@ class ImportCapitalRemittancePayment < ImportUtil
 
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  # Older templates may still carry a Stakeholder column - ignore it so it does not become a custom field
+  def ignore_headers
+    ["Stakeholder"]
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
@@ -95,8 +100,7 @@ class ImportCapitalRemittancePayment < ImportUtil
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"]).first
     raise "Capital Call not found" unless capital_call
 
-    investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
-    raise "Stakeholder not found" unless investor
+    raise "Payment Date is mandatory" if user_data["Payment Date"].blank?
 
     # One of the 2 should be present folio_id or virtual_bank_account
     folio_id = user_data["Folio No"]&.to_s
@@ -105,11 +109,14 @@ class ImportCapitalRemittancePayment < ImportUtil
     raise "Folio No or Virtual Bank Account must be specified" if folio_id.blank? && virtual_bank_account.blank?
 
     # Find the capital_commitment from either the folio_id or virtual_bank_account
-    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first if folio_id
-    raise "Stakeholder commitment not found for folio #{folio_id}" if folio_id.present? && capital_commitment.blank?
+    capital_commitment = fund.capital_commitments.where(folio_id:).first if folio_id
+    raise "Commitment not found for folio #{folio_id}" if folio_id.present? && capital_commitment.blank?
 
-    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, virtual_bank_account:).first if virtual_bank_account
-    raise "Stakeholder commitment not found for virtual bank account #{virtual_bank_account}" if virtual_bank_account.present? && capital_commitment.blank?
+    capital_commitment = fund.capital_commitments.where(virtual_bank_account:).first if virtual_bank_account
+    raise "Commitment not found for virtual bank account #{virtual_bank_account}" if virtual_bank_account.present? && capital_commitment.blank?
+
+    # The investor is derived from the commitment, not from the sheet
+    investor = capital_commitment.investor
 
     capital_remittance = capital_call.capital_remittances.where(folio_id: capital_commitment.folio_id).first
     raise "Capital Remittance not found" unless capital_remittance

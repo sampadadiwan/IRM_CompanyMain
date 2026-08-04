@@ -6,7 +6,10 @@ class ImageService
     FileUtils.mkdir_p(folder_path)
 
     # Convert PDF to PNG
-    `pdftoppm -png -r 300 #{file.path} #{output_prefix}`
+    # Array form bypasses the shell so paths cannot be interpreted as shell syntax.
+    # system returns nil (not an exception) when the binary is missing - re-raise to
+    # keep the old backtick behavior of failing loudly with Errno::ENOENT
+    raise Errno::ENOENT, "pdftoppm" if system("pdftoppm", "-png", "-r", "300", file.path, output_prefix).nil?
 
     # Get list of images
     image_paths = Dir.glob("#{output_prefix}-*.png")
@@ -20,7 +23,9 @@ class ImageService
     end
 
     # Use ImageMagick to combine images vertically
-    `convert #{image_paths.join(' ')} -append #{image_path}`
+    # Array form bypasses the shell so paths cannot be interpreted as shell syntax.
+    # nil means the binary is missing - fail loudly like the old backticks did
+    raise Errno::ENOENT, "convert" if system("convert", *image_paths, "-append", image_path).nil?
 
     Rails.logger.debug { "Saved combined image to #{image_path}" }
 

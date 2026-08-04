@@ -3,7 +3,7 @@ class PortfolioReport < ApplicationRecord
   include WithFolder
 
   belongs_to :entity
-  has_many :portfolio_report_sections,  dependent: :destroy
+  has_many :portfolio_report_sections, dependent: :destroy
 
   validates :tags, length: { maximum: 100 }, allow_blank: true
   has_many :portfolio_report_extracts,  dependent: :destroy
@@ -17,5 +17,9 @@ class PortfolioReport < ApplicationRecord
 
   def folder_path
     "Portfolio Reports/Templates/#{name}"
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[created_at updated_at name tags include_kpi include_portfolio_investments].sort
   end
 end

@@ -154,7 +154,8 @@ class TemplateTransformer
       Rails.logger.debug { "Initial docx open failed with decompression error: #{e.message}" }
       fixed_path = "#{@doc_path}_fixed.docx"
       Rails.logger.debug "Attempting to fix ZIP structure of source using command line..."
-      system("zip -FF #{@doc_path} --out #{fixed_path}")
+      # Array form bypasses the shell so paths cannot be interpreted as shell syntax
+      system("zip", "-FF", @doc_path, "--out", fixed_path)
       doc = Docx::Document.open(fixed_path)
       FileUtils.rm_f(fixed_path)
     rescue StandardError => e

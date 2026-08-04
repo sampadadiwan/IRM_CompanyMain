@@ -1,7 +1,10 @@
 Given('the KPI workbook file {string} for a kpi report') do |workbook_file| # Store the workbook file path for later use
   @workbook_file = "public/sample_uploads/#{workbook_file}"
   expect(File.exist?(@workbook_file)).to be(true), "Test file not found: #{@workbook_file}"
-  @kpi_report = KpiReport.create(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: ['Actual'])
+  # user is required on KpiReport; create! surfaces validation errors instead of leaving an
+  # unsaved report around (an unsaved owner makes the document save blow up much later)
+  # tag_list is a plain string column on KpiReport ("Actual"/"Budget"/"IC"), not an array
+  @kpi_report = KpiReport.create!(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: 'Actual', user: @user)
 
   @document = @kpi_report.documents.build(entity_id: @entity.id, name: "KPI", user_id: @user.id, file: File.open(@workbook_file), owner: @kpi_report)
 
@@ -11,7 +14,10 @@ end
 Given('the KPI workbook file {string} for a {string} kpi report') do |workbook_file, tag|
   @workbook_file = "public/sample_uploads/#{workbook_file}"
   expect(File.exist?(@workbook_file)).to be(true), "Test file not found: #{@workbook_file}"
-  @kpi_report = KpiReport.create(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: [tag])
+  # user is required on KpiReport; create! surfaces validation errors instead of leaving an
+  # unsaved report around (an unsaved owner makes the document save blow up much later)
+  # tag_list is a plain string column on KpiReport ("Actual"/"Budget"/"IC"), not an array
+  @kpi_report = KpiReport.create!(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: tag, user: @user)
 
   @document = @kpi_report.documents.build(entity_id: @entity.id, name: "KPI", user_id: @user.id, file: File.open(@workbook_file), owner: @kpi_report)
 
@@ -194,4 +200,189 @@ Then('the KPI data should be updated with the new values') do
   expect(new_kpis.pluck(:name).uniq).to include("EBITDA", "COD %"), "Expected new KPIs 'EBITDA' and 'COD %' to be created, but they were not found among new KPIs: #{new_kpis.pluck(:name).uniq}"
 
   puts "All KPIs after refresh: #{Kpi.where(portfolio_company_id: @portfolio_company.id).pluck(:name).tally}"
+end
+
+# --- Steps for KPI parser fixes ---
+# Changed in feature/kpi-multi-column-detection: replaced auto-creation steps
+# (child mappings should be created, no duplicate child mappings) with explicit
+# mapping setup + value import assertions. The parser no longer creates mappings —
+# all parent-child hierarchy must be pre-configured via bulk import.
+
+# Creates parent-child KPI mappings from a table with parent_name and reported_kpi_name.
+# standard_kpi_name is auto-prefixed as "Parent - Child" when parent is set,
+# mirroring the ImportInvestorKpiMapping bulk import behavior.
+And('the following parent-child KPI mappings exist for the portfolio company:') do |table|
+  parents = {}
+  table.hashes.each do |row|
+    reported = row['reported_kpi_name'].strip
+    parent_name = row['parent_name'].to_s.strip
+
+    attrs = {
+      entity_id: @portfolio_company.entity_id,
+      reported_kpi_name: reported,
+      standard_kpi_name: reported
+    }
+
+    if parent_name.present?
+      parent = parents[parent_name]
+      raise "Parent '#{parent_name}' not found — define it before its children" unless parent
+
+      attrs[:parent] = parent
+      # Auto-prefix: "Enterprise" → "Net Sales - Enterprise" (same as ImportInvestorKpiMapping)
+      attrs[:standard_kpi_name] = "#{parent.standard_kpi_name} - #{reported}"
+    end
+
+    mapping = @portfolio_company.investor_kpi_mappings.create!(attrs)
+    parents[reported] = mapping if parent_name.blank?
+  end
+  @portfolio_company.reload
+end
+
+# Verifies that at least one Kpi value was imported for a mapping by standard_kpi_name
+Then('KPI values should be imported for mapping {string}') do |standard_name|
+  mapping = InvestorKpiMapping.find_by(
+    standard_kpi_name: standard_name,
+    investor: @portfolio_company
+  )
+  expect(mapping).not_to be_nil, "Mapping '#{standard_name}' not found"
+
+  kpi_count = Kpi.where(
+    investor_kpi_mapping_id: mapping.id,
+    portfolio_company_id: @portfolio_company.id
+  ).count
+  expect(kpi_count).to be > 0,
+    "No KPI values imported for mapping '#{standard_name}' (mapping #{mapping.id})"
+end
+
+# Verifies the first imported Kpi value for a mapping matches the expected value
+Then('the KPI for mapping {string} should have value {float}') do |standard_name, expected_value|
+  mapping = InvestorKpiMapping.find_by(
+    standard_kpi_name: standard_name,
+    investor: @portfolio_company
+  )
+  expect(mapping).not_to be_nil, "Mapping '#{standard_name}' not found"
+
+  kpi = Kpi.where(
+    investor_kpi_mapping_id: mapping.id,
+    portfolio_company_id: @portfolio_company.id
+  ).order(:id).first
+  expect(kpi).not_to be_nil, "No KPI found for mapping '#{standard_name}'"
+  expect(kpi.value.to_f).to eq(expected_value),
+    "Expected #{expected_value} for '#{standard_name}', got #{kpi.value.to_f}"
+end
+
+# Verifies that KpiReports with each expected tag exist for the portfolio company
+Then('KPI reports should exist with tags {string}') do |tags_string|
+  expected_tags = tags_string.split(',').map(&:strip).sort
+  actual_tags = KpiReport.where(portfolio_company_id: @portfolio_company.id)
+                         .pluck(:tag_list).compact.uniq.sort
+  expect(actual_tags).to match_array(expected_tags),
+    "Expected tags #{expected_tags}, got #{actual_tags}"
+end
+
+# Verifies that each tag has KpiReports for the same set of periods
+Then('each tag should have KPI reports for the same periods') do
+  # Exclude the seed report created in the Given step (as_of today) — only compare
+  # the reports the KpiWorkbookReader created from the workbook periods
+  reports = KpiReport.where(portfolio_company_id: @portfolio_company.id).where.not(id: @kpi_report&.id)
+  by_tag = reports.group_by(&:tag_list)
+  periods_per_tag = by_tag.transform_values { |reps| reps.map(&:as_of).sort }
+
+  # All tags should cover the same periods
+  all_period_sets = periods_per_tag.values.uniq
+  expect(all_period_sets.size).to eq(1),
+    "Expected all tags to cover the same periods, got: #{periods_per_tag.inspect}"
+end
+
+# Verifies that child InvestorKpiMappings were created under a parent
+Then('child mappings should be created under {string} with names {string}') do |parent_name, children_string|
+  expected_children = children_string.split(',').map(&:strip).sort
+  parent = InvestorKpiMapping.find_by(
+    standard_kpi_name: parent_name,
+    investor: @portfolio_company
+  )
+  expect(parent).not_to be_nil, "Parent mapping '#{parent_name}' not found"
+
+  actual_children = parent.children.pluck(:reported_kpi_name).sort
+  expect(actual_children).to match_array(expected_children),
+    "Expected children #{expected_children} under '#{parent_name}', got #{actual_children}"
+end
+
+# Verifies the prefixed standard_kpi_name for a child under a specific parent
+Then('the standard KPI name for {string} under {string} should be {string}') do |child_name, parent_name, expected_standard|
+  parent = InvestorKpiMapping.find_by(
+    standard_kpi_name: parent_name,
+    investor: @portfolio_company
+  )
+  expect(parent).not_to be_nil, "Parent mapping '#{parent_name}' not found"
+
+  child = parent.children.find_by(reported_kpi_name: child_name)
+  expect(child).not_to be_nil, "Child '#{child_name}' not found under '#{parent_name}'"
+  expect(child.standard_kpi_name).to eq(expected_standard),
+    "Expected standard name '#{expected_standard}', got '#{child.standard_kpi_name}'"
+end
+
+# Verifies that each auto-created child mapping has at least one Kpi value imported
+Then('child KPIs should have values imported for each child mapping') do
+  child_mappings = InvestorKpiMapping.where(investor: @portfolio_company)
+                                     .where.not(ancestry: nil)
+  expect(child_mappings.count).to be > 0, "No child mappings found"
+
+  child_mappings.each do |cm|
+    kpi_count = Kpi.where(
+      investor_kpi_mapping_id: cm.id,
+      portfolio_company_id: @portfolio_company.id
+    ).count
+    expect(kpi_count).to be > 0,
+      "No KPI values imported for child '#{cm.standard_kpi_name}' (mapping #{cm.id})"
+  end
+end
+
+# Verifies that KpiReports were created for specific month dates
+Then('KPI reports should be created for months {string}') do |dates_string|
+  expected_dates = dates_string.split(',').map { |d| Date.parse(d.strip) }
+  actual_dates = KpiReport.where(portfolio_company_id: @portfolio_company.id)
+                          .pluck(:as_of).uniq.sort
+
+  expected_dates.each do |expected|
+    expect(actual_dates).to include(expected),
+      "Expected KPI report for #{expected}, found: #{actual_dates}"
+  end
+end
+
+# Records the child mapping count for later idempotency check
+And('I note the child mapping count under {string}') do |parent_name|
+  parent = InvestorKpiMapping.find_by(
+    standard_kpi_name: parent_name,
+    investor: @portfolio_company
+  )
+  expect(parent).not_to be_nil, "Parent mapping '#{parent_name}' not found"
+  @child_mapping_count = parent.children.count
+  puts "Child mapping count under '#{parent_name}': #{@child_mapping_count}"
+end
+
+# Re-runs the KpiWorkbookReader (for idempotency tests)
+When('the KpiWorkbookReader processes the file again') do
+  @portfolio_company.reload
+  reader = KpiWorkbookReader.new(
+    @kpi_report, @document,
+    @portfolio_company.investor_kpi_mappings,
+    @user, @portfolio_company
+  )
+  @extracted_kpis = reader.extract_kpis
+end
+
+# Replaces "I note the child mapping count" / "no duplicate child mappings" steps from PR #1560.
+# With explicit mapping-only approach, idempotency is about KPI values not duplicating on re-upload,
+# not about auto-created mappings not duplicating.
+And('I note the KPI count for the portfolio company') do
+  @kpi_count = Kpi.where(portfolio_company_id: @portfolio_company.id).count
+  puts "KPI count before re-upload: #{@kpi_count}"
+end
+
+# Verifies re-upload did not create additional KPI records
+Then('the KPI count should not have increased') do
+  new_count = Kpi.where(portfolio_company_id: @portfolio_company.id).count
+  expect(new_count).to eq(@kpi_count),
+    "KPI count changed from #{@kpi_count} to #{new_count} after re-upload — expected no duplicates"
 end

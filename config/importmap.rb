@@ -3,7 +3,7 @@
 pin "application", preload: true
 pin_all_from "app/javascript/controllers", under: "controllers"
 pin "trix"
-pin "@rails/actiontext", to: "@rails--actiontext.js" # @8.0.200
+pin "@rails/actiontext", to: "@rails--actiontext.js" # @8.1.300
 pin "chartkick", to: "chartkick.js"
 pin "@rails/activestorage", to: "activestorage.esm.js"
 
@@ -12,18 +12,11 @@ pin "@nathanvda/cocoon", to: "cocoon.min.js"
 pin_all_from "app/javascript/custom", under: "custom"
 pin "@rails/request.js", to: "request.js"
 pin "turbo_progress_bar"
-pin "countup.js" # @2.8.0
+pin "countup.js" # @2.10.1
 pin "@rails/actioncable", to: "actioncable.esm.js"
 pin_all_from "app/javascript/channels", under: "channels"
 
-pin "uppy", to: "uppy.min.js"
-
 pin "moment" # @2.30.1
-pin "typeahead" # @0.2.2
-pin "dom" # @0.0.2
-pin "xtend" # @1.0.3
-pin "sortable" # @2.0.0
-pin "jquery-browserify" # @1.8.1
 pin "@hotwired/stimulus", to: "stimulus.min.js"
 pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
 pin "@hotwired/turbo-rails", to: "turbo.min.js"
@@ -43,13 +36,17 @@ pin "highcharts/modules/accessibility", to: "highcharts-accessibility.js"
 
 # config/importmap.rb
 # Remove ANY pins for "chart.js/auto"
-pin "chart.js", to: "chart.js", preload: true
-pin "xlsx", to: "xlsx.js"
-pin "pptxgenjs", to: "pptxgenjs.js"
+pin "chart.js", preload: true # @4.5.1
+pin "xlsx", to: "xlsx.js" # @0.20.3 (SheetJS CDN build; npm is stuck at 0.18.5)
+pin "pptxgenjs" # @4.0.1
 pin "reveal.js" # @5.2.1
 pin "reveal.js/plugin/highlight/highlight.esm.js", to: "reveal.js--plugin--highlight--highlight.esm.js.js" # @5.2.1
 pin "reveal.js/plugin/markdown/markdown.esm.js", to: "reveal.js--plugin--markdown--markdown.esm.js.js" # @5.2.1
 pin "reveal.js/plugin/notes/notes.esm.js", to: "reveal.js--plugin--notes--notes.esm.js.js" # @5.2.1
-pin "dompurify" # @3.4.1
-pin "marked" # @18.0.2
-pin "mermaid", to: "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs"
+pin "dompurify" # @3.4.12
+pin "marked" # @18.0.7
+pin "mermaid", to: "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs"
+pin "node:fs" # @2.1.0
+pin "node:https" # @2.1.0
+pin "chartjs-plugin-datalabels" # @2.2.0
+pin "chart.js/helpers", to: "chart.js--helpers.js" # @4.5.1

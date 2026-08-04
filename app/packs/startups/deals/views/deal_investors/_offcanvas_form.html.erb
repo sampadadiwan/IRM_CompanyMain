@@ -1,11 +1,13 @@
 <% turbo_tag ||= "deal_investor_form_offcanvas#{deal_investor.id}" %>
 <%= turbo_frame_tag turbo_tag do %>
   <% doc_owner_tag||="" %>
-  <div class="card shadow mb-4">
-    <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">Potential Investment</h6>
-    </div>
-    <div class="card-body">
+  <%# Row menu "Edit" opens this straight in the offcanvas, so the header has to
+      say which investor is being edited — the generic title was only adequate
+      when the form was reached from a row you had just clicked. %>
+  <% card_title = (deal_investor.persisted? && deal_investor.investor_name.presence) || "Potential Investment" %>
+  <%# ToggleCard rather than a hand-rolled card: matches the collapsible sections
+      the rest of the panel uses, open by default. %>
+  <%= render ToggleCard.new(title: card_title, css_class: "edit_deal_investor", state: "show") do %>
       <%= form_with(model: deal_investor, validate: true, data: { turbo_frame: turbo_tag }) do |form| %>
         <% if deal_investor.errors.any? %>
           <div class="alert alert-danger">
@@ -106,6 +108,5 @@
           <a class="btn btn-outline-danger", data-bs-dismiss="offcanvas">Close</a>
         </div>
       <% end %>
-    </div>
-  </div>
+  <% end %>
 <% end %>

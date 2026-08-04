@@ -54,8 +54,6 @@ class FundTemplateDecorator < TemplateDecorator
     end
   end
 
-  private
-
   def fetch_account_entry(method_name, scope_type)
     # Handles fundae_, kycae_, and folioae_ prefixes for account entry lookups
     # Format: prefix_name[_enttype_type][cumulative] or prefixcumulative_name[_enttype_type]
@@ -473,10 +471,10 @@ class FundTemplateDecorator < TemplateDecorator
   # === Distribution Cash ===
   # === Distribution Cash & Reinvestment ===
 
-  # Distribution Cash is the sum of the gross payable amount - reinvestment amount of the distribution payments
-  def dist_cash_lp = Money.new(fund_dist_payments_lp.sum(DIST_CASH_SQL), @currency)
+  # Distribution Cash is the sum of the net_payable + tax of the distribution payments
+  def dist_cash_lp = Money.new(fund_dist_payments_lp.sum(NET_PAYABLE_PRE_TAX_SQL), @currency)
   memoize :dist_cash_lp
-  def dist_cash_gp = Money.new(fund_dist_payments_gp.sum(DIST_CASH_SQL), @currency)
+  def dist_cash_gp = Money.new(fund_dist_payments_gp.sum(NET_PAYABLE_PRE_TAX_SQL), @currency)
   memoize :dist_cash_gp
 
   # For Total we use the distribution payments of the fund_as_of
@@ -485,14 +483,14 @@ class FundTemplateDecorator < TemplateDecorator
   alias dist_cash_total_fund dist_cash_total
 
   # For investor we use distribution payments of the capital commitment
-  def dist_cash_investor = Money.new(dist_payments.sum(DIST_CASH_SQL), @currency)
+  def dist_cash_investor = Money.new(dist_payments.sum(NET_PAYABLE_PRE_TAX_SQL), @currency)
   memoize :dist_cash_investor
 
   def dist_cash_investor_percent = percentage(dist_cash_investor.cents, dist_cash_total.cents)
 
   # For KYC we use distribution payments of the investor kyc
   # Distribution Cash amount of the KYC
-  def dist_cash_kyc = Money.new(kyc_dist_payments.sum(DIST_CASH_SQL), @currency)
+  def dist_cash_kyc = Money.new(kyc_dist_payments.sum(NET_PAYABLE_PRE_TAX_SQL), @currency)
   memoize :dist_cash_kyc
 
   # Percentage of distribution cash of the KYC relative to the total fund distributions
@@ -550,20 +548,20 @@ class FundTemplateDecorator < TemplateDecorator
   def dpi_kyc = dist_cash_kyc / drawdown_cash_kyc
 
   # === Recallable Distributions ===
-  # Recallable Distribution is the minimum of 20% of committed amount plus reinvestment amount and distribution cash
-  def recall_dist_lp = [dist_cash_lp, (0.2 * committed_cash_lp) + committed_reinvest_lp].min
+  # Recallable Distribution is the minimum of 20% of committed amount minus reinvestment amount and distribution cash
+  def recall_dist_lp = [dist_cash_lp, (0.2 * committed_cash_lp) - committed_reinvest_lp].min
   memoize :recall_dist_lp
-  def recall_dist_gp = [dist_cash_gp, (0.2 * committed_cash_gp) + committed_reinvest_gp].min
+  def recall_dist_gp = [dist_cash_gp, (0.2 * committed_cash_gp) - committed_reinvest_gp].min
   memoize :recall_dist_gp
-  def recall_dist_total_fund = [dist_cash_total_fund, (0.2 * committed_cash_total_fund) + committed_reinvest_total_fund].min
+  def recall_dist_total_fund = [dist_cash_total_fund, (0.2 * committed_cash_total_fund) - committed_reinvest_total_fund].min
   memoize :recall_dist_total_fund
 
-  def recall_dist_investor = [dist_cash_investor, (0.2 * committed_cash_investor) + committed_reinvest_investor].min
+  def recall_dist_investor = [dist_cash_investor, (0.2 * committed_cash_investor) - committed_reinvest_investor].min
   memoize :recall_dist_investor
 
   def recall_dist_investor_percent = percentage(recall_dist_investor, recall_dist_total_fund)
 
-  def recall_dist_kyc = [dist_cash_kyc, (0.2 * committed_cash_kyc) + committed_reinvest_kyc].min
+  def recall_dist_kyc = [dist_cash_kyc, (0.2 * committed_cash_kyc) - committed_reinvest_kyc].min
   memoize :recall_dist_kyc
 
   def recall_dist_kyc_percent = percentage(recall_dist_kyc, recall_dist_total_fund)
@@ -1031,7 +1029,8 @@ class FundTemplateDecorator < TemplateDecorator
   def agg_dist_incl_investor_percent = percentage(agg_dist_incl_investor.cents, agg_dist_incl_total.cents)
 
   # Distribution Cash amount of the KYC including the notice date
-  alias agg_dist_incl_kyc dist_cash_kyc
+  def agg_dist_incl_kyc = Money.new(kyc_dist_payments.sum(DIST_CASH_SQL), @currency)
+  memoize :agg_dist_incl_kyc
 
   # Percentage of distribution cash of the KYC including the notice date
   def agg_dist_incl_kyc_percent = percentage(agg_dist_incl_kyc.cents, agg_dist_incl_total.cents)
