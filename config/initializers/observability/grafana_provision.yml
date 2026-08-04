@@ -350,9 +350,12 @@ alert_rules:
   # works for IN, US and staging without hardcoding server counts.
   # If ALL Sidekiqs are dead, count() returns an empty vector and the whole expression
   # becomes NoData — no_data_state: alerting makes that fire too.
+  # ruby_rss carries a pid label, so a Sidekiq restart briefly leaves TWO series on one
+  # host (old + new pid, until the stale one expires) — the inner count by(hostname)
+  # collapses those to one-per-host so a restart can't mask a real death elsewhere.
   - title: "Sidekiq Down"
     group: rails
-    expr: 'sum(up{job="rails_app"}) - count(ruby_rss{type="sidekiq"})'
+    expr: 'sum(up{job="rails_app"}) - count(count by(hostname)(ruby_rss{type="sidekiq"}))'
     threshold_gt: 0
     for: 2m
     no_data_state: alerting

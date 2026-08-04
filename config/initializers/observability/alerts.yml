@@ -74,9 +74,11 @@ groups:
       # instead of firing, and InstanceDown stays green because the exporter is still up.
       # Compare reachable app exporters against live Sidekiq process series; absent() covers
       # the case where every Sidekiq is dead and count() returns an empty vector.
+      # count by(hostname) dedupes the pid-labelled ruby_rss series so a restart's brief
+      # old+new pid overlap on one host can't mask a real death on another.
       - alert: SidekiqDown
         expr: |
-          (sum(up{job="rails_app"}) - count(ruby_rss{type="sidekiq"}) > 0)
+          (sum(up{job="rails_app"}) - count(count by(hostname)(ruby_rss{type="sidekiq"})) > 0)
           or absent(ruby_rss{type="sidekiq"})
         for: 2m
         labels:

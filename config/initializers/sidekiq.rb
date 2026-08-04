@@ -1,4 +1,72 @@
 require 'sidekiq'
+require 'etc' # page size lookup for SidekiqJobMemoryMetrics RSS reads
+
+# Server middleware that attributes memory consumption to individual job classes.
+# prometheus_exporter's built-in Sidekiq instrumentation only reports counts and
+# durations per job — memory (ruby_rss / ruby_heap_*) is only known per PROCESS.
+# This middleware measures each job execution and pushes two counters, which the
+# Sidekiq Grafana dashboard (graphana/*/sidekiq.dashboard.json) charts by job_name:
+#
+#   ruby_sidekiq_job_rss_growth_bytes   — positive RSS delta across the job run.
+#                                         A leaky job class accumulates a large total.
+#   ruby_sidekiq_job_allocated_objects  — objects allocated during the job run.
+#                                         High churn = GC pressure even without a leak.
+#
+# Accuracy caveat: Sidekiq runs 5 concurrent threads (plus single-threaded capsules),
+# and both RSS and GC.stat are process-wide, so deltas from overlapping jobs bleed
+# into each other. Attribution is therefore approximate — but over hours of traffic
+# the leaky/heavy job classes still dominate their own counters, which is what the
+# dashboard needs. RSS shrinking mid-job (GC/malloc_trim) is clamped to 0, not negated.
+class SidekiqJobMemoryMetrics
+  # Registered lazily so the class can load before PrometheusExporter's client exists.
+  # Counters are remote metrics — observe() ships them to the shared exporter, which
+  # applies the global "ruby_" prefix (same reason ruby_rss is "rss" in code).
+  def self.rss_growth_counter
+    @rss_growth_counter ||= PrometheusExporter::Client.default.register(
+      :counter, 'sidekiq_job_rss_growth_bytes',
+      'Cumulative positive RSS growth (bytes) observed across job executions, by job class'
+    )
+  end
+
+  def self.allocations_counter
+    @allocations_counter ||= PrometheusExporter::Client.default.register(
+      :counter, 'sidekiq_job_allocated_objects',
+      'Cumulative Ruby objects allocated during job executions, by job class'
+    )
+  end
+
+  def call(worker, msg, queue)
+    rss_before       = current_rss_bytes
+    allocated_before = GC.stat(:total_allocated_objects)
+    yield
+  ensure
+    # Metrics must never fail a job or mask its exception — hence rescue-all here.
+    begin
+      # Reuse the patched get_name below so ActiveJob wrappers resolve to the real
+      # class (DocGenJob), matching the job_name label on the built-in job metrics.
+      labels = {
+        job_name: PrometheusExporter::Instrumentation::Sidekiq.get_name(worker.class.to_s, msg),
+        queue:    queue,
+      }
+      rss_delta = current_rss_bytes - rss_before
+      self.class.rss_growth_counter.observe(rss_delta, labels) if rss_delta.positive?
+      self.class.allocations_counter.observe(GC.stat(:total_allocated_objects) - allocated_before, labels)
+    rescue StandardError
+      nil
+    end
+  end
+
+  private
+
+  # RSS from /proc/self/statm (resident pages × page size) — no shell-out, ~µs cost.
+  # Falls back to 0 (making deltas 0, never negative garbage) on non-Linux/dev edge cases.
+  def current_rss_bytes
+    @page_size ||= Etc.sysconf(Etc::SC_PAGE_SIZE)
+    File.read('/proc/self/statm').split[1].to_i * @page_size
+  rescue StandardError
+    0
+  end
+end
 
 Sidekiq.configure_server do |config|
   # edits the default capsule
@@ -94,6 +162,8 @@ Sidekiq.configure_server do |config|
 
   config.server_middleware do |chain|
     chain.add PrometheusExporter::Instrumentation::Sidekiq
+    # Per-job memory attribution (RSS growth + allocations) — see class comment above.
+    chain.add SidekiqJobMemoryMetrics
   end
   config.death_handlers << PrometheusExporter::Instrumentation::Sidekiq.death_handler
   config.on :startup do
