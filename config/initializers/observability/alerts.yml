@@ -68,6 +68,23 @@ groups:
           summary: "{{ $value }} jobs in Sidekiq dead queue"
           description: "Jobs are failing permanently. Check Sidekiq dead queue for errors."
 
+      # Fire when an app exporter is reachable but no Sidekiq process is pushing metrics.
+      # Sidekiq metrics are pushed BY the Sidekiq process — when it dies its series expire
+      # from prometheus_exporter within ~1 min, so the queue alerts above go blind (no data)
+      # instead of firing, and InstanceDown stays green because the exporter is still up.
+      # Compare reachable app exporters against live Sidekiq process series; absent() covers
+      # the case where every Sidekiq is dead and count() returns an empty vector.
+      - alert: SidekiqDown
+        expr: |
+          (sum(up{job="rails_app"}) - count(ruby_rss{type="sidekiq"}) > 0)
+          or absent(ruby_rss{type="sidekiq"})
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Sidekiq process down on at least one app server"
+          description: "No Sidekiq process metrics are being pushed — background jobs are not processing. Check monit and the sidekiq service."
+
       # Fire when any scraped target goes missing
       - alert: InstanceDown
         expr: up == 0

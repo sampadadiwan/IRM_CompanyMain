@@ -340,6 +340,27 @@ alert_rules:
       severity: warning
       category: rails
 
+  # Sidekiq process death. All ruby_sidekiq_* metrics are PUSHED by the Sidekiq process
+  # itself to prometheus_exporter — when Sidekiq dies its series simply expire (~1 min)
+  # instead of going to zero, so the queue-depth/latency alerts above go blind (NoData)
+  # rather than firing. Detect death by comparing reachable app exporters (up) against
+  # live Sidekiq process series (ruby_rss{type="sidekiq"}, registered in sidekiq.rb on
+  # startup): any shortfall means a Sidekiq is dead on at least one app server. The
+  # expected count self-calibrates to however many app servers are up, so the same rule
+  # works for IN, US and staging without hardcoding server counts.
+  # If ALL Sidekiqs are dead, count() returns an empty vector and the whole expression
+  # becomes NoData — no_data_state: alerting makes that fire too.
+  - title: "Sidekiq Down"
+    group: rails
+    expr: 'sum(up{job="rails_app"}) - count(ruby_rss{type="sidekiq"})'
+    threshold_gt: 0
+    for: 2m
+    no_data_state: alerting
+    summary: "Sidekiq process is dead on at least one app server — background jobs are not being processed; check monit and the sidekiq service on the app servers"
+    labels:
+      severity: critical
+      category: rails
+
   # ── Infrastructure depth ────────────────────────────────────────────────────
 
   # Inode exhaustion: disk % can look fine while inodes are 100% full (e.g. millions of Rails tmp files).
