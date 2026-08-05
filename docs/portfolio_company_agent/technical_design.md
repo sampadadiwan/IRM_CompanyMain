@@ -228,11 +228,15 @@ Added to `_form.html.erb` alongside existing agent-type configs (CashFlow, KYC, 
 
 **Info box:** Dynamically computed preview showing the actual dates based on current selections. Helps the admin understand what the settings mean without guessing.
 
-### 6.2 Dashboard — "Run Now" Button Enhancement
+### 6.2 Dashboard — "Run Validation" with Period + Target Selector
 
-**File:** `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_actions.html.erb`
+**Files:**
+- `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_actions.html.erb`
+- `app/packs/ai/portfolio_company_dashboard/controllers/portfolio_company_dashboard_controller.rb`
+- `app/packs/ai/portfolio_company_dashboard/jobs/portfolio_validation_job.rb`
+- `app/javascript/controllers/portfolio_validation_target_controller.js`
 
-The existing "Run Validation" button gets an optional date dropdown for adhoc runs.
+The "Run Validation" form has two controls: a period dropdown (existing) and a target selector (new).
 
 ```
 ┌──────────────────────────────────────────┐
@@ -240,35 +244,54 @@ The existing "Run Validation" button gets an optional date dropdown for adhoc ru
 │                                          │
 │  ┌────────────────────────────────────┐  │
 │  │ ▶ Run Validation                   │  │
-│  │   Check all data for completeness  │  │
+│  │   Check data for completeness      │  │
 │  │                                    │  │
-│  │   Check period: [Auto (Q2 - Jun 30) ▼]│
+│  │   Check period:                    │  │
+│  │   [Auto (Q2 - Jun 30, 2026)    ▼] │  │
 │  │                                    │  │
-│  │   Options:                         │  │
-│  │     • Auto (Q2 - Jun 30, 2026)     │  │
-│  │     • Q1 - Mar 31, 2026            │  │
-│  │     • Q4 - Dec 31, 2025            │  │
-│  │     • Q3 - Sep 30, 2025            │  │
-│  └────────────────────────────────────┘  │
-│                                          │
-│  ┌────────────────────────────────────┐  │
-│  │ ✉ Send Reminders                  │  │
-│  │   Email 5 companies with missing   │  │
-│  │   submissions                      │  │
-│  └────────────────────────────────────┘  │
-│                                          │
-│  ┌────────────────────────────────────┐  │
-│  │ 👁 View Pending Issues             │  │
-│  │   Filter and review all issues     │  │
+│  │   Run on:                          │  │
+│  │   [Selected Companies          ▼]  │  │
+│  │                                    │  │
+│  │   ┌────────────────────────────┐   │  │
+│  │   │ ☑ Acme Corp               │   │  │
+│  │   │ ☐ BetaHealth              │   │  │
+│  │   │ ☑ Gamma AI                │   │  │
+│  │   │ ☐ Delta Foods             │   │  │
+│  │   └────────────────────────────┘   │  │
+│  │                                    │  │
+│  │   [Run]                            │  │
 │  └────────────────────────────────────┘  │
 └──────────────────────────────────────────┘
 ```
 
-**Dropdown behavior:**
+**Period dropdown behavior:**
 - Default selection: "Auto" — uses the auto-computed previous period-end
 - Shows the last 4 valid period-end dates based on the agent's `due_period` setting
-- If a random date were somehow entered, the system snaps to the nearest completed period-end
 - Adhoc runs always execute regardless of the T+start / T+end window
+
+**Target selector behavior:**
+- **All Companies** (default): runs on every portfolio company — same as before
+- **Selected Companies**: shows a scrollable checklist of all company names with checkboxes
+- **By Tag**: shows checkboxes for each existing tag with company count, e.g., "SaaS (3)"
+- **By Sector**: shows checkboxes for each existing sector with company count
+- Tag/sector options hidden from dropdown if none exist on any portfolio company
+- Stimulus controller (`portfolio-validation-target`) toggles panel visibility and validates submit
+
+**Data flow:**
+
+```
+Form submits: target_mode + target_ids[]/target_tags[]/target_sectors[] + check_as_on_date
+  → controller#run_validation
+    → resolve_target_ids: queries Investor with entity_id scoping
+      → returns Array<Integer> (specific IDs) or nil (all companies)
+    → PortfolioValidationJob.perform_later(target_ids: [...], check_as_on_date: ...)
+      → Job: Investor.where(id: target_ids) or PortfolioCompanyAgent.new.targets(entity_id)
+        → PortfolioCompanyAgent.process_batch(targets: scoped_relation)
+```
+
+**Security:** `resolve_target_ids` re-queries with `entity_id` scoping — tampered IDs from other entities are filtered out. The job adds a second validation layer with the same scoping.
+
+**Tag/sector resolution:** Tags and sectors are plain string columns on `investors` (`tag_list` comma-separated, `sector` plain string). The controller queries all portfolio companies, splits/deduplicates values, and uses `.tally` for counts. Filtering uses existing scopes: `Investor.with_tag_list(tags)` (LIKE-based OR) and `Investor.in_sector(sectors)` (LIKE-based OR).
 
 ### 6.3 Dashboard — Active Window Indicator
 
@@ -297,11 +320,12 @@ States:
 
 ## 7. Execution Modes — Updated
 
-| Mode | Window Gate? | Date Input | Behavior |
-|------|-------------|------------|----------|
-| Scheduled (cron) | Yes — skips if outside window | Auto-computed | Runs only during T+start to T+end |
-| Adhoc (Run Now button) | No — always runs | Dropdown (auto or manual period-end) | FM can run anytime, for any period |
-| Single company (investor page) | No — always runs | Uses agent's current period | Step-by-step progress panel |
+| Mode | Window Gate? | Date Input | Target Input | Behavior |
+|------|-------------|------------|-------------|----------|
+| Scheduled (cron) | Yes — skips if outside window | Auto-computed | All companies | Runs only during T+start to T+end |
+| Adhoc (Dashboard) | No — always runs | Dropdown (auto or manual period-end) | Target selector (all, selected, by tag, by sector) | FM can run anytime, for any period, on any subset |
+| Adhoc (Support Agents page) | No — always runs | Auto-computed | All companies | Quick trigger, no targeting |
+| Single company (investor page) | No — always runs | Uses agent's current period | Single company | Step-by-step progress panel |
 
 ---
 
@@ -326,10 +350,12 @@ States:
 
 | File | Change |
 |------|--------|
-| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_actions.html.erb` | Period dropdown, Send Reminders with last-sent warning, consistent hover styling |
+| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_actions.html.erb` | Period dropdown + target selector (Run on), Send Reminders with last-sent warning, consistent hover styling |
 | `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_stats.html.erb` | 7 compact stat cards (h4 numbers, py-1 px-3 padding) |
 | `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/show.html.erb` | Active window indicator bar |
-| `app/packs/ai/portfolio_company_dashboard/controllers/portfolio_company_dashboard_controller.rb` | `run_validation` responds with `head :ok` (no page reload); `send_reminders` responds with flash message + redirect (feedback: sent/skipped/no overdue); accepts `check_as_on_date` |
+| `app/packs/ai/portfolio_company_dashboard/controllers/portfolio_company_dashboard_controller.rb` | `show` queries target selector data (companies, tags with counts, sectors with counts); `run_validation` accepts `target_mode` + selections, resolves to IDs via `resolve_target_ids`; `send_reminders` responds with flash + redirect |
+| `app/packs/ai/portfolio_company_dashboard/jobs/portfolio_validation_job.rb` | Accepts optional `target_ids` array; scopes targets when present, falls back to all companies when nil |
+| `app/javascript/controllers/portfolio_validation_target_controller.js` | **New file** — Stimulus controller for target selector panel show/hide + submit validation |
 | `app/packs/ai/portfolio_company_dashboard/services/portfolio_dashboard_presenter.rb` | Dashboard aggregations + `last_reminder_sent_at` for Send Reminders warning |
 
 ### Scheduler

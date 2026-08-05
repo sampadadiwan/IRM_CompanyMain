@@ -42,21 +42,25 @@
           [label, d.to_s]
         end
       %>
-      <%# Form posts to the dashboard's own run_validation action (not the shared
-           support_agents run_with_steps). This avoids modifying shared framework
-           files and lets us pass check_as_on_date to PortfolioValidationJob. %>
+            <%# Form posts to the dashboard's own run_validation action (not the shared
+           support_agents run_with_steps). Passes target_mode + target selections
+           alongside check_as_on_date to PortfolioValidationJob.
+           Stimulus controller handles panel show/hide and submit validation. %>
       <%= form_with url: run_validation_portfolio_company_dashboard_path,
                     method: :post,
                     class: "border rounded p-3 text-start",
                     style: "transition: border-color 0.2s; cursor: default;",
-                    data: { confirm: "Run validation on all portfolio companies?" } do |f| %>
+                    data: { controller: "portfolio-validation-target",
+                            portfolio_validation_target_total_count_value: presenter.total_companies } do |f| %>
         <div class="d-flex align-items-center gap-2 mb-2">
           <i class="ti ti-player-play"></i>
           <div>
             <strong>Run Validation</strong><br>
-            <small class="text-muted">Check all data for completeness</small>
+            <small class="text-muted">Check data for completeness</small>
           </div>
         </div>
+
+        <%# Check period dropdown (existing) %>
         <div class="mt-2">
           <label class="form-label small text-muted mb-1">Check period</label>
           <%= f.select :check_as_on_date,
@@ -64,8 +68,71 @@
                 {},
                 class: "form-select form-select-sm" %>
         </div>
-        <%= f.submit "Run", class: "btn btn-primary btn-sm mt-2 w-100" %>
+
+        <%# Target selector — controls which companies to validate %>
+        <div class="mt-2">
+          <label class="form-label small text-muted mb-1">Run on</label>
+          <select name="target_mode" class="form-select form-select-sm"
+                  data-action="change->portfolio-validation-target#modeChanged">
+            <option value="all">All Companies (<%= presenter.total_companies %>)</option>
+            <option value="selected">Selected Companies</option>
+            <% if tags_for_select.present? %>
+              <option value="by_tag">By Tag</option>
+            <% end %>
+            <% if sectors_for_select.present? %>
+              <option value="by_sector">By Sector</option>
+            <% end %>
+          </select>
+        </div>
+
+        <%# Panel: Selected Companies — scrollable checklist of all portfolio companies %>
+        <div hidden data-portfolio-validation-target-target="selectedPanel" class="mt-2"
+             style="max-height: 180px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.5rem;">
+          <% portfolio_companies.each do |name, id| %>
+            <div class="form-check">
+              <input type="checkbox" name="target_ids[]" value="<%= id %>"
+                     class="form-check-input" id="target_company_<%= id %>">
+              <label class="form-check-label small" for="target_company_<%= id %>"><%= name %></label>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Panel: By Tag — checkboxes for each existing tag across portfolio companies %>
+        <% if tags_for_select.present? %>
+          <div hidden data-portfolio-validation-target-target="tagPanel" class="mt-2"
+               style="max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.5rem;">
+            <% tags_for_select.each do |tag, count| %>
+              <div class="form-check">
+                <input type="checkbox" name="target_tags[]" value="<%= tag %>"
+                       class="form-check-input" id="target_tag_<%= tag.parameterize %>">
+                <label class="form-check-label small" for="target_tag_<%= tag.parameterize %>">
+                  <%= tag %> <span class="text-muted">(<%= count %>)</span>
+                </label>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%# Panel: By Sector — checkboxes for each existing sector across portfolio companies %>
+        <% if sectors_for_select.present? %>
+          <div hidden data-portfolio-validation-target-target="sectorPanel" class="mt-2"
+               style="max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.5rem;">
+            <% sectors_for_select.each do |sector, count| %>
+              <div class="form-check">
+                <input type="checkbox" name="target_sectors[]" value="<%= sector %>"
+                       class="form-check-input" id="target_sector_<%= sector.parameterize %>">
+                <label class="form-check-label small" for="target_sector_<%= sector.parameterize %>">
+                  <%= sector %> <span class="text-muted">(<%= count %>)</span>
+                </label>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%= f.submit "Run", class: "btn btn-primary btn-sm mt-2 w-100",
+              data: { action: "click->portfolio-validation-target#validateAndSubmit" } %>
       <% end %>
+
 
 
       <%# Batch progress panel appears here after Run Validation is clicked %>

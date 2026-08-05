@@ -19,12 +19,20 @@ class PortfolioValidationJob < ApplicationJob
   # @param entity_id [Integer] the entity scope
   # @param check_as_on_date [String, nil] ISO date string for manual period override (e.g., "2026-06-30");
   #   nil means auto-compute the most recently completed period
-  def perform(support_agent_id:, user_id:, entity_id:, check_as_on_date: nil)
+  # @param target_ids [Array<Integer>, nil] specific investor IDs to validate;
+  #   nil means all portfolio companies for the entity
+  def perform(support_agent_id:, user_id:, entity_id:, check_as_on_date: nil, target_ids: nil)
     # Parse the date string back to a Date object (Sidekiq serializes as string).
     check_date = check_as_on_date.present? ? Date.parse(check_as_on_date) : nil
 
-    # Resolve targets — all portfolio companies for this entity.
-    targets = PortfolioCompanyAgent.new.targets(entity_id)
+    # Resolve targets — specific companies if target_ids provided, otherwise all.
+    # Re-scopes by entity_id + category as a safety guard against stale/tampered IDs.
+    targets = if target_ids.present?
+                Investor.where(id: target_ids, entity_id: entity_id)
+                        .where("LOWER(category) = ?", "portfolio company")
+              else
+                PortfolioCompanyAgent.new.targets(entity_id)
+              end
 
     PortfolioCompanyAgent.process_batch(
       support_agent_id: support_agent_id,
