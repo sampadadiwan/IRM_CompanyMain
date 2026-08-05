@@ -15,8 +15,6 @@ class SupportAgent < ApplicationRecord
   include SupportAgentHelper
 
   AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent RtaReconciliationAgent DealManagementAgent].freeze
-  # Chat-only agents that do not support adhoc/batch "Run Now" execution
-  NON_RUNNABLE_TYPES = %w[LpAssistantAgent PortfolioAssistantAgent CustomerSupportAgent].freeze
   CATEGORIES = %w[Ops Finance Portfolio Onboarding Other].freeze
 
   belongs_to :entity
@@ -164,10 +162,5 @@ class SupportAgent < ApplicationRecord
     return nil unless fcf
 
     documents.find_by(name: fcf.human_label)
-  end
-
-  # @return [Boolean] whether this agent type supports adhoc/batch execution
-  def runnable?
-    NON_RUNNABLE_TYPES.exclude?(agent_type)
   end
 end
