@@ -78,8 +78,9 @@
                     <% if is_esign %>
                       <%= esign_execution_oneliner(log.result_summary) %>
                     <% else %>
-                      <% s = log.result_summary.transform_keys(&:to_s) %>
-                      <%= s["processed"].to_i %> processed<% if s["failed"].to_i > 0 %><span class="text-danger ms-1">· <%= s["failed"] %> failed</span><% end %>
+                      <%# normalized_result_summary handles legacy summary key shapes %>
+                      <% counts = normalized_result_summary(log.result_summary) %>
+                      <%= counts[:processed] %> processed<% if counts[:failed] > 0 %><span class="text-danger ms-1">· <%= counts[:failed] %> failed</span><% end %>
                     <% end %>
                   </div>
                 <% end %>

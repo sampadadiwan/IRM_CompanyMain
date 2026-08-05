@@ -95,7 +95,7 @@ class SupportAgentJob < ApplicationJob
           agent_class = support_agent.agent
           if agent_class.respond_to?(:process_batch)
             # For batch runs, never use with_steps (batch runs always skip step UI)
-            agent_class.process_batch(
+            batch_result = agent_class.process_batch(
               support_agent_id: support_agent.id,
               targets: targets,
               user_id: user_id,
@@ -103,7 +103,21 @@ class SupportAgentJob < ApplicationJob
               with_steps: false,
               execution_mode: execution_mode
             )
-            execution_log.mark_completed!({ batch: true, target_count: targets.count })
+            # process_batch returns { successes: [...], errors: [...] } or nil (agent
+            # skipped the run, e.g. outside its active window). Record the summary with
+            # the same keys the scheduled path (AgentRunnerJob) uses — the execution
+            # history tab reads "processed"/"failed", so any other keys render as 0.
+            batch_result = {} unless batch_result.is_a?(Hash)
+            batch_errors = Array(batch_result[:errors])
+            batch_processed = Array(batch_result[:successes]).size
+            # build_summary is the shared canonical shape (see AgentExecutionLog) —
+            # it also persists capped per-target error details for failure emails
+            execution_log.mark_completed!(
+              AgentExecutionLog.build_summary(total: targets.size, processed: batch_processed, errors: batch_errors).merge(batch: true)
+            )
+            # Email the failure details — the in-app toast is transient and manual
+            # runs have no schedule-based notifications.
+            notify_batch_errors(execution_log, batch_processed) if batch_errors.any?
             return
           end
         elsif target_id.present? && target_type.present?
@@ -158,13 +172,10 @@ class SupportAgentJob < ApplicationJob
             support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, rta_pdf_document_id: rta_pdf_document_id)
           end
 
-          # Track successes for batch summary
-          if is_batch_run
-            successes << {
-              id: target.id,
-              name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"
-            }
-          else
+          # Track successes for the batch summary AND the execution log — single
+          # runs must count too, or their log summary records "0 processed".
+          successes << { id: target.id, name: target_name }
+          unless is_batch_run
             # Send individual notification for non-batch or non-PortfolioCompanyAgent
             message = "#{support_agent.agent_type} processed #{target.class.name} '#{target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"}' successfully"
 
@@ -222,8 +233,13 @@ class SupportAgentJob < ApplicationJob
           send_batch_summary(support_agent, successes, errors, user_id, batch_target_type)
         end
 
-        # Mark execution log as completed
-        execution_log.mark_completed!({ successes: successes.count, errors: errors.count })
+        # Mark execution log as completed. build_summary is the shared canonical
+        # shape (total/processed/failed + capped error_details) used by both the
+        # manual and scheduled paths — the execution history tab reads these keys.
+        execution_log.mark_completed!(AgentExecutionLog.build_summary(total: targets.size, processed: successes.count, errors: errors))
+        # Email the failure details for batch runs (must come after mark_completed!
+        # so the mailer templates see the final status and summary).
+        notify_batch_errors(execution_log, successes.count) if is_batch_run && errors.any?
       rescue StandardError => e
         Rails.logger.error { "SupportAgentJob failed: #{e.message}" }
         Rails.logger.error { e.backtrace.join("\n") }
@@ -267,6 +283,20 @@ class SupportAgentJob < ApplicationJob
   end
 
   private
+
+  # Emails batch failure details via the same notifier the scheduler uses —
+  # AgentFailureNotifier resolves the recipient (the triggering user for manual
+  # runs) and also alerts the internal support team. Never lets a mail problem
+  # fail the job itself.
+  #
+  # @param execution_log [AgentExecutionLog] the completed log (with summary)
+  # @param success_count [Integer] used to pick partial-success vs full failure
+  def notify_batch_errors(execution_log, success_count)
+    notifier = AgentFailureNotifier.new(execution_log)
+    success_count.positive? ? notifier.notify_partial_success : notifier.notify_failure
+  rescue StandardError => e
+    Rails.logger.error { "SupportAgentJob: failed to send batch error email: #{e.message}" }
+  end
 
   # Fetches batch targets securely with entity validation and type checking
   #

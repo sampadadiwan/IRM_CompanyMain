@@ -1,7 +1,8 @@
 <p>Dear <%= @user&.full_name || "User" %>,</p>
 
 <p>
-  The scheduled agent <strong>"<%= @agent.name %>"</strong> has <span style="color: #dc3545;">failed</span> to complete.
+  <%# manual runs have no schedule — don't call them "scheduled" %>
+  The <%= @schedule ? "scheduled agent" : "agent" %> <strong>"<%= @agent.name %>"</strong> has <span style="color: #dc3545;">failed</span> to complete.
 </p>
 
 <p>
@@ -29,10 +30,14 @@
   <% end %>
 </table>
 
+<%= render "error_details", execution_log: @execution_log %>
+
 <p style="color: #666; font-size: 14px;">
   If you have questions, please contact support.
 </p>
 
 <p class="btn btn-outline-primary">
-  <%= link_to "View Details", support_agent_agent_schedule_url(@agent, subdomain: @entity.sub_domain) %>
+  <%# manual runs have no schedule page — link to the agent itself %>
+  <% details_url = @schedule ? support_agent_agent_schedule_url(@agent, subdomain: @entity.sub_domain) : support_agent_url(@agent, subdomain: @entity.sub_domain) %>
+  <%= link_to "View Details", details_url %>
 </p>

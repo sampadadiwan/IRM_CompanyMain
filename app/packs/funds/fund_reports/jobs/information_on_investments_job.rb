@@ -23,7 +23,8 @@ class InformationOnInvestmentsJob
       Rails.logger.info "Skipping #{api.id} as it has no investment instrument"
       next if inv_instrument.blank?
 
-      if api.portfolio_investments.where(investment_date: ..end_date).blank?
+      # none? issues SELECT 1 LIMIT 1; blank? loaded every matching investment row
+      if api.portfolio_investments.where(investment_date: ..end_date).none?
         Rails.logger.info "Skipping Aggregate Portfolio Investment #{api.id} as it has no portfolio investments with investment date before the end date"
         next
       end
@@ -78,7 +79,8 @@ class InformationOnInvestmentsJob
         inv_instrument = api.investment_instrument
         next if inv_instrument.blank?
 
-        if api.portfolio_investments.where(investment_date: ..end_date).blank?
+        # none? issues SELECT 1 LIMIT 1; blank? loaded every matching investment row
+        if api.portfolio_investments.where(investment_date: ..end_date).none?
           Rails.logger.info "Skipping Aggregate Portfolio Investment #{api.id} as it has no portfolio investments with investment date before the end date"
           next
         end

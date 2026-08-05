@@ -88,6 +88,33 @@ class AgentExecutionLog < ApplicationRecord
   #   @return [ActiveRecord::Relation<AgentExecutionLog>]
   scope :by_schedule, ->(schedule_id) { where(agent_schedule_id: schedule_id) }
 
+  # Cap on per-target error details persisted in result_summary — enough for a
+  # useful failure email without bloating the column on huge batches.
+  MAX_ERROR_DETAILS = 20
+
+  # Builds the canonical result_summary hash shared by every execution path
+  # (manual SupportAgentJob and scheduled AgentRunnerJob). Keeping one builder
+  # prevents the summary key drift ("successes/errors" vs "processed/failed")
+  # that previously made the execution history render "0 processed".
+  #
+  # Persists per-target failure details (capped) so failure emails and the
+  # history detail view can show WHAT failed, not just how many.
+  #
+  # @param total [Integer] number of targets in the run
+  # @param processed [Integer] successfully processed count
+  # @param errors [Array<Hash>] error entries with :target_name/:target_id and :error keys
+  # @return [Hash] summary for #mark_completed!
+  def self.build_summary(total:, processed:, errors: [])
+    summary = { total: total, processed: processed, failed: errors.count }
+    if errors.any?
+      summary[:error_details] = errors.first(MAX_ERROR_DETAILS).map do |e|
+        # Truncate individual messages — LLM/API errors can embed whole payloads
+        { target_name: e[:target_name] || "ID=#{e[:target_id]}", error: e[:error].to_s.truncate(300) }
+      end
+    end
+    summary
+  end
+
   # Transitions the execution to 'running' status and records the start time.
   #
   # @return [Boolean] true if the update succeeded

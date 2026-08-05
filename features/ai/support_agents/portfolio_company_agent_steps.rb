@@ -12,19 +12,25 @@ def build_portfolio_company_agent(entity, flags)
   end
 end
 
-# Returns [prev_period_end, due_date] for the current quarter window the agent checks.
-# The window is: previous quarter-end .. (current quarter-end - 15 days).
+# Returns [prev_period_end, due_date] for the quarter the agent validates.
+# prev_period_end equals the agent's check_date (compute_check_period): the most
+# recently completed quarter-end. The agent's data query range is
+# period_start..period_end == (quarter start)..prev_period_end.
 def portco_kpi_window
   due_date    = Date.end_of_period("Quarter") - 15.days
   prev_period = Date.previous_end_of_period("Quarter", due_date)
   [prev_period, due_date]
 end
 
-# A KPI as_of date that always falls inside the portco_kpi_window.
+# A KPI as_of date the agent's look-back query will find.
+# Since the look-back refactor, check_kpi_submission queries
+# as_of: period_start..period_end (the COMPLETED period, e.g. Apr 1..Jun 30) —
+# a date after period_end (the old "+1 day" here) falls outside the range,
+# silently skipping the document check (@last_kpi_report stays nil).
+# The period end itself is the canonical quarter-end reporting date.
 def kpi_as_of_in_window
-  prev_period, due_date = portco_kpi_window
-  # Pick the day after prev_period so it is always strictly inside the range.
-  [prev_period + 1.day, due_date - 1.day].min
+  prev_period, _due_date = portco_kpi_window
+  prev_period
 end
 
 # ── Background / agent configuration ─────────────────────────────────────────
@@ -89,7 +95,9 @@ Given("the portfolio company has a recent valuation") do
     owner:                 @portfolio_company,
     entity:                @entity,
     investment_instrument: instrument,
-    valuation_date:        prev_period + 1.day
+    # Must be INSIDE the completed period (period_start..period_end) — the agent
+    # queries valuation_date in that range; +1.day would fall outside it.
+    valuation_date:        prev_period
   )
 end
 

@@ -1,0 +1,27 @@
+<%# Renders the per-target failure list persisted by SupportAgentJob under
+    result_summary["error_details"]. Older logs (and full-crash failures) have
+    no details — render nothing rather than an empty section. %>
+<% summary = (execution_log.result_summary || {}).transform_keys(&:to_s) %>
+<% details = Array(summary["error_details"]) %>
+<% if details.any? %>
+  <h3 style="margin-top: 24px;">What failed</h3>
+  <table style="margin: 12px 0; border-collapse: collapse; width: 100%;">
+    <tr>
+      <th style="text-align: left; padding: 6px 12px 6px 0; color: #666; border-bottom: 1px solid #ddd;">Record</th>
+      <th style="text-align: left; padding: 6px 0; color: #666; border-bottom: 1px solid #ddd;">Error</th>
+    </tr>
+    <% details.each do |detail| %>
+      <% detail = detail.transform_keys(&:to_s) %>
+      <tr>
+        <td style="padding: 6px 12px 6px 0; vertical-align: top; white-space: nowrap;"><%= detail["target_name"] %></td>
+        <td style="padding: 6px 0; color: #dc3545;"><%= detail["error"] %></td>
+      </tr>
+    <% end %>
+    <% failed = summary["failed"].to_i %>
+    <% if failed > details.size %>
+      <tr>
+        <td colspan="2" style="padding: 6px 0; color: #666;">…and <%= failed - details.size %> more (see execution history)</td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>

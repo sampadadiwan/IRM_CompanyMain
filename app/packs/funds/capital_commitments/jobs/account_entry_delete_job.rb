@@ -11,7 +11,11 @@ class AccountEntryDeleteJob < ApplicationJob
       @account_entries = @account_entries.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
       count = @account_entries.count
       Audited.audit_class.as_user(user) do
-        @account_entries.each(&:destroy)
+        # find_each keeps ~1000 rows in memory per batch instead of loading the whole
+        # result set (which can be an entire import or fund ledger) at once.
+        # Safe while destroying: destroy is a paranoia soft-delete, and find_each's
+        # keyset pagination on id never revisits rows behind the cursor.
+        @account_entries.find_each(&:destroy)
       end
 
       message = "#{count} account entries were deleted by #{user.email}"

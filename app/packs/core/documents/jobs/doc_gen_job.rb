@@ -23,11 +23,13 @@ class DocGenJob < ApplicationJob
 
   def signed_document_already_exists?(model, doc_name)
     signed_or_sent_for_esign = model.documents.signed.or(model.documents.sent_for_esign)
-    signed_or_sent_for_esign.where("name like ?", "%#{doc_name}%").present?
+    # exists? issues SELECT 1 LIMIT 1; present? loaded every matching document row
+    signed_or_sent_for_esign.exists?(["name like ?", "%#{doc_name}%"])
   end
 
   def approved_document_already_exists?(model, doc_name)
-    model.documents.approved.where("name like ?", "%#{doc_name}%").present?
+    # exists? issues SELECT 1 LIMIT 1; present? loaded every matching document row
+    model.documents.approved.exists?(["name like ?", "%#{doc_name}%"])
   end
 
   def generate_doc_name(model, template, start_date, end_date)

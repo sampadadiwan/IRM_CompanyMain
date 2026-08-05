@@ -34,7 +34,8 @@ class ImportFundUnit < ImportUtil
         # Update only, but we dont have a pre-existing fund_unit
         raise "Skipping: FundUnit not found for update"
       end
-    elsif fund_unit.nil? || FundUnit.where(owner:).where(issue_date: Date.local_parse(row_data["Issue Date"])).blank?
+    # none? issues SELECT 1 LIMIT 1; blank? loaded every matching fund unit row
+    elsif fund_unit.nil? || FundUnit.where(owner:).where(issue_date: Date.local_parse(row_data["Issue Date"])).none?
       fund_unit = FundUnit.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)
       save_fu(fund_unit, fund, capital_commitment, owner, row_data, custom_field_headers)
       # No update, and we dont have a pre-existing fund_unit or the issue date of the fund unit is different

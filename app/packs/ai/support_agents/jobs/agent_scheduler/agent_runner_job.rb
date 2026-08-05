@@ -152,11 +152,15 @@ class AgentRunnerJob
       success: status != :failed,
       successes: successes,
       errors: errors,
-      summary: {
+      # build_summary is the shared canonical shape (total/processed/failed) used
+      # by both the scheduled and manual paths. It also persists capped per-target
+      # error_details so scheduled failure/partial-success emails can render the
+      # "What failed" table — previously scheduled runs stored counts only.
+      summary: AgentExecutionLog.build_summary(
+        total: successes.count + errors.count,
         processed: successes.count,
-        failed: errors.count,
-        total: successes.count + errors.count
-      }
+        errors: errors
+      )
     }
   end
 
@@ -218,8 +222,8 @@ class AgentRunnerJob
 
     issues = report.json_fields["esign_issues"] || []
     base.merge(
-      docs_checked:    issues.count { |i| i["type"] == "notified" },
-      notified:        issues.count { |i| i["type"] == "notified" },
+      docs_checked: issues.count { |i| i["type"] == "notified" },
+      notified: issues.count { |i| i["type"] == "notified" },
       expired_flagged: issues.count { |i| i["type"] == "expired" }
     )
   rescue StandardError => e

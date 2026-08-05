@@ -62,8 +62,9 @@ class TrackingCurrencyJob < ApplicationJob
     # By default, we only process new entries (tracking_amount_cents == 0)
     scope = scope.where(tracking_amount_cents: 0) unless force
 
-    # Batch process by reporting_date to minimize exchange rate lookups
-    scope.pluck(:reporting_date).compact.uniq.each do |date|
+    # Batch process by reporting_date to minimize exchange rate lookups.
+    # distinct.pluck dedups in SQL instead of materializing one Date per ledger row
+    scope.distinct.pluck(:reporting_date).compact.each do |date|
       # Fetch the rate between Fund Base Currency and Tracking Currency for this specific date
       rate = fund.tracking_exchange_rate(exchange_rate_date: date).rate
 

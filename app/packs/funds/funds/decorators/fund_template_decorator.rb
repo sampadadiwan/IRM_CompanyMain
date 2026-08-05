@@ -76,7 +76,9 @@ class FundTemplateDecorator < TemplateDecorator
       kyc_commitments
     )
 
-    return "" if account_entries.blank?
+    # none? issues a cheap `SELECT 1 ... LIMIT 1`; blank? would load every matching row
+    # as full-width AR objects only to discard them before the SQL aggregates below
+    return "" if account_entries.none?
 
     Money.new(
       account_entries.where(reporting_date: account_entries.maximum(:reporting_date)).sum(:amount_cents),

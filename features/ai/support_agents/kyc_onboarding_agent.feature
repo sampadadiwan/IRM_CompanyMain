@@ -79,6 +79,64 @@ Feature: KYC Onboarding Agent
     And the report should contain a field issue of type "kyc_expiring_soon"
     And a KYC expiry reminder email should have been sent
 
+  Scenario: KYC expiring today is a warning, not expired — valid through the expiry date
+    Given the KYC onboarding agent has expiry checking and reminders enabled
+    And the KYC expires today
+    When I run the KYC onboarding agent
+    Then the report final status should be "ready"
+    And the report should contain a field issue of type "kyc_expiring_soon"
+    And the report should not contain a field issue of type "kyc_expired"
+
+  Scenario: Expiry issues are not counted as missing fields
+    Given the KYC onboarding agent has expiry checking and reminders enabled
+    And the KYC expired 10 days ago
+    When I run the KYC onboarding agent
+    Then the report should contain a field issue of type "kyc_expired"
+    And the report missing-field count should be 0
+
+  # ── Reminder cadence (milestone bands, not one per run) ──────────────────
+
+  Scenario: Reminder is not re-sent for the same milestone on a later run
+    Given the KYC onboarding agent has expiry checking and reminders enabled
+    And the KYC expires in 14 days
+    When I run the KYC onboarding agent
+    And I run the KYC onboarding agent
+    Then exactly 1 KYC expiry reminder email should have been sent
+
+  Scenario: Reminder is re-sent when the KYC crosses into a new milestone band
+    Given the KYC onboarding agent has expiry checking and reminders enabled
+    And the KYC expires in 40 days
+    When I run the KYC onboarding agent
+    And the reminder was last sent on a previous day
+    And the KYC expires in 10 days
+    And I run the KYC onboarding agent
+    Then exactly 2 KYC expiry reminder emails should have been sent
+
+  Scenario: Blank warning thresholds fall back to the 60,30,15 defaults
+    Given the KYC onboarding agent has expiry checking and reminders enabled
+    And the agent expiry warning thresholds are blank
+    And the KYC expires in 14 days
+    When I run the KYC onboarding agent
+    Then the report should contain a field issue of type "kyc_expiring_soon"
+    And a KYC expiry reminder email should have been sent
+
+  # ── Reminder recipients ──────────────────────────────────────────────────
+
+  Scenario: Sandboxed entity redirects the expiry reminder to sandbox emails
+    Given the KYC onboarding agent has expiry checking and reminders enabled
+    And the entity is in sandbox mode with sandbox email "sandbox@example.com"
+    And the KYC expired 10 days ago
+    When I run the KYC onboarding agent
+    Then the expiry reminder email should have been sent to "sandbox@example.com"
+
+  Scenario: Entity with no active employees skips the expiry reminder gracefully
+    Given the KYC onboarding agent has expiry checking and reminders enabled
+    And the entity has no active employees
+    And the KYC expired 10 days ago
+    When I run the KYC onboarding agent
+    Then the report should contain a field issue of type "kyc_expired"
+    And no KYC expiry reminder email should have been sent
+
   # ── Feature flag combinations ────────────────────────────────────────────
 
   Scenario: All validation flags disabled — pipeline completes and AML is triggered

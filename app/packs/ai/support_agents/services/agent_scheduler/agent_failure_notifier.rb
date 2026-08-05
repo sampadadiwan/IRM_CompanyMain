@@ -76,7 +76,10 @@ class AgentFailureNotifier
   # @param notification_type [Symbol] :success, :failure, or :partial_success
   # @return [Boolean] true if notifications are enabled for this type
   def should_notify?(notification_type)
-    return false unless @schedule
+    # Manual runs have no schedule to configure notifications on — always email
+    # failures/partial successes to the user who triggered the run (they asked
+    # for it and the in-app toast is transient). Successes stay in-app only.
+    return %i[failure partial_success].include?(notification_type) if @schedule.nil?
     return false if @schedule.failure_notification_user_ids.blank?
 
     case notification_type
@@ -117,9 +120,14 @@ class AgentFailureNotifier
   end
 
   # Returns the users configured to receive notifications.
+  # Manual (schedule-less) runs notify the user who triggered them; an empty
+  # relation (e.g. system-triggered with no user) means only the internal
+  # support notification goes out.
   #
   # @return [ActiveRecord::Relation<User>] users to notify
   def users_to_notify
+    return User.where(id: @execution_log.triggered_by&.id) if @schedule.nil?
+
     User.where(id: @schedule.failure_notification_user_ids)
   end
 end

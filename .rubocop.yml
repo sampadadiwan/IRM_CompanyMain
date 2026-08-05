@@ -4,6 +4,10 @@ plugins:
   - rubocop-performance
   - rubocop-rails
 
+require:
+  # Custom cop: forbids blank?/present? directly on query chains (loads whole relation)
+  - ./lib/rubocop/cop/irm/relation_blank_present.rb
+
 Style/SafeNavigationChainLength:
   Enabled: false
 Rails/I18nLocaleTexts:

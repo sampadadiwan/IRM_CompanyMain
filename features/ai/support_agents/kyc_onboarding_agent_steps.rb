@@ -161,6 +161,39 @@ Given("the KYC expires in {int} days") do |days|
   @investor_kyc.update!(expiry_date: Time.zone.today + days.days)
 end
 
+Given("the KYC expires today") do
+  # Boundary case: a KYC is valid THROUGH its expiry date, so today must be a
+  # warning (kyc_expiring_soon), never a blocking kyc_expired.
+  @investor_kyc.update!(expiry_date: Time.zone.today)
+end
+
+Given("the agent expiry warning thresholds are blank") do
+  # Present-but-blank value: used to silently disable all warnings ([] is
+  # truthy so the || fallback never fired); must now fall back to 60/30/15.
+  @support_agent.update!(
+    json_fields: @support_agent.json_fields.merge("expiry_warning_days" => "")
+  )
+end
+
+Given("the entity is in sandbox mode with sandbox email {string}") do |email|
+  # Sandbox entities must never email real employee addresses — the mailer
+  # has to apply the redirect itself because no user_id param is passed.
+  setting = @entity.entity_setting || @entity.build_entity_setting
+  setting.update!(sandbox: true, sandbox_emails: email)
+  @entity.reload
+end
+
+Given("the reminder was last sent on a previous day") do
+  # Backdate the persisted milestone marker so the same-day guard doesn't mask
+  # the band-change resend being tested.
+  report = SupportAgentReport.find_by(owner: @investor_kyc, support_agent: @support_agent)
+  marker = report.json_fields["last_expiry_reminder"]
+  marker["sent_on"] = (Time.zone.today - 1.day).iso8601
+  report.json_fields["last_expiry_reminder"] = marker
+  report.json_fields_will_change!
+  report.save!
+end
+
 # ── Agent execution ───────────────────────────────────────────────────────
 
 When("I run the KYC onboarding agent") do
@@ -222,9 +255,48 @@ Then("the report should contain a field issue of type {string}") do |issue_type|
     "Expected a field issue of type '#{issue_type}' but got: #{field_issues.inspect}"
 end
 
+# Filters deliveries to expiry alerts by subject so unrelated mailers
+# (e.g. notification emails) can't skew the counts.
+def kyc_expiry_deliveries
+  ActionMailer::Base.deliveries.select { |m| m.subject.to_s.include?("KYC Expiry Alert") }
+end
+
 Then("a KYC expiry reminder email should have been sent") do
-  expect(ActionMailer::Base.deliveries).not_to be_empty,
-    "Expected an expiry reminder email to be delivered but ActionMailer::Base.deliveries is empty"
+  expect(kyc_expiry_deliveries).not_to be_empty,
+    "Expected an expiry reminder email to be delivered but none was found in ActionMailer::Base.deliveries"
+end
+
+Then("no KYC expiry reminder email should have been sent") do
+  expect(kyc_expiry_deliveries).to be_empty,
+    "Expected no expiry reminder email but got: #{kyc_expiry_deliveries.map(&:subject).inspect}"
+end
+
+Then("exactly {int} KYC expiry reminder email(s) should have been sent") do |count|
+  expect(kyc_expiry_deliveries.size).to eq(count),
+    "Expected exactly #{count} expiry reminder email(s) but got #{kyc_expiry_deliveries.size}: " \
+    "#{kyc_expiry_deliveries.map(&:subject).inspect}"
+end
+
+Then("the expiry reminder email should have been sent to {string}") do |email|
+  mail = kyc_expiry_deliveries.last
+  expect(mail).to be_present, "Expected an expiry reminder email but none was delivered"
+  expect(mail.to).to include(email),
+    "Expected the expiry reminder to go to #{email} but it went to: #{mail.to.inspect}"
+end
+
+Then("the report should not contain a field issue of type {string}") do |issue_type|
+  field_issues = @report.json_fields["field_issues"] || []
+  matching = field_issues.select { |issue| issue["type"] == issue_type }
+  expect(matching).to be_empty,
+    "Expected no field issue of type '#{issue_type}' but got: #{matching.inspect}"
+end
+
+Then("the report missing-field count should be {int}") do |count|
+  # Exercises SupportAgentReport#missing_field_count — blocking, non-expiry
+  # issues only (drives the "Missing Fields" stat card).
+  expect(@report.missing_field_count).to eq(count),
+    "Expected missing_field_count #{count} but got #{@report.missing_field_count}; " \
+    "field_issues: #{@report.json_fields['field_issues'].inspect}"
 end
 
 Then("the AML report entry should mention {string}") do |text|

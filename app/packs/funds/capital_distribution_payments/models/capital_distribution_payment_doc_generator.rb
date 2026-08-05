@@ -20,6 +20,9 @@ class CapitalDistributionPaymentDocGenerator
     @fund_doc_template_name = fund_doc_template.name
     @end_date = capital_distribution_payment.payment_date
 
+    # Baseline RSS so we can warn after generation if memory is retained (see ensure below)
+    rss_before_mb = log_memory_usage("CapitalDistributionPaymentDocGenerator #{capital_distribution_payment.id} start")
+
     # Download the Word template and run the document generation pipeline
     fund_doc_template.file.download do |tempfile|
       if capital_distribution_payment.capital_commitment.skip_doc_gen?
@@ -34,6 +37,8 @@ class CapitalDistributionPaymentDocGenerator
       end
     ensure
       cleanup
+      # Warn if this generation grew RSS and a full GC could not release it
+      warn_if_memory_retained(rss_before_mb, "CapitalDistributionPaymentDocGenerator #{capital_distribution_payment.id}")
     end
   end
 
@@ -80,6 +85,13 @@ class CapitalDistributionPaymentDocGenerator
     fund_as_of.json_fields["capital_distribution_payment"] = capital_distribution_payment
     investor_kyc = capital_commitment.investor_kyc
 
+    # kyc_commitments_before_end_date and kyc_commitments_between_dates are the same query —
+    # build and decorate it once and expose it under both keys, so a template touching both
+    # loads the rows once (the relation stays lazy: nothing loads if neither key is used)
+    kyc_commitments_to_end_date = TemplateDecorator.decorate_collection(
+      investor_kyc.capital_commitments.where(fund_id: capital_distribution_payment.fund_id, commitment_date: ..@end_date)
+    )
+
     context = {
       date: Time.zone.today.strftime("%d %B %Y"),
       entity: capital_distribution_payment.entity,
@@ -89,8 +101,8 @@ class CapitalDistributionPaymentDocGenerator
       investor_kyc: TemplateDecorator.decorate(investor_kyc),
       # Add kyc commitments context
       kyc_commitments: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(fund_id: capital_distribution_payment.fund_id)),
-      kyc_commitments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(fund_id: capital_distribution_payment.fund_id, commitment_date: ..@end_date)),
-      kyc_commitments_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(fund_id: capital_distribution_payment.fund_id, commitment_date: ..@end_date)),
+      kyc_commitments_before_end_date: kyc_commitments_to_end_date,
+      kyc_commitments_between_dates: kyc_commitments_to_end_date,
       capital_commitment: TemplateDecorator.decorate(capital_commitment),
       fund_unit_setting: TemplateDecorator.decorate(capital_commitment.fund_unit_setting),
       # All Commitments as of the payment date
@@ -140,12 +152,17 @@ class CapitalDistributionPaymentDocGenerator
   # Add amounts from the fund_as_of to the context
   def amounts_context(fund_as_of)
     currency = fund_as_of.currency
+    # Compute each SQL sum once — committed and drawdown totals were previously
+    # queried twice (their own key plus the undrawn-commitments derivation)
+    total_committed_cents = fund_as_of.capital_commitments.sum(:committed_amount_cents)
+    total_drawdown_cents = fund_as_of.capital_remittances.sum(:call_amount_cents)
+
     {
-      total_committed_cash: Money.new(fund_as_of.capital_commitments.sum(:committed_amount_cents), currency),
+      total_committed_cash: Money.new(total_committed_cents, currency),
       total_distribution_cash: Money.new(fund_as_of.capital_distribution_payments.sum("gross_payable_cents - reinvestment_with_fees_cents"), currency),
       total_reinvestment: Money.new(fund_as_of.capital_distribution_payments.sum(:reinvestment_with_fees_cents), currency),
-      total_drawdowns: Money.new(fund_as_of.capital_remittances.sum(:call_amount_cents), currency),
-      total_undrawn_commitments: Money.new(fund_as_of.capital_commitments.sum(:committed_amount_cents) - fund_as_of.capital_remittances.sum(:call_amount_cents), currency)
+      total_drawdowns: Money.new(total_drawdown_cents, currency),
+      total_undrawn_commitments: Money.new(total_committed_cents - total_drawdown_cents, currency)
     }
   end
 
@@ -227,7 +244,7 @@ class CapitalDistributionPaymentDocGenerator
   # @param template_path [String] Path to the .docx template file
   # @return [Hash<Symbol, Array<TemplateDecorator>>] Hash where:
   #   - Keys: Field names as symbols (e.g., :aes_revenue, :aescumulative_gains)
-  #   - Values: Decorated collections of breakdown items. Each item is an OpenStruct with:
+  #   - Values: Decorated collections of breakdown items. Each item is a DocGeneratorHelper::AccountEntryBreakdown with:
   #     - name [String] Display name from distribution fees or account entry name
   #     - reporting_date [Date] When the entry was recorded
   #     - folio_id [String] Folio identifier
@@ -245,6 +262,9 @@ class CapitalDistributionPaymentDocGenerator
     currency = capital_distribution_payment.fund.currency
     kyc_commitments = capital_commitment.investor_kyc.capital_commitments.where(fund_id: capital_distribution_payment.fund_id)
 
+    # The account entries breakdown was the prime suspect for memory bloat — log around it
+    log_memory_usage("account_entries_breakdown #{capital_distribution_payment.id} start (#{aes_fields.size} aes fields)")
+
     aes_fields.each do |field|
       breakdown = fetch_account_entries_breakdown(
         field,
@@ -259,6 +279,8 @@ class CapitalDistributionPaymentDocGenerator
 
       context[field.to_sym] = breakdown.present? ? TemplateDecorator.decorate_collection(breakdown) : []
     end
+
+    log_memory_usage("account_entries_breakdown #{capital_distribution_payment.id} done")
 
     context
   end

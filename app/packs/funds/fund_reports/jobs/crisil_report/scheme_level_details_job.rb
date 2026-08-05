@@ -134,9 +134,13 @@ class SchemeLevelDetailsJob
     final_close_lp_commitments_retail = (retail_kyc_commitments.where(fund_close: FINAL_CLOSE_NAME, unit_type: lp_unit_types).sum(:committed_amount_cents) / 100.0) / 1_000_000.0
     final_close_gp_commitments_retail = (retail_kyc_commitments.where(fund_close: FINAL_CLOSE_NAME, unit_type: gp_unit_types).sum(:committed_amount_cents) / 100.0) / 1_000_000.0
 
-    first_call_date = fund.capital_calls.where(call_date: ..@end_date).present? ? fund.capital_calls.where(call_date: ..@end_date).order(:call_date).first.call_date&.strftime("%d-%b-%y") : ""
+    # Single LIMIT-1 query each: the old present? guard loaded every matching row
+    # just to decide the ternary, then issued the ordered query anyway
+    first_call = fund.capital_calls.where(call_date: ..@end_date).order(:call_date).first
+    first_call_date = first_call ? first_call.call_date&.strftime("%d-%b-%y") : ""
 
-    first_investment_date = fund.portfolio_investments.where(investment_date: ..@end_date).present? ? fund.portfolio_investments.order(:investment_date).where(investment_date: ..@end_date).first.investment_date&.strftime("%d-%b-%y") : ""
+    first_investment = fund.portfolio_investments.where(investment_date: ..@end_date).order(:investment_date).first
+    first_investment_date = first_investment ? first_investment.investment_date&.strftime("%d-%b-%y") : ""
 
     fund_of_funds = "No"
     data["Scheme Name"]["Value"] = fund.name
@@ -192,9 +196,13 @@ class SchemeLevelDetailsJob
     final_close_lp_commitments_retail = (retail_kyc_commitments.where(fund_close: FINAL_CLOSE_NAME, unit_type: lp_unit_types).sum(:committed_amount_cents) / 100.0) / 1_000_000.0
     final_close_gp_commitments_retail = (retail_kyc_commitments.where(fund_close: FINAL_CLOSE_NAME, unit_type: gp_unit_types).sum(:committed_amount_cents) / 100.0) / 1_000_000.0
 
-    first_call_date = fund.capital_calls.where(call_date: ..@end_date).present? ? fund.capital_calls.where(call_date: ..@end_date).order(:call_date).first.call_date&.strftime("%d-%b-%y") : ""
+    # Single LIMIT-1 query each: the old present? guard loaded every matching row
+    # just to decide the ternary, then issued the ordered query anyway
+    first_call = fund.capital_calls.where(call_date: ..@end_date).order(:call_date).first
+    first_call_date = first_call ? first_call.call_date&.strftime("%d-%b-%y") : ""
 
-    first_investment_date = fund.portfolio_investments.where(investment_date: ..@end_date).present? ? fund.portfolio_investments.order(:investment_date).where(investment_date: ..@end_date).first.investment_date&.strftime("%d-%b-%y") : ""
+    first_investment = fund.portfolio_investments.where(investment_date: ..@end_date).order(:investment_date).first
+    first_investment_date = first_investment ? first_investment.investment_date&.strftime("%d-%b-%y") : ""
 
     # 7 fields are ignored
 

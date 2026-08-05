@@ -1,12 +1,28 @@
 module SupportAgentsHelper
+  # Normalizes an execution result_summary into { total:, processed:, failed: }.
+  # Handles all three historical shapes:
+  #   - canonical {total, processed, failed} (scheduled path, and manual since Aug 2026)
+  #   - legacy manual-run {successes, errors}
+  #   - legacy batch-delegation {batch: true, target_count:} — recorded before
+  #     per-target counts existed; those runs completed, so target_count is
+  #     shown as processed (matching the old optimistic behavior)
+  def normalized_result_summary(summary)
+    s = (summary || {}).transform_keys(&:to_s)
+    legacy_batch = s["batch"] && s.key?("target_count") && !s.key?("processed")
+    processed = legacy_batch ? s["target_count"].to_i : (s["processed"] || s["successes"]).to_i
+    failed    = (s["failed"] || s["errors"]).to_i
+    total     = s.key?("total") ? s["total"].to_i : processed + failed
+    { total: total, processed: processed, failed: failed }
+  end
+
   # Renders execution result_summary hash as stat pill cards (Total / Processed / Failed).
   def format_result_summary(summary)
     return "".html_safe if summary.blank?
 
-    s = summary.transform_keys(&:to_s)
-    total     = s["total"].to_i
-    processed = s["processed"].to_i
-    failed    = s["failed"].to_i
+    counts    = normalized_result_summary(summary)
+    total     = counts[:total]
+    processed = counts[:processed]
+    failed    = counts[:failed]
 
     pills = [
       { label: "Total",     value: total,     css: "exec-stat-pill--neutral" },

@@ -1,7 +1,8 @@
 <p>Dear <%= @user&.full_name || "User" %>,</p>
 
 <p>
-  The scheduled agent <strong>"<%= @agent.name %>"</strong> completed with <span style="color: #ffc107;">partial success</span>.
+  <%# manual runs have no schedule — don't call them "scheduled" %>
+  The <%= @schedule ? "scheduled agent" : "agent" %> <strong>"<%= @agent.name %>"</strong> completed with <span style="color: #ffc107;">partial success</span>.
 </p>
 
 <p>
@@ -17,7 +18,17 @@
     <td style="padding: 8px 16px 8px 0; color: #666;">Completed at:</td>
     <td style="padding: 8px 0;"><%= @execution_log.completed_at ? l(@execution_log.completed_at.in_time_zone(@schedule&.timezone || 'UTC'), format: :abbr_date_time) : "" %> <%= @schedule&.timezone || 'UTC' %></td>
   </tr>
-  <% if @execution_log.result_summary.present? %>
+  <% summary = (@execution_log.result_summary || {}).transform_keys(&:to_s) %>
+  <% if summary.key?("processed") || summary.key?("successes") %>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Summary:</td>
+    <td style="padding: 8px 0;">
+      <%# legacy manual-run logs stored "successes"/"errors" — same fallback as the execution history tab %>
+      <%= (summary["processed"] || summary["successes"]).to_i %> processed,
+      <span style="color: #dc3545;"><%= (summary["failed"] || summary["errors"]).to_i %> failed</span>
+    </td>
+  </tr>
+  <% elsif @execution_log.result_summary.present? %>
   <tr>
     <td style="padding: 8px 16px 8px 0; color: #666;">Summary:</td>
     <td style="padding: 8px 0;"><%= @execution_log.result_summary %></td>
@@ -25,10 +36,14 @@
   <% end %>
 </table>
 
+<%= render "error_details", execution_log: @execution_log %>
+
 <p style="color: #666; font-size: 14px;">
   Our technical team has been notified about the errors.
 </p>
 
 <p class="btn btn-outline-primary">
-  <%= link_to "View Details", support_agent_agent_schedule_url(@agent, subdomain: @entity.sub_domain) %>
+  <%# manual runs have no schedule page — link to the agent itself %>
+  <% details_url = @schedule ? support_agent_agent_schedule_url(@agent, subdomain: @entity.sub_domain) : support_agent_url(@agent, subdomain: @entity.sub_domain) %>
+  <%= link_to "View Details", details_url %>
 </p>

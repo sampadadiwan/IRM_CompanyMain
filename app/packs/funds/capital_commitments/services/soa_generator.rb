@@ -372,11 +372,13 @@ class SoaGenerator
 
   def add_account_entries(context, capital_commitment, start_date, end_date)
     context["cumulative_account_entry"] = {}
-    capital_commitment.account_entries.pluck(:entry_type).uniq.each do |entry_type|
+    # distinct.pluck dedups in SQL — plain pluck loaded one value per entry row for the
+    # commitment (and this runs once per commitment during SOA generation)
+    capital_commitment.account_entries.distinct.pluck(:entry_type).each do |entry_type|
       context["cumulative_account_entry"][entry_type.delete(' ').underscore] = capital_commitment.cumulative_account_entry(nil, entry_type, start_date, end_date).decorate
     end
 
-    capital_commitment.account_entries.pluck(:name).uniq.each do |name|
+    capital_commitment.account_entries.distinct.pluck(:name).each do |name|
       context["cumulative_account_entry"][name.delete(' ').underscore] = capital_commitment.cumulative_account_entry(name, nil, start_date, end_date).decorate
     end
   end

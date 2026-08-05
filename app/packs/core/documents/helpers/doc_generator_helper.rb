@@ -1,4 +1,49 @@
 module DocGeneratorHelper
+  # Typed value object for account entry breakdown rows.
+  # Replaces OpenStruct for explicit shape and better performance
+  # (OpenStruct allocates a per-instance method table; Struct does not).
+  AccountEntryBreakdown = Struct.new(
+    :name, :audit_name, :reporting_date, :folio_id, :amount, :entry_type,
+    keyword_init: true
+  )
+
+  # The columns the breakdown reads, plus id so the AR objects keep their identity.
+  # Loading full rows pulls in wide columns (json_fields, notes, explanation) we never read.
+  BREAKDOWN_COLUMNS = %i[id name reporting_date folio_id amount_cents entry_type capital_commitment_id].freeze
+
+  # Current process resident set size in MB.
+  # Reads /proc/self/status on Linux; falls back to `ps` elsewhere (e.g. macOS dev machines)
+  def current_rss_mb
+    if File.readable?("/proc/self/status")
+      File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1].to_i / 1024
+    else
+      `ps -o rss= -p #{Process.pid}`.to_i / 1024
+    end
+  end
+
+  # Log the current RSS with a label and return it, so callers can diff before/after
+  def log_memory_usage(label)
+    rss_mb = current_rss_mb
+    Rails.logger.info { "[MemoryUsage] #{label}: #{rss_mb} MB RSS" }
+    rss_mb
+  end
+
+  # Warn if memory grew during the block bounded by rss_before_mb and was not released.
+  # Ruby rarely returns freed heap pages to the OS, so RSS still elevated after a full
+  # GC.start indicates objects are genuinely retained (e.g. a cached association holding
+  # a large loaded relation), not just allocator slack.
+  def warn_if_memory_retained(rss_before_mb, label, threshold_mb: 100)
+    GC.start # full GC so anything unreachable is collected before we measure retention
+    rss_after_mb = current_rss_mb
+    retained_mb = rss_after_mb - rss_before_mb
+    return if retained_mb < threshold_mb
+
+    Rails.logger.warn do
+      "[MemoryUsage] #{label}: RSS grew by #{retained_mb} MB and was not released after GC " \
+        "(#{rss_before_mb} MB -> #{rss_after_mb} MB) - possible retained relation/association"
+    end
+  end
+
   # Extract cumulative flag from method name based on scope type
   # @param method_name [String] The merge field name (e.g., 'fundaecumulative_revenue')
   # @param scope_type [Symbol] The scope type (:fund_entries, :kyc_commitments, :folio_commitment, :aes_breakdown)
@@ -80,14 +125,16 @@ module DocGeneratorHelper
   # @param capital_commitment [CapitalCommitment, nil] Required for :folio_commitment and :aes_breakdown
   # @param kyc_commitments [ActiveRecord::Relation, nil] Required for :kyc_commitments and :aes_breakdown
   # @param distribution [CapitalDistribution, nil] Optional distribution for fee_type/audit_name mapping
-  # @return [Array<OpenStruct>] Array of breakdown items with properties:
+  # @return [Array<AccountEntryBreakdown>] Array of breakdown items with properties:
   #   - name [String] Display name (from distribution.audit_name or entry.name)
   #   - reporting_date [Date] The date the entry was recorded
   #   - folio_id [String] Folio identifier
   #   - amount [Money] The entry amount as Money object
   #   - entry_type [String] The type of entry (from distribution or database)
   def fetch_account_entries_breakdown(field_name, account_entries, scope_type, as_of_date, currency, capital_commitment = nil, kyc_commitments = nil, distribution = nil)
-    return [] if account_entries.blank?
+    # none? issues a cheap `SELECT 1 ... LIMIT 1`; blank? would load and cache the ENTIRE
+    # relation (the whole fund's ledger when called with fund.account_entries)
+    return [] if account_entries.none?
 
     cumulative = extract_cumulative_flag(field_name, scope_type)
     method_name_str = extract_method_name(field_name, scope_type, cumulative)
@@ -106,7 +153,9 @@ module DocGeneratorHelper
       kyc_commitments
     )
 
-    return [] if entries.blank?
+    # Load once, restricted to the columns we actually read
+    records = entries.select(*BREAKDOWN_COLUMNS).to_a
+    return [] if records.empty?
 
     dist_fee_map = {}
     if distribution.present?
@@ -115,12 +164,12 @@ module DocGeneratorHelper
       end
     end
 
-    latest_entries_by_folio = entries.group_by(&:folio_id).map do |_folio_id, folio_entries|
+    latest_entries_by_folio = records.group_by(&:folio_id).map do |_folio_id, folio_entries|
       folio_entries.max_by(&:reporting_date)
     end.sort_by(&:capital_commitment_id)
 
     latest_entries_by_folio.map do |entry|
-      OpenStruct.new(
+      AccountEntryBreakdown.new(
         name: entry.name,
         audit_name: dist_fee_map[entry.name.downcase]&.dig(:audit_name) || "",
         reporting_date: entry.reporting_date,
