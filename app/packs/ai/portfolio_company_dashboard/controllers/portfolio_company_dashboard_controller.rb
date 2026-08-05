@@ -35,6 +35,28 @@ class PortfolioCompanyDashboardController < ApplicationController
     portfolio_all = portfolio_reports_scope.includes(:owner).to_a
     @presenter = PortfolioDashboardPresenter.new(portfolio_all, @support_agent)
 
+    # Target selector data for the Run Validation action's "Run on" dropdown.
+    # Queries portfolio company names/IDs, tags, and sectors so the FM can
+    # scope validation to specific companies instead of running on all.
+    # Mirrors the pattern in InvestorsController for the selective run page.
+    #
+    # @see #run_validation for how these selections are resolved to target IDs
+    base_portcos = Investor.where(entity_id: current_user.entity_id)
+                           .where("LOWER(category) = ?", "portfolio company")
+    @portfolio_companies = base_portcos.order(:investor_name).pluck(:investor_name, :id)
+    # Tags with company counts — e.g., [["SaaS", 3], ["FinTech", 1]]
+    # Split comma-separated tag_list, count occurrences per unique tag.
+    @tags_for_select = base_portcos.pluck(:tag_list).compact
+                                   .flat_map { |t| t.split(",") }
+                                   .map(&:strip).compact_blank
+                                   .tally.sort_by { |tag, _| tag }
+
+    # Sectors with company counts — e.g., [["Technology", 2], ["Healthcare", 1]]
+    @sectors_for_select = base_portcos.pluck(:sector).compact
+                                      .flat_map { |s| s.split(",") }
+                                      .map(&:strip).compact_blank
+                                      .tally.sort_by { |sector, _| sector }
+
     # Filtered + paginated scope for the company table (Ransack search on investor name)
     table_scope = portfolio_reports_scope.joins(:investor)
     table_scope = filter_reports(table_scope, @presenter, params[:status])
@@ -46,24 +68,28 @@ class PortfolioCompanyDashboardController < ApplicationController
 
   # POST /portfolio_company_dashboard/run_validation
   #
-  # Enqueues a PortfolioValidationJob to run PortfolioCompanyAgent across all
-  # portfolio companies. Accepts an optional check_as_on_date from the dashboard
-  # period dropdown — when present, the agent validates data for that specific
-  # period-end date instead of auto-computing the most recently completed period.
+  # Enqueues a PortfolioValidationJob to run PortfolioCompanyAgent. Accepts an
+  # optional check_as_on_date from the period dropdown and target_mode from the
+  # target selector. When target_mode is not "all", resolves the FM's selection
+  # (company IDs, tags, or sectors) into validated investor IDs scoped to the
+  # current entity.
   #
   # Uses PortfolioValidationJob (not the shared SupportAgentJob) because the
   # shared job doesn't accept agent-specific parameters like check_as_on_date.
   #
   # @return [void]
+  # @see #resolve_target_ids
   def run_validation
     authorize @support_agent, :run?
     check_date = params[:check_as_on_date].presence
+    target_ids = resolve_target_ids
 
     PortfolioValidationJob.perform_later(
       support_agent_id: @support_agent.id,
       user_id: current_user.id,
       entity_id: current_user.entity_id,
-      check_as_on_date: check_date
+      check_as_on_date: check_date,
+      target_ids: target_ids
     )
 
     head :ok
@@ -198,5 +224,27 @@ class PortfolioCompanyDashboardController < ApplicationController
     end.map(&:id)
 
     scope.where(id: matching_ids)
+  end
+
+  # Resolves target company IDs from the target selector params.
+  # Re-queries with entity_id scoping to prevent targeting companies
+  # in other entities via tampered form data.
+  #
+  # @return [Array<Integer>, nil] investor IDs to validate, or nil for all companies
+  def resolve_target_ids
+    base = Investor.where(entity_id: current_user.entity_id)
+                   .where("LOWER(category) = ?", "portfolio company")
+
+    case params[:target_mode]
+    when "selected"
+      ids = Array(params[:target_ids]).map(&:to_i).reject(&:zero?)
+      base.where(id: ids).pluck(:id).presence
+    when "by_tag"
+      tags = Array(params[:target_tags]).compact_blank
+      base.with_tag_list(tags).pluck(:id).presence if tags.present?
+    when "by_sector"
+      sectors = Array(params[:target_sectors]).compact_blank
+      base.in_sector(sectors).pluck(:id).presence if sectors.present?
+    end
   end
 end

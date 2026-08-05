@@ -137,9 +137,11 @@ The info box at the bottom updates dynamically as the admin changes selections, 
 
 ---
 
-## 6. Dashboard — "Run Now" with Period Selection (FM)
+## 6. Dashboard — "Run Now" with Period Selection and Target Selector (FM)
 
-The dashboard's "Run Validation" button includes a dropdown to select which period to check.
+The dashboard's "Run Validation" button includes two controls:
+1. **Check period** — which reporting period to validate against
+2. **Run on** — which companies to include in the validation run
 
 ```
 ┌──────────────────────────────────────────┐
@@ -147,16 +149,21 @@ The dashboard's "Run Validation" button includes a dropdown to select which peri
 │                                          │
 │  ┌────────────────────────────────────┐  │
 │  │ ▶ Run Validation                   │  │
-│  │   Check all data for completeness  │  │
+│  │   Check data for completeness      │  │
 │  │                                    │  │
 │  │   Check period:                    │  │
 │  │   [Auto (Q2 - Jun 30, 2026)    ▼] │  │
 │  │                                    │  │
-│  │   Dropdown options:                │  │
-│  │     • Auto (Q2 - Jun 30, 2026)     │  │
-│  │     • Q1 - Mar 31, 2026            │  │
-│  │     • Q4 - Dec 31, 2025            │  │
-│  │     • Q3 - Sep 30, 2025            │  │
+│  │   Run on:                          │  │
+│  │   [All Companies (20)          ▼]  │  │
+│  │                                    │  │
+│  │   Options:                         │  │
+│  │     • All Companies (20)           │  │
+│  │     • Selected Companies           │  │
+│  │     • By Tag                       │  │
+│  │     • By Sector                    │  │
+│  │                                    │  │
+│  │   [Run]                            │  │
 │  └────────────────────────────────────┘  │
 │                                          │
 │  ┌────────────────────────────────────┐  │
@@ -169,9 +176,26 @@ The dashboard's "Run Validation" button includes a dropdown to select which peri
 └──────────────────────────────────────────┘
 ```
 
+### Check Period Options
+
 - **"Auto"** (default): Checks the most recently completed period — the system figures out the right one automatically
 - Past periods are shown as options for historical checks
 - The "Run Now" button works anytime — it is not restricted to the checking window
+
+### Target Selector — "Run on" Options
+
+| Selection | What Appears | What Happens |
+|-----------|-------------|-------------|
+| All Companies (default) | Nothing extra | Validates every portfolio company — same as before |
+| Selected Companies | Scrollable checklist of company names | Only checked companies are validated |
+| By Tag | Checkboxes with counts, e.g., "SaaS (3)" | Companies matching any checked tag are validated |
+| By Sector | Checkboxes with counts, e.g., "Technology (5)" | Companies in any checked sector are validated |
+
+**Key behaviors:**
+- "By Tag" and "By Sector" only appear if tags/sectors exist on portfolio companies. If no tags have been assigned, the option is hidden entirely.
+- The count next to each tag/sector shows how many companies will be included.
+- At least one item must be checked before the form can be submitted.
+- After the run completes, the dashboard stats still show the **full portfolio** — the target selector only controls which companies get re-validated, not what the dashboard displays.
 
 ---
 
@@ -238,7 +262,7 @@ The agent can be triggered from three different places. Each has a different lev
 
 | # | Trigger Point | Where | Period Selection | Who Uses It |
 |---|--------------|-------|-----------------|-------------|
-| 1 | **Dashboard "Run Validation"** | Portfolio Company Dashboard (`/portfolio_company_dashboard`) | Dropdown — pick a specific period or use Auto | FM doing detailed portfolio review |
+| 1 | **Dashboard "Run Validation"** | Portfolio Company Dashboard (`/portfolio_company_dashboard`) | Period dropdown + target selector (all, selected, by tag, by sector) | FM doing detailed portfolio review |
 | 2 | **Support Agent "Run Now"** | Support Agents index/show page (`/support_agents`) | No dropdown — always auto-computes the most recently completed period | Admin running a quick check |
 | 3 | **Investor Page "Run Agent"** | Portfolio company detail page (`/investors/:id`) | No dropdown — always auto-computes, runs for that single company only | FM checking one specific company |
 
@@ -256,9 +280,11 @@ The **Dashboard** is the dedicated, purpose-built view for portfolio company mon
 │     /portfolio_company_dashboard                             │
 │                                                              │
 │     [Run Validation]  +  [Check period: Q2 - Jun 30 ▼]      │
-│     ✓ Period dropdown    ✓ Window indicator                  │
-│     ✓ Stat cards         ✓ Company table                     │
-│     ✓ Send Reminders     ✓ View Pending Issues               │
+│                       +  [Run on: All Companies ▼]           │
+│     ✓ Period dropdown    ✓ Target selector                   │
+│     ✓ Window indicator   ✓ Stat cards                        │
+│     ✓ Company table      ✓ Send Reminders                    │
+│     ✓ View Pending Issues                                    │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐

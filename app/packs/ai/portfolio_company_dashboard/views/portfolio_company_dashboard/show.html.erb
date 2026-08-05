@@ -12,7 +12,11 @@
         <%= render "chart", presenter: @presenter %>
       </div>
       <div class="col-md-6">
-        <%= render "actions", support_agent: @support_agent, presenter: @presenter %>
+        <%= render "actions", support_agent: @support_agent, presenter: @presenter,
+           portfolio_companies: @portfolio_companies,
+           tags_for_select: @tags_for_select,
+           sectors_for_select: @sectors_for_select %>
+
       </div>
     </div>
 
