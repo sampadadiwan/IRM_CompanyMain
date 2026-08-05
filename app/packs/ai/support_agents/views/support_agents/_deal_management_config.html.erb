@@ -19,6 +19,14 @@
       label: "#{from_step.title} → #{to_step.title}"
     }
   end
+  if templates.any?
+  last_step = templates.last
+  transition_pairs << {
+    value: "#{last_step.sequence}-0",
+    label: "#{last_step.title} → Completed"
+  }
+  end
+
 
   selected = config["preset_steps"].to_s.split(",").map(&:strip).compact_blank.to_set
 %>

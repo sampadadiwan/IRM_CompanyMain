@@ -1,3 +1,6 @@
+<%# Header bar for the deals list view — title, filter toggle, Weekly Summary link,
+    Excel download, and new-deal button.
+    @param deal [Deal] the deal record (used for entity-level feature flags) %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4 pt-4">
   <h3 class="h3 mb-0 text-gray-600"><%= deal.name %> </h3>
   <span>
@@ -8,6 +11,12 @@
     <% else %>
       <%= link_to deal_path(deal, list_view: true), class: "btn btn-outline-primary" do %>
         <i class="ti ti-filter"></i> Not Declined
+      <% end %>
+    <% end %>
+    <%# Weekly Summary button — moved here from deal_details tabs for quick access %>
+    <% if deal.entity.support_agents.set?(:deal_management_agent) %>
+      <%= link_to weekly_summary_deal_path(deal), class: "btn btn-outline-primary" do %>
+        <i class="ti ti-report-analytics"></i> Weekly Summary
       <% end %>
     <% end %>
     <%= link_to deal_path(deal, list_view: true, format: :xlsx), class: "btn btn-outline-primary" do %>

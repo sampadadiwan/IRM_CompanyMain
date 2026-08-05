@@ -1,3 +1,8 @@
+<%# Deal details partial — tabbed view with activities, investors, tasks, reminders,
+    notifications, and agent settings for a single deal.
+    @param deal [Deal] the deal record
+    @param show_deal [String] "Yes"/"No" toggle for deal section visibility
+    @param show_investors [String] "Yes"/"No" toggle for investors section visibility %>
 <%
   show_deal ||= "Yes"
   show_investors ||= "Yes"
@@ -17,12 +22,6 @@
     <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">Custom Notifications</a>
-    <%# Only show Weekly Summary tab when a DealManagementAgent is configured for this entity %>
-    <% if deal.entity.support_agents.set?(:deal_management_agent) %>
-      <%= link_to weekly_summary_deal_path(deal), class: "nav-link" do %>
-        <i class="ti ti-report-analytics me-1"></i> Weekly Summary
-      <% end %>
-    <% end %>
     <% if deal.entity.support_agents.set?(:deals_report_agent) %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#agent-settings-tab">Agent Settings</a>
     <% end %>
