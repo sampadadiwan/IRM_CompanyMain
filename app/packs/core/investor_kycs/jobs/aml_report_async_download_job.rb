@@ -36,7 +36,8 @@ class AmlReportAsyncDownloadJob < ApplicationJob
     if file_url.present?
       download_file(file_url, tmpfile)
       Document.create(entity: aml_report.entity, owner: aml_report, name: doc_name, file: File.open(tmpfile.path, "rb"), folder: aml_report.document_folder, user_id: user_id, orignal: true, owner_tag: "AML")
-      UserAlert.new(user_id: user_id, message: "Downloaded Aml Report for #{name}", level: :success).broadcast if user_id.present?
+      # User-facing wording: the report was "generated" (the download from IDFy is an internal step)
+      UserAlert.new(user_id: user_id, message: "Generated AML Report for #{name}", level: :success).broadcast if user_id.present?
       aml_report.match_status = json_res.dig("result", "match_status")&.titleize
       aml_report.save
       # Skip if the fund has manually overridden the status, so a fresh IDFy result doesn't silently revert their decision.
@@ -63,13 +64,13 @@ class AmlReportAsyncDownloadJob < ApplicationJob
   def broadcast_failure(aml_report, user_id)
     name = aml_report.investor_kyc.full_name
     name = aml_report.custom_name if aml_report.custom_name.present?
-    UserAlert.new(user_id: user_id, message: "Failed to download Aml Report for #{name}", level: :danger).broadcast if user_id.present?
+    UserAlert.new(user_id: user_id, message: "Failed to generate AML Report for #{name}", level: :danger).broadcast if user_id.present?
   end
 
   def handle_error(err, aml_report, user_id)
     name = aml_report.investor_kyc.full_name
     name = aml_report.custom_name if aml_report.custom_name.present?
-    msg = "Failed to download Aml Report for #{name}: #{err.message}"
+    msg = "Failed to generate AML Report for #{name}: #{err.message}"
     Rails.logger.error msg
     UserAlert.new(user_id: user_id, message: msg, level: :danger).broadcast if user_id.present?
     errs = [{ investing_entity: aml_report.investor_kyc.full_name, aml_report_name: name, error: msg }]
