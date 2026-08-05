@@ -103,7 +103,9 @@ class PortfolioDashboardPresenter
       # Resolve via KpiReport.name — mirrors WithCustomField#setup_form_type
       # which uses self.class.name to find the entity's form type.
       form_type = support_agent.entity.form_types.where(name: KpiReport.name).last
-      labels = form_type&.form_custom_fields&.where(field_type: "File")&.map(&:label) || []
+      # Use label if present, fall back to humanized name for fields with blank labels.
+      labels = form_type&.form_custom_fields&.where(field_type: "File")
+                        &.map { |f| f.label.presence || f.name.humanize } || []
 
       agent_docs = support_agent.json_fields["required_docs"].to_s.split(",").map(&:strip).compact_blank
       labels += agent_docs
