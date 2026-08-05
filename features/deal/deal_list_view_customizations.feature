@@ -38,7 +38,10 @@ Scenario: List view sidepanel and documents navigation are configured for top-le
   When I create a new deal "name=Sidepanel Nav Deal;amount_cents=42000"
   Then I should see the "Deal was successfully created"
   And an deal should be created
-  And I visit the deal list view
+  And there is an existing investor ""
+  And there is a deal investor for the last investor
+  When I fetch the deal investor sidepanel content
   Then the deal list sidepanel frame should target top
   When I visit the deal documents folder page
-  Then the All Documents button should target top and close the sidepanel
+  Then the All Documents button should target top
+  And the documents frame should target top

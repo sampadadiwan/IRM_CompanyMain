@@ -38,7 +38,9 @@ class GrafanaAlertsController < ActionController::API
             custom_params: [
               { name: '1',            value: 'CapHive Infrastructure' },
               { name: 'notification', value: message.truncate(1000) },
-              { name: 'link',         value: 'graphana.caphive.com' }
+              # Link to the Grafana instance that actually fired (IN vs US) — both
+              # instances post to this same endpoint, so derive it from the payload
+              { name: 'link',         value: grafana_host(payload) }
             ]
           }
         end
@@ -65,17 +67,33 @@ class GrafanaAlertsController < ActionController::API
     return head :unauthorized unless expected.present? && received == expected
   end
 
+  # region=in/us label is injected on every rule by rake grafana:provision:alert_rules —
+  # one webhook payload always comes from a single Grafana instance, so the first
+  # alert's region identifies the whole batch. Empty string for pre-region alerts.
+  def payload_region(payload)
+    Array(payload['alerts']).filter_map { |a| a.dig('labels', 'region') }.first.to_s
+  end
+
+  # WhatsApp "link" param: point at the Grafana instance that fired, not always IN
+  def grafana_host(payload)
+    payload_region(payload) == 'us' ? 'graphana.caphive.us' : 'graphana.caphive.com'
+  end
+
   def format_alert(payload)
     alerts   = Array(payload['alerts'])
     firing   = alerts.select { |a| a['status'] == 'firing' }
     resolved = alerts.select { |a| a['status'] == 'resolved' }
 
+    # "[IN] " / "[US] " tag so the message says which region's servers are affected
+    region = payload_region(payload)
+    tag    = region.empty? ? '' : "[#{region.upcase}] "
+
     header = if firing.any? && resolved.any?
-      "ALERT: #{firing.size} firing, #{resolved.size} resolved"
+      "#{tag}ALERT: #{firing.size} firing, #{resolved.size} resolved"
     elsif firing.any?
-      "ALERT: #{firing.size} issue#{firing.size > 1 ? 's' : ''} firing"
+      "#{tag}ALERT: #{firing.size} issue#{firing.size > 1 ? 's' : ''} firing"
     else
-      "RESOLVED: #{resolved.size} issue#{resolved.size > 1 ? 's' : ''}"
+      "#{tag}RESOLVED: #{resolved.size} issue#{resolved.size > 1 ? 's' : ''}"
     end
 
     lines = [header, '']
@@ -83,6 +101,10 @@ class GrafanaAlertsController < ActionController::API
       icon    = a['status'] == 'firing' ? '[!]' : '[OK]'
       title   = a.dig('labels', 'alertname') || 'Unknown alert'
       summary = a.dig('annotations', 'summary') || ''
+      # The provisioner bakes "[IN] "/"[US] " into every summary (needed for email body
+      # text) — strip it here since the header already carries the tag, so WhatsApp
+      # messages don't repeat it per line and waste the 1000-char truncate budget
+      summary = summary.delete_prefix(tag)
       lines << "#{icon} #{title}"
       lines << "    #{summary}" unless summary.empty?
     end

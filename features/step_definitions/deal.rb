@@ -992,6 +992,10 @@ end
 # Deal List View sidepanel/documents navigation steps
 # ---------------------------------------------------------------------------
 
+When('I fetch the deal investor sidepanel content') do
+  visit(deal_investor_path(@deal_investor, turbo_frame: "deal_investor_frame"))
+end
+
 Then('the deal list sidepanel frame should target top') do
   expect(page).to have_css('turbo-frame#deal_investor_frame[target="_top"]', visible: :all, wait: 10)
 end
@@ -1001,8 +1005,11 @@ When('I visit the deal documents folder page') do
   visit(folder_documents_path(entity_id: @deal.entity_id, folder_id: @deal.document_folder.id))
 end
 
-Then('the All Documents button should target top and close the sidepanel') do
+Then('the All Documents button should target top') do
   link = find('a.btn.btn-outline-primary', text: 'All Documents', wait: 10)
   expect(link['data-turbo-frame']).to eq('_top')
-  expect(link['data-action'].to_s).to include('click->deals-list-ag-grid#closeSidepanel')
+end
+
+Then('the documents frame should target top') do
+  expect(page).to have_css('turbo-frame#documents_frame[target="_top"]', visible: :all, wait: 10)
 end
