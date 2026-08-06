@@ -35,8 +35,8 @@ class DealManagementAgent < SupportAgentService
                              within the configured report_period window (default 7 days).
     • Stagnation Breakdown — three-way stagnation analysis: newly stagnant, still stagnant,
                              and recovered investors compared against the previous report.
-    • Tasks Summary       — aggregates overdue, upcoming, and completed tasks for the deal
-                             and its investors.
+    • Tasks Summary       — aggregates overdue, upcoming (7-day window), pending (no due date
+                             or beyond 7 days), and completed tasks for the deal and its investors.
     • Charts Data         — pre-computes funnel, source mix, and lead mix chart data
                              from the deal's current pipeline state.
     • AI Insight          — optional single LLM call generating an actionable one-liner
@@ -142,12 +142,12 @@ class DealManagementAgent < SupportAgentService
 
   # Human descriptions of the steps each json_fields toggle gates.
   CHECK_TOGGLES = {
-    "check_progress"    => "the deal progress / stagnation check",
-    "check_documents"   => "the document checklist check",
-    "extract_terms"     => "term extraction from deal documents",
-    "summarize_notes"   => "investor note summaries",
-    "score_investors"   => "investor scoring",
-    "weekly_summary"    => "the weekly summary email and charts",
+    "check_progress" => "the deal progress / stagnation check",
+    "check_documents" => "the document checklist check",
+    "extract_terms" => "term extraction from deal documents",
+    "summarize_notes" => "investor note summaries",
+    "score_investors" => "investor scoring",
+    "weekly_summary" => "the weekly summary email and charts",
     "enable_ai_insight" => "the AI insight section of the weekly summary"
   }.freeze
 
@@ -157,16 +157,12 @@ class DealManagementAgent < SupportAgentService
   def self.config_issues(support_agent)
     issues = missing_toggle_issues(support_agent, CHECK_TOGGLES)
 
-    if (support_agent.json_fields || {})["notify_email"].to_s.strip.blank?
-      issues << "'notify_email' is blank — the deal digest email (this agent's main output) will never be sent."
-    end
+    issues << "'notify_email' is blank — the deal digest email (this agent's main output) will never be sent." if (support_agent.json_fields || {})["notify_email"].to_s.strip.blank?
 
     # Optional custom scoring rubric: field exists but no file uploaded means the
     # built-in default rubric is silently used, which users often don't realize.
     fcf = support_agent.form_custom_fields.find { |f| f.name == "scoring_skill_file" && f.field_type == "File" }
-    if fcf && !support_agent.documents.exists?(name: fcf.human_label)
-      issues << "No file uploaded for '#{fcf.human_label}' — investor scoring will use the built-in default rubric."
-    end
+    issues << "No file uploaded for '#{fcf.human_label}' — investor scoring will use the built-in default rubric." if fcf && !support_agent.documents.exists?(name: fcf.human_label)
 
     issues
   end
@@ -597,7 +593,8 @@ class DealManagementAgent < SupportAgentService
   end
 
   # ── Step 8 ── Aggregates tasks for the deal and its investors into overdue,
-  # upcoming, and completed buckets. Highlights the most overdue task and
+  # upcoming (due within 7 days), pending (no due date or due beyond 7 days),
+  # and completed buckets. Highlights the most overdue task and
   # lists tasks due soon (capped by max_tasks_in_email config).
   # Toggled by weekly_summary (Yes/No). Always returns true.
   #
@@ -622,10 +619,14 @@ class DealManagementAgent < SupportAgentService
     ).includes(:assigned_to, :rich_text_details).to_a
 
     period_start = ctx[:period_start] || @period_start
-    period_end   = ctx[:period_end] || @period_end
 
+    # Fixed 7-day lookahead — period_end is Time.current (today), so the old
+    # upcoming filter only caught tasks due exactly today. Tasks due beyond
+    # today fell through all buckets. Now: upcoming = today..+7d, pending = rest.
+    upcoming_horizon = Time.zone.today + 7.days
     overdue   = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date < Time.zone.today }
-    upcoming  = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date >= Time.zone.today && t.due_date <= period_end.to_date }
+    upcoming  = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date >= Time.zone.today && t.due_date <= upcoming_horizon }
+    pending   = all_tasks.select { |t| !t.completed && (t.due_date.blank? || t.due_date > upcoming_horizon) }
     completed = all_tasks.select { |t| t.completed && t.updated_at >= period_start }
 
     max_tasks = [@support_agent.json_fields["max_tasks_in_email"].to_i, 5].max
@@ -635,21 +636,24 @@ class DealManagementAgent < SupportAgentService
     ctx[:tasks_summary] = {
       overdue_count: overdue.size,
       upcoming_count: upcoming.size,
+      pending_count: pending.size,
       completed_count: completed.size,
       highlighted_overdue: format_deal_task(highlighted_overdue),
       overdue_tasks: overdue.sort_by(&:due_date).first(max_tasks).map { |t| format_deal_task(t) },
       pending_due_soon: pending_due_soon.map { |t| format_deal_task(t) },
+      pending_tasks: pending.sort_by { |t| t.due_date || Date.new(9999) }.first(max_tasks).map { |t| format_deal_task(t) },
       completed_tasks: completed.sort_by(&:updated_at).reverse.first(max_tasks).map { |t| format_deal_task(t) },
       all_overdue_ids: overdue.map(&:id),
       all_upcoming_ids: upcoming.map(&:id),
+      all_pending_ids: pending.map(&:id),
       all_completed_ids: completed.map(&:id)
     }
 
     if report
       mark_step_success(report, :aggregate_deal_tasks,
-                        message: "#{overdue.size} overdue, #{upcoming.size} upcoming, #{completed.size} completed")
+                        message: "#{overdue.size} overdue, #{upcoming.size} upcoming, #{pending.size} pending, #{completed.size} completed")
     end
-    alert_user(ctx, "Tasks: #{overdue.size} overdue, #{upcoming.size} upcoming, #{completed.size} completed", :info)
+    alert_user(ctx, "Tasks: #{overdue.size} overdue, #{upcoming.size} upcoming, #{pending.size} pending, #{completed.size} completed", :info)
     true
   end
 

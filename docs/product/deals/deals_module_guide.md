@@ -502,7 +502,8 @@ When Tiger moves to Due Diligence:
 | Scope | Query |
 |---|---|
 | Overdue | `completed: false, due_date < today` |
-| Upcoming pending | `completed: false, due_date: today..end_of_week` |
+| Upcoming (7-day window) | `completed: false, due_date: today..today+7.days` |
+| Pending | `completed: false, due_date blank OR due_date > today+7.days` |
 | Completed this week | `completed: true, updated_at: this_week_range` |
 | All incomplete | `completed: false` |
 
