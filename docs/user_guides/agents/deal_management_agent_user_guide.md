@@ -46,6 +46,7 @@ Every one of these checks (other than the final save) has its own on/off switch,
 | Scoring Skill File | File | seeded default | The document that defines your scoring rubric. See the note below. |
 | Min bullet points per section | Number | 3 | The minimum number of bullet points the AI must write for each scoring rationale (positives/concerns) and for each top-level list (strengths/risks/recommendations). |
 | Weekly summary | Select (Yes/No) | Yes | Turns on the weekly summary content — charts, task lists, and the digest email itself. With this off, no digest is sent even when Notify email is set. Agents set up before this option existed may have it unset, which counts as off — see the setup checklist below. |
+| Report period (days) | Number | 7 | How many days back the weekly summary looks when calculating step transitions, new investors, status changes, and completed tasks. Set to 7 for a true weekly view. If left blank, defaults to 1 day — meaning only today's changes appear in the summary. |
 | AI insight | Select (Yes/No) | Yes | Turns on the AI-written insight section inside the weekly summary. Only applies when Weekly summary is on. |
 | Notify email | Text | blank | Who receives the post-run pipeline digest. Leave blank and **no email at all** goes out for this agent. |
 
@@ -96,6 +97,7 @@ To turn it on: open the agent's **Schedule** tab, confirm or adjust the frequenc
 
 ## 6. Where to Find the Output
 
+- **Weekly Summary dashboard**: click the **Weekly Summary** button on the deals list view header. This shows the latest report's data: step transitions, stagnation breakdown, period deltas (new/dropped investors), tasks (overdue, upcoming, pending, completed), charts, and AI insight. A report selector dropdown lets you view older reports for comparison. Only visible when the Deal Management Agent is enabled for your organization.
 - **Deal-level report**: a fresh report is created every time the agent runs against the deal — history builds up over time, and the most recent one is always marked as the latest. You'll find it on the agent's **Deal Reports** tab and on the deal's own Agent/AI tab.
 - **Per-investor reports**: one report per active investor, but these are **replaced** each run rather than kept as history — only the latest result per investor is available.
 - **Score write-back**: when scoring succeeds, the investor's AI score (0–100) and letter grade are updated directly on their record.
