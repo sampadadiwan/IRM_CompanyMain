@@ -620,13 +620,12 @@ class DealManagementAgent < SupportAgentService
 
     period_start = ctx[:period_start] || @period_start
 
-    # Fixed 7-day lookahead — period_end is Time.current (today), so the old
-    # upcoming filter only caught tasks due exactly today. Tasks due beyond
-    # today fell through all buckets. Now: upcoming = today..+7d, pending = rest.
+    # Pending = all non-overdue incomplete tasks (superset of upcoming).
+    # Upcoming = subset of pending due within 7 days, shown separately for urgency.
     upcoming_horizon = Time.zone.today + 7.days
     overdue   = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date < Time.zone.today }
-    upcoming  = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date >= Time.zone.today && t.due_date <= upcoming_horizon }
-    pending   = all_tasks.select { |t| !t.completed && (t.due_date.blank? || t.due_date > upcoming_horizon) }
+    pending   = all_tasks.select { |t| !t.completed && (t.due_date.blank? || t.due_date >= Time.zone.today) }
+    upcoming  = pending.select { |t| t.due_date.present? && t.due_date <= upcoming_horizon }
     completed = all_tasks.select { |t| t.completed && t.updated_at >= period_start }
 
     max_tasks = [@support_agent.json_fields["max_tasks_in_email"].to_i, 5].max
