@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent RtaReconciliationAgent DealManagementAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent RtaReconciliationAgent DealManagementAgent SideLetterObligationAgent].freeze
   CATEGORIES = %w[Ops Finance Portfolio Onboarding Other].freeze
 
   belongs_to :entity

@@ -135,6 +135,11 @@ module UserGuideHelper
     'CashFlowAssistantAgent' => 'agents/cash_flow_assistant_agent_user_guide.md',
     'PortfolioReportAgent' => 'agents/portfolio_report_agent_user_guide.md',
     'CustomerSupportAgent' => 'customer_support_agent_user_guide.md',
+    'SideLetterObligationAgent' => 'agents/side_letter_obligation_agent_user_guide.md',
+    # Side letter obligation pages share the agent's guide (extraction, review
+    # gate, tasks, alerts are all explained there)
+    'side_letters' => 'agents/side_letter_obligation_agent_user_guide.md',
+    'side_letter_obligations' => 'agents/side_letter_obligation_agent_user_guide.md',
     # No dedicated guide yet — fall back to the general overview guide.
     'FundStatsAgent' => 'support_agents_user_guide.md',
     'LpAssistantAgent' => 'support_agents_user_guide.md',

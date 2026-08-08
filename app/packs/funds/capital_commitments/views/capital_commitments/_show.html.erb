@@ -114,6 +114,11 @@
         </div>
       </div>
 
+      <%# Side letters negotiated for this commitment + their obligation review state %>
+      <% if current_user && policy(SideLetter.new(entity_id: capital_commitment.entity_id)).index? %>
+        <%= render "side_letters/commitment_section", capital_commitment: capital_commitment %>
+      <% end %>
+
     </div>
 
     <!-- Right Column: Financials & Status -->

@@ -3,6 +3,10 @@
 **Approach:** Build — new AI feature; extends existing `DocQuestion`, `SupportAgent`, and `Chat` infrastructure
 **Phase:** P2 — builds on `side_letter_obligations.md` (P1); requires document corpus to be meaningful
 
+> **Scope note (2026-08):** Side letter obligation extraction has moved into P1 and is delivered by the
+> `SideLetterObligationAgent` — see `side_letter_obligations.md`. This document now covers LPA term-sheet
+> extraction and the fund-document chat only; its side-letter use cases are retained for context.
+
 ---
 
 ## What This Is
@@ -41,7 +45,7 @@ Counsel uploads the LPA for Fund III. CapHive's extraction agent processes the d
 Every extracted term cites the LPA section it came from.
 
 ### UC-2: Side Letter Obligation Extraction
-After a closing, 15 side letters are uploaded. The AI extraction agent processes each one and creates draft `LpObligation` records in the LP Obligation Matrix. Counsel reviews the draft matrix, approves 42 obligations, corrects 3 AI misclassifications, and adds 2 that the AI missed. Total counsel review time: 3 hours vs. 2 weeks manual entry.
+After a closing, 15 side letters are uploaded. The AI extraction agent processes each one and creates draft `SideLetterObligation` records in the LP Obligation Matrix. Counsel reviews the draft matrix, approves 42 obligations, corrects 3 AI misclassifications, and adds 2 that the AI missed. Total counsel review time: 3 hours vs. 2 weeks manual entry.
 
 ### UC-3: Natural Language Fund Document Query
 The CFO asks the fund document chat: "What is the maximum percentage we can call in a single capital call?" The system searches across the LPA and any amendments, finds "Section 6.3(b): No single capital call shall exceed 25% of an investor's total commitment except in the event of an emergency expense as defined in Section 1," and returns the answer with the exact quote and section reference.
@@ -63,7 +67,7 @@ After extracting all side letter obligations, counsel asks: "Show me all reporti
 | `SupportAgent` — configurable AI agents | ✅ Exists | Agents with tool access; can read documents, KYC, fund data |
 | LLM configuration per entity | ✅ Exists | Claude and other models configurable |
 | LPA term extraction | ❌ Missing | No structured extraction of fund terms into a term sheet model |
-| Side letter obligation extraction → LP Obligation Matrix | ❌ Missing | No extraction pipeline from side letter document to `LpObligation` records |
+| Side letter obligation extraction → LP Obligation Matrix | ➡️ Moved | Delivered in P1 by `SideLetterObligationAgent` (`side_letter_obligations.md`) |
 | Fund document natural language query with citations | ❌ Missing | Chat exists but without fund-document-specific grounding or citation enforcement |
 | Cross-document comparison (side letter vs. LPA baseline) | ❌ Missing | No cross-document comparison logic |
 | MFN analysis from extracted obligations | ❌ Missing | To be added as part of this feature |
@@ -123,10 +127,9 @@ For LPA:
   → Low-confidence fields flagged for counsel review
 
 For side letter:
-  → Obligation extraction: identify clauses by type
-  → Create draft LpObligation records (status = ai_extracted)
-  → Counsel reviews via LP Obligation Matrix
-  → Approves → status = counsel_reviewed (becomes active)
+  → Handled by SideLetterObligationAgent (see side_letter_obligations.md) —
+    extraction, counsel review gate, task projection, and due-date enforcement
+    all live in that feature
 ```
 
 ### Fund Document Chat
@@ -153,7 +156,7 @@ Every AI answer must include `[Source: {document_name}, Section {X.Y}]`. If the 
 ## Functional Requirements
 
 1. LPA term extraction runs automatically when an LPA document is added to the `FundDocumentSet`; results are draft until reviewed by counsel
-2. Side letter extraction creates `LpObligation` records with `status = ai_extracted`; these do not appear as active obligations until counsel approves them
+2. Side letter extraction creates `SideLetterObligation` records with `status = ai_extracted`; these do not appear as active obligations until counsel approves them
 3. Every AI-extracted term and obligation retains its source citation; terms without citations are not surfaced
 4. `FundTermSheet` fields with `ai_confidence < 0.75` are flagged for mandatory counsel review before the term is considered confirmed
 5. Fund document chat sessions are logged; all queries and responses are auditable
@@ -164,7 +167,7 @@ Every AI answer must include `[Source: {document_name}, Section {X.Y}]`. If the 
 
 ## Integration Points
 
-- `side_letter_obligations.md` — extraction pipeline populates `LpObligation` records (Phase 2 of that feature)
+- `side_letter_obligations.md` — obligation extraction is delivered there (P1) by `SideLetterObligationAgent`; this feature's cross-document tools query the resulting `SideLetterObligation` records
 - `investor_qualification_engine.md` — extracted eligibility terms from LPA feed into fund rule configuration
 - `capital_events_us.md` — extracted capital call rules (notice period, max call percentage) can pre-populate fund settings
 - `compliance_evidence_binder.md` — `FundTermSheet` included as a fund-level compliance reference

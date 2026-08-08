@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_07_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_08_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2999,6 +2999,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_07_100000) do
     t.index ["access_grant_id"], name: "index_oauth_openid_requests_on_access_grant_id"
   end
 
+  create_table "obligation_fulfillments", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "document_id"
+    t.bigint "entity_id", null: false
+    t.date "fulfilled_at", null: false
+    t.bigint "fulfilled_by_id"
+    t.text "fulfillment_method"
+    t.string "period_covered", limit: 40
+    t.bigint "side_letter_obligation_id", null: false
+    t.bigint "task_id"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_obligation_fulfillments_on_entity_id"
+    t.index ["side_letter_obligation_id"], name: "index_obligation_fulfillments_on_side_letter_obligation_id"
+    t.index ["task_id"], name: "index_obligation_fulfillments_on_task_id"
+  end
+
+  create_table "obligation_reminders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "due_date"
+    t.bigint "entity_id", null: false
+    t.string "kind", limit: 10, null: false
+    t.bigint "recipient_user_id"
+    t.datetime "sent_at"
+    t.bigint "side_letter_obligation_id", null: false
+    t.bigint "task_id"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_obligation_reminders_on_entity_id"
+    t.index ["side_letter_obligation_id", "kind", "due_date"], name: "idx_obligation_reminders_dedup"
+    t.index ["side_letter_obligation_id"], name: "index_obligation_reminders_on_side_letter_obligation_id"
+  end
+
   create_table "offers", force: :cascade do |t|
     t.string "PAN", limit: 15
     t.string "acquirer_name"
@@ -3569,6 +3600,54 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_07_100000) do
     t.index ["interest_form_type_id"], name: "index_secondary_sales_on_interest_form_type_id"
     t.index ["offer_form_type_id"], name: "index_secondary_sales_on_offer_form_type_id"
     t.index ["secondary_sale_form_type_id"], name: "index_secondary_sales_on_secondary_sale_form_type_id"
+  end
+
+  create_table "side_letter_obligations", force: :cascade do |t|
+    t.decimal "ai_confidence", precision: 5, scale: 4
+    t.datetime "created_at", null: false
+    t.boolean "delta", default: false, null: false
+    t.text "description"
+    t.bigint "entity_id", null: false
+    t.string "extracted_by", limit: 10, default: "manual", null: false
+    t.string "frequency_rrule", limit: 100
+    t.boolean "mfn_relevant", default: false, null: false
+    t.string "mfn_review_status", limit: 25, default: "not_reviewed", null: false
+    t.date "next_due_date"
+    t.string "obligation_type", limit: 20, null: false
+    t.string "owner_team", limit: 20
+    t.bigint "owner_user_id"
+    t.integer "reminder_days_before", default: 7, null: false
+    t.string "review_status", limit: 20, default: "pending_review", null: false
+    t.datetime "reviewed_at"
+    t.bigint "reviewed_by_id"
+    t.bigint "side_letter_id", null: false
+    t.string "source_clause", limit: 100
+    t.string "status", limit: 20
+    t.bigint "task_recurrence_rule_id"
+    t.string "title", null: false
+    t.text "trigger_description"
+    t.string "trigger_type", limit: 20, null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_side_letter_obligations_on_entity_id"
+    t.index ["next_due_date"], name: "index_side_letter_obligations_on_next_due_date"
+    t.index ["owner_user_id"], name: "index_side_letter_obligations_on_owner_user_id"
+    t.index ["review_status"], name: "index_side_letter_obligations_on_review_status"
+    t.index ["side_letter_id"], name: "index_side_letter_obligations_on_side_letter_id"
+    t.index ["task_recurrence_rule_id"], name: "index_side_letter_obligations_on_task_recurrence_rule_id"
+  end
+
+  create_table "side_letters", force: :cascade do |t|
+    t.bigint "capital_commitment_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "document_id", null: false
+    t.bigint "entity_id", null: false
+    t.date "executed_at"
+    t.string "extraction_status", limit: 20, default: "pending", null: false
+    t.text "notes"
+    t.datetime "updated_at", null: false
+    t.index ["capital_commitment_id"], name: "index_side_letters_on_capital_commitment_id"
+    t.index ["document_id"], name: "index_side_letters_on_document_id"
+    t.index ["entity_id"], name: "index_side_letters_on_entity_id"
   end
 
   create_table "simulation_events", force: :cascade do |t|
@@ -4458,6 +4537,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_07_100000) do
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_openid_requests", "oauth_access_grants", column: "access_grant_id", on_delete: :cascade
+  add_foreign_key "obligation_fulfillments", "entities"
+  add_foreign_key "obligation_fulfillments", "side_letter_obligations"
+  add_foreign_key "obligation_reminders", "entities"
+  add_foreign_key "obligation_reminders", "side_letter_obligations"
   add_foreign_key "offers", "entities"
   add_foreign_key "offers", "folders", column: "document_folder_id"
   add_foreign_key "offers", "form_types"
@@ -4535,6 +4618,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_07_100000) do
   add_foreign_key "secondary_sales", "form_types", column: "interest_form_type_id"
   add_foreign_key "secondary_sales", "form_types", column: "offer_form_type_id"
   add_foreign_key "secondary_sales", "form_types", column: "secondary_sale_form_type_id"
+  add_foreign_key "side_letter_obligations", "entities"
+  add_foreign_key "side_letter_obligations", "side_letters"
+  add_foreign_key "side_letters", "capital_commitments"
+  add_foreign_key "side_letters", "documents"
+  add_foreign_key "side_letters", "entities"
   add_foreign_key "simulation_events", "simulation_runs"
   add_foreign_key "simulation_runs", "kyc_onboardings"
   add_foreign_key "stamp_papers", "entities"

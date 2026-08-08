@@ -1,0 +1,86 @@
+<%# Obligation form — manual entry and counsel edits (pending rows only).
+    Locals: obligation %>
+<%= form_with model: obligation, url: obligation.persisted? ? side_letter_obligation_path(obligation) : side_letter_obligations_path do |f| %>
+  <% if obligation.errors.any? %>
+    <div class="alert alert-danger">
+      <ul class="mb-0">
+        <% obligation.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row g-3">
+    <% if obligation.side_letter_id.present? %>
+      <%= f.hidden_field :side_letter_id %>
+    <% else %>
+      <div class="col-md-6">
+        <%= f.label :side_letter_id, "Side letter", class: "form-label" %>
+        <%= f.collection_select :side_letter_id,
+                                SideLetter.where(entity_id: current_user.entity_id).includes(:document, capital_commitment: %i[investor fund]),
+                                :id, :to_s, { include_blank: "Select side letter" },
+                                class: "form-select", required: true %>
+      </div>
+    <% end %>
+    <div class="col-md-6">
+      <%= f.label :title, class: "form-label" %>
+      <%= f.text_field :title, class: "form-control", required: true %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :obligation_type, class: "form-label" %>
+      <%= f.select :obligation_type, obligation_type_options, {}, class: "form-select" %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :source_clause, "Source clause", class: "form-label" %>
+      <%= f.text_field :source_clause, class: "form-control", placeholder: "e.g. Section 4.3(b)" %>
+    </div>
+
+    <div class="col-12">
+      <%= f.label :description, class: "form-label" %>
+      <%= f.text_area :description, class: "form-control", rows: 3 %>
+    </div>
+
+    <div class="col-md-3">
+      <%= f.label :trigger_type, "Trigger", class: "form-label" %>
+      <%= f.select :trigger_type, trigger_type_options, {}, class: "form-select" %>
+    </div>
+    <div class="col-md-5">
+      <%= f.label :trigger_description, "Trigger description", class: "form-label" %>
+      <%= f.text_field :trigger_description, class: "form-control", placeholder: "e.g. Within 45 days of each quarter-end" %>
+    </div>
+    <div class="col-md-2">
+      <%= f.label :frequency_rrule, "Recurrence (RRULE)", class: "form-label" %>
+      <%= f.text_field :frequency_rrule, class: "form-control", placeholder: "FREQ=QUARTERLY;INTERVAL=1" %>
+    </div>
+    <div class="col-md-2">
+      <%= f.label :next_due_date, "Next due date", class: "form-label" %>
+      <%= f.date_field :next_due_date, class: "form-control" %>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :owner_user_id, "Owner (user)", class: "form-label" %>
+      <%= f.select :owner_user_id,
+                   options_from_collection_for_select(current_user.entity.employees.order(:first_name), :id, :name, obligation.owner_user_id),
+                   { include_blank: "None" }, class: "form-select" %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :owner_team, "Owner (team)", class: "form-label" %>
+      <%= f.select :owner_team, owner_team_options, { include_blank: "None" }, class: "form-select" %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :reminder_days_before, "Reminder lead time (days)", class: "form-label" %>
+      <%= f.number_field :reminder_days_before, class: "form-control", min: 0 %>
+    </div>
+    <div class="col-md-2 form-check ms-2 align-self-end">
+      <%= f.check_box :mfn_relevant, class: "form-check-input" %>
+      <%= f.label :mfn_relevant, "MFN relevant", class: "form-check-label" %>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <%= f.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", obligation.side_letter.present? ? side_letter_path(obligation.side_letter) : side_letter_obligations_path,
+                class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

@@ -141,6 +141,23 @@ class Document < ApplicationRecord
   # Sequence of callbacks is important here
   def after_create_commit_callbacks
     DocumentPostCreateJob.perform_later(id)
+    trigger_side_letter_extraction
+  end
+
+  # SideLetterObligationAgent auto-extraction: when a side letter PDF lands on a
+  # commitment and the agent has auto_extract_on_upload = Yes, enqueue an
+  # extraction run for just that commitment. Guards are ordered cheapest-first —
+  # this fires on every document create, so non-commitment uploads must exit on
+  # the first string compare.
+  def trigger_side_letter_extraction
+    return unless owner_type == "CapitalCommitment" && !template
+
+    agent = SupportAgent.enabled.where(entity_id: entity_id, agent_type: "SideLetterObligationAgent").last
+    return if agent.nil?
+    return unless (agent.json_fields || {})["auto_extract_on_upload"].to_s.casecmp("yes").zero?
+    return unless name == SideLetterObligationAgent.doc_label(agent)
+
+    SupportAgentJob.perform_later(support_agent_id: agent.id, target_type: "CapitalCommitment", target_id: owner_id)
   end
 
   def post_create_actions

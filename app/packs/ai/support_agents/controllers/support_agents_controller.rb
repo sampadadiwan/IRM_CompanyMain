@@ -98,6 +98,7 @@ class SupportAgentsController < ApplicationController
     @presentation_reports = query.presentation_reports
     @deal_reports         = query.deal_reports
     @rta_reports          = query.rta_reports
+    @side_letter_obligations = query.side_letter_obligations
   end
 
   # Initializes a new support agent for creation.

@@ -866,4 +866,48 @@ FactoryBot.define do
     account_entry_names { ["Custom Entry"] }
     period { "all" }
   end
+
+  factory :side_letter do
+    capital_commitment { CapitalCommitment.all.sample }
+    entity { capital_commitment.entity }
+    # The executed side letter PDF must be a document owned by the commitment
+    document do
+      create(:document, entity: capital_commitment.entity, owner: capital_commitment,
+                        name: "Side Letter", folder: capital_commitment.document_folder || Folder.first)
+    end
+    executed_at { Date.today - rand(12).months }
+    extraction_status { "pending" }
+  end
+
+  factory :side_letter_obligation do
+    side_letter
+    entity { side_letter.entity }
+    obligation_type { "reporting" }
+    title { "Quarterly ESG report" }
+    description { Faker::Company.catch_phrase }
+    source_clause { "Section 4.3(b)" }
+    trigger_type { "calendar_event" }
+    frequency_rrule { "FREQ=QUARTERLY;INTERVAL=1" }
+    next_due_date { Date.today + 30 }
+    review_status { "pending_review" }
+    reminder_days_before { 7 }
+    extracted_by { "manual" }
+    owner_team { "ir" }
+  end
+
+  factory :obligation_fulfillment do
+    side_letter_obligation
+    entity { side_letter_obligation.entity }
+    fulfilled_at { Date.today }
+    fulfillment_method { "Report sent via portal and email" }
+    period_covered { "Q3 2026" }
+  end
+
+  factory :obligation_reminder do
+    side_letter_obligation
+    entity { side_letter_obligation.entity }
+    kind { "upcoming" }
+    due_date { Date.today + 7 }
+    sent_at { Time.current }
+  end
 end

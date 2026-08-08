@@ -92,9 +92,14 @@ class Task < ApplicationRecord
   end
 
   def register_owner_interaction
-    return unless completed? && owner.is_a?(DealInvestor)
+    return unless completed?
 
-    owner.register_interaction(completed_on)
+    owner.register_interaction(completed_on) if owner.is_a?(DealInvestor)
+    # Duck-typed completion hook: owners that track their own completion
+    # side-effects (e.g. SideLetterObligation recording an ObligationFulfillment)
+    # implement register_task_completion — keeps core/tasks free of a hard
+    # dependency on funds-pack models.
+    owner.register_task_completion(self) if owner.respond_to?(:register_task_completion)
   end
 
   after_commit :send_notification, unless: :destroyed?

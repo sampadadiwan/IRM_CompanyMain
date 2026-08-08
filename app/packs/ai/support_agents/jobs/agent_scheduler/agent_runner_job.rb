@@ -59,7 +59,12 @@ class AgentRunnerJob
     targets = @support_agent.agent.new.targets(@entity.id)
 
     # Special handling for PortfolioCompanyAgent: process as batch with shared context
-    return execute_portfolio_company_batch(targets) if @support_agent.agent_type == "PortfolioCompanyAgent" && targets.many?
+    return execute_agent_batch(targets) if @support_agent.agent_type == "PortfolioCompanyAgent" && targets.many?
+
+    # SideLetterObligationAgent: a scheduled run IS the enforcement pass (entity-wide
+    # due-date scan inside process_batch) — always dispatch there, regardless of
+    # target count; per-target execution would run extraction instead.
+    return execute_agent_batch(targets) if @support_agent.agent_type == "SideLetterObligationAgent"
 
     # Default: process each target individually
     successes = []
@@ -78,14 +83,14 @@ class AgentRunnerJob
     build_execution_result(successes, errors)
   end
 
-  # Executes PortfolioCompanyAgent as a scheduled batch.
-  # Delegates to PortfolioCompanyAgent.process_batch (same as adhoc path) with
-  # execution_mode: :scheduled so notifications are batched and the chart job
-  # runs silently without per-company chat UI.
+  # Executes an agent with a process_batch entry point as a scheduled batch.
+  # Delegates to <Agent>.process_batch (same as adhoc path) with
+  # execution_mode: :scheduled so notifications are batched (and, for
+  # SideLetterObligationAgent, the run becomes the enforcement pass).
   #
-  # @param targets [Array] portfolio company targets
+  # @param targets [Array] agent targets
   # @return [Hash] execution result
-  def execute_portfolio_company_batch(targets)
+  def execute_agent_batch(targets)
     result = @support_agent.agent.process_batch(
       support_agent_id: @support_agent.id,
       targets: targets,

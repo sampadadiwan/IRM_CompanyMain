@@ -1,0 +1,45 @@
+<%# Side letter card on the commitment show page.
+    Locals: capital_commitment %>
+<% side_letters = SideLetter.where(capital_commitment_id: capital_commitment.id).includes(:document, :side_letter_obligations) %>
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header border-bottom py-3 d-flex justify-content-between align-items-center">
+    <h5 class="mb-0 fw-bold"><i class="ti ti-file-text me-2 text-warning"></i>Side Letters</h5>
+    <% if policy(SideLetter.new(entity_id: capital_commitment.entity_id)).new? %>
+      <%= link_to new_side_letter_path(capital_commitment_id: capital_commitment.id),
+                  class: "btn btn-outline-primary d-inline-flex align-items-center" do %>
+        <i class="ti ti-plus"></i> Add
+      <% end %>
+    <% end %>
+  </div>
+  <div class="card-body">
+    <% if side_letters.none? %>
+      <p class="text-muted mb-0">No side letters recorded for this commitment.</p>
+    <% else %>
+      <table class="table table-borderless align-middle mb-0">
+        <% side_letters.each do |side_letter| %>
+          <% obligation_ids = side_letter.side_letter_obligations.map(&:id) %>
+          <% open_tasks = Task.incomplete.where(owner_type: "SideLetterObligation", owner_id: obligation_ids) %>
+          <% next_due = open_tasks.where.not(due_date: nil).minimum(:due_date) %>
+          <tr>
+            <td><%= link_to side_letter.document.name, side_letter_path(side_letter) %></td>
+            <td><span class="badge bg-light text-dark border"><%= side_letter.extraction_status.humanize %></span></td>
+            <td>
+              <% pending = side_letter.side_letter_obligations.count { |o| o.review_status == "pending_review" } %>
+              <%= side_letter.side_letter_obligations.size %> obligation(s)
+              <% if pending.positive? %>
+                <span class="badge bg-warning text-dark"><%= pending %> pending review</span>
+              <% end %>
+            </td>
+            <td>
+              <%# Covenant tasks live on the obligations, not the commitment — link through %>
+              <%= link_to pluralize(open_tasks.count, "open task"), side_letter_path(side_letter) %>
+              <% if next_due.present? %>
+                <div class="text-muted">next due <%= next_due.strftime("%d %b %Y") %></div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+    <% end %>
+  </div>
+</div>

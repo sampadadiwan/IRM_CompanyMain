@@ -1,0 +1,43 @@
+<%= render FormCard.new(title: "Side Letters") do %>
+  <div class="d-flex justify-content-end mb-2">
+    <%= link_to new_side_letter_path(capital_commitment_id: params[:capital_commitment_id]),
+                class: "btn btn-primary d-inline-flex align-items-center" do %>
+      <i class="ti ti-plus"></i> New Side Letter
+    <% end %>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Investor</th>
+          <th>Fund</th>
+          <th>Document</th>
+          <th>Executed</th>
+          <th>Extraction Status</th>
+          <th>Obligations</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @side_letters.each do |side_letter| %>
+          <tr id="<%= dom_id(side_letter) %>">
+            <td><%= link_to side_letter.investor.investor_name, side_letter_path(side_letter) %></td>
+            <td><%= side_letter.fund.name %></td>
+            <td><%= side_letter.document.name %></td>
+            <td><%= side_letter.executed_at&.strftime("%d %b %Y") || "—" %></td>
+            <td><span class="badge bg-light text-dark border"><%= side_letter.extraction_status.humanize %></span></td>
+            <td><%= side_letter.side_letter_obligations.size %></td>
+            <td class="text-end">
+              <%= link_to side_letter_path(side_letter), class: "btn btn-outline-primary" do %>
+                <i class="ti ti-eye"></i> View
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @side_letters.none? %>
+          <tr><td colspan="7" class="text-center text-muted py-4">No side letters yet.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

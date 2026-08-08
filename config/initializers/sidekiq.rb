@@ -91,6 +91,12 @@ Sidekiq.configure_server do |config|
     # Used to update the tracking currency for all funds
 
     Sidekiq::Cron::Job.create(name: 'WorkflowAutoReminderJob', cron: 'every day at 06:00', class: 'WorkflowAutoReminderJob')
+    # Drives ALL support agent schedules (AgentSchedule → AgentRunnerJob): scans
+    # due schedules and enqueues runs. Was never cron-registered before, so no
+    # scheduled agent (incl. the SideLetterObligationAgent daily enforcement
+    # pass) ever fired outside manual runs. NOTE: on first deploy this activates
+    # any stored enabled schedules whose next_run_at has already passed.
+    Sidekiq::Cron::Job.create(name: 'SchedulerPollingJob', cron: 'every 10 minutes', class: 'SchedulerPollingJob')
     Sidekiq::Cron::Job.create(name: 'RecurringTaskGeneratorJob', cron: 'every day at 01:00', class: 'RecurringTaskGeneratorJob')
     Sidekiq::Cron::Job.create(name: 'MultiSiteUserSyncAllJob', cron: 'every day at 01:00', class: 'MultiSiteUserSyncAllJob')
     Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: 'every day at 01:00', class: 'TrackingCurrencyJob')

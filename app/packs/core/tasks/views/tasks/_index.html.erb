@@ -19,6 +19,10 @@
   embedded_task_context = params[:embedded_task_context].presence
   restricted_embedded_task_context = embedded_task_context.in?(%w[deal_tab deal_investor_tab])
 
+  # Side letter covenant tasks: scopes the Board/Show All/Incomplete links to one
+  # side letter's obligations (multi-owner, so owner_id alone can't express it).
+  side_letter_id = local_assigns[:side_letter_id] || params[:side_letter_id]
+
   investor = local_assigns[:investor]
   task_owner = owner || investor
   task_owner_id = task_owner&.id || params[:owner_id]
@@ -54,11 +58,14 @@
     <% unless search || embedded_task_context %>
       <%# Kanban board view of the same (filtered) tasks — full-page nav is fine,
           surrounding frames target _top anyway %>
+      <%# owner local wins over params so embedded grids (e.g. an obligation's
+          Tasks tab) get a board scoped to that owner, not the global board %>
       <%= link_to tasks_path(board: true,
                              assigned_to_id: params[:assigned_to_id],
-                             owner_id: params[:owner_id],
-                             owner_type: params[:owner_type],
+                             owner_id: owner&.id || params[:owner_id],
+                             owner_type: owner&.class&.name || params[:owner_type],
                              touch_point_id: params[:touch_point_id],
+                             side_letter_id: side_letter_id,
                              q: base_query),
                   class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center",
                   data: { turbo_frame: "_top" } do %>
@@ -81,12 +88,13 @@
     <% unless search %>
       <% show_for = belongs_to_entity_id?(current_user, for_entity&.id) ? nil : for_entity %>
 
-      <% if for_entity || owner %>
+      <% if for_entity || owner || side_letter_id %>
         <%= link_to tasks_path(
                       assigned_to_id: params[:assigned_to_id],
                       owner_id: owner&.id,
                       owner_type: owner&.class&.name,
                       deal_id: params[:deal_id],
+                      side_letter_id: side_letter_id,
                       embedded_task_context: embedded_task_context,
                       completed: :all,
                       q: base_query),
@@ -100,6 +108,7 @@
                       owner_id: owner&.id,
                       owner_type: owner&.class&.name,
                       deal_id: params[:deal_id],
+                      side_letter_id: side_letter_id,
                       embedded_task_context: embedded_task_context,
                       q: base_query),
                     class: "btn btn-sm btn-outline-warning d-inline-flex align-items-center",
@@ -107,7 +116,9 @@
           <i class="ti ti-alert-triangle"></i> Incomplete
         <% end %>
 
-        <% if can_create_task %>
+        <%# New/Import need a concrete owner — a side-letter-scoped grid spans
+            multiple obligation owners, so free-floating creation is suppressed %>
+        <% if can_create_task && (for_entity || owner) %>
           <% if embedded_task_context == "deal_tab" %>
             <%= link_to new_task_path(
                           "task[owner_type]": "DealInvestor",

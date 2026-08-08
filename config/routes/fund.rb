@@ -137,6 +137,19 @@ resources :capital_calls do
   get :show_deleted, on: :collection
 end
 
+# Side letter obligation tracking (LP Obligation Matrix + review gate)
+resources :side_letters
+resources :side_letter_obligations do
+  member do
+    patch :approve
+    patch :reject
+    patch :waive
+    patch :revert
+    post :fire
+    post :fulfill
+  end
+end
+
 resources :capital_commitments do
   patch 'generate_documentation', on: :member
   patch 'generate_soa', on: :member

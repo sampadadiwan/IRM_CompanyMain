@@ -56,6 +56,11 @@
           Reconciliation History
         </a>
       <% end %>
+      <% if @support_agent.agent_type == "SideLetterObligationAgent" %>
+        <a class="nav-link <%= 'active' if active_tab == 'obligations' %>" data-bs-toggle="pill" href="#obligations-tab">
+          Obligation Matrix
+        </a>
+      <% end %>
 
     </nav>
 
@@ -119,6 +124,12 @@
       <% if @support_agent.agent_type == "RtaReconciliationAgent" %>
         <div id="rta-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'rta_reports' %>">
           <%= render 'rta_reconciliation_reports_tab', support_agent: @support_agent, rta_reports: @rta_reports %>
+        </div>
+      <% end %>
+
+      <% if @support_agent.agent_type == "SideLetterObligationAgent" %>
+        <div id="obligations-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'obligations' %>">
+          <%= render 'obligation_matrix_tab', support_agent: @support_agent, obligations: @side_letter_obligations %>
         </div>
       <% end %>
 

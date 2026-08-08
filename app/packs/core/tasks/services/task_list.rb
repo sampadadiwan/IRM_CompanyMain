@@ -23,6 +23,15 @@ class TaskList < BaseList
     # the contact's InvestorAccess id (LP CRM), same as the notes index filter.
     @tasks = filter_params(@tasks, :owner_id, :owner_type, :assigned_to_id, :touch_point_id)
 
+    # Side letter covenant tasks span MULTIPLE SideLetterObligation owners, so a
+    # single owner_id can't express "this side letter" — same cross-owner shape
+    # as the Deal filter below. Used by the side letter show page's tasks tab
+    # (list and board views).
+    if @params[:side_letter_id].present?
+      obligation_ids = SideLetterObligation.where(side_letter_id: @params[:side_letter_id]).select(:id)
+      @tasks = @tasks.where(owner_type: "SideLetterObligation", owner_id: obligation_ids)
+    end
+
     # Special handling for Deal-related tasks to include both the Deal and its Investors
     if @params[:deal_id].present?
       deal = Deal.find_by(id: @params[:deal_id])

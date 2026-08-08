@@ -1,0 +1,59 @@
+<%# The standalone LP Obligation Matrix page: all obligations across LPs for
+    the entity, filterable per spec (type, owner team, due range, review
+    status, MFN relevance, fund). %>
+<%# Breadcrumbs come from the layout card (@bread_crumbs in the controller) %>
+<%= render FormCard.new(title: "LP Obligation Matrix") do %>
+  <%# First-time orientation: this feature has a lifecycle users must understand %>
+  <div class="alert alert-info d-flex align-items-start gap-2 mb-3">
+    <i class="ti ti-info-circle fs-5 mt-1"></i>
+    <div>
+      Every obligation your side letters create, across all LPs, in one place.
+      Extracted (or manually added) obligations wait as <strong>Pending review</strong> until counsel
+      approves them — only then do tasks and due-date alerts go live. <strong>Armed</strong> items are
+      event-driven and have no deadline until you <strong>Fire</strong> them.
+      <%= link_to "Read the guide", user_guide_path("agents/side_letter_obligation_agent_user_guide"), target: "_blank", rel: "noopener" %>.
+    </div>
+  </div>
+  <%= search_form_for @q, url: side_letter_obligations_path, method: :get,
+                      html: { class: "row g-2 align-items-end mb-3" } do |f| %>
+    <div class="col-md-2">
+      <%= label_tag :fund_id, "Fund", class: "form-label" %>
+      <%= select_tag :fund_id, options_from_collection_for_select(@funds, :id, :name, params[:fund_id]),
+                     include_blank: "All funds", class: "form-select" %>
+    </div>
+    <div class="col-md-2">
+      <%= f.label :obligation_type_eq, "Type", class: "form-label" %>
+      <%= f.select :obligation_type_eq, obligation_type_options, { include_blank: "All types" }, class: "form-select" %>
+    </div>
+    <div class="col-md-2">
+      <%= f.label :owner_team_eq, "Owner team", class: "form-label" %>
+      <%= f.select :owner_team_eq, owner_team_options, { include_blank: "All teams" }, class: "form-select" %>
+    </div>
+    <div class="col-md-2">
+      <%= f.label :review_status_eq, "Review status", class: "form-label" %>
+      <%= f.select :review_status_eq, SideLetterObligation.review_statuses.keys.map { |k| [k.humanize, k] },
+                   { include_blank: "All" }, class: "form-select" %>
+    </div>
+    <div class="col-md-2">
+      <%= f.label :next_due_date_gteq, "Due from", class: "form-label" %>
+      <%= f.date_field :next_due_date_gteq, class: "form-control" %>
+    </div>
+    <div class="col-md-2">
+      <%= f.label :next_due_date_lteq, "Due until", class: "form-label" %>
+      <%= f.date_field :next_due_date_lteq, class: "form-control" %>
+    </div>
+    <div class="col-md-2 form-check ms-2">
+      <%= f.check_box :mfn_relevant_eq, { class: "form-check-input" }, "true", "" %>
+      <%= f.label :mfn_relevant_eq, "MFN relevant only", class: "form-check-label" %>
+    </div>
+    <div class="col-md-2">
+      <%= f.submit "Filter", class: "btn btn-primary" %>
+      <%= link_to "Clear", side_letter_obligations_path, class: "btn btn-outline-secondary" %>
+    </div>
+  <% end %>
+
+  <%= render "side_letter_obligations/matrix", obligations: @side_letter_obligations %>
+<% end %>
+
+<%# Outside the FormCard — see _action_modals for why %>
+<%= render "side_letter_obligations/action_modals", obligations: @side_letter_obligations %>
