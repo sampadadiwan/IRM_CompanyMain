@@ -165,3 +165,16 @@ Scenario Outline: Investor Access form blocks a user who holds the Investor Advi
   	|entity              |investor                         |msg	|
   	|entity_type=Company |investor_name=Accelo4;primary_email=a@b4.c   |Stakeholder was successfully created|
 
+
+Scenario: Edit from the show page returns to the show page
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  Given there is an existing investor ""
+  And there is a contact "edit.flow@lp.com" named "Edith Flow" for the investor
+  When I visit the contact page for "edit.flow@lp.com"
+  And I click on "Edit"
+  Then the standalone edit form should have no "Close" button
+  And I fill the investor access form with "cc=teamcc@lp.com;approved=false"
+  And I click on "Save"
+  Then I should be back on the contact page for "edit.flow@lp.com"
+  And the contact "edit.flow@lp.com" should have cc "teamcc@lp.com"

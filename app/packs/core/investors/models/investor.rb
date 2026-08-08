@@ -43,6 +43,15 @@ class Investor < ApplicationRecord
   # The users linked to the InvestorAccess
   has_many :users, through: :investor_accesses
   has_many :approved_users, through: :approved_investor_accesses, source: :user
+
+  # LP CRM MVP: options for the "Touch Point" dropdown on note/task forms —
+  # every person recorded under this LP, approved (portal users) and unapproved
+  # (CRM-only contacts) alike, as [display name, investor_access_id] pairs.
+  # Notes/tasks link touch points via the InvestorAccess record so each
+  # contact's history stays scoped to this stakeholder (see Note#touch_point).
+  def touch_point_options
+    investor_accesses.order(:first_name).map { |ia| ["#{ia.full_name} (#{ia.email})", ia.id] }
+  end
   has_many :rm_mappings, dependent: :destroy
   has_many :rm_mappings_as_rm, class_name: "RmMapping", foreign_key: :rm_id, dependent: :destroy
   has_many :mapped_investors_as_rm, through: :rm_mappings_as_rm, source: :investor

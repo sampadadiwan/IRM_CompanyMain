@@ -1,5 +1,10 @@
 class ImportInvestorAccess < ImportUtil
-  step nil, delete: :create_custom_fields
+  # LP CRM: InvestorAccess supports custom fields (designation, POC role, intro, ...),
+  # so this import keeps the base create_custom_fields step — any non-standard column
+  # in the sheet becomes/updates a FormCustomField on the entity's "InvestorAccess"
+  # form type, same as every other custom-field-aware import. (The step used to be
+  # deleted here with `step nil, delete: :create_custom_fields` before InvestorAccess
+  # had custom-field support.)
 
   STANDARD_HEADERS = ["Stakeholder", "First Name", "Last Name", "Email", "Email Enabled", "Cc", "Country Code", "Phone", "WhatsApp Enabled", "Approved"].freeze
 
@@ -7,12 +12,21 @@ class ImportInvestorAccess < ImportUtil
     STANDARD_HEADERS
   end
 
+  # Incoming sheet headers are titleized by ImportUtil#get_headers, which turns
+  # "WhatsApp Enabled" into "Whatsapp Enabled" — no longer matching the standard
+  # header above, so it would be mistaken for a custom-field column and create a
+  # spurious whatsapp_enabled FormCustomField. save_row already reads the
+  # titleized key ("Whatsapp Enabled"), so the value itself is unaffected.
+  def ignore_headers
+    ["Whatsapp Enabled"]
+  end
+
   def initialize(**)
     super
     @investor_accesses = []
   end
 
-  def save_row(user_data, import_upload, _custom_field_headers, _ctx)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     if user_data['Stakeholder'].present?
       investor = import_upload.entity.investors.find_by(investor_name: user_data['Stakeholder'])
       raise "Stakeholder not found" unless investor
@@ -32,6 +46,11 @@ class ImportInvestorAccess < ImportUtil
                             approved:, whatsapp_enabled:, cc: user_data["Cc"],
                             entity_id: import_upload.entity_id, investor_id: investor.id,
                             granted_by: import_upload.user_id, import_upload_id: import_upload.id)
+
+    # LP CRM: map non-standard columns (Designation, POC Role, Intro, ...) into
+    # json_fields — ImportUtil#setup_custom_fields resolves each header to its
+    # custom-field key with the same normalizer the seed task uses.
+    setup_custom_fields(user_data, ia, custom_field_headers)
 
     Rails.logger.debug { "Saving InvestorAccess with email '#{ia.email}'" }
     ia.save!

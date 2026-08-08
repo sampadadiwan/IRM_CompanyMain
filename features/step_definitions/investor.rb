@@ -1079,10 +1079,13 @@ Then('the docusign esign completed document is present') do
   allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
   click_on("Get eSignatures' updates")
   # Turbo submits the form asynchronously so click_on returns before the server
-  # finishes the request.  The ActionCable "eSign status updated" alert is only
-  # broadcast after EsignUpdateJob commits the "signed" statuses, so waiting for
-  # it guarantees the DB is ready before we reload the page below.
-  expect(page).to have_content("eSign status updated", wait: 20)
+  # finishes the request.  DocumentEsignUpdateJob runs inline inside that request
+  # (and EsignUpdateJob via the :inline adapter), so the "signed" statuses are
+  # committed before the redirect response is sent.  Waiting for the redirect's
+  # flash notice therefore guarantees the DB is ready before we reload below.
+  # (The ActionCable "eSign status updated" toast is broadcast to the pre-redirect
+  # page and is wiped by the navigation, so it is not a reliable wait target.)
+  expect(page).to have_content("Fetching Updates for eSignatures", wait: 20)
   visit(document_path(@doc))
   click_on("Signatures")
   expected_status = "Signed"

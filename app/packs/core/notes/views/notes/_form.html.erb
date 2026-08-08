@@ -127,6 +127,23 @@
     </div>
   </div>
 
+  <%# LP CRM: which person at the LP this note was with. Options come from the
+      investor's recorded contacts (InvestorAccess rows, approved or not) —
+      see Investor#touch_point_options and Note#touch_point.
+      Rendered only when the owner is already a known Investor (the flow from the
+      stakeholder page passes owner_id); on the generic /notes/new page the owner
+      is picked client-side and we keep the MVP free of extra JS. %>
+  <% if effective_owner_type == "Investor" && note.owner.is_a?(Investor) %>
+    <% touch_point_options = note.owner.touch_point_options %>
+    <% if touch_point_options.present? %>
+      <div class="form-group">
+        <%= form.label :touch_point_id, "Touch Point" %>
+        <%= form.select :touch_point_id, touch_point_options, { selected: note.touch_point_id, include_blank: true }, class: "form-control" %>
+        <small class="text-muted">Who at the stakeholder this note was with.</small>
+      </div>
+    <% end %>
+  <% end %>
+
   <div class="form-group">
     <%= form.label :on %>
     <%= form.date_field :on, class: "form-control"  %>

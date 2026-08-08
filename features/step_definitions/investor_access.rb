@@ -173,3 +173,24 @@ Given('investor access {string} in the portfolio company') do |arg|
     end
   end
 end
+# The standalone edit (opened from the show page) must redirect back to show —
+# the turbo-stream response, meant for the inline list flow, would otherwise
+# leave the browser stuck on /edit with the save applied but invisible.
+Then('I should be back on the contact page for {string}') do |email|
+  ia = InvestorAccess.find_by(email: email)
+  expect(ia).to be_present
+  # have_current_path waits for the Turbo redirect to complete
+  expect(page).to have_current_path(investor_access_path(ia), ignore_query: true)
+  expect(page).to have_content(ia.email)
+end
+
+Then('the contact {string} should have cc {string}') do |email, cc|
+  expect(InvestorAccess.find_by(email: email).cc).to include(cc)
+end
+
+# Close only exists in the inline (turbo-frame) flow, where it clears the form
+# frame. On the standalone /edit page it would blank the form with no navigation.
+Then('the standalone edit form should have no {string} button') do |label|
+  expect(page).to have_button('Save') # form is on screen
+  expect(page).not_to have_content(label)
+end

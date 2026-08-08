@@ -22,7 +22,19 @@ class Task < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :owner, polymorphic: true, optional: true
+  # LP CRM MVP: the person at the LP this task involves — the contact's
+  # InvestorAccess record (assigned_to remains the internal GP user doing the
+  # work; touch_point is their counterpart at the LP). See Note#touch_point.
+  belongs_to :touch_point, class_name: "InvestorAccess", optional: true
   belongs_to :task_template, optional: true
+
+  # Same guard as Note#touch_point_belongs_to_owner: params are not to be
+  # trusted, so a touch point must be a contact of the task's owner stakeholder.
+  validate :touch_point_belongs_to_owner, if: -> { touch_point_id.present? }
+
+  def touch_point_belongs_to_owner
+    errors.add(:touch_point_id, "is not a contact of this stakeholder") unless owner.is_a?(Investor) && touch_point&.investor_id == owner_id
+  end
   belongs_to :task_recurrence_rule, optional: true
 
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
@@ -43,6 +55,31 @@ class Task < ApplicationRecord
   scope :for_category, ->(category) { where(category: category) }
 
   # counter_culture :entity, column_name: proc { |t| t.completed ? nil : 'tasks_count' }
+
+  # Kanban board status (string-backed per codebase convention — see Kpi, DealActivity).
+  # Driven only by TasksController#update_status (board drag) and the completed sync
+  # below — deliberately NOT in task_params or ransackable_attributes.
+  enum :status, { todo: "todo", in_progress: "in_progress", done: "done" }
+
+  # Keep status and the legacy completed flag in sync in BOTH directions:
+  # - board drag to/from Done drives completed (checkbox, stats, delayed scope still work)
+  # - the completed checkbox / TasksController#completed drives status (card moves on board)
+  # Pure assignment (no nested save) => no callback loop. Declared BEFORE
+  # stamp_completed_on so the completed_on stamping still sees
+  # will_save_change_to_completed? after the sync writes `completed`.
+  before_save :sync_status_and_completed, if: -> { will_save_change_to_status? || will_save_change_to_completed? }
+
+  def sync_status_and_completed
+    if will_save_change_to_status?
+      # Board path wins when both change in one save (only the board sends status)
+      self.completed = done?
+    elsif completed?
+      self.status = "done"
+    elsif done?
+      # Un-completing a done task sends it back to the To Do column
+      self.status = "todo"
+    end
+  end
 
   # Every completion route — the list-row checkbox, the form's `completed` box, and
   # TasksController#completed — goes through save, so stamping here covers them all
@@ -70,6 +107,21 @@ class Task < ApplicationRecord
     users.uniq.compact.each do |u|
       TaskNotifier.with(record: self, entity_id:).deliver_later(u)
     end
+  end
+
+  # Single source of truth for the "Delayed" badge — instance twin of the
+  # `delayed` scope above; used by both the list row and the board card.
+  def delayed?
+    !completed && due_date.present? && due_date < Time.zone.today
+  end
+
+  # Plain-text details for compact displays (kanban cards etc.). Older rows
+  # predate ActionText and keep their text only in the legacy `details` column,
+  # which has_rich_text hides — self[:details] reads the raw column. That column
+  # holds HTML (with entity-encoded fragments), so run it through ActionText's
+  # plain-text conversion rather than rendering the markup as literal text.
+  def display_details
+    details.to_plain_text.presence || ActionText::Content.new(self[:details].to_s).to_plain_text
   end
 
   def index_record?

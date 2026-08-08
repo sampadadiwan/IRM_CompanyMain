@@ -1,5 +1,5 @@
 class TasksController < ApplicationController
-  before_action :set_task, only: %i[show edit update destroy completed destroy_series]
+  before_action :set_task, only: %i[show edit update destroy completed update_status destroy_series]
   after_action :verify_authorized, except: %i[index search]
   after_action :verify_policy_scoped, only: []
 
@@ -12,8 +12,17 @@ class TasksController < ApplicationController
 
     @for_entity = current_user.entity
     @tasks = with_owner_access(@tasks, raise_error: false)
+    # touch_point_id filtering now lives in TaskList alongside the other filters
 
-    @pagy, @tasks = pagy(@tasks)
+    if params[:board].present?
+      prepare_board_filters
+      # Kanban board renders all three columns at once — pagination would split
+      # columns across pages, so cap defensively instead. The order makes the
+      # capped subset deterministic (soonest due first) rather than DB-arbitrary.
+      @tasks = @tasks.order(:due_date, :id).limit(500)
+    else
+      @pagy, @tasks = pagy(@tasks)
+    end
   end
 
   # Aggregated view for all Deal and DealInvestor tasks.
@@ -215,7 +224,47 @@ class TasksController < ApplicationController
     end
   end
 
+  # PATCH /tasks/1/update_status — kanban board drag & drop. Re-renders the card
+  # via turbo_stream so status-dependent bits (Delayed badge, completed state
+  # after the Task#sync_status_and_completed callback) stay fresh.
+  def update_status
+    authorize @task
+    # Guard before assigning: an unknown enum value raises ArgumentError
+    return head :unprocessable_entity unless Task.statuses.key?(params[:status])
+
+    @task.status = params[:status]
+    @task.send_notification_flag = false # a drag is not an assignment; don't email
+    if @task.save
+      render turbo_stream: turbo_stream.replace(@task, partial: "tasks/board_task", locals: { task: @task })
+    else
+      # Tell the user why the drag was rejected — WithTurboFlash appends this
+      # flash to the turbo_stream response; the JS rolls the card back and
+      # renders the stream. Reload so the card re-renders persisted state.
+      flash.now[:alert] = @task.errors.full_messages.to_sentence
+      @task.reload
+      render turbo_stream: turbo_stream.replace(@task, partial: "tasks/board_task", locals: { task: @task }),
+             status: :unprocessable_entity
+    end
+  end
+
   private
+
+  # Filter dropdown data for the kanban board (tasks/_board.html.erb) — kept out
+  # of the view so the queries live at the controller layer.
+  def prepare_board_filters
+    # Stakeholder filter value: the board's own investor_id param, or an
+    # Investor owner filter carried over from the list view
+    selected_id = params[:investor_id].presence ||
+                  (params[:owner_type] == "Investor" ? params[:owner_id].presence : nil)
+    @board_selected_investor = Investor.find_by(id: selected_id, entity_id: current_user.entity_id) if selected_id
+    @board_assignee_options = current_user.entity.employees.order(:first_name).map { |u| [u.name, u.id] }
+    @board_stakeholder_options = current_user.entity.investors.order(:investor_name).pluck(:investor_name, :id)
+    # tags is a comma-separated string column, so the split/uniq has to happen
+    # in Ruby — acceptable, tasks is a small table
+    @board_tag_options = Task.where(entity_id: current_user.entity_id).where.not(tags: [nil, ""])
+                             .distinct.pluck(:tags)
+                             .flat_map { |t| t.split(",") }.map(&:strip).uniq.sort
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_task
@@ -225,11 +274,12 @@ class TasksController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def task_params
+    # touch_point_id: LP CRM — the contact's User at the LP this task involves (optional)
     params.require(:task).permit(:details, :response, :owner_id, :owner_type,
                                  :due_date, :form_type_id, :completed, :user_id, :tags, :for_support,
-                                 :assigned_to_id, :category, properties: {},
-                                                             reminders_attributes: Reminder::NESTED_ATTRIBUTES,
-                                                             documents_attributes: Document::NESTED_ATTRIBUTES)
+                                 :assigned_to_id, :category, :touch_point_id, properties: {},
+                                                                              reminders_attributes: Reminder::NESTED_ATTRIBUTES,
+                                                                              documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 
   def normalized_task_params

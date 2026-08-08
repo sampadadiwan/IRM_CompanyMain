@@ -80,6 +80,8 @@ resources :tasks do
   get 'search', on: :collection
   get 'deal_tasks', on: :collection
   patch 'completed', on: :member
+  # Kanban board drag & drop target (tasks/_board.html.erb)
+  patch 'update_status', on: :member
   delete 'destroy_series', on: :member
 end
 

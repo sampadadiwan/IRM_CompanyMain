@@ -1,0 +1,53 @@
+// Tasks kanban board (tasks/_board.html.erb).
+// NOTE: not named kanban.scss — that file belongs to the legacy misc/kanbans pack.
+.task-board {
+  .task-board-column {
+    background-color: var(--bs-gray-100, #f8f9fa);
+    border: none;
+
+    > .card-header {
+      background: none;
+      border-bottom: none;
+    }
+  }
+
+  .task-board-column-body {
+    // Empty columns must keep some height to remain valid drop targets
+    min-height: 12rem;
+  }
+
+  .task-board-card {
+    cursor: grab;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    // Column-specific accent stripe — colors set per data-status below
+    border-left: 3px solid var(--bs-secondary, #6c757d);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.15s ease-in-out;
+
+    &:hover {
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    // Keep the title link looking like card text, not a hyperlink
+    a {
+      text-decoration: none;
+    }
+
+    .task-board-card-meta {
+      color: var(--bs-secondary-color, #6c757d);
+    }
+  }
+
+  .task-board-column-body[data-status="in_progress"] .task-board-card {
+    border-left-color: var(--bs-warning, #ffc107);
+  }
+
+  .task-board-column-body[data-status="done"] .task-board-card {
+    border-left-color: var(--bs-success, #198754);
+  }
+}

@@ -19,6 +19,17 @@
         <%= @note.details %>
       </td>
     </tr>
+    <%# LP CRM: the person at the LP this note was with, if recorded %>
+    <% if @note.touch_point %>
+      <tr>
+        <td>
+          With
+        </td>
+        <td>
+          <%= @note.touch_point.full_name %>
+        </td>
+      </tr>
+    <% end %>
     <tr>
       <td>
         On

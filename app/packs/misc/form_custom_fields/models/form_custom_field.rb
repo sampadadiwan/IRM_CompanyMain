@@ -60,7 +60,7 @@ class FormCustomField < ApplicationRecord
 
   has_rich_text :info
 
-  RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select", CheckBox: "/form_custom_fields/display/check_box", NumberField: "/form_custom_fields/display/number" }.freeze
+  RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select", CheckBox: "/form_custom_fields/display/check_box", NumberField: "/form_custom_fields/display/number", TextArea: "/form_custom_fields/display/text_area" }.freeze
 
   # NumberField meta_data holds "precision,separator", e.g. "2,comma" or "0,none".
   # Blank meta_data means no formatting is applied (raw value is displayed).

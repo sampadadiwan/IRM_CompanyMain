@@ -51,10 +51,27 @@
                      onchange: "this.form.requestSubmit();" %>
     <% end %>
 
+    <% unless search || embedded_task_context %>
+      <%# Kanban board view of the same (filtered) tasks — full-page nav is fine,
+          surrounding frames target _top anyway %>
+      <%= link_to tasks_path(board: true,
+                             assigned_to_id: params[:assigned_to_id],
+                             owner_id: params[:owner_id],
+                             owner_type: params[:owner_type],
+                             touch_point_id: params[:touch_point_id],
+                             q: base_query),
+                  class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center",
+                  data: { turbo_frame: "_top" } do %>
+        <i class="ti ti-layout-kanban"></i> Board
+      <% end %>
+    <% end %>
+
     <% investor ||= nil %>
 
     <% if investor && can_create_task %>
-      <%= link_to new_task_path("task[owner_id]": investor.id, "task[owner_type]": "Investor", "task[category]": params.dig(:q, :category_eq), embedded_task_context: embedded_task_context),
+      <%# LP CRM: carry the touch-point filter into the form so the new task is
+          pre-linked to that person (TasksController#new builds from task[...] params) %>
+      <%= link_to new_task_path("task[owner_id]": investor.id, "task[owner_type]": "Investor", "task[touch_point_id]": params[:touch_point_id].presence, "task[category]": params.dig(:q, :category_eq), embedded_task_context: embedded_task_context),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
         <i class="ti ti-plus"></i> New Task
@@ -105,6 +122,7 @@
             <%= link_to new_task_path(
                           "task[owner_id]": owner&.id || params[:owner_id],
                           "task[owner_type]": owner&.class&.name || params[:owner_type],
+                          "task[touch_point_id]": params[:touch_point_id].presence,
                           "task[category]": params.dig(:q, :category_eq),
                           embedded_task_context: embedded_task_context),
                         class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
@@ -145,6 +163,10 @@
                     </th>
                     <th>
                         Assigned to
+                    </th>
+                    <%# LP CRM: the person at the LP the task involves (Task#touch_point) %>
+                    <th>
+                        With
                     </th>
                     <th>
                         Due

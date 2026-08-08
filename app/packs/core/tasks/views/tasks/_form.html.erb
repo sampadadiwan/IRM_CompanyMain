@@ -109,6 +109,20 @@
       </div>
       <% end %>
 
+      <%# LP CRM: the person at the LP this task involves — the external counterpart
+          to assigned_to (the internal GP user). Same rendering rule as the note
+          form: only when the owner is already a known Investor. %>
+      <% if effective_owner_type == "Investor" && task.owner.is_a?(Investor) %>
+        <% touch_point_options = task.owner.touch_point_options %>
+        <% if touch_point_options.present? %>
+          <div class="form-group">
+            <%= form.label :touch_point_id, "Touch Point" %>
+            <%= form.select :touch_point_id, touch_point_options, { selected: task.touch_point_id, include_blank: true }, class: "form-control" %>
+            <small class="text-muted">Who at the stakeholder this task involves.</small>
+          </div>
+        <% end %>
+      <% end %>
+
       <div class="form-group">
         <%= form.label :due_date %>
         <%= form.date_field :due_date, class: "form-control"  %>

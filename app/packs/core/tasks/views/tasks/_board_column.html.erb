@@ -1,0 +1,18 @@
+<%# One kanban column per Task.status. The card body is the drop zone —
+    task_board_controller reads data-status to know what to PATCH. %>
+<div class="col-md-4">
+  <div class="card task-board-column h-100">
+    <div class="card-header fw-semibold">
+      <%= status.titleize %>
+      <span class="badge bg-secondary"><%= tasks.size %></span>
+    </div>
+    <div class="card-body task-board-column-body"
+         data-task-board-target="column"
+         data-status="<%= status %>"
+         data-action="dragover->task-board#dragOver drop->task-board#drop">
+      <% tasks.each do |task| %>
+        <%= render "/tasks/board_task", task: task %>
+      <% end %>
+    </div>
+  </div>
+</div>

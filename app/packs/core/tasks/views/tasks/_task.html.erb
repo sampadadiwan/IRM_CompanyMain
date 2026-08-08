@@ -13,9 +13,14 @@
   <td>
     <%= task.assigned_to&.first_name %>
   </td>
+  <%# LP CRM: touch point — matches the "With" header in _index.html.erb; linked
+      to the tasks list filtered to that person. Blank when not person-specific. %>
+  <td>
+    <%= link_to task.touch_point.full_name, tasks_path(touch_point_id: task.touch_point_id, completed: :all) if task.touch_point %>
+  </td>
   <td>
     <%= l task.due_date if task.due_date %>
-    <% if !task.completed && task.due_date && task.due_date < Time.zone.today %>
+    <% if task.delayed? %>
       <br>
       <span class="badge bg-danger"> Delayed </span>
     <% end %>

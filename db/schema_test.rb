@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_07_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -92,7 +92,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
     t.index ["parent_type", "parent_id", "fund_id", "name", "deleted_at", "cumulative"], name: "idx_ae_parent_fund_name_flags"
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
-    t.index ["temp_sqlite_id", "allocation_run_id", "entry_type"], name: "idx_account_entries_temp_sqlite_id"
   end
 
   create_table "account_entry_report_insights", force: :cascade do |t|
@@ -1609,7 +1608,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
-    t.date "onboarding_deadline"
     t.string "openai_api_key"
     t.string "openrouter_api_key"
     t.boolean "pan_verification"
@@ -2376,11 +2374,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.boolean "email_enabled", default: true
     t.integer "entity_id"
     t.string "first_name"
+    t.bigint "form_type_id"
     t.integer "granted_by"
     t.bigint "import_upload_id"
     t.bigint "investor_entity_id"
     t.integer "investor_id"
     t.boolean "is_investor_advisor", default: false
+    t.json "json_fields"
     t.string "last_name"
     t.string "phone", limit: 15
     t.boolean "send_confirmation", default: false
@@ -2391,6 +2391,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"
+    t.index ["form_type_id"], name: "index_investor_accesses_on_form_type_id"
     t.index ["investor_entity_id"], name: "index_investor_accesses_on_investor_entity_id"
     t.index ["investor_id"], name: "index_investor_accesses_on_investor_id"
     t.index ["user_id"], name: "index_investor_accesses_on_user_id"
@@ -2459,12 +2460,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.string "bank_branch"
     t.string "bank_name", limit: 100
     t.text "bank_verification_response"
-    t.string "bank_verification_state", default: "not_started", null: false
     t.string "bank_verification_status"
     t.boolean "bank_verified", default: false
     t.datetime "birth_date"
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "checks_failed_at"
     t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.text "comments"
     t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -2490,17 +2489,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.bigint "investor_user_id"
     t.datetime "investor_user_updated_at"
     t.json "json_fields"
-    t.bigint "kyc_onboarding_id"
     t.string "kyc_type", limit: 15, default: "Individual"
-    t.datetime "last_onboarding_nudge_at"
     t.datetime "link_sent_at"
     t.text "notification_msg"
-    t.integer "onboarding_nudge_count", default: 0, null: false
-    t.boolean "onboarding_nudges_paused", default: false, null: false
-    t.string "onboarding_state"
     t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
     t.text "pan_verification_response"
-    t.string "pan_verification_state", default: "not_started", null: false
     t.string "pan_verification_status"
     t.boolean "pan_verified", default: false
     t.boolean "reminder_sent", default: false
@@ -2515,7 +2508,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.decimal "uncalled_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false
-    t.datetime "verified_at"
     t.bigint "verified_by_id"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
@@ -2523,8 +2515,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.index ["form_type_id"], name: "index_investor_kycs_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
     t.index ["investor_user_id"], name: "index_investor_kycs_on_investor_user_id"
-    t.index ["kyc_onboarding_id"], name: "index_investor_kycs_on_kyc_onboarding_id"
-    t.index ["onboarding_state"], name: "index_investor_kycs_on_onboarding_state"
     t.index ["slug"], name: "index_investor_kycs_on_slug", unique: true
     t.index ["submission_status"], name: "index_investor_kycs_on_submission_status"
     t.index ["verified_by_id"], name: "index_investor_kycs_on_verified_by_id"
@@ -2869,12 +2859,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.bigint "owner_id"
     t.string "owner_type", default: "Investor"
     t.string "tags", limit: 100
+    t.bigint "touch_point_id"
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.index ["deleted_at"], name: "index_notes_on_deleted_at"
     t.index ["entity_id"], name: "index_notes_on_entity_id"
     t.index ["investor_id"], name: "index_notes_on_investor_id"
     t.index ["owner_type", "owner_id"], name: "index_notes_on_owner"
+    t.index ["touch_point_id"], name: "index_notes_on_touch_point_id"
     t.index ["user_id"], name: "index_notes_on_user_id"
   end
 
@@ -3810,9 +3802,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.bigint "owner_id"
     t.string "owner_type"
     t.text "response"
+    t.string "status", limit: 20, default: "todo", null: false
     t.string "tags", limit: 50
     t.bigint "task_recurrence_rule_id"
     t.bigint "task_template_id"
+    t.bigint "touch_point_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.index ["document_folder_id"], name: "fk_rails_62c414fe83"
@@ -3821,8 +3815,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
     t.index ["import_upload_id"], name: "index_tasks_on_import_upload_id"
     t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
+    t.index ["status"], name: "index_tasks_on_status"
     t.index ["task_recurrence_rule_id"], name: "index_tasks_on_task_recurrence_rule_id"
     t.index ["task_template_id"], name: "index_tasks_on_task_template_id"
+    t.index ["touch_point_id"], name: "index_tasks_on_touch_point_id"
     t.index ["user_id"], name: "index_tasks_on_user_id"
   end
 
@@ -4413,7 +4409,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_140000) do
   add_foreign_key "investor_kycs", "folders", column: "document_folder_id"
   add_foreign_key "investor_kycs", "form_types"
   add_foreign_key "investor_kycs", "investors"
-  add_foreign_key "investor_kycs", "kyc_onboardings"
   add_foreign_key "investor_kycs", "users", column: "investor_user_id"
   add_foreign_key "investor_kycs", "users", column: "verified_by_id"
   add_foreign_key "investor_notice_entries", "entities"

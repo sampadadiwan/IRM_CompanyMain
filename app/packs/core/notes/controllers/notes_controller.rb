@@ -34,8 +34,12 @@ class NotesController < ApplicationController
       end
     end
     @notes = @notes.where(user_id: params[:user_id]) if params[:user_id]
+    # LP CRM: "everything with this person" — filter by touch point (the
+    # contact's InvestorAccess id), used by the contact show page tabs.
+    @notes = @notes.where(touch_point_id: params[:touch_point_id]) if params[:touch_point_id].present?
     @notes = NoteSearch.perform(@notes, current_user, params)
-    @pagy, @notes = pagy(@notes.with_all_rich_text.includes(:user, :owner))
+    # :touch_point preloaded for the "With" column added to the notes list
+    @pagy, @notes = pagy(@notes.with_all_rich_text.includes(:user, :owner, :touch_point))
   end
 
   def search
@@ -178,7 +182,8 @@ class NotesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def note_params
-    params.require(:note).permit(:tags, :details, :entity_id, :user_id, :owner_id, :owner_type, :on, reminder_attributes: %i[due_date email])
+    # touch_point_id: LP CRM — the contact's User this note was with (optional)
+    params.require(:note).permit(:tags, :details, :entity_id, :user_id, :owner_id, :owner_type, :on, :touch_point_id, reminder_attributes: %i[due_date email])
   end
 
   def normalized_note_params

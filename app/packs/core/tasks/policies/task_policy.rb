@@ -58,6 +58,11 @@ class TaskPolicy < ApplicationPolicy
     update?
   end
 
+  # Kanban board drag & drop — same rights as completing/editing a task
+  def update_status?
+    update?
+  end
+
   def edit?
     update?
   end

@@ -1,0 +1,45 @@
+<%# Kanban card. id must be dom_id(task) — TasksController#update_status replaces
+    it via turbo_stream after a drag so badges/completed state stay fresh. %>
+<div id="<%= dom_id(task) %>"
+     class="card mb-2 task-board-card"
+     draggable="true"
+     data-task-board-target="card"
+     data-update-url="<%= update_status_task_path(task) %>"
+     data-action="dragstart->task-board#dragStart dragend->task-board#dragEnd">
+  <div class="card-body p-3">
+    <div class="fw-semibold mb-2">
+      <%# display_details falls back to the legacy details column for pre-ActionText rows %>
+      <%= link_to task.display_details.truncate(90), task, class: "text-reset", data: { turbo_frame: "_top" } %>
+    </div>
+    <% if task.owner %>
+      <div class="task-board-card-meta mb-1"><i class="ti ti-building"></i> <%= task.owner.to_s %></div>
+    <% end %>
+    <div class="d-flex justify-content-between align-items-center task-board-card-meta">
+      <span>
+        <% if task.assigned_to %>
+          <i class="ti ti-user"></i> <%= task.assigned_to.name %>
+        <% end %>
+      </span>
+      <span>
+        <% if task.due_date %>
+          <i class="ti ti-calendar"></i> <%= l(task.due_date) %>
+        <% end %>
+      </span>
+    </div>
+    <div class="mt-3 d-flex flex-wrap gap-1">
+      <% if task.delayed? %>
+        <span class="badge bg-danger">Delayed</span>
+      <% end %>
+      <% if task.category.present? %>
+        <span class="badge bg-secondary"><%= task.category %></span>
+      <% end %>
+      <% if task.touch_point %>
+        <%# LP CRM: the person at the LP this task involves %>
+        <span class="badge bg-info"><%= task.touch_point.full_name %></span>
+      <% end %>
+      <% task.tags&.split(",")&.each do |tag| %>
+        <span class="badge bg-light text-dark border"><%= tag.strip %></span>
+      <% end %>
+    </div>
+  </div>
+</div>

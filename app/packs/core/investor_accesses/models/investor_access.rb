@@ -1,5 +1,11 @@
 class InvestorAccess < ApplicationRecord
   include Trackable.new
+  # LP CRM MVP: an InvestorAccess with approved=false doubles as a CRM contact
+  # ("touch point") for a prospective LP — no portal access, no email sent.
+  # Contact details beyond name/email/phone (designation, POC role, intro, primary
+  # flag, ...) are tenant-configured custom fields stored in json_fields, so we
+  # reuse the standard WithCustomField machinery instead of adding columns.
+  include WithCustomField
 
   attr_accessor :call_code
 
