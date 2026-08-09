@@ -1,0 +1,277 @@
+---
+title: Note Summarizer Agent — AI Agents | CapHive
+description: How CapHive's Note Summarizer Agent writes an AI summary of an investor's
+  notes for the last full month or quarter, auto-tags untagged notes, and saves the
+  summary back onto the investor record.
+og_title: Note Summarizer Agent | CapHive
+og_description: AI summaries of investor notes for the last completed month or quarter.
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Note Summarizer Agent
+      </nav>
+      <span class="chip-label">Data &middot; Agent</span>
+      <h1 style="margin-top:22px">Investor notes, summarised <em>period by period.</em></h1>
+      <p class="lede">The Note Summarizer Agent generates an AI-written summary of an investor's notes over the past month or quarter. It runs across every investor in your entity, can auto-tag untagged notes first, and writes the summary back as a regular note on the investor record so it sits alongside everything else in that investor's notes feed.</p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>Every investor in the entity, or one investor on demand</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>Yes — for auto-tagging and for the summary itself</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A summary note on the investor record, plus a report per investor</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>For each investor, the agent works through five steps:</p>
+          <ol>
+            <li><strong>Auto-tag untagged notes.</strong> It finds any notes in the lookback period with no tags at all, sends them to the AI in one batch, and tags each one accordingly. If you have configured a list of allowed tags, the AI sticks to that list; otherwise it uses its own judgment. The step is skipped rather than failed if auto-tagging is off, or if there are no untagged notes in the period. Failures here are treated gently: they appear as an informational note and never block the rest of the run.</li>
+            <li><strong>Collect the notes to summarise.</strong> The agent gathers all notes for the investor within the period, leaving out anything already tagged as a previous summary so it never summarises its own output, and applying your tag filter if you have set one.</li>
+            <li><strong>Generate the summary.</strong> The collected notes go to the AI in one request, asking for three sections: Key Themes, Action Items — or "None identified" if there are none — and Relationship Status, given as Active, In Discussion or Dormant with a one-sentence explanation. The step is skipped, with no AI call at all, if there are no notes to summarise.</li>
+            <li><strong>Save the summary as a note.</strong> The summary is written back as a regular note on the investor, tagged to show it is a summary for that month or quarter, and dated to the last day of the period. Running the agent again for the same period overwrites that same note rather than creating a duplicate.</li>
+            <li><strong>Save the report.</strong> A report is saved with the summary text, the note count and the exact period covered. That is what appears on the Note Summaries tab.</li>
+          </ol>
+          <p>
+            Investors with no qualifying notes in the period still get a report, with nothing flagged as
+            blocking, but the AI is never called for them — so there is no cost for an investor with
+            nothing to summarise.
+          </p>
+
+          <div class="callout">
+            <p>
+              <strong>The agent always summarises the most recently completed period, never the one
+              still in progress.</strong> For Month that is the whole previous calendar month; for
+              Quarter, the whole previous calendar quarter. Running it partway through the current
+              period will not pick up notes from the period that is still happening. This is
+              deliberate, but it can look as though the agent missed recent notes.
+            </p>
+          </div>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Default</th><th>What it controls</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Summary period</td><td>Quarter</td><td>Month summarises the previous full calendar month; Quarter summarises the previous full calendar quarter. Either way the agent looks at the most recently completed period relative to when it runs.</td></tr>
+              <tr><td>Tag filter</td><td>blank</td><td>A comma-separated list of tags limiting which notes are included. A note is included if it has at least one of the listed tags. Blank includes every note in the period except previous summaries.</td></tr>
+              <tr><td>Auto-tag untagged notes</td><td>Yes</td><td>Sends untagged notes in the period to the AI for tagging before the summary step runs. These tags are saved permanently onto the notes themselves, so this affects your data beyond the agent's own run.</td></tr>
+              <tr><td>Available tags</td><td>call, meeting, kpi, board-meeting, fundraising, risk, hiring, operations</td><td>The list the AI must choose from when auto-tagging. Blank lets the AI pick any concise, lowercase tag it thinks fits.</td></tr>
+            </tbody>
+          </table>
+          <p>
+            Beyond configuration, the agent reads the investor's notes within your entity, filtered to
+            those dated inside the computed period, including the full text of each note.
+          </p>
+
+          <h3>Setup checklist</h3>
+          <p>The agent's General tab shows a yellow warning banner for two setup traps:</p>
+          <ul>
+            <li><strong>Auto-tagging never set.</strong> An unset toggle counts as off rather than Yes, so untagged notes are quietly left untagged. Set it explicitly to Yes or No.</li>
+            <li><strong>A tag filter set while auto-tagging is off.</strong> Untagged notes never gain a tag, so they can never match your filter, and depending on how your team tags notes the summaries may quietly cover nothing at all. Either turn auto-tagging on or clear the filter.</li>
+          </ul>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <p>
+            A Company Admin turns this agent on in the Support Agents section of the entity's admin
+            settings. While it is off, both the Run Now button and the Summarize Notes trigger on an
+            investor's page are disabled.
+          </p>
+          <p>
+            The agent requires an AI provider key, configured under the LLM Keys area of Support
+            Agents: both the auto-tagging step and the summary step call the AI, unless they are skipped
+            because there are no qualifying notes.
+          </p>
+          <p>
+            Only Company Admin users can run Setup All Agents and edit this agent's configuration
+            fields. The Summarize Notes trigger on an investor's page follows that record's normal edit
+            permissions.
+          </p>
+
+          <h2 id="running-it">Running it</h2>
+          <p>
+            <strong>From the agent's own page.</strong> Run Now on the Note Summarizer card processes
+            every investor in your entity, one after another, with no per-investor progress view. You
+            get a single summary notification once it is done.
+          </p>
+          <p>
+            <strong>From an investor's page.</strong> The Summarize Notes action under Misc runs the
+            agent for that investor alone, with a live progress panel showing each step: auto-tag
+            notes, collect notes, generate summary, save note, save report.
+          </p>
+          <p>
+            <strong>As a batch.</strong> Selecting several investors and running the agent on that
+            selection queues one job covering all of them, with a single summary notification and no
+            per-investor progress view. If one investor's run hits a problem, it is recorded in the
+            batch's error list without stopping the rest.
+          </p>
+          <p>
+            Unlike the agents that deal only with portfolio companies, this one runs against every
+            investor type in your entity — LPs, portfolio companies, prospects, everything.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            This is the one agent that comes with a default schedule already turned on from Setup All
+            Agents: monthly, on the 1st, at 06:00 Asia/Kolkata, with notifications on for failures and
+            partial successes but not for full successes. The frequency, time, time zone and
+            notification preferences can all be changed on the agent's Schedule tab.
+          </p>
+          <p>
+            Scheduled runs process every investor in your entity in one pass and skip the usual summary
+            notification, since nobody is actively waiting on the result. Instead, whatever failure or
+            partial-success notifications you have configured on the schedule are sent.
+          </p>
+
+          <h2 id="where-the-output-goes">Where the output goes</h2>
+          <ul>
+            <li><strong>Note Summaries tab</strong>, on this agent's own page — every summary report across all investors, showing investor name, period, note count, status and run date. Expand a row to read the full summary inline.</li>
+            <li><strong>Execution History tab</strong> — every run, with status and how long it took.</li>
+            <li><strong>The investor's own notes feed</strong> — the summary is also written as a regular note, so it sits alongside every other note on that investor's record rather than only inside the agent's reporting screens.</li>
+            <li>Each report is tied to the investor it covers.</li>
+          </ul>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <p>A report includes:</p>
+          <ul>
+            <li><strong>Summary text</strong> — the full AI-written summary under Key Themes, Action Items and Relationship Status, shown formatted both on the Note Summaries tab and in the saved note.</li>
+            <li><strong>Note count</strong> — how many notes were collected for the period.</li>
+            <li><strong>Period label and boundaries</strong> — the exact lookback window that was used.</li>
+            <li><strong>Status notes</strong> — for this agent these are almost always informational rather than concerning, since most nothing-happened situations, such as no notes found, auto-tagging turned off, or an unreadable AI tagging response, are treated as normal outcomes. The one case treated as blocking is an AI error during the summary-generation step itself.</li>
+          </ul>
+          <p>
+            The report's overall status is "ready" unless summary generation itself failed, in which
+            case it is "blocked". A report with no summary text and an informational "No notes found in
+            period" note is the expected, zero-cost outcome for an investor with nothing to summarise —
+            it simply means no note is written for that investor that period.
+          </p>
+          <p>
+            Summaries can be edited in place: double-click the summary text in the detail view to
+            overwrite it. Edited summaries carry a small "Edited" badge.
+          </p>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <div class="pull">
+            <p>Most failure paths here are designed to look like success.</p>
+          </div>
+          <ul>
+            <li><strong>Only summary generation produces a blocking issue.</strong> Both auto-tagging and saving the summary note are built to fail softly, logging an informational note rather than a blocking one. If a summary note silently failed to save, you would notice only by reading the report's notes carefully — the overall status would not tell you.</li>
+            <li><strong>Auto-tagging processes every untagged note in the period in one AI request.</strong> If the response cannot be read properly, or it tries to tag a note that was not part of the batch sent to it, those specific tag assignments are dropped silently. The step still reports as successful, just with fewer notes tagged than expected.</li>
+            <li><strong>Notes tagged as a previous summary are always excluded.</strong> This stops the agent re-summarising its own output, but it also means a note you create and tag manually with that same tag is silently excluded from all future summarisation too.</li>
+            <li><strong>The tag filter matches any note containing a listed tag as a substring, not as an exact tag.</strong> Filtering on <strong>kpi</strong> also matches a note tagged <strong>kpi-review</strong>. Use precise tag names to avoid pulling in notes you did not mean to include.</li>
+            <li><strong>The duplicate-note check is based purely on the period's end date, not on run history.</strong> If you manually create a note tagged as a summary and dated exactly on that period's last day, the agent's next run for the period will find your note and overwrite it rather than creating a separate one.</li>
+            <li><strong>Very large volumes of notes are cut off, not split into batches.</strong> The text sent to the AI is capped at 50,000 characters; anything past that is invisible to the AI, with no visible warning in the report and only a technical log entry recording it.</li>
+            <li><strong>The first user created in your entity is recorded as the author of new summary notes.</strong> If that person later leaves or is deactivated, the listed author on older summary notes can look inconsistent, though it does not stop future runs working.</li>
+          </ul>
+
+          <h2 id="faq">Questions we are asked</h2>
+          <div class="faq">
+            <details>
+              <summary>I ran the agent today but it did not summarise this period's notes.</summary>
+              <div>
+                <p>The agent always summarises the most recently completed period, never the one currently in progress.</p>
+                <p>Wait until the period ends, or check the report's period start and end dates to confirm exactly which window was used.</p>
+              </div>
+            </details>
+            <details>
+              <summary>An investor shows "skipped" with no summary. Is that an error?</summary>
+              <div>
+                <p>No — that is the expected, zero-cost outcome when an investor has no qualifying notes in the period. No AI call is made, and no note is written for that period.</p>
+              </div>
+            </details>
+            <details>
+              <summary>I tagged a note manually as a summary and now it is missing from collection.</summary>
+              <div>
+                <p>Any note tagged as a summary is automatically excluded from collection. That exists to stop the agent re-summarising its own prior output, but it also catches manually tagged notes that happen to use the same tag.</p>
+              </div>
+            </details>
+            <details>
+              <summary>An auto-tagged note has the wrong tag, or was not tagged at all.</summary>
+              <div>
+                <p>Auto-tagging is a single best-effort AI pass across all untagged notes in the period. If the response cannot be parsed, or it references a note that was not in that batch, that particular tag assignment is dropped silently rather than retried.</p>
+                <p>The rest of the period's notes are still tagged normally.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Does editing the summary re-run the agent?</summary>
+              <div>
+                <p>No. Double-clicking the summary text lets you overwrite the saved text directly on the report, and flags it as manually edited. It does not call the AI again or regenerate anything.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Why does the default schedule run at 06:00 Asia/Kolkata?</summary>
+              <div>
+                <p>That is simply the default that comes pre-configured from Setup All Agents. Frequency, time and time zone are all editable on the agent's Schedule tab if you need a different cadence.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>set.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-deal-management.html">
+        <div>
+          <span class="kick">Deals</span>
+          <h3>Deal Management Agent</h3>
+          <p>Health checks on one open deal — stagnation, document gaps, terms and investor scores.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-portfolio-company.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Portfolio Company Agent</h3>
+          <p>Data health for every portfolio company — KPI reports, documents and valuations.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-data-quality.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Data Quality Agent</h3>
+          <p>Nightly integrity checks across every fund's commitments, valuations and FX rates.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

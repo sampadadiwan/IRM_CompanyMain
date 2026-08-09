@@ -1,0 +1,283 @@
+---
+title: Data Quality Agent — AI Agents | CapHive
+description: How CapHive's Data Quality Agent runs nightly integrity checks across
+  every fund — commitment overflows, stale portfolio valuations and stale FX rates
+  — then emails a health score and a fix-it list per fund.
+og_title: Data Quality Agent | CapHive
+og_description: Nightly integrity checks across every fund, with a health score and
+  fix-it list per fund.
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Data Quality Agent
+      </nav>
+      <span class="chip-label">Data &middot; Agent</span>
+      <h1 style="margin-top:22px">Nightly integrity checks on <em>every fund's data.</em></h1>
+      <p class="lede">The Data Quality Agent runs nightly integrity checks across every fund's financial data — commitments that have collected more than was committed, valuations that have gone stale, and FX rates that have not been refreshed. It then emails a health score and a fix-it list to the people you have configured to receive it.</p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>Every fund in the entity, once a day</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>No</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A health score and fix-it list per fund, by email and in the app</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>
+            The agent always checks every fund belonging to your entity. You run it at entity level —
+            there is no per-fund trigger — and it expands that into a check across all of your funds in
+            a single pass. The results are still broken out per fund, so each fund gets its own email
+            and its own score.
+          </p>
+          <ol>
+            <li><strong>Gets started</strong> — sets up trackers to collect both the overall results and each fund's individual results.</li>
+            <li><strong>Checks for commitment overflows</strong> — for each fund, looks for any LP that has been called for more money than they actually committed.</li>
+            <li><strong>Checks for stale valuations</strong> — for each fund, looks at every portfolio company and flags any that does not have a valuation dated within your configured freshness window.</li>
+            <li><strong>Checks for stale FX rates</strong> — looks at the entity's exchange rates, which are shared across all funds rather than held per fund, and flags any that have not been refreshed within your configured window. Because the rates are not fund-specific, the same result appears on every fund's report.</li>
+            <li><strong>Calculates a health score</strong> — this always runs, with no on/off switch. It is a simple calculation over the results of the checks above.</li>
+            <li><strong>Sends the report</strong> — if that option is on, one quality report email per fund.</li>
+            <li><strong>Saves the report</strong> — stores the results of the run. This agent always finishes in a "ready" state.</li>
+          </ol>
+          <p>
+            <strong>No AI setup is needed.</strong> Every check here is a direct comparison against your
+            own data, and nothing requires an AI model to run.
+          </p>
+
+          <div class="callout">
+            <p>
+              <strong>A 100% health score with every check switched off means nothing was checked.</strong>
+              The score is the percentage of your active checks that came back clean, so an entity with
+              all three checks set to No reports a perfect score having verified nothing at all. Do not
+              read 100% as all-clear unless you can confirm at least one check is switched on.
+            </p>
+          </div>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Default</th><th>What it controls</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Check commitment overflows</td><td>Yes</td><td>Checks for LPs called beyond their committed amount. Set to No, the check is skipped and left out of the health score entirely.</td></tr>
+              <tr><td>Check missing/stale valuations</td><td>Yes</td><td>Checks portfolio company valuations against your freshness window. Set to No, the check is skipped and left out of the health score.</td></tr>
+              <tr><td>Check stale FX rates</td><td>Yes</td><td>Checks exchange rates against your freshness window. Set to No, the check is skipped and left out of the health score.</td></tr>
+              <tr><td>Email quality report after each run</td><td>Yes</td><td>Sends one email per fund with that fund's results. Set to No, no email goes out but the report is still saved and viewable in the app.</td></tr>
+              <tr><td>Stale valuation threshold (days)</td><td>90</td><td>Portfolio companies are flagged if their most recent valuation is older than this many days.</td></tr>
+              <tr><td>Stale FX rate threshold (days)</td><td>30</td><td>Exchange rates are flagged if they have not been updated within this many days.</td></tr>
+              <tr><td>Report recipient email(s)</td><td>blank</td><td>Who receives the email report. Left blank, the report goes to every active employee in your entity instead.</td></tr>
+            </tbody>
+          </table>
+
+          <h3>What else it reads</h3>
+          <ul>
+            <li><strong>Which funds get checked</strong> — every fund belonging to the entity. There is currently no way to exclude a specific fund from these checks.</li>
+            <li><strong>Commitments</strong> — each fund's full list of capital commitments, checked for overflows.</li>
+            <li><strong>Portfolio companies</strong> — identified through each fund's portfolio investments, then checked against their recorded valuations.</li>
+            <li><strong>FX rates</strong> — the entity's shared exchange rate records, which apply identically across all funds.</li>
+          </ul>
+
+          <h3>Setup checklist</h3>
+          <p>
+            An unset Yes/No toggle counts as off, not on. A toggle that was never given a value — common
+            on agents set up before an option existed — means that check is silently skipped. The
+            agent's General tab shows a yellow warning banner when setup needs attention, and for this
+            agent it flags:
+          </p>
+          <ul>
+            <li><strong>Any of the four toggles that has never been set.</strong> Set each one explicitly to Yes or No; an explicit No is respected and not flagged.</li>
+            <li><strong>All three data checks turned off.</strong> The agent would report a perfect 100% health score having checked nothing at all.</li>
+            <li><strong>A threshold field that is present but blank.</strong> A blank value is treated as zero days, so every valuation or FX rate would be flagged stale. Enter a number of days or remove the value.</li>
+          </ul>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <ul>
+            <li><strong>Where it is switched on</strong> — the Support Agents section of the entity's admin settings. A Company Admin ticks the Data Quality box and saves.</li>
+            <li><strong>AI key needed</strong> — no.</li>
+            <li><strong>Who can manage it</strong> — only Company Admin users can set up, configure or run this agent.</li>
+          </ul>
+          <p>
+            If the agent is not enabled for your entity, the Run Now button on its page is disabled,
+            with a tooltip pointing you to your administrator.
+          </p>
+
+          <h2 id="running-it">Running it</h2>
+          <ol>
+            <li>Go to the Support Agents area.</li>
+            <li>Run Setup All Agents once if this is the first time agents have been provisioned for your entity — that creates the agent's default settings and its daily schedule.</li>
+            <li>Open the Data Quality card.</li>
+            <li>On the General tab, click Run Now.</li>
+          </ol>
+          <p>
+            There is no per-fund trigger button. You always run this against the entity as a whole and
+            it fans out to every fund. The check runs in the background, with no live step-by-step
+            progress view — the result appears once the run finishes.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            The agent comes with a default daily schedule, created automatically by Setup All Agents:
+            it runs once a day at 01:00 Asia/Kolkata, deliberately placed off-hours, after most of the
+            day's data entry is done. That is what "nightly" means here — one run a day at a fixed hour
+            in the configured time zone, not a continuous watch. The frequency, time and notification
+            preferences can be adjusted on the agent's Schedule tab, and scheduled runs produce the
+            same reports and emails as a manual run.
+          </p>
+          <p>
+            The hour is read in the schedule's own time zone, which is independent of yours — 01:00
+            Asia/Kolkata may be midday or evening for an administrator viewing from elsewhere.
+          </p>
+
+          <h2 id="where-the-output-goes">Where the output goes</h2>
+          <ul>
+            <li><strong>General tab, View Report link</strong> — the most recent run's combined results across all funds.</li>
+            <li><strong>Execution History tab</strong> — every past run, with its status and how long it took.</li>
+            <li><strong>Email</strong> — one per fund, with a subject line in the form "Data Quality Report — Fund Name (health score%)".</li>
+          </ul>
+          <p>Each email includes:</p>
+          <ul>
+            <li>The fund's health score as a percentage.</li>
+            <li>A pass, fail or skipped breakdown for each of the three checks, scoped to that fund.</li>
+            <li>The detailed fix-it lists for that fund — commitment issues, valuation issues and FX issues — each naming the affected record and explaining why it was flagged.</li>
+            <li>Recipients: whoever is set in the recipient field, or, if that is blank, every active employee in the entity.</li>
+          </ul>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <p>
+            The health score is the percentage of your active — that is, switched-on — checks that came
+            back clean. There are at most three, and each can be turned on or off independently. The
+            score is calculated twice: once as an overall figure across all funds, and again separately
+            for each fund's own email. So in a multi-fund entity different funds can show different
+            scores even though something like FX staleness is identical across all of them.
+          </p>
+          <p>Each check comes back as one of three outcomes:</p>
+          <ul>
+            <li><strong>Pass</strong> — no issues found for that check.</li>
+            <li><strong>Fail</strong> — one or more issues found, with the relevant fix-it list populated with the affected records and the reason each was flagged.</li>
+            <li><strong>Skipped</strong> — the check's toggle is set to No, so it is left out of the health score entirely, neither helping nor hurting it.</li>
+          </ul>
+          <p>
+            This agent has no "blocked" outcome. It always finishes as "ready", even with a 0% health
+            score.
+          </p>
+          <div class="pull">
+            <p>The score itself is the signal to watch, not the report's overall status.</p>
+          </div>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <ul>
+            <li><strong>All three checks turned off.</strong> Every fund shows a 100% health score even though nothing was checked. Re-enable at least one, and remember that a 100% score only means something when you know which checks were running.</li>
+            <li><strong>No funds in the entity yet.</strong> There is nothing to check, so every step reports zero issues, the score is 100% and no emails go out. Confirm in Execution History that the run completed rather than assuming it is broken.</li>
+            <li><strong>Recipient field left blank with email sending on.</strong> The report goes to every active employee in the entity, including people who may not want operational emails, such as read-only viewers. Fill in the recipient field explicitly if you do not want that.</li>
+            <li><strong>The commitment check can be slow on funds with many LPs.</strong> It pulls in all of a fund's commitment records to evaluate them rather than filtering at the database level. This is not a correctness issue, but a run can take noticeably longer on a fund with thousands of LPs.</li>
+            <li><strong>The stale valuation threshold includes its own cutoff date.</strong> A valuation dated exactly on the boundary — exactly 90 days old, on the default setting — still counts as current, not stale. Lower the threshold by a day if you want stricter checking.</li>
+            <li><strong>The stale FX check applies the same result to every fund.</strong> Since exchange rates are held for the entity rather than per fund, identical FX findings appear on every fund's report — including funds whose currency mix the rate does not really affect. Do not assume a fund-specific cause when you see the same FX result repeated.</li>
+            <li><strong>A fund with no portfolio companies linked passes the valuation check by default</strong> — not because the data is good, but because there was nothing to evaluate. If a fund reports all valuations current but has no portfolio companies, check that its portfolio investments are set up correctly rather than taking the pass at face value.</li>
+            <li><strong>There is no deduplication between runs.</strong> A manual run shortly after the scheduled one starts fresh and, if email sending is on, sends a brand-new report email per fund. Running it twice in a day means recipients get two emails.</li>
+            <li><strong>Schedule time zones are easy to misread.</strong> The run fires at the configured hour in the configured zone, shown on the Schedule tab, independently of your own local time.</li>
+          </ul>
+
+          <h2 id="faq">Questions we are asked</h2>
+          <div class="faq">
+            <details>
+              <summary>My fund shows a 100% health score but I know there is a problem.</summary>
+              <div>
+                <p>Check whether all three checks are turned off in the settings. A fund with every check disabled scores 100% automatically, because there is nothing active to fail.</p>
+                <p>It does not mean the underlying data was verified as clean.</p>
+              </div>
+            </details>
+            <details>
+              <summary>I left the recipient field blank. Who gets the report?</summary>
+              <div>
+                <p>Every active employee in the entity. If you only want specific people to see it, fill in that field explicitly.</p>
+              </div>
+            </details>
+            <details>
+              <summary>The agent ran but no email arrived for one of my funds.</summary>
+              <div>
+                <p>First check that "Email quality report after each run" is set to Yes. If it is, and your entity has zero active employees together with a blank recipient field, there is simply nobody configured to receive it.</p>
+              </div>
+            </details>
+            <details>
+              <summary>A valuation is from yesterday but is still flagged as stale. Is that a fault?</summary>
+              <div>
+                <p>No — check the configured stale valuation threshold. The valuation has to fall within that window to count as current, not merely be recent in absolute terms.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Does this agent ever block anything?</summary>
+              <div>
+                <p>No. It always finishes as "ready", whatever the health score. The score and the fix-it list are there to inform you; nothing about this agent prevents an action from proceeding based on what it finds.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>set.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-cash-flow-assistant.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Cash Flow Assistant Agent</h3>
+          <p>Cash position, runway and recommended capital call, reported to fund managers.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-rta-reconciliation.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>RTA Reconciliation Agent</h3>
+          <p>Reconciles an RTA unit statement against the fund's own unit records.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-portfolio-company.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Portfolio Company Agent</h3>
+          <p>Data health for every portfolio company — KPI reports, documents and valuations.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

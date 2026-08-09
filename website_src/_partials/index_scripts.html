@@ -1,0 +1,311 @@
+
+
+<script>
+(function(){
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePointer = window.matchMedia('(pointer: fine)').matches;
+
+  /* ---- login: send the visitor to the app on their own domain ----
+     Mirrors the same block in assets/js/caphive.js. The homepage runs its own
+     script (its hero, scrollytelling and chat are homepage-only), so this logic
+     has to exist in both places — keep them in step. The markup ships
+     https://app.caphive.com/ so the link works with JavaScript off. */
+  var APP_BY_DOMAIN = {
+    'caphive.com': 'https://app.caphive.com/',
+    'caphive.us':  'https://app.caphive.us/'
+  };
+  var appUrl = APP_BY_DOMAIN[location.hostname.replace(/^www\./, '')];
+  if(appUrl){
+    document.querySelectorAll('a[data-login]').forEach(function(a){ a.href = appUrl; });
+  }
+
+  /* ---- nav shadow on scroll ---- */
+  var nav = document.getElementById('nav');
+  function onScroll(){ nav.classList.toggle('scrolled', window.scrollY > 24); }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  /* ---- mobile menu ---- */
+  var toggle = document.getElementById('navToggle');
+  var menu = document.getElementById('mobileMenu');
+  toggle.addEventListener('click', function(){
+    var open = menu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open);
+  });
+  menu.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){ menu.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); });
+  });
+
+  /* ---- duplicate marquee / ticker / testimonial tracks ---- */
+  ['marqueeTrack','tickerTrack','tTrack','caseTrack'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.innerHTML += el.innerHTML;
+  });
+
+  /* ---- scroll reveal (blur-fade) ---- */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold:0.12, rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  /* ---- odometer metrics ---- */
+  function buildOdo(el){
+    var str = Number(el.dataset.value).toLocaleString('en-US');
+    el.textContent = '';
+    str.split('').forEach(function(ch){
+      if(ch >= '0' && ch <= '9'){
+        var d = document.createElement('span'); d.className = 'odo-digit';
+        var reel = document.createElement('span'); reel.className = 'odo-reel';
+        reel.dataset.digit = ch;
+        for(var k = 0; k < 10; k++){
+          var s = document.createElement('span'); s.textContent = k; reel.appendChild(s);
+        }
+        d.appendChild(reel); el.appendChild(d);
+      } else {
+        var sep = document.createElement('span'); sep.textContent = ch; el.appendChild(sep);
+      }
+    });
+  }
+  var odos = [].slice.call(document.querySelectorAll('.odo'));
+  odos.forEach(buildOdo);
+  var oio = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      oio.unobserve(e.target);
+      var reels = e.target.querySelectorAll('.odo-reel');
+      reels.forEach(function(r, i){
+        r.style.transitionDelay = (i * 110) + 'ms';
+        requestAnimationFrame(function(){
+          r.style.transform = 'translateY(-' + r.dataset.digit + 'em)';
+        });
+      });
+    });
+  }, {threshold:0.6});
+  odos.forEach(function(el){ oio.observe(el); });
+
+  /* ---- dashboard: NAV ticking ---- */
+  var navVal = 412386905;
+  var demoNav = document.getElementById('demoNav');
+  if(demoNav && !reduced){
+    setInterval(function(){
+      navVal += 1200 + Math.floor(Math.random() * 8600);
+      demoNav.textContent = 'US$ ' + navVal.toLocaleString('en-US');
+    }, 2600);
+  }
+
+  /* ---- dashboard: activity toasts ---- */
+  var toastEl = document.getElementById('demoToast');
+  var toastMsgs = [
+    'Drawdown notice sent — 42 LPs',
+    'Q2 LP report generated — Fund III',
+    'Secondary transfer settled — US$ 12.8m',
+    'Distribution waterfall executed — Fund II'
+  ];
+  if(toastEl){
+    var toastText = toastEl.querySelector('.tt');
+    if(reduced){
+      toastEl.classList.add('show');
+    } else {
+      var ti = 0;
+      var showToast = function(){
+        toastText.textContent = toastMsgs[ti % toastMsgs.length]; ti++;
+        toastEl.classList.add('show');
+        setTimeout(function(){ toastEl.classList.remove('show'); }, 3400);
+      };
+      setTimeout(function(){ showToast(); setInterval(showToast, 4800); }, 2600);
+    }
+  }
+
+  /* ---- magnetic primary buttons ---- */
+  if(finePointer && !reduced){
+    [].slice.call(document.querySelectorAll('.btn-primary, .btn-white, .btn-dark')).forEach(function(b){
+      b.addEventListener('mousemove', function(e){
+        var r = b.getBoundingClientRect();
+        var mx = (e.clientX - r.left - r.width/2) * 0.22;
+        var my = (e.clientY - r.top - r.height/2) * 0.35;
+        b.style.transform = 'translate(' + mx + 'px,' + my + 'px)';
+      });
+      b.addEventListener('mouseleave', function(){ b.style.transform = ''; });
+    });
+  }
+
+  /* ---- product story: one scroll driver syncs steps, rail and dashboard ---- */
+  var steps = [].slice.call(document.querySelectorAll('.step'));
+  var views = [].slice.call(document.querySelectorAll('.view'));
+  var stageUrl = document.getElementById('stageUrl');
+  var storyFill = document.getElementById('storyFill');
+  var storySteps = document.querySelector('.story-steps');
+  var STAGE_URLS = ['app.caphive.com/funds', 'app.caphive.com/portfolios', 'app.caphive.com/deals'];
+  var storyIdx = -1;
+  function setStory(i){
+    if(i === storyIdx) return;
+    storyIdx = i;
+    steps.forEach(function(s, j){ s.classList.toggle('active', j === i); });
+    views.forEach(function(v, j){ v.classList.toggle('active', j === i); });
+    if(stageUrl) stageUrl.textContent = STAGE_URLS[i] || STAGE_URLS[0];
+  }
+  function updateStory(){
+    var mid = window.innerHeight * 0.5;
+    /* active step = the one whose center is closest to the viewport center */
+    var best = 0, bestDist = Infinity;
+    steps.forEach(function(s, j){
+      var r = s.getBoundingClientRect();
+      var d = Math.abs(r.top + r.height / 2 - mid);
+      if(d < bestDist){ bestDist = d; best = j; }
+    });
+    setStory(best);
+    if(storyFill && storySteps){
+      var wr = storySteps.getBoundingClientRect();
+      var p = Math.max(0, Math.min(1, (mid - wr.top) / wr.height));
+      storyFill.style.transform = 'scaleY(' + p + ')';
+    }
+  }
+  if(steps.length && views.length){
+    window.addEventListener('scroll', updateStory, {passive:true});
+    window.addEventListener('resize', updateStory);
+    updateStory();
+  }
+
+  /* ---- demo form ----
+     TODO: replace the mailto fallback with a fetch POST to your CRM or
+     Formspree endpoint, e.g.:
+       fetch('https://formspree.io/f/YOUR_ID', {method:'POST', body:new FormData(demoForm), headers:{Accept:'application/json'}})
+  */
+  var demoForm = document.getElementById('demoForm');
+  if(demoForm){
+    demoForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      var d = new FormData(demoForm);
+      var body = 'Name: ' + d.get('name') + '\nFirm: ' + d.get('firm') +
+                 '\nEmail: ' + d.get('email') + '\nAUM range: ' + d.get('aum');
+      location.href = 'mailto:hello@caphive.com?subject=' +
+        encodeURIComponent('Demo request — ' + d.get('firm')) +
+        '&body=' + encodeURIComponent(body);
+    });
+  }
+
+  /* ---- CTA rotating proof line ---- */
+  var CTA_STATS = [
+    'US$ 10bn+ AUM managed — and counting',
+    '4,000+ investors onboarded',
+    'US$ 500m+ raised & secondaries executed',
+    '1,000+ sellers & investors transacted'
+  ];
+  var ctaStat = document.getElementById('ctaStat');
+  if(ctaStat && !reduced){
+    var csi = 0;
+    setInterval(function(){
+      csi = (csi + 1) % CTA_STATS.length;
+      ctaStat.classList.add('fade');
+      setTimeout(function(){ ctaStat.textContent = CTA_STATS[csi]; ctaStat.classList.remove('fade'); }, 300);
+    }, 3400);
+  }
+
+  /* ---- AI agent chat demo ---- */
+  var SCRIPTS = [
+    { q: "Onboard Meridian Family Office to Fund III.",
+      a: "Started. KYC documents requested and the subscription pack is out for e-sign — 2 of 9 checks already cleared. I'll flag you when wire details are verified.",
+      chip: "Onboarding · Fund III checklist" },
+    { q: "What's Fund II's DPI after the March distribution?",
+      a: "DPI is 0.87x, up from 0.74x. The March distribution returned US$ 18.4m across 61 LPs — pref is fully paid, carry accrual starts next quarter.",
+      chip: "Fund II · Distribution ledger" },
+    { q: "Draft the Q2 LP report for Fund III.",
+      a: "Done — 24 portfolio updates pulled in, NAV bridge and TVPI trend included. Two companies reported unaudited numbers; both are flagged for review.",
+      chip: "Fund III · Q2 report draft" },
+    { q: "Which positions missed plan this quarter?",
+      a: "3 of 24. The widest variance is a Series B position at −12% ARR against plan. The full variance table is ready to open.",
+      chip: "Portfolio · Variance analysis" },
+    { q: "Are we ready for the quarterly AIF filing?",
+      a: "11 of 12 checks complete. One investor's FATCA declaration is pending — reminder sent. The filing pack is otherwise assembled.",
+      chip: "Compliance · AIF quarterly checklist" }
+  ];
+  var chatBody = document.getElementById('chatBody');
+  var agentTabs = [].slice.call(document.querySelectorAll('.agent-tab'));
+  var chatGen = 0, chatStarted = false;
+
+  function setActive(i){
+    agentTabs.forEach(function(t, j){ t.classList.toggle('active', i === j); });
+  }
+  function wait(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+  async function typeInto(el, text, speed, g){
+    for(var i = 0; i < text.length; i++){
+      if(g !== chatGen) return false;
+      el.textContent += text.charAt(i);
+      await wait(speed);
+    }
+    return true;
+  }
+  async function playScript(i){
+    chatGen++; var g = chatGen;
+    setActive(i);
+    chatBody.innerHTML = '';
+    var s = SCRIPTS[i];
+    var u = document.createElement('div'); u.className = 'msg user typing-cursor';
+    chatBody.appendChild(u);
+    if(!await typeInto(u, s.q, 26, g)) return;
+    u.classList.remove('typing-cursor');
+    var t = document.createElement('div'); t.className = 'msg ai';
+    t.innerHTML = '<span class="typing-dots"><i></i><i></i><i></i></span>';
+    chatBody.appendChild(t);
+    await wait(950); if(g !== chatGen) return;
+    t.innerHTML = ''; t.classList.add('typing-cursor');
+    if(!await typeInto(t, s.a, 13, g)) return;
+    t.classList.remove('typing-cursor');
+    var c = document.createElement('span'); c.className = 'chip'; c.textContent = s.chip;
+    t.appendChild(document.createElement('br'));
+    t.appendChild(c);
+    await wait(4000); if(g !== chatGen) return;
+    playScript((i + 1) % SCRIPTS.length);
+  }
+  function renderStatic(i){
+    chatGen++;
+    setActive(i);
+    chatBody.innerHTML = '';
+    var s = SCRIPTS[i];
+    var u = document.createElement('div'); u.className = 'msg user'; u.textContent = s.q;
+    var t = document.createElement('div'); t.className = 'msg ai'; t.textContent = s.a;
+    var c = document.createElement('span'); c.className = 'chip'; c.textContent = s.chip;
+    t.appendChild(document.createElement('br'));
+    t.appendChild(c);
+    chatBody.appendChild(u); chatBody.appendChild(t);
+  }
+  agentTabs.forEach(function(t, i){
+    t.addEventListener('click', function(){
+      if(reduced){ renderStatic(i); } else { playScript(i); }
+    });
+  });
+  if(reduced){
+    renderStatic(0);
+  } else {
+    var chatIO = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting && !chatStarted){
+          chatStarted = true; playScript(0); chatIO.disconnect();
+        }
+      });
+    }, {threshold:0.35});
+    chatIO.observe(document.querySelector('.chat'));
+  }
+})();
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "CapHive",
+  "url": "https://caphive.com",
+  "email": "hello@caphive.com",
+  "description": "Full-stack intelligent technology platform for powering private capital markets — funds, portfolios, deals & secondaries.",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel",
+    "addressLocality": "Mumbai",
+    "postalCode": "400013",
+    "addressCountry": "IN"
+  }
+}
+</script>
+</body>
+</html>

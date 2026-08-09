@@ -1,0 +1,288 @@
+---
+title: Investor Presentation Analyst — Pre-Board Briefings | CapHive
+description: Reads a portfolio company's investor presentations across reporting periods,
+  compares them to surface commitment misses and dropped risks, and produces a pre-board
+  briefing and a Management Accountability Score.
+og_title: Investor Presentation Analyst | CapHive
+og_description: Cross-period analysis of investor presentations, with grounded pre-board
+  questions and a 0–100 accountability score.
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Investor Presentation Analyst
+      </nav>
+      <span class="chip-label">Portfolio · Agent</span>
+      <h1 style="margin-top:22px">What management promised last quarter, <em>read against this one.</em></h1>
+      <p class="lede">
+        The Investor Presentation Analyst reads a portfolio company&rsquo;s investor presentations across reporting periods, extracts structured intelligence from each one, and compares periods to surface commitment misses and dropped risks. It produces a pre-board briefing plus a Management Accountability Score, all scoped to one portfolio company at a time.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>One portfolio company at a time</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>Yes &mdash; every meaningful step except the score</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>8&ndash;12 grounded pre-board questions and a 0&ndash;100 accountability score</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>Each run works through one portfolio company, in seven stages.</p>
+          <ol>
+            <li><strong>Gets started.</strong> Loads its settings. If the target is not actually a portfolio company, or the agent is not enabled, it stops cleanly with no error.</li>
+            <li><strong>Collects presentations.</strong> Looks at the most recent KPI reports of your configured type &mdash; Actual, by default &mdash; and on each one finds the first attached document whose file name contains one of your configured keywords. Matching is not case-sensitive. Reports are read oldest to newest, so later steps understand the timeline correctly.</li>
+            <li><strong>Extracts intelligence.</strong> Reads each matching document <strong>in full</strong>, with no shortening or skipping, and asks the AI to pull out eight categories of information per period: management narrative, commitments, risks, accomplishments, forward plans, strategic objectives, key metrics and initiatives.</li>
+            <li><strong>Runs cross-period analysis.</strong> Compares the extracted periods against each other to produce five comparison views: commitment tracking, risk evolution, objective drift, an &ldquo;initiative graveyard&rdquo; of abandoned plans, and metric anomalies. This only runs once at least two periods have been extracted.</li>
+            <li><strong>Generates the briefing.</strong> Produces 8&ndash;12 grounded pre-board questions, each citing a specific number, date or quote so it is clearly tied to real evidence. This step can reuse the previous question set if nothing meaningful has changed since the last run.</li>
+            <li><strong>Scores the company.</strong> Calculates the Management Accountability Score, 0&ndash;100, using simple arithmetic on the comparison results &mdash; no AI call is needed for this part. It is a weighted blend: Commitment 35%, Risk 25%, Coherence 25%, Narrative 15%.</li>
+            <li><strong>Saves everything</strong> as a new report.</li>
+          </ol>
+          <div class="pull">
+            <p>The accountability score is arithmetic on the comparison results. No AI call is involved in producing it.</p>
+          </div>
+          <p>
+            A small chat panel can optionally be turned on for this agent, so a fund manager can ask
+            follow-up questions about the latest run&rsquo;s findings in plain language without re-running
+            the whole analysis.
+          </p>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Default</th><th>What it controls</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Presentation document names</td><td>Investor Update, Board Deck, Management Presentation, Quarterly Update, Investor Presentation</td><td>Keywords matched, not case-sensitively, against document file names on each KPI report. A document counts as a presentation if its name contains <strong>any</strong> of these keywords.</td></tr>
+              <tr><td>Max periods to analyse</td><td>8</td><td>The maximum number of the most recent reporting periods scanned. Anything below 1 quietly falls back to 8.</td></tr>
+              <tr><td>KPI report tag</td><td>Actual</td><td>Which type of KPI report is scanned for presentation documents: Actual, Budget or IC.</td></tr>
+              <tr><td>Comparison strategy</td><td>All periods</td><td>&ldquo;All periods&rdquo; sends every extracted period to the AI in one go &mdash; most accurate, since it sees the whole arc at once. &ldquo;Sliding window&rdquo; instead makes one comparison per adjacent pair of periods &mdash; cheaper as the number of periods grows, but less holistic.</td></tr>
+              <tr><td>AI model</td><td>gemini-3-flash-preview</td><td>Needs to support a very large context window, roughly 500K tokens or more.</td></tr>
+            </tbody>
+          </table>
+          <p>
+            The model setting matters more here than on most agents. The extraction step sends each
+            presentation&rsquo;s full text to the AI with no shortening at all, and the whole design assumes
+            a model that can handle roughly a million tokens of context, which is what the default model
+            provides. Switch to a smaller-context model and long presentations may be silently cut off or
+            rejected by the AI provider, extraction quality will degrade or fail document by document &mdash;
+            each failure handled quietly and logged, not raised as a hard error &mdash; and in &ldquo;All
+            periods&rdquo; mode the cross-period comparison sends every period&rsquo;s extracted data in one
+            request, which can itself get close to a smaller model&rsquo;s limits, even though the original
+            documents are no longer part of that payload and only the extracted summaries are.
+          </p>
+          <p>Beyond those settings, the agent looks at:</p>
+          <ul>
+            <li>The KPI reports and their attached documents for the target portfolio company.</li>
+            <li>Documents in PDF, TXT, Markdown, Excel (XLSX or XLS), PowerPoint (PPTX or PPT) and Word (DOCX or DOC). PowerPoint and Word files go through a layered extraction process that tries a few different methods in sequence to get the best possible text out.</li>
+            <li>The previous run&rsquo;s report, used for the question-reuse logic and for the chat panel&rsquo;s context.</li>
+          </ul>
+          <p>
+            Two further on/off switches exist behind the scenes: one to turn off scoring and one to turn off
+            question generation, both on by default. They allow the Score and Briefing sections to be
+            disabled independently without affecting the rest of the agent, but they are not exposed on the
+            standard settings screen, so ask an administrator if you need either changed.
+          </p>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <ol>
+            <li>An administrator turns on the Investor Presentation Analyst toggle for your organisation, in the administration area under the entity&rsquo;s support agents settings.</li>
+            <li>An AI provider key needs to be set up under the LLM Keys area of AI &rarr; Support Agents &mdash; every meaningful step in this agent relies on the AI.</li>
+            <li>The default model, gemini-3-flash-preview, supports a roughly 1-million-token context window. Keep it unless you have a specific reason to switch and a comparably large-context replacement in mind.</li>
+            <li>Running the agent against a specific portfolio company requires permission to edit that company&rsquo;s record.</li>
+          </ol>
+
+          <h2 id="running-it">Running it</h2>
+          <ul>
+            <li><strong>From a portfolio company page.</strong> The &ldquo;Investor Presentation Analysis&rdquo; widget shows recent reports for that company &mdash; periods covered, score, grade, question count, status and run time. Run Presentation Analyst starts a first run; Re-run covers any run after that. Either opens a confirmation prompt.</li>
+            <li><strong>From the agent&rsquo;s own page.</strong> Run Now on the General tab, picking the target portfolio company.</li>
+          </ul>
+          <p>
+            From these screens the agent always runs against <strong>one portfolio company at a time</strong>
+            &mdash; there is no button to run it for every portfolio company at once, though the scheduled run
+            does work through every portfolio company in your organisation on its own.
+          </p>
+          <p>
+            Running the agent shows a live seven-step progress panel &mdash; Initialise, Collect
+            Presentations, Extract Intelligence, Cross-Period Analysis, Generate Briefing, Score, Save &mdash;
+            so you can watch each stage complete, or flag an issue, in real time.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            A monthly schedule is set up automatically by <strong>Setup All Agents</strong>: the 1st of each
+            month at 06:00 Asia/Kolkata, with failure and partial-success notifications on, success
+            notifications off, and CapHive support notified if something errors. <strong>It ships turned
+            off</strong> &mdash; nothing runs automatically until someone enables it on the agent&rsquo;s
+            Schedule tab, which is worth doing so fresh briefings are ready ahead of board meetings.
+          </p>
+
+          <h2 id="where-the-output-goes">Where the output goes</h2>
+          <ul>
+            <li><strong>Report.</strong> A new report is saved every time the agent runs for a portfolio company. Full history is kept, and the most recent one is always marked as the latest automatically.</li>
+            <li><strong>Portfolio company widget.</strong> The &ldquo;Investor Presentation Analysis&rdquo; widget shows the most recent runs with score, grade and question count inline, and expands for full detail.</li>
+            <li><strong>Presentation Reports tab</strong> on the agent&rsquo;s own page, grouped by portfolio company.</li>
+            <li><strong>Chat panel</strong>, if turned on. It only ever looks at the single most recent report for that company, so it always reflects the latest run &mdash; including any reused questions &mdash; and can search the full extracted detail for quotes that did not make it into the summarised findings.</li>
+          </ul>
+          <p>
+            <strong>No email goes out for this agent.</strong> Output is only available through the interface
+            and the chat panel. The schedule&rsquo;s notification toggles control internal alerts to
+            administrators and CapHive support if something fails; they do not send a digest to a fund
+            manager&rsquo;s inbox.
+          </p>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Meaning</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Period records</td><td>The eight categories of extracted intelligence for each period, in chronological order.</td></tr>
+              <tr><td>Cross-period flags</td><td>The five comparison views: commitment tracking, risk evolution, objective drift, initiative graveyard and metric anomalies. Empty if fewer than two periods were extracted, or if the comparison step ran into an error.</td></tr>
+              <tr><td>Analyst questions</td><td>8&ndash;12 grounded pre-board questions, each with the question text, its category, which period it came from and the supporting evidence.</td></tr>
+              <tr><td>Periods analysed</td><td>A readable list of which reporting periods were included.</td></tr>
+              <tr><td>Change tracking marker</td><td>An internal fingerprint of the cross-period flags, used to decide whether the question set needs regenerating next run.</td></tr>
+              <tr><td>Score</td><td>Overall score, grade and the four component scores &mdash; commitment, risk, coherence, narrative. Blank if scoring was turned off or failed.</td></tr>
+              <tr><td>Issue logs</td><td>Per-step collection, extraction and analysis issues, shown in the report&rsquo;s expandable detail panels.</td></tr>
+              <tr><td>Overall status</td><td>&ldquo;Blocked&rdquo; if anything blocking turned up anywhere in the run &mdash; for example zero presentations found, or zero periods successfully extracted &mdash; otherwise &ldquo;Ready.&rdquo;</td></tr>
+            </tbody>
+          </table>
+          <p>
+            The Management Accountability Score is calculated purely from the cross-period comparison, with
+            no AI call involved:
+          </p>
+          <ul>
+            <li><strong>Commitment (35%)</strong> &mdash; rewards commitments that were met or partially met, and subtracts points for any commitment that was quietly dropped and never mentioned again.</li>
+            <li><strong>Risk (25%)</strong> &mdash; starts at 100 and moves based on what happened to each previously flagged risk: a meaningful penalty for a dropped risk with no resolution, a smaller penalty for an escalated risk, a smaller penalty still for a newly introduced risk, and a bonus for any risk that was actually resolved.</li>
+            <li><strong>Coherence (25%)</strong> &mdash; starts at 100 and tracks strategic objectives and initiatives: a penalty for a removed objective, a smaller penalty for one that was reframed, a penalty for an abandoned initiative, and a bonus for an objective that stayed stable across three or more periods.</li>
+            <li><strong>Narrative (15%)</strong> &mdash; reduced based on how many metric anomalies were detected in that period.</li>
+          </ul>
+          <p>
+            The overall score maps to the same letter-grade scale &mdash; A, B+, B, C+, C, D &mdash; used by the
+            <a href="agent-portfolio-scoring.html">Portfolio Scoring Agent</a>, so the two scores can be
+            compared side by side.
+          </p>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <div class="callout">
+            <p>
+              <strong>No presentations found is the single most common reason for an empty result.</strong> A
+              presentation only counts if it is attached to a KPI report &mdash; not merely uploaded somewhere
+              general on the portfolio company &mdash; and its file name contains one of your configured
+              keywords, such as &ldquo;Board Deck&rdquo; or &ldquo;Investor Update.&rdquo; If the name does not
+              match, the agent finds nothing for that period. The run still completes and produces a report,
+              but it is marked Blocked with no further AI calls made.
+            </p>
+          </div>
+          <ul>
+            <li><strong>The &ldquo;All periods&rdquo; cost and accuracy trade-off.</strong> With many periods configured, this mode sends every extracted record to the AI in a single request. It is the most accurate, but the request size grows with the number of periods and could approach a smaller model&rsquo;s limits. It also means a single failed request loses the entire cross-period analysis for that run rather than one period pair: it fails gracefully to an empty result, but you lose all the signal at once.</li>
+            <li><strong>&ldquo;Sliding window&rdquo; trades cost for more individual AI calls.</strong> One request per adjacent pair of periods means seven separate requests for eight periods instead of one. On a rate-limited AI key, or when many portfolio companies are scheduled around the same time, that increases both how long a run takes and the chance of hitting provider rate limits. Failures are more contained &mdash; one period pair at a time &mdash; but there are more of them to track down.</li>
+            <li><strong>Reusing last time&rsquo;s questions can look like nothing happened.</strong> If the comparison results come out identical to the previous run, the briefing step reuses the previous question set rather than generating new ones, at no extra cost. That is intentional for companies that have not changed much, but if you added a new presentation and expected fresh questions, check whether that period actually introduced anything new.</li>
+            <li><strong>A smaller AI model risks silent truncation.</strong> Extraction sends the full document text with nothing shortened, so a model with a context window smaller than the recommended million tokens risks the provider quietly cutting off long documents, incomplete extraction, or outright failures on large presentations such as dense board decks or financial appendices. This fails quietly: per-document issues are logged as skipped rather than raised as an error that stops the run.</li>
+            <li><strong>Turning off scoring or question generation removes whole sections with little visible warning.</strong> Those two switches are not on the standard settings screen, so if an administrator turns one off directly, the Score section simply disappears from the report, with only a log entry and a low-severity note rather than an obvious warning.</li>
+            <li><strong>There is no email option for fund managers.</strong> Even with the schedule&rsquo;s failure notifications on, those only alert administrators and CapHive support. There is no feature that sends the briefing to a GP&rsquo;s inbox, so anyone waiting on a result needs to check the interface or the chat panel.</li>
+            <li><strong>Extraction quality for PowerPoint and Word files depends on what is available in the runtime environment.</strong> The agent tries several extraction methods in sequence, and the weakest fallback can miss speaker notes and table cells entirely &mdash; so a key metric mentioned only in a speaker note might never reach the AI.</li>
+          </ul>
+
+          <h2 id="questions">Questions</h2>
+          <div class="faq">
+            <details>
+              <summary>The agent reported &ldquo;no presentation documents found.&rdquo; What should I check first?</summary>
+              <div>
+                <p>Confirm the document is attached to a KPI report for that portfolio company rather than uploaded generally; that the report&rsquo;s type matches your KPI report tag setting, which defaults to Actual; that it falls within the most recent periods you have configured; and that its file name contains one of the keywords in Presentation document names. Matching is not case-sensitive.</p>
+              </div>
+            </details>
+            <details>
+              <summary>I added a new quarter&rsquo;s presentation but the pre-board questions look identical. Is that a bug?</summary>
+              <div>
+                <p>Probably not. Questions are only regenerated when the comparison results actually change from last time. If the new period did not introduce any new commitment misses, dropped risks, drift, abandoned initiatives or metric anomalies relative to what was already flagged, the agent reuses the previous question set at no extra cost.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Should I switch the AI model to save cost?</summary>
+              <div>
+                <p>Only to another large-context model. Anything with meaningfully less than about 500K tokens of context risks silently truncating long presentations during extraction, and can also struggle with the full multi-period payload sent in &ldquo;All periods&rdquo; comparison mode.</p>
+              </div>
+            </details>
+            <details>
+              <summary>When should I use &ldquo;Sliding window&rdquo; instead of &ldquo;All periods&rdquo;?</summary>
+              <div>
+                <p>When you have a lot of periods configured and want to control cost. It trades one request per adjacent pair of periods for less holistic reasoning across the whole timeline, and exposes you to more AI requests overall, and therefore more rate-limit risk, per run.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Where do fund managers see the output if there is no email?</summary>
+              <div>
+                <p>On the portfolio company&rsquo;s Investor Presentation Analysis widget, on the agent&rsquo;s Presentation Reports tab, or by asking the chat panel directly if it has been turned on for that agent.</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>set.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-portfolio-scoring.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Portfolio Scoring Agent</h3>
+          <p>A 0&ndash;100 investment score per company, graded against a sector-specific scoring guide.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-portfolio-report.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Portfolio Report Agent</h3>
+          <p>Investment-grade evaluation reports built section by section from a company's pitch materials.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-portfolio-company.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Portfolio Company Agent</h3>
+          <p>Rule-based checks on KPI submissions, required documents and valuations, company by company.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

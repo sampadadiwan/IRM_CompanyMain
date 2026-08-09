@@ -1,0 +1,266 @@
+---
+title: Distribution Readiness Agent &mdash; Pre-Payment Checks | CapHive
+description: 'A rule-based readiness gate for capital distributions: it checks investor
+  KYC, computed net payable, generated and approved notices and bank details before
+  payments are released, and stops at the first failing step.'
+og_title: Distribution Readiness Agent | CapHive
+og_description: Checks KYC, payable amounts, notices, approvals and bank details before
+  a distribution is paid.
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Distribution Readiness Agent
+      </nav>
+      <span class="chip-label">Finance &middot; Agent</span>
+      <h1 style="margin-top:22px">Check every prerequisite <em>before the money moves.</em></h1>
+      <p class="lede">
+        The Distribution Readiness Agent is a rule-based, step-by-step agent that checks every prerequisite is in place &mdash; investor KYC, computed payment amounts, generated and approved notices, and bank details &mdash; before a capital distribution payment goes out. Fund operations teams run it on a distribution immediately before wiring funds.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>One capital distribution, or every distribution in the entity in batch mode</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>No &mdash; entirely rule-based, and it works with no AI key configured</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A live step panel on the distribution, plus a report marked Ready or Blocked</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ARTICLE BODY ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>
+            The agent works through a fixed checklist against every payment on a single capital
+            distribution. Each check can be turned on or off independently, and if a check fails the agent
+            stops right there rather than continuing to the remaining checks. It is the distribution
+            counterpart to the <a href="agent-call-notice.html">Call Notice Agent</a>, which gates a
+            capital call before its notices are sent.
+          </p>
+          <ol>
+            <li><strong>Gets ready.</strong> Sets up separate buckets to collect KYC issues, payment issues, document issues and bank-detail issues.</li>
+            <li><strong>Checks KYC</strong> (toggle: Check KYC). Every payment's linked investor must have a KYC record, and it must be marked verified. A missing or unverified KYC fails this step for that payment.</li>
+            <li><strong>Checks that the payable amount has been computed</strong> (toggle: Check Net Payable). Every payment must have a net payable amount that is present and not zero.</li>
+            <li><strong>Checks that notices have been generated</strong> (toggle: Check Docs Generated). The agent first confirms the fund has a Distribution Template document uploaded at all; if not, this fails the whole step for every payment on the distribution, with the message &ldquo;Upload a Distribution Template under Fund &gt; Documents.&rdquo; If the template exists, it then checks each payment has at least one generated notice document attached.</li>
+            <li><strong>Checks that documents are approved</strong> (toggle: Check Docs Approved). Every notice document on every payment must be approved; anything still pending approval fails this step.</li>
+            <li><strong>Checks bank details</strong> (toggle: Check Bank Details). Every payment's investor must have a bank account number on file in their KYC record.</li>
+            <li><strong>Marks the distribution ready to pay.</strong> This confirmation step is only reached if every enabled check above has passed.</li>
+            <li><strong>Saves the report</strong>, finalised as either Ready or Blocked depending on whether any step failed.</li>
+          </ol>
+          <p>
+            Because the agent stops at the very first failing step, later steps are never run on a blocked
+            check &mdash; their entries in the report stay &ldquo;Pending&rdquo; until you fix the blocker
+            and run the agent again.
+          </p>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <h3>Configuration fields</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Default</th><th>What it controls</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Check KYC</td><td>Yes / No</td><td>Yes</td><td>Verifies the investor has a completed, verified KYC record before payment release. Blocks if KYC is missing or unverified.</td></tr>
+                <tr><td>Check Net Payable</td><td>Yes / No</td><td>Yes</td><td>Verifies the distribution's net payable amount has actually been calculated. Blocks if it is missing or zero.</td></tr>
+                <tr><td>Check Docs Generated</td><td>Yes / No</td><td>Yes</td><td>Checks that distribution notice documents have been generated and attached to each payment.</td></tr>
+                <tr><td>Check Docs Approved</td><td>Yes / No</td><td>Yes</td><td>Verifies generated notices have been approved. Blocks if any notice is still pending approval.</td></tr>
+                <tr><td>Check Bank Details</td><td>Yes / No</td><td>Yes</td><td>Verifies the investor has a bank account number on file via their KYC record. Blocks if missing.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>What it reads directly</h3>
+          <ul>
+            <li>The distribution's payments, each with their linked investor &mdash; through the capital commitment and KYC record &mdash; and their attached documents.</li>
+            <li>The fund's documents, specifically whether a Distribution Template exists. This is a fund-level prerequisite checked once per run, not separately for each payment.</li>
+          </ul>
+
+          <div class="callout">
+            <p>
+              The defaults above apply to agents provisioned through Setup All Agents. A toggle that was
+              never given a value at all &mdash; common on agents set up before an option existed &mdash;
+              does not default to Yes: the check is silently skipped, and a skipped check looks exactly like
+              a passed one in day-to-day use. Set each of the five toggles explicitly.
+            </p>
+          </div>
+
+          <h3>Setup warnings</h3>
+          <p>The agent's General tab shows a yellow warning banner whenever setup is incomplete. For this agent the banner flags:</p>
+          <ul>
+            <li><strong>Any of the five check toggles that has never been set.</strong> Set each one explicitly to Yes or No &mdash; an explicit No is respected and not flagged.</li>
+            <li><strong>All checks turned off.</strong> The agent would mark distributions &ldquo;ready to pay&rdquo; without verifying anything.</li>
+            <li><strong>Any fund with no Distribution Template uploaded.</strong> The notices-generated check will block every payment on that fund's distributions until a template exists under Fund &rarr; Documents.</li>
+          </ul>
+          <p>Resolve everything in the banner before trusting a &ldquo;Ready&rdquo; result.</p>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <ul>
+            <li><strong>Where to toggle it.</strong> Admin &rarr; Edit Entity &rarr; Support Agents. Requires the Company Admin role.</li>
+            <li><strong>AI key.</strong> Not required. This agent is entirely rule-based &mdash; none of its checks call AI, and it works with no AI key configured at all.</li>
+            <li>If the agent is turned off for your entity, the <strong>Run Readiness Check</strong> action is hidden entirely from the distribution's page.</li>
+          </ul>
+
+          <h2 id="running-it">Running it</h2>
+          <p><strong>From the distribution's own page</strong> &mdash; the typical way to use it:</p>
+          <ol>
+            <li>Open the distribution's show page.</li>
+            <li>From the action menu, choose <strong>Run Readiness Check</strong>. It only appears when the agent is turned on for your entity.</li>
+            <li>A confirmation popup explains what the agent does, then runs it against just that distribution.</li>
+            <li>Because you are targeting one distribution, a live step-by-step progress panel appears on the distribution's page as each check completes.</li>
+          </ol>
+          <p><strong>From the agent's own page:</strong> open AI &rarr; Support Agents &rarr; Distribution Readiness and click <strong>Run Now</strong> on the General tab to run the check against every distribution in your entity at once. Batch mode shows no step-by-step panel for an individual distribution.</p>
+          <p>
+            There is no way to select several specific distributions at once. Your only batch option is the
+            generic Run Now on the agent's own page.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            Not available. This agent has no Schedule tab &mdash; it is on-demand only, by design. Run it
+            manually before releasing each distribution's payments; there is no recurring automated check
+            running in the background.
+          </p>
+
+          <h2 id="output">Where the output goes</h2>
+          <ul>
+            <li><strong>The distribution's own page</strong> &mdash; the live step panel shows real-time progress while the check runs, and stays visible afterwards showing the final outcome of each step.</li>
+            <li><strong>The agent's General tab</strong> &mdash; a &ldquo;View Report&rdquo; link to the most recent report for the agent overall. Since the agent checks one distribution at a time, &ldquo;most recent&rdquo; simply reflects whichever distribution was checked last.</li>
+            <li><strong>The Execution History tab</strong> &mdash; every past run across all distributions, with status, start time and duration. Any row opens the full report.</li>
+          </ul>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <p>
+            Each step's outcome is recorded as <strong>Success</strong>, <strong>Failed</strong>,
+            <strong>Skipped</strong> or <strong>Pending</strong> &mdash; pending meaning it was never
+            reached because an earlier step blocked the run. Each failed step includes:
+          </p>
+          <ul>
+            <li>A plain-language message explaining what went wrong, often with a direct next step: re-run fee calculation on the distribution, click Generate Docs on the distribution page, approve each document before releasing payment, update KYC records before releasing payment.</li>
+            <li>A count and list of the specific payments or investors that failed, each with a name and the reason.</li>
+          </ul>
+          <p>
+            The distribution is marked <strong>Ready</strong> if it reaches &ldquo;Ready to Pay&rdquo; with
+            no failed steps, and <strong>Blocked</strong> if any enabled check fails, with the report noting
+            which step stopped the run. A blocked distribution's payments should not be released until the
+            flagged investors or documents are corrected and the agent is run again.
+          </p>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <ul>
+            <li><strong>The agent stops at the first problem it finds.</strong> Unlike agents that collect every issue before reporting back, this one stops dead at the first failed check. If KYC fails for one investor, you learn nothing about net-payable, document or bank-detail issues for any payment until that KYC issue is fixed and the agent is run again. Plan to iterate.</li>
+            <li><strong>No Distribution Template uploaded for the fund.</strong> The notices-generated check fails for the entire distribution, not just one payment, if the fund has no document tagged as a Distribution Template. Easy to miss if you have only ever generated notices by hand.</li>
+            <li><strong>A payment's amount is exactly zero.</strong> The agent treats a zero net payable exactly like a missing one. A genuinely zero payment &mdash; say, fully offset by fees &mdash; is still flagged as a blocker asking you to re-run fee calculation. There is no way to mark a payment as intentionally zero; the only option is to turn off Check Net Payable for that run.</li>
+            <li><strong>KYC exists but has not been marked verified.</strong> The agent distinguishes &ldquo;no KYC on file&rdquo; from &ldquo;KYC exists but is not verified&rdquo; in its messaging, but both block the same way. A KYC that is complete but has simply not had its Verified box ticked will block the payment.</li>
+            <li><strong>Bank details are only checked on the KYC record.</strong> The check looks at the bank account number stored on the investor's KYC record, not at any separate banking module your entity might use. Bank details entered elsewhere but never synced onto the KYC record are reported as missing.</li>
+            <li><strong>The notices-generated check is not picky about what counts as a notice.</strong> It checks whether any non-template document is attached to the payment, not that the document is a real distribution notice. A stray, unrelated attachment can make the check pass with no real notice present &mdash; and a genuine notice mistakenly tagged as a template is excluded and flagged as missing.</li>
+            <li><strong>The approval check does not notice if no documents exist.</strong> It only looks at documents that already exist and are not templates. If the notices-generated step was turned off and no notices exist at all, the approval check passes trivially: &ldquo;Docs Approved: Success&rdquo; does not mean approved documents exist, only that none of the zero existing ones are pending.</li>
+            <li><strong>A distribution with no payments attached sails through as Ready.</strong> Every payment-based check reports success when there is nothing to check. This can mask a setup mistake, like forgetting to add the payments in the first place.</li>
+            <li><strong>Running it twice on the same distribution at once.</strong> A manual run from the distribution's page and a batch Run Now from the agent's page can both target the same distribution simultaneously. Both write to the same report, and whichever finishes last wins.</li>
+            <li><strong>Turning off every check.</strong> With all five toggles off, the agent sails through to &ldquo;Ready to Pay&rdquo; having validated nothing. The report says Ready, but that reflects your configuration rather than actual readiness. The agent's page shows a warning banner whenever it is in this state.</li>
+          </ul>
+
+          <div class="pull">
+            <p>A distribution with no payments attached sails through as Ready.</p>
+            <cite>Distribution Readiness Agent user guide</cite>
+          </div>
+
+          <h2 id="faq">Questions we get asked</h2>
+          <div class="faq">
+            <details>
+              <summary>The agent blocked on KYC, but we know the investor's KYC is complete. What is wrong?</summary>
+              <div>
+                <p>Completeness and verification are two different things. Check whether the KYC record has actually been marked Verified &mdash; a complete-but-unverified KYC blocks this check by design.</p>
+              </div>
+            </details>
+            <details>
+              <summary>It blocked saying no Distribution Template was found, but we have generated notices before for other distributions in this fund.</summary>
+              <div>
+                <p>The check looks for a Distribution Template document on the fund itself, not on the individual distribution. Confirm a template document still exists under Fund &rarr; Documents &mdash; it may have been deleted or replaced without the correct tag.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Why did it stop after the KYC step instead of showing every issue at once?</summary>
+              <div>
+                <p>This agent stops at the very first failing step instead of collecting every issue. Fix the reported blocker and run it again; it will then surface the next blocking step, if there is one.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Can we schedule this to run automatically before every distribution?</summary>
+              <div>
+                <p>No. Distribution Readiness has no Schedule tab; it is intentionally on-demand only. Run it manually from the distribution's action menu before releasing payments.</p>
+              </div>
+            </details>
+            <details>
+              <summary>A payment shows &ldquo;Net payable not computed&rdquo; but the amount is genuinely zero for that investor. How do we get past this?</summary>
+              <div>
+                <p>There is no per-payment override. Either re-run fee calculation to confirm zero is correct &mdash; which may leave the amount at zero and re-trigger the same block &mdash; or temporarily turn off Check Net Payable on the agent's Edit page for that run, bearing in mind that disables the check for the whole run rather than one payment.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>bench.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-call-notice.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Call Notice Agent</h3>
+          <p>Checks a capital call has cleared KYC, documents, approvals and notification setup before notices go out.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-cash-flow-assistant.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Cash Flow Assistant Agent</h3>
+          <p>Calculates each fund's cash position, runway and recommended capital call, then emails a consolidated report.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-rta-reconciliation.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>RTA Reconciliation Agent</h3>
+          <p>Reconciles an uploaded RTA unit statement against your fund's own unit and folio records.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

@@ -3,13 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CapHive — Supercharge Private Capital Markets</title>
+<title>CapHive — Reimagine Private Capital Markets</title>
 <meta name="description" content="CapHive is a full-stack intelligent technology platform for powering private capital markets — funds, portfolios, deals & secondaries, with AI agents purpose-built for private markets.">
 <meta name="theme-color" content="#FBFAF7">
 <link rel="canonical" href="https://caphive.com/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
-<!-- TODO: host a real 1200x630 social image at /og.png before launch -->
-<meta property="og:title" content="CapHive — Supercharge Private Capital Markets">
+<meta property="og:title" content="CapHive — Reimagine Private Capital Markets">
 <meta property="og:description" content="Full-stack intelligent platform for private capital markets — funds, portfolios, deals & secondaries, with AI agents built in.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://caphive.com/">
@@ -18,10 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<!-- Shared design system first, so the homepage-only styles below can override it.
-     This is what supplies the nav dropdown (.has-menu / .nav-menu) and the
-     five-column footer that the interior pages use. -->
-<link rel="stylesheet" href="assets/css/caphive.css?v=732c1460">
+<link rel="stylesheet" href="assets/css/caphive.css?v=af04f9fa">
 <style>
   :root{
     --bg:      #FBFAF7;
@@ -139,6 +135,11 @@
     font-size:clamp(52px,8.2vw,108px); font-weight:800; letter-spacing:-0.045em;
     line-height:.98; max-width:1000px; margin:0 auto;
   }
+  /* The a and the i of "Reimagine" are the only colour in the headline: read in
+     order they spell AI, which is the platform's whole premise. <i> and not <em>
+     deliberately — <em> would pull in the italic serif from the shared
+     h1 em rule in caphive.css and undo the effect. */
+  .hero h1 .ai{ color:var(--orange); font-style:normal; }
   .hero h1 .w{ display:inline-block; opacity:0; transform:translateY(22px); filter:blur(10px); animation:wIn .8s cubic-bezier(.2,.8,.3,1) forwards; }
   .hero h1 .w:nth-child(1){ animation-delay:.08s }
   .hero h1 .w:nth-child(2){ animation-delay:.18s }
@@ -568,12 +569,6 @@
     .cta-grid{ grid-template-columns:1fr; gap:36px; }
     .foot-grid{ grid-template-columns:1fr; gap:36px; }
     .section{ padding:96px 0; }
-  }
-  /* "Supercharge" is the longest word in the headline and the clamp() floor of
-     52px makes it wider than a 320px screen (iPhone SE), overflowing the page.
-     8.2vw never wins at this size, so the floor has to come down explicitly. */
-  @media (max-width:380px){
-    .hero h1{ font-size:44px; }
   }
 
   /* ---------- reduced motion ---------- */

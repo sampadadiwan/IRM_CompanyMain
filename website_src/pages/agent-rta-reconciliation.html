@@ -1,0 +1,298 @@
+---
+title: RTA Reconciliation Agent &mdash; Unit Statement Reconciliation | CapHive
+description: 'Reconciles an uploaded RTA unit statement PDF against your fund''s unit
+  and folio records in CapHive: scheme and folio mismatches, movement and opening-balance
+  continuity, coverage gaps and unconfigured ISINs.'
+og_title: RTA Reconciliation Agent | CapHive
+og_description: Reconciles an uploaded RTA unit statement against your fund's own
+  unit and folio records.
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>RTA Reconciliation Agent
+      </nav>
+      <span class="chip-label">Finance &middot; Agent</span>
+      <h1 style="margin-top:22px">Reconcile the RTA statement <em>against your own unit records.</em></h1>
+      <p class="lede">
+        The RTA Reconciliation Agent reconciles an uploaded registrar and transfer agent unit statement PDF against your fund's own unit records in CapHive. It checks for mismatches at scheme (ISIN) and folio level, flags folios in the statement with no matching record, and flags unit classes CapHive holds that the statement never mentions.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>One fund per statement upload</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>Yes &mdash; AI reads the statement PDF, so an AI provider key is required</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A reconciliation report with a health score, plus an optional email summary</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ARTICLE BODY ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>The agent works on one fund per run. When you upload a statement PDF, it:</p>
+          <ol>
+            <li>
+              <strong>Checks fund readiness.</strong> Before looking at the statement at all, it checks
+              whether every unit type your fund actually holds &mdash; with a real, non-zero balance &mdash;
+              has an ISIN set up against it. A unit type with real commitments but no ISIN configured can
+              never be reconciled, however good the statement is. This check exists to surface that gap up
+              front rather than let it hide inside a clean-looking reconciliation.
+            </li>
+            <li>
+              <strong>Reads the statement.</strong> Extracts the text from the PDF and uses AI to pull out
+              one entry per scheme, being each ISIN block: scheme name, ISIN, NAV, summary totals for
+              opening, subscribed, redeemed and closing units, and a folio-by-folio breakdown of folio
+              number, investor name, holding type, opening and closing units, and pending requests.
+            </li>
+            <li>
+              <strong>Reconciles each scheme found in the statement:</strong>
+              <ul>
+                <li><strong>Summary check</strong> &mdash; the RTA's total closing units for that scheme against the total units CapHive has on record for that unit type.</li>
+                <li><strong>Folio-level check</strong> &mdash; each folio's closing units on the statement against the matching investor record in CapHive, matched by folio number and unit type.</li>
+                <li><strong>Movement check</strong> &mdash; the subscriptions and redemptions the RTA reports for the period against CapHive's own unit activity over the same dates. This only runs once a previous reconciliation exists for the fund, since it needs that prior run to know where the period started.</li>
+                <li><strong>Opening balance continuity</strong> &mdash; that this period's opening balance as reported by the RTA matches the closing balance the RTA reported last time for the same folio. This catches discrepancies a closing-balance-only check could miss.</li>
+                <li><strong>Investor name check</strong> &mdash; flags a folio where the folio number matches a CapHive record but the investor name on the statement differs from what is on file, ignoring case and extra spacing.</li>
+                <li><strong>Reverse check</strong> &mdash; looks for investor holdings in CapHive with a real balance and a folio number that never appears anywhere in the statement.</li>
+              </ul>
+            </li>
+            <li><strong>Checks coverage fund-wide.</strong> Compares every ISIN your fund holds, properly configured and with a non-zero balance, against the ISINs this particular statement actually covered. This is the only check that can catch a scheme the AMC forgot to send entirely, since the per-scheme checks only ever look at ISINs the PDF mentions.</li>
+            <li><strong>Flags pending requests.</strong> Folios where the statement shows an in-flight subscription or redemption request are flagged as warnings, not as mismatches.</li>
+            <li><strong>Sends the report</strong>, optionally emailing the reconciliation summary.</li>
+          </ol>
+          <p>
+            Nothing is ever written back to your investor holding or unit activity records. This agent only
+            compares and reports.
+          </p>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <h3>Configuration fields</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Default</th><th>What it controls</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Tolerance (units)</td><td>Number</td><td>0.01</td><td>The maximum difference in units, in absolute terms, per folio or summary that is still treated as a match. This accommodates the minor rounding you typically see in RTA PDFs.</td></tr>
+                <tr><td>Tolerance (%)</td><td>Number</td><td>0</td><td>The maximum percentage difference still treated as a match. A folio is only flagged as a mismatch if it fails both checks. Leave at 0 to rely on the unit tolerance alone.</td></tr>
+                <tr><td>Flag pending requests</td><td>Yes / No</td><td>Yes</td><td>When Yes, folios where the statement shows a pending transaction &mdash; worded as &ldquo;Pending TXN&rdquo;, &ldquo;Outstanding Requests&rdquo; and similar &mdash; are flagged as warnings, not as mismatches.</td></tr>
+                <tr><td>Email report after run</td><td>Yes / No</td><td>Yes</td><td>When Yes, the reconciliation summary is emailed to the Notify email address after each run.</td></tr>
+                <tr><td>Notify email</td><td>Text</td><td>Blank</td><td>The recipient for the reconciliation report email. Required when &ldquo;Email report after run&rdquo; is set to Yes.</td></tr>
+                <tr><td>Statement date override</td><td>Date</td><td>Blank</td><td>Overrides the statement period-end date pulled from the PDF. Use it when the RTA's date format is unusual and the automatic extraction gets it wrong.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Setup warnings</h3>
+          <p>The agent's General tab shows a yellow warning banner whenever setup would undermine a run. For this agent it flags:</p>
+          <ul>
+            <li><strong>Both tolerance fields empty.</strong> With neither set, tolerance is zero and every minor rounding difference in the RTA PDF is reported as a mismatch, drowning real breaks in noise.</li>
+            <li><strong>&ldquo;Email report after run&rdquo; set to Yes with a blank Notify email</strong> &mdash; the report would never be emailed.</li>
+            <li><strong>Any unit type whose ISIN is not configured.</strong> A unit type with no ISIN on its fund unit settings cannot be matched to any scheme in the statement, so its folios are invisible to every check. The banner names each affected unit type and fund.</li>
+            <li><strong>Either Yes/No toggle that has never been given a value</strong> &mdash; an unset toggle counts as off, which silently skips that behaviour.</li>
+          </ul>
+
+          <h3>Other data inputs</h3>
+          <ul>
+            <li><strong>The RTA statement PDF</strong>, uploaded each time you run the agent through its dedicated upload window rather than the agent's normal configuration page. It is the only file input; there is no recurring or pre-attached statement, and every run needs its own fresh upload.</li>
+            <li><strong>Your fund's unit configuration</strong>, which provides the ISIN each unit type is matched against.</li>
+            <li><strong>Your fund's investor holding records.</strong> The unit count and folio number on file for each investor and unit type are the CapHive side of every comparison.</li>
+            <li><strong>Your fund's unit activity ledger</strong>, used only for the movement check.</li>
+            <li><strong>The previous reconciliation report</strong>, if one exists, stored automatically from prior runs. It anchors the movement check and the opening-balance continuity check &mdash; the very first run for a fund has neither available, so those two checks are skipped that time.</li>
+          </ul>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <p>
+            An administrator enables the agent with a feature toggle under Admin &rarr; Edit Entity &rarr;
+            Support Agents. Because the agent uses AI to read the statement, your entity needs at least one
+            AI provider key configured under AI &rarr; Support Agents &rarr; LLM Keys. There is also a
+            per-agent AI Model setting on the agent's Edit page that, if filled in, overrides your entity's
+            default model for this agent only.
+          </p>
+          <p>
+            The upload button that starts a run only appears once the feature toggle is enabled, and only
+            for users with edit permission on the specific fund. Note for administrators: this agent is not
+            assigned to one of the usual internal groupings, so on the agent index page it appears under
+            Uncategorized.
+          </p>
+
+          <h2 id="running-it">Running it</h2>
+          <p>
+            There is no generic &ldquo;Run Now&rdquo; button. Running the agent always requires uploading a
+            PDF, so it has its own dedicated upload window instead of the standard agent run screen.
+          </p>
+          <ol>
+            <li>Open the fund's show page.</li>
+            <li>If the feature is enabled for your entity and you have edit rights on the fund, a <strong>Run RTA Reconciliation</strong> action is available in the fund's action area.</li>
+            <li>The upload window asks for an RTA statement PDF &mdash; PDF files only. It is the only required field; there is no separate notes or context field.</li>
+            <li>Click Run Reconciliation.</li>
+          </ol>
+          <p>
+            The uploaded PDF is saved as a document on the fund, named &ldquo;RTA Statement (PDF)&rdquo;,
+            before the reconciliation starts. That order works in your favour: the PDF stays on file even if
+            the reading step later fails or has to be retried.
+          </p>
+          <p>
+            The agent always runs against the one fund you triggered it from &mdash; there is no run-for-every-fund
+            option. Once you click Run, a live step-by-step progress panel appears: Initialize, Fund
+            Readiness, Parse Statement, Reconcile, Coverage Check, Pending Requests, Send Report, Save
+            Report.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            Not supported. There is no default schedule and no recurring-run option for this agent.
+            Reconciliation is inherently tied to a one-off statement upload, so you run it on demand each
+            time a new statement arrives from your RTA.
+          </p>
+
+          <h2 id="output">Where the output goes</h2>
+          <ul>
+            <li><strong>Reconciliation History tab</strong> on the agent's own page, under AI &rarr; Support Agents &rarr; RTA Reconciliation. It lists every run across all of your funds, with a health score, scheme count and folio-mismatch count per run. Expanding a row shows the full coverage breakdown &mdash; fund-wide, then ISIN-configured, then covered by this statement &mdash; along with per-scheme detail, folio-level mismatches, pending requests, folios missing from the statement, opening-balance continuity issues and investor name mismatches.</li>
+            <li><strong>Email.</strong> If &ldquo;Email report after run&rdquo; is Yes and Notify email is filled in, an HTML summary goes to that address after each run. Per scheme it shows a banner with the mismatch count and an all-matched or health-score indicator, a summary table of RTA units against CapHive units and the difference, a folio mismatch table when any exist, pending-request callouts, and a callout listing CapHive folios missing from the statement entirely.</li>
+            <li><strong>Report history.</strong> A new report is saved on every run, tied to the fund. Older runs are never overwritten. A report is marked Failed when any serious issue was found and Completed otherwise.</li>
+          </ul>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <ul>
+            <li><strong>Health score</strong> &mdash; the percentage of checks that passed cleanly. Only clean passes and serious mismatches count towards it; warning-level issues such as pending requests, folios missing from the statement, name mismatches and continuity issues are excluded. A run with no real mismatches scores 100% even with advisory warnings attached.</li>
+            <li><strong>Scheme results</strong> &mdash; one entry per ISIN found in the statement: whether the summary matched, the per-folio match, mismatch or unmatched status with RTA against CapHive units and the difference, folios on file that are missing from the statement, folios with pending requests, and the movement comparison, or blank if there is no prior run to anchor the period against.</li>
+            <li><strong>Scheme coverage</strong> &mdash; every ISIN your fund holds, and whether this statement covered it at all.</li>
+            <li><strong>Unit readiness</strong> &mdash; every unit type with a real balance, and whether it even has an ISIN configured. This is the fund-wide readiness check, independent of any statement.</li>
+            <li><strong>Fund-wide rollup</strong> &mdash; a summary across three layers, each a subset of the one before it: every unit type the fund holds regardless of setup, the subset with an ISIN configured, and the subset this specific statement actually covered.</li>
+          </ul>
+
+          <div class="pull">
+            <p>A gap between the first two layers points to a setup problem on your side; a gap between the last two points to an incomplete statement from the AMC.</p>
+            <cite>RTA Reconciliation Agent user guide</cite>
+          </div>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <div class="callout">
+            <p>
+              Statement text is capped at 30,000 characters before being processed. Very large or multi-fund
+              statements may have their tail end cut off, which can silently drop schemes or folios that
+              appear later in the document.
+            </p>
+          </div>
+          <ul>
+            <li><strong>A folio only needs to pass one of the two tolerance checks, not both.</strong> A folio or summary is treated as a match if it is close enough on either an absolute basis or a percentage basis. With the default setup, percentage tolerance at 0, only the absolute tolerance is active. Turn on a percentage tolerance and a small fund with a sizeable percentage swing can still pass if the absolute unit gap is tiny, while a large fund with a tiny percentage swing can pass even with a fairly large absolute gap. If matching feels too loose, tighten whichever of the two is letting too much through.</li>
+            <li><strong>No PDF uploaded, or the PDF cannot be read.</strong> If no file was attached, or the file is empty, the run stops immediately with &ldquo;No RTA statement PDF uploaded.&rdquo; If the PDF has no readable text at all &mdash; a scanned image with no text layer, for example &mdash; the run stops with &ldquo;Could not read text from the uploaded PDF.&rdquo; There is no fallback that can read text out of an image-only scan.</li>
+            <li><strong>Non-standard statement dates.</strong> RTAs format dates inconsistently. The agent does its best to interpret whatever date it found; if that fails it falls back to storing the raw text, which then does not sort or compare reliably for the movement check. Use the Statement date override field to force the correct date.</li>
+            <li><strong>The statement could not be understood, or came back malformed.</strong> Both show up as a serious issue on the run &mdash; no scheme data found, or the response was not valid. A timeout or rate-limit hiccup from the AI provider is also caught and shown as a run issue rather than crashing the page.</li>
+            <li><strong>Orphan ISINs.</strong> If the PDF contains an ISIN that does not match any unit configuration on the fund, that whole scheme is skipped and shown as a warning rather than reconciled. Its folios and units are reported as orphan, but they are never actually checked against CapHive.</li>
+            <li><strong>Unconfigured unit types.</strong> A unit type with real, non-zero holdings but no ISIN set up at all is invisible to the per-scheme checks. The fund readiness check at the start of the run is the only thing that surfaces this, as a serious issue, regardless of what is in the statement you upload.</li>
+            <li><strong>Folios in the statement that do not exist in CapHive.</strong> These show up as mismatches needing attention. Common causes: a typo in the folio number on the AMC's statement, a folio predating your CapHive records, or a unit-type mix-up &mdash; the same folio number reused across two unit classes can resolve to the wrong investor record if the unit type does not line up.</li>
+            <li><strong>Pending-transaction false positives or negatives.</strong> The agent recognises the common ways an RTA phrases &ldquo;nothing pending&rdquo;: None, Nil, NA, N/A, Not Applicable, a dash, or blank. A statement that phrases it differently, such as Settled or Processed, could be misread as an actual pending request, or the reverse, if the extraction normalises it inconsistently.</li>
+            <li><strong>Movement and continuity checks need a prior run to compare against.</strong> The very first reconciliation for a fund has nothing to anchor against, so both checks are quietly skipped rather than flagged. Do not expect this detail until the second run onward for a given fund.</li>
+            <li><strong>A blank Notify email with &ldquo;Email report after run&rdquo; set to Yes.</strong> The email step is simply skipped, with no error and no warning raised on that run, so a blank recipient field looks identical to everything working fine.</li>
+            <li><strong>Running the agent twice in quick succession on the same fund.</strong> Each run creates a new report rather than locking the fund while it works, so two back-to-back uploads for the same fund can overlap. Whichever run finishes and is marked latest is what the next run anchors against, so overlapping runs can produce confusing movement and continuity results.</li>
+            <li><strong>Investor name mismatches do not block the run.</strong> They are shown only as warnings, even though they could point to a stale folio reassignment or two different investors sharing a folio number by coincidence.</li>
+          </ul>
+
+          <h2 id="faq">Questions we get asked</h2>
+          <div class="faq">
+            <details>
+              <summary>We uploaded the PDF but the run says &ldquo;No RTA statement PDF uploaded.&rdquo; What happened?</summary>
+              <div>
+                <p>The file did not save properly before the run started, or the file uploaded was empty. Check the file is a valid, non-empty PDF and try the upload again.</p>
+              </div>
+            </details>
+            <details>
+              <summary>A folio shows as a mismatch even though the numbers look close. Why?</summary>
+              <div>
+                <p>Check both tolerance fields. The agent treats a difference as a match if it is within the unit tolerance or, if you have set one, the percentage tolerance &mdash; only when both are exceeded does it count as a mismatch. If the default unit tolerance of 0.01 is too tight for your RTA's typical rounding, raise it on the Edit page.</p>
+              </div>
+            </details>
+            <details>
+              <summary>The statement date on the report looks wrong and does not match the PDF.</summary>
+              <div>
+                <p>RTAs use inconsistent date formats and the automatic extraction can misread them. Set the Statement date override field on the Edit page to force the correct date for future runs against this fund.</p>
+              </div>
+            </details>
+            <details>
+              <summary>A scheme in our PDF was skipped entirely with a &ldquo;not found&rdquo; warning.</summary>
+              <div>
+                <p>The ISIN in the statement does not match anything configured for this fund. Add or correct the ISIN under the fund's Unit Settings, then re-run.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Why did we not get an email after the run?</summary>
+              <div>
+                <p>Either &ldquo;Email report after run&rdquo; is set to No, or the Notify email field is blank. Both need to be set together &mdash; check the agent's Edit page.</p>
+              </div>
+            </details>
+            <details>
+              <summary>The movement and continuity sections are missing from our report.</summary>
+              <div>
+                <p>These require a prior reconciliation run for the same fund to anchor the comparison period. They start appearing from your fund's second reconciliation run onward.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>bench.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-distribution-readiness.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Distribution Readiness Agent</h3>
+          <p>Checks KYC, payable amounts, notices, approvals and bank details before a distribution is paid.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-cash-flow-assistant.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Cash Flow Assistant Agent</h3>
+          <p>Calculates each fund's cash position, runway and recommended capital call, then emails a consolidated report.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-data-quality.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Data Quality Agent</h3>
+          <p>Runs nightly integrity checks across every fund's financial data, then emails a health score and a fix-it list.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

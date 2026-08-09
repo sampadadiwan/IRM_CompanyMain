@@ -1,0 +1,221 @@
+---
+title: KYC Doc Extractor Agent &mdash; Document-First KYC | CapHive
+description: How CapHive's KYC Doc Extractor Agent reads an investor's uploaded identity
+  and address documents with AI and pre-fills the matching KYC form fields for review.
+og_title: KYC Doc Extractor Agent | CapHive
+og_description: 'Document-first KYC: the investor uploads documents, the agent reads
+  them and pre-fills the form, and the investor confirms rather than types.'
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>KYC Doc Extractor Agent
+      </nav>
+      <span class="chip-label">Onboarding &middot; Agent</span>
+      <h1 style="margin-top:22px">Read the documents first, <em>fill the form after.</em></h1>
+      <p class="lede">
+        The KYC Doc Extractor Agent is the document reader behind CapHive's document-first KYC experience: an investor uploads their identity and address documents, the agent reads them with AI and pre-fills the matching KYC form fields. The investor reviews and confirms the details rather than typing everything in by hand.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>One investor's KYC record, at upload time</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>Yes &mdash; one request per uploaded document</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>Pre-filled KYC fields and an on-screen summary; no stored report</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+<h2 id="what-it-does">What it does</h2>
+<p>The agent has two stages, and a save at the end.</p>
+<ol>
+  <li><strong>Gets ready to read the documents.</strong> It loads the investor's KYC record and prepares a place to collect the outcome of each field it is about to try to fill in.</li>
+  <li><strong>Reads documents and fills in fields.</strong> Based on which KYC form type the investor is using, the agent looks up the extraction rules configured for that form. Rules are grouped by document, so even if several form fields come from the same document the agent makes only <strong>one AI request per uploaded document</strong>, asking for everything it needs in one go. For each configured field:
+    <ul>
+      <li>If the document the rule expects has not been uploaded yet, the field is marked <strong>skipped</strong> &mdash; "Document not uploaded".</li>
+      <li>If overwrite mode is set to "only fill blank fields", which is the default, and the field already has something typed in, it is marked <strong>skipped</strong> &mdash; "Field already has a value". The investor's own typed entry is never overwritten by mistake.</li>
+      <li>Otherwise the document is sent to AI with a combined extraction prompt. On success each field's value is written onto the KYC record and marked <strong>extracted</strong>.</li>
+      <li>If the AI's response cannot be read, or anything else goes wrong, every field tied to that document is marked <strong>error</strong>.</li>
+    </ul>
+  </li>
+  <li><strong>Saves everything at once.</strong> All extracted values are written in a single save at the end. That save deliberately skips the form's normal validation rules, so a partially filled KYC can still be saved mid-wizard without erroring out on fields the investor has not reached yet.</li>
+</ol>
+<p>This agent shows no step-by-step progress panel. It either runs immediately and finishes before the page reloads, when triggered from the Extract from Documents button, or runs in the background, when triggered from the document-first upload flow. Either way, what you see afterwards is a short summary message, or simply your form fields already filled in.</p>
+
+<h2 id="what-it-needs">What it needs</h2>
+<p>This agent has no standard configuration checklist on its edit page the way most agents do. Its settings live in a configuration panel built specifically for it.</p>
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Setting</th><th>Type</th><th>Default</th><th>What it controls</th></tr></thead>
+  <tbody>
+    <tr><td>Overwrite Mode</td><td>Dropdown, in the dedicated config panel</td><td>Only fill blank fields</td><td>"Only fill blank fields" never overwrites data the investor already typed in. "Always overwrite" replaces the field's value every time extraction runs, whatever is already there.</td></tr>
+    <tr><td>Extraction Rules</td><td>A set of rules per KYC form type</td><td>Empty until seeded automatically</td><td>For each KYC form type &mdash; Individual or Non-Individual &mdash; an ordered list of rules. Each rule names the uploaded document to read, the instruction sent to the AI for that document, and which KYC field the result should be written into.</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Extraction rules are not typed into a single text box. They are managed through an editable rule table in the agent's configuration panel, with one card per KYC form type and Add Rule and Remove Rule buttons. They are also seeded automatically the first time Setup All Agents is run for your entity, using your entity's actual Individual and Non-Individual KYC form types. The default starter rules are:</p>
+<ul>
+  <li>Extract the tax ID number from the "Upload Tax ID" document.</li>
+  <li>Extract the full permanent address from the "Upload Address Proof" document.</li>
+</ul>
+<p>The default Individual KYC form type gets a third starter rule that pulls the investor's full name from the "Upload Tax ID" document. This auto-seeding happens once only, the first time, and only if no rules exist yet &mdash; it will never overwrite rules you have since customised.</p>
+<p>Beyond configuration, the agent reads which KYC form type the investor is using, to decide which rule set applies; the investor's uploaded documents, matched to each rule by an exact trimmed name match against the document label the rule expects; and the investor's existing field values, to decide whether "only fill blank fields" mode should skip a given rule.</p>
+
+<h3>Setup checklist and warnings</h3>
+<p>Because this agent produces no report of its own, a broken setup used to be invisible &mdash; an investor's form simply stayed empty. The agent's General tab now shows a yellow warning banner when:</p>
+<ul>
+  <li><strong>No extraction rules are configured at all.</strong> The agent would run and extract nothing. Re-run Setup All Agents to seed the starter rules, or add rules in the configuration panel.</li>
+  <li><strong>Rules are tied to a KYC form type that no longer exists.</strong> This happens when form types were rebuilt after the rules were seeded. Those rules silently apply to nothing; re-run Setup All Agents, or re-create the rules against the current form types.</li>
+</ul>
+<p>Check as well that each rule's document name exactly matches the upload label on the KYC form &mdash; "Upload Tax ID", for example. A near-miss name means that rule always reports "Document not uploaded".</p>
+
+<div class="callout">
+  <p><strong>This agent fails quietly by design.</strong> A missing rule set, a rule pointing at a form type that no longer exists, or a document uploaded under a slightly different name all produce a skip rather than an error. What the investor sees is an empty form, not a message. The warning banner on the General tab is the signal to watch.</p>
+</div>
+
+<h2 id="turning-it-on">Turning it on</h2>
+<ul>
+  <li><strong>Where to switch it on.</strong> In the admin area, edit the entity and use the Support Agents section. This requires the Company Admin role.</li>
+  <li>That same toggle also gates the <strong>document-first upload screen</strong> itself. The screen appears only when both this agent and a separate entity setting for the doc-first wizard are on, the KYC has not already been submitted, and no documents have been uploaded yet.</li>
+  <li><strong>An AI key is required.</strong> Every extraction is an AI request, so a key must be configured under AI &rarr; Support Agents &rarr; LLM Keys. Gemini Flash is the recommended model here, because it handles large scanned documents well.</li>
+</ul>
+
+<h2 id="running-it">Running it</h2>
+<p>There is no Run Now button and no manual batch option on the agent's own page, and it never runs on a schedule. It kicks in automatically at two points in the KYC document upload flow.</p>
+<ol>
+  <li><strong>The document-first wizard.</strong> When an investor on the document-first wizard uploads their identity and address documents and clicks Continue to Fill Form, the documents are saved and the extraction job is queued to run in the background. The investor sees a brief processing screen that moves them on to the now pre-filled form once extraction finishes.</li>
+  <li><strong>The Extract from Documents button.</strong> Shown directly on the KYC form, this runs the agent immediately against whatever documents are already uploaded, and returns the investor to the form with a summary showing how many fields were extracted, skipped, or hit an error.</li>
+</ol>
+<p>Both paths always work against a single investor's KYC record; there is no entity-wide batch run. If no enabled KYC Doc Extractor Agent exists for the entity, the wizard simply skips extraction with no message, while the Extract from Documents button shows an alert saying the document extractor agent is not configured for this entity.</p>
+
+<h2 id="output">Where the output goes</h2>
+<p>There is no persisted, browsable report for this agent and no progress panel. Results are returned directly to whichever screen triggered it.</p>
+<ul>
+  <li><strong>From the Extract from Documents button</strong> &mdash; an immediate summary message: "Extracted N field(s) from your documents. X skipped (already filled or document not uploaded). Y error(s) &mdash; check server logs."</li>
+  <li><strong>From the document-first wizard</strong> &mdash; no summary at all beyond landing on the pre-filled form. The investor simply sees their fields already populated, or not, if extraction failed or was skipped.</li>
+  <li><strong>Field-by-field detail</strong> &mdash; visible only in server logs, which your CapHive technical contact can pull if you need to know exactly what happened with a specific document.</li>
+</ul>
+
+<h2 id="reading-the-result">Reading the result</h2>
+<p>There is no Ready or Blocked status here, because this agent does not gate any other process. Each field it attempted ends in one of three states.</p>
+<ul>
+  <li><strong>Extracted</strong> &mdash; the value was read from the document and written into the field.</li>
+  <li><strong>Skipped</strong> &mdash; either the source document was not uploaded, or, in "only fill blank fields" mode, the field already had a value.</li>
+  <li><strong>Error</strong> &mdash; the AI request failed to produce a usable result. The underlying error message is captured for troubleshooting.</li>
+</ul>
+
+<h2 id="where-it-can-fail">Where it can fail</h2>
+<ul>
+  <li><strong>No KYC Doc Extractor Agent enabled for the entity.</strong> Both entry points check for an enabled agent first. If none is found, the wizard silently skips extraction &mdash; nothing queued, no message &mdash; while the button shows an explicit alert. If you have set this up before and it is still not working, check that the agent is enabled both as a record and via the entity-level toggle. Those are two separate switches.</li>
+  <li><strong>No extraction rules configured for this KYC's form type.</strong> The agent records a single skipped result, "No extraction rules configured for this form type", and does nothing further. This looks like the agent did nothing rather than an error you would notice. If your entity added a new KYC form type after the agent was first set up, re-run Setup All Agents to seed rules for it &mdash; auto-seeding only happens once, when no rules exist yet.</li>
+  <li><strong>A document name that does not exactly match what the rule expects.</strong> Matching is on the document's name against the rule's expected label, trimmed and case-sensitive. An upload named something close but not identical &mdash; "PAN card" instead of the expected "Upload Tax ID" &mdash; is silently skipped with "Document not uploaded", even though a document clearly was uploaded, just under another name.</li>
+  <li><strong>The AI's response cannot be parsed.</strong> Caught and recorded as an error for every field tied to that document, but the record is still saved for any other fields that succeeded. One bad document does not take down the whole extraction.</li>
+  <li><strong>Any other AI or network problem.</strong> Caught, recorded as an error per field, and logged. The agent moves on to the next document rather than stopping, so one problematic document does not block extraction from the others.</li>
+  <li><strong>"Always overwrite" mode on a record the investor has already partly filled in.</strong> Every matching rule re-extracts and replaces the existing value, including anything the investor corrected by hand after a previous extraction. This is intentional for deliberate re-extraction, but it can quietly wipe out manual corrections if switched on without realising the consequence.</li>
+  <li><strong>A misconfigured target field.</strong> If a rule's target field name does not match a real field on the KYC record, the value is still saved but tucked away somewhere the form does not display. A typo in the target field name &mdash; "full_anme" for "full_name" &mdash; raises no error; it just looks as though the field never got filled, because nothing on the form reads that misspelled key.</li>
+  <li><strong>No AI key configured while the agent is turned on.</strong> The extraction request simply fails. This is not treated as a special case: it shows up as the same generic error outcome as any other failure, so the investor or staff member sees "N error(s) &mdash; check server logs" with no indication that the cause is a missing key.</li>
+  <li><strong>Running the wizard and the manual button at the same time.</strong> Both try to fill in the same record. Click Extract from Documents while a wizard extraction is still running in the background for the same investor and both will try to save &mdash; whichever finishes last wins, with no conflict warning.</li>
+  <li><strong>Running against a KYC with no documents uploaded at all.</strong> Every rule resolves to skipped and the record is never even saved, since there is nothing new to save, so the investor proceeds to a completely blank form. That is expected for a KYC with no documents yet, not a malfunction.</li>
+</ul>
+
+<h2 id="faq">Questions we get asked</h2>
+<div class="faq">
+  <details>
+    <summary>I uploaded documents but the form fields were not pre-filled. What should I check?</summary>
+    <div>
+      <p>First confirm a KYC Doc Extractor Agent is enabled for the entity, and that it has extraction rules configured for this investor's KYC form type. Then check that the uploaded document's name exactly matches what the rule expects &mdash; a mismatch causes a silent skip, not a visible error.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Why does extraction overwrite a value I typed in manually?</summary>
+    <div>
+      <p>Check the agent's Overwrite Mode setting. "Only fill blank fields", the default, never overwrites fields that already have a value. "Always overwrite" replaces every matching field on every extraction run, including values entered by hand.</p>
+    </div>
+  </details>
+  <details>
+    <summary>How do I add a new extraction rule, for example a date of birth from a passport?</summary>
+    <div>
+      <p>Open the agent's edit page and find the rule table for the relevant form type, Individual or Non-Individual KYC. Click Add Rule, fill in the document label, the extraction instruction and the target field, then save.</p>
+    </div>
+  </details>
+  <details>
+    <summary>The result says "N error(s)" with no further detail on screen. Where do I look?</summary>
+    <div>
+      <p>Ask your CapHive technical contact to check the server logs. They capture the underlying AI response or error message that the on-screen summary does not show.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Does this agent ever block KYC submission, or show up in Execution History?</summary>
+    <div>
+      <p>No. It has no Ready or Blocked status and does not appear in an Execution History tab &mdash; it only pre-fills fields for the investor to review. KYC submission and verification are still handled by the standard KYC workflow, and optionally double-checked afterwards by the <a href="agent-kyc-onboarding.html">KYC Onboarding Agent</a>.</p>
+    </div>
+  </details>
+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Keep going</span>
+      <h2>Other agents in the <em>same workflow.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-kyc-onboarding.html">
+        <div>
+          <span class="kick">Onboarding</span>
+          <h3>KYC Onboarding Agent</h3>
+          <p>Reviews a completed KYC record for completeness, document validity and expiry.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-esign-monitor.html">
+        <div>
+          <span class="kick">Onboarding</span>
+          <h3>E-Sign Monitor</h3>
+          <p>Flags signature requests sitting unsigned too long, and documents that expired or failed.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-data-quality.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Data Quality Agent</h3>
+          <p>Checks the records your reporting depends on and reports what needs fixing.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team &mdash; funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

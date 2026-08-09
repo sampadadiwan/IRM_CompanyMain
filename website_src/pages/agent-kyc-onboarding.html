@@ -1,0 +1,235 @@
+---
+title: KYC Onboarding Agent &mdash; Investor KYC Review | CapHive
+description: How CapHive's KYC Onboarding Agent reviews a completed investor KYC record
+  for completeness, document validity and expiry, then marks it Ready or Blocked and
+  starts AML screening.
+og_title: KYC Onboarding Agent | CapHive
+og_description: 'A fixed checklist run over every completed investor KYC record: required
+  fields, required documents, document validity, form-to-document matching and expiry.'
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>KYC Onboarding Agent
+      </nav>
+      <span class="chip-label">Onboarding &middot; Agent</span>
+      <h1 style="margin-top:22px">A final check on every completed <em>investor KYC record.</em></h1>
+      <p class="lede">
+        The KYC Onboarding Agent reviews a completed investor KYC record and checks that it is complete, internally consistent and not expired &mdash; before your team relies on it for capital calls, distributions or AML clearance. Operations and compliance teams use it as the final quality check on investor onboarding.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>One investor's KYC record, or every completed record in the entity</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>Yes &mdash; for two of the document checks</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A report on the record, marked Ready or Blocked, plus AML screening and expiry email</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+<h2 id="what-it-does">What it does</h2>
+<p>The agent looks only at KYC records the investor has marked complete, and only when it is switched on for your entity. Records still in progress are skipped entirely. For each record it works through a fixed checklist, notes every issue it finds along with how serious that issue is, saves a report &mdash; and, if everything checks out, starts AML screening.</p>
+<ol>
+  <li><strong>Gets ready to check.</strong> Only completed KYC records are considered, and only if the agent itself is turned on for the entity.</li>
+  <li><strong>Checks that all required information is filled in.</strong> Every required field &mdash; both standard fields and any custom fields your entity has marked required &mdash; must actually have a value, and that value cannot be a placeholder such as "N/A", "TEST" or "--". Dropdown-style fields are also checked, to confirm the selected value is one of the allowed options.</li>
+  <li><strong>Checks that all required documents are uploaded.</strong> Any field that calls for a document upload, plus any additional documents your entity requires, must have a matching file on the record.</li>
+  <li><strong>Checks that each uploaded document is the right document.</strong> The agent shows the AI each uploaded file along with its expected label &mdash; "Passport", for example &mdash; and asks whether the file actually matches. Mismatches, unreadable files and files that cannot be downloaded are all flagged.</li>
+  <li><strong>Cross-checks document contents against the form.</strong> For fields your entity has configured to be verified against a document, such as comparing a typed-in ID number to the ID document itself, the agent reads the relevant value out of the matching document with AI and compares it to what is typed into the form, flagging any mismatch.</li>
+  <li><strong>Checks expiry status.</strong> The KYC's expiry date is compared to today, and the record is flagged as expired (a blocker) or expiring soon (a warning), based on the warning windows you have configured.</li>
+  <li><strong>Saves the report.</strong> All findings are written to the KYC record's report, which is marked either Ready or Blocked.</li>
+  <li><strong>Sends expiry reminder emails.</strong> If anything came up expired or expiring soon, the agent emails every active team member on the entity.</li>
+  <li><strong>Starts AML screening.</strong> If there are no blocking issues from the field or document checks, the agent automatically starts an AML report, using the first active team member on the entity as the requestor.</li>
+</ol>
+
+<h2 id="what-it-needs">What it needs</h2>
+<h3>Configuration fields</h3>
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>What it controls</th></tr></thead>
+  <tbody>
+    <tr><td>Validate Fields</td><td>Yes / No</td><td>Off &mdash; treated as disabled unless explicitly set to Yes</td><td>Turns the "required fields filled in" check on or off. By default this setting has no visible toggle on the configuration form; it has to be turned on by your CapHive contact or it stays off.</td></tr>
+    <tr><td>Validate Documents</td><td>Yes / No</td><td>Off, as above</td><td>Turns on both the "document matches its label" check and the "document content matches the form" check. Also has no visible toggle by default.</td></tr>
+    <tr><td>Check Expiry</td><td>Yes / No</td><td>Yes</td><td>When on, checks the KYC's expiry date &mdash; a blocking issue if it has already expired, a warning if it falls within a configured warning window.</td></tr>
+    <tr><td>Expiry Warning Days</td><td>Text field</td><td>60, 30, 15</td><td>A comma-separated list of day counts before expiry that should trigger a warning. Clearing this field to blank turns advance warnings off entirely; the 60/30/15 fallback only applies when the setting was never created at all. The warning banner on the agent's page flags a blanked-out value.</td></tr>
+    <tr><td>Send Reminder</td><td>Yes / No</td><td>Off &mdash; no visible toggle by default</td><td>Turns the expiry reminder email step on or off.</td></tr>
+    <tr><td>Trigger AML</td><td>Yes / No</td><td>Off &mdash; no visible toggle by default</td><td>Turns the automatic AML screening step on or off.</td></tr>
+    <tr><td>Required Docs</td><td>Comma-separated list, not shown on the standard form by default</td><td>&mdash;</td><td>Extra document names required in addition to the document-upload fields already on the form. Checked during the document-presence step.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+  <p><strong>Out of the box, only Check Expiry and Expiry Warning Days appear as visible toggles.</strong> Validate Fields, Validate Documents, Send Reminder, Trigger AML and Required Docs are real settings the agent reads, but they have no visible form control by default. Because the agent treats anything other than an explicit "on" as off, any of them left unset behaves as disabled &mdash; so the completeness check, the document checks, the reminder emails or AML can be silently skipped, and the report comes back unexpectedly clean.</p>
+</div>
+
+<h3>What it reads off the record</h3>
+<ul>
+  <li>The KYC record's own field values, including any custom fields, for the completeness check.</li>
+  <li>The KYC's required configuration fields, including any field your entity has flagged for document cross-checking &mdash; that flag is what drives the compare-to-document step.</li>
+  <li>The documents uploaded to the KYC record, matched by name to the required field labels and to the extra required-document list.</li>
+  <li>The investor and entity linked to the record. The entity is needed to find an active team member to act as the AML requestor.</li>
+  <li>The record's expiry date and its expired or not-expired status.</li>
+</ul>
+
+<h3>Setup checklist and warnings</h3>
+<p>Silent skips are surfaced up front. The agent's General tab shows a yellow warning banner listing every one of the five toggles that has never been given a value, plus a blanked-out Expiry Warning Days field. An explicit "No" is respected as your choice and is not flagged.</p>
+<p>Two things fix most banner items:</p>
+<ul>
+  <li><strong>Re-run Setup All Agents.</strong> It fills in Validate Fields and Validate Documents as Yes automatically on existing agents that never had them. These are the agent's core checks and were the most common silent gap.</li>
+  <li><strong>Send Reminder and Trigger AML are deliberate opt-ins.</strong> Setup never turns these on for you, because they send email and start AML screening. Set them to Yes explicitly if you want them; until you decide, the banner keeps reminding you they are off.</li>
+</ul>
+
+<h2 id="turning-it-on">Turning it on</h2>
+<ul>
+  <li><strong>Where to switch it on.</strong> In the admin area, edit the entity and use the Support Agents section. This requires the Company Admin role.</li>
+  <li><strong>An AI key is needed for two of the steps.</strong> The "document matches its label" check and the "document content matches the form" check both call out to AI, so an AI key must be configured under AI &rarr; Support Agents &rarr; LLM Keys. The rest of the checks are rule-based and do not need one &mdash; but if those two steps run without a key configured, they will fail.</li>
+  <li>If the agent is turned off for your entity, the Run Now and Run KYC Onboarding Agent buttons appear greyed out wherever they show up.</li>
+</ul>
+
+<h2 id="running-it">Running it</h2>
+<p><strong>From the agent's own page.</strong> Open AI &rarr; Support Agents, open the KYC Onboarding Agent, and click Run Now on the General tab. This runs the agent against every completed KYC record in your entity in one batch; you will not see a step-by-step panel for an individual record this way.</p>
+<p><strong>From a single investor's KYC record</strong> &mdash; the more common path:</p>
+<ol>
+  <li>Open the investor's KYC record.</li>
+  <li>From the record's action menu, choose Run KYC Onboarding Agent. The option is only clickable when the agent is turned on for your entity; otherwise it is greyed out with a lock icon and a tooltip explaining why.</li>
+  <li>A confirmation popup shows what the agent checks, then runs it against that one record.</li>
+  <li>The check runs in the background and the record's report status shows as Pending while it works. Because you are running it against one specific record, you see a live step-by-step progress panel as each check completes.</li>
+</ol>
+<p>Either way, you do not have to wait on the page. Results appear once the check finishes running in the background.</p>
+
+<h2 id="scheduling">Scheduling</h2>
+<p>The agent supports scheduled runs, but out of the box no recurring schedule is pre-configured for it. To set one up, open the agent's Schedule tab, set the frequency (daily, weekly or monthly), the run time and the timezone, turn on Enabled, choose who should be notified on success, failure or partial success, and save.</p>
+<p>One gap is worth knowing about. The agent's own description mentions that it can run automatically when a new KYC is submitted, a document is uploaded or a field is updated &mdash; but none of those automatic triggers are wired up yet. The only ways it runs today are the manual Run Now and Run KYC Onboarding Agent buttons, and whatever schedule you set up yourself. If you need fields pre-filled right after a document upload, that is the job of the <a href="agent-kyc-doc-extractor.html">KYC Doc Extractor Agent</a>; use a daily schedule or manual runs here for the full onboarding review.</p>
+
+<h2 id="output">Where the output goes</h2>
+<ul>
+  <li><strong>The KYC record itself</strong> &mdash; a row of summary cards (Missing Fields, Missing Docs, Invalid Docs, Mismatched, AML Report) shows the latest results on the record.</li>
+  <li><strong>The agent's General tab</strong> &mdash; a View Report link to the most recent report for the agent overall.</li>
+  <li><strong>The agent's Execution History tab</strong> &mdash; every past run, scheduled or manual.</li>
+  <li><strong>Email</strong> &mdash; an expiry alert goes to every active team member on the entity any time a run turns up an expired or soon-to-expire KYC, however the run was triggered.</li>
+</ul>
+
+<h2 id="reading-the-result">Reading the result</h2>
+<p>The report groups its findings into three sections.</p>
+<ul>
+  <li><strong>Field issues</strong> &mdash; completeness and expiry findings: invalid or placeholder field values (blocking), an expired KYC (blocking), a KYC expiring soon (warning), and informational notes when everything checks out.</li>
+  <li><strong>Document issues</strong> &mdash; presence, validity and content matching: a missing required document (blocking), a document that does not match its expected label (blocking), a document the AI could not parse (warning), a document that could not be accessed (warning), a field that does not match its source document (blocking), and informational notes when everything checks out.</li>
+  <li><strong>AML report</strong> &mdash; a short log of what happened with AML screening: either confirmation that it was triggered, or the reason it was skipped, which is either that the KYC is incomplete or has blocking issues, or that no active team member was found to act as requestor.</li>
+</ul>
+<p>The record is marked <strong>Blocked</strong> if any field or document issue is blocking; otherwise it is marked <strong>Ready</strong>. Blocked means AML screening did not run this time. Someone needs to resolve the blocking issues and re-run the check before AML can proceed.</p>
+
+<h2 id="where-it-can-fail">Where it can fail</h2>
+<ul>
+  <li><strong>No active team member on the entity.</strong> AML screening needs someone to act as requestor, and the agent looks for the first active team member on your entity. If there is not one, AML is skipped with a "no active employee found" note &mdash; even though every other check passed and the record shows Ready. Check the entity's team list if AML never seems to trigger.</li>
+  <li><strong>No AI key configured while the agent is turned on.</strong> The "document matches its label" and "compare field to document" steps both need a key. Without one, expect the AI call to fail outright rather than produce a tidy per-document warning: this kind of configuration error is not caught gracefully the way a parsing error is, so it can stop the whole run for that record rather than flagging one document.</li>
+  <li><strong>The AI returns something the agent cannot read as a result.</strong> Caught and recorded as a warning on that specific document. It does not stop the run, but it also does not confirm the document either way, so it is worth a manual look.</li>
+  <li><strong>A document file cannot be opened or downloaded.</strong> Recorded as a warning, and that document's validity check is simply skipped. It is not retried automatically.</li>
+  <li><strong>Settings with no visible toggle may be silently off.</strong> Validate Fields, Validate Documents, Send Reminder and Trigger AML all default to off unless explicitly turned on behind the scenes. A newly set-up agent can silently skip the completeness check, the document checks, the reminder emails or AML, with no issues showing up at all. If checks seem to be getting skipped, confirm with your CapHive contact that these settings are actually on.</li>
+  <li><strong>The KYC is not yet marked complete by the investor.</strong> Records still in progress are left out of a batch run. That is expected behaviour, not a fault, even though it can look like nothing happened.</li>
+  <li><strong>Leaving the expiry warning window blank does not turn warnings off.</strong> Clear the Expiry Warning Days field and the agent falls back to its default 60/30/15-day windows. The only way to fully disable expiry checking is to set Check Expiry itself to No.</li>
+  <li><strong>Document names have to match closely.</strong> The "required document uploaded" check matches document names exactly, including case. The "document content matches form" check is a little more forgiving, being case-insensitive, but still needs a close name match. A document uploaded under a slightly different label than expected is reported as missing even though a similar file is sitting right there on the record.</li>
+  <li><strong>Running the same record from two places at once.</strong> A manual run and a scheduled run both update the same report for that record, and only one latest version is kept. Trigger a manual run while a scheduled run is still in progress and their updates can interleave &mdash; whichever finishes last wins.</li>
+  <li><strong>Re-running an already-resolved record does not reconcile outside changes.</strong> A re-run rebuilds the issue list from scratch, so resolved issues are correctly cleared. But if something was changed outside the KYC record &mdash; AML triggered manually, for instance &mdash; the agent has no way to know and will not reflect it.</li>
+</ul>
+
+<h2 id="faq">Questions we get asked</h2>
+<div class="faq">
+  <details>
+    <summary>The report shows zero issues, but I expected checks to run.</summary>
+    <div>
+      <p>Check with your CapHive contact whether Validate Fields and Validate Documents are actually turned on for this agent. These two settings have no visible toggle by default, so on a freshly set-up agent they may be off &mdash; which means the completeness and document checks are silently skipped rather than run.</p>
+    </div>
+  </details>
+  <details>
+    <summary>The report says Ready but no AML report was generated. Why?</summary>
+    <div>
+      <p>Look at the AML section of the report. If it says no active team member was found, add or activate an employee for the entity: AML needs someone to act as requestor. If Trigger AML is turned off, that step is skipped regardless of how everything else looks.</p>
+    </div>
+  </details>
+  <details>
+    <summary>A document I uploaded is flagged as missing, even though I can see it on the record.</summary>
+    <div>
+      <p>The document-presence check matches the required document's expected label to the uploaded document's name exactly, including case. Check that the uploaded document's name matches the expected label, or the configured required-document name, exactly &mdash; down to spacing and capitalisation.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Will this agent run automatically when an investor uploads a new document?</summary>
+    <div>
+      <p>Not currently. Even though the agent's description mentions automatic triggers, there is no automatic trigger wired up for document uploads today. Set up a daily or weekly schedule on the agent's Schedule tab, or trigger it manually from the KYC record.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Why didn't the expiry reminder email get sent, even though the KYC shows expiring soon?</summary>
+    <div>
+      <p>Confirm Send Reminder is actually turned on for this agent &mdash; it has no visible toggle by default, so it may simply be off. Also confirm the entity has active team members: the reminder goes to active employees, and if there are none there is effectively no one to send it to.</p>
+    </div>
+  </details>
+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Keep going</span>
+      <h2>Other agents in the <em>same workflow.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-kyc-doc-extractor.html">
+        <div>
+          <span class="kick">Onboarding</span>
+          <h3>KYC Doc Extractor</h3>
+          <p>Reads an investor's uploaded documents and pre-fills the matching KYC form fields.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-esign-monitor.html">
+        <div>
+          <span class="kick">Onboarding</span>
+          <h3>E-Sign Monitor</h3>
+          <p>Flags signature requests sitting unsigned too long, and documents that expired or failed.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-side-letter-obligation.html">
+        <div>
+          <span class="kick">Onboarding</span>
+          <h3>Side Letter Obligations</h3>
+          <p>Extracts every obligation from a side letter with its clause, for legal to review and track.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team &mdash; funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
