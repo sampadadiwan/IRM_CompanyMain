@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About Us — The Infrastructure Behind Private Capital | CapHive</title>
+<meta name="description" content="CapHive builds the operating infrastructure for private capital markets — one system of record for funds, portfolios, deals and secondaries, with AI inside the ledger.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/about.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="About Us — The Infrastructure Behind Private Capital | CapHive">
+<meta property="og:description" content="One system of record for funds, portfolios, deals and secondaries — built for the way private markets actually operate.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/about.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css">
+</head>
+<body data-page="about">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home">
+    <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+      <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+    </svg>
+    CapHive
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="resources.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="#" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="index.html">Home</a><span>/</span>About Us
+    </nav>
+    <span class="chip-label">About Us</span>
+    <h1>We build the rail that <em>private capital runs on.</em></h1>
+    <p class="lede">
+      CapHive is a full-stack intelligent technology platform for private capital markets. Funds,
+      portfolios, deals and secondaries — one system of record, with AI agents built into it rather
+      than bolted alongside.
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-outline" href="products.html">Explore the platform</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHY WE EXIST ================= -->
+<section class="section">
+  <div class="wrap-narrow">
+    <div class="reveal">
+      <span class="chip-label">Why we exist</span>
+      <h2 style="font-size:clamp(30px,4.4vw,50px);margin:20px 0 24px">Private markets grew up. Their <em>operations didn't.</em></h2>
+      <div class="prose">
+        <p>Private capital became a multi-trillion asset class. The workflow underneath it did not change
+        much: commitments live in a spreadsheet, KYC packs travel by email, the waterfall is rebuilt by
+        hand each quarter, and the investor statement is retyped from a workbook that only one person
+        fully understands.</p>
+        <p>Public markets solved this decades ago. Exchanges, depositories, clearing houses and market
+        data systems became shared infrastructure, and everything built on top of them got faster and
+        safer as a result. Private markets never got that layer. Every fund, every administrator and
+        every family office rebuilt a private version of it, badly, on its own.</p>
+        <p>CapHive is that missing layer. One ledger that holds investors, capital events, portfolio
+        positions and transactions together — so a signature, a wire and a statement are the same event
+        seen from different angles, and the numbers are current on a Tuesday, not eleven weeks after the
+        close.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PLATFORM METRICS ================= -->
+<section class="section-sm" aria-label="Platform scale" style="padding-top:0">
+  <div class="wrap">
+    <div class="kpi-row" style="margin-top:0">
+      <div class="kpi reveal"><strong>US$ 10<em>bn</em>+</strong><span>AUM administered on CapHive</span></div>
+      <div class="kpi reveal" data-delay="1"><strong>US$ 500<em>m</em>+</strong><span>capital raised &amp; secondaries executed</span></div>
+      <div class="kpi reveal" data-delay="2"><strong>4,000+</strong><span>investors managed</span></div>
+      <div class="kpi reveal" data-delay="3"><strong>1,000+</strong><span>sellers &amp; investors in transactions</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHAT WE BELIEVE ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">What we believe</span>
+      <h2>Four convictions the <em>product is built on.</em></h2>
+      <p>These are not slogans. Each one decided something concrete about how CapHive is designed.</p>
+    </div>
+    <div class="f-grid two">
+      <div class="f-card reveal">
+        <div class="f-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>One system of record beats six point solutions</h3>
+        <p>A CRM for LPs, a data room for documents, a workbook for the waterfall and an email thread for
+        approvals will always disagree with each other. Reconciliation between tools is not work anyone
+        should be paid to do. Hold the data once.</p>
+      </div>
+      <div class="f-card reveal" data-delay="1">
+        <div class="f-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 19V9M10 19V5M16 19v-6M21 19H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Operational alpha is real</h3>
+        <p>Faster onboarding, cleaner books and reporting that arrives when LPs ask for it change the
+        economics of a fund, not just the mood of the ops team. It is the argument in our note
+        “Operational alpha: the game changer AIFs can't ignore”.</p>
+        <!-- TODO: link the title above to the article once blog article pages exist -->
+        <a class="btn btn-outline btn-sm" href="resources.html" style="margin-top:18px">Read our insights</a>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <div class="f-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 4v10l-7 4-7-4V7l7-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg></div>
+        <h3>AI belongs inside the ledger</h3>
+        <p>An assistant that reads exported PDFs can summarise. An agent that sits on the live record can
+        onboard an investor, analyse a portfolio or run a compliance checklist — with permissions applied
+        and every action logged.</p>
+      </div>
+      <div class="f-card reveal" data-delay="3">
+        <div class="f-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 11V8a6 6 0 0112 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="4" y="11" width="16" height="9" rx="2.5" stroke="currentColor" stroke-width="1.8"/></svg></div>
+        <h3>A fund's data belongs to the fund</h3>
+        <p>You should be able to export the full history — investors, capital events, positions, documents —
+        in a usable format, whenever you want, without asking us first. Lock-in by inconvenience is not a
+        business model we're interested in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW WE WORK ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">How we work with funds</span>
+      <h2>We do the migration. You <em>check the numbers.</em></h2>
+      <p>Moving a back office is only safe if it is proved rather than promised. Four things we hold ourselves to on every implementation.</p>
+    </div>
+    <div class="steps-num reveal" data-delay="1">
+      <div class="step-n">
+        <h3>We migrate your history</h3>
+        <p>Commitments, capital events, investor records and documents come across as they are — spreadsheets, PDFs and all. That work is ours, not yours.</p>
+      </div>
+      <div class="step-n">
+        <h3>We run in parallel</h3>
+        <p>One close computed both ways, side by side, until the numbers agree to the rupee or cent. Nothing goes live on a difference nobody can explain.</p>
+      </div>
+      <div class="step-n">
+        <h3>We stay on your channel</h3>
+        <p>Your team talks to the people who build the product, on the channel they already use. No ticket queue between an operator and an answer.</p>
+      </div>
+      <div class="step-n">
+        <h3>We ship to your calendar</h3>
+        <p>Reporting deadlines, audit dates and fundraising windows set the roadmap order. Changes land before the quarter that needs them, not after.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LEADERSHIP ================= -->
+<!-- TODO: replace the four placeholder cards below with real leadership names, roles and one-line bios; add or remove cards as needed -->
+<!-- This section is hidden the same way the homepage hides its unfinished testimonials: removing the `hidden` attribute publishes it. -->
+<section class="section" style="padding-top:0" hidden>
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Leadership</span>
+      <h2>The people <em>behind the platform.</em></h2>
+      <p>Fund operators, accountants and engineers who have run these workflows before building software for them.</p>
+    </div>
+    <div class="team-grid">
+      <div class="person reveal">
+        <div class="pf" aria-hidden="true">NN</div>
+        <h3>Name</h3>
+        <div class="role">Role</div>
+        <p>One-line bio — where they worked before CapHive and what they own here.</p>
+      </div>
+      <div class="person reveal" data-delay="1">
+        <div class="pf" aria-hidden="true">NN</div>
+        <h3>Name</h3>
+        <div class="role">Role</div>
+        <p>One-line bio — where they worked before CapHive and what they own here.</p>
+      </div>
+      <div class="person reveal" data-delay="2">
+        <div class="pf" aria-hidden="true">NN</div>
+        <h3>Name</h3>
+        <div class="role">Role</div>
+        <p>One-line bio — where they worked before CapHive and what they own here.</p>
+      </div>
+      <div class="person reveal" data-delay="3">
+        <div class="pf" aria-hidden="true">NN</div>
+        <h3>Name</h3>
+        <div class="role">Role</div>
+        <p>One-line bio — where they worked before CapHive and what they own here.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CLIENTS ================= -->
+<section class="clients">
+  <p class="clients-label">Trusted by leading funds &amp; investment firms</p>
+  <div class="marquee" aria-label="Client logos">
+    <div class="marquee-track" data-dup>
+      <span class="client">Advantage</span><span class="client">Amit</span><span class="client">Artha</span>
+      <span class="client">Fireside</span><span class="client">Peer Capital</span><span class="client">Pravega</span>
+      <span class="client">Rhapsody</span><span class="client">Sadev</span><span class="client">Sauce</span>
+      <span class="client">Silicon Road</span><span class="client">True North</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHERE WE ARE ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Where we are</span>
+      <h2>Mumbai, and on <em>your calls.</em></h2>
+      <p>Our office is in Lower Parel. Most of the work happens alongside fund teams — in implementation sessions, close reviews and the channel your operators already live in.</p>
+    </div>
+    <!-- TODO: if there is a US office or registered entity, add a second card here with the real address; the platform supports US fund structures, but no US address is confirmed -->
+    <div class="f-grid two">
+      <div class="f-card reveal">
+        <div class="f-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg></div>
+        <h3>Mumbai</h3>
+        <p>
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013
+        </p>
+      </div>
+      <div class="f-card reveal" data-delay="1">
+        <div class="f-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M4 7l8 6 8-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Talk to us</h3>
+        <p>Tell us how your funds are structured and what your reporting calendar looks like, and we will
+        walk the platform on data that resembles yours. Write to hello@CapHive.com, or send the details
+        through the contact page.</p>
+        <div class="tag-row" style="margin-top:20px">
+          <a class="btn btn-outline btn-sm" href="contact.html">Contact us</a>
+          <a class="btn btn-outline btn-sm" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Keep going</span>
+      <h2>Where to <em>go next.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="careers.html">
+        <div>
+          <span class="kick">Careers</span>
+          <h3>Work with us</h3>
+          <p>Small team, production systems, and users who are professional fund operators.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="resources.html">
+        <div>
+          <span class="kick">Insights</span>
+          <h3>How we think</h3>
+          <p>Writing on operational alpha, portfolio data and where AI actually helps in private markets.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="contact.html">
+        <div>
+          <span class="kick">Contact</span>
+          <h3>Setup a demo</h3>
+          <p>A walkthrough of funds, portfolios, deals and secondaries, end to end, with your questions.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+            <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+            <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+          </svg>
+          CapHive
+        </a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="#" data-login>Login — IND</a></li>
+          <li><a href="#" data-login>Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <div class="legal-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="cookies.html">Cookie Policy</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js"></script>
+</body>
+</html>

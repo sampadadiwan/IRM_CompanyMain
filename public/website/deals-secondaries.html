@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deals &amp; Secondaries — Pipelines, SPVs &amp; Multi-Party Transactions | CapHive</title>
+<meta name="description" content="Source, analyse and execute multi-party transactions on one rail — deal pipelines and diligence, co-investment SPVs, and fund or direct secondaries settled on-platform.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/deals-secondaries.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Deals &amp; Secondaries — CapHive">
+<meta property="og:description" content="Pipelines, diligence, SPVs and multi-party fund or direct secondaries, coordinated and settled on one platform.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/deals-secondaries.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css">
+</head>
+<body data-page="deals">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home">
+    <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+      <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+    </svg>
+    CapHive
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="resources.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="#" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-orange">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="products.html">Products</a><span>/</span>Deals &amp; Secondaries
+      </nav>
+      <div class="hero-split tight">
+        <div>
+          <span class="chip-label">03 · Deals &amp; Secondaries</span>
+          <h1 style="margin-top:22px">Multi-party transactions on <em>one rail.</em></h1>
+          <p class="lede">
+            Move deals from pipeline to close with documents, diligence and approvals in one place —
+            then execute co-investments, SPVs and fund or direct secondaries with every buyer, seller
+            and signature coordinated on-platform.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="contact.html">
+              Setup a Demo
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a class="btn btn-outline" href="#capabilities">See the capabilities</a>
+          </div>
+        </div>
+
+        <!-- the artefact this module produces: live transactions, each with its own state -->
+        <div class="frame" aria-hidden="true">
+          <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">app.caphive.com/deals</span></div>
+          <div class="frame-body">
+            <div class="frame-top">
+              <div class="frame-fund">Live transactions<small>PIPELINE · ALL VEHICLES</small></div>
+              <span class="frame-live">Live</span>
+            </div>
+            <div class="frame-stats" style="margin-top:18px">
+              <div class="frame-stat"><div class="v">US$ 49.7m</div><div class="k">IN FLIGHT</div></div>
+              <div class="frame-stat"><div class="v">7</div><div class="k">OPEN DEALS</div></div>
+              <div class="frame-stat"><div class="v">64</div><div class="k">COUNTERPARTIES</div></div>
+            </div>
+            <div style="margin-top:22px">
+              <div class="deal"><span>Secondary — direct</span><span class="amt">US$ 12.8m</span><span class="pill done">Settled</span></div>
+              <div class="deal"><span>Co-investment SPV</span><span class="amt">US$ 6.4m</span><span class="pill sign">Signed</span></div>
+              <div class="deal"><span>Fund secondary — LP stake</span><span class="amt">US$ 21.5m</span><span class="pill dil">Diligence</span></div>
+              <div class="deal"><span>Growth round — Series C</span><span class="amt">US$ 9.0m</span><span class="pill dil">Diligence</span></div>
+              <div class="deal"><span>Continuation vehicle</span><span class="amt">US$ 18.2m</span><span class="pill warn">IC review</span></div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <div class="stat-band reveal" style="margin-top:52px">
+      <div><strong>US$ 500<em>m</em>+</strong><span>capital raised &amp; secondaries executed</span></div>
+      <div><strong>1,000+</strong><span>sellers &amp; investors in transactions</span></div>
+      <div><strong>US$ 12.8<em>m</em></strong><span>secondary settled on-platform</span></div>
+      <div><strong>40+ sellers</strong><span>one coordinated flow</span></div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= THE PROBLEM ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">The problem</span>
+      <h2>A transaction is only as good as the <em>thread it lives in.</em></h2>
+      <p>Deals and secondaries are the most document-heavy, most multi-party events a fund runs — and they are usually run in the least structured tools available.</p>
+    </div>
+    <div class="f-grid">
+      <div class="f-card reveal">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Pipeline and documents live apart</h3>
+        <p>The stage sits in one tool and the diligence file sits in another. Nobody can open a deal and see both the position and the paperwork behind it.</p>
+      </div>
+      <div class="f-card reveal" data-delay="1">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H8l-4 3V5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>A secondary with 40 sellers becomes 40 email threads</h3>
+        <p>Pricing, consents and transfer forms are chased individually. One seller going quiet stalls a settlement nobody can see the state of.</p>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Approvals are impossible to evidence afterwards</h3>
+        <p>Six months on, the IC approval is in a slide deck, the sign-off is in an inbox, and the signature is in a PDF nobody can date with confidence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CAPABILITIES ================= -->
+<section class="section" id="capabilities" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Capabilities</span>
+      <h2>Pipeline, vehicle and <em>transfer.</em></h2>
+      <p>Sourcing, execution and settlement sit on the same record. A diligence request, an IC approval and a transfer of units are all the same deal seen at different stages.</p>
+    </div>
+
+    <!-- Deal pipeline & diligence -->
+    <div class="split reveal" style="margin-bottom:96px">
+      <div class="split-text">
+        <span class="tile-kicker">Deal Pipeline &amp; Diligence</span>
+        <h2>From first meeting to <em>IC approval.</em></h2>
+        <p>Every deal carries its own stage, room and checklist. The work is visible, the documents are versioned, and the decision is recorded where the deal is.</p>
+        <ul class="check-list">
+          <li>Configurable stages with owners, next steps and stale-deal flags</li>
+          <li>Deal rooms with versioned documents and per-party access</li>
+          <li>Document requests tracked by counterparty, not by inbox</li>
+          <li>Diligence checklists with findings attached to the item they answer</li>
+          <li>IC memos, approvals and conditions recorded against the deal</li>
+          <li>Full audit trail — who saw what, who approved what, and when</li>
+        </ul>
+        <div class="tag-row" style="margin-top:26px">
+          <span class="tag">Deal pipes &amp; documents</span><span class="tag">Deal management &amp; analysis</span>
+        </div>
+      </div>
+      <div class="frame" aria-hidden="true">
+        <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">app.caphive.com/deals/pipeline</span></div>
+        <div class="frame-body">
+          <div class="frame-top">
+            <div class="frame-fund">Growth round — Series C<small>DILIGENCE · IC 12 DAYS</small></div>
+            <span class="frame-live">Live</span>
+          </div>
+          <div class="frame-nav" style="margin-top:20px">
+            <div class="lab">Proposed ticket</div>
+            <div class="val">US$ 9,000,000</div>
+          </div>
+          <div style="margin-top:22px">
+            <div class="pos"><span>Commercial diligence</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">Complete</span></div>
+            <div class="pos"><span>Financial diligence</span><div class="pos-bar"><i style="width:78%"></i></div><span class="pos-val">7 / 9</span></div>
+            <div class="pos"><span>Legal &amp; cap table</span><div class="pos-bar"><i style="width:55%"></i></div><span class="pos-val">In review</span></div>
+            <div class="pos"><span>IC memo</span><div class="pos-bar"><i style="width:24%"></i></div><span class="pos-val">Drafting</span></div>
+          </div>
+          <div class="frame-stats" style="border-top:1px solid rgba(255,255,255,.08);padding-top:18px">
+            <div class="frame-stat"><div class="v">64</div><div class="k">DOCUMENTS</div></div>
+            <div class="frame-stat"><div class="v">5</div><div class="k">OPEN REQUESTS</div></div>
+            <div class="frame-stat"><div class="v">3</div><div class="k">APPROVERS</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Co-investments & SPVs -->
+    <div class="split rev reveal" style="margin-bottom:96px">
+      <div class="split-text">
+        <span class="tile-kicker">Co-investments &amp; SPVs</span>
+        <h2>Spin up a vehicle in <em>the same system.</em></h2>
+        <p>Create the SPV, invite co-investors, allocate, collect the capital, and then report on it the way you report on any other fund — because it is one.</p>
+        <ul class="check-list">
+          <li>Stand up an SPV or co-investment vehicle against the underlying deal</li>
+          <li>Invite co-investors, capture commitments and e-sign the documents</li>
+          <li>Allocate by commitment, discretion or a bespoke rule set</li>
+          <li>Call and reconcile capital, then track it into the position</li>
+          <li>Statements, capital accounts and reporting on the SPV like any fund</li>
+        </ul>
+        <div class="tag-row" style="margin-top:26px">
+          <span class="tag">Co-investments / SPVs</span><span class="tag">Allocations</span><span class="tag">Capital collection</span>
+        </div>
+      </div>
+      <div class="frame" aria-hidden="true">
+        <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">app.caphive.com/deals/spv-04</span></div>
+        <div class="frame-body">
+          <div class="frame-top">
+            <div class="frame-fund">Co-investment SPV IV<small>18 CO-INVESTORS · USD</small></div>
+            <span class="frame-live">Live</span>
+          </div>
+          <div class="frame-nav" style="margin-top:20px">
+            <div class="lab">Committed to the vehicle</div>
+            <div class="val">US$ 6,400,000</div>
+          </div>
+          <div class="frame-stats">
+            <div class="frame-stat"><div class="v">18</div><div class="k">CO-INVESTORS</div></div>
+            <div class="frame-stat"><div class="v">16</div><div class="k">SIGNED</div></div>
+            <div class="frame-stat"><div class="v">92%</div><div class="k">FUNDED</div></div>
+          </div>
+          <div style="margin-top:20px">
+            <div class="deal"><span>Vehicle documents</span><span class="amt">18 parties</span><span class="pill done">E-signed</span></div>
+            <div class="deal"><span>Allocations confirmed</span><span class="amt">US$ 6.4m</span><span class="pill done">Locked</span></div>
+            <div class="deal"><span>Capital call — first close</span><span class="amt">US$ 5.9m</span><span class="pill done">Reconciled</span></div>
+            <div class="deal"><span>Outstanding</span><span class="amt">US$ 0.5m</span><span class="pill warn">2 investors</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondaries -->
+    <div class="split reveal">
+      <div class="split-text">
+        <span class="tile-kicker">Secondaries — Funds &amp; Direct</span>
+        <h2>Many sellers, one <em>settlement.</em></h2>
+        <p>LP stake transfers and direct secondaries run as a single coordinated transaction — matching, pricing, consent and paperwork tracked per party until the register updates.</p>
+        <ul class="check-list">
+          <li>LP stake transfers in funds and direct secondaries in companies</li>
+          <li>Multi-party matching of buyers and sellers within one transaction</li>
+          <li>Pricing, discounts and allocation across a fragmented seller base</li>
+          <li>GP consent, ROFR and transfer paperwork tracked per counterparty</li>
+          <li>Settlement, and the register or capital accounts updated on close</li>
+        </ul>
+        <div class="tag-row" style="margin-top:26px">
+          <span class="tag">Secondaries — funds &amp; direct</span><span class="tag">Consents &amp; transfers</span><span class="tag">Settlement</span>
+        </div>
+      </div>
+      <!-- the hero shows every live transaction; this is inside one of them -->
+      <div class="frame" aria-hidden="true">
+        <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">app.caphive.com/secondaries/direct-07</span></div>
+        <div class="frame-body">
+          <div class="frame-top">
+            <div class="frame-fund">Direct secondary · settlement<small>40+ SELLERS · ONE COORDINATED FLOW</small></div>
+            <span class="frame-live">Live</span>
+          </div>
+          <div class="frame-nav" style="margin-top:20px">
+            <div class="lab">Transaction value</div>
+            <div class="val">US$ 12,800,000</div>
+          </div>
+          <div style="margin-top:20px">
+            <div class="pos"><span>Seller consents</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">42 / 42</span></div>
+            <div class="pos"><span>Transfer paperwork</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">Executed</span></div>
+            <div class="pos"><span>Funds flow</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">Cleared</span></div>
+          </div>
+          <div class="frame-stats" style="border-top:1px solid rgba(255,255,255,.08);padding-top:18px;margin-top:8px">
+            <div class="frame-stat"><div class="v">40+</div><div class="k">SELLERS IN ONE FLOW</div></div>
+            <div class="frame-stat"><div class="v">1 register</div><div class="k">UPDATED ON CLOSE</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AI AGENTS BAND ================= -->
+<section class="section-sm">
+  <div class="band-dark reveal">
+    <span class="chip-label">AI Agents</span>
+    <h2 style="margin:20px 0 16px">Diligence reading, <em>done overnight.</em></h2>
+    <p>Point an agent at a deal room and ask what the shareholders' agreement says about transfer restrictions, or which sellers have not returned a consent — it answers from the documents in the deal, and cites them.</p>
+    <div class="hero-cta" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:32px">
+      <a class="btn btn-primary" href="ai-agents.html">
+        Meet the agents
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="integrations.html">Data &amp; integrations</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT LANDS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Implementation</span>
+      <h2>Running your first transaction in <em>weeks.</em></h2>
+      <p>We start with the deal you have in front of you. Your stages, your documents, your approval chain — configured, then used on a live transaction with us alongside.</p>
+    </div>
+    <div class="steps-num reveal" data-delay="1">
+      <div class="step-n">
+        <h3>Discovery</h3>
+        <p>We map your stages, diligence checklists, approval chain and standard transaction documents.</p>
+      </div>
+      <div class="step-n">
+        <h3>Configuration</h3>
+        <p>Deal rooms, document templates, consent workflows and permissions are set up per counterparty type.</p>
+      </div>
+      <div class="step-n">
+        <h3>First transaction</h3>
+        <p>One live deal or secondary is run end to end on CapHive, with our team on the same channel.</p>
+      </div>
+      <div class="step-n">
+        <h3>Scale up</h3>
+        <p>Pipeline, SPVs and secondaries move onto the platform, with history loaded behind them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRUST ================= -->
+<!-- TODO: verify every claim below against your actual certifications before launch -->
+<section class="section-sm" aria-label="Security and compliance">
+  <div class="wrap">
+    <div class="trust-row reveal">
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SOC 2 Type II</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>AES-256 at rest · TLS 1.3 in transit</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SEBI AIF &amp; US fund structures</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SSO / SAML &amp; full audit logs</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Keep going</span>
+      <h2>The rest of the <em>lifecycle.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="funds.html">
+        <div>
+          <span class="kick">01 · Funds</span>
+          <h3>Funds</h3>
+          <p>Investor onboarding, drawdowns and distributions, waterfalls and shadow books on one ledger.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="portfolios.html">
+        <div>
+          <span class="kick">02 · Portfolios</span>
+          <h3>Portfolios</h3>
+          <p>Company data collection, performance against plan, and LP- and GP-ready reporting.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="case-studies.html">
+        <div>
+          <span class="kick">Proof</span>
+          <h3>Case studies</h3>
+          <p>A US$ 12.8m secondary settled with 40+ sellers in a single coordinated flow.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+            <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+            <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+          </svg>
+          CapHive
+        </a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="#" data-login>Login — IND</a></li>
+          <li><a href="#" data-login>Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <div class="legal-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="cookies.html">Cookie Policy</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js"></script>
+</body>
+</html>

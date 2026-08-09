@@ -15,6 +15,11 @@ set :rails_env, "production"
 set :stage, :production
 set :env_variant, "in"
 
+# Enables the static-website server blocks in nginx_conf.erb: apex serves
+# public/website, www 301s to the apex. Stages without this render the
+# template exactly as before. Pairs with WEBSITE_HOSTS in .env.production.in.
+set :website_domain, "caphive.com"
+
 set :ssh_options, keys: "~/.ssh/caphive2.pem", compression: false, keepalive: true
 
 set :ssh_options, {

@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agents — Private Markets Agents for Funds &amp; Portfolios | CapHive</title>
+<meta name="description" content="Five AI agents built for private markets — onboarding, fund queries, portfolio reporting, portfolio analysis and compliance — grounded in your own ledger, permissioned and fully logged.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/ai-agents.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="AI Agents — CapHive">
+<meta property="og:description" content="AI agents purpose-built for private markets — onboarding, fund queries, reporting, analysis and compliance, grounded in your own data.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/ai-agents.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css">
+</head>
+<body data-page="ai-agents">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home">
+    <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+      <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+    </svg>
+    CapHive
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="resources.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="#" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="page-hero center hero-tinted tint-black">
+  <div class="wrap">
+    <div class="hero-panel">
+      <span class="chip-label">AI Agents</span>
+      <h1>AI agents, <em>purpose-built</em> for private markets.</h1>
+      <p class="lede">
+        CapHive's AI agents work inside the platform to streamline and supercharge ongoing tasks — from
+        onboarding and portfolio analysis to compliance checklists and querying structured and
+        unstructured data.
+      </p>
+
+      <!-- the artefact this module produces: the exchange itself. Tab switching is
+           handled by the shared [data-tabs] behaviour in assets/js/caphive.js —
+           with JavaScript off, the first panel stays visible. -->
+      <div data-tabs>
+        <div class="agent-tabs" aria-label="Choose an agent">
+          <button class="tab active" type="button" data-tab="onboarding" aria-selected="true">Intelligent Onboarding</button>
+          <button class="tab" type="button" data-tab="assistant" aria-selected="false">Fund Assistant</button>
+          <button class="tab" type="button" data-tab="reporting" aria-selected="false">Portfolio Reporting</button>
+          <button class="tab" type="button" data-tab="analyst" aria-selected="false">Portfolio Analyst</button>
+          <button class="tab" type="button" data-tab="compliance" aria-selected="false">Compliance</button>
+        </div>
+
+        <div class="panel active" data-panel="onboarding">
+          <div class="chat">
+            <div class="chat-head">Intelligent Onboarding<span class="chat-sub">connected to your fund data</span></div>
+            <div class="chat-body">
+              <div class="msg user">Onboard Meridian Family Office to Fund III.</div>
+              <div class="msg ai">
+                Started. KYC documents requested and the subscription pack is out for e-sign — 2 of 9 checks already cleared. I'll flag you when wire details are verified.
+                <span class="chip">Onboarding · Fund III checklist</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="assistant">
+          <div class="chat">
+            <div class="chat-head">Fund Assistant<span class="chat-sub">connected to your fund data</span></div>
+            <div class="chat-body">
+              <div class="msg user">What's Fund II's DPI after the March distribution?</div>
+              <div class="msg ai">
+                DPI is 0.87x, up from 0.74x. The March distribution returned US$ 18.4m across 61 LPs — pref is fully paid, carry accrual starts next quarter.
+                <span class="chip">Fund II · Distribution ledger</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="reporting">
+          <div class="chat">
+            <div class="chat-head">Portfolio Reporting<span class="chat-sub">connected to your fund data</span></div>
+            <div class="chat-body">
+              <div class="msg user">Draft the Q2 LP report for Fund III.</div>
+              <div class="msg ai">
+                Done — 24 portfolio updates pulled in, NAV bridge and TVPI trend included. Two companies reported unaudited numbers; both are flagged for review.
+                <span class="chip">Fund III · Q2 report draft</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="analyst">
+          <div class="chat">
+            <div class="chat-head">Portfolio Analyst<span class="chat-sub">connected to your fund data</span></div>
+            <div class="chat-body">
+              <div class="msg user">Which positions missed plan this quarter?</div>
+              <div class="msg ai">
+                3 of 24. The widest variance is a Series B position at −12% ARR against plan. The full variance table is ready to open.
+                <span class="chip">Portfolio · Variance analysis</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="compliance">
+          <div class="chat">
+            <div class="chat-head">Compliance<span class="chat-sub">connected to your fund data</span></div>
+            <div class="chat-body">
+              <div class="msg user">Are we ready for the quarterly AIF filing?</div>
+              <div class="msg ai">
+                11 of 12 checks complete. One investor's FATCA declaration is pending — reminder sent. The filing pack is otherwise assembled.
+                <span class="chip">Compliance · AIF quarterly checklist</span>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <div class="hero-cta" style="margin-top:40px">
+      <a class="btn btn-primary" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-outline" href="#agents">How the agents work</a>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= THE FIVE AGENTS ================= -->
+<section class="section" id="agents">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="chip-label">Five agents</span>
+      <h2>Each one does <em>a specific job.</em></h2>
+      <p>These are not one assistant with five names. Each agent has its own scope, its own permissions and its own record of what it did.</p>
+    </div>
+    <div class="f-grid">
+      <div class="f-card reveal">
+        <span class="kick">Agent 01</span>
+        <h3>Intelligent Onboarding</h3>
+        <p>Takes a new investor from first document to a completed subscription — requesting what is missing, chasing what is late, and keeping the checklist true.</p>
+        <ul class="check-list" style="margin-top:18px">
+          <li>Requests KYC documents and tracks expiries</li>
+          <li>Sends the subscription pack for e-sign</li>
+          <li>Reports which checks have cleared and which have not</li>
+        </ul>
+        <p style="margin-top:18px"><strong>Ask</strong> — “Onboard Meridian Family Office to Fund III.”</p>
+        <p><strong>Answer</strong> — “Started. KYC documents requested and the subscription pack is out for e-sign — 2 of 9 checks already cleared. I'll flag you when wire details are verified.”</p>
+      </div>
+      <div class="f-card reveal" data-delay="1">
+        <span class="kick">Agent 02</span>
+        <h3>Fund Assistant</h3>
+        <p>Answers questions about the fund from the fund's own books — capital accounts, distributions, fees and performance — without anyone exporting a spreadsheet.</p>
+        <ul class="check-list" style="margin-top:18px">
+          <li>Queries NAV, DPI, TVPI and IRR at fund or investor level</li>
+          <li>Explains what moved a number and when</li>
+          <li>Pulls the underlying capital event behind any figure</li>
+        </ul>
+        <p style="margin-top:18px"><strong>Ask</strong> — “What's Fund II's DPI after the March distribution?” The exchange below is this agent answering.</p>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <span class="kick">Agent 03</span>
+        <h3>Portfolio Reporting</h3>
+        <p>Assembles the quarterly LP report from the portfolio data already collected, and tells you where the data is weak before an LP finds it.</p>
+        <ul class="check-list" style="margin-top:18px">
+          <li>Drafts LP and GP reports from company updates</li>
+          <li>Builds the NAV bridge and TVPI trend</li>
+          <li>Flags unaudited or missing company numbers</li>
+        </ul>
+        <p style="margin-top:18px"><strong>Ask</strong> — “Draft the Q2 LP report for Fund III.”</p>
+        <p><strong>Answer</strong> — “Done — 24 portfolio updates pulled in, NAV bridge and TVPI trend included. Two companies reported unaudited numbers; both are flagged for review.”</p>
+      </div>
+      <div class="f-card reveal" data-delay="3">
+        <span class="kick">Agent 04</span>
+        <h3>Portfolio Analyst</h3>
+        <p>Reads performance against plan across the whole portfolio and surfaces the positions that need a conversation, with the variance quantified.</p>
+        <ul class="check-list" style="margin-top:18px">
+          <li>Compares reported metrics against plan and prior quarters</li>
+          <li>Ranks variances and names the widest ones</li>
+          <li>Opens the full variance table behind the answer</li>
+        </ul>
+        <p style="margin-top:18px"><strong>Ask</strong> — “Which positions missed plan this quarter?”</p>
+        <p><strong>Answer</strong> — “3 of 24. The widest variance is a Series B position at −12% ARR against plan. The full variance table is ready to open.”</p>
+      </div>
+      <div class="f-card reveal" data-delay="4">
+        <span class="kick">Agent 05</span>
+        <h3>Compliance</h3>
+        <p>Keeps the regulatory checklist current — which items are complete, which investor is holding something up, and what is left before a filing can go.</p>
+        <ul class="check-list" style="margin-top:18px">
+          <li>Tracks filing checklists item by item</li>
+          <li>Chases missing investor declarations</li>
+          <li>Assembles the filing pack for review</li>
+        </ul>
+        <p style="margin-top:18px"><strong>Ask</strong> — “Are we ready for the quarterly AIF filing?”</p>
+        <p><strong>Answer</strong> — “11 of 12 checks complete. One investor's FATCA declaration is pending — reminder sent. The filing pack is otherwise assembled.”</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- The chat mock that used to sit here is now the hero, with one panel per agent. -->
+
+<!-- ================= HOW THE AGENTS WORK ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">How the agents work</span>
+      <h2>Inside your ledger, <em>not beside it.</em></h2>
+      <p>An agent here is not a general chatbot with your documents attached. It reads and writes against the same records your team uses, under the same permissions, with the same audit trail.</p>
+    </div>
+    <div class="steps-num reveal" data-delay="1">
+      <div class="step-n">
+        <h3>Grounded in your own data</h3>
+        <p>Every answer comes from your funds, investors, portfolio companies and deal documents — not from general knowledge about private markets.</p>
+      </div>
+      <div class="step-n">
+        <h3>Proposed, permissioned, logged</h3>
+        <p>An agent proposes an action, inherits the permissions of the person who asked, and writes what it did to the audit log.</p>
+      </div>
+      <div class="step-n">
+        <h3>A human approves the consequential</h3>
+        <p>Anything that moves money or goes to an LP waits for a named person to approve it. The agent prepares; it does not release.</p>
+      </div>
+      <div class="step-n">
+        <h3>Answers cite the record</h3>
+        <p>Each reply carries the underlying record — the capital event, the statement, the company update or the document clause it came from.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GOVERNANCE ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Governance &amp; data handling</span>
+      <h2>Controls before <em>capability.</em></h2>
+      <p>An agent with access to fund data is a control question, not only a product question. These are the constraints it runs under.</p>
+    </div>
+    <div class="f-grid">
+      <div class="f-card reveal">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+        <h3>Role-based permissions</h3>
+        <p>An agent sees exactly what the person invoking it is entitled to see — no fund, investor or deal outside that scope.</p>
+      </div>
+      <!-- TODO: verify / replace with real detail before launch — confirm the model-training and vendor position with your DPA before publishing this card -->
+      <div class="f-card reveal" data-delay="1">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 11V8a6 6 0 0112 0v3M5 11h14v9H5v-9z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>No training on your data</h3>
+        <p>Your fund, investor and portfolio data is not used to train models. It is used to answer your questions and nothing else.</p>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Full audit log</h3>
+        <p>Every prompt, retrieval and action an agent takes is recorded against a user, a timestamp and a record.</p>
+      </div>
+      <div class="f-card reveal" data-delay="3">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Human-in-the-loop approvals</h3>
+        <p>Capital movement, investor communication and anything filed externally require an explicit human approval step.</p>
+      </div>
+      <!-- TODO: verify / replace with real detail before launch — confirm which hosting regions are actually offered -->
+      <div class="f-card reveal" data-delay="4">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c2.5 2.4 2.5 15.6 0 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Data residency options</h3>
+        <p>Hosting region can be selected so fund data stays in the jurisdiction your structure and LPs require.</p>
+      </div>
+      <a class="f-card reveal" data-delay="5" href="security.html">
+        <span class="kick">Security &amp; Trust</span>
+        <h3>The full control set</h3>
+        <p>Encryption, access control, hosting, retention and the certifications behind the platform.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap-narrow">
+    <div class="section-head reveal">
+      <span class="chip-label">Questions</span>
+      <h2>What teams ask <em>first.</em></h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>Where do the agents get their data?</summary>
+        <div>
+          <p>From your CapHive tenant. Fund books, capital events, investor records, portfolio company updates and the documents held in deal rooms and investor files.</p>
+          <p>Where you have connected banks, custodians or other systems through our integrations, the agents read the records those feeds create — not the external systems directly.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Can an agent send an LP notice on its own?</summary>
+        <div>
+          <p>No. An agent can draft the notice, compute each investor's figures and assemble the distribution list. Release requires a named person to approve it.</p>
+          <p>The same rule applies to anything that moves money or is filed with a regulator.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What happens when it is unsure?</summary>
+        <div>
+          <p>It says so, and shows what it could not resolve — a missing document, an unaudited number, a figure that two records disagree on.</p>
+          <p>An agent that cannot ground an answer in a record returns the gap rather than a guess.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Is our data used to train models?</summary>
+        <div>
+          <!-- TODO: verify / replace with real detail before launch — align this answer with the model-vendor terms in your DPA -->
+          <p>No. Your data is used to answer your questions. It is not used to train models, and it is not pooled with other clients' data.</p>
+          <p>Our data processing terms set this out in writing. See <a href="security.html">Security &amp; Trust</a> for the wider control set.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Which structured and unstructured sources can it query?</summary>
+        <div>
+          <p>Structured: fund and investor ledgers, capital accounts, capital events, fee and waterfall computations, portfolio metrics and deal records.</p>
+          <p>Unstructured: subscription packs, side letters, KYC files, company update decks and reports, and the documents held in a deal room — read within the permissions of the person asking.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Keep going</span>
+      <h2>Where the agents <em>do the work.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="funds.html">
+        <div>
+          <span class="kick">01 · Funds</span>
+          <h3>Funds</h3>
+          <p>Investor onboarding, drawdowns and distributions, waterfalls and shadow books on one ledger.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="portfolios.html">
+        <div>
+          <span class="kick">02 · Portfolios</span>
+          <h3>Portfolios</h3>
+          <p>Company data collection, performance against plan, and LP- and GP-ready reporting.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="integrations.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Data &amp; Integrations</h3>
+          <p>Banks, custodians, ERPs, e-sign and APIs — the feeds the agents read from.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+            <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+            <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+          </svg>
+          CapHive
+        </a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="#" data-login>Login — IND</a></li>
+          <li><a href="#" data-login>Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <div class="legal-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="cookies.html">Cookie Policy</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js"></script>
+</body>
+</html>

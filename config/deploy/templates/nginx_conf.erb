@@ -4,7 +4,10 @@ upstream puma_IRM_<%= fetch(:stage) %> {
 }
 
 server {
-  listen 80;
+  # default_server: with the website vhosts below also listening on :80, ALB
+  # health checks (Host: <target-ip>) and every tenant subdomain must keep
+  # landing here.
+  listen 80 default_server;
   server_tokens off;
   server_name localhost IRM.local;
   root /home/ubuntu/IRM/current/public;
@@ -74,3 +77,59 @@ server {
   }
 
 }
+<% if fetch(:website_domain, nil) %>
+# Static company website on the apex domain, served straight from
+# public/website — puma never sees this traffic. The vhost root being the
+# website directory also sidesteps the app's /assets/ sprockets location:
+# /assets/css/caphive.css resolves to public/website/assets/css/caphive.css.
+# Stages without `set :website_domain` render none of this (see
+# docs/technical/website_serving.md).
+server {
+  listen 80;
+  server_tokens off;
+  server_name <%= fetch(:website_domain) %>;
+  root /home/ubuntu/IRM/current/public/website;
+
+  # No .gz files ship with the site, so dynamic gzip rather than gzip_static.
+  gzip on;
+  gzip_types text/css application/javascript application/xml text/plain image/svg+xml;
+
+  # Legacy notification-email links target the bare domain with
+  # ?sub_domain=<tenant>; forward them to the tenant subdomain exactly as the
+  # app's WithAuthentication#set_current_entity used to. The charset guard
+  # keeps arbitrary query values out of the redirect Location.
+  if ($arg_sub_domain ~ "^[A-Za-z0-9-]+$") {
+    return 301 https://$arg_sub_domain.<%= fetch(:website_domain) %>$request_uri;
+  }
+
+  error_page 404 /404.html;
+  # "/" -> /index.html; /about.html served directly; $uri.html keeps
+  # extensionless URLs (/about) working exactly like the Rails
+  # FileHandler does in dev/test; anything else is the website's own styled
+  # 404 page with a real 404 status.
+  try_files $uri $uri.html $uri/index.html =404;
+
+  location ^~ /assets/ {
+    # The website's assets are UNFINGERPRINTED (caphive.css keeps its name
+    # across redesigns) — 1 day, never `expires max` like the app's sprockets
+    # locations above.
+    expires 1d;
+    add_header Cache-Control public;
+  }
+
+  # A brochure site has no writable endpoints.
+  if ($request_method !~ ^(GET|HEAD)$ ) {
+    return 405;
+  }
+}
+
+# Canonical-host redirect: www -> apex, matching the site's canonical <link>
+# tags. https:// is explicit because TLS terminates at the ALB and nginx only
+# ever listens on :80.
+server {
+  listen 80;
+  server_tokens off;
+  server_name www.<%= fetch(:website_domain) %>;
+  return 301 https://<%= fetch(:website_domain) %>$request_uri;
+}
+<% end %>
