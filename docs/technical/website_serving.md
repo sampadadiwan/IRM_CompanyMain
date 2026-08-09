@@ -89,8 +89,9 @@ the middleware is a one-line pass-through no-op.
 Why opt-in rather than deriving from `BASE_DOMAIN`: development and the whole
 Cucumber suite run on host `localhost` with `BASE_DOMAIN=localhost:<port>` — any
 derivation would hijack every dev browser request and every test. Both production
-stacks opt in with their own domains (`caphive.com` on IN, `caphive.us` on US);
-staging can opt in with `altconnects.com` when wanted.
+stacks opt in with their own domains (`caphive.com` on IN, `caphive.us` on US),
+and IN staging opts in with `altconnects.com` so the rollout can be rehearsed
+end-to-end before the production DNS cutover.
 
 Per-request logic:
 
@@ -203,9 +204,11 @@ the website repo disappear from `public/website/` on the next sync.
 | `.env.production.in` | `WEBSITE_HOSTS=caphive.com,www.caphive.com` |
 | `.env.development` | commented example: `# WEBSITE_HOSTS=caphive.localhost,www.caphive.localhost` |
 | `.env.production.us` | `WEBSITE_HOSTS=caphive.us,www.caphive.us` |
-| staging | deliberately untouched (opt in later with `altconnects.com` if wanted) |
+| `.env.staging.in` | `WEBSITE_HOSTS=altconnects.com,www.altconnects.com` |
+| `.env.staging.us` | untouched (opt in with `altconnects.us` if wanted) |
 | `config/deploy/production_in.rb` | `set :website_domain, "caphive.com"` |
 | `config/deploy/production_us.rb` | `set :website_domain, "caphive.us"` |
+| `config/deploy/staging_in.rb` | `set :website_domain, "altconnects.com"` |
 
 Dev testing: uncomment the `.env.development` line and browse
 `http://caphive.localhost:3001` — browsers resolve `*.localhost` to loopback per

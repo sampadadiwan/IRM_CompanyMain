@@ -17,6 +17,12 @@ set :rails_env, "staging"
 set :stage, :staging
 set :env_variant, "in"
 
+# Enables the static-website server blocks in nginx_conf.erb: apex serves
+# public/website, www 301s to the apex. Pairs with WEBSITE_HOSTS in
+# .env.staging.in. Lets the website rollout be rehearsed end-to-end on
+# staging before the production DNS cutover.
+set :website_domain, "altconnects.com"
+
 set :ssh_options, keys: "~/.ssh/altxdev.pem", compression: false, keepalive: true
 
 set :ssh_options, {
