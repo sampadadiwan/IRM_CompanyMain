@@ -94,8 +94,8 @@
     width:min(1120px, calc(100% - 28px)); z-index:60;
     display:flex; align-items:center; justify-content:space-between;
     padding:10px 12px 10px 20px; border-radius:999px;
-    background:rgba(251,250,247,.72); border:1px solid var(--line);
-    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    background:rgba(255,255,255,.94); border:1px solid var(--line);
+    backdrop-filter:blur(18px) saturate(120%); -webkit-backdrop-filter:blur(18px) saturate(120%);
     transition:box-shadow .3s;
   }
   .nav.scrolled{ box-shadow:0 12px 40px -18px rgba(16,16,16,.18); }
@@ -115,7 +115,7 @@
   .nav-toggle span{ display:block; width:22px; height:2px; background:var(--fg); margin:5px 0; border-radius:2px; }
 
   .mobile-menu{
-    position:fixed; inset:0; z-index:55; background:var(--bg);
+    position:fixed; inset:0; z-index:55; background:#fff;
     display:flex; flex-direction:column; justify-content:center; align-items:center; gap:26px;
     opacity:0; pointer-events:none; transition:opacity .3s;
   }
@@ -610,7 +610,7 @@
         <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
       <div class="nav-menu">
-        <a href="resources.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
         <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
         <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
         <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
@@ -1029,7 +1029,7 @@
       <h2>Insights from <em>the hive.</em></h2>
       <p>Writing on fund operations, AI and private markets.</p>
       <div class="tag-row" style="margin-top:22px">
-        <a class="tag" href="resources.html">All resources →</a>
+        <a class="tag" href="blog.html">All insights →</a>
         <a class="tag" href="faq.html">FAQ</a>
         <a class="tag" href="security.html">Security &amp; Trust</a>
         <a class="tag" href="pricing.html">Pricing</a>
@@ -1039,32 +1039,32 @@
     <!-- TODO: article pages are not built yet — each link below is href="#".
          Point them at blog/<slug>.html once the blog exists. -->
     <div class="articles reveal" data-delay="1">
-      <a class="article" href="#">
+      <a class="article" href="operational-alpha.html">
         <time datetime="2026-03-31">Mar 31, 2026</time>
         <h3>Operational alpha: the game changer AIFs can't ignore</h3>
         <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       </a>
-      <a class="article" href="#">
+      <a class="article" href="ai-is-ready.html">
         <time datetime="2026-03-31">Mar 31, 2026</time>
         <h3>AI is ready — but are you?</h3>
         <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       </a>
-      <a class="article" href="#">
+      <a class="article" href="portfolio-real-time-insight.html">
         <time datetime="2026-03-31">Mar 31, 2026</time>
         <h3>Portfolio management: shift from reporting to real-time insight</h3>
         <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       </a>
-      <a class="article" href="#">
+      <a class="article" href="ai-agent-infrastructure.html">
         <time datetime="2026-06-29">Jun 29, 2026</time>
         <h3>The infrastructure to get your AI agents to deliver</h3>
         <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       </a>
-      <a class="article" href="#">
+      <a class="article" href="ai-and-fifa-2026.html">
         <time datetime="2026-06-30">Jun 30, 2026</time>
         <h3>Yes, AI is transforming FIFA 2026 as well!</h3>
         <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       </a>
-      <a class="article" href="#">
+      <a class="article" href="tech-powered-portfolio-management-vc.html">
         <time datetime="2023-08-20">Aug 20, 2023</time>
         <h3>The imperative for tech-powered portfolio management for VC</h3>
         <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>

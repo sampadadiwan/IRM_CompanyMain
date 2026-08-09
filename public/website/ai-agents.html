@@ -51,7 +51,7 @@
         <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
       <div class="nav-menu">
-        <a href="resources.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
         <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
         <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
         <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
@@ -84,102 +84,104 @@
 </div>
 
 <!-- ================= HERO ================= -->
-<section class="page-hero center hero-tinted tint-black">
+<section class="page-hero hero-tinted tint-black">
   <div class="wrap">
     <div class="hero-panel">
-      <span class="chip-label">AI Agents</span>
-      <h1>AI agents, <em>purpose-built</em> for private markets.</h1>
-      <p class="lede">
-        CapHive's AI agents work inside the platform to streamline and supercharge ongoing tasks — from
-        onboarding and portfolio analysis to compliance checklists and querying structured and
-        unstructured data.
-      </p>
-
-      <!-- the artefact this module produces: the exchange itself. Tab switching is
-           handled by the shared [data-tabs] behaviour in assets/js/caphive.js —
-           with JavaScript off, the first panel stays visible. -->
-      <div data-tabs>
-        <div class="agent-tabs" aria-label="Choose an agent">
-          <button class="tab active" type="button" data-tab="onboarding" aria-selected="true">Intelligent Onboarding</button>
-          <button class="tab" type="button" data-tab="assistant" aria-selected="false">Fund Assistant</button>
-          <button class="tab" type="button" data-tab="reporting" aria-selected="false">Portfolio Reporting</button>
-          <button class="tab" type="button" data-tab="analyst" aria-selected="false">Portfolio Analyst</button>
-          <button class="tab" type="button" data-tab="compliance" aria-selected="false">Compliance</button>
+      <div class="hero-split">
+        <div>
+        <span class="chip-label">AI Agents</span>
+        <h1>AI agents, <em>purpose-built</em> for private markets.</h1>
+        <p class="lede">
+          CapHive's AI agents work inside the platform to streamline and supercharge ongoing tasks — from
+          onboarding and portfolio analysis to compliance checklists and querying structured and
+          unstructured data.
+        </p>
+        <!-- the artefact this module produces: the exchange itself. Tab switching is
+             handled by the shared [data-tabs] behaviour in assets/js/caphive.js —
+             with JavaScript off, the first panel stays visible. -->
+      <div class="hero-cta" style="margin-top:40px">
+        <a class="btn btn-primary" href="contact.html">
+          Setup a Demo
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-outline" href="#agents">How the agents work</a>
+      </div>
         </div>
+        <div data-tabs>
+          <div class="agent-tabs" aria-label="Choose an agent">
+            <button class="tab active" type="button" data-tab="onboarding" aria-selected="true">Intelligent Onboarding</button>
+            <button class="tab" type="button" data-tab="assistant" aria-selected="false">Fund Assistant</button>
+            <button class="tab" type="button" data-tab="reporting" aria-selected="false">Portfolio Reporting</button>
+            <button class="tab" type="button" data-tab="analyst" aria-selected="false">Portfolio Analyst</button>
+            <button class="tab" type="button" data-tab="compliance" aria-selected="false">Compliance</button>
+          </div>
 
-        <div class="panel active" data-panel="onboarding">
-          <div class="chat">
-            <div class="chat-head">Intelligent Onboarding<span class="chat-sub">connected to your fund data</span></div>
-            <div class="chat-body">
-              <div class="msg user">Onboard Meridian Family Office to Fund III.</div>
-              <div class="msg ai">
-                Started. KYC documents requested and the subscription pack is out for e-sign — 2 of 9 checks already cleared. I'll flag you when wire details are verified.
-                <span class="chip">Onboarding · Fund III checklist</span>
+          <div class="panel active" data-panel="onboarding">
+            <div class="chat">
+              <div class="chat-head">Intelligent Onboarding<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">Onboard Meridian Family Office to Fund III.</div>
+                <div class="msg ai">
+                  Started. KYC documents requested and the subscription pack is out for e-sign — 2 of 9 checks already cleared. I'll flag you when wire details are verified.
+                  <span class="chip">Onboarding · Fund III checklist</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="panel" data-panel="assistant">
-          <div class="chat">
-            <div class="chat-head">Fund Assistant<span class="chat-sub">connected to your fund data</span></div>
-            <div class="chat-body">
-              <div class="msg user">What's Fund II's DPI after the March distribution?</div>
-              <div class="msg ai">
-                DPI is 0.87x, up from 0.74x. The March distribution returned US$ 18.4m across 61 LPs — pref is fully paid, carry accrual starts next quarter.
-                <span class="chip">Fund II · Distribution ledger</span>
+          <div class="panel" data-panel="assistant">
+            <div class="chat">
+              <div class="chat-head">Fund Assistant<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">What's Fund II's DPI after the March distribution?</div>
+                <div class="msg ai">
+                  DPI is 0.87x, up from 0.74x. The March distribution returned US$ 18.4m across 61 LPs — pref is fully paid, carry accrual starts next quarter.
+                  <span class="chip">Fund II · Distribution ledger</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="panel" data-panel="reporting">
-          <div class="chat">
-            <div class="chat-head">Portfolio Reporting<span class="chat-sub">connected to your fund data</span></div>
-            <div class="chat-body">
-              <div class="msg user">Draft the Q2 LP report for Fund III.</div>
-              <div class="msg ai">
-                Done — 24 portfolio updates pulled in, NAV bridge and TVPI trend included. Two companies reported unaudited numbers; both are flagged for review.
-                <span class="chip">Fund III · Q2 report draft</span>
+          <div class="panel" data-panel="reporting">
+            <div class="chat">
+              <div class="chat-head">Portfolio Reporting<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">Draft the Q2 LP report for Fund III.</div>
+                <div class="msg ai">
+                  Done — 24 portfolio updates pulled in, NAV bridge and TVPI trend included. Two companies reported unaudited numbers; both are flagged for review.
+                  <span class="chip">Fund III · Q2 report draft</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="panel" data-panel="analyst">
-          <div class="chat">
-            <div class="chat-head">Portfolio Analyst<span class="chat-sub">connected to your fund data</span></div>
-            <div class="chat-body">
-              <div class="msg user">Which positions missed plan this quarter?</div>
-              <div class="msg ai">
-                3 of 24. The widest variance is a Series B position at −12% ARR against plan. The full variance table is ready to open.
-                <span class="chip">Portfolio · Variance analysis</span>
+          <div class="panel" data-panel="analyst">
+            <div class="chat">
+              <div class="chat-head">Portfolio Analyst<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">Which positions missed plan this quarter?</div>
+                <div class="msg ai">
+                  3 of 24. The widest variance is a Series B position at −12% ARR against plan. The full variance table is ready to open.
+                  <span class="chip">Portfolio · Variance analysis</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="panel" data-panel="compliance">
-          <div class="chat">
-            <div class="chat-head">Compliance<span class="chat-sub">connected to your fund data</span></div>
-            <div class="chat-body">
-              <div class="msg user">Are we ready for the quarterly AIF filing?</div>
-              <div class="msg ai">
-                11 of 12 checks complete. One investor's FATCA declaration is pending — reminder sent. The filing pack is otherwise assembled.
-                <span class="chip">Compliance · AIF quarterly checklist</span>
+          <div class="panel" data-panel="compliance">
+            <div class="chat">
+              <div class="chat-head">Compliance<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">Are we ready for the quarterly AIF filing?</div>
+                <div class="msg ai">
+                  11 of 12 checks complete. One investor's FATCA declaration is pending — reminder sent. The filing pack is otherwise assembled.
+                  <span class="chip">Compliance · AIF quarterly checklist</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-    </div>
-
-    <div class="hero-cta" style="margin-top:40px">
-      <a class="btn btn-primary" href="contact.html">
-        Setup a Demo
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-      <a class="btn btn-outline" href="#agents">How the agents work</a>
-    </div>
+      </div>
+      </div>
     </div>
   </div>
 </section>

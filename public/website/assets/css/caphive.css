@@ -94,8 +94,8 @@ p, li, .lede, .step-detail, .faq details > div{ text-wrap:pretty; }
   width:min(1120px, calc(100% - 28px)); z-index:60;
   display:flex; align-items:center; justify-content:space-between;
   padding:10px 12px 10px 20px; border-radius:999px;
-  background:rgba(251,250,247,.72); border:1px solid var(--line);
-  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  background:rgba(255,255,255,.94); border:1px solid var(--line);
+  backdrop-filter:blur(18px) saturate(120%); -webkit-backdrop-filter:blur(18px) saturate(120%);
   transition:box-shadow .3s;
 }
 .nav.scrolled{ box-shadow:0 12px 40px -18px rgba(16,16,16,.18); }
@@ -133,8 +133,8 @@ p, li, .lede, .step-detail, .faq details > div{ text-wrap:pretty; }
 .nav-menu{
   position:absolute; top:calc(100% + 14px); left:50%; transform:translate(-50%,8px);
   width:330px; padding:10px; border-radius:20px;
-  background:rgba(251,250,247,.92); border:1px solid var(--line);
-  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  background:rgba(255,255,255,.98); border:1px solid var(--line);
+  backdrop-filter:blur(18px) saturate(120%); -webkit-backdrop-filter:blur(18px) saturate(120%);
   box-shadow:0 30px 70px -30px rgba(16,16,16,.28);
   opacity:0; pointer-events:none; transition:opacity .25s, transform .25s cubic-bezier(.2,.8,.3,1);
 }
@@ -145,7 +145,7 @@ p, li, .lede, .step-detail, .faq details > div{ text-wrap:pretty; }
 .nav-menu span{ display:block; font-size:12.5px; color:var(--mut); margin-top:2px; line-height:1.45; }
 
 .mobile-menu{
-  position:fixed; inset:0; z-index:55; background:var(--bg);
+  position:fixed; inset:0; z-index:55; background:#fff;
   display:flex; flex-direction:column; justify-content:center; align-items:center; gap:22px;
   opacity:0; pointer-events:none; transition:opacity .3s; overflow-y:auto; padding:110px 24px 48px;
 }
@@ -341,16 +341,101 @@ a.f-card:hover h3{ color:var(--orange); }
   background:radial-gradient(50% 50% at 50% 50%, rgba(255,77,0,.16), transparent 70%); pointer-events:none;
 }
 
-/* ---------- numbered process ---------- */
-.steps-num{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; counter-reset:s; }
-.steps-num.three{ grid-template-columns:repeat(3,1fr); }
-.step-n{ border-top:2px solid var(--line); padding-top:22px; counter-increment:s; }
-.step-n::before{
-  content:"0" counter(s); display:block; font-family:var(--mono); font-size:11px;
-  letter-spacing:.16em; color:var(--orange); margin-bottom:14px;
+/* ---------- numbered process ----------
+   Equal-height tiles with a chevron in each gap. The earlier version staggered
+   the steps down a staircase, which left holes in the row and ran the last rule
+   off the right edge — tiles read as a sequence without needing the stagger.
+   The chevrons are pseudo-elements, so reading order stays a plain numbered list. */
+.steps-num{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:20px;
+  counter-reset:s; align-items:stretch;
 }
+.steps-num.three{ grid-template-columns:repeat(3,1fr); }
+.step-n{
+  position:relative; counter-increment:s;
+  background:var(--tile); border:1px solid var(--line); border-radius:var(--r-card);
+  padding:28px 26px 30px;
+  transition:transform .35s cubic-bezier(.2,.8,.3,1), border-color .35s, box-shadow .35s;
+}
+.step-n:hover{
+  transform:translateY(-5px); border-color:var(--fg);
+  box-shadow:0 26px 52px -30px rgba(16,16,16,.20);
+}
+
+/* the numeral, as a badge */
+.step-n::before{
+  content:"0" counter(s);
+  display:grid; place-items:center; width:38px; height:38px; border-radius:50%;
+  background:var(--cream); color:var(--orange-2);
+  font-family:var(--mono); font-size:11.5px; font-weight:500; letter-spacing:.08em;
+  margin-bottom:22px;
+  transition:background .35s, color .35s;
+}
+.step-n:hover::before{ background:var(--orange); color:#fff; }
+
 .step-n h3{ font-size:19px; letter-spacing:-0.02em; line-height:1.3; }
-.step-n p{ color:var(--mut); font-size:14.5px; margin-top:9px; }
+.step-n p{ color:var(--mut); font-size:14.5px; margin-top:10px; }
+
+/* chevron sitting in the gap, pointing at the next step */
+.steps-num > .step-n:not(:last-child)::after{
+  content:""; position:absolute; top:50%; right:-16px;
+  width:12px; height:12px; margin-top:-6px; pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3.5 1.5L8 6l-4.5 4.5' stroke='%23FF4D00' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center/contain;
+}
+
+/* inverted, for a sequence placed on a dark or orange surface */
+.band-dark .step-n, .tint-black .step-n, .tint-orange .step-n{
+  background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16); color:#fff;
+}
+.band-dark .step-n:hover, .tint-black .step-n:hover, .tint-orange .step-n:hover{
+  border-color:#fff; box-shadow:none;
+}
+.band-dark .step-n::before, .tint-black .step-n::before, .tint-orange .step-n::before{
+  background:rgba(255,255,255,.12); color:#fff;
+}
+.band-dark .step-n p, .tint-black .step-n p, .tint-orange .step-n p{ color:rgba(255,255,255,.7); }
+.band-dark .steps-num > .step-n:not(:last-child)::after,
+.tint-black .steps-num > .step-n:not(:last-child)::after,
+.tint-orange .steps-num > .step-n:not(:last-child)::after{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3.5 1.5L8 6l-4.5 4.5' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* ---------- capital lifecycle rail ----------
+   Nodes on a continuous rail, for showing capital moving through the platform
+   rather than a list of features. Built for a dark surface (inside .frame). */
+.flow{
+  position:relative; display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
+  padding-top:8px;
+}
+.flow::before{
+  content:""; position:absolute; left:10%; right:10%; top:26px; height:1px;
+  background:linear-gradient(90deg, rgba(255,77,0,.7), rgba(255,255,255,.22));
+}
+.flow-node{ position:relative; text-align:center; padding-top:60px; }
+.flow-node::before{
+  content:attr(data-step);
+  position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  width:38px; height:38px; border-radius:50%; display:grid; place-items:center;
+  background:var(--dark); border:1px solid rgba(255,255,255,.22);
+  font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--orange);
+  transition:background .3s, border-color .3s, color .3s;
+}
+.flow-node:hover::before{ background:var(--orange); border-color:var(--orange); color:#fff; }
+.flow-node h4{ font-size:15px; font-weight:600; letter-spacing:-0.01em; color:#fff; }
+.flow-node .amt-lab{
+  display:block; margin-top:8px; font-family:var(--mono); font-size:10px;
+  letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); line-height:1.6;
+}
+.flow-node p{ color:rgba(255,255,255,.62); font-size:13px; margin-top:10px; text-wrap:pretty; }
+
+@media (max-width:900px){
+  .flow{ grid-template-columns:1fr 1fr; gap:24px 12px; }
+  .flow::before{ display:none; }
+  .flow-node{ padding-top:52px; }
+}
+@media (max-width:560px){
+  .flow{ grid-template-columns:1fr; }
+}
 
 /* ---------- tabs ---------- */
 .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px; }
@@ -778,9 +863,38 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
    glance: white for Funds, orange for Deals & Secondaries, black for AI Agents.
    Portfolios and Integrations stay on the page ground — their full-width frame
    and category band already differentiate them. */
-.page-hero.hero-tinted{ padding-top:112px; }
+/* The fold should fall below the hero card, never through it. Vertical rhythm
+   scales with viewport height, and the dashboard/chat mock is allowed to crop —
+   it already reads as a screenshot — while the words never do. */
+.page-hero.hero-tinted{ padding-top:clamp(92px, 11vh, 112px); }
 .hero-panel{
-  border-radius:32px; padding:60px 56px; position:relative; overflow:hidden; isolation:isolate;
+  border-radius:32px; position:relative; overflow:hidden; isolation:isolate;
+  padding:clamp(34px, 4.2vh, 60px) clamp(24px, 3vw, 56px);
+}
+.page-hero.hero-tinted h1{ font-size:clamp(30px, 4.4vw, 56px); }
+.page-hero.hero-tinted .lede{ margin-top:clamp(14px, 1.8vh, 24px); }
+.page-hero.hero-tinted .hero-cta{ margin-top:clamp(20px, 2.8vh, 36px); }
+.page-hero.hero-tinted .article-meta{ margin-top:clamp(16px, 2vh, 26px); padding-top:clamp(14px, 1.8vh, 22px); }
+.page-hero.hero-tinted .stat-band{ margin-top:clamp(28px, 3.4vh, 52px) !important; }
+.page-hero .agent-tabs{ margin:clamp(18px, 2.4vh, 40px) 0 clamp(12px, 1.6vh, 24px); }
+/* the hero card may run wider than the page column — it is the one element on
+   the page that benefits from the extra room */
+.page-hero.hero-tinted > .wrap{ max-width:1280px; }
+/* inside a split the tabs and chat align left and fill their column */
+.hero-split .agent-tabs{ justify-content:flex-start; margin-top:0; }
+.hero-split .chat{ max-width:none; }
+/* the stat band is a sibling of the split, so it spans the whole card */
+.hero-panel > .stat-band{ margin-top:clamp(24px, 3vh, 44px); }
+
+/* the visual gives way first */
+.page-hero.hero-tinted .frame{ max-height:calc(100vh - 400px); min-height:250px; }
+.page-hero .chat{ max-height:calc(100vh - 470px); min-height:230px; }
+.page-hero .chat-body{ padding:clamp(16px, 2vh, 26px); }
+.page-hero.hero-tinted .hero-marquee{ padding:clamp(14px, 1.8vh, 24px) 0; }
+
+@media (max-height:860px){
+  .page-hero.hero-tinted h1{ font-size:clamp(26px, 3.4vw, 42px); }
+  .page-hero.hero-tinted .lede{ font-size:16px; }
 }
 .tint-white .hero-panel{
   background:var(--tile); border:1px solid var(--line);
@@ -788,6 +902,12 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
 }
 .tint-white .stat-band{ background:var(--bg); }
 .tint-orange .hero-panel{ background:var(--orange); border:1px solid var(--orange); color:#fff; }
+/* cream needs no text inversion — it is a light surface like white */
+.tint-cream .hero-panel{ background:var(--cream); border:1px solid #E2DDD1; box-shadow:0 40px 80px -60px rgba(16,16,16,.22); }
+/* deep orange is used TOGETHER with .tint-orange, so it inherits every inversion
+   and only swaps the fill. It measures 4.22:1 against white versus 3.33:1 for
+   --orange, so it is the better choice on the longer reads. */
+.tint-deep .hero-panel{ background:var(--orange-2); border-color:var(--orange-2); }
 .tint-black .hero-panel{ background:var(--dark); border:1px solid rgba(255,255,255,.1); color:#fff; }
 .tint-orange .hero-panel::before, .tint-black .hero-panel::before{
   content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
@@ -824,6 +944,10 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
 .tint-orange .stat-band span{ color:rgba(255,255,255,.92); }
 .tint-orange .stat-band strong em{ color:#fff; }
 .tint-orange :focus-visible, .tint-black :focus-visible{ outline-color:#fff; }
+.tint-orange .article-meta, .tint-black .article-meta{
+  border-top-color:rgba(255,255,255,.22); color:rgba(255,255,255,.82);
+}
+.tint-orange .article-meta a, .tint-black .article-meta a{ color:#fff; }
 
 /* the chat needs to lift off a black surface */
 .tint-black .chat{ background:var(--dark-2); border-color:rgba(255,255,255,.14); }
@@ -870,12 +994,17 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
 /* ---------- blog ---------- */
 .article-hero{ padding:150px 0 0; }
 
-/* The intro sits in a white card spanning the full column, with the text itself
-   measure-capped inside it so the headline and standfirst stay readable.
-   This rule has to restate the padding because .article-hero is declared after
-   the .hero-tinted block and would otherwise win. */
+/* A post is two stacked white cards — intro, then body — both spanning the full
+   column, with the text measure-capped inside so the two share an edge and the
+   reading width stays sane. This restates the padding because .article-hero is
+   declared after the .hero-tinted block and would otherwise win. */
 .article-hero.hero-tinted{ padding-top:112px; }
-.article-intro{ max-width:780px; }
+.article-measure{ max-width:780px; }
+.article-card{
+  background:var(--tile); border:1px solid var(--line); border-radius:32px;
+  padding:60px 56px 48px;
+  box-shadow:0 40px 80px -60px rgba(16,16,16,.28);
+}
 .article-hero h1{ font-size:clamp(34px,4.8vw,56px); font-weight:800; letter-spacing:-0.04em; line-height:1.04; }
 .article-hero .lede{
   color:var(--mut); font-size:clamp(17px,2vw,20px); margin-top:22px; text-wrap:pretty;
@@ -887,7 +1016,7 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
   text-transform:uppercase; color:var(--mut);
 }
 .article-meta .dot{ opacity:.45; }
-.article-body{ padding:56px 0 0; }
+.article-body{ padding:20px 0 0; }
 .article-body .prose{ max-width:none; }
 .article-body .prose > h2:first-child{ margin-top:0; }
 
@@ -958,7 +1087,8 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
 }
 @media (max-width:760px){
   .article-hero{ padding-top:126px; }
-  .article-body{ padding-top:40px; }
+  .article-body{ padding-top:14px; }
+  .article-card{ padding:32px 24px 28px; border-radius:24px; }
   .post-nav{ grid-template-columns:1fr; }
   .post-nav a.next{ text-align:left; }
   .post-lead-copy, .post-lead-side{ padding:32px 24px; }
@@ -981,6 +1111,8 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
   .split{ grid-template-columns:1fr; gap:40px; }
   .split.rev .split-text{ order:0; }
   .steps-num, .steps-num.three{ grid-template-columns:1fr 1fr; }
+  /* the chevron would point into the row below, so it comes off */
+  .steps-num > .step-n:not(:last-child)::after{ display:none; }
   .metrics-grid{ grid-template-columns:1fr 1fr; }
   .trust-row{ grid-template-columns:1fr 1fr; }
   .team-grid{ grid-template-columns:1fr 1fr; }
@@ -1001,6 +1133,7 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
   .f-grid, .f-grid.two, .f-grid.four{ grid-template-columns:1fr; }
   .case-grid{ grid-template-columns:1fr; }
   .steps-num, .steps-num.three{ grid-template-columns:1fr; }
+  .step-n{ padding:24px 22px 26px; }
   .metrics-grid{ grid-template-columns:1fr; }
   .trust-row{ grid-template-columns:1fr; }
   .team-grid{ grid-template-columns:1fr; }

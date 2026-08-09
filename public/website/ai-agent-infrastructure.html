@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The infrastructure to get your AI agents to deliver | CapHive</title>
+<meta name="description" content="Agents need three substrates: something to read, permission to act, and a record anyone can check. Grounding, permissioning and auditability are infrastructure, not prompting.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/ai-agent-infrastructure.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="The infrastructure to get your AI agents to deliver">
+<meta property="og:description" content="What an agent can read, what it is allowed to do, and whether anyone can check its work — the three substrates that decide whether agents are useful in a fund.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/ai-agent-infrastructure.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css">
+</head>
+<body data-page="resources">
+
+<!-- ============================================================
+     DRAFT FOR REVIEW. This piece deliberately contains no statistics,
+     survey results or benchmark figures, because none have been supplied.
+     Every claim is either an argument from mechanism or a description of a
+     workflow. If you want numbers in here, add them from a source you can
+     cite — do not let anyone paraphrase them in.
+     ============================================================ -->
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home">
+    <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+      <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+    </svg>
+    CapHive
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="#" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-orange tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>AI agent infrastructure
+          </nav>
+          <span class="chip-label">AI</span>
+          <h1 style="margin-top:22px">The infrastructure to get your AI agents <em>to deliver.</em></h1>
+          <p class="lede">
+            An agent is only as good as what it can read, what it is allowed to do, and
+            whether anyone can check its work. Those three things are infrastructure, not
+            prompting.
+          </p>
+          <div class="article-meta">
+            <time datetime="2026-06-29">Jun 29, 2026</time>
+            <span class="dot">·</span>
+            <span>6 min read</span>
+            <span class="dot">·</span>
+            <span>AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <p>
+          Most discussion of AI agents is still a discussion about instructions — how to phrase
+          the task, how to structure the request, which model to point at it. That is the part
+          you can do in an afternoon, which is why it gets the attention. It is also the part
+          that matters least once an agent is doing real work inside a fund.
+        </p>
+        <p>
+          An agent reads something, decides something and does something. Each of those verbs
+          rests on machinery that either exists before any model is chosen, or does not. Three
+          questions settle whether an agent will be useful: what can it read, what is it
+          allowed to do, and can anyone check its work afterwards. Answer those well and an
+          ordinary model becomes useful. Answer them badly and the best model available
+          produces output nobody is willing to put their name to.
+        </p>
+
+        <h2 id="read">1. Read — grounding</h2>
+        <p>
+          An agent's answer is worth exactly what its retrieval was worth. Grounding is not a
+          model feature; it is a property of the systems the agent is pointed at.
+        </p>
+
+        <h3>One system of record</h3>
+        <p>
+          If the commitment schedule exists in three places, the agent's first act is to choose
+          between them, and it will make that choice without telling you. A single authoritative
+          record is not a tidiness preference. It is the thing that makes an agent's output
+          reproducible, which is the precondition for anyone relying on it twice.
+        </p>
+
+        <h3>Structured fields, not pictures of fields</h3>
+        <p>
+          Commitment, drawn, distributed, unfunded, NAV, valuation date — these need to be typed
+          fields with definitions attached, not values embedded in a rendered statement. An agent
+          can read a number off a PDF. What it cannot do is know whether that number was computed
+          before or after the accrual, or which of two similar labels the fund actually means.
+          Structure is what converts reading into computing.
+        </p>
+
+        <h3>The unstructured documents indexed alongside them</h3>
+        <p>
+          Private markets keep half their meaning in prose. The limited partnership agreement,
+          side letters, subscription packs, board minutes, portfolio company updates written as
+          paragraphs. An agent that can read the register but not the side letter overriding it
+          will be wrong in precisely the situations where being right matters. Documents have to
+          be indexed against the entities they concern — this investor, this vehicle, this
+          company — so that retrieval is scoped rather than hopeful. That indexing is a
+          <a href="integrations.html">data and integrations</a> problem, and it is usually the
+          longest pole in the tent.
+        </p>
+
+        <h3>Retrieval that can cite the record it came from</h3>
+        <p>
+          Every figure an agent produces should arrive with a pointer to where it came from: the
+          row, the document, the version, the date it was last changed. This is the difference
+          between an answer and an assertion. It is also what makes review cheap — a reviewer who
+          can click through to the source spends seconds, while a reviewer who has to reconstruct
+          the calculation spends as long as doing the work themselves. Verification cost, not
+          accuracy, is what usually determines whether an agent survives contact with a busy
+          quarter.
+        </p>
+
+        <div class="pull">
+          <p>An uncitable answer cannot be used in anything that leaves the building — which means, in a fund, that it cannot be used at all.</p>
+        </div>
+
+        <h2 id="act">2. Act — permissioning</h2>
+        <p>
+          This is the substrate most often skipped, because a demonstration works without it and
+          the cost of skipping it only appears later.
+        </p>
+
+        <h3>An agent inherits a role, not a superuser key</h3>
+        <p>
+          The convenient way to give software access is to give it everything. Do that and the
+          agent's blast radius is the whole platform, permanently, regardless of how narrow the
+          task was. The correct model is duller: an agent acting on behalf of the fund accountant
+          sees what the fund accountant sees and can do what the fund accountant can do — no more.
+          The same role structure that governs your people should govern your software, with the
+          <a href="security.html">same controls and access logs</a> behind it. If a vendor cannot
+          show you where an agent's permissions are set, the answer is that they are not set.
+        </p>
+
+        <h3>Proposing and executing are different products</h3>
+        <p>
+          An agent that proposes computes each investor's share, drafts the notice, flags the two
+          investors whose details have changed, assembles the pack — and then stops, with
+          everything ready and nothing sent. An agent that executes sends it. The engineering
+          gap between those is small. The governance gap is enormous, and it should be an explicit
+          decision per class of action rather than a default that emerges from whichever
+          permission somebody granted first.
+        </p>
+
+        <h3>Anything that moves money or reaches an investor needs a human</h3>
+        <p>
+          Not because agents are unreliable — people misfile wires too — but because these actions
+          are one-way doors. A payment instruction that has settled cannot be recalled by
+          apologising. A statement that has reached four hundred inboxes cannot be unsent. The
+          test is not how confident the software is; it is whether the action can be reversed at
+          acceptable cost. Where it cannot, a named person approves it, and the approval is
+          recorded next to the action.
+        </p>
+
+        <div class="callout">
+          <p>
+            <strong>Four decisions to write down before any agent goes live:</strong> which
+            classes of action may run without a human; which need one approver; which need two;
+            and what happens when an approval is not given — does the item wait, expire, or
+            escalate? These are policy choices, not technical ones, and they take an afternoon
+            to make once somebody insists on making them.
+            <!-- TODO: a real figure here would strengthen this claim — add one you can cite -->
+          </p>
+        </div>
+
+        <h2 id="verify">3. Verify — auditability</h2>
+        <p>
+          The third substrate is a single audit log. Every agent action should be written to the
+          same log as the equivalent human action, in the same shape: actor, timestamp, the value
+          before, the value after, and the instruction or event that caused it. Not a separate
+          model log in a separate console.
+        </p>
+        <p>
+          The reason is practical. When an auditor, an investor or your own finance team asks why
+          a valuation changed, the answer must be a single readable sequence of events. If human
+          actions are in one system and agent actions in another, reconstructing a quarter means
+          merging two timelines by hand — and every incentive will push people toward keeping
+          agents out of anything that matters, which defeats the purpose.
+        </p>
+
+        <h3>When the agent is unsure, it escalates rather than guesses</h3>
+        <p>
+          A model asked for a number will produce a number. Fluency is not correctness, and an
+          uncertain answer is formatted identically to a confident one. So the agent needs a
+          legitimate third option beyond answering and refusing: hand the item to a person, with
+          what it found, what it could not reconcile, and where it looked. Escalation has to be a
+          designed path with a queue and an owner. Left to itself, plausible output is always the
+          path of least resistance.
+        </p>
+
+        <h2 id="buying">What this means when you are buying</h2>
+        <p>
+          Agent demonstrations look alike. The chat window is convincing in every one of them,
+          because the hard parts are invisible in a demo. Two questions separate the products,
+          and both can be asked in a first meeting:
+        </p>
+        <ol>
+          <li><strong>Where do the agent's permissions come from?</strong> A good answer points at the same role and access configuration your users have, and shows you the screen where it is set. A poor answer describes an API key.</li>
+          <li><strong>Where are the agent's actions logged?</strong> A good answer shows you a row in the same audit trail as a human action, with the before and after values. A poor answer offers a transcript of the conversation.</li>
+        </ol>
+        <p>
+          Three more worth asking: what does the agent do when it cannot resolve something; can
+          every figure it produces be traced to a source record; and who in your firm can switch
+          it off, immediately, without a support ticket. <a href="ai-agents.html">Agents built for
+          private markets</a> should have unremarkable answers to all five. If the answers are
+          interesting, that is usually a warning.
+        </p>
+
+        <h2 id="the-argument">The argument, briefly</h2>
+        <p>
+          Prompting is the visible part of agent work and the smallest part of it. Everything that
+          decides whether an agent is safe to run in a fund — one record to read, roles it can
+          inherit, an approval step where reversal is impossible, one log where its actions land,
+          and a defined route for admitting it does not know — is ordinary software
+          infrastructure. It is also work that improves the fund whether or not an agent ever
+          touches it.
+        </p>
+        <p>
+          Done properly, the result is undramatic. The agents become part of the furniture, doing
+          the chasing and the drafting and the first-pass reconciliation, while people spend their
+          attention on the judgements that were always theirs. Boring is the target. Boring is
+          what an investor is entitled to expect.
+          </p>
+          </div>
+
+          <!-- TODO: attribute this to a real author — replace the initials, name and role,
+               or delete the byline entirely if pieces are published under the firm's name. -->
+          <div class="byline">
+            <span class="avatar">CH</span>
+            <span>
+              <strong>CapHive</strong>
+              <span>Written by the CapHive team</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PREV / NEXT ================= -->
+  <section class="section-sm">
+    <div class="wrap-narrow">
+      <div class="post-nav">
+        <a href="portfolio-real-time-insight.html">
+          <span class="dir">← Previous</span>
+          <strong>Portfolio management: shift from reporting to real-time insight</strong>
+        </a>
+        <a class="next" href="ai-and-fifa-2026.html">
+          <span class="dir">Next →</span>
+          <strong>Yes, AI is transforming FIFA 2026 as well!</strong>
+        </a>
+      </div>
+    </div>
+  </section>
+</article>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Where this leads</span>
+      <h2>The three substrates, <em>as products.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="ai-agents.html">
+        <div>
+          <span class="kick">01 · AI Agents</span>
+          <h3>AI Agents</h3>
+          <p>Agents that cite their sources, inherit a role and stop at an approval step.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="security.html">
+        <div>
+          <span class="kick">Controls</span>
+          <h3>Security &amp; trust</h3>
+          <p>Roles, single sign-on and audit logs — where an agent's permissions come from.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="integrations.html">
+        <div>
+          <span class="kick">Grounding</span>
+          <h3>Data &amp; integrations</h3>
+          <p>Banks, custodians, ERPs, e-sign and APIs — the records an agent reads from.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+            <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+            <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+          </svg>
+          CapHive
+        </a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="#" data-login>Login — IND</a></li>
+          <li><a href="#" data-login>Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <div class="legal-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="cookies.html">Cookie Policy</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "The infrastructure to get your AI agents to deliver",
+  "datePublished": "2026-06-29",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/ai-agent-infrastructure.html"
+}
+</script>
+</body>
+</html>
