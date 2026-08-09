@@ -6,9 +6,8 @@
 # the FIRST entry is the canonical host, every other listed host 301s to it,
 # e.g. "caphive.com,www.caphive.com"). Deriving hosts from BASE_DOMAIN would
 # hijack development and the whole Cucumber suite — both run on plain
-# `localhost` — and would wrongly surface the .com-branded content on the
-# caphive.us stack, so an unset variable makes this middleware a pass-through
-# no-op.
+# `localhost` — so an unset variable makes this middleware a pass-through
+# no-op. Both production stacks opt in (.env.production.in / .us).
 #
 # Inserted at position 0 of the middleware stack (config/initializers/
 # website.rb), ahead of ActionDispatch::Static, the session store and

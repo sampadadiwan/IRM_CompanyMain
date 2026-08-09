@@ -88,9 +88,9 @@ the middleware is a one-line pass-through no-op.
 
 Why opt-in rather than deriving from `BASE_DOMAIN`: development and the whole
 Cucumber suite run on host `localhost` with `BASE_DOMAIN=localhost:<port>` — any
-derivation would hijack every dev browser request and every test. It also cleanly
-handles the US stack (`caphive.us`), where the .com-branded content should *not*
-appear: the variable is simply not set there.
+derivation would hijack every dev browser request and every test. Both production
+stacks opt in with their own domains (`caphive.com` on IN, `caphive.us` on US);
+staging can opt in with `altconnects.com` when wanted.
 
 Per-request logic:
 
@@ -202,8 +202,10 @@ the website repo disappear from `public/website/` on the next sync.
 |---|---|
 | `.env.production.in` | `WEBSITE_HOSTS=caphive.com,www.caphive.com` |
 | `.env.development` | commented example: `# WEBSITE_HOSTS=caphive.localhost,www.caphive.localhost` |
-| `.env.production.us`, staging | deliberately untouched (opt in later if wanted) |
+| `.env.production.us` | `WEBSITE_HOSTS=caphive.us,www.caphive.us` |
+| staging | deliberately untouched (opt in later with `altconnects.com` if wanted) |
 | `config/deploy/production_in.rb` | `set :website_domain, "caphive.com"` |
+| `config/deploy/production_us.rb` | `set :website_domain, "caphive.us"` |
 
 Dev testing: uncomment the `.env.development` line and browse
 `http://caphive.localhost:3001` — browsers resolve `*.localhost` to loopback per
@@ -238,10 +240,18 @@ Scenarios in `features/misc/website.feature`:
 The Rails/nginx changes are **inert until DNS points the apex at the ALB**, so they
 can merge and deploy first. Then, in `../IRM-Infra`:
 
-- **ACM cert**: currently `*.caphive.com` only — a wildcard does *not* cover the
-  bare apex. Add `caphive.com` as a SAN and reissue.
-- **Route53**: A/ALIAS records for `caphive.com` and `www.caphive.com` → the ALB.
+Per stack (IN serves `caphive.com`, US serves `caphive.us`; separate AWS
+accounts, so each is done against its own ALB/zone):
+
+- **ACM cert**: the wildcards (`*.caphive.com` / `*.caphive.us`) do *not* cover
+  the bare apexes. Add the apex as a SAN and reissue.
+- **Route53**: A/ALIAS records for the apex and `www` → that stack's ALB.
 - **ALB**: confirm the 443 listener forwards those hosts to the app target group.
+
+SEO note for the US stack: the page canonical tags, `og:url` and the sitemap all
+point at `https://caphive.com`, so search engines will index `.us`-served pages
+under the `.com` domain. That is the intended single-brand outcome; change the
+website repo's canonical URLs if `.us` should ever rank independently.
 
 Known/accepted trade-offs:
 

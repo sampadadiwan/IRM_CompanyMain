@@ -15,6 +15,12 @@ set :rails_env, "production"
 set :stage, :production
 set :env_variant, "us"
 
+# Enables the static-website server blocks in nginx_conf.erb: apex serves
+# public/website, www 301s to the apex. Pairs with WEBSITE_HOSTS in
+# .env.production.us. Note the page canonical tags point at caphive.com, so
+# .us-served pages canonicalize there for search engines.
+set :website_domain, "caphive.us"
+
 set :ssh_options, keys: "~/.ssh/caphive2.us.pem", compression: false, keepalive: true
 
 set :ssh_options, {
