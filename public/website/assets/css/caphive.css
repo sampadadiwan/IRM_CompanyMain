@@ -21,11 +21,21 @@
   --mono:    "Geist Mono", monospace;
 }
 *{ margin:0; padding:0; box-sizing:border-box; }
-html{ scroll-behavior:smooth; }
+/* The horizontal-overflow guard has to sit on <html>, not just <body>.
+   body{overflow-x:hidden} alone propagates to the viewport but still leaves
+   documentElement.scrollWidth wider than the screen, and mobile browsers then
+   shrink-to-fit the whole page: position:fixed elements (the pill nav) size
+   themselves to that wider layout viewport and hang off the right edge.
+   `clip` rather than `hidden` so neither element becomes a scroll container —
+   `hidden` on <body> would make it the scrollport and break the sticky
+   .story-stage on the home page. The `hidden` line before it is the fallback
+   for browsers predating overflow:clip (Safari < 16), which drop the `clip`
+   declaration and keep it. */
+html{ scroll-behavior:smooth; overflow-x:hidden; overflow-x:clip; }
 body{
   font-family:var(--font); background:var(--bg); color:var(--fg);
   line-height:1.55; font-size:16px; -webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
+  overflow-x:clip;
 }
 ::selection{ background:var(--orange); color:#fff; }
 a{ color:inherit; text-decoration:none; }
@@ -158,7 +168,11 @@ p, li, .lede, .step-detail, .faq details > div{ text-wrap:pretty; }
 .page-hero{ padding:170px 0 0; position:relative; }
 .page-hero::before{
   content:""; position:absolute; top:-220px; left:50%; transform:translateX(-50%);
-  width:900px; height:600px; pointer-events:none; z-index:-1;
+  /* min() keeps the glow inside the viewport on phones — a fixed 900px centred
+     on a 390px screen overflows 255px each side and triggers the shrink-to-fit
+     described at the top of this file. It is a 7%-opacity radial fade, so
+     narrowing it on mobile is visually indistinguishable. */
+  width:min(900px, 100%); height:600px; pointer-events:none; z-index:-1;
   background:radial-gradient(50% 50% at 50% 50%, rgba(255,77,0,.07), transparent 70%);
 }
 .page-hero h1{ font-size:clamp(40px,6.4vw,80px); font-weight:800; letter-spacing:-0.045em; line-height:1; max-width:1000px; }
@@ -864,7 +878,17 @@ table.cmp td .no{ color:var(--mut); }
 .prose a{ color:var(--orange-2); border-bottom:1px solid rgba(224,67,0,.3); }
 .prose a:hover{ border-color:var(--orange-2); }
 .prose strong{ color:var(--fg); font-weight:600; }
+.prose figure{ max-width:100%; }
 .prose table{ width:100%; border-collapse:collapse; margin-top:18px; }
+/* width:100% can't take a table below its min-content width, so a multi-column
+   table (the obligation matrix, the comparison tables in the agent pages) runs
+   off a phone screen and widens the whole document. Only some of them sit in a
+   <figure> we could scroll, so the table becomes its own scroll container:
+   display:block puts the real table in an anonymous box free to exceed the
+   width. Phones only — on desktop the tables still fill the prose column. */
+@media (max-width:760px){
+  .prose table{ display:block; overflow-x:auto; }
+}
 .prose th, .prose td{ text-align:left; padding:14px 12px; border-bottom:1px solid var(--line); font-size:14.5px; color:var(--mut); }
 .prose th{ font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--fg); font-weight:500; }
 .updated{
