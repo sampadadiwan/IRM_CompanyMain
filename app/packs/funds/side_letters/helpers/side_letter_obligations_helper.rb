@@ -6,51 +6,25 @@ module SideLetterObligationsHelper
   # states are the hardest part of this feature for users to internalise.
   def obligation_status_badge(obligation)
     if obligation.pending_review?
-      status_badge("Pending review", "bg-warning text-dark",
-                   "Waiting for counsel to approve or reject. Nothing is tracked and no alerts are sent until approval.")
+      obligation_badge_tag("Pending review", "bg-warning text-dark",
+                           "Waiting for counsel to approve or reject. Nothing is tracked and no alerts are sent until approval.")
     elsif obligation.rejected?
-      status_badge("Rejected", "bg-secondary",
-                   "Counsel rejected this obligation — it will never create tasks or alerts.")
+      obligation_badge_tag("Rejected", "bg-secondary",
+                           "Counsel rejected this obligation — it will never create tasks or alerts.")
     elsif obligation.armed?
-      status_badge("Armed", "bg-info text-dark",
-                   "Event-triggered: there is no due date until the event happens. Use Fire to set a deadline when it does.")
+      obligation_badge_tag("Armed", "bg-info text-dark",
+                           "Event-triggered: there is no due date until the event happens. Use Fire to set a deadline when it does.")
     elsif obligation.obligation_active?
-      due_badge(obligation)
+      obligation_due_badge(obligation)
     elsif obligation.status.to_s == "waived"
-      status_badge("Waived", "bg-secondary",
-                   "Counsel ended this obligation. Open tasks were removed; completed history is preserved. Use Revert if this was a mistake.")
+      obligation_badge_tag("Waived", "bg-secondary",
+                           "Counsel ended this obligation. Open tasks were removed; completed history is preserved. Use Revert if this was a mistake.")
     elsif obligation.status.to_s == "fulfilled"
-      status_badge("Fulfilled", "bg-success",
-                   "The obligation was completed — see the fulfillment history for the audit trail.")
+      obligation_badge_tag("Fulfilled", "bg-success",
+                           "The obligation was completed — see the fulfillment history for the audit trail.")
     else
-      status_badge(obligation.status.to_s.humanize, "bg-secondary", nil)
+      obligation_badge_tag(obligation.status.to_s.humanize, "bg-secondary", nil)
     end
-  end
-
-  # Active + dated: show urgency relative to the nearest open task
-  def due_badge(obligation)
-    due = obligation.tasks.incomplete.where.not(due_date: nil).minimum(:due_date) || obligation.next_due_date
-    return status_badge("Active", "bg-success", "Approved and tracked — tasks and due-date alerts are live.") if due.blank?
-
-    days = (due - Time.zone.today).to_i
-    if days.negative?
-      status_badge("Overdue #{days.abs}d", "bg-danger",
-                   "The nearest task slipped its due date #{days.abs} day(s) ago. The owner is re-alerted on the escalation cadence.")
-    elsif days.zero?
-      status_badge("Due today", "bg-danger", "The nearest task is due today — the owner has been alerted.")
-    elsif days <= 14
-      status_badge("Due in #{days}d", "bg-warning text-dark",
-                   "The nearest open task is due on #{due.strftime('%d %b %Y')}. The owner is reminded ahead of time per the obligation's lead-time setting.")
-    else
-      status_badge("Active", "bg-success",
-                   "Approved and tracked — next task due #{due.strftime('%d %b %Y')}.")
-    end
-  end
-
-  def status_badge(label, css, tip)
-    options = { class: "badge #{css}" }
-    options.merge!(title: tip, data: { bs_toggle: "tooltip" }) if tip
-    tag.span(label, **options)
   end
 
   def obligation_type_options
@@ -63,5 +37,37 @@ module SideLetterObligationsHelper
 
   def owner_team_options
     SideLetterObligation::OWNER_TEAMS.map { |k| [k.humanize, k] }
+  end
+
+  private
+
+  # Active + dated: show urgency relative to the nearest open task.
+  # Private (and obligation-prefixed) because Rails mixes every helper module
+  # into every view — a generic name here silently overrides same-named helpers
+  # in other packs (this collided with DealInvestorsHelper#status_badge).
+  def obligation_due_badge(obligation)
+    due = obligation.tasks.incomplete.where.not(due_date: nil).minimum(:due_date) || obligation.next_due_date
+    return obligation_badge_tag("Active", "bg-success", "Approved and tracked — tasks and due-date alerts are live.") if due.blank?
+
+    days = (due - Time.zone.today).to_i
+    if days.negative?
+      obligation_badge_tag("Overdue #{days.abs}d", "bg-danger",
+                           "The nearest task slipped its due date #{days.abs} day(s) ago. The owner is re-alerted on the escalation cadence.")
+    elsif days.zero?
+      obligation_badge_tag("Due today", "bg-danger", "The nearest task is due today — the owner has been alerted.")
+    elsif days <= 14
+      obligation_badge_tag("Due in #{days}d", "bg-warning text-dark",
+                           "The nearest open task is due on #{due.strftime('%d %b %Y')}. The owner is reminded ahead of time per the obligation's lead-time setting.")
+    else
+      obligation_badge_tag("Active", "bg-success",
+                           "Approved and tracked — next task due #{due.strftime('%d %b %Y')}.")
+    end
+  end
+
+  # Renders one badge span; attaches a Bootstrap tooltip only when a tip is given.
+  def obligation_badge_tag(label, css, tip)
+    options = { class: "badge #{css}" }
+    options.merge!(title: tip, data: { bs_toggle: "tooltip" }) if tip
+    tag.span(label, **options)
   end
 end
