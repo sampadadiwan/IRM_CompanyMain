@@ -118,34 +118,45 @@
       <%# Advisors only — pane for the Fund Access nav link above %>
       <% if @advisor_access_rights %>
         <div id="fund-access-tab" class="tab-pane fade">
-          <div class="table-responsive">
-            <h4>Fund Access Granted as Investor Advisor</h4>
-            <table class="table table-bordered dataTable">
-              <thead>
-                <tr>
-                  <th class="text-col">Fund</th>
-                  <th class="text-col">Granted By</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% if @advisor_access_rights.present? %>
-                  <% @advisor_access_rights.each do |access_right| %>
+          <%# Same wrapper as the notes/tasks panes above so this tab picks up the
+              .associated_entity spacing and h1 sizing from scaffolds.scss %>
+          <div id="fund_access" class="associated_entity">
+            <%# Header mirrors tasks/_index.html.erb: title left, action slot right %>
+            <div id="fund_access_header" class="d-sm-flex align-items-center justify-content-between mb-4 task_header">
+              <h1 class="h3 mb-0 text-gray-800">Fund Access Granted as Investor Advisor</h1>
+              <div class="d-flex flex-wrap align-items-center gap-2"></div>
+            </div>
+
+            <div class="table-responsive">
+              <table id="fund_access_rights" class="table table-bordered dataTable">
+                <thead>
+                  <tr>
+                    <th class="text-col">Fund</th>
+                    <th class="text-col">Granted By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <%# any? not present? — @advisor_access_rights is a relation and the
+                      rows are iterated right after, so one load is enough %>
+                  <% if @advisor_access_rights.any? %>
+                    <% @advisor_access_rights.each do |access_right| %>
+                      <tr>
+                        <td class="text-col">
+                          <%= link_to access_right.owner.name, fund_path(access_right.owner) if access_right.owner %>
+                        </td>
+                        <td class="text-col">
+                          <%= access_right.granted_by&.full_name %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  <% else %>
                     <tr>
-                      <td class="text-col">
-                        <%= link_to access_right.owner.name, fund_path(access_right.owner) if access_right.owner %>
-                      </td>
-                      <td class="text-col">
-                        <%= access_right.granted_by&.full_name %>
-                      </td>
+                      <td class="text-col" colspan="2">No fund access rights found for this advisor.</td>
                     </tr>
                   <% end %>
-                <% else %>
-                  <tr>
-                    <td class="text-col" colspan="2">No fund access rights found for this advisor.</td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       <% end %>

@@ -6,7 +6,16 @@
     </td>
   <% end %>
   <td class="text-col">
-    <%= investor_access.user.name if investor_access.user %>
+    <%# User name links to this access's show page — same target and policy gate as
+        the "View" action in the dropdown below; plain text when not permitted %>
+    <% if investor_access.user %>
+      <% if policy(investor_access).show? %>
+        <%= link_to investor_access.user.name,
+                    investor_access_path(investor_access, investor_id: investor_id) %>
+      <% else %>
+        <%= investor_access.user.name %>
+      <% end %>
+    <% end %>
   </td>
   <td class="text-col">
     <%= investor_access.is_investor_advisor ? "Advisor" : "Employee" %>
