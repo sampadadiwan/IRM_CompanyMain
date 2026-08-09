@@ -172,6 +172,38 @@ namespace :nginx do
   after 'nginx:switch_app', 'puma:restart'
   before 'nginx:switch_app', 'sidekiq:monit:monitor'
   # before 'nginx:switch_app', 'puma:monit:monitor'
+
+  desc 'Render and install ONLY the nginx config, then validate and reload'
+  task :update do
+    on roles(:app) do
+      # IRM:setup also re-uploads puma/monit/systemd configs and reloads
+      # monit. When the only change is nginx_conf.erb (e.g. adding the
+      # website vhosts), this task touches nothing else.
+      nginx_config_path = "/etc/nginx/sites-available"
+      site_name = "IRM_#{fetch(:stage)}"
+      tmp_path = "/tmp/#{site_name}"
+
+      config = ERB.new(File.read('./config/deploy/templates/nginx_conf.erb')).result(binding)
+
+      # Surface what is being installed — the vhosts are the whole point of
+      # this task, so a silent upload would hide a mis-rendered template.
+      config.scan(/^\s*server_name\s+(.+);/).flatten.each do |names|
+        info "  vhost: #{names}"
+      end
+
+      upload! StringIO.new(config), tmp_path
+      execute :sudo, :mv, tmp_path, "#{nginx_config_path}/#{site_name}"
+
+      # Idempotent: "|| true" keeps a pre-existing symlink from failing the run.
+      execute :sudo, "ln -s #{nginx_config_path}/#{site_name} /etc/nginx/sites-enabled/#{site_name} || true"
+
+      # nginx -t before reload. execute raises on a non-zero exit, so a bad
+      # config aborts here and the running server keeps its old config.
+      execute :sudo, "nginx -t"
+      execute :sudo, "nginx -s reload"
+      info "nginx reloaded with the new configuration"
+    end
+  end
 end
 
 # These recovery tasks are to be invoked ONLY if you are rebuilding an environment from scratch
