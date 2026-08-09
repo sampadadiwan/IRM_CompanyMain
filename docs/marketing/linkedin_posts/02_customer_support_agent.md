@@ -17,6 +17,96 @@ status: spare draft — not posted; renumber series label ("Fund Ops, Unstacked 
 
 ---
 
+## Article title
+
+**How Do You Know When Your Bot Is Wrong?**
+
+*We put an AI support agent inside our fund platform. Then we built a second AI whose only job is to grade the first one — every answer, scored out of nine.*
+
+---
+
+## Article
+
+It's quarter-end. Your operations manager needs to reissue a capital call notice and can't remember where the setting lives.
+
+So they email the vendor's support desk. And wait.
+
+That "quick question" just cost a day — and it wasn't a hard question. It was a question whose answer is sitting in a product guide nobody has time to search.
+
+**[STAT BAND: 100% of answers scored · 6 tool calls maximum · below 5 of 9 goes to a human]**
+
+### The easy half: an agent that answers
+
+The support agent lives inside the platform and answers from three sources: the product guides, for "how do I" questions; your firm's live data, for "how many LPs have signed" questions; and your own past conversations, for "what did we ask about last month" follow-ups.
+
+Answers arrive in seconds, with the menu path to follow rather than a paragraph of theory.
+
+That part is not the interesting part. In 2026, a chat box over a documentation set is table stakes — the differentiator is what happens when it's wrong.
+
+**[KEY POINT #1: "Every vendor can show you their agent answering correctly. Ask instead how they find out when it answered badly."]**
+
+### The hard half: a second AI that grades the first
+
+Every response the agent produces is scored asynchronously by an independent LLM judge, on completeness, grounding, and actionability. Not a sample. Not a weekly spot-check. **Every answer, scored 0 to 9.**
+
+Anything scoring below 5 — or receiving a thumbs-down from the person who asked — lands in a human review queue. Our team reads the conversation, fixes the underlying guide, and then replays the exact question side by side to prove the fix actually worked.
+
+That loop is the product. The agent isn't static: each bad answer improves the next one, and there's a record showing it did.
+
+**[PULL QUOTE: "An unscored answer is unknown quality. At one answer a week that's fine. At a thousand it's a liability you can't see."]**
+
+### ⚙️ Under the hood: unable, not merely instructed
+
+The agent can query your firm's live data, which is exactly where an AI support tool becomes dangerous rather than useful. Three constraints make it safe enough to leave running.
+
+**Every query is validated before it runs.** Read-only, against an explicit allowlist of tables. A query touching anything outside that list is rejected rather than executed.
+
+**Tenant scope is mandatory.** A query that does not carry your firm's scope is refused. The agent is *unable* to see another firm's data — that's a property of the query layer, not an instruction in a prompt that a cleverly-worded question might talk it out of.
+
+**A hard cap of six tool calls per question.** If the agent can't reach a grounded answer within six, it stops and escalates to a human. It does not keep going until it produces something that sounds like an answer.
+
+That last one matters more than it looks. The failure mode of a capable model isn't refusing to answer — it's answering anyway, fluently, from nothing. A cap converts that failure into an escalation.
+
+**[KEY POINT #2: "Make the agent unable to do the wrong thing. Prompts are guidance; allowlists and scope checks are guarantees."]**
+
+### Escalation is a feature
+
+When the agent escalates, the conversation is marked and lands in the support team's queue, and the person who asked is told plainly that a human now has it. They don't have to start again — the agent stays available for everything else while the escalated question is handled separately.
+
+Escalation happens for a few reasons: the question is beyond what the agent can ground an answer in, the tool-call cap was reached, or the person asked for a human.
+
+Every one of those is a better outcome than a confident guess about a capital call setting.
+
+### 📊 The impact
+
+Before: a "how do I" question becomes a support ticket, answered next business day, at quarter-end, when the answer was in a guide all along.
+
+After: seconds instead of a day for the routine questions — and, more importantly, **every single answer audited automatically in the background**, with the bad ones filing their own tickets.
+
+The measurable claim isn't deflection rate. It's this: **the proportion of answers whose quality anyone actually knows goes from roughly zero to one hundred percent.**
+
+### ✅ Takeaways
+
+**1. Ship the judge with the agent.** If you can't say how many of your AI's answers were poor last week, you don't have a quality problem — you have a measurement problem, and it's hiding the quality problem.
+
+**2. Make the agent unable, not merely instructed.** Read-only access, table allowlists, enforced tenant scope. Anything you can achieve structurally, don't achieve with a prompt.
+
+**3. Cap the loop.** An agent that keeps trying will eventually produce something. A cap turns "eventually produces something" into "escalates to a person".
+
+**4. Let bad answers file their own tickets.** Thumbs-downs and low judge scores should land in one queue, and fixing the source material should be the standard response.
+
+**5. Ask every AI vendor one question.** *How do you know when your bot is wrong?* The quality of that answer tells you more than any demo.
+
+———
+
+### 💡 See it on your own structure
+
+If you're evaluating AI support tooling this year, the useful comparison isn't the answers — it's the review queue behind them. Ask to see it.
+
+**Question: what would it take for you to trust an AI agent with questions about your own fund data — and is it a capability bar, or a governance one?**
+
+---
+
 ## Paste-ready post text
 
 ```

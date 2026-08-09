@@ -852,7 +852,10 @@ table.cmp td .no{ color:var(--mut); }
 .prose h3{ font-size:19px; margin:32px 0 10px; letter-spacing:-0.02em; }
 .prose p, .prose li{ color:var(--mut); font-size:16px; line-height:1.75; }
 .prose p + p{ margin-top:14px; }
-.prose ul, .prose ol{ margin:14px 0 0 0; padding-left:0; }
+/* list-style:none matters on ol: the numbers come from the counter on
+   .prose ol li::before below, so leaving the native marker on renders every
+   item twice ("1. 1. Assume your team…"). */
+.prose ul, .prose ol{ margin:14px 0 0 0; padding-left:0; list-style:none; }
 .prose ul li{ position:relative; padding-left:22px; margin-bottom:10px; }
 .prose ul li::before{ content:""; position:absolute; left:4px; top:11px; width:6px; height:6px; border-radius:50%; background:var(--orange); }
 .prose ol{ counter-reset:p; }
@@ -1124,6 +1127,13 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
 .article-hero .lede{
   color:var(--mut); font-size:clamp(17px,2vw,20px); margin-top:22px; text-wrap:pretty;
 }
+/* Tinted article heroes sit on a solid ground and invert their text. These must
+   come after the muted .article-hero .lede rule above, which would otherwise
+   repaint the lede grey-on-orange and drop it below readable contrast. */
+.tint-orange.article-hero .lede{ color:#fff; }
+.tint-black.article-hero .lede{ color:rgba(255,255,255,.82); }
+.tint-orange.article-hero .article-meta,
+.tint-black.article-hero .article-meta{ color:rgba(255,255,255,.8); border-top-color:rgba(255,255,255,.2); }
 .article-meta{
   display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:26px;
   padding-top:22px; border-top:1px solid var(--line);

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grading the support agent | CapHive</title>
+<meta name="description" content="We put an AI support agent inside our fund platform. Then we built a second AI whose only job is to grade the first one — every answer, scored out of nine.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/how-do-you-know-when-your-bot-is-wrong.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Grading the support agent">
+<meta property="og:description" content="We put an AI support agent inside our fund platform. Then we built a second AI whose only job is to grade the first one — every answer, scored out of nine.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/how-do-you-know-when-your-bot-is-wrong.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=a548770e">
+</head>
+<body data-page="resources">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home">
+    <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+      <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+    </svg>
+    CapHive
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="https://app.caphive.com/" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-orange tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>Grading the support agent
+          </nav>
+          <span class="chip-label">AI</span>
+          <h1 style="margin-top:22px">How do you know <em>when your bot is wrong?</em></h1>
+          <p class="lede">We put an AI support agent inside our fund platform. Then we built a second AI whose only job is to grade the first one — every answer, scored out of nine.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-09">Aug 9, 2026</time>
+            <span class="dot">·</span>
+            <span>4 min read</span>
+            <span class="dot">·</span>
+            <span>AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <p>It's quarter-end. Your operations manager needs to reissue a capital call notice and can't remember where the setting lives.</p>
+        <p>So they email the vendor's support desk. And wait.</p>
+        <p>That "quick question" just cost a day — and it wasn't a hard question. It was a question whose answer is sitting in a product guide nobody has time to search.</p>
+        <div class="stat-band" style="margin:34px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden"><div><strong>100%</strong><span>of answers scored</span></div><div><strong>6</strong><span>tool calls maximum</span></div><div><strong>below</strong><span>5 of 9 goes to a human</span></div></div>
+        <h3>The easy half: an agent that answers</h3>
+        <p>The support agent lives inside the platform and answers from three sources: the product guides, for "how do I" questions; your firm's live data, for "how many LPs have signed" questions; and your own past conversations, for "what did we ask about last month" follow-ups.</p>
+        <p>Answers arrive in seconds, with the menu path to follow rather than a paragraph of theory.</p>
+        <p>That part is not the interesting part. In 2026, a chat box over a documentation set is table stakes — the differentiator is what happens when it's wrong.</p>
+        <div class="pull"><p>Every vendor can show you their agent answering correctly. Ask instead how they find out when it answered badly.</p></div>
+        <h3>The hard half: a second AI that grades the first</h3>
+        <p>Every response the agent produces is scored asynchronously by an independent LLM judge, on completeness, grounding, and actionability. Not a sample. Not a weekly spot-check. <strong>Every answer, scored 0 to 9.</strong></p>
+        <p>Anything scoring below 5 — or receiving a thumbs-down from the person who asked — lands in a human review queue. Our team reads the conversation, fixes the underlying guide, and then replays the exact question side by side to prove the fix actually worked.</p>
+        <p>That loop is the product. The agent isn't static: each bad answer improves the next one, and there's a record showing it did.</p>
+        <div class="pull"><p>An unscored answer is unknown quality. At one answer a week that's fine. At a thousand it's a liability you can't see.</p></div>
+        <h3>⚙️ Under the hood: unable, not merely instructed</h3>
+        <p>The agent can query your firm's live data, which is exactly where an AI support tool becomes dangerous rather than useful. Three constraints make it safe enough to leave running.</p>
+        <p><strong>Every query is validated before it runs.</strong> Read-only, against an explicit allowlist of tables. A query touching anything outside that list is rejected rather than executed.</p>
+        <p><strong>Tenant scope is mandatory.</strong> A query that does not carry your firm's scope is refused. The agent is <em>unable</em> to see another firm's data — that's a property of the query layer, not an instruction in a prompt that a cleverly-worded question might talk it out of.</p>
+        <p><strong>A hard cap of six tool calls per question.</strong> If the agent can't reach a grounded answer within six, it stops and escalates to a human. It does not keep going until it produces something that sounds like an answer.</p>
+        <p>That last one matters more than it looks. The failure mode of a capable model isn't refusing to answer — it's answering anyway, fluently, from nothing. A cap converts that failure into an escalation.</p>
+        <div class="pull"><p>Make the agent unable to do the wrong thing. Prompts are guidance; allowlists and scope checks are guarantees.</p></div>
+        <h3>Escalation is a feature</h3>
+        <p>When the agent escalates, the conversation is marked and lands in the support team's queue, and the person who asked is told plainly that a human now has it. They don't have to start again — the agent stays available for everything else while the escalated question is handled separately.</p>
+        <p>Escalation happens for a few reasons: the question is beyond what the agent can ground an answer in, the tool-call cap was reached, or the person asked for a human.</p>
+        <p>Every one of those is a better outcome than a confident guess about a capital call setting.</p>
+        <h3>📊 The impact</h3>
+        <p>Before: a "how do I" question becomes a support ticket, answered next business day, at quarter-end, when the answer was in a guide all along.</p>
+        <p>After: seconds instead of a day for the routine questions — and, more importantly, <strong>every single answer audited automatically in the background</strong>, with the bad ones filing their own tickets.</p>
+        <p>The measurable claim isn't deflection rate. It's this: <strong>the proportion of answers whose quality anyone actually knows goes from roughly zero to one hundred percent.</strong></p>
+        <h2>What to take from this</h2><div class="callout"><ol><li><strong>Ship the judge with the agent.</strong> If you can't say how many of your AI's answers were poor last week, you don't have a quality problem — you have a measurement problem, and it's hiding the quality problem.</li><li><strong>Make the agent unable, not merely instructed.</strong> Read-only access, table allowlists, enforced tenant scope. Anything you can achieve structurally, don't achieve with a prompt.</li><li><strong>Cap the loop.</strong> An agent that keeps trying will eventually produce something. A cap turns "eventually produces something" into "escalates to a person".</li><li><strong>Let bad answers file their own tickets.</strong> Thumbs-downs and low judge scores should land in one queue, and fixing the source material should be the standard response.</li><li><strong>Ask every AI vendor one question.</strong> <em>How do you know when your bot is wrong?</em> The quality of that answer tells you more than any demo.</li></ol></div>
+        <h2>See it on your own structure</h2><p>If you're evaluating AI support tooling this year, the useful comparison isn't the answers — it's the review queue behind them. Ask to see it.</p><div class="callout"><p>Question: what would it take for you to trust an AI agent with questions about your own fund data — and is it a capability bar, or a governance one?</p></div>
+        <figure style="margin:34px 0"><div style="background:#FFFFFF;border:1px solid var(--line);border-radius:14px;padding:22px;overflow-x:auto"><svg width="100%" id="svg-how-do-you-know-when-your-bot-is-wrong-0" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="flowchart" style="max-width: 1580.72px; background-color: transparent;" viewBox="0 0 1580.71533203125 226.5" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#svg-how-do-you-know-when-your-bot-is-wrong-0{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:15px;fill:#101010;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .error-icon{fill:#FFFFFF;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .error-text{fill:#000000;stroke:#000000;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edge-thickness-normal{stroke-width:1px;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edge-thickness-thick{stroke-width:3.5px;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edge-pattern-solid{stroke-dasharray:0;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edge-thickness-invisible{stroke-width:0;fill:none;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edge-pattern-dashed{stroke-dasharray:3;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edge-pattern-dotted{stroke-dasharray:2;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .marker{fill:#8A8A8A;stroke:#8A8A8A;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .marker.cross{stroke:#8A8A8A;}#svg-how-do-you-know-when-your-bot-is-wrong-0 svg{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:15px;}#svg-how-do-you-know-when-your-bot-is-wrong-0 p{margin:0;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .label{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;color:#101010;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .cluster-label text{fill:#000000;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .cluster-label span{color:#000000;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .cluster-label span p{background-color:transparent;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .label text,#svg-how-do-you-know-when-your-bot-is-wrong-0 span{fill:#101010;color:#101010;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .node rect,#svg-how-do-you-know-when-your-bot-is-wrong-0 .node circle,#svg-how-do-you-know-when-your-bot-is-wrong-0 .node ellipse,#svg-how-do-you-know-when-your-bot-is-wrong-0 .node polygon,#svg-how-do-you-know-when-your-bot-is-wrong-0 .node path{fill:#FBF7F1;stroke:#FF4D00;stroke-width:1px;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .rough-node .label text,#svg-how-do-you-know-when-your-bot-is-wrong-0 .node .label text,#svg-how-do-you-know-when-your-bot-is-wrong-0 .image-shape .label,#svg-how-do-you-know-when-your-bot-is-wrong-0 .icon-shape .label{text-anchor:middle;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .rough-node .label,#svg-how-do-you-know-when-your-bot-is-wrong-0 .node .label,#svg-how-do-you-know-when-your-bot-is-wrong-0 .image-shape .label,#svg-how-do-you-know-when-your-bot-is-wrong-0 .icon-shape .label{text-align:center;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .node.clickable{cursor:pointer;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .root .anchor path{fill:#8A8A8A!important;stroke-width:0;stroke:#8A8A8A;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .arrowheadPath{fill:#0b0b0b;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edgePath .path{stroke:#8A8A8A;stroke-width:1px;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .flowchart-link{stroke:#8A8A8A;fill:none;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edgeLabel{background-color:#F2EFEA;text-align:center;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edgeLabel p{background-color:#F2EFEA;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .edgeLabel rect{opacity:0.5;background-color:#F2EFEA;fill:#F2EFEA;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .labelBkg{background-color:rgba(242, 239, 234, 0.5);}#svg-how-do-you-know-when-your-bot-is-wrong-0 .cluster rect{fill:#FFFFFF;stroke:hsl(0, 0%, 90%);stroke-width:1px;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .cluster text{fill:#000000;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .cluster span{color:#000000;}#svg-how-do-you-know-when-your-bot-is-wrong-0 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:12px;background:#FFFFFF;border:1px solid hsl(0, 0%, 90%);border-radius:2px;pointer-events:none;z-index:100;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#101010;}#svg-how-do-you-know-when-your-bot-is-wrong-0 rect.text{fill:none;stroke-width:0;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .icon-shape,#svg-how-do-you-know-when-your-bot-is-wrong-0 .image-shape{background-color:#F2EFEA;text-align:center;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .icon-shape p,#svg-how-do-you-know-when-your-bot-is-wrong-0 .image-shape p{background-color:#F2EFEA;padding:2px;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .icon-shape .label rect,#svg-how-do-you-know-when-your-bot-is-wrong-0 .image-shape .label rect{opacity:0.5;background-color:#F2EFEA;fill:#F2EFEA;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#svg-how-do-you-know-when-your-bot-is-wrong-0 .node .neo-node{stroke:#FF4D00;}#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].node rect,#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].cluster rect,#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].node polygon{stroke:url(#svg-how-do-you-know-when-your-bot-is-wrong-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].swimlane.cluster rect{filter:none;}#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].node path{stroke:url(#svg-how-do-you-know-when-your-bot-is-wrong-0-gradient);stroke-width:1px;}#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].node .neo-line path{stroke:#FF4D00;filter:none;}#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].node circle{stroke:url(#svg-how-do-you-know-when-your-bot-is-wrong-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].node circle .state-start{fill:#000000;}#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].icon-shape .icon{fill:url(#svg-how-do-you-know-when-your-bot-is-wrong-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-how-do-you-know-when-your-bot-is-wrong-0 [data-look="neo"].icon-shape .icon-neo path{stroke:url(#svg-how-do-you-know-when-your-bot-is-wrong-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-how-do-you-know-when-your-bot-is-wrong-0 :root{--mermaid-font-family:Arial,'Liberation Sans',Helvetica,sans-serif;}</style><g><marker id="my-svg_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5;"/></marker><marker id="my-svg_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5; stroke-dasharray: 1, 0;"/></marker><g class="root"><g class="clusters"/><g class="edgePaths"><path d="M151.891,144.25L156.057,144.25C160.224,144.25,168.557,144.25,176.224,144.25C183.891,144.25,190.891,144.25,194.391,144.25L197.891,144.25" id="my-svg-L_U_A_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_U_A_0" data-points="W3sieCI6MTUxLjg5MDYyNSwieSI6MTQ0LjI1fSx7IngiOjE3Ni44OTA2MjUsInkiOjE0NC4yNX0seyJ4IjoyMDEuODkwNjI1LCJ5IjoxNDQuMjV9XQ==" data-look="classic" marker-end="url(#svg-how-do-you-know-when-your-bot-is-wrong-0_flowchart-v2-pointEnd)"/><path d="M367.676,107.25L386.879,95.5C406.082,83.75,444.487,60.25,474.752,48.5C505.016,36.75,527.139,36.75,538.201,36.75L549.262,36.75" id="my-svg-L_A_R_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_A_R_0" data-points="W3sieCI6MzY3LjY3NTg3MzIyODU2MTA0LCJ5IjoxMDcuMjV9LHsieCI6NDgyLjg5MzA2NjQwNjI1LCJ5IjozNi43NX0seyJ4Ijo1NTMuMjYyMjA3MDMxMjUsInkiOjM2Ljc1fV0=" data-look="classic" marker-end="url(#svg-how-do-you-know-when-your-bot-is-wrong-0_flowchart-v2-pointEnd)"/><path d="M412.524,144.25L424.252,144.25C435.98,144.25,459.437,144.25,485.301,144.25C511.165,144.25,539.436,144.25,553.572,144.25L567.708,144.25" id="my-svg-L_A_E_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_A_E_0" data-points="W3sieCI6NDEyLjUyMzkyNTc4MTI1LCJ5IjoxNDQuMjV9LHsieCI6NDgyLjg5MzA2NjQwNjI1LCJ5IjoxNDQuMjV9LHsieCI6NTcxLjcwNzUxOTUzMTI1LCJ5IjoxNDQuMjV9XQ==" data-look="classic" marker-end="url(#svg-how-do-you-know-when-your-bot-is-wrong-0_flowchart-v2-pointEnd)"/><path d="M744.059,36.75L748.226,36.75C752.392,36.75,760.726,36.75,768.392,36.75C776.059,36.75,783.059,36.75,786.559,36.75L790.059,36.75" id="my-svg-L_R_J_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_R_J_0" data-points="W3sieCI6NzQ0LjA1OTA4MjAzMTI1LCJ5IjozNi43NX0seyJ4Ijo3NjkuMDU5MDgyMDMxMjUsInkiOjM2Ljc1fSx7IngiOjc5NC4wNTkwODIwMzEyNSwieSI6MzYuNzV9XQ==" data-look="classic" marker-end="url(#svg-how-do-you-know-when-your-bot-is-wrong-0_flowchart-v2-pointEnd)"/><path d="M1009.684,36.75L1022.753,36.75C1035.822,36.75,1061.96,36.75,1087.431,36.75C1112.903,36.75,1137.708,36.75,1150.11,36.75L1162.512,36.75" id="my-svg-L_J_Q_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_J_Q_0" data-points="W3sieCI6MTAwOS42ODQwODIwMzEyNSwieSI6MzYuNzV9LHsieCI6MTA4OC4wOTgxNDQ1MzEyNSwieSI6MzYuNzV9LHsieCI6MTE2Ni41MTIyMDcwMzEyNSwieSI6MzYuNzV9XQ==" data-look="classic" marker-end="url(#svg-how-do-you-know-when-your-bot-is-wrong-0_flowchart-v2-pointEnd)"/><path d="M1356.278,36.75L1360.444,36.75C1364.611,36.75,1372.944,36.75,1388.569,45.816C1404.193,54.881,1427.108,73.012,1438.566,82.078L1450.023,91.143" id="my-svg-L_Q_F_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Q_F_0" data-points="W3sieCI6MTM1Ni4yNzc4MzIwMzEyNSwieSI6MzYuNzV9LHsieCI6MTM4MS4yNzc4MzIwMzEyNSwieSI6MzYuNzV9LHsieCI6MTQ1My4xNjAzNTk0MDM1MTI4LCJ5Ijo5My42MjV9XQ==" data-look="classic" marker-end="url(#svg-how-do-you-know-when-your-bot-is-wrong-0_flowchart-v2-pointEnd)"/><path d="M1453.16,151.125L1441.18,160.604C1429.2,170.083,1405.239,189.042,1373.278,198.521C1341.317,208,1301.356,208,1252.493,208C1203.629,208,1145.864,208,1085.943,208C1026.023,208,963.947,208,910.774,208C857.601,208,813.33,208,771.128,208C728.926,208,688.793,208,641.099,208C593.405,208,538.149,208,498.861,203.769C459.573,199.538,436.254,191.076,424.594,186.845L412.934,182.614" id="my-svg-L_F_A_0" class="edge-thickness-normal edge-pattern-dotted edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_F_A_0" data-points="W3sieCI6MTQ1My4xNjAzNTk0MDM1MTI4LCJ5IjoxNTEuMTI1fSx7IngiOjEzODEuMjc3ODMyMDMxMjUsInkiOjIwOH0seyJ4IjoxMjYxLjM5NTAxOTUzMTI1LCJ5IjoyMDh9LHsieCI6MTA4OC4wOTgxNDQ1MzEyNSwieSI6MjA4fSx7IngiOjkwMS44NzE1ODIwMzEyNSwieSI6MjA4fSx7IngiOjc2OS4wNTkwODIwMzEyNSwieSI6MjA4fSx7IngiOjY0OC42NjA2NDQ1MzEyNSwieSI6MjA4fSx7IngiOjQ4Mi44OTMwNjY0MDYyNSwieSI6MjA4fSx7IngiOjQwOS4xNzM5MzA1NjgzMjExLCJ5IjoxODEuMjV9XQ==" data-look="classic" marker-end="url(#svg-how-do-you-know-when-your-bot-is-wrong-0_flowchart-v2-pointEnd)"/></g><g class="edgeLabels"><g class="edgeLabel"><g class="label" data-id="L_U_A_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel" transform="translate(482.89306640625, 36.75)"><g class="label" data-id="L_A_R_0" transform="translate(0, -9.5)"><g><rect class="background" style="" x="-29.9375" y="-1" width="59.875" height="21"/><text y="-10.1" text-anchor="middle" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">seconds</tspan></tspan></text></g></g></g><g class="edgeLabel" transform="translate(482.89306640625, 144.25)"><g class="label" data-id="L_A_E_0" transform="translate(-0.416015625, -9.5)"><g><rect class="background" style="" x="-44.953125" y="-1" width="90.73828125" height="21"/><text y="-10.1" text-anchor="middle" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">not</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> confident</tspan></tspan></text></g></g></g><g class="edgeLabel"><g class="label" data-id="L_R_J_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel" transform="translate(1088.09814453125, 36.75)"><g class="label" data-id="L_J_Q_0" transform="translate(0, -10)"><g><rect class="background" style="" x="-53.4140625" y="-1" width="106.828125" height="22"/><text y="-10.1" text-anchor="middle" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">score</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> &lt;</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 5</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> or</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 👎</tspan></tspan></text></g></g></g><g class="edgeLabel"><g class="label" data-id="L_Q_F_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel" transform="translate(901.87158203125, 208)"><g class="label" data-id="L_F_A_0" transform="translate(0, -9.5)"><g><rect class="background" style="" x="-64.546875" y="-1" width="129.09375" height="21"/><text y="-10.1" text-anchor="middle" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">agent</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> gets</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> smarter</tspan></tspan></text></g></g></g></g><g class="nodes"><g class="node default" id="my-svg-flowchart-U-0" data-look="classic" transform="translate(79.9453125, 144.25)"><rect class="basic label-container" style="" x="-71.9453125" y="-28.75" width="143.890625" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Ops</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> user</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> asks</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">a</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> question</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-A-1" data-look="classic" transform="translate(307.207275390625, 144.25)"><rect class="basic label-container" style="" x="-105.316650390625" y="-37" width="210.63330078125" height="74"/><g class="label" style="" transform="translate(0, -25)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">CapHive</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Support</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Agent</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">guides</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ·</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> your</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> data</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ·</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> past</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">chats</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-R-3" data-look="classic" transform="translate(648.66064453125, 36.75)"><rect class="basic label-container" style="" x="-95.3984375" y="-28.75" width="190.796875" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Grounded</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> answer</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">with</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> exact</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> menu</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> path</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-E-5" data-look="classic" transform="translate(648.66064453125, 144.25)"><rect class="basic label-container" style="" x="-76.953125" y="-28.75" width="153.90625" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Human</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> handoff</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">(and</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> it</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> tells</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> you)</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-J-7" data-look="classic" transform="translate(901.87158203125, 36.75)"><rect class="basic label-container" style="" x="-107.8125" y="-28.75" width="215.625" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Independent</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> AI</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> judge</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">every</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> answer</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> scored</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 0–9</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-Q-9" data-look="classic" transform="translate(1261.39501953125, 36.75)"><rect class="basic label-container" style="" x="-94.8828125" y="-20.5" width="189.765625" height="41"/><g class="label" style="" transform="translate(0, -8.5)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Human</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> review</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> queue</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-F-11" data-look="classic" transform="translate(1489.49658203125, 122.375)"><rect class="basic label-container" style="" x="-83.21875" y="-28.75" width="166.4375" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Guide</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> fixed,</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">question</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> replayed</tspan></tspan></text></g></g></g></g></g></g><defs><filter id="my-svg-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><defs><filter id="my-svg-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><linearGradient id="my-svg-gradient" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#FF4D00" stop-opacity="1"/><stop offset="100%" stop-color="hsl(37.5, 0%, 83.3333333333%)" stop-opacity="1"/></linearGradient></svg></div></figure>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+            <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+            <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+          </svg>
+          CapHive
+        </a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <div class="legal-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="cookies.html">Cookie Policy</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js?v=64f54259"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Grading the support agent",
+  "description": "We put an AI support agent inside our fund platform. Then we built a second AI whose only job is to grade the first one — every answer, scored out of nine.",
+  "datePublished": "2026-08-09",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/how-do-you-know-when-your-bot-is-wrong.html"
+}
+</script>
+</body>
+</html>

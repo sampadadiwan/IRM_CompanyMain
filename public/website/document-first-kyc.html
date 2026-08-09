@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Document-first KYC | CapHive</title>
+<meta name="description" content="Investor onboarding doesn’t get abandoned because the form is long. It gets abandoned because the form asks for information the investor has already given you.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/document-first-kyc.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Document-first KYC">
+<meta property="og:description" content="Investor onboarding doesn’t get abandoned because the form is long. It gets abandoned because the form asks for information the investor has already given you.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/document-first-kyc.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=a548770e">
+</head>
+<body data-page="resources">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home">
+    <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+      <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+    </svg>
+    CapHive
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="https://app.caphive.com/" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-orange tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>Document-first KYC
+          </nav>
+          <span class="chip-label">Fund operations</span>
+          <h1 style="margin-top:22px">Stop asking people to type <em>what’s already on their passport.</em></h1>
+          <p class="lede">Investor onboarding doesn’t get abandoned because the form is long. It gets abandoned because the form asks for information the investor has already given you.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-09">Aug 9, 2026</time>
+            <span class="dot">·</span>
+            <span>6 min read</span>
+            <span class="dot">·</span>
+            <span>Fund operations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <p>Watch someone start an investor onboarding form.</p>
+        <p>They upload their passport. Then the form asks for their full name. Then their date of birth. Then their address — which is printed on the utility bill they attached two screens ago.</p>
+        <p>At some point, usually around the fourth field, a reasonable person thinks: <em>you have this. I just sent it to you.</em></p>
+        <p>Then they leave the tab open, intending to come back. Your ops team chases them for eleven days.</p>
+        <div class="stat-band" style="margin:34px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden"><div><strong>1</strong><span>AI request per uploaded document, no matter how many…</span></div><div><strong>0</strong><span>fields overwritten that the investor typed themselves</span></div><div><strong>3</strong><span>checks on the finished record before anyone relies on it:…</span></div></div>
+        <h3>The fix is an inversion, not a feature</h3>
+        <p>The conventional order is: fill in the form, then upload documents to prove what you filled in.</p>
+        <p>We turned it around. <strong>Upload the documents first.</strong> The agent reads them, fills in the matching fields, and the investor's job becomes <em>review and confirm</em> rather than <em>transcribe</em>.</p>
+        <p>That's the whole idea. Everything else is making it trustworthy enough to leave on.</p>
+        <h3>Four rules that keep it honest</h3>
+        <p><strong>One request per document, not one per field.</strong> Extraction rules are grouped by the document they read, so if five fields come from a tax document, that's a single request asking for all five at once — not five separate reads of the same file that could each return something slightly different.</p>
+        <p><strong>Never overwrite what a human typed.</strong> The default mode fills blank fields only. If the investor has already entered something, the agent skips it and says why: <em>"Field already has a value."</em> The investor's own entry is authoritative over the machine's reading, always, without anybody having to think about it.</p>
+        <p><strong>Every field reports its own outcome.</strong> Not a single success/failure for the run — a per-field result. Extracted. Skipped, because the document wasn't uploaded. Skipped, because there was already a value. Error, because the response couldn't be read. When something doesn't fill in, you know which of those four things happened.</p>
+        <p><strong>A half-finished form can still be saved.</strong> The final write deliberately bypasses the form's normal validation, so a KYC that's been partially pre-filled saves cleanly mid-wizard instead of erroring on fields the investor hasn't reached yet. Small thing. It's the difference between a wizard that works and one that fights you at step two.</p>
+        <div class="pull"><p>An onboarding form that asks for what the uploaded document already contains isn't collecting information. It's charging the investor a transcription fee.</p></div>
+        <h2>⚙️ Under the hood: extraction is the easy half</h2>
+        <p>If the story stopped at pre-filling, this would be OCR with better marketing. The part that makes it usable for a compliance team is what happens <em>after</em> the investor says they're done.</p>
+        <p>A second agent picks up every KYC record the investor has marked complete — and only those; work in progress is left alone — and audits it.</p>
+        <p><strong>Are the required fields actually filled in?</strong> Including your own custom required fields. And here's the check I like most: <strong>a value that is placeholder junk doesn't count.</strong> "N/A". "TEST". "--". Every ops team has seen a KYC pass a completeness check because the field technically contained characters. Dropdown answers are validated too — the selected value must genuinely be one of the allowed options, not a stale value left over from a form that has since changed.</p>
+        <p><strong>Are the required documents uploaded?</strong> The ones the form fields call for, plus any extra documents your firm requires.</p>
+        <p><strong>Is each document actually the document it claims to be?</strong> This is the check nobody expects. The agent shows the AI each uploaded file together with the label it was filed under — "Passport" — and asks whether the file <em>is</em> that. Mismatches get flagged, as do files that can't be read or downloaded.</p>
+        <p>That failure is extremely common and almost invisible to a checklist: a completed form, a document in every slot, and one of them is the wrong file. A green tick against "Passport uploaded" says nothing about whether a passport was uploaded.</p>
+        <p><strong>Do the typed values match the documents?</strong> For fields you've configured for cross-checking, the agent reads the value out of the corresponding document and compares it to what's on the form. A typed ID number that disagrees with the ID document gets flagged rather than filed.</p>
+        <p><strong>Is it expired, or about to be?</strong> Expiry is checked against configurable warning windows — 60, 30 and 15 days by default — with expired treated as blocking and approaching expiry as a warning. Anything expiring triggers reminder emails to the team.</p>
+        <p>Then a report is saved, ready or blocked. And when nothing is blocking, <strong>AML screening is kicked off automatically</strong> — the record moves to the next stage without someone remembering to push it.</p>
+        <div class="pull"><p>A completed KYC form and a verified KYC record are different things. Most systems only measure the first, then treat it as the second.</p></div>
+        <h3>An honest note about the toggles</h3>
+        <p>Worth saying plainly, because it affects anyone who'd actually use this: several of these audit checks — field validation, document validation, the reminder email, AML kick-off — are <strong>off unless explicitly switched on.</strong> Anything not set to "on" behaves as off.</p>
+        <p>That's not ideal, and we've stopped pretending otherwise: the agent's own page now shows a warning banner naming every toggle that has never been given a value, and flags the case where the expiry warning window has been blanked out (which silently disables advance warnings entirely).</p>
+        <p>The general principle applies well beyond us: <strong>a check that is silently off looks exactly like a check that passed.</strong> If your compliance tooling can't tell you which of its checks are currently active, that's the first thing to fix — before adding any new ones.</p>
+        <table><thead><tr><th></th><th>Form-first onboarding</th><th>Document-first + audit</th></tr></thead><tbody><tr><td>What the investor does</td><td>Transcribes their own documents</td><td>Uploads, then confirms</td></tr><tr><td>Where abandonment happens</td><td>Mid-form, at the fourth redundant field</td><td>Materially less to abandon</td></tr><tr><td>"Complete" means</td><td>Fields contain characters</td><td>Fields contain real values, docs match labels</td></tr><tr><td>Wrong file in the right slot</td><td>Passes</td><td>Flagged</td></tr><tr><td>Expiry</td><td>Noticed when someone looks</td><td>Checked, with 60/30/15-day warnings</td></tr><tr><td>Next step after complete</td><td>Someone remembers to start AML</td><td>Kicked off automatically when clear</td></tr></tbody></table>
+        <figure style="margin:34px 0"><div style="background:#FFFFFF;border:1px solid var(--line);border-radius:14px;padding:22px;overflow-x:auto"><svg width="100%" id="svg-document-first-kyc-0" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="flowchart" style="max-width: 363.352px; background-color: transparent;" viewBox="0 0 363.3515625 785.25" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#svg-document-first-kyc-0{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:15px;fill:#101010;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#svg-document-first-kyc-0 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#svg-document-first-kyc-0 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#svg-document-first-kyc-0 .error-icon{fill:#FFFFFF;}#svg-document-first-kyc-0 .error-text{fill:#000000;stroke:#000000;}#svg-document-first-kyc-0 .edge-thickness-normal{stroke-width:1px;}#svg-document-first-kyc-0 .edge-thickness-thick{stroke-width:3.5px;}#svg-document-first-kyc-0 .edge-pattern-solid{stroke-dasharray:0;}#svg-document-first-kyc-0 .edge-thickness-invisible{stroke-width:0;fill:none;}#svg-document-first-kyc-0 .edge-pattern-dashed{stroke-dasharray:3;}#svg-document-first-kyc-0 .edge-pattern-dotted{stroke-dasharray:2;}#svg-document-first-kyc-0 .marker{fill:#8A8A8A;stroke:#8A8A8A;}#svg-document-first-kyc-0 .marker.cross{stroke:#8A8A8A;}#svg-document-first-kyc-0 svg{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:15px;}#svg-document-first-kyc-0 p{margin:0;}#svg-document-first-kyc-0 .label{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;color:#101010;}#svg-document-first-kyc-0 .cluster-label text{fill:#000000;}#svg-document-first-kyc-0 .cluster-label span{color:#000000;}#svg-document-first-kyc-0 .cluster-label span p{background-color:transparent;}#svg-document-first-kyc-0 .label text,#svg-document-first-kyc-0 span{fill:#101010;color:#101010;}#svg-document-first-kyc-0 .node rect,#svg-document-first-kyc-0 .node circle,#svg-document-first-kyc-0 .node ellipse,#svg-document-first-kyc-0 .node polygon,#svg-document-first-kyc-0 .node path{fill:#FBF7F1;stroke:#FF4D00;stroke-width:1px;}#svg-document-first-kyc-0 .rough-node .label text,#svg-document-first-kyc-0 .node .label text,#svg-document-first-kyc-0 .image-shape .label,#svg-document-first-kyc-0 .icon-shape .label{text-anchor:middle;}#svg-document-first-kyc-0 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#svg-document-first-kyc-0 .rough-node .label,#svg-document-first-kyc-0 .node .label,#svg-document-first-kyc-0 .image-shape .label,#svg-document-first-kyc-0 .icon-shape .label{text-align:center;}#svg-document-first-kyc-0 .node.clickable{cursor:pointer;}#svg-document-first-kyc-0 .root .anchor path{fill:#8A8A8A!important;stroke-width:0;stroke:#8A8A8A;}#svg-document-first-kyc-0 .arrowheadPath{fill:#0b0b0b;}#svg-document-first-kyc-0 .edgePath .path{stroke:#8A8A8A;stroke-width:1px;}#svg-document-first-kyc-0 .flowchart-link{stroke:#8A8A8A;fill:none;}#svg-document-first-kyc-0 .edgeLabel{background-color:#F2EFEA;text-align:center;}#svg-document-first-kyc-0 .edgeLabel p{background-color:#F2EFEA;}#svg-document-first-kyc-0 .edgeLabel rect{opacity:0.5;background-color:#F2EFEA;fill:#F2EFEA;}#svg-document-first-kyc-0 .labelBkg{background-color:rgba(242, 239, 234, 0.5);}#svg-document-first-kyc-0 .cluster rect{fill:#FFFFFF;stroke:hsl(0, 0%, 90%);stroke-width:1px;}#svg-document-first-kyc-0 .cluster text{fill:#000000;}#svg-document-first-kyc-0 .cluster span{color:#000000;}#svg-document-first-kyc-0 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:12px;background:#FFFFFF;border:1px solid hsl(0, 0%, 90%);border-radius:2px;pointer-events:none;z-index:100;}#svg-document-first-kyc-0 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#101010;}#svg-document-first-kyc-0 rect.text{fill:none;stroke-width:0;}#svg-document-first-kyc-0 .icon-shape,#svg-document-first-kyc-0 .image-shape{background-color:#F2EFEA;text-align:center;}#svg-document-first-kyc-0 .icon-shape p,#svg-document-first-kyc-0 .image-shape p{background-color:#F2EFEA;padding:2px;}#svg-document-first-kyc-0 .icon-shape .label rect,#svg-document-first-kyc-0 .image-shape .label rect{opacity:0.5;background-color:#F2EFEA;fill:#F2EFEA;}#svg-document-first-kyc-0 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#svg-document-first-kyc-0 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#svg-document-first-kyc-0 .node .neo-node{stroke:#FF4D00;}#svg-document-first-kyc-0 [data-look="neo"].node rect,#svg-document-first-kyc-0 [data-look="neo"].cluster rect,#svg-document-first-kyc-0 [data-look="neo"].node polygon{stroke:url(#svg-document-first-kyc-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-document-first-kyc-0 [data-look="neo"].swimlane.cluster rect{filter:none;}#svg-document-first-kyc-0 [data-look="neo"].node path{stroke:url(#svg-document-first-kyc-0-gradient);stroke-width:1px;}#svg-document-first-kyc-0 [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-document-first-kyc-0 [data-look="neo"].node .neo-line path{stroke:#FF4D00;filter:none;}#svg-document-first-kyc-0 [data-look="neo"].node circle{stroke:url(#svg-document-first-kyc-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-document-first-kyc-0 [data-look="neo"].node circle .state-start{fill:#000000;}#svg-document-first-kyc-0 [data-look="neo"].icon-shape .icon{fill:url(#svg-document-first-kyc-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-document-first-kyc-0 [data-look="neo"].icon-shape .icon-neo path{stroke:url(#svg-document-first-kyc-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-document-first-kyc-0 :root{--mermaid-font-family:Arial,'Liberation Sans',Helvetica,sans-serif;}</style><g><marker id="my-svg_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5;"/></marker><marker id="my-svg_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5; stroke-dasharray: 1, 0;"/></marker><g class="root"><g class="clusters"/><g class="edgePaths"><path d="M186.867,65.5L186.867,69.667C186.867,73.833,186.867,82.167,186.867,89.833C186.867,97.5,186.867,104.5,186.867,108L186.867,111.5" id="my-svg-L_A_B_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_A_B_0" data-points="W3sieCI6MTg2Ljg2NzE4NzUsInkiOjY1LjV9LHsieCI6MTg2Ljg2NzE4NzUsInkiOjkwLjV9LHsieCI6MTg2Ljg2NzE4NzUsInkiOjExNS41fV0=" data-look="classic" marker-end="url(#svg-document-first-kyc-0_flowchart-v2-pointEnd)"/><path d="M186.867,173L186.867,177.167C186.867,181.333,186.867,189.667,186.867,197.333C186.867,205,186.867,212,186.867,215.5L186.867,219" id="my-svg-L_B_C_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_B_C_0" data-points="W3sieCI6MTg2Ljg2NzE4NzUsInkiOjE3M30seyJ4IjoxODYuODY3MTg3NSwieSI6MTk4fSx7IngiOjE4Ni44NjcxODc1LCJ5IjoyMjN9XQ==" data-look="classic" marker-end="url(#svg-document-first-kyc-0_flowchart-v2-pointEnd)"/><path d="M186.867,280.5L186.867,284.667C186.867,288.833,186.867,297.167,186.867,304.833C186.867,312.5,186.867,319.5,186.867,323L186.867,326.5" id="my-svg-L_C_D_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_C_D_0" data-points="W3sieCI6MTg2Ljg2NzE4NzUsInkiOjI4MC41fSx7IngiOjE4Ni44NjcxODc1LCJ5IjozMDUuNX0seyJ4IjoxODYuODY3MTg3NSwieSI6MzMwLjV9XQ==" data-look="classic" marker-end="url(#svg-document-first-kyc-0_flowchart-v2-pointEnd)"/><path d="M186.867,388L186.867,392.167C186.867,396.333,186.867,404.667,186.867,412.333C186.867,420,186.867,427,186.867,430.5L186.867,434" id="my-svg-L_D_E_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_D_E_0" data-points="W3sieCI6MTg2Ljg2NzE4NzUsInkiOjM4OH0seyJ4IjoxODYuODY3MTg3NSwieSI6NDEzfSx7IngiOjE4Ni44NjcxODc1LCJ5Ijo0Mzh9XQ==" data-look="classic" marker-end="url(#svg-document-first-kyc-0_flowchart-v2-pointEnd)"/><path d="M147.817,593.2L138.537,607C129.258,620.8,110.699,648.4,101.42,668.825C92.141,689.25,92.141,702.5,92.141,709.125L92.141,715.75" id="my-svg-L_E_F_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_E_F_0" data-points="W3sieCI6MTQ3LjgxNjg2MzM2Mjk4MzcyLCJ5Ijo1OTMuMTk5Njc1ODYyOTgzN30seyJ4Ijo5Mi4xNDA2MjUsInkiOjY3Nn0seyJ4Ijo5Mi4xNDA2MjUsInkiOjcxOS43NX1d" data-look="classic" marker-end="url(#svg-document-first-kyc-0_flowchart-v2-pointEnd)"/><path d="M225.918,593.2L235.197,607C244.476,620.8,263.035,648.4,272.314,668.825C281.594,689.25,281.594,702.5,281.594,709.125L281.594,715.75" id="my-svg-L_E_G_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_E_G_0" data-points="W3sieCI6MjI1LjkxNzUxMTYzNzAxNjI4LCJ5Ijo1OTMuMTk5Njc1ODYyOTgzN30seyJ4IjoyODEuNTkzNzUsInkiOjY3Nn0seyJ4IjoyODEuNTkzNzUsInkiOjcxOS43NX1d" data-look="classic" marker-end="url(#svg-document-first-kyc-0_flowchart-v2-pointEnd)"/></g><g class="edgeLabels"><g class="edgeLabel"><g class="label" data-id="L_A_B_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_B_C_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_C_D_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_D_E_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel" transform="translate(92.140625, 676)"><g class="label" data-id="L_E_F_0" transform="translate(0, -17.75)"><g><rect class="background" style="" x="-84.140625" y="-1" width="168.28125" height="37.5"/><text y="-10.1" text-anchor="middle" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">placeholder</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ·</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> wrong</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> file</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ·</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">mismatch</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ·</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> expired</tspan></tspan></text></g></g></g><g class="edgeLabel" transform="translate(281.59375, 676)"><g class="label" data-id="L_E_G_0" transform="translate(0, -9.5)"><g><rect class="background" style="" x="-27.8515625" y="-1" width="55.703125" height="21"/><text y="-10.1" text-anchor="middle" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">all</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> clear</tspan></tspan></text></g></g></g></g><g class="nodes"><g class="node default" id="my-svg-flowchart-A-0" data-look="classic" transform="translate(186.8671875, 36.75)"><rect class="basic label-container" style="" x="-105.515625" y="-28.75" width="211.03125" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Investor</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> uploads</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">ID</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> +</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> address</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> documents</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-B-1" data-look="classic" transform="translate(186.8671875, 144.25)"><rect class="basic label-container" style="" x="-70.28076171875" y="-28.75" width="140.5615234375" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">One</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> AI</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> read</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">per</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> document</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-C-3" data-look="classic" transform="translate(186.8671875, 251.75)"><rect class="basic label-container" style="" x="-115.7421875" y="-28.75" width="231.484375" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Blank</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> fields</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> pre-filled</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">typed</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> values</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> never</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> touched</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-D-5" data-look="classic" transform="translate(186.8671875, 359.25)"><rect class="basic label-container" style="" x="-78.1875" y="-28.75" width="156.375" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Investor</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> reviews</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">and</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> confirms</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-E-7" data-look="classic" transform="translate(186.8671875, 535.125)"><polygon points="97.125,0 194.25,-97.125 97.125,-194.25 0,-97.125" class="label-container" transform="translate(-96.625, 97.125)"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Audit</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> agent</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">on</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> completed</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> record</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-F-9" data-look="classic" transform="translate(92.140625, 748.5)"><rect class="basic label-container" style="" x="-65.6953125" y="-28.75" width="131.390625" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">BLOCKED</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">report</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> saved</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-G-11" data-look="classic" transform="translate(281.59375, 748.5)"><rect class="basic label-container" style="" x="-73.7578125" y="-28.75" width="147.515625" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">AML</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> screening</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">kicked</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> off</tspan></tspan></text></g></g></g></g></g></g><defs><filter id="my-svg-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><defs><filter id="my-svg-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><linearGradient id="my-svg-gradient" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#FF4D00" stop-opacity="1"/><stop offset="100%" stop-color="hsl(37.5, 0%, 83.3333333333%)" stop-opacity="1"/></linearGradient></svg></div></figure>
+        <h2>📊 The impact</h2>
+        <p>Before: a long form asking investors to retype documents they'd already uploaded, "completed" records containing "N/A" in required fields, wrong files sitting in correctly-labelled slots, and expiry discovered when someone happened to look.</p>
+        <p>After: <strong>one AI request per document</strong> pre-fills the form, <strong>the investor's own entries are never overwritten</strong>, and a second agent checks <strong>completeness, placeholder junk, document identity, form-to-document consistency and expiry</strong> before the record is relied on — then <strong>starts AML screening</strong> when nothing is blocking.</p>
+        <p>The number to measure in your own firm: <strong>how long between an investor starting onboarding and your team being able to act on a verified record?</strong> Most of that duration isn't work. It's waiting for someone to return to a form.</p>
+        <h2>What to take from this</h2><div class="callout"><ol><li><strong>Ask for documents before you ask for data.</strong> If you can read it from what they've uploaded, don't make them type it. This applies to every form your firm sends, not just KYC.</li><li><strong>Treat placeholder text as an empty field.</strong> "N/A", "TEST", "--", a single hyphen. Add these to your completeness checks today — it's a one-line rule that catches a surprising number of records.</li><li><strong>Verify that a document is the document.</strong> A tick against "Passport uploaded" tells you a file exists in a slot. Nothing more.</li><li><strong>Never let extraction overwrite human input.</strong> The person is authoritative. Fill blanks; leave their answers alone.</li><li><strong>Audit what you can currently check.</strong> Before adding a new control, list which of your existing checks are actually switched on. A silently disabled check is indistinguishable from a passing one.</li></ol></div>
+        <h2>See it on your own structure</h2><p>Pick five KYC records your team marked complete last quarter and ask two questions: does every required field contain a real value, and is every uploaded file actually the document its label claims?</p><p>If either answer is "probably", DM me — that gap is exactly what the audit agent is for.</p><div class="callout"><p>Question for operations and compliance teams: what's the worst thing you've found sitting in a correctly-labelled document slot? I've heard a boarding pass, and I'd like to believe that's the record.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+            <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+            <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+          </svg>
+          CapHive
+        </a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <div class="legal-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="cookies.html">Cookie Policy</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js?v=64f54259"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Document-first KYC",
+  "description": "Investor onboarding doesn’t get abandoned because the form is long. It gets abandoned because the form asks for information the investor has already given you.",
+  "datePublished": "2026-08-09",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/document-first-kyc.html"
+}
+</script>
+</body>
+</html>
