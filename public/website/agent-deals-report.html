@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deals Report Agent — AI Agents | CapHive</title>
+<meta name="description" content="How CapHive's Deals Report Agent reports fundraising status across a fund's open deals — committed against target, fill rate, step distribution, top investors and staleness.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/agent-deals-report.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Deals Report Agent | CapHive">
+<meta property="og:description" content="Fundraising status for every open deal, emailed as one consolidated summary.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/agent-deals-report.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=a548770e">
+</head>
+<body data-page="ai-agents">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home">
+    <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+      <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+    </svg>
+    CapHive
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="https://app.caphive.com/" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Deals Report Agent
+      </nav>
+      <span class="chip-label">Deals &middot; Agent</span>
+      <h1 style="margin-top:22px">Fundraising status across <em>every open deal.</em></h1>
+      <p class="lede">The Deals Report Agent looks across a fund's open deals and produces a fundraising status report for each one — committed against target amounts, fill rate, activity-step distribution, top investors and staleness. It then emails a consolidated summary to whoever you have configured to receive it.</p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>Every open deal in the organisation, unless narrowed</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>No</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>Per-deal report, an HTML report document, one summary email</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>
+            Unlike the <a href="agent-deal-management.html">Deal Management Agent</a>, this one runs
+            against your whole organisation rather than a single deal, and works through these steps:
+          </p>
+          <ol>
+            <li><strong>Gets started</strong> — loads its settings: who should receive the report, the staleness threshold, an optional list limiting it to specific deals, and five on/off switches controlling which sections appear in the email — greeting, activity updates, tasks due, tasks overdue and stale items, all on by default.</li>
+            <li><strong>Loads the deals</strong> — pulls in every open deal for your organisation, narrowed to a specific list of deals if one has been set.</li>
+            <li><strong>Calculates summaries</strong> — for each deal it works out target against committed, pending and declined amounts, the fill rate, an overall health classification, how many days since the last investor activity, how investors are distributed across pipeline steps, and the top ten investors by committed amount.</li>
+            <li><strong>Generates reports</strong> — saves each deal's summary as a report attached to that deal, and creates an HTML document called "Deal Fundraising Report" in a private Reports folder inside that deal's documents, replacing any earlier version rather than piling up duplicates.</li>
+            <li><strong>Sends the email</strong> — one consolidated summary to the configured recipients, if any are set.</li>
+            <li><strong>Wraps up</strong> — finalises the run's status.</li>
+          </ol>
+          <p>
+            This agent is <strong>not AI-powered</strong>. It is number-crunching over your deal,
+            investor and activity data, and no AI provider key is needed for it to work.
+          </p>
+
+          <div class="callout">
+            <p>
+              <strong>Saving the deal-page panel narrows the report to that one deal.</strong> Before
+              the panel has ever been saved, the agent covers every open deal in the fund. But the
+              moment anyone opens a deal's Agent Settings tab and saves it — even only to update the
+              recipient list — the report quietly narrows to that single deal, with no warning. There is
+              no control on the panel to build a list of several deals or to clear the scope back to all
+              open deals; restoring either currently requires admin or engineering help working
+              directly with the underlying record.
+            </p>
+          </div>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <p>
+            This agent has no field-by-field settings page of its own. In practice you configure it
+            from a dedicated panel on the deal page — open a deal, then the Agent Settings tab.
+          </p>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Default</th><th>What it controls</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Email addresses</td><td>blank</td><td>Who receives the summary email, comma-separated.</td></tr>
+              <tr><td>No-activity threshold (days)</td><td>14 from this panel</td><td>How many days without investor activity before a deal is flagged as stale.</td></tr>
+              <tr><td>Greeting &amp; Fill Rate Summary</td><td>on</td><td>Includes the greeting and fill-rate paragraph in the email.</td></tr>
+              <tr><td>Activity Updates</td><td>on</td><td>Includes the updates-to-existing-items section.</td></tr>
+              <tr><td>Tasks Due</td><td>on</td><td>Includes upcoming due-date tasks.</td></tr>
+              <tr><td>Tasks Overdue</td><td>on</td><td>Includes overdue tasks.</td></tr>
+              <tr><td>No-Activity Items</td><td>on</td><td>Includes the staleness section.</td></tr>
+              <tr><td>Schedule</td><td>weekly, 10:00, UTC, enabled</td><td>Frequency, day, time, time zone and enabled state — the agent's recurring schedule is created from this same panel.</td></tr>
+            </tbody>
+          </table>
+          <p>The settings stored behind that panel are:</p>
+          <ul>
+            <li>The deal scope — comma-separated deal identifiers, or blank for all open deals.</li>
+            <li>The recipient list — comma-separated email addresses.</li>
+            <li>The staleness threshold — a day count, falling back to 30 if it was never set at all.</li>
+            <li>The five section toggles, each defaulting to on.</li>
+          </ul>
+
+          <h3>What else it reads</h3>
+          <ul>
+            <li>Each open deal's investors, whether active, pending or declined, and each investor's committed amount.</li>
+            <li>The deal's target amount.</li>
+            <li>The pipeline template steps, used to build the step distribution.</li>
+            <li>The most recent activity update tied to any investor, used to determine staleness.</li>
+          </ul>
+
+          <h3>Setup checklist</h3>
+          <p>
+            The agent's General tab shows a yellow warning banner when setup would silence or distort
+            the report:
+          </p>
+          <ul>
+            <li><strong>No email recipients configured</strong> — the summary email, this agent's main output, will never be sent. The run still completes and looks successful in the history.</li>
+            <li><strong>A staleness threshold present but blank</strong> — a blank value is treated as zero days, which flags every deal as stale. Enter a day count or remove the value.</li>
+            <li><strong>A section toggle stored with an unexpected value</strong> — the five section checkboxes are strict about how their state is stored, and one holding anything other than a plain on or off value silently drops that section from the email. This can happen when settings are edited outside the deal-page panel. The banner names the affected section, and re-saving the panel fixes it.</li>
+          </ul>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <ol>
+            <li>An administrator turns on the Deals Report Agent for your organisation, from the Support Agents section of the entity's admin settings.</li>
+            <li>No AI provider key is required — this agent never calls the AI.</li>
+            <li>The deal page's Agent Settings tab is available to any user with permission to edit that deal, and is not gated by the organisation-wide toggle. That toggle still controls whether the agent shows as enabled in the Support Agents list and whether its own Run Now button there is active.</li>
+          </ol>
+
+          <h2 id="running-it">Running it</h2>
+          <p><strong>From the deal page — the supported path today:</strong></p>
+          <ol>
+            <li>Open any deal and go to the Agent Settings tab.</li>
+            <li>Set the recipients, the staleness threshold, the content toggles and the schedule.</li>
+            <li>Click Run Now to open the confirmation prompt, or leave the schedule to handle it.</li>
+          </ol>
+          <p>
+            Because the agent always runs at the organisation level and works through deals internally,
+            triggering it from any single deal's page still produces a report covering whichever deals
+            are currently in scope — which may already have been narrowed to one deal the last time
+            someone saved that panel.
+          </p>
+          <p>
+            <strong>From the Support Agents list</strong>, open the Deals Report Agent card and click
+            Run Now on the General tab.
+          </p>
+          <p>
+            The agent always runs in the background without a live, step-by-step progress panel,
+            because it is working through several deals internally rather than one target with visible
+            steps. You see a queued notice rather than a step tracker.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            This agent does not come with a pre-built schedule. The only place a schedule is created is
+            the deal page's Agent Settings tab: saving that form is what creates or updates the
+            schedule, defaulting to weekly at 10:00 UTC, and saving the form is also what turns it on.
+            If nobody has ever opened that tab and saved it, the agent has no schedule at all and runs
+            only when someone clicks Run Now.
+          </p>
+
+          <h2 id="where-the-output-goes">Where the output goes</h2>
+          <ul>
+            <li><strong>Per-deal report</strong> — one report per deal, replaced each run rather than kept as history, so only the latest result per deal is available.</li>
+            <li><strong>HTML document</strong> — a "Deal Fundraising Report" saved into a private Reports folder under each deal's documents, replacing any earlier copy.</li>
+            <li><strong>Deal Reports tab</strong> — on the agent's own page. The tab name is shared with the Deal Management Agent's deal-level reports; they are told apart by which agent produced them.</li>
+            <li><strong>Email</strong> — sent to the configured recipients, if any. The subject line includes "- Action Required" if any deal needs attention. With no recipients configured no email goes out, though the run still completes and the reports still save.</li>
+          </ul>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Meaning</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Deal status</td><td>"Closed"; "Complete" at a fill rate of 100% or above; "On track" at 60% or above; "Needs attention" below 60%.</td></tr>
+              <tr><td>Target, committed, pending, declined and remaining amounts</td><td>Fundraising amounts in dollars.</td></tr>
+              <tr><td>Fill rate</td><td>Committed amount divided by target amount, as a percentage rounded to one decimal place. Shows 0.0% if there is no target set.</td></tr>
+              <tr><td>Investor counts</td><td>Total, active, pending and declined, broken out by status.</td></tr>
+              <tr><td>Stale, no-activity days, last activity date</td><td>Whether the deal has exceeded the no-activity threshold, the actual day count, and the timestamp of the most recent linked activity. The day count is blank if there has never been any activity.</td></tr>
+              <tr><td>Step distribution</td><td>How many investors sit at each pipeline step, in order. Empty if the deal has no pipeline template steps defined.</td></tr>
+              <tr><td>Top investors</td><td>Up to ten active investors sorted by committed amount, each with name, status, tier, amount and current pipeline step.</td></tr>
+            </tbody>
+          </table>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <ul>
+            <li><strong>Listed deals that no longer exist or are no longer open are dropped silently.</strong> A deal that has been deleted, belongs to a different fund, or is no longer open simply disappears from the results without a warning. If that leaves nothing to report on, the agent records "no open deals found" rather than a failure and the run proceeds — leaving you with zero deal reports and a near-empty email.</li>
+            <li><strong>The deal-page panel narrows the report scope to one deal every time it is saved.</strong> This is the most likely real-world surprise: someone opens the Agent Settings tab on one deal to tweak the recipient list, saves it, and without realising scopes the whole fund-wide report down to that deal. Anyone relying on all-deals coverage should avoid saving that panel unless they intend to narrow the scope, or have it reset afterwards by an administrator.</li>
+            <li><strong>There is no interface for choosing a specific handful of deals.</strong> The agent supports a custom multi-deal list, but the only panel that touches the setting is the single-deal Agent Settings tab, which always writes exactly one deal. A genuine custom subset has to be set directly on the underlying record by someone with admin or engineering access.</li>
+            <li><strong>No schedule comes pre-built.</strong> Do not assume a disabled schedule is waiting to be switched on. Check the deal page's Agent Settings tab — if it has never been saved, there is no schedule at all yet.</li>
+            <li><strong>Leaving the recipient list blank silences the email.</strong> Reports are still generated and saved per deal, but nobody is notified.</li>
+            <li><strong>Document-save failures are handled per deal.</strong> If saving the HTML report into a deal's Reports folder errors, it is caught and logged and the run moves on to the next deal. That deal's report still saves even if its HTML document does not.</li>
+            <li><strong>Staleness is based purely on activity-step updates</strong> — not notes, not document uploads, not other interactions. A deal where documents are actively being uploaded but no activity steps have changed can still be flagged as stale.</li>
+          </ul>
+
+          <h2 id="faq">Questions we are asked</h2>
+          <div class="faq">
+            <details>
+              <summary>I want this to cover all our open deals, but it only includes one.</summary>
+              <div>
+                <p>Most likely someone saved the Agent Settings tab from a single deal's page, which always resets the scope to just that deal. An administrator can reset the scope back to all open deals.</p>
+                <p>It is worth avoiding re-saving that per-deal panel unless you actually intend to narrow the scope.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Where do I configure which deals are included, beyond all or one?</summary>
+              <div>
+                <p>There is currently no in-app field for a custom multi-deal list. The agent can support it, but the only panel that touches the setting is the single-deal Agent Settings tab, which always writes exactly one deal. A genuine custom subset requires direct admin or engineering help.</p>
+              </div>
+            </details>
+            <details>
+              <summary>The agent ran but no email arrived.</summary>
+              <div>
+                <p>Check the recipient list on the deal page's Agent Settings tab. If it is blank, no email goes out, even though the per-deal reports were still generated and saved.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Does this agent need an AI provider key?</summary>
+              <div>
+                <p>No. The fill rate, staleness, step distribution and top investors are all calculated directly from your deal, investor and activity data, with no AI involved.</p>
+              </div>
+            </details>
+            <details>
+              <summary>The organisation-wide toggle is on but nothing runs automatically.</summary>
+              <div>
+                <p>This agent ships with no schedule already set up. Open a deal's Agent Settings tab, configure the schedule fields and save — that is what creates the schedule in the first place.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>set.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-deal-management.html">
+        <div>
+          <span class="kick">Deals</span>
+          <h3>Deal Management Agent</h3>
+          <p>Health checks on one open deal — stagnation, document gaps, terms and investor scores.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-note-summarizer.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Note Summarizer Agent</h3>
+          <p>AI summaries of an investor's notes for the last full month or quarter.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-data-quality.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Data Quality Agent</h3>
+          <p>Nightly integrity checks across every fund's commitments, valuations and FX rates.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+            <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+            <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+          </svg>
+          CapHive
+        </a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <div class="legal-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="cookies.html">Cookie Policy</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js?v=64f54259"></script>
+</body>
+</html>

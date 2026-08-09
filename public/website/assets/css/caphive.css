@@ -227,7 +227,16 @@ a.f-card:hover h3{ color:var(--orange); }
 .link-card:hover .arrow-btn{ background:var(--orange); border-color:var(--orange); color:#fff; transform:rotate(-45deg); }
 
 /* ---------- split (text + dark visual) ---------- */
-.split{ display:grid; grid-template-columns:1fr 1.05fr; gap:64px; align-items:center; }
+/* Each split sits in its own white card, so a page of them reads as a stack of
+   panels rather than copy floating beside screenshots. The dark product mock
+   inside gains contrast from the white ground. */
+.split{
+  display:grid; grid-template-columns:1fr 1.05fr;
+  gap:clamp(30px, 3.6vw, 56px); align-items:center;
+  background:var(--tile); border:1px solid var(--line); border-radius:32px;
+  padding:clamp(28px, 3.2vw, 48px);
+}
+.split + .split{ margin-top:20px; }
 .split.rev .split-text{ order:2; }
 .split-text h2{ font-size:clamp(30px,3.8vw,46px); margin:18px 0 16px; }
 .split-text p{ color:var(--mut); font-size:16.5px; max-width:520px; }
@@ -448,6 +457,112 @@ a.f-card:hover h3{ color:var(--orange); }
 .tab.active{ background:var(--fg); border-color:var(--fg); color:#fff; }
 .panel{ display:none; }
 .panel.active{ display:block; animation:fadeUp .5s cubic-bezier(.2,.8,.3,1); }
+
+/* ---------- agent directory ----------
+   Each agent is a <details> card: the summary carries the name and one line,
+   expanding to the detail, with a link through to that agent's own page.
+   Native disclosure, so it works with JavaScript off and several can be open
+   at once (the single-open behaviour in caphive.js is scoped to .faq only). */
+/* two columns throughout: the four-agent groups fall as a tidy 2x2 and the
+   two-agent groups fill their row, so no group ever leaves an orphan card */
+.agent-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; align-items:start; }
+.agent-card{
+  background:var(--tile); border:1px solid var(--line); border-radius:var(--r-card);
+  padding:26px 26px 24px;
+  transition:border-color .3s, box-shadow .3s, transform .3s cubic-bezier(.2,.8,.3,1);
+}
+.agent-card:hover{ border-color:var(--fg); transform:translateY(-3px); box-shadow:0 24px 48px -30px rgba(16,16,16,.18); }
+.agent-card[open]{ border-color:var(--fg); transform:none; }
+
+.agent-card > summary{ list-style:none; cursor:pointer; display:block; }
+.agent-card > summary::-webkit-details-marker{ display:none; }
+.agent-card .kick{
+  display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--orange); margin-bottom:12px;
+}
+/* Uniform collapsed geometry: the name reserves two lines and the one-liner is
+   clamped to three, so every card in a row is the same size regardless of how
+   long its sentence is. Expanding one card grows only that card. */
+.agent-card h3{
+  font-size:19px; letter-spacing:-0.025em; line-height:1.25; padding-right:38px;
+  min-height:2.5em;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.agent-card .one{
+  color:var(--mut); font-size:14.5px; margin-top:10px; line-height:1.5;
+  min-height:4.5em;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+}
+
+/* the +/- affordance, matching the FAQ */
+.agent-card > summary{ position:relative; }
+.agent-card > summary::after{
+  content:"+"; position:absolute; top:-4px; right:0;
+  width:30px; height:30px; border-radius:50%; border:1px solid var(--line);
+  display:grid; place-items:center; font-weight:400; font-size:17px; color:var(--mut);
+  transition:background .3s, border-color .3s, color .3s;
+}
+.agent-card[open] > summary::after{ content:"–"; background:var(--orange); border-color:var(--orange); color:#fff; }
+
+.agent-body{ margin-top:20px; padding-top:20px; border-top:1px solid var(--line); }
+.agent-body .check-list li{ font-size:14px; padding:9px 0; }
+.agent-body .ask{ font-size:14px; color:var(--mut); margin-top:14px; text-wrap:pretty; }
+.agent-body .ask b{ color:var(--fg); font-weight:600; }
+/* the call to action on each card is a filled button, full card width, so it
+   reads as the obvious next step rather than an afterthought link */
+.agent-read{ margin-top:22px; width:100%; justify-content:center; }
+
+/* Each category sits in its own coloured panel, cards on top of it. Tones rotate
+   through the existing palette — cream, a soft orange wash, and one dark panel —
+   so the directory reads as grouped rather than as sixteen loose tiles. */
+.agent-group{
+  border:1px solid var(--line); border-radius:32px;
+  padding:clamp(28px, 3.2vw, 44px);
+}
+.agent-group + .agent-group{ margin-top:20px; }
+.agent-group .section-head{ margin-bottom:26px; }
+.ag-cream{ background:var(--cream); border-color:#E4DFD4; }
+.ag-wash{ background:#FCEDE4; border-color:#F5DACA; }
+.ag-dark{ background:var(--dark); border-color:rgba(255,255,255,.1); color:#fff; }
+
+/* the dark panel needs its type and cards inverted */
+.ag-dark .chip-label{
+  background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.22); color:rgba(255,255,255,.85);
+}
+.ag-dark .section-head h3{ color:#fff; }
+.ag-dark .agent-card{
+  background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.15); color:#fff;
+}
+.ag-dark .agent-card:hover{ border-color:#fff; box-shadow:none; }
+.ag-dark .agent-card[open]{ border-color:#fff; }
+.ag-dark .agent-card h3{ color:#fff; }
+.ag-dark .agent-card .one{ color:rgba(255,255,255,.68); }
+.ag-dark .agent-card > summary::after{ border-color:rgba(255,255,255,.28); color:rgba(255,255,255,.75); }
+.ag-dark .agent-body{ border-top-color:rgba(255,255,255,.15); }
+.ag-dark .agent-body .ask{ color:rgba(255,255,255,.68); }
+.ag-dark .agent-body .ask b{ color:#fff; }
+.ag-dark .check-list li{ border-color:rgba(255,255,255,.12); }
+.ag-dark .check-list li::before{ background:rgba(255,77,0,.20); color:var(--orange); }
+
+@media (max-width:760px){
+  .agent-group{ padding:24px 20px; border-radius:24px; }
+}
+
+/* a lightweight fact strip for an agent's own page */
+.agent-facts{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:36px; }
+.agent-fact{ border:1px solid var(--line); background:var(--tile); border-radius:16px; padding:20px 22px; }
+.agent-fact dt{
+  font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--mut); margin-bottom:8px;
+}
+.agent-fact dd{ font-size:15px; font-weight:600; letter-spacing:-0.01em; }
+
+@media (max-width:1000px){
+  .agent-facts{ grid-template-columns:1fr; }
+}
+@media (max-width:700px){
+  .agent-grid{ grid-template-columns:1fr; }
+}
 
 /* ---------- chat mock ---------- */
 .chat{
@@ -1108,7 +1223,7 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
   .kpi-row{ grid-template-columns:1fr 1fr; }
   .f-grid, .f-grid.four{ grid-template-columns:1fr 1fr; }
   .case-grid{ grid-template-columns:1fr 1fr; }
-  .split{ grid-template-columns:1fr; gap:40px; }
+  .split{ grid-template-columns:1fr; gap:36px; }
   .split.rev .split-text{ order:0; }
   .steps-num, .steps-num.three{ grid-template-columns:1fr 1fr; }
   /* the chevron would point into the row below, so it comes off */
@@ -1142,6 +1257,7 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
   .job{ grid-template-columns:1fr 44px; row-gap:8px; }
   .job .meta{ grid-column:1; }
   .form-row{ grid-template-columns:1fr; }
+  .split{ padding:26px 22px; border-radius:24px; }
   .faq details > div{ padding-right:8px; }
   .cta{ padding-bottom:88px; }
   .cta-card{ padding:56px 24px; }

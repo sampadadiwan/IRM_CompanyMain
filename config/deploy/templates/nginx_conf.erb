@@ -94,6 +94,13 @@ server {
   gzip on;
   gzip_types text/css application/javascript application/xml text/plain image/svg+xml;
 
+  # HSTS. The Rails middleware stamps this when it serves the site, so nginx
+  # must too or the header disappears on exactly the hosts that face the
+  # public. No includeSubDomains: the apex must not dictate TLS policy for
+  # tenant subdomains. Only helps repeat visitors — first-time http:// hits
+  # still need the ALB's :80 redirect listener.
+  add_header Strict-Transport-Security "max-age=63072000" always;
+
   # Legacy notification-email links target the bare domain with
   # ?sub_domain=<tenant>; forward them to the tenant subdomain exactly as the
   # app's WithAuthentication#set_current_entity used to. The charset guard

@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cash Flow Assistant Agent &mdash; Fund Runway &amp; Capital Call Sizing | CapHive</title>
+<meta name="description" content="A rules-based agent that gates on data freshness, then calculates each fund's cash available, upcoming investments, 90-day expense estimate, buffer, net position, runway and recommended capital call, and emails a consolidated report.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/agent-cash-flow-assistant.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Cash Flow Assistant Agent | CapHive">
+<meta property="og:description" content="Calculates each fund's cash position, runway and recommended capital call, then emails a consolidated report.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/agent-cash-flow-assistant.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=a548770e">
+</head>
+<body data-page="ai-agents">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home">
+    <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+      <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+    </svg>
+    CapHive
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="https://app.caphive.com/" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Cash Flow Assistant Agent
+      </nav>
+      <span class="chip-label">Finance &middot; Agent</span>
+      <h1 style="margin-top:22px">Cash position, runway and the <em>call you may need to make.</em></h1>
+      <p class="lede">
+        The Cash Flow Assistant Agent is a rules-based reporting tool that checks how up to date your fund data is, calculates each fund's cash position, runway and recommended capital call, and emails a consolidated report to fund managers. A secondary chat feature lets users ask questions about the latest results in plain language.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>Every fund listed in its setup, entity-wide</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>No &mdash; the reporting pipeline is rules-based and never calls an AI model</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A per-fund report, a report file in each fund's Reports folder, and one consolidated email</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ARTICLE BODY ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>
+            The agent runs at entity level, then works through every fund listed in its setup. For each
+            fund it does the following.
+          </p>
+          <ol>
+            <li>
+              <strong>Checks data freshness.</strong> Verifies the fund's cash account data and pending
+              &mdash; not yet executed &mdash; investment data are recent enough. A fund whose cash data is
+              older than its configured threshold, or which has no cash data at all, is marked
+              &ldquo;blocked&rdquo; and excluded from the calculation for that run. This is a deliberate
+              safeguard, so that a runway or shortfall recommendation is never calculated off stale numbers.
+            </li>
+            <li>
+              <strong>Calculates the cash position</strong> for every fund that passed the freshness check:
+              <ul>
+                <li><strong>Cash available</strong> &mdash; the most recent account balances tagged as cash, added up across the fund's entity and any child entities such as SPVs.</li>
+                <li><strong>Upcoming investments</strong> &mdash; the total of any pending investments not yet executed.</li>
+                <li><strong>Estimated expenses</strong> &mdash; a 90-day forward estimate built from account entries tagged as expenses. The method depends on how much history exists: four or more months of data uses a trend-based projection, two to three months uses a recency-weighted average, exactly one month repeats the most recent figure, and no historical data at all returns an estimate of zero with a &ldquo;no data&rdquo; flag.</li>
+                <li><strong>Buffer required</strong> &mdash; the latest balance held in the reserve accounts.</li>
+                <li><strong>Net position</strong> &mdash; cash available minus upcoming investments, estimated expenses and the required buffer.</li>
+                <li><strong>Runway in days</strong> &mdash; cash available divided by the average daily outflow, being investments plus expenses spread over the 90-day window. Shown as &ldquo;180+ days&rdquo; in the email when there is no outflow at all to divide by.</li>
+                <li><strong>Status</strong> &mdash; a fund is marked &ldquo;shortfall&rdquo; if its net position is negative, &ldquo;watch&rdquo; if its runway is under 90 days, and &ldquo;surplus&rdquo; otherwise.</li>
+                <li><strong>Recommended capital call</strong> &mdash; for a fund in shortfall, the size of the gap plus the required buffer: enough to cover the shortfall and top the reserve back up.</li>
+              </ul>
+            </li>
+            <li><strong>Generates reports.</strong> Saves a report for each fund, and for any fund that was not blocked, also saves a formatted report document into that fund's private Reports folder.</li>
+            <li><strong>Sends an email.</strong> A single consolidated report covering all configured funds goes to everyone on the recipient list.</li>
+          </ol>
+          <p>
+            Nothing is ever written back to your account entries, investment records or any other source
+            data. This agent only reads and reports.
+          </p>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <p>
+            This agent does not have a standard settings form like most others. Configuration happens in two
+            different ways.
+          </p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Field</th><th>What it controls</th><th>Where it is set</th><th>Default</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Funds &amp; staleness thresholds</td><td>Which funds the agent processes, and how stale their data may be before that fund is excluded.</td><td>A dedicated table on the agent's Edit page &mdash; pick a fund per row, set its cash and pending-investment freshness thresholds, add or remove rows.</td><td>One row per existing fund, with a 30-day threshold for cash data and 90 days for pending investment data.</td></tr>
+                <tr><td>Which account types count as cash</td><td>Which account entries are added up for the cash-available figure and checked by the freshness gate.</td><td>Not exposed in any on-screen setting today. Set up behind the scenes by CapHive on your behalf.</td><td>None set by default.</td></tr>
+                <tr><td>Which account types count as expenses</td><td>Which account entries feed the 90-day expense estimate.</td><td>Not exposed on screen today &mdash; same as above.</td><td>None set by default.</td></tr>
+                <tr><td>Which account types count as the reserve buffer</td><td>Which account entries count towards the required reserve.</td><td>Not exposed on screen today &mdash; same as above.</td><td>None set by default.</td></tr>
+                <tr><td>Report recipients</td><td>Who receives the consolidated cash flow email after each run.</td><td>Not exposed on screen today &mdash; same as above.</td><td>None set by default.</td></tr>
+                <tr><td>Reminder recipients</td><td>Who receives the staleness-reminder email ahead of a scheduled run.</td><td>Not exposed on screen today &mdash; same as above.</td><td>None set by default.</td></tr>
+                <tr><td>Reminder lead time</td><td>How many days before the next scheduled run the staleness reminder starts firing.</td><td>Not exposed on screen today &mdash; same as above.</td><td>7 days.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout">
+            <p>
+              The cash, expenses, reserve buffer and report recipient settings have no on-screen panel
+              anywhere in the product today, so you cannot get meaningful output from this agent through the
+              standard interface alone &mdash; only the fund list and freshness thresholds are yours to
+              configure. Until CapHive sets the others up behind the scenes, every fund will show zero cash,
+              zero expenses and zero buffer.
+            </p>
+          </div>
+
+          <h3>Setup warnings</h3>
+          <p>
+            Incomplete setup is not invisible: the agent's General tab shows a yellow warning banner
+            whenever any of the following is true, and each item explains what will, or will not, happen
+            until it is fixed.
+          </p>
+          <ul>
+            <li><strong>No funds configured</strong> &mdash; the agent would analyse nothing and still report success.</li>
+            <li><strong>A configured fund no longer exists</strong>, for example because it was deleted or moved &mdash; that row silently drops out of every run.</li>
+            <li><strong>The cash account types are not set</strong> &mdash; every fund would be reported blocked with a misleading &ldquo;no cash data&rdquo; message.</li>
+            <li><strong>No report recipients</strong> &mdash; the consolidated email would never be sent.</li>
+          </ul>
+          <p>A clean General tab means the run will produce real numbers and the email will go out.</p>
+
+          <h3>Other data inputs</h3>
+          <ul>
+            <li><strong>Account entries</strong> in the cash, expense and buffer categories, from your existing fund and entity ledger data in CapHive.</li>
+            <li><strong>Pending investment records</strong> that have not been executed, from your existing deal data.</li>
+            <li><strong>Each fund's entity and any child entities.</strong> Cash, investments and expenses are added up across the fund's main entity and all of its child entities, including SPVs.</li>
+          </ul>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <p>
+            An administrator enables the agent with a feature toggle under Admin &rarr; Edit Entity &rarr;
+            Support Agents. No AI provider key is required &mdash; the reporting pipeline is fully
+            rules-based, adding up account entries and running the expense projection maths, and it never
+            calls an AI model.
+          </p>
+
+          <h2 id="running-it">Running it</h2>
+          <p>
+            Open AI &rarr; Support Agents &rarr; Cash Flow Assistant. The standard <strong>Run Now</strong>
+            button is available once the feature is enabled for your entity, and runs the full check against
+            every fund currently listed in the setup.
+          </p>
+          <p>
+            Configuration happens on the agent's Edit page, in the Funds &amp; Staleness Thresholds table:
+            add a fund row, pick the fund, set its two freshness thresholds in days, and save. There is no
+            &ldquo;run for just one fund&rdquo; option &mdash; a run always covers every fund listed there.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            Supported through the standard Schedule tab on the agent's page, the same way it works for every
+            agent: set a frequency and time, turn it on, and save. Scheduled runs produce the same per-fund
+            reports and email as a manual run.
+          </p>
+          <p>
+            There is also a separate daily reminder. Each day the system checks whether the next scheduled
+            run falls within the configured reminder lead time; if it does, it emails the reminder recipients
+            a preview of each fund's data freshness, so fund managers can fix stale data before the real run
+            happens and that fund ends up excluded.
+          </p>
+
+          <h2 id="output">Where the output goes</h2>
+          <ul>
+            <li><strong>Fund Reports tab</strong> on the agent's page &mdash; the report for each fund from every run.</li>
+            <li><strong>Each fund's private Reports folder</strong> &mdash; a &ldquo;Cash Flow Analysis&rdquo; report file is saved there for every fund that was not blocked. Running the agent again replaces this file rather than keeping multiple copies.</li>
+            <li><strong>Consolidated email</strong> to everyone on the report recipients list. It shows an overall status banner (Action Required, Monitor or All Clear), a portfolio summary table with one row per fund giving status, net position, runway and recommended action, and a detail section for each fund that was ready to calculate: cash available, upcoming investments, estimated expenses, buffer required, net position and a cash breakdown by entity. Blocked funds show as dashes in the summary table, with &ldquo;Update stale data&rdquo; as the suggested action.</li>
+            <li><strong>Staleness reminder email</strong>, sent separately to the reminder recipients ahead of the next scheduled run, listing each fund's freshness status and the specific reason it would be blocked &mdash; for example that an entity's cash data is 45 days old against a maximum of 30.</li>
+            <li><strong>Chat assistant</strong>, a secondary feature. When chat is enabled for this agent, a chat panel answers natural-language questions using the most recent completed report for each fund as its source of truth. It has a built-in &ldquo;what if&rdquo; calculator for stress-testing scenarios, and is designed to always use that calculator rather than work out hypothetical numbers on its own. Sample starter questions: which funds are running low, show stale balances, recommend capital calls.</li>
+          </ul>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <p>Each fund's report includes:</p>
+          <ul>
+            <li><strong>Status</strong> &mdash; ready or blocked, the outcome of the freshness check.</li>
+            <li><strong>Block reasons</strong> &mdash; a plain-language list explaining exactly why a fund was blocked, such as stale cash data or stale pending-investment data for a specific entity.</li>
+            <li><strong>Fund status</strong> &mdash; shortfall, watch or surplus, shown only for funds that were ready to calculate.</li>
+            <li><strong>The underlying figures</strong> &mdash; cash available, a per-entity cash breakdown with last-updated dates, upcoming investments and the list behind that total, estimated expenses and which estimation method was used, the monthly expense projections and how many data points fed them, buffer required, net position, runway in days, recommended capital call, and currency.</li>
+          </ul>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <ul>
+            <li><strong>The settings that actually drive the numbers have no on-screen panel.</strong> Which account types count as cash, expenses and reserve buffer must be set up before any of those figures can be anything other than zero, and there is no field for this anywhere in the product today. A fund manager who only fills in the Funds &amp; Staleness Thresholds table will see every fund show zero cash available, zero estimated expenses flagged &ldquo;no data&rdquo;, and zero buffer required.</li>
+            <li><strong>Stale cash data quietly excludes the whole fund.</strong> If even one of the fund's entities, including a child SPV, has no cash-tagged account data at all, or its most recent entry is older than the configured threshold, the entire fund is excluded from that run's calculation. There is no partial result. The same applies independently for stale pending-investment data.</li>
+            <li><strong>Stale-but-plausible balances can still feed a misleading recommendation.</strong> The freshness check only looks at how recent the latest data point is, not whether it is accurate. A fund can pass on a balance that is recent but simply wrong, and still produce a shortfall or surplus recommendation that does not reflect reality.</li>
+            <li><strong>A blank report recipients list skips the email.</strong> The email step is marked &ldquo;skipped&rdquo; in the run history, and the agent's page shows a warning banner ahead of time whenever the recipient list is empty &mdash; check there rather than the run history.</li>
+            <li><strong>An empty fund list.</strong> With no funds configured, the freshness check and the calculation both report zero funds processed, and the run completes successfully with nothing to show. The warning banner flags this state before you run.</li>
+            <li><strong>The quality of the expense estimate depends entirely on how much history you have.</strong> A fund with only one month of tagged expense data gets a flat repeat of that figure for the whole 90-day forecast, with no sense of trend. A brand-new fund with no historical expense data gets an estimate of exactly zero, which understates true expected spending until enough history builds up.</li>
+            <li><strong>Combining a fund with its child entities assumes consistent tagging.</strong> Cash, investment and expense data is added up across the fund's main entity and every child entity; if account tagging is applied inconsistently between the parent and a child SPV, the combined total can double-count or miss a child's contribution with no visible warning.</li>
+            <li><strong>The saved report file is replaced, not versioned.</strong> Each new run deletes and replaces the existing Cash Flow Analysis file in the fund's Reports folder rather than keeping past versions. Only the report history list preserves the run-by-run record.</li>
+          </ul>
+
+          <div class="pull">
+            <p>Zero cash, zero expenses and zero buffer can look like a clean bill of health rather than a sign that setup is incomplete.</p>
+            <cite>Cash Flow Assistant Agent user guide</cite>
+          </div>
+
+          <h2 id="faq">Questions we get asked</h2>
+          <div class="faq">
+            <details>
+              <summary>We ran the agent and every fund shows zero cash, zero expenses. What is wrong?</summary>
+              <div>
+                <p>Almost certainly the account-type settings for cash, expenses and buffer have not been set up yet. These have no on-screen field today &mdash; ask CapHive support or your administrator to confirm the configuration has been completed for your entity.</p>
+              </div>
+            </details>
+            <details>
+              <summary>A fund we expected to see in the report is missing entirely.</summary>
+              <div>
+                <p>Check the Fund Reports tab for that fund's status. It is likely blocked due to stale cash or pending-investment data, which excludes it from the ready section of the email. It will still show in the summary table with dashes and &ldquo;Update stale data&rdquo;.</p>
+              </div>
+            </details>
+            <details>
+              <summary>We did not get the consolidated email.</summary>
+              <div>
+                <p>The report recipients list is blank or has not been set up. There is no on-screen setting for this, so confirm with your admin or CapHive support that it has been configured.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Can we run this for just one fund?</summary>
+              <div>
+                <p>No. A run always processes every fund currently listed in the agent's configuration. To leave a fund out temporarily, remove its row from the Funds &amp; Staleness Thresholds table on the Edit page.</p>
+              </div>
+            </details>
+            <details>
+              <summary>How is the recommended capital call amount calculated?</summary>
+              <div>
+                <p>Only for funds in shortfall status. It is the absolute size of the shortfall plus the required buffer &mdash; enough to close the gap and restore the reserve to its target level.</p>
+              </div>
+            </details>
+            <details>
+              <summary>What is the difference between the consolidated report email and the staleness reminder?</summary>
+              <div>
+                <p>The consolidated report is the actual analysis, sent after a run completes. The staleness reminder is a separate, earlier heads-up sent automatically in the days before the next scheduled run, so stale data can be fixed proactively before that run happens and the fund ends up blocked.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>bench.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-call-notice.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Call Notice Agent</h3>
+          <p>Checks a capital call has cleared KYC, documents, approvals and notification setup before notices go out.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-distribution-readiness.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Distribution Readiness Agent</h3>
+          <p>Checks KYC, payable amounts, notices, approvals and bank details before a distribution is paid.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-rta-reconciliation.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>RTA Reconciliation Agent</h3>
+          <p>Reconciles an uploaded RTA unit statement against your fund's own unit and folio records.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+            <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+            <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+          </svg>
+          CapHive
+        </a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <div class="legal-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="cookies.html">Cookie Policy</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js?v=64f54259"></script>
+</body>
+</html>

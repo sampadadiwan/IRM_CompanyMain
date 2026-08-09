@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Company Agent — Portfolio Data Health Checks | CapHive</title>
+<meta name="description" content="A rule-based agent that checks every portfolio company for a missing KPI submission, missing required documents and a missing valuation, then sends one consolidated reminder.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/agent-portfolio-company.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Portfolio Company Agent | CapHive">
+<meta property="og:description" content="Rule-based data-health checks across every portfolio company. No AI model is called.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/agent-portfolio-company.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=a548770e">
+</head>
+<body data-page="ai-agents">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home">
+    <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+      <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+    </svg>
+    CapHive
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="https://app.caphive.com/" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Portfolio Company Agent
+      </nav>
+      <span class="chip-label">Portfolio · Agent</span>
+      <h1 style="margin-top:22px">Portfolio data health, <em>checked against your rules.</em></h1>
+      <p class="lede">
+        The Portfolio Company Agent keeps an eye on the data health of every portfolio company in your fund &mdash; whether KPI reports have come in on time, whether required documents are on file, and whether a recent valuation has been recorded. It does not use AI to make judgment calls; it checks your data against the rules you have configured.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>Every portfolio company at once, or a single company</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>No &mdash; every check is rule-based</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A per-company report, plus a portfolio compliance dashboard</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>
+            For every company in your portfolio that is categorised as a &ldquo;Portfolio Company,&rdquo;
+            the agent checks four things, in order.
+          </p>
+          <ol>
+            <li><strong>Has the company submitted its KPIs for the most recently completed period?</strong> Quarterly, by default. If not, this is flagged as a <strong>blocking</strong> issue.</li>
+            <li><strong>Are the required documents on file?</strong> The agent checks whether the documents attached to the company&rsquo;s most recent KPI submission match the list of documents your fund requires.</li>
+            <li><strong>Has a valuation been entered for the same period?</strong> If not, this is also flagged as <strong>blocking</strong>.</li>
+            <li><strong>Should a reminder go out?</strong> If any items are still missing and reminders are turned on, the agent emails the portfolio company a single consolidated reminder listing exactly what is missing &mdash; but never more than once per day.</li>
+          </ol>
+          <div class="pull">
+            <p>Every check is rule-based. There is no AI cost, and no AI judgment involved.</p>
+          </div>
+          <p>
+            This agent never makes a call to an AI model, so you do not need an AI provider key for it
+            to work. It also powers a few of the sample chat questions you will see on a portfolio
+            company&rsquo;s page &mdash; &ldquo;Show latest KPIs,&rdquo; or &ldquo;What&rsquo;s the
+            current valuation?&rdquo; &mdash; but that is a separate conversational feature, not the
+            run-and-report behaviour described here.
+          </p>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <p>Four settings control the agent.</p>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Default</th><th>What it controls</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Reporting Period</td><td>Quarterly</td><td>How often companies report: Monthly, Quarterly, Half-Yearly or Annually.</td></tr>
+              <tr><td>Start Checking After</td><td>15 days</td><td>How many days after a period ends before the agent begins checking.</td></tr>
+              <tr><td>Stop Checking After</td><td>60 days</td><td>How many days after a period ends before the agent stops checking and stops sending reminders.</td></tr>
+              <tr><td>Send KPI submission reminder</td><td>Yes</td><td>When Yes, sends a consolidated reminder email listing all missing items &mdash; KPIs, documents and valuations.</td></tr>
+            </tbody>
+          </table>
+          <p>
+            The older &ldquo;Reminder days&rdquo; setting &mdash; comma-separated day offsets such as
+            &ldquo;7,14,21&rdquo; &mdash; is no longer used. Reminders are sent on every agent run
+            inside the active window, so cadence is governed by the agent&rsquo;s Schedule tab rather
+            than by a list of dates. Re-running <strong>Setup All Agents</strong> fills the reminder
+            toggle with its default on agents that never had it.
+          </p>
+          <p>
+            The agent&rsquo;s General tab shows a yellow warning banner when reminder setup cannot
+            work. The case it flags is a &ldquo;Send KPI submission reminder&rdquo; toggle that was
+            never set: an unset toggle counts as off, so reminders silently never go out. Set it
+            explicitly to Yes or No &mdash; an explicit No is not flagged.
+          </p>
+          <p>Alongside that configuration, the agent reads three kinds of record:</p>
+          <ul>
+            <li>The company&rsquo;s submitted KPI reports &mdash; used to find the latest submission for the period, and, through that report&rsquo;s attachments, for the document check.</li>
+            <li>The company&rsquo;s uploaded documents &mdash; compared against your fund&rsquo;s required-documents list.</li>
+            <li>The company&rsquo;s valuations &mdash; used to find a recent valuation within the period.</li>
+          </ul>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <p>
+            A Company Admin turns the agent on or off in the administration area, under the entity&rsquo;s
+            support agents settings. While it is off, the <strong>Run Now</strong> button and the matching
+            trigger on a company&rsquo;s page stay disabled. No AI provider key is needed.
+          </p>
+          <p>
+            Only users with the Company Admin role can configure and run support agents from the main
+            Support Agents screen. When the agent is triggered from a portfolio company&rsquo;s own page
+            instead, it follows that record&rsquo;s normal edit permissions.
+          </p>
+          <p>
+            Unlike most agents, this one is not created from scratch when you run <strong>Setup All
+            Agents</strong> &mdash; it has been part of the product since before that setup flow existed
+            and is provisioned separately. Running Setup All Agents only fills in the
+            &ldquo;Send KPI submission reminder&rdquo; and &ldquo;Reminder days&rdquo; fields if they are
+            missing; it will not create the agent if it is not already there.
+          </p>
+
+          <h2 id="running-it">Running it</h2>
+          <ul>
+            <li><strong>From the agent&rsquo;s own page.</strong> Open the Portfolio Company Agent card under AI &rarr; Support Agents and click <strong>Run Now</strong> on the General tab. This agent&rsquo;s natural scope is the whole portfolio, so a run from here processes every portfolio company in one batch, with no step-by-step view per company.</li>
+            <li><strong>From a single portfolio company&rsquo;s page.</strong> Use <strong>Run Portfolio Agent</strong> from the company record. This runs the agent for that one company, and shows a live progress panel walking through each check: KPI Submission Check, Document Presence, Valuation Check, Send Reminder, Save Report.</li>
+            <li><strong>From the Portfolio Agent Run screen.</strong> Filter your portfolio companies by tag, sector or name, select one or more from the table, and run the agent on the selected companies. That queues a single batch job. There is no per-company progress view here either &mdash; you get one summary notification once all the selected companies have been processed.</li>
+          </ul>
+          <p>
+            A fund-wide or batch run processes every portfolio company in sequence. If one company hits
+            a problem it does not stop the rest from being checked, and the portfolio dashboard refreshes
+            once at the end for everything that succeeded.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            The agent has the standard Schedule tab &mdash; frequency, run time, timezone and
+            notification toggles &mdash; and you can set up a recurring schedule as with any other agent.
+            <strong>Setup All Agents does not turn on a default schedule</strong> for this one, so if you
+            want it to run automatically you have to configure that yourself. Scheduled runs always
+            process the whole portfolio in one batch, and they skip the summary notification, since
+            nobody is actively waiting on the result.
+          </p>
+
+          <h2 id="where-the-output-goes">Where the output goes</h2>
+          <ul>
+            <li><strong>General tab.</strong> A &ldquo;View Report&rdquo; link to the most recent run.</li>
+            <li><strong>Execution History tab.</strong> Every past run, manual or scheduled, with its status and duration; open any row for the full report.</li>
+            <li><strong>Portfolio Agent Reports tab.</strong> On this agent&rsquo;s own page, reports organised by the portfolio company they belong to.</li>
+            <li><strong>Portfolio Company Dashboard.</strong> A standalone dashboard reached from the Investors menu, with stat cards, a compliance chart, a searchable company table and a Send Reminders action.</li>
+          </ul>
+          <p>
+            Each report is attached to the portfolio company it covers, and the most recent run per
+            company is always the one marked as current.
+          </p>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <p>Each report has three groups of findings.</p>
+          <ul>
+            <li><strong>KPI findings.</strong> Submission status and reminder outcome for the period. A successful submission, or a note that no reminder was due yet, shows as a success. A missing submission shows as blocking.</li>
+            <li><strong>Document findings.</strong> One entry per required document that is missing, shown as blocking &mdash; or a single success entry if everything required is present.</li>
+            <li><strong>Valuation findings.</strong> Either a recent valuation was found, which is a success, or none was found, which is blocking.</li>
+          </ul>
+          <p>
+            The report&rsquo;s overall status is <strong>ready</strong> if nothing across all three groups
+            is blocking, or <strong>blocked</strong> if anything is. That status feeds the Completed,
+            Partial and Failed badges in Execution History.
+          </p>
+          <p>
+            The summary widget on the portfolio company page pulls three counters straight from these
+            findings: how many KPI issues are blocking (&ldquo;Missing KPIs&rdquo;), how many valuation
+            issues are blocking (&ldquo;Missing Valuations&rdquo;), and how many documents are flagged as
+            missing (&ldquo;Missing Documents&rdquo;).
+          </p>
+
+          <h3>The portfolio dashboard</h3>
+          <p>
+            A standalone dashboard, separate from the agent&rsquo;s General tab, gives a view of the whole
+            portfolio&rsquo;s compliance health. The first row of stat cards covers <strong>Total
+            Companies</strong> (everything categorised as a Portfolio Company, whether or not the agent has
+            run against it), <strong>Validated</strong> (companies the agent has checked, with a percentage
+            bar for how much of the portfolio has been processed), <strong>Up to Date</strong> (zero
+            blocking issues across KPIs, valuations and documents) and <strong>Not Yet Validated</strong>.
+            The second row breaks the issues out: <strong>KPI Not Submitted</strong>, <strong>Valuation
+            Missing</strong> and <strong>Documents Not Uploaded</strong>. Where the documents figure shows
+            zero but KPIs are overdue, the card&rsquo;s subtitle explains that the document check requires
+            a KPI submission first. Every card is clickable and filters the table below it.
+          </p>
+          <p>
+            The company table can be filtered by status &mdash; All Statuses, Up to Date, Has Issues, KPI
+            Not Submitted, Valuation Missing, Documents Not Uploaded &mdash; searched by company name, and
+            expanded row by row for the full KPI, document and valuation breakdown. It paginates at ten
+            companies per page.
+          </p>
+          <p>
+            Three actions sit on the dashboard. <strong>Run Validation</strong> triggers the agent across
+            all portfolio companies as a batch and the dashboard refreshes when it completes.
+            <strong>Send Reminders</strong> emails companies with any missing items, listing only what is
+            missing for that company; it deduplicates, so a company already reminded today is skipped, and
+            the button label shows the exact count of companies that will receive a reminder. Afterwards you
+            see either &ldquo;Reminders sent to N companies&rdquo; or &ldquo;Reminders were already sent
+            today.&rdquo; <strong>View Pending Issues</strong> filters the table to companies with at least
+            one blocking issue. A &ldquo;Send Now&rdquo; shortcut in the Recommended Next Steps section at
+            the bottom of the dashboard does exactly the same thing as Send Reminders.
+          </p>
+          <p>
+            The dashboard simplifies each company to one of three statuses: <strong>Up to Date</strong>
+            (the agent ran and found zero blocking issues), <strong>Has Issues</strong> (the agent ran and
+            found at least one) and <strong>Not Validated</strong> (the agent has not processed this company
+            yet).
+          </p>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <div class="callout">
+            <p>
+              <strong>The document check quietly does nothing for almost everyone.</strong> It only runs if
+              a particular setting has been turned on behind the scenes, and there is currently no field
+              anywhere in the product to turn it on &mdash; not on the Edit page, not in initial setup, and
+              it is not filled in automatically. Unless your technical team has switched it on manually, the
+              document check will report that all is well every time, even when documents are genuinely
+              missing. If you are relying on this check to catch missing paperwork, confirm with your team
+              that it has actually been turned on.
+            </p>
+          </div>
+          <ul>
+            <li><strong>No KPI report on file means the document check is skipped, not failed.</strong> If the agent cannot find a KPI submission for the period, it deliberately skips the document check rather than reporting a confusing &ldquo;document missing&rdquo; message against a submission that does not exist. The missing-KPI flag is then the only signal you see.</li>
+            <li><strong>The wrong category on a company causes a silent skip.</strong> If a company&rsquo;s category is not set to &ldquo;Portfolio Company&rdquo; (case-insensitive), the agent stops before doing anything and records no findings at all &mdash; just a quiet log entry your technical team could look up. This happens when someone changes a category partway through, or a run is pointed at the wrong record.</li>
+            <li><strong>Reminder timing follows the checking window, not a calendar date.</strong> Reminders go out on every run inside the active window. If the agent is scheduled weekly, companies get at most one reminder per week. The window boundaries are calculated using the application&rsquo;s configured time zone, not necessarily yours or your server&rsquo;s, which can cause a one-day difference around period boundaries.</li>
+            <li><strong>&ldquo;Already sent today&rdquo; tracking depends on having a prior report.</strong> The agent checks the most recent report to see whether a reminder already went out today. If reports have been deleted, or the entity is brand new with no report history, there is nothing to compare against &mdash; so a reminder could go out again on a day it normally would not have.</li>
+            <li><strong>Changing the reporting period affects all three checks.</strong> KPIs, valuations and documents are all checked against the same period. There is no way to use different periods for different check types.</li>
+            <li><strong>One company&rsquo;s failure during a batch run is easy to overlook.</strong> The rest of the batch keeps going, but that failure shows up only in the batch summary notification, not as its own failed report, unless that company&rsquo;s individual run also produced one.</li>
+          </ul>
+
+          <h2 id="questions">Questions</h2>
+          <div class="faq">
+            <details>
+              <summary>I turned on the KPI submission reminder but no email went out. Why?</summary>
+              <div>
+                <p>Check whether today falls within the active checking window, which runs from the start offset to the stop offset after the period ended. Reminders are only sent during the window, and never more than once per calendar day, so if one already went out today it will not send again.</p>
+                <p>Reminders are also only sent when at least one item &mdash; KPIs, documents or valuations &mdash; is missing. If everything has been submitted, no reminder is needed.</p>
+              </div>
+            </details>
+            <details>
+              <summary>The document check always says everything is fine, even when documents are clearly missing.</summary>
+              <div>
+                <p>That check is controlled by a setting with no field on the Edit page in the current product. Unless someone has explicitly turned it on behind the scenes, the check does nothing and will always report no missing documents, regardless of what is actually on file.</p>
+              </div>
+            </details>
+            <details>
+              <summary>I ran the agent on a portfolio company and got an empty report with no issues.</summary>
+              <div>
+                <p>The company&rsquo;s category is probably not set to &ldquo;Portfolio Company&rdquo; (case-insensitive). The agent stops silently for any other category, so check the company&rsquo;s category field.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Can I change the KPI and valuation period from quarterly to monthly?</summary>
+              <div>
+                <p>Yes. The Reporting Period setting offers Monthly, Quarterly, Half-Yearly and Annually. KPIs and valuations both use the same period setting.</p>
+              </div>
+            </details>
+            <details>
+              <summary>I clicked Send Reminders and nothing seemed to happen.</summary>
+              <div>
+                <p>If reminders were already sent today, the system skips all companies and tells you so. That prevents companies being emailed several times on the same day. Wait until tomorrow, or run the agent again &mdash; it will re-send as part of its pipeline if items are still missing.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Does running this agent for the whole fund show a live progress view?</summary>
+              <div>
+                <p>No. Running against the whole portfolio, or from the Portfolio Agent Run screen, processes companies as a batch with no per-company progress view; you get a single summary notification when it is done. Only single-company runs from a portfolio company&rsquo;s own page show step-by-step progress.</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>set.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-portfolio-scoring.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Portfolio Scoring Agent</h3>
+          <p>A 0&ndash;100 investment score per company, graded against a sector-specific scoring guide.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-presentation-analyst.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Investor Presentation Analyst</h3>
+          <p>Reads investor presentations across periods and surfaces commitment misses and dropped risks.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-data-quality.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Data Quality Agent</h3>
+          <p>Nightly integrity checks across every fund&rsquo;s commitments, valuations and FX rates.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <svg class="hex-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+            <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+            <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+          </svg>
+          CapHive
+        </a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <div class="legal-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="cookies.html">Cookie Policy</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js?v=64f54259"></script>
+</body>
+</html>
