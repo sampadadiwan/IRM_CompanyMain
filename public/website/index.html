@@ -620,7 +620,7 @@
     <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
   </nav>
   <div class="nav-cta">
-    <a class="login" href="#" data-login>Login</a>
+    <a class="login" href="https://app.caphive.com/" data-login>Login</a>
     <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
     <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
       <span></span><span></span><span></span>
@@ -1163,8 +1163,8 @@
           <li><a href="contact.html">Setup a Demo</a></li>
           <li><a href="security.html">Security &amp; Trust</a></li>
           <li><a href="faq.html">FAQ</a></li>
-          <li><a href="#" data-login>Login — IND</a></li>
-          <li><a href="#" data-login>Login — USA</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
         </ul>
       </div>
     </div>
@@ -1185,6 +1185,20 @@
 (function(){
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var finePointer = window.matchMedia('(pointer: fine)').matches;
+
+  /* ---- login: send the visitor to the app on their own domain ----
+     Mirrors the same block in assets/js/caphive.js. The homepage runs its own
+     script (its hero, scrollytelling and chat are homepage-only), so this logic
+     has to exist in both places — keep them in step. The markup ships
+     https://app.caphive.com/ so the link works with JavaScript off. */
+  var APP_BY_DOMAIN = {
+    'caphive.com': 'https://app.caphive.com/',
+    'caphive.us':  'https://app.caphive.us/'
+  };
+  var appUrl = APP_BY_DOMAIN[location.hostname.replace(/^www\./, '')];
+  if(appUrl){
+    document.querySelectorAll('a[data-login]').forEach(function(a){ a.href = appUrl; });
+  }
 
   /* ---- nav shadow on scroll ---- */
   var nav = document.getElementById('nav');

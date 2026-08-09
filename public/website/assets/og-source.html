@@ -1,0 +1,90 @@
+<!--
+  Source for /og.png (1200x630), the social share image referenced by every page.
+
+  To regenerate after a copy or brand change, serve the folder and screenshot at
+  exactly 1200x630 so the Google-hosted Geist and Instrument Serif faces load:
+
+    python3 -m http.server 8817
+    google-chrome --headless=new --disable-gpu --hide-scrollbars \
+      --window-size=1200,630 --default-background-color=FBFAF7 \
+      --screenshot=og.png http://localhost:8817/assets/og-source.html
+
+  Do not open it from file:// — the webfonts will not load and the type will
+  fall back to a system sans.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ width:1200px; height:630px; }
+  body{
+    background:#FBFAF7; color:#101010;
+    font-family:"Geist", sans-serif; -webkit-font-smoothing:antialiased;
+    position:relative; overflow:hidden;
+  }
+  /* the same orange bloom the site's heroes use */
+  .bloom{
+    position:absolute; top:-320px; right:-180px; width:900px; height:900px;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(255,77,0,.16), transparent 70%);
+  }
+  .frame-edge{
+    position:absolute; inset:28px; border:1px solid #E8E5DE; border-radius:28px;
+  }
+  .inner{ position:absolute; inset:28px; padding:62px 68px; display:flex; flex-direction:column; }
+
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand svg{ width:38px; height:44px; }
+  .brand span{ font-size:31px; font-weight:800; letter-spacing:-.035em; }
+
+  h1{
+    margin-top:auto; font-size:82px; font-weight:800; letter-spacing:-.045em;
+    line-height:.98; max-width:1000px;
+  }
+  h1 em{
+    font-family:"Instrument Serif", serif; font-style:italic; font-weight:400;
+    color:#FF4D00; letter-spacing:-.01em;
+  }
+  p.sub{
+    margin-top:26px; font-size:25px; color:#6F6A62; max-width:820px; line-height:1.45;
+  }
+
+  .foot{
+    margin-top:auto; padding-top:34px; border-top:1px solid #E8E5DE;
+    display:flex; align-items:center; gap:34px;
+    font-family:"Geist Mono", monospace; font-size:15px; letter-spacing:.1em;
+    text-transform:uppercase; color:#6F6A62;
+  }
+  .foot b{ color:#101010; font-weight:500; }
+  .dot{ width:7px; height:7px; border-radius:50%; background:#FF4D00; flex:none; }
+</style>
+</head>
+<body>
+  <div class="bloom"></div>
+  <div class="frame-edge"></div>
+  <div class="inner">
+    <div class="brand">
+      <svg viewBox="0 0 30 34" fill="none" aria-hidden="true">
+        <path d="M15 1L29 9v16L15 33 1 25V9L15 1z" stroke="#FF4D00" stroke-width="2"/>
+        <path d="M15 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
+      </svg>
+      <span>CapHive</span>
+    </div>
+
+    <h1>Supercharge <em>private capital markets.</em></h1>
+    <p class="sub">
+      A full-stack intelligent platform for funds, portfolios, deals &amp; secondaries —
+      with AI agents built for private markets.
+    </p>
+
+    <div class="foot">
+      <span><span class="dot" style="display:inline-block;margin-right:10px"></span><b>US$&nbsp;10bn+</b> AUM</span>
+      <span><b>4,000+</b> investors</span>
+      <span><b>US$&nbsp;500m+</b> raised &amp; secondaries</span>
+      <span style="margin-left:auto">caphive.com</span>
+    </div>
+  </div>
+</body>
+</html>
