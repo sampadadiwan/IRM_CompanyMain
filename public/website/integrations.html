@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=af04f9fa">
+<link rel="stylesheet" href="assets/css/caphive.css?v=f26f1db9">
 </head>
 <body data-page="integrations">
 
@@ -95,12 +95,12 @@
           Setup a Demo
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
-        <a class="btn btn-outline" href="#connections">See what we connect to</a>
       </div>
 
       <!-- the artefact this module produces: the breadth of what feeds the ledger.
-           Categories, not vendor claims — see the confirm-live-vs-roadmap note below.
-           As the panel's last child it runs edge to edge and closes the card. -->
+           Categories of system only — never vendor names. The vendor coverage grid
+           that used to sit below was parked in _holding/ because those connections
+           do not exist yet; keep this list category-level so it stays true. -->
       <div class="hero-marquee" aria-hidden="true">
         <div class="marquee">
           <div class="marquee-track" data-dup>
@@ -150,93 +150,6 @@
   </div>
 </section>
 
-<!-- ================= WHAT WE CONNECT TO ================= -->
-<section class="section" id="connections" style="padding-top:0">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <span class="chip-label">Coverage</span>
-      <h2>The systems CapHive <em>connects to.</em></h2>
-      <p>Grouped by the job they do in a fund. The names below are examples of the kind of system in each category, not a statement about partnership or certification. Tell us your stack and we will tell you exactly how each piece connects.</p>
-    </div>
-
-    <!-- TODO: confirm which of these integrations are live today vs. on the roadmap -->
-    <div class="f-grid reveal" data-delay="1">
-      <div class="f-card">
-        <span class="kick">Banking &amp; payments</span>
-        <h3>Cash in and out</h3>
-        <div class="tag-row" style="margin-top:16px">
-          <span class="tag">Bank statement feeds</span><span class="tag">MT940 / BAI2</span>
-          <span class="tag">Host-to-host file transfer</span><span class="tag">Payment file export</span>
-          <span class="tag">Virtual account references</span>
-        </div>
-      </div>
-      <div class="f-card">
-        <span class="kick">Custodians &amp; administrators</span>
-        <h3>Positions and books</h3>
-        <div class="tag-row" style="margin-top:16px">
-          <span class="tag">Custodian position files</span><span class="tag">Administrator trial balance</span>
-          <span class="tag">Depository statements</span><span class="tag">Registrar &amp; transfer agent files</span>
-        </div>
-      </div>
-      <div class="f-card">
-        <span class="kick">Accounting &amp; ERP</span>
-        <h3>The general ledger</h3>
-        <div class="tag-row" style="margin-top:16px">
-          <span class="tag">Tally</span><span class="tag">QuickBooks</span><span class="tag">Xero</span>
-          <span class="tag">Zoho Books</span><span class="tag">NetSuite</span><span class="tag">SAP</span>
-        </div>
-      </div>
-      <div class="f-card">
-        <span class="kick">KYC / AML &amp; identity</span>
-        <h3>Investor verification</h3>
-        <div class="tag-row" style="margin-top:16px">
-          <span class="tag">Identity verification providers</span><span class="tag">CKYC registry</span>
-          <span class="tag">Sanctions &amp; PEP screening</span><span class="tag">FATCA / CRS data capture</span>
-        </div>
-      </div>
-      <div class="f-card">
-        <span class="kick">E-signature</span>
-        <h3>Signed documents</h3>
-        <div class="tag-row" style="margin-top:16px">
-          <span class="tag">DocuSign</span><span class="tag">Adobe Acrobat Sign</span>
-          <span class="tag">Dropbox Sign</span><span class="tag">Aadhaar-based eSign</span>
-        </div>
-      </div>
-      <div class="f-card">
-        <span class="kick">Data rooms &amp; storage</span>
-        <h3>Files where you keep them</h3>
-        <div class="tag-row" style="margin-top:16px">
-          <span class="tag">Google Drive</span><span class="tag">SharePoint / OneDrive</span>
-          <span class="tag">Dropbox</span><span class="tag">Box</span><span class="tag">Amazon S3</span>
-        </div>
-      </div>
-      <div class="f-card">
-        <span class="kick">Communications</span>
-        <h3>Notices that get delivered</h3>
-        <div class="tag-row" style="margin-top:16px">
-          <span class="tag">Microsoft 365 / Outlook</span><span class="tag">Google Workspace</span>
-          <span class="tag">SMTP relay</span><span class="tag">SMS gateway</span><span class="tag">Slack</span>
-        </div>
-      </div>
-      <div class="f-card">
-        <span class="kick">BI &amp; warehouse</span>
-        <h3>Your own analysis</h3>
-        <div class="tag-row" style="margin-top:16px">
-          <span class="tag">Snowflake</span><span class="tag">BigQuery</span><span class="tag">Redshift</span>
-          <span class="tag">Power BI</span><span class="tag">Tableau</span><span class="tag">Metabase</span>
-        </div>
-      </div>
-      <div class="f-card">
-        <span class="kick">Market &amp; valuation data</span>
-        <h3>Marks and rates</h3>
-        <div class="tag-row" style="margin-top:16px">
-          <span class="tag">Listed price feeds</span><span class="tag">FX rates</span>
-          <span class="tag">Cap table &amp; round data</span><span class="tag">Comparables for valuation</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ================= API ================= -->
 <section class="section" style="padding-top:0">

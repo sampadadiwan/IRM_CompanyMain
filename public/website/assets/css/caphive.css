@@ -255,6 +255,11 @@ a.f-card:hover h3{ color:var(--orange); }
   padding:clamp(28px, 3.2vw, 48px);
 }
 .split + .split{ margin-top:20px; }
+/* A .split card followed by a card grid (the rollout steps on case-studies)
+   otherwise sits flush against it — both are bordered cards, so they read as one
+   broken box. 20px is the same gap .steps-num uses between its own cards, which
+   keeps the whole group on one rhythm. */
+.split + .steps-num{ margin-top:20px; }
 .split.rev .split-text{ order:2; }
 .split-text h2{ font-size:clamp(30px,3.8vw,46px); margin:18px 0 16px; }
 .split-text p{ color:var(--mut); font-size:16.5px; max-width:520px; }
