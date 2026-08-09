@@ -109,8 +109,12 @@ p, li, .lede, .step-detail, .faq details > div{ text-wrap:pretty; }
   transition:box-shadow .3s;
 }
 .nav.scrolled{ box-shadow:0 12px 40px -18px rgba(16,16,16,.18); }
-.brand{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:19px; letter-spacing:-0.03em; }
-.brand .hex-mark{ width:26px; height:30px; }
+/* The wordmark is part of the logo file now, so .brand carries no type of its
+   own. height:30px matches the hex the old inline mark drew, keeping the nav
+   pill exactly the height it was; the SVG's viewBox is trimmed to the artwork
+   so nothing is padded twice. */
+.brand{ display:flex; align-items:center; }
+.brand .logo{ display:block; height:34px; width:auto; }
 .nav-links{ display:flex; gap:6px; align-items:center; }
 .nav-link{
   display:inline-flex; align-items:center; gap:6px;
