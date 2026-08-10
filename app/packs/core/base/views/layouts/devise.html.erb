@@ -31,23 +31,29 @@
       <div class="position-relative z-index-5">
         <div class="row">
           <div class="col-xl-7 col-xxl-7 p-0 d-flex flex-column">
-            <div class="login-brand-section d-none d-xl-flex h-100 justify-content-center align-items-center p-5">
-              <div class="col-sm-8 col-md-6 col-xl-9">
-                <%= render "devise/shared/company_logo" %>
+            <div class="login-brand-section d-none d-xl-flex flex-column h-100 justify-content-center align-items-center p-5">
+              <%# Logo block takes the free vertical space so the ticker settles at the bottom. %>
+              <div class="brand-stage">
+                <div class="col-sm-8 col-md-6 col-xl-9 mx-auto">
+                  <%= render "devise/shared/company_logo" %>
+                </div>
               </div>
+              <%= render "devise/shared/finance_ticker", rows: 2 %>
             </div>
           </div>
           <div class="col-xl-5 col-xxl-5">
             <div class="authentication-login min-vh-100 bg-body row justify-content-center align-items-center p-4">
               <div class="col-sm-8 col-md-6 col-xl-9">
-                <% name = @current_entity&.name || "CapHive" %>
-                <!-- h5 class="card-title fw-semibold text-center"> Welcome to <%=name%> </h5 -->
-                <p class=" mb-9"></p>
                 <%= yield %>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <%# Below xl the brand panel is hidden, so the running banner moves to a bar under the form. %>
+      <div class="d-xl-none">
+        <%= render "devise/shared/finance_ticker", rows: 1, variant: "finance-ticker--bar" %>
       </div>
     </div>
   </div>

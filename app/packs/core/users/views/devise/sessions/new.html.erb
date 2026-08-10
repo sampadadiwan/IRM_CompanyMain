@@ -20,15 +20,19 @@
         <% unless @no_password_login  %>
             <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "user-login-form", data: { turbo: false } }) do |f| %>
                 <div class="form-group">
-                    <input type="email" class="form-control-modern"
-                        id="user_email"
-                        required="required"
-                        name="user[email]" value="<%=params[:email]%>"
-                        placeholder="Email Address">
+                    <div class="field-wrapper has-leading-icon">
+                        <i class="ti ti-mail leading-icon"></i>
+                        <input type="email" class="form-control-modern"
+                            id="user_email"
+                            required="required"
+                            name="user[email]" value="<%=params[:email]%>"
+                            placeholder="Email Address">
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <div class="password-wrapper">
+                    <div class="field-wrapper has-leading-icon password-wrapper">
+                        <i class="ti ti-lock leading-icon"></i>
                         <input type="password" class="form-control-modern"
                         name="user[password]" required="required"
                         id="user_password" placeholder="Password">
@@ -62,11 +66,14 @@
             %>
 
             <div class="form-group">
-                <input type="email" class="form-control-modern"
-                    id="user_email_wo_pass"
-                    required="required"
-                    name="user[email]" value="<%=params[:email]%>"
-                    placeholder="Email Address for Magic Link">
+                <div class="field-wrapper has-leading-icon">
+                    <i class="ti ti-send leading-icon"></i>
+                    <input type="email" class="form-control-modern"
+                        id="user_email_wo_pass"
+                        required="required"
+                        name="user[email]" value="<%=params[:email]%>"
+                        placeholder="Email Address for Magic Link">
+                </div>
             </div>
 
             <button type="submit" name="login_wo_pw" class="btn btn-secondary w-100" data-disable-with="Sending Link...">

@@ -4,7 +4,10 @@
         <% image = @current_entity&.logo&.url || "/img/logo_big.png" %>
         <%= image_tag(image, class: "devise-logo img-fluid") %>
     </div>
-    <div class="powered-by mt-auto">
+    <p class="brand-tagline">
+        Capital, investors and reporting - one system of record for the whole fund.
+    </p>
+    <div class="powered-by">
         Powered by <span class="highlight">Cap</span>Hive
     </div>
 </div>

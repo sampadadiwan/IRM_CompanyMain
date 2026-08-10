@@ -32,14 +32,38 @@
     animation: rotate-bg 60s linear infinite;
   }
 
+  // Holds the logo block and absorbs the free vertical space, so the running
+  // ticker rendered after it sits against the bottom of the panel.
+  .brand-stage {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
   .brand-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    position: relative;
     z-index: 1;
     text-align: center;
+  }
+
+  .brand-tagline {
+    max-width: 32ch;
+    margin: 0 auto;
+    color: #64748b;
+    font-size: 1.05rem;
+    line-height: 1.6;
+
+    [data-bs-theme=dark] & {
+      color: #94a3b8;
+    }
   }
 
   .splash-logo {
@@ -105,10 +129,25 @@
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.5);
+    // Sits above the page grid drawn by the #login_page_x ::before.
+    position: relative;
+    z-index: 1;
 
     [data-bs-theme=dark] & {
       background: rgba(30, 41, 59, 0.8);
       border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    // Ticker-tape accent along the top edge.
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      z-index: 2;
+      background: linear-gradient(90deg, #4299e1 0%, #805ad5 48%, #ed8936 100%);
     }
 
     &:hover {
@@ -116,6 +155,13 @@
       box-shadow:
         0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
+  }
+
+  // Keep the form content above the card artwork.
+  .login-header,
+  .login-body {
+    position: relative;
+    z-index: 1;
   }
 
   .login-header {
@@ -183,8 +229,39 @@
     }
   }
 
+  // Wraps an input so a leading (and optionally trailing) icon can sit inside it.
+  .field-wrapper {
+    position: relative;
+
+    .leading-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.15rem;
+      line-height: 1;
+      color: #a0aec0;
+      pointer-events: none;
+      transition: color 0.2s ease;
+    }
+
+    // Make room for the icon rather than letting the placeholder run under it.
+    &.has-leading-icon .form-control-modern {
+      padding-left: 46px;
+    }
+
+    &:focus-within .leading-icon {
+      color: #4299e1;
+    }
+  }
+
   .password-wrapper {
     position: relative;
+
+    // Keep the typed password clear of the eye toggle.
+    .form-control-modern {
+      padding-right: 46px;
+    }
 
     .toggle-password {
       position: absolute;

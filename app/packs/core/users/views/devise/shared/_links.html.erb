@@ -1,12 +1,12 @@
 <% @no_password_login = @current_entity&.entity_setting&.custom_flags&.no_password_login? %>
 
 <%- if controller_name != 'sessions' %>
-  <%= link_to "Log in", new_session_path(resource_name) , class: "small" %> |
+  <%= link_to "Log in", new_session_path(resource_name) , class: "small" %>
 <% end %>
 
 
 <%- if devise_mapping.recoverable? && controller_name != 'passwords' && controller_name != 'registrations' && !@no_password_login %>
-  <%= link_to "Reset Password", new_password_path(resource_name), data: { turbo: false } , class: "small" %> |
+  <%= link_to "Reset Password", new_password_path(resource_name), data: { turbo: false } , class: "small" %>
 <% end %>
 
 <%- if false && devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
@@ -15,6 +15,6 @@
 
 <%- if devise_mapping.omniauthable? %>
   <%- resource_class.omniauth_providers.each do |provider| %>
-    <%= link_to "Sign in with #{OmniAuth::Utils.camelize(provider)}", omniauth_authorize_path(resource_name, provider), method: :post , class: "small" %> |
+    <%= link_to "Sign in with #{OmniAuth::Utils.camelize(provider)}", omniauth_authorize_path(resource_name, provider), method: :post , class: "small" %>
   <% end %>
 <% end %>
