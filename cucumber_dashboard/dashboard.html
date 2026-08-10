@@ -1,0 +1,876 @@
+<title>Cucumber Dashboard</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --bg-raised: #222240;
+    --bg-inset: #16162b;
+    --text: #e0dfe6;
+    --text-dim: #8d99ae;
+    --text-muted: #5c6378;
+    --border: #2a2a4a;
+    --success: #2ec4b6;
+    --success-dim: rgba(46, 196, 182, 0.15);
+    --failure: #e63946;
+    --failure-dim: rgba(230, 57, 70, 0.12);
+    --running: #f4a261;
+    --running-dim: rgba(244, 162, 97, 0.12);
+    --skipped: #8d99ae;
+    --pending: #b5838d;
+    --accent: #7b68ee;
+    --accent-dim: rgba(123, 104, 238, 0.1);
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8f7f4; --bg-raised: #ffffff; --bg-inset: #efeee9;
+      --text: #1a1a2e; --text-dim: #5c6378; --text-muted: #9198a8;
+      --border: #d8d6cf; --success: #1a9e92; --success-dim: rgba(26,158,146,0.1);
+      --failure: #c5303d; --failure-dim: rgba(197,48,61,0.08);
+      --running: #d4873f; --running-dim: rgba(212,135,63,0.1);
+      --skipped: #7a8494; --pending: #9e6f79;
+      --accent: #6351d8; --accent-dim: rgba(99,81,216,0.08);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f8f7f4; --bg-raised: #ffffff; --bg-inset: #efeee9;
+    --text: #1a1a2e; --text-dim: #5c6378; --text-muted: #9198a8;
+    --border: #d8d6cf; --success: #1a9e92; --success-dim: rgba(26,158,146,0.1);
+    --failure: #c5303d; --failure-dim: rgba(197,48,61,0.08);
+    --running: #d4873f; --running-dim: rgba(212,135,63,0.1);
+    --skipped: #7a8494; --pending: #9e6f79;
+    --accent: #6351d8; --accent-dim: rgba(99,81,216,0.08);
+  }
+  :root[data-theme="dark"] {
+    --bg: #1a1a2e; --bg-raised: #222240; --bg-inset: #16162b;
+    --text: #e0dfe6; --text-dim: #8d99ae; --text-muted: #5c6378;
+    --border: #2a2a4a; --success: #2ec4b6; --success-dim: rgba(46,196,182,0.15);
+    --failure: #e63946; --failure-dim: rgba(230,57,70,0.12);
+    --running: #f4a261; --running-dim: rgba(244,162,97,0.12);
+    --skipped: #8d99ae; --pending: #b5838d;
+    --accent: #7b68ee; --accent-dim: rgba(123,104,238,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    min-height: 100vh; line-height: 1.4;
+  }
+  .mono { font-family: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace; }
+
+  /* ─── Topbar ───────────────────────────────────── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg-raised);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 14px; }
+  .topbar h1 { font-size: 14px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); }
+  .connection-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); transition: background 0.3s; }
+  .connection-dot.connected { background: var(--success); }
+  .connection-dot.error { background: var(--failure); }
+  .elapsed { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+
+  /* ─── Config bar ───────────────────────────────── */
+  .config-bar {
+    display: flex; align-items: center; gap: 12px; padding: 10px 20px;
+    border-bottom: 1px solid var(--border); background: var(--bg-raised); flex-wrap: wrap;
+  }
+  .config-group { display: flex; align-items: center; gap: 6px; }
+  .config-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+  .config-select {
+    background: var(--bg-inset); border: 1px solid var(--border); color: var(--text);
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px; padding: 5px 8px;
+    border-radius: 4px; cursor: pointer; outline: none;
+  }
+  .config-select:focus { border-color: var(--accent); }
+  .config-checkbox { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 11px; color: var(--text-dim); }
+  .config-checkbox input { accent-color: var(--accent); cursor: pointer; }
+  .config-input-email {
+    background: var(--bg-inset); border: 1px solid var(--border); color: var(--text);
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px; padding: 5px 8px;
+    border-radius: 4px; outline: none; width: 180px;
+  }
+  .config-spacer { flex: 1; }
+  .btn {
+    font-size: 12px; font-weight: 600; padding: 6px 16px; border-radius: 5px;
+    border: none; cursor: pointer; letter-spacing: 0.03em; transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-start { background: var(--success); color: #fff; }
+  .btn-stop { background: var(--failure); color: #fff; }
+  .btn-reset { background: var(--bg-inset); color: var(--text-dim); border: 1px solid var(--border); }
+
+  .config-input-features {
+    background: var(--bg-inset); border: 1px solid var(--border); color: var(--text);
+    font-size: 12px; padding: 5px 8px; border-radius: 4px; outline: none;
+    min-width: 320px; flex: 1; max-width: 500px;
+  }
+  .config-input-features:focus { border-color: var(--accent); }
+
+  /* ─── Summary strip ────────────────────────────── */
+  .summary { display: flex; gap: 2px; padding: 16px 20px; background: var(--bg); }
+  .stat { flex: 1; padding: 14px 16px; background: var(--bg-raised); border: 1px solid var(--border); }
+  .stat:first-child { border-radius: 8px 0 0 8px; }
+  .stat:last-child { border-radius: 0 8px 8px 0; }
+  .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px; }
+  .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .stat-value.success { color: var(--success); }
+  .stat-value.failure { color: var(--failure); }
+  .stat-value.running { color: var(--running); }
+  .stat-value.skipped { color: var(--skipped); }
+
+  /* ─── Progress bar ─────────────────────────────── */
+  .overall-progress { padding: 0 20px 12px; }
+  .progress-track { height: 6px; background: var(--bg-inset); border-radius: 3px; overflow: hidden; display: flex; }
+  .progress-fill-passed { background: var(--success); height: 100%; transition: width 0.4s ease; }
+  .progress-fill-failed { background: var(--failure); height: 100%; transition: width 0.4s ease; }
+  .progress-meta { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-muted); }
+
+  /* ─── Workers grid ─────────────────────────────── */
+  .workers { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; padding: 0 20px 16px; }
+  .worker-card { background: var(--bg-raised); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .worker-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .worker-id { display: flex; align-items: center; gap: 8px; }
+  .worker-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: var(--accent-dim); color: var(--accent); letter-spacing: 0.04em; }
+  .worker-pid { font-size: 11px; color: var(--text-muted); }
+  .worker-status { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .worker-status.idle { color: var(--text-muted); }
+  .worker-status.running { color: var(--running); }
+  .worker-status.done { color: var(--success); }
+  .worker-body { padding: 12px 14px; }
+  .worker-feature { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .worker-scenario { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 10px; min-height: 15px; }
+  .worker-counts { display: flex; gap: 12px; font-size: 12px; }
+  .worker-count { display: flex; align-items: center; gap: 4px; }
+  .worker-count .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-passed { background: var(--success); }
+  .dot-failed { background: var(--failure); }
+  .dot-skipped { background: var(--skipped); }
+  .count-num { font-weight: 600; }
+
+  /* ─── Feature timeline ─────────────────────────── */
+  .feature-timeline { max-height: 120px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .feature-timeline::-webkit-scrollbar { width: 4px; }
+  .feature-timeline::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .ft-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 11px; }
+  .ft-status { width: 14px; text-align: center; flex-shrink: 0; }
+  .ft-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dim); }
+  .ft-duration { color: var(--text-muted); flex-shrink: 0; }
+
+  /* ─── Per-worker failures ──────────────────────── */
+  .worker-failures { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .worker-failures-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--failure); }
+  .wf-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 8px; background: var(--failure-dim); color: var(--failure); }
+  .worker-failures-list { max-height: 150px; overflow-y: auto; }
+  .worker-failures-list::-webkit-scrollbar { width: 4px; }
+  .worker-failures-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .wf-row { padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+  .wf-row:last-child { border-bottom: none; }
+  .wf-location { font-weight: 600; color: var(--text); }
+  .wf-scenario { color: var(--text-dim); margin-top: 1px; }
+  .wf-error { color: var(--failure); opacity: 0.85; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ─── Rerun file ───────────────────────────────── */
+  .rerun-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .rerun-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .rerun-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--running); }
+  .rerun-path { font-size: 10px; color: var(--text-muted); }
+  .rerun-content {
+    max-height: 120px; overflow-y: auto; background: var(--bg-inset); border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px 10px; font-size: 11px; color: var(--text-dim);
+    white-space: pre; line-height: 1.6;
+  }
+  .rerun-content::-webkit-scrollbar { width: 4px; }
+  .rerun-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .rerun-loading { font-size: 11px; color: var(--text-muted); font-style: italic; }
+
+  /* ─── Console panel ─────────────────────────────── */
+  .console-wrapper { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; display: flex; flex-direction: column; transition: height 0.2s; }
+  .console-wrapper.closed { height: 32px; }
+  .console-wrapper.open { height: 280px; }
+  .console-toggle {
+    display: flex; align-items: center; justify-content: space-between; padding: 6px 20px;
+    background: var(--bg-raised); border-top: 1px solid var(--border); cursor: pointer; user-select: none; flex-shrink: 0;
+  }
+  .console-toggle-left { display: flex; align-items: center; gap: 8px; }
+  .console-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+  .console-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+  .console-dot.active { background: var(--success); }
+  .console-arrow { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; }
+  .console-wrapper.open .console-arrow { transform: rotate(180deg); }
+  .console-output {
+    flex: 1; overflow-y: auto; overflow-x: auto; padding: 10px 20px;
+    background: #0d0d1a; font-size: 11px; line-height: 1.5;
+    color: #b0b0c0; white-space: pre; display: none;
+  }
+  .console-wrapper.open .console-output { display: block; }
+  .console-output::-webkit-scrollbar { width: 6px; height: 6px; }
+  .console-output::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  /* ─── Waiting / banner / toast ──────────────────── */
+  .waiting { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; color: var(--text-muted); text-align: center; }
+  .waiting-pulse { width: 12px; height: 12px; border-radius: 50%; background: var(--running); margin-bottom: 16px; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+  .waiting h2 { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text-dim); }
+  .waiting p { font-size: 12px; }
+
+  .finished-banner { margin: 0 20px 16px; padding: 14px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-align: center; display: none; }
+  .finished-banner.all-passed { background: var(--success-dim); color: var(--success); border: 1px solid var(--success); }
+  .finished-banner.has-failures { background: var(--failure-dim); color: var(--failure); border: 1px solid var(--failure); }
+
+  .toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; z-index: 100; opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s; pointer-events: none; }
+  .toast.visible { opacity: 1; transform: translateY(0); }
+  .toast.info { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+  .toast.error { background: var(--failure-dim); color: var(--failure); border: 1px solid var(--failure); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .waiting-pulse { animation: none; opacity: 0.6; }
+    .progress-fill-passed, .progress-fill-failed { transition: none; }
+    .toast { transition: none; }
+  }
+  @media (max-width: 500px) {
+    .workers { grid-template-columns: 1fr; }
+    .summary { flex-wrap: wrap; }
+    .stat { min-width: calc(50% - 2px); }
+  }
+</style>
+
+<!-- ─── Top bar ──────────────────────────────────── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="connection-dot" id="connDot"></div>
+    <h1>Cucumber Parallel Dashboard</h1>
+  </div>
+  <div class="elapsed mono" id="elapsed">00:00</div>
+</div>
+
+<!-- ─── Config bar ───────────────────────────────── -->
+<div class="config-bar" id="configBar">
+  <div class="config-group">
+    <span class="config-label">Workers</span>
+    <select class="config-select" id="cfgWorkers">
+      <option value="2">2</option>
+      <option value="4" selected>4</option>
+      <option value="6">6</option>
+      <option value="8">8</option>
+    </select>
+  </div>
+
+  <label class="config-checkbox">
+    <input type="checkbox" id="cfgAllFeatures" checked> All Features
+  </label>
+  <input type="text" class="config-input-features mono" id="cfgFeaturePaths" placeholder="features/core/login.feature features/funds/capital_call.feature" style="display:none">
+
+  <!-- Email and Browser alerts hidden for Phase 2 -->
+  <div style="display:none">
+    <label class="config-checkbox">
+      <input type="checkbox" id="cfgEmail"> Email alerts
+    </label>
+    <div id="emailConfig" style="display:none; align-items: center; gap: 6px;">
+      <input type="email" class="config-input-email" id="cfgEmailTo" placeholder="to@example.com">
+      <input type="text" class="config-input-email" id="cfgSmtpUser" placeholder="smtp user" style="width:140px">
+      <input type="password" class="config-input-email" id="cfgSmtpPass" placeholder="smtp password" style="width:120px">
+      <input type="text" class="config-input-email" id="cfgSmtpHost" placeholder="smtp.gmail.com" value="smtp.gmail.com" style="width:130px">
+    </div>
+    <label class="config-checkbox">
+      <input type="checkbox" id="cfgNotify" checked> Browser alerts
+    </label>
+  </div>
+
+  <div class="config-spacer"></div>
+  <button class="btn btn-start" id="btnStart">Start Run</button>
+  <button class="btn btn-stop" id="btnStop" style="display:none">Stop</button>
+  <button class="btn btn-reset" id="btnReset">Reset</button>
+</div>
+
+<!-- ─── Stats ────────────────────────────────────── -->
+<div class="summary">
+  <div class="stat">
+    <div class="stat-label">Progress</div>
+    <div class="stat-value mono" id="statTotal">0</div>
+    <div class="stat-sub mono" id="statTotalSub"></div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Passed</div>
+    <div class="stat-value mono success" id="statPassed">0</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Failed</div>
+    <div class="stat-value mono failure" id="statFailed">0</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Running</div>
+    <div class="stat-value mono running" id="statRunning">0</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Skipped</div>
+    <div class="stat-value mono skipped" id="statSkipped">0</div>
+  </div>
+</div>
+
+<div class="overall-progress">
+  <div class="progress-track">
+    <div class="progress-fill-passed" id="overallPassed" style="width:0"></div>
+    <div class="progress-fill-failed" id="overallFailed" style="width:0"></div>
+  </div>
+  <div class="progress-meta">
+    <span id="progressPct">0%</span>
+    <span id="progressCounts">0 / 0 scenarios</span>
+  </div>
+</div>
+
+<div class="finished-banner" id="finishedBanner"></div>
+
+<div id="mainArea">
+  <div class="waiting" id="waitingState">
+    <div class="waiting-pulse"></div>
+    <h2>Ready to run</h2>
+    <p>Select features above, then click Start Run</p>
+  </div>
+</div>
+
+<div class="workers" id="workersGrid" style="display:none"></div>
+<div style="height: 40px"></div>
+
+<!-- ─── Console panel ────────────────────────────── -->
+<div class="console-wrapper closed" id="consoleWrapper">
+  <div class="console-toggle" id="consoleToggle">
+    <div class="console-toggle-left">
+      <span class="console-dot" id="consoleDot"></span>
+      <span class="console-label">Console Output</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn btn-reset" id="btnClearConsole" style="padding:3px 10px;font-size:10px;" onclick="event.stopPropagation()">Clear</button>
+      <span class="console-arrow">&#9650;</span>
+    </div>
+  </div>
+  <pre class="console-output mono" id="consoleOutput"></pre>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  const state = {
+    workers: {}, workerFailures: {}, startTime: null,
+    totalCompleted: 0, totalPassed: 0, totalFailed: 0, totalSkipped: 0,
+    totalScenarios: null, finished: 0, workerCount: 0, timerInterval: null,
+    runStatus: 'idle', notifyEnabled: true, allDoneFired: false
+  };
+
+  const $ = id => document.getElementById(id);
+
+  // ─── Notifications ────────────────────────────
+  /** Requests browser notification permission if not already granted */
+  function requestNotifyPermission() {
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  }
+  /** @param {string} title  @param {string} body  @param {string} tag - dedup key */
+  function notify(title, body, tag) {
+    if (!state.notifyEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
+    try { new Notification(title, { body, tag, silent: false }); } catch(_) {}
+  }
+  /** @param {string} msg  @param {string} [type='info'] - 'info' or 'error' */
+  function showToast(msg, type) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type || 'info') + ' visible';
+    setTimeout(() => t.classList.remove('visible'), 3000);
+  }
+
+  // ─── Feature path helpers ──────────────────────
+  /** @return {string|null} comma-separated feature paths, or null if none selected */
+  function getSelectedFeaturePath() {
+    if ($('cfgAllFeatures').checked) return 'features/';
+    const paths = $('cfgFeaturePaths').value.trim();
+    if (!paths) return null;
+    return paths.replace(/\s+/g, ',');
+  }
+
+  $('cfgAllFeatures').addEventListener('change', function() {
+    $('cfgFeaturePaths').style.display = this.checked ? 'none' : 'inline-block';
+  });
+
+  // ─── SMTP localStorage persistence ─────────────
+  const SMTP_STORAGE_KEY = 'cucumber_dashboard_smtp';
+  /** Persists SMTP config to localStorage for reuse across sessions */
+  function saveSmtpConfig() {
+    const cfg = { email_to: $('cfgEmailTo').value.trim(), smtp_user: $('cfgSmtpUser').value.trim(), smtp_pass: $('cfgSmtpPass').value, smtp_host: $('cfgSmtpHost').value.trim() };
+    try { localStorage.setItem(SMTP_STORAGE_KEY, JSON.stringify(cfg)); } catch(_) {}
+  }
+  /** Restores SMTP config from localStorage on page load */
+  function restoreSmtpConfig() {
+    try {
+      const cfg = JSON.parse(localStorage.getItem(SMTP_STORAGE_KEY));
+      if (!cfg) return;
+      if (cfg.email_to) $('cfgEmailTo').value = cfg.email_to;
+      if (cfg.smtp_user) $('cfgSmtpUser').value = cfg.smtp_user;
+      if (cfg.smtp_pass) $('cfgSmtpPass').value = cfg.smtp_pass;
+      if (cfg.smtp_host) $('cfgSmtpHost').value = cfg.smtp_host;
+    } catch(_) {}
+  }
+  restoreSmtpConfig();
+
+  // ─── Config handlers ──────────────────────────
+  $('cfgEmail').addEventListener('change', function() {
+    $('emailConfig').style.display = this.checked ? 'flex' : 'none';
+  });
+
+  /** @return {Object} current SMTP config from the form inputs */
+  function getSmtpConfig() {
+    return {
+      email_to: $('cfgEmailTo').value.trim(),
+      smtp_user: $('cfgSmtpUser').value.trim(),
+      smtp_pass: $('cfgSmtpPass').value,
+      smtp_host: $('cfgSmtpHost').value.trim() || 'smtp.gmail.com'
+    };
+  }
+  $('cfgNotify').addEventListener('change', function() {
+    state.notifyEnabled = this.checked;
+    if (this.checked) requestNotifyPermission();
+  });
+
+  $('btnStart').addEventListener('click', startRun);
+  $('btnStop').addEventListener('click', stopRun);
+  $('btnReset').addEventListener('click', resetDashboard);
+
+  /** Validates config, sends POST /run, and transitions UI to running state */
+  function startRun() {
+    const featurePath = getSelectedFeaturePath();
+    if (!featurePath) { showToast('Select at least one feature to run', 'error'); return; }
+
+    const workers = parseInt($('cfgWorkers').value);
+    const sendEmail = $('cfgEmail').checked;
+    const smtp = getSmtpConfig();
+    if (sendEmail && !smtp.email_to) { showToast('Enter an email address', 'error'); return; }
+    if (sendEmail && !smtp.smtp_user) { showToast('Enter SMTP user', 'error'); return; }
+    if (sendEmail && !smtp.smtp_pass) { showToast('Enter SMTP password', 'error'); return; }
+    if (sendEmail) saveSmtpConfig();
+
+    $('btnStart').disabled = true;
+    $('btnStart').textContent = 'Starting...';
+    setConfigEnabled(false);
+
+    fetch('/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workers, feature_path: featurePath, send_email: sendEmail, ...smtp })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'started') {
+        state.runStatus = 'running';
+        state.totalScenarios = data.total_scenarios;
+        state.allDoneFired = false;
+        resetState();
+        consoleOffset = 0;
+        $('consoleOutput').textContent = '';
+        $('consoleDot').classList.remove('active');
+        $('btnStart').style.display = 'none';
+        $('btnStop').style.display = 'inline-block';
+        $('waitingState').querySelector('h2').textContent = 'Workers starting up...';
+        $('waitingState').querySelector('p').textContent = `${workers} workers, ${data.total_scenarios} scenarios`;
+        showToast(`Run started: ${workers} workers, ${data.total_scenarios} scenarios`);
+
+        if (sendEmail) {
+          fetch('/send_email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'start', ...smtp, config: { workers, feature_path: featurePath, total_scenarios: data.total_scenarios, started_at: new Date().toISOString() } })
+          }).catch(() => {});
+        }
+      } else {
+        showToast(data.message || 'Failed to start', 'error');
+        setConfigEnabled(true);
+      }
+    })
+    .catch(() => { showToast('Failed to connect to server', 'error'); setConfigEnabled(true); })
+    .finally(() => { $('btnStart').disabled = false; $('btnStart').textContent = 'Start Run'; });
+  }
+
+  /** Sends POST /stop to kill all workers and returns UI to idle state */
+  function stopRun() {
+    $('btnStop').disabled = true;
+    $('btnStop').textContent = 'Stopping...';
+    fetch('/stop', { method: 'POST' }).then(r => r.json()).then(() => {
+      state.runStatus = 'stopped';
+      $('btnStop').style.display = 'none';
+      $('btnStart').style.display = 'inline-block';
+      $('btnStop').disabled = false;
+      $('btnStop').textContent = 'Stop';
+      setConfigEnabled(true);
+      showToast('All workers stopped');
+    }).catch(() => {
+      showToast('Failed to stop run', 'error');
+      $('btnStop').disabled = false;
+      $('btnStop').textContent = 'Stop';
+    });
+  }
+
+  /** Clears all progress data, resets UI to initial "Ready to run" state */
+  function resetDashboard() {
+    fetch('/reset', { method: 'POST' }).then(r => r.json()).then(() => {
+      resetState(); cursor = '';
+      state.runStatus = 'idle'; state.allDoneFired = false;
+      $('workersGrid').style.display = 'none'; $('workersGrid').innerHTML = '';
+      $('mainArea').style.display = 'block'; $('waitingState').style.display = 'flex';
+      $('waitingState').querySelector('h2').textContent = 'Ready to run';
+      $('waitingState').querySelector('p').textContent = 'Select features above, then click Start Run';
+      $('finishedBanner').style.display = 'none';
+      $('btnStop').style.display = 'none'; $('btnStart').style.display = 'inline-block';
+      setConfigEnabled(true);
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      $('elapsed').textContent = '00:00';
+      updateSummary();
+      consoleOffset = 0;
+      $('consoleOutput').textContent = '';
+      $('consoleDot').classList.remove('active');
+      showToast('Dashboard reset');
+    });
+  }
+
+  /** Resets all in-memory counters and worker state */
+  function resetState() {
+    state.workers = {}; state.workerFailures = {};
+    state.startTime = null; state.totalCompleted = 0;
+    state.totalPassed = 0; state.totalFailed = 0; state.totalSkipped = 0;
+    state.totalScenarios = null; state.finished = 0; state.workerCount = 0;
+  }
+
+  /** @param {boolean} enabled - toggles all config bar inputs */
+  function setConfigEnabled(enabled) {
+    $('cfgWorkers').disabled = !enabled;
+    $('cfgAllFeatures').disabled = !enabled;
+    $('cfgFeaturePaths').disabled = !enabled;
+    $('cfgEmail').disabled = !enabled;
+    $('cfgEmailTo').disabled = !enabled;
+    $('cfgSmtpUser').disabled = !enabled;
+    $('cfgSmtpPass').disabled = !enabled;
+    $('cfgSmtpHost').disabled = !enabled;
+  }
+
+  // ─── Polling ──────────────────────────────────
+  let cursor = '';
+  let pollErrors = 0;
+
+  /** Polls /poll for new worker events, processes them, and schedules next poll */
+  function poll() {
+    const dot = $('connDot');
+    fetch('/poll?cursor=' + encodeURIComponent(cursor))
+      .then(r => r.json())
+      .then(data => {
+        dot.classList.add('connected'); dot.classList.remove('error'); pollErrors = 0;
+        if (data.cursor) cursor = data.cursor;
+        if (data.total_scenarios && !state.totalScenarios) state.totalScenarios = data.total_scenarios;
+        if (data.run_status === 'finished' && state.runStatus === 'running') {
+          state.runStatus = 'finished';
+          $('btnStop').style.display = 'none'; $('btnStart').style.display = 'inline-block';
+          setConfigEnabled(true);
+        }
+        if (data.events && data.events.length > 0) data.events.forEach(handleEvent);
+        const delay = (state.runStatus === 'finished' || state.runStatus === 'idle') ? 5000 : 500;
+        setTimeout(poll, delay);
+      })
+      .catch(() => {
+        pollErrors++;
+        dot.classList.remove('connected'); dot.classList.add('error');
+        setTimeout(poll, Math.min(2000 * pollErrors, 10000));
+      });
+  }
+
+  // ─── Event handlers ───────────────────────────
+  /** @param {Object} ev - parsed JSONL event from a worker */
+  function handleEvent(ev) {
+    switch(ev.type) {
+      case 'worker_start': onWorkerStart(ev); break;
+      case 'feature_start': onFeatureStart(ev); break;
+      case 'scenario_start': onScenarioStart(ev); break;
+      case 'scenario_end': onScenarioEnd(ev); break;
+      case 'feature_end': onFeatureEnd(ev); break;
+      case 'worker_end': onWorkerEnd(ev); break;
+    }
+  }
+
+  /** @param {Object} ev - worker_start event; initializes worker state and shows grid */
+  function onWorkerStart(ev) {
+    if (!state.startTime) { state.startTime = new Date(ev.started_at || ev.timestamp); startTimer(); }
+    state.workerCount++;
+    state.workers[ev.worker] = {
+      id: ev.worker, pid: ev.pid, status: 'idle',
+      currentFeature: null, currentFeatureName: null, currentScenario: null,
+      passed: 0, failed: 0, skipped: 0, totalScenarios: 0,
+      featuresCompleted: [], featureIndex: 0
+    };
+    state.workerFailures[ev.worker] = [];
+    state.runStatus = 'running';
+    $('btnStart').style.display = 'none';
+    $('btnStop').style.display = 'inline-block';
+    setConfigEnabled(false);
+    $('waitingState').style.display = 'none'; $('mainArea').style.display = 'none';
+    $('workersGrid').style.display = 'grid';
+    renderWorkers();
+  }
+
+  /** @param {Object} ev - feature_start event; updates worker's current feature */
+  function onFeatureStart(ev) {
+    const w = state.workers[ev.worker]; if (!w) return;
+    w.status = 'running'; w.currentFeature = ev.feature;
+    w.currentFeatureName = ev.feature_name || shortPath(ev.feature);
+    w.currentScenario = null; w.featureIndex = ev.feature_index || w.featureIndex + 1;
+    renderWorker(ev.worker);
+  }
+
+  /** @param {Object} ev - scenario_start event; updates worker's current scenario */
+  function onScenarioStart(ev) {
+    const w = state.workers[ev.worker]; if (!w) return;
+    w.status = 'running'; w.currentScenario = ev.scenario;
+    renderWorker(ev.worker); updateSummary();
+  }
+
+  /** @param {Object} ev - scenario_end event; updates counts, records failures, triggers alerts */
+  function onScenarioEnd(ev) {
+    const w = state.workers[ev.worker]; if (!w) return;
+    if (ev.counts) {
+      const op = w.passed, of = w.failed, os = w.skipped;
+      w.passed = parseInt(ev.counts.passed) || 0;
+      w.failed = parseInt(ev.counts.failed) || 0;
+      w.skipped = (parseInt(ev.counts.skipped) || 0) + (parseInt(ev.counts.pending) || 0);
+      state.totalPassed += (w.passed - op);
+      state.totalFailed += (w.failed - of);
+      state.totalSkipped += (w.skipped - os);
+    }
+    w.totalScenarios = ev.total_scenarios || w.totalScenarios;
+    state.totalCompleted = Object.values(state.workers).reduce((s, wk) => s + wk.totalScenarios, 0);
+
+    if (ev.status === 'failed') {
+      const failureInfo = { feature: ev.feature, scenario: ev.scenario, line: ev.line, error: ev.error };
+      state.workerFailures[ev.worker].push(failureInfo);
+      notify('Scenario Failed', `W${ev.worker}: ${ev.scenario}\n${shortPath(ev.feature)}:${ev.line}`, 'fail-' + ev.worker + '-' + ev.line);
+
+      if ($('cfgEmail').checked) {
+        const smtp = getSmtpConfig();
+        fetch('/send_email', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'failure', ...smtp, failure: { ...failureInfo, worker: ev.worker } })
+        }).catch(() => {});
+      }
+    }
+    renderWorker(ev.worker); updateSummary();
+  }
+
+  /** @param {Object} ev - feature_end event; adds completed feature to timeline */
+  function onFeatureEnd(ev) {
+    const w = state.workers[ev.worker]; if (!w) return;
+    const wf = state.workerFailures[ev.worker] || [];
+    w.featuresCompleted.push({
+      path: ev.feature, name: shortPath(ev.feature), duration: ev.duration_s,
+      hadFailures: wf.some(f => f.feature === ev.feature)
+    });
+    renderWorker(ev.worker);
+  }
+
+  /** @param {Object} ev - worker_end event; marks worker done, triggers onAllDone when all finish */
+  function onWorkerEnd(ev) {
+    const w = state.workers[ev.worker]; if (!w) return;
+    w.status = 'done'; w.currentFeature = null; w.currentScenario = null;
+    state.finished++; renderWorker(ev.worker);
+    if (state.finished >= state.workerCount && state.workerCount > 0 && !state.allDoneFired) {
+      state.allDoneFired = true; onAllDone();
+    }
+  }
+
+  /** Fires when all workers complete; shows banner, sends notifications/emails */
+  function onAllDone() {
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    const banner = $('finishedBanner'); banner.style.display = 'block';
+    const duration = $('elapsed').textContent;
+    if (state.totalFailed > 0) {
+      banner.className = 'finished-banner has-failures';
+      banner.textContent = `Run complete — ${state.totalFailed} scenario${state.totalFailed === 1 ? '' : 's'} failed, ${state.totalPassed} passed (${duration})`;
+    } else {
+      banner.className = 'finished-banner all-passed';
+      banner.textContent = `All ${state.totalPassed} scenarios passed (${duration})`;
+    }
+    notify('Cucumber Run Complete', state.totalFailed > 0
+      ? `${state.totalFailed} failed, ${state.totalPassed} passed (${duration})`
+      : `All ${state.totalPassed} scenarios passed (${duration})`, 'run-done');
+
+    if ($('cfgEmail').checked) {
+      const smtp = getSmtpConfig();
+      const allFailures = [];
+      Object.entries(state.workerFailures).forEach(([wId, fails]) => {
+        fails.forEach(f => allFailures.push({ location: shortPath(f.feature) + ':' + f.line, scenario: f.scenario, error: f.error, worker: wId }));
+      });
+      fetch('/send_email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...smtp, summary: { passed: state.totalPassed, failed: state.totalFailed, skipped: state.totalSkipped, duration, failures: allFailures } })
+      }).then(r => r.json()).then(d => { if (d.status === 'sent') showToast('Completion email sent'); })
+        .catch(() => showToast('Failed to send email', 'error'));
+    }
+    state.runStatus = 'finished';
+    $('btnStop').style.display = 'none'; $('btnStart').style.display = 'inline-block';
+    setConfigEnabled(true);
+  }
+
+  // ─── Rendering ────────────────────────────────
+  /** Rebuilds the entire worker grid from current state */
+  function renderWorkers() {
+    const grid = $('workersGrid'); grid.innerHTML = '';
+    Object.keys(state.workers).sort((a, b) => a - b).forEach(id => {
+      const card = document.createElement('div');
+      card.className = 'worker-card'; card.id = `worker-${id}`;
+      grid.appendChild(card); renderWorker(id);
+    });
+  }
+
+  /** @param {string|number} id - worker ID; rebuilds that worker's card innerHTML */
+  function renderWorker(id) {
+    const w = state.workers[id]; if (!w) return;
+    let card = document.getElementById(`worker-${id}`);
+    if (!card) { card = document.createElement('div'); card.className = 'worker-card'; card.id = `worker-${id}`; $('workersGrid').appendChild(card); }
+
+    let timelineHtml = '';
+    if (w.featuresCompleted.length > 0) {
+      timelineHtml = '<div class="feature-timeline">' +
+        w.featuresCompleted.slice().reverse().map(f =>
+          `<div class="ft-row"><span class="ft-status"><span style="color:var(${f.hadFailures ? '--failure' : '--success'})">${f.hadFailures ? '&#x2717;' : '&#x2713;'}</span></span><span class="ft-name mono" title="${f.path}">${f.name}</span><span class="ft-duration mono">${formatDuration(f.duration)}</span></div>`
+        ).join('') + '</div>';
+    }
+
+    const failures = state.workerFailures[id] || [];
+    let failuresHtml = '';
+    if (failures.length > 0) {
+      failuresHtml = `<div class="worker-failures"><div class="worker-failures-header">Failed <span class="wf-badge">${failures.length}</span></div><div class="worker-failures-list">${
+        failures.map(f => `<div class="wf-row"><div class="wf-location mono">${shortPath(f.feature)}:${f.line}</div><div class="wf-scenario">${escapeHtml(f.scenario)}</div>${f.error ? `<div class="wf-error mono">${escapeHtml(f.error)}</div>` : ''}</div>`).join('')
+      }</div></div>`;
+    }
+
+    let rerunHtml = '';
+    if (failures.length > 0) {
+      const rerunPath = `/tmp/cucumber_progress/worker_${id}_failures.txt`;
+      rerunHtml = `<div class="rerun-section"><div class="rerun-header"><span class="rerun-label">Rerun File</span><span class="rerun-path mono">${rerunPath}</span></div><div class="rerun-content mono" id="rerun-${id}"><span class="rerun-loading">Loading...</span></div></div>`;
+    }
+
+    card.innerHTML = `
+      <div class="worker-header"><div class="worker-id"><span class="worker-badge">W${id}</span><span class="worker-pid mono">PID ${w.pid || '—'}</span></div><span class="worker-status ${w.status}">${w.status.toUpperCase()}</span></div>
+      <div class="worker-body">
+        <div class="worker-feature" title="${w.currentFeatureName || ''}">${w.currentFeatureName || (w.status === 'done' ? 'Finished' : 'Waiting...')}</div>
+        <div class="worker-scenario mono">${w.currentScenario || ''}</div>
+        <div class="worker-counts">
+          <span class="worker-count"><span class="dot dot-passed"></span><span class="count-num">${w.passed}</span></span>
+          <span class="worker-count"><span class="dot dot-failed"></span><span class="count-num">${w.failed}</span></span>
+          <span class="worker-count"><span class="dot dot-skipped"></span><span class="count-num">${w.skipped}</span></span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">${w.featuresCompleted.length} feature${w.featuresCompleted.length !== 1 ? 's' : ''} done</span>
+        </div>
+        ${failuresHtml}${rerunHtml}${timelineHtml}
+      </div>`;
+
+    if (failures.length > 0) {
+      fetch('/rerun_file?worker=' + id).then(r => r.json()).then(data => {
+        const el = document.getElementById('rerun-' + id);
+        if (el) el.textContent = data.content || 'No failures recorded yet';
+      }).catch(() => {
+        const el = document.getElementById('rerun-' + id);
+        if (el) el.textContent = 'Could not load file';
+      });
+    }
+  }
+
+  /** Updates the summary strip stats, progress bar, and percentage display */
+  function updateSummary() {
+    const done = state.totalPassed + state.totalFailed + state.totalSkipped;
+    const total = state.totalScenarios;
+    if (total) {
+      $('statTotal').textContent = done + ' / ' + total;
+      $('statTotalSub').textContent = Math.round(done / total * 100) + '%';
+      $('overallPassed').style.width = (state.totalPassed / total * 100) + '%';
+      $('overallFailed').style.width = (state.totalFailed / total * 100) + '%';
+      $('progressPct').textContent = Math.round(done / total * 100) + '%';
+      $('progressCounts').textContent = `${done} / ${total} scenarios`;
+    } else {
+      $('statTotal').textContent = done; $('statTotalSub').textContent = '';
+      const t = done || 1;
+      $('overallPassed').style.width = (state.totalPassed / t * 100) + '%';
+      $('overallFailed').style.width = (state.totalFailed / t * 100) + '%';
+      $('progressPct').textContent = done + ' completed';
+      $('progressCounts').textContent = `${state.totalPassed} passed, ${state.totalFailed} failed`;
+    }
+    $('statPassed').textContent = state.totalPassed;
+    $('statFailed').textContent = state.totalFailed;
+    $('statRunning').textContent = Object.values(state.workers).filter(w => w.status === 'running').length;
+    $('statSkipped').textContent = state.totalSkipped;
+  }
+
+  /** Starts the elapsed time counter, updating every second */
+  function startTimer() { updateTimer(); state.timerInterval = setInterval(updateTimer, 1000); }
+  /** Updates the elapsed timer display in HH:MM:SS or MM:SS format */
+  function updateTimer() {
+    if (!state.startTime) return;
+    const diff = Math.floor((Date.now() - state.startTime.getTime()) / 1000);
+    const m = Math.floor(diff / 60), s = diff % 60, h = Math.floor(m / 60);
+    $('elapsed').textContent = h > 0
+      ? `${h}:${String(m % 60).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+      : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  /** @param {string} p - full feature path  @return {string} shortened display path */
+  function shortPath(p) { return p ? p.replace(/^features\//, '').replace(/\.feature$/, '') : ''; }
+  /** @param {number|null} s - duration in seconds  @return {string} formatted as "1.2s" or "2m05s" */
+  function formatDuration(s) {
+    if (s == null) return '';
+    if (s < 60) return s.toFixed(1) + 's';
+    return Math.floor(s / 60) + 'm' + String(Math.round(s % 60)).padStart(2, '0') + 's';
+  }
+  /** @param {string} str  @return {string} HTML-escaped string */
+  function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
+  // ─── Console ───────────────────────────────────
+  let consoleOffset = 0;
+  let consoleOpen = false;
+
+  $('consoleToggle').addEventListener('click', () => {
+    consoleOpen = !consoleOpen;
+    $('consoleWrapper').className = 'console-wrapper ' + (consoleOpen ? 'open' : 'closed');
+    if (consoleOpen) pollConsole();
+  });
+
+  $('btnClearConsole').addEventListener('click', () => {
+    $('consoleOutput').textContent = '';
+    consoleOffset = 0;
+    $('consoleDot').classList.remove('active');
+    showToast('Console cleared');
+  });
+
+  /** Polls /console for new output, appends to panel, and auto-scrolls */
+  function pollConsole() {
+    if (!consoleOpen) return;
+    fetch('/console?offset=' + consoleOffset)
+      .then(r => r.json())
+      .then(data => {
+        if (data.content) {
+          $('consoleOutput').textContent += data.content;
+          consoleOffset = data.offset;
+          $('consoleDot').classList.add('active');
+          // Auto-scroll to bottom
+          const el = $('consoleOutput');
+          el.scrollTop = el.scrollHeight;
+        }
+        const delay = (state.runStatus === 'running') ? 1000 : 3000;
+        setTimeout(pollConsole, delay);
+      })
+      .catch(() => setTimeout(pollConsole, 3000));
+  }
+
+  // Activate console dot when run starts, deactivate when done
+  /** Toggles the console dot indicator based on run status */
+  function updateConsoleDot() {
+    $('consoleDot').classList.toggle('active', state.runStatus === 'running');
+  }
+
+  // ─── Init ─────────────────────────────────────
+  requestNotifyPermission();
+  poll();
+  pollConsole();
+})();
+</script>
