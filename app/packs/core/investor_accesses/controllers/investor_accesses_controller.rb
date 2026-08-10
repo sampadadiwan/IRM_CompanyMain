@@ -218,7 +218,7 @@ class InvestorAccessesController < ApplicationController
     @bread_crumbs = {
       Investors: investors_path,
       @investor_access.investor.investor_name => investor_path(@investor_access.investor),
-      Access: investor_accesses_path(investor_id: @investor_access.investor_id),
+      User: investor_accesses_path(investor_id: @investor_access.investor_id),
       @investor_access.email => investor_access_path(@investor_access)
     }
   end
