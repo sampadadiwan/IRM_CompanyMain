@@ -53,8 +53,9 @@ This counts scenarios, starts the dashboard server, and launches `parallel_cucum
 
 | Control | What It Does |
 |---------|-------------|
-| **Workers** dropdown | Choose how many parallel workers (2, 4, 6, or 8) |
+| **Workers** dropdown | Choose how many parallel workers (2, 3, 4, 6, or 8). Default is **3** |
 | **All Features** checkbox | When checked, runs all features. Uncheck to specify individual paths |
+| **Skip AI features** checkbox | When checked (default), excludes `features/ai/` from the run. AI features are expensive and typically skipped during routine testing |
 | **Feature paths** text input | Space-separated `.feature` file paths (visible when "All Features" is unchecked) |
 | **Start Run** button | Begin the parallel test run |
 | **Stop** button | Kill all running cucumber workers immediately |

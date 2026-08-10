@@ -153,8 +153,9 @@ worker_1.jsonl:4523,worker_2.jsonl:8901
 
 ```json
 {
-  "workers": 4,
+  "workers": 3,
   "feature_path": "features/",
+  "skip_ai": true,
   "send_email": false,
   "email_to": ""
 }
@@ -163,18 +164,20 @@ worker_1.jsonl:4523,worker_2.jsonl:8901
 **Process:**
 1. Reject if a run is already in progress
 2. **Check for pending migrations** — runs `db:migrate:status` and rejects if any migrations are `down`
-3. **Validate all paths exist** — returns error with missing paths if any are invalid
-4. Clean `/tmp/cucumber_progress/`
-5. Count total scenarios (grep for `^Scenario` lines)
-6. **Reject if 0 scenarios found** — returns error instead of starting an empty run
-7. Write `total_scenarios` and `run_config.json`
-8. Clear previous console output
-9. Normalize comma-separated paths to space-separated
-10. Spawn `parallel_cucumber` with `Process.spawn(env, cmd, pgroup: true)` where `env` sets `RAILS_ENV=test`
-11. Detach process and return PID + total count
+3. **Expand paths with AI exclusion** — if `skip_ai` is true and path is `features/`, lists all subdirectories under `features/` except `ai/` and joins them as comma-separated paths
+4. **Validate all paths exist** — returns error with missing paths if any are invalid
+5. Clean `/tmp/cucumber_progress/`
+6. Count total scenarios (grep for `^Scenario` lines)
+7. **Reject if 0 scenarios found** — returns error instead of starting an empty run
+8. Write `total_scenarios` and `run_config.json`
+9. Clear previous console output
+10. Normalize comma-separated paths to space-separated
+11. Spawn `parallel_cucumber` with `Process.spawn(env, cmd, pgroup: true)` where `env` sets `RAILS_ENV=test`
+12. Detach process and return PID + total count
 
 **Validation errors:**
 - `"Pending migrations found!"` — dev DB has unapplied migrations
+- `"Database preparation in progress, please wait"` — a DB prep step is already running
 - `"Path not found: features/core/nonexistent.feature"` — file/directory doesn't exist
 - `"No scenarios found in the selected paths"` — paths exist but contain no Scenario lines
 
@@ -475,6 +478,8 @@ Without validation, `parallel_cucumber` would spawn workers that immediately err
 |----------|-------|----------|
 | `PORT` | 9777 | `dashboard_server.rb` |
 | `PROGRESS_DIR` | `/tmp/cucumber_progress` | `dashboard_server.rb`, `progress_formatter.rb` |
+| Default workers | 3 | `dashboard.html` |
+| Default skip AI | true | `dashboard.html` |
 | Event poll interval (running) | 500ms | `dashboard.html` |
 | Event poll interval (idle) | 5000ms | `dashboard.html` |
 | Console poll interval (running) | 1000ms | `dashboard.html` |
