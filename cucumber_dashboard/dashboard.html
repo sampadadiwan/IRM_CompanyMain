@@ -422,6 +422,13 @@
         $('waitingState').querySelector('h2').textContent = 'Workers starting up...';
         $('waitingState').querySelector('p').textContent = `${workers} workers, ${data.total_scenarios} scenarios`;
         showToast(`Run started: ${workers} workers, ${data.total_scenarios} scenarios`);
+
+        if (sendEmail && emailTo) {
+          fetch('/send_email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'start', email_to: emailTo, config: { workers, feature_path: featurePath, total_scenarios: data.total_scenarios, started_at: new Date().toISOString() } })
+          }).catch(() => {});
+        }
       } else {
         showToast(data.message || 'Failed to start', 'error');
       }

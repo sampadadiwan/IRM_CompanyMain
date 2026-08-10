@@ -210,7 +210,10 @@ class DashboardServer
         next
       end
 
-      if type == 'failure'
+      case type
+      when 'start'
+        send_start_email(email_to, body['config'] || {})
+      when 'failure'
         send_failure_email(email_to, body['failure'] || {})
       else
         send_completion_email(email_to, summary)
@@ -273,6 +276,19 @@ class DashboardServer
     count
   rescue StandardError
     0
+  end
+
+  def send_start_email(to, config)
+    require_path = File.join(DASHBOARD_DIR, 'completion_mailer.rb')
+    script = <<~RUBY
+      require '#{PROJECT_DIR}/config/environment'
+      require '#{require_path}'
+      CucumberDashboard::CompletionMailer.run_started('#{to}', #{config.to_json.inspect}).deliver_now
+    RUBY
+    pid = Process.spawn("ruby", "-e", script, chdir: PROJECT_DIR)
+    Process.detach(pid)
+  rescue StandardError => e
+    puts "  Start email send failed: #{e.message}"
   end
 
   def send_completion_email(to, summary)
