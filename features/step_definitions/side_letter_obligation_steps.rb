@@ -60,6 +60,10 @@ Given('a fund with a capital commitment exists') do
 end
 
 Given('there is a side letter obligation support agent') do
+  # The policies keep the whole feature dark unless the entity flag is on, so an
+  # entity that has the agent configured must also have it switched on.
+  @entity.support_agents.set!(:side_letter_obligation_agent)
+
   @support_agent = FactoryBot.create(
     :support_agent,
     entity: @entity,

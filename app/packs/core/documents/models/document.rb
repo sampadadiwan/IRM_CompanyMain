@@ -154,6 +154,8 @@ class Document < ApplicationRecord
 
     agent = SupportAgent.enabled.where(entity_id: entity_id, agent_type: "SideLetterObligationAgent").last
     return if agent.nil?
+    # Feature is dark for the tenant — don't extract obligations nobody can see.
+    return unless agent.entity_flag_enabled?
     return unless (agent.json_fields || {})["auto_extract_on_upload"].to_s.casecmp("yes").zero?
     return unless name == SideLetterObligationAgent.doc_label(agent)
 
