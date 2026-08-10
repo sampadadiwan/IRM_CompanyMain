@@ -363,13 +363,16 @@
   const $ = id => document.getElementById(id);
 
   // ─── Notifications ────────────────────────────
+  /** Requests browser notification permission if not already granted */
   function requestNotifyPermission() {
     if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
   }
+  /** @param {string} title  @param {string} body  @param {string} tag - dedup key */
   function notify(title, body, tag) {
     if (!state.notifyEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
     try { new Notification(title, { body, tag, silent: false }); } catch(_) {}
   }
+  /** @param {string} msg  @param {string} [type='info'] - 'info' or 'error' */
   function showToast(msg, type) {
     const t = $('toast');
     t.textContent = msg;
@@ -378,6 +381,7 @@
   }
 
   // ─── Feature path helpers ──────────────────────
+  /** @return {string|null} comma-separated feature paths, or null if none selected */
   function getSelectedFeaturePath() {
     if ($('cfgAllFeatures').checked) return 'features/';
     const paths = $('cfgFeaturePaths').value.trim();
@@ -391,10 +395,12 @@
 
   // ─── SMTP localStorage persistence ─────────────
   const SMTP_STORAGE_KEY = 'cucumber_dashboard_smtp';
+  /** Persists SMTP config to localStorage for reuse across sessions */
   function saveSmtpConfig() {
     const cfg = { email_to: $('cfgEmailTo').value.trim(), smtp_user: $('cfgSmtpUser').value.trim(), smtp_pass: $('cfgSmtpPass').value, smtp_host: $('cfgSmtpHost').value.trim() };
     try { localStorage.setItem(SMTP_STORAGE_KEY, JSON.stringify(cfg)); } catch(_) {}
   }
+  /** Restores SMTP config from localStorage on page load */
   function restoreSmtpConfig() {
     try {
       const cfg = JSON.parse(localStorage.getItem(SMTP_STORAGE_KEY));
@@ -412,6 +418,7 @@
     $('emailConfig').style.display = this.checked ? 'flex' : 'none';
   });
 
+  /** @return {Object} current SMTP config from the form inputs */
   function getSmtpConfig() {
     return {
       email_to: $('cfgEmailTo').value.trim(),
@@ -429,6 +436,7 @@
   $('btnStop').addEventListener('click', stopRun);
   $('btnReset').addEventListener('click', resetDashboard);
 
+  /** Validates config, sends POST /run, and transitions UI to running state */
   function startRun() {
     const featurePath = getSelectedFeaturePath();
     if (!featurePath) { showToast('Select at least one feature to run', 'error'); return; }
@@ -481,6 +489,7 @@
     .finally(() => { $('btnStart').disabled = false; $('btnStart').textContent = 'Start Run'; });
   }
 
+  /** Sends POST /stop to kill all workers and returns UI to idle state */
   function stopRun() {
     $('btnStop').disabled = true;
     $('btnStop').textContent = 'Stopping...';
@@ -499,6 +508,7 @@
     });
   }
 
+  /** Clears all progress data, resets UI to initial "Ready to run" state */
   function resetDashboard() {
     fetch('/reset', { method: 'POST' }).then(r => r.json()).then(() => {
       resetState(); cursor = '';
@@ -520,6 +530,7 @@
     });
   }
 
+  /** Resets all in-memory counters and worker state */
   function resetState() {
     state.workers = {}; state.workerFailures = {};
     state.startTime = null; state.totalCompleted = 0;
@@ -527,6 +538,7 @@
     state.totalScenarios = null; state.finished = 0; state.workerCount = 0;
   }
 
+  /** @param {boolean} enabled - toggles all config bar inputs */
   function setConfigEnabled(enabled) {
     $('cfgWorkers').disabled = !enabled;
     $('cfgAllFeatures').disabled = !enabled;
@@ -542,6 +554,7 @@
   let cursor = '';
   let pollErrors = 0;
 
+  /** Polls /poll for new worker events, processes them, and schedules next poll */
   function poll() {
     const dot = $('connDot');
     fetch('/poll?cursor=' + encodeURIComponent(cursor))
@@ -567,6 +580,7 @@
   }
 
   // ─── Event handlers ───────────────────────────
+  /** @param {Object} ev - parsed JSONL event from a worker */
   function handleEvent(ev) {
     switch(ev.type) {
       case 'worker_start': onWorkerStart(ev); break;
@@ -578,6 +592,7 @@
     }
   }
 
+  /** @param {Object} ev - worker_start event; initializes worker state and shows grid */
   function onWorkerStart(ev) {
     if (!state.startTime) { state.startTime = new Date(ev.started_at || ev.timestamp); startTimer(); }
     state.workerCount++;
@@ -597,6 +612,7 @@
     renderWorkers();
   }
 
+  /** @param {Object} ev - feature_start event; updates worker's current feature */
   function onFeatureStart(ev) {
     const w = state.workers[ev.worker]; if (!w) return;
     w.status = 'running'; w.currentFeature = ev.feature;
@@ -605,12 +621,14 @@
     renderWorker(ev.worker);
   }
 
+  /** @param {Object} ev - scenario_start event; updates worker's current scenario */
   function onScenarioStart(ev) {
     const w = state.workers[ev.worker]; if (!w) return;
     w.status = 'running'; w.currentScenario = ev.scenario;
     renderWorker(ev.worker); updateSummary();
   }
 
+  /** @param {Object} ev - scenario_end event; updates counts, records failures, triggers alerts */
   function onScenarioEnd(ev) {
     const w = state.workers[ev.worker]; if (!w) return;
     if (ev.counts) {
@@ -641,6 +659,7 @@
     renderWorker(ev.worker); updateSummary();
   }
 
+  /** @param {Object} ev - feature_end event; adds completed feature to timeline */
   function onFeatureEnd(ev) {
     const w = state.workers[ev.worker]; if (!w) return;
     const wf = state.workerFailures[ev.worker] || [];
@@ -651,6 +670,7 @@
     renderWorker(ev.worker);
   }
 
+  /** @param {Object} ev - worker_end event; marks worker done, triggers onAllDone when all finish */
   function onWorkerEnd(ev) {
     const w = state.workers[ev.worker]; if (!w) return;
     w.status = 'done'; w.currentFeature = null; w.currentScenario = null;
@@ -660,6 +680,7 @@
     }
   }
 
+  /** Fires when all workers complete; shows banner, sends notifications/emails */
   function onAllDone() {
     if (state.timerInterval) clearInterval(state.timerInterval);
     const banner = $('finishedBanner'); banner.style.display = 'block';
@@ -693,6 +714,7 @@
   }
 
   // ─── Rendering ────────────────────────────────
+  /** Rebuilds the entire worker grid from current state */
   function renderWorkers() {
     const grid = $('workersGrid'); grid.innerHTML = '';
     Object.keys(state.workers).sort((a, b) => a - b).forEach(id => {
@@ -702,6 +724,7 @@
     });
   }
 
+  /** @param {string|number} id - worker ID; rebuilds that worker's card innerHTML */
   function renderWorker(id) {
     const w = state.workers[id]; if (!w) return;
     let card = document.getElementById(`worker-${id}`);
@@ -754,6 +777,7 @@
     }
   }
 
+  /** Updates the summary strip stats, progress bar, and percentage display */
   function updateSummary() {
     const done = state.totalPassed + state.totalFailed + state.totalSkipped;
     const total = state.totalScenarios;
@@ -778,7 +802,9 @@
     $('statSkipped').textContent = state.totalSkipped;
   }
 
+  /** Starts the elapsed time counter, updating every second */
   function startTimer() { updateTimer(); state.timerInterval = setInterval(updateTimer, 1000); }
+  /** Updates the elapsed timer display in HH:MM:SS or MM:SS format */
   function updateTimer() {
     if (!state.startTime) return;
     const diff = Math.floor((Date.now() - state.startTime.getTime()) / 1000);
@@ -788,12 +814,15 @@
       : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }
 
+  /** @param {string} p - full feature path  @return {string} shortened display path */
   function shortPath(p) { return p ? p.replace(/^features\//, '').replace(/\.feature$/, '') : ''; }
+  /** @param {number|null} s - duration in seconds  @return {string} formatted as "1.2s" or "2m05s" */
   function formatDuration(s) {
     if (s == null) return '';
     if (s < 60) return s.toFixed(1) + 's';
     return Math.floor(s / 60) + 'm' + String(Math.round(s % 60)).padStart(2, '0') + 's';
   }
+  /** @param {string} str  @return {string} HTML-escaped string */
   function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 
   // ─── Console ───────────────────────────────────
@@ -813,6 +842,7 @@
     showToast('Console cleared');
   });
 
+  /** Polls /console for new output, appends to panel, and auto-scrolls */
   function pollConsole() {
     if (!consoleOpen) return;
     fetch('/console?offset=' + consoleOffset)
@@ -833,6 +863,7 @@
   }
 
   // Activate console dot when run starts, deactivate when done
+  /** Toggles the console dot indicator based on run status */
   function updateConsoleDot() {
     $('consoleDot').classList.toggle('active', state.runStatus === 'running');
   }

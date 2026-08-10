@@ -13,6 +13,7 @@ class DashboardServer
   DASHBOARD_DIR = File.dirname(__FILE__)
   PROJECT_DIR = File.expand_path('..', DASHBOARD_DIR)
 
+  # Sets up WEBrick server, routes, and signal traps
   def initialize
     @server = WEBrick::HTTPServer.new(
       Port: PORT,
@@ -27,6 +28,7 @@ class DashboardServer
     trap('TERM') { stop_run; @server.shutdown }
   end
 
+  # Starts the WEBrick server and prints connection info
   def start
     puts "\n  Cucumber Dashboard running at http://localhost:#{PORT}"
     puts "  Project: #{PROJECT_DIR}"
@@ -36,6 +38,7 @@ class DashboardServer
 
   private
 
+  # Registers all HTTP endpoint handlers on the WEBrick server
   def setup_routes
     @server.mount_proc '/' do |_req, res|
       res['Content-Type'] = 'text/html'
@@ -239,6 +242,7 @@ class DashboardServer
     end
   end
 
+  # Kills the tracked process group and any stray cucumber workers
   def stop_run
     # Kill tracked process group if we have one
     if @run_pid
@@ -259,6 +263,7 @@ class DashboardServer
     @run_pid = nil
   end
 
+  # Checks if the spawned process has exited (non-blocking via WNOHANG)
   def check_run_finished
     return unless @run_status == 'running' && @run_pid
 
@@ -274,6 +279,8 @@ class DashboardServer
     end
   end
 
+  # @param feature_path [String] comma-separated feature file or directory paths
+  # @return [Integer] total number of scenarios found across all paths
   def count_scenarios(feature_path)
     paths = feature_path.split(',').map(&:strip)
     count = 0
@@ -295,6 +302,9 @@ class DashboardServer
     0
   end
 
+  # @param to [String] recipient email address
+  # @param config [Hash] run configuration details (workers, paths, start time)
+  # @param smtp_config [Hash] SMTP environment variables for the spawned process
   def send_start_email(to, config, smtp_config = {})
     require_path = File.join(DASHBOARD_DIR, 'completion_mailer.rb')
     script = <<~RUBY
@@ -308,6 +318,9 @@ class DashboardServer
     puts "  Start email send failed: #{e.message}"
   end
 
+  # @param to [String] recipient email address
+  # @param summary [Hash] run summary with pass/fail/skip counts and duration
+  # @param smtp_config [Hash] SMTP environment variables for the spawned process
   def send_completion_email(to, summary, smtp_config = {})
     require_path = File.join(DASHBOARD_DIR, 'completion_mailer.rb')
     script = <<~RUBY
@@ -321,6 +334,9 @@ class DashboardServer
     puts "  Email send failed: #{e.message}"
   end
 
+  # @param to [String] recipient email address
+  # @param failure [Hash] failed scenario details (feature, scenario, line, error)
+  # @param smtp_config [Hash] SMTP environment variables for the spawned process
   def send_failure_email(to, failure, smtp_config = {})
     require_path = File.join(DASHBOARD_DIR, 'completion_mailer.rb')
     script = <<~RUBY
@@ -334,6 +350,8 @@ class DashboardServer
     puts "  Failure email send failed: #{e.message}"
   end
 
+  # @param str [String] cursor string in "file:offset,file:offset" format
+  # @return [Hash] mapping of filenames to byte offsets
   def parse_cursor(str)
     return {} if str.nil? || str.empty?
 
@@ -345,10 +363,13 @@ class DashboardServer
     result
   end
 
+  # @param hash [Hash] mapping of filenames to byte offsets
+  # @return [String] encoded cursor string for the next poll request
   def encode_cursor(hash)
     hash.map { |k, v| "#{k}:#{v}" }.join(',')
   end
 
+  # @return [Integer, nil] total scenario count from the progress directory, or nil if not available
   def read_total_scenarios
     path = File.join(PROGRESS_DIR, 'total_scenarios')
     return nil unless File.exist?(path)
