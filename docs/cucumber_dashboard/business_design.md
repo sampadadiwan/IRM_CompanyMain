@@ -56,11 +56,11 @@ This counts scenarios, starts the dashboard server, and launches `parallel_cucum
 | **Workers** dropdown | Choose how many parallel workers (2, 4, 6, or 8) |
 | **All Features** checkbox | When checked, runs all features. Uncheck to specify individual paths |
 | **Feature paths** text input | Space-separated `.feature` file paths (visible when "All Features" is unchecked) |
-| **Email alerts** checkbox | Enable email notifications on failures and run completion |
-| **Browser alerts** checkbox | Enable desktop notifications (requires browser permission) |
 | **Start Run** button | Begin the parallel test run |
 | **Stop** button | Kill all running cucumber workers immediately |
 | **Reset** button | Clear all progress data and return to initial state |
+
+> **Phase 2 (planned):** Email alerts and browser notification controls are built into the backend but hidden from the UI. They will be enabled in a future release.
 
 ### Running Specific Features
 
@@ -133,6 +133,8 @@ A collapsible panel fixed at the bottom of the dashboard shows the raw `parallel
 
 - Auto-scrolls to the latest output during a run
 - Green dot indicator when output is actively streaming
+- **Clear** button next to the label to manually clear console content
+- Automatically cleared when a new run starts
 - Polls every 1 second during runs, 3 seconds when idle
 - Useful for debugging errors that don't surface in the worker cards (e.g. DB setup failures, missing step definitions)
 - Cleared on Reset
@@ -150,23 +152,21 @@ Top-right corner shows a live clock counting up from when the first worker start
 
 ## Notifications
 
-### Browser Notifications
+> **Note:** Email and browser alert controls are hidden in the current UI. They will be enabled in Phase 2. The backend endpoints are fully functional.
 
-When enabled (checked by default), you get desktop notifications for:
+### Browser Notifications (Phase 2)
+
+Desktop notifications for:
 
 - **Each scenario failure** — shows worker ID, scenario name, and file location
 - **Run completion** — shows pass/fail summary and duration
 
-Your browser will ask for notification permission on first visit.
-
-### Email Notifications
-
-When enabled:
+### Email Notifications (Phase 2)
 
 - **Each failure** — sends an email immediately when a scenario fails, with the scenario name, location, worker, and error
 - **Run completion** — sends a summary email with pass/fail/skip counts, duration, and a table of all failed scenarios
 
-Emails use Rails ActionMailer. In development, `letter_opener` opens them in browser tabs automatically.
+Emails use Rails ActionMailer with real SMTP delivery. SMTP credentials are configured per-run in the UI.
 
 ## Stopping a Run
 
@@ -183,11 +183,12 @@ The Stop button appears whenever workers are detected as running, regardless of 
 | Problem | Solution |
 |---------|----------|
 | Dashboard doesn't load | Check that the server is running (`ruby cucumber_dashboard/dashboard_server.rb`). Look for port 9777 conflicts. |
+| "Pending migrations" error | Run `bin/rails db:migrate` then `RAILS_ENV=test bin/rails db:migrate` to sync both dev and test DBs. |
+| "Test DB not ready" error | Run `RAILS_ENV=test bin/rails db:migrate` to prepare the test SQLite DB. |
 | "Path not found" error | The feature file or directory you entered doesn't exist. Check the path spelling. |
 | "No scenarios found" error | The path exists but contains no `Scenario` lines. Verify the feature file has scenarios. |
 | Workers show but no progress | Open the Console Output panel to see raw errors. Check `/tmp/cucumber_full_output.txt`. |
 | Stop doesn't kill workers | Run `pkill -f cucumber` manually in terminal. |
-| Email not arriving | Check that `letter_opener` is configured in development. Verify email address is entered. |
 | Connection dot is red | Server may have crashed. Restart with `ruby cucumber_dashboard/dashboard_server.rb`. |
 | All scenarios "undefined" | Step definitions aren't being loaded. Check that `--require features` is in the command. |
 | Scenario count wrong after reset | Click Reset before starting a new run with different features. |

@@ -50,9 +50,11 @@ cucumber_dashboard/
 ├── dashboard_server.rb    # WEBrick HTTP server with all API endpoints
 ├── dashboard.html         # Single-file frontend (HTML + CSS + JS, no build step)
 ├── progress_formatter.rb  # Cucumber formatter — hooks into test lifecycle events
-├── completion_mailer.rb   # ActionMailer for email notifications
+├── completion_mailer.rb   # ActionMailer for email notifications (Phase 2)
 └── README.md              # Quick start guide for teammates
 ```
+
+> **Important:** Do NOT add `.rb` files to this directory unless they are intended to be loaded by Cucumber. The `--require cucumber_dashboard/` flag causes Cucumber to auto-load every `.rb` file in this directory as a support file.
 
 ## Component Details
 
@@ -160,29 +162,34 @@ worker_1.jsonl:4523,worker_2.jsonl:8901
 
 **Process:**
 1. Reject if a run is already in progress
-2. **Validate all paths exist** — returns error with missing paths if any are invalid
-3. Clean `/tmp/cucumber_progress/`
-4. Count total scenarios (grep for `^Scenario` lines)
-5. **Reject if 0 scenarios found** — returns error instead of starting an empty run
-6. Write `total_scenarios` and `run_config.json`
-7. Normalize comma-separated paths to space-separated
-8. Spawn `parallel_cucumber` with `Process.spawn(cmd, pgroup: true)`
-9. Detach process and return PID + total count
+2. **Check for pending migrations** — runs `db:migrate:status` and rejects if any migrations are `down`
+3. **Validate all paths exist** — returns error with missing paths if any are invalid
+4. Clean `/tmp/cucumber_progress/`
+5. Count total scenarios (grep for `^Scenario` lines)
+6. **Reject if 0 scenarios found** — returns error instead of starting an empty run
+7. Write `total_scenarios` and `run_config.json`
+8. Clear previous console output
+9. Normalize comma-separated paths to space-separated
+10. Spawn `parallel_cucumber` with `Process.spawn(env, cmd, pgroup: true)` where `env` sets `RAILS_ENV=test`
+11. Detach process and return PID + total count
 
 **Validation errors:**
+- `"Pending migrations found!"` — dev DB has unapplied migrations
 - `"Path not found: features/core/nonexistent.feature"` — file/directory doesn't exist
 - `"No scenarios found in the selected paths"` — paths exist but contain no Scenario lines
 
 **Spawned command:**
 
 ```bash
-cd <PROJECT_DIR> && RUBYOPT='-W0' bundle exec parallel_cucumber <features> -n <workers> \
+RAILS_ENV=test RUBYOPT='-W0' \
+  cd <PROJECT_DIR> && bundle exec parallel_cucumber <features> -n <workers> \
   -o "--require features --require <DASHBOARD_DIR> \
       --format CucumberDashboard::ProgressFormatter --out /dev/null" \
   > /tmp/cucumber_full_output.txt 2>&1
 ```
 
 Key flags:
+- `RAILS_ENV=test` — ensures workers connect to SQLite test DBs, not MySQL dev DB (passed via `Process.spawn` env hash)
 - `RUBYOPT='-W0'` — suppress Ruby warnings
 - `--require features` — load step definitions (must come first, otherwise `--require <DASHBOARD_DIR>` overrides Cucumber's autoload)
 - `--format ... --out /dev/null` — our formatter writes to JSONL files, not STDOUT. `--out /dev/null` avoids the "all but one formatter must use --out" error
@@ -320,6 +327,8 @@ A fixed-position panel at the bottom of the page:
 - Polls `/console?offset=N` independently from the event poll
 - Appends new content and auto-scrolls to bottom
 - Green dot when output is actively streaming
+- **Clear** button to manually reset console content and offset
+- Auto-cleared when a new run starts (offset and content reset)
 - Cleared on Reset (offset reset to 0, content cleared)
 
 #### Notifications
@@ -328,15 +337,17 @@ A fixed-position panel at the bottom of the page:
 - Each scenario failure (tagged by worker+line to avoid duplicates)
 - Run completion
 
-**Email:** POST to `/send_email` endpoint. Fires on:
+**Email (Phase 2):** POST to `/send_email` endpoint. Backend is functional but UI controls are hidden. When enabled:
 - Each scenario failure (immediate, from `onScenarioEnd`)
 - Run completion (from `onAllDone`, includes full failure summary)
 
-### 4. Completion Mailer (`completion_mailer.rb`)
+### 4. Completion Mailer (`completion_mailer.rb`) — Phase 2
 
 **Class:** `CucumberDashboard::CompletionMailer < ActionMailer::Base`
 
-Two mail methods:
+> **Note:** The mailer is fully functional but the UI controls to enable email alerts are hidden. They will be exposed in Phase 2.
+
+Three mail methods:
 
 #### `run_complete(to, summary)`
 
@@ -346,6 +357,12 @@ HTML email with:
 - Summary table: Passed / Failed / Skipped / Duration
 - Failed scenarios table (if any): location, scenario name, worker, error
 
+#### `run_started(to, config)`
+
+Subject: `Cucumber Run Started — {workers} workers, {total} scenarios`
+
+HTML email with run configuration details (workers, feature paths, start time).
+
 #### `scenario_failed(to, failure)`
 
 Subject: `FAILED — {scenario} ({location})`
@@ -354,7 +371,7 @@ HTML email with:
 - Scenario name, file:line, worker ID
 - Error message
 
-Both methods render inline ERB templates (no external template files).
+All methods render inline ERB templates (no external template files). Uses real SMTP delivery (credentials passed via environment variables per invocation).
 
 ### 5. Shell Script (`run.sh`)
 
@@ -378,27 +395,29 @@ Two modes:
    ↓
 2. POST /run { workers: 4, feature_path: "features/" }
    ↓
-3. Server validates paths exist and contain scenarios
+3. Server checks for pending migrations (rejects if any are down)
    ↓
-4. Server counts scenarios, writes total_scenarios file
+4. Server validates paths exist and contain scenarios
    ↓
-5. Server spawns: parallel_cucumber features/ -n 4 -o "... --format ProgressFormatter ..."
+5. Server counts scenarios, writes total_scenarios file, clears console output
    ↓
-6. parallel_cucumber spawns 4 worker processes
+6. Server spawns with RAILS_ENV=test: parallel_cucumber features/ -n 4 -o "... --format ProgressFormatter ..."
    ↓
-7. Each worker loads ProgressFormatter, writes worker_start to worker_N.jsonl
+7. parallel_cucumber spawns 4 worker processes (all inherit RAILS_ENV=test)
    ↓
-8. Browser polls GET /poll every 500ms + GET /console every 1s
+8. Each worker loads ProgressFormatter, writes worker_start to worker_N.jsonl
    ↓
-9. Server reads new bytes from each worker_N.jsonl and cucumber_full_output.txt
+9. Browser polls GET /poll every 500ms + GET /console every 1s
    ↓
-10. Server returns new events + updated cursor / new console content + offset
+10. Server reads new bytes from each worker_N.jsonl and cucumber_full_output.txt
    ↓
-11. Browser processes events, updates worker cards, summary stats, progress bar, console
+11. Server returns new events + updated cursor / new console content + offset
    ↓
-12. On failure: browser sends POST /send_email (if enabled), shows notification
+12. Browser processes events, updates worker cards, summary stats, progress bar, console
    ↓
-13. On all workers done: browser shows finished banner, sends completion email
+13. On failure: browser shows notification (email alerts planned for Phase 2)
+   ↓
+14. On all workers done: browser shows finished banner
 ```
 
 ## Key Design Decisions
@@ -427,6 +446,14 @@ The mailer needs the full Rails environment loaded (`config/environment`). Loadi
 
 When `--require <dashboard_dir>` is specified, Cucumber stops auto-loading step definitions from `features/step_definitions/`. The explicit `--require features` before our require restores the default autoload behavior. Without this, all scenarios show as "undefined" (0 passed, 0 failed, N undefined).
 
+### Why pass RAILS_ENV=test via Process.spawn?
+
+Without `RAILS_ENV=test`, Cucumber workers boot in development mode and connect to the MySQL dev database instead of the SQLite test databases at `/dev/shm/test_*.sqlite3`. The env is passed via `Process.spawn`'s env hash so it is inherited by all child processes spawned by `parallel_cucumber`.
+
+### Why check for pending migrations before starting?
+
+If the dev DB has pending migrations, the test run will fail with cryptic errors (missing tables, column mismatches). Checking `db:migrate:status` upfront gives a clear error message telling the user to run `bin/rails db:migrate` first, before any workers are spawned.
+
 ### Why validate paths before starting?
 
 Without validation, `parallel_cucumber` would spawn workers that immediately error out on missing files. The dashboard would show "Workers starting up..." forever with 0 scenarios. Validating upfront gives immediate feedback via a toast error, preventing wasted time and confusion.
@@ -436,7 +463,7 @@ Without validation, `parallel_cucumber` would spawn workers that immediately err
 | Layer | Strategy |
 |-------|----------|
 | Formatter | All file writes wrapped in `rescue StandardError` — never crashes the test run |
-| Server `/run` | Validates paths exist and contain scenarios before spawning workers. Returns structured error JSON on failure |
+| Server `/run` | Checks pending migrations, validates paths exist and contain scenarios before spawning workers. Returns structured error JSON on failure |
 | Server general | WEBrick catches exceptions per-request. `count_scenarios` and `read_total_scenarios` rescue to safe defaults (0 / nil) |
 | Stop | Tries TERM → KILL → pkill. Each step rescues `Errno::ESRCH` in case the process is already gone. No precondition — always attempts kill |
 | Frontend | Poll errors trigger exponential backoff. Fetch failures show toast. Connection dot indicates server reachability |

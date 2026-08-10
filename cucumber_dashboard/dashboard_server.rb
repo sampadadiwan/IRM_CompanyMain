@@ -100,6 +100,14 @@ class DashboardServer
       send_email = body['send_email'] || false
       email_to = body['email_to'] || ''
 
+      # Check for pending migrations
+      pending_check = `cd #{PROJECT_DIR} && RAILS_ENV=development bundle exec rails db:migrate:status 2>&1 | grep '^ *down' | head -5`
+      unless pending_check.strip.empty?
+        res.body = JSON.generate({ status: 'error',
+          message: "Pending migrations found! Run 'bin/rails db:migrate' first.\n#{pending_check.strip}" })
+        next
+      end
+
       # Validate paths exist
       missing = feature_path.split(',').map(&:strip).reject do |p|
         File.exist?(File.join(PROJECT_DIR, p))
@@ -130,15 +138,19 @@ class DashboardServer
         started_at: Time.now.iso8601
       }))
 
+      # Clear previous console output
+      File.write('/tmp/cucumber_full_output.txt', '')
+
       # Normalize comma-separated paths into space-separated for parallel_cucumber
       feature_args = feature_path.split(',').map(&:strip).join(' ')
 
       # Spawn parallel_cucumber in background
-      cmd = "cd #{PROJECT_DIR} && RUBYOPT='-W0' bundle exec parallel_cucumber #{feature_args} -n #{workers}" \
+      cmd = "cd #{PROJECT_DIR} && bundle exec parallel_cucumber #{feature_args} -n #{workers}" \
             " -o \"--require features --require #{DASHBOARD_DIR} --format CucumberDashboard::ProgressFormatter --out /dev/null\"" \
             " > /tmp/cucumber_full_output.txt 2>&1"
 
-      @run_pid = Process.spawn(cmd, pgroup: true)
+      env = { 'RAILS_ENV' => 'test', 'RUBYOPT' => '-W0' }
+      @run_pid = Process.spawn(env, cmd, pgroup: true)
       @run_status = 'running'
       Process.detach(@run_pid)
 
@@ -202,6 +214,11 @@ class DashboardServer
 
       body = req.body ? JSON.parse(req.body) : {}
       email_to = body['email_to']
+      smtp_config = {
+        'CUCUMBER_SMTP_USER' => body['smtp_user'],
+        'CUCUMBER_SMTP_PASSWORD' => body['smtp_pass'],
+        'CUCUMBER_SMTP_ADDRESS' => body['smtp_host']
+      }.compact
       summary = body['summary'] || {}
       type = body['type'] || 'completion'
 
@@ -212,11 +229,11 @@ class DashboardServer
 
       case type
       when 'start'
-        send_start_email(email_to, body['config'] || {})
+        send_start_email(email_to, body['config'] || {}, smtp_config)
       when 'failure'
-        send_failure_email(email_to, body['failure'] || {})
+        send_failure_email(email_to, body['failure'] || {}, smtp_config)
       else
-        send_completion_email(email_to, summary)
+        send_completion_email(email_to, summary, smtp_config)
       end
       res.body = JSON.generate({ status: 'sent' })
     end
@@ -278,40 +295,40 @@ class DashboardServer
     0
   end
 
-  def send_start_email(to, config)
+  def send_start_email(to, config, smtp_config = {})
     require_path = File.join(DASHBOARD_DIR, 'completion_mailer.rb')
     script = <<~RUBY
       require '#{PROJECT_DIR}/config/environment'
       require '#{require_path}'
       CucumberDashboard::CompletionMailer.run_started('#{to}', #{config.to_json.inspect}).deliver_now
     RUBY
-    pid = Process.spawn("ruby", "-e", script, chdir: PROJECT_DIR)
+    pid = Process.spawn(smtp_config, "ruby", "-e", script, chdir: PROJECT_DIR)
     Process.detach(pid)
   rescue StandardError => e
     puts "  Start email send failed: #{e.message}"
   end
 
-  def send_completion_email(to, summary)
+  def send_completion_email(to, summary, smtp_config = {})
     require_path = File.join(DASHBOARD_DIR, 'completion_mailer.rb')
     script = <<~RUBY
       require '#{PROJECT_DIR}/config/environment'
       require '#{require_path}'
       CucumberDashboard::CompletionMailer.run_complete('#{to}', #{summary.to_json.inspect}).deliver_now
     RUBY
-    pid = Process.spawn("ruby", "-e", script, chdir: PROJECT_DIR)
+    pid = Process.spawn(smtp_config, "ruby", "-e", script, chdir: PROJECT_DIR)
     Process.detach(pid)
   rescue StandardError => e
     puts "  Email send failed: #{e.message}"
   end
 
-  def send_failure_email(to, failure)
+  def send_failure_email(to, failure, smtp_config = {})
     require_path = File.join(DASHBOARD_DIR, 'completion_mailer.rb')
     script = <<~RUBY
       require '#{PROJECT_DIR}/config/environment'
       require '#{require_path}'
       CucumberDashboard::CompletionMailer.scenario_failed('#{to}', #{failure.to_json.inspect}).deliver_now
     RUBY
-    pid = Process.spawn("ruby", "-e", script, chdir: PROJECT_DIR)
+    pid = Process.spawn(smtp_config, "ruby", "-e", script, chdir: PROJECT_DIR)
     Process.detach(pid)
   rescue StandardError => e
     puts "  Failure email send failed: #{e.message}"

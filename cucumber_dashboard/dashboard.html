@@ -263,14 +263,21 @@
   </label>
   <input type="text" class="config-input-features mono" id="cfgFeaturePaths" placeholder="features/core/login.feature features/funds/capital_call.feature" style="display:none">
 
-  <label class="config-checkbox">
-    <input type="checkbox" id="cfgEmail"> Email alerts
-  </label>
-  <input type="email" class="config-input-email" id="cfgEmailTo" placeholder="email@example.com" style="display:none">
-
-  <label class="config-checkbox">
-    <input type="checkbox" id="cfgNotify" checked> Browser alerts
-  </label>
+  <!-- Email and Browser alerts hidden for Phase 2 -->
+  <div style="display:none">
+    <label class="config-checkbox">
+      <input type="checkbox" id="cfgEmail"> Email alerts
+    </label>
+    <div id="emailConfig" style="display:none; align-items: center; gap: 6px;">
+      <input type="email" class="config-input-email" id="cfgEmailTo" placeholder="to@example.com">
+      <input type="text" class="config-input-email" id="cfgSmtpUser" placeholder="smtp user" style="width:140px">
+      <input type="password" class="config-input-email" id="cfgSmtpPass" placeholder="smtp password" style="width:120px">
+      <input type="text" class="config-input-email" id="cfgSmtpHost" placeholder="smtp.gmail.com" value="smtp.gmail.com" style="width:130px">
+    </div>
+    <label class="config-checkbox">
+      <input type="checkbox" id="cfgNotify" checked> Browser alerts
+    </label>
+  </div>
 
   <div class="config-spacer"></div>
   <button class="btn btn-start" id="btnStart">Start Run</button>
@@ -334,7 +341,10 @@
       <span class="console-dot" id="consoleDot"></span>
       <span class="console-label">Console Output</span>
     </div>
-    <span class="console-arrow">&#9650;</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn btn-reset" id="btnClearConsole" style="padding:3px 10px;font-size:10px;" onclick="event.stopPropagation()">Clear</button>
+      <span class="console-arrow">&#9650;</span>
+    </div>
   </div>
   <pre class="console-output mono" id="consoleOutput"></pre>
 </div>
@@ -379,10 +389,37 @@
     $('cfgFeaturePaths').style.display = this.checked ? 'none' : 'inline-block';
   });
 
+  // ─── SMTP localStorage persistence ─────────────
+  const SMTP_STORAGE_KEY = 'cucumber_dashboard_smtp';
+  function saveSmtpConfig() {
+    const cfg = { email_to: $('cfgEmailTo').value.trim(), smtp_user: $('cfgSmtpUser').value.trim(), smtp_pass: $('cfgSmtpPass').value, smtp_host: $('cfgSmtpHost').value.trim() };
+    try { localStorage.setItem(SMTP_STORAGE_KEY, JSON.stringify(cfg)); } catch(_) {}
+  }
+  function restoreSmtpConfig() {
+    try {
+      const cfg = JSON.parse(localStorage.getItem(SMTP_STORAGE_KEY));
+      if (!cfg) return;
+      if (cfg.email_to) $('cfgEmailTo').value = cfg.email_to;
+      if (cfg.smtp_user) $('cfgSmtpUser').value = cfg.smtp_user;
+      if (cfg.smtp_pass) $('cfgSmtpPass').value = cfg.smtp_pass;
+      if (cfg.smtp_host) $('cfgSmtpHost').value = cfg.smtp_host;
+    } catch(_) {}
+  }
+  restoreSmtpConfig();
+
   // ─── Config handlers ──────────────────────────
   $('cfgEmail').addEventListener('change', function() {
-    $('cfgEmailTo').style.display = this.checked ? 'inline-block' : 'none';
+    $('emailConfig').style.display = this.checked ? 'flex' : 'none';
   });
+
+  function getSmtpConfig() {
+    return {
+      email_to: $('cfgEmailTo').value.trim(),
+      smtp_user: $('cfgSmtpUser').value.trim(),
+      smtp_pass: $('cfgSmtpPass').value,
+      smtp_host: $('cfgSmtpHost').value.trim() || 'smtp.gmail.com'
+    };
+  }
   $('cfgNotify').addEventListener('change', function() {
     state.notifyEnabled = this.checked;
     if (this.checked) requestNotifyPermission();
@@ -398,16 +435,20 @@
 
     const workers = parseInt($('cfgWorkers').value);
     const sendEmail = $('cfgEmail').checked;
-    const emailTo = $('cfgEmailTo').value.trim();
-    if (sendEmail && !emailTo) { showToast('Enter an email address', 'error'); return; }
+    const smtp = getSmtpConfig();
+    if (sendEmail && !smtp.email_to) { showToast('Enter an email address', 'error'); return; }
+    if (sendEmail && !smtp.smtp_user) { showToast('Enter SMTP user', 'error'); return; }
+    if (sendEmail && !smtp.smtp_pass) { showToast('Enter SMTP password', 'error'); return; }
+    if (sendEmail) saveSmtpConfig();
 
     $('btnStart').disabled = true;
     $('btnStart').textContent = 'Starting...';
+    setConfigEnabled(false);
 
     fetch('/run', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workers, feature_path: featurePath, send_email: sendEmail, email_to: emailTo })
+      body: JSON.stringify({ workers, feature_path: featurePath, send_email: sendEmail, ...smtp })
     })
     .then(r => r.json())
     .then(data => {
@@ -416,24 +457,27 @@
         state.totalScenarios = data.total_scenarios;
         state.allDoneFired = false;
         resetState();
+        consoleOffset = 0;
+        $('consoleOutput').textContent = '';
+        $('consoleDot').classList.remove('active');
         $('btnStart').style.display = 'none';
         $('btnStop').style.display = 'inline-block';
-        setConfigEnabled(false);
         $('waitingState').querySelector('h2').textContent = 'Workers starting up...';
         $('waitingState').querySelector('p').textContent = `${workers} workers, ${data.total_scenarios} scenarios`;
         showToast(`Run started: ${workers} workers, ${data.total_scenarios} scenarios`);
 
-        if (sendEmail && emailTo) {
+        if (sendEmail) {
           fetch('/send_email', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'start', email_to: emailTo, config: { workers, feature_path: featurePath, total_scenarios: data.total_scenarios, started_at: new Date().toISOString() } })
+            body: JSON.stringify({ type: 'start', ...smtp, config: { workers, feature_path: featurePath, total_scenarios: data.total_scenarios, started_at: new Date().toISOString() } })
           }).catch(() => {});
         }
       } else {
         showToast(data.message || 'Failed to start', 'error');
+        setConfigEnabled(true);
       }
     })
-    .catch(() => showToast('Failed to connect to server', 'error'))
+    .catch(() => { showToast('Failed to connect to server', 'error'); setConfigEnabled(true); })
     .finally(() => { $('btnStart').disabled = false; $('btnStart').textContent = 'Start Run'; });
   }
 
@@ -489,6 +533,9 @@
     $('cfgFeaturePaths').disabled = !enabled;
     $('cfgEmail').disabled = !enabled;
     $('cfgEmailTo').disabled = !enabled;
+    $('cfgSmtpUser').disabled = !enabled;
+    $('cfgSmtpPass').disabled = !enabled;
+    $('cfgSmtpHost').disabled = !enabled;
   }
 
   // ─── Polling ──────────────────────────────────
@@ -583,10 +630,11 @@
       state.workerFailures[ev.worker].push(failureInfo);
       notify('Scenario Failed', `W${ev.worker}: ${ev.scenario}\n${shortPath(ev.feature)}:${ev.line}`, 'fail-' + ev.worker + '-' + ev.line);
 
-      if ($('cfgEmail').checked && $('cfgEmailTo').value.trim()) {
+      if ($('cfgEmail').checked) {
+        const smtp = getSmtpConfig();
         fetch('/send_email', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'failure', email_to: $('cfgEmailTo').value.trim(), failure: { ...failureInfo, worker: ev.worker } })
+          body: JSON.stringify({ type: 'failure', ...smtp, failure: { ...failureInfo, worker: ev.worker } })
         }).catch(() => {});
       }
     }
@@ -627,14 +675,15 @@
       ? `${state.totalFailed} failed, ${state.totalPassed} passed (${duration})`
       : `All ${state.totalPassed} scenarios passed (${duration})`, 'run-done');
 
-    if ($('cfgEmail').checked && $('cfgEmailTo').value.trim()) {
+    if ($('cfgEmail').checked) {
+      const smtp = getSmtpConfig();
       const allFailures = [];
       Object.entries(state.workerFailures).forEach(([wId, fails]) => {
         fails.forEach(f => allFailures.push({ location: shortPath(f.feature) + ':' + f.line, scenario: f.scenario, error: f.error, worker: wId }));
       });
       fetch('/send_email', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email_to: $('cfgEmailTo').value.trim(), summary: { passed: state.totalPassed, failed: state.totalFailed, skipped: state.totalSkipped, duration, failures: allFailures } })
+        body: JSON.stringify({ ...smtp, summary: { passed: state.totalPassed, failed: state.totalFailed, skipped: state.totalSkipped, duration, failures: allFailures } })
       }).then(r => r.json()).then(d => { if (d.status === 'sent') showToast('Completion email sent'); })
         .catch(() => showToast('Failed to send email', 'error'));
     }
@@ -755,6 +804,13 @@
     consoleOpen = !consoleOpen;
     $('consoleWrapper').className = 'console-wrapper ' + (consoleOpen ? 'open' : 'closed');
     if (consoleOpen) pollConsole();
+  });
+
+  $('btnClearConsole').addEventListener('click', () => {
+    $('consoleOutput').textContent = '';
+    consoleOffset = 0;
+    $('consoleDot').classList.remove('active');
+    showToast('Console cleared');
   });
 
   function pollConsole() {

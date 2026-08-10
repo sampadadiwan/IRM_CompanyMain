@@ -41,6 +41,12 @@ To stop the server, press `Ctrl+C`.
 3. Click **Start Run**
 4. Watch progress in real-time — each worker gets its own card showing current scenario, pass/fail counts, and failures
 
+If you see a "Pending migrations" error, run:
+```bash
+bin/rails db:migrate
+RAILS_ENV=test bin/rails db:migrate
+```
+
 ## Console Output
 
 Click the **Console Output** bar at the bottom to see the raw `parallel_cucumber` output — useful for debugging DB setup errors, missing steps, or anything not visible in the worker cards.
@@ -60,13 +66,9 @@ To stop from terminal: `pkill -f cucumber`
   ```
 - Click **Reset** to clear results before starting a new run
 
-## Optional: Email Alerts
+## Email Alerts (Phase 2)
 
-Check **Email alerts**, enter your email address, and click Start. You'll get:
-- An email on each scenario failure
-- A summary email when the run completes
-
-Uses Rails ActionMailer — in dev mode, emails open in browser tabs via `letter_opener`.
+Email alert controls are hidden in the current UI. The backend is fully functional and will be exposed in a future release.
 
 ## Files
 
