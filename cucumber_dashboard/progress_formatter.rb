@@ -10,6 +10,7 @@ module CucumberDashboard
   class ProgressFormatter
     PROGRESS_DIR = '/tmp/cucumber_progress'
 
+    # @param config [Cucumber::Configuration] cucumber event bus configuration
     def initialize(config)
       @config = config
       @worker_id = ENV.fetch('TEST_ENV_NUMBER', '1')
@@ -38,6 +39,7 @@ module CucumberDashboard
 
     private
 
+    # @param event [Cucumber::Core::Event] test case started event with location and name
     def on_test_case_started(event)
       test_case = event.test_case
       feature_path = test_case.location.file
@@ -74,6 +76,7 @@ module CucumberDashboard
       })
     end
 
+    # @param event [Cucumber::Core::Event] test case finished event with result status
     def on_test_case_finished(event)
       test_case = event.test_case
       result = event.result
@@ -98,6 +101,7 @@ module CucumberDashboard
       write_failure(test_case, error_msg) if status == :failed
     end
 
+    # @param _event [Cucumber::Core::Event] test run finished event
     def on_test_run_finished(_event)
       if @current_feature
         write_event('feature_end', {
@@ -115,6 +119,8 @@ module CucumberDashboard
       })
     end
 
+    # @param result [Cucumber::Core::Test::Result] test result object
+    # @return [Symbol] :passed, :failed, :skipped, or :pending
     def result_status(result)
       case result
       when Cucumber::Core::Test::Result::Passed then :passed
@@ -126,6 +132,8 @@ module CucumberDashboard
       end
     end
 
+    # @param result [Cucumber::Core::Test::Result] failed test result
+    # @return [String, nil] truncated error message or nil
     def extract_error(result)
       return nil unless result.respond_to?(:exception)
 
@@ -133,6 +141,8 @@ module CucumberDashboard
       "#{ex.class}: #{ex.message}"[0..300]
     end
 
+    # @param path [String] path to a .feature file
+    # @return [String] feature name from the Feature: line, or filename as fallback
     def extract_feature_name(path)
       File.read(path).each_line do |line|
         if line.strip.start_with?('Feature:')
@@ -144,6 +154,8 @@ module CucumberDashboard
       File.basename(path, '.feature')
     end
 
+    # @param type [String] event type (e.g. 'worker_start', 'scenario_end')
+    # @param data [Hash] event payload to serialize as JSON
     def write_event(type, data)
       event = {
         type: type,
@@ -156,6 +168,8 @@ module CucumberDashboard
       # Never crash the test run because of formatter errors
     end
 
+    # @param test_case [Cucumber::Core::Test::Case] the failed test case
+    # @param error_msg [String, nil] error message to include in the rerun file
     def write_failure(test_case, error_msg)
       location = "#{test_case.location.file}:#{test_case.location.line}"
       File.open(@failures_file, 'a') do |f|

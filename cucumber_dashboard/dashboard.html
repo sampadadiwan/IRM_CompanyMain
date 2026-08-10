@@ -252,7 +252,8 @@
     <span class="config-label">Workers</span>
     <select class="config-select" id="cfgWorkers">
       <option value="2">2</option>
-      <option value="4" selected>4</option>
+      <option value="3" selected>3</option>
+      <option value="4">4</option>
       <option value="6">6</option>
       <option value="8">8</option>
     </select>
@@ -260,6 +261,9 @@
 
   <label class="config-checkbox">
     <input type="checkbox" id="cfgAllFeatures" checked> All Features
+  </label>
+  <label class="config-checkbox">
+    <input type="checkbox" id="cfgSkipAi" checked> Skip AI features
   </label>
   <input type="text" class="config-input-features mono" id="cfgFeaturePaths" placeholder="features/core/login.feature features/funds/capital_call.feature" style="display:none">
 
@@ -389,8 +393,11 @@
     return paths.replace(/\s+/g, ',');
   }
 
+  function isSkipAi() { return $('cfgSkipAi').checked; }
+
   $('cfgAllFeatures').addEventListener('change', function() {
     $('cfgFeaturePaths').style.display = this.checked ? 'none' : 'inline-block';
+    $('cfgSkipAi').closest('label').style.display = this.checked ? '' : 'none';
   });
 
   // ─── SMTP localStorage persistence ─────────────
@@ -456,7 +463,7 @@
     fetch('/run', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workers, feature_path: featurePath, send_email: sendEmail, ...smtp })
+      body: JSON.stringify({ workers, feature_path: featurePath, skip_ai: isSkipAi(), send_email: sendEmail, ...smtp })
     })
     .then(r => r.json())
     .then(data => {
@@ -542,6 +549,7 @@
   function setConfigEnabled(enabled) {
     $('cfgWorkers').disabled = !enabled;
     $('cfgAllFeatures').disabled = !enabled;
+    $('cfgSkipAi').disabled = !enabled;
     $('cfgFeaturePaths').disabled = !enabled;
     $('cfgEmail').disabled = !enabled;
     $('cfgEmailTo').disabled = !enabled;

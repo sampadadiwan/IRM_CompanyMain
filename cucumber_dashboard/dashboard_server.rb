@@ -111,6 +111,15 @@ class DashboardServer
         next
       end
 
+      # Expand feature paths excluding AI features if requested
+      skip_ai = body['skip_ai'] || false
+      if skip_ai && feature_path == 'features/'
+        subdirs = Dir.glob(File.join(PROJECT_DIR, 'features', '*')).select { |f| File.directory?(f) }
+        feature_path = subdirs.reject { |d| File.basename(d) == 'ai' }
+                              .map { |d| "features/#{File.basename(d)}" }
+                              .join(',')
+      end
+
       # Validate paths exist
       missing = feature_path.split(',').map(&:strip).reject do |p|
         File.exist?(File.join(PROJECT_DIR, p))
