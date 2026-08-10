@@ -30,16 +30,32 @@ export default class extends Controller {
 
         // "both" means no method has been picked yet, so everything is on show.
         this.mode = "both";
+
+        // Once a form is on its way, freeze the card. data-disable-with disables the
+        // submit button, and a disabled button drops focus - which would otherwise
+        // look like "left the login card" and fold everything back open mid-request.
+        this.submitting = false;
+        this.element.addEventListener("submit", () => { this.submitting = true; });
     }
 
     // Focus landed in the password form.
-    usePassword() {
+    usePassword(event) {
+        if (this.isSubmitFocus(event)) return;
         this.setMode("password");
     }
 
     // Focus landed in the magic-link form.
-    useMagic() {
+    useMagic(event) {
+        if (this.isSubmitFocus(event)) return;
         this.setMode("magic");
+    }
+
+    // Clicking a submit button focuses it, which would otherwise read as "picked
+    // this method" and collapse the other one just as the form is being sent -
+    // the card animates while the page is already navigating away. Only focus
+    // landing in an actual field counts as choosing a method.
+    isSubmitFocus(event) {
+        return !!event.target.closest("button, input[type=submit]");
     }
 
     // Focus left the login card altogether - put both methods back on show.
@@ -48,6 +64,7 @@ export default class extends Controller {
         // tick. Checking activeElement rather than relatedTarget also means an
         // alt-tab away from the window leaves the card as it was.
         setTimeout(() => {
+            if (this.submitting) return;
             if (this.element.contains(document.activeElement)) return;
             this.resetMode();
         }, 0);
