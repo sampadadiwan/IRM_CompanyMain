@@ -42,8 +42,10 @@
             </div>
           </div>
           <div class="col-xl-5 col-xxl-5">
-            <div class="authentication-login min-vh-100 bg-body row justify-content-center align-items-center p-4">
-              <div class="col-sm-8 col-md-6 col-xl-9">
+            <%# g-0 + col-12 + no padding so the page fills this column edge to edge.
+                Anything else leaves a white frame around the login panel. %>
+            <div class="authentication-login min-vh-100 row g-0 justify-content-center align-items-center">
+              <div class="col-12">
                 <%= yield %>
               </div>
             </div>
