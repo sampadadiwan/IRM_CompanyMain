@@ -9,14 +9,14 @@ The dashboard is a self-contained tool (no gem dependencies beyond Rails) with f
                   │    Browser (dashboard)   │
                   │    http://localhost:9777  │
                   └────────┬────────────────┘
-                           │ HTTP polling (500ms)
+                           │ HTTP polling (500ms events, 1s console)
                            │
                   ┌────────▼────────────────┐
                   │    WEBrick Server        │
                   │    dashboard_server.rb   │
                   │    Port 9777             │
                   └────────┬────────────────┘
-                           │ reads JSONL files
+                           │ reads JSONL + console output files
                            │
               ┌────────────▼──────────────────┐
               │   /tmp/cucumber_progress/      │
@@ -26,8 +26,10 @@ The dashboard is a self-contained tool (no gem dependencies beyond Rails) with f
               │   worker_2_failures.txt        │
               │   total_scenarios              │
               │   run_config.json              │
+              ├───────────────────────────────┤
+              │   /tmp/cucumber_full_output.txt │
               └────────────▲──────────────────┘
-                           │ writes events
+                           │ writes events + stdout/stderr
                            │
           ┌────────────────┴──────────────────┐
           │  Cucumber Workers (parallel_cucumber)  │
@@ -36,7 +38,7 @@ The dashboard is a self-contained tool (no gem dependencies beyond Rails) with f
           └────────────────────────────────────┘
 ```
 
-**Data flow:** Cucumber workers write JSONL events to per-worker files. The WEBrick server reads these files on each poll request. The browser polls the server every 500ms and renders worker state in real-time.
+**Data flow:** Cucumber workers write JSONL events to per-worker files and console output to a shared log. The WEBrick server reads these files on each poll request. The browser polls the server every 500ms (events) and 1s (console) and renders worker state in real-time.
 
 There is no WebSocket or SSE — WEBrick's chunked response handling doesn't flush reliably. Cursor-based polling (tracking byte offset per file) is simple and works.
 
@@ -48,7 +50,8 @@ cucumber_dashboard/
 ├── dashboard_server.rb    # WEBrick HTTP server with all API endpoints
 ├── dashboard.html         # Single-file frontend (HTML + CSS + JS, no build step)
 ├── progress_formatter.rb  # Cucumber formatter — hooks into test lifecycle events
-└── completion_mailer.rb   # ActionMailer for email notifications
+├── completion_mailer.rb   # ActionMailer for email notifications
+└── README.md              # Quick start guide for teammates
 ```
 
 ## Component Details
@@ -106,7 +109,7 @@ Cucumber::Core::Test::Result::Undefined → :pending
 **Failure tracking:** On each failed scenario, the formatter appends to `worker_N_failures.txt`:
 
 ```
-features/core/login.feature:42 # Scenario: User can log in
+features/core/access_rights.feature:42 # Scenario: User can see fund models
   StandardError: expected 200, got 500
 ```
 
@@ -157,12 +160,18 @@ worker_1.jsonl:4523,worker_2.jsonl:8901
 
 **Process:**
 1. Reject if a run is already in progress
-2. Clean `/tmp/cucumber_progress/`
-3. Count total scenarios (grep for `^Scenario` lines)
-4. Write `total_scenarios` and `run_config.json`
-5. Normalize comma-separated paths to space-separated
-6. Spawn `parallel_cucumber` with `Process.spawn(cmd, pgroup: true)`
-7. Detach process and return PID + total count
+2. **Validate all paths exist** — returns error with missing paths if any are invalid
+3. Clean `/tmp/cucumber_progress/`
+4. Count total scenarios (grep for `^Scenario` lines)
+5. **Reject if 0 scenarios found** — returns error instead of starting an empty run
+6. Write `total_scenarios` and `run_config.json`
+7. Normalize comma-separated paths to space-separated
+8. Spawn `parallel_cucumber` with `Process.spawn(cmd, pgroup: true)`
+9. Detach process and return PID + total count
+
+**Validation errors:**
+- `"Path not found: features/core/nonexistent.feature"` — file/directory doesn't exist
+- `"No scenarios found in the selected paths"` — paths exist but contain no Scenario lines
 
 **Spawned command:**
 
@@ -178,15 +187,29 @@ Key flags:
 - `--require features` — load step definitions (must come first, otherwise `--require <DASHBOARD_DIR>` overrides Cucumber's autoload)
 - `--format ... --out /dev/null` — our formatter writes to JSONL files, not STDOUT. `--out /dev/null` avoids the "all but one formatter must use --out" error
 - `pgroup: true` — creates a process group so Stop can kill the entire tree
+- `> /tmp/cucumber_full_output.txt 2>&1` — captures all stdout/stderr for the console panel
 
 #### `POST /stop` — Stop All Workers
 
-Aggressively kills everything:
+Aggressively kills everything regardless of how the run was started:
 1. If tracked PID exists: send `TERM` to process group, wait 0.5s, send `KILL`
 2. Run `pkill -f 'parallel_cucumber'` to catch parent
 3. Run `pkill -f 'cucumber.*features'` to catch worker children
 
-This works regardless of whether the run was started from the dashboard or CLI.
+No precondition checks — always attempts the kill and returns success.
+
+#### `GET /console?offset=<byte_offset>` — Console Output Stream
+
+Returns new content from `/tmp/cucumber_full_output.txt` since the given byte offset:
+
+```json
+{
+  "content": "...new output lines...",
+  "offset": 84523
+}
+```
+
+The browser tracks its offset and only receives new data on each poll. Poll interval: 1s during runs, 3s when idle.
 
 #### `GET /rerun_file?worker=<id>` — Read Worker Failure File
 
@@ -195,7 +218,7 @@ Returns the content of `/tmp/cucumber_progress/worker_N_failures.txt` as JSON:
 ```json
 {
   "path": "/tmp/cucumber_progress/worker_1_failures.txt",
-  "content": "features/core/login.feature:42 # Scenario: ...\n..."
+  "content": "features/core/access_rights.feature:42 # Scenario: ...\n..."
 }
 ```
 
@@ -235,7 +258,7 @@ state = {
   totalPassed: 0,
   totalFailed: 0,
   totalSkipped: 0,
-  totalScenarios: null,  // from server
+  totalScenarios: null,  // from /run response; poll only sets if null
   finished: 0,           // workers done count
   workerCount: 0,
   timerInterval: null,
@@ -245,12 +268,15 @@ state = {
 }
 ```
 
+**Note:** `totalScenarios` is set from the `/run` response and only falls back to the poll's `total_scenarios` if not already set. This prevents stale counts from a previous run overwriting the current run's count. `resetState()` clears `totalScenarios` to `null`.
+
 #### Polling Loop
 
+Two independent polling loops:
+
 ```
-poll() → fetch /poll?cursor=... → process events → setTimeout(poll, delay)
-                                                     ↑
-                                        500ms if running, 5000ms if idle
+Event poll:   poll() → fetch /poll?cursor=...   → process events   → setTimeout (500ms / 5000ms)
+Console poll: pollConsole() → fetch /console?offset=... → append text → setTimeout (1000ms / 3000ms)
 ```
 
 Error handling: exponential backoff on fetch failures (2s, 4s, 8s, max 10s). Connection indicator dot goes red.
@@ -286,6 +312,15 @@ This prevents double-counting if events are replayed.
 4. Failed scenarios list (if any)
 5. Rerun file section (if failures exist) — fetches content from `/rerun_file`
 6. Feature timeline (completed features with durations)
+
+#### Console Panel
+
+A fixed-position panel at the bottom of the page:
+- Toggle open/closed by clicking the bar
+- Polls `/console?offset=N` independently from the event poll
+- Appends new content and auto-scrolls to bottom
+- Green dot when output is actively streaming
+- Cleared on Reset (offset reset to 0, content cleared)
 
 #### Notifications
 
@@ -343,25 +378,27 @@ Two modes:
    ↓
 2. POST /run { workers: 4, feature_path: "features/" }
    ↓
-3. Server counts scenarios, writes total_scenarios file
+3. Server validates paths exist and contain scenarios
    ↓
-4. Server spawns: parallel_cucumber features/ -n 4 -o "... --format ProgressFormatter ..."
+4. Server counts scenarios, writes total_scenarios file
    ↓
-5. parallel_cucumber spawns 4 worker processes
+5. Server spawns: parallel_cucumber features/ -n 4 -o "... --format ProgressFormatter ..."
    ↓
-6. Each worker loads ProgressFormatter, writes worker_start to worker_N.jsonl
+6. parallel_cucumber spawns 4 worker processes
    ↓
-7. Browser polls GET /poll every 500ms
+7. Each worker loads ProgressFormatter, writes worker_start to worker_N.jsonl
    ↓
-8. Server reads new bytes from each worker_N.jsonl since last cursor position
+8. Browser polls GET /poll every 500ms + GET /console every 1s
    ↓
-9. Server returns new events + updated cursor
+9. Server reads new bytes from each worker_N.jsonl and cucumber_full_output.txt
    ↓
-10. Browser processes events, updates worker cards, summary stats, progress bar
+10. Server returns new events + updated cursor / new console content + offset
    ↓
-11. On failure: browser sends POST /send_email (if enabled), shows notification
+11. Browser processes events, updates worker cards, summary stats, progress bar, console
    ↓
-12. On all workers done: browser shows finished banner, sends completion email
+12. On failure: browser sends POST /send_email (if enabled), shows notification
+   ↓
+13. On all workers done: browser shows finished banner, sends completion email
 ```
 
 ## Key Design Decisions
@@ -390,13 +427,18 @@ The mailer needs the full Rails environment loaded (`config/environment`). Loadi
 
 When `--require <dashboard_dir>` is specified, Cucumber stops auto-loading step definitions from `features/step_definitions/`. The explicit `--require features` before our require restores the default autoload behavior. Without this, all scenarios show as "undefined" (0 passed, 0 failed, N undefined).
 
+### Why validate paths before starting?
+
+Without validation, `parallel_cucumber` would spawn workers that immediately error out on missing files. The dashboard would show "Workers starting up..." forever with 0 scenarios. Validating upfront gives immediate feedback via a toast error, preventing wasted time and confusion.
+
 ## Error Handling
 
 | Layer | Strategy |
 |-------|----------|
 | Formatter | All file writes wrapped in `rescue StandardError` — never crashes the test run |
-| Server | WEBrick catches exceptions per-request. `count_scenarios` and `read_total_scenarios` rescue to safe defaults (0 / nil) |
-| Stop | Tries TERM → KILL → pkill. Each step rescues `Errno::ESRCH` in case the process is already gone |
+| Server `/run` | Validates paths exist and contain scenarios before spawning workers. Returns structured error JSON on failure |
+| Server general | WEBrick catches exceptions per-request. `count_scenarios` and `read_total_scenarios` rescue to safe defaults (0 / nil) |
+| Stop | Tries TERM → KILL → pkill. Each step rescues `Errno::ESRCH` in case the process is already gone. No precondition — always attempts kill |
 | Frontend | Poll errors trigger exponential backoff. Fetch failures show toast. Connection dot indicates server reachability |
 | Email | Spawned in a detached process — failures are logged to STDOUT but never block the server or dashboard |
 
@@ -406,9 +448,25 @@ When `--require <dashboard_dir>` is specified, Cucumber stops auto-loading step 
 |----------|-------|----------|
 | `PORT` | 9777 | `dashboard_server.rb` |
 | `PROGRESS_DIR` | `/tmp/cucumber_progress` | `dashboard_server.rb`, `progress_formatter.rb` |
-| Poll interval (running) | 500ms | `dashboard.html` |
-| Poll interval (idle) | 5000ms | `dashboard.html` |
+| Event poll interval (running) | 500ms | `dashboard.html` |
+| Event poll interval (idle) | 5000ms | `dashboard.html` |
+| Console poll interval (running) | 1000ms | `dashboard.html` |
+| Console poll interval (idle) | 3000ms | `dashboard.html` |
 | Max workers | 16 | `dashboard_server.rb` (clamp) |
 | Error truncation | 300 chars | `progress_formatter.rb` |
+| Console panel height | 280px | `dashboard.html` |
 | Rerun file scroll height | 120px | `dashboard.html` |
 | Failure list scroll height | 150px | `dashboard.html` |
+
+## API Summary
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | Serve dashboard HTML |
+| `/poll` | GET | Cursor-based event stream |
+| `/console` | GET | Cursor-based console output stream |
+| `/run` | POST | Start a test run (with validation) |
+| `/stop` | POST | Kill all cucumber processes |
+| `/reset` | POST | Clear progress data and state |
+| `/rerun_file` | GET | Read per-worker failure file |
+| `/send_email` | POST | Send completion or failure email |

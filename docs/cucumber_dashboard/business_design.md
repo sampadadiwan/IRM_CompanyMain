@@ -13,6 +13,7 @@ Running `parallel_cucumber` with multiple workers produces interleaved, hard-to-
 - How many scenarios have passed, failed, or are still running
 - Which specific scenarios failed and why
 - Overall progress toward completion
+- What's happening in the background (raw console output)
 
 The dashboard solves all of these problems with a single browser tab.
 
@@ -20,11 +21,10 @@ The dashboard solves all of these problems with a single browser tab.
 
 ### Option 1: Dashboard Only (Recommended)
 
-Start the server, then configure and run tests from the browser:
+Start the server from your project root:
 
 ```bash
-cd cucumber_dashboard
-./run.sh
+ruby cucumber_dashboard/dashboard_server.rb
 ```
 
 Open `http://localhost:9777`. You'll see:
@@ -32,6 +32,9 @@ Open `http://localhost:9777`. You'll see:
 - A **Start Run** button to kick off tests
 - A **Stop** button (appears during runs) to kill all workers
 - A **Reset** button to clear results and start fresh
+- A **Console Output** panel at the bottom for raw background output
+
+To stop the server, press `Ctrl+C`.
 
 ### Option 2: Dashboard + Immediate Run
 
@@ -64,11 +67,13 @@ This counts scenarios, starts the dashboard server, and launches `parallel_cucum
 1. Uncheck **All Features**
 2. In the text input, type space-separated paths:
    ```
-   features/core/login.feature features/funds/capital_call.feature features/ai/support_agents/
+   features/core/access_rights.feature features/ai/support_agents/call_notice_agent.feature
    ```
 3. Click **Start Run**
 
-You can specify individual `.feature` files or entire directories.
+You can specify individual `.feature` files or entire directories (e.g. `features/core/`).
+
+**Validation:** The dashboard validates all paths before starting. If a path doesn't exist, you'll see a red error toast (e.g. "Path not found: features/core/login.feature"). If the selected paths contain no scenarios, you'll see "No scenarios found in the selected paths". The run won't start until the paths are valid.
 
 ### Summary Strip
 
@@ -106,12 +111,12 @@ When a worker encounters failures, the card expands to show:
 Below the failures, a **Rerun File** section appears showing:
 
 - The file path (`/tmp/cucumber_progress/worker_N_failures.txt`)
-- A scrollable box with the file contents — `feature:line` entries
+- A scrollable box with the file contents — `feature:line` entries you can copy
 
 You can use these entries to re-run only failed scenarios:
 
 ```bash
-bundle exec cucumber features/core/login.feature:42 features/funds/capital_call.feature:18
+bundle exec cucumber features/core/access_rights.feature:42 features/ai/kyc_validation.feature:18
 ```
 
 #### Feature Timeline
@@ -121,6 +126,16 @@ At the bottom of each card, a scrollable timeline shows completed features with:
 - Pass/fail indicator (checkmark or X)
 - Feature name
 - Duration
+
+### Console Output Panel
+
+A collapsible panel fixed at the bottom of the dashboard shows the raw `parallel_cucumber` output — the same content as `/tmp/cucumber_full_output.txt`. Click the **Console Output** bar to expand/collapse.
+
+- Auto-scrolls to the latest output during a run
+- Green dot indicator when output is actively streaming
+- Polls every 1 second during runs, 3 seconds when idle
+- Useful for debugging errors that don't surface in the worker cards (e.g. DB setup failures, missing step definitions)
+- Cleared on Reset
 
 ### Finished Banner
 
@@ -157,26 +172,25 @@ Emails use Rails ActionMailer. In development, `letter_opener` opens them in bro
 
 Click the **Stop** button during a run. This:
 
-1. Sends TERM then KILL to the process group
-2. Runs `pkill` to catch any stray cucumber workers
+1. Sends TERM then KILL to the tracked process group
+2. Runs `pkill` to catch any stray `parallel_cucumber` and cucumber worker processes
 3. Returns the dashboard to idle state
 
-The Stop button appears whenever workers are detected as running, regardless of whether the run was started from the dashboard UI or the command line.
-
-## Keyboard Shortcuts
-
-None currently — all interaction is mouse/touch based.
+The Stop button appears whenever workers are detected as running, regardless of whether the run was started from the dashboard UI or the command line. To stop from terminal directly: `pkill -f cucumber`.
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| Dashboard doesn't load | Check that the server is running (`./run.sh`). Look for port 9777 conflicts. |
-| Workers show but no progress | Verify features exist at the specified paths. Check `/tmp/cucumber_full_output.txt` for errors. |
+| Dashboard doesn't load | Check that the server is running (`ruby cucumber_dashboard/dashboard_server.rb`). Look for port 9777 conflicts. |
+| "Path not found" error | The feature file or directory you entered doesn't exist. Check the path spelling. |
+| "No scenarios found" error | The path exists but contains no `Scenario` lines. Verify the feature file has scenarios. |
+| Workers show but no progress | Open the Console Output panel to see raw errors. Check `/tmp/cucumber_full_output.txt`. |
 | Stop doesn't kill workers | Run `pkill -f cucumber` manually in terminal. |
 | Email not arriving | Check that `letter_opener` is configured in development. Verify email address is entered. |
-| Connection dot is red | Server may have crashed. Restart with `./run.sh`. |
+| Connection dot is red | Server may have crashed. Restart with `ruby cucumber_dashboard/dashboard_server.rb`. |
 | All scenarios "undefined" | Step definitions aren't being loaded. Check that `--require features` is in the command. |
+| Scenario count wrong after reset | Click Reset before starting a new run with different features. |
 
 ## File Locations
 
