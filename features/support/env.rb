@@ -195,11 +195,24 @@ if ENV['TEST_ENV_NUMBER'].present?
 end
 
 
+# Chromium launch flags that cut each worker's memory footprint. A parallel run
+# puts one Rails + Puma + `node run-driver` + a multi-process Chromium in RAM per
+# worker; when the box runs out, renderers self-terminate and scenarios fail with
+# "Page crashed" / "Target crashed", or the driver stops replying and
+# playwright_transport_patch.rb reports it wedged. None of these flags change how
+# pages render — they only stop Chromium reaching for memory it can't have here.
+CHROMIUM_LOW_MEMORY_ARGS = %w[
+  --disable-dev-shm-usage
+  --disable-gpu
+  --renderer-process-limit=2
+].freeze
+
 Capybara.register_driver(:playwright) do |app|
   Capybara::Playwright::Driver.new(app,
                                    browser_type: :chromium,
                                    headless: ENV["BROWSER"].blank?,
                                    playwright_cli_executable_path: 'node_modules/.bin/playwright',
+                                   args: CHROMIUM_LOW_MEMORY_ARGS,
                                    screen_size: { width: 1680, height: 1100 },
                                    viewport: { width: 1680, height: 1100 },
                                    default_wait_for_load_state: "domcontentloaded",

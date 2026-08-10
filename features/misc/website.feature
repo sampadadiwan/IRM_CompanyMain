@@ -11,9 +11,13 @@ Feature: Static company website on the apex domain
 
   @website
   Scenario: The apex root serves the website homepage
+    # Asserts the canonical link rather than the headline: the headline is
+    # marketing copy that gets reworded (it moved from "Supercharge" to
+    # "Reimagine" and broke this scenario), while the canonical URL identifies
+    # the homepage and is something the app itself would never serve.
     When a visitor requests "/" on host "caphive.test"
     Then the response status is 200
-    And the response body contains "CapHive — Supercharge Private Capital Markets"
+    And the response body contains '<link rel="canonical" href="https://caphive.com/">'
 
   @website
   Scenario: Inner pages are served directly

@@ -471,7 +471,10 @@ Given('we Generate Investor Statements from commitments index page') do
   click_on("Submit")
   # Use have_selector with visible: :all because Bootstrap's fade transition can briefly make the notice
   # element non-visible to Selenium; we just need to confirm the flash was set (redirect succeeded).
-  expect(page).to have_selector("#notice", text: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", visible: :all, wait: 15)
+  # The wait is long because cucumber runs ActiveJob with the :inline adapter, so the allocation and
+  # document generation happen synchronously inside this request before the redirect sets the flash.
+  # 15s was enough on an idle box but timed out under the CPU contention of a parallel run.
+  expect(page).to have_selector("#notice", text: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", visible: :all, wait: 45)
 end
 
 Then('the {string} is successfully generated for all intended commitments') do |template_name|

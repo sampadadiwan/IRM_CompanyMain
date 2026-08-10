@@ -9,3 +9,10 @@ default: <%= std_opts %> features
 wip: --tags @wip:3 --wip features
 rerun: <%= rerun_opts %> --format rerun --out rerun.txt --strict 
 parallel: --format progress --format ParallelTests::Cucumber::FailuresLogger --out tmp/cucumber_failures.log --strict features
+# Same as `parallel` but WITHOUT the trailing `features` argument, for re-running
+# a specific list of scenarios. parallel_cucumber appends `--profile parallel`
+# automatically unless the options passed via -o already name a profile, and that
+# profile's `features` would be added after your file list — running the whole
+# suite instead of just the failures. Pass `-o "-p parallel_rerun"` to avoid that.
+# Failures land in a separate file so the list you are feeding in is not clobbered.
+parallel_rerun: --format progress --format ParallelTests::Cucumber::FailuresLogger --out tmp/cucumber_failures_rerun.log --strict
