@@ -249,10 +249,13 @@ class DataQualityAgent < SupportAgentService
     true
   end
 
-  # Emails the fix-it report to the configured address.
-  # When the target is an Entity, sends one consolidated report covering all funds.
+  # Emails the fix-it report to explicitly configured recipients only.
+  # Skips entirely when send_report is disabled or no recipients are configured —
+  # never falls back to all entity employees.
   #
-  # Configurable: send_report — "true"/"false"
+  # @param ctx [Hash] pipeline context with :funds, :fund_data, :support_agent_report
+  # @param support_agent [SupportAgent] the agent record carrying json_fields config
+  # @return [Boolean] true when step completes (sent, skipped, or no recipients)
   def send_quality_report(ctx, support_agent:, **)
     report = ctx[:support_agent_report]
     mark_step_running(report, :send_quality_report) if report
@@ -260,6 +263,14 @@ class DataQualityAgent < SupportAgentService
     unless enabled?("send_report")
       Rails.logger.debug { "[DataQualityAgent] send_report disabled, skipping." }
       mark_step_skipped(report, :send_quality_report, message: "Disabled") if report
+      return true
+    end
+
+    # Only send to explicitly configured recipients — no fallback to all employees
+    recipients = support_agent.json_fields["email"].presence
+    unless recipients
+      Rails.logger.info { "[DataQualityAgent] No report recipients configured, skipping email." }
+      mark_step_skipped(report, :send_quality_report, message: "No recipients configured") if report
       return true
     end
 
