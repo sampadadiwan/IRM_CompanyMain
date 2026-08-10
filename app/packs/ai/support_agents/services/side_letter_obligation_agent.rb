@@ -66,14 +66,40 @@ class SideLetterObligationAgent < SupportAgentService
 
     agent_record = SupportAgent.where(entity_id: entity_id, agent_type: "SideLetterObligationAgent").last
     label = self.class.doc_label(agent_record)
-    CapitalCommitment.where(entity_id: entity_id)
-                     .joins(:documents)
-                     .where(documents: { name: label })
-                     .distinct
+    scope = CapitalCommitment.where(entity_id: entity_id)
+    # Two ways a commitment qualifies, unioned in SQL: it has a side letter
+    # document (by name label or tag), or someone recorded a side letter by
+    # hand — whose document may be named and tagged anything at all.
+    commitment_docs = Document.where(entity_id: entity_id, owner_type: "CapitalCommitment", template: [nil, false])
+    by_doc = self.class.side_letter_documents(commitment_docs, label).select(:owner_id)
+    by_record = SideLetter.where(entity_id: entity_id).select(:capital_commitment_id)
+    scope.where(id: by_doc).or(scope.where(id: by_record))
   end
 
   def self.doc_label(support_agent)
     ((support_agent&.json_fields || {})["side_letter_doc_label"]).presence || DEFAULT_DOC_LABEL
+  end
+
+  # A document is a side letter if it carries the configured name label, or if
+  # it is tagged "Side Letter"/"SideLetter" in any casing. Tags let GPs keep
+  # their own file-naming conventions and still feed the agent.
+  TAG_PATTERNS = ["%side letter%", "%sideletter%"].freeze
+
+  # SQL form, for picking side letter documents out of a Document scope.
+  # LOWER + LIKE rather than a collation-dependent bare LIKE, so this behaves
+  # identically on MySQL (dev/prod) and SQLite (test).
+  def self.side_letter_documents(scope, label)
+    tag_sql = "LOWER(COALESCE(documents.tag_list, '')) LIKE :a OR LOWER(COALESCE(documents.tag_list, '')) LIKE :b"
+    scope.where(name: label)
+         .or(scope.where(tag_sql, a: TAG_PATTERNS[0], b: TAG_PATTERNS[1]))
+  end
+
+  # Ruby form, for deciding about one already-loaded document (upload hook).
+  def self.side_letter_document?(document, label)
+    return true if document.name == label
+
+    tags = document.tag_list.to_s.downcase
+    tags.include?("side letter") || tags.include?("sideletter")
   end
 
   def self.config_issues(support_agent)
@@ -136,13 +162,20 @@ class SideLetterObligationAgent < SupportAgentService
 
   def locate_side_letter(ctx, commitment:, **)
     label = self.class.doc_label(@support_agent)
-    ctx[:side_letter_doc] = commitment.documents.where(name: label).order(:id).last
+    # Newest document carrying the configured label or a side letter tag.
+    ctx[:side_letter_doc] = self.class
+                                .side_letter_documents(commitment.documents.where(template: [nil, false]), label)
+                                .order(:id).last
+    # Fallback for side letters recorded by hand: the user already told us which
+    # document is the side letter, so honour that whatever it is named.
+    ctx[:side_letter_doc] ||= SideLetter.where(capital_commitment_id: commitment.id)
+                                        .order(:id).last&.document
 
     if ctx[:side_letter_doc].nil?
       # Info, not blocking — not every LP negotiates a side letter
       ctx[:issues][:extraction_issues] << {
         type: :no_side_letter,
-        message: "No document named '#{label}' on this commitment — nothing to extract",
+        message: "No document named '#{label}' on this commitment and no side letter recorded — nothing to extract",
         severity: :info
       }
     end

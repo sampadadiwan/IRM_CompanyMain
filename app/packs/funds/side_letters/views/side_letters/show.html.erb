@@ -101,6 +101,17 @@
           <hr>
 
           <div class="d-flex flex-wrap gap-2">
+            <%# Runs the extraction agent against this side letter's commitment. Extraction
+                only ever produces pending_review rows, so this is safe to re-run — an
+                amended document is diffed against what counsel already approved. %>
+            <%# update? already implies the agent flag is on (SideLetterPolicy#agent_enabled?) %>
+            <% if policy(@side_letter).update? %>
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                      data-bs-target="#extract_side_letter_modal_<%= @side_letter.id %>"
+                      title="Read this side letter with AI and list the obligations it creates">
+                <i class="ti ti-robot"></i> Extract Obligations
+              </button>
+            <% end %>
             <%= link_to edit_side_letter_path(@side_letter), class: "btn btn-outline-secondary" do %>
               <i class="ti ti-edit"></i> Edit
             <% end %>
@@ -146,3 +157,7 @@
 
 <%# Outside the FormCard — see _action_modals for why %>
 <%= render "side_letter_obligations/action_modals", obligations: @obligations %>
+
+<% if policy(@side_letter).update? %>
+  <%= render "side_letters/extract_modal", side_letter: @side_letter %>
+<% end %>

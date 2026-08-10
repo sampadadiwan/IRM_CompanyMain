@@ -157,7 +157,8 @@ class Document < ApplicationRecord
     # Feature is dark for the tenant — don't extract obligations nobody can see.
     return unless agent.entity_flag_enabled?
     return unless (agent.json_fields || {})["auto_extract_on_upload"].to_s.casecmp("yes").zero?
-    return unless name == SideLetterObligationAgent.doc_label(agent)
+    # Matches the configured name label, or a "Side Letter"/"SideLetter" tag in any casing.
+    return unless SideLetterObligationAgent.side_letter_document?(self, SideLetterObligationAgent.doc_label(agent))
 
     SupportAgentJob.perform_later(support_agent_id: agent.id, target_type: "CapitalCommitment", target_id: owner_id)
   end

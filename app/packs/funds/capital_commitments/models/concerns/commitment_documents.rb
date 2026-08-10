@@ -10,8 +10,21 @@ module CommitmentDocuments
     docs = fund.documents.templates.map(&:name)
     docs += fund.documents.templates.map { |d| ["#{d.name} Header", "#{d.name} Footer"] }.flatten
     docs += fund.commitment_doc_list.split(",").map(&:strip) if fund.commitment_doc_list.present?
+    # Offering the exact label the extraction agent watches for is what lets an
+    # upload auto-trigger obligation extraction — a hand-typed name never matches.
+    docs << side_letter_document_label if side_letter_document_label
     docs += ["Other"] if docs.present?
-    docs.sort
+    docs.uniq.sort
+  end
+
+  # The side letter document label for this tenant, or nil when the Side Letter
+  # Obligation agent is off. The flag is a cheap bitmask read, so the agent row
+  # is only fetched for tenants actually running the feature.
+  def side_letter_document_label
+    return nil unless entity&.support_agents&.set?(:side_letter_obligation_agent)
+
+    agent = SupportAgent.where(entity_id: entity_id, agent_type: "SideLetterObligationAgent").last
+    SideLetterObligationAgent.doc_label(agent)
   end
 
   def docs_for_investor

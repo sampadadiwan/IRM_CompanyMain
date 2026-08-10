@@ -21,9 +21,10 @@ agent cannot tie to a specific clause in the document is discarded, never shown.
 1. **Enable the agent** for your firm (your administrator or CapHive support can do this),
    then run the agent setup so it appears on your Support Agents page.
 2. On the agent's edit page, set:
-   - **Side letter document name** — the exact name your side letters are uploaded
-     under on each commitment (for example, "Side Letter"). The agent only reads
-     documents with this name.
+   - **Side letter document name** — the name your side letters are usually uploaded
+     under on each commitment (for example, "Side Letter"). This name is offered in
+     the document dropdown on every commitment, so picking it is the easiest way to
+     have a side letter recognised.
    - **Auto-extract on upload** — choose Yes if you want extraction to run the moment
      a side letter is uploaded; leave No to run it manually.
    - **Default reminder lead time** — how many days before a due date the first
@@ -32,10 +33,28 @@ agent cannot tie to a specific clause in the document is discarded, never shown.
    - **Notify tag** — the team (by employee tag) that receives alerts for obligations
      without a named owner, and all overdue escalations.
 
+## How the agent recognises a side letter
+
+You do not have to rename your files to fit the agent. A document on a commitment
+counts as a side letter if **any** of the following is true:
+
+- It is **named** with the side letter document name set on the agent (the name
+  offered in the commitment's document dropdown).
+- It is **tagged** "Side Letter" or "SideLetter" — capitalisation does not matter,
+  and the tag can sit alongside others. Tags go in the Tags box on the document,
+  so a file called "SD - Amendment 3.pdf" tagged `legal, side letter` is picked up.
+- It is the document you nominated when you **recorded the side letter by hand**
+  on the commitment. In that case the file can be named and tagged anything at all,
+  because you have already pointed at it.
+
+Tagging is the most flexible option if your firm has its own file-naming
+conventions. Uploading a file that is neither named nor tagged, with no side letter
+recorded against it, is the one case the agent cannot see.
+
 ## Day-to-day flow
 
-1. **Upload** the executed side letter to the investor's commitment, using the
-   configured document name.
+1. **Upload** the executed side letter to the investor's commitment — either pick the
+   configured document name from the dropdown, or tag the document "Side Letter".
 2. **Extract** — run the agent for one commitment or the whole fund. Extracted
    obligations appear as "Pending review" in the Obligation Matrix.
 3. **Review** — legal opens the matrix, checks each obligation against the cited
@@ -77,3 +96,6 @@ their attention, worst first. Every alert sent is logged against the obligation.
   changes arrive as new items for review.
 - MFN-relevant obligations can be flagged during review so counsel can assess them
   across investors; the comparison dashboard is planned for a later release.
+- If a side letter you uploaded produced nothing, check that the document is named
+  or tagged as above, and that auto-extract on upload is switched on. You can always
+  run extraction by hand from the side letter's page — it is safe to re-run.
