@@ -34,7 +34,7 @@ Nothing here is a separate product or a separate login. It is the Stakeholder pa
 
 * **One record per LP firm, many people under it.** The firm holds the relationship; the individuals hold the contact detail.
 * **A contact is not a login.** You can record someone's full details, role and background with **Approved** set to **No** — they get no portal access and no email from CapHive.
-* **Every note and task can name the person it was with** (the "touch point"), so each individual has their own history, not just the firm.
+* **Every note and task can name the person it was with** (the "touch point"), so each individual has their own history, not just the firm. This works inside deals too, and a person's page gathers both.
 * **The LP page shows the whole relationship** — people, notes, follow-ups, reminders, documents, commitments — in one set of tabs.
 * **A stale relationship is visible.** The stakeholder list can be filtered by "no interaction in the last N days", and a dashboard widget surfaces LPs who have gone quiet.
 * **Your own vocabulary.** Engagement stages, roles and any other CRM field are configured by your firm — nothing is hard-coded.
@@ -222,11 +222,18 @@ Without it you know "someone at Acme asked about fees". With it you know **Sam i
 
 The dropdown offers only people recorded under that LP — so if a name is missing, add them as a contact first (Approved = No, thirty seconds).
 
+### Notes logged inside a deal
+
+The same Touch Point field is on notes logged from a **deal**, under one of its investors. The people offered are that investor's own contacts — the identical list you see on their stakeholder page — so a conversation recorded during a live deal names the same person as one recorded on the LP record, and both land in that person's history.
+
+That matters because deal conversations are usually the important ones. Without it, the busiest months of a relationship would be missing from the person's page.
+
 ### What happens automatically
 
-- The LP's **last interaction date** moves to today, which is what keeps them out of the "gone quiet" list.
+- The LP's **last interaction date** moves to today, which is what keeps them out of the "gone quiet" list. (Notes logged under a deal update that deal investor's own last-interaction date, not the LP's.)
 - The note appears in the LP's Notes tab, in that person's Notes tab, and in the global Notes list.
 - If you set a reminder, it is scheduled and appears in the LP's **Reminders** tab.
+- The **With** column in any notes or tasks list is a link — click a name to open that person's page.
 
 ---
 
@@ -247,10 +254,12 @@ Create one from the LP page → **Tasks** tab → **New Task**, or from a contac
 | **Reminders** | One or several nudges before the due date |
 | **Recurrence** | For anything on a cadence, e.g. a quarterly catch-up call |
 
+Follow-ups raised inside a **deal**, against one of its investors, offer the same Touch Point list — that investor's own contacts — so "chase the signed NDA" can name the person you will actually chase.
+
 ### Views that help
 
-- **List view** — the default, with a **With** column showing the touch point.
-- **Board view** — a Kanban board with To Do / In Progress / Done columns; drag cards between them. Useful in a Monday pipeline meeting.
+- **List view** — the default, with a **With** column showing the touch point. Click a name to open that person's page.
+- **Board view** — a Kanban board with To Do / In Progress / Done columns; drag cards between them. Useful in a Monday pipeline meeting. A deal has its own board covering the deal and every investor on it — see the **Tasks User Guide**.
 - **Show All / Incomplete** — toggle between the full history and only what is outstanding.
 - **Dashboard cards** — Completed, Incomplete, Delayed, Due This Week, each one clickable.
 
@@ -266,11 +275,13 @@ Repeatable sequences (an onboarding checklist, a diligence pack chase) can be bu
 
 Click any contact's name to open their page. It shows their details and CRM fields at the top, then tabs beneath:
 
-- **Notes** — every note logged *with this person*, at this LP
+- **Notes** — every note logged *with this person*, wherever it was written
 - **Tasks** — every follow-up naming them, including completed ones
 - **Fund Access** — advisors only
 
-Both lists are already filtered to that person, and anything you create from these tabs is pre-linked to them — you do not have to remember to set the touch point.
+**"Wherever it was written" is the point.** These lists are not limited to the LP record: a note taken during a deal, against that person, appears here alongside the rest. The **For** column tells you which record each entry was logged against, so you can see at a glance what came out of a live deal and what came from the ongoing relationship.
+
+Both lists are already filtered to that person, and anything you create from these tabs is pre-linked to them — you do not have to remember to set the touch point. If you clear the Touch Point before saving, the entry is created as an ordinary note or task and simply does not appear on this page, since it is no longer about this person.
 
 This is the page to open before a call. *"Last time we spoke you were worried about the drawdown schedule"* is the difference between a warm relationship and a cold one, and it should not depend on whose inbox it lives in.
 
@@ -397,6 +408,7 @@ Being honest about the boundaries saves disappointment:
 - **It does not do campaigns or bulk outreach.** The list view tells you who to contact; people do the contacting.
 - **It does not report on conversion or stage history.** Changing the Engagement Status overwrites the old value — there is no record of how long an LP sat in Due Diligence. If that matters to you, raise it; it is a small addition but it cannot be reconstructed after the fact.
 - **A note or task has one touch point, not several.** For a four-person meeting, pick the principal and name the others in the note text.
+- **Deal activity does not move the LP's "last spoken to" clock.** A note logged under a deal updates that deal investor's own last-interaction date. So an LP being worked hard inside a deal can still appear in the "gone quiet" list — log a note on the LP record itself when the relationship, rather than the transaction, has moved.
 - **There is no sync with an external CRM.**
 
 ---
@@ -413,7 +425,13 @@ Not while they are unapproved. The welcome email is sent when you click **Approv
 The dropdown lists only people recorded under that LP. Add them as a contact first — it takes seconds, and they do not need to be approved.
 
 **Can I log a note against a person without picking a firm?**
-No. Notes hang off the LP; the touch point narrows them to a person. This is what keeps each contact's history scoped to the right relationship.
+No. Notes hang off the LP (or, inside a deal, off that deal's investor); the touch point narrows them to a person. This is what keeps each contact's history scoped to the right relationship.
+
+**Do notes I write inside a deal show on the person's page?**
+Yes, as long as you set the Touch Point. Their page gathers everything recorded with them, and the **For** column shows whether an entry came from the LP record or from a deal.
+
+**Why is an LP in the "gone quiet" list when we spoke last week?**
+Most likely the conversation was logged under a deal, which updates the deal investor's date rather than the LP's. Add a note on the LP record when the relationship itself has moved on.
 
 **We use different pipeline stages.**
 Edit the Engagement Status choices to your own vocabulary — nothing is hard-coded.
