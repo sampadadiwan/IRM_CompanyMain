@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case study: multi-currency computations & reporting | CapHive</title>
+<meta name="description" content="A venture fund holding instruments in several currencies needed portfolio cost and FMV computed automatically, allocated on ratios that move with every capital call. Three currency layers, one close.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/case-multi-currency-close.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Case study: multi-currency computations and reporting">
+<meta property="og:description" content="Instrument currency, fund currency, tracking currency — and allocation ratios that change with every capital call.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/case-multi-currency-close.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=f26f1db9">
+</head>
+<body data-page="cases">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="https://app.caphive.com/" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-cream">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="case-studies.html">Case Studies</a><span>/</span>Multi-currency
+          </nav>
+          <span class="chip-label">Case study · Fund Accounting</span>
+          <h1 style="margin-top:22px">Three currencies in one holding, <em>and only one is the fund's.</em></h1>
+          <p class="lede">A venture fund with a multi-currency portfolio wanted portfolio accounting computed rather than assembled — allocated to investors on ratios that move with every capital call, across instruments that don't share a denomination with the fund that owns them.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-11">Aug 11, 2026</time>
+            <span class="dot">·</span>
+            <span>8 min read</span>
+            <span class="dot">·</span>
+            <span>Fund accounting</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+
+        <div class="stat-band" style="margin:0 0 34px;border:1px solid var(--line);border-radius:14px;overflow:hidden">
+          <div><strong>3</strong><span>currency layers held simultaneously</span></div>
+          <div><strong>8</strong><span>documented rate-date rules, one per record type</span></div>
+          <div><strong>0</strong><span>exchange rates guessed or carried forward</span></div>
+        </div>
+
+        <h3>The engagement</h3>
+        <p>A venture capital fund with a multi-currency portfolio, asking for six things: automated computation of portfolio-related fund accounting to remove errors; allocation to investors using ratios that fluctuate with each capital call; portfolios spanning multiple currencies; real-time dashboards; custom fields retained on individual investments; and oversight of financial instruments converting into other instruments.</p>
+        <p>That list looks like six features. Operationally it is one question asked six times: <em>when this number is expressed in a different currency, which day's rate applies?</em></p>
+
+        <h3>Why the workbook version drifts</h3>
+        <p>Every multi-currency GP has built the consolidation spreadsheet. Someone builds it for Q1, makes a dozen reasonable rate-date decisions, most of them undocumented and some buried in cell formulas. Next quarter, under deadline, someone extends it. A year later a different person adds a fund and picks a defensible date — a <em>different</em> defensible date.</p>
+        <p>Nothing there is negligent. It is what happens when a rule lives in a formula instead of a policy. You usually discover it when an auditor asks why the same commitment converts at two different rates in two different reports.</p>
+        <div class="pull"><p>Converting currency is trivial. Choosing the date is the whole job — and a rule applied by a person is a rule that drifts.</p></div>
+
+        <h3>Layer one — the instrument's own currency</h3>
+        <p>An investment instrument is the actual security: "Series A Equity", "10% NCD", a convertible note. Each belongs to exactly one company and carries a fixed currency that cannot be changed later, because every amount calculation stands on it.</p>
+        <p>When the fund buys, the amount is recorded in the instrument's currency <em>and</em> converted to the fund's currency at the rate on the investment date — with the rate used stored, not just applied. FMV is calculated in the instrument's currency and converted at the rate on the <em>valuation</em> date, which is a different date and moves every time a new valuation lands.</p>
+        <p>And if no rate exists between the instrument and fund currencies on the transaction date, the transaction is rejected outright. You set the rate up first. That refusal is the feature: the alternative is a holding recorded at a rate nobody chose.</p>
+
+        <h3>Layer two — the fund's base currency</h3>
+        <p>The fund's books stay in the fund's own currency. Its LPs, its accounts, its LPA all continue to speak it. Nothing about multi-currency reporting restates the fund's actual books, and that is deliberate.</p>
+        <p>Within a fund, each investor's folio can still commit and pay in its own currency, so remittances carry folio and fund amounts side by side permanently rather than deriving one from the other at report time.</p>
+
+        <h3>Layer three — the tracking currency</h3>
+        <p>The tracking currency is a reporting lens laid over the top: a single currency in which activity is restated so an INR fund, a EUR fund and a GBP fund can be read side by side in USD. It runs automatically for any fund whose tracking currency differs from its base, and the restated figure sits <em>beside</em> the original — it never replaces it.</p>
+        <p>What gets restated, and on which date, is the actual product:</p>
+        <figure style="margin:30px 0">
+          <table>
+            <thead><tr><th>Record</th><th>Rate date used</th></tr></thead>
+            <tbody>
+              <tr><td>Account entries</td><td>The reporting date</td></tr>
+              <tr><td>Remittance payments</td><td>The date the money was received</td></tr>
+              <tr><td>Capital calls</td><td>The remittance (call) date</td></tr>
+              <tr><td>Distributions</td><td>The distribution's payment date</td></tr>
+              <tr><td>Commitment adjustments</td><td>The adjustment's "as of" date</td></tr>
+              <tr><td>Capital commitments</td><td>The commitment date</td></tr>
+              <tr><td>Portfolio investment — cost</td><td>The investment date</td></tr>
+              <tr><td>Portfolio investment — FMV</td><td>The date of the latest valuation</td></tr>
+            </tbody>
+          </table>
+          <figcaption style="margin-top:10px;font-size:13px;color:var(--mut)">the rate-date table — the part most workbooks hold implicitly</figcaption>
+        </figure>
+        <p>Take a capital call. Two amounts matter: what was <strong>called</strong> and what was actually <strong>collected</strong>. Those happened on different days, and the rate moved between them. Convert both at one date and you have manufactured a shortfall that exists only in your reporting.</p>
+
+        <h2>⚙️ Under the hood: three rules that keep it honest</h2>
+        <p><strong>Percentages are never converted.</strong> An ownership stake or an allocation share is currency-neutral and stays exactly as it is. Obvious when stated; a classic workbook bug when an adjacent column gets multiplied by a rate.</p>
+        <p><strong>Cost freezes, FMV refreshes.</strong> An investment's cost is fixed at its investment-date rate and never moves. Its tracking FMV is recomputed on every run against the most recent valuation and that valuation's rate. Two figures on one record, one deliberately frozen and one deliberately live — because they describe different kinds of fact.</p>
+        <p><strong>Missing rates skip; they never guess.</strong> If a rate isn't available for a date a conversion needs, that record is skipped and administrators are alerted so the rate can be supplied. It is not interpolated from a neighbouring day, and it is not carried forward from the last known rate. Carrying yesterday's rate forward produces a complete, confident report containing a figure no market ever offered. A gap that announces itself is worth more.</p>
+        <p>When a historical rate is later corrected — as they are — an administrator forces a recalculation and the restated figures come back into line, rather than an error being preserved because it has already been reported.</p>
+
+        <h3>Ratios that move with every capital call</h3>
+        <p>This was the requirement that ruled out most alternatives. Investor allocation shares here are not static percentages set at close; they follow figures that change every time capital is called.</p>
+        <p>So they are computed, not stored by hand. During a run the engine takes each commitment's latest recorded value for the driving field as at the period end, totals them across the fund, and writes each commitment's share as a percentage entry for that reporting date. The previous run's generated percentages for the same date are removed first, so re-running a period replaces rather than accumulates.</p>
+        <p>Portfolio investments are then allocated across commitments on those shares — every investment up to the period end, or only those inside the window where a formula asks for it, and with the option to report at the investment date rather than the period end where that is the correct treatment. Proforma investments are allocated separately from actual ones, so a modelled scenario never contaminates the books.</p>
+
+        <h3>Instruments that turn into other instruments</h3>
+        <p>A stock conversion records one security becoming another — CCDs converting to equity. It captures the instrument and lot surrendered, the quantity given up, the destination instrument, the quantity received and the date. On save, the original holding is reduced, a new holding is created in the destination instrument <strong>carrying the original cost across at the rate on the original investment date</strong>, and both aggregate views update.</p>
+        <p>A conversion is cost-preserving: it creates no gain and reduces no cost, it just moves cost. And in Gross Portfolio IRR, conversions are netted out so the converted cost isn't double-counted as a fresh investment. Stock adjustments — bonus shares, rights issues, corrections — change the share count without pretending to be a transaction.</p>
+        <p>Custom fields ride along on individual investments, so the things this fund tracks that no schema anticipated stay on the record they belong to rather than in a parallel sheet.</p>
+
+        <h2>📊 The impact</h2>
+        <p><strong>Before:</strong> a quarterly workbook restating several funds into one currency, with each figure's rate date chosen by whoever built the tab, and no practical way to prove two reports used the same rule.</p>
+        <p><strong>After:</strong> every restated figure sits beside its base-currency original, converted on a documented rule per record type, refreshed automatically, with missing rates surfaced rather than filled in — and investor allocations recomputed from the ratios as they stand at each period end rather than as they stood at close.</p>
+        <p>The question worth asking your own team: <strong>for the last consolidated report you produced, which date's rate was used for the capital calls — and can two people answer that the same way without opening the file?</strong></p>
+
+        <h2>What to take from this</h2>
+        <div class="callout">
+          <ol>
+            <li><strong>Write down your rate-date table.</strong> Eight rows. It is the highest-value hour available to a multi-currency finance team, whatever software you use.</li>
+            <li><strong>Called and collected are different dates.</strong> Convert them at one rate and you invent a variance that never happened.</li>
+            <li><strong>Never carry a rate forward to fill a gap.</strong> A visible gap gets fixed; a silently interpolated rate reports as confidently as a right one.</li>
+            <li><strong>Keep cost frozen and FMV live.</strong> They are different kinds of fact and should not refresh on the same cadence.</li>
+            <li><strong>Restate for reporting; don't convert the books.</strong> The fund's base currency belongs to the fund. A tracking currency is a lens, not a migration.</li>
+          </ol>
+        </div>
+
+        <h2>Where this goes next</h2>
+        <p>The same computed entries are what <a href="case-investor-statements.html">investor statements</a> are built from, and the portfolio side of it feeds <a href="case-portfolio-reports.html">portfolio reports across 50+ companies</a>. For the longer treatment of rate dates, read <a href="tracking-currency.html">converting currency is trivial; choosing the date is the whole job</a>.</p>
+
+        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld. The workflow, platform mechanics and behaviour described are exactly as CapHive runs them; supporting detail is illustrative of how engagements of this shape run.</p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="case-studies.html">More case studies</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js?v=64f54259"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Case study: multi-currency computations and reporting",
+  "description": "A venture fund holding instruments in several currencies needed portfolio cost and FMV computed automatically, allocated on ratios that move with every capital call.",
+  "datePublished": "2026-08-11",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/case-multi-currency-close.html"
+}
+</script>
+</body>
+</html>

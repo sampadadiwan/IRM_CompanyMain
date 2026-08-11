@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case study: investor statements for 500+ LPs | CapHive</title>
+<meta name="description" content="An early-stage fund with over 500 LPs needed fees and NAV computed, statements produced in the fund's own format with variations for some investors, and delivered securely. The operating team got over 5x.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/case-investor-statements.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Case study: investor statements for 500+ LPs">
+<meta property="og:description" content="One run computes the entries and produces every statement — with the commitments it refused named, not skipped.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/case-investor-statements.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=f26f1db9">
+</head>
+<body data-page="cases">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>Banks, custodians, ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="login" href="https://app.caphive.com/" data-login>Login</a>
+    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="products.html">Products</a>
+  <a class="mm-sub" href="funds.html">Funds</a>
+  <a class="mm-sub" href="portfolios.html">Portfolios</a>
+  <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+  <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+  <a href="who-we-serve.html">Who We Serve</a>
+  <a href="resources.html">Resources</a>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+</div>
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-orange tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="case-studies.html">Case Studies</a><span>/</span>Investor statements
+          </nav>
+          <span class="chip-label">Case study · Fund Accounting</span>
+          <h1 style="margin-top:22px">500+ statements, <em>one run.</em></h1>
+          <p class="lede">An early-stage fund with more than five hundred limited partners had three problems: computing fees and NAV correctly, producing statements in its own format with variations for certain investors, and getting them to LPs securely. The operating team came out over 5× more efficient.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-11">Aug 11, 2026</time>
+            <span class="dot">·</span>
+            <span>8 min read</span>
+            <span class="dot">·</span>
+            <span>Fund accounting</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+
+        <div class="stat-band" style="margin:0 0 34px;border:1px solid var(--line);border-radius:14px;overflow:hidden">
+          <div><strong>5<em>×</em></strong><span>operating-team efficiency on the statement cycle</span></div>
+          <div><strong>500<em>+</em></strong><span>LPs served from one allocation run</span></div>
+          <div><strong>1</strong><span>run that computes the numbers and writes the documents</span></div>
+        </div>
+
+        <h3>The engagement</h3>
+        <p>An early-stage fund, 500+ LPs, three requirements. Automate the computation of fees and NAV so the figures are right. Generate customised account statements in the fund's defined format, with variations for selected investors. And distribute them to LPs through secure channels.</p>
+        <p>Most platforms treat those as three systems: an accounting engine, a document generator, and a delivery mechanism. The reason this fund's quarter used to take a fortnight is that a human sat between each pair.</p>
+
+        <h3>Where the fortnight went</h3>
+        <p>Fees computed in a workbook. NAV assembled from the workbook. Statements mail-merged from an export of the workbook. Then someone opens twenty at random to check them, finds one wrong, fixes the workbook, and has to work out which statements were produced before the fix.</p>
+        <p>The failure isn't any single step. It's that "the numbers" and "the documents" are two artefacts that have to be kept in agreement by a person who is tired.</p>
+        <div class="pull"><p>If your statements are generated from an export, they are always a copy of the truth as it stood at export time — and nothing tells you when that stopped being true.</p></div>
+
+        <h3>Step one — the numbers are computed, per folio, from formulas</h3>
+        <p>Each folio's account entries are produced by <strong>fund formulas</strong>: named rules the fund defines, evaluated per commitment with that commitment's own data in scope. Management fees, custody fees, admin costs, audit fees, bank charges — each becomes an account entry against each folio, with the fund-level totals rolled up alongside.</p>
+        <p>Formulas can carry period semantics, so the same underlying rule produces Quarterly, YTD and Since Inception views, and entries are named accordingly ("Quarterly Management Fees", "YTD Management Fees"). One rule type generates entries for several fee types at once — a reporting set that used to need fifteen formulas collapses to three, with identical output.</p>
+        <p>Re-running a period is safe: entries from the previous run for that period are replaced, not duplicated. This is the single property that makes iterating on a close bearable.</p>
+
+        <h3>Step two — the run that also writes the documents</h3>
+        <p>An allocation run takes a fund and a date range and does the work in one pass: computes the entries, optionally computes fund ratios, and — if you ask it to — generates the investor statements from the same numbers in the same run.</p>
+        <p>You choose what the statement is <em>for</em>:</p>
+        <ul>
+          <li><strong>Commitment</strong> — one statement per folio.</li>
+          <li><strong>Investing entity</strong> — one combined statement per investor across their folios, which is what an LP holding four folios actually wants to receive.</li>
+        </ul>
+        <p>Runs are recorded, and a locked run blocks a new run that overlaps its period. Once a quarter has been reported, you cannot casually recompute it underneath the statements you already sent — the platform tells you which locked run stands in the way, with its dates.</p>
+
+        <h3>Step three — the fund's own format, with variations</h3>
+        <p>Statements are produced from Word templates that the fund controls. The template is filled from a context built for that specific commitment: committed amounts before the period start, before the period end and the movement between; called, collected and uncalled; every remittance and remittance payment ordered by date; distributions with income, cost of investment, reinvestment, gross and net payable; the folio's account entries and the fund's; fund ratios; commitment adjustments. Amounts appear in both fund and folio currency, and the committed amount is also rendered in words.</p>
+        <p>"Variations for select investors" is not a fork of the process. A different template is selected — templates can be attached at fund level or against a specific commitment — and the same run produces the different document for the investors who need it.</p>
+
+        <h3>Step four — the refusals, which are the important output</h3>
+        <p>A bulk statement run does not silently do its best. It refuses in three specific cases, and reports each one by name:</p>
+        <ol>
+          <li>The commitment is flagged to skip document generation.</li>
+          <li>The commitment has no linked investor KYC.</li>
+          <li>The commitment's KYC exists but is <strong>not verified</strong>.</li>
+        </ol>
+        <p>Each refusal is collected, counted, and emailed to the person who started the run as an itemised error list — "completed with 11 errors", with the eleven commitments named. Everything else completes.</p>
+        <p>That behaviour is worth more than it sounds. The alternative — generating a statement against an unverified identity record — is exactly the failure you find out about from a regulator rather than from a job notification.</p>
+
+        <h2>⚙️ Under the hood: three details that carried the 5×</h2>
+        <p><strong>The statement is filed, not just produced.</strong> Each document lands in that commitment's statement folder, stamped with the period start and end dates in its name and an "as of" date equal to the period end. Nobody assembles a folder afterwards; the investor's file assembles itself.</p>
+        <p><strong>Delivery can be password-protected per notification.</strong> Where a fund enables it, the attached PDF is encrypted before it is sent, with the password taken from a configured attribute of the investor's own record — so it is something the investor already knows and nobody has to distribute a key. Where a link is more appropriate than an attachment, the download link expires after a week rather than living forever in an inbox.</p>
+        <p><strong>The follow-up question has a self-serve answer.</strong> The predictable email after any statement run is "why is my management fee higher this quarter?" The Account Entries Period Report answers it at folio level: totals for the period, a breakdown by entry type, a trailing-period trend against recent quarters, and the individual entries underneath. An investor with portal access can open their own folio's report; employees can open the fund-level view and drill into any folio. On demand — and only on demand — an AI commentary can be generated for a section, in plain language, flagging anomalies against the trailing history: <em>"Management Fee is 42% above its trailing 4-quarter average."</em></p>
+        <p>It never runs on page load. Nothing fires unless someone clicks Generate, so opening a report stays fast and nothing is being written on your behalf in the background.</p>
+        <div class="pull"><p>Most of a fund-ops team's statement-season workload is not producing statements. It is answering questions about statements one investor at a time.</p></div>
+
+        <h2>📊 The impact</h2>
+        <p><strong>Over 5× efficiency for the operating team</strong>, from three structural changes rather than from anyone working faster.</p>
+        <p>The numbers and the documents stopped being separate artefacts — one run produces both, from the same entries, so they cannot disagree. Re-running a period replaces rather than duplicates, so correcting a fee mid-close is a re-run instead of an archaeology exercise. And the exceptions became an itemised list emailed to the person who ran the job, rather than a silence you interpret afterwards.</p>
+        <p>Five hundred statements is not five hundred pieces of work. It is one piece of work and a short list of exceptions.</p>
+
+        <h2>What to take from this</h2>
+        <div class="callout">
+          <ol>
+            <li><strong>Generate documents from the ledger, not from an export of it.</strong> Every export is a fork you now have to keep in sync.</li>
+            <li><strong>Make re-running a period safe.</strong> If a correction means "regenerate everything and hope", nobody corrects small things.</li>
+            <li><strong>Lock reported periods.</strong> A run that can silently recompute a quarter you have already sent out is a liability, not a convenience.</li>
+            <li><strong>Refuse loudly and name names.</strong> Eleven commitments listed by name beats 489 successes reported as 500.</li>
+            <li><strong>Answer the follow-up question in the product.</strong> A per-folio period report with trend context removes more inbox load than the statement run itself.</li>
+          </ol>
+        </div>
+
+        <h2>Where this goes next</h2>
+        <p>Statements depend on verified investor records — see <a href="case-investor-onboarding.html">onboarding 200+ LPs</a> — and on the entries produced by the same engine described in <a href="case-multi-currency-close.html">multi-currency computations and reporting</a>. To see a statement run on your own structure, <a href="contact.html">book a walkthrough</a>.</p>
+
+        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld. The workflow, platform mechanics and behaviour described are exactly as CapHive runs them; supporting detail is illustrative of how engagements of this shape run.</p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="case-studies.html">More case studies</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        <p>A full-stack intelligent technology platform for powering private capital markets.</p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer>
+
+<script src="assets/js/caphive.js?v=64f54259"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Case study: investor statements for 500+ LPs",
+  "description": "An early-stage fund with over 500 LPs needed fees and NAV computed, statements produced in the fund's own format, and delivered securely.",
+  "datePublished": "2026-08-11",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/case-investor-statements.html"
+}
+</script>
+</body>
+</html>

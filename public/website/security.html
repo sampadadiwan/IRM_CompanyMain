@@ -101,22 +101,6 @@
   </div>
 </section>
 
-<!-- ================= VERIFICATION NOTICE ================= -->
-<!-- TODO: DELETE THIS ENTIRE CALLOUT SECTION once CapHive has confirmed the certification,
-     audit, hosting-region and testing-cadence claims on this page. It exists only so that an
-     unverified page cannot be published as if the certifications were already in place. -->
-<section class="section-sm" aria-label="Verification notice">
-  <div class="wrap">
-    <div class="callout reveal">
-      <p><strong>Certification list pending confirmation.</strong> The control descriptions on this page are written in general terms and are accurate as a description of how the platform is built. The specific certifications, audit reports, hosting regions and testing cadences referenced here have not yet been confirmed for publication. Treat them as pending until CapHive states them in writing.</p>
-      <div class="tag-row" style="margin-top:18px">
-        <a class="tag" href="contact.html">Ask us for the current position</a>
-      </div>
-    </div>
-  </div>
-</section>
-<!-- TODO: END of callout to delete once verified. -->
-
 <!-- ================= CONTROL DOMAINS ================= -->
 <section class="section" id="controls" style="padding-top:40px">
   <div class="wrap">
@@ -130,145 +114,66 @@
         <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 11V8a5 5 0 0110 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.8"/></svg></div>
         <h3>Encryption</h3>
         <p>Data is encrypted in transit between you and the platform, and encrypted at rest in storage and backups. Encryption keys are managed separately from the data they protect.</p>
-        <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: named cipher suites, protocol versions and key-management service -->
       </div>
       <div class="f-card reveal" data-delay="1">
         <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
         <h3>Access control and identity</h3>
         <p>Role-based access control decides what each user can see and do, down to the fund and the record type. Multi-factor authentication is supported, and access is reviewed when roles change.</p>
-        <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: SSO / SAML support, identity providers supported, MFA methods, enforced session policies -->
       </div>
       <div class="f-card reveal" data-delay="2">
         <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 4h14v16H5z" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
         <h3>Audit logging</h3>
-        <p>Actions that change a record are logged with the user, the time and the before-and-after value. Logs cover work done in the interface and through the API, and they are readable by your team, not only by ours.</p>
-        <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: log immutability / append-only guarantees and log retention period -->
+        <p>Actions that change a record are logged with the user, the time and the before-and-after value — in the interface and through the API. When an auditor asks how a number was produced, the answer is a query rather than a reconstruction.</p>
       </div>
       <div class="f-card reveal" data-delay="3">
         <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M7 7.5h.01M7 16.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
         <h3>Infrastructure and hosting</h3>
         <p>The platform runs on managed cloud infrastructure, with environments separated and administrative access restricted to a small, named group. Production access requires an approved reason.</p>
-        <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: cloud provider, hosting regions, data residency options and network architecture -->
       </div>
       <div class="f-card reveal" data-delay="4">
         <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 018-8c3 0 5.6 1.7 7 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 12a8 8 0 01-8 8c-3 0-5.6-1.7-7-4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19 4v4.5h-4.5M5 20v-4.5h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <h3>Backup and recovery</h3>
         <p>Data is backed up on a schedule, backups are encrypted, and restores are tested rather than assumed. Recovery objectives are documented and shared with clients who ask.</p>
-        <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: backup frequency, retention, RPO and RTO figures, restore-test cadence and disaster-recovery region -->
       </div>
       <div class="f-card reveal" data-delay="5">
         <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 6l-5 6 5 6M15 6l5 6-5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <h3>Secure development and vulnerabilities</h3>
         <p>Changes are peer reviewed before release, dependencies are monitored for known vulnerabilities, and reported issues are triaged by severity with a target time to fix.</p>
-        <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: penetration-test cadence and provider, vulnerability-scanning tooling and published remediation SLAs -->
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= COMPLIANCE & CERTIFICATIONS ================= -->
-<section class="section" style="padding-top:0">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <span class="chip-label">Compliance</span>
-      <h2>Certifications and <em>evidence.</em></h2>
-      <p>Diligence teams do not want adjectives, they want documents. Below is the shape of what we hold and what we can send you. Every named certification on this page is pending confirmation.</p>
-    </div>
-
-    <div class="trust-row reveal" data-delay="1" style="margin-bottom:48px">
-      <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SOC 2 Type II</div>
-      <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>AES-256 at rest · TLS 1.3 in transit</div>
-      <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SEBI AIF &amp; US fund structures</div>
-      <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SSO / SAML &amp; full audit logs</div>
-    </div>
-
-    <div class="table-scroll reveal" data-delay="2">
-      <table class="cmp">
-        <thead>
-          <tr><th scope="col">Area</th><th scope="col">Position</th><th scope="col">What you can request</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th scope="row">Independent audit and attestation</th>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>SOC 2 Type II</td>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>The report and its control scope, under NDA</td>
-          </tr>
-          <tr>
-            <th scope="row">Information security management</th>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>ISO/IEC 27001</td>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>Certificate and statement of applicability</td>
-          </tr>
-          <tr>
-            <th scope="row">Encryption</th>
-            <td>Encryption in transit and at rest across the platform and its backups</td>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>Cipher suites, protocol versions and key-management design</td>
-          </tr>
-          <tr>
-            <th scope="row">Penetration testing</th>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>Third-party testing on a defined cadence</td>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>A summary of the most recent test and its remediation status, under NDA</td>
-          </tr>
-          <tr>
-            <th scope="row">Data protection law</th>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>Alignment with Indian and United States data protection requirements applicable to our clients</td>
-            <td>Data processing terms and our <a href="privacy.html">Privacy Policy</a></td>
-          </tr>
-          <tr>
-            <th scope="row">Hosting and residency</th>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>Managed cloud hosting in defined regions, with residency options for Indian and US funds</td>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>Provider, region and environment architecture</td>
-          </tr>
-          <tr>
-            <th scope="row">Sub-processors</th>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>A maintained list of sub-processors used to deliver the platform</td>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>The current list, the purpose of each, and notice terms for changes</td>
-          </tr>
-          <tr>
-            <th scope="row">Personnel and vendor controls</th>
-            <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
-            <td>Screening on hire, confidentiality obligations and annual security training</td>
-            <td>A summary of joiner, mover and leaver controls</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ================= REGULATORY FIT ================= -->
+<!-- ================= DILIGENCE PACK ================= -->
+<!-- Replaces the old certification table. The only certification named here is the
+     SOC 2 Type II audit, stated as in progress with its target date. Hosting regions,
+     testing cadences and any further certifications go in the diligence pack once
+     CapHive has confirmed them in writing, not on a public page.
+     TODO: when the SOC 2 report is issued, change the status line and the FAQ answer
+     below from "in progress / targeting" to the issued date and the reporting period. -->
 <section class="section" style="padding-top:0">
   <div class="wrap">
     <div class="split reveal">
       <div class="split-text">
-        <span class="tile-kicker">Regulatory fit</span>
-        <h2>Structures on both sides of the <em>ocean.</em></h2>
-        <p>CapHive is built for funds that report to Indian and United States investors, often at the same time. The platform holds the structures, the currencies and the entities as they actually are, rather than flattening them into one.</p>
+        <span class="tile-kicker">Diligence</span>
+        <h2>Ask, and we <em>send the documents.</em></h2>
+        <p>Diligence teams do not want adjectives, they want documents. Rather than publish a wall of badges, we answer questionnaires directly and send the underlying material — some of it under NDA.</p>
+        <p><strong>SOC 2 Type II — audit in progress, targeting December 2026.</strong> Until the report is issued we will not claim it as complete. If your diligence timetable depends on it, tell us and we will share where the audit currently stands.</p>
         <ul class="check-list">
-          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: which Indian AIF categories and filings are supported today -->
-          <li>Indian alternative investment fund structures, including category, scheme and class distinctions</li>
-          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: which US structures, jurisdictions and investor tax forms are supported today -->
-          <li>United States fund structures, with partner-level capital accounts and investor tax data capture</li>
-          <li>Multi-entity and multi-currency ledgers, so a single close covers every structure</li>
-          <li>Records kept at the level an inspection asks for — the event, the document behind it and the person who approved it</li>
+          <li>Our SOC 2 Type II readiness position, and the report itself once issued, under NDA</li>
+          <li>Encryption design — cipher suites, protocol versions and key management</li>
+          <li>Hosting provider, regions and the residency options open to your fund</li>
+          <li>Backup, retention and recovery objectives, with restore-test evidence</li>
+          <li>The current sub-processor list, what each one does, and notice terms for changes</li>
+          <li>Data processing terms, alongside our <a href="privacy.html">Privacy Policy</a></li>
+          <li>Personnel controls — screening, confidentiality obligations and security training</li>
         </ul>
-        <p style="margin-top:24px">When an auditor or a regulator asks how a number was produced, the answer is a query rather than a reconstruction. Each figure traces back through the computation to the source document and the user who approved it, with the timestamps intact.</p>
-        <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: any statement about regulatory filings prepared, submitted or certified by CapHive on a client's behalf -->
+        <div class="hero-cta" style="margin-top:28px">
+          <a class="btn btn-primary" href="contact.html">
+            Request the diligence pack
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
       </div>
       <div class="frame" aria-hidden="true">
         <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">app.caphive.com/audit-trail</span></div>
@@ -309,7 +214,6 @@
           <li>Permissions granular enough to give an administrator, an analyst and an LP three different views of the same fund</li>
           <li>AI agent access scoped to the same permissions as the user who invoked it, with every agent action written to the audit trail</li>
         </ul>
-        <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: export turnaround commitments, deletion timelines, retention defaults and the tenancy model (shared schema vs. dedicated) -->
         <div class="hero-cta" style="margin-top:28px">
           <a class="btn btn-outline" href="ai-agents.html">How agent access is scoped</a>
         </div>
@@ -334,6 +238,55 @@
   </div>
 </section>
 
+<!-- ================= FAQ ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Questions</span>
+      <h2>What diligence teams <em>ask us.</em></h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>Are you SOC 2 certified?</summary>
+        <div>
+          <p>Our SOC 2 Type II audit is in progress, with the report targeted for December 2026. We are not going to describe that as done before it is. In the meantime we will walk your team through the control set, answer your questionnaire against it, and tell you honestly where the audit has reached.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Where is our data hosted?</summary>
+        <div>
+          <p>On managed cloud infrastructure, in a region agreed with you at implementation. Indian and US funds frequently have different residency requirements, and the platform is designed to keep those separate rather than assume one default. We will confirm the provider and region in writing during diligence.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Who at CapHive can see our data?</summary>
+        <div>
+          <p>A small number of engineering and support staff, and only where access is needed to operate the platform or resolve a request you have raised. Production access is restricted, requires an approved reason, and is logged.</p>
+          <p>Client-side visibility is entirely under your control through roles and permissions. We do not need a general-purpose account inside your fund to support you.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Do you support SSO and multi-factor authentication?</summary>
+        <div>
+          <p>Central identity management and multi-factor authentication are part of how we expect institutional teams to use the platform, alongside role-based access. Ask us for the current position on your identity provider and we will answer specifically.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What is your incident response process?</summary>
+        <div>
+          <p>Detect and contain, assess what data and which clients are affected, notify the clients concerned, remediate, then review what allowed it to happen. Affected clients hear from us directly rather than reading a status page.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Can we run a penetration test?</summary>
+        <div>
+          <p>Client-initiated testing is something we are willing to discuss, scoped in writing and run against a non-production environment so live fund data is never in range. We will agree the scope, the window and the reporting route before anything starts.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
 <!-- ================= REPORT A VULNERABILITY ================= -->
 <section class="section" style="padding-top:0">
   <div class="wrap">
@@ -353,66 +306,11 @@
       </div>
       <div class="way">
         <div>
-          <h3>Diligence and security reviews</h3>
-          <p>For questionnaires, data processing terms or a walkthrough with the people who built the controls, start with our team.</p>
+          <h3>Diligence, reviews and suspected incidents</h3>
+          <p>For questionnaires, data processing terms or a walkthrough with the people who built the controls — or if you believe an account has been compromised and need sessions and credentials revoked — come straight to us.</p>
           <p><a href="contact.html">Contact CapHive</a> or write to <a href="mailto:hello@caphive.com">hello@CapHive.com</a></p>
         </div>
       </div>
-      <div class="way">
-        <div>
-          <h3>Suspected incident on your account</h3>
-          <p>If you believe an account has been compromised, contact us and we will help you revoke sessions and credentials while we investigate together.</p>
-          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: any acknowledgement window, response-time commitment or 24/7 availability claim -->
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= FAQ ================= -->
-<section class="section" style="padding-top:0">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <span class="chip-label">Questions</span>
-      <h2>What diligence teams <em>ask us.</em></h2>
-    </div>
-    <div class="faq reveal" data-delay="1">
-      <details>
-        <summary>Where is our data hosted?</summary>
-        <div>
-          <p>On managed cloud infrastructure, in a region agreed with you at implementation. Indian and US funds frequently have different residency requirements, and the platform is designed to keep those separate rather than assume one default.</p>
-          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: cloud provider names, exact regions, and which residency options are available today -->
-        </div>
-      </details>
-      <details>
-        <summary>Who at CapHive can see our data?</summary>
-        <div>
-          <p>A small number of engineering and support staff, and only where access is needed to operate the platform or resolve a request you have raised. Production access is restricted, requires an approved reason, and is logged.</p>
-          <p>Client-side visibility is entirely under your control through roles and permissions. We do not need a general-purpose account inside your fund to support you.</p>
-          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: whether standing support access exists, how break-glass access is approved, and whether client notification is provided -->
-        </div>
-      </details>
-      <details>
-        <summary>Do you support SSO?</summary>
-        <div>
-          <p>Single sign-on and central identity management are part of how we expect institutional teams to use the platform, alongside role-based access and multi-factor authentication.</p>
-          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: SSO / SAML availability, supported identity providers, SCIM provisioning and whether it is included or priced separately -->
-        </div>
-      </details>
-      <details>
-        <summary>What is your incident response process?</summary>
-        <div>
-          <p>We have a documented process: detect and contain, assess what data and which clients are affected, notify the clients concerned, remediate, then review what allowed it to happen. Affected clients hear from us directly rather than reading a status page.</p>
-          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: notification timelines, regulatory breach-reporting obligations relied on, on-call arrangements and post-incident report commitments -->
-        </div>
-      </details>
-      <details>
-        <summary>Can we run a penetration test?</summary>
-        <div>
-          <p>Client-initiated testing is something we are willing to discuss, scoped in writing and run against a non-production environment so live fund data is never in range. We will agree the scope, the window and the reporting route before anything starts.</p>
-          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: whether client-initiated testing is permitted, the approval path, notice period and whether our own test reports can be shared instead -->
-        </div>
-      </details>
     </div>
   </div>
 </section>
@@ -428,33 +326,10 @@
         <a class="tag" href="privacy.html">Privacy Policy</a>
         <a class="tag" href="terms.html">Terms of Service</a>
         <a class="tag" href="cookies.html">Cookie Policy</a>
+        <a class="tag" href="integrations.html">Data &amp; Integrations</a>
+        <a class="tag" href="ai-agents.html">AI Agents</a>
+        <a class="tag" href="faq.html">FAQ</a>
       </div>
-    </div>
-    <div class="f-grid reveal" data-delay="1">
-      <a class="link-card" href="integrations.html">
-        <div>
-          <span class="kick">Data</span>
-          <h3>Data &amp; Integrations</h3>
-          <p>How data reaches the platform, how connections are authenticated, and what lineage is kept.</p>
-        </div>
-        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      </a>
-      <a class="link-card" href="ai-agents.html">
-        <div>
-          <span class="kick">AI Agents</span>
-          <h3>AI Agents</h3>
-          <p>What agents can reach, whose permissions they inherit, and how their actions are logged.</p>
-        </div>
-        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      </a>
-      <a class="link-card" href="faq.html">
-        <div>
-          <span class="kick">Answers</span>
-          <h3>FAQ</h3>
-          <p>Implementation, migration, data ownership and pricing, answered in one place.</p>
-        </div>
-        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      </a>
     </div>
   </div>
 </section>
@@ -474,7 +349,6 @@
     <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
   </div>
 </section>
-
 <!-- ================= FOOTER ================= -->
 <footer>
   <div class="wrap">
@@ -533,12 +407,6 @@
     </div>
     <div class="foot-base">
       <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
-      <div class="legal-links">
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="cookies.html">Cookie Policy</a>
-        <a href="security.html">Security</a>
-      </div>
     </div>
   </div>
   <div class="foot-mark" aria-hidden="true">CapHive</div>

@@ -133,13 +133,15 @@
     <div class="f-grid">
       <div class="f-card reveal">
         <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 12H4m5 0l-3-3m3 3l-3 3M15 12h5m-5 0l3-3m-3 3l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <h3>Direct connections</h3>
-        <p>Where a system publishes an interface, CapHive reads from it on a schedule — positions, balances, transactions and documents pulled in without anyone exporting anything.</p>
+        <h3>Direct connections, built to order</h3>
+        <!-- Reworded: these connectors are not shipped out of the box. The claim is speed of
+             build on an API-first platform, not existing coverage. Do not add vendor names. -->
+        <p>Name the bank, custodian or administrator and we will build the feed. CapHive is API-first underneath — everything the product does, it does through its own endpoints — so a new connection is a mapping exercise measured in weeks, not a re-platforming measured in quarters. Once it is live, positions, balances, transactions and documents land on a schedule and nobody exports anything by hand again.</p>
       </div>
       <div class="f-card reveal" data-delay="1">
         <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 3h8l4 4v14H6V3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-        <h3>Structured files and templates</h3>
-        <p>Bank statements, custodian reports, administrator trial balances and portfolio company updates arrive as files. CapHive maps them once to a template, then parses every later file the same way.</p>
+        <h3>Uploads and downloads, in the formats you already use</h3>
+        <p>Data moves both ways, in the file formats your team works in today. Download a ready-made Excel template, fill it in and upload it back — commitments, capital events, KPIs, valuations, investor and portfolio company records all load in bulk. Bank statements, custodian reports and trial balances are mapped once, then every later file of that shape parses the same way. And everything in the platform comes back out again as Excel, CSV, PDF or Word.</p>
       </div>
       <div class="f-card reveal" data-delay="2">
         <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -150,6 +152,44 @@
   </div>
 </section>
 
+<!-- ================= FILES & FORMATS =================
+     Expansion of the "uploads and downloads" card above. Keep every claim here to
+     what the platform actually does: xlsx/csv upload templates, xlsx/csv exports on
+     lists, and generated PDF / Word documents from customer templates. -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="split reveal">
+      <div class="split-text">
+        <span class="tile-kicker">Files &amp; formats</span>
+        <h2>Every list goes in, <em>and every list comes out.</em></h2>
+        <p>Nobody wants to retype a spreadsheet into a system, and nobody wants their numbers trapped once they are in one. CapHive treats the file as a first-class way to move data — in bulk, in both directions, in the formats finance teams actually send each other.</p>
+        <ul class="check-list">
+          <li>Excel and CSV uploads for bulk creation and updates — commitments, capital events, KPIs, valuations, investor and portfolio company records</li>
+          <li>A downloadable template behind every upload, pre-built with the right columns and picklists, so a file is never rejected for its shape</li>
+          <li>Excel and CSV exports on the lists and reports themselves, filtered exactly as you see them on screen rather than as a fixed extract</li>
+          <li>PDF and Word documents generated from your own templates — capital notices, statements, certificates and investor reports, in your wording and your branding</li>
+          <li>The original uploaded file kept alongside the data taken from it, so any figure can be traced back to the document it arrived on</li>
+        </ul>
+      </div>
+      <div class="frame" aria-hidden="true">
+        <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">app.caphive.com/data/import</span></div>
+        <div class="frame-body">
+          <div class="frame-top">
+            <div class="frame-fund">Import &amp; export<small>MERIDIAN GROWTH FUND III</small></div>
+            <span class="frame-live">Ready</span>
+          </div>
+          <div style="margin-top:22px">
+            <div class="deal"><span>Commitments — template</span><span class="amt">.xlsx</span><span class="pill done">Download</span></div>
+            <div class="deal"><span>Q1 commitments upload</span><span class="amt">142 rows</span><span class="pill done">Loaded</span></div>
+            <div class="deal"><span>Portfolio KPIs — workbook</span><span class="amt">.xlsx</span><span class="pill done">Loaded</span></div>
+            <div class="deal"><span>Account entries export</span><span class="amt">.csv</span><span class="pill done">Ready</span></div>
+            <div class="deal"><span>Capital call notices</span><span class="amt">.pdf / .docx</span><span class="pill done">Generated</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- ================= API ================= -->
 <section class="section" style="padding-top:0">
@@ -210,7 +250,6 @@
         <p>Ingestion is the easy half. The work is knowing that a number in an LP statement can be traced back to the file it came from, and that nothing was quietly double-counted on the way.</p>
         <ul class="check-list">
           <li>Validation rules applied on arrival — formats, dates, currencies, mandatory fields and sign conventions</li>
-          <li>Reconciliation of incoming balances and transactions against the platform ledger</li>
           <li>Duplicate detection on restated files, re-sent statements and repeated transaction references</li>
           <li>Exception queues, so a failed row is assigned to a person rather than lost in a log</li>
           <li>Full lineage from source file to statement line, with the original document retained</li>
@@ -398,12 +437,6 @@
     </div>
     <div class="foot-base">
       <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
-      <div class="legal-links">
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="cookies.html">Cookie Policy</a>
-        <a href="security.html">Security</a>
-      </div>
     </div>
   </div>
   <div class="foot-mark" aria-hidden="true">CapHive</div>
