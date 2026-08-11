@@ -12,11 +12,17 @@ class TaskList < BaseList
     @q = Task.ransack(@params[:q])
     @tasks = apply_policy_scope(@q.result, &)
     # Preload only what each view renders (CLAUDE.md: no speculative eager
-    # loading). Board cards use details/owner/assigned_to/touch_point; the list
-    # additionally renders for_entity, user, template and response.
+    # loading). Board cards and list rows both use details/owner/assigned_to/
+    # touch_point; the timeline row additionally uses the template.
     # :touch_point covers the "With" column in the tasks list (LP CRM).
     preloads = %i[assigned_to touch_point rich_text_details]
-    preloads += %i[for_entity user task_template rich_text_response] if @params[:board].blank?
+    # task_template drives the timeline row's action/help badges. for_entity,
+    # user and rich_text_response were preloaded here too but no list view reads
+    # them — response, "For entity" and the creator are shown on the task's own
+    # page, which loads a single record. Preloading them meant three extra
+    # queries per list render (and, for response, pulling every task's second
+    # rich-text body into memory) to feed nothing.
+    preloads << :task_template if @params[:board].blank?
     # :owner feeds the board card and the list's "For" column. A single-owner
     # list drops that column (ApplicationHelper#single_owner_list? — same rule,
     # repeated here because a service has no view helpers), leaving nothing to
