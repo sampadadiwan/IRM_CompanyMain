@@ -32,6 +32,9 @@
           compares the two to decide whether the saved task belongs in that list. %>
       <% list_touch_point_id = params[:list_touch_point_id].presence || params[:touch_point_id].presence %>
       <%= hidden_field_tag :list_touch_point_id, list_touch_point_id if list_touch_point_id %>
+      <%# Echoed back so the row returned by the create/update stream carries the
+          same columns as the list that opened this form (see tasks/_task.html.erb) %>
+      <%= hidden_field_tag :show_owner, params[:show_owner] if params[:show_owner].present? %>
 
       <%
         task_context = params[:embedded_task_context].presence
@@ -230,8 +233,22 @@
           </div>
         </div>
 
-      <%= render "layouts/multi_upload", form: form, title: "Task Documents",
-                  for_model: "task" %>
+      <%# The Uppy drop area is tall and most tasks never carry a document, so it
+          starts collapsed behind a link — on the kanban board especially, it was
+          pushing Save below the fold. The markup is still rendered (Uppy needs to
+          initialise), just hidden until asked for. %>
+      <div class="form-group">
+        <a class="btn btn-sm btn-outline-secondary" role="button"
+           data-bs-toggle="collapse" href="#task_documents_upload"
+           aria-expanded="false" aria-controls="task_documents_upload">
+          <i class="ti ti-paperclip"></i> Add Documents
+        </a>
+      </div>
+
+      <div class="collapse" id="task_documents_upload">
+        <%= render "layouts/multi_upload", form: form, title: "Task Documents",
+                    for_model: "task" %>
+      </div>
 
       <div class="form-group">
         <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>

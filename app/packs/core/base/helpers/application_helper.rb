@@ -255,6 +255,19 @@ module ApplicationHelper
     @pie_chart_colors_from_css
   end
 
+  # True when a notes/tasks list is scoped to exactly one owner — a stakeholder's
+  # or deal investor's own tab. Every row then repeats the same name, so the
+  # "For" column is dead weight and gets dropped.
+  #
+  # Deliberately false for the two mixed-owner scopes that also pass owner params:
+  #   * a contact's page (touch_point_scope=all) spans the LP's own records AND
+  #     its deal investors' — there the column is the only thing distinguishing them
+  #   * a deal's Tasks tab (deal_id) spans the Deal and every DealInvestor on it
+  def single_owner_list?
+    params[:owner_id].present? && params[:owner_type].present? &&
+      params[:touch_point_scope] != "all" && params[:deal_id].blank?
+  end
+
   def resolve_doc_color(document_name, custom_colors)
     name = document_name.to_s.downcase
 

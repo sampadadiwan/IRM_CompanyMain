@@ -15,6 +15,11 @@
     label += " : #{params[:q][:category_eq].titleize}"
   end
 
+  # "For" repeats the same stakeholder on every row of a single-owner list, so it
+  # is dropped there. Seeded into the New Task links and the row partial too, so
+  # rows that come back from a turbo stream match this header.
+  show_owner = !single_owner_list?
+
   search ||= false
   embedded_task_context = params[:embedded_task_context].presence
   restricted_embedded_task_context = embedded_task_context.in?(%w[deal_tab deal_investor_tab])
@@ -86,7 +91,7 @@
     <% if investor && can_create_task %>
       <%# LP CRM: carry the touch-point filter into the form so the new task is
           pre-linked to that person (TasksController#new builds from task[...] params) %>
-      <%= link_to new_task_path("task[owner_id]": investor.id, "task[owner_type]": "Investor", "task[touch_point_id]": params[:touch_point_id].presence, list_touch_point_id: params[:touch_point_id].presence, "task[category]": params.dig(:q, :category_eq), embedded_task_context: embedded_task_context),
+      <%= link_to new_task_path("task[owner_id]": investor.id, "task[owner_type]": "Investor", "task[touch_point_id]": params[:touch_point_id].presence, list_touch_point_id: params[:touch_point_id].presence, "task[category]": params.dig(:q, :category_eq), show_owner: show_owner, embedded_task_context: embedded_task_context),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
         <i class="ti ti-plus"></i> New Task
@@ -136,6 +141,7 @@
                           "task[owner_type]": "DealInvestor",
                           deal_id: params[:deal_id],
                           "task[category]": params.dig(:q, :category_eq),
+                          show_owner: show_owner,
                           embedded_task_context: embedded_task_context),
                         class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
                         data: { turbo_frame: 'new_task' } do %>
@@ -152,6 +158,7 @@
                           "task[touch_point_id]": params[:touch_point_id].presence,
                           list_touch_point_id: params[:touch_point_id].presence,
                           "task[category]": params.dig(:q, :category_eq),
+                          show_owner: show_owner,
                           embedded_task_context: embedded_task_context),
                         class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
                         data: { turbo_frame: 'new_task' } do %>
@@ -186,9 +193,11 @@
                     <th>
                         Details
                     </th>
+                    <% if show_owner %>
                     <th>
                         For
                     </th>
+                    <% end %>
                     <th>
                         Assigned to
                     </th>
@@ -212,7 +221,11 @@
 
             <tbody id="tasks_body">
                 <% tasks.each do |task| %>
-                    <%= render task %>
+                    <%# show_owner passed explicitly: the row is also re-rendered by
+                        turbo streams (create, update, the completed toggle), where
+                        this list's params aren't in the request, and a row with a
+                        different column count than the header would misalign %>
+                    <%= render partial: "tasks/task", locals: { task: task, show_owner: show_owner } %>
                 <% end %>
             </tbody>
         </table>

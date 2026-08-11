@@ -21,6 +21,9 @@
       compares the two to decide whether the saved note belongs in that list. %>
   <% list_touch_point_id = params[:list_touch_point_id].presence || params[:touch_point_id].presence %>
   <%= hidden_field_tag :list_touch_point_id, list_touch_point_id if list_touch_point_id %>
+  <%# Echoed back so the row returned by the create stream carries the same
+      columns as the list that opened this form (see notes/_note.html.erb) %>
+  <%= hidden_field_tag :show_owner, params[:show_owner] if params[:show_owner].present? %>
   <%# _note.html.erb reads params[:condensed] to pick its column set. Carry it
       through the submit so the row prepended by create matches the table it
       lands in (the dashboard widget renders this list condensed). %>

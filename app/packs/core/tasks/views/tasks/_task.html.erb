@@ -13,9 +13,14 @@
     <% end %>
     </div>
   </td>
+  <%# show_owner matches the "For" header in _index.html.erb. Passed as a local by
+      the list; turbo-stream re-renders fall back to the echoed form param. %>
+  <% show_owner = local_assigns.fetch(:show_owner) { params[:show_owner].to_s != "false" } %>
+  <% if show_owner %>
   <td>
     <%= task.owner&.to_s %>
   </td>
+  <% end %>
   <td>
     <%= task.assigned_to&.first_name %>
   </td>
@@ -42,11 +47,15 @@
   <td>
     <% if policy(task).update? %>
       <% checked = task.completed == 1 ? "checked" : ""%>
+      <%# show_owner rides along on both round-trips: each replaces this row, and
+          without it the replacement would come back with a different column
+          count than the table it lands in %>
       <%= form_with(model: task, url: completed_task_path(task), class: "inline_form") do |form| %>
+          <%= hidden_field_tag :show_owner, show_owner %>
           <%= form.check_box :completed, class: "task-done-checkbox", onchange:"this.form.requestSubmit();"  %>
       <% end %>
 
-      <%= link_to  "Edit", edit_task_path(task), class: "btn btn-outline-success ti ti-edit", data: { turbo_frame: 'new_task' }%>
+      <%= link_to  "Edit", edit_task_path(task, show_owner: show_owner), class: "btn btn-outline-success ti ti-edit", data: { turbo_frame: 'new_task' }%>
     <% end %>
 
     <%= link_to  "Show" , task , {class: "btn btn-outline-primary ti ti-eye" } if policy(task).show? %>
