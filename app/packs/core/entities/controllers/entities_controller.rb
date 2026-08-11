@@ -1,5 +1,5 @@
 class EntitiesController < ApplicationController
-  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder db_dump]
+  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder db_dump deactivate]
   after_action :verify_authorized, except: %i[dashboard search index investor_entities delete_attachment]
 
   # GET /entities or /entities.json
@@ -117,6 +117,32 @@ class EntitiesController < ApplicationController
     EntityMailer.with(entity_id: @entity.id, requesting_entity_id: current_user.entity_id).kpi_reminder.deliver_later
     redirect_path = request.referer || kpi_reports_path
     redirect_to redirect_path, notice: "Reminder sent"
+  end
+
+  # PATCH /entities/1/deactivate
+  # Support-only off-boarding switch. Flipping `active` is all this does — Entity#cascade_deactivation
+  # takes it from there and revokes employee logins and investor access in the background.
+  def deactivate
+    # The modal's confirmation checkbox is re-checked here: it is the only acknowledgement of a
+    # cascade that cannot be undone from the UI, so a stray or replayed PATCH must not perform it.
+    unless params[:confirm_deactivate] == "1"
+      return redirect_to entity_path(@entity), status: :see_other,
+                                               alert: "Deactivation not confirmed. Please tick the confirmation box."
+    end
+
+    # Passed through to EntityDeactivationJob so the cascade can alert whoever triggered it.
+    @entity.deactivated_by_id = current_user.id
+
+    # update_attribute rather than update: validations on grandfathered entities (e.g. the
+    # "FI code is required to enable CKYC" rule) must not block off-boarding the very clients
+    # this button exists for. after_commit — and so the cascade — still fires.
+    if @entity.update_attribute(:active, false)
+      redirect_to entity_path(@entity), status: :see_other,
+                                        notice: "#{@entity.name} has been deactivated. Employee logins and investor access are being revoked."
+    else
+      redirect_to entity_path(@entity), status: :see_other,
+                                        alert: "Could not deactivate #{@entity.name}. Please try again or contact engineering."
+    end
   end
 
   def db_dump

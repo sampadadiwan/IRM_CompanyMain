@@ -65,6 +65,12 @@ class EntityPolicy < ApplicationPolicy
     false
   end
 
+  # Off-boarding a client is a CapHive support action only — company admins must never be able to
+  # switch off their own entity. Hidden once the entity is already deactivated.
+  def deactivate?
+    user.has_cached_role?(:support) && record.active?
+  end
+
   def view_investments?
     user.entity_id == record.id || investment_access?
   end

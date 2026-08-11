@@ -301,6 +301,8 @@ resources :entities do
   get 'merge', on: :collection
   post 'merge', on: :collection
   post 'db_dump', on: :member
+  # Support-only off-boarding: revokes employee logins and investor access for the entity
+  patch 'deactivate', on: :member
 end
 
 resources :viewed_bies do
