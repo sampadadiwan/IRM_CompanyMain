@@ -50,8 +50,13 @@ class NotesController < ApplicationController
       @notes = touch_point ? @notes.where(touch_point_id: touch_point.id) : @notes.none
     end
     @notes = NoteSearch.perform(@notes, current_user, params)
-    # :touch_point preloaded for the "With" column added to the notes list
-    @pagy, @notes = pagy(@notes.with_all_rich_text.includes(:user, :owner, :touch_point))
+    # :touch_point preloaded for the "With" column added to the notes list.
+    # :owner only when the "For" column is actually rendered — a single-owner
+    # list (a stakeholder's own Notes tab) drops that column, and with it the
+    # only reader of the association, so the preload would be a wasted query.
+    preloads = %i[user touch_point]
+    preloads << :owner unless helpers.single_owner_list?
+    @pagy, @notes = pagy(@notes.with_all_rich_text.includes(*preloads))
   end
 
   def search

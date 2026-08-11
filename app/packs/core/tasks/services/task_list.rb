@@ -15,8 +15,15 @@ class TaskList < BaseList
     # loading). Board cards use details/owner/assigned_to/touch_point; the list
     # additionally renders for_entity, user, template and response.
     # :touch_point covers the "With" column in the tasks list (LP CRM).
-    preloads = %i[assigned_to owner touch_point rich_text_details]
+    preloads = %i[assigned_to touch_point rich_text_details]
     preloads += %i[for_entity user task_template rich_text_response] if @params[:board].blank?
+    # :owner feeds the board card and the list's "For" column. A single-owner
+    # list drops that column (ApplicationHelper#single_owner_list? — same rule,
+    # repeated here because a service has no view helpers), leaving nothing to
+    # preload for.
+    single_owner_list = @params[:owner_id].present? && @params[:owner_type].present? &&
+                        @params[:touch_point_scope] != "all" && @params[:deal_id].blank?
+    preloads << :owner if @params[:board].present? || !single_owner_list
     @tasks = @tasks.includes(*preloads)
 
     # Apply standard filters. touch_point_id: "everything with this person" —

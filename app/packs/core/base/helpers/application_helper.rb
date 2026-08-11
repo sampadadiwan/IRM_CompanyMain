@@ -268,6 +268,24 @@ module ApplicationHelper
       params[:touch_point_scope] != "all" && params[:deal_id].blank?
   end
 
+  # Path to a polymorphic owner built from its type and id alone — the record is
+  # never dereferenced to generate the URL. Safe because WithFriendlyId overrides
+  # to_param to return the id, so this is byte-identical to what
+  # polymorphic_path(record) would produce for slugged models too.
+  #
+  # Returns nil for an owner type with no show route (e.g. SideLetterObligation),
+  # so callers can fall back to plain text.
+  def owner_path(owner_type, owner_id)
+    return nil if owner_type.blank? || owner_id.blank?
+
+    route = "#{owner_type.underscore}_path"
+    return nil unless respond_to?(route)
+
+    public_send(route, owner_id)
+  rescue ActionController::UrlGenerationError
+    nil
+  end
+
   def resolve_doc_color(document_name, custom_colors)
     name = document_name.to_s.downcase
 

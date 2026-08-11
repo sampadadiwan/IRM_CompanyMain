@@ -18,7 +18,14 @@
   <% show_owner = local_assigns.fetch(:show_owner) { params[:show_owner].to_s != "false" } %>
   <% if show_owner %>
   <td>
-    <%= task.owner&.to_s %>
+    <%# Linked like the notes list. The href comes from owner_type/owner_id, so
+        routing costs nothing; the name uses the preloaded owner. %>
+    <% path = owner_path(task.owner_type, task.owner_id) %>
+    <% if path && task.owner.present? %>
+      <%= link_to task.owner.to_s, path %>
+    <% else %>
+      <%= task.owner&.to_s %>
+    <% end %>
   </td>
   <% end %>
   <td>

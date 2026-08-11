@@ -6,8 +6,15 @@
 <% unless params[:condensed].present? %>
 <% if show_owner %>
 <td>
-    <% owner_name = note.to_s %>
-    <%= link_to owner_name, polymorphic_path(note.owner) if note.owner.present? %>
+    <%# The href is built from owner_type/owner_id — no record needed to route.
+        The name still comes from the owner, which the controller batch-preloads
+        (one query per owner type, not per row). %>
+    <% path = owner_path(note.owner_type, note.owner_id) %>
+    <% if path && note.owner.present? %>
+      <%= link_to note.to_s, path %>
+    <% else %>
+      <%= note.to_s %>
+    <% end %>
 </td>
 <% end %>
 <td>
