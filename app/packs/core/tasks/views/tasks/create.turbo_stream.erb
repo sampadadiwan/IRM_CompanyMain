@@ -1,5 +1,16 @@
-
-    <%= turbo_stream.prepend('tasks_body', partial: "tasks/task", locals: { task: @task }) %>
-    <% dup_task = @task.dup; dup_task.details=nil; dup_task.completed=false %>
-    <%= turbo_stream.replace('new_task', partial: "tasks/blank") %>
-    <%= turbo_stream.update('user_alert', partial: 'layouts/alerts', locals: { notice: "Task was successfully created." }) %>
+<%# Prepend the new row only when the task belongs to the list on screen. One
+    created outside that list's scope — a different owner, or no contact when the
+    list is filtered to one — would otherwise sit at the top looking like it
+    belongs, until a reload silently dropped it. The flash says where it went. %>
+<% if @task_in_list_scope %>
+  <%= turbo_stream.prepend('tasks_body', partial: "tasks/task", locals: { task: @task }) %>
+<% end %>
+<%= turbo_stream.replace('new_task', partial: "tasks/blank") %>
+<% notice = if @task_in_list_scope
+              "Task was successfully created."
+            elsif @task.owner.present?
+              "Task created for #{@task.owner}. It is not shown here — this list is filtered."
+            else
+              "Task created. It is not shown here — this list is filtered."
+            end %>
+<%= turbo_stream.update('user_alert', partial: 'layouts/alerts', locals: { notice: notice }) %>

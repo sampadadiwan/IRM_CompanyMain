@@ -21,7 +21,19 @@ class TaskList < BaseList
 
     # Apply standard filters. touch_point_id: "everything with this person" —
     # the contact's InvestorAccess id (LP CRM), same as the notes index filter.
-    @tasks = filter_params(@tasks, :owner_id, :owner_type, :assigned_to_id, :touch_point_id)
+    #
+    # The contact show page sends touch_point_scope=all, meaning span owner types:
+    # tasks on the LP record AND tasks logged under one of its deal investors.
+    # owner_id/owner_type stay on the URL so the "New Task" button keeps
+    # defaulting to the LP record — they just stop narrowing the list here.
+    # TasksController authorises the contact and skips with_owner_access to match.
+    #
+    # A deal scope supersedes them outright: the list's Show All / Incomplete
+    # links carry owner_id/owner_type=Deal alongside deal_id, and ANDing those
+    # with the union below collapses it to Deal-owned tasks only — every
+    # DealInvestor task silently disappears (usually leaving an empty list).
+    owner_filters = skip_owner_filters? ? [] : %i[owner_id owner_type]
+    @tasks = filter_params(@tasks, *owner_filters, :assigned_to_id, :touch_point_id)
 
     # Side letter covenant tasks span MULTIPLE SideLetterObligation owners, so a
     # single owner_id can't express "this side letter" — same cross-owner shape
@@ -32,17 +44,27 @@ class TaskList < BaseList
       @tasks = @tasks.where(owner_type: "SideLetterObligation", owner_id: obligation_ids)
     end
 
-    # Special handling for Deal-related tasks to include both the Deal and its Investors
+    # Deal scope: the whole task set for a deal — tasks owned by the Deal itself
+    # AND tasks owned by every DealInvestor on it. Drives both the deal's Tasks
+    # tab and its kanban board.
+    #
+    # The investor side is a subquery (select(:id)), not a pluck: a deal with
+    # hundreds of investors would otherwise round-trip every id through Ruby and
+    # inline them into the SQL (CLAUDE.md — dedup/filter in SQL, not Ruby).
+    # :owner is already preloaded above, so no extra includes here.
     if @params[:deal_id].present?
       deal = Deal.find_by(id: @params[:deal_id])
       if deal
-        investor_ids = deal.deal_investors.pluck(:id)
-        @tasks = @tasks.where(
-          "(owner_id = ? AND owner_type = 'Deal') OR (owner_id IN (?) AND owner_type = 'DealInvestor')",
-          deal.id, investor_ids.presence || [0]
-        ).includes(:owner)
+        @tasks = @tasks.where(owner_type: "Deal", owner_id: deal.id)
+                       .or(@tasks.where(owner_type: "DealInvestor", owner_id: deal.deal_investors.select(:id)))
       end
     end
+
+    # Board filter: narrow a deal board to one investor on that deal. A separate
+    # param from investor_id on purpose — that one maps to owner_type=Investor
+    # (normalize_owner_filters!), which would contradict the deal scope above and
+    # empty the board.
+    @tasks = @tasks.where(owner_type: "DealInvestor", owner_id: @params[:deal_investor_id]) if @params[:deal_investor_id].present?
 
     # Support filtering by multiple owner types (e.g., Deal and DealInvestor)
     @tasks = @tasks.where(owner_type: @params[:owner_type_in]) if @params[:owner_type_in].present?
@@ -60,6 +82,19 @@ class TaskList < BaseList
   end
 
   private
+
+  # Both cases where a broader scope owns the query and a single owner_id /
+  # owner_type pair would wrongly narrow it: a deal (Deal + its DealInvestors)
+  # and a contact's full history (touch_point_scope=all).
+  def skip_owner_filters?
+    @params[:deal_id].present? || across_owners?
+  end
+
+  # LP CRM: true when the caller wants every task involving this contact,
+  # whichever record it was logged against (see the filter comment above).
+  def across_owners?
+    @params[:touch_point_id].present? && @params[:touch_point_scope] == "all"
+  end
 
   # Backward compatibility: some callers still pass investor_id instead of owner_id/owner_type.
   def normalize_owner_filters!

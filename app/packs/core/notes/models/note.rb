@@ -10,22 +10,13 @@ class Note < ApplicationRecord
   belongs_to :entity
   belongs_to :user
   belongs_to :owner, polymorphic: true, optional: true
-  # LP CRM MVP: the person at the LP this note was with — the contact's
-  # InvestorAccess record. An access belongs to exactly one investor, so the
-  # touch point is always a contact of the note's owner and each contact's
-  # history is cleanly scoped to that stakeholder. The note's owner stays the
-  # Investor — the touch point is a filter dimension only.
-  belongs_to :touch_point, class_name: "InvestorAccess", optional: true
+  # LP CRM: the person at the LP this note was with — the contact's InvestorAccess
+  # record, plus the guard that keeps it a contact of the note's own stakeholder.
+  # Works for both Investor-owned notes and notes logged under a DealInvestor
+  # (whose contacts are its parent LP's contacts). See WithTouchPoint.
+  include WithTouchPoint
+
   delegate :full_name, to: :user, prefix: :user
-
-  # The UI dropdown only offers the owner's contacts, but params are not to be
-  # trusted: without this check a crafted POST could attach any InvestorAccess —
-  # including another entity's — and its name/email would render in the lists.
-  validate :touch_point_belongs_to_owner, if: -> { touch_point_id.present? }
-
-  def touch_point_belongs_to_owner
-    errors.add(:touch_point_id, "is not a contact of this stakeholder") unless owner.is_a?(Investor) && touch_point&.investor_id == owner_id
-  end
 
   has_one :reminder, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :reminder, allow_destroy: true, update_only: true

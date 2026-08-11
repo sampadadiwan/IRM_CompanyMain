@@ -16,6 +16,11 @@
   <%= hidden_field_tag :return_to, return_to if return_to.present? %>
   <%= hidden_field_tag :embedded_note_context, params[:embedded_note_context] %>
   <%= hidden_field_tag :embedded_owner_id, params[:owner_id].presence || params.dig(:note, :owner_id) %>
+  <%# The contact filter of the list this form was opened from — distinct from
+      note[touch_point_id], which is the note's own contact. The controller
+      compares the two to decide whether the saved note belongs in that list. %>
+  <% list_touch_point_id = params[:list_touch_point_id].presence || params[:touch_point_id].presence %>
+  <%= hidden_field_tag :list_touch_point_id, list_touch_point_id if list_touch_point_id %>
   <%# _note.html.erb reads params[:condensed] to pick its column set. Carry it
       through the submit so the row prepended by create matches the table it
       lands in (the dashboard widget renders this list condensed). %>
@@ -88,35 +93,51 @@
   %>
 
   <div data-controller="note-owner">
-    <div class="form-group">
-      <%= form.label :owner_type, "Owner Type" %>
-      <%= form.select :owner_type,
-        owner_type_options,
-        { selected: effective_owner_type, include_blank: false },
-        class: "form-control",
-        disabled: owner_type_disabled,
-        data: {
-          "note-owner-target": "ownerType",
-          action: "change->note-owner#ownerTypeChanged"
-        } %>
-      <%= form.hidden_field :owner_type if owner_type_disabled %>
-      <%= form.hidden_field :entity_id if owner_type_disabled %>
-    </div>
+    <%# Opened from a deal or deal investor tab, the owner type is fixed by that
+        tab — submit it hidden instead of showing a greyed-out select that looks
+        editable. Outside those tabs (e.g. editing an existing note) the disabled
+        select stays: there it is the only thing saying what the note belongs to. %>
+    <% if restricted_embedded_context %>
+      <%= form.hidden_field :owner_type %>
+      <%= form.hidden_field :entity_id %>
+    <% else %>
+      <div class="form-group">
+        <%= form.label :owner_type, "Owner Type" %>
+        <%= form.select :owner_type,
+          owner_type_options,
+          { selected: effective_owner_type, include_blank: false },
+          class: "form-control",
+          disabled: owner_type_disabled,
+          data: {
+            "note-owner-target": "ownerType",
+            action: "change->note-owner#ownerTypeChanged"
+          } %>
+        <%= form.hidden_field :owner_type if owner_type_disabled %>
+        <%= form.hidden_field :entity_id if owner_type_disabled %>
+      </div>
+    <% end %>
 
     <% if owner_options.present? %>
-      <div class="form-group <%= show_for_field ? '' : 'd-none' %>" data-note-owner-target="ownerForGroup">
-        <%= form.label :owner_id, "For" %>
-        <%= form.select :owner_id,
-          owner_options,
-          { selected: note.owner_id, include_blank: !owner_locked },
-          class: "form-control",
-          disabled: owner_locked,
-          data: {
-            "note-owner-target": "ownerForSelect",
-            locked: owner_locked
-          } %>
-        <%= form.hidden_field :owner_id if owner_locked %>
-      </div>
+      <%# Same for "For" on a deal investor's own tab: that tab already picked the
+          investor. The deal tab keeps its select — there you choose which
+          investor on the deal the note is about. %>
+      <% if owner_locked && restricted_embedded_context %>
+        <%= form.hidden_field :owner_id %>
+      <% else %>
+        <div class="form-group <%= show_for_field ? '' : 'd-none' %>" data-note-owner-target="ownerForGroup">
+          <%= form.label :owner_id, "For" %>
+          <%= form.select :owner_id,
+            owner_options,
+            { selected: note.owner_id, include_blank: !owner_locked },
+            class: "form-control",
+            disabled: owner_locked,
+            data: {
+              "note-owner-target": "ownerForSelect",
+              locked: owner_locked
+            } %>
+          <%= form.hidden_field :owner_id if owner_locked %>
+        </div>
+      <% end %>
     <% else %>
       <%= form.hidden_field :owner_id %>
     <% end %>
@@ -128,12 +149,14 @@
   </div>
 
   <%# LP CRM: which person at the LP this note was with. Options come from the
-      investor's recorded contacts (InvestorAccess rows, approved or not) —
-      see Investor#touch_point_options and Note#touch_point.
-      Rendered only when the owner is already a known Investor (the flow from the
-      stakeholder page passes owner_id); on the generic /notes/new page the owner
-      is picked client-side and we keep the MVP free of extra JS. %>
-  <% if effective_owner_type == "Investor" && note.owner.is_a?(Investor) %>
+      LP's recorded contacts (InvestorAccess rows, approved or not) — see
+      Investor#touch_point_options and WithTouchPoint. A DealInvestor offers its
+      parent LP's contacts, so deal-side notes name the same people.
+      Rendered only when the owner is already loaded (the flows from the
+      stakeholder page and the deal investor tab both pass owner_id); on the
+      generic /notes/new page the owner is picked client-side and we keep the
+      MVP free of extra JS. %>
+  <% if note.owner.respond_to?(:touch_point_options) %>
     <% touch_point_options = note.owner.touch_point_options %>
     <% if touch_point_options.present? %>
       <div class="form-group">

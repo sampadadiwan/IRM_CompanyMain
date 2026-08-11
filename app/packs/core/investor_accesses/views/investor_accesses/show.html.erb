@@ -94,11 +94,15 @@
     <div class="tab-content">
       <div id="notes-tab" class="tab-pane fade show active">
         <div id="notes" class="associated_entity">
-          <%# owner_id/owner_type also prefill the "New Note" form with this
-              stakeholder, so the touch-point dropdown appears there %>
+          <%# touch_point_scope: "all" — this person's whole history, whether the
+              note was logged on the LP record or under one of its deal
+              investors. owner_id/owner_type no longer narrow the list; they stay
+              to prefill the "New Note" form with this stakeholder, so the
+              touch-point dropdown appears there. The "For" column shows which
+              record each note was logged against. %>
           <%= turbo_frame_tag "notes_frame", target: "_top", loading: :lazy,
                               src: notes_path(owner_id: @investor_access.investor_id, owner_type: "Investor",
-                                              touch_point_id: @investor_access.id) do %>
+                                              touch_point_id: @investor_access.id, touch_point_scope: "all") do %>
             <%= render "/layouts/loading" %>
           <% end %>
         </div>
@@ -106,10 +110,13 @@
 
       <div id="tasks-tab" class="tab-pane fade">
         <div id="tasks" class="associated_entity">
-          <%# completed: :all so finished follow-ups stay visible in the history %>
+          <%# completed: :all so finished follow-ups stay visible in the history;
+              touch_point_scope: "all" so deal-side follow-ups with this person
+              appear alongside the stakeholder ones (see the notes tab above) %>
           <%= turbo_frame_tag "task_list", target: "_top", loading: :lazy,
                               src: tasks_path(owner_id: @investor_access.investor_id, owner_type: "Investor",
-                                              touch_point_id: @investor_access.id, completed: :all) do %>
+                                              touch_point_id: @investor_access.id, touch_point_scope: "all",
+                                              completed: :all) do %>
             <%= render "/layouts/loading" %>
           <% end %>
         </div>

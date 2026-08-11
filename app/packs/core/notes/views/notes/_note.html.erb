@@ -9,10 +9,11 @@
     <%= link_to note.user_full_name, notes_path(user_id: note.user_id) %>
 </td>
 <%# LP CRM: touch point — matches the "With" header added in _index.html.erb;
-    linked to the same list filtered to that person. Blank when the note isn't
-    about a specific contact. %>
+    linked to that person's own contact page with the Notes tab open, which lists
+    their whole history (stakeholder notes and deal notes alike). Blank when the
+    note isn't about a specific contact. %>
 <td>
-    <%= link_to note.touch_point.full_name, notes_path(touch_point_id: note.touch_point_id) if note.touch_point %>
+    <%= link_to note.touch_point.full_name, investor_access_path(note.touch_point, tab: "notes-tab") if note.touch_point %>
 </td>
 <% end %>
 

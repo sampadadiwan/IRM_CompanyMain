@@ -13,6 +13,14 @@ Feature: Tasks
     Then a task should be created with details "Complete the audit report"
     And I should see "Complete the audit report"
 
+  # Tasks created before ActionText keep their text in the legacy details column.
+  # The kanban card always fell back to it; the list did not, so the same task
+  # showed text on the board and an empty cell in the list.
+  Scenario: A task whose text predates rich text still shows in the list
+    Given a legacy task "Filed before rich text existed" exists
+    And I am at the tasks page
+    Then I should see "Filed before rich text existed"
+
   Scenario: Filter tasks by completion status
     Given the following tasks exist:
       | details            | completed |

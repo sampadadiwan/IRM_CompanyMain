@@ -1,6 +1,12 @@
 <tr id="<%= dom_id task %>">
   <td>
-    <%= link_to task.details, task %>
+    <%# Pre-ActionText rows keep their text in the legacy details column, which
+        task.details hides — the board's cards already fall back, so without the
+        same fallback here the list shows an empty cell for a task the board
+        shows text for. sanitize because the legacy column is raw user HTML. %>
+    <%= link_to task do %>
+      <%= task.legacy_details? ? sanitize(task.details_html) : task.details %>
+    <% end %>
     <div>
     <% task.tags&.split(",")&.each do |tag| %>
       <small><%= link_to tag, search_tasks_path(query: tag) %></small>
@@ -14,9 +20,11 @@
     <%= task.assigned_to&.first_name %>
   </td>
   <%# LP CRM: touch point — matches the "With" header in _index.html.erb; linked
-      to the tasks list filtered to that person. Blank when not person-specific. %>
+      to that person's own contact page with the Tasks tab open, which lists their
+      whole history (stakeholder follow-ups and deal follow-ups alike, completed
+      included). Blank when not person-specific. %>
   <td>
-    <%= link_to task.touch_point.full_name, tasks_path(touch_point_id: task.touch_point_id, completed: :all) if task.touch_point %>
+    <%= link_to task.touch_point.full_name, investor_access_path(task.touch_point, tab: "tasks-tab") if task.touch_point %>
   </td>
   <td>
     <%= l task.due_date if task.due_date %>

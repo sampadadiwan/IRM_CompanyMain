@@ -16,7 +16,10 @@
     <%# LP CRM: when this list is filtered to a touch point (contact show page tabs),
         carry it into the form so the new note is pre-linked to that person —
         NotesController#new builds the note from these note[...] params. %>
-    <%= link_to "New Note", new_note_path("note[owner_id]": owner_id, "note[owner_type]": owner_type, "note[entity_id]": current_user.entity_id, "note[touch_point_id]": params[:touch_point_id].presence, return_to: params[:return_to], from: from_source, embedded_note_context: embedded_note_context, condensed: params[:condensed]), {class: "btn btn-outline-primary ti ti-plus", data: { turbo_frame: "new_note" }} %>
+    <%# list_touch_point_id is this list's own filter, carried through the form so
+        the create response can tell whether the saved note belongs here — unlike
+        note[touch_point_id], which the user can change before saving. %>
+    <%= link_to "New Note", new_note_path("note[owner_id]": owner_id, "note[owner_type]": owner_type, "note[entity_id]": current_user.entity_id, "note[touch_point_id]": params[:touch_point_id].presence, list_touch_point_id: params[:touch_point_id].presence, return_to: params[:return_to], from: from_source, embedded_note_context: embedded_note_context, condensed: params[:condensed]), {class: "btn btn-outline-primary ti ti-plus", data: { turbo_frame: "new_note" }} %>
     <% if owner_id.present? && !hide_summarize_btn %>
       <% if current_user.entity.support_agents.set?(:note_summarization_agent) %>
       <button type="button" class="btn btn-outline-secondary"

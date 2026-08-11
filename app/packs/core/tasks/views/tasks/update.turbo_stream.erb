@@ -1,4 +1,23 @@
+<%# Patch the edited record in place when it still belongs to what is on screen.
+    When it doesn't — the save changed its owner, so the list's or board's own
+    query would no longer return it — remove it instead. Leaving it there is how
+    re-owned tasks kept appearing in a deal's Tasks tab until the next reload.
 
-    <%= turbo_stream.replace(dom_id(@task), partial: "tasks/task", locals: { task: @task }) %>
-    <%= turbo_stream.replace('new_task', partial: "tasks/blank") %>
-    <%= turbo_stream.update('user_alert', partial: 'layouts/alerts', locals: { notice: "Task was successfully updated." }) %>
+    board=true comes from a kanban card's edit link: the same dom_id is a card
+    there, not a table row, so it has to be re-rendered with the card partial. %>
+<% card_view = params[:board].present? %>
+<% if card_view && @task_in_list_scope && @task.saved_change_to_status? %>
+  <%# The save moved it to another column — replacing in place would leave the
+      card sitting under the wrong heading. It lands at the top of the target
+      column rather than in due-date order, same as a drag does. %>
+  <%= turbo_stream.remove(dom_id(@task)) %>
+  <%= turbo_stream.prepend("board_column_#{@task.status}", partial: "tasks/board_task", locals: { task: @task }) %>
+<% elsif @task_in_list_scope %>
+  <%= turbo_stream.replace(dom_id(@task),
+                           partial: card_view ? "tasks/board_task" : "tasks/task",
+                           locals: { task: @task }) %>
+<% else %>
+  <%= turbo_stream.remove(dom_id(@task)) %>
+<% end %>
+<%= turbo_stream.replace('new_task', partial: "tasks/blank") %>
+<%= turbo_stream.update('user_alert', partial: 'layouts/alerts', locals: { notice: "Task was successfully updated." }) %>

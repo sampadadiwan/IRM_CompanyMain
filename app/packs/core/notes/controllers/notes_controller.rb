@@ -15,7 +15,15 @@ class NotesController < ApplicationController
     owner_id = params[:owner_id].presence
     owner_type = params[:owner_type].presence
 
-    if owner_id.present?
+    # LP CRM: the contact show page asks for "everything with this person" by
+    # sending touch_point_scope=all, which spans owner types — notes logged on
+    # the LP record AND notes logged under one of its deal investors. owner_id /
+    # owner_type still ride along on the URL so the "New Note" button keeps
+    # defaulting to the LP record; they just stop narrowing the list.
+    touch_point = authorized_touch_point
+    across_owners = touch_point.present? && params[:touch_point_scope] == "all"
+
+    if owner_id.present? && !across_owners
       if owner_type.present?
         owner = owner_type.safe_constantize&.find_by(id: owner_id)
         @notes = if owner.present? && policy(owner).show?
@@ -34,9 +42,13 @@ class NotesController < ApplicationController
       end
     end
     @notes = @notes.where(user_id: params[:user_id]) if params[:user_id]
-    # LP CRM: "everything with this person" — filter by touch point (the
-    # contact's InvestorAccess id), used by the contact show page tabs.
-    @notes = @notes.where(touch_point_id: params[:touch_point_id]) if params[:touch_point_id].present?
+    # LP CRM: filter by touch point (the contact's InvestorAccess id), used by
+    # the contact show page tabs and the "With" links in the list. An unknown or
+    # invisible contact filters to nothing rather than falling through to an
+    # unfiltered list.
+    if params[:touch_point_id].present?
+      @notes = touch_point ? @notes.where(touch_point_id: touch_point.id) : @notes.none
+    end
     @notes = NoteSearch.perform(@notes, current_user, params)
     # :touch_point preloaded for the "With" column added to the notes list
     @pagy, @notes = pagy(@notes.with_all_rich_text.includes(:user, :owner, :touch_point))
@@ -117,6 +129,11 @@ class NotesController < ApplicationController
         # stream's targets do not exist. Only the inline form gets the stream.
         format.turbo_stream do
           if params[:inline_frame] == "new_note"
+            # Does the new note belong to the list this form was opened from?
+            # The stream prepends a row without re-running that list's query, so
+            # one created outside its scope would sit at the top looking like it
+            # belongs until the next reload dropped it.
+            @note_in_list_scope = note_matches_list_scope?
             render :create
           else
             redirect_to redirect_target, notice: "Note was successfully created."
@@ -200,6 +217,24 @@ class NotesController < ApplicationController
 
     attrs["owner_id"] = current_user.id if attrs["owner_type"] == "User"
     attrs
+  end
+
+  # True when @note matches the scope of the list the inline form was opened
+  # from. The form carries that scope as hidden fields: embedded_owner_id for an
+  # owner's tab, list_touch_point_id for a contact's. An unscoped list — the
+  # global Notes page — contains every note, so nothing can fall out of it.
+  def note_matches_list_scope?
+    # A contact's tab lists only notes with that person; a note saved without
+    # them (or with someone else) does not belong there whatever its owner is.
+    if params[:list_touch_point_id].present? &&
+       @note.touch_point_id.to_s != params[:list_touch_point_id].to_s
+      return false
+    end
+
+    owner_id = params[:embedded_owner_id].presence
+    return true if owner_id.blank?
+
+    @note.owner_id.to_s == owner_id.to_s
   end
 
   def embedded_deal_investor_context?

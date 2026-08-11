@@ -22,19 +22,13 @@ class Task < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :owner, polymorphic: true, optional: true
-  # LP CRM MVP: the person at the LP this task involves — the contact's
-  # InvestorAccess record (assigned_to remains the internal GP user doing the
-  # work; touch_point is their counterpart at the LP). See Note#touch_point.
-  belongs_to :touch_point, class_name: "InvestorAccess", optional: true
+  # LP CRM: the person at the LP this task involves — the contact's InvestorAccess
+  # record (assigned_to remains the internal GP user doing the work; touch_point
+  # is their counterpart at the LP). Available on Investor-owned tasks and on
+  # tasks logged under a DealInvestor alike. See WithTouchPoint.
+  include WithTouchPoint
+
   belongs_to :task_template, optional: true
-
-  # Same guard as Note#touch_point_belongs_to_owner: params are not to be
-  # trusted, so a touch point must be a contact of the task's owner stakeholder.
-  validate :touch_point_belongs_to_owner, if: -> { touch_point_id.present? }
-
-  def touch_point_belongs_to_owner
-    errors.add(:touch_point_id, "is not a contact of this stakeholder") unless owner.is_a?(Investor) && touch_point&.investor_id == owner_id
-  end
   belongs_to :task_recurrence_rule, optional: true
 
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
@@ -127,6 +121,21 @@ class Task < ApplicationRecord
   # plain-text conversion rather than rendering the markup as literal text.
   def display_details
     details.to_plain_text.presence || ActionText::Content.new(self[:details].to_s).to_plain_text
+  end
+
+  # Details as renderable HTML. Rows created before ActionText keep their markup
+  # in the legacy `details` column, which has_rich_text hides — so those tasks
+  # render blank anywhere `task.details` is used directly, while the kanban card
+  # (display_details, which already falls back) shows their text. That mismatch
+  # makes the list and the board look like they disagree about the same task.
+  # Callers must sanitize the legacy branch: it is old user-entered HTML.
+  def details_html
+    details.body.present? ? details : self[:details].to_s
+  end
+
+  # True when the text comes from the legacy column and still needs sanitizing.
+  def legacy_details?
+    details.body.blank? && self[:details].present?
   end
 
   def index_record?

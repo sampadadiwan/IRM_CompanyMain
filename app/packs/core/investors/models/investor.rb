@@ -52,6 +52,13 @@ class Investor < ApplicationRecord
   def touch_point_options
     investor_accesses.order(:first_name).map { |ia| ["#{ia.full_name} (#{ia.email})", ia.id] }
   end
+
+  # The LP whose contacts may be used as touch points on notes/tasks owned by
+  # this record — itself. DealInvestor answers with its parent LP's id, so both
+  # owner types share one validation rule (see WithTouchPoint).
+  def touch_point_investor_id
+    id
+  end
   has_many :rm_mappings, dependent: :destroy
   has_many :rm_mappings_as_rm, class_name: "RmMapping", foreign_key: :rm_id, dependent: :destroy
   has_many :mapped_investors_as_rm, through: :rm_mappings_as_rm, source: :investor

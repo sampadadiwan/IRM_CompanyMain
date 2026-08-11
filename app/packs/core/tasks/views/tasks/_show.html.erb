@@ -13,7 +13,8 @@
             Details
           </td>
           <td>
-            <%= task.details %>
+            <%# Same legacy-column fallback as the list row and the kanban card %>
+            <%= task.legacy_details? ? sanitize(task.details_html) : task.details %>
           </td>
         </tr>
 
@@ -74,6 +75,20 @@
             <%= link_to task.owner if task.owner %>
           </td>
         </tr>
+
+        <%# LP CRM: the person at the LP this task involves, if recorded. Links to
+            their contact page with the Tasks tab open — the same destination as
+            the "With" column in the task lists. %>
+        <% if task.touch_point %>
+        <tr>
+          <td>
+            With
+          </td>
+          <td>
+            <%= link_to task.touch_point.full_name, investor_access_path(task.touch_point, tab: "tasks-tab") %>
+          </td>
+        </tr>
+        <% end %>
 
         <tr>
           <td>

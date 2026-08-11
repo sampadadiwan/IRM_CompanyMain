@@ -170,6 +170,16 @@ class DealInvestor < ApplicationRecord
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor", created_by_user_id)
   end
 
+  # LP CRM: a deal investor's touch points are its LP's people — the same
+  # contacts the stakeholder page offers — so a conversation logged inside a deal
+  # names the same person as one logged on the LP record, and the contact's page
+  # can show both. See WithTouchPoint for how notes/tasks use these.
+  delegate :touch_point_options, to: :investor
+
+  def touch_point_investor_id
+    investor_id
+  end
+
   def name
     investor_name
   end

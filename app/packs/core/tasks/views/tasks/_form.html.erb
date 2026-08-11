@@ -24,6 +24,14 @@
       <%= hidden_field_tag :embedded_owner_id, params[:owner_id].presence || params.dig(:task, :owner_id) %>
 
       <%= hidden_field_tag :deal_id, params[:deal_id] if params[:deal_id].present? %>
+      <%# Opened from a kanban card: the save must re-render a board card, not a
+          list row (see update.turbo_stream.erb) %>
+      <%= hidden_field_tag :board, params[:board] if params[:board].present? %>
+      <%# The contact filter of the list this form was opened from — distinct from
+          task[touch_point_id], which is the task's own contact. The controller
+          compares the two to decide whether the saved task belongs in that list. %>
+      <% list_touch_point_id = params[:list_touch_point_id].presence || params[:touch_point_id].presence %>
+      <%= hidden_field_tag :list_touch_point_id, list_touch_point_id if list_touch_point_id %>
 
       <%
         task_context = params[:embedded_task_context].presence
@@ -55,39 +63,60 @@
           [["Deal Investor", "DealInvestor"]]
         end
 
+        # An existing task must always find its own owner type in this list. When
+        # it doesn't — a DealInvestor task edited outside the deal tab, say — the
+        # browser silently falls back to the first option (User) and saving
+        # re-owns the task to the editor, unlinking it from its deal. Appending
+        # the real type keeps "leave it alone" the default.
+        if task.persisted? && effective_owner_type.present? &&
+           owner_type_options.none? { |(_label, value)| value == effective_owner_type }
+          owner_type_options += [[effective_owner_type.underscore.humanize.titleize, effective_owner_type]]
+        end
+
         owner_locked = effective_owner_type == "DealInvestor" && task.owner_id.present? && task_context == "deal_investor_tab"
         show_for_field = effective_owner_type != "User"
         show_name_field = task_context.blank? && effective_owner_type == "User"
       %>
 
-      <div class="form-group">
-        <%= form.label :owner_type, "Owner Type" %>
-        <%= form.select :owner_type,
-                        owner_type_options,
-                        { selected: effective_owner_type, include_blank: false },
-                        class: "form-control",
-                        disabled: owner_type_disabled,
-                        data: {
-                          "task-owner-target": "ownerType",
-                          action: "change->task-owner#ownerTypeChanged"
-                        } %>
-        <%= form.hidden_field :owner_type if owner_type_disabled %>
-      </div>
+      <%# Opened from a deal or deal investor tab, the owner type is fixed (the
+          controller forces DealInvestor regardless of what is posted), so the
+          field is submitted hidden rather than shown as a greyed-out select
+          that reads as editable. %>
+      <% if owner_type_disabled %>
+        <%= form.hidden_field :owner_type %>
+      <% else %>
+        <div class="form-group">
+          <%= form.label :owner_type, "Owner Type" %>
+          <%= form.select :owner_type,
+                          owner_type_options,
+                          { selected: effective_owner_type, include_blank: false },
+                          class: "form-control",
+                          data: {
+                            "task-owner-target": "ownerType",
+                            action: "change->task-owner#ownerTypeChanged"
+                          } %>
+        </div>
+      <% end %>
 
       <% if owner_options.present? %>
-        <div class="form-group <%= show_for_field ? '' : 'd-none' %>" data-task-owner-target="ownerForGroup">
-          <%= form.label :owner_id, "For" %>
-          <%= form.select :owner_id,
-                          owner_options,
-                          { selected: task.owner_id, include_blank: !owner_locked },
-                          class: "form-control",
-                          disabled: owner_locked,
-                          data: {
-                            "task-owner-target": "ownerForSelect",
-                            locked: owner_locked
-                          } %>
-          <%= form.hidden_field :owner_id if owner_locked %>
-        </div>
+        <%# Same for "For" on a deal investor's own tab: the investor is already
+            chosen by the tab you are in. The deal tab keeps the select — there
+            you still pick WHICH investor on the deal the task is for. %>
+        <% if owner_locked %>
+          <%= form.hidden_field :owner_id %>
+        <% else %>
+          <div class="form-group <%= show_for_field ? '' : 'd-none' %>" data-task-owner-target="ownerForGroup">
+            <%= form.label :owner_id, "For" %>
+            <%= form.select :owner_id,
+                            owner_options,
+                            { selected: task.owner_id, include_blank: true },
+                            class: "form-control",
+                            data: {
+                              "task-owner-target": "ownerForSelect",
+                              locked: false
+                            } %>
+          </div>
+        <% end %>
       <% else %>
         <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
       <% end %>
@@ -111,8 +140,10 @@
 
       <%# LP CRM: the person at the LP this task involves — the external counterpart
           to assigned_to (the internal GP user). Same rendering rule as the note
-          form: only when the owner is already a known Investor. %>
-      <% if effective_owner_type == "Investor" && task.owner.is_a?(Investor) %>
+          form: only when the owner is already loaded, which covers both the
+          stakeholder page and the deal investor tab (a DealInvestor offers its
+          parent LP's contacts). %>
+      <% if task.owner.respond_to?(:touch_point_options) %>
         <% touch_point_options = task.owner.touch_point_options %>
         <% if touch_point_options.present? %>
           <div class="form-group">
