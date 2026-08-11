@@ -286,6 +286,30 @@ module ApplicationHelper
     nil
   end
 
+  # A task's policy answer, memoized for the duration of ONE render.
+  #
+  # List rows ask the policy two questions each and kanban cards three, and for
+  # any user who is not a company admin every one of those walks down to an
+  # AccessRight lookup — twice over for a DealInvestor owner, via its parent
+  # Deal's policy. Rows sharing an owner repeated identical queries dozens of
+  # times per list and hundreds per board.
+  #
+  # The answer depends only on the user (fixed for the request) and on the task's
+  # entity, support flag and owner — so those form the key, and rows with the
+  # same owner collapse to a single evaluation.
+  #
+  # Scoped to the render on purpose. A longer-lived cache is NOT safe here: the
+  # investor-advisor switch changes the user's entity and roles mid-session, and
+  # an entry that outlives it answers with pre-switch permissions (SEC-12 in
+  # features/advisor/investor_advisor.feature catches exactly that).
+  def task_permits?(task, question)
+    @task_policy_memo ||= {}
+    key = [task.owner_type, task.owner_id, task.entity_id, task.for_support, question]
+    return @task_policy_memo[key] if @task_policy_memo.key?(key)
+
+    @task_policy_memo[key] = policy(task).public_send(question)
+  end
+
   def resolve_doc_color(document_name, custom_colors)
     name = document_name.to_s.downcase
 

@@ -23,13 +23,11 @@ class TaskList < BaseList
     # queries per list render (and, for response, pulling every task's second
     # rich-text body into memory) to feed nothing.
     preloads << :task_template if @params[:board].blank?
-    # :owner feeds the board card and the list's "For" column. A single-owner
-    # list drops that column (ApplicationHelper#single_owner_list? — same rule,
-    # repeated here because a service has no view helpers), leaving nothing to
-    # preload for.
-    single_owner_list = @params[:owner_id].present? && @params[:owner_type].present? &&
-                        @params[:touch_point_scope] != "all" && @params[:deal_id].blank?
-    preloads << :owner if @params[:board].present? || !single_owner_list
+    # :owner is preloaded even when the "For" column is hidden: TaskPolicy#create?
+    # dereferences record.owner (and delegates to the owner's own policy) for any
+    # user who is not a company admin, and the row partial asks policy(task).update?
+    # per row. Without this the association would load one row at a time.
+    preloads << :owner
     @tasks = @tasks.includes(*preloads)
 
     # Apply standard filters. touch_point_id: "everything with this person" —

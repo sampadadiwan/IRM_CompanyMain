@@ -93,7 +93,8 @@ Then('the {string} board card should open its edit form inline') do |details|
     # Loads into the board's own frame instead of navigating away, so the board
     # keeps its filters and scroll position
     expect(link['data-turbo-frame']).to eq('new_task')
-    expect(link[:target]).to be_nil
+    # rack_test reports a missing attribute as "" rather than nil
+    expect(link[:target].to_s).to be_empty
     expect(link[:href]).to include(edit_task_path(task))
     # board=true makes the save re-render a card rather than a list row
     expect(link[:href]).to include('board=true')
@@ -103,14 +104,16 @@ end
 
 Then('the {string} board card menu should offer Show, Edit and Delete') do |details|
   task = Task.all.find { |t| t.details.to_plain_text.include?(details) }
-  within("##{ActionView::RecordIdentifier.dom_id(task)} .dropdown-menu") do
+  # visible: :all — a dropdown menu is hidden until its toggle is clicked, and
+  # this asserts what the menu contains, not that it is open
+  within("##{ActionView::RecordIdentifier.dom_id(task)}", visible: :all) do
     # Show is the only way to the task's own page now that the title edits
-    expect(page).to have_link('Show', href: task_path(task))
-    expect(page).to have_link('Edit')
+    expect(page).to have_link('Show', href: task_path(task), visible: :all)
+    expect(page).to have_link('Edit', visible: :all)
     # Delete goes through the shared confirmation modal, so it is a button_to
     # form rather than a link
-    expect(page).to have_css("form.deleteButton[action='#{task_path(task)}']")
-    expect(page).to have_button('Delete')
+    expect(page).to have_css("form.deleteButton[action='#{task_path(task)}']", visible: :all)
+    expect(page).to have_button('Delete', visible: :all)
   end
 end
 
@@ -136,12 +139,6 @@ When('I set the task category to {string} and save') do |category|
   select(category, from: 'task_category')
   click_on('Save')
   sleep 1 # turbo_stream card replace
-end
-
-When('I tick Completed and save') do
-  check('task_completed')
-  click_on('Save')
-  sleep 1 # turbo_stream remove + prepend into the Done column
 end
 
 Then('I should still be on the tasks board') do

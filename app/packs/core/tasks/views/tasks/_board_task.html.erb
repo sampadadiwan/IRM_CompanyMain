@@ -66,14 +66,14 @@
           <i class="ti ti-dots-vertical fs-5"></i>
         </a>
         <div class="dropdown-menu dropdown-menu-end">
-          <% if policy(task).show? %>
+          <% if task_permits?(task, :show?) %>
             <%= link_to "Show", task, class: "dropdown-item ti ti-eye" %>
           <% end %>
-          <% if policy(task).update? %>
+          <% if task_permits?(task, :update?) %>
             <%= link_to "Edit", edit_path, class: "dropdown-item ti ti-edit",
                         data: { turbo_frame: "new_task" } %>
           <% end %>
-          <% if policy(task).destroy? %>
+          <% if task_permits?(task, :destroy?) %>
             <%# Shared confirmation modal, same as every other destructive action
                 (confirm_controller reads these data attributes off the button and
                 replays this form inside #confirmModal). Deliberately NOT

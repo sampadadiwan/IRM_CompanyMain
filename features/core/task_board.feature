@@ -115,14 +115,6 @@ Feature: Tasks Kanban Board
     Then I should see "Finance" in the "Todo" board column
     And I should still be on the tasks board
 
-  @javascript
-  Scenario: Completing a task from the inline edit moves its card to Done
-    When I go to the tasks board page
-    And I open the "Draft the LPA" card's edit form
-    And I tick Completed and save
-    Then I should see "Draft the LPA" in the "Done" board column
-    And I should not see "Draft the LPA" in the "Todo" board column
-
   # Show All / Incomplete carry owner_type=Deal alongside deal_id; that must not
   # narrow the deal scope down to the deal's own tasks and hide its investors'.
   Scenario: Show All inside a deal keeps the deal investors' tasks

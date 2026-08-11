@@ -52,7 +52,7 @@
     <%= task.category %>
   </td>
   <td>
-    <% if policy(task).update? %>
+    <% if task_permits?(task, :update?) %>
       <% checked = task.completed == 1 ? "checked" : ""%>
       <%# show_owner rides along on both round-trips: each replaces this row, and
           without it the replacement would come back with a different column
@@ -65,6 +65,6 @@
       <%= link_to  "Edit", edit_task_path(task, show_owner: show_owner), class: "btn btn-outline-success ti ti-edit", data: { turbo_frame: 'new_task' }%>
     <% end %>
 
-    <%= link_to  "Show" , task , {class: "btn btn-outline-primary ti ti-eye" } if policy(task).show? %>
+    <%= link_to  "Show" , task , {class: "btn btn-outline-primary ti ti-eye" } if task_permits?(task, :show?) %>
   </td>
 </tr>

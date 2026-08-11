@@ -30,6 +30,20 @@
     }
   %>
 
+  <%# All four numbers in one query, once — this used to rebuild the scope and
+      run a COUNT inside every card (Task.stat_counts). %>
+  <%
+    stat_scope = policy_scope(current_user.entity.tasks)
+    stat_scope = stat_scope.where(owner_params) if owner_params.present?
+    # Strip any existing 'completed' filter from the query so each card counts
+    # its own condition rather than the one the page is currently filtered by
+    clean_query = base_query.dup
+    if clean_query["c"].is_a?(Hash)
+      clean_query["c"] = clean_query["c"].reject { |_k, v| v["a"]&.any? { |_ak, av| av["name"] == "completed" } }
+    end
+    stat_counts = Task.stat_counts(stat_scope.ransack(clean_query).result)
+  %>
+
   <div class="row">
     <% task_types.each do |type, data| %>
       <div class="col">
@@ -38,24 +52,8 @@
             <div class="card-body">
               <div class="d-flex align-items-center mb-3">
                 <div>
-                  <%
-                    tasks = policy_scope(current_user.entity.tasks)
-                    tasks = tasks.where(owner_params) if owner_params.present?
-                    # Clean the base query from any existing 'completed' filters for accurate counting
-                    clean_query = base_query.dup
-                    if clean_query["c"].is_a?(Hash)
-                      clean_query["c"] = clean_query["c"].reject { |_k, v| v["a"]&.any? { |_ak, av| av["name"] == "completed" } }
-                    end
-
-                    tasks = tasks.ransack(clean_query).result
-                    count = if type == :due_this_week
-                              tasks.where(due_date: Date.today.beginning_of_week..Date.today.end_of_week).count
-                            else
-                              tasks.send(type).count
-                            end
-                  %>
                   <div data-controller="counters"
-                      data-counters-value-value="<%= count %>">
+                      data-counters-value-value="<%= stat_counts[type] %>">
                     <h3 class="fs-7" data-counters-target="output">0</h3>
                   </div>
                   <h3 class="fs-6"></h3>

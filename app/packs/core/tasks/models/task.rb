@@ -138,6 +138,37 @@ class Task < ApplicationRecord
     details.body.blank? && self[:details].present?
   end
 
+  # The four numbers on the tasks dashboard, in one pass over the scope.
+  #
+  # The partial used to rebuild the scope and run a COUNT inside each card —
+  # four policy-scope constructions and four full scans per page render. SUM over
+  # CASE rather than a FILTER clause or engine-specific boolean syntax, so the
+  # same SQL runs on MySQL (dev/prod) and SQLite (test).
+  #
+  # reorder(nil) drops ransack's default sort: ordering an aggregate is pointless
+  # and some engines reject it outright.
+  def self.stat_counts(scope)
+    today = Time.zone.today
+    completed = "SUM(CASE WHEN tasks.completed THEN 1 ELSE 0 END)"
+    incomplete = "SUM(CASE WHEN tasks.completed THEN 0 ELSE 1 END)"
+    delayed = sanitize_sql_array(
+      ["SUM(CASE WHEN tasks.completed THEN 0 WHEN tasks.due_date < ? THEN 1 ELSE 0 END)", today]
+    )
+    due_this_week = sanitize_sql_array(
+      ["SUM(CASE WHEN tasks.due_date BETWEEN ? AND ? THEN 1 ELSE 0 END)",
+       today.beginning_of_week, today.end_of_week]
+    )
+
+    values = scope.reorder(nil).pick(
+      Arel.sql(completed), Arel.sql(incomplete), Arel.sql(delayed), Arel.sql(due_this_week)
+    )
+    # pick returns nil when the scope has no rows at all
+    values ||= []
+
+    { completed: values[0].to_i, incomplete: values[1].to_i,
+      delayed: values[2].to_i, due_this_week: values[3].to_i }
+  end
+
   def index_record?
     true
   end
