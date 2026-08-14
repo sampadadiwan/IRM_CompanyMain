@@ -1,0 +1,132 @@
+<%# Post-run validation summary email sent to the FM who triggered the run.
+     Serves as a historical record of each run's results since the platform
+     does not persist historical run data. No dashboard links — the dashboard
+     shows live data that may change after this snapshot was taken.
+     @see PortfolioValidationDigestMailer#validation_summary %>
+<%
+  total         = @summary[:total] || (@successes.size + @errors.size)
+  up_to_date    = @summary[:up_to_date] || 0
+  has_issues    = @summary[:has_issues] || 0
+  kpi_overdue   = @summary[:kpi_overdue] || 0
+  val_overdue   = @summary[:valuation_overdue] || 0
+  doc_overdue   = @summary[:documents_overdue] || 0
+  period_label  = @summary[:period_label] || "current period"
+  issues_by_type = @summary[:issues_by_type] || {}
+  company_rows   = @summary[:company_rows] || []
+
+  overall_tone  = has_issues.positive? ? :warning : :success
+  overall_label = has_issues.positive? ? "#{has_issues} Companies Need Attention" : "All Companies Up to Date"
+  overall_sub   = "#{h @entity.name} · #{period_label} · #{I18n.l(@run_at, format: :abbr_date_time)}"
+%>
+
+<%= sa_banner(
+  title:    "Portfolio Validation Summary",
+  label:    overall_label,
+  subtitle: overall_sub,
+  tone:     overall_tone
+) %>
+
+<%# ── Overview Stats ── %>
+<%= sa_section(title: "Overview", top_margin: false) %>
+
+<%= sa_kv_table(rows: [
+  ["Companies Checked", total],
+  ["Up to Date", up_to_date, { tone: :success }],
+  ["Has Issues", has_issues, has_issues.positive? ? { tone: :danger } : {}]
+]) %>
+
+<%# ── Missing by Type Chart (HTML bar chart) ── %>
+<% if issues_by_type.any? %>
+  <%= sa_section(title: "Missing by Type") %>
+
+  <%
+    max_count = issues_by_type.values.max || 1
+  %>
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:20px">
+    <% issues_by_type.each do |category, count| %>
+      <%
+        bar_width = [(count.to_f / max_count * 100).round, 5].max
+        bar_color = count.positive? ? "#ef5350" : "#66bb6a"
+      %>
+      <tr>
+        <td style="padding:6px 12px;width:140px;font-size:12px;color:#555;white-space:nowrap"><%= h category %></td>
+        <td style="padding:6px 8px">
+          <div style="background:#f5f5f5;border-radius:4px;overflow:hidden;height:20px">
+            <div style="background:<%= bar_color %>;width:<%= bar_width %>%;height:20px;border-radius:4px;min-width:24px;text-align:center;line-height:20px;font-size:11px;color:#fff;font-weight:700">
+              <%= count %>
+            </div>
+          </div>
+        </td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<%# ── Issue Breakdown Callouts ── %>
+<% if kpi_overdue.positive? || val_overdue.positive? || doc_overdue.positive? %>
+  <%= sa_section(title: "Issue Breakdown") %>
+
+  <% if kpi_overdue.positive? %>
+    <%= sa_callout(
+      tone: :danger,
+      heading: "KPI Not Submitted",
+      body: "#{kpi_overdue} #{'company'.pluralize(kpi_overdue)} missing KPI reports for #{h period_label}.".html_safe
+    ) %>
+  <% end %>
+
+  <% if val_overdue.positive? %>
+    <%= sa_callout(
+      tone: :warning,
+      heading: "Valuation Missing",
+      body: "#{val_overdue} #{'company'.pluralize(val_overdue)} missing valuation for #{h period_label}.".html_safe
+    ) %>
+  <% end %>
+
+  <% if doc_overdue.positive? %>
+    <%= sa_callout(
+      tone: :warning,
+      heading: "Documents Not Uploaded",
+      body: "#{doc_overdue} #{'company'.pluralize(doc_overdue)} missing required documents.".html_safe
+    ) %>
+  <% end %>
+<% else %>
+  <%= sa_callout(tone: :success, body: "No issues found — all companies are up to date.".html_safe) %>
+<% end %>
+
+<%# ── Per-Company Status Table ── %>
+<% if company_rows.any? %>
+  <%= sa_section(title: "Company Details") %>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:20px">
+    <%= sa_th("Company", "Status", ["KPI", {align: :center}], ["Valuation", {align: :center}], ["Documents", {align: :center}]) %>
+    <tbody>
+      <% company_rows.each do |row| %>
+        <%
+          status_tone = row[:status] == "Up to Date" ? :success : :danger
+        %>
+        <tr>
+          <%= sa_td(h(row[:name])) %>
+          <td style="padding:9px 12px;border:1px solid #e0e0e0"><%= sa_badge(label: row[:status], tone: status_tone) %></td>
+          <td style="padding:9px 12px;border:1px solid #e0e0e0;text-align:center"><%= row[:kpi] ? "&#10003;".html_safe : "<span style='color:#c62828'>&#10007;</span>".html_safe %></td>
+          <td style="padding:9px 12px;border:1px solid #e0e0e0;text-align:center"><%= row[:valuation] ? "&#10003;".html_safe : "<span style='color:#c62828'>&#10007;</span>".html_safe %></td>
+          <td style="padding:9px 12px;border:1px solid #e0e0e0;text-align:center"><%= row[:documents].nil? ? "<span style='color:#999'>--</span>".html_safe : row[:documents] ? "&#10003;".html_safe : "<span style='color:#c62828'>&#10007;</span>".html_safe %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<%# ── Processing Errors (if any companies failed) ── %>
+<% if @errors.any? %>
+  <%= sa_section(title: "Processing Errors") %>
+
+  <%= sa_callout(
+    tone: :danger,
+    heading: "#{@errors.size} #{'company'.pluralize(@errors.size)} failed to process",
+    body: @errors.map { |e|
+      "&#10007; #{h(e[:target_name] || e['target_name'])} &mdash; #{h(e[:error] || e['error'])}"
+    }.join("<br>").html_safe
+  ) %>
+<% end %>
+
+<%= sa_footer("Sent by the Portfolio Company Agent · #{h @entity.name} · #{period_label} · #{I18n.l(@run_at, format: :abbr_date_time)}".html_safe) %>

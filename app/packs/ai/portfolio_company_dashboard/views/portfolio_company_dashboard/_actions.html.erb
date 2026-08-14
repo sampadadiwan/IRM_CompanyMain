@@ -51,7 +51,7 @@
                     class: "border rounded p-3 text-start",
                     style: "transition: border-color 0.2s; cursor: default;",
                     data: { controller: "portfolio-validation-target",
-                            portfolio_validation_target_total_count_value: presenter.total_companies } do |f| %>
+                            portfolio_validation_target_total_value: portfolio_companies.size } do |f| %>
         <div class="d-flex align-items-center gap-2 mb-2">
           <i class="ti ti-player-play"></i>
           <div>
@@ -69,68 +69,56 @@
                 class: "form-select form-select-sm" %>
         </div>
 
-        <%# Target selector — controls which companies to validate %>
+        <%# Target selectors — Select2 multi-selects for scoping which companies to validate.
+             All three are optional: if nothing is selected, validation runs on all companies.
+             When multiple selectors are used, tags and sectors are AND'd (company must match both).
+             Mirrors the ratios selection pattern from portfolio_agent_run.html.erb. %>
         <div class="mt-2">
-          <label class="form-label small text-muted mb-1">Run on</label>
-          <select name="target_mode" class="form-select form-select-sm"
-                  data-action="change->portfolio-validation-target#modeChanged">
-            <option value="all">All Companies (<%= presenter.total_companies %>)</option>
-            <option value="selected">Selected Companies</option>
-            <% if tags_for_select.present? %>
-              <option value="by_tag">By Tag</option>
-            <% end %>
-            <% if sectors_for_select.present? %>
-              <option value="by_sector">By Sector</option>
-            <% end %>
-          </select>
+          <label class="form-label small text-muted mb-1">Tags</label>
+          <%= select_tag "target_tags[]",
+                options_for_select(tags_for_select.map { |tag, count| ["#{tag} (#{count})", tag] }),
+                class: "form-control select2",
+                multiple: true,
+                include_hidden: false,
+                data: { placeholder: "All tags" } %>
         </div>
 
-        <%# Panel: Selected Companies — scrollable checklist of all portfolio companies %>
-        <div hidden data-portfolio-validation-target-target="selectedPanel" class="mt-2"
-             style="max-height: 180px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.5rem;">
-          <% portfolio_companies.each do |name, id| %>
+        <div class="mt-2">
+          <label class="form-label small text-muted mb-1">Sectors</label>
+          <%= select_tag "target_sectors[]",
+                options_for_select(sectors_for_select.map { |sector, count| ["#{sector} (#{count})", sector] }),
+                class: "form-control select2",
+                multiple: true,
+                include_hidden: false,
+                data: { placeholder: "All sectors" } %>
+        </div>
+
+        <div class="mt-2">
+          <label class="form-label small text-muted mb-1">Companies</label>
+          <%= select_tag "target_ids[]",
+                options_for_select(portfolio_companies),
+                class: "form-control select2",
+                multiple: true,
+                include_hidden: false,
+                data: { placeholder: "All companies" } %>
+        </div>
+
+        <%# Send reminders toggle — only shown when agent-level send_kpi_reminder
+             is enabled. Unchecked by default so the FM sees validation results
+             first and can choose to send reminders separately. Hidden field
+             ensures send_reminders=0 is always submitted when unchecked. %>
+        <% if support_agent.json_fields["send_kpi_reminder"].to_s.downcase.in?(%w[yes true 1]) %>
+          <div class="mt-2">
             <div class="form-check">
-              <input type="checkbox" name="target_ids[]" value="<%= id %>"
-                     class="form-check-input" id="target_company_<%= id %>">
-              <label class="form-check-label small" for="target_company_<%= id %>"><%= name %></label>
+              <%= f.hidden_field :send_reminders, value: "0" %>
+              <%= f.check_box :send_reminders, class: "form-check-input", id: "send_reminders_toggle" %>
+              <%= f.label :send_reminders, "Send reminders to companies with missing items", class: "form-check-label small text-muted" %>
             </div>
-          <% end %>
-        </div>
-
-        <%# Panel: By Tag — checkboxes for each existing tag across portfolio companies %>
-        <% if tags_for_select.present? %>
-          <div hidden data-portfolio-validation-target-target="tagPanel" class="mt-2"
-               style="max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.5rem;">
-            <% tags_for_select.each do |tag, count| %>
-              <div class="form-check">
-                <input type="checkbox" name="target_tags[]" value="<%= tag %>"
-                       class="form-check-input" id="target_tag_<%= tag.parameterize %>">
-                <label class="form-check-label small" for="target_tag_<%= tag.parameterize %>">
-                  <%= tag %> <span class="text-muted">(<%= count %>)</span>
-                </label>
-              </div>
-            <% end %>
-          </div>
-        <% end %>
-
-        <%# Panel: By Sector — checkboxes for each existing sector across portfolio companies %>
-        <% if sectors_for_select.present? %>
-          <div hidden data-portfolio-validation-target-target="sectorPanel" class="mt-2"
-               style="max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.5rem;">
-            <% sectors_for_select.each do |sector, count| %>
-              <div class="form-check">
-                <input type="checkbox" name="target_sectors[]" value="<%= sector %>"
-                       class="form-check-input" id="target_sector_<%= sector.parameterize %>">
-                <label class="form-check-label small" for="target_sector_<%= sector.parameterize %>">
-                  <%= sector %> <span class="text-muted">(<%= count %>)</span>
-                </label>
-              </div>
-            <% end %>
           </div>
         <% end %>
 
         <%= f.submit "Run", class: "btn btn-primary btn-sm mt-2 w-100",
-              data: { action: "click->portfolio-validation-target#validateAndSubmit" } %>
+              data: { action: "click->portfolio-validation-target#confirmAndSubmit" } %>
       <% end %>
 
 
@@ -138,31 +126,95 @@
       <%# Batch progress panel appears here after Run Validation is clicked %>
       <div id="batch_progress_panel"></div>
       
-      <%# Send Reminders — sends consolidated reminder emails to overdue companies %>
-      <%
-        last_sent = presenter.last_reminder_sent_at
-        days_ago = last_sent ? (Date.current - last_sent).to_i : nil
-        confirm_msg = if last_sent
-                        "Last reminders were sent on #{last_sent.strftime('%b %d, %Y')} (#{days_ago} #{'day'.pluralize(days_ago)} ago). Send again to #{presenter.overdue_companies.size} companies?"
-                      else
-                        "Send reminders to #{presenter.overdue_companies.size} companies with missing submissions?"
-                      end
-      %>
-      <%= button_to send_reminders_portfolio_company_dashboard_path,
-            method: :post,
-            class: "border rounded p-3 text-start d-flex align-items-center gap-2",
-            style: "transition: border-color 0.2s; background: none;",
-            disabled: presenter.overdue_companies.empty?,
-            data: { confirm: confirm_msg } do %>
+      <%# Send Reminders — collapse toggle that expands an inline per-company
+           selection panel below. Uses Bootstrap collapse instead of a modal
+           to avoid backdrop hover-flicker issues. %>
+      <a class="border rounded p-3 text-start d-flex align-items-center gap-2 text-decoration-none text-body <%= 'disabled' if presenter.overdue_companies.empty? %>"
+         style="transition: border-color 0.2s; cursor: pointer;"
+         data-bs-toggle="collapse" href="#sendRemindersPanel"
+         role="button" aria-expanded="false" aria-controls="sendRemindersPanel">
         <i class="ti ti-mail-forward"></i>
         <div>
           <strong>Send Reminders</strong><br>
           <small class="text-muted">
-            Email <%= presenter.overdue_companies.size %> companies with missing submissions
-            <% if last_sent %>
-              <br>Last sent: <%= last_sent.strftime('%b %d, %Y') %> (<%= days_ago %> <%= 'day'.pluralize(days_ago) %> ago)
-            <% end %>
+            Select from <%= presenter.overdue_companies.size %> companies with missing submissions
           </small>
+        </div>
+      </a>
+
+      <%# Inline collapsible panel for per-company reminder selection.
+           Select2 on top for search/select, table below shows selected companies
+           with last-sent dates and checkboxes. Stimulus controller syncs the two. %>
+      <% if presenter.overdue_companies.any? %>
+        <div class="collapse" id="sendRemindersPanel" data-controller="send-reminders-select">
+          <%= form_with url: send_reminders_portfolio_company_dashboard_path, method: :post do %>
+            <div class="border rounded p-3 mt-1">
+
+              <%# Select2 search — starts empty, selecting a company checks it
+                   in the table below. The table checkboxes are the source of truth
+                   for which companies receive reminders (via selected_ids[] inputs). %>
+              <label class="form-label small text-muted mb-1">Search & select companies</label>
+              <%
+                reminder_options = presenter.overdue_companies.map do |c|
+                  [c[:name], c[:owner_id]]
+                end
+              %>
+              <%= select_tag "reminder_search",
+                    options_for_select(reminder_options),
+                    class: "form-control select2",
+                    multiple: true,
+                    include_hidden: false,
+                    data: { placeholder: "Search companies...",
+                            send_reminders_select_target: "select" } %>
+
+              <%# Company table with checkboxes and last-sent info %>
+              <div class="mt-2" style="max-height: 250px; overflow-y: auto;">
+                <table class="table table-sm table-borderless mb-0 small">
+                  <thead>
+                    <tr class="border-bottom">
+                      <th style="width: 30px;">
+                        <input type="checkbox" class="form-check-input"
+                               data-action="change->send-reminders-select#toggleAll"
+                               data-send-reminders-select-target="selectAll"
+                               checked>
+                      </th>
+                      <th>Company</th>
+                      <th class="text-end">Issues</th>
+                      <th class="text-end">Last Reminded</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% presenter.overdue_companies.each do |company| %>
+                      <% last_sent = company[:last_reminder_sent_at] %>
+                      <% days_ago = last_sent ? (Date.current - last_sent).to_i : nil %>
+                      <tr data-send-reminders-select-target="row"
+                          data-owner-id="<%= company[:owner_id] %>">
+                        <td>
+                          <input type="checkbox" class="form-check-input" name="selected_ids[]"
+                                 value="<%= company[:owner_id] %>"
+                                 data-action="change->send-reminders-select#syncFromTable"
+                                 data-send-reminders-select-target="checkbox"
+                                 checked>
+                        </td>
+                        <td><%= company[:name] %></td>
+                        <td class="text-end text-danger"><%= company[:issues_count] %></td>
+                        <td class="text-end text-muted">
+                          <% if last_sent %>
+                            <%= last_sent.strftime('%b %d') %> (<%= days_ago %><%= "d" %>)
+                          <% else %>
+                            Never
+                          <% end %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+
+              <%= submit_tag "Send Reminders", class: "btn btn-primary btn-sm mt-2 w-100",
+                    data: { send_reminders_select_target: "submitBtn" } %>
+            </div>
+          <% end %>
         </div>
       <% end %>
 
@@ -199,6 +251,8 @@
         <% end %>
       </div>
     <% end %>
+
   </div>
 </div>
+
   

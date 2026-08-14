@@ -21,7 +21,9 @@ class PortfolioValidationJob < ApplicationJob
   #   nil means auto-compute the most recently completed period
   # @param target_ids [Array<Integer>, nil] specific investor IDs to validate;
   #   nil means all portfolio companies for the entity
-  def perform(support_agent_id:, user_id:, entity_id:, check_as_on_date: nil, target_ids: nil)
+  # @param skip_reminders [Boolean] when true the send_kpi_reminder step is skipped
+  #   for the entire run (FM unchecked "Send reminders" in the Run Validation dialog)
+  def perform(support_agent_id:, user_id:, entity_id:, check_as_on_date: nil, target_ids: nil, skip_reminders: true)
     # Parse the date string back to a Date object (Sidekiq serializes as string).
     check_date = check_as_on_date.present? ? Date.parse(check_as_on_date) : nil
 
@@ -34,13 +36,26 @@ class PortfolioValidationJob < ApplicationJob
                 PortfolioCompanyAgent.new.targets(entity_id)
               end
 
+    # Persist the resolved target IDs so the dashboard can scope stat cards
+    # to only the companies from this run. When target_ids is nil the FM ran
+    # on all companies — store nil so the dashboard shows everything without
+    # a filter bar. Read by the show action to filter reports.
+    support_agent = SupportAgent.find(support_agent_id)
+    resolved_ids = nil
+    if target_ids.present?
+      resolved_ids = targets.respond_to?(:pluck) ? targets.pluck(:id) : targets.map(&:id)
+    end
+    support_agent.json_fields["last_run_target_ids"] = resolved_ids
+    support_agent.save!
+
     PortfolioCompanyAgent.process_batch(
       support_agent_id: support_agent_id,
       targets: targets,
       user_id: user_id,
       entity_id: entity_id,
       execution_mode: :adhoc_batch,
-      check_as_on_date: check_date
+      check_as_on_date: check_date,
+      skip_reminders: skip_reminders
     )
   end
 end

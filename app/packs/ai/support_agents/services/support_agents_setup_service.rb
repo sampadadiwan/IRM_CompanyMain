@@ -48,7 +48,17 @@ class SupportAgentsSetupService
           field_type: "Select", label: "Send KPI submission reminder", meta_data: "Yes,No", position: 7,
           help_text: "When Yes, sends a consolidated reminder email to the portfolio company listing " \
                      "missing items (KPIs, documents, valuations) on each run inside the active checking " \
-                     "window. At most one reminder is sent per day." }
+                     "window. At most one reminder is sent per day." },
+        # @!attribute kpi_reminder_recipients [TextArea]
+        #   Comma-separated email addresses for KPI reminder delivery.
+        #   Previously the mailer fell back to @entity.employees (the fund team) which
+        #   sent reminders to the wrong people. This field ensures reminders only go to
+        #   explicitly configured contacts (e.g. portfolio company CFO/ops team).
+        #   When blank, no reminder email is sent even if send_kpi_reminder = Yes.
+        { name: "kpi_reminder_recipients",
+          field_type: "TextArea", label: "KPI reminder email recipients", meta_data: "", position: 8,
+          help_text: "Comma-separated email addresses that receive KPI reminder emails. " \
+                     "If left blank, no reminders are sent even when Send KPI submission reminder is Yes." }
         # reminder_days was removed when reminders moved to the active-window model —
         # cadence now follows the agent's run schedule, not a fixed day list.
       ]

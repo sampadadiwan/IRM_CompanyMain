@@ -72,8 +72,11 @@ class PortfolioCompanyAgent < SupportAgentService
   # @param with_steps [Boolean] whether to show step-by-step progress UI
   # @param execution_mode [Symbol] :adhoc_batch, :single_company_with_steps, or :scheduled
   # @param check_as_on_date [Date, nil] manual period-end date override from dashboard dropdown
+  # @param skip_reminders [Boolean] when true the send_kpi_reminder step is skipped
+  #   for the entire run. Defaults to true (safe — no accidental emails) to match
+  #   the dashboard UI where the checkbox is unchecked by default.
   # @return [Hash, nil] { successes: [...], errors: [...] } or nil if skipped
-  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch, check_as_on_date: nil)
+  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch, check_as_on_date: nil, skip_reminders: true)
     # Window gate: scheduled runs skip if outside T+start..T+end.
     # Adhoc runs always proceed regardless of window.
     if execution_mode == :scheduled
@@ -95,24 +98,41 @@ class PortfolioCompanyAgent < SupportAgentService
     # dashboard dropdown), we run a custom batch loop that injects check_as_on_date
     # into the Trailblazer ctx so check_kpi_submission uses it instead of auto-computing.
     # This avoids modifying the shared run_batch in support_agent_service.rb.
-    if check_as_on_date.present?
-      run_batch_with_check_date(
+    # Use run_batch_with_check_date when the dashboard passes either a manual
+    # period or skip_reminders — both need extra ctx keys injected into the
+    # Trailblazer pipeline that the shared run_batch does not support.
+    result = if check_as_on_date.present? || skip_reminders
+               run_batch_with_check_date(
+                 support_agent_id: support_agent_id,
+                 targets: targets,
+                 user_id: user_id,
+                 entity_id: entity_id,
+                 execution_mode: execution_mode,
+                 check_as_on_date: check_as_on_date,
+                 skip_reminders: skip_reminders
+               )
+             else
+               run_batch(
+                 support_agent_id: support_agent_id,
+                 targets: targets,
+                 user_id: user_id,
+                 entity_id: entity_id,
+                 execution_mode: execution_mode
+               )
+             end
+
+    # Send a validation summary email to the FM who triggered the run.
+    # Skipped for scheduled runs — those are silent by design.
+    if execution_mode != :scheduled && result.present?
+      send_validation_summary(
         support_agent_id: support_agent_id,
-        targets: targets,
         user_id: user_id,
-        entity_id: entity_id,
-        execution_mode: execution_mode,
-        check_as_on_date: check_as_on_date
-      )
-    else
-      run_batch(
-        support_agent_id: support_agent_id,
-        targets: targets,
-        user_id: user_id,
-        entity_id: entity_id,
-        execution_mode: execution_mode
+        successes: result[:successes],
+        errors: result[:errors]
       )
     end
+
+    result
   end
 
   # Custom batch loop that injects check_as_on_date into the Trailblazer ctx.
@@ -135,9 +155,11 @@ class PortfolioCompanyAgent < SupportAgentService
   # @param user_id [Integer] the FM who triggered the run
   # @param entity_id [Integer] the entity scope
   # @param execution_mode [Symbol] :adhoc_batch or :scheduled
-  # @param check_as_on_date [Date] the period-end date selected from the dashboard dropdown
+  # @param check_as_on_date [Date, nil] the period-end date selected from the dashboard dropdown
+  # @param skip_reminders [Boolean] when true the send_kpi_reminder step is skipped.
+  #   Defaults to true (safe — no accidental emails).
   # @return [Hash] { successes: [...], errors: [...] }
-  def self.run_batch_with_check_date(support_agent_id:, targets:, user_id:, entity_id:, check_as_on_date:, execution_mode: :adhoc_batch)
+  def self.run_batch_with_check_date(support_agent_id:, targets:, user_id:, entity_id:, check_as_on_date:, execution_mode: :adhoc_batch, skip_reminders: true)
     support_agent = SupportAgent.find(support_agent_id)
     targets_array = targets.to_a
     total = targets_array.size
@@ -169,7 +191,8 @@ class PortfolioCompanyAgent < SupportAgentService
         user_id: user_id,
         entity_id: entity_id,
         batch_mode: true,
-        check_as_on_date: check_as_on_date
+        check_as_on_date: check_as_on_date,
+        skip_reminders: skip_reminders
       )
 
       if result.failure?
@@ -212,6 +235,119 @@ class PortfolioCompanyAgent < SupportAgentService
   # have sane defaults when missing.)
   def self.config_issues(support_agent)
     missing_toggle_issues(support_agent, { "send_kpi_reminder" => "KPI submission reminder emails" })
+  end
+
+  # Sends a validation summary email to the FM who triggered the run.
+  #
+  # Loads the latest reports for the processed companies and aggregates
+  # stats (up-to-date, has-issues, per-category overdue counts) into a
+  # summary hash. The mailer renders these as stat-card-style blocks so
+  # the FM gets a dashboard snapshot without opening the app.
+  #
+  # Uses a single query with .where(owner_id:) to load reports for all
+  # processed companies at once — no N+1 risk.
+  #
+  # @param support_agent_id [Integer] the SupportAgent record ID
+  # @param user_id [Integer] the FM who triggered the run
+  # @param successes [Array<Hash>] successfully processed companies
+  # @param errors [Array<Hash>] failed companies
+  # @return [void]
+  def self.send_validation_summary(support_agent_id:, user_id:, successes:, errors:)
+    support_agent = SupportAgent.find(support_agent_id)
+    owner_ids = successes.pluck(:id)
+
+    # Single query: load latest reports for all processed companies.
+    reports = SupportAgentReport.where(
+      support_agent: support_agent,
+      owner_type: "Investor",
+      owner_id: owner_ids,
+      latest: true
+    ).to_a
+
+    # Aggregate stats from reports — mirrors PortfolioDashboardPresenter logic.
+    reports_with_data = reports.select { |r| r.json_fields.present? }
+    up_to_date = reports_with_data.count { |r| r.json_fields.with_indifferent_access[:final_status].to_s == "ready" }
+    has_issues = reports_with_data.count { |r| r.json_fields.with_indifferent_access[:final_status].to_s == "blocked" }
+
+    kpi_overdue = reports_with_data.count do |r|
+      Array(r.json_fields.with_indifferent_access[:kpi_issues])
+        .any? { |i| i[:severity].to_s == "blocking" }
+    end
+
+    valuation_overdue = reports_with_data.count do |r|
+      Array(r.json_fields.with_indifferent_access[:valuation_issues])
+        .any? { |i| i[:severity].to_s == "blocking" }
+    end
+
+    documents_overdue = reports_with_data.count do |r|
+      Array(r.json_fields.with_indifferent_access[:document_issues])
+        .any? { |i| i[:severity].to_s == "blocking" || i[:type].to_s == "missing" }
+    end
+
+    # Build per-category issue counts for the "Missing by Type" chart.
+    # Mirrors PortfolioDashboardPresenter#issues_by_type — counts companies
+    # per issue category, with per-document-type granularity.
+    issues_by_type = { "KPI" => 0, "Valuation" => 0 }
+    reports_with_data.each do |r|
+      data = r.json_fields.with_indifferent_access
+      issues_by_type["KPI"] += 1 if Array(data[:kpi_issues]).any? { |i| i[:severity].to_s == "blocking" }
+      issues_by_type["Valuation"] += 1 if Array(data[:valuation_issues]).any? { |i| i[:severity].to_s == "blocking" }
+      Array(data[:document_issues])
+        .select { |i| i[:severity].to_s == "blocking" || i[:type].to_s == "missing" }
+        .each do |i|
+          name = i[:message].presence || "Documents"
+          issues_by_type[name] ||= 0
+          issues_by_type[name] += 1
+        end
+    end
+    issues_by_type.reject! { |_, v| v.zero? }
+
+    # Build per-company status rows for the company table in the email.
+    # Preload investor names to avoid N+1 — single query for all owner_ids.
+    investor_names = Investor.where(id: owner_ids).pluck(:id, :investor_name).to_h
+    company_rows = reports_with_data.map do |r|
+      data = r.json_fields.with_indifferent_access
+      kpi_ok = Array(data[:kpi_issues]).none? { |i| i[:severity].to_s == "blocking" }
+      # Document check is skipped when KPI is not submitted (no report to
+      # check against), so absence of document_issues doesn't mean "all OK"
+      # — it means "not checked". Show "--" instead of a misleading ✓.
+      doc_status = Array(data[:document_issues]).none? { |i| i[:severity].to_s == "blocking" || i[:type].to_s == "missing" } if kpi_ok
+      {
+        name: investor_names[r.owner_id] || "Unknown",
+        status: data[:final_status].to_s == "ready" ? "Up to Date" : "Has Issues",
+        kpi: kpi_ok,
+        valuation: Array(data[:valuation_issues]).none? { |i| i[:severity].to_s == "blocking" },
+        documents: doc_status
+      }
+    end.sort_by { |c| c[:status] == "Has Issues" ? 0 : 1 }
+
+    # Compute period label from the agent's settings for the email subject.
+    agent_instance = new
+    agent_instance.instance_variable_set(:@support_agent, support_agent)
+    period_info = agent_instance.send(:compute_check_period)
+
+    summary = {
+      total: successes.size + errors.size,
+      up_to_date: up_to_date,
+      has_issues: has_issues,
+      kpi_overdue: kpi_overdue,
+      valuation_overdue: valuation_overdue,
+      documents_overdue: documents_overdue,
+      period_label: period_info[:period_label],
+      issues_by_type: issues_by_type,
+      company_rows: company_rows
+    }
+
+    PortfolioValidationDigestMailer.with(
+      support_agent_id: support_agent_id,
+      user_id: user_id,
+      entity_id: support_agent.entity_id,
+      successes: successes,
+      errors: errors,
+      summary: summary
+    ).validation_summary.deliver_later
+  rescue StandardError => e
+    Rails.logger.error { "[PortfolioCompanyAgent] Failed to send validation summary email: #{e.message}" }
   end
 
   private
@@ -331,10 +467,28 @@ class PortfolioCompanyAgent < SupportAgentService
     report = support_agent_report
     mark_step_running(report, :send_kpi_reminder) if report
 
-    # Guard: check if reminders are enabled via json_fields toggle.
+    # Guard: per-run override from the dashboard's "Send reminders" checkbox.
+    # Checked before the agent-level toggle because it is the broadest gate —
+    # applies to the entire run regardless of per-company settings.
+    if ctx[:skip_reminders]
+      Rails.logger.debug { "[#{self.class.name}] Reminders skipped (skip_reminders set by Run Validation)." }
+      mark_step_skipped(report, :send_kpi_reminder, message: "Skipped — send reminders not selected") if report
+      return true
+    end
+
+    # Guard: check if reminders are enabled via agent-level json_fields toggle.
     unless enabled?("send_kpi_reminder")
       Rails.logger.debug { "[#{self.class.name}] Reminders disabled, skipping." }
       mark_step_skipped(report, :send_kpi_reminder, message: "Disabled") if report
+      return true
+    end
+
+    # Guard: per-company opt-out via custom form field on the Investor record.
+    # FM sets skip_kpi_reminder = "Yes" on sold/written-off companies that
+    # should not receive automated reminder emails.
+    if portfolio_company.json_fields["skip_kpi_reminder"].to_s.downcase.in?(%w[yes true 1])
+      Rails.logger.debug { "[#{self.class.name}] Reminders skipped for #{portfolio_company.investor_name} (skip_kpi_reminder set)." }
+      mark_step_skipped(report, :send_kpi_reminder, message: "Skipped — company opted out") if report
       return true
     end
 
@@ -366,13 +520,23 @@ class PortfolioCompanyAgent < SupportAgentService
       return true
     end
 
+    # Guard: skip if no explicit recipients are configured. Avoids the mailer's
+    # default fallback to entity employees, which sends to the fund team instead
+    # of the intended portfolio company contacts.
+    recipients = support_agent.json_fields["kpi_reminder_recipients"].to_s.strip
+    if recipients.blank?
+      mark_step_skipped(report, :send_kpi_reminder, message: "No recipient emails configured") if report
+      return true
+    end
+
     # Send consolidated reminder with the missing items list.
     period_info = ctx[:period_info]
     EntityMailer.with(
       entity_id: portfolio_company.entity_id,
       requesting_entity_id: support_agent.entity_id,
       missing_items: missing_items,
-      period_label: period_info&.dig(:period_label)
+      period_label: period_info&.dig(:period_label),
+      recipient_emails: recipients
     ).kpi_reminder.deliver_later
 
     ctx[:last_kpi_reminder_sent_at] = Time.zone.today.iso8601

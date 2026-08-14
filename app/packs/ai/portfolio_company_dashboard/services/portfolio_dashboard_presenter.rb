@@ -20,9 +20,14 @@ class PortfolioDashboardPresenter
 
   # --- Stat Cards (Row 1: Overview) ---
 
-  # @return [Integer] total portfolio companies in the entity (regardless of agent run status)
+  # Changed: count only companies the agent has run for (i.e. that have a
+  # SupportAgentReport), not all portfolio companies in the entity. Previously
+  # the stat cards showed inflated totals that included companies the agent
+  # had never validated, making "Not Yet Validated" misleadingly high.
+  #
+  # @return [Integer] portfolio companies the agent has run for
   def total_companies
-    @total_companies ||= Investor.where(entity_id: support_agent.entity_id).where("LOWER(category) = ?", "portfolio company").count
+    @total_companies ||= reports.size
   end
 
   # Companies the agent has validated (final_status is "ready" or "blocked").
@@ -166,7 +171,9 @@ class PortfolioDashboardPresenter
   # consolidated reminders for all missing categories, not just KPIs.
   # Used by: Send Reminders button count, confirm dialog, and overdue sidebar list.
   #
-  # @return [Array<Hash>] companies with any blocking issues, sorted by issues_count descending
+  # @return [Array<Hash>] companies with any blocking issues, sorted by issues_count descending.
+  #   Each hash includes :last_reminder_sent_at (Date or nil) for per-company
+  #   reminder dates in the Send Reminders modal.
   def overdue_companies
     @overdue_companies ||= reports
                            .select { |r| blocking_count(r).positive? }
@@ -177,11 +184,18 @@ class PortfolioDashboardPresenter
       rescue StandardError
         nil
       end
+      last_reminder = begin
+        date_str = data[:last_kpi_reminder_sent_at]
+        Date.parse(date_str) if date_str.present?
+      rescue StandardError
+        nil
+      end
       {
         name: r.owner&.name || r.owner_name || "Unknown",
         owner_id: r.owner_id,
         issues_count: blocking_count(r),
-        days_since_run: run_at ? ((Time.current - run_at) / 1.day).floor : nil
+        days_since_run: run_at ? ((Time.current - run_at) / 1.day).floor : nil,
+        last_reminder_sent_at: last_reminder
       }
     end
                            .sort_by { |c| -c[:issues_count] }
@@ -221,6 +235,17 @@ class PortfolioDashboardPresenter
     when "Has Issues" then "warning"
     else "secondary"
     end
+  end
+
+  # Whether the KPI report was submitted for this company. Used by the table
+  # to decide if document columns should show ✓/✗ or "--" (not checked).
+  # When KPI is not submitted, check_document_presence is skipped entirely,
+  # so showing ✓ for documents would be misleading.
+  #
+  # @param report [SupportAgentReport]
+  # @return [Boolean] true if KPI report exists (no blocking KPI issues)
+  def kpi_submitted?(report)
+    category_ok?(report, :kpi)
   end
 
   # @param report [SupportAgentReport]

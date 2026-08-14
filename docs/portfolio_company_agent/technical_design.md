@@ -2,9 +2,9 @@
 
 ## Technical Design Document
 
-**Date:** 2026-07-21
-**Status:** Implemented — consolidated reminders confirmed by product spec 2026-07-28
-**Branch:** `feature/portco-standalone-dashboard`
+**Date:** 2026-07-21 (updated 2026-08-13)
+**Status:** Implemented — dashboard enhancements (skip-reminders, per-company Send Reminders, validation summary email, dashboard scoping) on `feature/portco-dashboard-enhancements`
+**Branch:** `feature/portco-dashboard-enhancements` (continuation of `feature/portco-standalone-dashboard`)
 
 ---
 
@@ -77,6 +77,12 @@ All settings stored in `support_agents.json_fields` (existing JSON column).
 |-----|-------------|
 | `days_before_due_period_end` | `start_days_after_period_end` |
 | `reminder_days` | Run frequency handled by existing `AgentSchedule` |
+
+### New Settings (2026-08-13)
+
+| Key | Type | Default | Purpose |
+|-----|------|---------|---------|
+| `kpi_reminder_recipients` | TextArea | "" | Comma-separated email addresses for KPI reminders. If blank, no reminders sent even when `send_kpi_reminder` = Yes. Replaces the old fallback to `@entity.employees`. Provisioned via `SupportAgentsSetupService`. |
 
 ### Unchanged Settings
 
@@ -166,6 +172,27 @@ If a company uploads KPI data on June 25 with `as_of = June 30`, the agent finds
 
 ## 5. Reminder Logic
 
+### Guard Chain (send_kpi_reminder step)
+
+Guards execute in order; first match skips the step:
+
+1. **Agent toggle:** `enabled?("send_kpi_reminder")` — agent-level on/off
+2. **Per-company opt-out:** `portfolio_company.json_fields["skip_kpi_reminder"]` — FM excludes sold/written-off companies
+3. **No missing items:** all KPIs, docs, valuations submitted — no reminder needed
+4. **Same-day dedup:** `last_kpi_reminder_sent_at` in report `json_fields` — one reminder per day max
+5. **No recipients configured:** `support_agent.json_fields["kpi_reminder_recipients"]` blank — skip silently
+
+### Recipients
+
+`kpi_reminder_recipients` (TextArea on agent config) holds comma-separated email addresses. Passed as `recipient_emails` param to `EntityMailer.kpi_reminder`. The mailer prefers this over the legacy `@entity.employees` fallback (which sent to fund team, not portfolio company contacts).
+
+```ruby
+# entity_mailer.rb — preference chain
+@to ||= params[:recipient_emails].presence || @entity.employees.pluck(:email).join(',')
+```
+
+The legacy `entities_controller#kpi_reminder` caller does not pass `recipient_emails`, so it still falls back to entity employees.
+
 ### Consolidated Reminders
 
 One email per company per run, listing only what's missing:
@@ -184,6 +211,65 @@ Existing `last_kpi_reminder_sent_at` logic in report `json_fields` prevents send
 ### Reminder Window
 
 Reminders only sent during the active window (T+start to T+end). After T+end, no more automated reminders.
+
+### Skip Reminders Toggle
+
+The `skip_reminders` param threads from the Run Validation form checkbox → `run_validation` controller action → `PortfolioValidationJob` → `process_batch` → `run_batch_with_check_date` → Trailblazer ctx. The `send_kpi_reminder` step checks `ctx[:skip_reminders]` as the first guard.
+
+- Hidden field ensures `send_reminders=0` is always submitted when unchecked
+- Checkbox only rendered when `support_agent.json_fields["send_kpi_reminder"]` is Yes/true/1
+- Default: unchecked (skip reminders) — FM validates first, then sends reminders separately
+
+### Per-Company Send Reminders Panel
+
+The Send Reminders action uses an inline collapsible panel (Bootstrap collapse, not modal — avoids backdrop hover-flicker issues) with:
+
+- **Select2 search** — multi-select dropdown for finding companies by name; syncs with table checkboxes via `send-reminders-select` Stimulus controller
+- **Company table** — scrollable (max-height 250px) with columns: checkbox, company name, issue count, last-reminded date (with days-ago display, or "Never")
+- **Select all** — header checkbox, checked by default
+- **Sync behavior** — selecting in Select2 checks the table row; unchecking a table row removes from Select2; toggling select-all updates both
+
+**Data source:** `presenter.overdue_companies` returns companies with blocking issues, each with `:name`, `:owner_id`, `:issues_count`, `:last_reminder_sent_at`.
+
+**Form submission:** Only `selected_ids[]` checkboxes are submitted (not the Select2 values). Controller reads `params[:selected_ids]` to scope reminder emails.
+
+### Dashboard Scoping (`last_run_target_ids`)
+
+`PortfolioValidationJob` persists the resolved target IDs in `support_agent.json_fields["last_run_target_ids"]` after each run:
+
+- **Scoped run** (FM selected specific companies/tags/sectors): stores the resolved array of Investor IDs
+- **All-company run** (no selection): stores `nil` — dashboard shows everything, no toggle bar
+
+The dashboard `show` action reads `last_run_target_ids`:
+- When present (array): filters reports to only those companies; shows a toggle bar with "Show last run (N)" / "Show all" links
+- When nil: no filtering, no toggle bar
+
+This ensures the dashboard always reflects the last run's scope by default, while giving the FM a one-click way to see all companies.
+
+### Validation Summary Email
+
+After every adhoc run, `process_batch` calls `send_validation_summary` which:
+
+1. Loads latest reports for all processed companies via single query: `SupportAgentReport.where(owner_id: owner_ids, latest: true)`
+2. Aggregates stats mirroring `PortfolioDashboardPresenter` logic (up_to_date, has_issues, per-category overdue counts)
+3. Builds `issues_by_type` hash with per-document-type granularity (e.g., "Financial Statement" → 3, "Board Deck" → 1)
+4. Builds `company_rows` — per-company status with `doc_status = nil` when KPI not submitted (renders as "--" in email)
+5. Preloads investor names via single query: `Investor.where(id: owner_ids).pluck(:id, :investor_name).to_h`
+6. Delivers `PortfolioValidationDigestMailer` with `entity_id` in params (required by `ApplicationMailer#setup_defaults`)
+
+**Pattern:** Follows `DealManagementDigestMailer` — inherits `SupportAgentBaseMailer` for shared email helpers (`sa_banner`, `sa_callout`, `sa_section`, `sa_kv_table`, `sa_footer`).
+
+**N+1 prevention:** Two queries total — one for reports, one for investor names. No per-company queries.
+
+**Error handling:** Wrapped in `rescue StandardError => e` with logger — email failure does not block the batch result.
+
+### Document Column Display
+
+When a company hasn't submitted KPIs, the document check step (`check_document_presence`) is skipped entirely because documents attach to KPI reports. This means absence of `document_issues` in the report doesn't mean "documents OK" — it means "not checked."
+
+Both the dashboard table and validation summary email handle this:
+- **Dashboard table:** `presenter.kpi_submitted?(report)` returns false → document columns show "--"
+- **Email:** `doc_status = Array(...).none? { ... } if kpi_ok` → returns `nil` when KPI not submitted → template renders "--"
 
 ---
 
@@ -236,7 +322,7 @@ Added to `_form.html.erb` alongside existing agent-type configs (CashFlow, KYC, 
 - `app/packs/ai/portfolio_company_dashboard/jobs/portfolio_validation_job.rb`
 - `app/javascript/controllers/portfolio_validation_target_controller.js`
 
-The "Run Validation" form has two controls: a period dropdown (existing) and a target selector (new).
+The "Run Validation" form has four controls: a period dropdown, three Select2 multi-selects for targeting, and a skip-reminders checkbox.
 
 ```
 ┌──────────────────────────────────────────┐
@@ -249,15 +335,12 @@ The "Run Validation" form has two controls: a period dropdown (existing) and a t
 │  │   Check period:                    │  │
 │  │   [Auto (Q2 - Jun 30, 2026)    ▼] │  │
 │  │                                    │  │
-│  │   Run on:                          │  │
-│  │   [Selected Companies          ▼]  │  │
+│  │   Tags:     [SaaS ×  HealthTech ×] │  │
+│  │   Sectors:  [All sectors       ▼]  │  │
+│  │   Companies:[All companies     ▼]  │  │
 │  │                                    │  │
-│  │   ┌────────────────────────────┐   │  │
-│  │   │ ☑ Acme Corp               │   │  │
-│  │   │ ☐ BetaHealth              │   │  │
-│  │   │ ☑ Gamma AI                │   │  │
-│  │   │ ☐ Delta Foods             │   │  │
-│  │   └────────────────────────────┘   │  │
+│  │   ☐ Send reminders to companies    │  │
+│  │     with missing items             │  │
 │  │                                    │  │
 │  │   [Run]                            │  │
 │  └────────────────────────────────────┘  │
@@ -270,23 +353,22 @@ The "Run Validation" form has two controls: a period dropdown (existing) and a t
 - Adhoc runs always execute regardless of the T+start / T+end window
 
 **Target selector behavior:**
-- **All Companies** (default): runs on every portfolio company — same as before
-- **Selected Companies**: shows a scrollable checklist of all company names with checkboxes
-- **By Tag**: shows checkboxes for each existing tag with company count, e.g., "SaaS (3)"
-- **By Sector**: shows checkboxes for each existing sector with company count
-- Tag/sector options hidden from dropdown if none exist on any portfolio company
-- Stimulus controller (`portfolio-validation-target`) toggles panel visibility and validates submit
+- Three Select2 multi-select dropdowns: Tags, Sectors, Companies — all optional
+- Leaving all empty runs on all companies (same as before)
+- Tags + sectors are AND'd when both present; explicit company IDs are always additive
+- Stimulus controller (`portfolio-validation-target`) builds a human-readable label from selected values for the confirm dialog (e.g., "tagged SaaS, in sectors HealthTech, 3 selected companies")
 
 **Data flow:**
 
 ```
-Form submits: target_mode + target_ids[]/target_tags[]/target_sectors[] + check_as_on_date
+Form submits: target_tags[]/target_sectors[]/target_ids[] + check_as_on_date + send_reminders
   → controller#run_validation
     → resolve_target_ids: queries Investor with entity_id scoping
       → returns Array<Integer> (specific IDs) or nil (all companies)
-    → PortfolioValidationJob.perform_later(target_ids: [...], check_as_on_date: ...)
-      → Job: Investor.where(id: target_ids) or PortfolioCompanyAgent.new.targets(entity_id)
-        → PortfolioCompanyAgent.process_batch(targets: scoped_relation)
+    → PortfolioValidationJob.perform_later(target_ids: [...], check_as_on_date: ..., skip_reminders: ...)
+      → Job: persists last_run_target_ids (nil for all, array for scoped)
+        → PortfolioCompanyAgent.process_batch(targets: scoped_relation, skip_reminders: ...)
+          → send_validation_summary (email to FM after batch completes)
 ```
 
 **Security:** `resolve_target_ids` re-queries with `entity_id` scoping — tampered IDs from other entities are filtered out. The job adds a second validation layer with the same scoping.
@@ -350,13 +432,22 @@ States:
 
 | File | Change |
 |------|--------|
-| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_actions.html.erb` | Period dropdown + target selector (Run on), Send Reminders with last-sent warning, consistent hover styling |
+| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_actions.html.erb` | Period dropdown + Select2 target selectors (Tags, Sectors, Companies) + skip-reminders checkbox + Send Reminders collapsible panel with per-company table |
 | `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_stats.html.erb` | 7 compact stat cards (h4 numbers, py-1 px-3 padding) |
-| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/show.html.erb` | Active window indicator bar |
-| `app/packs/ai/portfolio_company_dashboard/controllers/portfolio_company_dashboard_controller.rb` | `show` queries target selector data (companies, tags with counts, sectors with counts); `run_validation` accepts `target_mode` + selections, resolves to IDs via `resolve_target_ids`; `send_reminders` responds with flash + redirect |
-| `app/packs/ai/portfolio_company_dashboard/jobs/portfolio_validation_job.rb` | Accepts optional `target_ids` array; scopes targets when present, falls back to all companies when nil |
-| `app/javascript/controllers/portfolio_validation_target_controller.js` | **New file** — Stimulus controller for target selector panel show/hide + submit validation |
-| `app/packs/ai/portfolio_company_dashboard/services/portfolio_dashboard_presenter.rb` | Dashboard aggregations + `last_reminder_sent_at` for Send Reminders warning |
+| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/show.html.erb` | Active window indicator bar + last-run scope toggle (show-all/show-last-run) |
+| `app/packs/ai/portfolio_company_dashboard/controllers/portfolio_company_dashboard_controller.rb` | `show` queries target selector data + reads `last_run_target_ids` for scoping + `show_all` param; `run_validation` accepts selections + `send_reminders` toggle; `send_reminders` reads `selected_ids[]` |
+| `app/packs/ai/portfolio_company_dashboard/jobs/portfolio_validation_job.rb` | Accepts `target_ids` + `skip_reminders`; persists `last_run_target_ids` (nil for all-company, array for scoped); scopes targets |
+| `app/javascript/controllers/portfolio_validation_target_controller.js` | Stimulus controller — builds target label from Select2 selections, confirm dialog with reminder state |
+| `app/javascript/controllers/send_reminders_select_controller.js` | **New file** — Stimulus controller syncing Select2 ↔ table checkboxes for Send Reminders panel |
+| `app/packs/ai/portfolio_company_dashboard/services/portfolio_dashboard_presenter.rb` | Dashboard aggregations + `kpi_submitted?` + `overdue_companies` with per-company `last_reminder_sent_at` |
+
+### Validation Summary Email
+
+| File | Change |
+|------|--------|
+| `app/packs/ai/portfolio_company_dashboard/mailers/portfolio_validation_digest_mailer.rb` | **New file** — inherits `SupportAgentBaseMailer`; loads support_agent, user, successes, errors, summary; mails to FM |
+| `app/packs/ai/portfolio_company_dashboard/views/portfolio_validation_digest_mailer/validation_summary.html.erb` | **New file** — email template: banner, overview stats, Missing by Type bar chart, issue callouts, per-company table, errors, footer |
+| `app/packs/ai/support_agents/services/portfolio_company_agent.rb` | Added `send_validation_summary` class method (called from `process_batch` after adhoc runs); aggregates reports, builds summary hash, delivers mailer |
 
 ### Scheduler
 

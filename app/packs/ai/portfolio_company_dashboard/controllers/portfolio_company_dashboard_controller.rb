@@ -31,8 +31,16 @@ class PortfolioCompanyDashboardController < ApplicationController
     @period_info = agent_instance.send(:compute_check_period)
     @period_info[:due_period] = @support_agent.json_fields["due_period"] || "Quarter"
 
-    # Full report set for stat cards, chart, and sidebar aggregations
-    portfolio_all = portfolio_reports_scope.includes(:owner).to_a
+    # Report set for stat cards, chart, and sidebar aggregations.
+    # When the last run targeted a subset of companies, scope the presenter
+    # to only those companies so stat cards reflect the run — unless the FM
+    # clicks "Show All" (passes show_all=1 query param).
+    # @see PortfolioValidationJob where last_run_target_ids is persisted
+    portfolio_all = portfolio_reports_scope.includes(:owner)
+    last_run_ids = @support_agent.json_fields["last_run_target_ids"]
+    @showing_all = params[:show_all] == "1" || last_run_ids.blank?
+    portfolio_all = portfolio_all.where(owner_id: last_run_ids) if !@showing_all && last_run_ids.present?
+    portfolio_all = portfolio_all.to_a
     @presenter = PortfolioDashboardPresenter.new(portfolio_all, @support_agent)
 
     # Target selector data for the Run Validation action's "Run on" dropdown.
@@ -57,8 +65,11 @@ class PortfolioCompanyDashboardController < ApplicationController
                                       .map(&:strip).compact_blank
                                       .tally.sort_by { |sector, _| sector }
 
-    # Filtered + paginated scope for the company table (Ransack search on investor name)
+    # Filtered + paginated scope for the company table (Ransack search on investor name).
+    # Applies the same last_run_target_ids filter as the stat cards so the table
+    # matches the stats. Cleared when the FM clicks "Show all".
     table_scope = portfolio_reports_scope.joins(:investor)
+    table_scope = table_scope.where(owner_id: last_run_ids) if !@showing_all && last_run_ids.present?
     table_scope = filter_reports(table_scope, @presenter, params[:status])
     @q = table_scope.ransack(params[:q])
     @pagy, @paginated_reports = pagy(@q.result.order(updated_at: :desc), limit: 10)
@@ -84,12 +95,26 @@ class PortfolioCompanyDashboardController < ApplicationController
     check_date = params[:check_as_on_date].presence
     target_ids = resolve_target_ids
 
+    # Guard: FM used selectors but no companies matched the combination.
+    # Without this, empty resolves to nil downstream and the job runs on ALL companies.
+    if target_ids.is_a?(Array) && target_ids.empty?
+      render json: { error: "No companies matched your tag/sector/company selection." }, status: :unprocessable_entity
+      return
+    end
+
+    # Invert the UI's positive "Send reminders" checkbox into the pipeline's
+    # skip_reminders flag. Only an explicit "1" (checked) enables sending.
+    # When the agent-level toggle is off the checkbox is hidden and the param
+    # is absent, so skip_reminders defaults to true.
+    skip_reminders = params[:send_reminders].to_s != "1"
+
     PortfolioValidationJob.perform_later(
       support_agent_id: @support_agent.id,
       user_id: current_user.id,
       entity_id: current_user.entity_id,
       check_as_on_date: check_date,
-      target_ids: target_ids
+      target_ids: target_ids,
+      skip_reminders: skip_reminders
     )
 
     head :ok
@@ -106,7 +131,27 @@ class PortfolioCompanyDashboardController < ApplicationController
   # @return [void]
 
   def send_reminders
+    # Guard: bail early if no explicit recipients configured on the agent.
+    # Changed from the previous behaviour where the mailer fell back to
+    # @entity.employees (fund team) — reminders must only go to the
+    # FM-configured email list stored in json_fields["kpi_reminder_recipients"].
+    recipients = @support_agent.json_fields["kpi_reminder_recipients"].to_s.strip
+    if recipients.blank?
+      flash[:alert] = "No recipient emails configured. Add recipients in the agent settings."
+      redirect_to portfolio_company_dashboard_path
+      return
+    end
+
     overdue = @presenter_for_reminders.overdue_companies
+
+    # Filter to FM-selected companies when the modal posts selected_ids[].
+    # Falls back to all overdue companies if no selection (shouldn't happen
+    # with the modal UI, but guards against direct POST).
+    selected = Array(params[:selected_ids]).map(&:to_i).reject(&:zero?)
+    if selected.present?
+      selected_set = selected.to_set
+      overdue = overdue.select { |c| selected_set.include?(c[:owner_id]) }
+    end
 
     # Bulk-load reports and investors to avoid N+1 queries in the loop
     owner_ids = overdue.map { |c| c[:owner_id] } # rubocop:disable Rails/Pluck -- overdue is an array of hashes, not AR
@@ -115,17 +160,24 @@ class PortfolioCompanyDashboardController < ApplicationController
     investors = Investor.where(id: owner_ids).index_by(&:id)
 
     sent = 0
-    skipped = 0
+    skipped_today = 0
+    skipped_optout = 0
     overdue.each do |company|
       last_report = latest_reports[company[:owner_id]]
       last_sent = last_report&.json_fields&.dig("last_kpi_reminder_sent_at")
       if last_sent && Date.parse(last_sent) >= Time.zone.today
-        skipped += 1
+        skipped_today += 1
         next
       end
 
       investor = investors[company[:owner_id]]
       next unless investor
+
+      # Skip companies that have opted out of KPI reminders via custom form field.
+      if investor.json_fields["skip_kpi_reminder"].to_s.downcase.in?(%w[yes true 1])
+        skipped_optout += 1
+        next
+      end
 
       # Build missing items from the report's stored issues.
       data = last_report&.json_fields&.with_indifferent_access || {}
@@ -135,11 +187,14 @@ class PortfolioCompanyDashboardController < ApplicationController
       missing_items << "Valuations" if Array(data[:valuation_issues]).any? { |i| i[:severity].to_s == "blocking" }
       missing_items = ["KPIs"] if missing_items.empty?
 
+      # Pass explicit recipient_emails so the mailer uses the FM-configured
+      # contacts instead of falling back to entity employees.
       EntityMailer.with(
         entity_id: investor.entity_id,
         requesting_entity_id: @support_agent.entity_id,
         missing_items: missing_items,
-        period_label: data[:period_label]
+        period_label: data[:period_label],
+        recipient_emails: recipients
       ).kpi_reminder.deliver_later
 
       if last_report
@@ -149,12 +204,18 @@ class PortfolioCompanyDashboardController < ApplicationController
       sent += 1
     end
 
-    # Flash feedback so the FM knows what happened — sent, skipped (same-day
-    # dedup), or no overdue companies. Redirect renders the flash on the dashboard.
+    # Flash feedback with separate counts for same-day dedup vs company opt-out
+    # so the FM knows exactly why reminders were not sent.
     if sent.positive?
-      flash[:notice] = "Reminders sent to #{sent} #{'company'.pluralize(sent)}."
-    elsif skipped.positive?
-      flash[:alert] = "Reminders were already sent today. No new reminders sent."
+      msg = "Reminders sent to #{sent} #{'company'.pluralize(sent)}."
+      msg += " #{skipped_optout} opted out." if skipped_optout.positive?
+      msg += " #{skipped_today} already sent today." if skipped_today.positive?
+      flash[:notice] = msg
+    elsif skipped_today.positive? || skipped_optout.positive?
+      parts = []
+      parts << "#{skipped_today} already sent today" if skipped_today.positive?
+      parts << "#{skipped_optout} opted out of reminders" if skipped_optout.positive?
+      flash[:alert] = "No new reminders sent. #{parts.join(', ')}."
     else
       flash[:alert] = "No overdue companies to send reminders to."
     end
@@ -226,25 +287,42 @@ class PortfolioCompanyDashboardController < ApplicationController
     scope.where(id: matching_ids)
   end
 
-  # Resolves target company IDs from the target selector params.
+  # Resolves target company IDs from the Select2 multi-select params.
+  # Supports any combination of tags, sectors, and explicit company IDs.
+  # Tags and sectors are AND'd when both present (company must match both);
+  # explicit company IDs are always included additively.
   # Re-queries with entity_id scoping to prevent targeting companies
   # in other entities via tampered form data.
   #
-  # @return [Array<Integer>, nil] investor IDs to validate, or nil for all companies
+  # @return [Array<Integer>] investor IDs to validate (empty if selectors matched nothing)
+  # @return [nil] when no selectors were used — means "all companies"
   def resolve_target_ids
     base = Investor.where(entity_id: current_user.entity_id)
                    .where("LOWER(category) = ?", "portfolio company")
 
-    case params[:target_mode]
-    when "selected"
-      ids = Array(params[:target_ids]).map(&:to_i).reject(&:zero?)
-      base.where(id: ids).pluck(:id).presence
-    when "by_tag"
-      tags = Array(params[:target_tags]).compact_blank
-      base.with_tag_list(tags).pluck(:id).presence if tags.present?
-    when "by_sector"
-      sectors = Array(params[:target_sectors]).compact_blank
-      base.in_sector(sectors).pluck(:id).presence if sectors.present?
+    tags = Array(params[:target_tags]).compact_blank
+    sectors = Array(params[:target_sectors]).compact_blank
+    explicit_ids = Array(params[:target_ids]).map(&:to_i).reject(&:zero?)
+
+    # No selectors used → nil means "all companies"
+    return nil if tags.blank? && sectors.blank? && explicit_ids.blank?
+
+    resolved = Set.new
+
+    # Explicit company IDs are always included (additive, bypass tag/sector AND)
+    resolved.merge(base.where(id: explicit_ids).pluck(:id)) if explicit_ids.present?
+
+    # Tags + sectors AND'd when both present; OR within each group
+    if tags.present? && sectors.present?
+      tag_ids = base.with_tag_list(tags).pluck(:id)
+      sector_ids = base.in_sector(sectors).pluck(:id)
+      resolved.merge(tag_ids & sector_ids)
+    elsif tags.present?
+      resolved.merge(base.with_tag_list(tags).pluck(:id))
+    elsif sectors.present?
+      resolved.merge(base.in_sector(sectors).pluck(:id))
     end
+
+    resolved.to_a
   end
 end

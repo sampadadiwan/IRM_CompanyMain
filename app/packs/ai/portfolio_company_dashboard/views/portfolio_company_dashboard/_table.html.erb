@@ -90,9 +90,15 @@
                   <i class="ti ti-x text-danger fs-5"></i>
                 <% end %>
               </td>
+              <%# Document columns — show ✓/✗ only when KPI was submitted
+                   (document check runs against the KPI report). When KPI is
+                   missing the check is skipped, so show "--" instead of a
+                   misleading ✓. %>
               <% presenter.document_types.each do |doc_type| %>
                 <td class="text-center">
-                  <% if presenter.document_ok?(report, doc_type) %>
+                  <% if !presenter.kpi_submitted?(report) %>
+                    <span class="text-muted">--</span>
+                  <% elsif presenter.document_ok?(report, doc_type) %>
                     <i class="ti ti-check text-success fs-5"></i>
                   <% else %>
                     <i class="ti ti-x text-danger fs-5"></i>

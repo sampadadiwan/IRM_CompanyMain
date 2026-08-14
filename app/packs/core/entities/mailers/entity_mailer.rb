@@ -33,7 +33,11 @@ class EntityMailer < ApplicationMailer
     @requesting_entity = Entity.find params[:requesting_entity_id]
     @missing_items = params[:missing_items] || ["KPIs"]
     @period_label = params[:period_label]
-    @to ||= @entity.employees.pluck(:email).join(',')
+    # Changed: prefer explicit recipient_emails from agent config so reminders
+    # reach the FM-configured contacts (e.g. portfolio company CFO) instead of
+    # the fund entity's employees. Falls back to entity employees for legacy
+    # callers (entities_controller#kpi_reminder) that don't pass recipient_emails.
+    @to ||= params[:recipient_emails].presence || @entity.employees.pluck(:email).join(',')
     subject = "Action Required: Missing #{@missing_items.join(', ')} for #{@period_label || 'current period'}"
     send_mail(subject:)
   end

@@ -3,6 +3,30 @@
   <div class="portfolio-dashboard" data-controller="portfolio-dashboard-filter">
     <%= turbo_stream_from "batch_progress_#{@support_agent.id}" %>
 
+    <%# Last-run scope indicator — shows when stats are filtered to a subset
+         of companies from the last run, with a toggle to show all or return
+         to the scoped view. %>
+    <% last_run_ids = @support_agent.json_fields["last_run_target_ids"] %>
+    <% if last_run_ids.present? %>
+      <div class="alert alert-light border py-2 px-3 mb-3 d-flex align-items-center justify-content-between">
+        <% if @showing_all %>
+          <small><i class="ti ti-eye me-1"></i> Showing all companies</small>
+          <%= link_to portfolio_company_dashboard_path,
+                class: "btn btn-outline-primary btn-sm",
+                data: { turbo: false } do %>
+            <i class="ti ti-filter me-1"></i> Show last run (<%= last_run_ids.size %>)
+          <% end %>
+        <% else %>
+          <small><i class="ti ti-filter me-1"></i> Showing last run &mdash; <%= last_run_ids.size %> companies</small>
+          <%= link_to portfolio_company_dashboard_path(show_all: "1"),
+                class: "btn btn-outline-secondary btn-sm",
+                data: { turbo: false } do %>
+            <i class="ti ti-eye me-1"></i> Show all
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+
     <%# Row 1: Stat Cards %>
     <%= render "stats", presenter: @presenter, support_agent: @support_agent %>
 

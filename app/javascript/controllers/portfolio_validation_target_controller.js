@@ -1,86 +1,57 @@
-// Manages the Run Validation target selector — shows/hides the appropriate
-// secondary selector panel (companies, tags, or sectors) based on target_mode.
-// Also validates that at least one item is checked and shows a dynamic
-// confirmation dialog before form submission.
+// Manages the Run Validation target selectors — builds a confirmation label
+// from the Select2 multi-selects (tags, sectors, companies) and shows a
+// dynamic confirmation dialog before form submission.
 //
 // @see _actions.html.erb for the form markup
 // @see PortfolioCompanyDashboardController#run_validation for server-side handling
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["selectedPanel", "tagPanel", "sectorPanel"]
-  static values = { totalCount: Number }
-
-  connect() {
-    this.updatePanels()
-  }
-
-  // Called when the target_mode dropdown changes.
-  // Hides all panels, then reveals only the one matching the selected mode.
-  modeChanged() {
-    this.updatePanels()
-  }
-
-  // Shows the panel matching the current target_mode, hides the others.
-  updatePanels() {
-    const mode = this.element.querySelector("[name='target_mode']")?.value || "all"
-
-    if (this.hasSelectedPanelTarget) this.selectedPanelTarget.hidden = mode !== "selected"
-    if (this.hasTagPanelTarget) this.tagPanelTarget.hidden = mode !== "by_tag"
-    if (this.hasSectorPanelTarget) this.sectorPanelTarget.hidden = mode !== "by_sector"
-  }
+  static values = { total: Number }
 
   // Builds a human-readable label describing the current target selection.
-  // Used in the confirmation dialog so the FM knows exactly what will run.
+  // Reads selected values from the Select2 multi-selects to summarize
+  // what will be validated in the confirmation dialog.
+  //
+  // @return {string} e.g. "all 12 portfolio companies" or "3 companies, tagged SaaS"
   targetLabel() {
-    const mode = this.element.querySelector("[name='target_mode']")?.value || "all"
+    const parts = []
 
-    if (mode === "selected" && this.hasSelectedPanelTarget) {
-      const count = this.selectedPanelTarget.querySelectorAll("input[type='checkbox']:checked").length
-      return `${count} selected ${count === 1 ? "company" : "companies"}`
-    } else if (mode === "by_tag" && this.hasTagPanelTarget) {
-      const checked = this.tagPanelTarget.querySelectorAll("input[type='checkbox']:checked")
-      const names = Array.from(checked).map(el => el.value).join(", ")
-      return `companies tagged ${names}`
-    } else if (mode === "by_sector" && this.hasSectorPanelTarget) {
-      const checked = this.sectorPanelTarget.querySelectorAll("input[type='checkbox']:checked")
-      const names = Array.from(checked).map(el => el.value).join(", ")
-      return `companies in ${names}`
-    }
+    const tags = this.selectedValues("target_tags[]")
+    if (tags.length > 0) parts.push(`tagged ${tags.join(", ")}`)
 
-    return `all ${this.totalCountValue} portfolio companies`
+    const sectors = this.selectedValues("target_sectors[]")
+    if (sectors.length > 0) parts.push(`in sectors ${sectors.join(", ")}`)
+
+    const companies = this.selectedValues("target_ids[]")
+    if (companies.length > 0) parts.push(`${companies.length} selected ${companies.length === 1 ? "company" : "companies"}`)
+
+    if (parts.length === 0) return `all ${this.totalValue} portfolio companies`
+    return parts.join(", ")
   }
 
-  // Validates that at least one checkbox is checked for non-"all" modes,
-  // then shows a dynamic confirmation dialog before allowing form submission.
-  validateAndSubmit(event) {
-    const mode = this.element.querySelector("[name='target_mode']")?.value || "all"
-
-    if (mode === "selected" && this.hasSelectedPanelTarget) {
-      const checked = this.selectedPanelTarget.querySelectorAll("input[type='checkbox']:checked")
-      if (checked.length === 0) {
-        event.preventDefault()
-        alert("Please select at least one company.")
-        return
-      }
-    } else if (mode === "by_tag" && this.hasTagPanelTarget) {
-      const checked = this.tagPanelTarget.querySelectorAll("input[type='checkbox']:checked")
-      if (checked.length === 0) {
-        event.preventDefault()
-        alert("Please select at least one tag.")
-        return
-      }
-    } else if (mode === "by_sector" && this.hasSectorPanelTarget) {
-      const checked = this.sectorPanelTarget.querySelectorAll("input[type='checkbox']:checked")
-      if (checked.length === 0) {
-        event.preventDefault()
-        alert("Please select at least one sector.")
-        return
-      }
-    }
-
-    if (!confirm(`Run validation on ${this.targetLabel()}?`)) {
+  // Shows a dynamic confirmation dialog before allowing form submission.
+  // Includes the reminders toggle state so the FM knows whether reminder
+  // emails will be sent as part of this validation run.
+  //
+  // @param {Event} event - the click event from the submit button
+  confirmAndSubmit(event) {
+    const sendReminders = this.element.querySelector("#send_reminders_toggle")
+    const reminderNote = sendReminders?.checked
+      ? "\n\nReminders WILL be sent to companies with missing items."
+      : "\n\nReminders will NOT be sent."
+    if (!confirm(`Run validation on ${this.targetLabel()}?${reminderNote}`)) {
       event.preventDefault()
     }
+  }
+
+  // Reads selected option values from a Select2 multi-select by field name.
+  //
+  // @param {string} name - the form field name (e.g. "target_tags[]")
+  // @return {string[]} array of selected values
+  selectedValues(name) {
+    const select = this.element.querySelector(`[name="${name}"]`)
+    if (!select) return []
+    return Array.from(select.selectedOptions).map(opt => opt.value).filter(Boolean)
   }
 }

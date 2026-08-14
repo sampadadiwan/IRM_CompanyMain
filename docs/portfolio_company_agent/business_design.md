@@ -2,8 +2,8 @@
 
 ## Business Design Document
 
-**Date:** 2026-07-21
-**Status:** Implemented — product spec received 2026-07-28
+**Date:** 2026-07-21 (updated 2026-08-13)
+**Status:** Implemented — dashboard enhancements (skip-reminders, per-company Send Reminders, validation summary email, dashboard scoping) added 2026-08-13
 
 ---
 
@@ -184,18 +184,15 @@ The dashboard's "Run Validation" button includes two controls:
 
 ### Target Selector — "Run on" Options
 
-| Selection | What Appears | What Happens |
-|-----------|-------------|-------------|
-| All Companies (default) | Nothing extra | Validates every portfolio company — same as before |
-| Selected Companies | Scrollable checklist of company names | Only checked companies are validated |
-| By Tag | Checkboxes with counts, e.g., "SaaS (3)" | Companies matching any checked tag are validated |
-| By Sector | Checkboxes with counts, e.g., "Technology (5)" | Companies in any checked sector are validated |
+Three Select2 multi-select dropdowns (Tags, Sectors, Companies) replace the old checkbox panels. All optional — leaving all empty runs on all companies. Tags + sectors are AND'd when both present; explicit company IDs are always additive.
 
-**Key behaviors:**
-- "By Tag" and "By Sector" only appear if tags/sectors exist on portfolio companies. If no tags have been assigned, the option is hidden entirely.
-- The count next to each tag/sector shows how many companies will be included.
-- At least one item must be checked before the form can be submitted.
-- After the run completes, the dashboard stats still show the **full portfolio** — the target selector only controls which companies get re-validated, not what the dashboard displays.
+### Skip Reminders Toggle
+
+A checkbox in the Run Validation form: "Send reminders to companies with missing items" (unchecked by default). Only visible when the agent-level `send_kpi_reminder` setting is enabled. When unchecked, the `send_kpi_reminder` step is skipped entirely — the FM validates first, then decides whether to send reminders separately via the Send Reminders panel.
+
+### Dashboard Scoping After Run
+
+After the run completes, the dashboard stats and table show only **companies the agent has run for** (companies with a SupportAgentReport matching `last_run_target_ids`). A toggle bar at the top lets the FM switch between "Show last run (N)" and "Show all". When the FM runs on all companies, `last_run_target_ids` is cleared (nil) and no toggle bar appears — the dashboard shows everything.
 
 ---
 
@@ -308,12 +305,22 @@ The **Dashboard** is the dedicated, purpose-built view for portfolio company mon
 
 ## 9. Reminder Emails
 
+### Recipients
+
+Reminders are sent to the email addresses configured in the **KPI reminder email recipients** field on the agent edit page. This is a comma-separated list (e.g., `cfo@portco.com, ops@portco.com`). If left blank, no reminder emails are sent even when reminders are enabled.
+
+Previously, reminders fell back to the fund entity's employees — this sent reminders to the FM's own team instead of the portfolio company's contacts.
+
+### Per-Company Opt-Out
+
+Individual portfolio companies can be excluded from reminders by setting the `skip_kpi_reminder` field to "Yes" on the Investor record. Use for sold, written-off, or companies who handle their own reporting.
+
 ### One Email Per Company
 
 Each reminder is a single consolidated email listing everything that's missing:
 
 **Example — all 3 missing:**
-> Subject: Q2 2026 Data Submission Reminder
+> Subject: Action Required: Missing KPIs, Documents, Valuations for Q2 2026
 >
 > The following items are pending for Q2 2026 (April – June):
 > - KPI Report
@@ -323,7 +330,7 @@ Each reminder is a single consolidated email listing everything that's missing:
 > Please submit at your earliest convenience.
 
 **Example — only valuation missing:**
-> Subject: Q2 2026 Data Submission Reminder
+> Subject: Action Required: Missing Valuations for Q2 2026
 >
 > The following item is pending for Q2 2026 (April – June):
 > - Valuation
@@ -336,17 +343,25 @@ Each reminder is a single consolidated email listing everything that's missing:
 
 Reminders are sent once per agent run. If the agent is scheduled weekly, companies receive at most one reminder per week. No duplicate reminders on the same day.
 
-### Last-Sent Warning (Send Reminders Button)
+### Sending Reminders (Two Paths)
 
-The dashboard's Send Reminders button shows when reminders were last sent (e.g., "Last sent: Jul 28, 2026 (1 day ago)"). When clicked, the confirm dialog warns: "Last reminders were sent on Jul 28, 2026 (1 day ago). Send again to 5 companies?" This prevents accidental over-reminding.
+**Path 1 — During Agent Run:** The Run Validation form includes a "Send reminders to companies with missing items" checkbox (unchecked by default, only shown when agent-level `send_kpi_reminder` is enabled). If checked, reminders are sent as part of the agent pipeline for each company with missing items. If unchecked, the `send_kpi_reminder` step is skipped.
 
-The same last-sent info and confirm dialog appear on the footer's "Send Now" shortcut button (under Recommended Next Steps), so both reminder buttons behave consistently.
+**Path 2 — Standalone Send Reminders:** The dashboard's Send Reminders panel expands inline (Bootstrap collapse) with:
+- A Select2 search bar for finding companies
+- A scrollable table showing all overdue companies with: checkbox (pre-selected), company name, issue count, and last-reminded date with days-ago display
+- A "Select all" checkbox in the header (checked by default)
+- Selecting/deselecting in the Select2 syncs with the table checkboxes and vice versa
+
+Only the checked companies receive reminders when the "Send Reminders" button is clicked.
 
 ### Feedback After Sending
 
 After clicking Send Reminders (from either button), the dashboard shows a clear message:
 - **"Reminders sent to N companies."** — emails were queued successfully
 - **"Reminders were already sent today. No new reminders sent."** — all companies were skipped (same-day dedup)
+- **"N opted out of reminders."** — companies with `skip_kpi_reminder` set to Yes
+- **"No recipient emails configured. Add recipients in the agent settings."** — `kpi_reminder_recipients` is blank
 - **"No overdue companies to send reminders to."** — no companies have blocking issues
 
 ---
@@ -372,10 +387,35 @@ For each portfolio company, the agent verifies three things for the selected per
 
 ---
 
-## 11. Benefits
+## 11. Validation Summary Email
+
+After every adhoc (manual) run, the FM who triggered the run receives a validation summary email. This email serves as a **historical record** of that run's results — since the platform does not persist historical run data (reports are upserted per company), the email is the only snapshot of what was found at that point in time.
+
+### What It Contains
+
+1. **Banner** — "Portfolio Validation Summary" with tone (warning if issues, success if all clear)
+2. **Overview Stats** — Companies Checked, Up to Date, Has Issues
+3. **Missing by Type** — HTML bar chart showing counts per category (KPI, Valuation, and per-document-type like Financial Statement, Board Deck, etc.)
+4. **Issue Breakdown** — Callout cards for KPI Not Submitted, Valuation Missing, Documents Not Uploaded (only categories with issues)
+5. **Company Details** — Per-company table with columns: Company, Status, KPI (check/cross), Valuation (check/cross), Documents (check/cross or "--")
+6. **Processing Errors** — If any companies failed to process, listed with error messages
+
+### Key Behaviors
+
+- **No dashboard links** — The dashboard shows live data that may change after the snapshot was taken. Including links would be misleading.
+- **Documents column shows "--" when KPI not submitted** — When a company hasn't submitted KPIs, the document check is skipped (documents attach to KPI reports). Showing "--" instead of a check mark prevents the false impression that documents are OK.
+- **Scheduled runs don't send this email** — Scheduled runs are silent by design. Only adhoc runs (dashboard, support agents page, investor page) trigger the summary.
+- **Subject line** — `[Alert] Portfolio Validation — N companies checked` (if issues) or `[Summary] Portfolio Validation — N companies checked` (if all clear)
+
+---
+
+## 12. Benefits
 
 1. **Correct period checking** — Agent validates the period companies are actually submitting for, not the current in-progress period
 2. **Configurable timing** — Funds can set their own grace period (T+7, T+15, T+30) and deadline (T+30, T+60, T+90)
 3. **Reduced noise** — Consolidated reminders instead of multiple emails; no reminders outside the window
 4. **Manual flexibility** — "Run Now" works anytime for any period, not locked to the automated window
 5. **Clear visibility** — Dashboard shows whether the window is active, upcoming, or closed
+6. **Historical record** — Validation summary email after each manual run preserves a snapshot of results
+7. **Targeted runs** — FM can run on specific companies, tags, or sectors instead of all-or-nothing
+8. **Reminder control** — Skip reminders during validation, then send selectively via the per-company Send Reminders panel
