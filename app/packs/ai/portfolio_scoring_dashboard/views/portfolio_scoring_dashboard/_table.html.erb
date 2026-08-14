@@ -1,0 +1,338 @@
+<%# Company table — one row per company (latest scoring report), filtered by the
+    active tier. Search and pagination swap only this frame; the tier cards above
+    are full-page navigations so they can update the chart and the active card.
+
+    Expanding a row reuses investors/widgets/_score_display verbatim — the same
+    panel the Investor page shows — so there is no second detail view to maintain. %>
+<%= turbo_frame_tag "scoring_table_frame" do %>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <h6 class="fw-bold mb-0">Company Scores</h6>
+          <% if status_filter.present? %>
+            <%# The filter chip names the filter in full — tier labels carry their
+                grades, movement filters say what they measure — so the table
+                always states which subset is on screen. %>
+            <span class="badge bg-primary-subtle text-primary">
+              <%= presenter.filter_label(status_filter) %>
+            </span>
+            <%= link_to scoring_dashboard_path_with(status: nil),
+                  class: "btn btn-sm btn-outline-secondary", data: { turbo: false } do %>
+              <i class="ti ti-x"></i> Clear
+            <% end %>
+          <% end %>
+        </div>
+
+        <div class="d-flex gap-2">
+          <%= form_tag scoring_dashboard_path_with(q: nil),
+                method: :get, data: { controller: "search", turbo_frame: "scoring_table_frame" },
+                class: "d-flex search-form" do %>
+            <div class="input-group input-group-sm" style="width: 220px;">
+              <span class="input-group-text"><i class="ti ti-search"></i></span>
+              <%= text_field_tag "q[investor_investor_name_cont]", search_value,
+                    class: "form-control", placeholder: "Search company...",
+                    data: { "search-target": "searchInput", action: "keydown->search#debouncedSearchInput" } %>
+            </div>
+            <%# Carry every active filter through the search submit, or searching
+                would silently reset the tier, basis and portfolio scope. %>
+            <%= hidden_field_tag "status", status_filter if status_filter.present? %>
+            <%= hidden_field_tag "basis", "value" if basis == :value %>
+            <%= hidden_field_tag "sector", @sector_filter if @sector_filter.present? %>
+            <%= hidden_field_tag "tag", @tag_filter if @tag_filter.present? %>
+            <%# Sort must be a hidden field too: browsers discard the query
+                string on a GET form's action, so putting it in the URL alone
+                silently reset the ordering on every search. %>
+            <%= hidden_field_tag "sort", @sort %>
+            <%= hidden_field_tag "dir", @direction %>
+            <%= submit_tag "Submit", hidden: true, data: { target: "search.submit" } %>
+          <% end %>
+        </div>
+      </div>
+
+      <% if scoring_reports.none? %>
+        <div class="alert alert-secondary mb-0">
+          <i class="ti ti-info-circle"></i>
+          <% if status_filter.present? %>
+            No companies in this bucket.
+          <% else %>
+            No scoring reports yet. Run the scoring agent to populate the dashboard.
+          <% end %>
+        </div>
+      <% else %>
+        <div class="table-responsive">
+          <%# Same classes the Investors index gets from RansackTable, so the app's
+            shared table styling governs header, padding, borders and hover. %>
+        <table class="table table-bordered dataTable action_table hover">
+            <%# Sortable columns carry a caret showing the active order. Score
+                and delta are sorted in Ruby (they live in json_fields);
+                everything else goes the same way for consistency. Grade is
+                folded into the Score cell and the old Tier column dropped — it
+                duplicated the active filter, and nine columns crowded the table. %>
+            <thead>
+              <tr>
+                <th>
+                  <%= link_to scoring_sort_path("company"), class: "text-decoration-none text-body",
+                        data: { turbo_frame: "scoring_table_frame" },
+                        "data-bs-toggle": "tooltip", title: scoring_sort_hint("company") do %>
+                    Company <%= scoring_sort_caret("company") %>
+                  <% end %>
+                </th>
+                <th>
+                  <%= link_to scoring_sort_path("sector"), class: "text-decoration-none text-body",
+                        data: { turbo_frame: "scoring_table_frame" },
+                        "data-bs-toggle": "tooltip", title: scoring_sort_hint("sector") do %>
+                    Sector <%= scoring_sort_caret("sector") %>
+                  <% end %>
+                </th>
+                <th>
+                  <%= link_to scoring_sort_path("score"), class: "text-decoration-none text-body",
+                        data: { turbo_frame: "scoring_table_frame" },
+                        "data-bs-toggle": "tooltip", title: scoring_sort_hint("score") do %>
+                    Score &amp; Grade <%= scoring_sort_caret("score") %>
+                  <% end %>
+                </th>
+                <th class="text-center">
+                  <%= link_to scoring_sort_path("delta"), class: "text-decoration-none text-body",
+                        data: { turbo_frame: "scoring_table_frame" },
+                        "data-bs-toggle": "tooltip",
+                        title: "Change since this company's previous scoring run. #{scoring_sort_hint('delta')}" do %>
+                    Δ <%= scoring_sort_caret("delta") %>
+                  <% end %>
+                </th>
+                <th data-bs-toggle="tooltip" title="The dimension the agent scored lowest for this company">
+                  Weakest Dimension
+                </th>
+                <th>
+                  <%= link_to scoring_sort_path("scored"), class: "text-decoration-none text-body",
+                        data: { turbo_frame: "scoring_table_frame" },
+                        "data-bs-toggle": "tooltip", title: scoring_sort_hint("scored") do %>
+                    Scored <%= scoring_sort_caret("scored") %>
+                  <% end %>
+                </th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% scoring_reports.each do |report| %>
+                <% score = presenter.score_for(report) %>
+                <% tier_slug = presenter.tier_for_report(report) %>
+                <% color = presenter.color_for_report(report) %>
+                <% delta = presenter.delta_for(report) %>
+                <%# The tier class drives the row's left colour edge and the
+                    score bar's gradient — the table then scans by colour. %>
+                <tr class="sd-tier--<%= tier_slug || 'not_scored' %>">
+                  <td>
+                    <% if report.owner %>
+                      <%= link_to report.owner.investor_name, investor_path(report.owner),
+                            class: "fw-semibold text-decoration-none", data: { turbo: false } %>
+                    <% else %>
+                      <strong><%= presenter.company_name(report) %></strong>
+                    <% end %>
+                    <% if presenter.manually_edited?(report) %>
+                      <%# Flag human overrides so an edited score is not read as agent output. %>
+                      <span class="badge bg-light text-dark border" data-bs-toggle="tooltip"
+                            title="This score was manually edited after the agent produced it">
+                        <i class="ti ti-pencil"></i> Edited
+                      </span>
+                    <% end %>
+                    <%# Data coverage — how much the agent actually had to work with.
+                        A confident-looking score built on one KPI period and no
+                        documents deserves to say so. %>
+                    <% coverage = presenter.coverage_for(report) %>
+                    <% if coverage.any? %>
+                      <div class="mt-1 d-flex gap-1 flex-wrap">
+                        <span class="badge bg-light text-muted border" style="font-size: 0.65rem;"
+                              data-bs-toggle="tooltip" title="KPI periods the agent read">
+                          <i class="ti ti-chart-bar"></i> <%= coverage[:kpi_periods] %>
+                        </span>
+                        <span class="badge bg-light text-muted border" style="font-size: 0.65rem;"
+                              data-bs-toggle="tooltip" title="Valuations the agent read">
+                          <i class="ti ti-coin"></i> <%= coverage[:valuations_used] %>
+                        </span>
+                        <span class="badge bg-light text-muted border" style="font-size: 0.65rem;"
+                              data-bs-toggle="tooltip" title="Documents the agent read">
+                          <i class="ti ti-file"></i> <%= coverage[:documents_read] %>
+                        </span>
+                        <% if presenter.thin_evidence?(report) %>
+                          <span class="badge bg-warning-subtle text-warning" style="font-size: 0.65rem;"
+                                data-bs-toggle="tooltip"
+                                title="Scored from very little data — treat this score with caution">
+                            <i class="ti ti-alert-circle"></i> Thin evidence
+                          </span>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%= link_to scoring_dashboard_path_with(sector: presenter.sector_for(report), status: nil),
+                          class: "text-decoration-none", data: { turbo: false },
+                          "data-bs-toggle": "tooltip",
+                          title: "Scope the dashboard to #{presenter.sector_for(report)}" do %>
+                      <span class="badge bg-light text-dark border"><%= presenter.sector_for(report) %></span>
+                    <% end %>
+                  </td>
+
+                  <%# Score, grade and tier in one cell. The tier icon makes tier
+                      readable without relying on colour alone. %>
+                  <td>
+                    <% if score %>
+                      <div class="d-flex align-items-center gap-2" style="min-width: 190px;">
+                        <div class="progress flex-grow-1" style="height: 8px;"
+                             data-bs-toggle="tooltip"
+                             title="<%= presenter.label_for(tier_slug) %> — score <%= score %> of 100">
+                          <div class="progress-bar bg-<%= color %>" role="progressbar"
+                               style="width: <%= score %>%;"
+                               aria-valuenow="<%= score %>" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <span class="fw-bold" style="font-variant-numeric: tabular-nums;"><%= score %></span>
+                        <% if presenter.grade_for(report).present? %>
+                          <span class="badge bg-<%= color %>"
+                                data-bs-toggle="tooltip"
+                                title="Agent grade. The tier comes from the score, not this text.">
+                            <i class="ti <%= presenter.tier_meta(tier_slug.to_s)[:icon] %>"></i>
+                            <%= presenter.grade_for(report) %>
+                          </span>
+                        <% end %>
+                      </div>
+                    <% else %>
+                      <%# A run that produced no score — show why, inline. %>
+                      <span class="badge bg-danger-subtle text-danger"
+                            data-bs-toggle="tooltip" title="This run produced no score">
+                        <i class="ti ti-alert-triangle"></i> Failed
+                      </span>
+                      <% if presenter.error_for(report) %>
+                        <div class="text-danger mt-1"><small><%= presenter.error_for(report) %></small></div>
+                      <% end %>
+                    <% end %>
+                  </td>
+
+                  <td class="text-center">
+                    <% if delta.nil? %>
+                      <span class="text-muted" data-bs-toggle="tooltip"
+                            title="No previous run to compare against">—</span>
+                    <% elsif delta.zero? %>
+                      <span class="badge bg-light text-muted border" data-bs-toggle="tooltip"
+                            title="Same score as the previous run">
+                        <i class="ti ti-minus"></i>
+                      </span>
+                    <% else %>
+                      <span class="badge bg-<%= delta.positive? ? 'success' : 'danger' %>-subtle text-<%= delta.positive? ? 'success' : 'danger' %>"
+                            style="font-variant-numeric: tabular-nums;"
+                            data-bs-toggle="tooltip"
+                            title="<%= delta.positive? ? 'Up' : 'Down' %> <%= delta.abs %> points since the previous run">
+                        <i class="ti ti-<%= delta.positive? ? 'arrow-up' : 'arrow-down' %>"></i><%= delta.abs %>
+                      </span>
+                    <% end %>
+                  </td>
+
+                  <td>
+                    <% weakest = presenter.weakest_dimension_for(report) %>
+                    <% if weakest %>
+                      <span class="badge bg-light text-dark border sd-wrap"
+                            data-bs-toggle="tooltip"
+                            title="Lowest-scoring dimension for this company — expand the row for the full breakdown">
+                        <%= weakest %>
+                      </span>
+                    <% else %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+
+                  <td class="text-muted">
+                    <%= l(report.created_at, format: :abbr_month_day_year) %>
+                    <% if score && presenter.stale?(report) %>
+                      <span class="badge bg-warning-subtle text-warning" data-bs-toggle="tooltip"
+                            title="Older than <%= presenter.staleness_days %> days — re-run to refresh">Stale</span>
+                    <% end %>
+                  </td>
+
+                  <td>
+                    <% if score %>
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                              data-bs-toggle="collapse"
+                              data-bs-target="#scoring-detail-<%= report.id %>"
+                              title="Show every scoring dimension, strengths, risks and recommendations">
+                        <i class="ti ti-chevron-down"></i>
+                      </button>
+                    <% end %>
+                  </td>
+                </tr>
+
+                <% if score %>
+                  <tr class="collapse" id="scoring-detail-<%= report.id %>">
+                    <td colspan="7" class="sd-detail-cell">
+                      <%# Pinned to the left of the scroll container: without this
+                          the panel inherits the table's full width and its right
+                          edge is clipped out of view. %>
+                      <div class="sd-detail-inner">
+                        <%= render "investors/widgets/score_display",
+                                   report: report,
+                                   scoring_agent: support_agent,
+                                   investor: report.owner,
+                                   can_run: false,
+                                   can_edit: false %>
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+
+          <% if pagy && pagy.pages > 1 %>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <small class="text-muted"><%= raw pagy_info(pagy) %></small>
+              <% pagy_params = sticky_scoring_filters.compact %>
+              <%= raw pagy_bootstrap_nav(pagy, anchor_string: %(data-turbo-frame="scoring_table_frame" data-remote="true"), params: pagy_params) %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# Companies with no report at all cannot appear in a report-backed table,
+          so list them explicitly rather than letting the Not Scored count point at
+          rows that do not exist. %>
+      <% if status_filter == PortfolioScoringPresenter::NOT_SCORED[:slug] && presenter.unscored_companies.any? %>
+        <div class="mt-4">
+          <h6 class="fw-bold">Never Scored — no report exists</h6>
+          <p class="text-muted mb-2">
+            <small>
+              These companies produced no report. A blank sector means the agent skips them
+              entirely, because the sector is what selects the skill file.
+            </small>
+          </p>
+          <div class="table-responsive">
+            <table class="table table-bordered dataTable action_table hover">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Sector</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% presenter.unscored_companies.each do |company| %>
+                  <tr>
+                    <td>
+                      <%= link_to company[:name], investor_path(company[:id]),
+                            class: "text-decoration-none", data: { turbo: false } %>
+                    </td>
+                    <td class="text-muted"><%= company[:sector].presence || "—" %></td>
+                    <td>
+                      <% if company[:reason] == :no_sector %>
+                        <span class="badge bg-warning-subtle text-warning">No sector set</span>
+                      <% else %>
+                        <span class="badge bg-secondary-subtle text-secondary">Never run</span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,154 @@
+<%# Three findings the data already contained but the page never surfaced:
+    which dimension drags the book down, how sectors compare, and the trajectory
+    across runs rather than just the last step. All three are computed from
+    reports already loaded for the tier cards — no extra query. %>
+<div class="row g-4 mb-4">
+
+  <%# ── Weakest dimension across the portfolio ────────────────────────────── %>
+  <%# The table shows the weakest dimension per company; the portfolio-level
+      question is which dimension is weakest most often. %>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h6 class="fw-bold mb-0">Common Weak Spots</h6>
+          <i class="ti ti-info-circle text-muted"
+             data-bs-toggle="tooltip"
+             title="How often each dimension is a company's lowest-scoring one. Counts companies, not points."></i>
+        </div>
+
+        <% tally = presenter.weakest_dimension_tally %>
+        <% if tally.empty? %>
+          <p class="text-muted mb-0"><small>No scored companies yet.</small></p>
+        <% else %>
+          <% top_count = tally.first.last %>
+          <% tally.each_with_index do |(name, count), index| %>
+            <%# Rank by severity rather than painting every bar the same red:
+                the most common weak spot is the one to act on. %>
+            <% weak_tier = index.zero? ? "at_risk" : (index < 3 ? "watch" : "not_scored") %>
+            <% weak_color = presenter.tier_meta(weak_tier)[:color] %>
+            <div class="mb-2 sd-tier--<%= weak_tier %>">
+              <div class="d-flex justify-content-between align-items-baseline gap-2">
+                <small class="fw-semibold"><%= name %></small>
+                <span class="badge bg-<%= weak_color %>"
+                      data-bs-toggle="tooltip"
+                      title="Weakest dimension for <%= count %> of <%= presenter.scored_reports.size %> scored <%= 'company'.pluralize(count) %>">
+                  <%= count %>
+                </span>
+              </div>
+              <div class="progress sd-bar mt-1">
+                <div class="progress-bar"
+                     style="width: <%= top_count.positive? ? (count * 100.0 / top_count).round : 0 %>%"></div>
+              </div>
+            </div>
+          <% end %>
+          <small class="text-muted d-block mt-2">
+            <i class="ti ti-bulb"></i>
+            <strong><%= tally.first.first %></strong> is the most common weak spot.
+          </small>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Sector comparison ─────────────────────────────────────────────────── %>
+  <%# The sector dropdown filters but never compares. This turns it into analysis. %>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h6 class="fw-bold mb-0">Average Score by Sector</h6>
+          <i class="ti ti-info-circle text-muted"
+             data-bs-toggle="tooltip"
+             title="Mean score per sector. Sectors with one company are marked — a single company is not a trend."></i>
+        </div>
+
+        <% sectors = presenter.sector_averages %>
+        <% if sectors.empty? %>
+          <p class="text-muted mb-0"><small>No scored companies yet.</small></p>
+        <% else %>
+          <% sectors.first(6).each do |row| %>
+            <% row_tier = presenter.tier_for(row[:average]) %>
+            <% row_color = presenter.tier_meta(row_tier.to_s)[:color] %>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between align-items-baseline gap-2">
+                <%= link_to scoring_dashboard_path_with(sector: row[:sector], status: nil),
+                      class: "text-decoration-none text-truncate",
+                      data: { turbo: false },
+                      "data-bs-toggle": "tooltip",
+                      title: "Scope the whole dashboard to #{row[:sector]}" do %>
+                  <small class="fw-semibold"><%= row[:sector] %></small>
+                <% end %>
+                <span class="d-flex align-items-center gap-1 flex-shrink-0">
+                  <% if row[:count] == 1 %>
+                    <span class="badge bg-light text-muted border"
+                          data-bs-toggle="tooltip" title="Only one scored company in this sector">n=1</span>
+                  <% else %>
+                    <span class="badge bg-light text-dark border"
+                          data-bs-toggle="tooltip" title="<%= row[:count] %> scored companies">n=<%= row[:count] %></span>
+                  <% end %>
+                  <span class="badge bg-<%= row_color %>" style="font-variant-numeric: tabular-nums;">
+                    <%= row[:average] %>
+                  </span>
+                </span>
+              </div>
+              <div class="progress sd-bar mt-1 sd-tier--<%= row_tier || 'not_scored' %>">
+                <div class="progress-bar" style="width: <%= row[:average] %>%"></div>
+              </div>
+            </div>
+          <% end %>
+          <% if sectors.size > 6 %>
+            <small class="text-muted d-block mt-2">
+              <i class="ti ti-dots"></i> <%= sectors.size - 6 %> more <%= "sector".pluralize(sectors.size - 6) %>
+            </small>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Trajectory ────────────────────────────────────────────────────────── %>
+  <%# Movement is only "vs previous run". This shows direction of travel. %>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h6 class="fw-bold mb-0">Trajectory</h6>
+          <i class="ti ti-info-circle text-muted"
+             data-bs-toggle="tooltip"
+             title="Portfolio average score per month across every run in the last 12 months. Months with no run are skipped, not plotted as zero."></i>
+        </div>
+
+        <% trend = presenter.monthly_score_trend %>
+        <% if presenter.trend? %>
+          <div data-controller="scoring-trend-chart"
+               data-scoring-trend-chart-labels-value="<%= trend.pluck(:label).to_json %>"
+               data-scoring-trend-chart-values-value="<%= trend.pluck(:average).to_json %>"
+               data-scoring-trend-chart-counts-value="<%= trend.pluck(:count).to_json %>"
+               style="position: relative; height: 150px;">
+            <canvas data-scoring-trend-chart-target="canvas"></canvas>
+          </div>
+
+          <% first_point = trend.first %>
+          <% last_point = trend.last %>
+          <% span = last_point[:average] - first_point[:average] %>
+          <div class="mt-auto pt-2 d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge bg-<%= span.positive? ? 'success' : (span.negative? ? 'danger' : 'secondary') %>-subtle text-<%= span.positive? ? 'success' : (span.negative? ? 'danger' : 'secondary') %>"
+                  data-bs-toggle="tooltip"
+                  title="Change in the portfolio average between <%= first_point[:label] %> and <%= last_point[:label] %>">
+              <i class="ti ti-<%= span.positive? ? 'arrow-up' : (span.negative? ? 'arrow-down' : 'minus') %>"></i>
+              <%= span.positive? ? "+" : "" %><%= span %> since <%= first_point[:label] %>
+            </span>
+            <small class="text-muted"><%= trend.size %> months with runs</small>
+          </div>
+        <% else %>
+          <div class="text-center text-muted my-auto">
+            <i class="ti ti-chart-line" style="font-size: 1.8rem; opacity: 0.3;"></i>
+            <p class="mt-2 mb-0"><small>Trajectory needs runs in more than one month.</small></p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+</div>

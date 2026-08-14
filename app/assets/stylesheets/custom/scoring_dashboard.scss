@@ -1,0 +1,426 @@
+// ============================================================
+// Portfolio Scoring Dashboard — layout and structure, on the app's own palette.
+//
+// ISOLATION: every rule is nested under `.scoring-dashboard`, and every custom
+// property is declared on that wrapper rather than :root, so nothing here can
+// reach another screen.
+//
+// COLOUR: this file deliberately does NOT override the app's contextual colours.
+// Badges keep the pastel fills the Minimalist Theme gives them app-wide, and the
+// tier tokens below are lifted straight from that theme, so the dashboard reads
+// as part of the product rather than as its own colour system.
+// ============================================================
+
+.scoring-dashboard {
+  // ---------- tier palette ----------
+  // No hard-coded colours. Each tier maps to a Bootstrap contextual role and
+  // reads the theme's own variables, so the dashboard follows whichever colour
+  // theme the user has picked (Blue / Aqua / Purple / Green / Cyan / Orange /
+  // Minimalist) and switches with light and dark mode for free.
+  //
+  //   -bg   → *-bg-subtle      tinted surfaces (icon discs, movement tiles)
+  //   -ink  → *-text-emphasis  text, which needs a darker value than the raw
+  //                            contextual colour: warning at full strength is
+  //                            around 1.6:1 on white and cannot be read.
+  --sd-out: var(--bs-success);
+  --sd-out-bg: var(--bs-success-bg-subtle);
+  --sd-out-ink: var(--bs-success-text-emphasis);
+
+  --sd-track: var(--bs-primary);
+  --sd-track-bg: var(--bs-primary-bg-subtle);
+  --sd-track-ink: var(--bs-primary-text-emphasis);
+
+  --sd-watch: var(--bs-warning);
+  --sd-watch-bg: var(--bs-warning-bg-subtle);
+  --sd-watch-ink: var(--bs-warning-text-emphasis);
+
+  --sd-risk: var(--bs-danger);
+  --sd-risk-bg: var(--bs-danger-bg-subtle);
+  --sd-risk-ink: var(--bs-danger-text-emphasis);
+
+  --sd-none: var(--bs-secondary);
+  --sd-none-bg: var(--bs-secondary-bg-subtle);
+  --sd-none-ink: var(--bs-secondary-color);
+
+  --sd-ink: var(--bs-emphasis-color);
+  --sd-muted: var(--bs-secondary-color);
+  --sd-hairline: var(--bs-border-color);
+
+  // ---------- tier modifier: one class sets every colour a card needs ----------
+  .sd-tier--outperform { --sd-c: var(--sd-out);   --sd-c-bg: var(--sd-out-bg);   --sd-c-ink: var(--sd-out-ink); }
+  .sd-tier--on_track   { --sd-c: var(--sd-track); --sd-c-bg: var(--sd-track-bg); --sd-c-ink: var(--sd-track-ink); }
+  .sd-tier--watch      { --sd-c: var(--sd-watch); --sd-c-bg: var(--sd-watch-bg); --sd-c-ink: var(--sd-watch-ink); }
+  .sd-tier--at_risk    { --sd-c: var(--sd-risk);  --sd-c-bg: var(--sd-risk-bg);  --sd-c-ink: var(--sd-risk-ink); }
+  .sd-tier--not_scored { --sd-c: var(--sd-none);  --sd-c-bg: var(--sd-none-bg);  --sd-c-ink: var(--sd-none-ink); }
+
+  // ================= HERO =================
+  // The page had no focal point — five equal white cards and a grey score box.
+  // This is the anchor: one dark panel carrying the single number that matters.
+  .sd-hero {
+    position: relative;
+    overflow: hidden;
+    border: 0;
+    border-radius: 18px;
+    background:
+      radial-gradient(1100px 300px at 88% -30%, rgba(99, 102, 241, 0.5), transparent 62%),
+      radial-gradient(700px 280px at 8% 120%, rgba(16, 185, 129, 0.28), transparent 60%),
+      linear-gradient(135deg, var(--bs-dark) 0%, color-mix(in srgb, var(--bs-dark) 82%, var(--bs-primary)) 100%);
+    color: #fff;
+    box-shadow: 0 18px 44px -22px rgba(15, 23, 42, 0.75);
+
+    .card-body { position: relative; z-index: 1; }
+
+    // Everything inside inherits light-on-dark, including Bootstrap's muted text.
+    .text-muted { color: rgba(255, 255, 255, 0.62) !important; }
+    .border-start { border-color: rgba(255, 255, 255, 0.18) !important; }
+    a { color: #fff; }
+  }
+
+  // The score itself — the biggest thing on the page, as it should be.
+  .sd-hero-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 118px;
+    padding: 14px 18px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(4px);
+
+    b {
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.045em;
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+    }
+
+    small {
+      margin-top: 6px;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+    }
+  }
+
+  .sd-hero-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  // Value-needing-attention figure.
+  .sd-hero-figure {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+  }
+
+  // Chips on the dark panel: translucent rather than pastel.
+  .sd-hero .badge {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+    font-size: 0.7rem;
+  }
+
+  // …except tier chips, which keep their own solid colour so the grade reads.
+  .sd-hero .badge.sd-solid {
+    border-color: transparent;
+    background: var(--sd-c-bg) !important;
+    color: var(--sd-c-ink) !important;
+  }
+
+  // Clear-filter action. Deliberately the only solid white element on the hero.
+  .sd-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--bs-body-bg);
+    color: var(--bs-emphasis-color) !important;
+    border: 0;
+    transition: background 0.15s, transform 0.15s;
+
+    &:hover {
+      background: var(--bs-tertiary-bg);
+      color: var(--bs-emphasis-color) !important;
+      transform: translateY(-1px);
+    }
+  }
+
+  // The stacked share bar — thick enough to actually read as a chart.
+  .sd-share {
+    height: 30px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+
+    .progress-bar {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--sd-c-ink);
+      background: var(--sd-c-bg) !important;
+      transition: filter 0.2s;
+
+      &:hover { filter: brightness(0.96); }
+
+      // When a tier filter is active, the other segments stay visible as
+      // context but recede, so the selected slice reads immediately.
+      &.is-dimmed {
+        opacity: 0.28;
+        box-shadow: none;
+      }
+    }
+  }
+
+  // Legend dots, so the share bar is readable without hovering.
+  .sd-legend-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+    display: inline-block;
+    background: var(--sd-c-bg);
+    border: 1px solid var(--sd-c);
+  }
+
+  // ================= TIER CARDS =================
+  // Restrained on purpose: the tier reads from the number and the thin top rule,
+  // not from a filled card. The hero above is the page's loud element; five
+  // saturated cards next to it was two focal points competing.
+  .scoring-tier-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px !important;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+
+    // A 3px rule rather than a 5px gradient rail, and a barely-there wash so the
+    // card is still identifiably its tier at a glance.
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      background: var(--sd-c);
+      opacity: 0.85;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--sd-c) 35%, var(--bs-border-color)) !important;
+      box-shadow: 0 10px 22px -16px rgba(15, 23, 42, 0.4) !important;
+    }
+
+    .card-body { padding-top: 1rem !important; }
+  }
+
+  .scoring-tier-card--active {
+    border-color: var(--sd-c) !important;
+    box-shadow: inset 0 0 0 1px var(--sd-c), 0 8px 20px -16px rgba(15, 23, 42, 0.35) !important;
+    background: var(--sd-c-bg);
+  }
+
+  // The count still carries the tier colour — that is the one place the colour
+  // genuinely earns its keep.
+  .sd-tier-num {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+    color: var(--sd-c-ink) !important;
+  }
+
+  // Tinted disc with a coloured glyph, instead of solid white-on-colour.
+  .sd-tier-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    color: var(--sd-c-ink) !important;
+    background: var(--sd-c-bg);
+
+    i { font-size: 0.95rem; }
+
+    // On the selected card the glyph turns into a ✕, so "click again to clear"
+    // is visible rather than something you have to guess.
+    &.is-clearable {
+      background: var(--sd-c);
+      color: #fff !important;
+    }
+  }
+
+  // Share meter: thin and flat.
+  .scoring-tier-card .progress {
+    height: 5px !important;
+    border-radius: 99px;
+    background: var(--bs-tertiary-bg);
+  }
+
+  .scoring-tier-card .progress-bar {
+    border-radius: 99px;
+    background: var(--sd-c) !important;
+  }
+
+  // ================= MOVEMENT TILES =================
+  // Four plain numbers became four tinted tiles — same data, actual presence.
+  .sd-move {
+    display: block;
+    padding: 12px 14px;
+    border-radius: 13px;
+    background: var(--sd-c-bg);
+    border: 1px solid transparent;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+
+    b {
+      display: block;
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.035em;
+      font-variant-numeric: tabular-nums;
+      color: var(--sd-c-ink);
+    }
+
+    span {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.74rem;
+      color: var(--sd-muted);
+    }
+  }
+
+  a.sd-move:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 22px -14px color-mix(in srgb, var(--sd-c) 70%, transparent);
+  }
+
+  // Selected movement tile, matching the tier cards' selected state.
+  .sd-move.is-active {
+    border-color: var(--sd-c);
+    box-shadow: inset 0 0 0 1px var(--sd-c);
+  }
+
+  // ================= BADGES =================
+  // Intentionally not restyled. Badges keep the Minimalist Theme's pastel fills
+  // so a grade chip here matches every other status badge in the app.
+
+  // ================= PANELS =================
+  .card {
+    border-radius: 16px;
+  }
+
+  .card > .card-body > .d-flex > h6,
+  .card h6.fw-bold {
+    font-size: 0.78rem;
+    font-weight: 700 !important;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sd-muted);
+  }
+
+  // Insight bars: thicker and gradient rather than 5px hairlines.
+  .sd-bar {
+    height: 8px !important;
+    border-radius: 99px;
+    background: var(--bs-tertiary-bg);
+
+    .progress-bar {
+      border-radius: 99px;
+      background: var(--sd-c, var(--sd-track)) !important;
+    }
+  }
+
+  // ================= TABLE =================
+  // Intentionally almost empty. The table now uses the same markup and classes
+  // as the Investors index (table table-bordered dataTable action_table hover),
+  // so the app's shared styling in minimalist_theme.scss governs the header,
+  // padding, borders and hover. Only the score bar — which is content, not
+  // chrome — is styled here.
+  //
+  // Sticky headers and the tier colour edge were dropped deliberately: the
+  // Investors index has neither, and matching it was the point.
+  thead th a:hover { color: var(--sd-track) !important; }
+
+  // The shared theme pads cells 20px/24px. Across seven columns that alone
+  // pushes this table past its container, which is what was cropping the
+  // expanded report. Tighter here only.
+  .table thead th,
+  .table tbody td {
+    padding: 12px 14px;
+  }
+
+  // Long dimension and sector labels wrap instead of forcing the table wider.
+  .badge.sd-wrap {
+    white-space: normal;
+    text-align: left;
+  }
+
+  // ---- expanded report row ----
+  // The panel lives in a td of a table that may still scroll horizontally on
+  // narrow screens. Pinning it to the left of the scroll container keeps the
+  // whole report reachable instead of clipped off the right edge.
+  .sd-detail-cell {
+    padding: 0 !important;
+    background: var(--bs-tertiary-bg);
+  }
+
+  .sd-detail-inner {
+    position: sticky;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  // The report's own dimension table must not add its own overflow on top.
+  .sd-detail-inner table {
+    max-width: 100%;
+  }
+
+  td .progress {
+    height: 6px !important;
+    border-radius: 99px;
+    background: var(--bs-tertiary-bg);
+  }
+
+  td .progress-bar {
+    border-radius: 99px;
+    background: var(--sd-c) !important;
+  }
+
+  // Digits must not jitter between pages.
+  .sd-tier-num,
+  td .fw-bold,
+  .sd-move b,
+  h4 {
+    font-variant-numeric: tabular-nums;
+  }
+
+  // ================= CONTROLS =================
+  .form-select { border-radius: 10px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scoring-tier-card,
+    .sd-move {
+      transition: none;
+
+      &:hover { transform: none; }
+    }
+  }
+}

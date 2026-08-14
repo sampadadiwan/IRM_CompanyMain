@@ -1,0 +1,138 @@
+<%# Footer — turns the numbers above into actions. Each line only appears when it
+    has something to say, so an all-clear portfolio shows a single confirmation
+    rather than a list of zeros. %>
+<%# When the page is read by value, the next steps say so too — "3 companies at
+    risk" and "₹42cr at risk" prompt very different reactions. %>
+<div class="row g-4">
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3">Recommended Next Steps</h6>
+        <div class="d-flex flex-column gap-2">
+          <% at_risk = presenter.counts_by_tier["at_risk"] %>
+          <% watch = presenter.counts_by_tier["watch"] %>
+          <% breakdown = presenter.not_scored_breakdown %>
+          <% steps_shown = false %>
+
+          <% if at_risk.positive? %>
+            <% steps_shown = true %>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-alert-triangle text-danger"></i>
+                <span>
+                  <span class="badge bg-danger"><%= at_risk %></span>
+                  <%= "company".pluralize(at_risk) %> scored below 40
+                  <% if basis == :value %>
+                    &nbsp;·&nbsp;
+                    <span class="badge bg-danger-subtle text-danger"
+                          data-bs-toggle="tooltip" title="Portfolio FMV held by At Risk companies">
+                      <%= presenter.format_cents(presenter.value_by_tier["at_risk"]) %>
+                    </span>
+                  <% end %>
+                </span>
+              </div>
+              <%= link_to "Review", scoring_dashboard_path_with(status: "at_risk"),
+                    class: "btn btn-sm btn-outline-danger", data: { turbo: false } %>
+            </div>
+          <% end %>
+
+          <% if watch.positive? %>
+            <% steps_shown = true %>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-eye text-warning"></i>
+                <span>
+                  <span class="badge bg-warning text-dark"><%= watch %></span>
+                  <%= "company".pluralize(watch) %> need close monitoring
+                  <% if basis == :value %>
+                    &nbsp;·&nbsp;
+                    <span class="badge bg-warning-subtle text-warning"
+                          data-bs-toggle="tooltip" title="Portfolio FMV held by Watch List companies">
+                      <%= presenter.format_cents(presenter.value_by_tier["watch"]) %>
+                    </span>
+                  <% end %>
+                </span>
+              </div>
+              <%= link_to "Review", scoring_dashboard_path_with(status: "watch"),
+                    class: "btn btn-sm btn-outline-warning", data: { turbo: false } %>
+            </div>
+          <% end %>
+
+          <%# Configuration gaps are separated from scoring outcomes because they
+              are the FM's to fix, not the portfolio's. %>
+          <% if breakdown[:no_sector].positive? || breakdown[:failed].positive? %>
+            <% steps_shown = true %>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-settings-exclamation text-secondary"></i>
+                <span>
+                  <%= [
+                        ("#{breakdown[:no_sector]} #{'company'.pluralize(breakdown[:no_sector])} missing a sector" if breakdown[:no_sector].positive?),
+                        ("#{breakdown[:failed]} failed #{'run'.pluralize(breakdown[:failed])}" if breakdown[:failed].positive?)
+                      ].compact.join(" · ") %>
+                </span>
+              </div>
+              <%= link_to "Fix configuration", edit_support_agent_path(support_agent),
+                    class: "btn btn-sm btn-outline-secondary", data: { turbo: false } %>
+            </div>
+          <% end %>
+
+          <% if breakdown[:never_run].positive? %>
+            <% steps_shown = true %>
+            <div class="d-flex align-items-center gap-2">
+              <i class="ti ti-clock-pause text-secondary"></i>
+              <span><%= breakdown[:never_run] %> <%= "company".pluralize(breakdown[:never_run]) %> never scored — run the agent to include them</span>
+            </div>
+          <% end %>
+
+          <%# A stale score is a statement about the dashboard, not the company. %>
+          <% if presenter.stale_count.positive? %>
+            <% steps_shown = true %>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-history text-warning"></i>
+                <span><%= presenter.stale_count %> <%= "score".pluralize(presenter.stale_count) %> older than <%= presenter.staleness_days %> days</span>
+              </div>
+              <%= link_to "Review", scoring_dashboard_path_with(status: "stale"),
+                    class: "btn btn-sm btn-outline-warning", data: { turbo: false } %>
+            </div>
+          <% end %>
+
+          <% unless steps_shown %>
+            <div class="d-flex align-items-center gap-2 text-success">
+              <i class="ti ti-circle-check"></i>
+              <span>Every portfolio company is scored and on track.</span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body d-flex align-items-center justify-content-between">
+        <div>
+          <small class="text-muted">
+            <i class="ti ti-sparkles"></i>
+            AI-generated investment scores
+          </small>
+          <% if presenter.last_run_at %>
+            <br>
+            <small class="text-muted">
+              Last run: <%= l(presenter.last_run_at, format: :abbr_date_time) %>
+            </small>
+          <% end %>
+          <br>
+          <%= link_to support_agent_path(support_agent, tab: "scoring_reports"),
+                class: "small text-decoration-none", data: { turbo: false } do %>
+            View full run history <i class="ti ti-arrow-right"></i>
+          <% end %>
+        </div>
+        <span class="badge bg-<%= support_agent.enabled? ? 'success' : 'secondary' %>-subtle text-<%= support_agent.enabled? ? 'success' : 'secondary' %>">
+          <i class="ti ti-point-filled"></i> <%= support_agent.enabled? ? "Active" : "Disabled" %>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

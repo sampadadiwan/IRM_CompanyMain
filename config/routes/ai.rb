@@ -55,6 +55,11 @@ resource :portfolio_company_dashboard, only: [:show], controller: "portfolio_com
   post :run_validation
 end
 
+# Portfolio Scoring Dashboard — buckets portfolio companies by grade tier
+resource :portfolio_scoring_dashboard, only: [:show], controller: "portfolio_scoring_dashboard" do
+  post :run_scoring
+end
+
 resources :ai_checks do
   post 'run_checks', on: :collection
   get 'run_checks', on: :collection

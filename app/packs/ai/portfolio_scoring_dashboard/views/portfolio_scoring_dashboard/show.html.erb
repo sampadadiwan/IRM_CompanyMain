@@ -1,0 +1,66 @@
+<%# Portfolio Scoring Dashboard — buckets portfolio companies into grade tiers
+    from PortfolioScoringAgent output. Companion to the Portfolio Company
+    Dashboard; same row structure so the two agent dashboards read alike. %>
+<%= render FormCard.new(title: "Portfolio Scoring Dashboard") do %>
+  <div class="scoring-dashboard" data-controller="scoring-tooltips">
+    <%# Live batch progress while a run is in flight %>
+    <%= turbo_stream_from "batch_progress_#{@support_agent.id}" %>
+
+    <%# Configuration health — a missing or untagged skill file silently fails
+        every run for that sector, so surface it before the numbers. %>
+    <%= render "support_agents/config_issues_banner",
+               config_issues: PortfolioScoringAgent.config_issues(@support_agent) %>
+
+    <%# Row 0: the headline figure, share bar, and value needing attention %>
+    <%= render "headline", presenter: @presenter, basis: @basis, status_filter: @status_filter %>
+
+    <%# Row 1: portfolio scope toolbar + tier cards %>
+    <%= render "stats", presenter: @presenter, basis: @basis,
+                        status_filter: @status_filter, search_value: @search_value,
+                        sectors_for_select: @sectors_for_select,
+                        tags_for_select: @tags_for_select %>
+
+    <%# Row 2: grade distribution + score movement %>
+    <div class="row g-4 mb-4">
+      <div class="col-md-7">
+        <%= render "distribution", presenter: @presenter %>
+      </div>
+      <div class="col-md-5">
+        <%= render "movement", presenter: @presenter, support_agent: @support_agent,
+                               status_filter: @status_filter,
+                               portfolio_companies: @portfolio_companies,
+                               sectors_for_select: @sectors_for_select,
+                               tags_for_select: @tags_for_select %>
+      </div>
+    </div>
+
+    <%# Row 2b: portfolio-level findings drawn from the same reports %>
+    <%= render "insights", presenter: @presenter %>
+
+    <%# Row 3: filtered company table %>
+    <div class="mb-4">
+      <%= render "table", presenter: @presenter,
+                          support_agent: @support_agent,
+                          scoring_reports: @paginated_reports,
+                          pagy: @pagy,
+                          basis: @basis,
+                          status_filter: @status_filter,
+                          search_value: @search_value %>
+    </div>
+
+    <%# Footer: recommended next steps. Takes the basis so its wording follows
+        the count/value toggle like the rest of the page. %>
+    <%= render "footer", presenter: @presenter, support_agent: @support_agent, basis: @basis %>
+  </div>
+<% end %>
+
+<%# Run-scoring modal sits outside the FormCard so Bootstrap's backdrop is not
+    nested inside the card's own stimulus-controlled wrapper. %>
+<% if policy(@support_agent).run? %>
+  <%= render "run_modal", support_agent: @support_agent,
+                          presenter: @presenter,
+                          portfolio_companies: @portfolio_companies,
+                          total_portfolio_companies: @total_portfolio_companies,
+                          sectors_for_select: @sectors_for_select,
+                          tags_for_select: @tags_for_select %>
+<% end %>
