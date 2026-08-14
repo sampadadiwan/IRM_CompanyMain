@@ -239,11 +239,15 @@ puts "#{scorable.size} scorable companies (#{no_sector_count} have no sector and
 
 companies = scorable.shuffle(random: rng)
 
-# Reserve a slice for the states that are not a successful score, so the
-# dashboard's Not Scored card and its breakdown all have something to show.
-failed_companies = companies.first(2)
-never_run_companies = companies[2, 6] || []
-scored_companies = companies[8..] || []
+# Reserve a slice that is deliberately left unscored, so the dashboard's
+# Not Scored card has something to show.
+#
+# No failed runs are seeded. A fabricated error is indistinguishable from a real
+# one on the dashboard, and a reviewer will (rightly) go looking for the cause of
+# something that never happened. Demo data shows the healthy states only; real
+# failures come from real runs.
+never_run_companies = companies.first(6)
+scored_companies = companies[6..] || []
 
 # Target distribution across the scored companies — weighted toward the middle
 # tiers, the way a real portfolio sits.
@@ -338,36 +342,6 @@ scored_companies.each_with_index do |investor, index|
 end
 
 # ---------------------------------------------------------------------------
-# Failed runs — the two error paths a real run hits, written in the same shape
-# store_score uses on failure.
-# ---------------------------------------------------------------------------
-failure_messages = [
-  "No skill file configured for sector: %<sector>s. Configuration problems: " \
-  "No skill file uploaded for '%<sector>s Scoring Skill'. Upload it on the agent edit page.",
-  "Score JSON missing required keys: dimensions"
-]
-
-failed_companies.each_with_index do |investor, index|
-  failed_at = now - rng.rand(2..15).days
-  message = format(failure_messages[index % failure_messages.size], sector: investor.sector)
-
-  create_report!(
-    investor: investor,
-    support_agent: support_agent,
-    status: :failed,
-    created_at: failed_at,
-    json_fields: {
-      "error" => message,
-      "sector" => investor.sector,
-      "final_status" => "failed",
-      "run_at" => failed_at.iso8601,
-      "completed_at" => failed_at.iso8601,
-      "seeded" => true
-    }
-  )
-end
-
-# ---------------------------------------------------------------------------
 # Report back using the presenter itself, so the summary printed here is exactly
 # what the dashboard will render.
 # ---------------------------------------------------------------------------
@@ -382,7 +356,7 @@ reports = SupportAgentReport
 presenter = PortfolioScoringPresenter.new(reports, support_agent)
 
 puts
-puts "Created #{created_scored} latest score(s), #{created_previous} previous score(s), #{failed_companies.size} failed, #{never_run_companies.size} left never-run"
+puts "Created #{created_scored} latest score(s), #{created_previous} previous score(s), #{never_run_companies.size} left never-run"
 puts
 puts "Dashboard will show:"
 PortfolioScoringPresenter::TIERS.each do |tier|
