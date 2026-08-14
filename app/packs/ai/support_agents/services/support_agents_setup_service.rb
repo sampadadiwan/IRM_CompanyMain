@@ -340,6 +340,18 @@ class SupportAgentsSetupService
           "kpi_frequency"            => "All",
           "docs_from_last_n_reports" => 3,
           "document_name_filter"     => ""
+        },
+        # Bundled rubrics, uploaded automatically on first setup. Without these
+        # the agent's config_issues check reports "No skill file uploaded" and
+        # every run fails, because skill_for_sector finds no document to read.
+        #
+        # Keys are FormCustomField names; paths are relative to Rails.root and
+        # skipped silently if absent. They are .txt rather than the .md sources
+        # under docs/ai/skills because FileUploader's MIME allowlist has no
+        # text/markdown entry.
+        skill_files: {
+          "generic_skill_file"    => "public/sample_uploads/portfolio_scoring_generic_skill.txt",
+          "beauty_skincare_skill" => "public/sample_uploads/portfolio_scoring_beauty_skincare_skill.txt"
         }
         # No schedule — triggered on-demand or via the agent UI
       },

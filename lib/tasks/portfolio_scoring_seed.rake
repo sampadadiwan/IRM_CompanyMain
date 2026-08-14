@@ -12,12 +12,14 @@
 #
 # @see db/seeds/portfolio_scoring_reports.rb
 namespace :portfolio_scoring do
-  SEED_SCRIPT = Rails.root.join("db/seeds/portfolio_scoring_reports.rb")
+  # A local rather than a constant: defining a constant inside a namespace block
+  # leaks it into Object (Lint/ConstantDefinitionInBlock).
+  seed_script = Rails.root.join("db/seeds/portfolio_scoring_reports.rb")
 
   desc "Seed fake portfolio scoring reports for a demo of the scoring dashboard"
   task :seed, [:entity_id] => :environment do |_t, args|
     ENV["ENTITY_ID"] = (args[:entity_id] || 157).to_s
-    load SEED_SCRIPT
+    load seed_script
   end
 
   desc "Remove only the seeded scoring reports for an entity (leaves real agent output)"
