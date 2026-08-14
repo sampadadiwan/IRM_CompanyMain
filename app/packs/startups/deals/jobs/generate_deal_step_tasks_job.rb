@@ -24,20 +24,21 @@ class GenerateDealStepTasksJob < ApplicationJob
       # and remove any blank segments or surrounding whitespace
       task_titles = target_activity.tasks_csv.split(/[,\n]/).map(&:strip).compact_blank.uniq
 
-      # We iterate through each task title and create a Task record if it doesn't already exist
-      task_titles.each do |title|
-        # Deduplication: Check if a task with the same title already exists for this DealInvestor
-        # This prevents duplicate tasks if a deal is moved back and forth through steps.
-        existing_task = Task.find_by(
-          owner: deal_investor,
-          details: title
-        )
+      # Deduplication: skip the titles that this DealInvestor already has a task for, so moving a deal
+      # back and forth through steps doesn't pile up copies. Task#details is an ActionText
+      # attribute, so the title lives in action_text_rich_texts and the tasks.details column
+      # stays NULL — the comparison has to be against the rich text body, not the column.
+      existing_titles = deal_investor.tasks.includes(:rich_text_details)
+                                     .filter_map { |task| task.rich_text_details&.body&.to_plain_text&.strip }
+                                     .to_set
 
-        next if existing_task.present?
+      new_titles = task_titles.reject { |title| existing_titles.include?(title) }
+      return if new_titles.empty?
 
-        # Find a fallback user if user_id is nil
-        effective_user_id = user_id || deal_investor.entity.employees.first&.id
+      # Find a fallback user if user_id is nil
+      effective_user_id = user_id || deal_investor.entity.employees.first&.id
 
+      new_titles.each do |title|
         # Create the Task
         Task.create!(
           entity_id: deal_investor.entity_id,

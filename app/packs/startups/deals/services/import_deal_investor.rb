@@ -35,11 +35,16 @@ class ImportDealInvestor < ImportUtil
     process_deal_steps(import_upload, deal_steps_sheet)    if deal_steps_sheet
     process_notes(import_upload, notes_sheet)              if notes_sheet
 
+    # After the Deal Steps sheet, so the step each investor lands on reflects what that sheet
+    # marked complete rather than always being the first one.
+    assign_current_steps(import_upload.user_id)
+
     # Once, after everything is uploaded — not per note. Imported notes arrive in
     # arbitrary order and are can be backdated, so the incremental "only if larger"
     # rule would settle on whichever row happened to come last instead of the true
     # maximum "On" date.
     recompute_note_owners_last_interaction
+    broadcast_deal_steps_created(import_upload.owner)
 
     import_upload.save!
     true
@@ -53,6 +58,45 @@ class ImportDealInvestor < ImportUtil
     DealInvestor.where(id: @note_owner_ids.to_a).find_each(&:recompute_last_interaction_date!)
   end
 
+  # An upload can arrive with some steps already done, so the investor's current step — and the
+  # tasks raised for it — must be decided from the statuses the Deal Steps sheet left behind. A
+  # sheet reporting 3 of 8 steps complete lands the investor on step 4, with step 4's tasks.
+  # Only the rows this import created move; investors already in the deal keep their own step.
+  def assign_current_steps(user_id)
+    return if @imported_deal_investor_ids.blank?
+
+    DealInvestor.where(id: @imported_deal_investor_ids.to_a).find_each do |deal_investor|
+      assign_current_step(deal_investor, user_id)
+    rescue StandardError => e
+      # One investor's step must not take the whole upload down: every row is already saved by
+      # this point and ImportUploadJob does not retry.
+      Rails.logger.error "Current step assignment failed for '#{deal_investor.investor_name}': #{e.message}"
+    end
+  end
+
+  # The import already runs inside ImportUploadJob, so the step's tasks are generated inline: they
+  # are in place before the "Import complete" notification. set_deal_investor_activity falls back
+  # to the queue if that fails, so one bad row cannot take the rest of the import with it.
+  def assign_current_step(deal_investor, user_id)
+    if deal_investor.deal_activities.exists?(status: "incomplete")
+      deal_investor.set_deal_investor_activity(user_id, synchronous: true)
+    else
+      # Every step arrived complete or skipped: park the investor on the last one, the way the
+      # UI leaves it when the final step is completed. Nothing is left to raise tasks for.
+      last_step = deal_investor.deal_activities.last
+      deal_investor.update_column(:deal_activity_id, last_step.template_id) if last_step&.template_id
+    end
+  end
+
+  # GenerateDealActivitiesJob normally announces this per investor, but it is skipped during
+  # import, so tell the open deal screens once at the end instead of once per row.
+  def broadcast_deal_steps_created(deal)
+    return if @imported_deal_investor_ids.blank?
+
+    deal.broadcast_message("Deal steps were created, please refresh your page.")
+    deal.kanban_board.presence&.broadcast_board_event
+  end
+
   # -----------------------------------------------------------------------
   # Sheet 1 — Deal Investors
   # -----------------------------------------------------------------------
@@ -64,6 +108,9 @@ class ImportDealInvestor < ImportUtil
     # Columns not in STANDARD_FIELD_MAP go to json_fields
     custom_headers = headers - STANDARD_FIELD_MAP.keys
     ctx[:custom_field_headers] = custom_headers
+
+    # Collected so assign_current_steps can settle their current step after the Deal Steps sheet
+    @imported_deal_investor_ids = Set.new
 
     # Build results xlsx so failures can be inspected by the user
     package = Axlsx::Package.new do |p|
@@ -133,10 +180,17 @@ class ImportDealInvestor < ImportUtil
       end
     end
 
+    # The activities are created inline below rather than by DealInvestor's after_create_commit
+    # job: the Deal Steps sheet needs them to exist by the time it runs, and letting both paths
+    # run would enqueue the step tasks twice.
+    deal_investor.skip_activity_generation = true
     deal_investor.save!
 
-    # Create DealActivity records from templates only for brand-new investors
-    create_deal_activities(deal, deal_investor, entity_id, import_upload.user_id) if deal_investor.previously_new_record?
+    # Same code path the UI uses, so the activities carry the template's tasks_csv, by_date and
+    # notification flags. Which step the investor lands on is settled in assign_current_steps,
+    # once the Deal Steps sheet has had its say.
+    deal_investor.create_activities
+    @imported_deal_investor_ids << deal_investor.id
 
     import_upload.processed_row_count += 1
     result_row << "Success"
@@ -149,36 +203,6 @@ class ImportDealInvestor < ImportUtil
   # helper method to get allowed statuses for a deal, defaulting to DealInvestor::STATUS if not set
   def allowed_statuses_for(deal)
     deal.deal_investor_status.presence || DealInvestor::STATUS
-  end
-
-  def create_deal_activities(deal, deal_investor, entity_id, user_id = nil)
-    DealActivity.templates(deal).each do |template|
-      activity = DealActivity.where(
-        deal_id: deal.id,
-        deal_investor_id: deal_investor.id,
-        template_id: template.id
-      ).first_or_initialize
-
-      next unless activity.new_record?
-
-      activity.assign_attributes(
-        entity_id:,
-        title: template.title,
-        status: "incomplete",
-        days: template.days || 0,
-        sequence: template.sequence,
-        template_id: template.id
-      )
-      activity.save!
-    end
-
-    first_step = deal_investor.deal_activities.order(:sequence).first
-    return unless first_step&.template_id
-
-    deal_investor.update_column(:deal_activity_id, first_step.template_id)
-
-    # Genrate tasks for the first step asynchronously, passing the user_id for tracking who performed the action
-    GenerateDealStepTasksJob.perform_later(deal_investor.id, user_id, first_step.id)
   end
 
   # -----------------------------------------------------------------------

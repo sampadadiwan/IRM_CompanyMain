@@ -232,6 +232,35 @@ Then("the deal investor should have deal activities created") do
   expect(di.deal_activities.count).to be > 0
 end
 
+When("the step tasks job runs again for the imported deal investor") do
+  deal_investor = @deal.deal_investors.last
+  first_activity = deal_investor.deal_activities.order(:sequence).first
+  GenerateDealStepTasksJob.perform_now(deal_investor.id, @user&.id, first_activity.id)
+end
+
+Then("the imported deal investor should have one task each for {string}") do |titles_csv|
+  deal_investor = @deal.deal_investors.last
+  details = deal_investor.tasks.includes(:rich_text_details).map { |task| task.details.to_plain_text.strip }
+
+  titles_csv.split(",").map(&:strip).each do |title|
+    expect(details.count(title)).to eq(1)
+  end
+end
+
+Then("the imported deal investor should have no task for {string}") do |title|
+  deal_investor = @deal.deal_investors.last
+  details = deal_investor.tasks.includes(:rich_text_details).map { |task| task.details.to_plain_text.strip }
+
+  expect(details).not_to include(title)
+end
+
+Then("the imported deal investor should be on the step {string}") do |step_title|
+  deal_investor = @deal.deal_investors.last.reload
+  current_step = deal_investor.deal_activities.find_by(template_id: deal_investor.deal_activity_id)
+
+  expect(current_step&.title).to eq(step_title)
+end
+
 Then("the deal investor activities should have updated statuses") do
   di = DealInvestor.where(deal_id: @deal.id).last
   # @first_step is the title set in the When step (first template title)

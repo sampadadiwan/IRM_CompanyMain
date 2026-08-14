@@ -30,6 +30,10 @@ class DealInvestor < ApplicationRecord
   # Non-persisted actor used to attribute initial step task generation.
   attr_accessor :created_by_user_id
 
+  # Set by importers that create the activities inline, so this record's after_create_commit
+  # job doesn't race with them and generate the step tasks a second time.
+  attr_accessor :skip_activity_generation
+
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :deal, prefix: :deal
 
@@ -167,6 +171,9 @@ class DealInvestor < ApplicationRecord
   after_create_commit :create_activities_later
 
   def create_activities_later
+    # Duting import we generate Activities inline so we skip here
+    return if skip_activity_generation
+
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor", created_by_user_id)
   end
 
@@ -247,7 +254,7 @@ class DealInvestor < ApplicationRecord
     end
   end
 
-  def set_deal_investor_activity(user_id = nil)
+  def set_deal_investor_activity(user_id = nil, synchronous: false)
     # After activities are created, set the deal_investor to the first incomplete activity (lowest sequence).
     # Only set it if not already pointing to a valid activity.
     return if deal_activity_id.present? && deal_activities.exists?(template_id: deal_activity_id)
@@ -259,7 +266,22 @@ class DealInvestor < ApplicationRecord
     update_column(:deal_activity_id, first_activity.template_id)
 
     # Ensure tasks for the initial step are generated immediately after assigning current step.
-    GenerateDealStepTasksJob.perform_later(id, user_id, first_activity.id)
+    # Callers already running in a background job pass synchronous: true, so the tasks are in
+    # place by the time that job reports itself done; web requests keep the async hop.
+    return GenerateDealStepTasksJob.perform_later(id, user_id, first_activity.id) unless synchronous
+
+    generate_step_tasks_inline(user_id, first_activity)
+  end
+
+  # The current step is written above before the tasks are generated, so a raise here cannot be
+  # left to the caller's retry: the guard at the top of set_deal_investor_activity would see a
+  # valid current step and return before getting this far. Hand the work to the queue instead,
+  # which retries on its own.
+  def generate_step_tasks_inline(user_id, activity)
+    GenerateDealStepTasksJob.perform_now(id, user_id, activity.id)
+  rescue StandardError => e
+    Rails.logger.error "Inline step task generation failed for deal investor #{id}: #{e.message}"
+    GenerateDealStepTasksJob.perform_later(id, user_id, activity.id)
   end
 
   def messages_viewed(current_user)
