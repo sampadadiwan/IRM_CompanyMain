@@ -32,6 +32,8 @@ class DocGenJob < ApplicationJob
     model.documents.approved.exists?(["name like ?", "%#{doc_name}%"])
   end
 
+  # Subclasses override this freely. Whitespace normalization is deliberately NOT done here —
+  # see the .squish at the single call site in #generate, which covers every override.
   def generate_doc_name(model, template, start_date, end_date)
     if start_date && end_date
       "#{template.name} #{start_date} to #{end_date} - #{model}"
@@ -79,7 +81,16 @@ class DocGenJob < ApplicationJob
       templates_to_use.each_with_index do |template, tidx|
         # Validate the model before generating the document
         valid, msg = validate(model)
-        doc_name = generate_doc_name(model, template, Time.zone.parse(start_date.to_s).strftime("%d %B,%Y"), Time.zone.parse(end_date.to_s).strftime("%d %B,%Y"))
+        # Squished HERE, at the single call site, rather than inside generate_doc_name: five
+        # subclasses override that method (CapitalCommitmentDocJob, CapitalRemittanceDocJob,
+        # CapitalDistributionPaymentDocJob, KycDocGenJob, PortfolioReportDocGenJob) and a sixth
+        # would silently miss it. The guards below match this string against stored names with
+        # LIKE, and DocumentGeneratorBase#upload stores a name that Document's `normalizes :name`
+        # has squished — so any stray whitespace here (a template named "SOA ", or an investor
+        # name imported as "Acme  Capital", which is NOT normalized) would make the guards
+        # compare an unsquished string against a squished one, never match, and regenerate on
+        # every run.
+        doc_name = generate_doc_name(model, template, Time.zone.parse(start_date.to_s).strftime("%d %B,%Y"), Time.zone.parse(end_date.to_s).strftime("%d %B,%Y")).squish
         signed_document_already_exists = signed_document_already_exists?(model, doc_name)
         approved_document_already_exists = approved_document_already_exists?(model, doc_name)
 

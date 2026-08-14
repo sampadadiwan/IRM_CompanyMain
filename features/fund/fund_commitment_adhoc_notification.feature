@@ -197,6 +197,72 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has 0 documents attached
 
+  # Regression, first half: a document saved with stray whitespace in its name — which is what a
+  # template named "SOA " produced, since DocumentGeneratorBase#upload interpolates the template
+  # name — is stored squished by Document's `normalizes :name`. So a single-spaced attachment_names
+  # entry finds it. HTML collapses the run, so before this the document looked like an exact match
+  # in the UI while a literal LIKE missed it entirely.
+  Scenario: A document saved with a doubled space is stored squished and still attaches
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "SOA  01 April,2024 to 30 June,2024 - Demo Investor" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "\"SOA 01 April,2024 to 30 June,2024 - *\""
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 1 documents attached
+
+  # Regression, second half: the same tolerance from the other direction — the admin types or
+  # pastes attachment_names with a doubled space against a clean document name. Deliberately a
+  # WILDCARD entry: the exact-match branch goes through where(name:), which Rails' `normalizes`
+  # already squishes, so only the raw-SQL "name like ?" branch actually exercises the squish in
+  # documents_matching_attachment_name.
+  Scenario: A wildcard attachment_names entry typed with extra spaces still matches
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement  of  Acc*"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 1 documents attached
+
+  # Same on the attachment_mandatory path, where a miss is far more costly: it suppresses the
+  # whole email rather than just dropping the attachment.
+  Scenario: Attachment Mandatory sends when the entry differs only by extra whitespace
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement  of  Account" and attachment_mandatory "true"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 1 documents attached
+
+  # Squishing collapses whitespace RUNS; it must not drop words. Without a '*' the entry is still
+  # an exact match, so a missing word means no attachment rather than a loose partial match.
+  Scenario: An exact attachment name does not match a document with extra words in it
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement Account"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 0 documents attached
+
   Scenario: Preview shows the document that would be attached via attachment_names
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"

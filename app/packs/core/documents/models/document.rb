@@ -66,7 +66,13 @@ class Document < ApplicationRecord
 
   validates :name, presence: true
   validates :file, presence: true, on: :create
-  normalizes :name, with: ->(name) { name.strip }
+  # squish, not strip: a template whose own name carries a trailing space (e.g. "SOA ") makes
+  # every document generated from it inherit a DOUBLED space, because DocumentGeneratorBase#upload
+  # interpolates "#{doc_template.name} #{start_date} to ...". strip only cleaned the ends, so that
+  # internal run survived — and HTML collapses it, making the name look correct everywhere in the
+  # UI while exact/LIKE matching (CustomNotification#attachment_names) silently missed it.
+  # Applies on assignment and save, so existing rows are untouched until they're next saved.
+  normalizes :name, with: ->(name) { name.squish }
   validates :owner_tag, length: { maximum: 40 }
   validates :tag_list, length: { maximum: 120 }
 

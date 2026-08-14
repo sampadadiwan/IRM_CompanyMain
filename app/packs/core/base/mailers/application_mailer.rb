@@ -162,6 +162,9 @@ class ApplicationMailer < ActionMailer::Base
   #   pattern:      plain text -> exact match   |  contains '*' -> wildcard/substring match
   #   multiplicity: latest_doc_only=true -> newest match only  |  false -> every match
   #
+  # The entry is squished before matching, so a doubled space typed into attachment_names still
+  # matches - see documents_matching_attachment_name.
+  #
   # Examples (attachment_names entry -> latest_doc_only -> result):
   #   "Statement of Account"    -> true  -> exact match,     newest "Statement of Account" only
   #   "*Statement of Account*"  -> true  -> substring match, newest match only (old fuzzy_match=true behavior)
@@ -204,15 +207,29 @@ class ApplicationMailer < ActionMailer::Base
   # shared by attach_custom_notification_documents and missing_mandatory_attachment_names so
   # both use the exact same wildcard-vs-exact resolution rule.
   #
+  # The PATTERN is squished before use; the stored name is not touched. It doesn't need to be:
+  # Document normalizes :name with squish, and migration 20260814100000 backfilled every row
+  # written before that, so document names in the database carry no stray whitespace. Squishing
+  # the pattern is what covers an attachment_names entry typed or pasted with a doubled space.
+  #
+  # This deliberately leaves the comparison itself in SQL rather than doing it in Ruby.
+  # documents.name is utf8mb4_0900_ai_ci: MySQL treats "Konig" and "König" as equal and gives
+  # zero weight to formatting characters, so "- Ishan" matches "- <U+2060>Ishan" — and real
+  # document names here contain both accents and zero-width joiners. A Ruby comparison
+  # (casecmp?/Regexp) is case-insensitive only, so it would silently stop matching those rows.
+  # Keeping the match in the database preserves that behavior exactly, and keeps the relation
+  # lazy so latest_doc_only's .limit(1) still becomes a SQL LIMIT instead of loading every match.
+  #
   # exclude_generated_unapproved drops a generated-but-unapproved document from the match
   # entirely (regardless of attachment_mandatory) - we never send those. That also means an
   # attachment_names entry whose only match is generated-but-unapproved is treated as absent,
   # so it can trigger missing_mandatory_attachment_names just like a genuinely missing document.
   def documents_matching_attachment_name(name)
-    documents = if name.include?('*')
-                  custom_notification_documents_owner.documents.where("name like ? ESCAPE ?", wildcard_to_like(name), '\\')
+    pattern = name.to_s.squish
+    documents = if pattern.include?('*')
+                  custom_notification_documents_owner.documents.where("name like ? ESCAPE ?", wildcard_to_like(pattern), '\\')
                 else
-                  custom_notification_documents_owner.documents.where(name: name)
+                  custom_notification_documents_owner.documents.where(name: pattern)
                 end
     documents.exclude_generated_unapproved.order(created_at: :desc)
   end
