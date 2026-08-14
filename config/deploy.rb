@@ -14,6 +14,10 @@ set :application, "IRM"
 set :repo_url, "git@github.com:ausangshukla/IRM.git"
 set :branch, ENV["branch"] || 'main'
 set :whenever_roles, :all
+# Pass env_variant (in/us) through to schedule.rb, alongside whenever's own
+# `environment` var, so region-specific timing (e.g. IST vs US local time)
+# can be computed there. Server clocks are always UTC regardless of region.
+set :whenever_variables, -> { "'environment=#{fetch(:whenever_environment)}&env_variant=#{fetch(:env_variant)}'" }
 
 set :deploy_to, "/home/ubuntu/IRM"
 set :ssh_options, forward_agent: true

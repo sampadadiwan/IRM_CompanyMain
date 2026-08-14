@@ -17,6 +17,21 @@
 ## commands to a running Monit daemon. See the Monit Wiki if you want to
 ## enable SSL for the HTTP interface.
 #
+# systemd starts monit as `monit -I` (foreground, no -d flag), which requires
+# the poll interval to come from this file. Without it, monit exits
+# immediately on every start (and doesn't survive a reboot) with:
+#   "Poll time is invalid or not defined ... use the -d option"
+set daemon 60
+
+# Default id/state files live under /root/, but the systemd unit sandboxes
+# this process with ProtectHome=yes + ProtectSystem=strict, and only
+# whitelists /run/, /var/lib/monit/, /var/log/ as writable (ReadWritePaths).
+# /root is invisible to it, so monit exits immediately under systemd (while
+# working fine run manually via sudo, which has no such sandbox) unless these
+# point inside the whitelisted directory.
+set idfile /var/lib/monit/id
+set statefile /var/lib/monit/state
+
 set httpd port 2812 and
     use address localhost  # only accept connection from localhost (drop if you use M/Monit)
     allow localhost        # allow localhost to connect to the server and

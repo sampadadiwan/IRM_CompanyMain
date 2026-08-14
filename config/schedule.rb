@@ -45,3 +45,15 @@ end
 every 1.hour, roles: [:primary] do
   runner "ReportBuilderSchedulerJob.perform_later"
 end
+
+# Force-restart Sidekiq daily at ~7:20am local time. Works around a build-up
+# (stuck/leaked workers) that a plain `monit restart` alone doesn't clear.
+# Server clocks are UTC regardless of region:
+#   in -> IST is UTC+5:30 year-round -> 7:20am IST = 1:50am UTC
+#   us -> US Eastern has DST the server clock can't track; 11:50am UTC splits
+#         the difference between EDT (7:50am) and EST (6:50am) year-round
+sidekiq_restart_at = env_variant == 'us' ? '11:50 am' : '1:50 am'
+
+every 1.day, at: sidekiq_restart_at, roles: [:app] do
+  command "(sudo /usr/bin/monit unmonitor sidekiq_IRM_#{environment}; pkill -9 -f '^sidekiq [0-9]'; sleep 2; cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 ~/.rvm/bin/rvm default do bundle exec sidekiq -e #{environment}     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 & sleep 2; sudo /usr/bin/monit monitor sidekiq_IRM_#{environment}) >> /home/ubuntu/sidekiq_restart.log 2>&1"
+end
