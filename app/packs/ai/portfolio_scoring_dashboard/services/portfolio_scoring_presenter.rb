@@ -762,19 +762,102 @@ class PortfolioScoringPresenter
     end
   end
 
-  # Entity-currency FMV per portfolio company, summed in SQL.
-  # Falls back to the invested amount when FMV has not been marked up yet, so a
-  # company with no valuation still carries weight in the value view.
-  # COALESCE/NULLIF are portable across MySQL (prod) and SQLite (test).
+  # Entity-currency FMV per portfolio company.
   #
-  # @return [Hash{Integer => Integer}] investor id => cents
+  # Two corrections over a naive SUM, both of which produced real overstatement:
+  #
+  # 1. BUY ROWS ONLY. PortfolioInvestment holds a row per buy AND per sell, and
+  #    PortfolioComputations#compute_fmv sets `fmv = buy? ? net_quantity * price
+  #    : 0`. So a sell row is always zero, and a fully-exited buy row is zero too
+  #    because its net quantity has gone to zero. Summing
+  #    COALESCE(NULLIF(fmv, 0), amount) across all rows therefore fell back to
+  #    the *invested amount* on both — counting an exited position's original
+  #    cost and its sale proceeds as though the company were still held.
+  #
+  # 2. CURRENCY. entity_currency_fmv_cents is only maintained by
+  #    TrackingCurrencyJob, which runs for entities that have tracking currency
+  #    enabled. Where it is missing, the fund-currency figure is converted here
+  #    instead of being silently read as zero — this book holds both INR and USD
+  #    funds, so an unconverted sum would be meaningless.
+  #
+  # The fallback to net invested (buys minus sells, floored at zero) now applies
+  # per COMPANY and only when it has no valuation at all, rather than per row.
+  #
+  # @return [Hash{Integer => Integer}] investor id => cents in entity currency
   def fmv_cents_by_company
-    @fmv_cents_by_company ||= PortfolioInvestment
-                              .where(entity_id: support_agent.entity_id)
-                              .where(portfolio_company_id: portfolio_companies.pluck(:id))
-                              .group(:portfolio_company_id)
-                              .sum(Arel.sql("COALESCE(NULLIF(entity_currency_fmv_cents, 0), entity_currency_amount_cents, 0)"))
-                              .transform_values(&:to_i)
+    @fmv_cents_by_company ||= begin
+      ids = portfolio_companies.pluck(:id)
+
+      if ids.empty?
+        {}
+      else
+        rows = PortfolioInvestment
+               .where(entity_id: support_agent.entity_id, portfolio_company_id: ids)
+               .pluck(:portfolio_company_id, :fund_id, :quantity,
+                      :entity_currency_fmv_cents, :fmv_cents,
+                      :entity_currency_amount_cents, :amount_cents)
+
+        currencies = fund_currencies(rows.pluck(1).uniq)
+        fmv = Hash.new(0)
+        net_invested = Hash.new(0)
+
+        rows.each do |company_id, fund_id, quantity, ec_fmv, fund_fmv, ec_amount, fund_amount|
+          currency = currencies[fund_id]
+          buy = quantity.to_f.positive?
+
+          # FMV exists only on buy rows; sells are zero by construction.
+          fmv[company_id] += entity_cents(ec_fmv, fund_fmv, currency) if buy
+
+          # Net invested: buys add, sells subtract.
+          net_invested[company_id] += (buy ? 1 : -1) * entity_cents(ec_amount, fund_amount, currency)
+        end
+
+        ids.index_with do |id|
+          value = fmv[id]
+          value = [net_invested[id], 0].max if value.zero?
+          value.round
+        end
+      end
+    end
+  end
+
+  # @param fund_ids [Array<Integer>]
+  # @return [Hash{Integer => String}] fund id => ISO currency code
+  def fund_currencies(fund_ids)
+    @fund_currencies ||= Fund.where(id: fund_ids).pluck(:id, :currency).to_h
+  end
+
+  # Prefers the maintained entity-currency column, converts the fund-currency
+  # figure when it is absent, and returns zero rather than a wrong number when
+  # no exchange rate exists.
+  #
+  # @return [Float] cents in entity currency
+  def entity_cents(entity_value, fund_value, fund_currency)
+    return entity_value.to_f unless entity_value.to_f.zero?
+    return 0.0 if fund_value.to_f.zero?
+    return fund_value.to_f if fund_currency.blank? || fund_currency == entity_currency
+
+    rate = exchange_rate_to_entity(fund_currency)
+    return fund_value.to_f * rate if rate
+
+    Rails.logger.warn do
+      "[PortfolioScoringPresenter] No #{fund_currency}->#{entity_currency} rate for " + "entity #{support_agent.entity_id}; excluding #{fund_value} from the value view."
+    end
+    0.0
+  end
+
+  # Latest available rate into the entity's currency, memoised per source currency.
+  #
+  # @param from [String] ISO code
+  # @return [BigDecimal, nil]
+  def exchange_rate_to_entity(from)
+    @exchange_rate_to_entity ||= {}
+    return @exchange_rate_to_entity[from] if @exchange_rate_to_entity.key?(from)
+
+    @exchange_rate_to_entity[from] = ExchangeRate
+                                     .where(entity_id: support_agent.entity_id, from: from, to: entity_currency)
+                                     .order(as_of: :asc)
+                                     .last&.rate
   end
 
   # @return [String] ISO code used to format the value view

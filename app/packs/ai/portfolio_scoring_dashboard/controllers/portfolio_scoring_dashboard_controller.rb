@@ -298,7 +298,13 @@ class PortfolioScoringDashboardController < ApplicationController
     # label ("Only companies never scored (5)") and the run disagree: a company
     # scored 18 months ago, or one left with only a step-tracking row from a
     # crashed run, counted as never-run but was excluded from the run itself.
-    reported_owner_ids = scoring_reports_scope.reselect(:owner_id).distinct.pluck(:owner_id)
+    # unscope(:order) matters: the base scope orders by created_at, and MySQL
+    # rejects `SELECT DISTINCT owner_id ... ORDER BY created_at` under
+    # ONLY_FULL_GROUP_BY, which made this raise rather than return ids.
+    reported_owner_ids = scoring_reports_scope.unscope(:order)
+                                              .reselect(:owner_id)
+                                              .distinct
+                                              .pluck(:owner_id)
     portfolio_companies_scope.where.not(sector: [nil, ""])
                              .where.not(id: reported_owner_ids)
                              .pluck(:id)

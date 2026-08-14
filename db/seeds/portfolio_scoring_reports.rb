@@ -1,21 +1,27 @@
 # frozen_string_literal: true
 
-# Demo scoring reports for the Portfolio Scoring Dashboard (entity 157).
+# Demo scoring reports for the Portfolio Scoring Dashboard.
 #
 # Fabricates SupportAgentReport rows in the exact shape PortfolioScoringAgent
 # writes, so the dashboard can be reviewed without paying for real LLM runs.
 # No agent is executed and no LLM is called.
 #
 # Run with:
-#   bundle exec rails runner db/seeds/portfolio_scoring_reports_157.rb
+#   bundle exec rake portfolio_scoring:seed          # entity 157
+#   bundle exec rake portfolio_scoring:seed[123]     # any entity
+#   ENTITY_ID=123 bundle exec rails runner db/seeds/portfolio_scoring_reports.rb
 #
 # Idempotent — every row it writes is tagged json_fields["seeded"] = true and
 # deleted on the next run, so repeated runs converge on the same data set.
+# The match is on the KEY only: a MySQL json column renders `"seeded": true`
+# with a space, so a pattern pinning the value after the colon finds nothing.
 #
 # @see PortfolioScoringPresenter
 # @see PortfolioScoringAgent
 
-ENTITY_ID = 157
+# Entity to seed. Override with ENTITY_ID=123, or use the rake wrapper:
+#   bundle exec rake portfolio_scoring:seed[123]
+ENTITY_ID = Integer(ENV.fetch("ENTITY_ID", 157))
 
 support_agent = SupportAgent.find_by!(agent_type: "PortfolioScoringAgent", entity_id: ENTITY_ID)
 
@@ -28,7 +34,7 @@ rng = Random.new(157)
 # ---------------------------------------------------------------------------
 removed = SupportAgentReport
           .where(support_agent: support_agent, owner_type: "Investor")
-          .where("json_fields LIKE '%\"seeded\":true%'")
+          .where("json_fields LIKE '%\"seeded\"%'")
           .destroy_all
           .size
 puts "Removed #{removed} previously seeded scoring report(s)"
