@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'erb'
+require 'English' # $CHILD_STATUS, the readable spelling of $? that rubocop's Style/SpecialGlobalVars wants
 require 'json'
 require 'yaml'
 
@@ -33,6 +34,32 @@ namespace :gmail do
     gmail_push(build_dir)
 
     gmail_next_steps(env, config, script_id)
+  end
+
+  # `setup` pushes source, which is all a Test deployment needs — and a Test deployment
+  # installs for the script owner and nobody else. Anything a real user installs, whether
+  # from the Marketplace or an admin domain-install, runs a *versioned deployment*: a
+  # frozen snapshot with its own id. This is the task that cuts one.
+  desc "Release the add-on: build, push and cut a versioned deployment. Usage: rake gmail:release[production]"
+  task :release, [:env] do |_t, args|
+    env, config = gmail_env!(args[:env])
+
+    gmail_preflight!
+    revision = gmail_release_guard!(env, config)
+    build_dir = gmail_build(env, config)
+    script_id = gmail_script_id(env, config, build_dir)
+    gmail_push(build_dir)
+    deployment_id = gmail_deploy(env, build_dir, revision)
+
+    gmail_release_steps(env, config, script_id, deployment_id)
+  end
+
+  desc "List the Apps Script deployments for an environment. Usage: rake gmail:deployments[production]"
+  task :deployments, [:env] do |_t, args|
+    env, config = gmail_env!(args[:env])
+    build_dir = gmail_build(env, config)
+    gmail_script_id(env, config, build_dir)
+    abort 'clasp deployments failed.' unless system('clasp', 'deployments', chdir: build_dir)
   end
 
   desc "Print the Apps Script project URL for an environment. Usage: rake gmail:open[staging]"
@@ -145,6 +172,87 @@ def gmail_script_id(env, config, build_dir)
   script_id
 end
 
+# Refuses to cut a release that cannot be traced back to a commit, and makes a production
+# release an explicit act rather than a typo away.
+#
+# The whole point of building from config/gmail_addins.yml was that what runs can be
+# verified against what is committed. A release from a dirty or unpushed tree breaks that
+# guarantee permanently: the deployment is frozen and there is no way to recover which
+# source produced it.
+#
+# @return [String] the revision the release is being cut from
+def gmail_release_guard!(env, config)
+  dirty = `git status --porcelain`.strip
+  unless dirty.empty?
+    abort <<~MSG
+      Working tree is not clean, so this release could not be traced back to a commit.
+      Commit or stash first:
+
+      #{dirty.lines.first(10).map { |l| "  #{l}" }.join}
+    MSG
+  end
+
+  branch = `git rev-parse --abbrev-ref HEAD`.strip
+  local = `git rev-parse HEAD`.strip
+  remote = `git rev-parse origin/#{branch} 2>/dev/null`.strip
+  unpushed = "HEAD is not pushed to origin/#{branch}. Push first, so the deployed version has a commit anyone can check out."
+  abort unpushed if remote.empty? || local != remote
+
+  # A release pointed at a host that is not serving the new code produces an add-on that
+  # fails on first use, and versioned deployments cannot be edited in place.
+  probe = "curl -sf -o /dev/null --max-time 20 #{config['host']}/manifests/icons/caphive-128.png"
+  unreachable = "#{config['host']} is not serving /manifests/icons/caphive-128.png — deploy the Rails app there first."
+  abort unreachable unless system(probe)
+
+  # Guarded rather than prompted: rake is a poor place for an interactive confirmation, and
+  # an env var is the same ceremony in a terminal and in CI.
+  if env.start_with?('production') && ENV['CONFIRM'] != env
+    abort <<~MSG
+      Refusing to release '#{env}' (#{config['host']}) without an explicit confirmation.
+      Re-run with:
+
+        CONFIRM=#{env} rake gmail:release[#{env}]
+    MSG
+  end
+
+  "#{branch}@#{local[0, 12]}"
+end
+
+# Cuts a versioned deployment, reusing this environment's deployment id when one is
+# already recorded.
+#
+# Reuse matters: a Marketplace listing points at one deployment id, so each release must
+# update that id rather than mint a new one. Deploying fresh every time would leave the
+# published listing frozen on the first release forever.
+#
+# @return [String] the deployment id
+def gmail_deploy(env, build_dir, revision)
+  state_path = gmail_state_path(env)
+  state = JSON.parse(File.read(state_path))
+  description = "#{env} #{revision}"
+
+  cmd = ['clasp', 'deploy', '--description', description]
+  if state['deploymentId']
+    puts "Updating deployment #{state['deploymentId']}"
+    cmd += ['--deploymentId', state['deploymentId']]
+  else
+    puts 'No deployment recorded yet — creating the first one.'
+  end
+
+  output = IO.popen(cmd, chdir: build_dir, err: %i[child out], &:read)
+  puts output
+  abort 'clasp deploy failed.' unless $CHILD_STATUS.success?
+
+  # clasp prints the deployment id as an AKfycb… token; there is no machine-readable form.
+  deployment_id = state['deploymentId'] || output[/AKfycb[A-Za-z0-9_-]+/]
+  unreadable = "Deployed, but could not read the deployment id from clasp's output. Run: rake gmail:deployments[#{env}]"
+  abort unreadable if deployment_id.nil?
+
+  state['deploymentId'] = deployment_id
+  File.write(state_path, JSON.pretty_generate(state))
+  deployment_id
+end
+
 def gmail_push(build_dir)
   # -f because the build directory is generated: there is never a local edit worth keeping,
   # and without it clasp prompts, which breaks unattended runs.
@@ -180,5 +288,40 @@ def gmail_next_steps(env, config, script_id)
     Check it reaches the server first:
 
       curl -s -o /dev/null -w "%{http_code}\\n" #{config['host']}/manifests/icons/caphive-128.png
+
+    A Test deployment installs for you only. To put this in front of real users, cut a
+    versioned deployment: rake gmail:release[#{env}]
+  MSG
+end
+
+# What is left after a release. All of it is Google Cloud console and Marketplace listing
+# work, none of which clasp can reach.
+def gmail_release_steps(env, config, script_id, deployment_id)
+  puts <<~MSG
+
+    Released '#{env}' -> #{config['host']}
+    Script:     #{script_id}
+    Deployment: #{deployment_id}
+    Project:    https://script.google.com/d/#{script_id}/edit
+
+    That deployment id is the add-on's identity to Google. Keep it: every later
+    `rake gmail:release[#{env}]` updates this same id, which is what a published listing
+    points at. It is recorded in #{gmail_state_path(env)}.
+
+    First release only — Marketplace setup, none of which clasp can do:
+
+      1. Attach a standard GCP project (Project Settings > Google Cloud Platform project).
+         Apps Script's default project cannot be listed.
+      2. In that project: enable the Google Workspace Marketplace SDK, and configure the
+         OAuth consent screen with exactly the three scopes in appsscript.json.
+      3. Marketplace SDK > App Configuration: point it at deployment #{deployment_id}.
+      4. Store Listing: icons, screenshots, a demo video showing each scope in use, and
+         privacy policy + terms URLs on a domain verified to you.
+      5. Submit for OAuth verification. gmail.addons.current.message.readonly is a
+         SENSITIVE scope, so this is a review — expect weeks. It is not RESTRICTED, so no
+         CASA security assessment is required.
+
+    Until that review passes, only the script owner and users you share the project with
+    can install this. Clients cannot.
   MSG
 end
