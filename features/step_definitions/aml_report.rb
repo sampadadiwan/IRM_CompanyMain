@@ -190,3 +190,34 @@ Given('I mock aml and click on {string}') do |string|
   click_on(string)
   sleep(1)
 end
+
+# incident 45847776 - the "View AML Reports" link builds exactly this URL. Visiting it directly
+# keeps the step usable for the cross-entity scenario, where the link is rendered for a user
+# whose policy scope excludes every report on the KYC.
+Given('I go to the AML reports page for the KYC') do
+  @kyc ||= InvestorKyc.last
+  visit(aml_reports_path(investor_kyc_id: @kyc.id))
+end
+
+# incident 45847776 - asserts on the rendered page, not on the exception. The breadcrumb name
+# is the discriminator: the Rails error page for the old NoMethodError echoes the request URL
+# and the controller source, but never the KYC's full_name.
+Then('I should see the AML reports page with no reports for the KYC') do
+  expect(page).to have_content("No AML reports to display")
+  expect(page).to have_content(@kyc.full_name)
+  expect(page).not_to have_content("NoMethodError")
+end
+
+# incident 45847776 - variant 2 of the trigger: an employee at the *investor* entity, who
+# InvestorKycPolicy#show? lets open the KYC (user.entity_id == investor.investor_entity_id)
+# but whose AmlReportPolicy::Scope (entity_id: user.entity_id) excludes the fund's reports.
+Given('I log in as the investor entity employee with aml enabled') do
+  # index? gates on the *viewing* user's entity, so AML has to be on for the investor entity too.
+  @investor_entity.entity_setting.update!(aml_enabled: true)
+  steps %(Given I log out)
+  @user = @employee_investor
+  steps %(
+    And I am at the login page
+    When I fill and submit the login page
+  )
+end
