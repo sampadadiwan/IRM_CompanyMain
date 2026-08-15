@@ -1,0 +1,127 @@
+# Configuration for the production-exception RCA watcher (bin/incident-watch).
+#
+# Secrets are NOT stored here - they come from the environment:
+#   INCIDENT_WATCH_IMAP_USER          Gmail address that receives the ERROR_EMAIL alerts
+#   INCIDENT_WATCH_IMAP_PASSWORD      Google app password (not your account password)
+#
+# The Gmail MCP path (see docs/technical/incident_rca_system.md) needs no credentials
+# here - it authenticates through the connector configured in Claude Code.
+
+# The mailbox production actually sends to (the ERROR_EMAIL env var on the app servers).
+# Recorded here for documentation only - nothing reads it. It is NOT the same as the
+# claude.ai account email, so the Gmail MCP connector must be authorized against THIS
+# account, and INCIDENT_WATCH_IMAP_USER must be set to it.
+account: thimmaiah@gmail.com
+
+# --- which emails are production exception reports --------------------------------
+mailbox: INBOX
+
+# Sender allowlist - the primary filter, and the one that actually identifies an alert.
+# ExceptionNotifier sends as SUPPORT_EMAIL_FROM, which differs by deployment region. Header
+# values arrive as '"Support" <support@caphive.com>', so these are matched as a substring of
+# the From header, case-insensitively. Pushed down to the IMAP server as an OR chain.
+#
+# An email must match BOTH this list and subject_pattern to be treated as an incident.
+# Empty this list to fall back to subject matching alone (not recommended - anyone can send
+# you a mail whose subject contains "[ERROR] production").
+from:
+  - support@caphive.com
+  - support@caphive.us
+
+# Subject matcher, applied in Ruby so it survives Gmail's tokenising of IMAP SUBJECT
+# searches. This is what separates production alerts from staging ones, since both come
+# from the same sender. Covers both notifier paths configured in this app:
+#   config/application.rb                        -> "[Error] production:(domain)funds#show ..."
+#   config/initializers/exception_notification.rb -> "[ERROR] production: (NoMethodError) ..."
+subject_pattern: '\[ERROR\]\s*production'
+
+# How far back to look on each poll. Wider than the cron interval so a missed run or a
+# delayed delivery still gets picked up - message-level dedupe makes the overlap free.
+lookback_days: 3
+
+# --- state ------------------------------------------------------------------------
+# Incident JSON + the seen-message-id ledger. Under tmp/ so it stays out of git.
+state_dir: tmp/incident_watch
+
+# --- mailbox etiquette ------------------------------------------------------------
+# Both default to false: the poller opens the mailbox read-only (IMAP EXAMINE) and leaves
+# your inbox exactly as it found it. Dedupe is local, so it stays idempotent regardless.
+mark_seen: false
+apply_label: false
+label: ClaudeRCA/processed
+
+# --- what happens when a new incident appears -------------------------------------
+dispatch:
+  enabled: true
+
+  # Branch off the pushed main so the RCA never inherits uncommitted local work.
+  base_ref: origin/main
+  branch_prefix: fix/incident-
+
+  # Each run gets its own git worktree, so an unattended job can never disturb the tree
+  # you are working in.
+  worktree_dir: .claude/worktrees
+
+  model: opus
+  timeout_seconds: 1800
+
+  # Whether a successful run should AUTOMATICALLY push the branch and open a draft PR.
+  #
+  # Off by default: the unattended run produces the RCA and the patch on a local branch and
+  # then stops. You read the RCA on the dashboard and press "Create PR" on the ones worth
+  # reviewing - so nothing reaches GitHub without a human deciding it should.
+  #
+  # Turn this on if you would rather every verified fix be published immediately.
+  #
+  # Either way the push is done by the dispatcher in Ruby, deliberately NOT by granting the
+  # unattended Claude run `git push` / `gh` in allowed_tools below: the run cannot reach the
+  # remote at all, and publishing happens only after `git log` confirms a real commit.
+  open_pull_request: false
+
+  # Safety valve: a production incident storm should not fan out into dozens of
+  # concurrent Claude runs. Remaining incidents stay "new" and dispatch on the next poll.
+  max_per_poll: 3
+
+  # --- stage 1: analyse -------------------------------------------------------------
+  # Tools the unattended ANALYSIS run may use. It writes the RCA document and nothing
+  # else, so it deliberately has no Edit: it can read the codebase and create
+  # docs/incidents/<...>.md, but it cannot change application code. The dispatcher also
+  # verifies afterwards that the commit touched only docs/incidents/.
+  analyse_allowed_tools:
+    - Read
+    - Write
+    - Grep
+    - Glob
+    - 'Bash(git status:*)'
+    - 'Bash(git diff:*)'
+    - 'Bash(git log:*)'
+    - 'Bash(git blame:*)'
+    - 'Bash(git show:*)'
+    - 'Bash(git add:*)'
+    - 'Bash(git commit:*)'
+    - 'Bash(rg:*)'
+
+  # --- stage 2: patch ---------------------------------------------------------------
+  # Tools the PATCH run may use, once you have approved the RCA. It may edit code, run the
+  # regression test, and commit inside its own worktree - nothing that reaches the network
+  # or the remote. Widen only if you know why.
+  allowed_tools:
+    - Read
+    - Edit
+    - Write
+    - Grep
+    - Glob
+    - 'Bash(git status:*)'
+    - 'Bash(git diff:*)'
+    - 'Bash(git log:*)'
+    - 'Bash(git blame:*)'
+    - 'Bash(git add:*)'
+    - 'Bash(git commit:*)'
+    - 'Bash(git show:*)'
+    - 'Bash(rg:*)'
+    - 'Bash(bundle exec rubocop:*)'
+    # The regression test runs through this wrapper, not `bundle exec cucumber` directly.
+    # Bash permissions match by command prefix, so an inline `TEST_ENV_NUMBER=... bundle
+    # exec cucumber` would be denied, and allowlisting `Bash(TEST_ENV_NUMBER=*)` would
+    # permit any command hidden behind an env prefix. The wrapper keeps the grant narrow.
+    - 'Bash(tmp/incident_watch/rca-cucumber:*)'

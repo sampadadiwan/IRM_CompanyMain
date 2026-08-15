@@ -23,6 +23,10 @@ DS_Store
 mcp.json
 .env.secrets
 
+# IMAP app password for bin/incident-watch (see docs/technical/incident_rca_system.md).
+# The preferred location is ~/.config/incident_watch.env, outside the repo entirely.
+config/incident_watch.env
+
 /.aider.tags.cache.v3
 .aider*
 /db/sphinx

@@ -390,6 +390,39 @@ namespace :IRM do
     end
   end
 
+  # Installs the systemd drop-in that undoes the sandbox Ubuntu's monit package
+  # applies to monit.service, then re-execs monit so it takes effect. The
+  # sandbox is a property of the monit PROCESS and is inherited by everything it
+  # spawns, so `monit reload` is NOT enough here — monit itself has to restart.
+  # Idempotent; called from IRM:setup and from IRM:fix_monit_sandbox.
+  def configure_monit_sandbox
+    override_dir = "/etc/systemd/system/monit.service.d"
+
+    execute :sudo, :mkdir, "-p", override_dir
+    upload! StringIO.new(File.read('./config/deploy/templates/monit_service_override.conf')),
+            "/tmp/monit_override.conf"
+    execute :sudo, :mv, "/tmp/monit_override.conf", "#{override_dir}/override.conf"
+    execute :sudo, :chown, "root:root", "#{override_dir}/override.conf"
+    execute :sudo, :chmod, "644", "#{override_dir}/override.conf"
+
+    execute :sudo, "systemctl daemon-reload"
+    execute :sudo, "systemctl restart monit"
+
+    # Prove the sandbox is actually gone rather than assuming the restart took —
+    # this is precisely the class of failure that was passing silently before.
+    nnp = capture(:systemctl, "show", "monit", "-p", "NoNewPrivileges", "--value").strip
+    caps = capture(:systemctl, "show", "monit", "-p", "CapabilityBoundingSet", "--value").strip
+    info "monit sandbox now: NoNewPrivileges=#{nnp}, CapabilityBoundingSet=#{caps}"
+    raise "monit is still sandboxed (NoNewPrivileges=#{nnp}) — drop-in did not apply" if nnp == "yes"
+  end
+
+  desc 'Install the systemd drop-in that lets monit start/stop our services'
+  task :fix_monit_sandbox do
+    on roles(:app) do
+      configure_monit_sandbox
+    end
+  end
+
   desc 'Generate and upload Monit, nginx configuration and systemd service files'
   task :setup do
     on roles(:app) do
@@ -440,8 +473,15 @@ namespace :IRM do
       generate_and_upload('./config/deploy/templates/monitrc.erb', local_monitrc, "/etc/monit/monitrc")
       execute :sudo, :chown, "root", "/etc/monit/monitrc"
       execute :sudo, :chmod, "700", "/etc/monit/monitrc"
-      # Reload Monit to apply the new configuration
-      execute :sudo, "monit reload"
+
+      # Un-sandbox monit before restarting it. The AMI installs monit from apt
+      # (see templates/packer/appserver.ami.pkr.hcl), and the packaged unit is
+      # hardened to the point where monit cannot su/sudo to ubuntu or even see
+      # /home — so every `start program` fails and nothing it supervises can be
+      # started. Full explanation in the drop-in itself. This also restarts
+      # monit, which picks up the conf.d/monitrc changes above, so no separate
+      # `monit reload` is needed here.
+      configure_monit_sandbox
 
       # Remove the /etc/nginx/sites-enabled/default file
       execute :sudo, :rm, "-f", "/etc/nginx/sites-enabled/default"

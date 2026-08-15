@@ -1,0 +1,18 @@
+{
+  "kind": "web",
+  "exception_class": "NoMethodError",
+  "controller": "funds",
+  "action": "show",
+  "location": "funds#show",
+  "message": "undefined method 'total_commitment' for nil",
+  "culprit.path": "app/packs/funds/funds/controllers/funds_controller.rb",
+  "culprit.line": 87,
+  "culprit.method": "FundsController#show",
+  "request.url": "https://app.caphive.com/funds/4821",
+  "request.http_method": "GET",
+  "request.parameters": "{\"controller\"=>\"funds\", \"action\"=>\"show\", \"id\"=>\"4821\"}",
+  "request.rails_root": "/var/www/IRM/current",
+  "environment.HTTP_HOST": "app.caphive.com",
+  "environment.QUERY_STRING": "",
+  "job": null
+}

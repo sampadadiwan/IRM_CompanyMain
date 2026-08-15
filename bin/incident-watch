@@ -1,0 +1,1073 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# incident-watch - turn production ExceptionNotifier emails into an RCA and a patched branch.
+#
+#   bin/incident-watch dashboard [--open]   regenerate the HTML dashboard
+#   bin/incident-watch logs [FP] [-f]       show what a run is doing (defaults to the running one)
+#   bin/incident-watch check                 verify credentials, filters and PATH before scheduling
+#   bin/incident-watch poll                 fetch new alert emails over IMAP, then dispatch
+#   bin/incident-watch ingest FILE|-        ingest one email body (the Gmail MCP path)
+#   bin/incident-watch list [--state=new]   show what has been seen
+#   bin/incident-watch show FINGERPRINT     print one incident record
+#   bin/incident-watch dispatch FP|--all    run the RCA (analysis only) for a recorded incident
+#   bin/incident-watch stop [FP|--all]      kill a running analysis/patch run
+#   bin/incident-watch rca FP               print the RCA
+#   bin/incident-watch approve FP           approve the RCA -> write the patch and open a PR
+#   bin/incident-watch serve [--open]       dashboard with working buttons (Create PR, Ignore)
+#   bin/incident-watch publish FP           push the branch and open its draft PR
+#   bin/incident-watch ignore FP --reason .. mute a bad-data error (--rule to mute future ones)
+#   bin/incident-watch unignore FP          un-mute an incident
+#   bin/incident-watch selftest             parse the bundled fixtures and assert
+#   bin/incident-watch cron                 print the crontab line to install
+#
+# Stdlib only, except for `poll`, which needs the mail gem for MIME decoding and so must
+# run under `bundle exec`. Rails is never booted - a cron tick costs well under a second.
+
+require 'json'
+require 'open3'
+require 'optparse'
+require 'yaml'
+
+REPO_ROOT = File.expand_path('..', __dir__)
+$LOAD_PATH.unshift(File.join(REPO_ROOT, 'lib'))
+
+require 'incident_watch/parser'
+require 'incident_watch/store'
+require 'incident_watch/dispatcher'
+
+module IncidentWatch
+  # Command-line front end. Every subcommand shares one config, one store and one logger.
+  class CLI
+    CONFIG_PATH = File.join(REPO_ROOT, 'config', 'incident_watch.yml')
+    DASHBOARD_FILENAME = 'dashboard.html'
+    IGNORE_RULES_PATH = File.join(REPO_ROOT, 'config', 'incident_watch_ignore.yml')
+
+    # States with a Claude process attached, i.e. something you can stop.
+    RUNNING_STATES = %w[dispatched patching].freeze
+
+    # Where IMAP credentials may live, highest priority first. Defaulting to a file outside
+    # the repo means the app password cannot be committed by accident, and keeping it in a
+    # file rather than in the crontab means it is not exposed by `crontab -l`.
+    CREDENTIAL_FILES = [
+      File.join(Dir.home, '.config', 'incident_watch.env'),
+      File.join(REPO_ROOT, 'config', 'incident_watch.env')
+    ].freeze
+
+    def self.run(argv)
+      new.run(argv)
+    end
+
+    def run(argv)
+      load_credentials
+      command = argv.shift
+      case command
+      when 'poll' then cmd_poll(argv)
+      when 'check' then cmd_check(argv)
+      when 'dashboard' then cmd_dashboard(argv)
+      when 'logs' then cmd_logs(argv)
+      when 'stop' then cmd_stop(argv)
+      when 'approve' then cmd_approve(argv)
+      when 'rca' then cmd_rca(argv)
+      when 'publish' then cmd_publish(argv)
+      when 'serve' then cmd_serve(argv)
+      when 'ignore' then cmd_ignore(argv)
+      when 'unignore' then cmd_unignore(argv)
+      when 'ingest' then cmd_ingest(argv)
+      when 'list' then cmd_list(argv)
+      when 'show' then cmd_show(argv)
+      when 'dispatch' then cmd_dispatch(argv)
+      when 'selftest' then cmd_selftest(argv)
+      when 'cron' then cmd_cron(argv)
+      when nil, '-h', '--help', 'help' then usage
+      else
+        warn "unknown command: #{command}"
+        usage(1)
+      end
+    end
+
+    private
+
+    # Read INCIDENT_WATCH_* assignments out of the first credentials file that exists.
+    # Anything already set in the real environment wins, so a shell export or a crontab
+    # line can still override the file.
+    def load_credentials
+      path = CREDENTIAL_FILES.find { |p| File.exist?(p) }
+      @credentials_path = path
+      return unless path
+
+      # A secrets file other users can read is a finding, not a detail - say so loudly
+      # rather than quietly using it.
+      warn "WARNING: #{path} is readable by other users. Fix with: chmod 600 #{path}" unless
+        File.stat(path).mode.nobits?(0o077)
+
+      File.readlines(path).each do |line|
+        line = line.strip
+        next if line.empty? || line.start_with?('#')
+
+        key, _, value = line.partition('=')
+        key = key.strip.sub(/\Aexport\s+/, '')
+        next unless key.start_with?('INCIDENT_WATCH_')
+
+        # Strip one layer of surrounding quotes; app passwords are usually pasted quoted.
+        ENV[key] ||= value.strip.gsub(/\A['"]|['"]\z/, '')
+      end
+    end
+
+    def config
+      @config ||= YAML.safe_load_file(CONFIG_PATH)
+    end
+
+    def store
+      @store ||= Store.new(File.join(REPO_ROOT, config['state_dir']))
+    end
+
+    def logger
+      @logger ||= ->(msg) { warn "#{Time.now.getlocal.strftime('%Y-%m-%d %H:%M:%S')} #{msg}" }
+    end
+
+    def dispatcher
+      @dispatcher ||= Dispatcher.new(REPO_ROOT, config, store, logger: logger)
+    end
+
+    # An email is a production incident only if BOTH gates pass.
+    #
+    #   sender  - identifies it as coming from our app at all. ExceptionNotifier sends as
+    #             SUPPORT_EMAIL_FROM ("Support" <support@caphive.com> / .us).
+    #   subject - separates production from staging, since both use the same sender. Both
+    #             notifier paths prefix with "[ERROR] production" or "[Error] production:",
+    #             so one case-insensitive pattern covers them.
+    #
+    # Getting this wrong in either direction is expensive: too loose and a forwarded or
+    # spoofed email opens a branch, too tight and real outages are silently ignored.
+    def alert_email?(subject, from)
+      sender_allowed?(from) && Regexp.new(config['subject_pattern'], Regexp::IGNORECASE).match?(subject.to_s)
+    end
+
+    # From headers arrive as '"Support" <support@caphive.com>', so match the address as a
+    # substring. An empty allowlist means "sender is not a criterion" - see the config.
+    def sender_allowed?(from)
+      senders = Array(config['from']).map { |s| s.to_s.strip.downcase }.reject(&:empty?)
+      return true if senders.empty?
+
+      haystack = from.to_s.downcase
+      senders.any? { |sender| haystack.include?(sender) }
+    end
+
+    # --- poll ---------------------------------------------------------------------------
+
+    def cmd_poll(argv)
+      options = { dispatch: true }
+      OptionParser.new do |o|
+        o.banner = 'Usage: bin/incident-watch poll [options]'
+        o.on('--no-dispatch', 'Record incidents but do not start any RCA runs') { options[:dispatch] = false }
+        o.on('--dry-run', 'Show what would be recorded, write nothing') { options[:dry_run] = true }
+      end.parse!(argv)
+
+      # A poll that dispatches can far outlive the 30-minute cron interval: it runs up to
+      # max_per_poll RCAs one after another, each with a 30-minute budget. Without this lock
+      # the next tick would start a second poll on top of the first, multiplying the number
+      # of concurrent Claude runs past the cap that exists precisely to bound them.
+      #
+      # Non-blocking: if a poll is already running, this tick is skipped, not queued. The
+      # lock is released when the process exits, including when it is killed.
+      # rubocop:disable Style/FileOpen -- the block form would close the file and drop the
+      # lock at the end of the block, which is exactly what must not happen: the lock has to
+      # outlive this method and cover the whole poll, including the dispatch runs.
+      lock = File.open(File.join(store.root, 'poll.lock'), File::CREAT | File::RDWR)
+      # rubocop:enable Style/FileOpen
+      unless lock.flock(File::LOCK_EX | File::LOCK_NB)
+        logger.call('[poll] another poll is still running; skipping this tick')
+        return
+      end
+      # Held for the lifetime of the process - deliberately not closed.
+      @poll_lock = lock
+
+      require 'incident_watch/imap_source'
+      source = ImapSource.new(config, logger: logger)
+      unless source.available?
+        warn 'IMAP credentials not configured - see `bin/incident-watch cron` or docs/technical/incident_rca_system.md'
+        exit 2
+      end
+
+      seen = 0
+      matched = 0
+      created = []
+
+      # The filter is pushed into the fetch so only alert bodies are downloaded; it is
+      # re-applied below as cheap defence, since the envelope subject and the decoded body
+      # headers can differ in odd MIME cases.
+      accept = ->(subject, from) { alert_email?(subject, from) }
+
+      source.each_message(accept: accept) do |message|
+        seen += 1
+        next unless alert_email?(message.subject, message.from)
+
+        matched += 1
+        # Message-level dedupe: the poll window overlaps the cron interval on purpose,
+        # so most matches on any given run have already been ingested.
+        next if store.seen?(message.message_id)
+
+        parsed = Parser.parse(message.body,
+                              message_id: message.message_id,
+                              subject: message.subject,
+                              from: message.from,
+                              date: message.date)
+
+        if options[:dry_run]
+          puts "would record #{parsed['fingerprint']} #{parsed['exception_class']} #{parsed['location']}"
+          next
+        end
+
+        incident, outcome = store.record(parsed)
+        store.mark_seen(message.message_id)
+
+        # Apply the ignore rules on arrival. The incident is still recorded - you want to
+        # know bad data is still generating errors, and how often - it is simply never
+        # queued for analysis.
+        if outcome == :created && (rule = ignore_rules.match(incident))
+          incident = store.update_state(incident['fingerprint'], 'ignored',
+                                        'ignored_reason' => rule['reason'],
+                                        'ignored_at' => Time.now.utc.iso8601,
+                                        'ignored_by_rule' => true)
+          logger.call("[poll] ignored #{incident['fingerprint']} #{incident['exception_class']} " \
+                      "- #{rule['reason']}")
+          next
+        end
+
+        created << incident if outcome == :created
+        logger.call("[poll] #{outcome} #{incident['fingerprint']} #{incident['exception_class']} " \
+                    "#{incident['location']} (x#{incident['occurrences']})")
+      end
+
+      logger.call("[poll] #{seen} body(ies) fetched, #{matched} production alert(s), #{created.size} new incident(s)")
+      return if options[:dry_run]
+
+      # Refresh the dashboard before dispatching, so incidents appear as "awaiting analysis"
+      # immediately, then again after, so any run that started shows its progress bar.
+      write_dashboard
+      dispatch_new(created) if options[:dispatch]
+      write_dashboard
+      logger.call("[poll] dashboard: #{dashboard_path}")
+    end
+
+    # --- ingest (Gmail MCP path) ---------------------------------------------------------
+
+    # Reads the plain-text body of one ExceptionNotifier email. This is what the
+    # /incident-triage skill pipes in after fetching a thread through the Gmail MCP
+    # connector, and it is also the easiest way to test the parser against a real email.
+    def cmd_ingest(argv)
+      options = { dispatch: false }
+      OptionParser.new do |o|
+        o.banner = 'Usage: bin/incident-watch ingest FILE|- [options]'
+        o.on('--message-id ID', 'Gmail message id, used for dedupe') { |v| options[:message_id] = v }
+        o.on('--subject SUBJECT', 'Email subject') { |v| options[:subject] = v }
+        o.on('--from FROM', 'Sender') { |v| options[:from] = v }
+        o.on('--date DATE', 'Received timestamp') { |v| options[:date] = v }
+        o.on('--dispatch', 'Start the RCA run immediately if this is a new incident') { options[:dispatch] = true }
+        o.on('--force', 'Ingest even if this message id was already processed') { options[:force] = true }
+      end.parse!(argv)
+
+      path = argv.shift or abort 'ingest needs a FILE or - for stdin'
+      body = path == '-' ? $stdin.read : File.read(path)
+
+      # When the caller supplied real headers - which the /incident-triage skill always does
+      # - apply the same sender/subject gate the poller uses, so the MCP path cannot ingest
+      # a staging alert or a forwarded email that the IMAP path would have rejected.
+      # Manual ingestion without headers (testing, replaying a saved body) is unaffected.
+      if options[:from] && options[:subject] && !options[:force] && !alert_email?(options[:subject], options[:from])
+        puts JSON.pretty_generate(
+          'status' => 'rejected',
+          'reason' => 'sender or subject did not match the production alert criteria in config/incident_watch.yml',
+          'from' => options[:from],
+          'subject' => options[:subject]
+        )
+        return
+      end
+
+      if !options[:force] && store.seen?(options[:message_id])
+        puts JSON.pretty_generate('status' => 'already_ingested', 'message_id' => options[:message_id])
+        return
+      end
+
+      parsed = Parser.parse(body, **options.slice(:message_id, :subject, :from, :date))
+      incident, outcome = store.record(parsed)
+      store.mark_seen(options[:message_id])
+
+      # Structured output so the calling skill can branch on it without scraping prose.
+      puts JSON.pretty_generate(
+        'status' => outcome,
+        'fingerprint' => incident['fingerprint'],
+        'exception_class' => incident['exception_class'],
+        'location' => incident['location'],
+        'culprit' => incident['culprit'],
+        'occurrences' => incident['occurrences'],
+        'state' => incident['state'],
+        'incident_path' => store.path_for(incident['fingerprint'])
+      )
+
+      dispatch_new([incident]) if options[:dispatch] && outcome == :created
+    end
+
+    # --- dispatch -----------------------------------------------------------------------
+
+    def cmd_dispatch(argv)
+      options = {}
+      OptionParser.new do |o|
+        o.banner = 'Usage: bin/incident-watch dispatch FINGERPRINT|--all [options]'
+        o.on('--all', 'Dispatch every incident still in state=new') { options[:all] = true }
+        o.on('--force', 'Re-run even if already dispatched or done') { options[:force] = true }
+      end.parse!(argv)
+
+      targets = if options[:all]
+                  store.all.select { |i| i['state'] == 'new' }
+                else
+                  fingerprint = argv.shift or abort 'dispatch needs a FINGERPRINT or --all'
+                  incident = store.find(fingerprint) or abort("no incident #{fingerprint}")
+                  [incident]
+                end
+
+      # Refresh between runs so a long `dispatch --all` shows progress as it goes, rather
+      # than staying blank until everything finishes.
+      targets.each do |incident|
+        write_dashboard
+        dispatcher.dispatch(incident, force: options[:force])
+      end
+      write_dashboard
+    end
+
+    # Shared by poll and ingest. The cap is a safety valve: a single bad deploy can email
+    # hundreds of distinct exceptions, and we do not want that to become a fleet of
+    # concurrent Claude runs. Anything skipped stays "new" and goes out on the next poll.
+    def dispatch_new(incidents)
+      return if incidents.empty?
+
+      unless config.dig('dispatch', 'enabled')
+        logger.call('[poll] dispatch disabled in config; incidents left in state=new')
+        return
+      end
+
+      cap = config.dig('dispatch', 'max_per_poll').to_i
+      batch = cap.positive? ? incidents.first(cap) : incidents
+      if batch.size < incidents.size
+        logger.call("[poll] dispatching #{batch.size} of #{incidents.size} new incident(s) (max_per_poll=#{cap}); " \
+                    'the rest remain queued')
+      end
+
+      batch.each { |incident| dispatcher.dispatch(incident) }
+    end
+
+    # --- read-only commands --------------------------------------------------------------
+
+    def cmd_list(argv)
+      options = {}
+      OptionParser.new do |o|
+        o.banner = 'Usage: bin/incident-watch list [--state=new] [--json]'
+        o.on('--state STATE', 'Filter by state: new, dispatched, done, failed') { |v| options[:state] = v }
+        o.on('--json', 'Emit JSON instead of a table') { options[:json] = true }
+      end.parse!(argv)
+
+      incidents = store.all
+      incidents = incidents.select { |i| i['state'] == options[:state] } if options[:state]
+      incidents = incidents.sort_by { |i| i['last_seen'].to_s }.reverse
+
+      return puts(JSON.pretty_generate(incidents.map { |i| i.except('raw_body') })) if options[:json]
+
+      if incidents.empty?
+        puts 'No incidents recorded.'
+        return
+      end
+
+      # One format string for the header and the rows, so the columns cannot drift apart.
+      row_format = '%-10s %-10s %-5s %-28s %-26s %s'
+      puts format(row_format, 'FP', 'STATE', 'N', 'EXCEPTION', 'WHERE', 'BRANCH')
+      incidents.each do |i|
+        puts format(row_format,
+                    i['fingerprint'], i['state'], i['occurrences'],
+                    truncate(i['exception_class'], 28), truncate(i['location'] || '-', 26), i['branch'] || '-')
+      end
+    end
+
+    def cmd_show(argv)
+      fingerprint = argv.shift or abort 'show needs a FINGERPRINT'
+      incident = store.find(fingerprint) or abort "no incident #{fingerprint}"
+      puts JSON.pretty_generate(incident)
+    end
+
+    def truncate(value, max)
+      str = value.to_s
+      str.length > max ? "#{str[0, max - 1]}~" : str
+    end
+
+    # --- selftest -------------------------------------------------------------------------
+
+    # Parses the bundled fixtures - one web exception, one Sidekiq exception - and asserts
+    # the fields the RCA depends on. Run it after touching Parser, or after upgrading the
+    # exception_notification gem, since the fixtures mirror that gem's templates.
+    def cmd_selftest(_argv)
+      fixtures = Dir[File.join(REPO_ROOT, 'lib', 'incident_watch', 'fixtures', '*.txt')]
+      abort 'no fixtures found' if fixtures.empty?
+
+      failures = []
+      fixtures.each do |path|
+        name = File.basename(path, '.txt')
+        expected = JSON.parse(File.read(path.sub(/\.txt\z/, '.expected.json')))
+        actual = Parser.parse(File.read(path), message_id: "<#{name}@test>")
+
+        expected.each do |key, want|
+          got = key.split('.').reduce(actual) { |acc, seg| acc.is_a?(Hash) ? acc[seg] : nil }
+          failures << "#{name}: #{key}\n  expected: #{want.inspect}\n  actual:   #{got.inspect}" unless got == want
+        end
+        puts "  parsed #{name}: #{actual['exception_class']} @ #{actual['culprit']&.fetch('path', nil)}:" \
+             "#{actual['culprit']&.fetch('line', nil)} (fingerprint #{actual['fingerprint']})"
+      end
+
+      # Render the dashboard with an incident in every state. The parser fixtures above
+      # cannot catch a broken rendering branch, and a 500 in the browser is a poor way to
+      # find out that a state you rarely reach was never exercised.
+      require 'incident_watch/render_check'
+      render_failures = RenderCheck.run(REPO_ROOT, config, File.join(REPO_ROOT, 'tmp'))
+      render_failures.each { |f| failures << "dashboard render - #{f}" }
+      puts "  rendered dashboard in all #{Store::STATES.size} states" if render_failures.empty?
+
+      if failures.empty?
+        puts "OK - #{fixtures.size} fixture(s) parsed, dashboard renders in every state"
+      else
+        puts "\nFAILURES:"
+        failures.each { |f| puts "- #{f}" }
+        exit 1
+      end
+    end
+
+    # --- dashboard ---------------------------------------------------------------------
+
+    def dashboard_path
+      File.join(store.root, DASHBOARD_FILENAME)
+    end
+
+    # Regenerate the HTML view. Called explicitly, and also after every poll and dispatch so
+    # the page is never more than one cron tick out of date.
+    def write_dashboard
+      require 'incident_watch/dashboard'
+      Dashboard.new(REPO_ROOT, config, store).render_to(dashboard_path)
+    rescue StandardError => e
+      # A dashboard failure must never take the poller down with it - the incident data is
+      # already safely on disk by this point.
+      warn "dashboard generation failed: #{e.class}: #{e.message}"
+      nil
+    end
+
+    def cmd_dashboard(argv)
+      options = {}
+      OptionParser.new do |o|
+        o.banner = 'Usage: bin/incident-watch dashboard [--open]'
+        o.on('--open', 'Open the dashboard in your browser afterwards') { options[:open] = true }
+      end.parse!(argv)
+
+      path = write_dashboard or exit 1
+      puts path
+
+      return unless options[:open]
+
+      # xdg-open on Linux, open on macOS; neither is fatal if missing.
+      %w[xdg-open open].each do |opener|
+        break if system(opener, path, out: File::NULL, err: File::NULL)
+      end
+    end
+
+    # --- stop -------------------------------------------------------------------------------
+
+    # Kill a running analysis or patch run and stop it spending tokens.
+    #
+    # This exists because killing the dispatcher is NOT enough: each run is spawned into its
+    # own process group (so a watchdog can take its whole tool tree down), which also means
+    # it survives its parent. Ctrl-C on `dispatch --all` stops the queue but leaves the
+    # in-flight Claude process running to completion.
+    def cmd_stop(argv)
+      options = {}
+      OptionParser.new do |o|
+        o.banner = 'Usage: bin/incident-watch stop [FINGERPRINT|--all]'
+        o.on('--all', 'Stop every running analysis/patch run') { options[:all] = true }
+        o.on('--ignore REASON', 'Also mute the incident so it is never retried') { |v| options[:ignore] = v }
+      end.parse!(argv)
+
+      running = store.all.select { |i| RUNNING_STATES.include?(i['state']) }
+      targets = if options[:all]
+                  running
+                else
+                  fp = argv.shift || running.first&.fetch('fingerprint', nil)
+                  abort 'nothing is running. Pass a FINGERPRINT to stop a specific one.' if fp.nil?
+                  incident = store.find(fp) or abort("no incident #{fp}")
+                  [incident]
+                end
+
+      if targets.empty?
+        puts 'Nothing is running.'
+        return
+      end
+
+      targets.each do |incident|
+        fp = incident['fingerprint']
+        killed = kill_run(fp, incident['run_pid'])
+
+        if options[:ignore]
+          store.update_state(fp, 'ignored', 'ignored_reason' => options[:ignore],
+                                            'ignored_at' => Time.now.utc.iso8601, 'run_pid' => nil)
+          puts "#{fp}: #{killed ? 'stopped' : 'no process found'}, and muted - #{options[:ignore]}"
+        else
+          # Back to `new`, not `failed`: you stopped it deliberately, so it is simply
+          # un-started. Mute it with `ignore` if you never want it analysed.
+          store.update_state(fp, 'new', 'run_pid' => nil,
+                                        'error' => 'stopped by user')
+          puts "#{fp}: #{killed ? 'stopped' : 'no process found'} (back to state=new)"
+        end
+      end
+
+      write_dashboard
+      puts "\nTo make sure it is never analysed again:"
+      puts "  bin/incident-watch ignore #{targets.first['fingerprint']} --reason \"...\" --rule"
+    end
+
+    # Signal the run's whole process group, so the claude process and every tool it spawned
+    # go together. Falls back to finding the process by its command line for runs started
+    # before run_pid was recorded.
+    def kill_run(fingerprint, pid)
+      pid ||= find_run_pid(fingerprint)
+      return false unless pid
+
+      begin
+        pgid = Process.getpgid(pid)
+      rescue Errno::ESRCH
+        return false
+      end
+
+      Process.kill('TERM', -pgid)
+      # Give it a moment to exit cleanly, then insist.
+      20.times do
+        sleep 0.25
+        return true if begin
+          Process.getpgid(pid)
+        rescue StandardError
+          nil
+        end.nil?
+      end
+      Process.kill('KILL', -pgid)
+      true
+    rescue Errno::ESRCH
+      true
+    rescue StandardError => e
+      warn "could not stop #{fingerprint}: #{e.class}: #{e.message}"
+      false
+    end
+
+    def find_run_pid(fingerprint)
+      out, status = Open3.capture2e('pgrep', '-f', "incident-.*#{fingerprint}\\.json")
+      return nil unless status.success?
+
+      out.split("\n").map(&:strip).reject(&:empty?).first&.to_i
+    end
+
+    # --- rca / approve ----------------------------------------------------------------------
+
+    # Print the RCA for an incident. It lives on the branch, not in the working tree, so it
+    # is read with `git show` - which keeps working after the worktree is cleaned up.
+    def rca_markdown(fingerprint)
+      incident = store.find(fingerprint) or return nil
+      doc = incident['rca_doc']
+      branch = incident['branch']
+      return nil if doc.to_s.empty? || branch.to_s.empty?
+
+      out, status = Open3.capture2e('git', '-C', REPO_ROOT, 'show', "#{branch}:#{doc}")
+      status.success? ? out : nil
+    end
+
+    def cmd_rca(argv)
+      fingerprint = argv.shift or abort 'rca needs a FINGERPRINT'
+      markdown = rca_markdown(fingerprint) or abort "no RCA recorded for #{fingerprint}"
+      puts markdown
+    end
+
+    # Approve the RCA: implement the fix and open the draft PR. This is the gate - up to this
+    # point no application code has been changed by anything.
+    def cmd_approve(argv)
+      fingerprint = argv.shift or abort 'approve needs a FINGERPRINT (see: bin/incident-watch list)'
+      incident = store.find(fingerprint) or abort "no incident #{fingerprint}"
+
+      abort "#{fingerprint} is #{incident['state']}, not analysed - only an analysed incident can be approved" unless incident['state'] == 'analysed'
+
+      write_dashboard
+      result = dispatcher.patch_incident(fingerprint)
+      write_dashboard
+
+      final = store.find(fingerprint)
+      case result
+      when :done then puts "#{fingerprint}: patched - #{final['pr_url'] || 'no PR (publishing failed)'}"
+      else warn "#{fingerprint}: #{result} - #{final['error']}"
+      end
+    end
+
+    # --- publish --------------------------------------------------------------------------
+
+    # Push an analysed incident's branch and open its draft PR, on demand.
+    def cmd_publish(argv)
+      fingerprint = argv.shift or abort 'publish needs a FINGERPRINT (see: bin/incident-watch list)'
+      result = dispatcher.publish_incident(fingerprint)
+
+      if result['pr_url']
+        puts "#{fingerprint}: #{result['pr_url']}"
+      else
+        warn "#{fingerprint}: #{result['pr_error'] || 'nothing published'}"
+      end
+      write_dashboard
+      exit 1 unless result['pr_url']
+    end
+
+    # --- serve ------------------------------------------------------------------------------
+
+    # Serve the dashboard over HTTP so its buttons work.
+    #
+    # The generated file is static, so opening it as file:// gives you a read-only view -
+    # a page loaded from disk has nothing to POST to. This wraps the same renderer in a
+    # tiny local server, which is what turns "Create PR" from a label into a button.
+    #
+    # Bound to 127.0.0.1 only. It runs privileged actions (pushing branches, opening PRs)
+    # with no authentication, so it must never be reachable from off the machine.
+    def cmd_serve(argv)
+      options = { port: 4567 }
+      OptionParser.new do |o|
+        o.banner = 'Usage: bin/incident-watch serve [--port N] [--open]'
+        o.on('--port PORT', Integer, 'Port to listen on (default 4567)') { |v| options[:port] = v }
+        o.on('--open', 'Open a browser once the server is up') { options[:open] = true }
+      end.parse!(argv)
+
+      require 'webrick'
+      require 'incident_watch/dashboard'
+
+      server = WEBrick::HTTPServer.new(
+        BindAddress: '127.0.0.1', Port: options[:port],
+        Logger: WEBrick::Log.new(File::NULL), AccessLog: []
+      )
+
+      server.mount_proc '/' do |req, res|
+        handle_dashboard_request(req, res)
+      end
+
+      url = "http://127.0.0.1:#{options[:port]}/"
+      puts "Incident dashboard: #{url}"
+      puts 'Press Ctrl-C to stop.'
+      trap('INT') { server.shutdown }
+      system('xdg-open', url, out: File::NULL, err: File::NULL) if options[:open]
+      server.start
+    end
+
+    # On a POST, WEBrick's req.query parses the form-encoded body and ignores the URL query
+    # string entirely. The dashboard's forms post a body so they work either way, but
+    # accepting both makes the endpoints testable with a plain `curl -X POST "...?fp=..."`.
+    def param(req, name)
+      value = req.query[name]
+      return value unless value.to_s.empty?
+
+      uri_query = req.request_uri&.query
+      return nil if uri_query.to_s.empty?
+
+      require 'uri'
+      URI.decode_www_form(uri_query).to_h[name]
+    end
+
+    # Routes are deliberately tiny: every action takes a fingerprint, does one thing, and
+    # redirects back to the dashboard so the page always reflects the result.
+    def handle_dashboard_request(req, res)
+      case "#{req.request_method} #{req.path}"
+      when 'POST /publish'
+        act(res) { dispatcher.publish_incident(param(req, 'fp')) }
+      when 'POST /stop'
+        act(res) do
+          fp = param(req, 'fp')
+          incident = store.find(fp)
+          kill_run(fp, incident&.dig('run_pid'))
+          store.update_state(fp, 'new', 'run_pid' => nil, 'error' => 'stopped from the dashboard')
+        end
+      when 'POST /approve'
+        act(res) do
+          fp = param(req, 'fp')
+          # Detached: patching takes minutes and the browser must not sit on it. The
+          # dashboard shows a progress bar for the "patching" state meanwhile.
+          Process.spawn(File.join(REPO_ROOT, 'bin', 'incident-watch'), 'approve', fp,
+                        chdir: REPO_ROOT, out: File::NULL, err: File::NULL)
+        end
+      when 'GET /rca'
+        fp = param(req, 'fp')
+        markdown = rca_markdown(fp)
+        res.status = 200
+        res['Content-Type'] = 'text/html; charset=utf-8'
+        res.body = Dashboard.new(REPO_ROOT, config, store, interactive: true)
+                            .render_rca(store.find(fp), markdown)
+      when 'POST /ignore'
+        act(res) do
+          reason = param(req, 'reason').to_s.strip
+          reason = 'Bad data (no reason given)' if reason.empty?
+          store.update_state(param(req, 'fp'), 'ignored',
+                             'ignored_reason' => reason, 'ignored_at' => Time.now.utc.iso8601)
+        end
+      when 'POST /unignore'
+        act(res) do
+          store.update_state(param(req, 'fp'), 'new', 'ignored_reason' => nil, 'ignored_at' => nil)
+        end
+      when 'POST /dispatch'
+        act(res) do
+          incident = store.find(param(req, 'fp'))
+          # Spawned detached: an RCA takes minutes and the browser must not sit on it.
+          if incident
+            Process.spawn(File.join(REPO_ROOT, 'bin', 'incident-watch'), 'dispatch', incident['fingerprint'],
+                          chdir: REPO_ROOT, out: File::NULL, err: File::NULL)
+          end
+        end
+      else
+        res.status = 200
+        res['Content-Type'] = 'text/html; charset=utf-8'
+        res.body = Dashboard.new(REPO_ROOT, config, store, interactive: true).render
+      end
+    end
+
+    # Run an action, then redirect back to the dashboard. Errors are swallowed into the page
+    # rather than shown as a WEBrick stack trace - the dashboard already has a place to
+    # display pr_error, and a 500 page would lose the rest of the incident list.
+    def act(res)
+      yield
+    rescue StandardError => e
+      warn "dashboard action failed: #{e.class}: #{e.message}"
+    ensure
+      res.status = 303
+      res['Location'] = '/'
+    end
+
+    # --- ignore ---------------------------------------------------------------------------
+
+    def ignore_rules
+      require 'incident_watch/ignore_rules'
+      @ignore_rules ||= IgnoreRules.load(IGNORE_RULES_PATH, logger: logger)
+    end
+
+    # Mute an incident caused by bad data rather than by a defect.
+    #
+    # Two scopes, because they solve different problems:
+    #   * without --rule : mutes this one incident, and nothing else.
+    #   * with    --rule : also writes a persistent rule so future recurrences are muted on
+    #                      arrival. Needed because a fingerprint changes the moment the
+    #                      culprit line moves, so muting by fingerprint alone means the same
+    #                      bad data re-opens a branch after the next refactor.
+    def cmd_ignore(argv)
+      options = {}
+      OptionParser.new do |o|
+        o.banner = 'Usage: bin/incident-watch ignore FINGERPRINT --reason "..." [--rule]'
+        o.on('--reason REASON', 'Why this is not a code defect (required)') { |v| options[:reason] = v }
+        o.on('--rule', 'Also mute future incidents matching this exception + location') { options[:rule] = true }
+        o.on('--list', 'List the persistent ignore rules and exit') { options[:list] = true }
+      end.parse!(argv)
+
+      if options[:list]
+        rules = ignore_rules.rules
+        return puts('No ignore rules. Add one with: bin/incident-watch ignore <fp> --reason "..." --rule') if
+          rules.empty?
+
+        puts "#{rules.size} ignore rule(s) in #{IGNORE_RULES_PATH}:"
+        rules.each_with_index do |rule, i|
+          matchers = IgnoreRules::MATCHERS.keys.filter_map { |k| "#{k}=#{rule[k]}" if rule[k].to_s != '' }
+          puts "  #{i + 1}. #{rule['reason']}"
+          puts "     #{matchers.join('  ')}"
+        end
+        return
+      end
+
+      fingerprint = argv.shift or abort 'ignore needs a FINGERPRINT (see: bin/incident-watch list)'
+      # A reason is mandatory. A muted incident with no explanation is indistinguishable
+      # from a bug in the matcher six months from now.
+      reason = options[:reason] or abort 'ignore needs --reason "why this is not a code defect"'
+      incident = store.find(fingerprint) or abort "no incident #{fingerprint}"
+
+      store.update_state(fingerprint, 'ignored',
+                         'ignored_reason' => reason,
+                         'ignored_at' => Time.now.utc.iso8601)
+      puts "ignored #{fingerprint} (#{incident['exception_class']} in #{incident['location'] || 'background'})"
+
+      if options[:rule]
+        rule = {
+          'reason' => reason,
+          # Anchored so that "funds#show" cannot also match "funds#show_all", and escaped so
+          # that regex metacharacters in a class name (:: is fine, but . is not) stay literal.
+          'exception_class' => "\\A#{Regexp.escape(incident['exception_class'].to_s)}\\z"
+        }
+        rule['location'] = "\\A#{Regexp.escape(incident['location'])}\\z" if incident['location']
+        ignore_rules.add(rule)
+        puts "added a rule: future #{incident['exception_class']} in " \
+             "#{incident['location'] || 'background'} will be ignored on arrival"
+        puts "  #{IGNORE_RULES_PATH}"
+      end
+
+      write_dashboard
+    end
+
+    def cmd_unignore(argv)
+      fingerprint = argv.shift or abort 'unignore needs a FINGERPRINT'
+      incident = store.find(fingerprint) or abort "no incident #{fingerprint}"
+      abort "#{fingerprint} is not ignored (state=#{incident['state']})" unless incident['state'] == 'ignored'
+
+      store.update_state(fingerprint, 'new', 'ignored_reason' => nil, 'ignored_at' => nil)
+      puts "#{fingerprint} is queued again. Analyse it with: bin/incident-watch dispatch #{fingerprint}"
+      puts 'Note: a persistent rule may re-ignore it on the next poll - check ' \
+           '`bin/incident-watch ignore --list`'
+      write_dashboard
+    end
+
+    # --- logs ----------------------------------------------------------------------------
+
+    # Show what a headless RCA run actually did, turn by turn. Works while the run is still
+    # in flight, which is the whole point - `list` only tells you it is "dispatched".
+    def cmd_logs(argv)
+      options = {}
+      OptionParser.new do |o|
+        o.banner = 'Usage: bin/incident-watch logs FINGERPRINT [options]'
+        o.on('-f', '--follow', 'Stream new lines as the run produces them') { options[:follow] = true }
+        o.on('-n', '--tail N', Integer, 'Show only the last N lines') { |v| options[:tail] = v }
+        o.on('--thinking', 'Include the model\'s reasoning blocks (verbose)') { options[:thinking] = true }
+        o.on('--raw', 'Print paths to the underlying log files instead') { options[:raw] = true }
+      end.parse!(argv)
+
+      # Default to whatever is running. `dispatch --all` works through incidents one at a
+      # time, so requiring an explicit fingerprint would mean looking it up again after every
+      # run finishes.
+      fingerprint = argv.shift || running_fingerprint
+      abort 'nothing is running. Pass a FINGERPRINT (see: bin/incident-watch list)' unless fingerprint
+
+      require 'incident_watch/run_log'
+      run_log = RunLog.new(REPO_ROOT, store)
+
+      if options[:raw]
+        puts "dispatcher : #{File.join(REPO_ROOT, 'log', 'incident_watch.log')}"
+        puts "process    : #{run_log.run_log_path(fingerprint) || '(none yet)'}"
+        puts "transcript : #{run_log.transcript_path(fingerprint) || '(none yet)'}"
+        return
+      end
+
+      render = lambda do
+        run_log.render_transcript(fingerprint, show_thinking: options[:thinking], tail: options[:tail])
+      end
+
+      unless options[:follow]
+        puts render.call
+        return
+      end
+
+      # Poll the transcript and print only what is new. The file is appended to by the
+      # running claude process, so this behaves like `tail -f` but on rendered output.
+      #
+      # When a run ends, roll onto whatever is running next. That makes a single
+      # `logs -f` track an entire `dispatch --all` sequence instead of stopping after the
+      # first incident.
+      loop do
+        puts "\n#{'=' * 78}\n== #{fingerprint}  #{store.find(fingerprint)&.fetch('exception_class', '')}\n#{'=' * 78}"
+        seen = 0
+        loop do
+          lines = run_log.render_transcript(fingerprint, show_thinking: options[:thinking])
+          puts lines[seen..] if lines.size > seen
+          seen = lines.size
+          incident = store.find(fingerprint)
+          break unless incident && incident['state'] == 'dispatched'
+
+          sleep 3
+        end
+
+        final = store.find(fingerprint)
+        puts "\n-- #{fingerprint} finished: #{final&.fetch('state', 'unknown')}" \
+             "#{" - #{final['pr_url']}" if final && final['pr_url']} --"
+
+        # Give the dispatcher a moment to start the next one before deciding we are done.
+        sleep 5
+        nxt = running_fingerprint
+        break if nxt.nil? || nxt == fingerprint
+
+        fingerprint = nxt
+      end
+      puts "\n-- nothing else running --"
+    end
+
+    # The incident currently being analysed. Only one runs at a time, but sort by when it
+    # entered the state so the newest wins if a stale record was ever left behind.
+    def running_fingerprint
+      store.all
+           .select { |i| i['state'] == 'dispatched' }
+           .max_by { |i| i['state_changed_at'].to_s }
+           &.fetch('fingerprint', nil)
+    end
+
+    # --- check -------------------------------------------------------------------------
+
+    # Preflight. Proves every moving part before you put this on a timer, because the
+    # failure modes are all silent: wrong mailbox returns zero threads rather than an
+    # error, and a cron PATH without `claude` polls happily and never dispatches.
+    def cmd_check(_argv)
+      failures = []
+
+      pass = ->(label, detail = nil) { puts "  ok    #{label}#{" - #{detail}" if detail}" }
+      fail_ = lambda { |label, detail|
+        failures << label
+        puts "  FAIL  #{label} - #{detail}"
+      }
+
+      puts 'Configuration'
+      pass.call('config readable', CONFIG_PATH)
+      pass.call('alert senders', Array(config['from']).join(', '))
+      pass.call('subject pattern', config['subject_pattern'])
+      pass.call('expected mailbox', config['account'] || '(not recorded)')
+
+      puts "\nCredentials"
+      if @credentials_path
+        pass.call('credentials file', @credentials_path)
+      else
+        puts "  note  no credentials file; expecting environment variables\n        " \
+             "(create #{CREDENTIAL_FILES.first} to avoid exporting them by hand)"
+      end
+
+      require 'incident_watch/imap_source'
+      source = ImapSource.new(config)
+      if source.available?
+        pass.call('INCIDENT_WATCH_IMAP_USER', ENV.fetch('INCIDENT_WATCH_IMAP_USER', nil))
+        pass.call('INCIDENT_WATCH_IMAP_PASSWORD', 'set')
+      else
+        fail_.call('IMAP credentials', 'INCIDENT_WATCH_IMAP_USER / _PASSWORD are not set')
+      end
+
+      if source.available?
+        puts "\nGmail connection"
+        begin
+          result = source.probe
+          pass.call('login + mailbox', "#{config['mailbox']} opened read-only")
+          pass.call('search', "#{result[:matched]} message(s) from the alert senders in the " \
+                              "last #{config['lookback_days']} day(s)")
+
+          headers = result[:headers]
+          incidents, ignored = headers.partition { |m| alert_email?(m[:subject], m[:from]) }
+          pass.call('subject filter', "#{incidents.size} of #{headers.size} would be treated " \
+                                      'as production incidents')
+
+          if headers.empty?
+            puts '  note  no messages matched the sender filter. Either production has been ' \
+                 "quiet, or\n        the sender list in config/incident_watch.yml does not " \
+                 'match what Gmail receives.'
+          elsif incidents.empty?
+            # This is the important failure to surface: the sender filter is clearly right
+            # (mail is arriving) but nothing looks like an exception alert. Either there
+            # genuinely were none, or subject_pattern is wrong.
+            puts "\n  note  NONE of the #{headers.size} message(s) matched subject_pattern."
+            puts '        Either production threw no exceptions in this window, or the pattern'
+            puts '        needs adjusting. A sample of what is arriving instead:'
+            ignored.first(8).each { |m| puts "          [ignored] #{m[:subject].to_s[0, 84]}" }
+            puts "\n        Widen the window to look further back:"
+            puts '          lookback_days: 14   # in config/incident_watch.yml'
+          else
+            puts "\n  Would be treated as incidents (most recent first):"
+            incidents.first(10).each { |m| puts "    [INCIDENT] #{m[:date][0, 20]}  #{m[:subject].to_s[0, 76]}" }
+            puts "    ... and #{incidents.size - 10} more" if incidents.size > 10
+            puts "\n  Ignored, for contrast:"
+            ignored.first(4).each { |m| puts "    [ignored ] #{m[:subject].to_s[0, 84]}" }
+          end
+        rescue StandardError => e
+          fail_.call('Gmail connection', "#{e.class}: #{e.message.lines.first.to_s.strip}")
+          # The three things that actually cause this, in order of how often they do.
+          puts '        - the password must be a Google APP password, not your account password'
+          puts '        - IMAP must be enabled: Gmail Settings > Forwarding and POP/IMAP'
+          puts '        - if you pasted the app password with spaces, try it without them'
+        end
+      end
+
+      puts "\nDispatch prerequisites"
+      claude = `which claude 2>/dev/null`.strip
+      claude.empty? ? fail_.call('claude CLI', 'not on PATH') : pass.call('claude CLI', claude)
+
+      base = config.dig('dispatch', 'base_ref')
+      if system('git', '-C', REPO_ROOT, 'rev-parse', '--verify', '--quiet', base, out: File::NULL)
+        pass.call('base ref', base)
+      else
+        fail_.call('base ref', "#{base} not found - run `git fetch origin`")
+      end
+
+      begin
+        store.all
+        pass.call('state directory', store.root)
+      rescue StandardError => e
+        fail_.call('state directory', e.message)
+      end
+
+      puts
+      if failures.empty?
+        puts 'All checks passed. Install the schedule with: bin/incident-watch cron'
+        exit 0
+      else
+        puts "#{failures.size} check(s) failed: #{failures.join(', ')}"
+        exit 1
+      end
+    end
+
+    # --- cron ------------------------------------------------------------------------------
+
+    def cmd_cron(_argv)
+      ruby = `which ruby`.strip
+      ruby = 'ruby' if ruby.empty?
+      # cron runs with a minimal PATH (typically /usr/bin:/bin), which finds neither the
+      # mise-managed ruby nor the claude CLI. Pin the directories we actually need, or the
+      # poll succeeds and every dispatch silently fails with "command not found".
+      claude_dir = File.dirname(`which claude`.strip)
+      path = [File.dirname(ruby), claude_dir, '/usr/local/bin', '/usr/bin', '/bin'].reject(&:empty?).uniq.join(':')
+
+      creds = CREDENTIAL_FILES.first
+
+      puts <<~CRON
+        # Add this to `crontab -e` to poll Gmail every 30 minutes.
+        #
+        # cron does not read your shell profile, so PATH must be declared here or the
+        # dispatch step will not find `claude` and every poll will silently do nothing.
+        #
+        # The credentials are NOT in this crontab on purpose - `crontab -l` would expose
+        # them. bin/incident-watch reads them from:
+        #     #{creds}
+        # Create that file with (chmod 600 matters):
+        #     mkdir -p #{File.dirname(creds)}
+        #     printf 'INCIDENT_WATCH_IMAP_USER=%s\\nINCIDENT_WATCH_IMAP_PASSWORD=%s\\n' \\
+        #       '#{config['account'] || 'you@gmail.com'}' 'your16charapppassword' > #{creds}
+        #     chmod 600 #{creds}
+
+        PATH=#{path}
+
+        */30 * * * * cd #{REPO_ROOT} && #{ruby} -S bundle exec ruby bin/incident-watch poll >> log/incident_watch.log 2>&1
+
+        # `poll` regenerates the dashboard itself, so there is no second entry to schedule.
+        # Open it (it refreshes itself every 30s):
+        #   file://#{File.join(REPO_ROOT, config['state_dir'], 'dashboard.html')}
+        #
+        # Verify everything before trusting it:
+        #   bin/incident-watch check                                  # proves login, filters, PATH
+        #   bundle exec ruby bin/incident-watch poll --dry-run        # writes nothing, dispatches nothing
+        #
+        # Then watch it work:
+        #   tail -f #{REPO_ROOT}/log/incident_watch.log
+        #   bin/incident-watch list
+        #
+        # To record incidents but never start an RCA run automatically, append --no-dispatch
+        # to the cron command above.
+      CRON
+    end
+
+    # The banner is the comment block at the top of this file. Take lines while they are
+    # still comments rather than slicing a fixed range, so editing the header cannot start
+    # spilling source code into `--help`.
+    def usage(code = 0)
+      lines = File.readlines(__FILE__)
+      lines = lines.drop_while { |l| l.start_with?('#!') || l.strip.start_with?('# frozen') || l.strip.empty? }
+      banner = lines.take_while { |l| l.start_with?('#') }
+      puts banner.map { |l| l.sub(/^#\s?/, '') }.join
+      exit code
+    end
+  end
+end
+
+IncidentWatch::CLI.run(ARGV)

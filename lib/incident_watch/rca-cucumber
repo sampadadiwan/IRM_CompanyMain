@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# Cucumber runner for unattended RCA verification runs.
+#
+# This exists so the RCA run can be allowlisted precisely. Claude Code matches Bash
+# permissions by command prefix, so an inline env assignment -
+#   TEST_ENV_NUMBER=31447 bundle exec cucumber features/x.feature:12
+# - does NOT match an allowlist entry of `Bash(bundle exec cucumber:*)` and gets denied.
+# Allowlisting `Bash(TEST_ENV_NUMBER=*)` instead would permit *any* command behind an env
+# prefix, which is far too broad. A fixed-name wrapper keeps the grant narrow.
+#
+# It also puts the TEST_ENV_NUMBER convention in one place:
+#   - randomised, so parallel runs do not collide on the same test database
+#   - kept small, because Capybara listens on port 3100 + TEST_ENV_NUMBER and a large
+#     value pushes that past the valid port range, breaking every UI step
+#
+# The dispatcher stages this into the worktree at tmp/incident_watch/rca-cucumber.
+#
+# Usage: tmp/incident_watch/rca-cucumber features/fund/capital_distributions.feature:177
+
+set -euo pipefail
+
+# Respect an explicit value if one is already set; otherwise pick one in [100, 30099].
+export TEST_ENV_NUMBER="${TEST_ENV_NUMBER:-$((RANDOM % 30000 + 100))}"
+
+echo "rca-cucumber: TEST_ENV_NUMBER=${TEST_ENV_NUMBER} (Capybara port $((3100 + TEST_ENV_NUMBER)))"
+
+# Never run migrations here - maintain_test_schema! reloads the schema on its own, and
+# migrating the test database is explicitly forbidden in this project.
+exec bundle exec cucumber "$@"
