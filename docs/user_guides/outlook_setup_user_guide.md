@@ -26,8 +26,11 @@ your team can see it.
 # 2. Requirements
 
 - A **CapHive account** — the same login you use for CapHive every day
-- **Outlook on the web**, or **Outlook for Windows or Mac**
+- **Outlook on the web**, or the **desktop Outlook app for Windows or Mac**
 - The **install link** from your CapHive administrator
+
+The add-in is not available in Outlook on a phone or tablet. Everywhere else, it is the same
+add-in: install it once and it follows your mailbox to every copy of Outlook you use.
 
 Your organisation's name appears throughout the add-in, so if you use CapHive under a different
 brand, expect to see that name instead of "CapHive" on the button and panel.
@@ -39,7 +42,12 @@ brand, expect to see that name instead of "CapHive" on the button and panel.
 Most organisations have this installed centrally by an administrator, in which case the add-in
 simply appears in Outlook and you can skip to section 4.
 
-To install it yourself in **Outlook on the web**:
+> **You only ever install this once.** The add-in is attached to your mailbox, not to one copy
+> of Outlook. Install it in any one place and it appears everywhere you read that mailbox —
+> the desktop app on Windows, the desktop app on Mac, and Outlook on the web. There is no
+> separate download to run on your computer.
+
+### In Outlook on the web
 
 1. Open Outlook and click the **Settings** gear in the top right
 2. Search the settings for **Add-ins**, and open **Manage add-ins** (older versions:
@@ -47,19 +55,37 @@ To install it yourself in **Outlook on the web**:
 3. Choose **My add-ins**, then **Add a custom add-in → Add from URL**
 4. Paste the install link your administrator gave you, and confirm
 
+### In the desktop app on Windows or Mac
+
+You can do the same thing without leaving the desktop app:
+
+1. Open any email, and click **Get Add-ins** on the **Home** ribbon (on Mac you may find it
+   under **Tools → Get Add-ins**)
+2. Choose **My add-ins**, then **Add a custom add-in → Add from URL**
+3. Paste the install link your administrator gave you, and confirm
+4. Close and reopen Outlook — the button appears on the ribbon when it starts again
+
+If **Add a custom add-in** is missing, your version of Outlook or your organisation's settings
+do not allow installing add-ins yourself. Install it from Outlook on the web instead, using the
+steps above — it will then show up in the desktop app — or ask your administrator to install it
+for you.
+
 Outlook will warn you that the add-in comes from outside the store. That is expected for an
 add-in your own organisation provides.
 
 **Administrators** installing for everyone should use the Microsoft 365 admin centre instead:
 **Settings → Integrated apps → Upload custom apps**, using the same link. Allow up to 24 hours
-for it to reach all users.
+for it to reach all users. A central install reaches the desktop apps and the web in the same
+way — nobody needs to install anything on their own computer.
 
 ---
 
 # 4. Finding the Add-in
 
-Open any email. A button appears in the toolbar above the message, labelled **File to CapHive**
-(or your organisation's name).
+Open any email. A button appears labelled **File to CapHive** (or your organisation's name):
+
+- **In the desktop app**, on the **Home** ribbon, in its own CapHive group
+- **In Outlook on the web**, in the toolbar above the message
 
 Clicking it opens the CapHive panel on the right-hand side.
 
@@ -163,8 +189,15 @@ from Gmail, you will see that here.
 # 10. Troubleshooting
 
 **The button does not appear.** Refresh Outlook, then check under the three dots (…) in the
-message toolbar. If it is still missing, confirm with your administrator that the add-in is
+message toolbar. In the desktop app, close Outlook completely and reopen it — a newly installed
+add-in only appears on the ribbon after a restart, and a central install can take up to 24 hours
+to reach you. If it is still missing, confirm with your administrator that the add-in is
 installed for your account.
+
+**It works in Outlook on the web but not in the desktop app.** It is the same add-in and the
+same installation, so nothing needs installing again. Close the desktop app completely and
+reopen it. If it is still missing after a restart, tell your administrator — some organisations
+restrict which add-ins the desktop app is allowed to load.
 
 **The panel is blank.** Close and reopen it. If it stays blank, tell your administrator which
 version of Outlook you are using — the panel needs to load from CapHive, and a network or
