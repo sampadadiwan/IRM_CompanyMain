@@ -1,0 +1,40 @@
+# Tenant configuration for the Outlook add-in manifests.
+#
+# Run `rake outlook:manifests` after changing this to regenerate the XML in
+# public/manifests/ from lib/templates/outlook_manifest.xml.erb.
+#
+# The id MUST be unique per tenant. Both shipped manifests previously carried the same
+# <Id> (61f73634-8c8d-4c31-9a74-27960166699a), and Outlook keys installed add-ins by id —
+# so the two could not coexist in one tenant, and sideloading the second silently replaced
+# the first. The CapHive id is kept as-is so existing installs upgrade in place rather than
+# appearing as a second add-in.
+caphive:
+  id: 61f73634-8c8d-4c31-9a74-27960166699a
+  display_name: CapHive Filing
+  provider_name: CapHive
+  host: https://app.caphive.com
+  support_url: https://caphive.com/support
+  group_label: CapHive
+  button_label: File to CapHive
+
+# app.caphive.us is a separate server with a separate database from app.caphive.com, so a
+# user exists in one or the other and each needs its own manifest. Distinct <Id> and a
+# distinct display name: Outlook keys installed add-ins by id, and a user who works across
+# both regions would otherwise see two identically-named buttons.
+caphive_us:
+  id: 4f267f92-0af3-4f64-a141-06ff1ee3a515
+  display_name: CapHive Filing (US)
+  provider_name: CapHive
+  host: https://app.caphive.us
+  support_url: https://caphive.com/support
+  group_label: CapHive US
+  button_label: File to CapHive
+
+altconnects:
+  id: f257ae50-5fa8-4788-bb0c-9550489c837d
+  display_name: AltConnects Filing
+  provider_name: AltConnects
+  host: https://dev.altconnects.com
+  support_url: https://dev.altconnects.com/support
+  group_label: AltConnects
+  button_label: File to AltConnects

@@ -7,6 +7,11 @@ This guide explains how to install and use the **CapHive Gmail Add-on**, which a
 
 Once installed, you can file any email under the appropriate investor in just a few clicks.
 
+> **Availability:** the add-on is not yet published to the Google Workspace Marketplace.
+> Searching for it there will not find it. Until it is listed, your CapHive administrator
+> installs it for your organisation and shares the link with you — so start at section 3,
+> Option B.
+
 ---
 
 # 1. What the Add-on Does
@@ -116,20 +121,21 @@ Clicking this icon opens the **CapHive panel**.
 
 ---
 
-# 5. First-Time Login
+# 5. First-Time Sign In
 
-When you open the add-on for the first time, you will be asked to log in to CapHive.
+When you open the add-on for the first time, it will ask you to sign in to CapHive.
 
-Enter your CapHive credentials:
+Click **Sign in to CapHive**. A browser tab opens on your normal CapHive sign-in page.
 
-```
-Email
-Password
-```
+Sign in there exactly as you usually do — including single sign-on and any two-factor step
+your organisation uses. You will never be asked to type your CapHive password into the
+Gmail sidebar itself.
 
-You will be redirected to the CapHive add-on panel after login.
+Once you have signed in, close the tab and return to Gmail. The add-on panel will show the
+matched investor for the email you have open.
 
-> **Note:** Your login session is stored securely. You will not need to log in again on subsequent uses unless your session expires.
+> **Note:** Your sign-in is remembered for 30 days. After that, or if your access is
+> revoked, the add-on will show the **Sign in to CapHive** button again.
 
 ---
 

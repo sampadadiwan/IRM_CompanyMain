@@ -133,3 +133,12 @@ opencode.json
 .vscode/mcp.json
 .vscode/mcp.json
 
+
+# Apps Script deployment config (per-deployment script id)
+.clasp.json
+addons/**/.clasp.json
+# Per-environment script ids, written by `rake gmail:setup[<env>]`. Gitignored because the
+# projects belong to whichever Google account created them, so they differ per developer.
+addons/**/.clasp.*.json
+# Generated Apps Script projects — rebuild with `rake gmail:build[<env>]`.
+addons/gmail/build/

@@ -6,10 +6,11 @@ class EmailMatchesController < ApplicationController
 
     Rails.logger.debug { "Received match request with params: #{params.inspect}" }
 
+    # Sender only — see InvestorEmailMatcher. to_emails/cc_emails may still be posted here
+    # by older callers; they are ignored rather than rejected.
     matcher = InvestorEmailMatcher.new(
       from_email: params[:from_email],
-      to_emails: params[:to_emails],
-      cc_emails: params[:cc_emails],
+      mailbox_email: params[:mailbox_email],
       user: current_user
     )
     result = matcher.match

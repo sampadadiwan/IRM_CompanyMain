@@ -105,9 +105,20 @@ Investor
 
 ### Matching Algorithm (Priority Order)
 
-1.  **From Email Domain Match**: Extracts domain from the sender's email and matches it against `Investor.primary_email` domain.
-2.  **CC Email Domain Match**: Extracts domains from any CC'd emails and matches them against `Investor.primary_email` domain.
-3.  **Direct Email Match (Fallback)**: Matches sender, to, and cc emails against `InvestorAccess.email`.
+Most specific first — matching stops at the first tier that produces candidates.
+Participants means From, To **and** CC on every tier.
+
+1.  **Contact Match**: A participant address is a known, approved `InvestorAccess.email`.
+2.  **Primary Email Match**: A participant address is an `Investor.primary_email` exactly.
+3.  **Domain Match**: A participant address shares a domain with `Investor.primary_email`.
+    Generic mail hosts (gmail.com, outlook.com, …) are excluded, since a shared suffix
+    there says nothing about the counterparty.
+
+> Superseded earlier drafts of this section listed domain matching first with a direct
+> email fallback, and described matching on From and CC only. The implementation does the
+> opposite ordering — specific before general, which is the correct precedence — and reads
+> To as well, without which no outbound email could ever be matched.
+> See `InvestorEmailMatcher` and `docs/technical/mail_addin_review.md`.
 
 ---
 

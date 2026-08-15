@@ -1,0 +1,23 @@
+/**
+ * GENERATED FILE — do not edit, and do not commit.
+ * Source: lib/templates/gmail_config.gs.erb + config/gmail_addins.yml
+ * Regenerate with: rake gmail:setup[<%= env %>]
+ *
+ * Baking the host in at build time rather than reading it from a Script Property set by
+ * hand in the console means a freshly pushed project is already correct. The previous
+ * build required a manual property and, when it was missing, fell back to a hardcoded dev
+ * hostname — so a production install quietly talked to a dev server.
+ *
+ * getApiUrl() still lets a Script Property override this, so a deployed add-on can be
+ * repointed in an incident without a push.
+ */
+
+// Which entry of config/gmail_addins.yml produced this build.
+var CAPHIVE_ENV = '<%= env %>';
+
+// Base URL of the CapHive instance this project talks to. No trailing slash.
+var CAPHIVE_API_URL = '<%= config['host'] %>';
+
+// Suffix shown in the card header, so it is obvious at a glance which environment the
+// open card is filing into. Empty for production.
+var CAPHIVE_ENV_LABEL = '<%= env == 'production' ? '' : config['display_name'].to_s[/\((.+)\)/, 1].to_s %>';

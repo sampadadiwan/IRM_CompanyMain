@@ -23,6 +23,11 @@ class IncomingEmailsController < ApplicationController
       body: params[:html].presence || params[:text],
       cc_emails: params[:cc],
       message_id: message_id,
+      # Also stored as internet_message_id, which is the dedup key the Outlook and Gmail
+      # add-ins key on. Without this, an email ingested here is invisible to the add-ins'
+      # already-filed check and to idx_incoming_emails_dedup (NULL never collides), so a
+      # user opening that same message in Outlook is told it is unfiled and files it again.
+      internet_message_id: message_id,
       received_at: Time.current
     )
 

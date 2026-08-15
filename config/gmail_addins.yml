@@ -1,0 +1,33 @@
+# Environment configuration for the Gmail add-on.
+#
+# Each key here becomes its OWN Apps Script project, with its own script id, its own name
+# in the Gmail sidebar and its own API host. That separation is the point: a single Apps
+# Script project has exactly one copy of the code and one set of script properties, so a
+# staging build and a production build cannot coexist inside one project. Testing against
+# staging without risking a write to production means two projects.
+#
+# Run `rake gmail:setup[<env>]` after changing this. The host is baked into the pushed
+# source at build time (build/<env>/Config.gs), so there is no console step to forget and
+# no way for the staging add-on to silently point at production.
+#
+# display_name MUST differ per environment. Both add-ons appear as icons in the same Gmail
+# side panel, and identical names make them impossible to tell apart — which is how you end
+# up filing a test email into production.
+#
+# Note on the two production entries: `production` (India) and `production_us` are separate
+# servers with separate databases, so a user exists in exactly one of them and a token from
+# one is meaningless at the other. They are two projects here. If the add-on later grows a
+# region dropdown (host stored per user rather than per project), these collapse into a
+# single entry with a `sites` list, and a single Marketplace listing serves both.
+
+staging:
+  display_name: CapHive Filing (Staging)
+  host: https://dev.altconnects.com
+
+production:
+  display_name: CapHive Filing
+  host: https://app.caphive.com
+
+production_us:
+  display_name: CapHive Filing (US)
+  host: https://app.caphive.us

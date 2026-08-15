@@ -119,6 +119,16 @@ class Investor < ApplicationRecord
 
   validates_uniqueness_of :primary_email, scope: :entity_id, message: "has already been used for a different stakeholder. Please enter a unique primary email ID."
 
+  # Keeps the indexed domain column in step with primary_email. The mail add-ins match
+  # senders by domain, and doing that as `primary_email LIKE '%@domain'` cannot use an
+  # index — it scans every investor on each request. This column makes it an equality
+  # lookup against idx_investors_on_email_domain_entity.
+  # @see InvestorEmailMatcher
+  before_save :sync_primary_email_domain, if: :will_save_change_to_primary_email?
+  def sync_primary_email_domain
+    self.primary_email_domain = primary_email.to_s.split("@").last.presence&.downcase
+  end
+
   # The investor_entity_id duplicate is a side effect of the name/email match (see #update_name),
   # so it's redundant noise once either of those is already flagged.
   validate :suppress_redundant_entity_duplicate_error

@@ -48,8 +48,7 @@
     funds:'products', portfolios:'products', deals:'products',
     'ai-agents':'products', integrations:'products',
     pricing:'solutions',
-    cases:'resources', faq:'resources', security:'resources',
-    careers:'about'
+    cases:'resources', faq:'resources', security:'resources'
   };
   var page = document.body.dataset.page;
   if(page){

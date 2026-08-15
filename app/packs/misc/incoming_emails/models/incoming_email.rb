@@ -13,8 +13,46 @@ class IncomingEmail < ApplicationRecord
   belongs_to :entity
   belongs_to :filed_by_user, class_name: 'User', optional: true
 
+  # Blank must become NULL, not "". idx_incoming_emails_dedup is unique across
+  # (entity_id, internet_message_id, owner_type, owner_id), and while both MySQL and SQLite
+  # allow repeated NULLs in a unique index, they do not allow repeated "". A client that
+  # cannot supply a Message-ID sends an empty string, which would otherwise make two
+  # completely unrelated emails collide and the second one be reported as "already filed"
+  # against the first.
+  normalizes :internet_message_id, with: ->(value) { value.presence }
+  normalizes :message_id, with: ->(value) { value.presence }
+
   def to_s
     "From: #{from}, Subj: #{subject}"
+  end
+
+  # Removes this filing without taking the shared folder — and other emails' documents —
+  # with it.
+  #
+  # #folder_path resolves to one folder per (owner, sender), and setup_document_folder
+  # reuses an existing folder at that path, so every email from the same sender to the same
+  # investor shares one Folder. WithFolder then attaches that folder to the email twice
+  # over: `belongs_to :document_folder, dependent: :destroy` and
+  # `has_many :folders, as: :owner, dependent: :destroy`, where the owner is whichever
+  # email most recently materialised it. Folder itself declares
+  # `has_many :documents, dependent: :destroy`.
+  #
+  # So a plain destroy of one filing can delete the shared folder through *either* path and
+  # take every document in it, including other emails' attachments. Both links are severed
+  # here; the folder is handed to another email that still points at it, or left ownerless
+  # rather than deleted. This email's own attachments still cascade through
+  # `has_many :documents, as: :owner, dependent: :destroy`, which is intended.
+  def destroy_filing!
+    folder = document_folder_id.present? ? Folder.find_by(id: document_folder_id) : nil
+    update_column(:document_folder_id, nil) if document_folder_id.present?
+
+    if folder && folder.owner_type == self.class.name && folder.owner_id == id
+      # document_folder_id is already cleared above, so this cannot find self.
+      heir_id = IncomingEmail.where(document_folder_id: folder.id).limit(1).pick(:id)
+      folder.update_columns(owner_id: heir_id, owner_type: heir_id ? self.class.name : nil)
+    end
+
+    destroy!
   end
 
   # This is used to check if the incoming email is sent to an entities mailbox
@@ -23,7 +61,9 @@ class IncomingEmail < ApplicationRecord
     return if entity.present?
 
     self.entity ||= Entity.joins(:entity_setting).where('entity_settings.mailbox': to).first
-    if entity.present?
+    if entity.present? && subject.present?
+      # subject.present? guard: empty-subject mail is common, and strip on nil raised
+      # NoMethodError here, 500ing the SendGrid webhook.
       # matches() generates ILIKE on Postgres and LIKE on SQLite — both case-insensitive
       self.owner ||= entity.investors.where(Investor.arel_table[:investor_name].matches(subject.strip)).first
     end
@@ -57,17 +97,30 @@ class IncomingEmail < ApplicationRecord
     errors.add(:base, "Could not resolve email owner: #{e.message}")
   end
 
+  # SendGrid posts attachments as attachment1, attachment2, ... alongside the mail fields.
   def save_attachments(params)
     attachment_keys = params.keys.select { |k| k.start_with?("attachment") && params[k].is_a?(ActionDispatch::Http::UploadedFile) }
     return if attachment_keys.empty?
 
     # Resolve once outside the loop to avoid N+1 queries per attachment
     user = User.where(email: from).first || entity.employees.first || User.support_users.first
-    attachment_keys.each do |key|
-      file = params[key]
+    save_uploaded_attachments(attachment_keys.map { |key| params[key] }, user: user)
+  end
+
+  # Shared attachment path, used by the SendGrid webhook above and by the Outlook/Gmail
+  # add-ins via MailFilingCreate. The add-ins attribute the documents to the filing user;
+  # SendGrid has no signed-in user and resolves one from the sender.
+  # @param files [Array<ActionDispatch::Http::UploadedFile>]
+  # @param user [User] who the resulting Documents are attributed to
+  # @return [Array<String>] messages for files that could not be saved, so callers can
+  #   report a partial failure instead of a clean success with documents missing
+  def save_uploaded_attachments(files, user:)
+    Array(files).compact.filter_map do |file|
       document = documents.build(name: file.original_filename, entity:, user:, orignal: true)
       document.file = file.tempfile
-      document.save
+      next if document.save
+
+      "#{file.original_filename}: #{document.errors.full_messages.join(', ')}"
     end
   end
 

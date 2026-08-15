@@ -67,6 +67,20 @@ h1 em, h2 em, h3 em{ font-family:var(--serif); font-style:italic; font-weight:40
   letter-spacing:0; font-size:1.06em;
 }
 
+/* The name is two-toned: "Cap" in the brand orange, "Hive" in the muted grey.
+   The grey lives on .wordmark rather than on a second inner span, so a surface
+   that cannot carry it needs only one override. On the dark panels and the
+   orange form card the grey falls below contrast, so the name goes back to
+   inheriting that surface's own foreground; on the orange card "Cap" would also
+   disappear into the background, so it inherits there too. */
+.wordmark{ color:var(--mut); }
+.wordmark .wm-cap{ color:var(--orange); }
+.frame .wordmark, .stage .wordmark, .band-dark .wordmark, .ag-dark .wordmark,
+.chat .wordmark, .plan.feature .wordmark, .tint-black .hero-panel .wordmark,
+.post-lead-side .wordmark, .form-card.orange .wordmark,
+.link-card:hover .wordmark, .case:hover .wordmark{ color:inherit; }
+.form-card.orange .wordmark .wm-cap{ color:inherit; }
+
 /* ---------- line breaking ----------
    Headings and short labels break into even lines instead of leaving a single
    orphaned word on the last line; body copy avoids a one-word final line.
@@ -721,7 +735,49 @@ a.f-card:hover h3{ color:var(--orange); }
   background:var(--cream); color:var(--orange-2); font-weight:700; font-size:14px;
 }
 .quote-who strong{ display:block; font-size:14.5px; }
+/* The founder's name links out to LinkedIn. a{color:inherit;text-decoration:none}
+   strips every affordance, so the link carries its own rule. */
+.quote-who strong a{ border-bottom:1px solid var(--line); }
+.quote-who strong a:hover{ color:var(--orange-2); border-color:var(--orange-2); }
 .quote-who span{ font-size:12.5px; color:var(--mut); }
+
+/* ---------- founder's message (About) ----------
+   A two-column letter, not a testimonial: attribution parked in a left rail and
+   the message set straight onto the dark band. This deliberately does not reuse
+   .quote — that is built for a one-line pull quote, so on a four-paragraph
+   letter it drew a card inside the band and repeated its opening quote mark on
+   every paragraph. One oversized mark opens the whole letter instead.
+   .band-dark caps its own p at 640px for a lede; the letter takes the measure
+   back, and both selectors weigh the same so this block has to stay below it. */
+.founder{ display:grid; grid-template-columns:200px 1fr; gap:64px; align-items:start; }
+.founder-who{ display:flex; flex-direction:column; align-items:flex-start; gap:14px; }
+.founder-who .avatar{ width:52px; height:52px; font-size:15px; background:rgba(255,255,255,.1); color:#fff; }
+.founder-id{ display:flex; flex-direction:column; gap:3px; }
+.founder-id strong{ font-size:16px; font-weight:600; color:#fff; letter-spacing:-0.01em; }
+.founder-id .role{ font-size:13px; color:rgba(255,255,255,.5); }
+.founder-li{
+  display:inline-flex; align-items:center; gap:7px;
+  font-size:13px; font-weight:500; color:rgba(255,255,255,.72);
+  border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:7px 14px;
+  transition:color .25s, border-color .25s, background .25s;
+}
+.founder-li:hover{ color:#fff; border-color:#fff; background:rgba(255,255,255,.06); }
+/* The mark sits on its own line rather than hanging in the margin — a negative
+   offset would clip against the band's 24px padding on small screens. */
+.founder-note::before{
+  content:"\201C"; display:block; font-family:var(--serif); font-size:76px;
+  line-height:.55; color:var(--orange); margin-bottom:26px;
+}
+.founder-note p{ color:rgba(255,255,255,.78); font-size:16.5px; line-height:1.7; max-width:66ch; }
+.founder-note p + p{ margin-top:18px; }
+
+@media (max-width:1000px){
+  /* Stacked, with the letter above the attribution that signs it. */
+  .founder{ grid-template-columns:1fr; gap:30px; }
+  .founder-note{ order:1; }
+  .founder-who{ order:2; flex-direction:row; align-items:center; flex-wrap:wrap; gap:14px; }
+  .founder-li{ margin-left:auto; }
+}
 
 /* ---------- article index ---------- */
 .article{

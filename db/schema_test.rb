@@ -2189,21 +2189,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_100000) do
 
   create_table "incoming_emails", force: :cascade do |t|
     t.text "body"
-    t.string "cc_emails"
+    t.text "cc_emails"
     t.datetime "created_at", null: false
     t.bigint "document_folder_id"
     t.bigint "entity_id"
     t.bigint "filed_by_user_id"
     t.string "from"
     t.string "internet_message_id"
-    t.string "message_id"
+    t.text "message_id"
     t.bigint "owner_id"
     t.string "owner_type"
     t.datetime "received_at"
     t.string "subject"
-    t.string "to"
+    t.text "to"
     t.datetime "updated_at", null: false
     t.index ["document_folder_id"], name: "index_incoming_emails_on_document_folder_id"
+    t.index ["entity_id", "internet_message_id", "owner_type", "owner_id"], name: "idx_incoming_emails_dedup", unique: true, length: { owner_type: 40 }
     t.index ["entity_id"], name: "index_incoming_emails_on_entity_id"
     t.index ["filed_by_user_id"], name: "index_incoming_emails_on_filed_by_user_id"
     t.index ["owner_type", "owner_id"], name: "index_incoming_emails_on_owner"
@@ -2585,6 +2586,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_100000) do
     t.date "last_interaction_date"
     t.string "pan", limit: 40
     t.string "primary_email"
+    t.string "primary_email_domain", limit: 191
     t.string "sector"
     t.string "slug"
     t.string "tag_list", limit: 120
@@ -2599,6 +2601,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_100000) do
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
     t.index ["pan"], name: "index_investors_on_pan"
+    t.index ["primary_email_domain", "entity_id"], name: "idx_investors_on_email_domain_entity"
     t.index ["slug"], name: "index_investors_on_slug", unique: true
     t.index ["tag_list"], name: "index_investors_on_tag_list"
   end

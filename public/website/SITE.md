@@ -61,7 +61,7 @@ guide but worth a deliberate decision before launch.
 `ai-is-ready.html`, `portfolio-real-time-insight.html`, `ai-agent-infrastructure.html`,
 `ai-and-fifa-2026.html`, `tech-powered-portfolio-management-vc.html`
 
-**Company** — `about.html`, `careers.html`, `contact.html`, `thank-you.html`
+**Company** — `about.html`, `contact.html`, `thank-you.html`
 
 **Legal & utility** — `privacy.html`, `terms.html`, `cookies.html`, `404.html`,
 `robots.txt`, `sitemap.xml`
@@ -110,7 +110,6 @@ site.
    - Case-study outcome figures are illustrative, carried over from the homepage.
    - Leadership cards on `about.html` and the testimonials sections are `hidden`
      with placeholder content — fill them in and remove the `hidden` attribute.
-   - Job listings on `careers.html` are illustrative.
    - Login is domain-aware: the nav link carries `data-login` and ships
      `https://app.caphive.com/` so it works with JavaScript off, then the runtime
      swaps in `https://app.caphive.us/` when the visitor is on `caphive.us`.

@@ -85,13 +85,13 @@ Rails.application.routes.draw do
     get 'redirect_to_subdomain', on: :collection
   end
 
-  resource :two_factor, only: [:new, :create], controller: 'users/two_factor' do
+  resource :two_factor, only: %i[new create], controller: 'users/two_factor' do
     get  :select_mode           # choose WhatsApp vs Authenticator
     post :select_mode, action: :select_mode_post
     get  :enroll                # authenticator mode: QR code setup
     post :verify_enrollment     # authenticator mode: confirm TOTP code
     get  :enroll_whatsapp       # whatsapp mode: confirm phone + send test code
-    post :verify_whatsapp_enrollment  # whatsapp mode: verify test code
+    post :verify_whatsapp_enrollment # whatsapp mode: verify test code
     post :send_whatsapp
     get  :backup_codes
   end
@@ -101,7 +101,7 @@ Rails.application.routes.draw do
   post "/internal/sync/users/digest",  to: "users_sync#digest" # optional reconciliation
 
   post "/ses_notifications", to: "ses_notifications#create"
-  post "/grafana/alert",    to: "grafana_alerts#alert"
+  post "/grafana/alert", to: "grafana_alerts#alert"
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -115,10 +115,34 @@ Rails.application.routes.draw do
   get 'features/*id', to: 'features#show', as: :feature, format: false
 
   get 'outlook_addin/taskpane', to: 'outlook_addin#taskpane'
+  # Opened in an Office dialog (a top-level window, so the session cookie works there)
+  # to mint the bearer token the task pane authenticates with.
+  get 'outlook_addin/oauth_start', to: 'outlook_addin#oauth_start'
+  # Same purpose for the Gmail add-on, which opens this in a browser tab and receives the
+  # token back through Apps Script's usercallback.
+  get 'gmail_addin/oauth_start', to: 'gmail_addin#oauth_start'
+  # Legacy session-authenticated endpoints for the old Outlook task pane. Superseded by
+  # the token-authenticated /api/v1/mail/* API below, which both add-ins now use.
   get 'outlook_addin/investors', to: 'outlook_addin#investors'
   resources :email_matches, only: [:create]
   resources :incoming_emails do
     post :sendgrid, on: :collection
+  end
+
+  # Shared mail add-in API — Outlook task pane and Gmail add-on both call these.
+  # Bearer-token authenticated via Doorkeeper; no session cookie is involved.
+  namespace :api do
+    namespace :v1 do
+      namespace :mail do
+        post 'match', to: 'matches#create'
+        get 'owners', to: 'owners#index'
+        resources :filings, only: %i[create destroy] do
+          post :attachments, on: :member
+        end
+        # Browsers preflight the cross-origin calls the Outlook task pane makes.
+        match '*path', to: 'base#preflight', via: :options
+      end
+    end
   end
 
   if Rails.env.test?

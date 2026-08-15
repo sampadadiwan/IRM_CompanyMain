@@ -38,6 +38,14 @@ class ApplicationPolicy
     false
   end
 
+  # Permission to file an email against this record from the Outlook/Gmail add-ins.
+  # incoming_emails.owner is polymorphic, so any owner type can opt in by overriding
+  # this; denying by default keeps new types out of the add-ins until considered.
+  # @see MailFilingCreate
+  def file_mail?
+    false
+  end
+
   def validate_docs_with_ai?
     user.entity.enable_doc_llm_validation
   end

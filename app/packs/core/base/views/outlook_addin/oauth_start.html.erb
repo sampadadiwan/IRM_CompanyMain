@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signing in to CapHive</title>
+  <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <%= stylesheet_link_tag "mail_addin" %>
+</head>
+<body class="mail-addin mail-addin--dialog">
+  <div class="mail-addin__dialog-body">
+    <div class="mail-addin__spinner"></div>
+    <p class="mail-addin__muted">Signing in&hellip;</p>
+    <p id="dialog-error" class="mail-addin__alert mail-addin__alert--error" hidden></p>
+  </div>
+
+  <%# The token is rendered as JSON and handed to the task pane over Office's dialog
+      messaging channel. messageParent only delivers to the add-in that opened this
+      dialog, and the payload never touches the page's URL or any third-party origin. %>
+  <%# json_escape neutralises <, > and & so a user or entity name containing "</script>"
+      cannot break out of this block. %>
+  <script type="application/json" id="token-payload"><%= raw json_escape(@token_payload.to_json) %></script>
+
+  <script type="text/javascript">
+    Office.onReady(function () {
+      var payload = document.getElementById('token-payload').textContent;
+      try {
+        Office.context.ui.messageParent(payload);
+      } catch (e) {
+        var err = document.getElementById('dialog-error');
+        err.textContent = 'Could not return the sign-in result to Outlook. Please close this window and try again.';
+        err.hidden = false;
+      }
+    });
+  </script>
+</body>
+</html>
