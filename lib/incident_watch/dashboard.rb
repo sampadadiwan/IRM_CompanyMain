@@ -21,11 +21,13 @@ module IncidentWatch
     # forms that POST, so they only work when the page is served by `incident-watch serve`;
     # a file:// page has nothing to post to. The static file therefore renders read-only,
     # with a pointer to the serve command, rather than dead buttons.
-    def initialize(repo_root, config, store, interactive: false)
+    def initialize(repo_root, config, store, interactive: false, flash: nil, booted_at: nil)
       @repo_root = repo_root
       @config = config
       @store = store
       @interactive = interactive
+      @flash = flash
+      @booted_at = booted_at
       @now = Time.now.utc
     end
 
@@ -58,6 +60,8 @@ module IncidentWatch
             #{'&middot; read-only &mdash; run <code>bin/incident-watch serve</code> for action buttons' unless @interactive}
           </p>
         </header>
+        #{flash_banner}
+        #{stale_code_banner}
         #{review_banner(incidents)}
         #{summary(incidents)}
         #{table(incidents, pr_index)}
@@ -259,6 +263,36 @@ module IncidentWatch
     # The static file:// page has no buttons - it cannot POST anywhere. Without this banner
     # it reports "3 awaiting your review" and then offers no way whatsoever to review them,
     # which is a dead end rather than a dashboard. Say plainly what to run.
+    # Show what just went wrong. Without this an action that fails redirects to an unchanged
+    # page, which looks exactly like a button that does nothing.
+    def flash_banner
+      return '' if @flash.to_s.empty?
+
+      %(<section class="banner error">#{h @flash}</section>)
+    end
+
+    # Ruby reads these files once, at boot. Editing them afterwards does not affect a running
+    # server, and the symptom - a button that silently does nothing - is genuinely hard to
+    # place. If anything the server depends on is newer than the server, say so.
+    def stale_code_banner
+      return '' unless @booted_at
+
+      sources = Dir[File.join(@repo_root, 'lib', 'incident_watch', '*.rb')] +
+                [File.join(@repo_root, 'bin', 'incident-watch')]
+      newer = sources.select { |f| File.exist?(f) && File.mtime(f) > @booted_at }
+      return '' if newer.empty?
+
+      <<~HTML
+        <section class="banner error">
+          <strong>This server is running stale code.</strong>
+          #{newer.size} source file(s) changed since it started
+          (#{@booted_at.getlocal.strftime('%H:%M:%S')}). Buttons may fail silently or behave
+          unexpectedly until you restart it.
+          <div class="mono">Ctrl-C, then: bin/incident-watch serve --open</div>
+        </section>
+      HTML
+    end
+
     def review_banner(incidents)
       awaiting = incidents.select { |i| i['state'] == 'analysed' }
       return '' if awaiting.empty?
@@ -572,6 +606,7 @@ module IncidentWatch
         .banner { background: var(--new-bg); border: 1px solid var(--new); border-radius: 10px;
                   padding: 14px 16px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; }
         .banner p { margin: 10px 0 4px; }
+        .banner.error { background: var(--hot-bg); border-color: var(--hot); }
         .banner .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
                         font-size: 12px; background: var(--panel); border: 1px solid var(--line);
                         border-radius: 6px; padding: 6px 9px; margin: 3px 0; overflow-x: auto; }

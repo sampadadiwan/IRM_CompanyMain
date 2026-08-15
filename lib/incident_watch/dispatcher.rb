@@ -24,7 +24,10 @@ module IncidentWatch
     def dispatch(incident, force: false)
       fingerprint = incident['fingerprint']
 
-      unless force || incident['state'] == 'new'
+      # `failed` is retryable by definition - that is what the Retry button is for.
+      # Anything further along (analysed/done/patching) needs an explicit force, so a stray
+      # click cannot redo work that already succeeded.
+      unless force || %w[new failed].include?(incident['state'])
         log "#{fingerprint}: state=#{incident['state']}, skipping (use --force to re-run)"
         return :skipped
       end
@@ -96,6 +99,44 @@ module IncidentWatch
       end
     end
 
+    # Retry a failed incident, resuming at the right stage.
+    #
+    # Which stage that is comes from git, not from the stored state: the state says only
+    # "failed", but the branch shows exactly how far the work actually got. A run that
+    # produced an RCA and a patch and then failed while opening the PR must not redo the
+    # analysis - that would waste tokens and throw away good work.
+    def retry_incident(fingerprint)
+      incident = @store.find(fingerprint) or return :missing
+
+      branch = incident['branch']
+      if branch.to_s.empty? || !branch_exists?(branch)
+        # Nothing was ever built. Start over.
+        return dispatch(incident, force: true)
+      end
+
+      files = changed_files(branch)
+      has_rca = files.any? { |f| f.start_with?('docs/incidents/') }
+      has_patch = files.any? { |f| !f.start_with?('docs/incidents/') }
+
+      if has_patch
+        # RCA and patch are both committed; the failure was in publishing. Just publish.
+        log "#{fingerprint}: retry - work is complete, retrying publish only"
+        result = publish(fingerprint, branch, incident['rca_doc'], force: true)
+        @store.update_state(fingerprint, 'done', { 'error' => nil }.merge(result))
+        result['pr_error'] ? :failed : :done
+      elsif has_rca
+        # Analysis succeeded, patching did not. Resume at stage 2.
+        log "#{fingerprint}: retry - RCA exists, resuming at the patch stage"
+        @store.update_state(fingerprint, 'analysed', 'error' => nil)
+        patch_incident(fingerprint)
+      else
+        # The branch exists but carries nothing usable - reset it and re-analyse.
+        log "#{fingerprint}: retry - nothing committed, re-running analysis from a clean branch"
+        reset_worktree(incident['worktree'])
+        dispatch(incident, force: true)
+      end
+    end
+
     private
 
     # --- git ---------------------------------------------------------------------------
@@ -130,6 +171,15 @@ module IncidentWatch
 
       log "base ref #{configured} not found, falling back to HEAD"
       'HEAD'
+    end
+
+    # Drop whatever a failed run left on the branch so a retry starts from the same place
+    # the first attempt did. Only ever used on an incident's own worktree.
+    def reset_worktree(worktree)
+      return if worktree.to_s.empty? || !File.exist?(File.join(worktree, '.git'))
+
+      base = @config.dig('dispatch', 'base_ref')
+      Open3.capture3('git', '-C', worktree, 'reset', '--hard', base)
     end
 
     def ref_exists?(ref)
@@ -361,6 +411,83 @@ module IncidentWatch
     def find_rca_doc(worktree, fingerprint)
       path = Dir[File.join(worktree, 'docs', 'incidents', "*#{fingerprint}*")].first
       path&.sub("#{worktree}/", '')
+    end
+
+    # --- publishing --------------------------------------------------------------------
+
+    # Push the branch and open a draft PR with the RCA as the body.
+    #
+    # Everything here runs from the main checkout, not from the incident's worktree. A
+    # worktree is disposable - it may have been removed long before you decide the fix is
+    # worth publishing - but the branch and its objects live in the shared repository, so
+    # this keeps working regardless.
+    #
+    # Never fatal to the incident: if the remote is unreachable or `gh` is not authenticated,
+    # the branch and the RCA are still on disk and still valuable; we record why publishing
+    # failed rather than throwing that away.
+    def publish(fingerprint, branch, rca_doc, force: false)
+      # Automatic publishing is opt-in via config; `force` is the dashboard/CLI saying
+      # "yes, publish this one" after a human has approved the RCA.
+      return {} unless force || @config.dig('dispatch', 'open_pull_request')
+
+      # An existing PR means this is a re-run; do not try to create a second one.
+      if (existing = find_pull_request(branch))
+        return { 'pr_url' => existing['url'], 'pr_number' => existing['number'] }
+      end
+
+      out, status = git('push', '--set-upstream', 'origin', branch)
+      return { 'pr_error' => "push failed: #{out.lines.last.to_s.strip}" } unless status.success?
+
+      log "#{fingerprint}: pushed #{branch}"
+
+      incident = @store.find(fingerprint) || {}
+      title = "Fix #{incident['exception_class']} in #{incident['location'] || 'background'} " \
+              "(incident #{fingerprint})"
+      # PR base is the configured base ref without its remote prefix (origin/main -> main).
+      base = @config.dig('dispatch', 'base_ref').to_s.delete_prefix('origin/')
+
+      args = ['gh', 'pr', 'create', '--draft', '--base', base, '--head', branch, '--title', title]
+      body_file = rca_body_file(branch, rca_doc)
+      args += if body_file
+                ['--body-file', body_file.path]
+              else
+                ['--body', "Automated RCA for incident `#{fingerprint}`. See the commit message."]
+              end
+
+      out, status = Open3.capture2e(*args, chdir: @repo_root)
+      body_file&.unlink
+      return { 'pr_error' => "gh pr create failed: #{out.lines.last.to_s.strip}" } unless status.success?
+
+      url = out[%r{https://\S+/pull/\d+}]
+      log "#{fingerprint}: opened draft PR #{url}"
+      { 'pr_url' => url, 'pr_number' => url&.slice(%r{/pull/(\d+)}, 1)&.to_i }
+    rescue StandardError => e
+      { 'pr_error' => "#{e.class}: #{e.message}" }
+    end
+
+    # Read the RCA off the branch into a temp file for `gh --body-file`. Reading from the
+    # branch rather than from a worktree path is what makes publishing work after the
+    # worktree is gone.
+    def rca_body_file(branch, rca_doc)
+      return nil if rca_doc.to_s.empty?
+
+      out, status = Open3.capture2e('git', '-C', @repo_root, 'show', "#{branch}:#{rca_doc}")
+      return nil unless status.success?
+
+      file = Tempfile.new(['rca', '.md'])
+      file.write(out)
+      file.flush
+      file
+    end
+
+    def find_pull_request(branch)
+      out, status = Open3.capture2e('gh', 'pr', 'list', '--head', branch, '--state', 'all',
+                                    '--json', 'number,url', chdir: @repo_root)
+      return nil unless status.success?
+
+      JSON.parse(out).first
+    rescue StandardError
+      nil
     end
 
     # --output-format json wraps the final assistant message in a envelope; fall back to

@@ -331,7 +331,12 @@ module IncidentWatch
       # than staying blank until everything finishes.
       targets.each do |incident|
         write_dashboard
-        dispatcher.dispatch(incident, force: options[:force])
+        if incident['state'] == 'failed' && !options[:force]
+          # Resume where the failed attempt got to, rather than redoing finished work.
+          dispatcher.retry_incident(incident['fingerprint'])
+        else
+          dispatcher.dispatch(incident, force: options[:force])
+        end
       end
       write_dashboard
     end
@@ -425,6 +430,26 @@ module IncidentWatch
       # Render the dashboard with an incident in every state. The parser fixtures above
       # cannot catch a broken rendering branch, and a 500 in the browser is a poor way to
       # find out that a state you rarely reach was never exercised.
+      # Guard against a method being deleted out from under its callers. This is not
+      # hypothetical: an editing mistake removed `publish` while `publish_incident` and
+      # `finish_patch` still called it, and nothing noticed until a real run reached the
+      # publish step and died with NoMethodError - after doing all the expensive work.
+      # Ruby will not tell us at load time, so assert the contract explicitly.
+      expected = {
+        Dispatcher => %i[dispatch patch_incident publish_incident retry_incident],
+        # Private, but called across the class - deleting one breaks a run mid-flight.
+        :"#{Dispatcher}#private" => %i[publish rca_body_file find_pull_request finish_analysis
+                                       finish_patch fail_incident commit_count changed_files
+                                       find_rca_doc reset_worktree run_claude]
+      }
+      expected[Dispatcher].each do |m|
+        failures << "Dispatcher is missing public method ##{m}" unless Dispatcher.method_defined?(m)
+      end
+      expected[:"#{Dispatcher}#private"].each do |m|
+        failures << "Dispatcher is missing method ##{m}" unless Dispatcher.private_method_defined?(m)
+      end
+      puts '  dispatcher method contract intact' if failures.empty?
+
       require 'incident_watch/render_check'
       render_failures = RenderCheck.run(REPO_ROOT, config, File.join(REPO_ROOT, 'tmp'))
       render_failures.each { |f| failures << "dashboard render - #{f}" }
@@ -643,6 +668,12 @@ module IncidentWatch
       require 'webrick'
       require 'incident_watch/dashboard'
 
+      # Ruby loads these files once, at startup. Editing them afterwards has no effect on
+      # this process, and the resulting "the button does nothing" is very hard to diagnose -
+      # so the page warns when the code on disk is newer than the server.
+      # getlocal, so it is directly comparable with File.mtime.
+      @booted_at = Time.now.getlocal
+
       server = WEBrick::HTTPServer.new(
         BindAddress: '127.0.0.1', Port: options[:port],
         Logger: WEBrick::Log.new(File::NULL), AccessLog: []
@@ -725,16 +756,29 @@ module IncidentWatch
       else
         res.status = 200
         res['Content-Type'] = 'text/html; charset=utf-8'
-        res.body = Dashboard.new(REPO_ROOT, config, store, interactive: true).render
+        flash = @flash
+        @flash = nil
+        res.body = Dashboard.new(REPO_ROOT, config, store,
+                                 interactive: true, flash: flash, booted_at: @booted_at).render
       end
     end
 
-    # Run an action, then redirect back to the dashboard. Errors are swallowed into the page
-    # rather than shown as a WEBrick stack trace - the dashboard already has a place to
-    # display pr_error, and a 500 page would lose the rest of the incident list.
+    # Run an action, then redirect back to the dashboard.
+    #
+    # A failure must be visible on the page, not only in the server log. Silently redirecting
+    # to an unchanged dashboard is indistinguishable from the button doing nothing, which is
+    # exactly how a stale-code NoMethodError went unnoticed through several clicks.
+    #
+    # Two kinds of failure are caught: a raised exception, and a result hash carrying
+    # 'pr_error' (publishing reports failures by return value, not by raising).
     def act(res)
-      yield
+      result = yield
+      if result.is_a?(Hash) && result['pr_error']
+        @flash = "Failed: #{result['pr_error']}"
+        warn "dashboard action failed: #{result['pr_error']}"
+      end
     rescue StandardError => e
+      @flash = "Failed: #{e.class}: #{e.message}"
       warn "dashboard action failed: #{e.class}: #{e.message}"
     ensure
       res.status = 303
