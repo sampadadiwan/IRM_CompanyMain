@@ -2,6 +2,13 @@
 # env 'MAILTO', 'support@caphive.com'
 
 set :path, "/home/ubuntu/IRM/current"
+
+# Default region variant. Capistrano passes the real value through whenever's
+# --set (see :whenever_variables in config/deploy.rb); those pre-set variables
+# take precedence over `set`, so this only applies when schedule.rb is rendered
+# without deploy context (e.g. a bare `whenever` run, or the Cucumber scenario
+# in features/core/report_builder/scheduling.feature).
+set :env_variant, "in"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
 every :reboot, roles: [:app] do

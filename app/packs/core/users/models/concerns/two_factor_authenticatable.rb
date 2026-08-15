@@ -37,6 +37,23 @@ module TwoFactorAuthenticatable
     sms_available?
   end
 
+  # Whether WhatsApp two-factor can actually be offered to this user.
+  #
+  # `whatsapp_enabled` alone is not enough. It is an administrator's assertion that the
+  # user is reachable on WhatsApp, and nothing keeps it in step with `users.phone` — a
+  # user can carry the flag with no number stored at all (self sign-up, an import that
+  # set the flag but no phone, a number later cleared). Offering WhatsApp to such a user
+  # sends them into an enrollment screen that says "code sent to +" and waits for a code
+  # SendOtpToWhatsappJob has already refused to send.
+  #
+  # So the number is checked here, once, and the mode-selection and login screens ask
+  # this instead of the raw column.
+  #
+  # @return [Boolean]
+  def whatsapp_otp_enabled?
+    whatsapp_enabled? && phone.present?
+  end
+
   # Starts an SMS verification.
   #
   # The otp_secret is still generated even though Verify does not need it: it is what a

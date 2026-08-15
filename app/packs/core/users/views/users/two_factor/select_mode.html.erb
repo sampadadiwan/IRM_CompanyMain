@@ -14,28 +14,35 @@
       <%= form_tag select_mode_two_factor_path, method: :post, data: { turbo: false } do %>
         <div class="d-flex flex-column gap-3 mb-4">
 
-          <label class="mfa-option <%= 'mfa-option--disabled' unless @user.whatsapp_enabled? %>">
-            <%= radio_button_tag :two_factor_mode, "whatsapp", false,
-                  disabled: !@user.whatsapp_enabled?,
-                  data: { two_factor_mode_target: "radio", action: "change->two-factor-mode#toggle" } %>
-            <div class="mfa-option__body">
-              <div class="mfa-option__title">
-                <i class="fab fa-whatsapp text-success"></i> WhatsApp
-                <span class="mfa-option__badge">Easiest</span>
+          <%# Both phone-based modes are suppressed entirely when we hold no phone number
+              for the user: there is nowhere to send a code, so neither is a choice they
+              could make. Only the authenticator option survives, and it is preselected
+              below. The "contact your administrator" variant below is for the different
+              case where we DO have a number but WhatsApp has not been switched on. %>
+          <% if @user.phone.present? %>
+            <label class="mfa-option <%= 'mfa-option--disabled' unless @user.whatsapp_enabled? %>">
+              <%= radio_button_tag :two_factor_mode, "whatsapp", false,
+                    disabled: !@user.whatsapp_enabled?,
+                    data: { two_factor_mode_target: "radio", action: "change->two-factor-mode#toggle" } %>
+              <div class="mfa-option__body">
+                <div class="mfa-option__title">
+                  <i class="fab fa-whatsapp text-success"></i> WhatsApp
+                  <span class="mfa-option__badge">Easiest</span>
+                </div>
+                <% if @user.whatsapp_enabled? %>
+                  <div class="mfa-option__desc">
+                    A code is sent to <strong><%= @user.masked_phone_with_call_code %></strong> each time you log in.
+                    Nothing to install — but you'll need mobile signal.
+                  </div>
+                <% else %>
+                  <div class="mfa-option__desc">
+                    A code is sent to your WhatsApp each time you log in.
+                    <span class="mfa-option__warning">Not enabled for your account — contact your administrator.</span>
+                  </div>
+                <% end %>
               </div>
-              <% if @user.whatsapp_enabled? %>
-                <div class="mfa-option__desc">
-                  A code is sent to <strong><%= @user.masked_phone_with_call_code %></strong> each time you log in.
-                  Nothing to install — but you'll need mobile signal.
-                </div>
-              <% else %>
-                <div class="mfa-option__desc">
-                  A code is sent to your WhatsApp each time you log in.
-                  <span class="mfa-option__warning">Not enabled for your account — contact your administrator.</span>
-                </div>
-              <% end %>
-            </div>
-          </label>
+            </label>
+          <% end %>
 
           <%# SMS is offered only when the entity has it switched on AND we hold a number
               we can actually text. There is no per-user opt-in column — a valid mobile
@@ -57,7 +64,9 @@
           <% end %>
 
           <label class="mfa-option">
-            <%= radio_button_tag :two_factor_mode, "authenticator", !@user.whatsapp_enabled?,
+            <%# Preselected whenever WhatsApp is not a live choice — whether because it is
+                switched off or because there is no number to send to. %>
+            <%= radio_button_tag :two_factor_mode, "authenticator", !@user.whatsapp_otp_enabled?,
                   data: { two_factor_mode_target: "radio", action: "change->two-factor-mode#toggle" } %>
             <div class="mfa-option__body">
               <div class="mfa-option__title">
@@ -106,7 +115,7 @@
 
         <div class="mfa-help-section__detail"
              data-two-factor-mode-target="authenticatorHelp"
-             <%= "hidden" if @user.whatsapp_enabled? %>>
+             <%= "hidden" if @user.whatsapp_otp_enabled? %>>
           <%= render "users/two_factor/guide_link" %>
 
           <div class="mt-3">

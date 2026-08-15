@@ -51,10 +51,13 @@
           flat phone, typically. Getting in this way does not burn a backup code.
           Note the trade-off this makes deliberately: it caps an authenticator user's
           effective security at the strength of whichever fallback they have. %>
-      <% if @user.authenticator_mode? && (@user.whatsapp_enabled? || @user.sms_otp_enabled?) %>
+      <% if @user.authenticator_mode? && (@user.whatsapp_otp_enabled? || @user.sms_otp_enabled?) %>
         <div class="divider w-100"><span>OR</span></div>
 
-        <% if @user.whatsapp_enabled? %>
+        <%# whatsapp_otp_enabled?, not the raw column: with no phone number on the account
+            the send is refused downstream, so the button would only ever report success
+            for a message that never goes out. %>
+        <% if @user.whatsapp_otp_enabled? %>
           <button type="button" id="send-whatsapp-btn" class="btn btn-secondary w-100" data-action="click->two-factor#sendWhatsapp">
             <i class="fab fa-whatsapp"></i> Send code via WhatsApp
           </button>

@@ -63,9 +63,11 @@ module Users
         render :select_mode and return
       end
 
-      # Whatsapp mode requires the user to have WhatsApp enabled
-      if mode == "whatsapp" && !@user.whatsapp_enabled?
-        flash.now[:alert] = "WhatsApp is not enabled for your account. Please choose Authenticator."
+      # WhatsApp mode requires the flag AND a number to send to. Same reasoning as the
+      # SMS check below: this POST is unauthenticated and attacker controlled, so the
+      # screen having hidden the option is not a guarantee it was not submitted.
+      if mode == "whatsapp" && !@user.whatsapp_otp_enabled?
+        flash.now[:alert] = "WhatsApp is not available for your account. Please choose Authenticator."
         render :select_mode and return
       end
 
@@ -130,6 +132,14 @@ module Users
 
     def enroll_whatsapp
       @user = User.find(session[:otp_user_id])
+
+      # Same guard shape as enroll_sms: the URL is reachable directly by any user mid-2FA,
+      # and without a number the screen would show "code sent to +" and wait forever.
+      unless @user.whatsapp_otp_enabled?
+        redirect_to select_mode_two_factor_path,
+                    alert: "WhatsApp codes are not available for your account."
+        return
+      end
 
       ActiveRecord::Base.connected_to(role: :writing) do
         # Generate secret silently — user never sees it; WhatsApp delivers the code
@@ -234,6 +244,15 @@ module Users
 
     def send_whatsapp
       @user = User.find(session[:otp_user_id])
+
+      # Mirrors the send_sms guard: the button is hidden for these users, but the endpoint
+      # is reachable directly. Answering here means an honest error instead of "Code sent!"
+      # for a job that aborts on the missing number.
+      unless @user.whatsapp_otp_enabled?
+        render json: { error: "WhatsApp codes are not available for your account." },
+               status: :unprocessable_entity
+        return
+      end
 
       if session[:otp_whatsapp_sent_at] && Time.current - Time.parse(session[:otp_whatsapp_sent_at]) < 30
         render json: { error: "Please wait 30 seconds before requesting another code." }, status: :too_many_requests
