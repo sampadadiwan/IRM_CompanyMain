@@ -87,6 +87,21 @@ groups:
           summary: "Sidekiq process down on at least one app server"
           description: "No Sidekiq process metrics are being pushed — background jobs are not processing. Check monit and the sidekiq service."
 
+      # Fire when Sidekiq's BRPOP fetch loop keeps failing to reach Redis. These errors
+      # are suppressed from email (incident 2d7eca43) and counted here instead: Sidekiq
+      # reports one per processor thread per downtime episode, so an isolated stall
+      # increments this once or twice while a real outage trips every thread on every
+      # app server within seconds. Mirrors "Sidekiq Cannot Reach Redis" in
+      # grafana_provision.yml, which is what actually alerts in production.
+      - alert: SidekiqRedisFetchErrors
+        expr: sum(increase(ruby_sidekiq_redis_fetch_errors[10m])) > 3
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Sidekiq cannot reach Redis: {{ $value | humanize }} fetch failures in 10m"
+          description: "Sidekiq's Redis fetch loop is failing repeatedly — jobs are not being picked up. Check Redis on the DB-Redis-ES host: CPU, disk I/O, and whether an xtrabackup run is in progress."
+
       # Fire when any scraped target goes missing
       - alert: InstanceDown
         expr: up == 0

@@ -369,6 +369,23 @@ alert_rules:
       severity: critical
       category: rails
 
+  # Sidekiq losing Redis in its BRPOP fetch loop. These no longer email — they carried
+  # no job and Sidekiq retries them by itself (incident 2d7eca43) — so this counter is
+  # the replacement signal and must stay provisioned for the suppression to be safe.
+  # Sidekiq reports one fetch failure per processor thread per downtime episode, so a
+  # single stalled poll increments it once or twice, while a real outage trips all 7
+  # threads (5 default + serial + db_restore capsules) on every app server in seconds.
+  # Threshold sits above the blip and well below the outage.
+  - title: "Sidekiq Cannot Reach Redis"
+    group: rails
+    expr: 'sum(increase(ruby_sidekiq_redis_fetch_errors[10m]))'
+    threshold_gt: 3
+    for: 2m
+    summary: "Sidekiq's Redis fetch loop is failing repeatedly — jobs are not being picked up; check Redis on the DB-Redis-ES host (CPU, disk IO, and whether an xtrabackup run is in progress)"
+    labels:
+      severity: critical
+      category: rails
+
   # ── Infrastructure depth ────────────────────────────────────────────────────
 
   # Inode exhaustion: disk % can look fine while inodes are 100% full (e.g. millions of Rails tmp files).

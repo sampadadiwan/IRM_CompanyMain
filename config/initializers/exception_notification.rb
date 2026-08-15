@@ -21,6 +21,13 @@ if ENV['VULN_SCAN'].blank?
   # ExceptionMailer (or the newer exception_notification gem) is designed for Rack requests, so Sidekiq errors bypass it unless you attach a handler:
   Sidekiq.configure_server do |config|
     config.error_handlers << proc do |ex, ctx|
+      # Not everything Sidekiq reports here is a failed job. Its own BRPOP poll loop
+      # reports Redis blips through this same chain with an empty ctx, then sleeps a
+      # second and retries — emailing those woke the on-call for an event that had
+      # already healed, with nothing in the mail to act on (incident 2d7eca43).
+      # They are counted for Grafana instead; everything else notifies as before.
+      next if SidekiqRedisFetchError.suppress?(ex, ctx)
+
       ExceptionNotifier.notify_exception(
         ex,
         data: ctx # job_class, args, jid, queue, etc.
