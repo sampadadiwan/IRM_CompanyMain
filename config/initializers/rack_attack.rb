@@ -131,6 +131,31 @@ module Rack
       end
     end
 
+    # Throttle the two-factor SMS send endpoint by IP.
+    #
+    # Every request here costs real money — it sends a text message. SMS pumping (toll
+    # fraud) is the standard attack: drive sends to premium-rate numbers and take a cut
+    # of the termination fee. This is the per-IP layer of a three-layer defence; the
+    # per-number and per-user layers are durable counters inside TwilioSmsDelivery,
+    # which is where the money is actually stopped. This one catches a single actor
+    # driving many accounts before the request reaches Rails at all.
+    #
+    # Deliberately NOT added to AUTH_PATHS: that list exempts paths from the 404 scanner
+    # rules because an anonymous user must be able to reach them to sign in. This
+    # endpoint is not needed to establish a session — it is an optional resend — so it
+    # gets no such exemption.
+    #
+    # Tighter than logins/ip (10 per 30s) because a legitimate user presses resend once
+    # or twice, never ten times.
+    #
+    # @see docs/technical/twilio_sms_otp_design.md section 9
+    # start_with? rather than ==: `post :send_sms` inside `resource :two_factor` generates
+    # /two_factor/send_sms(.:format), so /two_factor/send_sms.json reaches the same action.
+    # An exact match would compute no throttle key at all for that request.
+    throttle('otp_sms_send/ip', limit: 3, period: 60.seconds) do |req|
+      client_ip(req) if req.post? && req.path.start_with?('/two_factor/send_sms')
+    end
+
     # Throttle IPs that hit 404 errors multiple times
     # Action	Effect
     # Attacker sends 5 requests	Allowed

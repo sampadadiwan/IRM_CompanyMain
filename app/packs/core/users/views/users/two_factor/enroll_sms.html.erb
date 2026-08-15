@@ -1,0 +1,57 @@
+<%# SMS-mode enrollment: user confirms a code texted to the number on their record.
+    Mirrors enroll_whatsapp — the number is shown masked so a user with a stale number
+    discovers it HERE, where they can still choose another mode, rather than at their
+    next login when they would be locked out. %>
+<div id="two_factor_enroll_sms_page" data-controller="two-factor">
+  <div class="login-container">
+    <div class="login-header">
+      <h2 class="h3 mb-2 fw-normal">Confirm Your Phone</h2>
+      <p class="text-muted">We've texted a 6-digit code to your phone</p>
+    </div>
+
+    <div class="login-body">
+      <%- flash.each do |name, msg| -%>
+        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+      <%- end -%>
+
+      <div class="alert alert-info text-center mb-3">
+        <i class="fas fa-comment-dots"></i>
+        Code sent to <strong><%= @user.masked_phone_with_call_code %></strong>
+      </div>
+
+      <%= form_tag verify_sms_enrollment_two_factor_path, data: { turbo: false } do %>
+        <div class="form-group">
+          <%= text_field_tag :otp_code, nil,
+                class: "form-control-modern w-100 mfa-code-input",
+                placeholder: "000000",
+                inputmode: "numeric",
+                autocomplete: "one-time-code",
+                autofocus: true,
+                required: true %>
+        </div>
+
+        <button type="submit" class="glow-edge btn btn-primary w-100" data-disable-with="Verifying...">
+          <span>Confirm &amp; Enable 2FA</span>
+          <i class="fas fa-shield-alt"></i>
+        </button>
+      <% end %>
+
+      <%# Text messages can take longer to arrive than the code stays valid, so the
+          resend is a first-class control rather than a footnote. Because the code is
+          TOTP, a resend always ships whatever is valid at that moment — the user is
+          never handed the same stale code twice. %>
+      <div class="text-center mt-3">
+        <button type="button" id="send-sms-btn" class="btn btn-link"
+                data-action="click->two-factor#sendSms">
+          Didn't get it? Send another code
+        </button>
+      </div>
+
+      <div id="sms-status" class="text-center mt-2" style="display: none;"></div>
+
+      <div class="login-footer text-center mt-3">
+        Wrong number? Contact your administrator — for security you can't change it here.
+      </div>
+    </div>
+  </div>
+</div>

@@ -6,6 +6,10 @@ class User < ApplicationRecord
   # instead of the serialized access_rights_cache column on users.
   include CanonicalFingerprint
   include TwoFactorAuthenticatable
+  # Phone-number normalisation and SMS eligibility for the SMS two-factor mode.
+  # Kept separate from TwoFactorAuthenticatable because it is about the number, not
+  # about codes. See docs/technical/twilio_sms_otp_design.md.
+  include SmsDeliverable
 
   include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions])
 

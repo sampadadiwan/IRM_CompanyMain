@@ -3,38 +3,64 @@
   <div class="login-container">
     <div class="login-header">
       <h2 class="h3 mb-2 fw-normal">Set Up Two-Factor Authentication</h2>
-      <p class="text-muted">Scan this QR code with your authenticator app</p>
+      <p class="text-muted">Three steps, about two minutes</p>
     </div>
 
-    <div class="login-body text-center">
+    <div class="login-body">
       <%- flash.each do |name, msg| -%>
         <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
       <%- end -%>
 
-      <div class="mb-4">
-        <p class="text-muted mb-3">
-          1. Install Google Authenticator, Authy, or any TOTP authenticator app.
-        </p>
-        <p class="text-muted mb-3">
-          2. Scan this QR code:
-        </p>
-
-        <div class="d-inline-block p-3 bg-white rounded border mb-3">
-          <%= raw @qr_code.as_svg(
-            module_size: 4,
-            standalone: true,
-            use_path: true
-          ) %>
+      <%# ── Step 1: get an app ─────────────────────────────────────────── %>
+      <div class="mfa-step">
+        <div class="mfa-step__number">1</div>
+        <div class="mfa-step__body">
+          <div class="mfa-step__title">Install an authenticator app</div>
+          <div>
+            Already have Google Authenticator, Microsoft Authenticator or Authy? Go to step 2.
+            If not, the download links are at the bottom of this page.
+          </div>
         </div>
-
-        <p class="text-muted mb-3">
-          Or enter this key manually: <code><%= @user.otp_secret.scan(/.{4}/).join(' ') %></code>
-        </p>
       </div>
 
-      <p class="text-muted mb-3">
-        3. Enter the 6-digit code from your app to confirm:
-      </p>
+      <%# ── Step 2: scan ───────────────────────────────────────────────── %>
+      <div class="mfa-step">
+        <div class="mfa-step__number">2</div>
+        <div class="mfa-step__body">
+          <div class="mfa-step__title">Scan this QR code</div>
+          <div class="mb-2">
+            In the app tap <strong>+</strong> or <strong>Add account</strong>, choose
+            <strong>Other</strong>, then point your camera at this code.
+          </div>
+
+          <div class="text-center">
+            <div class="d-inline-block p-3 bg-white rounded border mb-2">
+              <%= raw @qr_code.as_svg(
+                module_size: 4,
+                standalone: true,
+                use_path: true
+              ) %>
+            </div>
+          </div>
+
+          <div>
+            Can't scan it? In the app choose <strong>Enter a setup key</strong> and type this,
+            selecting <strong>Time based</strong> if asked:
+          </div>
+          <code class="mfa-setup-key mt-2"><%= @user.otp_secret.scan(/.{4}/).join(' ') %></code>
+        </div>
+      </div>
+
+      <%# ── Step 3: confirm ────────────────────────────────────────────── %>
+      <div class="mfa-step">
+        <div class="mfa-step__number">3</div>
+        <div class="mfa-step__body">
+          <div class="mfa-step__title">Enter the 6-digit code from the app</div>
+          <div>
+            The code changes every 30 seconds. If it's about to expire, wait for the next one.
+          </div>
+        </div>
+      </div>
 
       <%= form_tag verify_enrollment_two_factor_path, data: { turbo: false } do %>
         <div class="form-group">
@@ -43,14 +69,41 @@
                 placeholder: "000000",
                 inputmode: "numeric",
                 autocomplete: "one-time-code",
+                autofocus: true,
                 required: true %>
         </div>
 
         <button type="submit" class="glow-edge btn btn-primary w-100" data-disable-with="Verifying...">
-          <span>Confirm & Enable 2FA</span>
+          <span>Confirm &amp; Enable 2FA</span>
           <i class="fas fa-shield-alt"></i>
         </button>
       <% end %>
+
+      <%# ── Help section ─────────────────────────────────────────────────
+          Same placement as the mode-selection screen: the enrollment steps and
+          the submit button come first, onboarding material after. %>
+      <section class="mfa-help-section" aria-labelledby="mfa-help-heading">
+        <h3 class="mfa-help-section__heading" id="mfa-help-heading">
+          <i class="fas fa-question-circle"></i> New to this?
+        </h3>
+
+        <%# Same order as the mode-selection screen: the always-relevant line sits
+            directly under the heading, detail below it. %>
+        <p class="mfa-help-section__intro">
+          Code rejected? It's almost always your phone's clock.
+          <%= link_to "How to fix it",
+                      public_guide_path("authenticator_app_setup_user_guide") + "#troubleshooting",
+                      target: "_blank", rel: "noopener" %>
+        </p>
+
+        <div class="mfa-help-section__detail">
+          <%= render "users/two_factor/guide_link" %>
+
+          <div class="mt-3">
+            <%= render "users/two_factor/authenticator_apps" %>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </div>

@@ -1,6 +1,9 @@
 /* Modern Login Page Styles */
 
-#login_page_x, #two_factor_page, #two_factor_enroll_page, #two_factor_backup_page {
+// Every page rendered in the "devise" layout. Keep this list and the one further
+// down in sync — a 2FA screen missing from either renders unstyled and full-bleed.
+#login_page_x, #two_factor_page, #two_factor_enroll_page, #two_factor_backup_page,
+#two_factor_select_mode_page, #two_factor_enroll_whatsapp_page, #two_factor_enroll_sms_page {
   // Fills the whole auth column rather than floating as a panel inside it -
   // otherwise the card sits inside a grey box inside a white box.
   min-height: 100vh;
@@ -143,7 +146,8 @@
   }
 }
 
-#login_page_x, #two_factor_page, #two_factor_enroll_page, #two_factor_backup_page {
+#login_page_x, #two_factor_page, #two_factor_enroll_page, #two_factor_backup_page,
+#two_factor_select_mode_page, #two_factor_enroll_whatsapp_page, #two_factor_enroll_sms_page {
   .login-container {
     width: 100%;
     max-width: 450px;
@@ -473,4 +477,363 @@
 
 
 
+}
+/* ============================================================
+   Two-factor setup screens
+   Mode selection and authenticator enrollment carry more content
+   than a login form (option cards, app store links, help links),
+   so they widen the panel and style the radio choices as cards.
+   ============================================================ */
+
+#two_factor_select_mode_page, #two_factor_enroll_page {
+  .login-container {
+    // Wider than the 450px login card: the option cards and the app store
+    // links wrap badly below about 520px.
+    max-width: 520px;
+  }
+}
+
+/* ── Mode selection: radio choices rendered as selectable cards ── */
+
+.mfa-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  margin: 0;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+
+  [data-bs-theme=dark] & {
+    background: #0f172a;
+    border-color: #1e293b;
+  }
+
+  &:hover:not(.mfa-option--disabled) {
+    border-color: #a3bffa;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.12);
+  }
+
+  // Driven by :has() so the selected state follows the radio with no JS.
+  // Browsers without :has() simply show the hover/focus states instead.
+  &:has(input:checked) {
+    border-color: #4299e1;
+    background: #f7fbff;
+    box-shadow: 0 4px 14px rgba(66, 153, 225, 0.18);
+
+    [data-bs-theme=dark] & {
+      background: #10233a;
+    }
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+    background: #f8fafc;
+
+    [data-bs-theme=dark] & {
+      background: #0b1220;
+    }
+  }
+
+  input[type="radio"] {
+    margin-top: 4px;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.mfa-option__body {
+  min-width: 0;
+}
+
+.mfa-option__title {
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  [data-bs-theme=dark] & {
+    color: #f8fafc;
+  }
+}
+
+.mfa-option__desc {
+  color: #718096;
+  line-height: 1.5;
+
+  [data-bs-theme=dark] & {
+    color: #94a3b8;
+  }
+}
+
+.mfa-option__badge {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ebf8ff;
+  color: #2c5282;
+
+  [data-bs-theme=dark] & {
+    background: #10233a;
+    color: #90cdf4;
+  }
+}
+
+.mfa-option__warning {
+  color: #b7791f;
+  font-weight: 600;
+}
+
+/* ── Numbered setup steps on the enrollment page ── */
+
+.mfa-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.mfa-step__number {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #4299e1;
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.mfa-step__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #4a5568;
+
+  [data-bs-theme=dark] & {
+    color: #cbd5e1;
+  }
+}
+
+.mfa-step__title {
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 4px;
+
+  [data-bs-theme=dark] & {
+    color: #f8fafc;
+  }
+}
+
+/* ── Authenticator app download links ── */
+
+.authenticator-apps {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #f7fafc;
+  text-align: left;
+
+  [data-bs-theme=dark] & {
+    background: #0f172a;
+    border-color: #1e293b;
+  }
+}
+
+.authenticator-apps__intro {
+  color: #718096;
+  margin-bottom: 12px;
+
+  [data-bs-theme=dark] & {
+    color: #94a3b8;
+  }
+}
+
+.authenticator-apps__item + .authenticator-apps__item {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+
+  [data-bs-theme=dark] & {
+    border-top-color: #1e293b;
+  }
+}
+
+.authenticator-apps__name {
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 6px;
+
+  [data-bs-theme=dark] & {
+    color: #f8fafc;
+  }
+}
+
+.authenticator-apps__stores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+// Store links are pill buttons rather than plain anchors so they read as
+// tappable targets on a phone, which is where they are actually followed.
+.authenticator-apps__store {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid #cbd5e0;
+  border-radius: 999px;
+  background: #fff;
+  color: #2d3748;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+
+  [data-bs-theme=dark] & {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  &:hover {
+    border-color: #4299e1;
+    background: #ebf8ff;
+    color: #2b6cb0;
+    text-decoration: none;
+  }
+}
+
+/* ── "New to this?" help callout linking the public guide ── */
+
+.mfa-help {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid #bee3f8;
+  border-radius: 12px;
+  background: #ebf8ff;
+  text-align: left;
+  color: #2c5282;
+
+  [data-bs-theme=dark] & {
+    background: #10233a;
+    border-color: #1e3a5f;
+    color: #90cdf4;
+  }
+
+  i {
+    flex-shrink: 0;
+  }
+
+  a {
+    font-weight: 600;
+    text-decoration: underline;
+  }
+}
+
+/* The 2FA setup key is long; let it wrap instead of forcing the card wider. */
+.mfa-setup-key {
+  display: inline-block;
+  max-width: 100%;
+  word-break: break-all;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #edf2f7;
+  color: #2d3748;
+
+  [data-bs-theme=dark] & {
+    background: #1e293b;
+    color: #e2e8f0;
+  }
+}
+
+/* ── Onboarding help block, sat below the primary action ────────────
+   Kept visually distinct from the form above it (top rule + inset
+   background) so it reads as supporting material rather than another
+   step someone has to complete before pressing the button. */
+
+.mfa-help-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  // Left-aligned throughout. The options above it are left-aligned cards, and the
+  // previous mix (left heading over centred body) made the block read as two
+  // unrelated fragments rather than one section.
+  text-align: left;
+
+  [data-bs-theme=dark] & {
+    border-top-color: #1e293b;
+  }
+}
+
+.mfa-help-section__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  // Matches the surrounding body copy: this is a section label, not a page title.
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a202c;
+  // Tight to the line below it — they are one unit. The old 14px here plus 14px on
+  // the following block left a 28px hole under a one-line heading.
+  margin-bottom: 6px;
+
+  [data-bs-theme=dark] & {
+    color: #f8fafc;
+  }
+
+  i {
+    color: #4299e1;
+  }
+}
+
+// The one line that is always present, whichever mode is selected.
+.mfa-help-section__intro {
+  margin: 0;
+  color: #718096;
+
+  [data-bs-theme=dark] & {
+    color: #94a3b8;
+  }
+
+  a {
+    color: #4299e1;
+    font-weight: 500;
+    text-decoration: none;
+    // Keeps "Compare the options" from breaking across lines mid-phrase, which is
+    // what made the old centred version look ragged.
+    white-space: nowrap;
+
+    &:hover {
+      color: #2b6cb0;
+      text-decoration: underline;
+    }
+  }
+}
+
+// The Authenticator-only block: guide callout plus app store links. Hidden unless
+// that mode is selected, so the margin lives here rather than on the intro above —
+// otherwise the gap persists when the block is hidden.
+.mfa-help-section__detail {
+  margin-top: 14px;
+}
+
+/* Shared styling for the 6-digit code inputs on the two-factor screens.
+   Previously repeated as an inline style attribute on each view. */
+.mfa-code-input {
+  text-align: center;
+  font-size: 1.5rem;
+  letter-spacing: 8px;
+  font-weight: 600;
 }

@@ -1,0 +1,36 @@
+<%# App store download links for the supported TOTP apps.
+    Shown on the mode-selection and enrollment screens because a first-time user
+    reaches those pages with nothing installed and no way to get past them.
+    Links open in a new tab so a half-finished enrollment is never navigated away from.
+
+    Local (optional): intro — override the leading sentence. %>
+<div class="authenticator-apps">
+  <p class="authenticator-apps__intro">
+    <%= local_assigns.fetch(:intro, "Don't have an authenticator app yet? Install one of these free apps on your phone — any of them works.") %>
+  </p>
+
+  <% [
+       { name: "Google Authenticator",
+         ios: "https://apps.apple.com/app/google-authenticator/id388497605",
+         android: "https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" },
+       { name: "Microsoft Authenticator",
+         ios: "https://apps.apple.com/app/microsoft-authenticator/id983156458",
+         android: "https://play.google.com/store/apps/details?id=com.azure.authenticator" },
+       { name: "Twilio Authy",
+         ios: "https://apps.apple.com/app/twilio-authy/id494168017",
+         android: "https://play.google.com/store/apps/details?id=com.authy.authy" }
+     ].each do |app| %>
+    <div class="authenticator-apps__item">
+      <div class="authenticator-apps__name"><%= app[:name] %></div>
+      <div class="authenticator-apps__stores">
+        <%# rel="noopener" — these are third-party stores opened in a new tab. %>
+        <a href="<%= app[:ios] %>" class="authenticator-apps__store" target="_blank" rel="noopener noreferrer">
+          <i class="fab fa-apple"></i> iPhone
+        </a>
+        <a href="<%= app[:android] %>" class="authenticator-apps__store" target="_blank" rel="noopener noreferrer">
+          <i class="fab fa-google-play"></i> Android
+        </a>
+      </div>
+    </div>
+  <% end %>
+</div>

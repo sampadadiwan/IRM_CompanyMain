@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_14_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_15_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3106,6 +3106,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_100000) do
     t.index ["user_id"], name: "index_offers_on_user_id"
   end
 
+  create_table "otp_deliveries", force: :cascade do |t|
+    t.string "channel", default: "sms", null: false
+    t.datetime "created_at", null: false
+    t.string "error_code"
+    t.string "provider_message_id"
+    t.string "purpose", null: false
+    t.integer "segments"
+    t.string "status", null: false
+    t.string "to_number_digest", limit: 64, null: false
+    t.string "to_number_last4", limit: 4
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["provider_message_id"], name: "index_otp_deliveries_on_provider_message_id"
+    t.index ["to_number_digest", "created_at"], name: "index_otp_deliveries_on_to_number_digest_and_created_at"
+    t.index ["user_id", "created_at"], name: "index_otp_deliveries_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_otp_deliveries_on_user_id"
+  end
+
   create_table "payments", force: :cascade do |t|
     t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
     t.datetime "created_at", null: false
@@ -4551,6 +4569,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_14_100000) do
   add_foreign_key "offers", "secondary_sales"
   add_foreign_key "offers", "users"
   add_foreign_key "offers", "users", column: "final_agreement_user_id"
+  add_foreign_key "otp_deliveries", "users"
   add_foreign_key "payments", "entities"
   add_foreign_key "payments", "users"
   add_foreign_key "permissions", "entities"

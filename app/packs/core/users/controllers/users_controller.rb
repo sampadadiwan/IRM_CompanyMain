@@ -1,4 +1,7 @@
 class UsersController < ApplicationController
+  # Shared 2FA mode dispatch, also used by Users::SessionsController for password login.
+  include TwoFactorDispatch
+
   before_action :authenticate_user!, except: %w[magic_link no_password_login welcome cross_site_login redirect_to_subdomain]
   # skip_before_action :verify_authenticity_token, only: %i[magic_link]
 
@@ -170,24 +173,17 @@ class UsersController < ApplicationController
     end
 
     ActiveRecord::Base.connected_to(role: :writing) do
-      if @user.two_factor_enabled?
-        if @user.two_factor_mode.nil?
-          # Mode not yet chosen — send to selection screen before enrollment
-          session[:otp_user_id] = @user.id
-          redirect_to select_mode_two_factor_path
-          return
-        elsif @user.whatsapp_mode?
-          # WhatsApp mode — auto-send OTP before showing verification page
-          session[:otp_user_id] = @user.id
-          @user.send_otp_via_whatsapp
-          session[:otp_whatsapp_sent_at] = Time.current.to_s
-          redirect_to new_two_factor_path
-          return
-        else
-          session[:otp_user_id] = @user.id
-          redirect_to new_two_factor_path
-          return
-        end
+      # Shared with the password-login path in Users::SessionsController — see
+      # TwoFactorDispatch for why this branch is not written out twice. No sign_out
+      # here: on the magic-link path the user was never signed in to begin with.
+      two_factor_path = two_factor_challenge_path_for(@user)
+      if two_factor_path == :sms_undeliverable
+        redirect_to new_session_path(User),
+                    alert: Users::SessionsController::SMS_UNDELIVERABLE_MESSAGE
+        return
+      elsif two_factor_path
+        redirect_to two_factor_path
+        return
       end
 
       sign_in @user

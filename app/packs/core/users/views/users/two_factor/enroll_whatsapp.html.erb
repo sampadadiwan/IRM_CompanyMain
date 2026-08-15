@@ -35,9 +35,10 @@
       <% end %>
 
       <div class="login-footer text-center mt-3">
-        <small class="text-muted">
-          Didn't receive it? Check your phone number or contact your administrator.
-        </small>
+        Didn't receive it? Check your phone number or contact your administrator.
+        <%= link_to "Read the two-factor guide",
+                    public_guide_path("two_factor_authentication_user_guide"),
+                    target: "_blank", rel: "noopener" %>
       </div>
     </div>
   </div>

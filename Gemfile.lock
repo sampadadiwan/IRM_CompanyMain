@@ -765,6 +765,7 @@ GEM
       hashery (~> 2.0)
       ruby-rc4
       ttfunk
+    phonelib (0.10.24)
     playwright-ruby-client (1.61.0)
       base64
       concurrent-ruby (>= 1.1.6)
@@ -1110,6 +1111,10 @@ GEM
     turbo-rails (2.0.23)
       actionpack (>= 7.1.0)
       railties (>= 7.1.0)
+    twilio-ruby (7.10.7)
+      faraday (>= 2.0, < 3.0)
+      jwt (>= 1.5, < 4.0)
+      nokogiri (>= 1.6, < 2.0)
     typhoeus (1.6.0)
       ethon (>= 0.18.0)
     tzinfo (2.0.6)
@@ -1281,6 +1286,7 @@ DEPENDENCIES
   paranoia
   parser
   pdf-reader
+  phonelib
   playwright-ruby-client (= 1.61.0)
   polars-df
   pragmatic_segmenter
@@ -1329,6 +1335,7 @@ DEPENDENCIES
   to_words
   trailblazer
   turbo-rails
+  twilio-ruby
   tzinfo-data
   uppy-s3_multipart
   view_component

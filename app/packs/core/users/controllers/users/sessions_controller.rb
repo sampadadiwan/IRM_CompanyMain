@@ -1,29 +1,28 @@
 module Users
   class SessionsController < Devise::SessionsController
+    # Mode dispatch is shared with the magic-link path in UsersController so a new
+    # delivery mode cannot be wired into one entry point and not the other.
+    include TwoFactorDispatch
+
+    # Shown when an sms-mode user cannot be sent a code. Deliberately does not say why:
+    # whether a number is textable is not something an unauthenticated caller should be
+    # able to probe. SMS mode has no backup codes, so an administrator is the only route.
+    SMS_UNDELIVERABLE_MESSAGE = "We can't send a verification code to your phone right now. " \
+                                "Please contact your administrator.".freeze
+
     def create
       self.resource = warden.authenticate!(auth_options)
 
-      if resource.two_factor_enabled?
-        if resource.two_factor_mode.nil?
-          # Mode not yet chosen — send to selection screen before enrollment
-          session[:otp_user_id] = resource.id
-          sign_out(resource)
-          redirect_to select_mode_two_factor_path
-        elsif resource.whatsapp_mode?
-          # WhatsApp mode — auto-send OTP before showing verification page
-          session[:otp_user_id] = resource.id
-          sign_out(resource)
-          ActiveRecord::Base.connected_to(role: :writing) do
-            resource.send_otp_via_whatsapp
-          end
-          session[:otp_whatsapp_sent_at] = Time.current.to_s
-          redirect_to new_two_factor_path
-        else
-          # Authenticator mode — user reads code from their app
-          session[:otp_user_id] = resource.id
-          sign_out(resource)
-          redirect_to new_two_factor_path
-        end
+      two_factor_path = two_factor_challenge_path_for(resource)
+
+      if two_factor_path == :sms_undeliverable
+        sign_out(resource)
+        redirect_to new_session_path(User), alert: SMS_UNDELIVERABLE_MESSAGE
+      elsif two_factor_path
+        # The user is NOT signed in until they clear 2FA — only session[:otp_user_id]
+        # carries them forward, which is what Users::TwoFactorController checks.
+        sign_out(resource)
+        redirect_to two_factor_path
       else
         # Standard login (no 2FA)
         sign_in(resource)

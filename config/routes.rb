@@ -93,6 +93,12 @@ Rails.application.routes.draw do
     get  :enroll_whatsapp       # whatsapp mode: confirm phone + send test code
     post :verify_whatsapp_enrollment # whatsapp mode: verify test code
     post :send_whatsapp
+    get  :enroll_sms            # sms mode: confirm number + send test code
+    post :verify_sms_enrollment # sms mode: verify test code
+    # Costs real money per call. Rate limited in three places: a session cooldown here,
+    # durable per-number/per-user limits in TwilioSmsDelivery, and a per-IP Rack::Attack
+    # throttle — see docs/technical/twilio_sms_otp_design.md section 9.
+    post :send_sms
     get  :backup_codes
   end
 
@@ -110,6 +116,13 @@ Rails.application.routes.draw do
 
   resources :user_guides, only: [:index]
   get 'user_guides/*id', to: 'user_guides#show', as: :user_guide, format: false
+
+  # Login-less help pages. Only the ids in PublicGuidesController::PUBLIC_GUIDE_IDS resolve;
+  # the two-factor screens link here because the visitor is signed out at that point.
+  # The path segment is the guide id so relative links between guides work under /help too.
+  # Globbed like the /user_guides route: a plain :id segment rejects dots, which would turn
+  # a "...user_guide.md" link into a routing error instead of a handled redirect.
+  get 'help/*id', to: 'public_guides#show', as: :public_guide, format: false
   resources :release_notes, only: %i[index show], constraints: { id: %r{[^/]+} }
   resources :features, only: [:index]
   get 'features/*id', to: 'features#show', as: :feature, format: false

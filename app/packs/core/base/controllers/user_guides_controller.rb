@@ -1,8 +1,10 @@
 class UserGuidesController < ApplicationController
+  # Markdown resolution/rendering is shared with PublicGuidesController, which serves a
+  # login-less subset of the same files.
+  include WithGuideRendering
+
   after_action :verify_authorized
   before_action :force_html_format, only: :show
-
-  GUIDES_ROOT = Rails.root.join("docs/user_guides").freeze
 
   def index
     authorize :user_guide, :index?
@@ -35,31 +37,25 @@ class UserGuidesController < ApplicationController
   def show
     authorize :user_guide, :show?
 
-    raw_id    = params[:id].to_s.sub(/\.md$/i, "")
-    # Prevent directory traversal
-    safe_path = GUIDES_ROOT.join("#{raw_id}.md").cleanpath
-    unless safe_path.to_s.start_with?("#{GUIDES_ROOT}/")
+    raw_id = params[:id].to_s.sub(/\.md$/i, "")
+    # resolve_guide_path returns nil for a missing file or any id that escapes GUIDES_ROOT.
+    safe_path = resolve_guide_path(raw_id)
+
+    if safe_path.nil?
       redirect_to user_guides_path, alert: "User guide not found."
       return
     end
 
-    if File.exist?(safe_path)
-      content = File.read(safe_path)
-      renderer = Redcarpet::Render::HTML.new(hard_wrap: true, filter_html: true, with_toc_data: true)
-      markdown = Redcarpet::Markdown.new(renderer, autolink: true, tables: true, fenced_code_blocks: true, lax_spacing: true, space_after_headers: true)
-      @html_content = markdown.render(content).html_safe
+    @html_content = render_guide_markdown(safe_path)
 
-      parts  = raw_id.split("/")
-      @title = parts.last.humanize.titleize.gsub(/ User Guide$/i, '')
+    parts  = raw_id.split("/")
+    @title = guide_title(raw_id)
 
-      if parts.length > 1
-        group_label = parts.first.humanize.titleize
-        @bread_crumbs = { t('top_menus.user_guides') => user_guides_path, group_label => nil, @title => nil }
-      else
-        @bread_crumbs = { t('top_menus.user_guides') => user_guides_path, @title => nil }
-      end
+    if parts.length > 1
+      group_label = parts.first.humanize.titleize
+      @bread_crumbs = { t('top_menus.user_guides') => user_guides_path, group_label => nil, @title => nil }
     else
-      redirect_to user_guides_path, alert: "User guide not found."
+      @bread_crumbs = { t('top_menus.user_guides') => user_guides_path, @title => nil }
     end
   end
 

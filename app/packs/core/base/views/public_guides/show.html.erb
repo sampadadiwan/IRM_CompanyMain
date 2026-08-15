@@ -1,0 +1,23 @@
+<%# Login-less guide page. Same rendered body as the signed-in viewer, wrapped in the
+    standalone public_guide layout instead of the app shell. %>
+<div class="card public-guide__card">
+  <div class="card-body p-4">
+    <%= render "user_guides/guide_body", html_content: @html_content %>
+  </div>
+</div>
+
+<%# Cross-link the other published guide so a visitor can move between them without a login. %>
+<% siblings = PublicGuidesController::PUBLIC_GUIDE_IDS - [@guide_id] %>
+<% if siblings.any? %>
+  <nav class="public-guide__related" aria-label="Related guides">
+    <h2 class="public-guide__related-heading">Related guides</h2>
+    <ul class="public-guide__related-list">
+      <% siblings.each do |guide_id| %>
+        <li>
+          <%= link_to guide_id.humanize.titleize.gsub(/ User Guide$/i, ""),
+                      public_guide_path(guide_id) %>
+        </li>
+      <% end %>
+    </ul>
+  </nav>
+<% end %>

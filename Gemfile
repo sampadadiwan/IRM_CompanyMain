@@ -143,6 +143,13 @@ gem 'rack-attack'
 gem 'httparty'
 gem 'rubyzip', "2.4.1"
 
+# SMS delivery for two-factor one-time codes. See docs/technical/twilio_sms_otp_design.md.
+gem 'twilio-ruby'
+# Phone number parsing/validation (wraps Google's libphonenumber metadata). Twilio requires
+# E.164 and users.phone/call_code carry no format validation, so numbers must be normalised
+# before they can be dialled. Per-country trunk-prefix and length rules are not regex-able.
+gem 'phonelib'
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]
 

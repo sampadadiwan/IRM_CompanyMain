@@ -19,6 +19,43 @@ module TwoFactorAuthenticatable
     two_factor_mode == "authenticator"
   end
 
+  def sms_mode?
+    two_factor_mode == "sms"
+  end
+
+  # Whether SMS two-factor is switched on for the deployment AND this user has a number
+  # we can actually text.
+  #
+  # Both halves are required and they answer different questions: the environment switch
+  # is the rollout/kill control, the number is the entitlement. Nothing is stored per
+  # user or per entity — see SmsDeliverable for why.
+  #
+  # Used by the mode-selection screen and by the SMS fallback button on the login screen.
+  def sms_otp_enabled?
+    return false unless SmsDeliverable.feature_enabled?
+
+    sms_available?
+  end
+
+  # Starts an SMS verification.
+  #
+  # The otp_secret is still generated even though Verify does not need it: it is what a
+  # later switch to authenticator mode would use, and #create still falls back to a TOTP
+  # check, which requires a secret to be present.
+  def ensure_otp_secret_and_send_sms!(purpose = "enrollment")
+    if otp_secret.blank?
+      generate_otp_secret
+      save!
+    end
+    send_otp_via_sms(purpose)
+  end
+
+  # No code is passed — Twilio Verify generates and holds it. Contrast
+  # send_otp_via_whatsapp, which passes the live code as a job argument.
+  def send_otp_via_sms(purpose = "login")
+    ::SendOtpToSmsJob.perform_later(id, purpose)
+  end
+
   def generate_otp_secret
     self.otp_secret = User.generate_otp_secret
   end
