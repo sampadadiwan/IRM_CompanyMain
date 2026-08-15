@@ -16,8 +16,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=f26f1db9">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=b072d96a">
 </head>
 <body data-page="ai-agents">
 
@@ -46,7 +46,7 @@
       </a>
       <div class="nav-menu">
         <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
-        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on <span class="wordmark">CapHive</span></span></a>
         <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
         <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
       </div>
@@ -124,7 +124,7 @@
 <table>
   <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>What it controls</th></tr></thead>
   <tbody>
-    <tr><td>Validate Fields</td><td>Yes / No</td><td>Off &mdash; treated as disabled unless explicitly set to Yes</td><td>Turns the "required fields filled in" check on or off. By default this setting has no visible toggle on the configuration form; it has to be turned on by your CapHive contact or it stays off.</td></tr>
+    <tr><td>Validate Fields</td><td>Yes / No</td><td>Off &mdash; treated as disabled unless explicitly set to Yes</td><td>Turns the "required fields filled in" check on or off. By default this setting has no visible toggle on the configuration form; it has to be turned on by your <span class="wordmark">CapHive</span> contact or it stays off.</td></tr>
     <tr><td>Validate Documents</td><td>Yes / No</td><td>Off, as above</td><td>Turns on both the "document matches its label" check and the "document content matches the form" check. Also has no visible toggle by default.</td></tr>
     <tr><td>Check Expiry</td><td>Yes / No</td><td>Yes</td><td>When on, checks the KYC's expiry date &mdash; a blocking issue if it has already expired, a warning if it falls within a configured warning window.</td></tr>
     <tr><td>Expiry Warning Days</td><td>Text field</td><td>60, 30, 15</td><td>A comma-separated list of day counts before expiry that should trigger a warning. Clearing this field to blank turns advance warnings off entirely; the 60/30/15 fallback only applies when the setting was never created at all. The warning banner on the agent's page flags a blanked-out value.</td></tr>
@@ -201,7 +201,7 @@
   <li><strong>No AI key configured while the agent is turned on.</strong> The "document matches its label" and "compare field to document" steps both need a key. Without one, expect the AI call to fail outright rather than produce a tidy per-document warning: this kind of configuration error is not caught gracefully the way a parsing error is, so it can stop the whole run for that record rather than flagging one document.</li>
   <li><strong>The AI returns something the agent cannot read as a result.</strong> Caught and recorded as a warning on that specific document. It does not stop the run, but it also does not confirm the document either way, so it is worth a manual look.</li>
   <li><strong>A document file cannot be opened or downloaded.</strong> Recorded as a warning, and that document's validity check is simply skipped. It is not retried automatically.</li>
-  <li><strong>Settings with no visible toggle may be silently off.</strong> Validate Fields, Validate Documents, Send Reminder and Trigger AML all default to off unless explicitly turned on behind the scenes. A newly set-up agent can silently skip the completeness check, the document checks, the reminder emails or AML, with no issues showing up at all. If checks seem to be getting skipped, confirm with your CapHive contact that these settings are actually on.</li>
+  <li><strong>Settings with no visible toggle may be silently off.</strong> Validate Fields, Validate Documents, Send Reminder and Trigger AML all default to off unless explicitly turned on behind the scenes. A newly set-up agent can silently skip the completeness check, the document checks, the reminder emails or AML, with no issues showing up at all. If checks seem to be getting skipped, confirm with your <span class="wordmark">CapHive</span> contact that these settings are actually on.</li>
   <li><strong>The KYC is not yet marked complete by the investor.</strong> Records still in progress are left out of a batch run. That is expected behaviour, not a fault, even though it can look like nothing happened.</li>
   <li><strong>Leaving the expiry warning window blank does not turn warnings off.</strong> Clear the Expiry Warning Days field and the agent falls back to its default 60/30/15-day windows. The only way to fully disable expiry checking is to set Check Expiry itself to No.</li>
   <li><strong>Document names have to match closely.</strong> The "required document uploaded" check matches document names exactly, including case. The "document content matches form" check is a little more forgiving, being case-insensitive, but still needs a close name match. A document uploaded under a slightly different label than expected is reported as missing even though a similar file is sitting right there on the record.</li>
@@ -214,7 +214,7 @@
   <details>
     <summary>The report shows zero issues, but I expected checks to run.</summary>
     <div>
-      <p>Check with your CapHive contact whether Validate Fields and Validate Documents are actually turned on for this agent. These two settings have no visible toggle by default, so on a freshly set-up agent they may be off &mdash; which means the completeness and document checks are silently skipped rather than run.</p>
+      <p>Check with your <span class="wordmark">CapHive</span> contact whether Validate Fields and Validate Documents are actually turned on for this agent. These two settings have no visible toggle by default, so on a freshly set-up agent they may be off &mdash; which means the completeness and document checks are silently skipped rather than run.</p>
     </div>
   </details>
   <details>
@@ -287,7 +287,7 @@
 <!-- ================= CTA ================= -->
 <section class="cta">
   <div class="cta-card reveal">
-    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <h2>See <span class="wordmark">CapHive</span> on your <em>own fund data.</em></h2>
     <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team &mdash; funds, portfolios, deals &amp; secondaries, end to end.</p>
     <div class="hero-cta">
       <a class="btn btn-white" href="contact.html">
@@ -357,7 +357,7 @@
       </div>
     </div>
     <div class="foot-base">
-      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <p>© <span data-year>2026</span> <span class="wordmark">CapHive</span> Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
     </div>
   </div>
   <div class="foot-mark" aria-hidden="true">CapHive</div>

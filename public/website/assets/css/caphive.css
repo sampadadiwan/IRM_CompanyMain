@@ -19,6 +19,7 @@
   --font:    "Geist", sans-serif;
   --serif:   "Instrument Serif", serif;
   --mono:    "Geist Mono", monospace;
+  --brand:   "Lobster", cursive;
 }
 *{ margin:0; padding:0; box-sizing:border-box; }
 /* The horizontal-overflow guard has to sit on <html>, not just <body>.
@@ -48,6 +49,23 @@ img{ max-width:100%; display:block; }
 
 h1,h2,h3{ letter-spacing:-0.035em; line-height:1.02; font-weight:700; }
 h1 em, h2 em, h3 em{ font-family:var(--serif); font-style:italic; font-weight:400; color:var(--orange); letter-spacing:-0.01em; }
+
+/* ---------- wordmark ----------
+   The name "CapHive" is set in Lobster everywhere it is read as the brand —
+   headings, body copy and the footer's oversized mark. It is NOT applied to
+   domains, email addresses, alt/aria text, page titles or meta descriptions,
+   and never inside an inline <svg>, where an HTML span is invalid markup and
+   the label would silently disappear.
+   Lobster ships a single weight, so font-weight is pinned to 400: inheriting
+   the heading's 700 would make the browser synthesise a bold and smear the
+   script's thin strokes. The heading's tight -0.035em tracking is released for
+   the same reason — a connected face needs its own fitting — and the size is
+   nudged up because Lobster's cap height runs short next to Geist at the same
+   font-size. Inside an <em> it also has to win over the serif rule above. */
+.wordmark, h1 em .wordmark, h2 em .wordmark, h3 em .wordmark{
+  font-family:var(--brand); font-weight:400; font-style:normal;
+  letter-spacing:0; font-size:1.06em;
+}
 
 /* ---------- line breaking ----------
    Headings and short labels break into even lines instead of leaving a single
@@ -962,8 +980,13 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
 .foot-base p, .foot-base a{ font-size:13px; color:var(--mut); }
 .foot-base .legal-links{ display:flex; gap:24px; flex-wrap:wrap; }
 .foot-base .legal-links a:hover{ color:var(--fg); }
+/* The oversized footer mark is the word "CapHive", so it takes the brand face
+   directly rather than a nested span. Lobster's single weight and its own
+   sidebearings replace the 800 / -0.05em fitting Geist needed; line-height
+   opens up a little because the script carries descenders the sans did not. */
 .foot-mark{
-  text-align:center; font-weight:800; letter-spacing:-0.05em; line-height:.78;
+  text-align:center; font-family:var(--brand); font-weight:400;
+  letter-spacing:0; line-height:.92;
   font-size:clamp(90px,18.5vw,250px); color:#EDEAE2; user-select:none;
   transform:translateY(12%); transition:color .5s;
 }

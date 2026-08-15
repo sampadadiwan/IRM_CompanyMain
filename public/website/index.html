@@ -16,8 +16,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=f26f1db9">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=b072d96a">
 <style>
   :root{
     --bg:      #FBFAF7;
@@ -535,8 +535,12 @@
   .foot-base p, .foot-base a{ font-size:13px; color:var(--mut); }
   .foot-base .legal{ display:flex; gap:24px; }
   .foot-base .legal a:hover{ color:var(--fg); }
+  /* Homepage copy of the shared rule — it loads after caphive.css, so it has to
+     carry the Lobster wordmark treatment too or the footer mark falls back to
+     Geist here only. Keep in step with .foot-mark in assets/css/caphive.css. */
   .foot-mark{
-    text-align:center; font-weight:800; letter-spacing:-0.05em; line-height:.78;
+    text-align:center; font-family:var(--brand); font-weight:400;
+    letter-spacing:0; line-height:.92;
     font-size:clamp(90px,18.5vw,250px); color:#EDEAE2; user-select:none;
     transform:translateY(12%); transition:color .5s;
   }
@@ -614,7 +618,7 @@
       </a>
       <div class="nav-menu">
         <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
-        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on <span class="wordmark">CapHive</span></span></a>
         <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
         <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
       </div>
@@ -648,7 +652,6 @@
 <!-- ================= HERO ================= -->
 <section class="hero">
   <div class="wrap">
-    <span class="chip-label">US$ 10 bn+ AUM runs on CapHive</span>
     <h1>
       <span class="w">Reim<i class="ai">a</i>g<i class="ai">i</i>ne</span>
       <span class="w">Private</span>
@@ -656,7 +659,7 @@
       <span class="w">Markets</span>
     </h1>
     <p class="lede">
-      CapHive is a full-stack intelligent technology platform powering private capital markets —
+      <span class="wordmark">CapHive</span> is a full-stack intelligent technology platform powering private capital markets —
       funds, portfolios, deals &amp; secondaries — with AI agents purpose-built for private markets.
     </p>
     <div class="hero-cta">
@@ -713,21 +716,20 @@
       <span class="tick"><span class="st">✓</span><b>Distribution waterfall executed</b> — Fund II</span>
       <span class="tick"><span class="st">↑</span><b>Secondary transfer settled</b> — US$ 12.8m</span>
       <span class="tick"><span class="st">✓</span><b>KYC verified</b> — 7 new investors</span>
-      <span class="tick"><span class="st">⟳</span><b>Shadow books synced</b> — 00:00 UTC</span>
-      <span class="tick"><span class="st">✓</span><b>Multi-currency P&amp;L computed</b> — INR / USD</span>
+      <span class="tick"><span class="st">✓</span><b>Multi Currency ratios computed</b> — USD</span>
     </div>
   </div>
 </section>
 
 <!-- ================= CLIENTS ================= -->
 <section class="clients">
-  <p class="clients-label">Trusted by leading funds &amp; investment firms</p>
+  <p class="clients-label">Trusted by leading funds</p>
   <div class="marquee" aria-label="Client logos">
     <div class="marquee-track" id="marqueeTrack">
-      <span class="client">Advantage</span><span class="client">Amit</span><span class="client">Artha</span>
-      <span class="client">Fireside</span><span class="client">Peer Capital</span><span class="client">Pravega</span>
-      <span class="client">Rhapsody</span><span class="client">Sadev</span><span class="client">Sauce</span>
-      <span class="client">Silicon Road</span><span class="client">True North</span>
+      <span class="client">Advantage</span><span class="client">Ambit Arcadia</span><span class="client">Artha</span>
+      <span class="client">Fireside</span><span class="client">PeerCapital</span><span class="client">Pravega</span>
+      <span class="client">Rhapsody</span><span class="client">Sauce.vc</span>
+      <span class="client">Silicon Road Ventures</span><span class="client">True North</span>
     </div>
   </div>
 </section>
@@ -738,7 +740,7 @@
     <div class="section-head reveal">
       <span class="chip-label">Products</span>
       <h2>One platform. Every workflow in <em>private markets.</em></h2>
-      <p>Capital flows in from LPs, through funds, into portfolios — and out through exits and secondaries. CapHive runs the full lifecycle end to end.</p>
+      <p>Capital flows in from LPs, through funds, into portfolios — and out through exits and secondaries. <span class="wordmark">CapHive</span> runs the full lifecycle end to end.</p>
       <div class="tag-row" style="margin-top:22px">
         <a class="tag" href="products.html">Platform overview →</a>
         <a class="tag" href="who-we-serve.html">Who we serve</a>
@@ -751,7 +753,7 @@
         <div class="step active" data-view="0">
           <span class="tile-kicker">01 · Funds</span>
           <h3>Funds</h3>
-          <p>Run the entire fund back office on one intelligent system of record.</p>
+          <p>Run the entire fund operations on one intelligent system of record.</p>
           <p class="step-detail">Onboard investors with digital KYC and e-sign subscription packs, issue drawdown notices and distributions in clicks, and let the accounting engine keep computations, waterfalls and shadow books current — every day, not just at quarter end.</p>
           <div class="tag-group">
             <h4>Investors</h4>
@@ -870,7 +872,7 @@
     <div class="section-head reveal">
       <span class="chip-label">AI Agents</span>
       <h2>AI agents, <em>purpose-built</em> for private markets.</h2>
-      <p>CapHive's AI agents seamlessly integrate to streamline and supercharge ongoing tasks — from onboarding and portfolio analysis to compliance checklists and querying structured and unstructured data. Watch them work.</p>
+      <p><span class="wordmark">CapHive</span>'s AI agents seamlessly integrate to streamline and supercharge ongoing tasks — from onboarding and portfolio analysis to compliance checklists and querying structured and unstructured data. Watch them work.</p>
     </div>
     <div class="agent-tabs reveal" data-delay="1" role="tablist" aria-label="AI agents">
       <button class="agent-tab active" type="button">Intelligent Onboarding</button>
@@ -880,7 +882,7 @@
       <button class="agent-tab" type="button">Compliance</button>
     </div>
     <div class="chat reveal" data-delay="2">
-      <div class="chat-head">CapHive Assistant<span class="chat-sub">connected to your fund data</span></div>
+      <div class="chat-head"><span class="wordmark">CapHive</span> Assistant<span class="chat-sub">connected to your fund data</span></div>
       <div class="chat-body" id="chatBody" aria-live="polite"></div>
     </div>
     <div class="reveal" data-delay="3" style="display:flex;justify-content:center;margin-top:36px">
@@ -923,8 +925,8 @@
     <div class="trust-row">
       <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SOC 2 Type II</div>
       <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>AES-256 at rest · TLS 1.3 in transit</div>
-      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SEBI AIF &amp; US fund structures</div>
-      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SSO / SAML &amp; full audit logs</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>ISO 27001:2022</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SSO / OAuth &amp; full audit logs</div>
     </div>
   </div>
 </section>
@@ -986,35 +988,35 @@
   <div class="wrap">
     <div class="section-head reveal">
       <span class="chip-label">Testimonials</span>
-      <h2>What teams say about <em>CapHive.</em></h2>
+      <h2>What teams say about <em><span class="wordmark">CapHive</span>.</em></h2>
     </div>
   </div>
   <!-- TODO: placeholder quotes/names carried over from the current site — swap in real client testimonials -->
   <div class="t-marquee">
     <div class="t-track" id="tTrack">
       <figure class="quote">
-        <p>It's incredible — it's really wonderful. CapHive has completely surpassed our expectations.</p>
+        <p>It's incredible — it's really wonderful. <span class="wordmark">CapHive</span> has completely surpassed our expectations.</p>
         <figcaption class="quote-who">
           <span class="avatar">TW</span>
           <span><strong>Theresa Webb</strong><span>Web Developer</span></span>
         </figcaption>
       </figure>
       <figure class="quote">
-        <p>It's incredible — it's really wonderful. CapHive has completely surpassed our expectations.</p>
+        <p>It's incredible — it's really wonderful. <span class="wordmark">CapHive</span> has completely surpassed our expectations.</p>
         <figcaption class="quote-who">
           <span class="avatar">AM</span>
           <span><strong>Arlene McCoy</strong><span>UX Designer</span></span>
         </figcaption>
       </figure>
       <figure class="quote">
-        <p>It's incredible — it's really wonderful. CapHive has completely surpassed our expectations.</p>
+        <p>It's incredible — it's really wonderful. <span class="wordmark">CapHive</span> has completely surpassed our expectations.</p>
         <figcaption class="quote-who">
           <span class="avatar">EH</span>
           <span><strong>Esther Howard</strong><span>Product Designer</span></span>
         </figcaption>
       </figure>
       <figure class="quote">
-        <p>It's incredible — it's really wonderful. CapHive has completely surpassed our expectations.</p>
+        <p>It's incredible — it's really wonderful. <span class="wordmark">CapHive</span> has completely surpassed our expectations.</p>
         <figcaption class="quote-who">
           <span class="avatar">BS</span>
           <span><strong>Brooklyn Simmon</strong><span>CEO, Bribbble LLC</span></span>
@@ -1081,7 +1083,7 @@
   <div class="cta-card reveal">
     <div class="cta-grid">
       <div>
-        <h2>See CapHive on your <em>own fund data.</em></h2>
+        <h2>See <span class="wordmark">CapHive</span> on your <em>own fund data.</em></h2>
         <p>Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
         <div class="cta-stats" id="ctaStat">US$ 10bn+ AUM managed — and counting</div>
         <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
@@ -1092,14 +1094,6 @@
         <label>Name<input required name="name" placeholder="Your name" autocomplete="name"></label>
         <label>Firm<input required name="firm" placeholder="Fund / firm"></label>
         <label>Work email<input required type="email" name="email" placeholder="you@fund.com" autocomplete="email"></label>
-        <label>AUM range
-          <select name="aum">
-            <option>Under US$ 50m</option>
-            <option>US$ 50m – 250m</option>
-            <option>US$ 250m – 1bn</option>
-            <option>US$ 1bn+</option>
-          </select>
-        </label>
         <button class="btn btn-primary" type="submit">
           Book my demo
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1166,7 +1160,7 @@
       </div>
     </div>
     <div class="foot-base">
-      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <p>© <span data-year>2026</span> <span class="wordmark">CapHive</span> Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
     </div>
   </div>
   <div class="foot-mark" aria-hidden="true">CapHive</div>
@@ -1351,7 +1345,7 @@
       e.preventDefault();
       var d = new FormData(demoForm);
       var body = 'Name: ' + d.get('name') + '\nFirm: ' + d.get('firm') +
-                 '\nEmail: ' + d.get('email') + '\nAUM range: ' + d.get('aum');
+                 '\nEmail: ' + d.get('email');
       location.href = 'mailto:hello@caphive.com?subject=' +
         encodeURIComponent('Demo request — ' + d.get('firm')) +
         '&body=' + encodeURIComponent(body);

@@ -515,8 +515,12 @@
   .foot-base p, .foot-base a{ font-size:13px; color:var(--mut); }
   .foot-base .legal{ display:flex; gap:24px; }
   .foot-base .legal a:hover{ color:var(--fg); }
+  /* Homepage copy of the shared rule — it loads after caphive.css, so it has to
+     carry the Lobster wordmark treatment too or the footer mark falls back to
+     Geist here only. Keep in step with .foot-mark in assets/css/caphive.css. */
   .foot-mark{
-    text-align:center; font-weight:800; letter-spacing:-0.05em; line-height:.78;
+    text-align:center; font-family:var(--brand); font-weight:400;
+    letter-spacing:0; line-height:.92;
     font-size:clamp(90px,18.5vw,250px); color:#EDEAE2; user-select:none;
     transform:translateY(12%); transition:color .5s;
   }

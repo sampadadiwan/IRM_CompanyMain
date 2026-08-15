@@ -122,7 +122,7 @@ data_page: ai-agents
           <p>
             A monthly schedule is set up automatically by <strong>Setup All Agents</strong>: the 1st of each
             month at 06:00 Asia/Kolkata, with failure and partial-success notifications on, success
-            notifications off, and CapHive support notified if something errors. <strong>It ships turned
+            notifications off, and <span class="wordmark">CapHive</span> support notified if something errors. <strong>It ships turned
             off</strong> &mdash; nothing runs automatically until someone enables it on the agent&rsquo;s
             Schedule tab, which is worth doing so fresh briefings are ready ahead of board meetings.
           </p>
@@ -137,7 +137,7 @@ data_page: ai-agents
           <p>
             <strong>No email goes out for this agent.</strong> Output is only available through the interface
             and the chat panel. The schedule&rsquo;s notification toggles control internal alerts to
-            administrators and CapHive support if something fails; they do not send a digest to a fund
+            administrators and <span class="wordmark">CapHive</span> support if something fails; they do not send a digest to a fund
             manager&rsquo;s inbox.
           </p>
 
@@ -190,7 +190,7 @@ data_page: ai-agents
             <li><strong>Reusing last time&rsquo;s questions can look like nothing happened.</strong> If the comparison results come out identical to the previous run, the briefing step reuses the previous question set rather than generating new ones, at no extra cost. That is intentional for companies that have not changed much, but if you added a new presentation and expected fresh questions, check whether that period actually introduced anything new.</li>
             <li><strong>A smaller AI model risks silent truncation.</strong> Extraction sends the full document text with nothing shortened, so a model with a context window smaller than the recommended million tokens risks the provider quietly cutting off long documents, incomplete extraction, or outright failures on large presentations such as dense board decks or financial appendices. This fails quietly: per-document issues are logged as skipped rather than raised as an error that stops the run.</li>
             <li><strong>Turning off scoring or question generation removes whole sections with little visible warning.</strong> Those two switches are not on the standard settings screen, so if an administrator turns one off directly, the Score section simply disappears from the report, with only a log entry and a low-severity note rather than an obvious warning.</li>
-            <li><strong>There is no email option for fund managers.</strong> Even with the schedule&rsquo;s failure notifications on, those only alert administrators and CapHive support. There is no feature that sends the briefing to a GP&rsquo;s inbox, so anyone waiting on a result needs to check the interface or the chat panel.</li>
+            <li><strong>There is no email option for fund managers.</strong> Even with the schedule&rsquo;s failure notifications on, those only alert administrators and <span class="wordmark">CapHive</span> support. There is no feature that sends the briefing to a GP&rsquo;s inbox, so anyone waiting on a result needs to check the interface or the chat panel.</li>
             <li><strong>Extraction quality for PowerPoint and Word files depends on what is available in the runtime environment.</strong> The agent tries several extraction methods in sequence, and the weakest fallback can miss speaker notes and table cells entirely &mdash; so a key metric mentioned only in a speaker note might never reach the AI.</li>
           </ul>
 
@@ -273,7 +273,7 @@ data_page: ai-agents
 <!-- ================= CTA ================= -->
 <section class="cta">
   <div class="cta-card reveal">
-    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <h2>See <span class="wordmark">CapHive</span> on your <em>own fund data.</em></h2>
     <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
     <div class="hero-cta">
       <a class="btn btn-white" href="contact.html">

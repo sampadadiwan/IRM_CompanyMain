@@ -179,7 +179,7 @@
       e.preventDefault();
       var d = new FormData(demoForm);
       var body = 'Name: ' + d.get('name') + '\nFirm: ' + d.get('firm') +
-                 '\nEmail: ' + d.get('email') + '\nAUM range: ' + d.get('aum');
+                 '\nEmail: ' + d.get('email');
       location.href = 'mailto:hello@caphive.com?subject=' +
         encodeURIComponent('Demo request — ' + d.get('firm')) +
         '&body=' + encodeURIComponent(body);

@@ -16,8 +16,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=f26f1db9">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=b072d96a">
 </head>
 <body data-page="ai-agents">
 
@@ -46,7 +46,7 @@
       </a>
       <div class="nav-menu">
         <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
-        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on <span class="wordmark">CapHive</span></span></a>
         <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
         <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
       </div>
@@ -150,7 +150,7 @@
               </thead>
               <tbody>
                 <tr><td>Funds &amp; staleness thresholds</td><td>Which funds the agent processes, and how stale their data may be before that fund is excluded.</td><td>A dedicated table on the agent's Edit page &mdash; pick a fund per row, set its cash and pending-investment freshness thresholds, add or remove rows.</td><td>One row per existing fund, with a 30-day threshold for cash data and 90 days for pending investment data.</td></tr>
-                <tr><td>Which account types count as cash</td><td>Which account entries are added up for the cash-available figure and checked by the freshness gate.</td><td>Not exposed in any on-screen setting today. Set up behind the scenes by CapHive on your behalf.</td><td>None set by default.</td></tr>
+                <tr><td>Which account types count as cash</td><td>Which account entries are added up for the cash-available figure and checked by the freshness gate.</td><td>Not exposed in any on-screen setting today. Set up behind the scenes by <span class="wordmark">CapHive</span> on your behalf.</td><td>None set by default.</td></tr>
                 <tr><td>Which account types count as expenses</td><td>Which account entries feed the 90-day expense estimate.</td><td>Not exposed on screen today &mdash; same as above.</td><td>None set by default.</td></tr>
                 <tr><td>Which account types count as the reserve buffer</td><td>Which account entries count towards the required reserve.</td><td>Not exposed on screen today &mdash; same as above.</td><td>None set by default.</td></tr>
                 <tr><td>Report recipients</td><td>Who receives the consolidated cash flow email after each run.</td><td>Not exposed on screen today &mdash; same as above.</td><td>None set by default.</td></tr>
@@ -165,7 +165,7 @@
               The cash, expenses, reserve buffer and report recipient settings have no on-screen panel
               anywhere in the product today, so you cannot get meaningful output from this agent through the
               standard interface alone &mdash; only the fund list and freshness thresholds are yours to
-              configure. Until CapHive sets the others up behind the scenes, every fund will show zero cash,
+              configure. Until <span class="wordmark">CapHive</span> sets the others up behind the scenes, every fund will show zero cash,
               zero expenses and zero buffer.
             </p>
           </div>
@@ -186,7 +186,7 @@
 
           <h3>Other data inputs</h3>
           <ul>
-            <li><strong>Account entries</strong> in the cash, expense and buffer categories, from your existing fund and entity ledger data in CapHive.</li>
+            <li><strong>Account entries</strong> in the cash, expense and buffer categories, from your existing fund and entity ledger data in <span class="wordmark">CapHive</span>.</li>
             <li><strong>Pending investment records</strong> that have not been executed, from your existing deal data.</li>
             <li><strong>Each fund's entity and any child entities.</strong> Cash, investments and expenses are added up across the fund's main entity and all of its child entities, including SPVs.</li>
           </ul>
@@ -264,7 +264,7 @@
             <details>
               <summary>We ran the agent and every fund shows zero cash, zero expenses. What is wrong?</summary>
               <div>
-                <p>Almost certainly the account-type settings for cash, expenses and buffer have not been set up yet. These have no on-screen field today &mdash; ask CapHive support or your administrator to confirm the configuration has been completed for your entity.</p>
+                <p>Almost certainly the account-type settings for cash, expenses and buffer have not been set up yet. These have no on-screen field today &mdash; ask <span class="wordmark">CapHive</span> support or your administrator to confirm the configuration has been completed for your entity.</p>
               </div>
             </details>
             <details>
@@ -276,7 +276,7 @@
             <details>
               <summary>We did not get the consolidated email.</summary>
               <div>
-                <p>The report recipients list is blank or has not been set up. There is no on-screen setting for this, so confirm with your admin or CapHive support that it has been configured.</p>
+                <p>The report recipients list is blank or has not been set up. There is no on-screen setting for this, so confirm with your admin or <span class="wordmark">CapHive</span> support that it has been configured.</p>
               </div>
             </details>
             <details>
@@ -344,7 +344,7 @@
 <!-- ================= CTA ================= -->
 <section class="cta">
   <div class="cta-card reveal">
-    <h2>See CapHive on your <em>own fund data.</em></h2>
+    <h2>See <span class="wordmark">CapHive</span> on your <em>own fund data.</em></h2>
     <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
     <div class="hero-cta">
       <a class="btn btn-white" href="contact.html">
@@ -414,7 +414,7 @@
       </div>
     </div>
     <div class="foot-base">
-      <p>© <span data-year>2026</span> CapHive Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <p>© <span data-year>2026</span> <span class="wordmark">CapHive</span> Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
     </div>
   </div>
   <div class="foot-mark" aria-hidden="true">CapHive</div>
