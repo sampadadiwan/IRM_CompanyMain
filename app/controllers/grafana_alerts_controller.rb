@@ -30,7 +30,7 @@ class GrafanaAlertsController < ActionController::API
 
     template = ENV.fetch('CAPHIVE_NOTIFICATION', 'caphive_notification_6')
 
-    WhatsappGeneralNotification.send_template_message(
+    response = WhatsappGeneralNotification.send_template_message(
       {
         recipients: phones.map do |phone|
           {
@@ -49,7 +49,18 @@ class GrafanaAlertsController < ActionController::API
       broadcast_name: 'Grafana Alerts'
     )
 
-    Rails.logger.info "[GrafanaAlert] Sent to #{phones.size} number(s): #{message.truncate(120)}"
+    # Always log the raw WATI body. This return value used to be discarded, so a rejected
+    # send logged "Sent to 2 number(s)" and answered Grafana with 200 — the contact point
+    # showed green while nothing was ever delivered.
+    if delivery_failed?(response)
+      Rails.logger.error "[GrafanaAlert] WATI rejected the send: #{response.inspect.truncate(500)}"
+      # 502 so Grafana marks the contact point as failing and retries, instead of
+      # recording a successful notification.
+      render json: { error: 'whatsapp_delivery_failed', wati: response }, status: :bad_gateway and return
+    end
+
+    Rails.logger.info "[GrafanaAlert] Sent to #{phones.size} number(s): #{message.truncate(120)} " \
+                      "| WATI: #{response.inspect.truncate(300)}"
     render json: { status: 'ok' }
   rescue JSON::ParserError => e
     Rails.logger.error "[GrafanaAlert] Bad JSON: #{e.message}"
@@ -59,7 +70,27 @@ class GrafanaAlertsController < ActionController::API
     render json: { error: e.message }, status: :internal_server_error
   end
 
+  # WATI reports a rejected template send inside a 200 body rather than via HTTP status,
+  # and the exact shape varies by plan/endpoint version. Treat the send as failed only on
+  # a positive failure signal — an unrecognised body is logged verbatim by the caller, so
+  # an undocumented shape stays diagnosable without falsely failing every alert.
+  FAILURE_RESULTS = %w[false failure failed error].freeze
+
   private
+
+  def delivery_failed?(response)
+    # Non-Hash means the transport helper returned something unexpected; the caller logs it.
+    return false unless response.is_a?(Hash)
+
+    # WhatsappGeneralNotification.parse_response returns {"error" => "non_json_response"}
+    # when WATI answers with HTML (auth failure, gateway error) — caught here too.
+    return true if response['error'].present?
+    return true if response['errors'].is_a?(Hash) && response.dig('errors', 'error').present?
+    return true if response['result'] == false
+
+    result = response['result']
+    result.is_a?(String) && FAILURE_RESULTS.include?(result.downcase)
+  end
 
   def verify_token
     expected = Rails.application.credentials[:grafana_webhook_token]
@@ -96,7 +127,7 @@ class GrafanaAlertsController < ActionController::API
       "#{tag}RESOLVED: #{resolved.size} issue#{resolved.size > 1 ? 's' : ''}"
     end
 
-    lines = [header, '']
+    segments = [header]
     alerts.first(5).each do |a|
       icon    = a['status'] == 'firing' ? '[!]' : '[OK]'
       title   = a.dig('labels', 'alertname') || 'Unknown alert'
@@ -105,11 +136,23 @@ class GrafanaAlertsController < ActionController::API
       # text) — strip it here since the header already carries the tag, so WhatsApp
       # messages don't repeat it per line and waste the 1000-char truncate budget
       summary = summary.delete_prefix(tag)
-      lines << "#{icon} #{title}"
-      lines << "    #{summary}" unless summary.empty?
+      # Summary joined to its own title with ": " so one alert stays one segment —
+      # the " · " separator then reads as the boundary between distinct alerts.
+      segments << (summary.empty? ? "#{icon} #{title}" : "#{icon} #{title}: #{summary}")
     end
-    lines << "... and #{alerts.size - 5} more" if alerts.size > 5
+    segments << "... and #{alerts.size - 5} more" if alerts.size > 5
 
-    lines.join("\n")
+    # Single line, joined with " · ". WhatsApp rejects template PARAMETER values that
+    # contain newlines, tabs, or runs of 4+ spaces — the template body may have line
+    # breaks, but the variables spliced into it may not. This message is one such
+    # variable, so it can never contain them. sanitize_param also scrubs whitespace
+    # inside each segment, since Grafana summary annotations are free text.
+    segments.map { |s| sanitize_param(s) }.reject(&:empty?).join(' · ')
+  end
+
+  # Collapse every whitespace run (newline, tab, multi-space) to a single space so the
+  # value is always legal as a WhatsApp template variable.
+  def sanitize_param(text)
+    text.to_s.gsub(/\s+/, ' ').strip
   end
 end
