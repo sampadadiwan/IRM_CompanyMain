@@ -7,8 +7,15 @@
 #      bundle exec rails credentials:edit
 #      grafana_webhook_token: "your-secret-token-here"
 #
-#   2. Add GRAFANA_ALERT_PHONES to Rails credentials (comma-separated, E.164 without +):
-#      grafana_alert_phones: "917721046692,919876543210"
+#   2. Add GRAFANA_ALERT_PHONES to Rails credentials, E.164 without the '+'. Preferred
+#      shape is a list, which has no separator to lose:
+#        grafana_alert_phones:
+#          - "917721046692"
+#          - "919876543210"
+#      A quoted CSV string also works. QUOTE IT either way — unquoted, YAML reads a run of
+#      digits as an Integer, and a dropped comma fuses both numbers into one bignum that
+#      WATI rejects with "There are no valid Receivers":
+#        grafana_alert_phones: "917721046692,919876543210"
 #
 #   3. In Grafana → Contact Points → Caphive WhatsApp → set:
 #      URL: https://app.caphive.com/grafana/alert
@@ -20,10 +27,19 @@ class GrafanaAlertsController < ActionController::API
   def alert
     payload = JSON.parse(request.body.read)
     message = format_alert(payload)
-    phones  = Rails.application.credentials[:grafana_alert_phones].to_s
-                   .split(',').map(&:strip).reject(&:empty?)
+    phones  = configured_phones
 
     if phones.empty?
+      # "Deliberately unconfigured" and "configured but unusable" must not answer alike.
+      # The second is how this endpoint failed for months — a broken credential that still
+      # returned 200 left Grafana's contact point green while every alert was dropped. So
+      # it fails loudly and lets Grafana mark the contact point down.
+      if Rails.application.credentials[:grafana_alert_phones].present?
+        Rails.logger.error '[GrafanaAlert] credentials[:grafana_alert_phones] is set but ' \
+                           'contains no digits — check the separators and that it is quoted'
+        render json: { error: 'no_valid_alert_phones' }, status: :bad_gateway and return
+      end
+
       Rails.logger.warn '[GrafanaAlert] No phones configured in credentials[:grafana_alert_phones]'
       render json: { status: 'ok', note: 'no phones configured' } and return
     end
@@ -53,7 +69,11 @@ class GrafanaAlertsController < ActionController::API
     # send logged "Sent to 2 number(s)" and answered Grafana with 200 — the contact point
     # showed green while nothing was ever delivered.
     if delivery_failed?(response)
-      Rails.logger.error "[GrafanaAlert] WATI rejected the send: #{response.inspect.truncate(500)}"
+      # Recipients are logged alongside the response because WATI's commonest rejection
+      # ("There are no valid Receivers") names no number — without them the log says the
+      # send failed but not which address it choked on.
+      Rails.logger.error "[GrafanaAlert] WATI rejected the send to #{mask_phones(phones)}: " \
+                         "#{response.inspect.truncate(500)}"
       # 502 so Grafana marks the contact point as failing and retries, instead of
       # recording a successful notification.
       render json: { error: 'whatsapp_delivery_failed', wati: response }, status: :bad_gateway and return
@@ -110,6 +130,37 @@ class GrafanaAlertsController < ActionController::API
     # not read as a clean send for the whole alert.
     recipients = response['recipients']
     recipients.is_a?(Array) && recipients.any? { |r| r.is_a?(Hash) && Array(r['errors']).any? }
+  end
+
+  # Alert recipients, normalised to the bare-digit E.164 form WATI insists on.
+  #
+  # The credential is hand-maintained ops config, so it drifts from the documented
+  # "comma-separated, E.164 without +" format: a leading '+', a space between the country
+  # code and the number, a dash, or a trailing newline from an editor all creep in. WATI
+  # answers any of those with `{"success" => false, "error" => "There are no valid
+  # Receivers", "recipients" => []}` — it rejects the whole broadcast rather than the one
+  # malformed entry, so a single stray character silences every alert. Stripping to digits
+  # here makes the endpoint tolerant of the formats a human would reasonably type.
+  #
+  # No length validation here on purpose. A malformed entry is already loud: WATI refuses
+  # it, delivery_failed? catches the refusal, and the endpoint answers 502 so Grafana marks
+  # the contact point down. Re-checking the length locally would only reword that error.
+  def configured_phones
+    configured = Rails.application.credentials[:grafana_alert_phones]
+    # A YAML list is the safer shape — each number is its own element, so there is no
+    # separator to drop. The CSV string is still accepted for the existing config.
+    raw = configured.is_a?(Array) ? configured : configured.to_s.split(',')
+
+    raw.filter_map do |entry|
+      digits = entry.gsub(/\D/, '')
+      digits unless digits.empty?
+    end
+  end
+
+  # Last 4 digits only — enough to identify which number was refused when reading logs,
+  # without writing ops staff's full numbers into production.log.
+  def mask_phones(phones)
+    phones.map { |p| "***#{p.last(4)}" }.join(',')
   end
 
   def verify_token
