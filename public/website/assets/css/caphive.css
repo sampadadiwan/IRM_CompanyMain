@@ -719,7 +719,12 @@ a.f-card:hover h3{ color:var(--orange); }
   display:flex; align-items:center; gap:12px; padding:18px 20px;
   border:1px solid var(--line); background:var(--tile); border-radius:16px;
   font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--mut);
+  transition:border-color .25s, color .25s;
 }
+/* The shield is already orange, so the hover picks up the border and the label to
+   match it — the same treatment the cards elsewhere use, minus the lift, since a
+   badge is not a link and should not read as one. */
+.trust-item:hover{ border-color:var(--orange); color:var(--fg); }
 .trust-item svg{ flex:none; }
 
 /* ---------- testimonial ---------- */
