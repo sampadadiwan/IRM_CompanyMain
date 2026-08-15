@@ -56,7 +56,7 @@ class GrafanaAlertsController < ActionController::API
               { name: 'notification', value: message.truncate(1000) },
               # Link to the Grafana instance that actually fired (IN vs US) — both
               # instances post to this same endpoint, so derive it from the payload
-              { name: 'link',         value: grafana_host(payload) }
+              { name: 'link',         value: grafana_link_path(payload) }
             ]
           }
         end
@@ -176,9 +176,13 @@ class GrafanaAlertsController < ActionController::API
     Array(payload['alerts']).filter_map { |a| a.dig('labels', 'region') }.first.to_s
   end
 
-  # WhatsApp "link" param: point at the Grafana instance that fired, not always IN
-  def grafana_host(payload)
-    payload_region(payload) == 'us' ? 'graphana.caphive.us' : 'graphana.caphive.com'
+  # WhatsApp "link" param. The template's button is a Meta URL button, so this value is
+  # appended to a base fixed at approval time (https://app.caphive.com/) — it must be a
+  # path, never a hostname. Passing 'graphana.caphive.com' here is what produced the
+  # button pointing at https://app.caphive.com/graphana.caphive.com. The path resolves
+  # through the GET /grafana/:region redirect in routes.rb, which knows the hostnames.
+  def grafana_link_path(payload)
+    "grafana/#{payload_region(payload) == 'us' ? 'us' : 'in'}"
   end
 
   def format_alert(payload)

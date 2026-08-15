@@ -109,6 +109,23 @@ Rails.application.routes.draw do
   post "/ses_notifications", to: "ses_notifications#create"
   post "/grafana/alert", to: "grafana_alerts#alert"
 
+  # The WhatsApp alert template's button is a Meta URL button: its base is fixed at
+  # template-approval time (https://app.caphive.com/) and the send may only append a
+  # suffix, so an alert cannot link straight at Grafana — passing the hostname produced
+  # https://app.caphive.com/graphana.caphive.com. This hop is what the suffix points at
+  # instead. Region is in the path because both regions' alerts render through the one
+  # approved template, so US alerts arrive at the IN base and still have to reach
+  # graphana.caphive.us. No conflict with /grafana/alert above: that is a POST, and the
+  # constraint admits only "in" and "us", keeping this a fixed redirect rather than an
+  # open one.
+  # 302, not the redirect helper's default 301: a permanent redirect would be cached by
+  # the browser and outlive any change to the Grafana hostnames.
+  get "/grafana/:region",
+      to: redirect(status: 302) { |params, _req|
+        params[:region] == "us" ? "https://graphana.caphive.us" : "https://graphana.caphive.com"
+      },
+      constraints: { region: /in|us/ }
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Defines the root path route ("/")
