@@ -1,276 +1,212 @@
-
 # CapHive Outlook Add-in
 
 ## User Setup Guide
 
-This guide explains how to install and use the **CapHive Outlook Add-in**, which allows you to **file investor emails directly into CapHive**.
+This guide explains how to install and use the **CapHive Outlook Add-in**, which lets you file
+investor emails into CapHive without leaving Outlook.
 
-Once installed, you can file any email under the appropriate investor in just a few clicks.
+Once installed, you can file an email against the right investor in two clicks, and everyone on
+your team can see it.
+
+> **Availability:** the add-in is not published to the Microsoft store. Your CapHive
+> administrator installs it for your organisation, or sends you a link to install it yourself.
 
 ---
 
 # 1. What the Add-in Does
 
-The CapHive Outlook Add-in allows you to:
-
-• File emails from Outlook directly into CapHive
-• Automatically match investors based on email address
-• Maintain a central investor communication history
-• Ensure important communication is recorded and visible to your team
+- Files emails from Outlook straight into CapHive
+- Suggests the right investor based on who sent the email
+- Files any attachments along with the email
+- Tells you when an email has already been filed, so nothing is recorded twice
+- Keeps investor correspondence in one place, visible to your whole team
 
 ---
 
 # 2. Requirements
 
-Before installing the add-in, ensure you have:
+- A **CapHive account** — the same login you use for CapHive every day
+- **Outlook on the web**, or **Outlook for Windows or Mac**
+- The **install link** from your CapHive administrator
 
-• A **CapHive user account**
-• Access to **Microsoft Outlook (Web or Desktop)**
-• The **CapHive Add-in manifest file** provided by your administrator
-
-You will also need your **CapHive login credentials**.
-
----
-
-# 3. Installing the Add-in in Outlook Web
-
-### Step 1 — Open Outlook
-
-Go to:
-
-```
-https://outlook.office.com
-```
-
-Sign in with your Microsoft account.
+Your organisation's name appears throughout the add-in, so if you use CapHive under a different
+brand, expect to see that name instead of "CapHive" on the button and panel.
 
 ---
 
-### Step 2 — Open Add-ins
+# 3. Installing the Add-in
 
-Click the **Settings icon (⚙️)** in the top right.
+Most organisations have this installed centrally by an administrator, in which case the add-in
+simply appears in Outlook and you can skip to section 4.
 
-Then click:
+To install it yourself in **Outlook on the web**:
 
-```
-View all Outlook settings
-```
+1. Open Outlook and click the **Settings** gear in the top right
+2. Search the settings for **Add-ins**, and open **Manage add-ins** (older versions:
+   **Mail → Customise actions → Add-ins**)
+3. Choose **My add-ins**, then **Add a custom add-in → Add from URL**
+4. Paste the install link your administrator gave you, and confirm
 
----
+Outlook will warn you that the add-in comes from outside the store. That is expected for an
+add-in your own organisation provides.
 
-### Step 3 — Open Add-in Management
-
-Navigate to:
-
-```
-Mail → Customize actions
-```
-
-Scroll to the **Add-ins** section and click:
-
-```
-Manage add-ins
-```
+**Administrators** installing for everyone should use the Microsoft 365 admin centre instead:
+**Settings → Integrated apps → Upload custom apps**, using the same link. Allow up to 24 hours
+for it to reach all users.
 
 ---
 
-### Step 4 — Upload the CapHive Add-in
+# 4. Finding the Add-in
 
-Click:
+Open any email. A button appears in the toolbar above the message, labelled **File to CapHive**
+(or your organisation's name).
 
-```
-Add from file
-```
+Clicking it opens the CapHive panel on the right-hand side.
 
-Upload the provided file:
-
-```
-caphive_outlook_addin.xml
-```
-
-Confirm the installation.
+If you do not see the button, look under the **three dots (…)** in the message toolbar — Outlook
+moves buttons there when the window is narrow.
 
 ---
 
-# 4. Verifying Installation
+# 5. Signing In
 
-Open any email in Outlook.
+The first time you open the panel it asks you to sign in.
 
-You should now see a new button in the email toolbar:
+Click **Sign in to CapHive**. A separate sign-in window opens, and you log in exactly as you
+normally would — including single sign-on or multi-factor authentication if your organisation
+uses them.
 
-```
-File to CapHive
-```
+> **You will never be asked to type your CapHive password into the panel itself.** If anything
+> inside the Outlook panel ever asks for your password, do not enter it, and tell your
+> administrator.
 
-Clicking this button opens the **CapHive panel**.
-
----
-
-# 5. First-Time Login
-
-When you open the add-in for the first time, you will be asked to log in to CapHive.
-
-Enter your CapHive credentials.
-
-```
-Email
-Password
-```
-
-You will be redirected to the CapHive add-in panel after login.
+Once signed in, the panel shows **Signed in as** your name. You stay signed in for about a month
+before being asked again.
 
 ---
 
 # 6. Filing an Email
 
-### Step 1 — Open an Email
+### Step 1 — Open the email and the panel
 
-Open an email from an investor.
+Open the email, then click **File to CapHive**. The panel checks the email straight away.
 
-Example:
+### Step 2 — Check the suggested record
 
-```
-From: investor@abcfo.com
-Subject: Capital call question
-```
+The add-in suggests an investor based on **who sent the email**, and tells you why it chose them:
 
----
+| What you see | What it means |
+| --- | --- |
+| Matched on a known investor contact | The sender is a recognised contact on that investor's record |
+| Matched on the investor's primary email | The sender is the investor's main email address |
+| Matched on email domain | The sender works at the same organisation as that investor |
 
-### Step 2 — Click “File to CapHive”
+Always check the suggestion before filing. It is a suggestion, not a decision.
 
-Click the button:
+### Step 3 — Change the record if needed
 
-```
-File to CapHive
-```
+If the suggestion is wrong, or nothing was suggested, click **Change record** and search by name.
+Pick the right one from the list.
 
-The CapHive panel opens on the right side.
+### Step 4 — File it
 
----
+Click **File to CapHive**. The panel confirms with **Filed to CapHive**, and offers:
 
-### Step 3 — Investor Matching
-
-The system automatically tries to match the email to an investor.
-
-Matching is based on the investor email address stored in CapHive.
-
-Possible outcomes:
-
-| Result             | Description                     |
-| ------------------ | ------------------------------- |
-| Investor found     | Investor detected automatically |
-| Multiple investors | You must select the correct one |
-| No match           | You can search for the investor |
+- **View in CapHive** — opens the filed email in CapHive
+- **Undo** — removes the filing again, if you filed it against the wrong record
 
 ---
 
-### Step 4 — Confirm Filing
+# 7. When Nothing Is Suggested
 
-Once the correct investor is selected, click:
+This is normal and does not mean anything is wrong. The add-in only suggests a record based on the
+**sender**, so it will not suggest one when:
 
-```
-Confirm Filing
-```
+- **You sent the email.** Emails you sent to an investor show no suggestion, because the sender is
+  you. Search for the investor and file it.
+- The sender is not recorded against any investor in CapHive
+- The email is internal, or from someone unrelated
 
-The email will now be stored in CapHive.
+In every case you can still file it — click **Change record**, search, and file.
 
----
-
-# 7. What Gets Stored in CapHive
-
-The following information is saved:
-
-• Email subject
-• Sender email
-• Recipients (To / CC)
-• Email body
-• Timestamp
-• Associated investor
-
-This information is stored in CapHive under the investor's communication record.
+This is deliberate. The add-in would rather offer nothing than confidently suggest the wrong
+investor.
 
 ---
 
-# 8. Viewing Filed Emails in CapHive
+# 8. What Gets Stored
 
-Once filed, emails will appear in:
+- The subject and full message, with its formatting intact
+- Who it was from, and who it was sent to
+- Any attachments
+- The date it was sent
+- Who filed it, and when
+- The investor it was filed against
 
-```
-Investor → Communications → Emails
-```
-
-Team members with permission can view the stored communication.
+Filed emails appear in CapHive on the investor's record, under their communications.
 
 ---
 
-# 9. Duplicate Protection
+# 9. Filing the Same Email Twice
 
-If an email has already been filed, CapHive will detect this and notify you.
+If an email has already been filed, the panel tells you so, and shows who filed it and against
+which record. It will not be recorded twice.
 
-Duplicate emails will not be stored again.
+You can still file it against a *different* investor if the email genuinely relates to more than
+one — the panel offers **File again to a different record**.
+
+This works across the whole team, and across Outlook and Gmail: if a colleague filed the email
+from Gmail, you will see that here.
 
 ---
 
 # 10. Troubleshooting
 
-### The "File to CapHive" button does not appear
+**The button does not appear.** Refresh Outlook, then check under the three dots (…) in the
+message toolbar. If it is still missing, confirm with your administrator that the add-in is
+installed for your account.
 
-Try the following:
+**The panel is blank.** Close and reopen it. If it stays blank, tell your administrator which
+version of Outlook you are using — the panel needs to load from CapHive, and a network or
+security policy can block it.
 
-• Refresh Outlook
-• Ensure the add-in is installed under **Manage Add-ins**
-• Reinstall the manifest file
+**It keeps asking me to sign in.** Your session has expired, which happens about once a month.
+Click **Sign in to CapHive** again. If it happens repeatedly within a day, tell your
+administrator.
 
----
+**The wrong investor was suggested.** Click **Change record** and pick the right one before
+filing. If a particular sender is consistently matched to the wrong investor, ask your
+administrator to check that investor's email address in CapHive.
 
-### Login keeps redirecting to sign-in
-
-Make sure cookies are enabled for the CapHive domain.
-
----
-
-### Investor was not matched
-
-You can manually search and select the correct investor.
-
----
-
-# 11. Security
-
-The add-in uses your existing **CapHive login session**.
-
-• No email data is stored outside CapHive
-• Only authorized users can file emails
-• Permissions are enforced based on investor access
+**I filed it against the wrong record.** Click **Undo** straight away. If you have moved on,
+the filing can be removed from the investor's record in CapHive.
 
 ---
 
-# 12. Support
+# 11. Security and Privacy
 
-If you encounter any issues installing or using the add-in, contact:
-
-```
-support@caphive.com
-```
-
-Include:
-
-• Your Outlook version
-• A screenshot of the issue
-• The email you attempted to file (if applicable)
+- You sign in through your organisation's normal CapHive login, including single sign-on and
+  multi-factor authentication
+- Your password is never entered into, or seen by, the Outlook panel
+- The add-in only reads the email you have open — it has no access to the rest of your mailbox
+- You can only file against investors you already have permission to see in CapHive
+- Nothing is filed until you confirm it
 
 ---
 
-# 13. Best Practices
+# 12. Best Practice
 
-To keep investor communication well organized:
-
-• File important investor emails promptly
-• Verify the investor match before confirming
-• Avoid filing internal-only emails
-
----
-
-✅ **Tip:** Filing emails immediately after reading them ensures the communication is captured for your entire team.
+- File investor emails as you read them, so the record stays current
+- Check the suggested investor before confirming
+- Do not file internal-only emails
+- If an email covers two investors, file it against both
 
 ---
+
+# 13. Support
+
+If you have trouble installing or using the add-in, contact **support@caphive.com** and include:
+
+- Which version of Outlook you use (web, Windows, or Mac)
+- A screenshot of the panel
+- The subject of the email you were trying to file
