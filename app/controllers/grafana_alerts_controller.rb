@@ -70,10 +70,22 @@ class GrafanaAlertsController < ActionController::API
     render json: { error: e.message }, status: :internal_server_error
   end
 
-  # WATI reports a rejected template send inside a 200 body rather than via HTTP status,
-  # and the exact shape varies by plan/endpoint version. Treat the send as failed only on
-  # a positive failure signal — an unrecognised body is logged verbatim by the caller, so
-  # an undocumented shape stays diagnosable without falsely failing every alert.
+  # WATI reports a rejected template send inside a 200 body rather than via HTTP status.
+  # The confirmed v3 messageTemplates/send shape, from a live production call:
+  #
+  #   {"success" => true,
+  #    "broadcast_id" => "6a8037d8...",
+  #    "recipients" => [{"local_message_id" => "...", "phone_number" => "917721046692",
+  #                      "target" => "917721046692", "errors" => []}]}
+  #
+  # NOTE: success == true means WATI ACCEPTED the broadcast, not that WhatsApp delivered it.
+  # Meta can still reject the message downstream (e.g. an unapproved template, or a
+  # parameter value containing newlines/tabs/4+ spaces) after this call has returned 200.
+  # Final delivery state is only visible in the WATI dashboard or via its status webhooks,
+  # so a clean response here rules out API-level rejection and nothing more.
+  #
+  # `result` is checked too because the older v1 endpoints in WhatsappGeneralNotification
+  # use that key instead — cheap to accept both rather than depend on which one answered.
   FAILURE_RESULTS = %w[false failure failed error].freeze
 
   private
@@ -86,10 +98,18 @@ class GrafanaAlertsController < ActionController::API
     # when WATI answers with HTML (auth failure, gateway error) — caught here too.
     return true if response['error'].present?
     return true if response['errors'].is_a?(Hash) && response.dig('errors', 'error').present?
-    return true if response['result'] == false
 
-    result = response['result']
-    result.is_a?(String) && FAILURE_RESULTS.include?(result.downcase)
+    # v3 top-level accept/reject flag.
+    return true if response['success'] == false
+    # v1-style flag, for whichever endpoint answered.
+    return true if response['result'] == false
+    return true if response['result'].is_a?(String) && FAILURE_RESULTS.include?(response['result'].downcase)
+
+    # Per-recipient rejections: the broadcast can be accepted overall while individual
+    # numbers are refused (invalid number, no opt-in), so one bad phone in the batch must
+    # not read as a clean send for the whole alert.
+    recipients = response['recipients']
+    recipients.is_a?(Array) && recipients.any? { |r| r.is_a?(Hash) && Array(r['errors']).any? }
   end
 
   def verify_token
