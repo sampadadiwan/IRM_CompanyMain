@@ -25,7 +25,10 @@ scripts: index_scripts.html
       funds, portfolios, deals &amp; secondaries — with AI agents purpose-built for private markets.
     </p>
     <div class="hero-cta">
-      <a class="btn btn-primary" href="#contact">
+      <!-- Straight to the one demo form on contact.html, anchored to the form
+           itself. It used to scroll to #contact on this page, which was where
+           the homepage's own shortened copy of the form lived. -->
+      <a class="btn btn-primary" href="contact.html#demo-request">
         Setup a Demo
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
@@ -441,39 +444,28 @@ scripts: index_scripts.html
 </section>
 
 <!-- ================= CTA ================= -->
+<!-- There is exactly ONE demo form on the site, on contact.html. The homepage used
+     to carry a shortened copy of it (name / firm / email only) with its own handler
+     in _partials/index_scripts.html; both are gone. Two forms meant two field sets,
+     two handlers and two things to keep in step — and the short one collected less
+     about the prospect than the reply needs. This CTA now sends the visitor to the
+     real form, anchored so it is the first thing they land on.
+     See docs/technical/website_lead_capture.md. -->
 <section class="cta" id="contact">
   <div class="cta-card reveal">
-    <div class="cta-grid">
-      <div>
-        <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
-        <p>Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
-        <div class="cta-stats" id="ctaStat">US$ 10bn+ AUM managed — and counting</div>
-        <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
-        <a class="cta-mail" href="contact.html" style="margin-left:20px">all ways to reach us</a>
-      </div>
-      <!-- The short version of the demo form on contact.html, and driven by the SAME handler
-           in assets/js/caphive.js — data-mailto marks it as ours. It used to have a bespoke
-           inline handler in _partials/index_scripts.html that only ever composed an email;
-           that has been removed, because two handlers for two forms is how one of them
-           quietly stops working. Field names must match contact.html's: the server stores
-           them under these names. -->
-      <form class="cta-form" id="demoForm" data-mailto="hello@caphive.com" data-subject="Demo request">
-        <!-- Spam controls, identical to contact.html. Stripped by the server, never stored. -->
-        <div class="hp-field" aria-hidden="true">
-          <label>Do not fill this in<input type="text" name="_hp" tabindex="-1" autocomplete="off"></label>
-        </div>
-        <input type="hidden" name="_ts" value="">
-        <label>Name<input required name="name" placeholder="Your name" autocomplete="name"></label>
-        <label>Firm<input required name="firm" placeholder="Fund / firm"></label>
-        <label>Work email<input required type="email" name="email" placeholder="you@fund.com" autocomplete="email"></label>
-        <button class="btn btn-primary" type="submit">
-          Book my demo
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <!-- Rewritten to "Sending your request…" by caphive.js once an endpoint resolves. -->
-        <div class="form-msg">Your email client is opening with the request prefilled. Send it and we will pick it up from there.</div>
-      </form>
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <!-- #demo-request is the form's own id on contact.html. -->
+      <a class="btn btn-white" href="contact.html#demo-request">
+        Book my demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="contact.html">All ways to reach us</a>
     </div>
+    <!-- Cycled by the CTA_STATS rotator in _partials/index_scripts.html. -->
+    <div class="cta-stats" id="ctaStat" style="justify-content:center">US$ 10bn+ AUM managed — and counting</div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
   </div>
 </section>
 

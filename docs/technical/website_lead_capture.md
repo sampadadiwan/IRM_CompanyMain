@@ -1,6 +1,6 @@
 # Website Lead Capture
 
-**Status:** Built. Migration applied, 21 Cucumber scenarios passing.
+**Status:** Built. Migration applied, 24 Cucumber scenarios passing.
 **What it does:** Captures demo requests from the public website into our own database, with no login and no third-party form processor.
 **Prerequisite row:** A1 in [`docs/marketing/us_gtm_prerequisites.md`](../marketing/us_gtm_prerequisites.md).
 
@@ -34,10 +34,10 @@ Staging is deliberately not a `caphive.*` domain, which is why nothing hardcodes
 ```mermaid
 sequenceDiagram
     participant V as Visitor (caphive.com)
-    participant J as caphive.js / index_scripts
+    participant J as caphive.js (contact.html)
     participant R as Rails (app.caphive.com)
     participant O as WebsiteLeadCreate
-    participant M as Support mailbox
+    participant M as hello@caphive.com
 
     V->>J: Submits demo form
     J->>J: Collect fields, UTM params, _source_page, _ts
@@ -80,7 +80,7 @@ A discarded bot gets the same 200 and the same redirect as a real lead. Telling 
 | `app/packs/core/base/services/website_lead_create.rb` | Trailblazer operation: `reject_bot` → `build` → `save` → `handle_errors` (left) → `send_notification`. |
 | `app/packs/core/base/controllers/website_leads_controller.rb` | Public `create`/`options`; staff `index`/`show`. |
 | `app/packs/core/base/policies/website_lead_policy.rb` | `:support` / `:super` only. |
-| `app/packs/core/base/mailers/website_lead_mailer.rb` + view | The A2 alert. |
+| `app/packs/core/base/mailers/website_lead_mailer.rb` + view | The A2 alert, to `WEBSITE_LEADS_EMAIL_TO` (default `hello@caphive.com`). |
 | `app/packs/core/base/views/website_leads/` | Read-only staff screens. |
 | `app/assets/stylesheets/custom/website_leads.scss` | Message/payload block styling. |
 | `config/routes.rb` | `resources :website_leads, only: %i[index show create]` plus the OPTIONS route. |
@@ -99,16 +99,20 @@ A discarded bot gets the same 200 and the same redirect as a real lead. Telling 
 | `website_src/_layout.html.erb` | Renders `site_config` before `analytics`. |
 | `website_src/_partials/analytics.html` | Adds the `caphiveTrack` wrapper. |
 | `website_src/pages/contact.html` | Honeypot, `_ts`, form id, isolated mailto-only sentence. |
-| `website_src/pages/index.html` | Same, on the short homepage form. |
-| `website_src/_partials/index_scripts.html` | Homepage POST handler replacing the mailto-only one. |
+| `website_src/pages/index.html` | Hero and CTA buttons link to `contact.html#demo-request`. The homepage no longer carries a form. |
+| `website_src/_partials/index_scripts.html` | Homepage form handler removed along with the homepage form. |
 | `public/website/assets/js/caphive.js` | The shared POST handler and the thank-you conversion event. |
-| `public/website/assets/css/caphive.css` | `.hp-field` honeypot positioning. |
+| `public/website/assets/css/caphive.css` | `.hp-field` honeypot positioning; `#demo-request` scroll offset for the anchored jump from the homepage. |
 | `website_src/pages/privacy.html` | Collection and retention wording. |
 | `website_src/pages/cookies.html` | Corrected — no third-party form processor. |
 
 **The endpoint is resolved in the browser, not at build time.** `public/website` is built once and committed, and both deployments serve the same files. A single baked-in URL would post every US lead into the India database. An unrecognised host resolves to an empty endpoint and the form falls back to a mail-client draft, so a preview deploy degrades instead of losing leads.
 
-**The homepage needs its own copy of the handler.** `index.html` overrides the shared script bundle with `_partials/index_scripts.html` and never loads `caphive.js`, so the conversion path exists twice. That duplication is deliberate and flagged in both files — loading `caphive.js` alongside `index_scripts.html` would double-bind the nav, mobile menu, reveal, odometer and magnetic-button behaviours they both implement.
+**There is one form, on `contact.html`.** The homepage used to carry a shortened copy of it (name, firm, email) with its own submit handler in `_partials/index_scripts.html`, because `index.html` renders that partial instead of `caphive.js` and so the conversion path had to exist twice. Both the short form and its handler are gone: the homepage's hero and CTA buttons now link to `contact.html#demo-request`. One form means one field set, one handler, and one thing to check after a deploy — and the short form collected neither the role nor the message that make a configure-first demo possible.
+
+`index.html` still renders `index_scripts.html` instead of `caphive.js` — loading both would double-bind the nav, mobile menu, reveal, odometer and magnetic-button behaviours they each implement — so the booking-link swap is still duplicated there. Only the form handler was removed.
+
+**The alert goes to the commercial mailbox, not to `SUPPORT_EMAIL_TO`.** That address is the support and exception firehose — ExceptionNotifier, CS escalations, entity alerts — and a prospect owed a five-minute reply must not arrive in it. `WEBSITE_LEADS_EMAIL_TO` is its own variable, set to `hello@caphive.com` in every `.env`, and the mailer falls back to that address if the variable is unset. `Reply-To` is the prospect, so replying to the alert answers them directly.
 
 ---
 
@@ -152,9 +156,9 @@ Both numbers are published verbatim in `website_src/pages/privacy.html` §7. **C
 
 ## 6. Tests
 
-`features/core/website_leads.feature`, 21 scenarios, all passing. They drive Rack::Test through the full middleware stack rather than Capybara, because the Origin header is the thing under test, the body must be real `multipart/form-data`, and the throttle scenario needs `X-Forwarded-For` (127.0.0.1 is deliberately safelisted).
+`features/core/website_leads.feature`, 24 scenarios, all passing. They drive Rack::Test through the full middleware stack rather than Capybara, because the Origin header is the thing under test, the body must be real `multipart/form-data`, and the throttle scenario needs `X-Forwarded-For` (127.0.0.1 is deliberately safelisted).
 
-Covered: valid submission stored and announced; full message in the notification; UTM persistence; landing page; IP recorded; malformed email; missing name; oversized message; honeypot; too-fast submission; **missing `_ts` accepted**; throttle on the sixth submission; allowed origin echoed; credentials never allowed; `Vary: Origin`; unlisted origin refused; **the other stack's origin refused**; unset `WEBSITE_HOSTS` trusting nothing; preflight; staff index and show; ordinary user denied; anonymous denied.
+Covered: valid submission stored and announced; **notification addressed to `hello@caphive.com` with the prospect as `Reply-To` and every submitted field in the body**; full message in the notification; UTM persistence; landing page; IP recorded; malformed email; missing name; oversized message; honeypot; too-fast submission; **missing `_ts` accepted**; throttle on the sixth submission; allowed origin echoed; credentials never allowed; `Vary: Origin`; unlisted origin refused; **the other stack's origin refused**; unset `WEBSITE_HOSTS` trusting nothing; preflight; staff index and show; ordinary user denied; anonymous denied.
 
 Cucumber runs the `:inline` ActiveJob adapter, so `deliver_later` has already run when the response returns — assertions are on `ActionMailer::Base.deliveries`. The `@website_leads` Around hook restores `WEBSITE_HOSTS`, which `.env.test` does not define.
 
@@ -164,10 +168,10 @@ Cucumber runs the `:inline` ActiveJob adapter, so `deliver_later` has already ru
 
 The only step a human still owns (`HUMAN_ACTIONS.md` §A1/A2). From an incognito window on the deployed site:
 
-1. Submit the form on `contact.html` **and** the short form on the homepage. They are separate handlers and both need checking.
-2. Each should leave the browser on `thank-you.html?src=demo-form` with no mail client involved.
+1. Submit the form on `contact.html`. It is the only demo form on the site; the homepage's "Setup a Demo" and CTA buttons should land you on it, scrolled to the form.
+2. It should leave the browser on `thank-you.html?src=demo-form` with no mail client involved.
 3. The lead appears under **Website Leads** in the app (`:support` / `:super` only).
-4. An email reaches `SUPPORT_EMAIL_TO` within five minutes, with the full message and the prospect's address as `Reply-To`.
+4. An email reaches `WEBSITE_LEADS_EMAIL_TO` (`hello@caphive.com`) within five minutes, with the full message and the prospect's address as `Reply-To`.
 
 If the browser console shows a CORS error, the site's hostname is missing from `ENDPOINTS` in `site_config.html.erb`, from `WEBSITE_HOSTS` on the app host, or the two disagree.
 

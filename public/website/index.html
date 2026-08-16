@@ -126,7 +126,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=de1dd679">
+<link rel="stylesheet" href="assets/css/caphive.css?v=2beecd8c">
 <style>
   :root{
     --bg:      #FBFAF7;
@@ -597,7 +597,6 @@
     width:120%; height:100%; z-index:-1;
     background:radial-gradient(50% 60% at 50% 0%, rgba(255,255,255,.22), transparent 70%);
   }
-  .cta-grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:56px; align-items:center; text-align:left; }
   .cta-card h2{ font-size:clamp(32px,4.4vw,56px); font-weight:800; letter-spacing:-0.04em; margin-bottom:16px; }
   .cta-card h2 em{ color:#fff; }
   .cta-card p{ font-size:17px; opacity:.9; }
@@ -610,21 +609,13 @@
   .cta-stats.fade{ opacity:0; }
   .cta-mail{ display:inline-block; margin-top:16px; font-size:14px; opacity:.85; border-bottom:1px solid rgba(255,255,255,.5); transition:opacity .25s, border-color .25s; }
   .cta-mail:hover{ opacity:1; border-color:#fff; }
-  .cta-form{
-    background:#fff; border-radius:20px; padding:28px; color:var(--fg);
-    display:flex; flex-direction:column; gap:14px;
-    box-shadow:0 30px 60px -30px rgba(0,0,0,.35);
-  }
-  .cta-form label{
-    display:flex; flex-direction:column; gap:6px;
-    font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--mut);
-  }
-  .cta-form input, .cta-form select{
-    font-family:var(--font); font-size:15px; padding:12px 14px;
-    border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--fg);
-  }
-  .cta-form input:focus, .cta-form select:focus{ border-color:var(--orange); outline:none; }
-  .cta-form .btn{ justify-content:center; margin-top:6px; }
+  /* The .cta-form rules that used to sit here went with the homepage's copy of
+     the demo form. The CTA is now the centred card every other page uses.
+     .hero-cta above is the HERO's button row and starts at opacity:0 behind a
+     one-shot entrance animation — reused inside .cta-card it has to be reset,
+     or the buttons depend on an animation that fired before the section was
+     ever scrolled to. */
+  .cta-card .hero-cta{ opacity:1; animation:none; }
 
   /* ---------- footer ---------- */
   footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
@@ -683,7 +674,6 @@
     .metrics-grid{ grid-template-columns:1fr; }
     .trust-row{ grid-template-columns:1fr; }
     .cta-card{ padding:56px 24px; }
-    .cta-grid{ grid-template-columns:1fr; gap:36px; }
     .foot-grid{ grid-template-columns:1fr; gap:36px; }
     .section{ padding:96px 0; }
   }
@@ -830,7 +820,10 @@
       funds, portfolios, deals &amp; secondaries — with AI agents purpose-built for private markets.
     </p>
     <div class="hero-cta">
-      <a class="btn btn-primary" href="#contact">
+      <!-- Straight to the one demo form on contact.html, anchored to the form
+           itself. It used to scroll to #contact on this page, which was where
+           the homepage's own shortened copy of the form lived. -->
+      <a class="btn btn-primary" href="contact.html#demo-request">
         Setup a Demo
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
@@ -1246,39 +1239,28 @@
 </section>
 
 <!-- ================= CTA ================= -->
+<!-- There is exactly ONE demo form on the site, on contact.html. The homepage used
+     to carry a shortened copy of it (name / firm / email only) with its own handler
+     in _partials/index_scripts.html; both are gone. Two forms meant two field sets,
+     two handlers and two things to keep in step — and the short one collected less
+     about the prospect than the reply needs. This CTA now sends the visitor to the
+     real form, anchored so it is the first thing they land on.
+     See docs/technical/website_lead_capture.md. -->
 <section class="cta" id="contact">
   <div class="cta-card reveal">
-    <div class="cta-grid">
-      <div>
-        <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
-        <p>Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
-        <div class="cta-stats" id="ctaStat">US$ 10bn+ AUM managed — and counting</div>
-        <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
-        <a class="cta-mail" href="contact.html" style="margin-left:20px">all ways to reach us</a>
-      </div>
-      <!-- The short version of the demo form on contact.html, and driven by the SAME handler
-           in assets/js/caphive.js — data-mailto marks it as ours. It used to have a bespoke
-           inline handler in _partials/index_scripts.html that only ever composed an email;
-           that has been removed, because two handlers for two forms is how one of them
-           quietly stops working. Field names must match contact.html's: the server stores
-           them under these names. -->
-      <form class="cta-form" id="demoForm" data-mailto="hello@caphive.com" data-subject="Demo request">
-        <!-- Spam controls, identical to contact.html. Stripped by the server, never stored. -->
-        <div class="hp-field" aria-hidden="true">
-          <label>Do not fill this in<input type="text" name="_hp" tabindex="-1" autocomplete="off"></label>
-        </div>
-        <input type="hidden" name="_ts" value="">
-        <label>Name<input required name="name" placeholder="Your name" autocomplete="name"></label>
-        <label>Firm<input required name="firm" placeholder="Fund / firm"></label>
-        <label>Work email<input required type="email" name="email" placeholder="you@fund.com" autocomplete="email"></label>
-        <button class="btn btn-primary" type="submit">
-          Book my demo
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <!-- Rewritten to "Sending your request…" by caphive.js once an endpoint resolves. -->
-        <div class="form-msg">Your email client is opening with the request prefilled. Send it and we will pick it up from there.</div>
-      </form>
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <!-- #demo-request is the form's own id on contact.html. -->
+      <a class="btn btn-white" href="contact.html#demo-request">
+        Book my demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="contact.html">All ways to reach us</a>
     </div>
+    <!-- Cycled by the CTA_STATS rotator in _partials/index_scripts.html. -->
+    <div class="cta-stats" id="ctaStat" style="justify-content:center">US$ 10bn+ AUM managed — and counting</div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
   </div>
 </section>
 
@@ -1592,72 +1574,15 @@
     updateStory();
   }
 
-  /* ---- demo form ----
-     Mirrors the "CONVERSION PATH" block in assets/js/caphive.js — the homepage
-     overrides the shared script bundle with this file, so caphive.js never loads
-     here and the logic has to exist twice. Keep them in step; if you change the
-     payload, the spam controls or the redirect in one, change the other.
-
-     See docs/technical/website_lead_capture.md. */
+  /* The homepage renders THIS file instead of the shared assets/js/caphive.js,
+     so anything the homepage needs from the shared bundle has to exist here too. */
   var CFG = window.CAPHIVE || {};
-  var track = window.caphiveTrack || function(){};
 
-  var demoForm = document.getElementById('demoForm');
-  if(demoForm){
-    var endpoint = CFG.formEndpoint || '';
-    var msg = demoForm.querySelector('.form-msg');
-    var btn = demoForm.querySelector('button[type="submit"]');
-
-    /* Stamped at render, read by the server's time-to-submit check. */
-    var ts = demoForm.querySelector('input[name="_ts"]');
-    if(ts) ts.value = String(Date.now());
-
-    if(endpoint && msg) msg.textContent = 'Sending your request…';
-
-    demoForm.addEventListener('submit', function(e){
-      e.preventDefault();
-      var d = new FormData(demoForm);
-
-      /* ---- fallback: compose in the visitor's own mail client ----
-         Only reached on a host site_config does not recognise. */
-      if(!endpoint){
-        var body = 'Name: ' + d.get('name') + '\nFirm: ' + d.get('firm') +
-                   '\nEmail: ' + d.get('email');
-        location.href = 'mailto:hello@caphive.com?subject=' +
-          encodeURIComponent('Demo request — ' + d.get('firm')) +
-          '&body=' + encodeURIComponent(body);
-        return;
-      }
-
-      /* ---- POST mode ---- */
-      d.append('_source_page', location.pathname.replace(/^.*\//, '') || 'index.html');
-      var qs = new URLSearchParams(location.search);
-      ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
-        if(qs.get(k)) d.append(k, qs.get(k));
-      });
-
-      if(btn){ btn.disabled = true; btn.setAttribute('aria-busy','true'); }
-      if(msg) msg.classList.add('show');
-
-      fetch(endpoint, {
-        method: 'POST',
-        body: d,
-        headers: { 'Accept': 'application/json' }
-      }).then(function(res){
-        if(!res.ok) throw new Error('HTTP ' + res.status);
-        track('demo_form_submitted', { form_id: 'demoForm', method: 'post' });
-        var dest = CFG.thankYouUrl || 'thank-you.html';
-        location.href = dest + (dest.indexOf('?') === -1 ? '?' : '&') + 'src=demo-form';
-      }).catch(function(err){
-        if(btn){ btn.disabled = false; btn.removeAttribute('aria-busy'); }
-        if(msg){
-          msg.classList.add('show');
-          msg.textContent = 'That did not send — please email hello@CapHive.com directly and we will pick it up.';
-        }
-        if(window.console) console.error('form submit failed', err);
-      });
-    });
-  }
+  /* There is no demo form on the homepage any more — the CTA links to the single
+     form on contact.html, which assets/js/caphive.js handles. The duplicate
+     handler that used to live here is gone with it: two copies of the submit
+     logic was one copy too many to keep in step.
+     See docs/technical/website_lead_capture.md. */
 
   /* ---- booking link ----
      Mirrors the booking block in assets/js/caphive.js, and it has to exist here

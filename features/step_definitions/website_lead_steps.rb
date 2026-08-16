@@ -174,6 +174,22 @@ Then('no lead notification email should have been delivered') do
                                            "expected no email, got #{ActionMailer::Base.deliveries.map(&:subject).inspect}"
 end
 
+# Leads go to the commercial mailbox, deliberately NOT to SUPPORT_EMAIL_TO. This
+# step pins the recipient so a future refactor cannot quietly reroute prospects
+# into the support/exception firehose.
+Then('the lead notification should have been sent to {string}') do |address|
+  mail = ActionMailer::Base.deliveries.last
+  expect(mail).to be_present, "no email was delivered"
+  expect(mail.to).to include(address)
+end
+
+# Replying to the alert must reach the prospect, not the mailbox it landed in.
+Then('the lead notification should reply to {string}') do |address|
+  mail = ActionMailer::Base.deliveries.last
+  expect(mail).to be_present, "no email was delivered"
+  expect(mail.reply_to).to include(address)
+end
+
 Then('the notification should contain {string}') do |text|
   mail = ActionMailer::Base.deliveries.last
   expect(mail).to be_present, "no email was delivered"

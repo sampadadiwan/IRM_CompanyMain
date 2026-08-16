@@ -904,6 +904,10 @@ table.cmp td .no{ color:var(--mut); }
 
 /* ---------- contact ---------- */
 .contact-grid{ display:grid; grid-template-columns:1fr 1.1fr; gap:56px; align-items:start; }
+/* The site's only demo form, linked from the homepage as contact.html#demo-request.
+   The nav is fixed, so an anchored jump needs room left above the form or the
+   first field arrives underneath the pill. */
+#demo-request{ scroll-margin-top:110px; }
 .form-card{
   background:var(--tile); border:1px solid var(--line); border-radius:var(--r-card);
   padding:34px; display:flex; flex-direction:column; gap:16px;

@@ -468,7 +468,6 @@
     width:120%; height:100%; z-index:-1;
     background:radial-gradient(50% 60% at 50% 0%, rgba(255,255,255,.22), transparent 70%);
   }
-  .cta-grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:56px; align-items:center; text-align:left; }
   .cta-card h2{ font-size:clamp(32px,4.4vw,56px); font-weight:800; letter-spacing:-0.04em; margin-bottom:16px; }
   .cta-card h2 em{ color:#fff; }
   .cta-card p{ font-size:17px; opacity:.9; }
@@ -481,21 +480,13 @@
   .cta-stats.fade{ opacity:0; }
   .cta-mail{ display:inline-block; margin-top:16px; font-size:14px; opacity:.85; border-bottom:1px solid rgba(255,255,255,.5); transition:opacity .25s, border-color .25s; }
   .cta-mail:hover{ opacity:1; border-color:#fff; }
-  .cta-form{
-    background:#fff; border-radius:20px; padding:28px; color:var(--fg);
-    display:flex; flex-direction:column; gap:14px;
-    box-shadow:0 30px 60px -30px rgba(0,0,0,.35);
-  }
-  .cta-form label{
-    display:flex; flex-direction:column; gap:6px;
-    font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--mut);
-  }
-  .cta-form input, .cta-form select{
-    font-family:var(--font); font-size:15px; padding:12px 14px;
-    border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--fg);
-  }
-  .cta-form input:focus, .cta-form select:focus{ border-color:var(--orange); outline:none; }
-  .cta-form .btn{ justify-content:center; margin-top:6px; }
+  /* The .cta-form rules that used to sit here went with the homepage's copy of
+     the demo form. The CTA is now the centred card every other page uses.
+     .hero-cta above is the HERO's button row and starts at opacity:0 behind a
+     one-shot entrance animation — reused inside .cta-card it has to be reset,
+     or the buttons depend on an animation that fired before the section was
+     ever scrolled to. */
+  .cta-card .hero-cta{ opacity:1; animation:none; }
 
   /* ---------- footer ---------- */
   footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
@@ -554,7 +545,6 @@
     .metrics-grid{ grid-template-columns:1fr; }
     .trust-row{ grid-template-columns:1fr; }
     .cta-card{ padding:56px 24px; }
-    .cta-grid{ grid-template-columns:1fr; gap:36px; }
     .foot-grid{ grid-template-columns:1fr; gap:36px; }
     .section{ padding:96px 0; }
   }

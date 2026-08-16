@@ -27,6 +27,20 @@ Feature: Capturing demo requests from the public website
     And a website lead should exist for "nadia@meridiancapital.example"
     And a lead notification email should have been delivered
 
+  Scenario: The notification reaches the commercial mailbox and replies to the prospect
+    When the website submits a demo request from "https://caphive.com" with:
+      | name    | Nadia Okonkwo                                      |
+      | firm    | Meridian Capital                                   |
+      | email   | nadia@meridiancapital.example                      |
+      | role    | CFO or Finance                                     |
+      | message | Four currencies and a close that takes three weeks. |
+    Then the lead notification should have been sent to "hello@caphive.com"
+    And the lead notification should reply to "nadia@meridiancapital.example"
+    And the notification should contain "Nadia Okonkwo"
+    And the notification should contain "Meridian Capital"
+    And the notification should contain "nadia@meridiancapital.example"
+    And the notification should contain "CFO or Finance"
+
   Scenario: The prospect's own words reach the notification in full
     When the website submits a demo request from "https://caphive.com" with:
       | name    | Nadia Okonkwo                                      |

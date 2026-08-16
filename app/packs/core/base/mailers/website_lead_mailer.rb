@@ -1,13 +1,20 @@
 # Tells us a demo request came in from the public website.
 #
 # This is the alert that GTM prerequisite A2 measures ("a submission produces an
-# alert within 5 minutes"), so it goes to the monitored support mailbox rather
+# alert within 5 minutes"), so it goes to a monitored shared mailbox rather
 # than through the entity -> user notification machinery, which needs a tenant
 # this record does not have.
 #
 # @see WebsiteLeadCreate
 # @see docs/technical/website_lead_capture.md
 class WebsiteLeadMailer < ApplicationMailer
+  # Inbound leads go to the commercial mailbox, NOT to SUPPORT_EMAIL_TO — that
+  # address is the support/exception firehose (ExceptionNotifier, escalations,
+  # entity alerts) and a prospect waiting on a five-minute reply must not be
+  # buried in it. Kept as its own env var so a deployment can redirect leads
+  # without moving every other alert with them.
+  DEFAULT_RECIPIENT = "hello@caphive.com".freeze
+
   def new_lead
     @website_lead = WebsiteLead.find(params[:website_lead_id])
 
@@ -19,7 +26,7 @@ class WebsiteLeadMailer < ApplicationMailer
 
     mail(
       from: ENV.fetch("SUPPORT_EMAIL_FROM", nil),
-      to: ENV.fetch("SUPPORT_EMAIL_TO", "support@caphive.com"),
+      to: ENV["WEBSITE_LEADS_EMAIL_TO"].presence || DEFAULT_RECIPIENT,
       # Replying to the alert reaches the prospect directly, which is the whole
       # point of a five-minute response commitment. reply_to is safe to set from
       # visitor input only because the address passed WebsiteLead's format
