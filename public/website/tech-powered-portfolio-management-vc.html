@@ -45,7 +45,21 @@
     /* Where the browser goes after a successful submission. Having its own URL
        is what makes the conversion measurable. Do not change without updating
        the conversion trigger in the analytics property. */
-    thankYouUrl: 'thank-you.html'
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
   };
 }());
 </script>
@@ -112,7 +126,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=363ab74b">
+<link rel="stylesheet" href="assets/css/caphive.css?v=de1dd679">
 </head>
 <body data-page="resources">
 
@@ -160,7 +174,10 @@
   </nav>
   <div class="nav-cta">
     <a class="login" href="https://app.caphive.com/" data-login>Login</a>
-    <a class="btn btn-dark btn-nav" href="contact.html">Setup a Demo</a>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-dark btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
     <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -209,7 +226,8 @@
 
   <a href="about.html">About</a>
   <a href="contact.html">Contact</a>
-  <a class="btn btn-primary" href="contact.html">Setup a Demo</a>
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
 </div>
 <script>
 (function(){
@@ -656,7 +674,7 @@
 </script>
 
 
-<script src="assets/js/caphive.js?v=6783cdc2"></script>
+<script src="assets/js/caphive.js?v=7bab08b2"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",

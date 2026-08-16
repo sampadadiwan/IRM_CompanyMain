@@ -44,14 +44,20 @@ data_page: contact
 
         <h3 style="margin-top:48px;font-size:19px">Other ways to reach us</h3>
         <div class="contact-ways" style="margin-top:20px">
-          <div class="way">
+          <!-- Calendly. Published availability is a commitment: the slots offered are
+               US-hours and must be genuinely honoured, so narrow them in Calendly rather
+               than declining a booking after the fact.
+
+               data-booking on the wrapper, data-booking-cta on the link: caphive.js hides
+               this whole block and leaves the href alone while CAPHIVE.bookingUrl is empty.
+               The url is NOT hardcoded here — site_config.html.erb is the single place it
+               lives, so retiring the account cannot leave a dead link behind on this page
+               while every other CTA on the site correctly disappears. -->
+          <div class="way" data-booking hidden>
             <div>
               <h4>Book a time directly</h4>
-              <!-- Calendly, live since 2026-08-16. Published availability is a commitment:
-                   the slots offered are US-hours and must be genuinely honoured, so narrow
-                   them in Calendly rather than declining a booking after the fact. -->
-              <p>Prefer to skip the form? Pick a 30-minute slot that suits you.<br>
-                <a href="https://calendly.com/caphive-support/30min" target="_blank" rel="noopener">Book a 30-minute call</a></p>
+              <p>Prefer to skip the form? Pick a slot that suits you.<br>
+                <a href="#" data-booking-cta target="_blank" rel="noopener">Book a call</a></p>
             </div>
           </div>
           <div class="way">
@@ -146,6 +152,14 @@ data_page: contact
           <span data-mailto-only>This form currently composes an email in your own mail client — nothing is submitted to us until you send it.</span>
           We use what you send only to answer you. See our <a href="privacy.html">Privacy Policy</a>.
         </p>
+
+        <!-- Revealed by caphive.js only once CAPHIVE.bookingUrl is set. Hidden by default
+             rather than pointing somewhere provisional — an advertised booking link that
+             does not book is worse than no booking link. -->
+        <div class="booking-alt" data-booking hidden>
+          <span>or</span>
+          <a class="btn btn-ghost" data-booking href="#" rel="noopener">Pick a time directly</a>
+        </div>
       </form>
 
     </div>

@@ -96,11 +96,21 @@ Calendly free tier, Cal.com, or Google Appointment Schedules.
 - **Availability must be genuinely bookable in US business hours.** For an India-based team that is evenings IST. Publishing slots you cannot honour is worse than publishing none.
 - Set the post-booking redirect to `https://caphive.com/thank-you.html?src=booking` — that is what fires the `booking_completed` conversion.
 
-### A4 · Put the booking link everywhere — 10 min · **Founder**
+### A4 · Put the booking link everywhere — **mostly done** · 5 min · **Founder**
 
-**Site: already wired.** Paste the URL into `bookingUrl` in `site_config.html.erb` and rebuild — the header CTA, the mobile menu CTA, the contact-page button and the thank-you-page button all pick it up and un-hide themselves.
+**Site: wired and switched on.** `bookingUrl` in `site_config.html.erb` is set to
+`https://calendly.com/caphive-support`, and the header CTA, the mobile menu CTA,
+the contact-page button and the thank-you-page button all read it. To change or retire
+the link, edit that one line and run `rake website:build` — blanking it hides every
+booking CTA again and sends the header button back to the contact form.
 
-**Not wired, and must be done by hand:** the **email signature** used for outbound. Same URL. See the signature block in [`C6_outbound_email_template.md`](C6_outbound_email_template.md) §4.
+**Not wired, and must be done by hand:** the **email signature** used for outbound. Same
+URL. See the signature block in [`C6_outbound_email_template.md`](C6_outbound_email_template.md) §4.
+
+**Still to confirm (this is A3, and it is the part that matters):** that the account's
+published availability is genuinely bookable in US business hours, and that the
+post-booking redirect points at `thank-you.html?src=booking`. A live link onto an empty
+or IST-only calendar is worse than no link.
 
 ### B1 · Create the GA4 property — free · 20 min · **Founder**
 

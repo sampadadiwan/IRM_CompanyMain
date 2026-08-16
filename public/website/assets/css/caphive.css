@@ -922,6 +922,27 @@ table.cmp td .no{ color:var(--mut); }
 .form-card .btn{ justify-content:center; margin-top:6px; }
 .form-note{ font-size:12.5px; color:var(--mut); }
 
+/* ---------- booking alternative ----------
+   The "or pick a time directly" row under the submit button. caphive.js keeps the
+   whole block [hidden] until window.CAPHIVE.bookingUrl is configured, so the rule
+   below only ever paints once a real scheduling link exists. The "or" rule lines
+   are drawn with flex children rather than pseudo-elements so the divider inherits
+   the current colour on both the white and the orange card. */
+.booking-alt{ display:flex; align-items:center; gap:14px; margin-top:18px; }
+.booking-alt[hidden]{ display:none; }
+.booking-alt > span{
+  flex:0 0 auto; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase;
+  opacity:.7;
+}
+.booking-alt::before, .booking-alt::after{
+  content:""; flex:1 1 auto; height:1px; background:currentColor; opacity:.25;
+}
+/* Keep the rules on the outside and the button in the middle. */
+.booking-alt > span{ order:1; }
+.booking-alt::before{ order:0; }
+.booking-alt > .btn{ order:2; flex:0 0 auto; margin-top:0; }
+.booking-alt::after{ order:3; }
+
 /* ---------- honeypot ----------
    The bot trap on the demo form. Moved off-screen rather than display:none or
    visibility:hidden: a bot that parses CSS skips anything obviously hidden, and

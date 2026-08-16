@@ -178,4 +178,27 @@ If the browser console shows a CORS error, the site's hostname is missing from `
 - **No downstream automation.** A lead creates no CRM record and no task. The public write path stays as small as possible.
 - **No pooling across stacks.** India and US each keep their own leads; nothing crosses.
 - **No edit or destroy on the staff screens.** They are read-only.
-- **The booking-link work (A3/A4) is still unmerged**, on branch `gtm/website-prereqs`. Its nav, mobile-menu and `.booking-alt` changes were left there on purpose; that branch also carries an `analytics.html.erb` that conflicts with the GA4 and consent-banner work already on `main`, so it needs rebasing rather than merging.
+- **The ad tags (B2/B3) were rejected, not deferred.** Branch `gtm/website-prereqs` carries an `analytics.html.erb` that adds LinkedIn Insight and Google Ads tags and has **no Consent Mode at all** — it loads GA4 the moment an id is set. `main`'s partial denies `analytics_storage` by default, replays the stored choice before `config`, and states that no advertising tags run; `cookies.html` is an accurate inventory built on that. Adding those tags is a privacy and cookie-policy decision that belongs in its own change, built inside `main`'s consent-gated partial. Do not resurrect the branch's file for it.
+
+The booking-link work (A3/A4) **has been cherry-picked** — see §9. Once that landed, nothing of value remains on `gtm/website-prereqs`: what is left is the rejected analytics file, a `mobile_menu.html` that predates `main`'s submenu fix, and comment-wording differences. The branch can be deleted.
+
+---
+
+## 9. Booking Link (A3/A4)
+
+Cherry-picked from `gtm/website-prereqs`, not merged.
+
+`window.CAPHIVE.bookingUrl` in `site_config.html.erb` drives four CTAs. Elements marked `data-booking` stay hidden until it is set; `data-booking-cta` elements additionally have their `href` replaced, which is what lets the header button point at the contact form until a scheduling account exists.
+
+| Where | Element |
+|---|---|
+| Header (all 64 pages) | `_partials/nav.html.erb` — `data-booking-cta` |
+| Mobile menu | `_partials/mobile_menu.html` — `data-booking-cta` |
+| Contact form | `.booking-alt` block, "or / Pick a time directly" |
+| Thank-you page | `.booking-alt` block, "or skip the wait / Pick a time now" |
+
+**The homepage needed its own copy of the swap.** `nav.html.erb` is shared by every page, so `index.html` carries `data-booking-cta` — but it renders `_partials/index_scripts.html` instead of `caphive.js`, so nothing would have rewritten it. As inherited, the booking link would have gone live on all 63 other pages and silently kept pointing at the contact form on the busiest one. The block is duplicated into `index_scripts.html`, flagged in both files.
+
+**Two conversion paths, both covered.** A redirect-based setup sends the visitor to `thank-you.html?src=booking`, which fires `booking_completed`; an embedded Calendly widget posts a `calendly.event_scheduled` message instead. The message listener matches the origin's **host** exactly (`calendly.com` or `*.calendly.com`) rather than the substring check the branch used — an `indexOf` test would also accept `https://calendly.com.attacker.example`, letting any page that can open a window fire a fake conversion into the analytics property.
+
+`bookingUrl` is currently `https://calendly.com/caphive-support`. Blank that one line and rebuild to retire it; nothing else needs touching.

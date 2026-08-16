@@ -22,6 +22,19 @@ robots: noindex
         <a href="mailto:hello@caphive.com" style="color:var(--orange-2)">hello@CapHive.com</a> — add it to your
         safe senders so it does not land in spam.
       </p>
+      <!-- The highest-intent moment on the whole site. Kept hidden by caphive.js until
+           window.CAPHIVE.bookingUrl is configured; skipping the reply round-trip is the
+           single biggest thing a booking link buys. -->
+      <div class="booking-alt" data-booking hidden>
+        <span>or skip the wait</span>
+        <a class="btn btn-primary" data-booking href="#" rel="noopener">Pick a time now</a>
+      </div>
+      <!-- This page is reached as thank-you.html?src=demo-form (from the demo form) or
+           ?src=booking (set that as the redirect target in the scheduling tool).
+           caphive.js reads the param and fires demo_form_submitted / booking_completed.
+           Gating on the param rather than the bare URL is what stops a bookmark or a
+           crawler counting as a conversion. Do not rename this page without updating the
+           conversion trigger in the analytics property. -->
     </div>
   </div>
 </section>
