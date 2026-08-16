@@ -164,31 +164,14 @@
   <script src="/modernize/js/sidebarmenu.js"></script>
   <script src="/modernize/js/widget/ui-card-init.js"></script>
 
-  <% if ENV["CLARITY_CODE"].present? %>
-    <script>
-      (function(c,l,a,r,i,t,y){
-
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        i="<%= ENV["CLARITY_CODE"] %>";
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-
-      })(window, document, "clarity", "script");
-    </script>
-
-    <% if current_user && current_user.entity_id.present? %>
-      <script>
-        document.addEventListener("DOMContentLoaded", function() {
-          if (window.clarity) {
-            clarity("set", "entity_id", "<%= current_user.entity_id %>");
-            clarity("set", "entity", "<%= current_user.entity.name %>");
-            clarity("set", "role", "<%= current_user.curr_role %>");
-          }
-        });
-      </script>
-    <% end %>
-
-  <% end %>
+  <%# Microsoft Clarity session recording was removed deliberately. It recorded
+      authenticated sessions inside the platform and tagged them with the client
+      fund's name, entity id and user role, which is not something we are willing
+      to tell a prospect's GC we do. The public cookie policy also states that the
+      signed-in application runs no analytics or marketing cookies; this block
+      contradicted that. Do not reintroduce it without a privacy review and a
+      corresponding change to the cookie policy. The CLARITY_CODE environment
+      variable is now unused. %>
 
 </body>
 
