@@ -8,7 +8,8 @@
     edit stays invisible. -%>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><%= title %></title>
+<%# Analytics loads first so pageviews are recorded even if a later asset stalls. -%>
+<%= partial "analytics" %><title><%= title %></title>
 <meta name="description" content="<%= description %>">
 <%= robots %><meta name="theme-color" content="#FBFAF7">
 <link rel="canonical" href="<%= canonical %>">
@@ -31,4 +32,4 @@
 <%= partial "nav" %>
 
 <%= partial "mobile_menu" %><%= content %><!-- ================= FOOTER ================= -->
-<%= partial "footer" %><%= scripts %>
+<%= partial "footer" %><%= partial "consent_banner" %><%= scripts %>

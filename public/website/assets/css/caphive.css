@@ -197,12 +197,36 @@ p, li, .lede, .step-detail, .faq details > div{ text-wrap:pretty; }
 .mobile-menu{
   position:fixed; inset:0; z-index:55; background:#fff;
   display:flex; flex-direction:column; justify-content:center; align-items:center; gap:22px;
+  /* With both accordion groups expanded the list can outgrow the viewport, and
+     plain centring pushes the first items above the scroll origin where they
+     cannot be reached. "safe" falls back to flex-start once that happens; the
+     unprefixed value above stays as the fallback for engines that drop it. */
+  justify-content:safe center;
   opacity:0; pointer-events:none; transition:opacity .3s; overflow-y:auto; padding:110px 24px 48px;
 }
 .mobile-menu.open{ opacity:1; pointer-events:auto; }
 .mobile-menu a{ font-size:26px; font-weight:700; letter-spacing:-0.03em; }
 .mobile-menu a:hover{ color:var(--orange); }
 .mobile-menu .mm-sub{ font-size:17px; font-weight:500; color:var(--mut); }
+
+/* ---- mobile menu: expandable Products / Resources groups ---- */
+.mm-group{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+/* the parent link and its chevron sit on one row */
+.mm-row{ display:flex; align-items:center; gap:8px; }
+.mm-toggle{
+  /* 44px keeps the tap target at the accessible minimum; the negative margin
+     stops that box from padding out the menu's 22px rhythm */
+  width:44px; height:44px; margin:-10px -8px; flex:none;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:0; padding:0; cursor:pointer; color:var(--mut);
+}
+.mm-toggle svg{ transition:transform .25s; }
+.mm-toggle[aria-expanded="true"]{ color:var(--orange); }
+.mm-toggle[aria-expanded="true"] svg{ transform:rotate(180deg); }
+.mm-panel{ display:flex; flex-direction:column; align-items:center; gap:14px; }
+/* .mm-panel sets display:flex, which outranks the UA stylesheet's
+   [hidden]{display:none} — without this the panels would never collapse. */
+.mm-panel[hidden]{ display:none; }
 
 /* ---------- page hero (interior pages) ---------- */
 .page-hero{ padding:170px 0 0; position:relative; }
@@ -1409,6 +1433,42 @@ footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
   .cta-grid{ grid-template-columns:1fr; gap:36px; }
   .foot-grid{ grid-template-columns:1fr 1fr; gap:32px; }
   .band-dark{ padding:48px 24px; border-radius:24px; margin-inline:0; }
+}
+
+/* ---------- cookie consent ----------
+   Deliberately quiet: a small card in the bottom-left corner rather than a bar
+   or a modal, so it never covers content and nothing has to be dismissed to
+   read the page. Borrows the floating nav's translucent-white-over-blur
+   treatment so it reads as site chrome. */
+.consent{
+  position:fixed; left:16px; bottom:16px; z-index:55;
+  width:min(340px, calc(100% - 32px));
+  display:flex; flex-direction:column; gap:12px;
+  padding:16px 18px; border-radius:18px;
+  background:rgba(255,255,255,.94); border:1px solid var(--line);
+  backdrop-filter:blur(18px) saturate(120%); -webkit-backdrop-filter:blur(18px) saturate(120%);
+  box-shadow:0 18px 44px -20px rgba(16,16,16,.28);
+  /* revealed by adding .in, so there is no flash before the script decides
+     whether a choice is already stored */
+  opacity:0; transform:translateY(12px);
+  transition:opacity .3s, transform .3s cubic-bezier(.2,.8,.3,1);
+}
+.consent.in{ opacity:1; transform:none; }
+/* .consent sets display:flex, which outranks the UA stylesheet's
+   [hidden]{display:none} — without this the banner would show even while the
+   hidden attribute is set. */
+.consent[hidden]{ display:none; }
+/* 13px is the footer's text tier, not an arbitrary shrink */
+.consent-text{ font-size:13px; line-height:1.5; color:var(--mut); }
+.consent-text a{ color:var(--fg); text-decoration:underline; text-underline-offset:2px; }
+.consent-text a:hover{ color:var(--orange); }
+/* Accept and Decline are the same size and equally visible — the choice must
+   not be weighted towards accepting. */
+.consent-actions{ display:flex; gap:8px; }
+.consent-actions .btn{ flex:1; justify-content:center; }
+
+@media (max-width:560px){
+  .consent{ left:12px; right:12px; bottom:12px; width:auto; }
 }
 
 /* ---------- reduced motion ---------- */

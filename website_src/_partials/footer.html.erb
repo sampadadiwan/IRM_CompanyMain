@@ -62,6 +62,14 @@
     </div>
     <div class="foot-base">
       <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <%# "Cookie settings" reopens the consent banner (see _partials/consent_banner.html);
+          it stays a real link to the policy so it still works with JavaScript off. -%>
+      <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
     </div>
   </div>
   <div class="foot-mark" aria-hidden="true">CapHive</div>
