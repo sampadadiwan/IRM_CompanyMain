@@ -57,7 +57,7 @@ Outreach drives traffic to the site. If the site cannot capture an address or bo
 | A1 | Demo form POSTs to something we control (Formspree, CRM endpoint, or an app-side action) | A test submission from an incognito window lands somewhere we can see, with no mail client involved | | | 📝 Drafted — code done, needs endpoint URL |
 | A2 | Submission notification routed to a monitored inbox | Test submission produces an alert within 5 minutes | | | 🔴 Needs human (depends on A1 provider) |
 | A3 | Booking link live (Calendly free tier or equivalent), with US-hours availability that reflects reality | A prospect in ET can book a slot without emailing first | | | ☑ Done — account created 2026-08-16 |
-| A4 | Booking link placed on the contact page, in the site header CTA, and in the email signature used for outbound | All three carry the same link | | | 📝 Drafted — site wired; email signature by hand |
+| A4 | Booking link placed on the contact page, in the site header CTA, and in the email signature used for outbound | All three carry the same link | | | 🟡 Contact page live 2026-08-16. Header CTA still points at the form (deliberate — a booking ask is heavier than a form for a cold visitor); email signature by hand |
 | A5 | Distinct thank-you / confirmation page after submission | Loads at a unique URL, so it can be used as a conversion trigger in B4 | | | ☑ Done |
 
 **Note on A3:** availability must be genuinely bookable during US business hours. Publishing slots we cannot honour is worse than publishing none.
