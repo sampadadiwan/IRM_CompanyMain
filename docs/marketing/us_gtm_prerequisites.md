@@ -10,7 +10,7 @@
 >
 > ✅ **F3 is answered: 1,354 US GPs match the §1.1 profile** against a 400–600 requirement — the funnel's volume assumption holds. See [`F_form_adv_findings.md`](gtm_prerequisites_work/F_form_adv_findings.md).
 >
-> Website changes for Groups A and B are code-complete and uncommitted in the worktree `../IRM-gtm-prereqs` (branch `gtm/website-prereqs`) for review.
+> Groups A and B are on `main`. Lead capture is built and covered by Cucumber — see [`docs/technical/website_lead_capture.md`](../technical/website_lead_capture.md). GA4 runs behind a consent banner; no ad tag is loaded, and the `ad_*` consent signals are permanently denied in `website_src/_partials/analytics.html`. Remaining blanks: the LinkedIn Partner ID, and a decision on Google Ads conversion tracking (the account and label exist but adding the tag would reverse the "no ad tags" position and require a cookie-policy change).
 
 ---
 
@@ -50,7 +50,7 @@ flowchart TD
 
 Outreach drives traffic to the site. If the site cannot capture an address or book a call, the traffic is wasted and there is no way to tell that it was.
 
-**Current state:** the demo form on the contact page is wired by a `data-mailto` handler that composes an email in the visitor's own mail client (`website_src/pages/contact.html`). Nothing is submitted to us unless the visitor then chooses to send it, and we have no record of anyone who abandoned at that step. There is no booking link.
+**Current state:** the demo form POSTs to our own `/website_leads` endpoint on the app host, resolved in the browser from `location.hostname` so each stack writes to its own database. The booking block on the contact page is driven by `CAPHIVE.bookingUrl` and stays hidden while that value is empty, so retiring the Calendly account cannot leave a dead link behind. What remains is verification on a real deploy, and routing the notification to a monitored inbox (A2).
 
 | # | Item | Done when | Owner | Target | Status |
 |---|---|---|---|---|---|
