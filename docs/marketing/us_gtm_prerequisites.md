@@ -46,18 +46,20 @@ flowchart TD
 
 ---
 
-## 2. Group A — Conversion Path (Blocks Outbound)
+## 2. Group A — Conversion Path ✅ COMPLETE (2026-08-16)
 
 Outreach drives traffic to the site. If the site cannot capture an address or book a call, the traffic is wasted and there is no way to tell that it was.
 
-**Current state:** the demo form POSTs to our own `/website_leads` endpoint on the app host, resolved in the browser from `location.hostname` so each stack writes to its own database. The booking block on the contact page is driven by `CAPHIVE.bookingUrl` and stays hidden while that value is empty, so retiring the Calendly account cannot leave a dead link behind. What remains is verification on a real deploy, and routing the notification to a monitored inbox (A2).
+**Complete.** The demo form POSTs to our own `/website_leads` endpoint on the app host, resolved in the browser from `location.hostname` so each stack writes to its own database. Submissions notify a monitored inbox. Both the contact-page block and the header CTA are driven by `CAPHIVE.bookingUrl` and degrade to the contact form while it is empty, so retiring the Calendly account cannot leave a dead link behind.
+
+**The one standing obligation:** the Calendly availability published is a commitment. The GTM plan sells US-hours coverage, and declining a booking after offering the slot does more damage than never offering it. If the ET window stops being honourable, narrow it in Calendly the same day.
 
 | # | Item | Done when | Owner | Target | Status |
 |---|---|---|---|---|---|
-| A1 | Demo form POSTs to something we control (our own `/website_leads` endpoint on the app host) | A test submission from an incognito window lands somewhere we can see, with no mail client involved | | | ✅ Built — verify on the next deploy |
-| A2 | Submission notification routed to a monitored inbox | Test submission produces an alert within 5 minutes | | | 🔴 Needs human (depends on A1 provider) |
+| A1 | Demo form POSTs to something we control (our own `/website_leads` endpoint on the app host) | A test submission from an incognito window lands somewhere we can see, with no mail client involved | | | ☑ Done |
+| A2 | Submission notification routed to a monitored inbox | Test submission produces an alert within 5 minutes | | | ☑ Done |
 | A3 | Booking link live (Calendly free tier or equivalent), with US-hours availability that reflects reality | A prospect in ET can book a slot without emailing first | | | ☑ Done — account created 2026-08-16 |
-| A4 | Booking link placed on the contact page, in the site header CTA, and in the email signature used for outbound | All three carry the same link | | | 🟡 Contact page live 2026-08-16. Header CTA still points at the form (deliberate — a booking ask is heavier than a form for a cold visitor); email signature by hand |
+| A4 | Booking link placed on the contact page, in the site header CTA, and in the email signature used for outbound | All three carry the same link | | | ☑ Done — contact page and header CTA both driven by `CAPHIVE.bookingUrl`; email signature set by hand |
 | A5 | Distinct thank-you / confirmation page after submission | Loads at a unique URL, so it can be used as a conversion trigger in B4 | | | ☑ Done |
 
 **Note on A3:** availability must be genuinely bookable during US business hours. Publishing slots we cannot honour is worse than publishing none.
