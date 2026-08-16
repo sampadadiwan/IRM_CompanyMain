@@ -182,20 +182,72 @@ without the variable render **byte-identical** to today:
 Rollout: `cap production_in IRM:setup` re-uploads the conf, then
 `sudo nginx -t && sudo nginx -s reload`.
 
-## Content workflow (`rake website:sync`)
+## Content workflow (`rake website:build`)
 
-The `../caphive.com` repo remains the **source of truth**. `public/website/` is a
-mirror and must never be hand-edited:
+`website_src/` is the **source of truth** — one ERB layout, shared partials, and
+one file per page carrying YAML front matter plus that page's body.
+`public/website/` is **generated output** that is still committed (so a deploy
+never has to run the build) and must never be hand-edited:
 
 ```
-rake website:sync   # rsync -av --delete ../caphive.com/ public/website/
-                      #   (excludes .git, .claude, SITE.md)
-git add public/website && git commit
+$EDITOR website_src/pages/pricing.html   # or _layout.html.erb / _partials/*
+bundle exec rake website:build           # renders website_src/ -> public/website/
+git add website_src public/website && git commit
 ```
 
-Override the source path with `WEBSITE_SRC=/path/to/caphive.com` if the checkout
-lives elsewhere. The `--delete` flag keeps the mirror exact — files removed from
-the website repo disappear from `public/website/` on the next sync.
+Assets (`assets/css`, `assets/js`, `assets/img`) are not templated and live
+directly in `public/website`; the build only writes `*.html`, stamping each asset
+URL with a content hash. Editing one shared CSS file therefore rewrites every
+page — a 60-file diff for a one-line change is normal.
+
+## Intraday website deploy (`cap <stage> website:deploy`)
+
+Because nginx serves the site straight off disk from
+`/home/ubuntu/IRM/current/public/website`, a copy fix or a new page needs nothing
+a full deploy provides — no bundle, no `assets:precompile`, no migration, no new
+release directory, no puma/sidekiq restart. `lib/capistrano/tasks/website.rake`
+ships just those files into the **current release** in about 15 seconds:
+
+```
+bundle exec cap production_in website:deploy   # build + upload + verify
+bundle exec cap production_us website:deploy
+bundle exec cap production_in website:upload   # ship public/website as-is on disk
+bundle exec cap production_in website:verify   # only check what is already live
+```
+
+```mermaid
+sequenceDiagram
+    participant D as Developer
+    participant L as Local repo
+    participant S as App server (role :web)
+    participant N as nginx
+
+    D->>L: cap <stage> website:deploy
+    L->>L: git status public/website website_src
+    Note over L: warns if dirty — the next full<br/>deploy checks out git, not this upload
+    L->>L: rake website:build (website_src -> public/website)
+    L->>L: tar -czf tmp/website-deploy.tar.gz -C public website
+    Note over L: 79 files as one ~700 KB archive,<br/>not 79 SFTP round trips
+    L->>S: upload! tarball to /tmp
+    S->>S: extract to /tmp/website-incoming-<stage>, chmod a+rX
+    S->>S: rsync -a --delete incoming/ current/public/website/
+    Note over S: rsync = no moment where the vhost<br/>root is missing; --delete prunes<br/>removed pages. Falls back to a<br/>two-rename swap if rsync is absent.
+    S-->>L: file count + sha256 of index.html
+    Note over L,S: mismatch vs the local build aborts the run
+    L->>S: curl -H "Host: <website_domain>" http://127.0.0.1/
+    S->>N: request hits this box's own nginx (not DNS/ALB)
+    N-->>L: 200 for / and /pricing.html, else the task fails
+```
+
+Two things to know:
+
+- **It patches the current release only.** `public/website/` is git-tracked, so
+  the next full `cap deploy` re-checks it out from the deploy branch. Commit and
+  push the same change or the upload silently reverts. `website:deploy` warns
+  when the working tree is dirty for exactly this reason.
+- **`website:verify` needs `:website_domain`.** Stages without it render no
+  website vhost at all (`nginx_conf.erb` guards on it), so the check is skipped
+  with a warning rather than failing — `staging_us` is the one such stage today.
 
 ## Configuration summary
 
