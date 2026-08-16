@@ -161,9 +161,16 @@ Rails.application.routes.draw do
   get 'features', to: redirect(status: 302) { '/internal_docs' }
   get 'features/*id',
       to: redirect(status: 302) { |params, _req|
-        # delete_prefix guards against a leading slash in the glob turning this
-        # into a protocol-relative "//host" redirect.
-        "/internal_docs/features/#{params[:id].to_s.delete_prefix('/')}"
+        # params[:id] arrives percent-DECODED, and Redirect#serve runs URI.parse
+        # on whatever this block returns. An id carrying a space or any other
+        # non-URI byte ("/features/foo%20bar") would raise URI::InvalidURIError
+        # inside the router, where the controllers' rescue_from never sees it —
+        # a 500 and an exception alert rather than the clean 302 the retired
+        # FeaturesController gave. So re-escape, per segment, to keep the "/"
+        # separators. Dropping empty segments also stops a leading slash from
+        # turning this into a protocol-relative "//host" redirect.
+        segments = params[:id].to_s.split("/").reject(&:empty?).map { |s| ERB::Util.url_encode(s) }
+        "/internal_docs/features/#{segments.join('/')}"
       },
       format: false
 

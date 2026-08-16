@@ -52,14 +52,13 @@ Feature: Internal docs viewer access control
     Then the docs response should redirect to "/users/sign_in"
 
   # The impersonated session is the CUSTOMER's user record with the acting support
-  # user recorded on it — the customer never holds the support role themselves.
-  # User#support? is true in this state, so a policy written against it would leak
-  # CapHive's commercial docs into a customer-facing view.
+  # user recorded in the session — the customer never holds the support role
+  # themselves. User#support? is true in this state, so a policy written against
+  # it would leak CapHive's commercial docs into a customer-facing view.
   Scenario: A session impersonated by support is denied
-    Given the user is impersonating a customer
-    Then the user should be treated as support by the legacy helper
-    When the user requests "/internal_docs"
-    Then the docs response should redirect to "/"
+    When a support user impersonates the user and requests "/internal_docs"
+    Then the impersonation should be active in the session
+    And the docs response should redirect to "/"
 
   # ── The whitelist is a security boundary, not just navigation ─────────────
 
@@ -117,3 +116,18 @@ Feature: Internal docs viewer access control
     Given the user has the role "support"
     When the user requests "/features/us_gtm"
     Then the docs response should redirect to "/internal_docs/features/us_gtm"
+
+  # The redirect block's return value is fed to URI.parse inside the router, where
+  # a raw space would raise URI::InvalidURIError as a 500 that no rescue_from sees.
+  Scenario: A retired feature URL containing a space redirects instead of erroring
+    Given the user has the role "support"
+    When the user requests "/features/no%20such%20doc"
+    Then the docs response should redirect to "/internal_docs/features/no%20such%20doc"
+
+  # A "." segment survives the whitelist (it cleans away) but used to leave the
+  # breadcrumb reading its section label off the raw id, producing a blank crumb.
+  Scenario: A dot segment in the id still resolves and labels its section
+    Given the user has the role "support"
+    When the user requests "/internal_docs/./marketing/us_gtm_zero_budget_notes"
+    Then the docs response should be successful
+    And the docs response body should contain "Marketing"

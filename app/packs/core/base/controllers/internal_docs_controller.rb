@@ -60,19 +60,24 @@ class InternalDocsController < ApplicationController
   def show
     authorize :internal_doc, :show?
 
-    raw_id = params[:id].to_s.sub(/\.md$/i, "")
+    # Clean the id ONCE, up front, and use the cleaned form for everything after.
+    # "marketing/../technical/x" has a first segment of "marketing" but resolves
+    # into technical/, so any code reading a path segment off the raw string —
+    # the whitelist check and the breadcrumb label alike — would be reading a
+    # segment the file never came from.
+    doc_id = Pathname.new(params[:id].to_s.sub(/\.md$/i, "")).cleanpath.to_s
 
     # Whitelist first, before any file is touched: an id outside the browsable
     # sections is a not-found regardless of whether the file exists, so this
     # route can never be walked across the rest of docs/.
-    unless section_allowed?(raw_id)
+    unless section_allowed?(doc_id)
       redirect_to internal_docs_path, alert: "Document not found."
       return
     end
 
     # Second layer: resolve_guide_path returns nil for a missing file or any id
     # that escapes DOCS_ROOT.
-    safe_path = resolve_guide_path(raw_id)
+    safe_path = resolve_guide_path(doc_id)
 
     if safe_path.nil?
       redirect_to internal_docs_path, alert: "Document not found."
@@ -80,10 +85,10 @@ class InternalDocsController < ApplicationController
     end
 
     @html_content = render_guide_markdown(safe_path)
-    @title        = guide_title(raw_id)
+    @title        = guide_title(doc_id)
 
-    # section_for is never nil here — section_allowed? has already passed.
-    section_label = section_for(raw_id.split("/").first)
+    # Never nil: doc_id is cleaned, and section_allowed? has already passed on it.
+    section_label = section_for(doc_id.split("/").first)
     @bread_crumbs = { t("top_menus.internal_docs") => internal_docs_path,
                       section_label => nil,
                       @title => nil }
@@ -99,16 +104,13 @@ class InternalDocsController < ApplicationController
 
   # Is the first path segment of this id one of the browsable sections?
   #
-  # The id is cleaned BEFORE its first segment is read: "marketing/../technical/x"
-  # has a first segment of "marketing" but resolves into technical/, so a check
-  # against the raw string would be trivially bypassable. cleanpath collapses the
-  # ".." here exactly as resolve_guide_path does later.
+  # Expects an id already collapsed by cleanpath (see #show) — a raw id could
+  # still carry ".." segments and would be trivially bypassable.
   #
-  # @param raw_id [String] doc id from the URL, without the .md suffix
+  # @param doc_id [String] cleaned doc id, without the .md suffix
   # @return [Boolean]
-  def section_allowed?(raw_id)
-    cleaned = Pathname.new(raw_id.to_s).cleanpath.to_s
-    ALLOWED_DIRS.include?(cleaned.split("/").first)
+  def section_allowed?(doc_id)
+    ALLOWED_DIRS.include?(doc_id.to_s.split("/").first)
   end
 
   # Section label ("Marketing") for a top-level directory name ("marketing").
@@ -131,7 +133,10 @@ class InternalDocsController < ApplicationController
       # Group by the subdirectory below the section root; nil for files sitting
       # directly in it, which sort first in the index.
       group    = parts.length > 2 ? parts[1..-2].join("/").humanize.titleize : nil
-      title    = parts.last.humanize.titleize
+      # guide_title, not a local titleize: show uses it too, and it trims a
+      # trailing "User Guide". Titling them differently here would make a card
+      # and the page it links to disagree about the document's name.
+      title    = guide_title(id)
 
       { id: id, title: title, group: group, description: description_for(path, title) }
     end
@@ -140,14 +145,20 @@ class InternalDocsController < ApplicationController
   # First line of prose in the document, for the index card blurb — skipping
   # blank lines, headings and YAML front-matter fences.
   #
+  # Streamed line by line rather than File.read: the index globs every document
+  # in both sections and only ever needs the first prose line of each, so
+  # slurping them whole would read megabytes per page view to throw nearly all
+  # of it away. The lazy chain stops at the first line that qualifies.
+  #
   # @param path [String] absolute path to the Markdown file
   # @param title [String] fallback title, used when the document has no prose
   # @return [String]
   def description_for(path, title)
-    lines = File.read(path).split("\n").reject do |line|
+    first_prose_line = File.foreach(path).lazy.map(&:chomp).reject do |line|
       line.strip.empty? || line.start_with?("#") || line.start_with?("---")
-    end
-    lines.first&.truncate(120) || "Internal documentation for #{title.downcase}."
+    end.first
+
+    first_prose_line&.truncate(120) || "Internal documentation for #{title.downcase}."
   end
 
   # Doc ids read naturally with no extension; without this a trailing dot in an

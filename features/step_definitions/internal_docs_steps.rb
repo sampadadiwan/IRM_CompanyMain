@@ -29,21 +29,36 @@ Given('the user has the super role granted directly in the database') do
   @user.reload
 end
 
-# Mirrors what UsersController#login_as leaves behind: the CUSTOMER's user record
-# with the acting support user recorded on it. The customer does not hold the
-# support role — User#support? returns true purely from support_user_id, which is
-# exactly what InternalDocPolicy must not rely on.
-Given('the user is impersonating a customer') do
-  support_user = FactoryBot.create(:user, entity: @entity)
+# Drives the REAL impersonation flow through UsersController#login_as rather than
+# writing support_user_id on a model in this process. That shortcut would prove
+# nothing: support_user_id is an attr_accessor, not a column (user.rb:25), and
+# WithAuthentication#authenticate_user! reassigns it from session[:support_user_id]
+# on every request, so the request under test would see nil and deny for the
+# ordinary "no staff role" reason — passing even if InternalDocPolicy were
+# rewritten to use User#support?, the exact regression this guards against.
+When('a support user impersonates the user and requests {string}') do |path|
+  support_entity = FactoryBot.create(:entity, entity_type: "Investment Fund")
+  support_user   = FactoryBot.create(:user, entity: support_entity)
   support_user.add_role :support
-  @user.update!(support_user_id: support_user.id)
-  @user.reload
+
+  # UserPolicy#login_as? needs an enabled mapping for the target's entity whose
+  # login-as whitelist admits the acting user; a blank user_emails list means
+  # "any support user", so enable_user_login alone carries it.
+  FactoryBot.create(:support_client_mapping,
+                    user: support_user, entity: @user.entity,
+                    enabled: true, enable_user_login: true)
+
+  @docs_session = ActionDispatch::Integration::Session.new(Rails.application)
+  @docs_session.post "/users/sign_in", params: { user: { email: support_user.email, password: "password" } }
+  @docs_session.post "/users/#{@user.id}/login_as"
+  @docs_session.get path
 end
 
-# Pins the premise of the scenario above: if this ever stops being true, the
-# impersonation carve-out in InternalDocPolicy is testing nothing.
-Then('the user should be treated as support by the legacy helper') do
-  expect(@user.support?).to be(true)
+# Pins the premise of the scenario: without this the request could be denied
+# because impersonation silently failed to start, and the carve-out under test
+# would never be exercised.
+Then('the impersonation should be active in the session') do
+  expect(@docs_session.session[:support_user_id]).to be_present
 end
 
 When('the user requests {string}') do |path|
