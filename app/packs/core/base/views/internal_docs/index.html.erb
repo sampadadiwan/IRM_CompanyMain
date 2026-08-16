@@ -1,0 +1,70 @@
+<%# Staff-only index of CapHive's marketing and commercial documentation.
+    Mirrors user_guides/index.html.erb, with one extra level of nesting: the
+    SECTIONS whitelist becomes the outer heading, subdirectories the inner one. %>
+<div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+  <div class="card-body px-4 py-3">
+    <div class="row align-items-center">
+      <div class="col-9">
+        <h4 class="fw-semibold mb-8"><%= t('top_menus.internal_docs') %></h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+              <a class="text-muted text-decoration-none" href="/">Home</a>
+            </li>
+            <li class="breadcrumb-item" aria-current="page"><%= t('top_menus.internal_docs') %></li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-controller="list-filter">
+  <ul class="nav nav-pills p-3 mb-3 rounded align-items-center card flex-row">
+    <li class="nav-item flex-grow-1 me-3">
+      <div class="input-group">
+        <span class="input-group-text bg-transparent border-0">
+          <i class="ti ti-search fs-4"></i>
+        </span>
+        <input type="text" class="form-control border-0 ps-0" placeholder="<%= t('top_menus.internal_docs') %>..."
+               data-action="input->list-filter#filter" data-list-filter-target="input">
+        <button class="btn btn-link text-muted d-none" type="button" data-action="click->list-filter#clear" data-list-filter-target="clearButton">
+          <i class="ti ti-x fs-4"></i>
+        </button>
+      </div>
+    </li>
+    <li class="nav-item ms-auto">
+      <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
+        <%= @doc_count %> Documents
+      </span>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <div data-list-filter-target="noResults" class="alert alert-warning d-none mx-3">
+      No internal documents found matching your search.
+    </div>
+    <% @sections.each do |section, grouped_docs| %>
+      <h4 class="px-2 mt-4 mb-3 fw-semibold border-bottom pb-2">
+        <i class="ti ti-lock me-1"></i><%= section %>
+      </h4>
+      <% grouped_docs.each do |group, docs| %>
+        <% if group.present? %>
+          <h5 class="px-2 mt-3 mb-2 text-muted fw-semibold">
+            <i class="ti ti-folder me-1"></i><%= group %>
+          </h5>
+        <% end %>
+        <div class="note-has-grid row">
+          <% docs.each do |doc| %>
+            <%= render "shared/doc_card", doc: doc,
+                                          subtitle: group.presence || section,
+                                          path: internal_doc_path(id: doc[:id]),
+                                          cta: "View Document",
+                                          icon: "ti-file-text",
+                                          accent: "note-business" %>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>

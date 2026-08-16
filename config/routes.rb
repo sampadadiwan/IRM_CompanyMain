@@ -141,8 +141,31 @@ Rails.application.routes.draw do
   # a "...user_guide.md" link into a routing error instead of a handled redirect.
   get 'help/*id', to: 'public_guides#show', as: :public_guide, format: false
   resources :release_notes, only: %i[index show], constraints: { id: %r{[^/]+} }
-  resources :features, only: [:index]
-  get 'features/*id', to: 'features#show', as: :feature, format: false
+
+  # Internal documentation browser — CapHive staff only, see InternalDocPolicy.
+  # /internal_docs, not /internal/docs: the /internal/* prefix above is already
+  # taken by the machine-to-machine sync endpoints, and colliding there would be
+  # confusing. Globbed *id with format: false for the same reason as the
+  # user_guides route above: a plain :id segment rejects dots, which would break
+  # ids containing them.
+  resources :internal_docs, only: [:index]
+  get 'internal_docs/*id', to: 'internal_docs#show', as: :internal_doc, format: false
+
+  # /features is retired: docs/features/ is now the "Strategy" section of the
+  # internal docs viewer, so the two no longer serve the same files under two
+  # different policies with two copies of the traversal guard. Kept as 302
+  # redirects — not 301 — so existing links and bookmarks keep working without
+  # being cached permanently in browsers.
+  # Unnamed on purpose: nothing in the app links here any more, so a
+  # features_path helper would only invite new callers to the retired URL.
+  get 'features', to: redirect(status: 302) { '/internal_docs' }
+  get 'features/*id',
+      to: redirect(status: 302) { |params, _req|
+        # delete_prefix guards against a leading slash in the glob turning this
+        # into a protocol-relative "//host" redirect.
+        "/internal_docs/features/#{params[:id].to_s.delete_prefix('/')}"
+      },
+      format: false
 
   get 'outlook_addin/taskpane', to: 'outlook_addin#taskpane'
   # Opened in an Office dialog (a top-level window, so the session cookie works there)

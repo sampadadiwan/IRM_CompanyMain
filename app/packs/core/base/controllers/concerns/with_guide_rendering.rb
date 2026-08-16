@@ -1,21 +1,32 @@
-# Shared Markdown rendering for the user guides in docs/user_guides.
+# Shared Markdown resolution and rendering for the Markdown trees under docs/.
 #
-# Both the signed-in guide browser (UserGuidesController) and the public,
-# login-less guide pages (PublicGuidesController) render the same source files,
-# so the renderer options and the directory-traversal guard live here rather
-# than being duplicated — a divergence in either would be a security or a
-# formatting bug depending on which copy drifted.
+# Three controllers render Markdown off disk: the signed-in guide browser
+# (UserGuidesController), the public, login-less guide pages
+# (PublicGuidesController) and the staff-only internal docs viewer
+# (InternalDocsController). The renderer options and the directory-traversal
+# guard live here rather than being duplicated — a divergence in either would be
+# a security or a formatting bug depending on which copy drifted.
 module WithGuideRendering
   extend ActiveSupport::Concern
 
-  # Root of the Markdown sources. Every path resolved by this concern is
-  # verified to sit underneath it.
+  # Root of the Markdown sources for the guide controllers. Every path resolved
+  # by this concern is verified to sit underneath #guides_root, which defaults
+  # to this constant.
   GUIDES_ROOT = Rails.root.join("docs/user_guides").freeze
 
   private
 
+  # The directory every resolved path must sit inside. Overridable so a
+  # controller serving a different tree (InternalDocsController serves all of
+  # docs/) reuses this traversal guard instead of writing a second one.
+  #
+  # @return [Pathname]
+  def guides_root
+    GUIDES_ROOT
+  end
+
   # Resolves a guide id ("kpi_upload_user_guide", "agents/esign_monitor_agent_user_guide")
-  # to an on-disk path, refusing anything that escapes GUIDES_ROOT.
+  # to an on-disk path, refusing anything that escapes #guides_root.
   #
   # @param raw_id [String] guide id from the URL, with or without a .md suffix
   # @return [Pathname, nil] the readable guide path, or nil if missing/out of bounds
@@ -23,8 +34,8 @@ module WithGuideRendering
     id = raw_id.to_s.sub(/\.md$/i, "")
     # cleanpath collapses any ".." segments so the start_with? check below cannot
     # be walked past with a crafted id.
-    path = GUIDES_ROOT.join("#{id}.md").cleanpath
-    return nil unless path.to_s.start_with?("#{GUIDES_ROOT}/")
+    path = guides_root.join("#{id}.md").cleanpath
+    return nil unless path.to_s.start_with?("#{guides_root}/")
     return nil unless File.exist?(path)
 
     path

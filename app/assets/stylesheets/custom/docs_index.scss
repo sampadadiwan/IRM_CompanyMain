@@ -1,0 +1,6 @@
+// Markdown-document index cards (/user_guides, /internal_docs).
+// The blurb is the first line of prose from each document and varies in length;
+// a floor keeps the cards in a row the same height without stretching short ones.
+.doc-card-blurb {
+  min-height: 50px;
+}

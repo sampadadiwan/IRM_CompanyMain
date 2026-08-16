@@ -385,8 +385,8 @@ en:
     todo_daily_tasks: To-do and Daily Tasks
     user_guides: User Guides
     release_notes: Release Notes
-    features: Features
-    feature_docs: Feature documentation for support
+    internal_docs: Internal Docs
+    internal_docs_subtitle: Marketing and strategy documentation
     learn_how_to_use: Learn how to use CapHive
     user: User
     user_profile: User Profile

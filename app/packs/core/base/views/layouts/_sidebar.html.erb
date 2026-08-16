@@ -247,10 +247,15 @@
             <span class="hide-menu">CS Reviews</span>
           </a>
         </li>
+      <% end %>
+      <%# Gated on the policy rather than support?, which is also true while a support
+          user is impersonating a customer: a visible link that 403s is a bad experience
+          and advertises the URL to customers. %>
+      <% if current_user && policy(:internal_doc).index? %>
         <li class="sidebar-item">
-          <a class="sidebar-link" href="/features">
-            <span><i class="ti ti-flag"></i></span>
-            <span class="hide-menu"><%= t('top_menus.features') %></span>
+          <a class="sidebar-link" href="/internal_docs">
+            <span><i class="ti ti-lock"></i></span>
+            <span class="hide-menu"><%= t('top_menus.internal_docs') %></span>
           </a>
         </li>
       <% end %>
