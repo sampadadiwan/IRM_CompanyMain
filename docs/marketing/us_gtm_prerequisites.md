@@ -56,7 +56,7 @@ Outreach drives traffic to the site. If the site cannot capture an address or bo
 |---|---|---|---|---|---|
 | A1 | Demo form POSTs to something we control (Formspree, CRM endpoint, or an app-side action) | A test submission from an incognito window lands somewhere we can see, with no mail client involved | | | 📝 Drafted — code done, needs endpoint URL |
 | A2 | Submission notification routed to a monitored inbox | Test submission produces an alert within 5 minutes | | | 🔴 Needs human (depends on A1 provider) |
-| A3 | Booking link live (Calendly free tier or equivalent), with US-hours availability that reflects reality | A prospect in ET can book a slot without emailing first | | | 🔴 Needs human (account + availability decision) |
+| A3 | Booking link live (Calendly free tier or equivalent), with US-hours availability that reflects reality | A prospect in ET can book a slot without emailing first | | | ☑ Done — account created 2026-08-16 |
 | A4 | Booking link placed on the contact page, in the site header CTA, and in the email signature used for outbound | All three carry the same link | | | 📝 Drafted — site wired; email signature by hand |
 | A5 | Distinct thank-you / confirmation page after submission | Loads at a unique URL, so it can be used as a conversion trigger in B4 | | | ☑ Done |
 
@@ -72,10 +72,10 @@ Without tags there is no retargeting audience, no attribution, and no way to kno
 
 | # | Item | Done when | Owner | Target | Status |
 |---|---|---|---|---|---|
-| B1 | Web analytics installed sitewide (GA4, or a lightweight paid alternative) | Real-time view shows a visit from a phone on mobile data | | | 📝 Drafted — slot built, needs GA4 ID |
+| B1 | Web analytics installed sitewide (GA4, or a lightweight paid alternative) | Real-time view shows a visit from a phone on mobile data | | | 🟡 Account created 2026-08-16 — awaiting Measurement ID in site config + deploy |
 | B2 | LinkedIn Insight Tag installed sitewide | LinkedIn Campaign Manager reports the tag as active | | | 📝 Drafted — slot built, needs Partner ID |
-| B3 | Google Ads tag installed sitewide | Google Ads reports the tag as receiving traffic | | | 📝 Drafted — slot built, needs Ads ID |
-| B4 | Conversion events defined: `demo_form_submitted`, `booking_completed` | Both fire on a test run and appear in the analytics property | | | 📝 Drafted — events fire; mark as conversions |
+| B3 | Google Ads tag installed sitewide | Google Ads reports the tag as receiving traffic | | | 🟡 Account created 2026-08-16 — awaiting Conversion ID + Label in site config + deploy |
+| B4 | Conversion events defined: `demo_form_submitted`, `booking_completed` | Both fire on a test run and appear in the analytics property | | | 🟡 Ads conversion action created 2026-08-16 — GA4 side needs the deploy, then mark as key events |
 | B5 | UTM convention agreed and documented for outbound links | One convention used across email, LinkedIn, and blog links, written down somewhere both founders can find | | | ☑ Done |
 
 **Sequencing note:** tags must be live and collecting for at least a few days before any retargeting audience can be built, and LinkedIn will not serve a Matched Audience below roughly 300 members. That lag is why B sits on the critical path rather than being done later.
