@@ -996,6 +996,9 @@ table.cmp td .no{ color:var(--mut); }
 .prose a:hover{ border-color:var(--orange-2); }
 .prose strong{ color:var(--fg); font-weight:600; }
 .prose figure{ max-width:100%; }
+/* Cookie names in the legal tables. Geist Mono is already loaded for the rest
+   of the site, so this only points at it — no extra font request. */
+.prose code{ font-family:var(--mono); font-size:.92em; color:var(--fg); overflow-wrap:anywhere; }
 .prose table{ width:100%; border-collapse:collapse; margin-top:18px; }
 /* width:100% can't take a table below its min-content width, so a multi-column
    table (the obligation matrix, the comparison tables in the agent pages) runs
