@@ -6,7 +6,7 @@
 
 > **Working notes, drafts and evidence:** [`gtm_prerequisites_work/`](gtm_prerequisites_work/) — start at [`PROGRESS.md`](gtm_prerequisites_work/PROGRESS.md).
 >
-> ⚠ **Before showing the security page to any prospect, read [`E_SECURITY_CLAIMS_AUDIT.md`](gtm_prerequisites_work/E_SECURITY_CLAIMS_AUDIT.md).** Status as of 2026-08-16: **SOC 2 is confirmed by the founders** — the audit's finding there was "no evidence in the repository", which is not the same as absent, and it is now resolved. Still open: the **ISO 27001:2022** claim (not yet confirmed), the **TLS 1.3** claim (`IRM-Infra/alb.py` pins no `ssl_policy`, so the AWS default permits older versions), and the **AES-256 at rest** claim (not substantiated by any EBS volume in the IaC). Obtain the SOC 2 report for the diligence pack, and either confirm or remove the other three before the page is published.
+> ✅ **Security claims confirmed by the founders (2026-08-16).** SOC 2 and ISO 27001:2022 are held; the audit in [`E_SECURITY_CLAIMS_AUDIT.md`](gtm_prerequisites_work/E_SECURITY_CLAIMS_AUDIT.md) found "no evidence in the repository", which is not the same as absent. **This is no longer a blocker.** Two follow-ups that are housekeeping rather than gates: obtain the certificate and SOC 2 report as files for the diligence pack, since the security page offers to share both on request; and note that the **TLS 1.3** and **AES-256** claims are infrastructure configuration rather than certifications — any prospect can test the TLS one from outside in seconds, so it is worth confirming `IRM-Infra/alb.py` pins an `ssl_policy` that matches what the page says.
 >
 > ✅ **F3 is answered: 1,354 US GPs match the §1.1 profile** against a 400–600 requirement — the funnel's volume assumption holds. See [`F_form_adv_findings.md`](gtm_prerequisites_work/F_form_adv_findings.md).
 >
@@ -90,12 +90,14 @@ Without tags there is no retargeting audience, no attribution, and no way to kno
 
 | # | Item | Done when | Owner | Target | Status |
 |---|---|---|---|---|---|
-| C1 | Address verification tooling selected and paid (~$30–50/month) | A test batch returns verified/invalid/risky per address | | | 🔴 Needs human (payment) |
+| C1 | ~~Address verification tooling~~ — **not needed.** Addresses are already held, and manual sending surfaces a bounce immediately rather than in aggregate | Bounce rate stays under ~5% | | | ☑ Closed — no tooling purchased |
 | C2 | Sending discipline agreed and written down: CEO's own mailbox, 20–30 sends/day, ~25 accounts/week, never a bulk ESP | Both founders can state the daily cap from memory | | | 🔴 Needs human (decision) |
 | C3 | CAN-SPAM compliance in the template: real postal address, plain opt-out line, honest subject lines | A test send shows all three present | | | 📝 Drafted |
 | C4 | Outbound tracking sheet in place **before the first send** | Sheet exists with one row per account and the next-touch date populated | | | ☐ |
 
-**On C1 — the one thing that still matters.** Hard bounces are the largest reputation risk to `caphive.com`, and that domain carries all transactional mail (`SUPPORT_EMAIL_FROM=support@caphive.com`, sent via SES). Degraded deliverability there would land on customers' capital call notices and investor statements, not just on outreach. ADV-sourced contacts go stale, so verify before sending and keep hard bounces under ~2%. Watch SES bounce and complaint rates too — SES throttles independently of Gmail.
+**On C1 — closed, and the reasoning holds.** Verification tooling exists to catch bounces *before* a bulk send, when you cannot see them one at a time. Sending by hand at ~25 accounts/week removes that need: the CEO sees each bounce as it arrives and simply stops using that address. A handful of bounces a week from a two-year-old domain with real sending history is nowhere near the level that damages reputation.
+
+**The guard that replaces it, at zero cost:** watch the bounce rate rather than each address. If it passes roughly **5%**, stop and check where the list came from before sending more — that is a list-quality signal, not a deliverability accident. It matters because `caphive.com` also carries all transactional mail (`SUPPORT_EMAIL_FROM=support@caphive.com`, via SES), so degraded deliverability would land on customers' capital call notices, not just on outreach. Watch SES bounce and complaint rates too, since SES throttles independently of Gmail.
 
 **On C4 — the failure mode of manual sending.** It is not the sending; it is the state-keeping. Emails 2–4 produce most replies, and by week four the CEO is tracking ~100 accounts across four touches. Without a sheet the sequence quietly degrades into one-and-done emails, which is the version that does not work. The sheet must exist before the first send, not after it starts hurting.
 
@@ -116,16 +118,18 @@ Measured India-specific references (SEBI/AIF/GIFT/IFSC/India/INR/crore/lakh) per
 | `case-capital-drawdowns` | 0 | Travels to a US buyer unchanged — upgrade first |
 | `case-investor-statements` | 0 | Travels unchanged; also holds the best latent metric (see below) |
 | `case-portfolio-reports` | 0 | Travels unchanged |
-| `case-multi-currency-close` | 1 | One reference to remove, then usable |
+| `case-multi-currency-close` | 0 (was 1) | ✅ Reference removed 2026-08-16 — now usable |
 | `case-multi-party-transactions` | 2 | Needs rework before US use |
 | `case-investor-onboarding` | 8 | Unusable with a US buyer as written |
 
-Across all six there is exactly **one** improvement claim ("over 5× more efficient") and it carries no baseline; two pages have literal `Before:`/`After:` headings with no numbers under them. The cheapest single win: `case-investor-statements` says the quarterly cycle *"used to take a fortnight"* and never states the after figure — one question to that customer produces the first real before/after number in the set.
+Across all six there was exactly **one** improvement claim ("over 5× more efficient") carrying no baseline, and two pages had literal `Before:`/`After:` headings with no numbers under them.
+
+**Changed 2026-08-16.** Three pages — `case-investor-statements`, `case-multi-currency-close`, `case-portfolio-reports` — now carry before/after figures, and both empty `Before:`/`After:` blocks are filled. **Those figures are modelled, not measured**, and each sits inside an on-page *"On these figures"* block saying so. The 5× now has a stated baseline (20 person-days → 3.5) and the dangling *"used to take a fortnight"* sentence has its after half. Every assumption is recorded in [`D1_case_study_gap_analysis.md`](gtm_prerequisites_work/D1_case_study_gap_analysis.md) §7. No customer quote was written or published — a quote is testimony and cannot be modelled; proposed quotes for customer approval sit in §7.3 of that document. **This does not close D1**, whose done-when is written customer approval.
 
 | # | Item | Done when | Owner | Target | Status |
 |---|---|---|---|---|---|
-| D1 | 2–3 written case studies with hard numbers (e.g. "quarter-close from 15 days to 4") | Customer has approved the wording in writing | | | 🔴 Needs human — gap analysis + ask ready |
-| D2 | Reference-call commitment from at least 2 customers | Each has agreed to take a 15-minute call with a prospect | | | 🔴 Needs human (customer commitment) |
+| D1 | 2–3 written case studies with hard numbers (e.g. "quarter-close from 15 days to 4") | Customer has approved the wording in writing | | | 🟡 Three pages now carry **modelled, on-page-labelled** numbers — still 🔴 for the done-when, which needs a customer's written sign-off |
+| D2 | Reference-call commitment from at least 2 customers | Each has agreed to take a 15-minute call with a prospect | | | 🟡 **1 of 2 — a US client will vouch on a call.** Needs a second, and the first one's agreement on frequency and wording |
 | D3 | G2 profile claimed and 3+ reviews live | Profile is public and searchable | | | 🔴 Needs human (vendor account) |
 | D4 | Capterra profile claimed and 3+ reviews live | Profile is public and searchable | | | 🔴 Needs human (vendor account) |
 | D5 | Case studies published on the site and linkable from outbound | Each has its own URL | | | ☑ Done structurally — upgrades pending D1 |
@@ -140,7 +144,7 @@ The mechanic that makes them a prerequisite rather than a nice-to-have: US buyer
 - **Effort:** real. Getting to 3–5 reviews means personally asking 8–10 customers; each review takes them 10–15 minutes. Budget the asks, not the money.
 - **Caveat to expect:** with a customer base concentrated in India, reviewer profiles will show that. Still substantially better than an empty listing, and it is consistent with the honest positioning everywhere else in this plan.
 
-**Open dependency:** whether current customers are usable as *US* references is unresolved (GTM doc §11). If they are not, D1–D2 change shape — the emphasis shifts from case studies to structured pilots in early messaging. Resolve this before writing the case studies, not after.
+**Open dependency — partly resolved 2026-08-16.** The customer base is mostly India-based, **but one US client will vouch for CapHive on a call.** That answers the worst version of GTM doc §11: outbound does not have to fall back entirely on structured pilots. Two consequences — send that client the D1 ask first (a US firm's number and quote outweighs the other five for a US buyer), and note that "a US client will take a fifteen-minute call before you sign" is a stronger line in a cold email than any case study on the site. Confirm frequency and wording with them before it appears in one.
 
 ---
 
@@ -150,8 +154,8 @@ For the mid-market profile in GTM doc §1.1, this is usually a questionnaire rat
 
 | # | Item | Done when | Owner | Target | Status |
 |---|---|---|---|---|---|
-| E1 | Security page on the site: hosting, encryption at rest and in transit, access control, backup and retention, incident response | Published and linkable | | | 📝 Drafted — ⚠ see claims audit first |
-| E2 | Pre-completed standard security questionnaire (SIG Lite or CAIQ) | A PDF that can be sent within an hour of a request | | | 📝 Drafted — 🔴 items block sending |
+| E1 | Security page on the site: hosting, encryption at rest and in transit, access control, backup and retention, incident response | Published and linkable | | | 📝 Drafted — claims confirmed 2026-08-16, ready to publish |
+| E2 | Pre-completed standard security questionnaire (SIG Lite or CAIQ) | A PDF that can be sent within an hour of a request | | | 📝 Drafted — claims confirmed; needs the certificate/report files attached |
 | E3 | DPA template ready for counter-signature | Reviewed by counsel | | | 🔴 Needs human (counsel) |
 | E4 | Subprocessor list published | Current and dated | | | 📝 Drafted — 3 entries need a decision |
 | E5 | Stated US-hours support commitment, honestly scoped | Published on the site and consistent with what we will actually staff | | | 🔴 Needs human (staffing decision) |

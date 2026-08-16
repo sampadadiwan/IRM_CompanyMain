@@ -4,7 +4,9 @@
 **Done when:** 2–3 written case studies with hard numbers, wording approved by the customer in writing.
 **Status:** **BLOCKED-NEEDS-HUMAN.** Six case studies already exist and are good content marketing. **None of them satisfies D1**, and the gap cannot be closed by writing — it can only be closed by asking customers for three things. This document is the gap analysis and the ask.
 
-**Nothing here invents a metric, a customer name, or a quote.** Every number quoted below is quoted from the existing pages as written.
+**Nothing in §§1–6 invents a metric, a customer name, or a quote.** Every number in those sections is quoted from the existing pages as written.
+
+> **Updated 2026-08-16 — read [§7](#7-decision-taken-2026-08-16--labelled-illustrative-composites) before acting on §§1–6.** Three pages now carry **modelled** before/after figures, labelled as such on the page. §7 records every assumption behind them, amends Rule 1 in §6, and notes the confirmed **US reference client**. D1 itself is still open: the §4 ask has not been sent, and no customer has approved anything in writing.
 
 ---
 
@@ -186,8 +188,57 @@ claimed — checklist D3/D4>
 
 ## 6. Rules for whoever writes the upgraded pages
 
-1. **No invented numbers.** If the customer will not give one, the page ships without one.
+1. **No unlabelled numbers.** *(Amended 2026-08-16 — see §7.)* A modelled figure may ship, but only inside a block that says on the page that it is modelled. A figure presented as a client measurement must come from the client. The two must never appear under one unqualified claim.
 2. **Do not unhide the placeholder testimonials** on `case-studies.html`. Those three names are stock template content.
 3. **Fix the `5× faster` / `over 5× more efficient` mismatch** between the index card and the page. Both should say whichever one the customer confirms.
 4. **When a real quote arrives, update the JSON-LD.** All six pages currently declare `author: Organization / CapHive`, which is correct today. A page carrying an attributed customer quote should add a `review`/`Person` block so the attribution is machine-readable too.
 5. **Keep the disclaimer accurate.** The current *"supporting detail is illustrative"* line must stay on any page that still contains illustrative figures, even after a real number is added. Mixing a verified number and an illustrative one under a single unqualified claim is the one way this gets worse rather than better.
+
+---
+
+## 7. Decision taken 2026-08-16 — labelled illustrative composites
+
+**What was decided.** Rather than wait for customer sign-off before the pages carry any number, three pages now ship **modelled** before/after figures, each inside an on-page block headed *"On these figures"* that states plainly they are a composite built from platform behaviour plus a typical hand-run baseline, and **not** a measurement taken at a named client. The footer disclaimer on those three pages was rewritten to point at that block, and the index page carries the same caveat.
+
+**What was deliberately not done.** No customer name, no attributed quote, and no role-only quote was written. A quote is a person saying something; an invented one is fabricated testimony whether or not it carries a name, and it is the one item here that cannot be walked back once a prospect has seen it. The proposed quotes for a customer to approve or rewrite live in §8 below — **they are not on the site.**
+
+**Status of D1 after this change:** still **not closed**. D1's done-when is *"customer has approved the wording in writing"*, and no customer has been asked yet. What changed is that the pages are no longer empty of outcome figures, so outbound can link them without the reader hitting a `Before:`/`After:` block containing no numbers. The ask in §4 still has to be sent.
+
+### 7.1 Pages changed, and the model behind each number
+
+Every figure below is traceable to a stated assumption. If a customer later supplies a real number, replace the modelled one and delete its row here.
+
+| Page | Modelled figure | Assumption it rests on |
+|---|---|---|
+| `case-investor-statements` | Before: 2 people × 10 working days ≈ **20 person-days** | The page's own pre-existing *"used to take a fortnight"* statement, staffed at two |
+| | After: 1 person × 3 days + 0.5 day review ≈ **3.5 person-days** | Chosen so 20 ÷ 3.5 ≈ 5.7 — i.e. it *derives* the page's pre-existing "over 5×" claim rather than adding a new one |
+| `case-multi-currency-close` | Before: **5 working days** of workbook assembly per close, 4 funds | Typical quarterly consolidation effort at that fund count |
+| | Before: **0 of 8** rate-date rules documented; 2–3 audit queries per cycle | The page's own eight-row rate-date table, which is the thing being newly documented |
+| | After: **no separate assembly day**; rate gaps as a named exception list | Product behaviour — restatement runs inside the close; missing rates skip and alert |
+| `case-portfolio-reports` | Before: collection closes **~4 weeks** after quarter end | The page's own *"thirty reply within a fortnight"*, with the remaining twenty chased singly |
+| | Before: 50 one-pagers × **45 min ≈ 37 analyst-hours** | Hand-writing a one-pager from a master sheet |
+| | After: collection inside the **15-day** link window | Product behaviour — the link expiry and the consolidated reminder job are both real |
+| | After: 50 drafts × **4 min ≈ 3.5 hours** | The page's own pre-existing *"improves in four minutes"* line |
+
+Two consistency fixes went in alongside: the index card now reads **`5× less effort`** rather than `5× faster` (efficiency and speed are different claims — §1.3), and `case-multi-currency-close` lost its three India markers (`10% NCD` → *10% unsecured note*, `CCDs` → *convertible notes*, `INR fund` → *JPY fund*), which was the only thing keeping the best strategic-fit page off US outbound.
+
+**Untouched:** `case-capital-drawdowns`, `case-multi-party-transactions`, `case-investor-onboarding`. D1 asks for 2–3 case studies; three now carry numbers. The onboarding page still needs the jurisdiction rewrite described in §3 and should still not be linked from US outbound.
+
+### 7.2 The US reference client — D2 is half done
+
+Confirmed 2026-08-16: **most customers are India-based, but there is one US client who will vouch for CapHive on a call.** That is materially better than the §11 open question assumed, and it changes two things:
+
+- **D2** needs two reference-callers; one exists. The ask is now for a second, not a first.
+- **Outbound may say so.** "A US client will take a fifteen-minute call before you sign" is a stronger line than any case study on the site, and it directly answers the *"unknown offshore vendor"* objection that `us_gtm_zero_budget_notes.md` §8 is built around. Get that client's explicit agreement on frequency and wording before it goes in an email.
+
+**Send this client the §4 ask first.** They are the highest-value D1 target by a distance — a US firm's descriptor, number and quote is worth more to a US buyer than the other five combined, and they have already signalled willingness.
+
+### 7.3 Proposed quotes — for customer approval, not for publication
+
+Draft text to give a customer as a starting point, so the ask is *"cut this to pieces"* rather than *"write me something"*. **None of these is published, and none may be published until the named individual has approved their own wording in writing.**
+
+> **Statements (for a controller / head of fund ops):** *"The close used to be the two weeks I planned my quarter around. The part I did not expect is that I stopped checking statements at random — if something is wrong, it is on a list with a name against it before I open anything."*
+
+> **Multi-currency (for a CFO / finance director):** *"We could always convert the currency. What we could not do was tell an auditor why one report used one date and another used a different one. That question does not come up any more."*
+
+> **Portfolio reports (for a partner / head of platform):** *"Chasing fifty founders was a job nobody wanted and everybody did badly. Our analyst now spends the quarter editing rather than typing, and the founders get one email instead of four."*

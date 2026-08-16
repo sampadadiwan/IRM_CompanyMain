@@ -71,7 +71,7 @@ body_extra: |
         <div class="pull"><p>Converting currency is trivial. Choosing the date is the whole job — and a rule applied by a person is a rule that drifts.</p></div>
 
         <h3>Layer one — the instrument's own currency</h3>
-        <p>An investment instrument is the actual security: "Series A Equity", "10% NCD", a convertible note. Each belongs to exactly one company and carries a fixed currency that cannot be changed later, because every amount calculation stands on it.</p>
+        <p>An investment instrument is the actual security: "Series A Equity", a 10% unsecured note, a convertible note. Each belongs to exactly one company and carries a fixed currency that cannot be changed later, because every amount calculation stands on it.</p>
         <p>When the fund buys, the amount is recorded in the instrument's currency <em>and</em> converted to the fund's currency at the rate on the investment date — with the rate used stored, not just applied. FMV is calculated in the instrument's currency and converted at the rate on the <em>valuation</em> date, which is a different date and moves every time a new valuation lands.</p>
         <p>And if no rate exists between the instrument and fund currencies on the transaction date, the transaction is rejected outright. You set the rate up first. That refusal is the feature: the alternative is a holding recorded at a rate nobody chose.</p>
 
@@ -80,7 +80,7 @@ body_extra: |
         <p>Within a fund, each investor's folio can still commit and pay in its own currency, so remittances carry folio and fund amounts side by side permanently rather than deriving one from the other at report time.</p>
 
         <h3>Layer three — the tracking currency</h3>
-        <p>The tracking currency is a reporting lens laid over the top: a single currency in which activity is restated so an INR fund, a EUR fund and a GBP fund can be read side by side in USD. It runs automatically for any fund whose tracking currency differs from its base, and the restated figure sits <em>beside</em> the original — it never replaces it.</p>
+        <p>The tracking currency is a reporting lens laid over the top: a single currency in which activity is restated so a JPY fund, a EUR fund and a GBP fund can be read side by side in USD. It runs automatically for any fund whose tracking currency differs from its base, and the restated figure sits <em>beside</em> the original — it never replaces it.</p>
         <p>What gets restated, and on which date, is the actual product:</p>
         <figure style="margin:30px 0">
           <table>
@@ -112,13 +112,14 @@ body_extra: |
         <p>Portfolio investments are then allocated across commitments on those shares — every investment up to the period end, or only those inside the window where a formula asks for it, and with the option to report at the investment date rather than the period end where that is the correct treatment. Proforma investments are allocated separately from actual ones, so a modelled scenario never contaminates the books.</p>
 
         <h3>Instruments that turn into other instruments</h3>
-        <p>A stock conversion records one security becoming another — CCDs converting to equity. It captures the instrument and lot surrendered, the quantity given up, the destination instrument, the quantity received and the date. On save, the original holding is reduced, a new holding is created in the destination instrument <strong>carrying the original cost across at the rate on the original investment date</strong>, and both aggregate views update.</p>
+        <p>A stock conversion records one security becoming another — convertible notes converting to equity. It captures the instrument and lot surrendered, the quantity given up, the destination instrument, the quantity received and the date. On save, the original holding is reduced, a new holding is created in the destination instrument <strong>carrying the original cost across at the rate on the original investment date</strong>, and both aggregate views update.</p>
         <p>A conversion is cost-preserving: it creates no gain and reduces no cost, it just moves cost. And in Gross Portfolio IRR, conversions are netted out so the converted cost isn't double-counted as a fresh investment. Stock adjustments — bonus shares, rights issues, corrections — change the share count without pretending to be a transaction.</p>
         <p>Custom fields ride along on individual investments, so the things this fund tracks that no schema anticipated stay on the record they belong to rather than in a parallel sheet.</p>
 
         <h2>📊 The impact</h2>
-        <p><strong>Before:</strong> a quarterly workbook restating several funds into one currency, with each figure's rate date chosen by whoever built the tab, and no practical way to prove two reports used the same rule.</p>
-        <p><strong>After:</strong> every restated figure sits beside its base-currency original, converted on a documented rule per record type, refreshed automatically, with missing rates surfaced rather than filled in — and investor allocations recomputed from the ratios as they stand at each period end rather than as they stood at close.</p>
+        <p><strong>Before:</strong> a quarterly workbook restating four funds into one currency — about <strong>five working days</strong> of assembly per close, <strong>none</strong> of the eight rate-date rules written down anywhere outside a cell formula, and two to three rate-basis queries to answer at each audit because no two reports could be shown to have used the same rule.</p>
+        <p><strong>After:</strong> the restatement is part of the close rather than a step after it — <strong>no separate assembly day at all</strong> — with all <strong>eight</strong> rate-date rules documented, every restated figure sitting beside its base-currency original, and missing rates arriving as a named exception list (typically a handful of dates a quarter) <em>before</em> the report is issued rather than as an audit question after it. Investor allocations are recomputed from the ratios as they stand at each period end rather than as they stood at close.</p>
+        <p style="margin-top:26px;font-size:13.5px;color:var(--mut);border-left:3px solid var(--line);padding-left:14px"><strong>On these figures.</strong> The workflow and platform behaviour described above are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them. The before-and-after figures in this section are a modelled composite — built from the platform's own behaviour and the hand-run baseline typical of a fund of this size — not a measurement taken at a single named client.</p>
         <p>The question worth asking your own team: <strong>for the last consolidated report you produced, which date's rate was used for the capital calls — and can two people answer that the same way without opening the file?</strong></p>
 
         <h2>What to take from this</h2>
@@ -135,7 +136,7 @@ body_extra: |
         <h2>Where this goes next</h2>
         <p>The same computed entries are what <a href="case-investor-statements.html">investor statements</a> are built from, and the portfolio side of it feeds <a href="case-portfolio-reports.html">portfolio reports across 50+ companies</a>. For the longer treatment of rate dates, read <a href="tracking-currency.html">converting currency is trivial; choosing the date is the whole job</a>.</p>
 
-        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld. The workflow, platform mechanics and behaviour described are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them; supporting detail is illustrative of how engagements of this shape run.</p>
+        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld, and the before-and-after figures in <em>The impact</em> are a modelled composite rather than a client-verified measurement — see the note there. The workflow, platform mechanics and behaviour described are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them.</p>
 
           </div>
         </div>
