@@ -8,8 +8,10 @@
     edit stays invisible. -%>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<%# Analytics loads first so pageviews are recorded even if a later asset stalls. -%>
-<%= partial "analytics" %><title><%= title %></title>
+<%# site_config MUST render before analytics and before any script that reads
+    window.CAPHIVE. Analytics stays early so pageviews are recorded even if a
+    later asset stalls. -%>
+<%= partial "site_config" %><%= partial "analytics" %><title><%= title %></title>
 <meta name="description" content="<%= description %>">
 <%= robots %><meta name="theme-color" content="#FBFAF7">
 <link rel="canonical" href="<%= canonical %>">

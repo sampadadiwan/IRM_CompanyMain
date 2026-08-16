@@ -53,6 +53,13 @@ every 1.hour, roles: [:primary] do
   runner "ReportBuilderSchedulerJob.perform_later"
 end
 
+# Enforces the WebsiteLead retention windows published in the website's privacy
+# policy: visitor IP and user-agent are nulled after 90 days, whole leads deleted
+# after 24 months. Idempotent, so a missed night costs nothing but a day.
+every 1.day, at: '2:30 am', roles: [:primary] do
+  rake "website_leads:purge"
+end
+
 # Force-restart Sidekiq daily at ~7:20am local time. Works around a build-up
 # (stuck/leaked workers) that a plain `monit restart` alone doesn't clear.
 # Server clocks are UTC regardless of region:

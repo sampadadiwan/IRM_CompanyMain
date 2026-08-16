@@ -1,0 +1,70 @@
+<%# Alert for one demo request from the public website.
+
+    EVERY value on this page is typed by an anonymous stranger. ERB escapes by
+    default, so the rule here is simply: never reach for raw, html_safe or
+    simple_format. In particular `message` is free text and is rendered inside a
+    <pre> so its line breaks survive without simple_format's sanitiser being
+    involved at all.
+
+    The full message is never truncated — it is the field that makes a
+    configure-first demo possible. %>
+<h2 style="margin:0 0 4px;font-family:Helvetica,Arial,sans-serif;">Demo request from the website</h2>
+<p style="margin:0 0 20px;color:#666;font-family:Helvetica,Arial,sans-serif;font-size:13px;">
+  <%= @website_lead.submitted_at.strftime("%d %b %Y, %H:%M %Z") %>
+</p>
+
+<table cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Helvetica,Arial,sans-serif;font-size:14px;">
+  <tr>
+    <td style="color:#666;vertical-align:top;">Name</td>
+    <td><strong><%= @website_lead.name %></strong></td>
+  </tr>
+  <tr>
+    <td style="color:#666;vertical-align:top;">Email</td>
+    <%# mailto: is built with the escaped address; reply-to on the message itself
+        is the faster route and is already set by the mailer. %>
+    <td><%= mail_to @website_lead.email %></td>
+  </tr>
+  <tr>
+    <td style="color:#666;vertical-align:top;">Firm</td>
+    <td><%= @website_lead.firm.presence || "—" %></td>
+  </tr>
+  <tr>
+    <td style="color:#666;vertical-align:top;">Role</td>
+    <td><%= @website_lead.role.presence || "—" %></td>
+  </tr>
+</table>
+
+<% if @website_lead.message.present? %>
+  <h3 style="margin:24px 0 6px;font-family:Helvetica,Arial,sans-serif;font-size:15px;">What they said</h3>
+  <%# <pre> preserves the line breaks; white-space:pre-wrap stops a long line
+      forcing a horizontal scrollbar in the mail client. %>
+  <pre style="margin:0;padding:12px;background:#f6f6f6;border-left:3px solid #ddd;
+              white-space:pre-wrap;word-wrap:break-word;font-family:Helvetica,Arial,sans-serif;
+              font-size:14px;line-height:1.5;"><%= @website_lead.message %></pre>
+<% end %>
+
+<h3 style="margin:24px 0 6px;font-family:Helvetica,Arial,sans-serif;font-size:15px;">Where they came from</h3>
+<table cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#444;">
+  <tr>
+    <td style="color:#666;">Page</td>
+    <td><%= @website_lead.landing_page.presence || "—" %></td>
+  </tr>
+  <tr>
+    <td style="color:#666;">Referrer</td>
+    <td><%= @website_lead.referrer.presence || "—" %></td>
+  </tr>
+  <% if @website_lead.attributed? %>
+    <% WebsiteLead::UTM_FIELDS.each do |field| %>
+      <% next if @website_lead[field].blank? %>
+      <tr>
+        <td style="color:#666;"><%= field.to_s.humanize %></td>
+        <td><%= @website_lead[field] %></td>
+      </tr>
+    <% end %>
+  <% end %>
+</table>
+
+<p style="margin:24px 0 0;color:#888;font-family:Helvetica,Arial,sans-serif;font-size:12px;">
+  Lead #<%= @website_lead.id %>. The full record, including any fields added to the form since
+  this email was written, is on the Website Leads screen in the app.
+</p>

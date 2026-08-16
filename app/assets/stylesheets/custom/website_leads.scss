@@ -1,0 +1,25 @@
+// Staff-only screens for inbound demo requests from the public website.
+// See docs/technical/website_lead_capture.md.
+
+// The prospect's own words, and the pretty-printed raw payload beside them.
+// <pre> is used so line breaks survive without a sanitiser touching the text,
+// but a browser's default <pre> styling is wrong here on two counts: it picks a
+// monospace face, and it refuses to wrap.
+.website-lead-message {
+  // Inherit the surrounding type. This is prose a human reads, not code, and
+  // shrinking it or switching to monospace makes the most important field on
+  // the screen the hardest one to read.
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.6;
+
+  // pre-wrap keeps the author's newlines while still wrapping long lines, so a
+  // single pasted URL cannot force the whole card to scroll sideways.
+  white-space: pre-wrap;
+  word-wrap: break-word;
+
+  padding: 0.75rem 1rem;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+  border-left: 3px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.25rem;
+}

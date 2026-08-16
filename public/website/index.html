@@ -3,6 +3,52 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html'
+  };
+}());
+</script>
 <!-- Google tag (gtag.js) — GA4 property for caphive.com.
      Rendered into the <head> of every page by _layout.html.erb, so the
      measurement ID lives here and nowhere else.
@@ -36,6 +82,20 @@
 
   gtag('js', new Date());
   gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
 <title>CapHive — Reimagine Private Capital Markets</title>
@@ -52,7 +112,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=afdf9bcc">
+<link rel="stylesheet" href="assets/css/caphive.css?v=363ab74b">
 <style>
   :root{
     --bg:      #FBFAF7;
@@ -1178,8 +1238,18 @@
         <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
         <a class="cta-mail" href="contact.html" style="margin-left:20px">all ways to reach us</a>
       </div>
-      <!-- TODO: point this form at your CRM / Formspree endpoint (see submit handler in the script); it currently opens a prefilled email draft -->
-      <form class="cta-form" id="demoForm">
+      <!-- The short version of the demo form on contact.html, and driven by the SAME handler
+           in assets/js/caphive.js — data-mailto marks it as ours. It used to have a bespoke
+           inline handler in _partials/index_scripts.html that only ever composed an email;
+           that has been removed, because two handlers for two forms is how one of them
+           quietly stops working. Field names must match contact.html's: the server stores
+           them under these names. -->
+      <form class="cta-form" id="demoForm" data-mailto="hello@caphive.com" data-subject="Demo request">
+        <!-- Spam controls, identical to contact.html. Stripped by the server, never stored. -->
+        <div class="hp-field" aria-hidden="true">
+          <label>Do not fill this in<input type="text" name="_hp" tabindex="-1" autocomplete="off"></label>
+        </div>
+        <input type="hidden" name="_ts" value="">
         <label>Name<input required name="name" placeholder="Your name" autocomplete="name"></label>
         <label>Firm<input required name="firm" placeholder="Fund / firm"></label>
         <label>Work email<input required type="email" name="email" placeholder="you@fund.com" autocomplete="email"></label>
@@ -1187,6 +1257,8 @@
           Book my demo
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+        <!-- Rewritten to "Sending your request…" by caphive.js once an endpoint resolves. -->
+        <div class="form-msg">Your email client is opening with the request prefilled. Send it and we will pick it up from there.</div>
       </form>
     </div>
   </div>
@@ -1503,20 +1575,69 @@
   }
 
   /* ---- demo form ----
-     TODO: replace the mailto fallback with a fetch POST to your CRM or
-     Formspree endpoint, e.g.:
-       fetch('https://formspree.io/f/YOUR_ID', {method:'POST', body:new FormData(demoForm), headers:{Accept:'application/json'}})
-  */
+     Mirrors the "CONVERSION PATH" block in assets/js/caphive.js — the homepage
+     overrides the shared script bundle with this file, so caphive.js never loads
+     here and the logic has to exist twice. Keep them in step; if you change the
+     payload, the spam controls or the redirect in one, change the other.
+
+     See docs/technical/website_lead_capture.md. */
+  var CFG = window.CAPHIVE || {};
+  var track = window.caphiveTrack || function(){};
+
   var demoForm = document.getElementById('demoForm');
   if(demoForm){
+    var endpoint = CFG.formEndpoint || '';
+    var msg = demoForm.querySelector('.form-msg');
+    var btn = demoForm.querySelector('button[type="submit"]');
+
+    /* Stamped at render, read by the server's time-to-submit check. */
+    var ts = demoForm.querySelector('input[name="_ts"]');
+    if(ts) ts.value = String(Date.now());
+
+    if(endpoint && msg) msg.textContent = 'Sending your request…';
+
     demoForm.addEventListener('submit', function(e){
       e.preventDefault();
       var d = new FormData(demoForm);
-      var body = 'Name: ' + d.get('name') + '\nFirm: ' + d.get('firm') +
-                 '\nEmail: ' + d.get('email');
-      location.href = 'mailto:hello@caphive.com?subject=' +
-        encodeURIComponent('Demo request — ' + d.get('firm')) +
-        '&body=' + encodeURIComponent(body);
+
+      /* ---- fallback: compose in the visitor's own mail client ----
+         Only reached on a host site_config does not recognise. */
+      if(!endpoint){
+        var body = 'Name: ' + d.get('name') + '\nFirm: ' + d.get('firm') +
+                   '\nEmail: ' + d.get('email');
+        location.href = 'mailto:hello@caphive.com?subject=' +
+          encodeURIComponent('Demo request — ' + d.get('firm')) +
+          '&body=' + encodeURIComponent(body);
+        return;
+      }
+
+      /* ---- POST mode ---- */
+      d.append('_source_page', location.pathname.replace(/^.*\//, '') || 'index.html');
+      var qs = new URLSearchParams(location.search);
+      ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
+        if(qs.get(k)) d.append(k, qs.get(k));
+      });
+
+      if(btn){ btn.disabled = true; btn.setAttribute('aria-busy','true'); }
+      if(msg) msg.classList.add('show');
+
+      fetch(endpoint, {
+        method: 'POST',
+        body: d,
+        headers: { 'Accept': 'application/json' }
+      }).then(function(res){
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        track('demo_form_submitted', { form_id: 'demoForm', method: 'post' });
+        var dest = CFG.thankYouUrl || 'thank-you.html';
+        location.href = dest + (dest.indexOf('?') === -1 ? '?' : '&') + 'src=demo-form';
+      }).catch(function(err){
+        if(btn){ btn.disabled = false; btn.removeAttribute('aria-busy'); }
+        if(msg){
+          msg.classList.add('show');
+          msg.textContent = 'That did not send — please email hello@CapHive.com directly and we will pick it up.';
+        }
+        if(window.console) console.error('form submit failed', err);
+      });
     });
   }
 

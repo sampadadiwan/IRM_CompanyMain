@@ -120,9 +120,13 @@ site.
      homepage's inline script. The footer's "Login — IND" / "Login — USA" links
      are pinned per region and carry no `data-login`, so they are never rewritten.
 
-2. **Wire the forms.** They currently compose a `mailto:`. Swap for a POST to your
-   CRM or Formspree — the exact snippet is commented in `assets/js/caphive.js`.
-   Redirect to `thank-you.html` on success.
+2. ~~**Wire the forms.**~~ **Done.** Both demo forms POST to our own `/website_leads`
+   endpoint on the app host, which stores the lead and emails the support mailbox.
+   The target is resolved from the current hostname in `_partials/site_config.html.erb`,
+   so caphive.com and caphive.us each reach their own stack; an unrecognised host
+   falls back to the old `mailto:` draft. Handler lives in `assets/js/caphive.js`,
+   duplicated in `_partials/index_scripts.html` for the homepage. See
+   `docs/technical/website_lead_capture.md`.
 
 3. ~~Add `og.png`~~ **Done.** 1200×630 at the site root, rendered from
    `assets/og-source.html` with headless Chrome so it uses the real Geist and

@@ -922,6 +922,17 @@ table.cmp td .no{ color:var(--mut); }
 .form-card .btn{ justify-content:center; margin-top:6px; }
 .form-note{ font-size:12.5px; color:var(--mut); }
 
+/* ---------- honeypot ----------
+   The bot trap on the demo form. Moved off-screen rather than display:none or
+   visibility:hidden: a bot that parses CSS skips anything obviously hidden, and
+   the whole point is that it should look fillable to a script and be unreachable
+   for a person. tabindex="-1" and aria-hidden in the markup keep keyboard and
+   screen-reader users away from it. */
+.hp-field{
+  position:absolute; left:-9999px; top:auto;
+  width:1px; height:1px; overflow:hidden;
+}
+
 /* ---------- orange form ----------
    Same markup as .form-card; the fields stay white so contrast on the inputs
    themselves is unchanged, and the submit button inverts to white-on-orange. */

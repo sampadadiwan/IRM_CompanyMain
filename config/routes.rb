@@ -151,6 +151,24 @@ Rails.application.routes.draw do
   resources :internal_docs, only: [:index]
   get 'internal_docs/*id', to: 'internal_docs#show', as: :internal_doc, format: false
 
+  # Demo requests from the public website.
+  #
+  # POST is PUBLIC and cross-origin — caphive.com / caphive.us are static sites
+  # with no writable endpoint of their own, so the form posts here on the app
+  # host. GET (index/show) is CapHive staff only, via WebsiteLeadPolicy. Both
+  # live on one controller, whose filter skips are scoped per action.
+  #
+  # The path is the one baked into the website's site_config partial, so it is
+  # effectively public API: changing it means rebuilding and redeploying the
+  # static site in lockstep. The Rack::Attack throttle keys on it literally
+  # (config/initializers/rack_attack.rb, 'website_leads/ip').
+  #
+  # The OPTIONS route is preflight insurance. Today's client sends only
+  # CORS-safelisted headers so no preflight fires; adding one later would
+  # otherwise break submission with a failure invisible in our logs.
+  resources :website_leads, only: %i[index show create]
+  match 'website_leads', to: 'website_leads#options', via: :options
+
   # /features is retired: docs/features/ is now the "Strategy" section of the
   # internal docs viewer, so the two no longer serve the same files under two
   # different policies with two copies of the traversal guard. Kept as 302

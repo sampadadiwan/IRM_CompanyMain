@@ -169,20 +169,69 @@
   }
 
   /* ---- demo form ----
-     TODO: replace the mailto fallback with a fetch POST to your CRM or
-     Formspree endpoint, e.g.:
-       fetch('https://formspree.io/f/YOUR_ID', {method:'POST', body:new FormData(demoForm), headers:{Accept:'application/json'}})
-  */
+     Mirrors the "CONVERSION PATH" block in assets/js/caphive.js — the homepage
+     overrides the shared script bundle with this file, so caphive.js never loads
+     here and the logic has to exist twice. Keep them in step; if you change the
+     payload, the spam controls or the redirect in one, change the other.
+
+     See docs/technical/website_lead_capture.md. */
+  var CFG = window.CAPHIVE || {};
+  var track = window.caphiveTrack || function(){};
+
   var demoForm = document.getElementById('demoForm');
   if(demoForm){
+    var endpoint = CFG.formEndpoint || '';
+    var msg = demoForm.querySelector('.form-msg');
+    var btn = demoForm.querySelector('button[type="submit"]');
+
+    /* Stamped at render, read by the server's time-to-submit check. */
+    var ts = demoForm.querySelector('input[name="_ts"]');
+    if(ts) ts.value = String(Date.now());
+
+    if(endpoint && msg) msg.textContent = 'Sending your request…';
+
     demoForm.addEventListener('submit', function(e){
       e.preventDefault();
       var d = new FormData(demoForm);
-      var body = 'Name: ' + d.get('name') + '\nFirm: ' + d.get('firm') +
-                 '\nEmail: ' + d.get('email');
-      location.href = 'mailto:hello@caphive.com?subject=' +
-        encodeURIComponent('Demo request — ' + d.get('firm')) +
-        '&body=' + encodeURIComponent(body);
+
+      /* ---- fallback: compose in the visitor's own mail client ----
+         Only reached on a host site_config does not recognise. */
+      if(!endpoint){
+        var body = 'Name: ' + d.get('name') + '\nFirm: ' + d.get('firm') +
+                   '\nEmail: ' + d.get('email');
+        location.href = 'mailto:hello@caphive.com?subject=' +
+          encodeURIComponent('Demo request — ' + d.get('firm')) +
+          '&body=' + encodeURIComponent(body);
+        return;
+      }
+
+      /* ---- POST mode ---- */
+      d.append('_source_page', location.pathname.replace(/^.*\//, '') || 'index.html');
+      var qs = new URLSearchParams(location.search);
+      ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
+        if(qs.get(k)) d.append(k, qs.get(k));
+      });
+
+      if(btn){ btn.disabled = true; btn.setAttribute('aria-busy','true'); }
+      if(msg) msg.classList.add('show');
+
+      fetch(endpoint, {
+        method: 'POST',
+        body: d,
+        headers: { 'Accept': 'application/json' }
+      }).then(function(res){
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        track('demo_form_submitted', { form_id: 'demoForm', method: 'post' });
+        var dest = CFG.thankYouUrl || 'thank-you.html';
+        location.href = dest + (dest.indexOf('?') === -1 ? '?' : '&') + 'src=demo-form';
+      }).catch(function(err){
+        if(btn){ btn.disabled = false; btn.removeAttribute('aria-busy'); }
+        if(msg){
+          msg.classList.add('show');
+          msg.textContent = 'That did not send — please email hello@CapHive.com directly and we will pick it up.';
+        }
+        if(window.console) console.error('form submit failed', err);
+      });
     });
   }
 

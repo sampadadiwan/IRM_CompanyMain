@@ -81,13 +81,32 @@ data_page: contact
       </div>
 
       <!-- RIGHT: demo form -->
-      <!-- The form is wired by assets/js/caphive.js via data-mailto / data-subject: the handler
-           reads the field names and opens a prefilled email draft. To send server-side instead,
-           replace the fetch target in the "forms" block of caphive.js with your CRM or Formspree
-           endpoint (POST FormData to https://formspree.io/f/YOUR_ID), then redirect to
-           thank-you.html on success. Field names below are already the payload keys. -->
-      <form class="form-card orange reveal" data-delay="1" data-mailto="hello@caphive.com" data-subject="Demo request">
+      <!-- Wired by the "CONVERSION PATH" block in assets/js/caphive.js. It POSTs to
+           window.CAPHIVE.formEndpoint — our own /website_leads endpoint on the app host,
+           resolved from the current hostname in _partials/site_config.html.erb — and then
+           redirects to thank-you.html?src=demo-form, which is the conversion trigger.
+           On a host the config does not recognise, formEndpoint is empty and the handler
+           falls back to composing an email in the visitor's own mail client.
+
+           Field names are the payload keys. Keep them stable: the server stores them under
+           these names and the notification email keys off them. -->
+      <form id="demo-request" class="form-card orange reveal" data-delay="1" data-mailto="hello@caphive.com" data-subject="Demo request">
         <span class="tile-kicker" style="margin-bottom:0">Book a walkthrough</span>
+        <!-- Spam controls. Both are stripped by the server and never stored.
+
+             _hp is a honeypot: positioned off-screen rather than type="hidden" (which some
+             bots skip) and marked aria-hidden + tabindex="-1" so a screen reader or keyboard
+             user never lands on it. If it arrives filled, the submission is discarded.
+
+             _ts is stamped by caphive.js when the page renders. A form returned in under two
+             seconds was not read by a person. A MISSING _ts is accepted — a cached page or
+             partially-blocked JS must never cost us a real lead. -->
+        <div class="hp-field" aria-hidden="true">
+          <label>Do not fill this in
+            <input type="text" name="_hp" tabindex="-1" autocomplete="off">
+          </label>
+        </div>
+        <input type="hidden" name="_ts" value="">
         <div class="form-row">
           <label>Name
             <input required type="text" name="name" placeholder="Your name" autocomplete="name">
@@ -116,9 +135,15 @@ data_page: contact
           Book my demo
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+        <!-- Both strings below describe the UNCONFIGURED (mail-client) mode, because that is
+             what the page does on a host site_config does not recognise. When a real endpoint
+             is resolved, caphive.js rewrites the .form-msg text and hides [data-mailto-only].
+             The sentence about the mail client is isolated in its own span precisely so the
+             Privacy Policy link survives that swap — it matters more now, not less, since a
+             real submission records an IP address. -->
         <div class="form-msg">Your email client is opening with the request prefilled. Send it and we will pick it up from there.</div>
         <p class="form-note">
-          This form currently composes an email in your own mail client — nothing is submitted to us until you send it.
+          <span data-mailto-only>This form currently composes an email in your own mail client — nothing is submitted to us until you send it.</span>
           We use what you send only to answer you. See our <a href="privacy.html">Privacy Policy</a>.
         </p>
       </form>

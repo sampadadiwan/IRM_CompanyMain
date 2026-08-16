@@ -451,8 +451,18 @@ scripts: index_scripts.html
         <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
         <a class="cta-mail" href="contact.html" style="margin-left:20px">all ways to reach us</a>
       </div>
-      <!-- TODO: point this form at your CRM / Formspree endpoint (see submit handler in the script); it currently opens a prefilled email draft -->
-      <form class="cta-form" id="demoForm">
+      <!-- The short version of the demo form on contact.html, and driven by the SAME handler
+           in assets/js/caphive.js — data-mailto marks it as ours. It used to have a bespoke
+           inline handler in _partials/index_scripts.html that only ever composed an email;
+           that has been removed, because two handlers for two forms is how one of them
+           quietly stops working. Field names must match contact.html's: the server stores
+           them under these names. -->
+      <form class="cta-form" id="demoForm" data-mailto="hello@caphive.com" data-subject="Demo request">
+        <!-- Spam controls, identical to contact.html. Stripped by the server, never stored. -->
+        <div class="hp-field" aria-hidden="true">
+          <label>Do not fill this in<input type="text" name="_hp" tabindex="-1" autocomplete="off"></label>
+        </div>
+        <input type="hidden" name="_ts" value="">
         <label>Name<input required name="name" placeholder="Your name" autocomplete="name"></label>
         <label>Firm<input required name="firm" placeholder="Fund / firm"></label>
         <label>Work email<input required type="email" name="email" placeholder="you@fund.com" autocomplete="email"></label>
@@ -460,6 +470,8 @@ scripts: index_scripts.html
           Book my demo
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+        <!-- Rewritten to "Sending your request…" by caphive.js once an endpoint resolves. -->
+        <div class="form-msg">Your email client is opening with the request prefilled. Send it and we will pick it up from there.</div>
       </form>
     </div>
   </div>

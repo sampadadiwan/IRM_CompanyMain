@@ -259,6 +259,18 @@
           </a>
         </li>
       <% end %>
+      <%# Inbound demo requests from the public website. Gated on WebsiteLeadPolicy
+          for the same reason as the link above: these records have no entity, so
+          role is the only boundary, and impersonation must not carry the sales
+          pipeline into a customer's session. %>
+      <% if current_user && policy(WebsiteLead).index? %>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="<%= website_leads_path %>">
+            <span><i class="ti ti-inbox"></i></span>
+            <span class="hide-menu"><%= t('top_menus.website_leads') %></span>
+          </a>
+        </li>
+      <% end %>
     </ul>
     <!-- End of Sidebar -->
 

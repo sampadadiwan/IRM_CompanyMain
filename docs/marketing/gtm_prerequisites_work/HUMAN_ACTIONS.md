@@ -57,23 +57,36 @@ Two functions, sometimes one tool:
 
 Verified end-to-end on one test account = row done.
 
-### A1 · Choose and configure the form endpoint — free tier available · 20 min · **Founder**
+### A1 · ~~Choose and configure the form endpoint~~ — **DONE, nothing to buy** · **Engineering**
 
-**The code is written and waiting.** All that is missing is the endpoint URL.
+**No account to create and no URL to paste.** The form posts to our own endpoint,
+`/website_leads` on the app host, which stores the lead in our database and emails
+the support mailbox. A third-party form processor was considered and rejected: it
+would have put every inbound prospect's name, firm and stated problem in someone
+else's database for no benefit we could not build in a day.
 
-1. Create an account at **Formspree** (free tier: 50 submissions/mo — ample) or **Web3Forms** (free, unlimited, needs an `access_key` hidden field).
-2. Copy the form endpoint URL.
-3. Paste it into `formEndpoint` in `website_src/_partials/site_config.html.erb`.
-4. Run `rake website:build`, deploy.
-5. **Test from an incognito window.** The submission must land somewhere visible with no mail client involved, and the browser must end up on `thank-you.html?src=demo-form`.
+The endpoint is resolved in the browser from the current hostname
+(`website_src/_partials/site_config.html.erb`), so caphive.com reaches
+app.caphive.com and caphive.us reaches app.caphive.us — one built site, two stacks,
+no per-deploy configuration.
 
-Until this is filled in the form keeps composing an email in the visitor's own mail client — the exact behaviour A1 exists to eliminate.
+**What is left for a human:** test it after the next deploy. From an incognito
+window, submit the form on both `contact.html` and the homepage. Each must land in
+the database (visible under **Website Leads** in the app), produce an email, and
+leave the browser on `thank-you.html?src=demo-form` with no mail client involved.
 
-### A2 · Route submission notifications to a monitored inbox — free · 10 min · **Founder**
+See [`docs/technical/website_lead_capture.md`](../../technical/website_lead_capture.md).
 
-Formspree/Web3Forms both email on submission. Point that at a mailbox someone **actually watches**, and add a Slack or push notification if the reply-time commitment is measured in hours.
+### A2 · Confirm the notification mailbox — free · 10 min · **Founder**
 
-**Test:** a submission produces an alert within 5 minutes. Re-test monthly — per the checklist §9, a conversion path that fails quietly looks identical to a channel that is not working.
+The notification goes to `SUPPORT_EMAIL_TO` (falling back to support@caphive.com),
+sent from `SUPPORT_EMAIL_FROM`, with the prospect's address as `Reply-To` so a reply
+reaches them directly. Confirm that mailbox is one someone **actually watches**, and
+add a Slack or push notification if the reply-time commitment is measured in hours.
+
+**Test:** a submission produces an alert within 5 minutes. Re-test monthly — per the
+checklist §9, a conversion path that fails quietly looks identical to a channel that
+is not working.
 
 ### A3 · Create the booking link — free tier · 30 min · **Founder**
 

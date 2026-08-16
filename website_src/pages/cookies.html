@@ -23,9 +23,10 @@ body_top: |+
          * Third parties actually contacted by the browser: googletagmanager.com
            (GA4) and fonts.googleapis.com / fonts.gstatic.com (Google Fonts).
            No CDN, no ad platform, no embeds, no iframes anywhere on the site.
-           The Formspree endpoint in contact.html / index_scripts.html is an
-           unimplemented TODO comment — forms still use mailto:, so no form
-           processor receives anything.
+           The demo forms POST to our own app host (app.caphive.com /
+           app.caphive.us), not to any third-party form processor. That request
+           carries no cookies — it is a credential-less cross-origin POST — so it
+           sets nothing and needs no consent entry here.
          * app.caphive.com cookies — _caphive_session (60 min),
            session_token, remember_user_token (Devise :rememberable),
            currency_units, adminSettings, owner_type. The Gemfile carries no

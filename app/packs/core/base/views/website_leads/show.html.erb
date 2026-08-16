@@ -1,0 +1,120 @@
+<%# One demo request, in full.
+
+    The whole point of this screen over the notification email is that nothing is
+    truncated — the message field is what makes a configure-first demo possible.
+
+    Every value is visitor-supplied. ERB escapes by default and nothing here uses
+    raw or html_safe; the message is rendered in a <pre> so its line breaks
+    survive without a sanitiser being involved. %>
+<div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+  <div class="card-body px-4 py-3">
+    <div class="row align-items-center">
+      <div class="col-9">
+        <h4 class="fw-semibold mb-8"><%= @website_lead.name %></h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+              <a class="text-muted text-decoration-none" href="/">Home</a>
+            </li>
+            <li class="breadcrumb-item">
+              <%= link_to t('top_menus.website_leads'), website_leads_path, class: "text-muted text-decoration-none" %>
+            </li>
+            <li class="breadcrumb-item" aria-current="page"><%= @website_lead.name %></li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="card-title mb-3">The lead</h5>
+    <table class="table table-borderless mb-0">
+      <tbody>
+        <tr>
+          <th class="w-25 text-muted fw-normal">Received</th>
+          <td><%= l(@website_lead.submitted_at, format: :long) %></td>
+        </tr>
+        <tr>
+          <th class="text-muted fw-normal">Name</th>
+          <td><%= @website_lead.name %></td>
+        </tr>
+        <tr>
+          <th class="text-muted fw-normal">Email</th>
+          <td><%= mail_to @website_lead.email %></td>
+        </tr>
+        <tr>
+          <th class="text-muted fw-normal">Firm</th>
+          <td><%= @website_lead.firm.presence || "—" %></td>
+        </tr>
+        <tr>
+          <th class="text-muted fw-normal">Role</th>
+          <td><%= @website_lead.role.presence || "—" %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if @website_lead.message.present? %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">What they said</h5>
+      <pre class="website-lead-message mb-0"><%= @website_lead.message %></pre>
+    </div>
+  </div>
+<% end %>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="card-title mb-3">Where they came from</h5>
+    <table class="table table-borderless mb-0">
+      <tbody>
+        <tr>
+          <th class="w-25 text-muted fw-normal">Page</th>
+          <td><%= @website_lead.landing_page.presence || "—" %></td>
+        </tr>
+        <tr>
+          <th class="text-muted fw-normal">Referrer</th>
+          <td><%= @website_lead.referrer.presence || "—" %></td>
+        </tr>
+        <% WebsiteLead::UTM_FIELDS.each do |field| %>
+          <tr>
+            <th class="text-muted fw-normal"><%= field.to_s.humanize %></th>
+            <td><%= @website_lead[field].presence || "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title mb-3">Technical</h5>
+    <%# request_ip and user_agent are nulled by the retention purge once the
+        abuse-control window closes, so an older lead shows dashes here. That is
+        the system working, not data loss — say so, or it reads as a bug. %>
+    <table class="table table-borderless mb-3">
+      <tbody>
+        <tr>
+          <th class="w-25 text-muted fw-normal">IP address</th>
+          <td><%= @website_lead.request_ip.presence || "— (past retention window)" %></td>
+        </tr>
+        <tr>
+          <th class="text-muted fw-normal">Browser</th>
+          <td><%= @website_lead.user_agent.presence || "— (past retention window)" %></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <% payload = @website_lead.raw_payload_hash %>
+    <% if payload.any? %>
+      <h6 class="text-muted">Everything the form sent</h6>
+      <%# Kept because the website's form fields change without a deploy of this
+          app. A field added there shows up here even though no column exists. %>
+      <pre class="website-lead-message mb-0"><%= JSON.pretty_generate(payload) %></pre>
+    <% end %>
+  </div>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -4142,6 +4142,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_120000) do
     t.index ["entity_id"], name: "index_viewed_bies_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_viewed_bies_on_owner"
     t.index ["user_id"], name: "index_viewed_bies_on_user_id"
+  end
+
+  create_table "website_leads", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.string "firm"
+    t.string "landing_page"
+    t.text "message"
+    t.string "name", null: false
+    t.text "raw_payload"
+    t.string "referrer"
+    t.string "request_ip", limit: 45
+    t.string "role"
+    t.datetime "submitted_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "user_agent", limit: 512
+    t.string "utm_campaign"
+    t.string "utm_content"
+    t.string "utm_medium"
+    t.string "utm_source"
+    t.string "utm_term"
+    t.index ["email"], name: "index_website_leads_on_email"
+    t.index ["request_ip", "submitted_at"], name: "index_website_leads_on_request_ip_and_submitted_at"
+    t.index ["submitted_at"], name: "index_website_leads_on_submitted_at"
+    t.index ["utm_source", "submitted_at"], name: "index_website_leads_on_utm_source_and_submitted_at"
   end
 
   create_table "workflow_actor_responses", force: :cascade do |t|

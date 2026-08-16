@@ -156,6 +156,31 @@ module Rack
       client_ip(req) if req.post? && req.path.start_with?('/two_factor/send_sms')
     end
 
+    # Throttle the public demo-form endpoint by IP.
+    #
+    # This is the only unauthenticated, CSRF-exempt write endpoint in the app
+    # (WebsiteLeadsController#create), reachable cross-origin from the static
+    # website. The honeypot and the time-to-submit check inside WebsiteLeadCreate
+    # stop a naive bot; this stops a determined one from filling the table.
+    #
+    # 5 per hour is deliberately generous against real demand of a handful of
+    # demo requests per month, so the only way a genuine visitor trips it is by
+    # submitting the same form five times — at which point they have our
+    # attention anyway.
+    #
+    # Deliberately NOT added to AUTH_PATHS: that list exempts paths from the 404
+    # scanner rules because an anonymous user must reach them to sign in. This
+    # endpoint is not needed to establish a session.
+    #
+    # Exact == rather than start_with?: /website_leads/:id is the STAFF-only show
+    # page and must not share a throttle bucket with anonymous submissions. Only
+    # POSTs are counted, so the staff index (a GET on the same path) is untouched.
+    #
+    # @see docs/technical/website_lead_capture.md
+    throttle('website_leads/ip', limit: 5, period: 1.hour) do |req|
+      client_ip(req) if req.post? && req.path == '/website_leads'
+    end
+
     # Throttle IPs that hit 404 errors multiple times
     # Action	Effect
     # Attacker sends 5 requests	Allowed
