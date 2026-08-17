@@ -35,6 +35,8 @@ class PortfolioValidationDigestMailer < SupportAgentBaseMailer
 
     subject = "#{prefix} Portfolio Validation — #{total} companies checked"
 
-    mail(to: @user.email, subject: subject)
+    # Use @to (set by ApplicationMailer#setup_defaults) which respects
+    # entity sandbox setting — redirects to sandbox_emails when enabled.
+    mail(to: @to, subject: subject)
   end
 end
