@@ -113,7 +113,7 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
 <title>Case study: onboarding 200+ LPs digitally | CapHive</title>
-<meta name="description" content="An AIF raising from 200+ investors needed to share strategy documents, collect KYC, generate and execute agreements, and keep it all institutional. Here is how that onboarding runs, step by step.">
+<meta name="description" content="A fund raising from 200+ investors under one of the world's most paperwork-heavy regimes needed to share strategy documents, collect KYC, generate and execute agreements, and keep it all institutional. Here is how that onboarding runs, step by step — and which parts of it are jurisdiction rather than mechanism.">
 <meta name="theme-color" content="#FBFAF7">
 <link rel="canonical" href="https://caphive.com/case-investor-onboarding.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
@@ -255,11 +255,11 @@
           </nav>
           <span class="chip-label">Case study · Funds</span>
           <h1 style="margin-top:22px">200+ LPs onboarded, <em>without a single Word form.</em></h1>
-          <p class="lede">An Alternative Investment Fund raising from more than two hundred investors had four problems that all looked like paperwork and were really one problem: nothing that arrived could be trusted by the system that came next.</p>
+          <p class="lede">An Indian Alternative Investment Fund raising from more than two hundred investors had four problems that all looked like paperwork and were really one problem: nothing that arrived could be trusted by the system that came next.</p>
           <div class="article-meta">
             <time datetime="2026-08-11">Aug 11, 2026</time>
             <span class="dot">·</span>
-            <span>7 min read</span>
+            <span>9 min read</span>
             <span class="dot">·</span>
             <span>Onboarding</span>
           </div>
@@ -282,8 +282,14 @@
         </div>
 
         <h3>The engagement</h3>
-        <p>An AIF taking on 200+ investors, with four stated requirements. Share confidential strategy and track-record material with prospects. Collect investor information and documents. Generate agreements from varying templates and execute them electronically. And build an institutional process for managing KYC information on an ongoing basis — not just through the raise.</p>
+        <p>An Indian AIF taking on 200+ investors, with four stated requirements. Share confidential strategy and track-record material with prospects. Collect investor information and documents. Generate agreements from varying templates and execute them electronically. And build an institutional process for managing KYC information on an ongoing basis — not just through the raise.</p>
         <p>Those read as four projects. They are one, because each stage is only as good as what the previous stage handed it.</p>
+
+        <h3>A note on jurisdiction, before the detail</h3>
+        <p>This fund is regulated in India, and the stages below name Indian machinery by its own names: SEBI investor categories, PAN, CKYC, e-stamping. That is deliberate, and it is worth reading past rather than around, for one reason. Indian onboarding is heavier than American onboarding.</p>
+        <p>A US fund raising under Reg D typically collects a subscription agreement, a tax form, an accredited-investor or qualified-purchaser representation, and its own AML checks. This fund collected all of that, plus a government identity-registry lookup, plus a category-and-sub-category classification validated against the regulator's own taxonomy, plus a stamped instrument — for two hundred investors, most of whom were never in the same room as the fund.</p>
+        <p>So everything described here had to survive the harder version of the problem. <a href="#travels">What travels, and what is configuration</a> at the end of this piece separates the two explicitly: the mechanism, which is the same everywhere, from the regional connectors, which are settings.</p>
+        <div class="pull"><p>The question a reader outside India is actually asking is not "do they know SEBI" — it is "is SEBI hard-coded". It is a tag on a field.</p></div>
 
         <h3>Stage one — the data room, before anyone is an investor</h3>
         <p>Strategy documents and track record go into a permission-controlled Data Room, organised into sub-folders. Access is granted per investor firm, per sub-folder, and each investor sees only what has been explicitly shared with them — nothing above it, nothing beside it.</p>
@@ -292,7 +298,8 @@
 
         <h3>Stage two — collecting information the system can act on</h3>
         <p>Each investor receives a secure link and completes their own KYC — no <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> account required. What they see is not a fixed form. It is built from a <strong>form type</strong>: the standard field set plus whatever custom fields the fund has defined, grouped into wizard steps.</p>
-        <p>That matters because the same investor type needs different questions in different regulatory contexts. A SEBI-tagged form adds investor category and sub-category, with sub-categories validated against the category chosen. A GIFT-tagged form carries IFSC declarations. Non-individual investors — trusts, LLPs, corporates — get their own field set entirely: beneficial ownership, authorised signatories, FATCA/CRS classification, because non-individual KYC is a separate record type rather than a checkbox on the individual form.</p>
+        <p>That matters because the same investor type needs different questions in different regulatory contexts. Every field can carry a <strong>regulatory environment</strong> tag, and switching an environment on <em>adds</em> its fields to the form rather than forking it. Four packs ship today — SEBI, IFSC and CRISIL for Indian and GIFT City reporting, MAS for Singapore. A SEBI-tagged form adds investor category and sub-category, with sub-categories validated against the category chosen. An IFSC-tagged form carries the GIFT City declarations. A regime with no pack of its own is a set of custom fields defined once and reused — which is what most regimes are, once you stop treating each one as a separate product.</p>
+        <p>Non-individual investors — trusts, LLCs, LLPs, corporates — get their own field set entirely: beneficial ownership, authorised signatories, FATCA/CRS classification, because non-individual KYC is a separate record type rather than a checkbox on the individual form. That last field is the one every jurisdiction on the list has in common, for the obvious reason: it is the one the US exported to all of them.</p>
         <p>Where a form needs more than three pages, extra steps are switched on and given real names — <em>Beneficial Ownership</em>, <em>FATCA Declarations</em>. A step with no fields assigned to it is never rendered, so the trust form is longer than the individual form without anyone maintaining two wizards.</p>
         <p>Two details did more work than they should have:</p>
         <ul>
@@ -301,14 +308,14 @@
         </ul>
 
         <h3>Stage three — verification that isn't a person reading a scan</h3>
-        <p>PAN verification runs automatically in the background whenever the PAN, full name or date of birth changes, confirming the number exists and that the registered name and DOB match what's on file. Bank verification runs the same way on account number, IFSC or name, confirming the beneficiary name at the bank.</p>
-        <p>Both store the full response, not a summary — a pass/fail badge for the operator, an auditable record underneath. A name mismatch becomes a flag on day one instead of a discovery in month six when a distribution bounces.</p>
-        <p>Where an investor was contactable, CKYC returned a registry record from CERSAI: a PAN search, an OTP to their registered mobile, then the downloaded record shown side by side with the current values before anything is copied across. Where they weren't, KRA answered from PAN and date of birth with no OTP at all. Both land as their own dated <em>KYC Data</em> records and are kept permanently, so "where did this address come from" always has an answer.</p>
+        <p>Verification means one thing whatever the country: the value is checked against an authoritative source that is not the investor, and the <em>whole</em> response is stored rather than a summary — a pass/fail badge for the operator, an auditable record underneath. A name mismatch becomes a flag on day one instead of a discovery in month six when a distribution bounces.</p>
+        <p>Which authoritative sources exist is regional, and for this fund they were the Indian ones. PAN verification runs automatically in the background whenever the PAN, full name or date of birth changes, confirming the number exists and that the registered name and DOB match what's on file. Bank verification runs the same way on account number, routing code or name, confirming the beneficiary name at the bank. Where an investor was contactable, CKYC returned a registry record from CERSAI: a PAN search, an OTP to their registered mobile, then the downloaded record shown side by side with the current values before anything is copied across. Where they weren't, KRA answered from PAN and date of birth with no OTP at all. Both land as their own dated <em>KYC Data</em> records and are kept permanently, so "where did this address come from" always has an answer.</p>
+        <p>Three of the checks in this stage are not regional at all, and they are the ones that carry the most weight in a country with no national KYC registry to call. <strong>Extraction</strong> reads the uploaded identity and address documents. <strong>Cross-checking</strong> compares the value read out of a document against the value typed into the form. <strong>AML screening</strong> runs sanctions, PEP, warnings and adverse-media lists, which are international by construction — a sanctions list does not care where your fund is domiciled. A US fund gets all three on day one, without a registry connector existing.</p>
 
         <h3>Stage four — documents generated once, signed electronically</h3>
         <p>Agreements are generated from templates against the investor's own record — one touch per investor, or one action for a folder. Every generated document must be explicitly approved before it goes anywhere, then signatories are added with a label and a signing order.</p>
-        <p>Signers get an email link and sign from a phone — with Aadhaar or a digital signature certificate. Sequential order means signer two is only notified once signer one is done; parallel means everyone at once. When the last signature lands, the executed copy is filed back automatically against the investor, locked and approved. Requests expire after 90 days if they stall, which is a feature — a signature request with no expiry is just an open loop.</p>
-        <p>For Indian execution, <strong>e-stamping travels with the template</strong>. A document template carries its own stamp-paper configuration — the stamp values by tag, which page the signature sits on, and the note and its placement — and every document generated from that template inherits it. When the document is sent, the e-stamp request goes to the provider alongside the signature request, so the executed copy comes back stamped rather than stamped afterwards by someone with a courier.</p>
+        <p>Signers get an email link and sign from a phone. <strong>The signing provider is a setting on the fund, not a fixture of the product</strong> — DocuSign or Digio, with the same generated document, the same labelled signatories, the same signing order and the same filing behaviour behind either. This fund signed the Indian way, with Aadhaar or a digital signature certificate; a fund in Boston sends the identical envelope through DocuSign and never learns what an Aadhaar is. Sequential order means signer two is only notified once signer one is done; parallel means everyone at once. When the last signature lands, the executed copy is filed back automatically against the investor, locked and approved. Requests expire after 90 days if they stall, which is a feature — a signature request with no expiry is just an open loop.</p>
+        <p>Where execution carries a statutory attachment, <strong>the attachment travels with the template</strong>. In India that attachment is stamp paper: a document template carries its own stamp-paper configuration — the stamp values by tag, which page the signature sits on, and the note and its placement — and every document generated from that template inherits it. When the document is sent, the e-stamp request goes to the provider alongside the signature request, so the executed copy comes back stamped rather than stamped afterwards by someone with a courier. In a jurisdiction with nothing to attach, that configuration is simply absent and everything around it is unchanged.</p>
         <p>A whole folder can go out at once with <strong>Send All for eSign</strong>, which picks up every generated, approved, unsent document and queues them with a small random delay between each so the signing provider isn't hammered.</p>
 
         <figure style="margin:30px 0">
@@ -316,11 +323,11 @@
             <thead><tr><th>Requirement</th><th>What it runs on</th></tr></thead>
             <tbody>
               <tr><td>Share confidential strategy material</td><td>Data Room sub-folders, access per investor firm, cascading or not</td></tr>
-              <tr><td>Collect investor information</td><td>Form types with custom fields and named wizard steps; secure link, no login</td></tr>
+              <tr><td>Collect investor information</td><td>Form types with custom fields and named wizard steps; regulatory packs added by tag, not by forking the form; secure link, no login</td></tr>
               <tr><td>Collect documents</td><td>Required-document checklist per KYC type; investor sees the same checklist you do</td></tr>
-              <tr><td>Verify identity</td><td>Automatic PAN and bank checks; CKYC (OTP) or KRA (PAN + DOB)</td></tr>
+              <tr><td>Verify identity</td><td>Extraction, cross-check and AML screening everywhere; national registry connectors where they exist — here automatic PAN and bank checks, CKYC (OTP) or KRA (PAN + DOB)</td></tr>
               <tr><td>Generate agreements</td><td>Template-based generation per investor, individually approved</td></tr>
-              <tr><td>Execute electronically</td><td>E-signature (Aadhaar or DSC) with labelled signatories and signing order; e-stamping carried on the template; executed copy filed automatically</td></tr>
+              <tr><td>Execute electronically</td><td>E-signature through DocuSign or Digio, with labelled signatories and signing order; statutory stamping carried on the template where the jurisdiction has any; executed copy filed automatically</td></tr>
               <tr><td>Manage KYC on an ongoing basis</td><td>Verified flag with who and when; expiry dates with 60/30/15-day warnings</td></tr>
             </tbody>
           </table>
@@ -338,16 +345,35 @@
         <p>Onboarding is usually scoped as a raise-period activity. It isn't. A <strong>Docs Completed</strong> flag maintains itself as files land against the checklist. Expiry dates carry 60-, 30- and 15-day warning windows that email the team before a record lapses. Verification records who signed off and when.</p>
         <p>That last one is load-bearing. A verified KYC is the precondition for generating an investor's capital call notices and their investor statement — the statement run will refuse a commitment whose KYC isn't verified and report it by name rather than skipping it silently. Onboarding debt is drawdown debt with a delay.</p>
 
+        <h2 id="travels">🌍 What travels, and what is configuration</h2>
+        <p>This engagement ran under Indian regulation. Almost none of what made it work is Indian. Here is the split, stated plainly enough to argue with.</p>
+        <figure style="margin:30px 0">
+          <table>
+            <thead><tr><th>Stage</th><th>Identical in every jurisdiction</th><th>What actually changes</th></tr></thead>
+            <tbody>
+              <tr><td>Data room</td><td>Per-firm, per-folder access; cascade or stop; record of who saw what</td><td>Nothing</td></tr>
+              <tr><td>Form definition</td><td>Form types, custom fields, named wizard steps, interim saves, document-first entry</td><td>Which regulatory pack is switched on — or none, and the fields are simply defined</td></tr>
+              <tr><td>Verification</td><td>Extraction, form-to-document cross-check, AML screening, full-response storage</td><td>Whether a national identity registry exists to call, and which one</td></tr>
+              <tr><td>Document generation</td><td>Template-based, per-investor, individually approved before it moves</td><td>The template text — which was always going to be yours</td></tr>
+              <tr><td>Execution</td><td>Envelope, signatory labels, signing order, auto-filing, 90-day expiry</td><td>Provider (DocuSign or Digio) and the signing credential behind it</td></tr>
+              <tr><td>Statutory attachment</td><td>—</td><td>E-stamping in India; in the US there is nothing to attach, and the configuration is absent</td></tr>
+              <tr><td>Ongoing KYC</td><td>Verified flag with who and when; 60/30/15-day expiry warnings; the block on unverified commitments</td><td>What expires, and after how long</td></tr>
+            </tbody>
+          </table>
+          <figcaption style="margin-top:10px;font-size:13px;color:var(--mut)">six of seven rows are the same wherever the fund sits</figcaption>
+        </figure>
+        <p>One clarification we would rather make than let a table imply otherwise: <strong>there is no US regulatory pack today</strong>, in the way SEBI, IFSC, CRISIL and MAS ship as packs. Nothing about a US raise needs one — a Reg D subscription pack is a field set, a document checklist and a DocuSign envelope, all of which are configuration on the day you start. But if a US fund wants its own tagged, validated field set the way an Indian one has, that is something we would build with you, and we would rather say so here than have you find out on the call.</p>
+
         <h2>📊 The impact</h2>
         <p><strong>200+ limited partners onboarded through one digitised process</strong> — strategy material shared under access control, information and documents collected through customised forms, agreements generated in one touch and executed electronically, and a KYC repository that later capital events read from directly.</p>
-        <p>The operational point isn't that each step got faster, though it did. It is that no step re-keys the previous one. The name that was verified against the PAN registry is the name on the generated agreement, is the name on the call notice, is the name on the statement.</p>
+        <p>The operational point isn't that each step got faster, though it did. It is that no step re-keys the previous one. The name that came back verified from the identity registry is the name on the generated agreement, is the name on the call notice, is the name on the statement.</p>
 
         <h2>What to take from this</h2>
         <div class="callout">
           <ol>
             <li><strong>Count round trips, not review time.</strong> If review takes twenty minutes and onboarding takes two weeks, the review is not your problem.</li>
             <li><strong>Ask for the document before the form.</strong> An investor will photograph an ID card in ten seconds and mistype the number in thirty.</li>
-            <li><strong>Keep jurisdiction differences in the form definition</strong> — not in a folder of Word files someone has to remember to update in three places.</li>
+            <li><strong>Keep jurisdiction differences in the form definition</strong> — not in a folder of Word files someone has to remember to update in three places. A regime you enter in year three should cost you a field set, not a second onboarding system.</li>
             <li><strong>Make every generated document individually approvable.</strong> Bulk generation without per-document approval is how the wrong figure reaches an investor.</li>
             <li><strong>Scope onboarding past the close.</strong> Expiry, re-verification and document completeness are the part that decides whether year three is calm.</li>
           </ol>
@@ -356,7 +382,7 @@
         <h2>Where this goes next</h2>
         <p>The same verified records are what a drawdown runs against — see <a href="case-capital-drawdowns.html">capital drawdowns across 100+ LPs</a>, or <a href="case-investor-statements.html">investor statements for 500+ LPs</a>. If you want to talk through your own onboarding, <a href="contact.html">book a walkthrough</a>.</p>
 
-        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld. The workflow, platform mechanics and behaviour described are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them; supporting detail is illustrative of how engagements of this shape run.</p>
+        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld. The workflow, platform mechanics and behaviour described are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them; supporting detail is illustrative of how engagements of this shape run. This engagement was regulated in India — <a href="#travels">what travels, and what is configuration</a> marks which parts of it are regional.</p>
 
           </div>
         </div>
@@ -528,7 +554,7 @@
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   "headline": "Case study: onboarding 200+ LPs digitally",
-  "description": "An AIF raising from 200+ investors needed to share strategy documents, collect KYC, generate and execute agreements, and keep it all institutional.",
+  "description": "A fund raising from 200+ investors under one of the world's most paperwork-heavy regimes needed to share strategy documents, collect KYC, generate and execute agreements, and keep it all institutional.",
   "datePublished": "2026-08-11",
   "author": { "@type": "Organization", "name": "CapHive" },
   "publisher": { "@type": "Organization", "name": "CapHive" },

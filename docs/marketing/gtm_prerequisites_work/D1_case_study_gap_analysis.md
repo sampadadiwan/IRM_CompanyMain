@@ -7,6 +7,8 @@
 **Nothing in §§1–6 invents a metric, a customer name, or a quote.** Every number in those sections is quoted from the existing pages as written.
 
 > **Updated 2026-08-16 — read [§7](#7-decision-taken-2026-08-16--labelled-illustrative-composites) before acting on §§1–6.** Three pages now carry **modelled** before/after figures, labelled as such on the page. §7 records every assumption behind them, amends Rule 1 in §6, and notes the confirmed **US reference client**. D1 itself is still open: the §4 ask has not been sent, and no customer has approved anything in writing.
+>
+> **Also updated 2026-08-16 — [§8](#8-jurisdiction-pass-14-closed-2026-08-16) closes the §1.4 gap.** The jurisdiction rewrite described in §3 as "a bigger job than the other two combined" has been done. `case-investor-onboarding` is now US-readable and the §3 instruction *"do not link it from US outbound"* is **withdrawn**. §1.4's posture table below is superseded by §8.1.
 
 ---
 
@@ -242,3 +244,55 @@ Draft text to give a customer as a starting point, so the ask is *"cut this to p
 > **Multi-currency (for a CFO / finance director):** *"We could always convert the currency. What we could not do was tell an auditor why one report used one date and another used a different one. That question does not come up any more."*
 
 > **Portfolio reports (for a partner / head of platform):** *"Chasing fifty founders was a job nobody wanted and everybody did badly. Our analyst now spends the quarter editing rather than typing, and the founders get one email instead of four."*
+
+---
+
+## 8. Jurisdiction pass — §1.4 closed 2026-08-16
+
+**What §1.4 actually diagnosed.** Not that India appears on the pages — that India appears *unframed*, so a US reader concludes "these people only do India" and stops. The fix that loses the article is deletion: strip SEBI, PAN, CKYC and e-stamping out of `case-investor-onboarding` and what remains is a generic onboarding page with no operational depth, which is exactly what made it the strongest piece of writing in the set.
+
+**What was done instead — reframe, not erase.** Every India term stays on the page. Each is now presented as an *instance of a configurable mechanism* rather than as how the product works, and the page states its jurisdiction up front instead of letting the reader discover it in stage two.
+
+The reframe rests on two facts verified in the codebase before a word was written — this is not marketing language applied to a monolith:
+
+| Claim now made on the page | Where it is true in the code |
+|---|---|
+| Regulatory packs are a tag on a field, added to a form rather than forking it | `FormCustomField::REGULATORY_ENVS = %w[SEBI CRISIL IFSC MAS]`; `reg_env` column, `AddRegulatoryCustomFieldsService` |
+| Four packs ship today, including one outside India | `MAS` — Singapore — is in that constant |
+| The e-signature provider is a per-firm setting, DocuSign **or** Digio | `EntitySetting#esign_provider`, `EsignHelper` provider dispatch, both `DocusignEsignHelper` and `DigioEsignHelper` implemented with live webhook paths |
+| AML screening is international by construction | screening runs sanctions / PEP / warnings / adverse-media lists |
+
+**The MAS pack and the DocuSign integration are the whole argument.** They are the difference between "an Indian vendor" and "a vendor with a regional connector", and both were already built — §1.4 was a writing problem, not a product problem.
+
+### 8.1 Jurisdiction posture after the pass — supersedes the §1.4 table
+
+| Case study | Was | Now | What changed |
+|---|---|---|---|
+| `case-portfolio-reports` | Neutral | Neutral | untouched |
+| `case-capital-drawdowns` | Neutral | Neutral | untouched |
+| `case-investor-statements` | Neutral | Neutral | untouched |
+| `case-multi-currency-close` | Light | **Neutral** | done in §7.1 (`NCD`/`CCD`/`INR` removed) |
+| `case-multi-party-transactions` | Light | **Neutral** | `IFSC` → *routing code*; e-sign para now leads with the DocuSign/Digio setting; Indian stamping reframed as one instance of "statutory attachments ride on the template" |
+| `case-investor-onboarding` | **Heavy** | **Framed** | see 8.2 — India detail retained in full, jurisdiction declared and bounded |
+
+Site-wide, one further India tell was removed: the parallel-run boilerplate *"until the numbers agree to the rupee or cent"* appeared on `about`, `pricing`, `funds`, `faq`, `products` and `case-studies` — now *"to the last decimal"*, which reads correctly in both markets.
+
+**Deliberately untouched:** `outlook-for-aifs-in-india.html`. It is an India-market asset and should stay one.
+
+### 8.2 What changed in `case-investor-onboarding`
+
+1. **Jurisdiction declared in the lede** — *"An Indian Alternative Investment Fund…"* — so nobody is ambushed by SEBI four screens later.
+2. **New section: "A note on jurisdiction, before the detail."** Turns the liability into the credential: Indian onboarding is *heavier* than a Reg D raise (identity-registry lookup + regulator-taxonomy classification + a stamped instrument, on top of the subscription agreement, tax form and accreditation representation a US fund collects). Everything on the page had to survive the harder version.
+3. **New section: "🌍 What travels, and what is configuration"** — a seven-row table splitting mechanism from jurisdiction, linked from the lede section and from the footer disclaimer. Six of the seven rows are identical in every jurisdiction. This is the section a US CFO is actually reading for.
+4. **Stage-level reframes.** Form definition leads with the reg-env tag and names all four packs; verification leads with the universal principle and adds the three genuinely non-regional checks (extraction, cross-check, AML screening); execution leads with the DocuSign/Digio setting and treats Aadhaar/DSC as this fund's route; stamping generalised to "statutory attachments ride on the template".
+5. **The requirements table** rows for verification and execution rewritten mechanism-first, connector-second.
+
+**One honesty note was added deliberately, and should not be edited out:** the page states plainly that **there is no US regulatory pack today** the way SEBI/IFSC/CRISIL/MAS ship, that a Reg D raise does not need one (fields + checklist + DocuSign envelope are all configuration), and that building one is work we would do with the customer. Per §6 Rule 1's spirit, a jurisdiction table that quietly implied a US pack exists would be the same failure mode as an unlabelled number.
+
+### 8.3 What this does and does not change for D1
+
+**Does not close D1.** D1 is attribution, a before/after number and an approved quote. §1.4 was the fourth of four failings and the only one closable by writing; the other three still require the §4 ask, which still has not been sent.
+
+**Does change the outbound plan.** §3's *"Leave it published for the India market; do not link it from US outbound"* is withdrawn — the page is now linkable in US outbound. It is still not the *first* link to send: `case-multi-currency-close` remains the better Email 1 asset because it hits the §1.1 complexity qualifier. Onboarding is the right second link for a prospect whose pain is the raise itself, and the "what travels" table is the right thing to paste when a prospect asks the offshore-vendor question directly.
+
+**Still open on this page:** no outcome numbers (its stat band is scale and capability only — §1.3), no attribution, no quote. It was not given modelled figures in §7 and still has none.
