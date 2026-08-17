@@ -28,6 +28,21 @@ When('the entity {string} is deactivated directly') do |name|
   Entity.find_by(name: name).update!(active: false)
 end
 
+When('the deactivation job for {string} runs the way Sidekiq runs it') do |name|
+  entity = Entity.find_by(name: name)
+  # update_column flips the flag without firing the after_commit cascade, so the job below is
+  # the only thing that runs — exactly like the queued job picking the record up later.
+  entity.update_column(:active, false)
+
+  # features/support/env.rb pins Chewy to :bypass for the whole suite, which short-circuits
+  # every index callback and hides a missing strategy. A Sidekiq worker starts on :base
+  # instead, which raises Chewy::UndefinedUpdateStrategy the moment an indexed model is saved,
+  # so :base is what the job has to survive.
+  Chewy.strategy(:base) do
+    EntityDeactivationJob.perform_now(entity_id: entity.id)
+  end
+end
+
 When('the entity {string} is activated directly') do |name|
   Entity.find_by(name: name).update!(active: true)
 end

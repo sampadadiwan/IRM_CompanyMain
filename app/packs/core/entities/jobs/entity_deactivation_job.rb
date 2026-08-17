@@ -14,21 +14,28 @@ class EntityDeactivationJob < ApplicationJob
   # @param entity_id [Integer] the entity that was deactivated
   # @param user_id [Integer, nil] the support user to alert when the cascade finishes
   def perform(entity_id:, user_id: nil)
-    entity = Entity.find_by(id: entity_id)
-    return if entity.blank?
+    # InvestorAccess (and the User it touches) declare `update_index`, so saving them fires a
+    # Chewy callback. Sidekiq workers start with the :base strategy, which raises
+    # Chewy::UndefinedUpdateStrategy on any index update — every job that writes an indexed
+    # model has to name a strategy. :sidekiq matches the rest of the jobs: the re-index is
+    # queued on the `chewy` queue instead of blocking this worker.
+    Chewy.strategy(:sidekiq) do
+      entity = Entity.find_by(id: entity_id)
+      next if entity.blank?
 
-    # The entity may have been re-activated between the commit and this job running — in that
-    # case there is nothing to revoke and we must not touch existing access.
-    if entity.active?
-      Rails.logger.info "Entity #{entity_id} is active again; skipping deactivation cascade"
-      return
+      # The entity may have been re-activated between the commit and this job running — in that
+      # case there is nothing to revoke and we must not touch existing access.
+      if entity.active?
+        Rails.logger.info "Entity #{entity_id} is active again; skipping deactivation cascade"
+        next
+      end
+
+      employees_count = entity.employees.where(active: true).update_all(active: false)
+      accesses_count = revoke_investor_accesses(entity)
+
+      Rails.logger.info "Entity #{entity.id} - #{entity.name}: deactivated #{employees_count} employees, revoked #{accesses_count} investor accesses"
+      send_notification("#{entity.name} deactivated: #{employees_count} employee login(s) disabled and #{accesses_count} investor access(es) revoked.", user_id)
     end
-
-    employees_count = entity.employees.where(active: true).update_all(active: false)
-    accesses_count = revoke_investor_accesses(entity)
-
-    Rails.logger.info "Entity #{entity.id} - #{entity.name}: deactivated #{employees_count} employees, revoked #{accesses_count} investor accesses"
-    send_notification("#{entity.name} deactivated: #{employees_count} employee login(s) disabled and #{accesses_count} investor access(es) revoked.", user_id)
   end
 
   private

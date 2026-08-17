@@ -35,6 +35,11 @@ Feature: Entity Deactivation
     Then the investor access for "lp@acme.com" should not be approved
     And the employee "staff@acme.com" should be inactive
 
+  Scenario: The cascade runs inside a Chewy index strategy when executed by a worker
+    When the deactivation job for "Acme Fund" runs the way Sidekiq runs it
+    Then the investor access for "lp@acme.com" should not be approved
+    And the employee "staff@acme.com" should be inactive
+
   Scenario: Re-activating the entity does not restore access
     When the entity "Acme Fund" is deactivated directly
     And the entity "Acme Fund" is activated directly
