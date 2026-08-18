@@ -148,6 +148,27 @@ Scenario Outline: Import capital remittance
 
 
 @import
+Scenario Outline: Import capital remittances with non-breaking spaces in the lookup columns
+  Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is a fund "<fund>" for the entity
+  And Given I upload an investors file for the fund
+  Given the fund has capital call template
+  Given the investors are added to the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  When I create a new capital call "<call>"
+  Then I should see the capital call details
+  Then when the capital call is approved
+  When I import capital remittances using an XLSX with non-breaking spaces in the lookup columns
+  Then the remittance import should succeed with no failed rows
+  And the imported remittances should be linked to the fund and capital call
+
+  Examples:
+  	|entity                                         |fund                        | call |
+  	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR | name=Call 1;call_basis=Upload |
+
+
+@import
 Scenario Outline: Import capital distributions
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

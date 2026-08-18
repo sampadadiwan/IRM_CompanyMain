@@ -171,3 +171,62 @@ Then('the capital remittance payment amount is not recomputed') do
   expect(@target_remittance_payment.folio_amount.to_f).not_to eq(@folio_amount)
   expect(@target_remittance_payment.amount.to_f).to eq(@amount)
 end
+
+# ── Non-breaking space regression (import_capital_remittance.rb) ──────────────
+# Builds a remittance import sheet whose Fund / Capital Call / Folio No cells are
+# prefixed with U+00A0. Sheets pasted together from Word or a web page routinely
+# carry these; String#strip does not remove them, so before the ImportUtil
+# sanitizer folded unicode whitespace the fund lookup returned nil and the import
+# blew up with "undefined method 'capital_calls' for nil".
+When('I import capital remittances using an XLSX with non-breaking spaces in the lookup columns') do
+  require "caxlsx"
+  nbsp = "\u00A0" # non-breaking space, written as an escape so it survives editing
+  tmp = Tempfile.new(["capital_remittances_nbsp", ".xlsx"])
+
+  # Import against the folios created by capital_commitments_multi_currency.xlsx
+  @nbsp_folio_ids = @fund.capital_commitments.order(:id).limit(2).pluck(:folio_id)
+
+  Axlsx::Package.new do |p|
+    p.workbook.add_worksheet(name: "Capital Remittances") do |ws|
+      ws.add_row(["Fund *", "Capital Call *", "Folio No*", "Call Amount (Inclusive of Capital Fees, Folio Currency)*",
+                  "Capital Fees (Folio Currency)", "Other Fees (Folio Currency)",
+                  "Call Amount (Inclusive of Capital Fees, Fund Currency)*", "Capital Fees (Fund Currency)",
+                  "Other Fees (Fund Currency)", "Investment Amount (Fund Currency)", "Remittance Date", "Verified"])
+      @nbsp_folio_ids.each do |folio_id|
+        # Leading and trailing NBSP on every column the importer looks up by
+        ws.add_row(["#{nbsp}#{@fund.name}#{nbsp}", "#{nbsp}#{@capital_call.name}#{nbsp}", "#{nbsp}#{folio_id}#{nbsp}",
+                    12_000, 10, 5, nil, nil, nil, 0, nil, "No"])
+      end
+    end
+    p.serialize(tmp.path)
+  end
+
+  @import_upload = ImportUpload.create!(entity: @entity, owner: @fund, import_type: "CapitalRemittance",
+                                        name: "NBSP remittance import", user_id: @user.id,
+                                        import_file: File.open(tmp.path))
+  ImportUploadJob.perform_now(@import_upload.id)
+  @import_upload.reload
+ensure
+  tmp&.close
+  tmp&.unlink
+end
+
+Then('the remittance import should succeed with no failed rows') do
+  # The error text makes a failure readable in CI instead of just "1 != 0"
+  expect(@import_upload.failed_row_count).to eq(0), "Import failed: #{@import_upload.status} #{@import_upload.error_text}"
+  expect(@import_upload.processed_row_count).to eq(@nbsp_folio_ids.count)
+end
+
+Then('the imported remittances should be linked to the fund and capital call') do
+  remittances = CapitalRemittance.where(import_upload_id: @import_upload.id)
+  expect(remittances.count).to eq(@nbsp_folio_ids.count)
+
+  remittances.each do |cr|
+    # The NBSP must not survive into the stored folio id either
+    expect(cr.folio_id).to be_in(@nbsp_folio_ids.map(&:to_s))
+    expect(cr.fund_id).to eq(@fund.id)
+    expect(cr.capital_call_id).to eq(@capital_call.id)
+    expect(cr.capital_commitment).to be_present
+    expect(cr.investor).to be_present
+  end
+end

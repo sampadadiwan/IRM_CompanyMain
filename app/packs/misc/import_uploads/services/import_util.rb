@@ -108,10 +108,22 @@ class ImportUtil < Trailblazer::Operation
     false
   end
 
+  # Normalise a single spreadsheet cell.
+  # Files pasted together from Word/web pages routinely carry non-breaking spaces (U+00A0)
+  # and other unicode whitespace. String#strip only removes ASCII whitespace, so those
+  # characters survive and silently break exact-match lookups such as
+  # entity.funds.where(name: "\u00A0Artha Fund IV"), which then returns nil.
+  # Fold every kind of whitespace to a plain space before stripping and squeezing.
+  def sanitize_cell(value)
+    return nil if value.nil?
+
+    value.to_s.gsub(/[[:space:]]/, " ").strip.squeeze(" ")
+  end
+
   # get header row without the mandatory *
   def get_headers(headers)
     # The headers are transformed by strip, squeeze and titleize and then stripped of *
-    ret_headers = headers.compact.each { |x| x&.delete!("*") }.map { |h| h&.downcase&.strip&.squeeze(" ")&.titleize }
+    ret_headers = headers.compact.each { |x| x&.delete!("*") }.map { |h| sanitize_cell(h)&.downcase&.titleize }
     Rails.logger.debug { "ret_headers = #{ret_headers}" }
     ret_headers
   end
@@ -140,7 +152,7 @@ class ImportUtil < Trailblazer::Operation
           end
 
           # This sanitizes each row by stripping and squeezing spaces
-          sanitized_row = row[..(headers.length - 1)].map { |x| x&.to_s&.strip&.squeeze(" ") }
+          sanitized_row = row[..(headers.length - 1)].map { |x| sanitize_cell(x) }
 
           # Fail fast: an earlier row failed, so skip the remaining rows as they may depend on it (eg a Sell based on a failed Buy)
           if stopped_at
