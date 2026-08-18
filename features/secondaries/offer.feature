@@ -111,6 +111,7 @@ Scenario Outline: Offer Bank verification
       |sale                                  | offer	             |
       |name=Grand Sale;percent_allowed=100   |quantity=100;price=1000        |
 
+@import
 Scenario Outline: Offer Approval Notification
   Given Im logged in as a user "first_name=Test1" for an entity "name=Urban;entity_type=Company"
   Given the user has role "company_admin"

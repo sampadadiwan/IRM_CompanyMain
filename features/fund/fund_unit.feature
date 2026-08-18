@@ -101,6 +101,7 @@ Scenario Outline: Import fund units
   	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| name=Call 1;call_basis=Upload | 2120000 |
 
 
+@import
 Scenario Outline: Transfer Fund Units
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -129,6 +130,7 @@ Examples:
   	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,transfer_ratio=1,transfer_account_entries=true,account_entries_excluded=nil|
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil |
 
+@import
 Scenario Outline: Transfer Fund Units Validations
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -164,6 +166,7 @@ Examples:
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;unit_type=A2;fund_id=1  | commitment_date=2020-01-02;unit_type=A1;fund_id=2 | Commitments are not from the same fund.Commitments are not the same unit type. |
 
 
+@import
 Scenario Outline: Transfer Fund Units - Invalid Ratio
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -189,6 +192,7 @@ Examples:
   | 110   | Transfer ratio must be 100 or less.    |
 
 
+@import
 Scenario: Transfer Fund Units - fails when from commitment has no remaining units
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -209,6 +213,7 @@ Scenario: Transfer Fund Units - fails when from commitment has no remaining unit
   Then I should get the error "From commitment does not have enough units."
 
 
+@import
 Scenario: Transfer Fund Units without account entries
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -232,6 +237,7 @@ Scenario: Transfer Fund Units without account entries
   And adjustments are create upon fund unit transfer
 
 
+@import
 Scenario: Transfer Fund Units with excluded account entries
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -252,6 +258,7 @@ Scenario: Transfer Fund Units with excluded account entries
   And the other account entries are pro-rated
 
 
+@import
 Scenario: Fund unit counter caches are correct after transfer
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"

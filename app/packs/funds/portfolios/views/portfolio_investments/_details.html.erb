@@ -4,6 +4,12 @@
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-attributions-tab">Attribution</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab">Account Entries</a>
+    <%# Tasks against this investment (Task#owner polymorphic) — same tab shape as
+        the capital commitment and investor pages. Snapshots are immutable
+        historical copies, so they get no task tab. %>
+    <% unless portfolio_investment.snapshot %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
+    <% end %>
     <% if portfolio_investment.excused_folio_ids? %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab">Excused Folios</a>
     <% end %>
@@ -31,6 +37,18 @@
         <% end %>
       </div>
     </div>
+
+    <% unless portfolio_investment.snapshot %>
+      <div id="tasks-tab" class="tab-pane fade">
+        <div id="tasks" class="associated_entity">
+          <%# target: "_top" so the New Task / Board links inside the list escape
+              this frame rather than rendering a full page inside the tab. %>
+          <%= turbo_frame_tag "task_list", target: "_top", loading: :lazy, src: tasks_path(owner_id: portfolio_investment.id, owner_type: "PortfolioInvestment") do %>
+            <%= render "/layouts/loading" %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
 
     <% if portfolio_investment.excused_folio_ids? %>
       <div id="commitments-tab" class="tab-pane fade">

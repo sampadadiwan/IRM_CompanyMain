@@ -54,7 +54,7 @@ class ImportInvestment < ImportUtil
 
   def find_portfolio_company(import_upload, portfolio_company_name)
     portfolio_company = import_upload.entity.investors.portfolio_companies.find_by(investor_name: portfolio_company_name)
-    raise "Portfolio Company not found" if portfolio_company.nil?
+    raise "Portfolio Company not found: #{portfolio_company_name}" if portfolio_company.nil?
 
     portfolio_company
   end
@@ -116,7 +116,7 @@ class ImportInvestment < ImportUtil
     funding_round = user_data['Funding Round']
     quantity = user_data['Quantity'].to_d
     price = user_data['Price'].to_d
-    investment_date = Date.local_parse(user_data['Investment Date'])
+    investment_date = parse_date_cell(user_data, 'Investment Date', required: true)
     notes = user_data['Notes'].presence
 
     [portfolio_company_name, category, currency, investor_name, investment_type, funding_round, quantity, price, investment_date, notes]

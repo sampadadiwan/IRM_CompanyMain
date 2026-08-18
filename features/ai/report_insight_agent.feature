@@ -2,6 +2,7 @@
 Feature: Report Insight Agent
   Tests to check Report insight generation and notification
 
+@import
 Scenario Outline: Check Insight generation for a report
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

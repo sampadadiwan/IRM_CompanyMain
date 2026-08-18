@@ -30,7 +30,7 @@ class ImportFundRatio < ImportUtil
     # Scenario defaults to "Default" when the column is blank
     scenario = user_data["Scenario"]&.strip || "Default"
     # end_date is the period-end this ratio represents; nil means open-ended
-    end_date = user_data["End Date"].present? ? parse_date(user_data["End Date"]) : nil
+    end_date = parse_date_cell(user_data, "End Date")
 
     attributes = {
       fund: fund,
@@ -134,13 +134,6 @@ class ImportFundRatio < ImportUtil
     end
   end
 
-  # Uses Date.local_parse so timezone-aware parsing matches the app's locale setting
-  def parse_date(date_string)
-    Date.local_parse(date_string)
-  rescue ArgumentError
-    raise "Invalid date format for #{date_string}"
-  end
-
   # Finds an existing FundRatio by identity (fund + entity + owner + name) and overwrites its values.
   # Does NOT guard against duplicate end_dates — "Update Only" rows are expected to already exist.
   def update_fund_ratio(attrs)
@@ -152,7 +145,7 @@ class ImportFundRatio < ImportUtil
       name: attrs[:user_data]["Ratio Name"]
     )
 
-    raise "Fund Ratio not found for update: #{attrs[:user_data]}" if fund_ratio.nil?
+    raise "No fund ratio named '#{attrs[:user_data]['Ratio Name']}' found to update for #{attrs[:owner]}" if fund_ratio.nil?
 
     fund_ratio.assign_attributes(
       value: attrs[:value],

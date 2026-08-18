@@ -152,7 +152,7 @@ Scenario: SEC-1 Allowed roles whitelist — model rejects platform-level role at
   When I try to build an investor advisor with allowed_roles including "super"
   Then the investor advisor should fail validation with "contains invalid role"
 
-@security
+@security @import
 Scenario: SEC-2 Allowed roles whitelist — import raises error for platform-level role in spreadsheet
   # Finding 2 (import path): the import service must reject rows whose
   # Allowed Roles column contains roles outside ALLOWED_ADVISOR_ROLES.
@@ -270,7 +270,7 @@ Scenario: SEC-11 Invalid fund_id in new_for_investor redirects gracefully withou
   When I visit the new_for_investor page with an invalid fund_id
   Then I should be redirected to the funds page with an alert
 
-@security
+@security @import
 Scenario: SEC-12 Roles after switch are scoped to allowed_roles only — no privilege escalation
   # Findings 2 + 8: after switching, the advisor must hold only the roles
   # configured in allowed_roles, never anything beyond them.

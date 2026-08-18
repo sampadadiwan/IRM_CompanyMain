@@ -36,9 +36,9 @@ class ImportServiceBase < Trailblazer::Operation
   # get header row without the mandatory *
   def get_headers(headers)
     # The headers are transformed by strip, squeeze and titleize and then stripped of *
-    # Fold unicode whitespace (eg non-breaking spaces from pasted content) to plain
+    # Fold unicode blanks (eg non-breaking spaces from pasted content) to plain
     # spaces first - String#strip leaves them behind and the header match then fails
-    ret_headers = headers.compact.each { |x| x&.delete!("*") }.map { |h| h&.to_s&.gsub(/[[:space:]]/, " ")&.downcase&.strip&.squeeze(" ")&.titleize }
+    ret_headers = headers.compact.each { |x| x&.delete!("*") }.map { |h| h&.to_s&.gsub(/[[:blank:]]/, " ")&.downcase&.strip&.squeeze(" ")&.titleize }
     Rails.logger.debug { "ret_headers = #{ret_headers}" }
     ret_headers
   end

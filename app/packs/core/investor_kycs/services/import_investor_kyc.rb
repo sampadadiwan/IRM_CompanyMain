@@ -24,7 +24,7 @@ class ImportInvestorKyc < ImportUtil
     pan = user_data["Pan/Tax Id"]&.strip
 
     investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
-    raise "Stakeholder not found" unless investor
+    raise "Stakeholder not found: #{user_data['Stakeholder']}" unless investor
 
     investor_kyc = InvestorKyc.where(investor_id: investor.id, PAN: pan,
                                      entity_id: import_upload.entity_id, full_name:).first
@@ -44,7 +44,7 @@ class ImportInvestorKyc < ImportUtil
       else
         # Kyc not found but there is a kyc with a blank full name or nil full name in the DB - update
         # Update only, but we dont have a pre-existing KYC
-        raise "Skipping: InvestorKyc not found for update"
+        raise "Skipping: no KYC found to update for #{investor.investor_name} (#{full_name.presence || 'no name'}, PAN #{pan.presence || 'blank'})"
       end
     elsif investor_kyc.nil?
       investor_kyc = InvestorKyc.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)
@@ -52,7 +52,7 @@ class ImportInvestorKyc < ImportUtil
       # No update, and we dont have a pre-existing KYC
     else
       # No update, but we have a pre-existing KYC
-      raise "Skipping: InvestorKyc for investor already exists"
+      raise "Skipping: a KYC already exists for #{investor.investor_name} (#{full_name.presence || 'no name'}, PAN #{pan.presence || 'blank'}). Set Update Only to Yes to update it"
     end
 
     saved
@@ -64,7 +64,7 @@ class ImportInvestorKyc < ImportUtil
     # Ignore the case
     kyc_type = kyc_type.split.map(&:capitalize).join(" ")
     # Check for valid kyc type
-    raise "Invalid Kyc Type" unless ["Individual", "Non Individual"].include?(kyc_type)
+    raise "Kyc Type '#{kyc_type}' is not valid. Use 'Individual' or 'Non Individual'" unless ["Individual", "Non Individual"].include?(kyc_type)
 
     # Determine the form type for the row being processed
     form_type = get_form_type(import_upload, user_data, form_type_name: "#{kyc_type.delete(' ').strip}Kyc")

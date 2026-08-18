@@ -152,7 +152,9 @@
               </li>
               <% Task::CATEGORIES.each do |category| %>
                 <li class="sidebar-item">
-                  <a class="sidebar-link" href="/tasks?q[category_eq]=<%= category %>">
+                  <%# tasks_path rather than a hand-built query string: category names
+                      can contain spaces ("Portfolio Company"), which must be encoded %>
+                  <a class="sidebar-link" href="<%= tasks_path(q: { category_eq: category }) %>">
                     <div class="round-16 d-flex align-items-center justify-content-center">
                       <i class="ti ti-circle fs-2"></i>
                     </div>

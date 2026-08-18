@@ -29,7 +29,7 @@ class ImportInvestorAccess < ImportUtil
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
     if user_data['Stakeholder'].present?
       investor = import_upload.entity.investors.find_by(investor_name: user_data['Stakeholder'])
-      raise "Stakeholder not found" unless investor
+      raise "Stakeholder not found: #{user_data['Stakeholder']}" unless investor
     else
       raise "Stakeholder name is missing"
     end

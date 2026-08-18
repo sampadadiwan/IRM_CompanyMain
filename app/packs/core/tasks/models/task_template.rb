@@ -6,7 +6,7 @@ class TaskTemplate < ApplicationRecord
   validates :for_class, length: { maximum: 40 }
   validates :tag_list, length: { maximum: 100 }, allow_blank: true
   validates :due_in_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  FOR_CLASS = %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution IndividualKyc NonIndividualKyc Offer Interest].freeze
+  FOR_CLASS = %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution IndividualKyc NonIndividualKyc Offer Interest PortfolioInvestment].freeze
 
   STANDARD_COLUMNS = { "For; text-col" => "for_class; text-col",
                        "Tags; text-col" => "tag_list; text-col",

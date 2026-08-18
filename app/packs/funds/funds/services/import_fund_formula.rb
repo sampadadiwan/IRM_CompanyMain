@@ -21,7 +21,8 @@ class ImportFundFormula < ImportUtil
     Rails.logger.debug row_data
 
     fund = import_upload.owner
-    raise "Fund not found" unless fund
+    # The fund is the upload owner, not a column in the sheet
+    raise "Fund not found - upload fund formulas against a fund" unless fund
 
     name, description, entry_type, formula, rule_type, rule_for, tag_list, roll_up, meta_data, generate_ytd_qtly, enabled, sequence, cache = read_row_data(row_data)
     update_only = row_data["Update Only"]&.downcase == "yes"

@@ -2,6 +2,7 @@ Feature: Account Entries
   Can run allocation
 
 
+@import
 Scenario Outline: Allocate account entries
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -99,7 +100,7 @@ Scenario Outline: Edit Account Entry parent
       |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
 
 
-@notification
+@notification @import
 Scenario Outline: AE download in a job
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

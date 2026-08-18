@@ -2,6 +2,7 @@
 Feature: KYC level Call and Dist Payment notice generation and notification
 
 
+@import
 Scenario Outline: Call Notice generation and notification for all
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -23,6 +24,7 @@ Scenario Outline: Call Notice generation and notification for all
   # Normal scenario - call notice is generated for each remittance for its own data
   Then the notification must be sent to the investors where the call notice was generated
 
+@import
 Scenario Outline: Call Notice generation and notification for all at kyc level
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -46,6 +48,7 @@ Scenario Outline: Call Notice generation and notification for all at kyc level
   Given I approve the capital call
   Then the notification must be sent to the investors where the call notice was generated
 
+@import
 Scenario Outline: Call Notice generation and notification for only the latest ones at kyc level
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -70,6 +73,7 @@ Scenario Outline: Call Notice generation and notification for only the latest on
   Given I approve the capital call
   Then the notification must be sent to the investors where the call notice was generated
 
+@import
 Scenario Outline: DIST Notice generation and notification for all
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -95,6 +99,7 @@ Scenario Outline: DIST Notice generation and notification for all
   Then the notification must be sent to the investors where the distribution notice was generated
 
 
+@import
 Scenario Outline: DIST Notice generation and notification for all
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -123,6 +128,7 @@ Scenario Outline: DIST Notice generation and notification for all
   Then the notification must be sent to the investors where the distribution notice was generated
 
 
+@import
 Scenario Outline: DIST Notice generation and notification for only the latest ones at kyc level
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

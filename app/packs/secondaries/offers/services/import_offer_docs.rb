@@ -40,7 +40,9 @@ class ImportOfferDocs < ImportUtil
     # Get the Offer
     offer = import_upload.entity.offers.where(id: user_data["Id"]).first
     raise "Offer #{user_data['Id']} not found" unless offer
-    raise "Offer user is #{offer.user.full_name} but import has #{user_data['User']}" if offer.user.full_name != user_data["User"]
+    # offer.user can be nil, which turned this check into a NoMethodError
+    raise "Offer #{offer.id} has no seller, so it cannot be matched to '#{user_data['User']}'" if offer.user.nil?
+    raise "Offer #{offer.id} belongs to #{offer.user.full_name} but the import says #{user_data['User']}" if offer.user.full_name != user_data["User"]
 
     send_email = user_data["Send Email"] == "Yes"
     orignal = user_data["Orignal Format"] == "Yes"

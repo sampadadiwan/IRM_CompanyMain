@@ -19,7 +19,7 @@ class ImportPortfolioInvestment < ImportUtil
 
     portfolio_company = import_upload.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first
 
-    raise "Portfolio Company not found" if portfolio_company.nil?
+    raise "Portfolio Company not found: #{user_data['Portfolio Company']}" if portfolio_company.nil?
 
     investment_instrument = portfolio_company.investment_instruments.find_or_initialize_by(name: instrument, entity_id: import_upload.entity_id, currency: user_data["Currency"])
 
@@ -65,7 +65,7 @@ class ImportPortfolioInvestment < ImportUtil
 
       result.success?
     else
-      raise "PortfolioInvestment already exists"
+      raise "A portfolio investment in #{portfolio_company.investor_name} on #{user_data['Investment Date']} already exists"
     end
   end
 

@@ -23,7 +23,7 @@ Examples:
     |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=USD  |name=Merger;unit_types=Series A,Series B| percentage_called=20;generate_remittances_verified=true |
 
 
-@doc_gen @notification
+@doc_gen @notification @import
 Scenario Outline: Create new capital call
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -66,6 +66,7 @@ Scenario Outline: Create new capital call
     |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B;currency=INR    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 40000 | This is a capital call for Fund 2 |
 
 
+@import
 Scenario Outline: Capital Call recompute fees
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"

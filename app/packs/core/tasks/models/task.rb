@@ -7,7 +7,9 @@ class Task < ApplicationRecord
   include WithFolder
   include WithCustomField
 
-  CATEGORIES = %w[Finance Ops Compliance IR Other].freeze
+  # "Other" stays last — it is the catch-all that reveals the free-text box in
+  # the form. Multi-word entries cannot use %w, hence the explicit array.
+  CATEGORIES = ["Finance", "Ops", "Compliance", "IR", "Portfolio Company", "Other"].freeze
 
   update_index('task') { self if index_record? }
   attr_accessor :send_notification_flag

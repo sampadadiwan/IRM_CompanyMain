@@ -18,9 +18,9 @@ class ImportCapitalCall < ImportUtil
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
 
     if fund
-      name = user_data["Name"]
+      name = cell(user_data, "Name", required: true)
       if CapitalCall.exists?(entity_id: import_upload.entity_id, fund:, name:)
-        raise "Capital Call Already Present"
+        raise "Capital Call '#{name}' already exists in fund #{fund.name}"
       else
         generate_remittances = user_data["Generate Remittances"]&.downcase == "yes"
         generate_remittances_verified = user_data["Remittances Verified"]&.downcase == "yes"
@@ -31,7 +31,10 @@ class ImportCapitalCall < ImportUtil
                       else
                         ["All"]
                       end
-        percentage_called = user_data["Percentage Called"] || 0
+        # Always a String - a blank cell used to default to the Integer 0, which
+        # then blew up on split with "undefined method 'split' for an instance of Integer"
+        percentage_called = user_data["Percentage Called"].to_s
+        raise "Percentage Called must be specified" if percentage_called.strip.blank?
 
         if fund_closes.include?("All")
           fund_closes = fund.capital_commitments.pluck(:fund_close)
@@ -41,6 +44,9 @@ class ImportCapitalCall < ImportUtil
         else
           cleaned_fund_closes = fund_closes.map(&:strip)
           close_percentage_values = percentage_called.split(',').map(&:strip)
+          # One percentage per named close, else the zip silently pads with nils
+          raise "Percentage Called has #{close_percentage_values.length} value(s) but Fund Closes names #{cleaned_fund_closes.length}. Give one comma separated percentage per close" if close_percentage_values.length != cleaned_fund_closes.length
+
           close_percentages = cleaned_fund_closes.zip(close_percentage_values).to_h
         end
 
@@ -49,8 +55,8 @@ class ImportCapitalCall < ImportUtil
 
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,
-                                       fund:, due_date: Date.local_parse(user_data["Due Date"]),
-                                       call_date: Date.local_parse(user_data["Call Date"]),
+                                       fund:, due_date: parse_date_cell(user_data, "Due Date", required: true),
+                                       call_date: parse_date_cell(user_data, "Call Date", required: true),
                                        import_upload_id: import_upload.id, fund_closes:,
                                        send_call_notice_flag:, close_percentages:,
                                        manual_generation: true, call_basis: user_data["Call Basis"],
@@ -67,7 +73,7 @@ class ImportCapitalCall < ImportUtil
         result.success?
       end
     else
-      raise "Fund not found"
+      raise "Fund not found: #{user_data['Fund']}"
     end
   end
 
@@ -77,7 +83,7 @@ class ImportCapitalCall < ImportUtil
     if unit_price_premium.present?
       unit_price_premium.each do |upp|
         unit_type, price, premium = upp.split(":").map(&:strip)
-        raise("Unit Type #{unit_type} not found in Fund") unless capital_call.fund.unit_types_list.include?(unit_type)
+        raise "Unit Type '#{unit_type}' not found in fund #{capital_call.fund.name}. Known unit types: #{capital_call.fund.unit_types_list.join(', ')}" unless capital_call.fund.unit_types_list.include?(unit_type)
 
         capital_call.unit_prices ||= {}
         capital_call.unit_prices[unit_type] = { price:, premium: }.stringify_keys

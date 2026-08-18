@@ -8,6 +8,7 @@ Feature: Ratio Formula Management
     Given the user has role "company_admin"
     Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
 
+  @import
   Scenario: Custom rule affects XIRR calculation
     Given Im logged in as user "Test"
     # Re-use working setup from existing tests
@@ -33,6 +34,7 @@ Feature: Ratio Formula Management
 
 
 
+@import
 Scenario Outline: Compute KYC Fund Ratios with ratio formulas
   Given The fund has kyc level data generation enabled
   And Given import file "kyc_fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
@@ -87,6 +89,7 @@ Scenario Outline: Compute KYC Fund Ratios with ratio formulas
   Then the fund ratios computed must match the ratios in "kyc_fund_ratios/formula_fund_ratios.xlsx"
   And the cashflow CSV documents should be created for the fund ratios
 
+@import
 Scenario Outline: Compute KYC Fund Ratios with ratio formulas with labels
   Given The fund has kyc level data generation enabled
   And Given import file "kyc_fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
@@ -156,6 +159,7 @@ Scenario Outline: Compute KYC Fund Ratios with ratio formulas with labels
   And the same owner should not have multiple ratios with same label
   And the cashflow CSV documents should be created for the fund ratios
 
+@import
 Scenario Outline: Compute KYC Fund Ratios with skip_portfolio_fmv ratio formulas
   Given The fund has kyc level data generation enabled
   And Given import file "kyc_fund_ratios/exchange_rates.xlsx" for "ExchangeRate"

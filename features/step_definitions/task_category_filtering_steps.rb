@@ -29,3 +29,10 @@ Then('I should see {string} in the {string} stat card') do |count, subtitle|
     expect(page).to have_content(count)
   end
 end
+
+# The category select on the task form — asserted through the New Task form
+# rather than the model so a category missing from the dropdown is caught.
+Then('{string} should be offered as a task category') do |category|
+  click_on('New Task', match: :first)
+  expect(page).to have_select('task_category', with_options: [category])
+end

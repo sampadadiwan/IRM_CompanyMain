@@ -28,8 +28,8 @@ class ImportAccountEntry < ImportUtil
       # ret_val = prepare_record(user_data, import_upload, custom_field_headers)
       save_account_entry(user_data, import_upload, custom_field_headers)
     else
-      raise "Fund not found" if fund.nil?
-      raise "Commitment not found" if capital_commitment.nil?
+      raise "Fund not found: #{user_data['Fund']}" if fund.nil?
+      raise "Capital Commitment not found in fund #{fund.name} for folio #{folio_id}" if capital_commitment.nil?
     end
   end
 
@@ -53,13 +53,13 @@ class ImportAccountEntry < ImportUtil
 
         account_entry.save!
       else
-        msg = "Duplicate, already present"
+        msg = "Duplicate account entry - #{entry_type} '#{name}' already exists for fund #{fund.name}#{", folio #{folio_id}" if folio_id.present?} on #{reporting_date}"
         Rails.logger.debug { "#{msg} #{account_entry}" }
         raise msg unless account_entry.new_record?
         raise account_entry.errors.full_messages.join(",") unless account_entry.valid?
       end
     else
-      raise "Fund not found" unless fund
+      raise "Fund not found: #{user_data['Fund']}"
     end
   end
 
@@ -67,7 +67,7 @@ class ImportAccountEntry < ImportUtil
     folio_id = user_data["Folio No"]&.to_s
     name = user_data["Name"].presence
     entry_type = user_data["Entry Type"].presence
-    reporting_date = Date.local_parse(user_data["Reporting Date"]) if user_data["Reporting Date"].present?
+    reporting_date = parse_date_cell(user_data, "Reporting Date")
     folio_amount_cents = user_data["Amount (Folio Currency)"].to_d * 100
     fund_amount_cents = user_data["Amount (Fund Currency)"].to_d * 100
     period = user_data["Period"]
@@ -78,7 +78,7 @@ class ImportAccountEntry < ImportUtil
     cumulative = user_data["Cumulative"] == "true"
 
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
-    raise "Fund not found" unless fund
+    raise "Fund not found: #{user_data['Fund']}" unless fund
 
     @funds.add(fund)
 
@@ -87,26 +87,34 @@ class ImportAccountEntry < ImportUtil
     capital_commitment = folio_id.present? ? fund.capital_commitments.where(folio_id:).first : nil
     investor = capital_commitment&.investor
     investor_name = capital_commitment&.investor_name
-    raise "Commitment not found" if folio_id.present? && capital_commitment.nil?
+    raise "Capital Commitment not found in fund #{fund.name} for folio #{folio_id}" if folio_id.present? && capital_commitment.nil?
 
     [folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for, parent_type, parent_id, ref_id, cumulative]
   end
 
   def validate_parent_presence(account_entry)
-    if account_entry.parent_type.present? && account_entry.parent_id.blank?
-      raise "Parent Id not present"
-    elsif account_entry.parent_id.present? && account_entry.parent_type.blank?
-      raise "Parent Type not present"
-    elsif account_entry.parent_type.present? && account_entry.parent_id.present?
-      raise "Parent not found" if account_entry.parent.nil?
+    parent_type = account_entry.parent_type.to_s
 
-      if account_entry.parent_type.to_s != "Investor"
+    if account_entry.parent_type.present? && account_entry.parent_id.blank?
+      raise "Parent Id must be specified when Parent Type is #{parent_type}"
+    elsif account_entry.parent_id.present? && account_entry.parent_type.blank?
+      raise "Parent Type must be specified when Parent Id is #{account_entry.parent_id}"
+    elsif account_entry.parent_type.present? && account_entry.parent_id.present?
+      # Parent Type is free text from the sheet. Reading the polymorphic association
+      # with an unknown type raises "uninitialized constant Foo", which says nothing
+      # about the column at fault - so resolve the name first without blowing up.
+      parent_class = parent_type.safe_constantize
+      raise "Parent Type '#{parent_type}' is not a valid record type" unless parent_class.respond_to?(:find_by)
+
+      raise "Parent #{parent_type} #{account_entry.parent_id} not found" if account_entry.parent.nil?
+
+      if parent_type != "Investor"
         ae_fund_id = account_entry.fund_id
         parent_fund_id = account_entry.parent.fund_id
 
         if (parent_fund_id != ae_fund_id) && (account_entry.fund.master_fund_id != parent_fund_id)
           # ae and parent should be in the same fund or parent's fund should be the master fund of ae's fund
-          raise "Parent does not belong to Fund"
+          raise "Parent #{parent_type} #{account_entry.parent_id} belongs to fund id #{parent_fund_id}, not to #{account_entry.fund.name}"
         end
       end
     end

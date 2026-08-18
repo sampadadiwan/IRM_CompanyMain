@@ -1,6 +1,7 @@
 Feature: Commitment Adjustments
   Adjustments to capital commitments
 
+@import
 Scenario Outline: Create a commitment adjustment
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
@@ -27,6 +28,7 @@ Scenario Outline: Create a commitment adjustment
         | folio_amount_cents=10000000;adjustment_type=Arrear  | 100000000                  | 10000000                 |
         | folio_amount_cents=-10000000;adjustment_type=Arrear | 100000000                  | -10000000                |
   
+@import
 Scenario Outline: Create a commitment adjustment for 0 dollar commitment
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity

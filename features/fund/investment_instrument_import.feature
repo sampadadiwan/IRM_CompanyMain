@@ -1,6 +1,7 @@
 Feature: Investment Instruent Import
   Import investment instrument
 
+@import
 Scenario Outline: Import Portfolio Insstrument
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"

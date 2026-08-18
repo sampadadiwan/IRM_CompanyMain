@@ -6,6 +6,7 @@ class ImportTask < ImportUtil
   step nil, delete: :create_custom_fields
 
   STANDARD_HEADERS = ["Description", "Status", "Due Date", "Category", "Assignee Email", "Owner Type", "Owner Name", "Update Only", "Recurring", "Rrule", "Start Date", "End Date"].freeze
+  OWNER_TYPES = %w[Fund Investor PortfolioCompany Entity].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -16,7 +17,7 @@ class ImportTask < ImportUtil
 
     description = row_data["Description"]
     status = row_data["Status"]
-    due_date = row_data["Due Date"].present? ? Date.local_parse(row_data["Due Date"]) : nil
+    due_date = parse_date_cell(row_data, "Due Date")
     category = row_data["Category"]
     assignee_email = row_data["Assignee Email"]
     owner_type = row_data["Owner Type"]
@@ -26,11 +27,15 @@ class ImportTask < ImportUtil
     # Recurring task fields
     recurring = row_data["Recurring"]&.downcase == "yes"
     rrule = row_data["Rrule"]
-    start_date = row_data["Start Date"].present? ? Date.local_parse(row_data["Start Date"]) : nil
-    end_date = row_data["End Date"].present? ? Date.local_parse(row_data["End Date"]) : nil
+    start_date = parse_date_cell(row_data, "Start Date")
+    end_date = parse_date_cell(row_data, "End Date")
 
     entity = import_upload.entity
-    assignee = entity.employees.find_by(email: assignee_email) if assignee_email.present?
+    if assignee_email.present?
+      assignee = entity.employees.find_by(email: assignee_email)
+      # Without this the task was silently created with no assignee
+      raise "Assignee not found: #{assignee_email}" unless assignee
+    end
 
     owner = find_owner(entity, owner_type, owner_name)
 
@@ -56,7 +61,7 @@ class ImportTask < ImportUtil
   def save_normal_task(entity, import_upload, description, status, due_date, category, assignee, owner, update_only)
     if update_only
       task = entity.tasks.find_by(due_date: due_date, owner_type: owner&.class&.name, owner_id: owner&.id)
-      raise "Task not found for update" unless task
+      raise "No task found to update for #{owner&.class&.name} '#{owner.try(:name) || owner.try(:investor_name)}' due #{due_date}" unless task
 
       task.update!(
         details: description,
@@ -97,7 +102,7 @@ class ImportTask < ImportUtil
 
     if update_only
       rule = entity.task_recurrence_rules.find_by(rrule: rrule, start_date: start_date)
-      raise "TaskRecurrenceRule not found for update" unless rule
+      raise "No recurring task found to update with rule '#{rrule}' starting #{start_date}" unless rule
 
       rule.update!(
         task_template_payload: task_template_payload,
@@ -114,16 +119,26 @@ class ImportTask < ImportUtil
     end
   end
 
+  # An unresolved owner used to fall through to the entity, so a typo in Owner Name
+  # silently filed the task against the wrong record instead of failing the row
   def find_owner(entity, owner_type, owner_name)
-    return nil if owner_type.blank? || owner_name.blank?
+    return nil if owner_type.blank? && owner_name.blank?
 
-    case owner_type
-    when "Fund"
-      entity.funds.find_by(name: owner_name)
-    when "Investor", "PortfolioCompany"
-      entity.investors.find_by(investor_name: owner_name)
-    when "Entity"
-      entity.name == owner_name ? entity : nil
-    end
+    raise "Owner Type must be specified when Owner Name is #{owner_name}" if owner_type.blank?
+    raise "Owner Name must be specified when Owner Type is #{owner_type}" if owner_name.blank?
+    raise "Owner Type '#{owner_type}' is not valid. Use one of: #{OWNER_TYPES.join(', ')}" unless OWNER_TYPES.include?(owner_type)
+
+    owner = case owner_type
+            when "Fund"
+              entity.funds.find_by(name: owner_name)
+            when "Investor", "PortfolioCompany"
+              entity.investors.find_by(investor_name: owner_name)
+            when "Entity"
+              entity.name == owner_name ? entity : nil
+            end
+
+    raise "#{owner_type} not found: #{owner_name}" unless owner
+
+    owner
   end
 end

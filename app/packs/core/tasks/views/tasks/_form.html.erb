@@ -43,6 +43,15 @@
         effective_owner_type ||= "User" if task_context.blank?
         task.owner_type = effective_owner_type
 
+        # Owner types this form has no picker for: the task was opened from that
+        # record's own page (a capital commitment, a portfolio investment, a side
+        # letter obligation...), so its owner is fixed. Without this the select
+        # below offers only User/Investor, the browser falls back to the first
+        # option, and saving silently re-owns the task to the editor — the same
+        # bug DealInvestor tasks used to hit outside the deal tabs.
+        record_owner_type = effective_owner_type.present? &&
+                            !effective_owner_type.in?(%w[User Investor DealInvestor])
+
         investor_owner_options = current_user.entity.investors.includes(:investor_entity).sort_by { |investor| investor.investor_name }.map { |investor| [investor.investor_name, investor.id] }
         owner_options = nil
         if effective_owner_type == "DealInvestor"
@@ -51,13 +60,16 @@
             owner_options = deal&.deal_investors&.includes(:investor)&.sort_by { |di| di.investor_name }&.map { |di| [di.investor_name, di.id] }
           end
           owner_options ||= current_user.entity.deal_investors.includes(:investor).sort_by { |deal_investor| deal_investor.investor_name }.map { |deal_investor| [deal_investor.investor_name, deal_investor.id] }
-        elsif task_context.blank?
-          owner_options = investor_owner_options
-        elsif effective_owner_type == "Investor"
+        elsif record_owner_type
+          # No options list — the hidden owner_id below carries the record it
+          # belongs to. An investor select here would show nothing selected and
+          # blank the owner on save.
+          owner_options = nil
+        elsif task_context.blank? || effective_owner_type == "Investor"
           owner_options = investor_owner_options
         end
 
-        owner_type_disabled = restricted_embedded_context
+        owner_type_disabled = restricted_embedded_context || record_owner_type
         owner_type_options = if task_context.blank?
           [["User", "User"], ["Investor", "Investor"]]
         elsif effective_owner_type == "Investor"
@@ -121,7 +133,10 @@
           </div>
         <% end %>
       <% else %>
-        <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+        <%# No picker for this owner type (a personal task, or one owned by a
+            record this form has no options list for) — carry the id through as
+            a real hidden field so it survives the save. %>
+        <%= form.hidden_field :owner_id %>
       <% end %>
 
       <div class="form-group <%= show_name_field ? '' : 'd-none' %>" data-task-owner-target="ownerNameGroup">

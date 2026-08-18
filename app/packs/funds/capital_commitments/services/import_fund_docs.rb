@@ -60,9 +60,11 @@ class ImportFundDocs < ImportUtil
     as_of = nil
     if user_data["As Of Date"].present?
       begin
-        as_of = Date.parse(user_data["As Of Date"])
-      rescue ArgumentError
-        return [false, "Invalid 'As Of Date': #{user_data['As Of Date']}"]
+        # local_parse, like every other importer - Date.parse ignores the entity's
+        # date format and can read 03/04 as either day/month or month/day
+        as_of = parse_date_cell(user_data, "As Of Date")
+      rescue StandardError => e
+        return [false, e.message]
       end
     end
 
@@ -100,7 +102,7 @@ class ImportFundDocs < ImportUtil
       return cc
     when "Remittance"
       call_name = user_data["Call / Distribution Name"]
-      raise "Call Name not found" unless call_name
+      raise "Call Name must be specified for a Capital Call document" unless call_name
 
       call = CapitalCall.where(fund_id: fund.id, name: call_name).last
       raise "Capital Call not found for #{call_name}" unless call
@@ -111,7 +113,7 @@ class ImportFundDocs < ImportUtil
       return capital_remittance
     when "Distribution"
       distribution_name = user_data["Call / Distribution Name"]
-      raise "Distribution Name not found" unless distribution_name
+      raise "Distribution Name must be specified for a Capital Distribution document" unless distribution_name
 
       distribution = CapitalDistribution.where(fund_id: fund.id, title: distribution_name).last
       raise "Capital Distribution not found for #{fund.name}, #{distribution_name}" unless distribution

@@ -10,10 +10,10 @@ class ImportCapitalCommitment < ImportUtil
 
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
-    raise "Fund not found" unless fund
+    raise "Fund not found: #{user_data['Fund']}" unless fund
 
     investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
-    raise "Stakeholder not found" unless investor
+    raise "Stakeholder not found: #{user_data['Stakeholder']}" unless investor
 
     update_only = user_data["Update Only"]
     folio_id, _, _, folio_currency, = get_params(user_data, import_upload)
@@ -25,7 +25,7 @@ class ImportCapitalCommitment < ImportUtil
         save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)
       else
         # Update only, but we dont have a pre-existing capital_commitment
-        raise "Capital Commitment not found for #{folio_id}"
+        raise "Capital Commitment not found for folio #{folio_id} in fund #{fund.name} - Update Only rows must match an existing commitment"
       end
     elsif capital_commitment.nil?
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:, fund:, folio_currency:)
@@ -37,7 +37,7 @@ class ImportCapitalCommitment < ImportUtil
     # No update, and we dont have a pre-existing capital_commitment
     else
       # No update, but we have a pre-existing capital_commitment
-      raise "Capital Commitment already exists for #{folio_id}"
+      raise "Capital Commitment already exists for folio #{folio_id} in fund #{fund.name}. Set Update Only to Yes to update it"
     end
     true
   end
@@ -80,7 +80,7 @@ class ImportCapitalCommitment < ImportUtil
     kyc_full_name = user_data["Kyc Investing Entity"]
     if kyc_full_name.present?
       kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
-      raise "KYC not found" unless kyc
+      raise "KYC not found for #{investor.investor_name}: #{kyc_full_name}" unless kyc
     else
       kyc = fund.entity.investor_kycs.where(investor_id: investor.id).last
     end
@@ -95,14 +95,14 @@ class ImportCapitalCommitment < ImportUtil
   def get_params(user_data, import_upload)
     folio_id = user_data["Folio No"].presence
     unit_type = user_data["Unit Type"].presence
-    commitment_date = Date.local_parse(user_data["Commitment Date"]) if user_data["Commitment Date"].present?
+    commitment_date = parse_date_cell(user_data, "Commitment Date")
     folio_currency = user_data["Folio Currency"].presence
     onboarding_completed = user_data["Onboarding Completed"] == "Yes"
     feeder_fund_name = user_data["Feeder Fund"].presence
     feed_fund = nil
     if feeder_fund_name.present?
       feed_fund = import_upload.entity.funds.where(name: feeder_fund_name).first
-      raise "Feeder Fund not found" unless feed_fund
+      raise "Feeder Fund not found: #{feeder_fund_name}" unless feed_fund
     end
 
     [folio_id, unit_type, commitment_date, folio_currency, onboarding_completed, feed_fund]

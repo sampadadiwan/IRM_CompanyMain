@@ -2,6 +2,7 @@ Feature: SearchComponent
   Test behavior of the Search Component
 
 
+@import
 Scenario Outline: Create investors and search with search component
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

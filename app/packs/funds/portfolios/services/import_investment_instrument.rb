@@ -18,7 +18,7 @@ class ImportInvestmentInstrument < ImportUtil
     update_only = row_data["Update Only"]
 
     portfolio_company = import_upload.entity.investors.where(investor_name: row_data["Portfolio Company"]).first
-    raise "Portfolio Company not found" unless portfolio_company
+    raise "Portfolio Company not found: #{row_data['Portfolio Company']}" unless portfolio_company
 
     investment_instrument = InvestmentInstrument.where(portfolio_company_id: portfolio_company.id,
                                                        entity_id: import_upload.entity_id, name:).first
@@ -26,12 +26,12 @@ class ImportInvestmentInstrument < ImportUtil
     if update_only == "Yes"
       if investment_instrument.present?
         # Update only, and we have a pre-existing investment_instrument
-        raise "Currency cannot be updated" if investment_instrument.currency.to_s.downcase != currency.to_s.downcase
+        raise "Currency cannot be updated - #{name} is already held in #{investment_instrument.currency}" if investment_instrument.currency.to_s.downcase != currency.to_s.downcase
 
         saved = save_instrument(investment_instrument, portfolio_company, row_data, custom_field_headers, import_upload)
       else
         # Update only, but we dont have a pre-existing investment_instrument
-        raise "Skipping: InvestmentInstrument not found for update"
+        raise "Skipping: no instrument named '#{name}' found to update for #{portfolio_company.investor_name}"
       end
     elsif investment_instrument.nil?
       investment_instrument = InvestmentInstrument.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)

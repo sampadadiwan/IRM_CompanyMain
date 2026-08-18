@@ -31,13 +31,32 @@ class ImportDealInvestor < ImportUtil
   # save_data — process all three sheets
   # -----------------------------------------------------------------------
   def save_data(ctx, import_upload:, deal_investors_sheet:, deal_steps_sheet: nil, notes_sheet: nil, **)
-    process_deal_investors(import_upload, deal_investors_sheet, ctx)
-    process_deal_steps(import_upload, deal_steps_sheet)    if deal_steps_sheet
-    process_notes(import_upload, notes_sheet)              if notes_sheet
+    # One results workbook with a sheet per source sheet. The Deal Steps and Notes
+    # sheets used to report their failures to Rails.logger only, so the user saw a
+    # failed row count with no way to find out which rows or why.
+    package = Axlsx::Package.new do |p|
+      p.workbook.add_worksheet(name: "Deal Investors Results") do |ws|
+        process_deal_investors(import_upload, deal_investors_sheet, ctx, ws)
+      end
+
+      if deal_steps_sheet
+        p.workbook.add_worksheet(name: "Deal Steps Results") do |ws|
+          process_deal_steps(import_upload, deal_steps_sheet, ws)
+        end
+      end
+
+      if notes_sheet
+        p.workbook.add_worksheet(name: "Notes Results") do |ws|
+          process_notes(import_upload, notes_sheet, ws)
+        end
+      end
+    end
+
+    File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
 
     # After the Deal Steps sheet, so the step each investor lands on reflects what that sheet
     # marked complete rather than always being the first one.
-    assign_current_steps(import_upload.user_id)
+    assign_current_steps(import_upload, import_upload.user_id)
 
     # Once, after everything is uploaded — not per note. Imported notes arrive in
     # arbitrary order and are can be backdated, so the incremental "only if larger"
@@ -62,16 +81,25 @@ class ImportDealInvestor < ImportUtil
   # tasks raised for it — must be decided from the statuses the Deal Steps sheet left behind. A
   # sheet reporting 3 of 8 steps complete lands the investor on step 4, with step 4's tasks.
   # Only the rows this import created move; investors already in the deal keep their own step.
-  def assign_current_steps(user_id)
+  def assign_current_steps(import_upload, user_id)
     return if @imported_deal_investor_ids.blank?
+
+    failures = []
 
     DealInvestor.where(id: @imported_deal_investor_ids.to_a).find_each do |deal_investor|
       assign_current_step(deal_investor, user_id)
     rescue StandardError => e
       # One investor's step must not take the whole upload down: every row is already saved by
-      # this point and ImportUploadJob does not retry.
+      # this point and ImportUploadJob does not retry. Collected rather than only logged, so a
+      # failure here is visible on the import instead of buried in the server log.
       Rails.logger.error "Current step assignment failed for '#{deal_investor.investor_name}': #{e.message}"
+      failures << "#{deal_investor.investor_name}: #{e.message}"
     end
+
+    return if failures.empty?
+
+    import_upload.status = "Imported, but the current step could not be set for #{failures.count} investor(s)"
+    import_upload.error_text = failures.join("; ")
   end
 
   # The import already runs inside ImportUploadJob, so the step's tasks are generated inline: they
@@ -100,7 +128,7 @@ class ImportDealInvestor < ImportUtil
   # -----------------------------------------------------------------------
   # Sheet 1 — Deal Investors
   # -----------------------------------------------------------------------
-  def process_deal_investors(import_upload, sheet, ctx)
+  def process_deal_investors(import_upload, sheet, ctx, worksheet)
     deal      = import_upload.owner
     entity_id = import_upload.entity_id
     headers   = sheet[:headers]
@@ -112,26 +140,21 @@ class ImportDealInvestor < ImportUtil
     # Collected so assign_current_steps can settle their current step after the Deal Steps sheet
     @imported_deal_investor_ids = Set.new
 
-    # Build results xlsx so failures can be inspected by the user
-    package = Axlsx::Package.new do |p|
-      p.workbook.add_worksheet(name: "Deal Investors Results") do |ws|
-        ws.add_row(headers + ["Result"])
+    worksheet.add_row(headers + ["Result"])
 
-        sheet[:data][1..].each_with_index do |row, i|
-          sanitized = row[..(headers.length - 1)].map { |x| x&.to_s&.strip&.squeeze(" ") }
-          user_data = headers.zip(sanitized).to_h
+    sheet[:data][1..].each_with_index do |row, i|
+      # sanitize_cell folds non-breaking spaces, which strip leaves behind and which
+      # would otherwise break the investor name lookup below
+      sanitized = row[..(headers.length - 1)].map { |x| sanitize_cell(x) }
+      user_data = headers.zip(sanitized).to_h
 
-          Audited.audit_class.as_user(import_upload.user) do
-            save_investor_row(user_data, import_upload, custom_headers, ctx, deal, entity_id, sanitized)
-          end
-
-          ws.add_row(sanitized)
-          import_upload.save if ((i + 1) % 10).zero?
-        end
+      Audited.audit_class.as_user(import_upload.user) do
+        save_investor_row(user_data, import_upload, custom_headers, ctx, deal, entity_id, sanitized)
       end
-    end
 
-    File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
+      worksheet.add_row(sanitized)
+      import_upload.save if ((i + 1) % 10).zero?
+    end
   end
 
   def save_investor_row(user_data, import_upload, custom_headers, _ctx, deal, entity_id, result_row)
@@ -209,41 +232,69 @@ class ImportDealInvestor < ImportUtil
   # Sheet 2 — Deal Steps
   # Updates DealActivity statuses; row 1 = headers (investor name + step titles)
   # -----------------------------------------------------------------------
-  def process_deal_steps(import_upload, sheet)
+  def process_deal_steps(import_upload, sheet, worksheet)
     deal      = import_upload.owner
     entity_id = import_upload.entity_id
     headers   = sheet[:headers]  # ["Deal Investor", "Deck Sent", "Meeting 1", ...]
     step_titles = headers[1..]   # drop the "Deal Investor" column
 
-    sheet[:data][1..].each do |row|
-      investor_name = row[0].to_s.strip
-      next if investor_name.blank?
+    worksheet.add_row(headers + ["Result"])
 
+    sheet[:data][1..].each do |row|
+      result_row = row[..(headers.length - 1)].map { |x| sanitize_cell(x) }
+      investor_name = result_row[0].to_s
+
+      if investor_name.blank?
+        result_row << "Skipped - no Deal Investor name"
+        worksheet.add_row(result_row)
+        next
+      end
+
+      # Every miss below used to be a silent `next` with the row still counted as
+      # processed, so a typo in a name or a step title looked like a clean import
       investor = Investor.where(investor_name:, entity_id:).first
-      next if investor.nil?
+      raise "Investor '#{investor_name}' not found" if investor.nil?
 
       deal_investor = DealInvestor.find_by(deal_id: deal.id, investor_id: investor.id)
-      next if deal_investor.nil?
+      raise "'#{investor_name}' is not on this deal - add them on the Deal Investors sheet first" if deal_investor.nil?
+
+      updated = 0
+      problems = []
 
       step_titles.each_with_index do |title, idx|
         next if title.blank?
 
         # The status value is expected to be in the next column (idx + 1) corresponding to this title
-        status_value = row[idx + 1].to_s.strip
+        status_value = result_row[idx + 1].to_s
         next if status_value.blank?
 
         # Case-insensitive match against the activity title
         activity = deal_investor.deal_activities.find { |a| a.title.casecmp?(title) }
-        next if activity.nil?
+        if activity.nil?
+          problems << "no step named '#{title}' on this deal"
+          next
+        end
 
         mapped_status = map_activity_status(status_value)
-        activity.update_column(:status, mapped_status) if mapped_status
+        if mapped_status.nil?
+          problems << "'#{status_value}' is not a valid status for '#{title}'"
+          next
+        end
+
+        activity.update_column(:status, mapped_status)
+        updated += 1
       end
 
+      raise problems.join("; ") if problems.any?
+
       import_upload.processed_row_count += 1
+      result_row << "Success - #{updated} step(s) updated"
+      worksheet.add_row(result_row)
     rescue StandardError => e
       Rails.logger.error "Deal Steps row error for '#{investor_name}': #{e.message}"
       import_upload.failed_row_count += 1
+      result_row << "Error: #{e.message}"
+      worksheet.add_row(result_row)
     end
   end
 
@@ -258,7 +309,7 @@ class ImportDealInvestor < ImportUtil
   # Expected headers: Deal Investor, On, Details, Tags,
   #                   Reminder Emails, Reminder Date
   # -----------------------------------------------------------------------
-  def process_notes(import_upload, sheet)
+  def process_notes(import_upload, sheet, worksheet)
     # Get the owner deal and entity_id for the notes
     deal      = import_upload.owner
     entity_id = import_upload.entity_id
@@ -267,20 +318,34 @@ class ImportDealInvestor < ImportUtil
     # Collected so save_data can recompute last_interaction_date once at the end.
     @note_owner_ids = Set.new
 
-    sheet[:data][1..].each do |row|
-      user_data = headers.zip(row).to_h
-      investor_name = user_data["Deal Investor"].to_s.strip
-      next if investor_name.blank?
+    worksheet.add_row(headers + ["Result"])
 
+    sheet[:data][1..].each do |row|
+      result_row = row[..(headers.length - 1)].map { |x| sanitize_cell(x) }
+      user_data = headers.zip(result_row).to_h
+      investor_name = user_data["Deal Investor"].to_s
+
+      if investor_name.blank?
+        result_row << "Skipped - no Deal Investor name"
+        worksheet.add_row(result_row)
+        next
+      end
+
+      # An unmatched name used to be a silent skip, indistinguishable from a note
+      # that was actually created
       investor = Investor.where(investor_name:, entity_id:).first
-      next if investor.nil?
+      raise "Investor '#{investor_name}' not found" if investor.nil?
 
       # We need to find the DealInvestor record for this investor in the context of the current deal, because notes are associated with DealInvestor, not directly with Investor.
       deal_investor = DealInvestor.find_by(deal_id: deal.id, investor_id: investor.id)
       raise "DealInvestor for investor '#{investor_name}' not found in this deal" if deal_investor.nil?
 
       details_text = user_data["Details"].to_s.strip
-      next if details_text.blank?
+      if details_text.blank?
+        result_row << "Skipped - Details is blank"
+        worksheet.add_row(result_row)
+        next
+      end
 
       # Attach the note to the DealInvestor, and create a Reminder if either Reminder Emails or Reminder Date is present.
       note = Note.new(
@@ -288,7 +353,7 @@ class ImportDealInvestor < ImportUtil
         owner_id: deal_investor.id,
         owner_type: "DealInvestor",
         user_id: import_upload.user_id,
-        on: parse_date(user_data["On"]),
+        on: parse_date_cell(user_data, "On"),
         tags: user_data["Tags"].presence&.strip
       )
       note.details = details_text
@@ -297,7 +362,7 @@ class ImportDealInvestor < ImportUtil
 
       # Create a reminder if email or due_date is present
       reminder_email = user_data["Reminder Emails"].presence&.strip
-      reminder_date  = parse_date(user_data["Reminder Date"])
+      reminder_date  = parse_date_cell(user_data, "Reminder Date")
       if reminder_email.present? || reminder_date.present?
         Reminder.create!(
           owner: note,
@@ -309,9 +374,13 @@ class ImportDealInvestor < ImportUtil
       end
 
       import_upload.processed_row_count += 1
+      result_row << "Success"
+      worksheet.add_row(result_row)
     rescue StandardError => e
       Rails.logger.error "Notes row error for '#{investor_name}': #{e.message}"
       import_upload.failed_row_count += 1
+      result_row << "Error: #{e.message}"
+      worksheet.add_row(result_row)
     end
   end
 
@@ -323,14 +392,5 @@ class ImportDealInvestor < ImportUtil
     return 0 if value.blank?
 
     value.to_s.gsub(/[^0-9.]/, "").to_d * 100
-  end
-
-  def parse_date(value)
-    return nil if value.blank?
-    return value.to_date if value.respond_to?(:to_date) && !value.is_a?(String)
-
-    Date.local_parse(value.to_s)
-  rescue ArgumentError
-    nil
   end
 end

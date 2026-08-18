@@ -110,14 +110,18 @@ class ImportUtil < Trailblazer::Operation
 
   # Normalise a single spreadsheet cell.
   # Files pasted together from Word/web pages routinely carry non-breaking spaces (U+00A0)
-  # and other unicode whitespace. String#strip only removes ASCII whitespace, so those
+  # and other unicode blanks. String#strip only removes ASCII whitespace, so those
   # characters survive and silently break exact-match lookups such as
   # entity.funds.where(name: "\u00A0Artha Fund IV"), which then returns nil.
-  # Fold every kind of whitespace to a plain space before stripping and squeezing.
+  #
+  # [[:blank:]] and not [[:space:]]: blank covers spaces and tabs including the
+  # unicode ones, while leaving newlines alone. Some cells legitimately hold
+  # multi-line text - a fund formula body is Ruby source, and folding its newlines
+  # into spaces joins two statements into one line and makes it unparseable.
   def sanitize_cell(value)
     return nil if value.nil?
 
-    value.to_s.gsub(/[[:space:]]/, " ").strip.squeeze(" ")
+    value.to_s.gsub(/[[:blank:]]/, " ").strip.squeeze(" ")
   end
 
   # get header row without the mandatory *
@@ -198,7 +202,9 @@ class ImportUtil < Trailblazer::Operation
         true
       else
         import_upload.failed_row_count += 1
-        row << "Error"
+        # save_row returned falsy without raising, so there is no message to show.
+        # Say that plainly rather than leaving a bare "Error" in the results sheet.
+        row << "Error - the row could not be saved. Check that every record it refers to exists."
         false
       end
     rescue ActiveRecord::Deadlocked => e
@@ -257,7 +263,7 @@ class ImportUtil < Trailblazer::Operation
   # rubocop:enable Metrics/CyclomaticComplexity
 
   def setup_exchange_rate(model, user_data)
-    as_of = Date.local_parse(user_data["As Of"]) if user_data["As Of"].present?
+    as_of = parse_date_cell(user_data, "As Of")
     ExchangeRate.create(from: user_data["From Currency"], to: user_data["To Currency"], as_of:, rate: user_data["Exchange Rate"], entity_id: model.entity_id, notes: "Imported with #{model}")
   end
 
@@ -273,7 +279,16 @@ class ImportUtil < Trailblazer::Operation
       next if idx.zero?
 
       exchange_rate = [headers, row].transpose.to_h
-      exchange_rate["As Of"] = Date.local_parse(exchange_rate["As Of"].to_s)
+      # Skip trailing blank rows rather than sorting a nil As Of below, and name
+      # the sheet in the error when a rate carries an unparseable date
+      next if exchange_rate.values.all? { |v| v.to_s.strip.blank? }
+
+      begin
+        exchange_rate["As Of"] = parse_date_cell(exchange_rate, "As Of", required: true)
+      rescue StandardError => e
+        raise "Exchange Rates sheet, row #{idx + 1}: #{e.message}"
+      end
+
       exchange_rates << exchange_rate
     end
 
@@ -283,6 +298,53 @@ class ImportUtil < Trailblazer::Operation
 
   def stz(val)
     val&.strip&.squeeze(" ")
+  end
+
+  # ── Cell helpers ────────────────────────────────────────────────────────────
+  # A row that fails must say which column is wrong. Reading a cell straight out
+  # of user_data and calling strip/downcase/split on it raises a bare
+  # NoMethodError when the cell is empty, which tells the user nothing about
+  # what to fix. These helpers keep the failure message anchored to the column.
+
+  # Fetch a cell value. Pass required: true to reject a blank cell by name.
+  def cell(user_data, column, required: false)
+    value = user_data[column]
+    raise "#{column} must be specified" if required && value.to_s.strip.blank?
+
+    value
+  end
+
+  # Yes/No flag columns. A blank cell is false rather than a NoMethodError.
+  def flag?(value)
+    %w[yes true y].include?(value.to_s.strip.downcase)
+  end
+
+  # Parse a date cell. Date.local_parse falls back to Date.parse, which reports
+  # "no implicit conversion of nil into String" for a blank cell and "invalid
+  # date" for a malformed one - neither names the column, so translate both.
+  def parse_date_cell(user_data, column, required: false)
+    raw = user_data[column]
+
+    if raw.to_s.strip.blank?
+      raise "#{column} must be specified" if required
+
+      return nil
+    end
+
+    # Roo hands back real Date/Time objects for date formatted cells - convert those
+    # directly rather than round tripping them through the string parser
+    return raw.to_date if !raw.is_a?(String) && raw.respond_to?(:to_date)
+
+    begin
+      Date.local_parse(raw.strip)
+    rescue StandardError
+      raise "#{column} '#{raw}' is not a valid date. Use the format #{date_format_example}"
+    end
+  end
+
+  # A sample date in the locale's format, so the user has something to copy
+  def date_format_example
+    Time.zone.today.strftime(I18n.t("date.formats.default"))
   end
 
   def defer_counter_culture_updates

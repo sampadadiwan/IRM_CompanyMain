@@ -1,6 +1,7 @@
 Feature: Fund Ratio
   Manage fund ratios
 
+@import
 Scenario Outline: Compute Fund Ratios
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -19,6 +20,7 @@ Scenario Outline: Compute Fund Ratios
   Then the fund ratios computed must match the ratios in "fund_ratios/fund_ratios.xlsx"
   And the cashflow CSV documents should be created for the fund ratios
 
+@import
 Scenario Outline: Compute Fund Ratios in tracking currency
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -38,6 +40,7 @@ Scenario Outline: Compute Fund Ratios in tracking currency
   Given I log in as user "Test"
   And The Portfolio company MOIC ratio can be viewed properly
 
+@import
 Scenario Outline: Compute KYC Fund Ratios
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"

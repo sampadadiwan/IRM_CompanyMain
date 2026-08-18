@@ -470,7 +470,7 @@ Then('I should see the commitment and distribuition docs upload errors') do
     if idx == 5
       # row[headers.length].include?("Capital Commitment not found for SAAS Fund, 1001 and Investor 1").should == true
     end
-    row[headers.length].include?("Distribution Name not found").should == true if idx == 6
+    row[headers.length].include?("Distribution Name must be specified for a Capital Distribution document").should == true if idx == 6
     row[headers.length].include?("Capital Distribution not found for SAAS Fund, Distribution 99").should == true if idx == 7
     if idx == 8
       # row[headers.length].include?("Capital Distribution Payment not found for SAAS Fund, Distribution 3, 10 and Investor 1").should == true

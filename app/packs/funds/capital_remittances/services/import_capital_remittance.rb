@@ -50,10 +50,13 @@ class ImportCapitalRemittance < ImportUtil
 
       result.success?
     else
-      # Raise appropriate errors if any required entity is missing or invalid
-      raise "Fund not found" unless fund
-      raise "Capital Call not found" unless capital_call
-      raise "Capital Commitment not found" unless capital_commitment
+      # Unreachable - inputs raises on each of these - but kept so a future edit
+      # cannot fall through and leave the row with an unexplained "Error"
+      raise "Fund not found: #{user_data['Fund']}" unless fund
+      raise "Capital Call not found: #{user_data['Capital Call']}" unless capital_call
+      raise "Capital Commitment not found for folio #{folio_id}" unless capital_commitment
+
+      raise "Investor not found for folio #{folio_id}"
     end
   end
 

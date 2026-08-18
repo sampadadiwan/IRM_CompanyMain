@@ -12,6 +12,7 @@ class PortfolioInvestment < ApplicationRecord
   include PortfolioInvestmentCounters  # Counter cache logic
   include WithCustomField              # JSON-based custom field support
   include ForInvestor                  # Scopes for investor filtering
+  include WithNextSteps                # has_many :tasks (polymorphic owner) + task template generation
   include RansackerAmounts.new(fields: %w[amount cost_of_sold fmv gain])
   include PortfolioInvestmentShared
 

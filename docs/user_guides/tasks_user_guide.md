@@ -105,7 +105,7 @@ The same applies to the list view on that tab: **Show All** and **Incomplete** k
 
 Tasks can be tagged to a functional area for easier organisation and reporting:
 
-- **Standard categories:** Finance, Ops, Compliance, IR, or Other.
+- **Standard categories:** Finance, Ops, Compliance, IR, Portfolio Company, or Other.
 - **Custom:** choose "Other" and enter your own category name.
 
 ---
@@ -160,6 +160,7 @@ Tasks are automatically filed into virtual folders by category, making them easy
 
 - **Tasks / Finance**
 - **Tasks / Compliance**
+- **Tasks / Portfolio Company**
 - **Tasks / General** (for tasks with no category)
 
 ---

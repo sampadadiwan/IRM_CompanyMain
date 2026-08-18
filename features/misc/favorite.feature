@@ -1,6 +1,7 @@
 Feature: Favorite
   Can add a page to favorites and view it in the favorites list
 
+@import
 Scenario Outline: Add a page to favorites and view it in the favorites list
   Given Im logged in as a user "" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

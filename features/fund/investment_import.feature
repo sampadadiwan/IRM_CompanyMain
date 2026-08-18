@@ -1,6 +1,7 @@
 Feature: Investment Import
   Can bulk upload and update investments
 
+@import
 Scenario Outline: Bulk upload and update investment
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"

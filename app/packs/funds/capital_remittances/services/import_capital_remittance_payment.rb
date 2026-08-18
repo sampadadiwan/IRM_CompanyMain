@@ -28,10 +28,12 @@ class ImportCapitalRemittancePayment < ImportUtil
       create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers, import_upload)
 
     else
-      raise "Fund not found" unless fund
-      raise "Capital Call not found" unless capital_call
-      raise "Capital Remittance not found" unless capital_remittance
-      raise "Currency not same as commitment currency" unless folio_currency == capital_commitment.folio_currency
+      # Unreachable - inputs raises on each of these - but kept so a future edit
+      # cannot fall through and leave the row with an unexplained "Error"
+      raise "Fund not found: #{user_data['Fund']}" unless fund
+      raise "Capital Call not found: #{user_data['Capital Call']}" unless capital_call
+      raise "Capital Remittance not found for folio #{capital_commitment&.folio_id}" unless capital_remittance
+      raise "Amount is in #{folio_currency} but folio #{capital_commitment.folio_id} is held in #{capital_commitment.folio_currency}" unless folio_currency == capital_commitment.folio_currency
     end
 
     true
@@ -39,7 +41,7 @@ class ImportCapitalRemittancePayment < ImportUtil
 
   def create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers, import_upload)
     # Make the capital_remittance
-    fund, _, _, _, capital_remittance, folio_amount_cents, _, _, _, update_only = inputs
+    fund, capital_call, _, capital_commitment, capital_remittance, folio_amount_cents, _, _, _, update_only = inputs
     capital_remittance_payment = CapitalRemittancePayment.where(entity_id: fund.entity_id, fund:,
                                                                 capital_remittance:,
                                                                 folio_amount_cents:,
@@ -53,7 +55,7 @@ class ImportCapitalRemittancePayment < ImportUtil
         save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
       else
         # Update only, but we dont have a pre-existing capital_remittance_payment
-        raise "Skipping: CapitalRemittancePayment not found for update"
+        raise "Skipping: no payment found to update for folio #{capital_commitment.folio_id} in call #{capital_call.name}"
       end
     elsif capital_remittance_payment.nil?
       capital_remittance_payment = CapitalRemittancePayment.new(import_upload_id: import_upload.id)
@@ -61,7 +63,7 @@ class ImportCapitalRemittancePayment < ImportUtil
     # No update, and we dont have a pre-existing capital_remittance_payment
     else
       # No update, but we have a pre-existing capital_remittance_payment
-      raise "Skipping: CapitalRemittancePayment already exists"
+      raise "Skipping: a payment for folio #{capital_commitment.folio_id} in call #{capital_call.name} on #{user_data['Payment Date']} already exists"
     end
 
     # Add the capital_remittance to the set, so we can save them after all the payment numbers are rolled up
@@ -95,10 +97,10 @@ class ImportCapitalRemittancePayment < ImportUtil
 
   def inputs(import_upload, user_data)
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
-    raise "Fund not found" unless fund
+    raise "Fund not found: #{user_data['Fund']}" unless fund
 
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"]).first
-    raise "Capital Call not found" unless capital_call
+    raise "Capital Call not found in fund #{fund.name}: #{user_data['Capital Call']}" unless capital_call
 
     raise "Payment Date is mandatory" if user_data["Payment Date"].blank?
 
@@ -119,7 +121,7 @@ class ImportCapitalRemittancePayment < ImportUtil
     investor = capital_commitment.investor
 
     capital_remittance = capital_call.capital_remittances.where(folio_id: capital_commitment.folio_id).first
-    raise "Capital Remittance not found" unless capital_remittance
+    raise "No remittance for folio #{capital_commitment.folio_id} in call #{capital_call.name} - generate the remittances first" unless capital_remittance
 
     folio_amount_cents = user_data["Amount (Folio Currency)"].to_d * 100
     amount_cents = user_data["Amount (Fund Currency)"].present? ? user_data["Amount (Fund Currency)"].to_d * 100 : 0

@@ -1,3 +1,10 @@
+# The tasks sample sheets assign to user@example.com. The importer now fails a row
+# whose Assignee Email matches no employee rather than silently leaving the task
+# unassigned, so the assignee has to exist before the upload.
+Given('there is an employee {string} for the entity') do |email|
+  @assignee = FactoryBot.create(:user, entity: @user.entity, email: email, first_name: "Assignee", last_name: "User")
+end
+
 
 Given('Given I upload a {string} file for {string}') do |file, type|
   @import_file = file

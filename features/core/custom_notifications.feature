@@ -99,6 +99,7 @@ Examples:
     |true         | PAN=ABCD9876;send_kyc_form_to_user=true | subject=KYC Updated 2;email_method=notify_kyc_updated | 
 
 
+@import
 Scenario Outline: Capital call with custom notification
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund" 
   Given the user has role "company_admin"
@@ -118,6 +119,7 @@ Scenario Outline: Capital call with custom notification
     | custom_notification_new|
     | subject=Remittance is due for fund;email_method=notify_capital_remittance |
 
+@import
 Scenario: Capital call notification placeholder substitution
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -134,6 +136,7 @@ Scenario: Capital call notification placeholder substitution
   Then the capital remittance notification placeholders are resolved correctly
 
 
+@import
 Scenario Outline: Capital call notification falls back to the fund-level default
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -155,6 +158,7 @@ Scenario Outline: Capital call notification falls back to the fund-level default
     | subject=Fund default remittance notice;email_method=notify_capital_remittance   | Fund default remittance notice |
 
 
+@import
 Scenario Outline: Capital call specific notification overrides the fund-level default
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -201,6 +205,7 @@ Scenario: Attachment checkboxes are hidden until attachment_names has a value
   Then the attachment checkboxes should be hidden
 
 
+@import
 Scenario: Capital call notifications tab offers only a call-specific notification option
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -221,6 +226,7 @@ Scenario: Capital call notifications tab offers only a call-specific notificatio
   And the custom notification form title should include "Call Notification"
 
 
+@import
 Scenario Outline: Creating a call-specific notification warns when the fund already has a default for that email
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"

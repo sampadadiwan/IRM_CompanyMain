@@ -9,7 +9,7 @@ class TasksController < ApplicationController
 
   # Owner types a board heading can name. A whitelist because the value comes
   # from a URL param and gets constantized (see #board_scope_label).
-  BOARD_SCOPE_TYPES = %w[Deal DealInvestor Investor User SideLetterObligation].freeze
+  BOARD_SCOPE_TYPES = %w[Deal DealInvestor Investor User SideLetterObligation CapitalCommitment PortfolioInvestment].freeze
   after_action :verify_authorized, except: %i[index search]
   after_action :verify_policy_scoped, only: []
 

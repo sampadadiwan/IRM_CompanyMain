@@ -77,6 +77,7 @@ Feature: LP CRM
     When I set the stakeholder engagement status to "Due Diligence"
     Then the investor engagement status should be "Due Diligence"
 
+  @import
   Scenario: Import contacts with CRM custom field columns
     When I upload a stakeholder users file with CRM columns for "import.crm@lp.com"
     Then the imported contact "import.crm@lp.com" should be unapproved with designation "COO", POC role "Finance" and intro "Met via bulk import"

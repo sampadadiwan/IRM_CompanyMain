@@ -823,7 +823,7 @@ Then('I should see the remittance docs upload errors') do
     next if idx.zero? # skip header row
 
     row[headers.length].include?("Success").should == true if [1, 2].include?(idx)
-    row[headers.length].include?("Call Name not found").should == true if idx == 3
+    row[headers.length].include?("Call Name must be specified for a Capital Call document").should == true if idx == 3
     row[headers.length].include?("Capital Call not found for Some capital call").should == true if idx == 4
     if idx == 5
       # row[headers.length].include?("Capital Remittance not found for SAAS Fund, Capital Call 25, 55 and Investor 6").should == true
