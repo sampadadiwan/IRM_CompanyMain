@@ -1,4 +1,6 @@
 <% @doc_share ||= nil %>
+<% @document ||= document %>
+<% if @document.present? %>
 <div id="pdf_viewer" data-controller="pdf" class="card">
 
    <input id="viewer_content_type" , value="<%=@document.file.content_type%>" hidden="hidden"></input>
@@ -22,8 +24,9 @@
       Loading Secure PDF
       <%= render "/layouts/loading" %>
    </div>
-   
+
    <div id='viewer' class="card-body">
    </div>
 
 </div>
+<% end %>
