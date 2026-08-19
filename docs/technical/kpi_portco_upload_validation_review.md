@@ -1,6 +1,7 @@
 # Portco KPI Upload (Magic Link) — Validation Review and Enhancement Plan
 
-**Status:** Review only — no code changes made.
+**Status:** Review complete; all ten gaps signed off 2026-08-18 (see per-section sign-off notes). No code changes made yet.
+**Open decisions:** §2.3 single-period rule — implemented provisionally as **Option C** (a lone period cell is accepted only when rows beneath it carry mapped KPI names; warning `single_period_header`), pending confirmation; §2.2 optional per-entity strict mode ("all mapped KPIs required").
 **Date:** 2026-08-18
 **Scope:** The self-reporting flow where a Portfolio Company (portco) receives a magic link
 and uploads a KPI workbook against a pre-created `KpiReport` shell. This note reviews every
@@ -214,10 +215,14 @@ for present and filled?".
 
 ### 2.7 Zero mappings → green "All 0 KPIs found" — MEDIUM
 
+> **Sign-off: APPROVED (2026-08-18).** `validate` returns error `no_mappings` first when the portco has no `not_compute` mappings, with a portco-facing "your fund has not configured KPIs to collect yet — contact them" message; the fund's shell/pending dashboard shows a "no KPI mappings" badge, and `SendPortcoNotification` warns the fund at send time.
+
 If the fund has not configured `InvestorKpiMapping`s for the portco, `reportedKpis` is `[]`,
 the analyzer renders `All 0 KPIs found` in a success alert, and the importer imports nothing.
 
 ### 2.8 Read-only fields are enforced only by the browser — MEDIUM (security-flavoured)
+
+> **Sign-off: APPROVED (2026-08-18).** (1) Actor-scoped strong params: portco actors (`@signed_id_user` present, or `portfolio_company_user?`) may send only `notes`, `documents_attributes`, `upload_new_kpis`, `properties`; `update_existing_kpis` is set server-side for portcos; fund users keep the full list. (2) `kpis_attributes` unreachable for portcos; defence in depth — nested KPIs from non-fund actors forced `unapproved`. (3) `delete_kpis` fund-only, logged (who/when/count). (4) For fund users changing `portfolio_company_id`, verify the target portco belongs to `current_user.entity_id` and re-authorise on the mutated record; `entity_id` never reassignable via update. Cucumber cases listed in §5.
 
 For portco users `_form.html.erb` sets `disabled: true` on `portfolio_company_id`, `as_of`,
 `period`, `tag_list`, but `kpi_report_params` still permits them — plus `entity_id`, `user_id`
@@ -230,6 +235,8 @@ signed link a crafted PATCH can:
 
 ### 2.9 No plausibility checks against mapping metadata — MEDIUM
 
+> **Sign-off: APPROVED (2026-08-18).** Warnings only, never blocking, all in `validate` and shown pre-save and in the fund's import summary: `denomination_suspect` (≥3 orders of magnitude vs last approved, no explicit unit in cell — fires first and suppresses `outlier`/`threshold_breach` for the same cell), `percentage_scale_suspect`, `threshold_breach` (mapping `lower_/upper_threshold`), `rag_red` (mapping `rag_rules`), `sign_flip`, `outlier` (default ±200% when no thresholds). History-based rules only when ≥1 prior approved value exists. Fund pages show the warning count; approving a flagged value resets the baseline. **No auto-correction** of suspected denominations.
+
 `InvestorKpiMapping` already carries `data_type` (money/numeric/percentage), `denomination`
 (thousands/lakhs/millions/crores), `lower_threshold`/`upper_threshold`, `rag_rules`. None are
 consulted at upload time:
@@ -239,6 +246,8 @@ consulted at upload time:
 - a 500% swing vs the last approved value raises no flag until the fund's reviewer notices.
 
 ### 2.10 Guard state is per-page-load — LOW
+
+> **Sign-off: APPROVED (2026-08-18).** Correctness already covered by §2.1 H / §2.3 / D (browser re-asks the server on load; final submit recomputes). Decision: **persist the last validation result** (JSON + timestamp) on the report for display — instant panel on reload, fund pending dashboard can show "draft saved — N errors outstanding" without opening the file; "Re-check" button and auto re-run when the portco's mappings changed after the stored check; the stored copy is never used for the submit decision. Same storage as the post-import summary (§2.2 E).
 
 The guard is DOM state. Save Draft reloads the page; the previously attached document is not
 re-analysed (no `data-xlsx-preview-url` is passed for KPI reports), so the analyzer panel is
@@ -287,7 +296,7 @@ Error codes to emit (all currently either silent or email-only):
 | `duplicate_period` | same parsed period + tag twice in a header (not distinguished by a tag row) |
 | `duplicate_kpi_row` | same mapping matched on 2+ rows (any sheet) with conflicting values for a period; identical values → warning only |
 
-Other warning codes: `hidden_sheet_skipped` (hidden sheets are not imported), `duplicate_kpi_row_identical`. Warning-only period codes: `future_period_skipped` (column + parsed date), `historic_periods_touched` (list; flags periods already `reviewed`), `historic_value_changed` (per KPI × period: approved old → staged new).
+Plausibility warning codes (§2.9): `denomination_suspect`, `percentage_scale_suspect`, `threshold_breach`, `rag_red`, `sign_flip`, `outlier`. Other warning codes: `hidden_sheet_skipped` (hidden sheets are not imported), `duplicate_kpi_row_identical`. Warning-only period codes: `future_period_skipped` (column + parsed date), `historic_periods_touched` (list; flags periods already `reviewed`), `historic_value_changed` (per KPI × period: approved old → staged new).
 
 Warning codes: `kpi_missing` (a mapping not found anywhere), `future_period_skipped`,
 `hidden_sheet_skipped`, `historic_periods_touched` (list of periods other than the requested
@@ -375,7 +384,7 @@ so the fund's "submitted" email means "and the data is staged". Persist the vali
 summary on the report (a JSON column or an attached document) so the fund's show page can
 display "3 warnings, 0 errors" next to the *View Including Staged* link.
 
-**F. Tighten strong params for magic-link actors.**
+**F. Actor-scoped strong params (approved §2.8).**
 When `@signed_id_user` is present, permit only `notes`, `documents_attributes`,
 `upload_new_kpis` (and `properties` if custom fields are intended). Drop `kpis_attributes`,
 `as_of`, `period`, `portfolio_company_id`, `entity_id`, `user_id`, `tag_list`. If nested
@@ -478,16 +487,99 @@ sequenceDiagram
 - Hidden sheet containing KPI names → skipped, warning names the sheet, no `Kpi` rows from it.
 - Same KPI on two rows with different values → `duplicate_kpi_row` error; identical values → warning, imported once.
 - Expected-KPI summary excludes `compute` mappings.
-- Portco PATCH with `kpi_report[as_of]` / `kpis_attributes` → ignored (params filtered), no approved `Kpi` created.
+- Portco PATCH via magic link carrying `as_of`, `period`, `portfolio_company_id`, `entity_id`, `tag_list` → all unchanged; notes saved.
+- Portco PATCH carrying `delete_kpis=true` on a report with approved KPIs → count unchanged.
+- Portco PATCH carrying `kpis_attributes` (new row, `_destroy` on an approved id) → no new `Kpi`, existing intact.
+- Logged-in portco user (no signed_id) → same three assertions.
+- Fund user sets `portfolio_company_id` to another fund's Investor → 403; own portco → succeeds; normal `as_of`/`period` edit still works.
 - Import job produces errors → status not `submitted`, or (with E) fund notified only on clean import.
-- Zero mappings configured → error "no KPI mappings configured", not green.
+- Zero mappings configured → `no_mappings` error on validate/submit; fund sees a badge on the shell; sending the notification warns the fund.
+- Value 10⁷× last approved on a `crores` mapping → `denomination_suspect` warning, submit still allowed; brand-new portco (no history) → no plausibility warnings.
+- Change beyond mapping thresholds → `threshold_breach` warning shown pre-save and in the fund summary.
 - Large workbook (many sheets/columns) → accepted; no size-based rejection.
 - `validate_upload` via magic link: valid signed_id → verdict returned; tampered/expired → 410; other portco's report → 403.
 - Pre-save panel and final-submit gate return the same verdict for the same file (same fixture through both paths).
 
 ---
 
-## 6. Summary
+## 6. Implementation order and status
+
+1. ✅ **Done 2026-08-18 (phase 1, awaiting manual test)** — `KpiWorkbookReader#validate` (dry run sharing the import code path), `KpiValueNormalizer` (§2.4 rules), fiscal-year plumbing from `month_offset_for_fy` (incl. `KpiDateUtils` FY/half-year/January-start fixes), hidden sheets skipped, duplicate/requested-period/plausibility checks, verdict persisted on `kpi_reports.validation_result` / `validated_at` (§2.10); `KpiUploadValidate` Trailblazer op; `KpiReportsController#validate_upload` (member for saved reports incl. magic link, collection for the New page) + `validate_upload?` policy; `_validation_panel.html.erb` (errors / warnings / requested period / "How we read your file" raw → stored table); JS reduced to display only (`kpi_xlsx_report_controller.js` posts, `kpi_validation_panel_controller.js` toggles the guard from the server's error count); import job persists the same verdict and skips the workflow launch only on blocking errors. Cell highlighting in the sheet preview deferred (preview drops blank rows/cols, so coordinates don't map 1:1). Cucumber: `features/startup/kpi_upload_validation.feature` (15 scenarios) + updated reader/portco features (72/72 passing).
+
+### 6.1 Manual QA — phase 1 (server-side workbook check + pre-save panel)
+
+Setup (dev): `bundle exec rails db:migrate` has been run; log in as a fund user with KPIs enabled.
+Pick a portfolio company (Investors → category Portfolio Company) and make sure it has a few
+`InvestorKpiMapping`s (Investors → KPI Mappings), e.g. Revenue, EBITDA, Headcount, Gross Margin (data type
+percentage). Note the fund's fiscal-year start (Entity Settings → month offset for FY; default April).
+
+Create a shell + magic link: KPI Reports → *Send notification* to that portco for a month (e.g. Jun 2026,
+period Month). Open the link from the email (letter_opener in dev) in a private window — you are now the
+portco user, unauthenticated.
+
+| # | Steps | Expect |
+|---|---|---|
+| 1 | Open the magic link before uploading anything | Panel says "Upload your KPI workbook and we will check it…"; Save Draft / Submit enabled (gating comes in phase 2) |
+| 2 | Upload an .xlsx: row 1 `KPI \| May 2026 \| Jun 2026`, rows `Revenue \| 1,200 \| ₹ 12,50,000`, `EBITDA \| (500) \| $1.2M`, `Headcount \| 45 L \| 2.5 Cr`, `Gross Margin \| 42% \| 0.41` (type the numbers as text) | Spinner, then **Workbook check** card: "No blocking errors", "You were asked for Jun 2026 (Month) — column present, KPIs filled 4 of N", "How we read your file" table shows raw → stored: 1,200→1200; ₹ 12,50,000→1250000; (500)→-500; $1.2M→1200000; 45 L→4500000; 2.5 Cr→25000000; 42%→0.42; the *How* column lists the transformations |
+| 3 | Reload the page | Same panel is shown from the stored verdict (`validation_result`); *Re-check file* button present once a document is saved |
+| 4 | Upload a file whose header is `KPI \| Notes \| Comments` | Red error "No sheet in the file has a header row with at least two period columns…"; Save Draft & Submit **disabled** |
+| 5 | Upload a file with periods `Apr 2026 \| May 2026` only | Error `You were asked for Jun 2026 (Month), but no column in the file is that period. Periods found: …`; buttons disabled |
+| 6 | Same file but Jun 2026 column present with all cells blank | Error "…present but none of the expected KPIs has a value in it"; with only some KPIs blank → amber warning listing them, buttons enabled |
+| 7 | Put `#DIV/0!` (or an Excel formula that errors), `10 (prev 8)`, `ten`, `TBD` in value cells | Errors for the first three naming the cell (e.g. `MIS!B2`); `TBD` → warning "treated as blank"; table rows red / grey |
+| 8 | Add a second row `Revenue` with different values | Error `duplicate_kpi_row` naming both cells; identical values → warning only |
+| 9 | Add a hidden sheet containing KPI names | Warning "Sheet 'X' is hidden … ignored"; nothing from it in the table |
+| 10 | Add a title row above the header (row 1 "Company MIS", header on row 3) | Still valid — header found on row 3 |
+| 11 | Add a future column (e.g. Dec 2027) | Warning `'Dec 2027' was read as 31-Dec-2027, which is in the future — Actual values under it are ignored`; row shows "future — ignored" |
+| 12 | Add columns for older months that already have **approved** values (approve some via the fund UI first), with different numbers | Warnings "This file also updates N other periods…" and "N values differ from figures your fund has already approved"; those rows amber with *Approved now* → *Will be stored*; after Save Draft the values are staged **unapproved**, approved values unchanged |
+| 13 | Use `FY25`/`FY26` headers with the fund's FY offset set to January (0) vs April (3) | Period labels in the panel change accordingly (FY26 → Dec 2026 vs Mar 2026) |
+| 14 | Portco with **no** KPI mappings | Error "Your fund has not configured which KPIs to collect…" |
+| 15 | Value 1000× the last approved value on a crores-denominated mapping | Amber `denomination_suspect` warning, still submittable |
+| 16 | Fund side: KPI Reports → *New* → pick portco, upload a workbook before saving | Same panel (context taken from the form's portco / as-of / period); requested-period findings are warnings here, not errors |
+| 17 | Save Draft, then Submit as portco; check the fund's report page after the import job | Import wrote the same numbers the panel showed; `kpi_reports.validation_result` refreshed by the job |
+
+2. ✅ **Done 2026-08-18 (phase 2, awaiting manual test)** — server-side submit gate in `KpiReportsController#update` (portco final submit re-runs `KpiUploadValidate` on the workbook being submitted — fresh cached upload or attached document; errors → saved as draft, status unchanged, fund not notified, alert + panel show why); actor-scoped `kpi_report_params` (portco: `notes`, `upload_new_kpis`, `properties`, `documents_attributes` only; `update_existing_kpis` set server-side; `entity_id` only on create; `delete_kpis` fund-only and logged); fund re-pointing `portfolio_company_id` re-checked against the fund's entity; Uppy restricted to `.xlsx/.xls/.csv` (`KpiReport::WORKBOOK_FILE_TYPES`); Submit Report starts disabled until a workbook has been checked (Save Draft stays usable), all portco buttons disabled on blocking errors. Review-gate fixes folded in: informational warnings no longer trigger the import error email/toast (`LEGACY_EMAIL_WARNING_CODES`); `validate_upload` accepts only Shrine **cache** references; the New-page (collection) route verifies the portco belongs to the caller's entity; a stored verdict is only shown when it describes the attached document (`document_id`/`source` on the verdict); Quarter/Half-Year/Year requests answered with monthly columns ending on the requested date are accepted with warning `requested_period_derived` (KPIs without cumulation listed) — *judgment call, please confirm*. Cucumber: 78/78 across the three KPI features.
+
+   **Deployment notes from the review:** (a) entities whose `month_offset_for_fy` is not April and who already imported `FY…`/`Q…FY…`-labelled workbooks will see those labels resolve to different dates from now on (previously the importer hard-coded April) — their existing FY-labelled reports stay as they are; new imports create reports at the correct dates. Check such entities before deploying. (b) `save_kpi_entry` still does two small queries per cell (pre-existing); the import runs in a background job, left as is.
+
+### 6.2 Manual QA — phase 2 (submit gate, param scoping, file types)
+
+| # | Steps | Expect |
+|---|---|---|
+| 1 | Open a fresh magic link (no workbook yet) | Panel placeholder; **Submit Report disabled**, Save Draft enabled |
+| 2 | Choose a PDF in the file picker | Uppy refuses it (only .xlsx/.xls/.csv are selectable) |
+| 3 | Upload a workbook with a blocking error (e.g. missing requested period) | Both buttons disabled |
+| 4 | With that bad file selected, in dev tools remove `disabled` from *Submit Report* → Confirm & Submit | Red flash "Not submitted — the KPI workbook has N blocking errors. Your changes were saved as a draft…"; status becomes *Draft Saved* (not Submitted); no "submitted" email to the fund; the panel shows the errors |
+| 5 | Upload a valid workbook → Submit Report → Confirm | "KPI report submitted. The fund team has been notified."; status *Submitted*; fund email sent |
+| 6 | As portco (magic link or logged in), send a PATCH with dev tools / curl carrying `kpi_report[as_of]`, `[period]`, `[portfolio_company_id]`, `[tag_list]`, `[entity_id]`, `[delete_kpis]=true`, `[kpis_attributes][0][name]=X&[value]=1` (include the page's CSRF token) | Only `notes` (and document) change; nothing else moves; no KPI deleted or created |
+| 7 | As fund admin, edit a report and set `portfolio_company_id` (dev tools) to an Investor id from another fund | 403 / not authorised; report unchanged. Own portco → allowed |
+| 8 | Fund admin: check the "Delete existing KPIs" box and save | Still works; a warning line "delete_kpis requested by user …" appears in the Rails log |
+| 9 | Portco: Save Draft after uploading a workbook, reload | Panel shows the verdict for the attached document (not a stale one); Submit enabled iff no errors |
+| 10 | Import job after a normal multi-period upload (fund side) | No "Errors in extracting KPIs" email/toast unless there are blocking errors or missing KPIs; import summary stored on the report |
+| 11 | Fund admin: KPI Reports → New → pick portco → upload `05_error_bad_values.xlsx` | Panel shows the 3 errors and "This report is for …"; **Save disabled**; forcing the form → "Not saved — the KPI workbook has 3 blocking errors"; no report created. Upload `02_success_template_shape.xlsx` → Save enabled |
+
+3. ✅ **Done 2026-08-18 (phase 3, awaiting manual test)** — `kpi_reports.import_status` (`pending`/`imported`/`failed`) + `fund_notified_at`; a portco's final submit sets `pending`, `ImportKpiWorkbookJob` flips it and is the only place the fund is notified (`KpiReport#notify_fund_of_submission!`, idempotent); the submitted email now states what was staged (values / KPIs / warnings); a post-gate import failure reopens the report (`draft_saved`, `import_status: failed`), emails the portco the details (existing report mail) and the fund a "KPI import failed" notice (`KpiReportImportFailedNotifier`); fund show page: *Workbook import* row (status, error/warning counts, values staged, changed-vs-approved, checked-at), a "No KPI mappings configured" badge, a collapsed *Workbook check details* card (same panel the portco saw), and a **Reopen & ask to re-upload** button (`PATCH reopen`, fund-only) that clears submission markers and re-sends the link — the lifecycle restarts at `link_sent`; sending a notification to a portco without mappings warns the fund at send time.
+4. ✅ **Done 2026-08-18 (phase 4, awaiting manual test)** — `KpiTemplateGenerate` + `GET /kpi_reports/:id/template.xlsx` (magic-link aware, `template?` policy) and a **Download KPI template** button on the form: note row, `KPI | Unit | prev-2 | prev-1 | requested` header with labels that round-trip through `KpiDateUtils` under the entity's fiscal-year start (`Jun 2026`, `Apr-Jun 2026`, `FY26`/`CY2026`, `H1 FY27`/`H1 2026`, `YTD Jun 2026`), one row per non-computed mapping with its unit.
+5. **Review gate (phases 2–4) folded in 2026-08-19:** portco shells are normalised to the period's month end at creation (`KpiReportCreateShell`) and the requested-period match compares against `as_of.end_of_month`; unrecognised labels in a tag row ("Variance", "Var %") make that column ignored (`unrecognized_tag_column`) instead of colliding with Actual as a duplicate; any 3-month range header (`Mar-May 2026`) is a Quarter, so odd-quarter templates round-trip; the import job stores `document_id`/`source` on the verdict so the edit page trusts it and does not re-check on load; a job crash after a submission reopens the report (`import_status: failed`) instead of leaving it `pending`; RAG rules with string `-Infinity` bounds no longer raise; the panel shows the uploaded filename rather than the label "KPIs"; portco submit forces `upload_new_kpis` so the import (and hence the fund notification) always runs.
+6. **Parent/child hardening (2026-08-19):** filled-down layouts (parent name repeated on every child row, child in the next column) are now read as child rows (`pick_row_mapping`); an unmapped label in the parent column resets the parent context; a child name mapped under two parents with no parent context in the sheet is **skipped with warning `parent_context_unknown`** instead of guessed; a new hint `children_sum_mismatch` fires when a parent with 2+ mapped children does not equal their sum (±1 %). Existing indented/column layouts, idempotent re-upload and same-name-under-two-parents behave as before (pinned by `kpi_workbook_reading.feature` + new scenarios in `kpi_upload_validation_extended.feature`).
+7. **Fund-side gate (2026-08-19):** blocking errors now stop a fund user's save as well — the fund's Save button carries the "draft" guard (disabled only on blocking errors, never on "no file yet"), and `create`/`update` refuse to save when the workbook being attached has blocking errors (`uploaded_workbook_blocked?`, alert "Not saved — the KPI workbook has N blocking errors…", form re-rendered with the verdict). The requested-period rule stays a warning on fund-created reports; the panel says "This report is for …" there instead of "You were asked for …".
+8. Cucumber: `kpi_upload_validation_extended.feature` (22 scenarios: plausibility warnings, header quirks, locales, tag rows, fund-side severity, endpoint auth incl. expired link and cross-tenant New page, stale verdicts, upload types, import-job emails, fund show page, submitted email content, template variants, review fixes) + `parse_period.feature` fiscal-start outline. Whole KPI suite: 239+ scenarios green. Demo workbooks in `public/sample_uploads/kpi_portco_uploads/` (README lists each file's expected verdict) are pinned by `features/startup/kpi_upload_sample_files.feature` (14 scenarios, incl. one end-to-end magic-link upload). History-based plausibility hints only look back `HISTORY_MAX_AGE` (36 months).
+
+### 6.3 Manual QA — phases 3 & 4 (notify-after-import, fund summary, reopen, template)
+
+| # | Steps | Expect |
+|---|---|---|
+| 1 | Portco: upload a valid workbook, Submit Report → Confirm | Notice "…being imported and the fund team will be notified"; report shows *Submitted*; within seconds (Sidekiq) `import_status` = imported and the fund's Kpi-tagged users (or all employees) get "KPIs submitted: …" with the staged counts |
+| 2 | Submit again from the same report (fund reopens first, or a second portco user) | Fund is not emailed twice for the same submission (`fund_notified_at`) |
+| 3 | Simulate a post-gate failure: after the gate passes but before Sidekiq runs, delete the portco's KPI mappings, then let the job run (or run `ImportKpiWorkbookJob.perform_now(report_id, user_id)` in a console) | Report back to *Draft Saved*, *Workbook import* row shows "Import failed — reopened for the portco"; fund gets "KPI import failed: …" listing the errors; portco gets the details email and can edit again |
+| 4 | Fund: open a submitted report | *Workbook import* row: Imported / N errors / N warnings / values staged; "Workbook check details" card at the bottom shows the same panel the portco saw (raw → stored table) |
+| 5 | Fund: click **Reopen & ask to re-upload** → confirm | Notice "Report reopened…"; status *Link Sent*; portco Kpi users receive the reminder email with a fresh link; the link opens an editable report |
+| 6 | Fund: KPI Reports → Send notification to a portco that has no KPI mappings | Alert "No KPI mappings configured for: <portco> — …"; the report's show page shows the red "No KPI mappings configured" badge |
+| 7 | Portco (magic link) or fund: click **Download KPI template** on the report form | `KPI_template_<portco>_<as_of>.xlsx` downloads: row 1 note, row 3 `KPI | Unit | <prev-2> | <prev-1> | <requested>` (e.g. `Apr 2026 | May 2026 | Jun 2026` for a June Month shell, `Oct-Dec 2025 | Jan-Mar 2026 | Apr-Jun 2026` for a Quarter shell), one row per KPI with its unit (Crores / % (e.g. 42% or 0.42) / absolute) |
+| 8 | Fill the requested column in the template and upload it | Panel: no errors, requested period present, all KPIs filled; Submit enabled |
+| 9 | Change the fund's FY start to January (Entity Settings) and download a Year-period template | Header uses `CY2025 | CY2026 | …` instead of `FY..` |
+
+
+## 7. Summary
 
 The current design has one blocking check — a browser-side header/name scan that runs once
 per upload — and an asynchronous importer whose failures are reported by email after the report

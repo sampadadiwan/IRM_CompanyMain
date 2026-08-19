@@ -157,3 +157,26 @@ Feature: KPI Period Parsing
     | H1 2023        | 2023-06-30    | half year  |
     | H1 FY2023      | 2022-09-30    | half year  |
     | H1 FY23        | 2022-09-30    | half year  |
+
+  # Fiscal-year labels depend on the entity's fiscal-year start (month_offset_for_fy + 1). The importer
+  # now passes it through (KpiWorkbookReader → KpiDateUtils.parse_period); previously April was hard-coded.
+  Scenario Outline: Parsing fiscal labels under different fiscal-year start months
+    When I parse the period string "<Input Period>" with fiscal start month <Start Month>
+    Then the resulting date should be "<Expected Date>"
+
+    Examples:
+      | Input Period | Start Month | Expected Date |
+      | FY26         | 4           | 2026-03-31    |
+      | FY26         | 1           | 2026-12-31    |
+      | FY26         | 7           | 2026-06-30    |
+      | FY2025-26    | 4           | 2026-03-31    |
+      | Q1FY26       | 4           | 2025-06-30    |
+      | Q1FY26       | 1           | 2026-03-31    |
+      | Q4FY26       | 1           | 2026-12-31    |
+      | Q1FY26       | 7           | 2025-09-30    |
+      | H1FY26       | 4           | 2025-09-30    |
+      | H2FY26       | 4           | 2026-03-31    |
+      | H1FY26       | 1           | 2026-06-30    |
+      | H1 2026      | 4           | 2026-06-30    |
+      | CY2025       | 4           | 2025-12-31    |
+      | Jan 26       | 7           | 2026-01-31    |

@@ -23,6 +23,10 @@ resources :kpi_reports do
   get :show_deleted, on: :collection
   patch "refresh_import", on: :member
   patch "mark_reviewed", on: :member
+  post "validate_upload", on: :member      # dry-run workbook validation for the pre-save panel (saved report)
+  post "validate_upload", on: :collection  # same, for the New page (report context from form fields)
+  patch "reopen", on: :member              # fund: reopen a submitted report and ask the portco to re-upload
+  get "template", on: :member              # pre-filled KPI workbook template (portco + fund)
   get "portco_pending", on: :collection
 end
 

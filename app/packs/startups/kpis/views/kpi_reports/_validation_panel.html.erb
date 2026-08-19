@@ -1,0 +1,183 @@
+<%#
+  Server-side verdict of a KPI workbook (KpiWorkbookReader#validate) — the ONLY validation the portco
+  sees; the browser adds no rules of its own (docs/technical/kpi_portco_upload_validation_review.md §3.3).
+  Rendered on page load from kpi_report.validation_result and replaced via turbo_stream by
+  KpiReportsController#validate_upload after each upload / re-check.
+
+  locals: verdict (Hash or nil), kpi_report
+%>
+<%
+  verdict ||= nil
+  errors   = verdict.present? ? Array(verdict['errors'])   : []
+  warnings = verdict.present? ? Array(verdict['warnings']) : []
+  summary  = verdict.present? ? (verdict['summary'] || {}) : {}
+  cells    = verdict.present? ? Array(verdict['cells'])    : []
+  requested = summary['requested_period']
+  # Sort the cell table by KPI then period so a KPI's periods read left→right like the sheet
+  sorted_cells = cells.sort_by { |c| [c['standard_kpi'].to_s, c['parsed_period'].to_s, c['tag'].to_s] }
+  fmt = ->(v) { v.present? ? number_with_delimiter(BigDecimal(v.to_s).round(4).to_s('F').sub(/\.0+\z/, '').sub(/(\.\d*?)0+\z/, '\1')) : '—' }
+%>
+
+<div id="kpi_validation_panel" class="mt-3"
+     data-controller="kpi-validation-panel"
+     data-kpi-validation-panel-errors-value="<%= errors.size %>"
+     data-kpi-validation-panel-checked-value="<%= verdict.present? %>">
+
+  <% if verdict.blank? %>
+    <div class="alert alert-secondary mb-0">
+      <i class="ti ti-file-search me-1"></i>
+      Upload your KPI workbook (.xlsx, .xls or .csv) and we will check it against what your fund expects before you save. Submit Report is enabled once the workbook passes the check.
+    </div>
+  <% else %>
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+          <span class="fw-bold">Workbook check</span>
+          <% if summary['file_name'].present? %>
+            <span class="text-muted ms-2"><%= summary['file_name'] %></span>
+          <% end %>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <% if verdict['ok'] %>
+            <span class="badge bg-success">No blocking errors</span>
+          <% else %>
+            <span class="badge bg-danger"><%= pluralize(errors.size, 'error') %></span>
+          <% end %>
+          <% if warnings.any? %>
+            <span class="badge bg-warning text-dark"><%= pluralize(warnings.size, 'warning') %></span>
+          <% end %>
+          <% if verdict['generated_at'].present? %>
+            <span class="text-muted">checked <%= time_ago_in_words(Time.zone.parse(verdict['generated_at'])) %> ago</span>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <%# ── Requested period ───────────────────────────────────────────── %>
+        <% if requested.present? %>
+          <div class="kpi-validation-requested mb-3 p-2 border rounded d-flex align-items-center gap-3 flex-wrap">
+            <%# Portco shells are a request ("you were asked for"); fund-created reports simply have a period %>
+            <span><%= kpi_report.enable_portco_upload ? 'You were asked for' : 'This report is for' %> <strong><%= requested['label'] %></strong></span>
+            <% if requested['present'] %>
+              <span class="text-success"><i class="ti ti-check"></i> column present</span>
+              <span>KPIs filled: <strong><%= requested['kpis_filled'] %></strong> of <%= requested['kpis_expected'] %></span>
+            <% else %>
+              <span class="<%= kpi_report.enable_portco_upload ? 'text-danger' : 'text-warning-emphasis' %>"><i class="ti ti-x"></i> column not found in the file</span>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%# ── Errors (block submission) ─────────────────────────────────── %>
+        <% if errors.any? %>
+          <div class="alert alert-danger">
+            <div class="fw-bold mb-1">Please fix these errors before submitting.</div>
+            <ul class="mb-0 kpi-validation-list">
+              <% errors.each do |e| %>
+                <li><%= e['message'] %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <%# ── Warnings (shown, not blocking) ────────────────────────────── %>
+        <% if warnings.any? %>
+          <div class="alert alert-warning">
+            <div class="fw-bold mb-1">Please review — these do not block submission.</div>
+            <ul class="mb-0 kpi-validation-list">
+              <% warnings.each do |w| %>
+                <li><%= w['message'] %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <%# ── Summary ───────────────────────────────────────────────────── %>
+        <% if summary.present? && summary['kpis_expected'].present? %>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <div class="p-2 border rounded h-100">
+                <div><strong><%= summary['kpis_found'].to_a.size %></strong> of <%= summary['kpis_expected'].to_a.size %> expected KPIs found</div>
+                <% if summary['kpis_missing'].to_a.any? %>
+                  <div class="text-muted">Missing: <%= summary['kpis_missing'].join(', ') %></div>
+                <% end %>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-2 border rounded h-100">
+                <div><strong><%= summary['periods_found'].to_a.size %></strong> period<%= 's' unless summary['periods_found'].to_a.size == 1 %> in the file
+                  <% if summary['periods_found'].to_a.any? %>
+                    <span class="text-muted">— <%= summary['periods_found'].first(8).join(', ') %><%= ', …' if summary['periods_found'].size > 8 %></span>
+                  <% end %>
+                </div>
+                <% if summary['other_periods'].to_a.any? %>
+                  <div class="text-muted">Also updates: <%= summary['other_periods'].first(8).join(', ') %><%= ', …' if summary['other_periods'].size > 8 %></div>
+                <% end %>
+                <% if summary['hidden_sheets'].to_a.any? %>
+                  <div class="text-muted">Hidden sheets ignored: <%= summary['hidden_sheets'].join(', ') %></div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <%# ── How we read your file ─────────────────────────────────────── %>
+        <% if sorted_cells.any? %>
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="fw-bold">How we read your file</span>
+            <span class="text-muted">
+              <%= summary['cells_ok'] %> values
+              <% if summary['cells_changed'].to_i.positive? %>· <span class="text-warning-emphasis"><%= summary['cells_changed'] %> differ from approved</span><% end %>
+              <% if summary['cells_error'].to_i.positive? %>· <span class="text-danger"><%= summary['cells_error'] %> errors</span><% end %>
+            </span>
+          </div>
+          <div class="kpi-validation-cells table-responsive border rounded">
+            <table class="table table-sm table-bordered mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>KPI</th>
+                  <th>Period</th>
+                  <th>Cell</th>
+                  <th class="text-end">In your file</th>
+                  <th class="text-end">Will be stored</th>
+                  <th>How</th>
+                  <th class="text-end">Approved now</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% sorted_cells.each do |c| %>
+                  <% row_class = case c['status']
+                                 when 'error', 'duplicate' then 'table-danger'
+                                 when 'future', 'skipped' then 'table-secondary'
+                                 else (c['changed'] ? 'table-warning' : (c['is_requested'] ? 'kpi-validation-requested-row' : ''))
+                                 end %>
+                  <tr class="<%= row_class %>">
+                    <td><%= c['kpi'] %><% if c['standard_kpi'].present? && c['standard_kpi'] != c['kpi'] %> <span class="text-muted">(<%= c['standard_kpi'] %>)</span><% end %></td>
+                    <td><%= c['period'] %><% if c['tag'].present? && c['tag'] != 'Actual' %> <span class="badge bg-light text-dark border"><%= c['tag'] %></span><% end %></td>
+                    <td class="text-muted"><%= c['ref'] %></td>
+                    <td class="text-end"><%= c['raw'] %></td>
+                    <td class="text-end fw-semibold"><%= c['status'] == 'ok' ? fmt.call(c['stored']) : '—' %></td>
+                    <td class="text-muted"><%= Array(c['applied']).join('; ') %></td>
+                    <td class="text-end"><%= c['old_value'].present? ? fmt.call(c['old_value']) : '' %></td>
+                    <td>
+                      <% case c['status']
+                         when 'ok' %>
+                        <% if c['changed'] %><span class="badge bg-warning text-dark">changed</span>
+                        <% elsif c['old_value'].present? %><span class="badge bg-light text-dark border">same as approved</span>
+                        <% else %><span class="badge bg-success">new</span><% end %>
+                      <% when 'error' %><span class="badge bg-danger"><%= c['code'].to_s.humanize %></span>
+                      <% when 'duplicate' %><span class="badge bg-danger">duplicate</span>
+                      <% when 'future' %><span class="badge bg-secondary">future — ignored</span>
+                      <% when 'skipped' %><span class="badge bg-secondary">blank</span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

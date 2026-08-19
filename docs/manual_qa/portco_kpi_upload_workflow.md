@@ -159,3 +159,12 @@
 | Draft Saved | Portco saved progress, not yet submitted |
 | Submitted | Portco clicked Submit — fund notified |
 | Reviewed | Fund admin marked as reviewed |
+
+## 8. Server-side workbook check (pre-save panel) — added 2026-08-18
+
+The old browser-side XLSX check has been replaced by a server-side dry run
+(`KpiWorkbookReader#validate`) whose verdict is rendered into the **Workbook check** panel on the
+report edit page (portco magic link and fund users alike) as soon as an upload finishes. The manual QA
+table for this — formatted numbers (1,200 / (500) / ₹ / 1.2M / 12%), requested-period checks, duplicates,
+hidden sheets, future columns, changed approved values, fiscal-year labels, no-mappings — lives in
+`docs/technical/kpi_portco_upload_validation_review.md` §6.1.

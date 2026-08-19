@@ -275,27 +275,34 @@ When('I upload the kpi workbook {string} for validation') do |workbook_file|
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
 end
 
+# The workbook check is server-side (KpiReportsController#validate_upload → KpiWorkbookReader#validate);
+# the verdict is rendered into #kpi_validation_panel by turbo_stream after the upload completes.
 Then('I should see a validation report with the message {string}') do |message|
-  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
-    expect(page).to have_content(message, wait: 10)
+  within('#kpi_validation_panel') do
+    expect(page).to have_content(message, wait: 15)
   end
 end
 
 And('the report should list {string} found KPIs') do |count|
-  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
-    expect(page).to have_css('table tbody tr td span[style="color:green;"]', count: count.to_i, wait: 10)
+  within('#kpi_validation_panel') do
+    expect(page).to have_content("#{count} of ", wait: 15)
+    expect(page).to have_content("expected KPIs found")
   end
 end
 
 And('the report should list {string} missing KPIs') do |count|
-  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
-    expect(page).to have_css('table tbody tr td span[style="color:red;"]', count: count.to_i, wait: 10)
+  within('#kpi_validation_panel') do
+    if count.to_i.zero?
+      expect(page).not_to have_content("Missing:")
+    else
+      expect(page).to have_content("Missing:", wait: 15)
+    end
   end
 end
 
 Then('I should see a validation error with the message {string}') do |error_message|
-  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
-    expect(page).to have_content(error_message, wait: 10)
+  within('#kpi_validation_panel') do
+    expect(page).to have_content(error_message, wait: 15)
   end
 end
 

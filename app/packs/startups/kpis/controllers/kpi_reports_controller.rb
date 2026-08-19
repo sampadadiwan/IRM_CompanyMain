@@ -1,6 +1,9 @@
 class KpiReportsController < ApplicationController
-  skip_before_action :authenticate_user!, only: %i[show edit update], if: -> { params[:signed_id].present? }
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze refresh_import mark_reviewed]
+  skip_before_action :authenticate_user!, only: %i[show edit update validate_upload template], if: -> { params[:signed_id].present? }
+  # validate_upload is called by JS after Uppy finishes; the magic link's signed_id keeps it usable
+  # by unauthenticated portco users, and CSRF is enforced by the token the form page carries.
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze refresh_import mark_reviewed reopen template]
+  before_action :set_kpi_report_for_validation, only: %i[validate_upload]
   after_action :verify_authorized, except: %i[index search show_performance chart_refresh refresh_import portco_pending]
   after_action :verify_policy_scoped, only: %i[index chart_refresh]
 
@@ -78,6 +81,17 @@ class KpiReportsController < ApplicationController
     authorize @kpi_report
     setup_doc_user(@kpi_report)
 
+    # A workbook with blocking errors is never saved — for fund users too (§2.1 applies to everyone;
+    # the requested-period rule is only a warning on fund-created reports, so what blocks here are
+    # genuine file problems: no header, unreadable values, duplicates, no mappings …).
+    if (blocked = uploaded_workbook_blocked?(current_user))
+      setup_custom_fields(@kpi_report)
+      @kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.order(:reported_kpi_name) if @kpi_report.portfolio_company.present?
+      flash.now[:alert] = blocked
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     respond_to do |format|
       if @kpi_report.save
         format.html { redirect_to edit_kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: "Kpi report was successfully created." }
@@ -98,18 +112,71 @@ class KpiReportsController < ApplicationController
     # current_user is nil for unauthenticated magic-link submissions; fall back to @signed_id_user.
     acting_user = current_user || @signed_id_user
     merged = kpi_report_params.merge(user_id: acting_user&.id).merge(status_attrs)
+    # Portco uploads always refresh existing staged values — set here rather than trusted from the wire.
+    # (string — KpiReport#import_kpis tests %w[1 true])
+    merged[:update_existing_kpis] = 'true' if portco_actor?
+
+    # A fund user may re-point a report to another portfolio company, but only one of their own —
+    # authorisation ran against the record as loaded, so re-check the target (§2.8).
+    return unless authorized_target_portfolio_company?(merged[:portfolio_company_id])
+
+    # Fund users: a newly uploaded workbook with blocking errors is not saved either — same rule as the
+    # portco gate, minus the "requested period" strictness (a warning for fund-created reports).
+    if !portco_actor? && (blocked = uploaded_workbook_blocked?(acting_user))
+      setup_custom_fields(@kpi_report)
+      @kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.order(:reported_kpi_name) if @kpi_report.portfolio_company.present?
+      flash.now[:alert] = blocked
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
+    # Submit gate (§2.1 / §2.2 D): a portco's final submission must carry a KPI workbook that passes
+    # the same server-side check the pre-save panel showed. If it does not, save what they sent as a
+    # draft (so the upload is not lost), keep the status, do not notify the fund, and show the errors.
+    if status_attrs[:status] == 'submitted' && !was_already_submitted && portco_actor?
+      verdict = gate_verdict(acting_user)
+      # Passed the gate: mark the import as pending — ImportKpiWorkbookJob flips it to imported/failed
+      # and is the one that notifies the fund (§2.2 E), so "submitted" always means "and staged".
+      if verdict['ok']
+        merged[:import_status] = 'pending'
+        # The import job is what completes the submission — make sure after_commit enqueues it
+        # (string — KpiReport#import_kpis tests %w[1 true]).
+        merged[:upload_new_kpis] = 'true'
+      end
+      unless verdict['ok']
+        merged = merged.except(:status, :submitted_at)
+        merged[:status] = 'draft_saved' if @kpi_report.status_shell_created? || @kpi_report.status_link_sent?
+        status_attrs = {}
+        error_count = Array(verdict['errors']).size
+        flash[:alert] = "Not submitted — the KPI workbook has #{helpers.pluralize(error_count, 'blocking error')}. " \
+                        "Your changes were saved as a draft; please fix the errors shown below and submit again."
+      end
+    end
 
     Rails.logger.info "=== KPI UPDATE ==="
     # Use filtered_parameters (not params.inspect) so signed_id bearer tokens are
     # never written to logs in plaintext — raw params.inspect bypasses filter_parameters.
     Rails.logger.info "params: #{request.filtered_parameters.inspect}"
     Rails.logger.info "merged: #{merged.inspect}"
+    # Hard-deletes every Kpi on the report — fund-only, so leave a trace of who asked for it.
+    Rails.logger.warn "KpiReport##{@kpi_report.id}: delete_kpis requested by user #{acting_user&.id} (#{@kpi_report.kpis.count} rows)" if %w[1 true].include?(merged[:delete_kpis].to_s)
 
     respond_to do |format|
       if @kpi_report.update(merged)
         Rails.logger.info "KPI update succeeded!"
-        notify_fund_on_submission(@kpi_report) if status_attrs[:status] == 'submitted' && !was_already_submitted
-        notice = status_attrs[:status] == 'submitted' ? "KPI report submitted. The fund team has been notified." : "Kpi report was successfully updated."
+        # The document just attached (if any) is now the report's KPIs file — refresh the stored
+        # verdict so the panel the user lands on reflects it (display only; the gate recomputed above).
+        KpiUploadValidate.call(kpi_report: @kpi_report, user: acting_user) if merged[:documents_attributes].present? && @kpi_report.documents.exists?(name: "KPIs")
+        # Fund users submitting on a portco's behalf (no import gate) are notified immediately as before;
+        # portco submissions notify from the import job once the data is staged.
+        notify_fund_on_submission(@kpi_report) if status_attrs[:status] == 'submitted' && !was_already_submitted && !portco_actor?
+        notice = if flash[:alert].present?
+                   nil
+                 elsif status_attrs[:status] == 'submitted'
+                   "KPI report submitted. Your workbook is being imported and the fund team will be notified."
+                 else
+                   "Kpi report was successfully updated."
+                 end
         format.html { redirect_to edit_kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: notice }
         format.json { render :show, status: :ok, location: @kpi_report }
       else
@@ -118,6 +185,52 @@ class KpiReportsController < ApplicationController
         format.json { render json: @kpi_report.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  # POST /kpi_reports/:id/validate_upload
+  #
+  # Dry-run validation of a KPI workbook (docs/technical/kpi_portco_upload_validation_review.md §3.1 C).
+  # The browser holds NO rules — Uppy uploads to the Shrine cache, JS posts the cached-file JSON here,
+  # KpiWorkbookReader#validate parses it exactly as the import would (writing nothing), and the
+  # verdict is rendered into the validation panel. The same reader gates final submission, so what
+  # the portco sees is what will be stored. Accepts `file_data` (Shrine cached JSON), a multipart
+  # `file`, or neither (re-check the already-attached KPIs document, e.g. on page load).
+  # Member route: an existing report (portco magic link, fund edit page). Collection route: the fund's
+  # New page — the report context (portfolio company, as_of, period, tag) is built from the form fields.
+  def validate_upload
+    acting_user = current_user || @signed_id_user
+    result = KpiUploadValidate.call(kpi_report: @kpi_report, user: acting_user,
+                                    file_data: params[:file_data], file: params[:file])
+    @verdict = result[:verdict]
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "kpi_validation_panel",
+          partial: "kpi_reports/validation_panel",
+          locals: { verdict: @verdict, kpi_report: @kpi_report }
+        )
+      end
+      format.json { render json: @verdict }
+      format.html { redirect_to(@kpi_report.persisted? ? edit_kpi_report_url(@kpi_report, signed_id: params[:signed_id]) : new_kpi_report_url) }
+    end
+  end
+
+  # PATCH /kpi_reports/:id/reopen — fund side "reopen and ask for re-upload" (§3.4 Q): back to
+  # draft_saved, submission markers cleared, magic link re-sent to the portco's Kpi users.
+  def reopen
+    authorize @kpi_report
+    @kpi_report.reopen_for_portco!(current_user.entity_id)
+    redirect_to kpi_report_url(@kpi_report), notice: "Report reopened and the portfolio company has been asked to upload again."
+  end
+
+  # GET /kpi_reports/:id/template.xlsx — a workbook pre-filled with this portco's KPI names and the
+  # requested period (plus the two previous ones), so uploads start from a file the importer reads
+  # without guesswork (§3.4 P). Magic-link users can download it (set_kpi_report handles signed_id).
+  def template
+    result = KpiTemplateGenerate.call(kpi_report: @kpi_report)
+    send_data result[:xlsx], filename: result[:filename],
+                             type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
 
   # PATCH /kpi_reports/:id/mark_reviewed
@@ -225,10 +338,16 @@ class KpiReportsController < ApplicationController
     )
 
     notice = portfolio_company_ids.size > 1 ? "Notifications are being sent." : "Notification is being sent."
+    # A portco with no non-computed KPI mappings can upload nothing usable — say so now, at send time (§2.7).
+    unmapped = Investor.where(id: portfolio_company_ids)
+                       .where.not(id: InvestorKpiMapping.not_compute.select(:investor_id))
+                       .order(:investor_name).pluck(:investor_name)
+    unmapped_alert = "No KPI mappings configured for: #{unmapped.join(', ')} — their uploads will be rejected until mappings are added under Investors → KPI Mappings." if unmapped.any?
     respond_to do |format|
-      format.html { redirect_to request.referer || kpi_reports_path, notice: notice }
+      format.html { redirect_to request.referer || kpi_reports_path, notice: notice, alert: unmapped_alert }
       format.turbo_stream do
         flash.now[:notice] = notice
+        flash.now[:alert] = unmapped_alert if unmapped_alert
         streams = [
           turbo_stream.update("remote_modal", ""),
           turbo_stream.append("remote_modal", partial: "kpi_reports/alerts"),
@@ -283,6 +402,57 @@ class KpiReportsController < ApplicationController
 
   private
 
+  # True when the acting user is NOT an employee of the fund that owns the report — i.e. a portco
+  # self-reporting via magic link or a logged-in portco user. Drives param scoping and the submit gate.
+  def portco_actor?
+    acting_user = current_user || @signed_id_user
+    return true if @signed_id_user.present?
+    return false if acting_user.blank? || @kpi_report.blank?
+
+    acting_user.entity_id != @kpi_report.entity_id
+  end
+
+  # Runs the same server-side check the pre-save panel uses, against the workbook this request is
+  # submitting: a freshly uploaded file (Shrine cached JSON in documents_attributes) if present,
+  # otherwise the KPIs document already attached to the report. Persists the verdict for display.
+  def gate_verdict(acting_user)
+    docs = params.dig(:kpi_report, :documents_attributes)
+    file_data = nil
+    if docs.respond_to?(:values)
+      kpi_doc = docs.values.find { |d| d[:name].to_s == "KPIs" && d[:file].present? }
+      file_data = kpi_doc[:file] if kpi_doc
+    end
+    KpiUploadValidate.call(kpi_report: @kpi_report, user: acting_user, file_data: file_data)[:verdict] || { 'ok' => false, 'errors' => [] }
+  end
+
+  # When this request attaches a NEW KPIs workbook (Shrine cached JSON in documents_attributes), run the
+  # workbook check on it. Returns an alert message when it has blocking errors, nil otherwise
+  # (no new file → nothing to check here; the existing document was checked when it was attached).
+  def uploaded_workbook_blocked?(acting_user)
+    docs = params.dig(:kpi_report, :documents_attributes)
+    return nil unless docs.respond_to?(:values)
+
+    kpi_doc = docs.values.find { |d| d[:name].to_s == "KPIs" && d[:file].present? }
+    return nil unless kpi_doc
+
+    verdict = KpiUploadValidate.call(kpi_report: @kpi_report, user: acting_user, file_data: kpi_doc[:file])[:verdict]
+    return nil if verdict.blank? || verdict['ok']
+
+    @verdict = verdict
+    "Not saved — the KPI workbook has #{helpers.pluralize(Array(verdict['errors']).size, 'blocking error')}. Please fix the errors shown in the workbook check and try again."
+  end
+
+  # For a fund user changing portfolio_company_id: the target must belong to their own entity.
+  # Renders a 403 and returns false when it does not (mirrors send_portco_notification's check).
+  def authorized_target_portfolio_company?(new_pc_id)
+    return true if new_pc_id.blank? || new_pc_id.to_i == @kpi_report.portfolio_company_id
+
+    target = Investor.find_by(id: new_pc_id)
+    raise Pundit::NotAuthorizedError, "portfolio company does not belong to this report's entity" if target.nil? || target.entity_id != @kpi_report.entity_id
+
+    true
+  end
+
   # Determines the status transition for the update action based on submit_action param.
   # "final" submits the report; anything else advances from shell/link_sent to draft_saved.
   def resolve_status_transition(submit_action)
@@ -326,6 +496,25 @@ class KpiReportsController < ApplicationController
     @signed_id_user || current_user
   end
 
+  # validate_upload works for a persisted report (member route, incl. magic link) or for the New page
+  # (collection route) where the report is built from the submitted form fields and never saved.
+  def set_kpi_report_for_validation
+    if params[:id].present? || params[:signed_id].present?
+      set_kpi_report
+    else
+      attrs = params[:kpi_report].present? ? params.require(:kpi_report).permit(:portfolio_company_id, :as_of, :period, :tag_list, :entity_id) : {}
+      @kpi_report = KpiReport.new(attrs)
+      # The report always belongs to the caller's entity, and the portfolio company must be one of
+      # theirs — otherwise a fund user could point the check at another tenant's portco and read its
+      # KPI mapping names / values back through the panel.
+      @kpi_report.entity_id = current_user.entity_id
+      @kpi_report.tag_list = "Actual" if @kpi_report.tag_list.blank?
+      raise Pundit::NotAuthorizedError, "portfolio company does not belong to your entity" if @kpi_report.portfolio_company_id.present? && @kpi_report.portfolio_company&.entity_id != current_user.entity_id
+
+      authorize @kpi_report
+    end
+  end
+
   # Use callbacks to share common setup or constraints between actions.
   def set_kpi_report
     if params[:signed_id].present?
@@ -353,8 +542,19 @@ class KpiReportsController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # Portco actors (magic link or logged-in portco user) may only change what their form shows:
+  # notes, custom fields, the workbook and the upload flag. Report identity (portfolio company,
+  # period, tag, entity), nested KPI rows and delete_kpis are fund-only (§2.8) — the browser used to
+  # enforce this with disabled inputs, which is not enforcement.
   def kpi_report_params
-    params.require(:kpi_report).permit(:portfolio_company_id, :entity_id, :as_of, :tag_list, :notes, :user_id, :form_type_id, :delete_kpis, :update_existing_kpis, :upload_new_kpis, :period, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy], documents_attributes: Document::NESTED_ATTRIBUTES)
+    if action_name != 'create' && @kpi_report.present? && portco_actor?
+      params.require(:kpi_report).permit(:notes, :upload_new_kpis, properties: {}, documents_attributes: Document::NESTED_ATTRIBUTES)
+    else
+      # entity_id is only settable on create — a report never moves tenant on update.
+      permitted = %i[portfolio_company_id as_of tag_list notes user_id form_type_id delete_kpis update_existing_kpis upload_new_kpis period]
+      permitted << :entity_id if action_name == 'create'
+      params.require(:kpi_report).permit(*permitted, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy], documents_attributes: Document::NESTED_ATTRIBUTES)
+    end
   end
 
   def search

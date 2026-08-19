@@ -11,6 +11,10 @@ class KpiReportCreateShell < Trailblazer::Operation
   # Gather all attributes required for the KpiReport model.
   # We assign a default user_id from the Fund entity to act as the initial "creator".
   def setup_params(ctx, entity:, portco:, as_of:, period:, **)
+    # Imported periods always resolve to the END of the month/quarter/year (KpiDateUtils), so the
+    # request must live on the same date or the portco's data would land on a different report and
+    # the requested-period check could never be satisfied. Normalise whatever date the fund typed.
+    as_of = as_of.to_date.end_of_month
     ctx[:params] = {
       entity: entity,
       portfolio_company: portco,

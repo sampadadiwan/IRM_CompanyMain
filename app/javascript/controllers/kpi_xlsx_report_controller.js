@@ -1,25 +1,48 @@
 import { Controller } from "@hotwired/stimulus";
-import * as XLSX from "xlsx";
 
-const XLSXLib = XLSX && XLSX.read ? XLSX : window.XLSX;
-
-// Compares an uploaded XLSX against expected KPI mappings and renders a per-KPI
-// status table. Listens for the custom `upload:complete` event fired by the file
-// upload component, then uses SheetJS to parse the workbook client-side.
+// KPI workbook check — display only.
+//
+// All validation rules live on the server (KpiWorkbookReader#validate, reached via
+// KpiReportsController#validate_upload). This controller:
+//   1. listens for the `upload:complete` event the file-upload component fires after Uppy finishes,
+//   2. POSTs the uploaded file reference (Shrine cached-file JSON) — or the File itself as a
+//      fallback — to the validate_upload endpoint,
+//   3. renders the turbo_stream response, which replaces #kpi_validation_panel.
+// The panel's own controller (kpi-validation-panel) toggles the submit guard from the server's
+// error count. No regexes, no counting, no rules here — by design
+// (docs/technical/kpi_portco_upload_validation_review.md §2.3).
 export default class extends Controller {
-  static targets = ["output"];
+  static targets = ["spinner"];
+  static values = {
+    url: String,          // validate_upload path (with signed_id for magic-link users)
+    hasDocument: Boolean, // a KPIs document is already attached to the report
+    hasVerdict: Boolean,  // a stored verdict was rendered server-side on page load
+    persisted: Boolean,   // false on the New page — the report context is sent from the form fields
+  };
 
   connect() {
     this.handleUploadBound = this.handleUpload.bind(this);
     document.addEventListener("upload:complete", this.handleUploadBound);
+
+    // A document exists but nothing has been checked yet (e.g. attached before this feature) —
+    // ask the server for a verdict so the panel and guard reflect reality on load.
+    if (this.urlValue && this.hasDocumentValue && !this.hasVerdictValue) {
+      this.post(new FormData());
+    }
   }
 
   disconnect() {
     document.removeEventListener("upload:complete", this.handleUploadBound);
   }
 
+  // "Re-check file" button — validates the already-attached KPIs document again.
+  recheck() {
+    if (!this.urlValue) return;
+    this.post(new FormData());
+  }
+
   handleUpload(event) {
-    const { file, uploadId } = event.detail;
+    const { file, uploadId, uploadedData } = event.detail || {};
     const controllerUploadId = this.element.dataset.uploadId;
     const targetId = event.target?.id || event.target?.closest?.("[id]")?.id;
 
@@ -32,180 +55,74 @@ export default class extends Controller {
       (targetId === controllerUploadId ||
         targetId?.includes(controllerUploadId) ||
         controllerUploadId.includes(targetId || ""));
-
     if (!idMatches && !fallbackMatches) return;
+    if (!this.urlValue) return;
 
-    const reportedKpis = JSON.parse(this.element.dataset.reportedKpis || "[]");
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const lib = (XLSX && XLSX.read) ? XLSX : window.XLSX;
-        if (!lib || typeof lib.read !== "function") throw new Error("XLSX library unavailable");
-        const data = new Uint8Array(e.target.result);
-        const workbook = lib.read(data, { type: "array" });
-        this.analyzeWorkbook(workbook, reportedKpis);
-      } catch (err) {
-        this.outputTarget.innerHTML =
-          `<div class="alert alert-danger">` +
-          `<strong>Please fix these errors before submitting.</strong> ` +
-          `Failed to parse the uploaded file: ${err.message}</div>`;
-        this.setSubmitGuard(true);
-      }
-    };
-    reader.onerror = () => {
-      this.outputTarget.innerHTML =
-        `<div class="alert alert-danger">Failed to read the uploaded file.</div>`;
-      this.setSubmitGuard(true);
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  analyzeWorkbook(workbook, reportedKpis) {
-    const normalize = (str) => (str || "").toString().replace(/\s+/g, "").toLowerCase();
-    const results = [];
-    const errors = [];
-
-    workbook.SheetNames.forEach((sheetName) => {
-      const sheet = workbook.Sheets[sheetName];
-      if (!sheet["!ref"]) {
-        errors.push(`Sheet '${sheetName}' is empty or invalid.`);
-        return;
-      }
-
-      const data = XLSXLib.utils.sheet_to_json(sheet, { header: 1 });
-      if (data.length === 0) {
-        errors.push(`Sheet '${sheetName}' is empty.`);
-        return;
-      }
-
-      const headerRow = data[0] || [];
-      const periodColumns = headerRow.slice(1).filter((v) => this.isDateLike(v));
-
-      if (periodColumns.length < 1) {
-        errors.push(
-          `Invalid or missing header row in sheet '${sheetName}'. ` +
-          `Expected date-like values (e.g. Jan 24, FY24, Q1FY25). ` +
-          `Found: ${headerRow.slice(1).join(", ")}`
-        );
-        return;
-      }
-
-      const hasKpiNames = data.length > 1 &&
-        data.some((r, i) => i > 0 && r[0] && r[0].toString().trim() !== "");
-      if (!hasKpiNames) {
-        errors.push(
-          `Missing KPI names in sheet '${sheetName}'. The first column should contain KPI names.`
-        );
-        return;
-      }
-
-      const periodCount = periodColumns.length;
-
-      reportedKpis.forEach((kpiObj) => {
-        // Changed from r[0] to r.some() — the old code only checked column A for KPI name matches,
-        // so children in column B (column-based parent-child layout) were falsely reported as "Missing"
-        // in the preview even though the server-side parser (multi-column scan) found them.
-        const row = data.find((r) => r.some((cell) => normalize(cell) === normalize(kpiObj.reported_kpi_name)));
-        if (!row) return;
-
-        const nonBlankCount = row
-          .slice(1)
-          .filter((v) => v !== null && v !== undefined && v.toString().trim() !== "")
-          .length;
-
-        results.push({ sheet: sheetName, kpi: kpiObj.reported_kpi_name, nonBlankCount, periodCount });
-      });
-    });
-
-    if (errors.length > 0) {
-      this.outputTarget.innerHTML =
-        `<div class="alert alert-danger">Errors:<ul>${errors.map((e) => `<li>${e}</li>`).join("")}</ul>` +
-        `<strong>Please fix these errors before submitting.</strong></div>`;
-      this.setSubmitGuard(true);
+    const body = new FormData();
+    this.appendFormContext(body);
+    if (uploadedData) {
+      // Normal path: Uppy already put the file in the Shrine cache; send the reference only.
+      body.append("file_data", uploadedData);
+    } else if (file) {
+      // Fallback (tests / upload libs without cached data): send the bytes themselves.
+      body.append("file", file, file.name);
+    } else {
       return;
     }
-
-    const foundNames = new Set(results.map((r) => normalize(r.kpi)));
-    const missing = reportedKpis
-      .filter((k) => !foundNames.has(normalize(k.reported_kpi_name)))
-      .map((k) => k.reported_kpi_name);
-
-    this.renderReport(results, missing, reportedKpis.length);
+    this.post(body);
   }
 
-  renderReport(results, missing, totalKpis) {
-    const foundCount = totalKpis - missing.length;
-    let html = "<div class='card card-body'>";
-
-    if (missing.length > 0) {
-      html +=
-        `<div class="alert alert-warning">` +
-        `${foundCount} of ${totalKpis} KPIs found. ` +
-        `Missing: ${missing.join(", ")}. ` +
-        `You can still submit — missing KPIs will not be imported.` +
-        `</div>`;
-    } else {
-      html += `<div class="alert alert-success">All ${totalKpis} KPIs found.</div>`;
-    }
-
-    const allKpis = [
-      ...results.map((r) => ({ ...r, present: true })),
-      ...missing.map((m) => ({ sheet: "-", kpi: m, nonBlankCount: 0, periodCount: 0, present: false })),
-    ];
-
-    if (allKpis.length > 0) {
-      html += `<table class="table table-bordered table-sm">
-        <thead><tr><th>Status</th><th>Sheet</th><th>KPI</th><th>Non-Blank Values</th></tr></thead>
-        <tbody>`;
-      allKpis.forEach((r) => {
-        const icon = r.present
-          ? '<span style="color:green;">&#10004;</span>'
-          : '<span style="color:red;">&#10008;</span>';
-        const valueDisplay = r.present ? `${r.nonBlankCount} / ${r.periodCount}` : "-";
-        html += `<tr><td>${icon}</td><td>${r.sheet}</td><td>${r.kpi}</td><td>${valueDisplay}</td></tr>`;
-      });
-      html += "</tbody></table>";
-    }
-
-    html += "</div>";
-    this.outputTarget.innerHTML = html;
-    this.setSubmitGuard(false);
-  }
-
-  // Disables or re-enables all submit buttons marked with data-kpi-submit-guard.
-  // Only portco form buttons carry this attribute, so fund admin forms are unaffected.
-  setSubmitGuard(blocked) {
-    document.querySelectorAll("[data-kpi-submit-guard]").forEach((el) => {
-      el.disabled = blocked;
+  // On the New page the report is not saved yet: send the form's portfolio company / as_of / period /
+  // tag along so the server can build the same context the import will later use.
+  appendFormContext(body) {
+    if (this.persistedValue) return;
+    const form = document.getElementById("kpi-report-form");
+    if (!form) return;
+    ["portfolio_company_id", "as_of", "period", "tag_list"].forEach((name) => {
+      // The form renders a hidden text field AND a visible select for portfolio_company_id — prefer
+      // the visible control (what the user actually chose), then fall back to any field of that name.
+      const el = form.querySelector(`select[name="kpi_report[${name}]"]`) || form.querySelector(`[name="kpi_report[${name}]"]`);
+      if (el && el.value !== undefined && el.value !== "") body.append(`kpi_report[${name}]`, el.value);
     });
   }
 
-  // Returns true if a cell value looks like a date/period header.
-  // Mirrors KpiDateUtils.date_like? on the Ruby side.
-  isDateLike(v) {
-    if (!v) return false;
+  async post(body) {
+    this.showSpinner(true);
+    try {
+      const response = await fetch(this.urlValue, {
+        method: "POST",
+        headers: {
+          Accept: "text/vnd.turbo-stream.html",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content || "",
+        },
+        body,
+        credentials: "same-origin",
+      });
+      const html = await response.text();
+      if (response.ok && window.Turbo) {
+        window.Turbo.renderStreamMessage(html);
+      } else {
+        this.renderFailure(`The workbook check could not be completed (HTTP ${response.status}). Please try again.`);
+      }
+    } catch (err) {
+      this.renderFailure(`The workbook check could not be completed: ${err.message}`);
+    } finally {
+      this.showSpinner(false);
+    }
+  }
 
-    // Numeric Excel date serials (e.g. 45689 → 2025-02-15)
-    if (!isNaN(v) && v > 10000 && v < 60000) return true;
+  // Network/server failure: show a message and keep Submit blocked — an unchecked file must not go through.
+  renderFailure(message) {
+    const panel = document.getElementById("kpi_validation_panel");
+    if (!panel) return;
+    panel.innerHTML = `<div class="alert alert-danger mb-0">${message}</div>`;
+    // Mark as "checked with 1 error" so kpi_validation_panel_controller keeps every button disabled.
+    panel.dataset.kpiValidationPanelCheckedValue = "true";
+    panel.dataset.kpiValidationPanelErrorsValue = "1";
+    document.querySelectorAll("[data-kpi-submit-guard]").forEach((el) => { el.disabled = true; });
+  }
 
-    const s = v.toString().trim();
-
-    // "Jan-24", "Feb-24", "Mar-25" shorthand
-    if (/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)[-'']?\d{2,4}\b/i.test(s)) return true;
-
-    const patterns = [
-      /\bH[12](?:\s?FY)?\s?\d{2,4}\b/i,                                                                                          // H1 2023, H2FY23
-      /\bQ[1-4][-' ]?(?:FY|CY)?\d{2,4}\b/i,                                                                                      // Q1FY25, Q3CY22
-      /\bFY\s?\d{2,4}[-–]\d{2,4}\b/i,                                                                                             // FY2020-21
-      /\b(?:FY|CY)\s?\d{2,4}\b/i,                                                                                                 // FY23, CY2024
-      /\b(?:JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\s+\d{2,4}\b/i, // Jan 24, September 2024
-      /\b(?:JFM|AMJ|JAS|OND)\s+\d{4}\b/i,                                                                                        // JFM 2021
-      /\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)-(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+\d{4}\b/i, // Jan-Mar 2021
-      /\b\d{2}[-/]\d{2}[-/]\d{2,4}\b/,                                                                                            // 01-11-2024
-      /\b\d{4}\b/,                                                                                                                 // plain year
-    ];
-
-    return patterns.some((p) => p.test(s));
+  showSpinner(on) {
+    if (this.hasSpinnerTarget) this.spinnerTarget.classList.toggle("d-none", !on);
   }
 }

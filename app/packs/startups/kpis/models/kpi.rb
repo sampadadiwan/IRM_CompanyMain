@@ -142,6 +142,12 @@ class Kpi < ApplicationRecord
        .first
   end
 
+  # Class-level RAG evaluation so callers without a Kpi instance (e.g. KpiWorkbookReader's
+  # pre-save plausibility check) can apply the same rules as #determine_rag_status_from_rules.
+  def self.rag_status_for(ratio, rules_hash, comparison_type: 'ratio_rules')
+    new.determine_rag_status_from_rules(ratio, rules_hash, comparison_type: comparison_type)
+  end
+
   # Helper method to determine RAG status from rules
   def determine_rag_status_from_rules(ratio, rules_hash, comparison_type: 'ratio_rules')
     return nil unless rules_hash.present? && rules_hash[comparison_type].present?
@@ -151,8 +157,9 @@ class Kpi < ApplicationRecord
     # Convert string keys to symbols for easier access if needed, or ensure consistency
     # rules = rules.transform_keys(&:to_sym)
 
-    # Sort rules by min bound to ensure correct order of evaluation
-    sorted_rules = rules.values.sort_by { |r| r['min'] }
+    # Sort rules by min bound to ensure correct order of evaluation. Bounds may be numbers or the
+    # string sentinels "-Infinity"/"Infinity" — normalise before sorting so mixed types don't raise.
+    sorted_rules = rules.values.sort_by { |r| r['min'] == '-Infinity' ? -Float::INFINITY : r['min'].to_f }
 
     sorted_rules.each do |rule|
       min_val = rule['min'] == '-Infinity' ? -Float::INFINITY : rule['min'].to_f

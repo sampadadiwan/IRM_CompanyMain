@@ -26,7 +26,7 @@ Feature: KPI Workbook Reading
       | kpi_extraction/Fintech MIS.xlsx | Loans Disbursed, Net Income, Numberof customers| 8 |
       # Add more example rows with different files or target KPI combinations as needed
 
-  Scenario Outline: Generating a client-side KPI validation report from an uploaded workbook
+  Scenario Outline: Generating a server-side KPI validation report from an uploaded workbook
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
     And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -45,10 +45,12 @@ Feature: KPI Workbook Reading
 
     Examples:
       | workbook_file                               | message                 | found_kpis | missing_kpis |
-      | kpi_extraction/validation/all_found.xlsx    | All 5 KPIs found.      | 5          | 0            |
-      | kpi_extraction/validation/missing_kpis.xlsx | Missing: Returns%.     | 4          | 1            |
+      | kpi_extraction/validation/all_found.xlsx    | 5 of 5 expected KPIs found | 5          | 0            |
+      | kpi_extraction/validation/missing_kpis.xlsx | Missing: Returns%          | 4          | 1            |
 
-  Scenario Outline: Handling workbooks with structural errors during client-side validation
+  # invalid_header.xlsx has a blank row above the header: the old browser check (row 1 only) rejected
+  # it, the server reads the header on row 2 — a valid file, and the panel must say so.
+  Scenario Outline: Handling workbooks with structural quirks during server-side validation
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
     And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -61,7 +63,7 @@ Feature: KPI Workbook Reading
 
     Examples:
       | workbook_file                                  | error_message                                                                                                     |
-      | kpi_extraction/validation/invalid_header.xlsx  | Invalid or missing header row in sheet 'MIS'. Expected date-like values (e.g. Jan 24, FY24, Q1FY25). |
+      | kpi_extraction/validation/invalid_header.xlsx  | 1 of 1 expected KPIs found |
       | kpi_extraction/validation/empty_sheet.xlsx     | Sheet 'Sheet1' is empty  |
 
   Scenario: Future 'Actual' KPIs should not be imported

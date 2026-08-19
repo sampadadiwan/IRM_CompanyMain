@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2687,6 +2687,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
     t.boolean "enable_portco_upload", default: false, null: false
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
+    t.datetime "fund_notified_at"
+    t.string "import_status", limit: 20
     t.bigint "import_upload_id"
     t.json "json_fields"
     t.datetime "link_sent_at"
@@ -2699,6 +2701,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
     t.string "tag_list", default: "Actual"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.datetime "validated_at"
+    t.json "validation_result"
     t.index ["deleted_at"], name: "index_kpi_reports_on_deleted_at"
     t.index ["document_folder_id"], name: "index_kpi_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_kpi_reports_on_entity_id"

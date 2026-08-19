@@ -1,0 +1,25 @@
+// Pre-save KPI workbook check panel (kpi_reports/_validation_panel.html.erb).
+// Font sizes intentionally inherit from the surrounding form — no reduced text.
+#kpi_validation_panel {
+  .kpi-validation-list {
+    max-height: 16rem;
+    overflow-y: auto;
+    padding-left: 1.25rem;
+  }
+
+  .kpi-validation-cells {
+    max-height: 28rem;
+    overflow: auto;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+  }
+
+  // Rows for the period the fund asked for stand out slightly against other periods
+  .kpi-validation-requested-row td {
+    font-weight: 600;
+  }
+}

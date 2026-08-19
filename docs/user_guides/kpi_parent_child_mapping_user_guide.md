@@ -140,9 +140,28 @@ Parents are in column A, children are in column B. Values start from column C on
 └──────────────┴─────────────┴────────┴────────┴────────┘
 ```
 
+#### Layout C: Parent Repeated on Every Child Row (Filled-Down)
+
+Common in exports and pivot tables — the parent name is repeated in column A on each child row, with the child in column B. The parent's own total sits on a row with an empty column B.
+
+```
+┌──────────────┬─────────────┬────────┬────────┬────────┐
+│ KPI          │ Segment     │ Apr 25 │ May 25 │ Jun 25 │
+├──────────────┼─────────────┼────────┼────────┼────────┤
+│ Net Sales    │             │  1000  │  1100  │  1200  │
+│ Net Sales    │ Enterprise  │   500  │   550  │   600  │
+│ Net Sales    │ Mid-Market  │   300  │   330  │   360  │
+│ Net Sales    │ SMB         │   200  │   220  │   240  │
+│ Operating Cost│            │   800  │   850  │   900  │
+│ Operating Cost│ Enterprise │   400  │   420  │   440  │
+└──────────────┴─────────────┴────────┴────────┴────────┘
+```
+
+A row that names both a parent and one of its own children is read as the **child** row; the parent label on it is treated as context.
+
 ### How the Parser Matches
 
-The parser scans **all columns before the first date column** (left to right). For each row, the first cell that matches a configured `InvestorKpiMapping.reported_kpi_name` is used.
+The parser scans **all columns before the first date column** (left to right) and collects every cell that matches a configured "Reported KPI Name". If a row names a parent and one of that parent's children (Layout C) the child wins; otherwise the leftmost match is used.
 
 ```
 Header:   [  KPI  |        | Apr 25 | May 25 | Jun 25 ]
@@ -156,7 +175,11 @@ Header:   [  KPI  |        | Apr 25 | May 25 | Jun 25 ]
 - After "Net Sales" row → "Enterprise" resolves to "Net Sales - Enterprise"
 - After "Operating Cost" row → "Enterprise" resolves to "Operating Cost - Enterprise"
 
-This means the Excel file must list children **directly below their parent** (which is the natural layout in financial statements).
+This means the Excel file must list children **directly below their parent** (which is the natural layout in financial statements). Two safeguards apply:
+- A row whose label in the parent column is **not a mapped KPI** (e.g. a "Customers" section) resets the current parent, so a following "Enterprise" is not silently attributed to the previous section.
+- If a child name is mapped under **more than one** parent and the sheet gives no clue which section the row belongs to (for example the child appears before any parent row), the row is **skipped and a warning is shown** in the Workbook check panel — the parser never guesses. Put the row under its parent.
+
+**Sum check:** when a parent and *all* of its mapped children (two or more) carry values for a period and the children do not add up to the parent (±1 %), the Workbook check shows a hint such as "Net Sales, Jun 2026: 1,000 but its 2 components add up to 900 (Enterprise + SMB)". It never blocks the upload.
 
 ### ACT/BUDGET/IC Tag Columns
 
@@ -182,14 +205,16 @@ The parser detects the tag row (ACT/BUDGET/IC labels) and creates **separate Kpi
 5. Check "Upload new KPIs"
 6. Click Save
 
-### Client-Side Preview
+### The Workbook Check
 
-Before saving, the upload form shows a preview comparing the attached Excel against configured mappings. The preview scans all columns in each row (matching the server-side parser behavior) and reports:
+Before saving, the upload form shows the **Workbook check** panel — the same check the import itself runs, so what it shows is what will be stored. For parent-child files it reports:
 
-- **Found KPIs:** KPI names in the Excel that match a configured mapping
-- **Missing KPIs:** Configured mappings with no matching row in the Excel
+- **Found / missing KPIs:** which mapped KPIs (parents and children) were found in the Excel and which were not
+- **How we read your file:** one row per value with the resolved name (e.g. `Enterprise (Net Sales - Enterprise)`), what was in the file and what will be stored
+- **Warnings:** a child skipped because its parent could not be determined, or a parent that does not equal the sum of its children
+- **Errors:** the same child under the same parent appearing twice with different values for a period (blocks the upload until one is removed)
 
-This is a quick sanity check before the actual upload.
+See the *KPI Management & Workbook Upload User Guide* for the full list of checks.
 
 ---
 
@@ -254,7 +279,9 @@ A portco starts reporting a new region ("West") under "Net Sales".
      Mid-Market
    ```
 
-3. Values are saved to the correct mapping — no cross-parent collision
+3. Values are saved to the correct mapping — no cross-parent collision. (Layout C — the parent name repeated on each child row — works too.)
+
+4. If "Enterprise" appears **without** a parent row above it, that row is skipped with a warning ("mapped under Net Sales and Operating Cost, but the sheet does not show which section this row belongs to") instead of being guessed.
 
 ### Scenario 3: Re-uploading After Adding New Mappings
 

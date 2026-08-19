@@ -22,8 +22,9 @@ module FormTypeHelper
     render partial: "/form_types/custom_form_fields", locals: { model:, form:, required:, struct:, fields: }
   end
 
-  def file_fields(name, model, form, required: false, meta_data: nil, data_controller: nil)
-    render "/form_custom_fields/file", field: FormCustomField.new(name:, label: name, field_type: "file", required:, form_type_id: model.form_type&.id, meta_data:), model:, f: form, data_controller: data_controller
+  # allowed_types: Uppy allowedFileTypes (extensions like ".xlsx" or MIME types); defaults to any file.
+  def file_fields(name, model, form, required: false, meta_data: nil, data_controller: nil, allowed_types: nil)
+    render "/form_custom_fields/file", field: FormCustomField.new(name:, label: name, field_type: "file", required:, form_type_id: model.form_type&.id, meta_data:), model:, f: form, data_controller: data_controller, allowed_types: allowed_types
   end
 
   def display_custom_fields(model, collapsed: false, custom_fields: [], timestamps_and_snapshot: true)

@@ -66,8 +66,17 @@
 
 
     <div class="form-group">
-        <%= file_fields("KPIs", @kpi_report, form, required: false, meta_data: "KPIs") %>
-        <small class="form-text text-muted">Please upload the KPIs.</small>
+        <%# Spreadsheets only (§2.1 G) — the server re-checks the file type in KpiWorkbookReader (not_spreadsheet). %>
+        <%= file_fields("KPIs", @kpi_report, form, required: false, meta_data: "KPIs", allowed_types: KpiReport::WORKBOOK_FILE_TYPES) %>
+        <small class="form-text text-muted">Please upload the KPIs as an Excel or CSV workbook (.xlsx, .xls, .csv).</small>
+        <% if @kpi_report.persisted? && @kpi_report.portfolio_company.present? %>
+          <div class="mt-1">
+            <%# Pre-filled workbook: this portco's KPI names + the requested period, in a layout the importer reads without guesswork %>
+            <%= link_to template_kpi_report_path(@kpi_report, format: :xlsx, signed_id: params[:signed_id].presence), class: "btn btn-outline-secondary", data: { turbo: false } do %>
+              <i class="ti ti-download me-1"></i>Download KPI template
+            <% end %>
+          </div>
+        <% end %>
         <small class="form-text text-danger">Please ensure the first row indicates the period (eg: January 2025, Q12025,FY2025 etc) and the first column contains the name of the relevant metric.</small>
     </div>
 
@@ -104,15 +113,20 @@
         <% if @kpi_report.status_submitted? || @kpi_report.status_reviewed? %>
           <span class="badge bg-success fs-6 p-2">Report Already Submitted</span>
         <% else %>
-          <%= form.submit "Save Draft", class: "btn btn-outline-secondary", data: { kpi_submit_guard: true } %>
+          <%# data-kpi-submit-guard: "draft" is disabled only on blocking errors; "final" also while no
+              workbook has been checked yet (kpi_validation_panel_controller.js) %>
+          <%= form.submit "Save Draft", class: "btn btn-outline-secondary", data: { kpi_submit_guard: "draft" } %>
           <button type="button" class="btn btn-success"
                   data-bs-toggle="modal" data-bs-target="#submitReportModal"
-                  data-kpi-submit-guard>
+                  data-kpi-submit-guard="final"
+                  title="Upload your KPI workbook to enable submission">
             Submit Report
           </button>
         <% end %>
       <% else %>
-        <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
+        <%# Fund users are not gated on "no file yet", but a workbook with blocking errors cannot be saved
+            (kpi_validation_panel_controller.js disables "draft"-guarded buttons on errors; the server re-checks) %>
+        <%= form.submit t_common(:save), class: "btn btn-outline-primary", data: { kpi_submit_guard: "draft" } %>
       <% end %>
     </div>
   <% end %>
@@ -135,7 +149,7 @@
           </div>
           <div class="modal-footer border-top-0">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-success" data-kpi-submit-guard
+            <button type="button" class="btn btn-success" data-kpi-submit-guard="final"
                     onclick="document.getElementById('submit_action_field').value='final'; document.getElementById('kpi-report-form').requestSubmit();">
               Confirm &amp; Submit
             </button>

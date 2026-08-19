@@ -1,0 +1,18 @@
+<p>Dear <%= @user.name %>,</p>
+
+<p><strong><%= @portfolio_company.investor_name %></strong> submitted their KPI report for the period ending <strong><%= l @kpi_report.as_of %></strong>, but the workbook could not be imported.</p>
+
+<% if @errors.any? %>
+  <p>Problems found:</p>
+  <ul>
+    <% @errors.first(10).each do |message| %>
+      <li><%= message %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<p>The report has been reopened so the portfolio company can correct the file and submit again. They have been emailed the details.</p>
+
+<p><%= link_to 'Open KPI Report', kpi_report_url(@kpi_report, host: @entity.sub_domain + '.' + ENV.fetch('DOMAIN', 'localhost')), class: "btn btn-outline-primary" %></p>
+
+<p>Thank you,<br><%= @entity.name %> System</p>

@@ -60,7 +60,7 @@ class KpiDateUtils
       parse_quarter(str, fiscal_year_start_month) ||
       parse_year(str, fiscal_year_start_month) ||
       parse_ytd(str) ||
-      parse_half_year(str) ||
+      parse_half_year(str, fiscal_year_start_month) ||
       fallback_parse(raw_period, raise_error)
   end
 
@@ -168,7 +168,8 @@ class KpiDateUtils
     start_month = ((((quarter - 1) * 3) + fiscal_year_start_month - 1) % 12) + 1
     # A start month earlier in the calendar than the fiscal year's opening month means the
     # quarter crosses the fiscal year boundary into fiscal_year; otherwise it's in fiscal_year-1.
-    year = start_month < fiscal_year_start_month ? fiscal_year : fiscal_year - 1
+    # A January start means the fiscal year IS the calendar year, so every quarter sits in fiscal_year.
+    year = start_month < fiscal_year_start_month || fiscal_year_start_month == 1 ? fiscal_year : fiscal_year - 1
 
     # Move 2 months forward to get the end month of the quarter
     end_month = ((start_month + 2 - 1) % 12) + 1
@@ -187,7 +188,11 @@ class KpiDateUtils
     Date.new(end_year, end_month, -1)
   end
 
-  def self.parse_year(str, _fiscal_year_start_month)
+  # FY labels are named by the calendar year in which the fiscal year ENDS (FY26 = the year
+  # ending in 2026). Which month it ends in depends on the entity's fiscal-year start
+  # (`month_offset_for_fy` on EntitySetting / json_fields → passed here as a 1-based month).
+  # April start → FY26 ends 31-Mar-2026; January start → FY26 ends 31-Dec-2026.
+  def self.parse_year(str, fiscal_year_start_month = 4)
     return nil if str.blank?
 
     str = str.to_s.strip.upcase.gsub(/\s+/, '')
@@ -196,28 +201,33 @@ class KpiDateUtils
       start_year = normalize_year(match[1])
       end_year = match[2] ? normalize_year(match[2]) : start_year
       # Use end_year for fiscal year end date
-      Date.new(end_year, 3, 31)
+      fiscal_year_end(end_year, fiscal_year_start_month)
     elsif (match = str.match(/\A(?:CY)?(\d{2,4})\z/))
       year = normalize_year(match[1])
       Date.new(year, 12, 31)
     end
   end
 
-  def self.parse_half_year(str)
+  # Last day of the fiscal year that ends in `end_year` for the given 1-based start month.
+  # A January start means the fiscal year is the calendar year (ends 31-Dec of end_year).
+  def self.fiscal_year_end(end_year, fiscal_year_start_month)
+    fiscal_year_start_month = 4 if fiscal_year_start_month.blank?
+    return Date.new(end_year, 12, 31) if fiscal_year_start_month.to_i == 1
+
+    Date.new(end_year, fiscal_year_start_month.to_i - 1, -1)
+  end
+
+  def self.parse_half_year(str, fiscal_year_start_month = 4)
     # Normalize to remove spaces and upcase
     str = str.to_s.strip.upcase.gsub(/\s+/, '')
 
-    # Match: H1FY2023 or H2FY23 (Fiscal Half Year)
+    # Match: H1FY2023 or H2FY23 (Fiscal Half Year). H1 ends 6 months after the fiscal year
+    # start, H2 at the fiscal year end — both derived from the entity's fiscal-year start month
+    # (April start: H1 = Apr–Sep, H2 = Oct–Mar; January start: H1 = Jan–Jun, H2 = Jul–Dec).
     if (match = str.match(/\AH([12])FY(\d{2,4})\z/))
       half = match[1].to_i
-      fy_end_year = normalize_year(match[2])
-      fy_start_year = fy_end_year - 1
-
-      if half == 1
-        return Date.new(fy_start_year, 9, 30)  # Apr–Sep
-      else
-        return Date.new(fy_end_year, 3, 31)    # Oct–Mar
-      end
+      fy_end = fiscal_year_end(normalize_year(match[2]), fiscal_year_start_month)
+      return half == 1 ? (fy_end - 6.months).end_of_month : fy_end
     end
 
     # Match: H1 2023 or H2 2023 (Calendar Half Year)
@@ -312,7 +322,9 @@ class KpiDateUtils
     # === Quarter Formats ===
     return "Quarter" if /\AQ([1-4])(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1FY24 or Q1CY2024 or Q12024
     return "Quarter" if /\AQ([1-4])\s+(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1 FY24 or Q1 2024
-    return "Quarter" if /\A(JAN|APR|JUL|OCT)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str) # e.g. JAN-MAR 2024
+    # Any month range ("JAN-MAR 2024", "MAR-MAY 2026") is a quarter — parse_quarter case 4 handles the
+    # start month, so quarters not aligned to Jan/Apr/Jul/Oct (odd fiscal starts) round-trip too.
+    return "Quarter" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str)
     return "Quarter" if /\A(JFM|AMJ|JAS|OND)\s+(\d{2,4})\z/.match?(str) # e.g. JFM 2024
 
     # === Fallback ===
