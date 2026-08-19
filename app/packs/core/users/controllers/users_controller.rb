@@ -8,7 +8,7 @@ class UsersController < ApplicationController
   skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress whatsapp_webhook]
   skip_before_action :set_current_entity, only: %i[whatsapp_webhook]
 
-  before_action :set_user, only: %w[show update destroy edit]
+  before_action :set_user, only: %w[show update destroy edit reset_two_factor]
   after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook cross_site_login redirect_to_subdomain]
 
   def welcome; end
@@ -227,6 +227,40 @@ class UsersController < ApplicationController
     end
 
     redirect_to root_path, notice: "Signed in as #{@user.full_name}"
+  end
+
+  # POST /users/1/reset_two_factor
+  #
+  # Clears the user's two-factor METHOD (not the two-factor flag) so they pick a new one at
+  # their next login. Two callers share this action:
+  #   * the user themselves, from their own profile page — TwoFactorReset re-checks their
+  #     password (params[:password]) and we sign them out immediately so they go straight
+  #     to the mode-selection screen rather than sitting in a session whose second factor
+  #     is half-configured;
+  #   * a company admin / support user, from the target's user page — no password check
+  #     (the acting admin's own session + UserPolicy#reset_two_factor? is the gate); the
+  #     target's next login lands on mode selection via TwoFactorDispatch.
+  # See docs/technical/two_factor_authentication.md, "Resetting the two-factor method".
+  def reset_two_factor
+    authorize @user, :reset_two_factor?
+
+    result = TwoFactorReset.call(user: @user, actor: current_user,
+                                 password: params[:password], message: params[:message])
+
+    if result.success?
+      if @user.id == current_user.id
+        # Self-service: end the session now. Signing back in routes to select_mode
+        # because two_factor_mode is nil (TwoFactorDispatch).
+        sign_out current_user
+        redirect_to new_user_session_path,
+                    notice: "Your two-factor method has been reset. Sign in again to choose a new method."
+      else
+        redirect_to user_path(@user),
+                    notice: "Two-factor method reset for #{@user.full_name}. They will choose a new method at their next sign-in."
+      end
+    else
+      redirect_to user_path(@user), alert: result[:errors]
+    end
   end
 
   # GET /users/1 or /users/1.json

@@ -48,4 +48,24 @@ class UserMailer < ApplicationMailer
     subject = params[:message] || "Your Download is Ready: #{filename}"
     mail(from: @from, to: @to, cc: @cc, subject:)
   end
+
+  # Security notification sent by TwoFactorReset after a user's two-factor METHOD was cleared
+  # back to "none". Goes out for both the self-service and the administrator path — in the
+  # first case it confirms the action, in the second it is the user's warning if they never
+  # asked for it. `actor_id` tells the template which of the two wording variants to use.
+  #
+  # @param entity_id [Integer] the user's entity — ApplicationMailer#setup_defaults derives
+  #   @from / @to (sandbox-aware) from entity_id + user_id
+  # @param user_id [Integer] the user whose method was reset (becomes @user)
+  # @param actor_id [Integer] who performed the reset (same as user_id for self-service)
+  # @param previous_mode [String] "authenticator" / "whatsapp" / "sms" — for the email body
+  # @param message [String, nil] optional note typed by the administrator in the modal
+  def two_factor_reset
+    @actor = User.find_by(id: params[:actor_id])
+    @self_reset = @actor.present? && @actor.id == @user.id
+    @previous_mode = params[:previous_mode].to_s
+    @message = params[:message]
+
+    mail(from: @from, to: @to, subject: "Your two-factor authentication method was reset")
+  end
 end

@@ -193,6 +193,79 @@ User submits code → POST /users/two_factor/verify_enrollment
       └─ Show error, allow retry
 ```
 
+## Resetting the two-factor method
+
+Until this flow existed, `two_factor_mode` was written exactly once
+(`Users::TwoFactorController#select_mode_post`, reachable only while the mode was nil) and
+nothing cleared it. A user who picked WhatsApp could never move to an authenticator app,
+and a lost phone meant a developer editing the row.
+
+**Design: reset to "none", choose again at next login.** A reset does NOT disable 2FA and
+does NOT switch modes in place. It clears the method and lets the *existing* enrollment
+flow do the rest — `TwoFactorDispatch` already routes nil-mode users to `select_mode`, so
+the login path needed no change.
+
+| Column                    | After reset                | Why                                                          |
+|---------------------------|----------------------------|--------------------------------------------------------------|
+| `two_factor_mode`         | `nil`                      | Next login → mode selection                                  |
+| `otp_secret`              | `nil`                      | Old authenticator entry / in-flight WhatsApp codes die       |
+| `otp_backup_codes`        | `nil`                      | Minted against the old secret                                |
+| `consumed_timestep`       | `nil`                      | Replay guard for the old secret — kept, it rejects the first code of the new one |
+| `two_factor_enabled`      | **unchanged**              | 2FA is never silently switched off                           |
+| `two_factor_reset_at`     | now                        | Mode-selection banner + email say when                       |
+| `two_factor_reset_by_id`  | actor's `users.id`         | Banner/email say "by you" vs "by your administrator"         |
+
+Two entry points, one operation (`TwoFactorReset`, Trailblazer), one route
+(`POST /users/:id/reset_two_factor`), one policy method (`UserPolicy#reset_two_factor?`):
+
+* **Self-service** — "Change 2FA Method" on the user's own page. The operation re-checks
+  the password (step-up: a hijacked session must not be able to weaken the second factor)
+  and the controller signs the user out immediately so they go straight to mode selection.
+* **Administrator** — "Reset 2FA Method" on a colleague's page (company admin of the same
+  entity, or support). No password check; the admin's own session + policy is the gate.
+  Optional message is included in the email to the user.
+
+Both open the same "Immediate Actions" modal (`users/_reset_two_factor_modal`, styled by
+`custom/action_summary_modal.scss`, same pattern as the KYC "Request Updates" popup) that
+spells out every consequence before the button becomes active. Every reset writes an audit
+row (`two_factor_mode` is now in `User`'s audited fields, with an `audit_comment` naming
+the actor) and sends `UserMailer#two_factor_reset`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as User / Admin
+    participant S as users/show
+    participant C as UsersController#reset_two_factor
+    participant P as UserPolicy#reset_two_factor?
+    participant O as TwoFactorReset (operation)
+    participant DB as users row
+    participant M as UserMailer#two_factor_reset
+    participant L as Login → TwoFactorDispatch
+
+    U->>S: click "Change / Reset 2FA Method"
+    S-->>U: modal: Immediate Actions (mode-aware cards)
+    U->>C: POST /users/:id/reset_two_factor (password | message)
+    C->>P: authorize
+    P-->>C: self, company_admin of entity, or support — and a mode is set
+    C->>O: call(user, actor, password, message)
+    O->>O: ensure_resettable (enabled + mode present)
+    O->>O: verify_password_if_self (step-up, self only)
+    O->>DB: mode=nil, otp_secret=nil, backup codes=nil, consumed_timestep=nil, reset_at/by stamped, audit_comment
+    O->>M: deliver_later (who / when / previous mode / admin message)
+    O-->>C: success
+    alt self-service
+        C->>U: sign_out + redirect to login ("sign in again to choose a new method")
+    else administrator
+        C->>U: redirect to user page ("they will choose at next sign-in")
+    end
+    U->>L: next password / magic-link login
+    L-->>U: two_factor_mode nil → select_mode (with "reset on … by …" banner)
+    U->>L: enroll + verify new method (existing Flow 5)
+```
+
+Feature coverage: `features/login/two_factor_method_reset.feature`.
+
 ## Components
 
 ### Model Concern: `TwoFactorAuthenticatable`
@@ -315,7 +388,7 @@ end
 | Concern | Mitigation |
 |---------|------------|
 | Brute force OTP | Max 3 failed attempts per session, then redirect to login |
-| Replay attack | `consumed_timestep` prevents reusing the same TOTP code |
+| Replay attack | `consumed_timestep` prevents reusing the same TOTP code (cleared whenever a new `otp_secret` is minted — codes for the retired secret can no longer verify) |
 | Session hijacking (2FA page) | `session[:otp_user_id]` is short-lived (5 min), cleared on success |
 | WhatsApp interception | TOTP code is valid for only 30 seconds |
 | Lost authenticator app | 8 backup codes (each single-use, stored bcrypt-hashed) |

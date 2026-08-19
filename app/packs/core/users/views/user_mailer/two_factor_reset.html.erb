@@ -1,0 +1,45 @@
+<%# Sent by TwoFactorReset. Wording switches on whether the user did this themselves. %>
+<h3>Dear <%= @user.full_name %></h3>
+
+<% if @self_reset %>
+  <p>
+    You reset your two-factor authentication method on
+    <%= l(@user.two_factor_reset_at || Time.current, format: :long) %>.
+    Your previous method (<strong><%= @previous_mode.titleize %></strong>) and any backup codes
+    you had saved will no longer work.
+  </p>
+<% else %>
+  <p>
+    Your two-factor authentication method was reset by your administrator
+    <% if @actor %>(<%= @actor.full_name %>)<% end %> on
+    <%= l(@user.two_factor_reset_at || Time.current, format: :long) %>.
+    Your previous method (<strong><%= @previous_mode.titleize %></strong>) and any backup codes
+    you had saved will no longer work.
+  </p>
+<% end %>
+
+<p>
+  Two-factor authentication is <strong>still switched on</strong> for your account.
+  The next time you sign in you will be asked to choose a new method — Authenticator app,
+  WhatsApp or Text message — and confirm it before you can continue.
+</p>
+
+<% if @message.present? %>
+  <p><strong>Message from your administrator:</strong></p>
+  <blockquote style="border-left:3px solid #ccc; padding-left:12px; color:#555;">
+    <%= simple_format(h(@message)) %>
+  </blockquote>
+<% end %>
+
+<p>
+  <strong>Before you sign in</strong>, have your phone with you (for WhatsApp or text message)
+  or install an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy.
+</p>
+
+<% unless @self_reset %>
+  <p>
+    <strong>If you did not ask for this reset, contact your administrator immediately.</strong>
+  </p>
+<% end %>
+
+<p>Please do NOT share this email with others.</p>

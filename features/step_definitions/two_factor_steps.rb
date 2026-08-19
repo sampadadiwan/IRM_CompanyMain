@@ -110,6 +110,22 @@ When("I enter the WhatsApp OTP to confirm enrollment") do
   click_on("Confirm & Enable 2FA")
 end
 
+Then("I should see the resend WhatsApp code button") do
+  expect(page).to have_button("Didn't get it? Resend code via WhatsApp")
+end
+
+When("I click the resend WhatsApp code button") do
+  click_on("Didn't get it? Resend code via WhatsApp")
+  expect(page).to have_css("#whatsapp-status", visible: :visible, wait: 10)
+end
+
+# enroll_whatsapp has just sent a code, so the 30-second server-side cooldown in
+# send_whatsapp is still running — the resend is refused with the wait message. That is
+# the honest thing to assert here: the button is wired and the endpoint answered.
+Then("I should see the WhatsApp resend cooldown message") do
+  expect(page).to have_css("#whatsapp-status", text: "Please wait 30 seconds", wait: 10)
+end
+
 Then("the user should have 2FA enabled in whatsapp mode") do
   @user.reload
   expect(@user.two_factor_enabled).to be true

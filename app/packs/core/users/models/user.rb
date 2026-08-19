@@ -11,7 +11,7 @@ class User < ApplicationRecord
   # about codes. See docs/technical/twilio_sms_otp_design.md.
   include SmsDeliverable
 
-  include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions])
+  include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions two_factor_mode])
 
   # SECURITY (finding M1): purpose scope shared by every passwordless-login signed_id — the email
   # magic link, the WhatsApp login link, and the no_password_login verification. Minting and

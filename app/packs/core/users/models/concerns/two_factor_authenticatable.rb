@@ -73,8 +73,15 @@ module TwoFactorAuthenticatable
     ::SendOtpToSmsJob.perform_later(id, purpose)
   end
 
+  # `consumed_timestep` is anti-replay bookkeeping about the OLD secret: devise-two-factor
+  # passes it to ROTP as `after:`, which rejects every code from that timestep or earlier.
+  # A brand new secret makes those codes unverifiable anyway, so carrying the timestep over
+  # only blocks the legitimate first code — a user who verified a code and then re-enrolled
+  # inside the same 30-second window is told "Invalid code. Please try again." Clear it
+  # with the secret so enrollment starts from a clean slate.
   def generate_otp_secret
     self.otp_secret = User.generate_otp_secret
+    self.consumed_timestep = nil
   end
 
   # Ensures a secret exists (generates + saves if blank), then sends current TOTP code via WhatsApp.

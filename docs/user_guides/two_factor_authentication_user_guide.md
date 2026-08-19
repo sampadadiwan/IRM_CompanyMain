@@ -13,8 +13,9 @@
 5. [Authenticator App Mode — Setup](#authenticator-app-mode--setup)
 6. [Logging In with 2FA](#logging-in-with-2fa)
 7. [Using Backup Codes](#using-backup-codes)
-8. [Disabling 2FA](#disabling-2fa)
-9. [Frequently Asked Questions](#frequently-asked-questions)
+8. [Changing Your Verification Method](#changing-your-verification-method)
+9. [Disabling 2FA](#disabling-2fa)
+10. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -171,6 +172,37 @@ To use a backup code, enter it on the verification screen instead of a 6-digit c
 
 ---
 
+## Changing Your Verification Method
+
+You can switch from WhatsApp to the Authenticator app (or the other way round) at any
+time. The change is a **reset**: your current method is removed and you choose a fresh one
+the next time you sign in. Two-factor authentication itself stays switched on throughout.
+
+### Changing it yourself
+
+1. Go to your **Profile** page.
+2. Next to **Two-Factor Authentication** click **Change 2FA Method**.
+3. Read the popup carefully — it lists exactly what will happen:
+   - your current method stops working immediately;
+   - you are signed out straight away;
+   - two-factor stays on — you must pick and confirm a new method to get back in;
+   - a confirmation email is sent to you.
+4. Have your phone (for WhatsApp / text message) or an authenticator app ready **before**
+   you continue.
+5. Enter your password, tick the acknowledgement box and click **Reset 2FA Method**.
+6. Sign in again. You will land on the method-selection screen with a note that your
+   method was reset, choose a new one and set it up as described above.
+
+### Asking your administrator
+
+If you cannot sign in at all (lost phone, changed number, no backup codes), your
+administrator can do the same reset from your user page. They will see the same popup,
+including a reminder to confirm the request really came from you. You receive an email
+telling you the reset happened and who did it — **if you did not ask for it, contact your
+administrator immediately.** Your next sign-in then asks you to choose a new method.
+
+---
+
 ## Disabling 2FA
 
 1. Go to your **Profile** page
@@ -187,14 +219,14 @@ To use a backup code, enter it on the verification screen instead of a 6-digit c
 ## Frequently Asked Questions
 
 **Can I switch from WhatsApp mode to Authenticator mode (or vice versa)?**
-Not directly from your profile yet. Contact your administrator to reset your 2FA setup — you will then be prompted to choose again on your next login.
+Yes. On your Profile page click **Change 2FA Method**, confirm your password, and you will choose a new method at your next sign-in. See [Changing Your Verification Method](#changing-your-verification-method). If you cannot sign in, ask your administrator to reset it for you.
 
 **I chose WhatsApp mode but I am not receiving codes.**
 Check that your WhatsApp number is registered correctly. Ask your administrator to verify that WhatsApp is enabled on your account and that the phone number is correct.
 
 **What if I lose my phone?**
-- WhatsApp mode: contact your administrator to disable 2FA.
-- Authenticator mode: use a backup code to log in, then disable and re-enable 2FA with your new phone.
+- WhatsApp or text message mode: contact your administrator and ask them to reset your 2FA method. You will pick a new method at your next sign-in.
+- Authenticator mode: use a backup code to log in, then click **Change 2FA Method** on your Profile page and set it up again on your new phone. No backup codes left? Ask your administrator to reset it.
 
 **Does 2FA apply to magic link logins?**
 Yes — if 2FA is enabled, you must complete verification after clicking a magic link too.

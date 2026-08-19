@@ -46,6 +46,26 @@ Feature: Two-Factor Authentication Enrollment
       |      | entity_type=Company |
 
   @stub-whatsapp
+  Scenario Outline: User can resend the WhatsApp code during enrollment
+    Given there is a user "<user>" for an entity "<entity>"
+    And the user has two-factor authentication enabled but not configured
+    And the user has WhatsApp enabled
+    And I am at the login page
+    When I fill and submit the login page
+    Then I should be on the 2FA mode selection page
+    When I select the WhatsApp mode
+    Then I should be on the WhatsApp 2FA enrollment page
+    And I should see the resend WhatsApp code button
+    When I click the resend WhatsApp code button
+    Then I should see the WhatsApp resend cooldown message
+    When I enter the WhatsApp OTP to confirm enrollment
+    Then I should see "Two-factor authentication via WhatsApp is now enabled"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  @stub-whatsapp
   Scenario Outline: User enrolls via WhatsApp mode
     Given there is a user "<user>" for an entity "<entity>"
     And the user has two-factor authentication enabled but not configured

@@ -71,6 +71,9 @@ Rails.application.routes.draw do
     # self-login link): login_as requires the acting admin to be logged in and authorized, so
     # there is no bearer token in a URL that could be leaked and replayed anonymously.
     post 'login_as', on: :member
+    # Clears the user's two-factor METHOD back to "none" (TwoFactorReset). Self-service and
+    # administrator paths share this one action; the policy + operation tell them apart.
+    post 'reset_two_factor', on: :member
     post 'magic_link', on: :collection
     post 'whatsapp_webhook', on: :collection
     get 'welcome', on: :collection

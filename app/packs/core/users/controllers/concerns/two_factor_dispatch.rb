@@ -35,7 +35,9 @@ module TwoFactorDispatch
     session[:otp_user_id] = user.id
 
     if user.two_factor_mode.nil?
-      # Enabled but never configured — choose a mode before anything can be sent.
+      # Enabled but no method chosen — either never configured, or cleared by TwoFactorReset
+      # (self-service "Change 2FA Method" / admin "Reset 2FA Method"). Either way: choose a
+      # mode before anything can be sent. This is why a reset needs no login-flow changes.
       select_mode_two_factor_path
     elsif user.whatsapp_mode?
       # Out-of-band modes send the code up front so it is in flight while the
