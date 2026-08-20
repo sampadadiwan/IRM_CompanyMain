@@ -10,7 +10,7 @@
     configure-first demo possible. %>
 <h2 style="margin:0 0 4px;font-family:Helvetica,Arial,sans-serif;">Demo request from the website</h2>
 <p style="margin:0 0 20px;color:#666;font-family:Helvetica,Arial,sans-serif;font-size:13px;">
-  <%= @website_lead.submitted_at.strftime("%d %b %Y, %H:%M %Z") %>
+  <%= l(@website_lead.submitted_at) %> <%= @website_lead.submitted_at.strftime("%Z") %>
 </p>
 
 <table cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Helvetica,Arial,sans-serif;font-size:14px;">

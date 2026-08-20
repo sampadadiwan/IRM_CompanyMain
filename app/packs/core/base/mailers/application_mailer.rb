@@ -2,6 +2,10 @@ class ApplicationMailer < ActionMailer::Base
   default from: ENV.fetch("SUPPORT_EMAIL_FROM", nil)
   layout "mailer"
 
+  # Every l(date)/l(time) call in a mailer view renders dd-Mon-YYYY, regardless of the
+  # site's own date.formats.default — see EmailDateLocalization.
+  helper EmailDateLocalization
+
   # Templates render through an ActionView context, not the mailer instance itself,
   # so a plain instance method (adhoc_notification_link, defined below) isn't visible
   # to the view unless explicitly exposed like this.

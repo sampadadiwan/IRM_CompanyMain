@@ -4,7 +4,7 @@ Scheduled Report: <%= @report.name %>
 Your scheduled report is attached to this email as an Excel file.
 
 Report:    <%= @report.name %>
-Generated: <%= I18n.l(Time.current, format: :abbr_date_time) + " " + Time.current.strftime("%Z") %>
+Generated: <%= I18n.l(Time.current, format: :email, locale: :en) + " " + Time.current.strftime("%Z") %>
 <% if @report.template&.dig("root_model").present? %>
 Source:    <%= @report.template["root_model"].humanize %>
 <% end %>

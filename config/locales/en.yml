@@ -16,6 +16,10 @@ en:
       chart_month_year: "%m/%y"
       chart_abbr_month_year: "%b %y"
       chart_year: "%Y"
+      # Outgoing emails always use this format, and only this locale's copy — every caller
+      # forces locale: :en alongside format: :email (see EmailDateLocalization), since
+      # rails-i18n's own :ja translations override %b with kanji month names otherwise.
+      email: "%d-%b-%Y"
   investor_kyc:
     tax_id: "PAN / Tax ID"
     bank_routing_number: "IFSC Code"
@@ -347,6 +351,10 @@ en:
       time_only: "%H:%M"
       abbr_date_time: "%d %b %Y %H:%M"
       long_date_time: "%B %d, %Y at %I:%M %p"
+      # Outgoing emails always use this format, and only this locale's copy — every caller
+      # forces locale: :en alongside format: :email (see EmailDateLocalization), since
+      # rails-i18n's own :ja translations override %b with kanji month names otherwise.
+      email: "%d-%b-%Y %H:%M"
   top_menus:
     access_rights: Access Rights
     account_settings: Account Settings

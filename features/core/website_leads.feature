@@ -40,6 +40,7 @@ Feature: Capturing demo requests from the public website
     And the notification should contain "Meridian Capital"
     And the notification should contain "nadia@meridiancapital.example"
     And the notification should contain "CFO or Finance"
+    And the notification should show the submission date as dd-Mon-YYYY
 
   Scenario: The prospect's own words reach the notification in full
     When the website submits a demo request from "https://caphive.com" with:

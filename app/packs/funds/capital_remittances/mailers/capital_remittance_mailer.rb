@@ -7,7 +7,7 @@ class CapitalRemittanceMailer < ApplicationMailer
     "fund_name" => ->(m) { m.instance_variable_get(:@capital_remittance)&.fund&.name },
     "capital_call_name" => ->(m) { m.instance_variable_get(:@capital_call)&.name },
     "call_amount" => ->(m) { m.instance_variable_get(:@capital_remittance)&.call_amount&.format },
-    "due_date" => ->(m) { m.instance_variable_get(:@capital_call)&.due_date&.to_fs(:long) },
+    "due_date" => ->(m) { (d = m.instance_variable_get(:@capital_call)&.due_date) && I18n.l(d, format: :email, locale: :en) },
     "kyc_full_name" => ->(m) { m.instance_variable_get(:@capital_remittance)&.capital_commitment&.investor_kyc&.full_name },
     "folio_id" => ->(m) { m.instance_variable_get(:@capital_remittance)&.folio_id },
     "committed_amount" => ->(m) { m.instance_variable_get(:@capital_remittance)&.capital_commitment&.committed_amount&.format },

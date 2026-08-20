@@ -137,6 +137,26 @@ Scenario: Capital call notification placeholder substitution
 
 
 @import
+Scenario: Capital call notification without a custom notification shows the due date as dd-Mon-YYYY
+  # No custom notification is set up for this call, so notify_capital_remittance.html.erb
+  # falls back to its hardcoded <% else %> branch (l @capital_remittance.capital_call.due_date)
+  # instead of the custom_notifications/mail partial exercised above — a distinct code path.
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload an investors file for the fund
+  Given the investors have approved investor access
+  Given the fund has capital call template
+  Given the investors are added to the fund
+  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
+  Then I should see the capital call details
+  Then when the capital call is approved
+  Then the remittance investors should receive an email with the due date shown as dd-Mon-YYYY
+
+
+@import
 Scenario Outline: Capital call notification falls back to the fund-level default
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"

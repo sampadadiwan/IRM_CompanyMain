@@ -284,6 +284,14 @@ Then("the expiry reminder email should have been sent to {string}") do |email|
     "Expected the expiry reminder to go to #{email} but it went to: #{mail.to.inspect}"
 end
 
+Then("the expiry reminder email should show the expiry date as dd-Mon-YYYY") do
+  mail = kyc_expiry_deliveries.last
+  expect(mail).to be_present, "Expected an expiry reminder email but none was delivered"
+  # dd-Mon-YYYY per EmailDateLocalization, never the site's own date.formats.default —
+  # see app/packs/core/base/helpers/email_date_localization.rb.
+  expect(mail.body.encoded).to include(I18n.l(@investor_kyc.expiry_date, format: :email, locale: :en))
+end
+
 Then("the report should not contain a field issue of type {string}") do |issue_type|
   field_issues = @report.json_fields["field_issues"] || []
   matching = field_issues.select { |issue| issue["type"] == issue_type }

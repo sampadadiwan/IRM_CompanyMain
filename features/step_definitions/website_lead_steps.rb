@@ -202,6 +202,15 @@ Then('the notification should not contain the raw text {string}') do |text|
   expect(mail.body.encoded).not_to include(text)
 end
 
+# submitted_at is Time.current at request time, not a fixed value, so this checks the
+# rendered shape (dd-Mon-YYYY) via EmailDateLocalization rather than an exact string —
+# see app/packs/core/base/helpers/email_date_localization.rb.
+Then('the notification should show the submission date as dd-Mon-YYYY') do
+  mail = ActionMailer::Base.deliveries.last
+  expect(mail).to be_present, "no email was delivered"
+  expect(mail.body.encoded).to match(/\b\d{2}-[A-Z][a-z]{2}-\d{4}\b/)
+end
+
 Then('the lead response should allow the origin {string}') do |origin|
   expect(@website_lead_response.headers['Access-Control-Allow-Origin']).to eq(origin)
 end

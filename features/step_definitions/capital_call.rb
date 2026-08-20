@@ -720,6 +720,19 @@ Then('the remittance investors should receive an email with subject including {s
   end
 end
 
+# Covers notify_capital_remittance.html.erb's <% else %> branch (no @custom_notification) —
+# the hardcoded `l @capital_remittance.capital_call.due_date` line, distinct from the
+# custom_notifications/mail partial exercised by the placeholder-substitution scenarios above.
+Then('the remittance investors should receive an email with the due date shown as dd-Mon-YYYY') do
+  expected = I18n.l(@capital_call.due_date, format: :email, locale: :en)
+  @capital_call.capital_remittances.each do |cr|
+    user = cr.investor.investor_accesses.approved.first.user
+    open_email(user.email)
+    expect(current_email).not_to be_nil
+    expect(current_email.body.to_s).to include(expected)
+  end
+end
+
 Given('there is a custom notification with placeholders in place for the Call with email_method {string}') do |email_method|
   @capital_call = CapitalCall.last
   @custom_notification = CustomNotification.create!(
@@ -748,9 +761,14 @@ Then('the capital remittance notification placeholders are resolved correctly') 
       expect(body).not_to include("{{fund_name}}")
       expect(body).not_to include("{{capital_call_name}}")
       expect(body).not_to include("{{call_amount}}")
+      expect(body).not_to include("{{due_date}}")
       expect(body).not_to include("{{folio_id}}")
       expect(body).not_to include("{{committed_amount}}")
       expect(body).not_to include("{{remittance_amount}}")
+
+      # {{due_date}} resolves via I18n.l(..., format: :email, locale: :en), same dd-Mon-YYYY
+      # shape as every other outgoing-email date — never the site's own date.formats.default.
+      expect(body).to include(I18n.l(@capital_call.due_date, format: :email, locale: :en))
 
       # Unknown placeholder preserved
       expect(body).to include("{{not_a_real_placeholder}}")
