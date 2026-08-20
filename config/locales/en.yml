@@ -19,7 +19,7 @@ en:
       # Outgoing emails always use this format, and only this locale's copy — every caller
       # forces locale: :en alongside format: :email (see EmailDateLocalization), since
       # rails-i18n's own :ja translations override %b with kanji month names otherwise.
-      email: "%d-%b-%Y"
+      email: "%b %d %Y"
   investor_kyc:
     tax_id: "PAN / Tax ID"
     bank_routing_number: "IFSC Code"
@@ -354,7 +354,7 @@ en:
       # Outgoing emails always use this format, and only this locale's copy — every caller
       # forces locale: :en alongside format: :email (see EmailDateLocalization), since
       # rails-i18n's own :ja translations override %b with kanji month names otherwise.
-      email: "%d-%b-%Y %H:%M"
+      email: "%b %d %Y %H:%M"
   top_menus:
     access_rights: Access Rights
     account_settings: Account Settings
