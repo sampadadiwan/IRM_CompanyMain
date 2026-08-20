@@ -39,38 +39,38 @@
 <% if timestamps_and_snapshot %>
     <% if model.form_type_id.present? %>
     <tr class="">
-        <td>
+        <td class="text-nowrap">
             Form Type
         </td>
-        <td>
+        <td class="text-nowrap">
             <%= link_to model.form_type.tag || model.form_type_id, model.form_type %>
         </td>
     </tr>
     <% end %>
 
 <tr class="">
-    <td>
+    <td class="text-nowrap">
         Created
     </td>
-    <td>
+    <td class="text-nowrap">
         <%= l model.created_at %>
     </td>
 </tr>
 <tr class="">
-    <td>
+    <td class="text-nowrap">
         Updated
     </td>
-    <td>
+    <td class="text-nowrap">
         <%= l model.updated_at %>
     </td>
 </tr>
 
 <% if model.respond_to?(:snapshot_date) && model.snapshot_date.present? %>
 <tr class="">
-    <td>
+    <td class="text-nowrap">
         Snapshot Date
     </td>
-    <td>
+    <td class="text-nowrap">
         <%= l model.snapshot_date %>
     </td>
 </tr>

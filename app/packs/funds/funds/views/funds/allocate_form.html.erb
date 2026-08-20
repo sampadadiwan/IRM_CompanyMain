@@ -164,10 +164,10 @@
       <% @fund.allocation_runs.includes(:user).order(created_at: :desc).each do |runs|  %>
         <tr>
           <td>
-            <%= l runs.start_date %>
+            <%= l runs.start_date, format: :abbr_month_day_year %>
           </td>
           <td>
-            <%= l runs.end_date %>
+            <%= l runs.end_date, format: :abbr_month_day_year %>
           </td>
           <td>
             <%= display_boolean runs.run_allocations %>

@@ -10,7 +10,7 @@ en:
       long: "%B %d, %Y"
       short: "%b %d"
       month_year: "%b %Y"
-      abbr_month_day_year: "%d %b %Y"
+      abbr_month_day_year: "%b %d, %Y"
       day_month_year: "%d %B %Y"
       month_year_full: "%B %Y"
       chart_month_year: "%m/%y"
@@ -19,7 +19,7 @@ en:
       # Outgoing emails always use this format, and only this locale's copy — every caller
       # forces locale: :en alongside format: :email (see EmailDateLocalization), since
       # rails-i18n's own :ja translations override %b with kanji month names otherwise.
-      email: "%b %d %Y"
+      email: "%b %d, %Y"
   investor_kyc:
     tax_id: "PAN / Tax ID"
     bank_routing_number: "IFSC Code"
@@ -345,7 +345,7 @@ en:
       long: "%B %d, %Y"
       short: "%b %d"
       month_year: "%b %Y"
-      abbr_month_day_year: "%d %b %Y"
+      abbr_month_day_year: "%b %d, %Y"
       day_month_year: "%d %B %Y"
       month_year_full: "%B %Y"
       time_only: "%H:%M"
@@ -354,7 +354,7 @@ en:
       # Outgoing emails always use this format, and only this locale's copy — every caller
       # forces locale: :en alongside format: :email (see EmailDateLocalization), since
       # rails-i18n's own :ja translations override %b with kanji month names otherwise.
-      email: "%b %d %Y %H:%M"
+      email: "%b %d, %Y %H:%M"
   top_menus:
     access_rights: Access Rights
     account_settings: Account Settings

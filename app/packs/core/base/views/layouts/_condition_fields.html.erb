@@ -1,12 +1,32 @@
 
+  <%
+    # Whether this row's already-selected attribute (if any, e.g. on reload after a
+    # date filter was submitted) is a date/datetime column, so the right value input
+    # variant starts visible without waiting for an attribute-select change event.
+    current_attribute_name = f.object.attributes.first&.name
+    current_attribute_type = current_attribute_name &&
+      ransack_filter_attribute_types(@q.klass, associations)[current_attribute_name]
+    current_attribute_is_date = %i[date datetime timestamp].include?(current_attribute_type)
+  %>
   <div class="row form-group">
     <%= f.attribute_fields do |a| %>
-      <%= a.attribute_select({associations: associations}, {class: "form-control col"}) %>
+      <%= a.attribute_select({associations: associations}, {class: "form-control col attribute-select"}) %>
     <% end %>
     <%= f.predicate_select({only: [:cont, :not_cont, :eq, :not_eq, :gt, :gteq, :lt, :lteq, :blank, :null, :not_null], default: :eq}, {class: "form-control col"}) %>
 
+    <%
+      # Invariant: exactly one of the text/date value inputs below must be enabled —
+      # both share the same Ransack-generated `name`, so an enabled/enabled or
+      # disabled/disabled pair would submit two values or none. current_attribute_is_date
+      # is the single source of truth for this initial render; filter_controller.js's
+      # toggleValueField is the equivalent single source of truth once the user changes
+      # the attribute select — keep both in sync if this logic ever changes.
+    %>
     <%= f.value_fields do |v| %>
-      <%= v.text_field :value, class: "form-control col" %>
+      <div class="value-field-text col <%= "d-none" if current_attribute_is_date %>">
+        <%= v.text_field :value, class: "form-control", disabled: current_attribute_is_date %>
+      </div>
+      <%= ransack_date_value_field(v, active: current_attribute_is_date) %>
     <% end %>
 
     <span class="col-2 pt-2">

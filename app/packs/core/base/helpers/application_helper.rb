@@ -68,6 +68,87 @@ module ApplicationHelper
     end
   end
 
+  # Maps every ransackable attribute name, exactly as Ransack's own attribute_select
+  # names it (base columns as-is, association columns as "#{association}_#{column}" —
+  # see Ransack::Helpers::FormBuilder#attr_from_base_and_column), to its Rails column
+  # type. Used by the generic search filter (_condition_fields.html.erb) so its
+  # Stimulus controller knows when to swap the value input for a locale-date one.
+  # Only resolves one level of association (matches every current call site).
+  def ransack_filter_attribute_types(klass, associations = [])
+    types = attribute_types_for(klass)
+
+    Array(associations).each do |assoc|
+      reflection = klass.reflect_on_association(assoc)
+      next unless reflection
+
+      begin
+        attribute_types_for(reflection.klass).each do |column, type|
+          types["#{assoc}_#{column}"] = type
+        end
+      rescue StandardError
+        next # polymorphic/unresolvable association klass
+      end
+    end
+
+    types
+  end
+
+  # Same input-group markup as date_field_tag (locale-formatted display input +
+  # hidden ISO input + calendar-icon native date input, driven by the locale-date
+  # Stimulus controller), but for a Ransack value_fields builder rather than a bound
+  # model attribute — the submitted field goes through v.hidden_field so Ransack's
+  # own name/id generation is used (this also has to work inside the "add row"
+  # cocoon-style cloned templates, which only munge Rails-generated name/id attrs).
+  # `active:` controls the initial visible/enabled state — pass true when this
+  # condition's currently-selected attribute is already a date/datetime (e.g. on
+  # reload after a date filter was submitted). filter_controller.js takes over
+  # toggling it from there as the user changes the attribute select.
+  def ransack_date_value_field(v, css_class: "form-control", active: false)
+    date        = coerce_date_tag(v.object.value)
+    i18n_format = I18n.t("date.formats.default")
+    locale_val  = date ? l(date) : ""
+    iso_val     = date ? date.iso8601 : ""
+    # "col" makes this div (not the input-group inside it) the flex item the
+    # surrounding .row expects — matches the plain text_field it replaces.
+    wrapper_class = active ? "value-field-date col" : "value-field-date col d-none"
+
+    content_tag(:div, class: wrapper_class) do
+      content_tag(:div, class: "input-group",
+        data: { controller: "locale-date", "locale-date-format-value": i18n_format }
+      ) do
+        display = tag.input(
+          type:         "text",
+          # Suffixed so it doesn't collide with the plain text_field's id, which is
+          # bound to the same v/:value pair and rendered alongside this in the DOM
+          id:           "#{v.field_id(:value)}_display",
+          value:        locale_val,
+          class:        css_class,
+          autocomplete: "off",
+          data:         {
+            "locale-date-target": "display",
+            action: "click->locale-date#openPicker input->locale-date#inputChanged"
+          }
+        )
+        hidden = v.hidden_field(:value, id: nil, value: iso_val, disabled: !active,
+          data: { "locale-date-target": "hidden" }
+        )
+        icon_span = content_tag(:span, class: "input-group-text",
+          style: "cursor:pointer;",
+          data:  { action: "click->locale-date#openPicker" }
+        ) do
+          concat tag.i(class: "fas fa-calendar", style: "pointer-events:none;")
+          concat tag.input(
+            type:  "date",
+            value: iso_val,
+            style: "position:absolute; width:0; height:0; opacity:0; overflow:hidden;",
+            data:  { "locale-date-target": "picker", action: "change->locale-date#pickerChanged" }
+          )
+        end
+        display + hidden + icon_span
+      end
+    end
+  end
+
   private
 
   def coerce_date_tag(value)
@@ -76,6 +157,11 @@ module ApplicationHelper
     Date.local_parse(value.to_s)
   rescue StandardError
     nil
+  end
+
+  def attribute_types_for(klass)
+    ransackable = klass.ransackable_attributes
+    klass.columns_hash.slice(*ransackable).transform_values(&:type)
   end
 
   public
