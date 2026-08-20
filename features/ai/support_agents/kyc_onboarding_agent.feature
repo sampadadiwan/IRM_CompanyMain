@@ -69,7 +69,7 @@ Feature: KYC Onboarding Agent
     Then the report final status should be "blocked"
     And the report should contain a field issue of type "kyc_expired"
     And a KYC expiry reminder email should have been sent
-    And the expiry reminder email should show the expiry date as dd-Mon-YYYY
+    And the expiry reminder email should show the expiry date as Mon dd yyyy
     And the AML job should not have been enqueued for the investor KYC
 
   Scenario: KYC expiring soon produces a warning and triggers a reminder email

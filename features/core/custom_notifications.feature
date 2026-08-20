@@ -137,7 +137,7 @@ Scenario: Capital call notification placeholder substitution
 
 
 @import
-Scenario: Capital call notification without a custom notification shows the due date as dd-Mon-YYYY
+Scenario: Capital call notification without a custom notification shows the due date as Mon dd yyyy
   # No custom notification is set up for this call, so notify_capital_remittance.html.erb
   # falls back to its hardcoded <% else %> branch (l @capital_remittance.capital_call.due_date)
   # instead of the custom_notifications/mail partial exercised above — a distinct code path.
@@ -153,7 +153,7 @@ Scenario: Capital call notification without a custom notification shows the due 
   When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
   Then I should see the capital call details
   Then when the capital call is approved
-  Then the remittance investors should receive an email with the due date shown as dd-Mon-YYYY
+  Then the remittance investors should receive an email with the due date shown as Mon dd yyyy
 
 
 @import
