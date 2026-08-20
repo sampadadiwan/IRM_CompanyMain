@@ -57,7 +57,7 @@
           %>
           <li class="timeline-item d-flex position-relative overflow-hidden mb-4">
             <div class="timeline-time flex-shrink-0 text-end" style="width: 80px;">
-              <small class="text-muted" title="<%= audit.created_at %>">
+              <small class="text-muted" title="<%= l(audit.created_at, format: :abbr_date_time) %>">
                 <%= l(audit.created_at.to_date, format: :short) %><br>
                 <span class="fs-1"><%= l(audit.created_at, format: :time_only) %></span>
               </small>
