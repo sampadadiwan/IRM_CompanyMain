@@ -346,7 +346,8 @@ async toggleSessions() {
     if (res.success && res.sessions.length > 0) {
       list.innerHTML = res.sessions.map(s => {
         const date = new Date(s.updated_at)
-        const dateStr = date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+        // undefined locale = the visitor's own browser/OS locale, not a hardcoded region.
+        const dateStr = date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
         const isActive = s.id === this.sessionIdValue
         const statusBadge = s.status === "escalated" ? '<span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem">Escalated</span>' : ""
 
