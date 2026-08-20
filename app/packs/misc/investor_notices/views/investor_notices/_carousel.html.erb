@@ -1,16 +1,25 @@
 <%# gp_entity_id (optional) scopes the notices to the GP the LP selected in the
     vc_dashboard GP switcher; nil keeps the old behaviour of showing notices
-    from every GP the user has access to. Included in the cache key so each
-    GP selection is cached separately. %>
-<% gp_entity_id = local_assigns[:gp_entity_id] %>
-<% cache ["InvestorNotice", current_user, current_user.entity, gp_entity_id], expires_in: 5.day do %>
+    from every GP the user has access to. %>
 <%
-    active = "active"
+    gp_entity_id = local_assigns[:gp_entity_id]
     notices = InvestorNotice.notices(current_user, gp_entity_id: gp_entity_id)
+                             .includes(:entity, :investor_notice_items, :rich_text_details)
+                             .to_a
+    # Per-notice criteria (InvestorNotice#criteria) is a Dentaku expression, not
+    # SQL, so it can only be checked in Ruby against the already-fetched
+    # candidates — this must run every request to stay current (that's the
+    # whole point of evaluating it here instead of once at generation time),
+    # which is also why this partial isn't fragment-cached: caching this
+    # result could serve a stale pass/fail for criteria referencing state that
+    # changes independently of any InvestorNotice's own updated_at.
+    notices = notices.select { |n| InvestorNoticeCriteriaEvaluator.matches?(n, current_user) }
     # If user has come in via a subdomain, show that notice first
-    notices = notices.to_a.sort_by{|n| n.entity_id == @current_entity.id ? 0:1} if @current_entity
+    notices = notices.sort_by { |n| n.entity_id == @current_entity.id ? 0 : 1 } if @current_entity
 %>
-        
+
+<% active = "active" %>
+
 <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel">
     <div class="carousel-inner">
         <% notices.each do |investor_notice| %>
@@ -21,8 +30,8 @@
         <% end %>
     </div>
 
-
-    <% if notices.count > 0 %>
+    <%# Prev/next controls only make sense with more than one slide. %>
+    <% if notices.length > 1 %>
     <a class="carousel-control-prev" data-bs-target="#carouselExampleControls" role="button" data-bs-slide="prev">
         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
         <span class="sr-only">Previous</span>
@@ -34,5 +43,3 @@
     <% end %>
 
 </div>
-
-<% end %>

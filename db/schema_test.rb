@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1605,6 +1605,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
     t.string "mcp_allowed_clients", default: "[]"
     t.string "mcp_allowed_roles", default: "[\"employee\"]"
     t.boolean "mcp_enabled", default: false, null: false
+    t.boolean "mcp_llm_tools_enabled", default: false, null: false
     t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
@@ -2554,6 +2555,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
     t.string "btn_label", limit: 40
     t.string "category", limit: 30
     t.datetime "created_at", null: false
+    t.text "criteria"
     t.date "end_date"
     t.bigint "entity_id", null: false
     t.boolean "generate", default: false
@@ -2815,6 +2817,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
     t.datetime "updated_at", null: false
     t.index ["entity_id", "name"], name: "idx_kyc_onboardings_entity_name", unique: true
     t.index ["entity_id"], name: "index_kyc_onboardings_on_entity_id"
+  end
+
+  create_table "mcp_audit_logs", force: :cascade do |t|
+    t.text "arguments"
+    t.string "client_name"
+    t.datetime "created_at", null: false
+    t.integer "duration_ms"
+    t.bigint "entity_id", null: false
+    t.string "error"
+    t.string "method", null: false
+    t.bigint "oauth_application_id"
+    t.string "tool_name"
+    t.bigint "user_id", null: false
+    t.index ["entity_id", "created_at"], name: "index_mcp_audit_logs_on_entity_id_and_created_at"
+    t.index ["entity_id"], name: "index_mcp_audit_logs_on_entity_id"
+    t.index ["oauth_application_id"], name: "index_mcp_audit_logs_on_oauth_application_id"
+    t.index ["tool_name"], name: "index_mcp_audit_logs_on_tool_name"
+    t.index ["user_id", "created_at"], name: "index_mcp_audit_logs_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_mcp_audit_logs_on_user_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -4580,6 +4601,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
   add_foreign_key "kyc_inspection_records", "users", column: "resolved_by_id"
   add_foreign_key "kyc_onboarding_wizards", "kyc_onboardings"
   add_foreign_key "kyc_onboardings", "entities"
+  add_foreign_key "mcp_audit_logs", "entities"
+  add_foreign_key "mcp_audit_logs", "oauth_applications"
+  add_foreign_key "mcp_audit_logs", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"

@@ -106,7 +106,16 @@
           <tr>
             <td>
               Two-Factor Authentication
-              <%= user_guide_icon_for('two_factor', tooltip: 'Two-Factor Authentication Guide') %>
+              <%# 2FA's guide is served via the public/login-less route (PublicGuidesController),
+                  not user_guide_icon_for, because that helper hides the icon for investor role —
+                  this guide applies to every role and is on the public allowlist for exactly
+                  that reason. %>
+              <%= link_to public_guide_path("two_factor_authentication_user_guide"), target: "_blank",
+                          'data-bs-toggle': 'tooltip', title: 'Two-Factor Authentication Guide',
+                          class: 'btn btn-info p-0 rounded-circle d-inline-flex align-items-center justify-content-center',
+                          style: 'width: 35px; height: 35px;', rel: 'noopener' do %>
+                <i class="ti ti-info-circle fs-5" style="margin: 0 !important;"></i>
+              <% end %>
             </td>
             <td>
               <%= display_boolean @user.two_factor_enabled %>

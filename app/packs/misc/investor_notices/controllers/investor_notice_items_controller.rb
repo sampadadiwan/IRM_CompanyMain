@@ -3,7 +3,8 @@ class InvestorNoticeItemsController < ApplicationController
 
   # GET /investor_notice_items or /investor_notice_items.json
   def index
-    @investor_notice_items = InvestorNoticeItem.all
+    authorize(InvestorNoticeItem)
+    @investor_notice_items = policy_scope(InvestorNoticeItem)
   end
 
   # GET /investor_notice_items/1 or /investor_notice_items/1.json
@@ -11,7 +12,8 @@ class InvestorNoticeItemsController < ApplicationController
 
   # GET /investor_notice_items/new
   def new
-    @investor_notice_item = InvestorNoticeItem.new
+    @investor_notice_item = InvestorNoticeItem.new(entity_id: current_user.entity_id)
+    authorize(@investor_notice_item)
   end
 
   # GET /investor_notice_items/1/edit
@@ -20,6 +22,14 @@ class InvestorNoticeItemsController < ApplicationController
   # POST /investor_notice_items or /investor_notice_items.json
   def create
     @investor_notice_item = InvestorNoticeItem.new(investor_notice_item_params)
+    # entity_id is normally set by the before_save `set_entity_id` callback,
+    # but the policy check below runs before save — set it here from the
+    # referenced parent notice so belongs_to_entity? has something to compare,
+    # and so this doubles as verifying the notice actually belongs to the
+    # current user's GP (a nil investor_notice yields a nil entity_id, which
+    # belongs_to_entity? correctly denies).
+    @investor_notice_item.entity_id = @investor_notice_item.investor_notice&.entity_id
+    authorize(@investor_notice_item)
 
     respond_to do |format|
       if @investor_notice_item.save
@@ -60,10 +70,17 @@ class InvestorNoticeItemsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_investor_notice_item
     @investor_notice_item = InvestorNoticeItem.find(params[:id])
+    authorize(@investor_notice_item)
   end
 
   # Only allow a list of trusted parameters through.
   def investor_notice_item_params
-    params.require(:investor_notice_item).permit(:investor_notice_id, :title, :details, :link)
+    # link can carry [user.xxx] variables (see InvestorNoticeLinkInterpolator)
+    # — same support-only gate as InvestorNotice#criteria.
+    if current_user.support?
+      params.require(:investor_notice_item).permit(:investor_notice_id, :title, :details, :link)
+    else
+      params.require(:investor_notice_item).permit(:investor_notice_id, :title, :details)
+    end
   end
 end

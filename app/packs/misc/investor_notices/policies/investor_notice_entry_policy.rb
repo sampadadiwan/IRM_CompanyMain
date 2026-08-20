@@ -6,7 +6,9 @@ class InvestorNoticeEntryPolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    # Match InvestorNoticePolicy#index? — the Scope already restricts rows to
+    # the user's entity, but an LP has no business browsing the entries index.
+    user.has_cached_role?(:company_admin)
   end
 
   def show?

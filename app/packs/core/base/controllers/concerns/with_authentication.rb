@@ -23,7 +23,13 @@ module WithAuthentication
     end
   end
 
-  def authenticate_user!
+  # opts is unused directly here, but must be accepted: Devise's
+  # RegistrationsController#authenticate_scope! (used to guard edit/update/
+  # destroy on a user's own account) calls authenticate_user!(force: true) —
+  # a 0-arg override raises ArgumentError the moment anyone hits
+  # /users/edit (or updates/deletes their own account). Bare `super` below
+  # forwards opts on to Devise's own authenticate_user! automatically.
+  def authenticate_user!(opts = {})
     if request.headers['Authorization'].present?
       authenticate_devise_api_token!
       # set the current user to the user that is logged in
