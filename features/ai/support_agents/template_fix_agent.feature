@@ -25,11 +25,11 @@ Feature: AI Fix Me for document templates
   Background:
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     And the entity has an LLM provider configured
-    And a fund exists
+    And a fund exists for the template fix entity
     And the fund has a commitment template document "KYC Template1.docx"
 
   Scenario: Running Fix Me produces a downloadable draft, leaving the template untouched
-    Given the user is a company admin
+    Given the template fix admin is a company admin
     And the Fix Me AI reports back "Fixed the duplicate numbering in section 5.2 by wrapping the alternate variant in a Sablon conditional."
     When I open the fix me modal and describe the issue "Clause numbers duplicate after 5.2.9"
     Then a template fix agent report should exist with status "ready"

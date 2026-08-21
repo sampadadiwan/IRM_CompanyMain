@@ -7,11 +7,11 @@ Given('the entity has an LLM provider configured') do
   @entity.entity_setting.update!(gemini_api_key: "test-gemini-key")
 end
 
-Given('the user is a company admin') do
+Given('the template fix admin is a company admin') do
   @user.add_role(:company_admin)
 end
 
-Given('a fund exists') do
+Given('a fund exists for the template fix entity') do
   @fund = FactoryBot.create(:fund, entity: @entity)
 end
 
