@@ -63,7 +63,7 @@
       "datasource": { "type": "prometheus", "uid": "$datasource" },
       "targets": [
         {
-          "expr": "sum(ruby_rss{type=\"sidekiq\"})",
+          "expr": "sum by()(ruby_rss{type=\"sidekiq\"})",
           "legendFormat": "RSS",
           "refId": "A"
         }
@@ -95,7 +95,7 @@
       "datasource": { "type": "prometheus", "uid": "$datasource" },
       "targets": [
         {
-          "expr": "max(ruby_sidekiq_stats_enqueued)",
+          "expr": "max by()(ruby_sidekiq_stats_enqueued)",
           "legendFormat": "Enqueued",
           "refId": "A"
         }
@@ -127,7 +127,7 @@
       "datasource": { "type": "prometheus", "uid": "$datasource" },
       "targets": [
         {
-          "expr": "max(ruby_sidekiq_queue_latency_seconds) or vector(0)",
+          "expr": "max by()(ruby_sidekiq_queue_latency_seconds) or vector(0)",
           "legendFormat": "Latency",
           "refId": "A"
         }
@@ -159,7 +159,7 @@
       "datasource": { "type": "prometheus", "uid": "$datasource" },
       "targets": [
         {
-          "expr": "max(ruby_sidekiq_stats_retry_size)",
+          "expr": "max by()(ruby_sidekiq_stats_retry_size)",
           "legendFormat": "Retries",
           "refId": "A"
         }
@@ -190,7 +190,7 @@
       "datasource": { "type": "prometheus", "uid": "$datasource" },
       "targets": [
         {
-          "expr": "max(ruby_sidekiq_stats_dead_size)",
+          "expr": "max by()(ruby_sidekiq_stats_dead_size)",
           "legendFormat": "Dead",
           "refId": "A"
         }

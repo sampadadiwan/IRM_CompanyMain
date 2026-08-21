@@ -52,8 +52,9 @@ class GrafanaProvisioner
 
   # Map Grafana dashboard UID → filename used in dash_dir (matches pre-existing naming convention)
   DASH_FILENAMES = {
-    'rYdddlPWk' => 'node.dashboard.json',
-    'L-0CZ_WVk' => 'rails.dashboard.json',
+    'rYdddlPWk'      => 'node.dashboard.json',
+    'L-0CZ_WVk'      => 'rails.dashboard.json',
+    'caphive-sidekiq' => 'sidekiq.dashboard.json',
   }.freeze
 
   # graphana.caphive.com and graphana.caphive.us are two SEPARATE Grafana instances (IN and US

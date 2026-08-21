@@ -435,3 +435,7 @@ dashboards:
       - add_controller_variable  # $controller dropdown for error breakdown filtering
       - add_rails_depth_panels   # P99 latency, Puma thread saturation, Sidekiq depth/latency
       - add_mysql_depth_panels   # InnoDB miss rate, deadlocks, aborted connections
+
+  - uid: caphive-sidekiq
+    name: "Sidekiq Memory & Jobs Dashboard"
+    patches: []
