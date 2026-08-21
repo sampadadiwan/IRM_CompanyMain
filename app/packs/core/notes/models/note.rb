@@ -10,6 +10,11 @@ class Note < ApplicationRecord
   belongs_to :entity
   belongs_to :user
   belongs_to :owner, polymorphic: true, optional: true
+
+  # The ingest email that created this note (nil for manually created notes).
+  # @see AgentIngestedEmail
+  belongs_to :source_email, class_name: "AgentIngestedEmail", optional: true
+
   # LP CRM: the person at the LP this note was with — the contact's InvestorAccess
   # record, plus the guard that keeps it a contact of the note's own stakeholder.
   # Works for both Investor-owned notes and notes logged under a DealInvestor

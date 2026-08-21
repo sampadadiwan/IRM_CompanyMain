@@ -22,6 +22,15 @@
     <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">Custom Notifications</a>
+        <%# Warehouse tab — pending emails the Deal Update Agent couldn't auto-file %>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#warehouse-tab">
+      Warehouse
+      <% warehouse_count = deal.warehouse_items.pending.count %>
+      <% if warehouse_count > 0 %>
+        <span class="badge bg-warning"><%= warehouse_count %></span>
+      <% end %>
+    </a>
+
     <% if deal.entity.support_agents.set?(:deals_report_agent) %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#agent-settings-tab">Agent Settings</a>
     <% end %>
@@ -87,6 +96,15 @@
         <% end %>
       </div>
     </div>
+        <%# Warehouse tab pane — lazy-loaded list of pending warehouse items %>
+    <div id="warehouse-tab" class="tab-pane fade">
+      <div id="warehouse_items" class="associated_entity">
+        <%= turbo_frame_tag "warehouse_items_frame", target: "_top", src: deal_warehouse_items_path(deal), loading: :lazy do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
+      </div>
+    </div>
+
     <% if deal.entity.support_agents.set?(:deals_report_agent) %>
       <div id="agent-settings-tab" class="tab-pane fade">
         <%= render "deals/deal_agent_settings", deal: deal %>

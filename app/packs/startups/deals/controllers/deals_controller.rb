@@ -90,6 +90,9 @@ class DealsController < ApplicationController
       render "deal_charts"
     else
       @investor_label = @deal.entity.is_fund? ? "Company" : "Investor"
+      # Lazy-generate ingest address on first visit (covers role-based access
+      # where no AccessRight callback fires).
+      @deal_ingest_address = ensure_deal_ingest_address
       respond_to do |format|
         format.html do
           if params[:overview].present? || current_user.curr_role_investor?
@@ -301,6 +304,21 @@ class DealsController < ApplicationController
   end
 
   private
+
+  # Lazy-generate an ingest address for the current user on this deal.
+  # Uses the writing connection to avoid read-replica errors.
+  #
+  # @return [DealIngestAddress, nil]
+  def ensure_deal_ingest_address
+    addr = @deal.deal_ingest_addresses.active.find_by(user: current_user)
+    return addr if addr
+
+    ActiveRecord::Base.connected_to(role: :writing) do
+      DealIngestAddress.find_or_create_by(deal: @deal, user: current_user)
+    end
+  rescue ActiveRecord::RecordNotUnique
+    @deal.deal_ingest_addresses.active.find_by(user: current_user)
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_deal

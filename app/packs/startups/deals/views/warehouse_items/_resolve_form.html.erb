@@ -1,0 +1,27 @@
+<%# Inline resolve controls for a single warehouse item.
+    Lets the user pick a stakeholder and file as note/task, or discard.
+    @param item [WarehouseItem] the warehouse item to resolve
+    @param deal [Deal] the parent deal (for the form URL and investor list) %>
+<div class="d-flex gap-1">
+  <%= form_with url: resolve_deal_warehouse_item_path(deal, item), method: :patch, class: "d-inline-flex gap-1 align-items-center" do |f| %>
+    <%= f.hidden_field :resolution, value: "filed" %>
+    <%= f.select :deal_investor_id,
+    deal_investors.map { |di| [di.investor.investor_name, di.id] },
+
+        { prompt: "Pick stakeholder..." },
+        class: "form-select form-select-sm", style: "width: auto; min-width: 150px;" %>
+    <%= f.select :intent,
+        [["Meeting Note", "meeting_note"], ["Task", "task"]],
+        {},
+        class: "form-select form-select-sm", style: "width: auto;" %>
+    <%= f.submit "File", class: "btn btn-success btn-sm" %>
+  <% end %>
+
+  <%= button_to resolve_deal_warehouse_item_path(deal, item),
+      method: :patch,
+      params: { resolution: "discarded" },
+      class: "btn btn-outline-danger btn-sm",
+      data: { turbo_confirm: "Discard this email? It won't be recoverable." } do %>
+    <i class="ti ti-trash"></i>
+  <% end %>
+</div>

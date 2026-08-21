@@ -1,0 +1,20 @@
+<%# Shows the current user's personal deal ingest email address with a copy button.
+    Only rendered for users who have a DealIngestAddress for this deal.
+    @param deal [Deal] the deal record
+    @param ingest_address [DealIngestAddress] the user's ingest address %>
+<% if ingest_address.present? %>
+  <div class="d-flex align-items-center gap-1 mt-1"
+       data-controller="clipboard tooltip"
+       data-bs-toggle="tooltip"
+       data-bs-placement="bottom"
+       data-bs-title="Send an email to this address to add a meeting note or task to this deal board">
+    <i class="ti ti-mail-forward text-muted"></i>
+    <code class="text-muted" data-clipboard-target="source"><%= ingest_address.full_address %></code>
+    <button type="button"
+            class="btn btn-link btn-sm p-0 text-muted"
+            data-action="click->clipboard#copy"
+            title="Copy email address">
+      <i class="ti ti-copy"></i>
+    </button>
+  </div>
+<% end %>

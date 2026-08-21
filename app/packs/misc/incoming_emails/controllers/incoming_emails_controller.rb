@@ -8,6 +8,15 @@ class IncomingEmailsController < ApplicationController
   def sendgrid
     Rails.logger.debug { "Processing incoming email, to: #{params[:to]}, from: #{params[:from]}, subject: #{params[:subject]}" }
 
+    # Deal Update Agent — route emails to @updates.caphive.com to the
+    # deal ingest pipeline. All other domains fall through to the
+    # existing IncomingEmail logic below.
+    # @see DealIngestAuthenticator
+    if deal_ingest_email?(params[:to])
+      DealIngestAuthenticator.call(params)
+      return head :ok
+    end
+
     # Extract Message-ID from the raw headers string for idempotency on SendGrid retries
     message_id = params[:headers]&.match(/Message-ID:\s*<([^>]+)>/i)&.[](1)
 
@@ -119,5 +128,16 @@ class IncomingEmailsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def incoming_email_params
     params.require(:incoming_email).permit(:from, :to, :subject, :body, :owner_id, :owner_type, :entity_id, :cc_emails, :message_id, :internet_message_id, :received_at)
+  end
+
+  # Whether the inbound email is addressed to the deal ingest domain.
+  # Matches any address @updates.caphive.com (or whatever DEAL_INGEST_DOMAIN is set to).
+  #
+  # @param to [String] the To field from SendGrid
+  # @return [Boolean]
+  def deal_ingest_email?(to)
+    return false if to.blank?
+
+    to.downcase.include?("@#{DealIngestAddress.domain}")
   end
 end

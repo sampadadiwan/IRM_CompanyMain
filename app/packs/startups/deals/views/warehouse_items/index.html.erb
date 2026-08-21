@@ -1,0 +1,63 @@
+<%# Warehouse items list — emails the Deal Update Agent couldn't auto-file.
+    @param @deal [Deal] the deal these items belong to
+    @param @warehouse_items [ActiveRecord::Relation] pending warehouse items %>
+
+<%= turbo_frame_tag "warehouse_items_frame" do %>
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="ti ti-inbox"></i> Warehouse
+      <span class="badge bg-warning"><%= @warehouse_items.count %></span>
+    </h5>
+<%= link_to deal_path(@deal, list_view: true), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "_top" } do %>
+      <i class="ti ti-arrow-left"></i> Back to Deal
+    <% end %>
+  </div>
+
+  <% if @warehouse_items.any? %>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Received</th>
+            <th>From</th>
+            <th>Intent</th>
+            <th>Content Preview</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @warehouse_items.each do |item| %>
+            <% email = item.agent_ingested_email %>
+            <% parsed = email.parse_json || {} %>
+            <tr>
+              <td><%= l(email.received_at, format: :short) %></td>
+              <td><%= email.sender_user.full_name %></td>
+              <td>
+                <% case item.parsed_intent %>
+                <% when "meeting_note" %>
+                  <span class="badge bg-info">Meeting Note</span>
+                <% when "task" %>
+                  <span class="badge bg-primary">Task</span>
+                <% else %>
+                  <span class="badge bg-secondary">Unknown</span>
+                <% end %>
+              </td>
+              <td><%= truncate((parsed["body"] || email.raw_payload).to_s, length: 80) %></td>
+              <td>
+                  <%= render "warehouse_items/resolve_form", item: item, deal: @deal, deal_investors: @deal_investors %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%== pagy_nav(@pagy) if @pagy.pages > 1 %>
+  <% else %>
+    <div class="card-body text-center text-muted py-5">
+      <i class="ti ti-inbox-off" style="font-size: 2rem;"></i>
+      <p class="mt-2">No pending items in the warehouse</p>
+    </div>
+  <% end %>
+</div>
+<% end %>

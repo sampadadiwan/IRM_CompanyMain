@@ -27,6 +27,18 @@ class Deal < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
 
+  # Per-(deal, user) unguessable email addresses for the Deal Update Agent.
+  # @see DealIngestAddress
+  has_many :deal_ingest_addresses, dependent: :destroy
+
+  # Audit log of every authenticated email processed by the Deal Update Agent.
+  # @see AgentIngestedEmail
+  has_many :agent_ingested_emails, dependent: :destroy
+
+  # Emails the Deal Update Agent couldn't auto-file, awaiting manual review.
+  # @see WarehouseItem
+  has_many :warehouse_items, dependent: :destroy
+
   has_many :ci_track_records, as: :owner, dependent: :destroy
   has_many :ci_widgets, as: :owner, dependent: :destroy
 

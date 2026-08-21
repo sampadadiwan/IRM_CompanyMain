@@ -33,6 +33,10 @@ class Task < ApplicationRecord
   belongs_to :task_template, optional: true
   belongs_to :task_recurrence_rule, optional: true
 
+  # The ingest email that created this task (nil for manually created tasks).
+  # @see AgentIngestedEmail
+  belongs_to :source_email, class_name: "AgentIngestedEmail", optional: true
+
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   validates :details, presence: true

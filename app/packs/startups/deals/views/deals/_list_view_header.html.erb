@@ -2,7 +2,13 @@
     Excel download, and new-deal button.
     @param deal [Deal] the deal record (used for entity-level feature flags) %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4 pt-4">
-  <h3 class="h3 mb-0 text-gray-600"><%= deal.name %> </h3>
+  <div>
+    <h3 class="h3 mb-0 text-gray-600"><%= deal.name %></h3>
+    <%= render "deals/deal_ingest_address",
+               deal: deal,
+               ingest_address: @deal_ingest_address %>
+  </div>
+
   <span>
     <% if params[:all].blank? %>
       <%= link_to deal_path(deal, list_view: true, all: true), class: "btn btn-outline-primary" do %>
