@@ -50,6 +50,7 @@ end
 resources :fund_unit_settings
 resources :portfolio_investments do
   get 'base_amount_form', on: :collection
+  post 'check_duplicate_sell', on: :collection
 end
 resources :portfolio_investment_snapshots, controller: "portfolio_investments", defaults: { snapshot: true }
 

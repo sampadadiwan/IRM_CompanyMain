@@ -19,6 +19,11 @@ When('I try to update the fund\'s tracking currency to {string} bypassing the di
   select(currency, from: "fund_tracking_currency")
   click_on("Next")
   click_on("Save")
+  # The submit goes through Turbo (async fetch + redirect), so click_on can return before the
+  # server has finished processing/committing. Wait for the page to actually leave the edit
+  # form (success -> fund show page, denial -> root) before any DB assertion runs, otherwise
+  # @fund.reload can race the request and read pre-commit state.
+  expect(page).to have_no_current_path(edit_fund_path(@fund))
 end
 
 Then('the tracking currency update should be denied') do

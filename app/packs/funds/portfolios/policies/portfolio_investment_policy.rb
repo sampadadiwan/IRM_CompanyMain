@@ -44,6 +44,13 @@ class PortfolioInvestmentPolicy < FundBasePolicy
     true
   end
 
+  # Same rule as create? — this probes matching_sells for an arbitrary fund_id/
+  # portfolio_company_id/investment_instrument_id supplied by the client, so it
+  # must be gated exactly like the create it's a pre-save check for, not left open.
+  def check_duplicate_sell?
+    create?
+  end
+
   # No updates to investments as the current algorith for attribution cannot handle updates
   # So delete and create if you want to update
   def update?

@@ -1,5 +1,7 @@
 <%= render FormCard.new(title: "Portfolio Investment : #{portfolio_investment.portfolio_company.presence || 'New'}") do %>
 
+  <div data-controller="portfolio-investment-duplicate-check"
+       data-portfolio-investment-duplicate-check-check-url-value="<%= check_duplicate_sell_portfolio_investments_path %>">
   <%= form_with(model: portfolio_investment, validate: true) do |form| %>
     <% if portfolio_investment.errors.any? %>
       <div class="alert alert-danger">
@@ -100,5 +102,6 @@
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
+  </div>
 
 <% end %>

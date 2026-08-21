@@ -33,7 +33,17 @@ class AttributionService
       buys.each do |buy|
         break if allocatable_quantity.zero?
 
+        # Row-lock the buy before reading net_quantity. Without this, two sells created
+        # close together (e.g. the duplicate-PI scenario this whole feature is about) each
+        # start this loop from their own unlocked read of `buys`, so both can see the same
+        # pre-consumption net_quantity and over-allocate against the same lot. FOR UPDATE
+        # serializes concurrent jobs on this row; on SQLite (test env) it's a harmless no-op
+        # since SQLite has no row-level locking.
+        buy.lock!
+        next if buy.net_quantity <= 0
+
         attribution_quantity = [buy.net_quantity, allocatable_quantity].min
+        next if attribution_quantity.zero?
 
         PortfolioAttribution.create!(
           entity_id: @portfolio_investment.entity_id,
@@ -58,15 +68,24 @@ class AttributionService
     all_investments = @portfolio_investment.aggregate_portfolio_investment.portfolio_investments
     buys = all_investments.allocatable_buys(@portfolio_investment.portfolio_company_id, @portfolio_investment.investment_instrument_id)
 
-    total_buy_quantity = buys.sum(&:net_quantity)
-    return if total_buy_quantity.zero?
-
     ActiveRecord::Base.transaction do
+      # Lock every eligible buy up front, in the same investment_date order the scope
+      # already sorts by (so two concurrent sells always acquire locks in that same order
+      # and can't deadlock each other). Without this, two duplicate sells created close
+      # together would each compute proportions off the same pre-consumption net_quantity
+      # snapshot and over-allocate the same lots — same underlying race as the FIFO path.
+      buys = buys.to_a.each(&:lock!)
+      total_buy_quantity = buys.sum(&:net_quantity)
+      next if total_buy_quantity.zero?
+
       buys.each do |buy|
         break if sell_quantity.zero?
 
         proportion = buy.net_quantity.to_f / total_buy_quantity
-        attribution_quantity = (sell_quantity * proportion).round(6)
+        # Capped at buy.net_quantity as a safety net: proportions are computed from the
+        # now-locked, up-to-date net_quantity values, but rounding could otherwise still
+        # nudge a single buy's share a hair past what's actually left in that lot.
+        attribution_quantity = [(sell_quantity * proportion).round(6), buy.net_quantity].min
         next if attribution_quantity.zero?
 
         PortfolioAttribution.create!(
