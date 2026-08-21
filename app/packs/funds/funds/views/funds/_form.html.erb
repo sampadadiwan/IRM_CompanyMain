@@ -53,9 +53,9 @@
                   <%
                     currencies = fund.entity.exchange_rates.pluck(:from) << fund.entity.currency
                     currency_disabled = !fund.new_record?
-                    # Escape hatch: tracking currency is normally locked after creation, but
-                    # support can pass ?debug=true on the edit URL to correct a bad value
-                    tracking_currency_disabled = currency_disabled && params[:debug] != "true"
+                    # Tracking currency is locked after creation except for support, who can
+                    # correct a bad value (see FundPolicy#update_tracking_currency?)
+                    tracking_currency_disabled = currency_disabled && !policy(fund).update_tracking_currency?
                   %>
                   <div class="form-group">
                     <%= form.label :currency %>
