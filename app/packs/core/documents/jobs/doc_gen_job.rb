@@ -44,12 +44,16 @@ class DocGenJob < ApplicationJob
 
   def valid_inputs
     @error_msg ||= []
-    if templates.blank?
+    # none? issues SELECT 1 LIMIT 1; blank? would load and cache every matching row —
+    # for subclasses like CapitalDistributionPaymentDocJob, models() can be the full
+    # capital_distribution_payments relation for a distribution with several eager-loaded
+    # associations, which #generate below is about to load anyway.
+    if templates.none?
       send_notification("No templates found", @user_id, "danger")
       @error_msg << { msg: "No templates found" }
       false
     end
-    if models.blank?
+    if models.none?
       send_notification("No records found", @user_id, "danger")
       @error_msg << { msg: "No records found" }
       false

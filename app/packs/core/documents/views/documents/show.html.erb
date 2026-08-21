@@ -275,6 +275,10 @@
                <% end %>
             </div>
          <% end %>
+
+         <% if policy(@document).run_fix? %>
+            <%= render "documents/fix_me", document: @document %>
+         <% end %>
       </div>
    <% end %>
 

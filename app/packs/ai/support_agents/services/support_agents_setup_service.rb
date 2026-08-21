@@ -583,6 +583,29 @@ class SupportAgentsSetupService
                      "and all overdue escalations, e.g. 'legal'. Leave blank to send these " \
                      "to the entity's company admins instead." }
       ]
+    },
+
+    # ── TemplateFixAgent ─────────────────────────────────────────────────────────
+    # No config fields — everything (the problem description, the model) is
+    # supplied per-run from the "Fix Me" button on a template document, not
+    # configured on the agent. Also created lazily on first use (see
+    # DocumentsController#run_fix), so this entry mainly exists for admins who
+    # want to provision/see it ahead of time via Setup All Agents.
+    #
+    # enable_entity_flag: unlike every other entry, provisioning this agent also
+    # licenses it for the entity — Fix Me has no separate "enabled" gate of its
+    # own to flip on later, so a freshly-provisioned agent that still reads as
+    # entity-disabled would otherwise never become usable without a manual step.
+    {
+      tag: "TemplateFixAgent",
+      category: "Ops",
+      enable_entity_flag: true,
+      agent: {
+        name: "Template Fix Agent",
+        with_steps: true, # Fix Me runs show the step progress panel
+        json_fields: {}
+      },
+      fields: []
     }
   ].freeze
 
@@ -749,6 +772,24 @@ class SupportAgentsSetupService
     end
 
     setup_schedule(sa, agent_cfg[:schedule]) if agent_cfg[:schedule]
+    enable_entity_flag!(tag) if cfg[:enable_entity_flag]
+  end
+
+  # Turns on the entity's support_agents bitflag for this agent — the separate
+  # licensing gate SupportAgent#entity_flag_enabled? checks (distinct from the
+  # SupportAgent record's own `enabled` column, which this method never touches).
+  # Opt-in per config entry via `enable_entity_flag: true` — provisioning the
+  # records does NOT imply licensing an agent, so this stays off for every
+  # existing entry; flip it on deliberately per agent, not globally.
+  def enable_entity_flag!(tag)
+    flag = self.class.flag_for(tag)
+    if @entity.support_agents.set?(flag)
+      log "    [entity flag] '#{flag}' already enabled"
+      return
+    end
+
+    @entity.support_agents.set!(flag)
+    log "    [entity flag] Enabled '#{flag}' on #{@entity.name}"
   end
 
   def setup_schedule(sa, schedule_cfg)

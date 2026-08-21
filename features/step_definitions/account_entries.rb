@@ -27,8 +27,8 @@ Then("I see AllocationRun created") do
 	eventually { expect(AllocationRun.last).to be_present }
 	@allocation_run = AllocationRun.last
 	within('table') do
-    expect(page).to have_css('tr', text: @allocation_run.start_date.strftime('%d/%m/%Y'))
-    expect(page).to have_css('tr', text: @allocation_run.end_date.strftime('%d/%m/%Y'))
+    expect(page).to have_css('tr', text: I18n.l(@allocation_run.start_date, format: :abbr_month_day_year))
+    expect(page).to have_css('tr', text: I18n.l(@allocation_run.end_date, format: :abbr_month_day_year))
   end
   eventually { expect(AccountEntry.last).to(be_present) }
 end

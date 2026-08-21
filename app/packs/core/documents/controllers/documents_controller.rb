@@ -3,7 +3,7 @@ class DocumentsController < ApplicationController
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list verify_accessibility]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download show_email_list]
   after_action :verify_policy_scoped, only: []
 
@@ -322,6 +322,33 @@ class DocumentsController < ApplicationController
     redirect_to document_url(@document), notice: "Document will be sent to the email addresses as requested."
   rescue StandardError => e
     redirect_to document_url(@document), alert: e.message
+  end
+
+  # AI "Fix Me": kicks off TemplateFixAgent against this template document with
+  # the user-described problem. Runs in the background — TemplateFixJob sends
+  # a UserAlert when the resulting draft (or failure) is ready.
+  def run_fix
+    issue_description = params[:issue_description].to_s.strip
+    if issue_description.blank?
+      redirect_to document_url(@document), alert: "Please describe the issue before running Fix Me."
+      return
+    end
+
+    support_agent = SupportAgent.find_or_create_by!(entity_id: current_user.entity_id, agent_type: "TemplateFixAgent") do |sa|
+      sa.name = "Template Fix Agent"
+      sa.category = "Ops"
+      sa.enabled = true
+    end
+
+    TemplateFixJob.perform_later(
+      support_agent_id: support_agent.id,
+      document_id: @document.id,
+      issue_description: issue_description,
+      llm_model: params[:llm_model].presence,
+      user_id: current_user.id
+    )
+
+    redirect_to document_url(@document), notice: "Fix Me is running in the background — you'll get a notification when it's done."
   end
 
   def share_by_email

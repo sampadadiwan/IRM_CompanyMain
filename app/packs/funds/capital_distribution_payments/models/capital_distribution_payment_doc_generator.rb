@@ -109,10 +109,7 @@ class CapitalDistributionPaymentDocGenerator
       fund_as_of_commitments: TemplateDecorator.decorate(fund_as_of.capital_commitments)
     }
 
-    all_payments = fund_as_of.capital_distribution_payments
-                             .includes(:capital_commitment)
-                             .where(capital_distribution_id: capital_distribution_payment.capital_distribution_id)
-                             .to_a
+    all_payments = fetch_all_payments(fund_as_of, capital_distribution_payment, options)
 
     dist_notice_fees_context(
       fund_as_of, all_payments, capital_distribution_payment, capital_commitment, context,
@@ -121,6 +118,31 @@ class CapitalDistributionPaymentDocGenerator
     # This is only for dumping keys for debugging inside the template
     context.store :context, DocGenContext.new(context)
     context
+  end
+
+  # Distribution-wide payments (all folios/investors) as of this payment's date, used to
+  # compute fund-wide fee totals in dist_notice_fees_context. A bulk job generates one
+  # document per payment in the same distribution, instantiating this generator once per
+  # payment — without caching, each instantiation re-queries and re-materializes this same
+  # distribution-wide list (O(N^2) across the run for N payments). `options` is the same
+  # Hash instance passed to every generator instantiation within one job run (see
+  # DocGenJob#generate), so it doubles as a cache scoped to that run. Keyed on as_of_date
+  # since FundAsOf#capital_distribution_payments filters payment_date <= as_of_date, and
+  # payments within one distribution aren't guaranteed to share the same payment_date.
+  def fetch_all_payments(fund_as_of, capital_distribution_payment, options)
+    unless options.is_a?(Hash)
+      return fund_as_of.capital_distribution_payments
+                       .includes(:capital_commitment)
+                       .where(capital_distribution_id: capital_distribution_payment.capital_distribution_id)
+                       .to_a
+    end
+
+    cache = (options[:all_payments_cache] ||= {})
+    cache_key = [capital_distribution_payment.capital_distribution_id, fund_as_of.as_of_date]
+    cache[cache_key] ||= fund_as_of.capital_distribution_payments
+                                   .includes(:capital_commitment)
+                                   .where(capital_distribution_id: capital_distribution_payment.capital_distribution_id)
+                                   .to_a
   end
 
   # Add capital distribution payment context

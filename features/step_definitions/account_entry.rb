@@ -13,7 +13,9 @@ end
 Given('I filter the AEs') do
   @document_name = "account_entries.xlsx"
   visit account_entries_path(filter: true)
-  find('#q_c_0_v_0_value').set('01/01/2020')
+  # The default condition row filters on reporting_date (a date attribute), so the
+  # value field renders as the locale-date widget rather than the plain text field.
+  find('.value-field-date input[type="text"]').set('01/01/2020')
   find('button.search-button[type="submit"]').click
   sleep(2)
 end
@@ -97,7 +99,9 @@ end
 
 Given('I filter and pivot the AEs') do
   visit account_entries_path(filter: true)
-  find('#q_c_0_v_0_value').set('01/01/2020')
+  # The default condition row filters on reporting_date (a date attribute), so the
+  # value field renders as the locale-date widget rather than the plain text field.
+  find('.value-field-date input[type="text"]').set('01/01/2020')
   check('q_pivot')
   sleep(0.5)
   find('button.search-button[type="submit"]').click

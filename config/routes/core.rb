@@ -255,6 +255,7 @@ resources :investor_notices
 resources :fees
 
 resources :documents do
+  post 'run_fix', on: :member
   patch 'send_for_esign', on: :member
   patch 'force_send_for_esign', on: :member
   patch 'cancel_esign', on: :member

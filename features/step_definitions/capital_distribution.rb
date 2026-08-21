@@ -509,6 +509,31 @@ Given('We Generate documents for the capital distribution') do
   expect(page).to have_content("Documentation generation started")
 end
 
+When('I generate distribution payment documents directly for the capital distribution') do
+  @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
+  # KYC must be verified or DocGenJob#validate skips the payment — same setup as
+  # "We Generate documents for the capital distribution" above, but this step calls
+  # the job directly (perform_now) instead of driving it through the UI, so a
+  # SQL query counter wrapped around this step (see sql_query_count_steps.rb)
+  # observes the job's own queries instead of a separate browser/server process's.
+  @capital_distribution_payments.each do |cdp|
+    next if cdp.capital_commitment&.investor_kyc&.verified
+
+    if cdp.capital_commitment.investor_kyc.present?
+      cdp.capital_commitment.investor_kyc.update_columns(verified: true, completed_by_investor: true, submission_status: "verified")
+    else
+      investor_kyc = InvestorKyc.new(investor: cdp.capital_commitment.investor, entity: @entity, verified: true, completed_by_investor: true, submission_status: "verified", full_name: cdp.investor_name, PAN: Faker::Alphanumeric.alphanumeric(number: 10).upcase, birth_date: Time.zone.today - 18.years)
+      investor_kyc.save(validate: false)
+      cdp.capital_commitment.investor_kyc = investor_kyc
+      cdp.capital_commitment.save(validate: false)
+    end
+  end
+
+  # nil payment id triggers the bulk "all payments in this distribution" path in
+  # CapitalDistributionPaymentDocJob#models
+  CapitalDistributionPaymentDocJob.perform_now(@capital_distribution.id, nil, @user.id)
+end
+
 Given('The distribution payment documents are approved') do
   @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
   @capital_distribution_payments.each do |cdp|

@@ -121,4 +121,14 @@ class DocumentPolicy < ApplicationPolicy
   def verify_accessibility?
     show?
   end
+
+  # AI "Fix Me" on a template: gated to company admins (the same tier who
+  # manages templates) since it edits legal document templates, even though
+  # the result is always a new draft — the source template is never overwritten.
+  # Named to match the DocumentsController#run_fix action (Pundit infers the
+  # policy method from the action name via the bare `authorize @document` in
+  # set_document).
+  def run_fix?
+    update? && record.template? && user.has_cached_role?(:company_admin)
+  end
 end

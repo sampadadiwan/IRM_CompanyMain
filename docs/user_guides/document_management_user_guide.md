@@ -180,6 +180,8 @@ This lets you find, say, the March 2025 investor statement at a glance.
 
 A **generated document** is created by merging data into a **template**. Templates power capital-call notices, remittance vouchers, distribution documents, and secondary-sale agreements. Each template keeps a list of every document generated from it, so you can trace any generated document back to its template.
 
+If a template has a problem that only shows up once documents are generated from it — clause numbers that duplicate or skip, unexpected blank space on a page, a section that shows for every investor when it shouldn't — company administrators can open the template and click **Fix Me** to describe the problem and get back a corrected draft to review. See the [Template Fix Agent guide](agents/template_fix_agent_user_guide) for details.
+
 ---
 
 ## Document Approval
