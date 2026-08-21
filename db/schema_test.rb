@@ -296,6 +296,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.check_constraint "trigger_type in ('scheduled','manual')", name: "valid_trigger_type"
   end
 
+  create_table "agent_ingested_emails", force: :cascade do |t|
+    t.decimal "confidence", precision: 5, scale: 2
+    t.datetime "created_at", null: false
+    t.bigint "deal_id", null: false
+    t.string "match_tier", limit: 2
+    t.string "message_id", null: false
+    t.json "parse_json"
+    t.text "raw_payload"
+    t.datetime "received_at", null: false
+    t.bigint "sender_user_id", null: false
+    t.string "status", limit: 20, default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deal_id"], name: "index_agent_ingested_emails_on_deal_id"
+    t.index ["message_id"], name: "index_agent_ingested_emails_on_message_id", unique: true
+    t.index ["sender_user_id"], name: "index_agent_ingested_emails_on_sender_user_id"
+    t.index ["status"], name: "index_agent_ingested_emails_on_status"
+  end
+
   create_table "agent_schedules", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
@@ -1255,6 +1273,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.index ["deal_investor_id"], name: "index_deal_docs_on_deal_investor_id"
     t.index ["deleted_at"], name: "index_deal_docs_on_deleted_at"
     t.index ["user_id"], name: "index_deal_docs_on_user_id"
+  end
+
+  create_table "deal_ingest_addresses", force: :cascade do |t|
+    t.string "address", limit: 16, null: false
+    t.datetime "created_at", null: false
+    t.bigint "deal_id", null: false
+    t.datetime "revoked_at"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["address"], name: "index_deal_ingest_addresses_on_address", unique: true
+    t.index ["deal_id", "user_id"], name: "index_deal_ingest_addresses_on_deal_id_and_user_id", unique: true
+    t.index ["deal_id"], name: "index_deal_ingest_addresses_on_deal_id"
+    t.index ["user_id"], name: "index_deal_ingest_addresses_on_user_id"
   end
 
   create_table "deal_investors", force: :cascade do |t|
@@ -2879,13 +2910,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
 
   create_table "notes", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.boolean "created_by_agent", default: false, null: false
     t.datetime "deleted_at"
     t.text "details"
     t.integer "entity_id"
     t.integer "investor_id"
+    t.string "match_tier", limit: 2
     t.date "on"
     t.bigint "owner_id"
     t.string "owner_type", default: "Investor"
+    t.bigint "source_email_id"
     t.string "tags", limit: 100
     t.bigint "touch_point_id"
     t.datetime "updated_at", null: false
@@ -2894,6 +2928,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.index ["entity_id"], name: "index_notes_on_entity_id"
     t.index ["investor_id"], name: "index_notes_on_investor_id"
     t.index ["owner_type", "owner_id"], name: "index_notes_on_owner"
+    t.index ["source_email_id"], name: "index_notes_on_source_email_id"
     t.index ["touch_point_id"], name: "index_notes_on_touch_point_id"
     t.index ["user_id"], name: "index_notes_on_user_id"
   end
@@ -3914,6 +3949,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.boolean "completed", default: false
     t.date "completed_on"
     t.datetime "created_at", null: false
+    t.boolean "created_by_agent", default: false, null: false
     t.text "details"
     t.bigint "document_folder_id"
     t.date "due_date"
@@ -3923,10 +3959,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.bigint "form_type_id"
     t.integer "import_upload_id"
     t.boolean "is_exception", default: false
+    t.string "match_tier", limit: 2
     t.datetime "original_start_date"
     t.bigint "owner_id"
     t.string "owner_type"
     t.text "response"
+    t.bigint "source_email_id"
     t.string "status", limit: 20, default: "todo", null: false
     t.string "tags", limit: 50
     t.bigint "task_recurrence_rule_id"
@@ -3940,6 +3978,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
     t.index ["import_upload_id"], name: "index_tasks_on_import_upload_id"
     t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
+    t.index ["source_email_id"], name: "index_tasks_on_source_email_id"
     t.index ["status"], name: "index_tasks_on_status"
     t.index ["task_recurrence_rule_id"], name: "index_tasks_on_task_recurrence_rule_id"
     t.index ["task_template_id"], name: "index_tasks_on_task_template_id"
@@ -4171,6 +4210,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.index ["user_id"], name: "index_viewed_bies_on_user_id"
   end
 
+  create_table "warehouse_items", force: :cascade do |t|
+    t.bigint "agent_ingested_email_id", null: false
+    t.json "candidate_stakeholder_ids"
+    t.datetime "created_at", null: false
+    t.bigint "deal_id", null: false
+    t.string "parsed_intent", limit: 20
+    t.string "resolution", limit: 20
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_id"
+    t.datetime "updated_at", null: false
+    t.index ["agent_ingested_email_id"], name: "index_warehouse_items_on_agent_ingested_email_id"
+    t.index ["deal_id", "resolved_at"], name: "index_warehouse_items_on_deal_id_and_resolved_at"
+    t.index ["deal_id"], name: "index_warehouse_items_on_deal_id"
+    t.index ["resolved_by_id"], name: "index_warehouse_items_on_resolved_by_id"
+  end
+
   create_table "website_leads", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", null: false
@@ -4331,6 +4386,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
   add_foreign_key "agent_execution_logs", "entities"
   add_foreign_key "agent_execution_logs", "support_agents"
   add_foreign_key "agent_execution_logs", "users", column: "triggered_by_id"
+  add_foreign_key "agent_ingested_emails", "deals"
+  add_foreign_key "agent_ingested_emails", "users", column: "sender_user_id"
   add_foreign_key "agent_schedules", "entities"
   add_foreign_key "agent_schedules", "support_agents"
   add_foreign_key "agent_schedules", "users", column: "created_by_id"
@@ -4439,6 +4496,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
   add_foreign_key "deal_docs", "deal_investors"
   add_foreign_key "deal_docs", "deals"
   add_foreign_key "deal_docs", "users"
+  add_foreign_key "deal_ingest_addresses", "deals"
+  add_foreign_key "deal_ingest_addresses", "users"
   add_foreign_key "deal_investors", "deal_activities"
   add_foreign_key "deal_investors", "deals"
   add_foreign_key "deal_investors", "entities"
@@ -4607,6 +4666,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
+  add_foreign_key "notes", "agent_ingested_emails", column: "source_email_id"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
@@ -4721,6 +4781,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
   add_foreign_key "taggings", "tags"
   add_foreign_key "task_recurrence_rules", "entities"
   add_foreign_key "task_templates", "entities"
+  add_foreign_key "tasks", "agent_ingested_emails", column: "source_email_id"
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "folders", column: "document_folder_id"
   add_foreign_key "tasks", "form_types"
@@ -4746,6 +4807,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
   add_foreign_key "video_kycs", "users"
   add_foreign_key "viewed_bies", "entities"
   add_foreign_key "viewed_bies", "users"
+  add_foreign_key "warehouse_items", "agent_ingested_emails"
+  add_foreign_key "warehouse_items", "deals"
+  add_foreign_key "warehouse_items", "users", column: "resolved_by_id"
   add_foreign_key "workflow_actor_responses", "users", column: "actor_id"
   add_foreign_key "workflow_actor_responses", "workflow_instances"
   add_foreign_key "workflow_auto_assignment_rules", "entities"

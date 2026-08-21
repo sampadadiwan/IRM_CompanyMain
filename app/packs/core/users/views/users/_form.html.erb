@@ -73,7 +73,12 @@
       <div class="form-group">
         <%= form.label :tag_list, "Tags" %>
         <i class="ti ti-info-circle ms-1" data-bs-toggle="tooltip" title="Tags help group users for sending notifications"></i>
-        <%= form.text_field :tag_list, class: "form-control" %>
+        <%= form.text_field :tag_list, class: "form-control", list: "user_tag_list_suggestions" %>
+        <datalist id="user_tag_list_suggestions">
+          <% User::NOTIFICATION_TAGS.each do |tag| %>
+            <option value="<%= tag %>">
+          <% end %>
+        </datalist>
         <small class="form-text text-muted">Comma separated list of tags</small>
       </div>
 

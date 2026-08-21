@@ -19,6 +19,14 @@ class User < ApplicationRecord
   # redeemed as a login. Keep this constant as the single source of truth for all three call sites.
   MAGIC_LINK_PURPOSE = :magic_login
 
+  # tag_list is free text, but these values are checked for by exact string match elsewhere:
+  # "Kpi" gates recipients for KpiReport's submission/failure notifiers (notify_fund_of_submission!,
+  # reopen_after_failed_import! in app/packs/startups/kpis/models/kpi_report.rb, and the matching
+  # controller path in kpi_reports_controller.rb#notify_fund_on_submission); "db_dump_notification"
+  # gates recipients in EntityDbDumpJob. Suggested (not enforced) on the user form's tag input —
+  # other tags remain valid, e.g. per-entity Support Agent "notify_tag" config values.
+  NOTIFICATION_TAGS = %w[Kpi db_dump_notification].freeze
+
   attr_accessor :role_name
   # This is set from session[:support_user_id] in the ApplicationController.
   # The session is setup in users_controller#no_password_login when support user logs in as another user
