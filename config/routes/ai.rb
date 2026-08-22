@@ -60,6 +60,13 @@ resource :portfolio_scoring_dashboard, only: [:show], controller: "portfolio_sco
   post :run_scoring
 end
 
+# Presentation Analyst Dashboard — buckets portfolio companies by Management
+# Accountability tier, aggregates cross-period flags and the pre-board
+# briefing across the portfolio.
+resource :presentation_analyst_dashboard, only: [:show], controller: "presentation_analyst_dashboard" do
+  post :run_analysis
+end
+
 resources :ai_checks do
   post 'run_checks', on: :collection
   get 'run_checks', on: :collection

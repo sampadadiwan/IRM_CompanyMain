@@ -154,7 +154,9 @@ GRAFANA_PASS=xxx bundle exec rake grafana:provision:save
 
 ## Alert reference
 
-All 15 active alerts. Grouped by folder in Grafana Alerting UI.
+Grouped by folder in Grafana Alerting UI. All active alerts now live under **CapHive
+Alerts** — see `grafana_provision.yml` for the full, current list with exact PromQL;
+this table only calls out the ones worth a note.
 
 ### CapHive Alerts — infrastructure
 
@@ -163,6 +165,8 @@ All 15 active alerts. Grouped by folder in Grafana Alerting UI.
 | CPU Critical | avg CPU not-idle | >90% | 5m |
 | Memory Critical | node (MemTotal − MemAvailable) / MemTotal | >90% | 5m |
 | Disk Critical | max by instance, fstype!="tmpfs" | >90% | 5m |
+| Disk IO Saturation | rate(node_disk_io_time_seconds_total) | >90% busy | 5m |
+| Node Alive | `up{job="node"} == 0` | — | 2m |
 
 ### CapHive Alerts — rails
 
@@ -172,40 +176,27 @@ All 15 active alerts. Grouped by folder in Grafana Alerting UI.
 | Avg Request Duration Critical | irate sum/count × 1000 | >2000ms | 5m |
 | Sidekiq Retry Queue Critical | ruby_sidekiq_stats_retry_size | >20 jobs | 5m |
 | Web Memory Critical | avg ruby_rss (web/puma_worker) | >700 MB | 5m |
+| Web Worker Memory | ruby_rss per process (master/web/puma_master/puma_worker) | >450 MB | 5m |
+| Memory Sidekiq | ruby_rss per process (sidekiq) | >1000 MB | 5m — was firing repeatedly in July 2026, a real recurring leak |
+| P95 Response Time | approx: (P90+P99)/2 (no true P95 quantile exported) | >750ms | 5m |
 
-### Disk folder
-
-| Alert | Threshold | Note |
-|---|---|---|
-| Disk Usage >85% | >85% | All nodes, no hardcoded IP |
-| Disk IO Saturation | >90% busy | Per device |
-
-### Memory folder
-
-| Alert | Threshold | Note |
-|---|---|---|
-| Web Worker Memory | >450 MB per process | Per Puma PID |
-| Memory Sidekiq | >1000 MB | Per Sidekiq PID — was firing July 2026, restart Sidekiq |
-| High Memory usage | <10% node free | Node-level OOM risk |
-
-### ResponseTimes folder
-
-| Alert | Threshold |
-|---|---|
-| P95 Response Time | >750ms |
-| P99 Response Times | >2.5s |
-
-### WebApp folder
-
-| Alert | Threshold |
-|---|---|
-| WebApp Alive | `up{job="rails_app"} == 0` for 2m |
-| Node Alive | `up{job="node"} == 0` for 5m |
-
-**Deleted (were noisy, not actionable):**
+**Deleted (were noisy, not actionable, or duplicated a rule above):**
 - `Errors > 30 errors` — absolute 4xx+5xx count; bot 404s at 3 req/s triggered this every evaluation cycle
 - `Enqued Sidekiq Jobs > 30` — Chewy alone runs 292 jobs/hr, so this fired on every index batch
 - `High CPU Usage` (CPU folder) — duplicate of CapHive Alerts CPU Critical
+- `Disk Usage > 85%` (Disk folder) — hardcoded to a single instance (10.0.1.56); Disk
+  Critical above already covers every instance via `max by(instance)`
+- `High Memory usage <10% free` (Memory folder) — no DB-instance exclusion, so it
+  could false-alarm on DB servers where InnoDB intentionally holds 70-85% RAM; Memory
+  Critical above already excludes them
+- `P99 Response Times` (ResponseTimes folder) — duplicated P99 Request Latency Critical
+- `WebApp Alive` (WebApp folder) — `up{job="rails_app"} == 0`, byte-for-byte the same
+  condition as Rails Exporter Down above, which already carries severity + `no_data_state`
+
+All 4 of the above, plus the 5 migrated rules, had **no `severity` label at all** in
+their pre-migration form — meaning even a full node outage could only ever reach email,
+never WhatsApp. See `export_legacy_alert_rules.sh` to re-pull the live definition of any
+rule if it's ever edited outside this file again.
 
 ---
 

@@ -1,0 +1,42 @@
+<%# Cross-reference against PortfolioScoringAgent — a finding invisible on
+    either dashboard alone. Strong fundamentals with weak accountability is
+    the pattern worth a callout: good numbers today sitting on top of broken
+    commitments and quietly shifted objectives. The mirror case (honest about
+    weak fundamentals) is lower urgency and gets a muted secondary line. %>
+<% risk = presenter.cross_reference_available? ? presenter.narrative_risk_companies : [] %>
+<% honest = presenter.cross_reference_available? ? presenter.honest_underperformer_companies : [] %>
+<% if risk.any? || honest.any? %>
+  <div class="alert alert-<%= risk.any? ? 'danger' : 'secondary' %> py-3 mb-3">
+    <% if risk.any? %>
+      <div class="d-flex align-items-start gap-2 <%= "mb-2" if honest.any? %>">
+        <i class="ti ti-alert-triangle mt-1"></i>
+        <div>
+          <strong>
+            <%= risk.size %> <%= "company".pluralize(risk.size) %> score well on fundamentals but poorly on accountability
+          </strong>
+          <div class="small mt-1">
+            Strong <%= link_to "Portfolio Scoring", portfolio_scoring_dashboard_path, class: "alert-link", data: { turbo: false } %>
+            numbers alongside a pattern of broken commitments and shifted objectives can mean the reporting itself is not to be trusted going forward.
+          </div>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <% risk.each do |row| %>
+              <%= link_to investor_path(row[:investor_id]), class: "badge bg-danger-subtle text-danger text-decoration-none", data: { turbo: false } do %>
+                <%= row[:name] %> — <%= row[:fundamentals_score] %> fundamentals / <%= row[:accountability_score] %> accountability
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if honest.any? %>
+      <div class="d-flex align-items-start gap-2">
+        <i class="ti ti-shield-check mt-1 text-muted"></i>
+        <div class="text-muted small">
+          <strong><%= honest.size %> <%= "company".pluralize(honest.size) %></strong>
+          score poorly on fundamentals but well on accountability — management is being consistent and honest about a struggling business, a different engagement than the row above.
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

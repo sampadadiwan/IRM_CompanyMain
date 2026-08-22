@@ -3,7 +3,10 @@ import { Chart, registerables } from "chart.js"
 
 Chart.register(...registerables)
 
-// Grade distribution bar chart for the Portfolio Scoring Dashboard.
+// Grade distribution bar chart — shared by the Portfolio Scoring Dashboard
+// (7-band axis) and the Presentation Analyst Dashboard (6-band axis). Both
+// pass their own labels/values/tiers, so the same chart works for either
+// grade scale.
 //
 // Bar colours are passed in from the presenter rather than chosen here, so each
 // band inherits its tier's colour and the chart stays reconciled with the stat
@@ -11,7 +14,7 @@ Chart.register(...registerables)
 export default class extends Controller {
   static targets = ["canvas"]
   static values = {
-    labels: Array,   // grade letters, fixed 7-band axis
+    labels: Array,   // grade letters, fixed axis (7 bands for scoring, 6 for presentation)
     values: Array,   // company count per band
     tiers: Array,    // tier slug per band; the colour is read from the theme
     urls: Array      // click-through URL per band, built server-side with the
@@ -20,13 +23,18 @@ export default class extends Controller {
 
   // Bootstrap role behind each tier. Colours are never hard-coded here: the
   // active Modernize colour theme (and light/dark mode) defines them, so the
-  // chart follows whatever the user has selected.
+  // chart follows whatever the user has selected. Covers both dashboards'
+  // tier slugs — PortfolioScoringPresenter::TIERS and
+  // PresentationAnalystPresenter::TIERS.
   static TIER_ROLE = {
     outperform: "success",
     on_track: "primary",
     watch: "warning",
     at_risk: "danger",
-    not_scored: "secondary"
+    not_scored: "secondary",
+    high_accountability: "success",
+    reliable: "primary",
+    not_analyzed: "secondary"
   }
 
   connect() {

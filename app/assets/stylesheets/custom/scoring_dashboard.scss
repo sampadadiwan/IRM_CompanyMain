@@ -1,9 +1,15 @@
 // ============================================================
-// Portfolio Scoring Dashboard — layout and structure, on the app's own palette.
+// Agent dashboard shell — layout and structure, on the app's own palette.
+// Shared by the Portfolio Scoring Dashboard (.scoring-dashboard) and the
+// Presentation Analyst Dashboard (.presentation-dashboard): both are a hero +
+// tier cards + chart + filtered table over a SupportAgentReport read model,
+// so they share one ruleset rather than duplicating ~400 lines for a second
+// grade-band scale. Each dashboard's presenter defines its own tier slugs,
+// added as modifier rules below.
 //
-// ISOLATION: every rule is nested under `.scoring-dashboard`, and every custom
-// property is declared on that wrapper rather than :root, so nothing here can
-// reach another screen.
+// ISOLATION: every rule is nested under the wrapper classes, and every custom
+// property is declared there rather than on :root, so nothing here can reach
+// another screen.
 //
 // COLOUR: this file deliberately does NOT override the app's contextual colours.
 // Badges keep the pastel fills the Minimalist Theme gives them app-wide, and the
@@ -11,7 +17,7 @@
 // as part of the product rather than as its own colour system.
 // ============================================================
 
-.scoring-dashboard {
+.scoring-dashboard, .presentation-dashboard {
   // ---------- tier palette ----------
   // No hard-coded colours. Each tier maps to a Bootstrap contextual role and
   // reads the theme's own variables, so the dashboard follows whichever colour
@@ -47,11 +53,17 @@
   --sd-hairline: var(--bs-border-color);
 
   // ---------- tier modifier: one class sets every colour a card needs ----------
+  // Portfolio Scoring Dashboard tier slugs:
   .sd-tier--outperform { --sd-c: var(--sd-out);   --sd-c-bg: var(--sd-out-bg);   --sd-c-ink: var(--sd-out-ink); }
   .sd-tier--on_track   { --sd-c: var(--sd-track); --sd-c-bg: var(--sd-track-bg); --sd-c-ink: var(--sd-track-ink); }
   .sd-tier--watch      { --sd-c: var(--sd-watch); --sd-c-bg: var(--sd-watch-bg); --sd-c-ink: var(--sd-watch-ink); }
   .sd-tier--at_risk    { --sd-c: var(--sd-risk);  --sd-c-bg: var(--sd-risk-bg);  --sd-c-ink: var(--sd-risk-ink); }
   .sd-tier--not_scored { --sd-c: var(--sd-none);  --sd-c-bg: var(--sd-none-bg);  --sd-c-ink: var(--sd-none-ink); }
+  // Presentation Analyst Dashboard tier slugs (PresentationAnalystPresenter::TIERS) —
+  // reuse the same four tokens, "watch"/"at_risk" already shared with scoring above.
+  .sd-tier--high_accountability { --sd-c: var(--sd-out);   --sd-c-bg: var(--sd-out-bg);   --sd-c-ink: var(--sd-out-ink); }
+  .sd-tier--reliable            { --sd-c: var(--sd-track); --sd-c-bg: var(--sd-track-bg); --sd-c-ink: var(--sd-track-ink); }
+  .sd-tier--not_analyzed        { --sd-c: var(--sd-none);  --sd-c-bg: var(--sd-none-bg);  --sd-c-ink: var(--sd-none-ink); }
 
   // ================= HERO =================
   // The page had no focal point — five equal white cards and a grey score box.

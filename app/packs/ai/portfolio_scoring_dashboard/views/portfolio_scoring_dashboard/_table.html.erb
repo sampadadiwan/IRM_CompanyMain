@@ -63,7 +63,7 @@
         <div class="table-responsive">
           <%# Same classes the Investors index gets from RansackTable, so the app's
             shared table styling governs header, padding, borders and hover. %>
-        <table class="table table-bordered dataTable action_table hover">
+        <table class="table table-bordered dataTable action_table hover no_hover_table">
             <%# Sortable columns carry a caret showing the active order. Score
                 and delta are sorted in Ruby (they live in json_fields);
                 everything else goes the same way for consistency. Grade is
@@ -303,7 +303,7 @@
             </small>
           </p>
           <div class="table-responsive">
-            <table class="table table-bordered dataTable action_table hover">
+            <table class="table table-bordered dataTable action_table hover no_hover_table">
               <thead>
                 <tr>
                   <th>Company</th>

@@ -1,0 +1,35 @@
+<%# Grade distribution — six bands (A/B+/B/C+/C/D), matching
+    PresentationAnalystAgent#score_to_grade. Reuses the same Chart.js
+    controller as the Portfolio Scoring Dashboard's distribution chart; only
+    the labels/values/tiers passed in differ. %>
+<div class="card border-0 shadow-sm h-100">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h6 class="fw-bold mb-0">Grade Distribution</h6>
+      <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+         title="Companies by Management Accountability grade band. Click a bar to filter the table."></i>
+    </div>
+
+    <% if presenter.scored_reports.empty? %>
+      <div class="text-center text-muted py-5">
+        <i class="ti ti-chart-bar" style="font-size: 2rem; opacity: 0.3;"></i>
+        <p class="mt-2 mb-0"><small>No companies analyzed yet.</small></p>
+      </div>
+    <% else %>
+      <%
+        distribution = presenter.grade_distribution
+        urls = PresentationAnalystPresenter::GRADE_BANDS.map do |band|
+          presentation_dashboard_path_with(status: band[:tier])
+        end
+      %>
+      <div data-controller="scoring-distribution-chart"
+           data-scoring-distribution-chart-labels-value="<%= distribution.keys.to_json %>"
+           data-scoring-distribution-chart-values-value="<%= distribution.values.to_json %>"
+           data-scoring-distribution-chart-tiers-value="<%= presenter.distribution_tiers.to_json %>"
+           data-scoring-distribution-chart-urls-value="<%= urls.to_json %>"
+           style="position: relative; height: 260px;">
+        <canvas data-scoring-distribution-chart-target="canvas"></canvas>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -410,6 +410,92 @@ alert_rules:
       severity: critical
       category: infra
 
+  # ── Migrated from legacy folders (Disk / Memory / ResponseTimes / WebApp) ──
+  # These 5 existed as hand-created rules outside this file, all with NO
+  # severity label — meaning even a full node outage (Node Alive) could only
+  # ever reach email, never WhatsApp, regardless of how critical the underlying
+  # condition was. 4 siblings were dropped rather than migrated because they
+  # duplicated a rule already above, in each case with a *weaker* condition:
+  #   - "Disk Usage > 85%" was hardcoded to one instance (10.0.1.56) despite
+  #     the old README claiming otherwise — Disk Critical above covers all
+  #     instances via max by(instance).
+  #   - "High Memory usage <10% free" had no DB-instance exclusion, so it could
+  #     false-alarm on DB servers where InnoDB intentionally holds 70-85% RAM —
+  #     Memory Critical above already excludes them.
+  #   - "P99 Response Times" duplicated P99 Request Latency Critical above
+  #     (same metric, no aggregation, no severity).
+  #   - "WebApp Alive" (up{job="rails_app"}) was byte-for-byte the same
+  #     condition as Rails Exporter Down above, which already has severity,
+  #     no_data_state, and a shorter `for`.
+  # Pulled from the live rules with export_legacy_alert_rules.sh — see that
+  # script for how to re-verify these against Grafana if they're ever edited.
+
+  - title: "Disk IO Saturation (>90% busy)"
+    group: infrastructure
+    expr: 'sum by (instance, device) (rate(node_disk_io_time_seconds_total[1m]))'
+    threshold_gt: 0.9
+    for: 5m
+    summary: "A disk device is >90% busy — I/O-bound, expect slow queries and elevated request latency"
+    labels:
+      severity: warning
+      category: infra
+
+  # Per-process, unlike the fleet-average "Web Memory Critical" above — catches
+  # a single runaway worker that an average across all workers would dilute.
+  - title: "Web Worker Memory (>450MB per process)"
+    group: rails
+    expr: 'ruby_rss{namespace=~".*", type=~"master|web|puma_master|puma_worker"} / 1024 / 1024'
+    threshold_gt: 450
+    for: 5m
+    summary: "A single Puma worker process RSS has exceeded 450MB — possible per-worker memory leak"
+    labels:
+      severity: warning
+      category: rails
+
+  # No equivalent exists above — Sidekiq has queue-depth/latency/dead-queue/
+  # redis-error alerts but nothing on its own memory. Critical because an
+  # OOM-killed Sidekiq process stops all background jobs, the same severity
+  # class as "Sidekiq Down". Was firing repeatedly in July 2026 (see README) —
+  # a recurring leak, not a one-off false alarm, so the threshold is unchanged.
+  - title: "Memory Sidekiq (>1000MB per process)"
+    group: rails
+    expr: 'ruby_rss{namespace=~".*", type=~"sidekiq"} / 1024 / 1024'
+    threshold_gt: 1000
+    for: 5m
+    summary: "A Sidekiq process RSS has exceeded 1000MB — check for a memory leak before it OOMs"
+    labels:
+      severity: critical
+      category: rails
+
+  # No true P95 quantile is exported (only 0.01/0.1/0.5/0.9/0.99 — see the P99
+  # rule above), so this approximates it as the midpoint of P90 and P99. Lower
+  # threshold than P99 Request Latency Critical — an earlier warning on the
+  # same kind of tail-latency degradation.
+  - title: "P95 Response Time (approx, >750ms)"
+    group: rails
+    expr: '(avg by (instance, job) (ruby_http_request_duration_seconds{quantile="0.99"}) + avg by (instance, job) (ruby_http_request_duration_seconds{quantile="0.9"})) / 2 * 1000'
+    threshold_gt: 750
+    for: 5m
+    summary: "Approximate P95 response time has exceeded 750ms"
+    labels:
+      severity: warning
+      category: rails
+
+  # Generic node_exporter liveness — nothing else in this file checks it (the
+  # Exporter Down rules above only cover mysqld and the rails app). Same
+  # "Down" pattern: 1-up so >0 means down. Tightened from the legacy rule's
+  # `for: 5m` to `2m` to match the Rails/MySQL Exporter Down precedent above.
+  - title: "Node Alive"
+    group: infrastructure
+    expr: 'max(1 - up{job="node"})'
+    threshold_gt: 0
+    for: 2m
+    no_data_state: alerting
+    summary: "node_exporter is unreachable on at least one server — that host may be down or network-partitioned"
+    labels:
+      severity: critical
+      category: infra
+
 
 # Read-only Grafana users — provisioned with Viewer org role.
 # Passwords come from ENV so they are never stored in git.

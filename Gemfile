@@ -283,3 +283,4 @@ gem 'ruby_linear_regression'
 gem 'ruby_llm'
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary'
+gem "ruby-vips", "~> 2.0"

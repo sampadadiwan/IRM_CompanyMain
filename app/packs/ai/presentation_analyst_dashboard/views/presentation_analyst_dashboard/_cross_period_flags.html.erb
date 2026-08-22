@@ -1,0 +1,62 @@
+<%# Cross-Period Flags — portfolio-wide tally of the five comparison lenses.
+    One company's dropped risk is a footnote in its own report; a tally of
+    dropped risks across the portfolio is a pattern. No equivalent on the
+    Portfolio Scoring Dashboard — this data only exists because this agent
+    compares presentations across periods. %>
+<% if presenter.analyzed_reports.any? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-bold mb-0">Cross-Period Flags</h6>
+        <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+           title="Every flag from each company's latest analysis, tallied across the portfolio. Each lens feeds one dimension of the Management Accountability Score."></i>
+      </div>
+
+      <% tally = presenter.flags_tally %>
+      <% if tally.values.sum.zero? %>
+        <p class="text-muted mb-0"><small>No cross-period flags — either every company is on its first analyzed period, or nothing changed between periods.</small></p>
+      <% else %>
+        <div class="row g-3">
+          <% PresentationAnalystPresenter::LENSES.each do |lens| %>
+            <% count = tally[lens[:key]] %>
+            <% companies = presenter.companies_for_lens(lens[:key]) %>
+            <div class="col-md">
+              <div class="border rounded-3 p-3 h-100">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <i class="ti <%= lens[:icon] %> text-muted"></i>
+                  <small class="fw-semibold"><%= lens[:label] %></small>
+                </div>
+                <h4 class="mb-0 sd-tier-num"><%= count %></h4>
+                <small class="text-muted d-block mb-2">
+                  across <%= companies %> <%= "company".pluralize(companies) %>
+                  <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;"><%= lens[:score_dim] %></span>
+                </small>
+
+                <% items = presenter.flag_items_for_lens(lens[:key], limit: 3) %>
+                <% if items.any? %>
+                  <div class="d-flex flex-column gap-1">
+                    <% items.each do |entry| %>
+                      <%= link_to investor_path(entry[:investor_id]),
+                            class: "small text-decoration-none text-truncate", data: { turbo: false },
+                            "data-bs-toggle": "tooltip", title: entry[:item]["note"].presence || entry[:item]["evidence"].presence do %>
+                        <span class="fw-semibold"><%= entry[:investor_name] %></span>
+                        <%# Short label first: metric_anomalies items carry both a short
+                            "metric" name (e.g. "NRR") and a long narrative "description" —
+                            metric must win, or every card truncates the sentence instead
+                            of naming the metric. %>
+                        <span class="text-muted">— <%= (entry[:item]["commitment"] || entry[:item]["name"] || entry[:item]["metric"] || entry[:item]["description"]).to_s.truncate(40) %></span>
+                      <% end %>
+                    <% end %>
+                  </div>
+                  <% if count > items.size %>
+                    <small class="text-muted d-block mt-1">+<%= count - items.size %> more</small>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,95 @@
+<%# Score movement — compares each company's newest Management Accountability
+    Score to its previous scored run. A static distribution says where the
+    book stands; movement says which way it is heading. Also carries the
+    stale count and the Run Analysis action. %>
+<div class="card border-0 shadow-sm h-100">
+  <div class="card-body d-flex flex-column">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <h6 class="fw-bold mb-0">Score Movement</h6>
+        <% if presenter.headline_delta %>
+          <span class="badge bg-<%= presenter.headline_delta.positive? ? 'success' : (presenter.headline_delta.negative? ? 'danger' : 'secondary') %>-subtle text-<%= presenter.headline_delta.positive? ? 'success' : (presenter.headline_delta.negative? ? 'danger' : 'secondary') %>"
+                data-bs-toggle="tooltip"
+                title="Average change per company across the <%= presenter.comparable_count %> with a previous run">
+            <%= presenter.headline_delta.positive? ? "+" : "" %><%= presenter.headline_delta %> avg
+          </span>
+        <% end %>
+      </div>
+      <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+         title="Change since each company's previous analysis run. Companies analyzed only once count as unchanged."></i>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <%
+        movement_figures = [
+          { slug: "improved",  count: presenter.improved_count,  tier: "high_accountability", label: "improved" },
+          { slug: "declined",  count: presenter.declined_count,  tier: "at_risk",              label: "declined" },
+          { slug: "unchanged", count: presenter.unchanged_count, tier: "not_analyzed",         label: "unchanged" },
+          { slug: "stale",     count: presenter.stale_count,     tier: "watch",                label: "stale > #{presenter.staleness_days}d" }
+        ]
+      %>
+      <% movement_figures.each do |figure| %>
+        <div class="col-6">
+          <% if figure[:count].positive? %>
+            <% move_active = status_filter == figure[:slug] %>
+            <%= link_to presentation_dashboard_path_with(status: move_active ? nil : figure[:slug]),
+                  class: "sd-move sd-tier--#{figure[:tier]} text-decoration-none #{'is-active' if move_active}",
+                  data: { turbo: false },
+                  "data-bs-toggle": "tooltip",
+                  title: move_active ? "Showing these — click to clear the filter" :
+                                       "Show the #{figure[:count]} #{'company'.pluralize(figure[:count])} #{figure[:label]}" do %>
+              <b><%= figure[:count] %></b>
+              <span><%= figure[:label] %></span>
+            <% end %>
+          <% else %>
+            <div class="sd-move sd-tier--<%= figure[:tier] %>">
+              <b><%= figure[:count] %></b>
+              <span><%= figure[:label] %></span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <% movers = presenter.movers(limit: 4) %>
+    <% if movers.any? %>
+      <div class="border-top pt-2">
+        <% movers.each do |mover| %>
+          <div class="d-flex align-items-center justify-content-between py-1">
+            <div class="text-truncate me-2">
+              <%= link_to mover[:name], investor_path(mover[:investor_id]),
+                    class: "text-decoration-none fw-semibold", data: { turbo: false } %>
+              <small class="text-muted">
+                <%= mover[:from_grade] %> → <%= mover[:to_grade] %>
+              </small>
+            </div>
+            <span class="badge text-nowrap bg-<%= mover[:delta].positive? ? 'success' : 'danger' %>-subtle text-<%= mover[:delta].positive? ? 'success' : 'danger' %>"
+                  style="font-variant-numeric: tabular-nums;"
+                  data-bs-toggle="tooltip"
+                  title="<%= mover[:name] %> moved from <%= mover[:from] %> to <%= mover[:to] %>">
+              <i class="ti ti-<%= mover[:delta].positive? ? 'arrow-up' : 'arrow-down' %>"></i>
+              <%= mover[:delta].abs %>
+            </span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="border-top pt-3 text-muted">
+        <small>
+          <i class="ti ti-info-circle"></i>
+          No comparison available yet — companies need a second analysis run before
+          movement can be measured.
+        </small>
+      </div>
+    <% end %>
+
+    <div class="mt-auto pt-3">
+      <% if policy(support_agent).run? %>
+        <button type="button" class="btn btn-sm btn-primary"
+                data-bs-toggle="modal" data-bs-target="#run-presentation-analysis-batch-modal">
+          <i class="ti ti-robot"></i> Run Analysis
+        </button>
+      <% end %>
+    </div>
+  </div>
+</div>
