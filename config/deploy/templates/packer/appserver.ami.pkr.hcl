@@ -180,6 +180,10 @@ build {
       "sudo apt install --yes pv",
       "sudo apt install --yes unzip",
       "sudo apt install --yes imagemagick",
+      // libvips42: ruby-vips (Gemfile) dlopens this via FFI; missing on the AMI
+      // crashes any Rails boot (including assets:precompile) once something
+      // requires "vips".
+      "sudo apt install --yes libvips42",
       "sudo apt install --yes poppler-utils",
       "sudo apt install --yes ffmpeg",
       "sudo apt install --yes pandoc",
