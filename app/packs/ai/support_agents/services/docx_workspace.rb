@@ -43,7 +43,7 @@ class DocxWorkspace
   # a real Sablon operation up front instead of only catching it at render time.
   VALID_SABLON_TAIL = /:(if|elsif|elseIf|else|endIf|each\([^)]+\)|endEach)\z/
 
-  attr_reader :dir, :change_log
+  attr_reader :dir, :change_log, :initial_paragraph_counts, :content_check
 
   def initialize(document)
     @document = document
@@ -52,6 +52,102 @@ class DocxWorkspace
     document.file.download { |tempfile| FileUtils.cp(tempfile.path, @source_docx_path) }
     @parsed = {} # part_name => Nokogiri::XML::Document, mutated in place
     @change_log = []
+    @initial_paragraph_counts = {}
+    @initial_paragraph_words = {} # part_name => [[word, word, ...], ...] one array per paragraph
+    EDITABLE_PARTS.each do |pname|
+      xml = read_raw_entry(@source_docx_path, pname)
+      next unless xml
+
+      doc = Nokogiri::XML(xml, &:strict)
+      paras = doc.xpath("//w:p", "w" => W_NS)
+      @initial_paragraph_counts[pname] = paras.size
+      @initial_paragraph_words[pname] = paras.map { |p| words_in(paragraph_text(p)) }
+    end
+  end
+
+  # Hard content-preservation gate. TemplateFixAgent fixes template STRUCTURE
+  # only (numbering, indentation, pagination/style properties) — it has no
+  # tool that creates a Sablon merge field, inserts a paragraph, or otherwise
+  # has any legitimate reason to change what the template says. None of its
+  # remaining tools ever touch a <w:t> element. So paragraph count, word
+  # count, and the words themselves (whitespace/formatting differences aside)
+  # must come out EXACTLY as they went in — no exceptions, no "insertions are
+  # fine" carve-out (that carve-out existed only for the now-removed
+  # DocxInsertMergeFieldTool). Raises at the FIRST point of divergence found,
+  # not a generic pass/fail, so a human can see exactly what changed without
+  # re-running a diff by hand.
+  def validate_content_unchanged!
+    orig_para_total = 0
+    current_para_total = 0
+    orig_word_total = 0
+    current_word_total = 0
+    word_for_word_ok = true
+    first_failure = nil
+
+    EDITABLE_PARTS.each do |pname|
+      orig_count = @initial_paragraph_counts[pname]
+      next unless orig_count
+
+      orig_words = @initial_paragraph_words[pname]
+      current_paras = paragraphs(pname)
+      current_words = current_paras.map { |p| words_in(paragraph_text(p)) }
+      orig_total = orig_words.sum(&:size)
+      current_total = current_words.sum(&:size)
+
+      orig_para_total += orig_count
+      current_para_total += current_paras.size
+      orig_word_total += orig_total
+      current_word_total += current_total
+
+      para_ok = current_paras.size == orig_count
+      word_count_ok = orig_total == current_total
+      first_diff_idx = para_ok ? orig_words.each_index.find { |idx| orig_words[idx] != current_words[idx] } : nil
+      word_by_word_ok = para_ok && first_diff_idx.nil?
+      word_for_word_ok &&= word_by_word_ok
+
+      Rails.logger.info do
+        "[DocxWorkspace] Content check #{pname}: paragraphs #{orig_count}/#{current_paras.size} " \
+          "(#{para_ok ? 'PASS' : 'FAIL'}), words #{orig_total}/#{current_total} " \
+          "(#{word_count_ok ? 'PASS' : 'FAIL'}), word-for-word #{word_by_word_ok ? 'PASS' : 'FAIL'}"
+      end
+
+      next if first_failure
+
+      unless para_ok
+        first_failure = "Content check failed for #{pname}: paragraph count changed from #{orig_count} to " \
+                         "#{current_paras.size}. This agent must never add or remove paragraphs."
+      end
+
+      if !first_failure && !word_count_ok
+        first_failure = "Content check failed for #{pname}: word count changed from #{orig_total} to " \
+                         "#{current_total}. This agent must never add, remove, or reword content — only " \
+                         "formatting/numbering/pagination structure."
+      end
+
+      if !first_failure && first_diff_idx
+        idx = first_diff_idx
+        first_failure = "Content check failed for #{pname} paragraph #{idx}: words changed.\n" \
+                         "  before: #{orig_words[idx].join(' ').inspect}\n" \
+                         "  after:  #{current_words[idx].join(' ').inspect}"
+      end
+    end
+
+    # Stored regardless of pass/fail so the UI/report can show the actual
+    # numbers either way — TemplateFixAgent#finalize_fix reads this even when
+    # the raise below sends it into the rescue path.
+    @content_check = {
+      paragraph_count: { original: orig_para_total, fixed: current_para_total },
+      word_count: { original: orig_word_total, fixed: current_word_total },
+      word_for_word_match: word_for_word_ok && first_failure.nil?,
+      passed: first_failure.nil?
+    }
+
+    if first_failure
+      Rails.logger.error { "[DocxWorkspace] #{first_failure}" }
+      raise first_failure
+    end
+
+    true
   end
 
   # Returns the parsed, mutable Nokogiri document for a part, loading it from
@@ -87,6 +183,14 @@ class DocxWorkspace
     return "" unless node
 
     node.xpath(".//w:t", "w" => W_NS).map(&:text).join
+  end
+
+  # Whitespace-normalized word list for a paragraph's text — used by
+  # validate_content_unchanged! so a pure formatting edit (which never
+  # changes wording, only how it's indented/spaced/tabbed) can't trip the
+  # check on an incidental whitespace difference.
+  def words_in(text)
+    text.to_s.tr(" ", " ").split(/\s+/).reject(&:empty?)
   end
 
   # OOXML parts always serialize the "w" namespace with that literal prefix,
@@ -273,6 +377,67 @@ class DocxWorkspace
     new_p
   end
 
+  # Sets indentation (left, hanging, firstLine) on a paragraph's pPr/w:ind.
+  def set_paragraph_indentation!(part_name, index, left: nil, hanging: nil, first_line: nil)
+    p = paragraph_at(part_name, index)
+    raise ArgumentError, "No paragraph at index #{index} in #{part_name}" unless p
+
+    pPr = p.at_xpath("w:pPr", "w" => W_NS)
+    if pPr.nil?
+      pPr = Nokogiri::XML::Node.new("w:pPr", p.document)
+      p.prepend_child(pPr)
+    end
+
+    ind = pPr.at_xpath("w:ind", "w" => W_NS)
+    if ind.nil?
+      ind = Nokogiri::XML::Node.new("w:ind", p.document)
+      pPr.add_child(ind)
+    end
+
+    set_wval(ind, left.to_s) if left.present?
+    set_wval(ind, hanging.to_s, "hanging") if hanging.present?
+    set_wval(ind, first_line.to_s, "firstLine") if first_line.present?
+    ind
+  end
+
+  # Sets start counter or indentation on a specific abstractNum level in word/numbering.xml.
+  def set_numbering_level!(abstract_num_id, ilvl, start: nil, left: nil, hanging: nil)
+    doc = part("word/numbering.xml")
+    raise ArgumentError, "word/numbering.xml not found" unless doc
+
+    abn = doc.xpath("//w:abstractNum", "w" => W_NS).find { |a| a["w:abstractNumId"] == abstract_num_id.to_s }
+    raise ArgumentError, "AbstractNum '#{abstract_num_id}' not found" unless abn
+
+    lvl = abn.xpath("w:lvl", "w" => W_NS).find { |l| l["w:ilvl"] == ilvl.to_s }
+    raise ArgumentError, "Level '#{ilvl}' not found in AbstractNum '#{abstract_num_id}'" unless lvl
+
+    if start.present?
+      start_el = lvl.at_xpath("w:start", "w" => W_NS)
+      if start_el
+        set_wval(start_el, start.to_s)
+      else
+        start_node = Nokogiri::XML::Node.new("w:start", doc)
+        set_wval(start_node, start.to_s)
+        lvl.prepend_child(start_node)
+      end
+    end
+
+    if left.present? || hanging.present?
+      pPr = lvl.at_xpath("w:pPr", "w" => W_NS)
+      if pPr.nil?
+        pPr = Nokogiri::XML::Node.new("w:pPr", doc)
+        lvl.add_child(pPr)
+      end
+      ind = pPr.at_xpath("w:ind", "w" => W_NS)
+      if ind.nil?
+        ind = Nokogiri::XML::Node.new("w:ind", doc)
+        pPr.add_child(ind)
+      end
+      set_wval(ind, left.to_s) if left.present?
+      set_wval(ind, hanging.to_s, "hanging") if hanging.present?
+    end
+  end
+
   # Toggles a boolean paragraph-property flag (e.g. <w:keepNext/>) on a named
   # style in styles.xml — the fix for the Heading4-style-driven blank-page
   # pagination bug. Matches on the literal styleId attribute rather than an
@@ -346,7 +511,7 @@ class DocxWorkspace
   # returning extracted page text so the agent can "observe" its edits without
   # needing a vision-capable model.
   #
-  # @return [Hash] { success:, page_count:, text:, error: }
+  # @return [Hash] { success:, page_count:, text:, blank_page_hints:, error: }
   def render_preview!
     candidate_path = File.join(@dir, "preview_#{SecureRandom.hex(4)}.docx")
     rezip_to(candidate_path)
@@ -360,7 +525,7 @@ class DocxWorkspace
     text, _err, _status = Open3.capture3("pdftotext", "-layout", pdf_path, "-")
     page_count = text.count("\f") + (text.present? ? 1 : 0)
 
-    { success: true, page_count: page_count, text: text }
+    { success: true, page_count: page_count, text: text, blank_page_hints: detect_blank_pages(text) }
   ensure
     File.delete(candidate_path) if candidate_path && File.exist?(candidate_path)
     File.delete(pdf_path) if pdf_path && File.exist?(pdf_path)
@@ -375,15 +540,32 @@ class DocxWorkspace
     final_path = File.join(@dir, "final.docx")
     rezip_to(final_path)
 
+    # Clone the same document-format settings DocumentGeneratorBase#upload copies
+    # from a template onto its generated output ("download", "printing",
+    # "force_esign_order", "display_on_page") — this draft is, in the same sense,
+    # a document derived from the source template. orignal/template are then
+    # forced to true regardless of the source's own values (see below), and the
+    # rest of Document.create!'s kwargs override any of these slice carries over.
+    settings = @document.attributes.slice("download", "printing", "force_esign_order", "display_on_page")
+
     Document.create!(
+      **settings,
       name: "#{@document.name} #{name_suffix}",
       entity: @document.entity,
       folder: @document.folder,
       owner: @document.owner,
       # Deliberately NOT the source's owner_tag: Document#setup_folder auto-flags
       # template=true whenever owner_tag includes "Template" (e.g. "Commitment
-      # Template"), which would put this draft in the fund's template dropdown too.
+      # Template"), which would put this draft in the fund's template
+      # owner_tag-filtered lists (e.g. CapitalCommitmentDocJob's default
+      # template scan) alongside the source before a human has reviewed it.
+      # template/orignal are set explicitly true instead (regardless of the
+      # source's own values) — Document#setup_folder only applies its
+      # owner_tag-derived default via `self.template ||= ...`, so an explicit
+      # true here is never overridden.
       owner_tag: nil,
+      template: true,
+      orignal: true,
       user: @document.user,
       from_template: @document,
       file: File.open(final_path, "rb")
@@ -394,7 +576,101 @@ class DocxWorkspace
     FileUtils.remove_entry(@dir) if @dir && Dir.exist?(@dir)
   end
 
+  # Structural (not render-based) early-warning for the "blank page after
+  # heading" bug: finds paragraph styles that carry <w:keepNext/> AND are used
+  # by a run of CLOSELY-CLUSTERED paragraphs (occurrences no more than
+  # +max_gap+ paragraph-indices apart — a numbered sub-clause list typically
+  # alternates the styled item with one empty spacer paragraph, so a gap of 2
+  # is the norm; +max_gap+ allows a little slack). A style's raw total-use
+  # count is NOT enough to flag on by itself — e.g. Heading1 (a genuine,
+  # legitimate keepNext use, preventing a top-level section heading being
+  # orphaned at the bottom of a page) is used 31 times in Individual.docx, but
+  # scattered one-per-section across ~2500 paragraphs, never clustered. A
+  # keepNext style reused several times in a tight cluster (e.g. Heading4 on
+  # 6 consecutive "X.Y.Z" nested sub-clauses like 5.2.9.1-5.2.9.6) is the
+  # repeated-list-item pattern that risks LibreOffice gluing that whole run
+  # into one unbreakable block. This is a static XML scan (cheap, always
+  # accurate) rather than inferring from rendered PDF text — confirmed on
+  # Individual.docx that pdftotext -layout does NOT reliably represent a large
+  # visual gap as a proportionally blank page (the page still has its real
+  # preceding text plus the page-number footer, so a naive "page has very
+  # little text" check misses it entirely).
+  def keepnext_repeated_styles(part_name = "word/document.xml", min_cluster: 3, max_gap: 4)
+    styles_doc = part("word/styles.xml")
+    return [] unless styles_doc
+
+    keepnext_style_ids = styles_doc.xpath("//w:style[@w:type='paragraph']", "w" => W_NS).filter_map do |style|
+      style["w:styleId"] if style.at_xpath("w:pPr/w:keepNext", "w" => W_NS)
+    end
+    return [] if keepnext_style_ids.empty?
+
+    doc = part(part_name)
+    return [] unless doc
+
+    indices_by_style = Hash.new { |h, k| h[k] = [] }
+    doc.xpath("//w:p", "w" => W_NS).each_with_index do |p, idx|
+      sid = p.at_xpath("w:pPr/w:pStyle", "w" => W_NS)&.[]("w:val")
+      indices_by_style[sid] << idx if sid && keepnext_style_ids.include?(sid)
+    end
+
+    indices_by_style.filter_map do |sid, indices|
+      next if indices.size < min_cluster
+
+      start_idx, cluster_len = longest_clustered_run(indices, max_gap)
+      { style_id: sid, clustered_count: cluster_len, start_index: start_idx } if cluster_len >= min_cluster
+    end
+  end
+
   private
+
+  # Flags pages whose extracted text is suspiciously short — the fingerprint of
+  # the "blank page after heading" pagination bug (confirmed live on
+  # Individual.docx: a paragraph style's <w:keepNext/> chains several
+  # consecutive same-style paragraphs — e.g. Heading4 on clauses 5.2.9.1-
+  # 5.2.9.6 — into one unbreakable block; when that block doesn't fit the
+  # remaining space on a page, LibreOffice pushes the WHOLE block to the next
+  # page instead of splitting it, leaving the gap behind). Without this, an
+  # LLM agent has no cheap way to notice the bug in a page-text dump — it would
+  # have to read and mentally diff thousands of characters looking for a gap,
+  # which a tool-call-budget-constrained loop won't reliably do. The trailing
+  # page is excluded: a short/empty final page is a normal document-end
+  # artifact, not a pagination bug.
+  def detect_blank_pages(text, min_chars: 40)
+    pages = text.to_s.split("\f")
+    pages.each_with_index.filter_map do |page_text, idx|
+      next if idx == pages.size - 1
+
+      stripped = page_text.strip
+      next if stripped.length >= min_chars
+
+      next_page_text = pages[idx + 1].to_s.strip
+      next_snippet = next_page_text.lines.first&.strip.presence || next_page_text[0, 80]
+      { page: idx + 1, chars: stripped.length, next_page_starts_with: next_snippet }
+    end
+  end
+
+  # Given sorted paragraph indices where a style occurs, returns [start_index,
+  # length] of the longest run where consecutive occurrences are within
+  # +max_gap+ of each other.
+  def longest_clustered_run(indices, max_gap)
+    best_start = indices.first
+    best_len = 1
+    run_start = indices.first
+    run_len = 1
+
+    indices.each_cons(2) do |a, b|
+      if (b - a) <= max_gap
+        run_len += 1
+      else
+        best_start, best_len = run_start, run_len if run_len > best_len
+        run_start = b
+        run_len = 1
+      end
+    end
+    best_start, best_len = run_start, run_len if run_len > best_len
+
+    [best_start, best_len]
+  end
 
   def validate_sablon_expression!(expression)
     return if expression.start_with?("=") || expression.match?(VALID_SABLON_TAIL)

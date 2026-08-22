@@ -337,6 +337,7 @@ class DocumentsController < ApplicationController
     support_agent = SupportAgent.find_or_create_by!(entity_id: current_user.entity_id, agent_type: "TemplateFixAgent") do |sa|
       sa.name = "Template Fix Agent"
       sa.category = "Ops"
+      sa.llm_model = "gemini-3.7-flash"
       sa.enabled = true
     end
 

@@ -21,7 +21,7 @@ class SupportAgent < ApplicationRecord
   has_one :agent_schedule, dependent: :destroy
 
   # Matches the fallback used by db/migrate/archive/20260514100003_backfill_llm_model_for_support_agents.rb
-  attribute :llm_model, :string, default: "gemini-3-flash-preview"
+  attribute :llm_model, :string, default: "gemini-3.7-flash"
 
   scope :enabled, -> { where(enabled: true) }
   scope :for_user, lambda { |user|

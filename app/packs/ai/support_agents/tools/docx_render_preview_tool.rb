@@ -33,6 +33,7 @@ class DocxRenderPreviewTool < RubyLLM::Tool
 
     text = result[:text].to_s
     header = "Rendered OK. #{result[:page_count]} page(s)."
+    header += blank_page_warning(result[:blank_page_hints])
 
     return header if page_query.blank?
 
@@ -42,5 +43,20 @@ class DocxRenderPreviewTool < RubyLLM::Tool
 
     matched = hits.first(3).map { |page, idx| "--- page #{idx + 1} ---\n#{page.strip}" }.join("\n\n")
     "#{header}\n#{matched}"
+  end
+
+  private
+
+  def blank_page_warning(hints)
+    return "" if hints.blank?
+
+    details = hints.map { |h| "page #{h[:page]} (#{h[:chars]} chars; next page starts \"#{h[:next_page_starts_with]}\")" }.join("; ")
+    "\n⚠ Nearly-blank page(s) detected: #{details}. This is the signature of a paragraph " \
+      "style's keepNext chaining several consecutive same-style paragraphs (e.g. a Heading4-" \
+      "style sub-clause list) into one unbreakable block that doesn't fit the remaining page " \
+      "space, so LibreOffice pushes the WHOLE block to the next page. Use DocxInspectParagraphTool " \
+      "on the first paragraph(s) of the page right after the gap to find their style, then " \
+      "DocxSetStylePropertyTool(style_id: <that style>, property: 'keepNext', enabled: false) — " \
+      "don't just delete/shorten content to make it fit."
   end
 end

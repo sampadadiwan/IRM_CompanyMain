@@ -24,7 +24,9 @@
       </div>
       <div class="card-body">
         <% if template_fix_report.json_fields["fix_summary"].present? %>
-          <p style="white-space: pre-wrap;"><%= template_fix_report.json_fields["fix_summary"] %></p>
+          <div class="prose" style="font-size: 0.9rem; line-height: 1.6;">
+            <%= markdown_to_html(template_fix_report.json_fields["fix_summary"]) %>
+          </div>
         <% end %>
 
         <% if template_fix_report.json_fields["changes"].present? %>
@@ -34,6 +36,41 @@
               <li><%= change %></li>
             <% end %>
           </ul>
+        <% end %>
+
+        <% content_check = template_fix_report.json_fields["content_check"] %>
+        <% if content_check.present? %>
+          <% para = content_check["paragraph_count"] || {}
+             words = content_check["word_count"] || {}
+             passed = content_check["passed"]
+             word_match = content_check["word_for_word_match"] %>
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body py-2 px-3">
+              <p class="fw-bold mb-2">
+                Content check —
+                <span class="badge <%= passed ? 'bg-success' : 'bg-danger' %>">
+                  <%= passed ? "PASS" : "FAIL" %>
+                </span>
+              </p>
+              <div class="row small">
+                <div class="col-md-4">
+                  Paragraph count:
+                  <strong><%= para["original"] %> → <%= para["fixed"] %></strong>
+                  <%= para["original"] == para["fixed"] ? content_tag(:i, "", class: "ti ti-check text-success ms-1") : content_tag(:i, "", class: "ti ti-x text-danger ms-1") %>
+                </div>
+                <div class="col-md-4">
+                  Word count:
+                  <strong><%= words["original"] %> → <%= words["fixed"] %></strong>
+                  <%= words["original"] == words["fixed"] ? content_tag(:i, "", class: "ti ti-check text-success ms-1") : content_tag(:i, "", class: "ti ti-x text-danger ms-1") %>
+                </div>
+                <div class="col-md-4">
+                  Word-for-word match:
+                  <strong><%= word_match ? "Yes" : "No" %></strong>
+                  <%= word_match ? content_tag(:i, "", class: "ti ti-check text-success ms-1") : content_tag(:i, "", class: "ti ti-x text-danger ms-1") %>
+                </div>
+              </div>
+            </div>
+          </div>
         <% end %>
 
         <% result_doc = Document.find_by(id: template_fix_report.json_fields["result_document_id"]) %>
@@ -119,6 +156,17 @@
                 <div class="action-summary__desc">
                   This runs in the background and can take anywhere from under a minute to several
                   minutes for a large document.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--red">
+              <span class="action-summary__icon"><i class="ti ti-alert-triangle"></i></span>
+              <div>
+                <div class="action-summary__title">Always review before relying on it</div>
+                <div class="action-summary__desc">
+                  This is AI-generated. <b>CapHive is not liable for any unintended changes it
+                  introduces</b> — validate the draft against the original before using it.
                 </div>
               </div>
             </div>

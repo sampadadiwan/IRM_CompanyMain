@@ -49,7 +49,9 @@ gem 'rswag-api'
 gem 'rswag-ui'
 
 # Use Redis adapter to run Action Cable in production
-gem "redis"
+# Pinned < 6: Action Cable's redis subscription adapter (actioncable/lib/action_cable/subscription_adapter/redis.rb)
+# hardcodes `gem "redis", ">= 4", "< 6"` and raises Gem::LoadError against redis 6.x.
+gem "redis", "< 6"
 # Background Jobs
 gem 'memoized'
 gem "sidekiq"

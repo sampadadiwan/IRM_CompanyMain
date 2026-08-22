@@ -16,14 +16,16 @@ module DocumentGeneratorBase
     Rails.logger.debug { "#{self.class} Generating document at #{file_path}" }
     template.render_to_file(file_path, context)
 
-    # Run DOCX post-processors atomically: take a backup so we can restore the original
-    # if either step fails mid-write, preventing a half-processed file from being used.
+    # Run DOCX post-processor atomically: take a backup so we can restore the original
+    # if it fails mid-write, preventing a half-processed file from being used.
+    #
+    # DocxNumberingFixer deliberately NOT run here — it's for TemplateFixAgent's own
+    # documented pattern (a hidden vanish-flagged counter-setter paragraph confusing
+    # LibreOffice's list numbering) and must never run silently on every generated
+    # document. Only the reported/fixed template should ever go through it.
     backup_path = "#{file_path}.bak"
     FileUtils.cp(file_path, backup_path)
     begin
-      # Fix ghost list-numbering so sub-item counters match their section headings.
-      DocxNumberingFixer.fix!(file_path)
-
       # Bake resolved style properties (fonts, sizes, indentation) directly into
       # paragraphs/runs so LibreOffice doesn't mis-read the style inheritance
       # chain and produce wrong fonts or indentation in the PDF.

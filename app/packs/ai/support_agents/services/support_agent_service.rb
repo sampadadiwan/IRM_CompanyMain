@@ -210,19 +210,23 @@ class SupportAgentService < Trailblazer::Operation
 
     report.save!
 
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "support_agent_report_#{report.id}",
-      target: "step_#{step_data['step']}",
-      partial: "support_agents/step_circle",
-      locals: { step: step_data }
-    )
+    begin
+      Turbo::StreamsChannel.broadcast_replace_to(
+        "support_agent_report_#{report.id}",
+        target: "step_#{step_data['step']}",
+        partial: "support_agents/step_circle",
+        locals: { step: step_data }
+      )
 
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "support_agent_report_#{report.id}",
-      target: "progress_bar_#{report.id}",
-      partial: "support_agents/progress_bar",
-      locals: { report: report }
-    )
+      Turbo::StreamsChannel.broadcast_replace_to(
+        "support_agent_report_#{report.id}",
+        target: "progress_bar_#{report.id}",
+        partial: "support_agents/progress_bar",
+        locals: { report: report }
+      )
+    rescue StandardError, ScriptError => e
+      Rails.logger.warn { "[SupportAgentService] Broadcast failed: #{e.message}" }
+    end
   end
 
   def mark_step_running(report, step_id)
@@ -254,12 +258,16 @@ class SupportAgentService < Trailblazer::Operation
     report.status = status.to_s == "ready" ? :completed : :failed
     report.save!
 
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "support_agent_report_#{report.id}",
-      target: "progress_panel_#{report.id}",
-      partial: "support_agents/progress_panel",
-      locals: { report: report, support_agent: report.support_agent, target: report.owner, collapsed: false }
-    )
+    begin
+      Turbo::StreamsChannel.broadcast_replace_to(
+        "support_agent_report_#{report.id}",
+        target: "progress_panel_#{report.id}",
+        partial: "support_agents/progress_panel",
+        locals: { report: report, support_agent: report.support_agent, target: report.owner, collapsed: false }
+      )
+    rescue StandardError, ScriptError => e
+      Rails.logger.warn { "[SupportAgentService] Broadcast failed: #{e.message}" }
+    end
   end
 
   def cancelled?(report)

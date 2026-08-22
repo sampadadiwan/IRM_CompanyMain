@@ -6,13 +6,13 @@
 #   SupportAgentsSetupService.new(entity_id).call
 #   SupportAgentsSetupService.new(entity_id, output: Rails.logger).call
 class SupportAgentsSetupService
-  DEFAULT_LLM_MODEL = "gemini-3-flash-preview"
+  DEFAULT_LLM_MODEL = "gemini-3-flash-preview".freeze
 
   # Extraction rule templates for KycDocExtractorAgent.
   # Applied dynamically at setup time, keyed by the entity's actual KYC FormType IDs.
   KYC_EXTRACTOR_BASE_RULES = [
     { "doc_label" => "Upload Tax ID",        "prompt" => "Extract the PAN number from this document. Return only the 10-character alphanumeric PAN (e.g. ABCDE1234F). No explanation.", "target_field" => "PAN" },
-    { "doc_label" => "Upload Address Proof", "prompt" => "Extract the full permanent address from this document. Return only the address as plain text, no labels or explanation.",    "target_field" => "address" }
+    { "doc_label" => "Upload Address Proof", "prompt" => "Extract the full permanent address from this document. Return only the address as plain text, no labels or explanation.", "target_field" => "address" }
   ].freeze
 
   # IndividualKyc/Default also extracts the investor's full name from the Tax ID document.
@@ -69,10 +69,10 @@ class SupportAgentsSetupService
       tag: "KycDocExtractorAgent",
       category: "Onboarding",
       agent: {
-        name:       "KYC Doc Extractor",
+        name: "KYC Doc Extractor",
         with_steps: false,
         json_fields: {
-          "overwrite_mode"   => "blank_only",
+          "overwrite_mode" => "blank_only",
           "extraction_rules" => {} # populated dynamically from the entity's KYC FormTypes
         }
         # No schedule — triggered on-demand during KYC document upload
@@ -85,14 +85,14 @@ class SupportAgentsSetupService
       tag: "DistributionReadinessAgent",
       category: "Finance",
       agent: {
-        name:       "Distribution Readiness",
+        name: "Distribution Readiness",
         with_steps: true,
         json_fields: {
-          "check_kyc"            => "Yes",
-          "check_net_payable"    => "Yes",
+          "check_kyc" => "Yes",
+          "check_net_payable" => "Yes",
           "check_docs_generated" => "Yes",
-          "check_docs_approved"  => "Yes",
-          "check_bank_details"   => "Yes"
+          "check_docs_approved" => "Yes",
+          "check_bank_details" => "Yes"
         }
       },
       fields: [
@@ -122,11 +122,11 @@ class SupportAgentsSetupService
       tag: "EsignMonitorAgent",
       category: "Ops",
       agent: {
-        name:       "E-Sign Monitor",
+        name: "E-Sign Monitor",
         with_steps: false,
         json_fields: {
-          "send_reminders"      => "Yes",
-          "flag_expired"        => "Yes",
+          "send_reminders" => "Yes",
+          "flag_expired" => "Yes",
           "reminder_after_days" => "3"
         },
         schedule: {
@@ -155,16 +155,16 @@ class SupportAgentsSetupService
       tag: "DataQualityAgent",
       category: "Ops",
       agent: {
-        name:       "Data Quality",
+        name: "Data Quality",
         with_steps: false,
         json_fields: {
           "check_commitment_overflows" => "Yes",
-          "check_missing_valuations"   => "Yes",
-          "check_stale_fx_rates"       => "Yes",
-          "send_report"                => "Yes",
-          "stale_valuation_days"       => "90",
-          "stale_fx_days"              => "30",
-          "email"                      => ""
+          "check_missing_valuations" => "Yes",
+          "check_stale_fx_rates" => "Yes",
+          "send_report" => "Yes",
+          "stale_valuation_days" => "90",
+          "stale_fx_days" => "30",
+          "email" => ""
         },
         schedule: {
           frequency: "daily", run_at_time: "01:00", timezone: "Asia/Kolkata",
@@ -208,11 +208,11 @@ class SupportAgentsSetupService
       tag: "NoteSummarizerAgent",
       category: "Ops",
       agent: {
-        name:       "Note Summarizer",
+        name: "Note Summarizer",
         with_steps: false,
         json_fields: {
           "summary_period" => "Quarter",
-          "tag_filter"     => "",
+          "tag_filter" => "",
           "auto_tag_notes" => "Yes",
           "available_tags" => "call,meeting,kpi,board-meeting,fundraising,risk,hiring,operations"
         },
@@ -249,24 +249,24 @@ class SupportAgentsSetupService
       tag: "DealManagementAgent",
       category: "Portfolio",
       agent: {
-        name:       "Deal Management",
+        name: "Deal Management",
         with_steps: false,
         json_fields: {
-          "check_progress"         => "Yes",
-          "stagnant_days"          => "14",
-          "check_documents"        => "Yes",
-          "required_docs"          => "NDA, Term Sheet, Pitch Deck",
-          "extract_terms"          => "Yes",
+          "check_progress" => "Yes",
+          "stagnant_days" => "14",
+          "check_documents" => "Yes",
+          "required_docs" => "NDA, Term Sheet, Pitch Deck",
+          "extract_terms" => "Yes",
           "term_extraction_prompt" => "",
-          "summarize_notes"        => "Yes",
-          "note_period"            => "Quarter",
-          "score_investors"        => "Yes",
+          "summarize_notes" => "Yes",
+          "note_period" => "Quarter",
+          "score_investors" => "Yes",
           "min_points_per_section" => "3",
-          "notify_email"           => "",
+          "notify_email" => "",
           # enabled? fails closed — these were previously unseeded, leaving the
           # weekly summary email and AI insight permanently (and silently) off
-          "weekly_summary"         => "Yes",
-          "enable_ai_insight"      => "Yes"
+          "weekly_summary" => "Yes",
+          "enable_ai_insight" => "Yes"
         },
         # Bundled seed file for the scoring rubric — uploaded automatically on first setup.
         # Path is relative to Rails.root. Skipped silently if the file is absent.
@@ -343,13 +343,13 @@ class SupportAgentsSetupService
       tag: "PortfolioScoringAgent",
       category: "Portfolio",
       agent: {
-        name:       "Portfolio Scoring Agent",
+        name: "Portfolio Scoring Agent",
         with_steps: false,
         json_fields: {
-          "min_points_per_section"   => "5",
-          "kpi_frequency"            => "All",
+          "min_points_per_section" => "5",
+          "kpi_frequency" => "All",
           "docs_from_last_n_reports" => 3,
-          "document_name_filter"     => ""
+          "document_name_filter" => ""
         },
         # Bundled rubrics, uploaded automatically on first setup. Without these
         # the agent's config_issues check reports "No skill file uploaded" and
@@ -360,7 +360,7 @@ class SupportAgentsSetupService
         # under docs/ai/skills because FileUploader's MIME allowlist has no
         # text/markdown entry.
         skill_files: {
-          "generic_skill_file"    => "public/sample_uploads/portfolio_scoring_generic_skill.txt",
+          "generic_skill_file" => "public/sample_uploads/portfolio_scoring_generic_skill.txt",
           "beauty_skincare_skill" => "public/sample_uploads/portfolio_scoring_beauty_skincare_skill.txt"
         }
         # No schedule — triggered on-demand or via the agent UI
@@ -408,23 +408,23 @@ class SupportAgentsSetupService
       tag: "PresentationAnalystAgent",
       category: "Portfolio",
       agent: {
-        name:       "Investor Presentation Analyst",
+        name: "Investor Presentation Analyst",
         with_steps: true, # shows the 7-step progress panel in the agent UI
         json_fields: {
           "presentation_doc_names" => "Investor Update, Board Deck, Management Presentation, Quarterly Update, Investor Presentation",
-          "max_periods"            => "8",
-          "kpi_tag_list"           => "Actual",
-          "comparison_strategy"    => "all_periods",
-          "llm_model"              => "gemini-3-flash-preview",
-          "chat_config"            => { "enabled" => "true" }
+          "max_periods" => "8",
+          "kpi_tag_list" => "Actual",
+          "comparison_strategy" => "all_periods",
+          "llm_model" => "gemini-3-flash-preview",
+          "chat_config" => { "enabled" => "true" }
         },
         schedule: {
           frequency: "monthly", run_on_day: 1, run_at_time: "06:00", timezone: "Asia/Kolkata",
           enabled: false,
-          notify_on_failure:         true,
-          notify_on_success:         false,
+          notify_on_failure: true,
+          notify_on_success: false,
           notify_on_partial_success: true,
-          notify_caphive_on_error:   true
+          notify_caphive_on_error: true
         }
       },
       fields: [
@@ -461,14 +461,14 @@ class SupportAgentsSetupService
     {
       tag: "RtaReconciliationAgent",
       agent: {
-        name:       "RTA Reconciliation",
+        name: "RTA Reconciliation",
         with_steps: true,
         json_fields: {
-          "tolerance_units"        => "0.01",
-          "tolerance_pct"          => "0",
+          "tolerance_units" => "0.01",
+          "tolerance_pct" => "0",
           "check_pending_requests" => "Yes",
-          "send_report"            => "Yes",
-          "notify_email"           => ""
+          "send_report" => "Yes",
+          "notify_email" => ""
           # No default schedule — runs on-demand at statement upload time
         }
       },
@@ -541,14 +541,14 @@ class SupportAgentsSetupService
       tag: "SideLetterObligationAgent",
       category: "Ops",
       agent: {
-        name:       "Side Letter Obligations",
+        name: "Side Letter Obligations",
         with_steps: true, # extraction runs show the step progress panel
         json_fields: {
-          "side_letter_doc_label"        => "Side Letter",
-          "auto_extract_on_upload"       => "No",
+          "side_letter_doc_label" => "Side Letter",
+          "auto_extract_on_upload" => "No",
           "default_reminder_days_before" => "7",
-          "overdue_escalation_days"      => "3",
-          "notify_tag"                   => ""
+          "overdue_escalation_days" => "3",
+          "notify_tag" => ""
         },
         # The daily scheduled run is the ENFORCEMENT pass (due-date alerts);
         # extraction is triggered manually / per-commitment.
@@ -602,6 +602,7 @@ class SupportAgentsSetupService
       enable_entity_flag: true,
       agent: {
         name: "Template Fix Agent",
+        llm_model: "gemini-3.7-flash",
         with_steps: true, # Fix Me runs show the step progress panel
         json_fields: {}
       },
@@ -611,10 +612,10 @@ class SupportAgentsSetupService
 
   # agent_type strings whose support_agents flag name doesn't follow the simple underscore convention.
   AGENT_TYPE_TO_FLAG = {
-    "NoteSummarizerAgent"     => :note_summarization_agent,
-    "LpAssistantAgent"        => :folio_assistant,
+    "NoteSummarizerAgent" => :note_summarization_agent,
+    "LpAssistantAgent" => :folio_assistant,
     "PortfolioAssistantAgent" => :portfolio_assistant,
-    "CashFlowAssistantAgent"  => :cash_flow_assistant_agent, # explicit for clarity
+    "CashFlowAssistantAgent" => :cash_flow_assistant_agent # explicit for clarity
   }.freeze
 
   # @param entity_id [Integer]
@@ -678,8 +679,8 @@ class SupportAgentsSetupService
   # ── Per-config setup ────────────────────────────────────────────────────────
 
   def setup_config(cfg)
-    tag = cfg[:tag]
-    ft  = find_or_create_form_type(cfg)
+    cfg[:tag]
+    ft = find_or_create_form_type(cfg)
     return unless ft
 
     upsert_custom_fields(ft, cfg[:fields])
@@ -727,9 +728,7 @@ class SupportAgentsSetupService
         # is blank (a blank skill tag is always drift, never a deliberate UI setting).
         # Fields whose template meta_data is not skill-tagged — i.e. every other agent —
         # are never touched.
-        if field_attrs[:field_type] == "File" && field_attrs[:meta_data].to_s.match?(/skill/i) && fcf.meta_data.blank?
-          updatable[:meta_data] = field_attrs[:meta_data]
-        end
+        updatable[:meta_data] = field_attrs[:meta_data] if field_attrs[:field_type] == "File" && field_attrs[:meta_data].to_s.match?(/skill/i) && fcf.meta_data.blank?
 
         changed = updatable.any? { |k, v| fcf.send(k) != v }
         if changed
@@ -750,13 +749,13 @@ class SupportAgentsSetupService
 
     if sa.new_record?
       sa.assign_attributes(
-        name:         agent_cfg[:name],
+        name: agent_cfg[:name],
         form_type_id: ft.id,
-        with_steps:   agent_cfg[:with_steps],
-        enabled:      true,
-        llm_model:    DEFAULT_LLM_MODEL,
-        category:     cfg[:category],
-        json_fields:  agent_cfg[:json_fields] || {}
+        with_steps: agent_cfg[:with_steps],
+        enabled: true,
+        llm_model: DEFAULT_LLM_MODEL,
+        category: cfg[:category],
+        json_fields: agent_cfg[:json_fields] || {}
       )
       sa.save!
       log "    [agent] Created #{tag} (ID=#{sa.id})"
@@ -827,8 +826,8 @@ class SupportAgentsSetupService
       # seeded value the core KYC checks silently skip. send_reminder/trigger_aml
       # are deliberately NOT seeded (outbound email / AML screening should be an
       # explicit opt-in) — config_issues surfaces them instead.
-      "KycOnboardingAgent"    => { "check_expiry" => "Yes", "expiry_warning_days" => "60,30,15",
-                                   "validate_fields" => "Yes", "validate_documents" => "Yes" },
+      "KycOnboardingAgent" => { "check_expiry" => "Yes", "expiry_warning_days" => "60,30,15",
+                                "validate_fields" => "Yes", "validate_documents" => "Yes" },
       # reminder_days is gone — reminders follow the active-window model now
       "PortfolioCompanyAgent" => { "send_kpi_reminder" => "Yes" }
     }.each do |agent_type, defaults|
@@ -865,7 +864,7 @@ class SupportAgentsSetupService
 
     rules = kyc_fts.each_with_object({}) do |ft, hash|
       entry = KYC_EXTRACTOR_BASE_RULES.dup
-      entry = entry + [KYC_EXTRACTOR_FULL_NAME_RULE] if ft.name == "IndividualKyc" && ft.tag == "Default"
+      entry += [KYC_EXTRACTOR_FULL_NAME_RULE] if ft.name == "IndividualKyc" && ft.tag == "Default"
       hash[ft.id.to_s] = entry
     end
     sa.update!(json_fields: sa.json_fields.merge("extraction_rules" => rules))
@@ -913,12 +912,12 @@ class SupportAgentsSetupService
 
     begin
       doc = Document.new(
-        owner:      sa,
-        name:       doc_name,
-        entity_id:  @entity_id,
-        user_id:    user&.id,
+        owner: sa,
+        name: doc_name,
+        entity_id: @entity_id,
+        user_id: user&.id,
         send_email: false,
-        folder:     sa.document_folder
+        folder: sa.document_folder
       )
       doc.file = File.open(file_path)
       doc.save!

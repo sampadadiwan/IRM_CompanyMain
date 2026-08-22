@@ -22,19 +22,26 @@ class TemplateFixJob < ApplicationJob
     support_agent = SupportAgent.find(support_agent_id)
     document = Document.find(document_id)
 
-    report = TemplateFixAgent.new.initialize_report_with_steps(
-      {}, model: document, support_agent: support_agent, user_id: user_id
-    )
+    # Document has a Chewy update_index callback (app/packs/core/documents/models/document.rb),
+    # which raises Chewy::UndefinedUpdateStrategy outside an active strategy — TemplateFixAgent's
+    # finalize_fix step saves the fixed draft as a new Document (DocxWorkspace#
+    # save_as_new_document!), which needs a strategy context here the same way
+    # CapitalCommitmentDocJob#perform wraps its own Document-creating work.
+    Chewy.strategy(:sidekiq) do
+      report = TemplateFixAgent.new.initialize_report_with_steps(
+        {}, model: document, support_agent: support_agent, user_id: user_id
+      )
 
-    TemplateFixAgent.call(
-      support_agent_id: support_agent_id,
-      document: document,
-      issue_description: issue_description,
-      llm_model: llm_model,
-      user_id: user_id,
-      entity_id: support_agent.entity_id,
-      support_agent_report: report
-    )
+      TemplateFixAgent.call(
+        support_agent_id: support_agent_id,
+        document: document,
+        issue_description: issue_description,
+        llm_model: llm_model,
+        user_id: user_id,
+        entity_id: support_agent.entity_id,
+        support_agent_report: report
+      )
+    end
 
     message = "Template Fix Agent finished for '#{document.name}'. " \
               "<a href='#{Rails.application.routes.url_helpers.document_path(document, tab: 'fix_me')}' " \
