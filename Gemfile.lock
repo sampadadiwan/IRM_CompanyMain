@@ -958,9 +958,6 @@ GEM
       ostruct
     ruby-progressbar (1.13.0)
     ruby-rc4 (0.1.5)
-    ruby-vips (2.3.0)
-      ffi (~> 1.12)
-      logger
     ruby2_keywords (0.0.5)
     rubyXL (3.4.33)
       nokogiri (>= 1.10.8)
@@ -1310,7 +1307,6 @@ DEPENDENCIES
   rubocop-rspec
   ruby-openai!
   ruby-prof
-  ruby-vips (~> 2.0)
   rubyXL (= 3.4.33)
   ruby_linear_regression
   ruby_llm

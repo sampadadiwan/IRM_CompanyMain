@@ -135,6 +135,10 @@ module CapHive
     # config.active_storage.replace_on_assign_to_many = false
     config.active_storage.analyzers = []
     config.active_storage.previewers = []
+    # config.load_defaults 7.0 implicitly sets variant_processor to :vips (Rails changed the
+    # default starting with 7.0). We don't use vips - imagemagick/mini_magick are what's
+    # installed and exercised - so pin it explicitly rather than relying on that default.
+    config.active_storage.variant_processor = :mini_magick
 
     # supports :s3, :s3_multipart, or :app
     config.upload_server = if ENV["UPLOAD_SERVER"].present?
