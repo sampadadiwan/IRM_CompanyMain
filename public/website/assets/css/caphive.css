@@ -137,7 +137,9 @@ p, li, .lede, .step-detail, .faq details > div{ text-wrap:pretty; }
 /* ---------- floating pill nav ---------- */
 .nav{
   position:fixed; top:16px; left:50%; transform:translateX(-50%);
-  width:min(1120px, calc(100% - 28px)); z-index:60;
+  /* matches .hero-panel's rendered width: wrap's 1280px cap minus its own
+     24px+24px padding, so the pill lines up with the hero card below it */
+  width:min(1232px, calc(100% - 48px)); z-index:60;
   display:flex; align-items:center; justify-content:space-between;
   padding:10px 12px 10px 20px; border-radius:999px;
   background:rgba(255,255,255,.94); border:1px solid var(--line);
@@ -189,6 +191,12 @@ p, li, .lede, .step-detail, .faq details > div{ text-wrap:pretty; }
   opacity:0; pointer-events:none; transition:opacity .25s, transform .25s cubic-bezier(.2,.8,.3,1);
 }
 .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu{ opacity:1; transform:translate(-50%,0); pointer-events:auto; }
+/* Login dropdown: narrower than the Products/Resources panels and hangs off
+   the right edge of the pill instead of centering, so it never overflows the
+   viewport when the trigger sits at the far right of the nav. */
+.login-menu .nav-menu{ width:190px; left:auto; right:0; transform:translateY(8px); }
+.login-menu:hover .nav-menu, .login-menu:focus-within .nav-menu{ transform:translateY(0); }
+.login-menu:hover::after, .login-menu:focus-within::after{ left:auto; right:0; transform:none; width:190px; }
 .nav-menu a{ display:block; padding:11px 14px; border-radius:14px; transition:background .2s; }
 .nav-menu a:hover{ background:var(--cream); }
 .nav-menu strong{ display:block; font-size:14.5px; font-weight:600; letter-spacing:-0.01em; }

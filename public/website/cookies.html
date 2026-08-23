@@ -126,7 +126,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=2beecd8c">
+<link rel="stylesheet" href="assets/css/caphive.css?v=686b40f0">
 </head>
 <body data-page="legal">
 
@@ -204,7 +204,18 @@
     <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
   </nav>
   <div class="nav-cta">
-    <a class="login" href="https://app.caphive.com/" data-login>Login</a>
+    <div class="has-menu login-menu">
+      <a class="login nav-link" href="https://app.caphive.com/" data-login>
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <!-- Pinned per region and carry no data-login, same as the footer's
+           "Login — IND" / "Login — USA" links (see caphive.js). -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
     <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
          header CTA, the contact page and the outbound email signature all carry the same
          link. Falls back to the contact form while no booking url is configured. -->
