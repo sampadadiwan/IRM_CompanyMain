@@ -276,20 +276,30 @@ commands = [
                             <i class="ti ti-list-details"></i>Show Email List
                           <% end %>
                         </li>
-                        <% if @fund.entity.support_agents.set?(:fund_stats_agent) %>
-                          <li>
+                        <li>
+                          <% if @fund.entity.support_agents.set?(:fund_stats_agent) %>
                             <button type="button" class="dropdown-item ti ti-chart-histogram"
                                     data-bs-toggle="modal" data-bs-target="#run-fund-stats-agent-modal">
                               Run Fund Stats
                             </button>
-                          </li>
-                        <% end %>
-                        <% if @fund.entity.support_agents.set?(:rta_reconciliation_agent) && policy(@fund).update? %>
+                          <% else %>
+                            <span class="dropdown-item disabled text-muted ti ti-chart-histogram" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Fund Stats Agent is disabled. Contact support to enable it">
+                              Run Fund Stats <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+                            </span>
+                          <% end %>
+                        </li>
+                        <% if policy(@fund).update? %>
                           <li>
-                            <button type="button" class="dropdown-item ti ti-file-check"
-                                    data-bs-toggle="modal" data-bs-target="#run-rta-reconciliation-modal">
-                              Run RTA Reconciliation
-                            </button>
+                            <% if @fund.entity.support_agents.set?(:rta_reconciliation_agent) %>
+                              <button type="button" class="dropdown-item ti ti-file-check"
+                                      data-bs-toggle="modal" data-bs-target="#run-rta-reconciliation-modal">
+                                Run RTA Reconciliation
+                              </button>
+                            <% else %>
+                              <span class="dropdown-item disabled text-muted ti ti-file-check" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="RTA Reconciliation Agent is disabled. Contact support to enable it">
+                                Run RTA Reconciliation <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+                              </span>
+                            <% end %>
                           </li>
                         <% end %>
                         <li>

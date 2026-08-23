@@ -274,12 +274,16 @@
                   method: :patch, class: "dropdown-item ti ti-files",
                   form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will generate the distribution notices for all payments in this distribution. Proceed?"} if policy(@capital_distribution).generate_docs? %>
 
+              <div class="dropdown-divider"></div>
               <% if @capital_distribution.entity.support_agents.set?(:distribution_readiness_agent) %>
-                <div class="dropdown-divider"></div>
                 <button type="button" class="dropdown-item ti ti-shield-check"
                         data-bs-toggle="modal" data-bs-target="#run-distribution-readiness-modal">
                   Run Readiness Check
                 </button>
+              <% else %>
+                <span class="dropdown-item disabled text-muted ti ti-shield-check" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Distribution Readiness Agent is disabled. Contact support to enable it">
+                  Run Readiness Check <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+                </span>
               <% end %>
             </div>
         </div>

@@ -33,6 +33,8 @@
 
     <% if deal.entity.support_agents.set?(:deals_report_agent) %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#agent-settings-tab">Agent Settings</a>
+    <% else %>
+      <span class="nav-link disabled text-muted" style="opacity:0.65; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Deals Report Agent is disabled. Contact support to enable it">Agent Settings <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i></span>
     <% end %>
   </nav>
   <div class="tab-content">

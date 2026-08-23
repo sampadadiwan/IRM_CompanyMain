@@ -1100,7 +1100,12 @@ table.cmp td .no{ color:var(--mut); }
 .cta-mail:hover{ opacity:1; border-color:#fff; }
 
 /* ---------- footer ---------- */
-footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
+/* overflow-x only: Lobster's descenders (script font, generous descent) plus
+   .foot-mark's translateY(12%) push the glyph below its own compressed
+   line-height(.92) box — clipping on the y-axis crops the bottom of the giant
+   "CapHive" mark. Only the x-axis needs clipping (guards against the mark's
+   width ever exceeding the viewport at extreme aspect ratios). */
+footer{ border-top:1px solid var(--line); padding:80px 0 clamp(60px,10vw,140px); overflow-x:hidden; }
 .foot-grid{ display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr 1fr; gap:40px; padding-bottom:64px; }
 .foot-brand p{ color:var(--mut); font-size:14.5px; max-width:280px; margin-top:16px; }
 .foot-brand .addr{ margin-top:20px; font-size:13.5px; line-height:1.7; color:var(--mut); }
