@@ -40,3 +40,21 @@ Feature: AI Fix Me for document templates
   Scenario: The Fix Me button is hidden from a non-admin user
     When I visit the template document page
     Then I should not see "Fix Me"
+
+  # TemplateFixAgent fixes template STRUCTURE only (numbering, indentation,
+  # pagination) — nothing in its remaining toolset ever touches a <w:t> text
+  # element, so the fixed draft must always have the exact same paragraph
+  # count, word count, and words as the original, in order. This is enforced
+  # as a hard gate (DocxWorkspace#validate_content_unchanged!) before the
+  # draft is even saved. With the AI stubbed (no real tool calls), only the
+  # deterministic formatting/numbering fixers run against the real fixture —
+  # proving the invariant holds on an actual template with known
+  # formatting/numbering bugs, not just a trivial no-op case.
+  Scenario: Fixing a real template with formatting bugs preserves every word
+    Given the template fix admin is a company admin
+    And the fund has a commitment template document "MessedUpDocTemplate.docx"
+    And the Fix Me AI reports back "Corrected the clause numbering and indentation round-trip issues."
+    When I open the fix me modal and describe the issue "Numbering under section 2 is wrong, and there's a blank page after clause 5.2.9"
+    Then a template fix agent report should exist with status "ready"
+    And a new draft document should exist, distinct from the template
+    And the fix should report a passing content check

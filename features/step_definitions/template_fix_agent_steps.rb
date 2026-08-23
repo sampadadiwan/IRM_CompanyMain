@@ -58,6 +58,21 @@ Then('a new draft document should exist, distinct from the template') do
   draft = Document.find_by(id: @fix_report.json_fields["result_document_id"])
   expect(draft).to be_present
   expect(draft.id).not_to eq(@template_document.id)
-  expect(draft.template?).to be(false)
+  # template/orignal are forced true on every draft (DocxWorkspace#save_as_new_document!)
+  # so it's immediately usable as a template — but owner_tag stays nil, so it never
+  # auto-appears in owner_tag-filtered template lists (e.g. CapitalCommitmentDocJob's
+  # default scan) until a human reviews it and promotes it themselves.
+  expect(draft.template?).to be(true)
+  expect(draft.orignal?).to be(true)
+  expect(draft.owner_tag).to be_nil
   expect(draft.from_template_id).to eq(@template_document.id)
+end
+
+Then('the fix should report a passing content check') do
+  content_check = @fix_report.json_fields["content_check"]
+  expect(content_check).to be_present
+  expect(content_check["passed"]).to be(true)
+  expect(content_check.dig("paragraph_count", "original")).to eq(content_check.dig("paragraph_count", "fixed"))
+  expect(content_check.dig("word_count", "original")).to eq(content_check.dig("word_count", "fixed"))
+  expect(content_check["word_for_word_match"]).to be(true)
 end

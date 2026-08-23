@@ -241,6 +241,7 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem 'capybara-email'
+  gem 'cucumber', '10.2.0'
   gem 'cucumber-rails', require: false
   gem 'database_cleaner-active_record'
 
