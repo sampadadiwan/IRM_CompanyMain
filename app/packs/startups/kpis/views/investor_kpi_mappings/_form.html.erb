@@ -89,11 +89,57 @@
     <%= form.text_field :upper_threshold, class: "form-control"  %>
   </div>
 
+  <hr>
+
   <div class="form-group">
-    <%= form.label :rag_rules %>
-    <%= form.text_area :rag_rules, class: "form-control", rows: 10 %>
-    <small class="form-text text-muted">Enter RAG rules as a JSON object. Example: `{"ratio_rules": {"red": {"min": -Infinity, "max": 0.7}, "amber": {"min": 0.7, "max": 0.9}, "green": {"min": 0.9, "max": Infinity}}}`</small>
+    <a class="btn btn-outline-secondary" data-bs-toggle="collapse" href="#rag_rules_section" role="button"
+       aria-expanded="<%= investor_kpi_mapping.rag_configured? %>" aria-controls="rag_rules_section">
+      RAG Rule (Red / Amber / Green) <i class="ti ti-caret-down"></i>
+    </a>
+    <%= link_to user_guide_path("kpi_rag_status_user_guide", anchor: "setting-up-a-rag-rule"), target: "_blank", rel: "noopener",
+                class: "ms-2", data: { bs_toggle: "tooltip", bs_title: "How to set up a RAG rule" } do %>
+      <i class="ti ti-info-circle text-primary fs-4"></i>
+    <% end %>
+    <a href="#" class="ms-2" data-bs-toggle="modal" data-bs-target="#rag_rules_examples_modal" title="See example RAG rules">
+      <i class="ti ti-bulb text-primary fs-4"></i>
+    </a>
   </div>
+
+  <div class="collapse<%= ' show' if investor_kpi_mapping.rag_configured? %>" id="rag_rules_section">
+    <% rag_tag_options = (["Budget"] + KpiReport.where(portfolio_company_id: investor_kpi_mapping.investor_id).distinct.pluck(:tag_list)).compact_blank.uniq.sort %>
+    <div class="form-group" data-controller="otherselect" data-otherselect-select-id-value="#investor_kpi_mapping_rag_comparator_tag" data-otherselect-other-id-value="#rag_comparator_tag_other">
+      <%= form.label :rag_comparator_tag, "RAG comparator tag" %>
+      <%= form.select :rag_comparator_tag, rag_tag_options + ["Other"], { include_blank: "None — judge the value directly" }, class: "form-control", "data-action": "change->otherselect#checkOtherName" %>
+      <%= form.text_field :rag_comparator_tag, class: "form-control", disabled: true, id: "rag_comparator_tag_other", hidden: true, placeholder: "Enter a custom tag" %>
+      <small class="form-text text-muted">The tag of the report to compare the actual value against (e.g. "Budget", "PriorYear"). Choose "None — judge the value directly" for a KPI with no comparator (e.g. a margin % or a ratio that's already self-contained). Choose "Other" to type a tag not listed here yet.</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :rag_direction, "RAG direction" %>
+      <%= form.select :rag_direction, InvestorKpiMapping.rag_directions.keys.map { |k| [k.titleize, k] }, { include_blank: true }, class: "form-control" %>
+      <small class="form-text text-muted">"Higher is better" for KPIs like Revenue or Margin; "Lower is better" for KPIs like Churn or Burn.</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :rag_red_threshold, "RAG red threshold" %>
+      <%= form.text_field :rag_red_threshold, class: "form-control" %>
+      <small class="form-text text-muted">Below this value is flagged red (or above it, when direction is "Lower is better").</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :rag_green_threshold, "RAG green threshold" %>
+      <%= form.text_field :rag_green_threshold, class: "form-control" %>
+      <small class="form-text text-muted">At or above this value is flagged green (or at/below it, when direction is "Lower is better"). Everything between red and green is amber.</small>
+    </div>
+
+    <% if investor_kpi_mapping.rag_configured? %>
+      <div class="form-group">
+        <small class="form-text text-muted"><strong>Current rule:</strong> <%= investor_kpi_mapping.rag_rule_summary %></small>
+      </div>
+    <% end %>
+  </div>
+
+  <hr>
 
   <%= custom_form_fields(@investor_kpi_mapping, form) %>
 
@@ -101,5 +147,97 @@
     <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
   </div>
 <% end %>
+
+<div class="modal fade" id="rag_rules_examples_modal" tabindex="-1" aria-labelledby="rag_rules_examples_modal_label" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="rag_rules_examples_modal_label">
+          <i class="ti ti-bulb text-primary me-1"></i> Example RAG Rules
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">A few real-world examples of how funds commonly set these fields up:</p>
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm">
+            <thead>
+              <tr>
+                <th>KPI</th>
+                <th>Comparator tag</th>
+                <th>Direction</th>
+                <th>Red</th>
+                <th>Green</th>
+                <th>What it means</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Revenue</td>
+                <td>Budget</td>
+                <td>Higher is better</td>
+                <td>0.7</td>
+                <td>0.9</td>
+                <td>Red if actual revenue is below 70% of budget; green at 90% or above.</td>
+              </tr>
+              <tr>
+                <td>Net Burn</td>
+                <td>Budget</td>
+                <td>Lower is better</td>
+                <td>1.2</td>
+                <td>1.0</td>
+                <td>Red if spending is more than 120% of the budgeted burn.</td>
+              </tr>
+              <tr>
+                <td>Gross Margin %</td>
+                <td><em>(none)</em></td>
+                <td>Higher is better</td>
+                <td>0.40</td>
+                <td>0.55</td>
+                <td>Judged directly, no comparator — red under 40%, green at 55% or above.</td>
+              </tr>
+              <tr>
+                <td>Cash Runway (months)</td>
+                <td><em>(none)</em></td>
+                <td>Higher is better</td>
+                <td>6</td>
+                <td>12</td>
+                <td>Red under 6 months of runway; green at 12 months or more.</td>
+              </tr>
+              <tr>
+                <td>Customer Churn %</td>
+                <td>Budget</td>
+                <td>Lower is better</td>
+                <td>1.5</td>
+                <td>1.0</td>
+                <td>Red if churn is more than 1.5× the budgeted rate.</td>
+              </tr>
+              <tr>
+                <td>Revenue Growth YoY</td>
+                <td>PriorYear</td>
+                <td>Higher is better</td>
+                <td>1.10</td>
+                <td>1.20</td>
+                <td>Red if this year is below 110% of last year's figure (under 10% growth).</td>
+              </tr>
+              <tr>
+                <td>Leverage Ratio (debt covenant)</td>
+                <td><em>(none)</em></td>
+                <td>Lower is better</td>
+                <td>4.0</td>
+                <td>3.6</td>
+                <td>Red if leverage exceeds the 4.0x covenant limit.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <%= link_to "Full guide", user_guide_path("kpi_rag_status_user_guide"), target: "_blank", rel: "noopener", class: "btn btn-outline-primary" %>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <% end %>

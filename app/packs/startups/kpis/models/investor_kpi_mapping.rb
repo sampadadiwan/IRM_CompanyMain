@@ -10,8 +10,6 @@ class InvestorKpiMapping < ApplicationRecord
   acts_as_list scope: :investor, add_new_at: :bottom
   default_scope { order(:position) }
 
-  attribute :rag_rules, :json, default: {}
-
   has_one :investor_entity, class_name: "Entity", through: :investor
   has_many :kpis, through: :investor_entity
   CATEGORIES = ["Balance Sheet", "Income Statement", "Cashflow Statement", "Operational Metrics", "Other"].freeze
@@ -24,6 +22,7 @@ class InvestorKpiMapping < ApplicationRecord
   enum :data_type, { money: 'money', numeric: 'numeric', percentage: 'percentage' }
   enum :denomination, { millions: 'millions', crores: 'crores', lakhs: 'lakhs', thousands: 'thousands' }
   enum :autofill, { cumulate: 'cumulate', forward_fill: 'forward_fill', compute: 'compute' }, prefix: true
+  enum :rag_direction, { higher_is_better: 'higher_is_better', lower_is_better: 'lower_is_better' }
 
   scope :cumulate, -> { where(autofill: 'cumulate') }
   scope :forward_fill, -> { where(autofill: 'forward_fill') }
@@ -42,6 +41,44 @@ class InvestorKpiMapping < ApplicationRecord
     return false if compute_formula.blank?
 
     errors.add(:compute_formula, "You cannot do CRUD operations in a formula") if compute_formula.downcase.match?(SAFE_EVAL_REGEX)
+  end
+
+  # RAG rules — see docs/technical/kpi_rag_rules_redesign.md. rag_comparator_tag blank means
+  # "judge the raw value directly" (e.g. a margin %); present means "compare as a ratio against
+  # the same-named KPI in a report carrying that tag" (e.g. "Budget", "PriorYear").
+  validate :rag_rules_kosher?
+  def rag_rules_kosher?
+    fields = [rag_direction, rag_red_threshold, rag_green_threshold]
+    return if fields.all?(&:blank?)
+
+    if fields.any?(&:blank?)
+      errors.add(:base, "RAG direction, red threshold and green threshold must all be set together")
+      return
+    end
+
+    if rag_red_threshold == rag_green_threshold
+      errors.add(:rag_red_threshold, "must differ from the green threshold")
+    elsif higher_is_better? && rag_red_threshold > rag_green_threshold
+      errors.add(:rag_red_threshold, "must be below the green threshold when direction is 'higher is better'")
+    elsif lower_is_better? && rag_red_threshold < rag_green_threshold
+      errors.add(:rag_red_threshold, "must be above the green threshold when direction is 'lower is better'")
+    end
+  end
+
+  def rag_configured?
+    rag_direction.present? && rag_red_threshold.present? && rag_green_threshold.present?
+  end
+
+  # Plain-language rendering of the configured rule, for show/index views and the edit form.
+  def rag_rule_summary
+    return "Not configured" unless rag_configured?
+
+    comparator_phrase = rag_comparator_tag.present? ? " of #{rag_comparator_tag}" : ""
+    if higher_is_better?
+      "Red below #{rag_red_threshold}#{comparator_phrase} · Green at or above #{rag_green_threshold}#{comparator_phrase}"
+    else
+      "Red above #{rag_red_threshold}#{comparator_phrase} · Green at or below #{rag_green_threshold}#{comparator_phrase}"
+    end
   end
 
   after_commit :update_parent_child_count

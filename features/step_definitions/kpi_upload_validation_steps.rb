@@ -243,11 +243,15 @@ Given('the KPI mapping {string} exists with lower threshold {int} and upper thre
   @portfolio_company.reload
 end
 
-# rag_rules shape as used by Kpi#determine_rag_status_from_rules: { 'ratio_rules' => { status => { min, max } } }
-Given('the KPI mapping {string} exists with a red RAG band above ratio {float}') do |name, ratio|
+# comparator_tag: pass "none" for a flat threshold (judges the value directly, no comparator KPI
+# or approved Budget needed).
+Given('the KPI mapping {string} exists with RAG comparator {string}, direction {string}, red threshold {float}, green threshold {float}') do |name, comparator_tag, direction, red, green|
   @portfolio_company.investor_kpi_mappings.create!(
     entity_id: @portfolio_company.entity_id, reported_kpi_name: name, standard_kpi_name: name,
-    rag_rules: { 'ratio_rules' => { 'green' => { 'min' => '-Infinity', 'max' => ratio }, 'red' => { 'min' => ratio, 'max' => 'Infinity' } } }
+    rag_comparator_tag: comparator_tag == 'none' ? nil : comparator_tag,
+    rag_direction: direction,
+    rag_red_threshold: red,
+    rag_green_threshold: green
   )
   @portfolio_company.reload
 end

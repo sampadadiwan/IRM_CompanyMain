@@ -142,59 +142,31 @@ class Kpi < ApplicationRecord
        .first
   end
 
-  # Class-level RAG evaluation so callers without a Kpi instance (e.g. KpiWorkbookReader's
-  # pre-save plausibility check) can apply the same rules as #determine_rag_status_from_rules.
-  def self.rag_status_for(ratio, rules_hash, comparison_type: 'ratio_rules')
-    new.determine_rag_status_from_rules(ratio, rules_hash, comparison_type: comparison_type)
+  # Live RAG computation — see docs/technical/kpi_rag_rules_redesign.md (Phase 3). Recomputes
+  # whenever a value is saved, and cascades to same-name/date siblings so a comparator (e.g.
+  # Budget) entered after the actual still triggers the actual's status to update.
+  after_save :recompute_rag_status!, if: :saved_change_to_value?
+  after_save :recompute_dependent_rag_statuses!, if: :saved_change_to_value?
+
+  def recompute_rag_status!
+    mapping = investor_kpi_mapping
+    return unless mapping&.rag_configured?
+
+    comparator_value = nil
+    if mapping.rag_comparator_tag.present?
+      comparator = find_tagged_kpi(mapping.rag_comparator_tag)
+      comparator = nil if comparator&.id == id # comparing a value to itself isn't meaningful
+      comparator_value = comparator&.value
+    end
+
+    new_status = RagStatusEvaluator.call(value: value, comparator_value: comparator_value, mapping: mapping)[:status]
+    update_column(:rag_status, new_status) if new_status != rag_status
   end
 
-  # Helper method to determine RAG status from rules
-  def determine_rag_status_from_rules(ratio, rules_hash, comparison_type: 'ratio_rules')
-    return nil unless rules_hash.present? && rules_hash[comparison_type].present?
-
-    rules = rules_hash[comparison_type]
-
-    # Convert string keys to symbols for easier access if needed, or ensure consistency
-    # rules = rules.transform_keys(&:to_sym)
-
-    # Sort rules by min bound to ensure correct order of evaluation. Bounds may be numbers or the
-    # string sentinels "-Infinity"/"Infinity" — normalise before sorting so mixed types don't raise.
-    sorted_rules = rules.values.sort_by { |r| r['min'] == '-Infinity' ? -Float::INFINITY : r['min'].to_f }
-
-    sorted_rules.each do |rule|
-      min_val = rule['min'] == '-Infinity' ? -Float::INFINITY : rule['min'].to_f
-      max_val = rule['max'] == 'Infinity' ? Float::INFINITY : rule['max'].to_f
-
-      if ratio >= min_val && ratio < max_val
-        # Find the key (rag_status name) that corresponds to this rule's values
-        return rules.key(rule)
-      end
-    end
-    nil # No matching status found
-  end
-
-  # Method to compute and set RAG status
-  def set_rag_status_from_ratio(tagged_kpi_tag_list)
-    Rails.logger.debug { "Kpi:  set_rag_status_from_ratio called for KPI: #{name}, value: #{value}, report_as_of: #{kpi_report.as_of}, pc_id: #{portfolio_company_id}" }
-    Rails.logger.debug { "Kpi:  Looking for tagged KPI with tag: #{tagged_kpi_tag_list}" }
-
-    tagged_kpi = find_tagged_kpi(tagged_kpi_tag_list)
-
-    Rails.logger.debug { "Kpi:  Found tagged_kpi: #{tagged_kpi.present? ? tagged_kpi.to_s : 'nil'}" }
-    Rails.logger.debug { "Kpi:  tagged_kpi.value: #{tagged_kpi&.value}" }
-    Rails.logger.debug { "Kpi:  investor_kpi_mapping&.rag_rules.present?: #{investor_kpi_mapping&.rag_rules.present?}" }
-
-    if tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value != 0 && investor_kpi_mapping&.rag_rules.present?
-      ratio = value.to_f / tagged_kpi.value
-      self.rag_status = determine_rag_status_from_rules(ratio, investor_kpi_mapping.rag_rules)
-      Rails.logger.debug { "Kpi:  RAG status determined: #{rag_status}" }
-    elsif tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value.zero?
-      self.rag_status = 'red'
-      Rails.logger.debug "--- RAG status set to 'red' due to division by zero."
-    else
-      self.rag_status = nil
-      Rails.logger.debug "--- RAG status set to nil (conditions not met)."
-    end
-    save if changed?
+  def recompute_dependent_rag_statuses!
+    Kpi.joins(:kpi_report)
+       .where(name: name, portfolio_company_id: portfolio_company_id, 'kpi_reports.as_of': kpi_report.as_of)
+       .where.not(id: id)
+       .find_each(&:recompute_rag_status!)
   end
 end

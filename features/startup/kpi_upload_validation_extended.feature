@@ -60,11 +60,77 @@ Feature: Server-side KPI workbook validation — extended coverage
 
   @kpi_validation_ext
   Scenario: A value in the red RAG band against the approved budget warns
-    Given the KPI mapping "Churn" exists with a red RAG band above ratio 1.5
+    Given the KPI mapping "Churn" exists with RAG comparator "Budget", direction "lower_is_better", red threshold 1.5, green threshold 1.0
     And an approved "Budget" KPI "Churn" of 10 exists for "TestStartup" as of "2026-06-30" period "Month"
     And a KPI workbook with sheet "MIS":
       | KPI   | Jun 2026 |
       | Churn | 20       |
+    When the workbook is validated for the KPI report
+    Then the validation has no errors
+    And the validation has warning "rag_red"
+
+  @kpi_validation_ext
+  Scenario: A value in the amber RAG band against the approved budget warns
+    Given the KPI mapping "Retention" exists with RAG comparator "Budget", direction "higher_is_better", red threshold 0.7, green threshold 0.9
+    And an approved "Budget" KPI "Retention" of 10 exists for "TestStartup" as of "2026-06-30" period "Month"
+    And a KPI workbook with sheet "MIS":
+      | KPI       | Jun 2026 |
+      | Retention | 8        |
+    When the workbook is validated for the KPI report
+    Then the validation has no errors
+    And the validation has warning "rag_amber"
+
+  @kpi_validation_ext
+  Scenario: Net Burn overspending against budget in the red RAG band warns
+    Given the KPI mapping "Net Burn" exists with RAG comparator "Budget", direction "lower_is_better", red threshold 1.2, green threshold 1.0
+    And an approved "Budget" KPI "Net Burn" of 100 exists for "TestStartup" as of "2026-06-30" period "Month"
+    And a KPI workbook with sheet "MIS":
+      | KPI      | Jun 2026 |
+      | Net Burn | 130      |
+    When the workbook is validated for the KPI report
+    Then the validation has no errors
+    And the validation has warning "rag_red"
+
+  @kpi_validation_ext
+  Scenario: Headcount overshooting budget in the red RAG band warns
+    Given the KPI mapping "Headcount" exists with RAG comparator "Budget", direction "lower_is_better", red threshold 1.1, green threshold 1.0
+    And an approved "Budget" KPI "Headcount" of 100 exists for "TestStartup" as of "2026-06-30" period "Month"
+    And a KPI workbook with sheet "MIS":
+      | KPI       | Jun 2026 |
+      | Headcount | 120      |
+    When the workbook is validated for the KPI report
+    Then the validation has no errors
+    And the validation has warning "rag_red"
+
+  @kpi_validation_ext
+  Scenario: A value in the green RAG band against the approved budget warns of nothing
+    Given the KPI mapping "Churn" exists with RAG comparator "Budget", direction "lower_is_better", red threshold 1.5, green threshold 1.0
+    And an approved "Budget" KPI "Churn" of 10 exists for "TestStartup" as of "2026-06-30" period "Month"
+    And a KPI workbook with sheet "MIS":
+      | KPI   | Jun 2026 |
+      | Churn | 5        |
+    When the workbook is validated for the KPI report
+    Then the validation has no errors
+    And the validation has no warning "rag_red"
+    And the validation has no warning "rag_amber"
+
+  @kpi_validation_ext
+  Scenario: RAG rules produce no warning when there is no approved Budget to compare against
+    Given the KPI mapping "Churn" exists with RAG comparator "Budget", direction "lower_is_better", red threshold 1.5, green threshold 1.0
+    And a KPI workbook with sheet "MIS":
+      | KPI   | Jun 2026 |
+      | Churn | 20       |
+    When the workbook is validated for the KPI report
+    Then the validation has no errors
+    And the validation has no warning "rag_red"
+    And the validation has no warning "rag_amber"
+
+  @kpi_validation_ext
+  Scenario: A flat-threshold RAG rule (no comparator) warns without needing an approved Budget
+    Given the KPI mapping "Gross Margin" exists with RAG comparator "none", direction "higher_is_better", red threshold 0.40, green threshold 0.55
+    And a KPI workbook with sheet "MIS":
+      | KPI          | Jun 2026 |
+      | Gross Margin | 0.35     |
     When the workbook is validated for the KPI report
     Then the validation has no errors
     And the validation has warning "rag_red"

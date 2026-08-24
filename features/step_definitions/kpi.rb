@@ -160,22 +160,39 @@ Given('a KPI {string} exists for the kpi report') do |args|
   @kpi.save!
 end
 
-Given('an Investor KPI Mapping for {string} with RAG rules:') do |kpi_name, rag_rules_json|
+# comparator_tag: pass "none" for a flat threshold (no comparator KPI needed) — RAG status then
+# computes automatically the moment the KPI's own value is saved, via Kpi#recompute_rag_status!.
+Given('an Investor KPI Mapping for {string} exists with RAG comparator {string}, direction {string}, red threshold {float}, green threshold {float}') do |kpi_name, comparator_tag, direction, red, green|
   investor_kpi_mapping = InvestorKpiMapping.find_or_initialize_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company, reported_kpi_name: kpi_name)
-  investor_kpi_mapping.rag_rules = JSON.parse(rag_rules_json)
+  investor_kpi_mapping.rag_comparator_tag = comparator_tag == 'none' ? nil : comparator_tag
+  investor_kpi_mapping.rag_direction = direction
+  investor_kpi_mapping.rag_red_threshold = red
+  investor_kpi_mapping.rag_green_threshold = green
   investor_kpi_mapping.save!
-end
-
-When('I compute the RAG status for KPI {string} with tagged KPI tag {string}') do |kpi_name, tagged_kpi_tag|
-  kpi = Kpi.find_by(name: kpi_name)
-  # Re-assign investor_kpi_mapping to ensure it has the latest rag_rules
-  kpi.investor_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: kpi.name, entity: @entity, investor: @portfolio_company)
-  kpi.set_rag_status_from_ratio(tagged_kpi_tag)
 end
 
 Then('the KPI {string} should have RAG status {string}') do |kpi_name, expected_rag_status|
   kpi = Kpi.find_by(name: kpi_name)
   kpi.rag_status.should == expected_rag_status
+end
+
+Then('the KPI {string} should have no RAG status') do |kpi_name|
+  kpi = Kpi.find_by(name: kpi_name)
+  kpi.rag_status.should be_nil
+end
+
+When('I attempt to save an Investor KPI Mapping for {string} with RAG comparator {string}, direction {string}, red threshold {float}, green threshold {float}') do |kpi_name, comparator_tag, direction, red, green|
+  @attempted_mapping = InvestorKpiMapping.find_or_initialize_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company, reported_kpi_name: kpi_name)
+  @attempted_mapping.rag_comparator_tag = comparator_tag == 'none' ? nil : comparator_tag
+  @attempted_mapping.rag_direction = direction
+  @attempted_mapping.rag_red_threshold = red
+  @attempted_mapping.rag_green_threshold = green
+  @attempted_mapping.save
+end
+
+Then('the mapping save should fail with an error about RAG thresholds') do
+  @attempted_mapping.errors.any?.should == true
+  @attempted_mapping.persisted?.should == false
 end
 
 Given('KPI is enabled for the user') do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1467,6 +1467,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.bigint "owner_id"
     t.string "owner_tag", limit: 40
     t.string "owner_type"
+    t.string "pdf_conversion_engine", default: "libreoffice", null: false
     t.boolean "printing"
     t.string "provider_doc_id"
     t.boolean "public_visibility", default: false
@@ -2465,7 +2466,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.json "json_fields"
     t.decimal "lower_threshold", precision: 20, scale: 2, default: "0.0"
     t.integer "position", default: 0
-    t.json "rag_rules"
+    t.string "rag_comparator_tag", limit: 50, default: "Budget"
+    t.string "rag_direction", limit: 20
+    t.decimal "rag_green_threshold", precision: 20, scale: 4
+    t.decimal "rag_red_threshold", precision: 20, scale: 4
     t.string "reported_kpi_name", limit: 100
     t.boolean "show_in_report", default: false
     t.string "standard_kpi_name", limit: 100

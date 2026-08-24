@@ -1005,18 +1005,30 @@ class KpiWorkbookReader
     history = history_before(mapping.id, period_type, tag, parsed_period)
     prev = history.last # [as_of, value] of the most recent prior approved period
 
-    # RAG vs approved Budget for the same period — independent of history.
-    if mapping.rag_rules.present? && same_tag?(tag, 'Actual')
-      budget = approved_value_for(mapping.id, parsed_period, period_type, 'Budget')
-      if budget.present? && !budget.to_d.zero?
-        # Malformed rag_rules (hand-entered JSON) must never break the import — skip the hint instead.
+    # RAG vs the configured comparator (Budget by default, or none for a flat threshold) for the
+    # same period — independent of history. See docs/technical/kpi_rag_rules_redesign.md.
+    if mapping.rag_configured? && same_tag?(tag, 'Actual')
+      comparator_value = nil
+      skip_rag = false
+      if mapping.rag_comparator_tag.present?
+        comparator_value = approved_value_for(mapping.id, parsed_period, period_type, mapping.rag_comparator_tag)
+        skip_rag = comparator_value.blank? || comparator_value.to_d.zero?
+      end
+
+      unless skip_rag
         status = begin
-          Kpi.rag_status_for(value.to_d / budget.to_d, mapping.rag_rules)
+          RagStatusEvaluator.call(value: value.to_d, comparator_value: comparator_value, mapping: mapping)[:status]
         rescue StandardError => e
-          Rails.logger.warn("KpiWorkbookReader: rag_rules on mapping #{mapping.id} could not be evaluated: #{e.message}")
+          Rails.logger.warn("KpiWorkbookReader: RAG rules on mapping #{mapping.id} could not be evaluated: #{e.message}")
           nil
         end
-        add_issue(:warning, :rag_red, "#{prefix}: #{format_number(value)} is in the red band your fund defined against budget (#{format_number(budget)}).", **ctx) if status == 'red'
+        comparator_phrase = mapping.rag_comparator_tag.present? ? " against #{mapping.rag_comparator_tag} (#{format_number(comparator_value)})" : ''
+        case status
+        when 'red'
+          add_issue(:warning, :rag_red, "#{prefix}: #{format_number(value)} is in the red RAG band#{comparator_phrase}.", **ctx)
+        when 'amber'
+          add_issue(:warning, :rag_amber, "#{prefix}: #{format_number(value)} is in the amber RAG band#{comparator_phrase}.", **ctx)
+        end
       end
     end
 
