@@ -3,6 +3,14 @@
 #   Pass 2 – one aggregator per join (pivot or regular)
 # Then merges results into an array of hashes keyed by column key.
 class ReportBuilderQueryEngine
+  # Safety ceiling for the "sort by a computed column" path below — a sort key
+  # that isn't a plain root-model column (a joined/aggregate/pivot/formula
+  # value) can only be applied after pass2 has computed it for every row, so
+  # pagination can't happen in SQL. We still cap how many root rows we'll ever
+  # pull into memory for that path, so a report rooted on a huge table (e.g.
+  # AccountEntry) with a computed sort key can't materialize the whole table.
+  MAX_COMPUTED_SORT_ROWS = 20_000
+
   def initialize(report:, entity:, external_filters: {})
     @report           = report
     @entity           = entity
@@ -12,13 +20,26 @@ class ReportBuilderQueryEngine
   end
 
   # Returns Array<Hash> where each hash is one output row.
-  def run(limit: nil)
+  # limit/offset page the *root* query (pass1) in SQL — the cheap, default path.
+  # computed_sort_cap bounds how many rows the "sort by a computed column" path
+  # (below) will ever pull into memory; pass nil to leave it truly unbounded —
+  # ReportBuilderExportJob does this, since a download must return every row
+  # regardless of sort, not just the first MAX_COMPUTED_SORT_ROWS.
+  def run(limit: nil, offset: nil, computed_sort_cap: MAX_COMPUTED_SORT_ROWS)
     return [] unless config.valid?
 
     @dynamic_columns = []
-    root_records, root_ids = pass1(limit: limit)
-    child_data             = pass2(root_ids)
-    rows                   = merge(root_records, child_data)
+
+    # A sort key that isn't a real root-model column (e.g. a joined/aggregate
+    # GridViewPreference like "capital_commitments.amount") only exists after
+    # merge — apply_sort silently can't order the SQL scope by it. Rather than
+    # keep dropping the sort on the floor, compute the (capped) full dataset,
+    # sort it in memory, then slice out the requested page.
+    return run_with_computed_sort(limit: limit, offset: offset, cap: computed_sort_cap) if computed_sort?
+
+    root_records, root_ids = pass1(limit: limit, offset: offset)
+    child_data              = pass2(root_ids)
+    rows                    = merge(root_records, child_data)
 
     apply_formulas(rows)
   end
@@ -46,6 +67,51 @@ class ReportBuilderQueryEngine
 
   attr_reader :report, :entity, :config
 
+  # Fetches every row up to the safety cap (unbounded pass1/pass2 within that
+  # cap), sorts by the computed key, then hands back just the requested page —
+  # the only way to sort correctly by a value that only exists post-merge.
+  def run_with_computed_sort(limit:, offset:, cap:)
+    root_records, root_ids = pass1(limit: cap)
+    child_data              = pass2(root_ids)
+    rows                    = apply_formulas(merge(root_records, child_data))
+    rows                    = sort_rows(rows)
+    paginate_rows(rows, limit: limit, offset: offset)
+  end
+
+  # True when the configured sort key is not a plain column on the root
+  # model — i.e. it can only be resolved after pass2/merge (a joined column,
+  # an aggregate, a pivot column, or a formula result).
+  def computed_sort?
+    key = sort_key
+    key.present? && config.root_class.column_names.exclude?(key)
+  end
+
+  def sort_key
+    config.sort[:key].to_s.split(";").first&.strip.to_s
+  end
+
+  # In-memory equivalent of apply_sort for keys apply_sort can't reach.
+  # Groups nils first (stable across rows lacking the aggregate/formula value)
+  # and falls back to leaving order untouched if values aren't comparable.
+  def sort_rows(rows)
+    key = sort_key
+    return rows if key.blank?
+
+    sorted = begin
+      rows.sort_by { |r| [r[key].nil? ? 0 : 1, r[key]] }
+    rescue ArgumentError
+      rows
+    end
+
+    config.sort[:dir] == "desc" ? sorted.reverse : sorted
+  end
+
+  def paginate_rows(rows, limit:, offset:)
+    return rows unless limit
+
+    rows[offset.to_i, limit] || []
+  end
+
   def apply_formulas(rows)
     formulas = config.formulas
     return rows if formulas.blank?
@@ -56,7 +122,7 @@ class ReportBuilderQueryEngine
 
   # ── Pass 1 ──────────────────────────────────────────────────────────────
 
-  def pass1(limit: nil)
+  def pass1(limit: nil, offset: nil)
     scope = config.root_class.where(entity_id: entity.id)
 
     merged_filters = config.root_filters.merge(@external_filters)
@@ -64,13 +130,16 @@ class ReportBuilderQueryEngine
 
     scope = apply_sort(scope)
     scope = scope.limit(limit) if limit
+    # SQL-level OFFSET keeps paginated pages from re-loading earlier rows —
+    # only used by run() for the plain-column-sort fast path.
+    scope = scope.offset(offset) if offset
 
     records = scope.to_a
     [records, records.map(&:id)]
   end
 
   def apply_sort(scope)
-    key = config.sort[:key].to_s.split(";").first&.strip.to_s
+    key = sort_key
     dir = config.sort[:dir] == "desc" ? "DESC" : "ASC"
     key.present? && config.root_class.column_names.include?(key) ? scope.order("#{key} #{dir}") : scope
   end

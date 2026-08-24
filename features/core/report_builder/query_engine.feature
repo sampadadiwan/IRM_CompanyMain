@@ -80,3 +80,29 @@ Feature: ReportBuilderQueryEngine — two-pass query orchestration
     Given a report on "Investor" selecting column "investor_name"
     When I run the report engine
     Then the engine columns should include a column with key "investor_name"
+
+  # These cover the "computed sort" path — sort keys that aren't a plain root
+  # column (a joined/aggregate GridViewPreference) can't be ordered in SQL, so
+  # the engine has to compute the full result, sort it in memory, then hand
+  # back the requested page. Previously this kind of sort was silently ignored.
+  Scenario: Sort by a joined aggregate column orders rows correctly
+    Given another investor "Small Investor" with no commitments
+    And a report on "Investor" selecting column "investor_name"
+    And that investor has a capital commitment of 2000000 paise
+    And the second investor has a capital commitment of 500000 paise
+    And the report joins "capital_commitments" with "sum" aggregate on "folio_committed_amount"
+    And the report is sorted by "capital_commitments.folio_committed_amount" "desc"
+    When I run the report engine
+    Then the engine should return 2 rows
+    And the rows should be ordered by "capital_commitments.folio_committed_amount" descending
+
+  Scenario: Limit still applies when sorting by a joined aggregate column
+    Given another investor "Small Investor" with no commitments
+    And a report on "Investor" selecting column "investor_name"
+    And that investor has a capital commitment of 2000000 paise
+    And the second investor has a capital commitment of 500000 paise
+    And the report joins "capital_commitments" with "sum" aggregate on "folio_committed_amount"
+    And the report is sorted by "capital_commitments.folio_committed_amount" "desc"
+    When I run the report engine with a limit of 1
+    Then the engine should return 1 row
+    And the first row's "investor_name" should equal "Sharma Capital"

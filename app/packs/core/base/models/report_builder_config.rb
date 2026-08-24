@@ -37,9 +37,54 @@ class ReportBuilderConfig
     end.present?
   end
 
+  # Display-only currency symbol for the report (e.g. "$", "₹") — no
+  # conversion is applied, this only labels monetized columns. Returns nil
+  # when no currency is configured (the default, matching today's behavior).
+  def currency_symbol
+    return nil if currency.blank?
+
+    Money::Currency.new(currency).symbol
+  rescue StandardError
+    nil
+  end
+
+  # True when `clean_key` (a column key with any "; col-type" suffix already
+  # stripped) resolves — on the root model, or on a model reached by walking
+  # a dotted path of *real* AR associations from the root model (regardless
+  # of whether that relation happens to be in config.joins; display-only, so
+  # there's no injection surface to gate on join configuration here) — to a
+  # Money attribute (a physical "<col>_cents" column with no plain "<col>" column).
+  # Mirrors the identical monetized? helper duplicated in
+  # ReportBuilderChildAggregator/ReportBuilderPivotAggregator, but exposed
+  # here for the display layer (ReportBuilderTable, ReportBuilderXlsxExporter)
+  # which has no other way to know a value came from a monetized attribute.
+  def monetized?(clean_key)
+    klass, bare_col = resolve_column(clean_key)
+    return false unless klass
+
+    klass.column_names.exclude?(bare_col) && klass.column_names.include?("#{bare_col}_cents")
+  end
+
   private
 
   def strip_col_type(key)
     key.split(";").first.strip
+  end
+
+  def resolve_column(clean_key)
+    parts = clean_key.to_s.split(".")
+    bare_col = parts.pop
+    klass = root_class
+
+    parts.each do |part|
+      reflection = klass.reflect_on_association(part.to_sym)
+      return [nil, nil] unless reflection
+
+      klass = reflection.klass
+    end
+
+    [klass, bare_col]
+  rescue StandardError
+    [nil, nil]
   end
 end

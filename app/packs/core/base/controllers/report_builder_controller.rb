@@ -114,9 +114,28 @@ class ReportBuilderController < ApplicationController
       external_filters: params[:q]
     )
 
-    @rows    = engine.run
-    @columns = engine.columns
+    # Report-builder roots include large production tables (AccountEntry,
+    # CapitalDistributionPayment, CapitalRemittance, Document, ...) — rendering
+    # every matching row on one HTML page is exactly the kind of accidental
+    # full-table materialization that's caused memory incidents before.
+    # Paginate here the same way Pagy is used elsewhere in the app; @total
+    # comes from a cheap COUNT query, not from loading the rows.
     @total   = engine.count
+    per_page = (params[:per_page].presence || 100).to_i
+    per_page = 100 unless per_page.positive?
+
+    # Pagy raises (VariableError/OverflowError) for a page outside 1..total_pages
+    # instead of clamping — clamp ourselves so a stale bookmarked page, a filter
+    # change that shrinks @total, or a garbage ?page= param 500s instead of
+    # just showing the nearest valid page.
+    total_pages = @total.zero? ? 1 : (@total.to_f / per_page).ceil
+    page_num    = (params[:page].presence || 1).to_i.clamp(1, total_pages)
+
+    @pagy = Pagy.new(count: @total, page: page_num, items: per_page)
+    limit = @pagy.respond_to?(:limit) ? @pagy.limit : @pagy.vars[:items]
+
+    @rows    = engine.run(limit: limit, offset: @pagy.offset)
+    @columns = engine.columns
 
     # Mimic standard index variables
     @q = @report.root_class.ransack(params[:q])

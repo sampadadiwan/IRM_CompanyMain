@@ -12,7 +12,9 @@ class ReportBuilderExportJob < ApplicationJob
 
       # 1. Generate data
       engine   = ReportBuilderQueryEngine.new(report: report, entity: entity)
-      all_rows = engine.run
+      # computed_sort_cap: nil — a download must contain every matching row
+      # regardless of sort column, not just the first N used for on-screen sorting.
+      all_rows = engine.run(computed_sort_cap: nil)
       exporter = ReportBuilderXlsxExporter.new(report: report, rows: all_rows, columns: engine.columns)
 
       # 2. Save to temporary file

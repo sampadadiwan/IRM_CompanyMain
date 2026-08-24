@@ -39,7 +39,9 @@
           <tr>
             <% @columns.each do |col| %>
               <% val = row[col.key] %>
-              <td class="<%= col.key.include?('num-col') ? 'text-end' : '' %>">
+              <%# "__pivot__" marks a dynamic pivot column (ReportBuilderPivotAggregator) —
+                  numeric like a "num-col", just not caught by that substring alone. %>
+              <td class="<%= (col.key.include?('num-col') || col.key.include?('__pivot__')) ? 'text-end' : '' %>">
                 <%= val.nil? ? "" : val %>
               </td>
             <% end %>

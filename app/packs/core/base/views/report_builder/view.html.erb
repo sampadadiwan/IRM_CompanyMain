@@ -45,10 +45,11 @@
     <div class="card-body p-0">
       <%= render ReportBuilderTable.new(report: @report, columns: @columns, rows: @rows, q: @q) %>
     </div>
-    <div class="card-footer bg-white py-3">
+    <div class="card-footer bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
       <div class="text-muted small">
-        Showing all <%= @rows.size %> records.
+        Showing <%= @rows.size %> of <%= @total %> record<%= @total == 1 ? "" : "s" %>.
       </div>
+      <%== pagy_nav(@pagy) if @pagy.pages > 1 %>
     </div>
   </div>
 </div>

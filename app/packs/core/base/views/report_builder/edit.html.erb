@@ -534,9 +534,13 @@
                           data-report-builder-target="sortKey">
                     <option value="">— none —</option>
                     <% gvps_for_sort = @report.grid_view_preferences.order(:sequence).to_a %>
+                    <%# Joined/aggregate columns (dotted keys) used to be hidden here because
+                        the query engine could only sort SQL-side, on plain root-model columns,
+                        and would silently ignore a dotted key. ReportBuilderQueryEngine now
+                        sorts those in memory after merging (capped for safety on huge roots),
+                        so they're real, working options too. %>
                     <% gvps_for_sort.each do |gvp| %>
                       <% ck = gvp.key.split(";").first.strip %>
-                      <% next if ck.include?(".") %>
                       <option value="<%= ck %>" <%= @config.sort[:key].to_s.split(";").first&.strip == ck ? "selected" : "" %>>
                         <%= gvp.label.presence || gvp.name %>
                       </option>
@@ -554,7 +558,7 @@
               </div>
             </div>
 
-            <div class="mb-0">
+            <div class="mb-3">
               <label class="form-label small fw-bold">Row Grouping (Excel)</label>
               <select class="form-select form-select-sm bg-light border-0"
                       data-action="change->report-builder#groupingChanged"
@@ -568,6 +572,25 @@
                 <% end %>
               </select>
               <div class="form-text small" style="font-size: 0.65rem">Creates collapsible groups in Excel export.</div>
+            </div>
+
+            <div class="mb-0">
+              <label class="form-label small fw-bold">Display Currency</label>
+              <select class="form-select form-select-sm bg-light border-0"
+                      data-action="change->report-builder#currencyChanged"
+                      data-report-builder-target="currency">
+                <option value="">— none —</option>
+                <% Money::Currency.table.values.sort_by { |c| c[:iso_code] }.each do |c| %>
+                  <option value="<%= c[:iso_code] %>" <%= @config.currency.to_s.upcase == c[:iso_code] ? "selected" : "" %>>
+                    <%= c[:iso_code] %> (<%= c[:symbol] %>) — <%= c[:name] %>
+                  </option>
+                <% end %>
+              </select>
+              <%# Display only — no conversion. Just labels monetized (Money) columns
+                  with this symbol in the view, preview, and Excel export. Funds/entities
+                  can hold different currencies, so this never converts amounts — picking
+                  one here is an explicit choice by whoever built the report. %>
+              <div class="form-text small" style="font-size: 0.65rem">Labels monetary columns with this symbol. Display only — amounts are not converted.</div>
             </div>
           </div>
         </div>
