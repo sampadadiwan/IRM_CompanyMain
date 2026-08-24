@@ -10,6 +10,21 @@ class FundAssistant < BaseAssistant
   DESCRIPTION = "I can help you with fund details, capital calls, commitments, remittances, distributions, portfolio investments, and fund ratios.".freeze
   AI_MODEL = ENV.fetch("DEFAULT_MODEL").freeze
 
+  # `default_report_queries` previously fell through to BaseAssistant's empty `[]`, so any
+  # `run_report`/AssistantReportJob run for FundAssistant without an explicit `queries:`
+  # silently produced zero prompts and no output. AssistantReportJob already lists
+  # 'FundAssistant' alongside the other three assistants as a supported report type, so it
+  # needs a real query list like PortfolioAssistant::CROSS_PORTFOLIO_REPORT_QUERIES /
+  # CapitalCommitmentAssistant::MONTHLY_REPORT_QUERIES.
+  FUND_REPORT_QUERIES = [
+    "List all funds with their committed, collected, and distribution amounts. Format as a table.",
+    "Show total committed and total collected amount broken down by fund (use the aggregate group_by feature). Format as a table sorted by committed amount descending.",
+    "List all capital calls due in the next 30 days across all funds, sorted by due date.",
+    "List all unpaid or pending capital remittances across all funds, grouped by fund, with total outstanding amount per fund.",
+    "Show current TVPI and DPI fund ratios for every fund, sorted by TVPI descending.",
+    "Plot a bar chart of total committed amount by fund across the whole platform."
+  ].freeze
+
   # Initializes the FundAssistant.
   #
   # @param user [User] The user for whom the assistant is acting.
@@ -82,5 +97,9 @@ class FundAssistant < BaseAssistant
       Current User ID: #{@user.id}
       Todays Date: #{Time.zone.today}
     SYSTEM
+  end
+
+  def default_report_queries
+    FUND_REPORT_QUERIES
   end
 end

@@ -14,8 +14,13 @@ class CapitalCommitmentAssistant < BaseAssistant
     'Create a monthly LP report for this commitment as of today. Start with a 1-page summary: commitment size, called-to-date, remaining unfunded, distributed-to-date, and net cash flow to date.',
     'Show my commitment details (fund name, investor name, folio, commitment amount, commitment date if available) and highlight any key fields that affect funding/distributions.',
     'What is my remaining unfunded commitment right now, and has it changed since the start of this month?',
-    'List all capital remittances created this month for this commitment. Include: notice date, due date, amount, currency, status, and any reference numbers.',
-    'List all capital remittances due this month (regardless of when they were created). Include amounts and status; group by due date week.',
+    # Due date lives on the associated capital call, not on the remittance itself -- query
+    # via the nested Ransack attribute `capital_call_due_date` (see ListCapitalRemittances'
+    # tool description). Grouping by "due date week" was dropped from the second query below:
+    # perform_aggregation's group_by only supports grouping by an exact column value, not a
+    # date-bucketed week, so that request was unanswerable by any tool regardless of this fix.
+    'List all capital remittances created this month for this commitment. Include: notice date, due date (query capital_call_due_date), amount, currency, status, and any reference numbers.',
+    'List all capital remittances due this month (regardless of when they were created) -- filter with capital_call_due_date_gteq/capital_call_due_date_lteq for this month\'s range. Sort by due date and include a total outstanding amount.',
     'List all unpaid or pending capital remittances for this commitment. Include days past due and total outstanding amount.',
     'List all overdue capital remittances for this commitment, sorted by most overdue first. Provide a total overdue amount at the bottom.',
     'Show the total capital called and total capital paid during this month for this commitment. Present as a table with subtotals.',

@@ -34,6 +34,28 @@ module PortfolioAssistantTools
     end
   end
 
+  # Tool to get a one-call high-level overview of a portfolio company: total invested,
+  # current FMV, latest valuation, and TVPI/RVPI. Added so a single "summarize Company X"
+  # question doesn't have to be answered by chaining GetPortfolioCompanyDetails +
+  # ListValuations + two ListFundRatios calls.
+  class GetPortfolioCompanySnapshot < RubyLLM::Tool
+    def name = "get_portfolio_company_snapshot"
+
+    description "Get a high-level financial snapshot for a specific portfolio company in one call: " \
+                "total invested, current FMV, latest valuation, and TVPI/RVPI multiples. " \
+                "Prefer this over separate detail/valuation/fund-ratio calls for a general company overview."
+    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: true
+
+    def initialize(assistant)
+      super()
+      @assistant = assistant
+    end
+
+    def execute(portfolio_company_id:)
+      @assistant.get_portfolio_company_snapshot(portfolio_company_id: portfolio_company_id).to_json
+    end
+  end
+
   # Tool to get details for a specific portfolio company.
   class GetPortfolioCompanyDetails < RubyLLM::Tool
     def name = "get_portfolio_company_details"
@@ -125,7 +147,9 @@ module PortfolioAssistantTools
                 "Construct a query hash using available attributes and predicates. " \
                 "Attributes: name, value, source. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
-                "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'name asc', limit: 10."
+                "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'name asc', limit: 10. " \
+                "DEFAULTS TO THE LAST 12 MONTHS if no date filter is given. For multi-year/all-time requests, " \
+                "pass query: { all_time_eq: 'true' } or an explicit kpi_report_as_of_gteq."
     param :portfolio_company_ids, type: "array", desc: "The IDs of the portfolio companies", required: true
     param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'actuals', 'budgets', 'ics', 'monthly', 'quarterly', 'yearly', 'ytd'", required: false
     param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false

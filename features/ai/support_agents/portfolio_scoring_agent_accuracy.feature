@@ -36,7 +36,7 @@ Feature: Portfolio Scoring Agent scoring accuracy
   #   participant T as Cucumber
   #   participant PS as PortfolioScoringAgent
   #   participant SA as SupportAgent
-  #   participant LLM as LlmService (live gemini-3-flash-preview)
+  #   participant LLM as LlmService (live gemini-3.7-flash)
   #   participant R as SupportAgentReport
   #   T->>PS: call(support_agent_id:, target: investor)
   #   PS->>SA: skill_for_sector("SaaS")

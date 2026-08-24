@@ -15,7 +15,7 @@
 
 # ─── Dummy Presentation Text ──────────────────────────────────────────────────
 # Realistic investor update text written to Tempfiles and attached to KPI reports.
-# Concise enough to fit comfortably in one gemini-3-flash-preview call while containing
+# Concise enough to fit comfortably in one gemini-3.7-flash call while containing
 # all the signals the extraction and comparator prompts are designed to surface:
 # commitments, risks, dropped initiatives, objective changes, metric trends.
 
@@ -130,15 +130,15 @@ def build_presentation_agent(entity, extra_fields = {})
   SupportAgent.find_or_create_by!(agent_type: "PresentationAnalystAgent", entity: entity) do |a|
     a.name       = "Investor Presentation Analyst"
     a.enabled    = true
-    # gemini-3-flash-preview has a 1M token context window — required for full-document processing.
+    # Needs a large context window for full-document processing.
     # PRD §4.1: "Full document needs to be processed — gemini has a 1M context."
-    a.llm_model  = "gemini-3-flash-preview"
+    a.llm_model  = "gemini-3.7-flash"
     a.json_fields = {
       "presentation_doc_names" => "Investor Update, Board Deck, Management Presentation, Quarterly Update, Investor Presentation",
       "max_periods"            => "8",
       "kpi_tag_list"           => "Actual",
       "comparison_strategy"    => "all_periods",
-      "llm_model"              => "gemini-3-flash-preview",
+      "llm_model"              => "gemini-3.7-flash",
       "enable_scoring"         => "Yes",
       "enable_questions"       => "Yes"
     }.merge(extra_fields)

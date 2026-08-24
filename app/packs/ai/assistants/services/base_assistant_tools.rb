@@ -132,6 +132,12 @@ class BaseAssistantTools
       # Fetch data directly via data manager
       data_results = data_manager.public_send(method_name, query: query, scope: scope, sort: sort, limit: limit)
 
+      # list_* methods can now return { error: "..." } (e.g. an unrecognized/unsupported
+      # `scope`) instead of raising -- that Hash is never `blank?`, so without this check it
+      # would fall through into generate_chart_html as if it were real chart data, silently
+      # rendering/summarizing a chart from an error payload instead of surfacing the error.
+      return RubyLLM::Content.new("Error: #{data_results[:error]}") if data_results.is_a?(Hash) && data_results[:error].present?
+
       return RubyLLM::Content.new("No data found for the given query to plot a chart.") if data_results.blank?
 
       # Generate chart HTML

@@ -6,7 +6,10 @@
 #   SupportAgentsSetupService.new(entity_id).call
 #   SupportAgentsSetupService.new(entity_id, output: Rails.logger).call
 class SupportAgentsSetupService
-  DEFAULT_LLM_MODEL = "gemini-3-flash-preview".freeze
+  # Written to SupportAgent#llm_model for every newly-created agent (see setup_agent below).
+  # Existing agents are never touched by a re-run -- their llm_model is left as whatever the
+  # user configured, same as json_fields' merge-without-overwrite behavior.
+  DEFAULT_LLM_MODEL = "gemini-3.7-flash".freeze
 
   # Extraction rule templates for KycDocExtractorAgent.
   # Applied dynamically at setup time, keyed by the entity's actual KYC FormType IDs.
@@ -415,7 +418,7 @@ class SupportAgentsSetupService
           "max_periods" => "8",
           "kpi_tag_list" => "Actual",
           "comparison_strategy" => "all_periods",
-          "llm_model" => "gemini-3-flash-preview",
+          "llm_model" => "gemini-3.7-flash",
           "chat_config" => { "enabled" => "true" }
         },
         schedule: {
@@ -453,7 +456,7 @@ class SupportAgentsSetupService
           field_type: "TextField", label: "LLM model", meta_data: "", position: 5,
           help_text: "LLM model name used for all extraction, comparison, and question-generation calls. " \
                      "Must support a large context window (≥500K tokens) to process full presentations " \
-                     "without truncation. Default: gemini-3-flash-preview (1M token context)." }
+                     "without truncation. Default: gemini-3.7-flash." }
       ]
     },
 

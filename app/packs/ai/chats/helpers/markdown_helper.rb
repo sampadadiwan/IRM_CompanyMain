@@ -31,6 +31,7 @@ module MarkdownHelper
     scrubber.attributes = %w[
       href title src alt
       class id width height
+      target rel
       data-controller
       data-chart-renderer-spec-value
       data-chart-renderer-target

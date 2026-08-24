@@ -199,7 +199,7 @@ def create_scoring_agent_with_real_rubric(entity)
     enabled:     true,
     category:    "Portfolio",
     # Pinned so an entity/ENV default change cannot silently move the model under us.
-    llm_model:   "gemini-3-flash-preview",
+    llm_model:   "gemini-3.7-flash",
     json_fields: scoring_agent_template.fetch(:json_fields)
   )
 

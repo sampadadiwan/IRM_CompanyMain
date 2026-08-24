@@ -29,6 +29,7 @@ Support Agents are AI-powered automation tools that run checks, extract data, ge
    - [Portfolio Scoring Agent](#7-8-portfolio-scoring-agent)
    - [Deals Report Agent](#7-9-deals-report-agent)
    - [Investor Presentation Analyst](#7-10-investor-presentation-analyst)
+   - [Portfolio Assistant](#7-11-portfolio-assistant)
 8. [FAQ](#8-faq)
 9. [AI Governance & Compliance FAQ](#9-ai-governance--compliance-faq)
 
@@ -425,6 +426,33 @@ Reads investor presentations (PDF, PPTX, DOCX) attached to KPI reports across pe
 **Recommended schedule:** Monthly on the 1st at 06:00, so briefings are ready before board meetings.
 
 **Note:** The chat panel can be enabled on this agent (Chat tab) to let fund managers ask follow-up questions about the analysis in natural language.
+
+---
+
+### 7.11 Portfolio Assistant
+
+**Category:** Portfolio
+
+A conversational assistant, not a scheduled checker — it answers questions about your portfolio companies on demand instead of producing a periodic report. Ask it about valuations, investment transactions, cap tables, KPIs, fund performance ratios, and documents, and it replies in plain language with tables, links back to the underlying records, and charts when you ask for one.
+
+**Where to find it:**
+
+- On the Investors index page, the chat bubble answers questions across your **entire portfolio** — e.g. "which companies had a valuation increase last quarter?" or "show total invested by company."
+- On an individual portfolio company's page, the chat bubble is scoped to **that company only** — e.g. "summarize this company's performance" or "list its last 10 investment transactions."
+
+**What it can answer:**
+
+- Company lookups and details (sector, tags, city, primary contact).
+- A quick financial snapshot for one company: total invested, current fair market value, latest valuation, and TVPI/RVPI.
+- Valuation history and trends, including line/bar charts.
+- Investment transaction history (buys, sells, conversions) and cap table ownership breakdowns.
+- KPI trends (e.g. Revenue, EBITDA) — by default it looks at the last 12 months; ask for "all time" or a specific date range for longer history.
+- Fund performance ratios (TVPI, RVPI, and similar multiples).
+- Document lookup, including reading the content of a specific document to answer a question about it.
+
+**Configuration fields:** none beyond the standard AI Model override — this agent has no report schedule or check toggles since it responds to questions rather than running checks.
+
+**Tip:** Every record the assistant references links back to that record's page, so you can jump straight from a chat answer to the underlying valuation, investment, or document.
 
 ---
 

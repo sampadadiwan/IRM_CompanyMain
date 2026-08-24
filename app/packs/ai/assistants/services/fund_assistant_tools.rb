@@ -198,13 +198,15 @@ class FundAssistantTools < BaseAssistantTools
 
   # Tool to list payments received from capital distributions.
   class ListCapitalDistributionPayments < RubyLLM::Tool
-    description "List capital distribution payments. Can be filtered by fund_ids, folio_ids, or scope. fund_ids and folio_ids are optional. fund_ids is not required if folio_ids is provided. At least one filter must be used. " \
+    description "List capital distribution payments. Can be filtered by fund_ids, folio_ids, scope, or a Ransack query. fund_ids and folio_ids are optional. fund_ids is not required if folio_ids is provided. At least one filter must be used. " \
+                "Attributes for query: payment_date, net_payable, gross_payable, units_quantity. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'payment_date desc', limit: 10."
     param :fund_ids, type: "array", desc: "Filter by fund IDs", required: false
     param :folio_ids, type: "array", desc: "Filter by folio IDs", required: false
     param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'completed', 'incomplete', 'notification_sent', 'notification_not_sent'", required: false
     param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
     param :group_by_field, type: :string, desc: "Field to group results by", required: false
+    param :query, type: :object, desc: "Ransack query hash, e.g. { payment_date_gteq: '2024-01-01' }", required: false
     param :sort, type: :string, desc: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`)", required: false
     param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
     param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
@@ -214,13 +216,14 @@ class FundAssistantTools < BaseAssistantTools
       @assistant = assistant
     end
 
-    def execute(fund_ids: nil, folio_ids: nil, scope: nil, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
-      return { error: "At least one filter (fund_ids, folio_ids, or scope) or aggregate must be provided for list_capital_distribution_payments as the dataset is too large." }.to_json if fund_ids.blank? && folio_ids.blank? && scope.blank? && aggregate.blank?
+    def execute(fund_ids: nil, folio_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
+      return { error: "At least one filter (fund_ids, folio_ids, scope, or query) or aggregate must be provided for list_capital_distribution_payments as the dataset is too large." }.to_json if fund_ids.blank? && folio_ids.blank? && scope.blank? && (query.blank? || query.values.all?(&:blank?)) && aggregate.blank?
 
-      # We pass aggregate_field and group_by inside query for the data manager
-      query = { aggregate_field: aggregate_field, group_by: group_by_field }.compact
+      q = (query || {}).with_indifferent_access
+      q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
+      q[:group_by] ||= group_by_field if group_by_field.present?
 
-      @assistant.list_capital_distribution_payments(fund_ids: fund_ids, folio_ids: folio_ids, scope: scope, sort: sort, limit: limit, aggregate: aggregate, query: query).to_json
+      @assistant.list_capital_distribution_payments(fund_ids: fund_ids, folio_ids: folio_ids, scope: scope, sort: sort, limit: limit, aggregate: aggregate, query: q).to_json
     end
   end
 

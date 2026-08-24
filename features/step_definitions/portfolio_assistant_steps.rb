@@ -24,7 +24,7 @@ Given('a SupportAgent of type {string} exists for the entity') do |agent_type|
     name: agent_type.underscore.humanize,
     agent_type: agent_type,
     enabled: true,
-    llm_model: 'gemini-3-flash-preview',
+    llm_model: 'gemini-3.7-flash',
     json_fields: {
       'chat_config' => { 'enabled' => true }
     }

@@ -29,7 +29,7 @@ Feature: Customer Support Escalation Flow
     And I should see a message about being connected to the support team
 
   Scenario: Auto-escalate only fires for CustomerSupportAgent
-    Given a different support agent exists with agent_type "PortfolioAssistant"
+    Given a different support agent exists with agent_type "PortfolioAssistantAgent"
     And I am logged in as the fund manager user
     When the agent exceeds the maximum tool iterations
     Then no CustomerSupportEscalation should be created
