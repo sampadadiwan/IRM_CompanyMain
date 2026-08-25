@@ -141,6 +141,16 @@
                         </td>
                      </tr>
 
+                     <% if @document.template && @document.pdf_conversion_engine != "libreoffice" %>
+                        <tr>
+                           <td>
+                              PDF Conversion Engine
+                           </td>
+                           <td>
+                              <%= @document.pdf_conversion_engine.titleize %>
+                           </td>
+                        </tr>
+                     <% end %>
 
                      <tr>
                         <td>
