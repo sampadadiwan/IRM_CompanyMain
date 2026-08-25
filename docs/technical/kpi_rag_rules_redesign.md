@@ -261,7 +261,10 @@ typed/validated columns rather than free-form JSON.
 
 - ~~Does the comparator mean same-period-last-year or MoM?~~ Resolved by making
   `rag_comparator_tag` a free-text tag (§3.2) — the fund's own tagging convention decides; the
-  system doesn't need to know.
+  system doesn't need to know. **Partially revisited** by the PriorPeriod comparator (§8 below):
+  for the common case of "judge this period against the immediately preceding one," the system
+  now does resolve it — by DB order, not calendar arithmetic — rather than requiring the fund to
+  maintain a duplicate tagged row purely to satisfy the RAG check.
 - **Still open:** `Kpi#rag_status`'s manual-override dropdown (`views/kpis/_form.html.erb`) still
   exists, but a manual edit will be silently overwritten the next time that KPI's value or its
   comparator's value is saved (Phase 3's `after_save` always recomputes). Worth deciding whether
@@ -273,3 +276,97 @@ typed/validated columns rather than free-form JSON.
   separate mechanisms.
 - Trend-based rules ("flag red after N consecutive declining periods") remain out of scope, as
   before.
+
+---
+
+## 8. Addendum: prior-period comparator
+
+Added after the Phase 1–5 build above, in response to a real gap: the `PriorYear` worked example
+(§4) requires a fund to upload a *second*, separately-tagged report for the same `as_of` date
+just to give the actual something to be judged against — duplicating a value that's typically
+already sitting in the DB as last month's/quarter's/year's own actual report. This addendum adds
+a way to judge a KPI against *itself*, one period back, using data that's already there.
+
+### 8.1 What it is
+
+`InvestorKpiMapping::PRIOR_PERIOD_COMPARATOR` (`"PriorPeriod"`) — a reserved value for
+`rag_comparator_tag`, alongside real tag strings like `"Budget"`/`"PriorYear"` and blank
+(flat-threshold mode). It means: *compare this KPI's value against the same KPI's own most
+recent earlier report* — same `name`, same `tag_list` (so an Actual is only ever judged against
+a prior Actual, never a Budget row), same `period` cadence, most recent `as_of` strictly before
+this one.
+
+Deliberately **not** period arithmetic: it does not compute "as_of minus one month" (or quarter,
+or year) and look for a row at that exact date. It walks to whatever the immediately-preceding
+row in the DB actually is, ordered by `as_of`. This keeps the same philosophy as the tag-based
+comparators (§7's "the system doesn't need to know" resolution) — the fund's own reporting
+cadence decides which dates exist; the comparator just asks "what came before this, in this
+series," not "what calendar date should have come before this."
+
+### 8.2 Implementation
+
+- `InvestorKpiMapping#rag_comparator_prior_period?` — `rag_comparator_tag ==
+  PRIOR_PERIOD_COMPARATOR`.
+- `Kpi#find_prior_period_kpi` / `Kpi#find_next_period_kpi` (`app/packs/startups/kpis/models/kpi.rb`)
+  — the backward and forward lookups, mirrors of each other.
+- `Kpi#recompute_rag_status!` branches on `rag_comparator_prior_period?` before falling through to
+  the existing `find_tagged_kpi` (same-`as_of`) path — the rest of the method, and
+  `RagStatusEvaluator` itself, is unchanged; the evaluator never learns where `comparator_value`
+  came from.
+- `Kpi#recompute_dependent_rag_statuses!` also branches: the same-`as_of` sibling fan-out doesn't
+  apply here (there's no sibling at the same date to find), so instead it recomputes only
+  `find_next_period_kpi` — the one row that could newly have a comparator now that this one was
+  saved. This covers backfill: if February's actual is entered before January's, February starts
+  with no RAG status (no prior period yet), and saving January's actual afterwards cascades
+  forward to recompute February's.
+- `KpiWorkbookReader#plausibility_checks` (upload-time warning path) reuses `history_before`'s
+  `prev` value — already computed for the denomination/jump checks on the same row — as the
+  PriorPeriod comparator value, rather than issuing a second query.
+- Mapping form (`investor_kpi_mappings/_form.html.erb`): offered as a fixed dropdown option
+  ("Prior period (this KPI's own last report)"), listed separately from the tags sourced off
+  `KpiReport.tag_list` so it can't collide with a fund that happens to use that literal string as
+  a real tag.
+
+### 8.3 What this does not change
+
+- Tag-based comparators (`Budget`, `PriorYear`, any custom tag) work exactly as before — this is
+  an additional `rag_comparator_tag` value, not a replacement.
+- `RagStatusEvaluator` is untouched: `rag_comparator_tag.present?` is still the branch condition
+  for "ratio against a comparator" vs. "judge the raw value," and `"PriorPeriod"` is non-blank, so
+  it already takes the ratio branch with no evaluator change needed.
+- Cross-period-type comparisons are still not possible: `find_prior_period_kpi` filters on
+  `kpi_reports.period`, so a `month`-period KPI is never compared against a `quarter`-period row
+  for the same name.
+
+### 8.4 Approved-only, both directions
+
+Building the PriorPeriod comparator surfaced a live gap in the original Phase 3 build: neither
+`Kpi#recompute_rag_status!` nor its comparator lookup (`find_tagged_kpi`) checked `status` at
+all, so an unapproved (staging) row could get a `rag_status` of its own, and — separately — could
+be silently used as another KPI's comparator, ahead of a fund actually confirming the figure.
+This wasn't a risk unique to PriorPeriod (`find_tagged_kpi` had the exact same gap from Phase 3
+onward); PriorPeriod just made it obvious, since a fund's own prior report is far more likely to
+have a pending unapproved re-upload sitting next to it than a same-`as_of` Budget row is. Fixed
+in both directions:
+
+- **A KPI is only ever judged if it's approved.** `recompute_rag_status!` returns early unless
+  `approved?`, and — more importantly — the `after_save` trigger (`rag_recompute_trigger?`) is
+  gated on `approved?` up front, so an unapproved row's value changing (the common case: every
+  row of an import, before review) never even invokes recompute. This mirrors the grid's existing
+  display convention (`kpi_reports/_grid_view_table.html.erb`): unapproved rows are hidden by
+  default and only shown under `view_unapproved`, so an un-reviewed figure was never meant to
+  carry a confident-looking flag in the first place.
+- **A KPI is only ever used as a comparator if it's approved.** `find_tagged_kpi` and
+  `find_prior_period_kpi` are both `Kpi.approved`-scoped now, matching what
+  `KpiWorkbookReader#approved_index` (the upload-time path) had already been doing since Phase 1
+  — the live and upload-time paths were quietly inconsistent on this point until now.
+  `find_next_period_kpi` is deliberately **not** approved-scoped: it isn't a comparator lookup,
+  it's "which dependent KPI might need recomputing" — that dependent's own `recompute_rag_status!`
+  re-applies the approved-only rule to itself when it runs.
+- **Approving a KPI can newly produce or unlock a status**, since `KpiApprover` approves by
+  flipping `status`, not `value` (except when it's overwriting an already-approved record, which
+  does change `value`). `rag_recompute_trigger?` fires on `saved_change_to_status?` as well as
+  `saved_change_to_value?`, so: approving a KPI computes its own status for the first time if
+  eligible, and approving a comparator (e.g. Budget, or an earlier PriorPeriod report) cascades
+  forward via `recompute_dependent_rag_statuses!` to unlock whatever depends on it — without that
+  dependent's own value needing to change again.

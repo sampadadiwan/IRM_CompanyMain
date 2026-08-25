@@ -44,6 +44,24 @@
     </td>
   </tr>
 
+  <%# rag_status is only ever set by Kpi#recompute_rag_status! when investor_kpi_mapping is
+      present and rag_configured? (see app/packs/startups/kpis/models/kpi.rb), and the
+      investor_kpi_mappings FK has no ON DELETE, so a mapping can't be destroyed while a KPI
+      still references it — investor_kpi_mapping is guaranteed present whenever rag_status is. %>
+  <% if @kpi.rag_status.present? %>
+  <tr>
+    <td>
+      RAG Status
+    </td>
+    <td>
+      <span class="badge <%= rag_status_badge_class(@kpi.rag_status) %>"><%= @kpi.rag_status.titleize %></span>
+      <div class="form-text text-muted">
+        <%= @kpi.investor_kpi_mapping.rag_rule_summary %>
+      </div>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       Status

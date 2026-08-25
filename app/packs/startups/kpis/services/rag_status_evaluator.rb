@@ -4,6 +4,12 @@
 # Called from both Kpi#recompute_rag_status! (the live, persisted path) and
 # KpiWorkbookReader#plausibility_checks (the upload-time warning). See
 # docs/technical/kpi_rag_rules_redesign.md.
+#
+# This operation doesn't know or care *how* comparator_value was resolved — the caller may have
+# matched it by tag (Budget/PriorYear, same as_of) or, when mapping.rag_comparator_prior_period?
+# is true, by walking to the KPI's own most recent prior report (see the "Addendum: prior-period
+# comparator" section of the doc above). Either way rag_comparator_tag.present? is true (the
+# reserved sentinel string is non-blank), so both paths take the same ratio-based branch below.
 class RagStatusEvaluator < Trailblazer::Operation
   step :evaluate
 

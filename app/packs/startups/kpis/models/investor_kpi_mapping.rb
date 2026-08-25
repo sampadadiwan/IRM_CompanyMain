@@ -5,6 +5,15 @@ class InvestorKpiMapping < ApplicationRecord
 
   HIGHLIGHT_KPI_CF = "highlight_kpi".freeze
 
+  # Reserved `rag_comparator_tag` value meaning "compare against this same KPI's own most recent
+  # prior report" (same name, same tag_list, earlier as_of) rather than "compare against a
+  # same-as_of sibling carrying this literal tag" (e.g. "Budget", "PriorYear"). It intentionally
+  # collides with the free-text tag namespace (a fund could in principle tag a report literally
+  # "PriorPeriod"), which is why the dropdown in the mapping form offers it as a distinct fixed
+  # option rather than sourcing it from KpiReport.tag_list values like the real tags are. See
+  # "Addendum: prior-period comparator" in docs/technical/kpi_rag_rules_redesign.md.
+  PRIOR_PERIOD_COMPARATOR = "PriorPeriod".freeze
+
   belongs_to :entity
   belongs_to :investor
   acts_as_list scope: :investor, add_new_at: :bottom
@@ -69,11 +78,24 @@ class InvestorKpiMapping < ApplicationRecord
     rag_direction.present? && rag_red_threshold.present? && rag_green_threshold.present?
   end
 
+  # True when this mapping's comparator is "this KPI's own prior report", not a same-as_of
+  # sibling tagged e.g. "Budget"/"PriorYear". See PRIOR_PERIOD_COMPARATOR above.
+  def rag_comparator_prior_period?
+    rag_comparator_tag == PRIOR_PERIOD_COMPARATOR
+  end
+
   # Plain-language rendering of the configured rule, for show/index views and the edit form.
   def rag_rule_summary
     return "Not configured" unless rag_configured?
 
-    comparator_phrase = rag_comparator_tag.present? ? " of #{rag_comparator_tag}" : ""
+    comparator_phrase =
+      if rag_comparator_prior_period?
+        " of the prior period"
+      elsif rag_comparator_tag.present?
+        " of #{rag_comparator_tag}"
+      else
+        ""
+      end
     if higher_is_better?
       "Red below #{rag_red_threshold}#{comparator_phrase} · Green at or above #{rag_green_threshold}#{comparator_phrase}"
     else

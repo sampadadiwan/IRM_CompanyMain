@@ -1,6 +1,8 @@
 Feature: KPI RAG status — real-world rule patterns
   Extends the single "ratio vs Budget" example in kpis.feature with the other rule shapes funds
-  actually use, and the live-computation behavior added in Phase 3 of the redesign. Reference:
+  actually use, the live-computation behavior added in Phase 3 of the redesign, and the
+  PriorPeriod comparator added afterwards (judging a KPI against its own most recent earlier
+  report, already in the DB, instead of a separately tagged upload). Reference:
   docs/technical/kpi_rag_rules_redesign.md.
 
   RAG status is computed automatically the moment a KPI's own value (or its comparator's value)
@@ -88,6 +90,67 @@ Feature: KPI RAG status — real-world rule patterns
     And a KPI "name=Revenue;value=0" exists for the kpi report
     And a KpiReport "as_of=2024-01-01;period=YTD" exists for the entity
     And a KPI "name=Revenue;value=100" exists for the kpi report
+    Then the KPI "Revenue" should have RAG status "red"
+
+  @rag_status
+  Scenario: Revenue judged against its own prior period, already in the DB, no separate tagged upload needed
+    Given an Investor KPI Mapping for "Revenue" exists with RAG comparator "PriorPeriod", direction "higher_is_better", red threshold 0.95, green threshold 1.00
+    And a KpiReport "as_of=2024-01-31;period=month" exists for the entity
+    And a KPI "name=Revenue;value=100" exists for the kpi report
+    And a KpiReport "as_of=2024-02-28;period=month" exists for the entity
+    And a KPI "name=Revenue;value=90" exists for the kpi report
+    Then the KPI "Revenue" should have RAG status "red"
+
+  @rag_status
+  Scenario: Prior-period RAG status recomputes automatically once the earlier period arrives after the later one
+    Given an Investor KPI Mapping for "Revenue" exists with RAG comparator "PriorPeriod", direction "higher_is_better", red threshold 0.95, green threshold 1.00
+    And a KpiReport "as_of=2024-02-28;period=month" exists for the entity
+    And a KPI "name=Revenue;value=90" exists for the kpi report
+    Then the KPI "Revenue" should have no RAG status
+    Given a KpiReport "as_of=2024-01-31;period=month" exists for the entity
+    And a KPI "name=Revenue;value=100" exists for the kpi report
+    Then the KPI "Revenue" should have RAG status "red"
+
+  @rag_status
+  Scenario: A zero-valued prior period forces a red status under the PriorPeriod comparator too
+    Given an Investor KPI Mapping for "Revenue" exists with RAG comparator "PriorPeriod", direction "higher_is_better", red threshold 0.95, green threshold 1.00
+    And a KpiReport "as_of=2024-01-31;period=month" exists for the entity
+    And a KPI "name=Revenue;value=0" exists for the kpi report
+    And a KpiReport "as_of=2024-02-28;period=month" exists for the entity
+    And a KPI "name=Revenue;value=100" exists for the kpi report
+    Then the KPI "Revenue" should have RAG status "red"
+
+  @rag_status
+  Scenario: An unapproved comparator is not used — approving it retroactively unlocks the RAG status
+    Given an Investor KPI Mapping for "Revenue" exists with RAG comparator "Budget", direction "higher_is_better", red threshold 0.7, green threshold 0.9
+    And a KpiReport "as_of=2024-01-01;period=YTD;tag_list=Budget" exists for the entity
+    And a KPI "name=Revenue;value=120;status=unapproved" exists for the kpi report
+    And a KpiReport "as_of=2024-01-01;period=YTD" exists for the entity
+    And a KPI "name=Revenue;value=100" exists for the kpi report
+    Then the KPI "Revenue" should have no RAG status
+    When the KPI "Revenue" tagged "Budget" is approved
+    Then the KPI "Revenue" should have RAG status "amber"
+
+  @rag_status
+  Scenario: An unapproved KPI has no RAG status of its own, even with an approved comparator already in place
+    Given an Investor KPI Mapping for "Revenue" exists with RAG comparator "Budget", direction "higher_is_better", red threshold 0.7, green threshold 0.9
+    And a KpiReport "as_of=2024-01-01;period=YTD;tag_list=Budget" exists for the entity
+    And a KPI "name=Revenue;value=120" exists for the kpi report
+    And a KpiReport "as_of=2024-01-01;period=YTD" exists for the entity
+    And a KPI "name=Revenue;value=100;status=unapproved" exists for the kpi report
+    Then the KPI "Revenue" should have no RAG status
+    When the KPI "Revenue" tagged "Actual" is approved
+    Then the KPI "Revenue" should have RAG status "amber"
+
+  @rag_status
+  Scenario: An unapproved prior period is not used — approving it retroactively unlocks the later period's RAG status
+    Given an Investor KPI Mapping for "Revenue" exists with RAG comparator "PriorPeriod", direction "higher_is_better", red threshold 0.95, green threshold 1.00
+    And a KpiReport "as_of=2024-01-31;period=month" exists for the entity
+    And a KPI "name=Revenue;value=100;status=unapproved" exists for the kpi report
+    And a KpiReport "as_of=2024-02-28;period=month" exists for the entity
+    And a KPI "name=Revenue;value=90" exists for the kpi report
+    Then the KPI "Revenue" should have no RAG status
+    When the KPI "Revenue" as of "2024-01-31" is approved
     Then the KPI "Revenue" should have RAG status "red"
 
   @rag_status

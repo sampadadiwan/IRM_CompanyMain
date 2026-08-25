@@ -51,7 +51,9 @@ class KpisController < ApplicationController
   # GET /kpis/1 or /kpis/1.json
   def show
     @bread_crumbs = { Kpis: kpis_path }
-    if @kpi.kpi_report.present?
+    # A KpiReport can exist with no portfolio_company_id (legacy/orphaned data) — guard on the
+    # association itself, not just kpi_report.present?, so this doesn't 500 on those rows.
+    if @kpi.kpi_report&.portfolio_company.present?
       @bread_crumbs[@kpi.kpi_report.portfolio_company.investor_name.to_s] = investor_path(@kpi.kpi_report.portfolio_company)
       @bread_crumbs[@kpi.kpi_report.as_of.to_s] = kpi_report_path(@kpi.kpi_report)
     end
@@ -63,7 +65,9 @@ class KpisController < ApplicationController
     @kpi = Kpi.new(kpi_params)
     @kpi.entity_id = current_user.entity_id
     @bread_crumbs = { Kpis: kpis_path }
-    if @kpi.kpi_report.present?
+    # A KpiReport can exist with no portfolio_company_id (legacy/orphaned data) — guard on the
+    # association itself, not just kpi_report.present?, so this doesn't 500 on those rows.
+    if @kpi.kpi_report&.portfolio_company.present?
       @bread_crumbs[@kpi.kpi_report.portfolio_company.investor_name.to_s] = investor_path(@kpi.kpi_report.portfolio_company)
       @bread_crumbs[@kpi.kpi_report.as_of.to_s] = kpi_report_path(@kpi.kpi_report)
     end
@@ -76,7 +80,9 @@ class KpisController < ApplicationController
   # GET /kpis/1/edit
   def edit
     @bread_crumbs = { Kpis: kpis_path }
-    if @kpi.kpi_report.present?
+    # A KpiReport can exist with no portfolio_company_id (legacy/orphaned data) — guard on the
+    # association itself, not just kpi_report.present?, so this doesn't 500 on those rows.
+    if @kpi.kpi_report&.portfolio_company.present?
       @bread_crumbs[@kpi.kpi_report.portfolio_company.investor_name.to_s] = investor_path(@kpi.kpi_report.portfolio_company)
       @bread_crumbs[@kpi.kpi_report.as_of.to_s] = kpi_report_path(@kpi.kpi_report)
     end

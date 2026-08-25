@@ -1005,12 +1005,18 @@ class KpiWorkbookReader
     history = history_before(mapping.id, period_type, tag, parsed_period)
     prev = history.last # [as_of, value] of the most recent prior approved period
 
-    # RAG vs the configured comparator (Budget by default, or none for a flat threshold) for the
-    # same period — independent of history. See docs/technical/kpi_rag_rules_redesign.md.
+    # RAG vs the configured comparator (Budget by default, prior period, or none for a flat
+    # threshold) for the same period — independent of the denomination/jump history checks below.
+    # See docs/technical/kpi_rag_rules_redesign.md and its "Addendum: prior-period comparator".
     if mapping.rag_configured? && same_tag?(tag, 'Actual')
       comparator_value = nil
       skip_rag = false
-      if mapping.rag_comparator_tag.present?
+      if mapping.rag_comparator_prior_period?
+        # `prev` was already computed above (history_before, same tag as this row) for the
+        # jump/denomination checks — reuse it rather than re-querying.
+        comparator_value = prev&.last
+        skip_rag = comparator_value.blank? || comparator_value.to_d.zero?
+      elsif mapping.rag_comparator_tag.present?
         comparator_value = approved_value_for(mapping.id, parsed_period, period_type, mapping.rag_comparator_tag)
         skip_rag = comparator_value.blank? || comparator_value.to_d.zero?
       end
@@ -1022,7 +1028,14 @@ class KpiWorkbookReader
           Rails.logger.warn("KpiWorkbookReader: RAG rules on mapping #{mapping.id} could not be evaluated: #{e.message}")
           nil
         end
-        comparator_phrase = mapping.rag_comparator_tag.present? ? " against #{mapping.rag_comparator_tag} (#{format_number(comparator_value)})" : ''
+        comparator_phrase =
+          if mapping.rag_comparator_prior_period?
+            " against the prior period (#{format_number(comparator_value)})"
+          elsif mapping.rag_comparator_tag.present?
+            " against #{mapping.rag_comparator_tag} (#{format_number(comparator_value)})"
+          else
+            ''
+          end
         case status
         when 'red'
           add_issue(:warning, :rag_red, "#{prefix}: #{format_number(value)} is in the red RAG band#{comparator_phrase}.", **ctx)

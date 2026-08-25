@@ -221,3 +221,61 @@ disappears.
 - **The armed marker**: one AMI boots primaries, replicas and verifiers; only
   the true primary may write to a backup chain, and "truth" is established by
   the restore itself.
+
+## 11. Proposed enhancement: backup size sanity checks (not yet implemented)
+
+`DbBackupFreshnessJob` (§6) only asks "did *something* land on schedule?" —
+it never opens a backup to see what's inside. That misses a distinct failure
+mode: a backup that runs on time and lands in S3, but is truncated, empty, or
+corrupt (disk full mid-upload, xtrabackup crashing after writing only
+metadata, a source read failure producing a near-empty dump). A 0-byte or
+dramatically undersized "full" backup currently passes the freshness check
+with a green ✓.
+
+**Evidence this is checkable in practice** — sizes pulled directly from both
+prod buckets (listing objects under a single backup's prefix):
+
+| | Full backups (3 most recent) | Incrementals (3 most recent) |
+|---|---|---|
+| IN | 1370.0 / 1369.6 / 1371.5 MB | 3.0 / 5.1 / 6.0 MB |
+| US | 23.1 / 23.1 / 23.2 MB | 1.1 / 1.1 / 1.1 MB |
+
+Full backups are remarkably stable day-to-day (±0.2%) — a relative-drop check
+on fulls would have very low false-positive risk. Incrementals are noisier
+(activity-dependent), so they need a looser check.
+
+**Plan when this gets picked up:**
+
+1. **What to check** — extend `check_bucket` (primary bucket only; the
+   replica mirrors primary, so checking it too would double the cost and the
+   alerts for no new signal) with two checks alongside the existing age
+   check:
+   - **Absolute floor**: fail if the latest full or incremental totals near-
+     zero (e.g. <1MB) — catches a fully failed/empty upload regardless of
+     history, no baseline needed.
+   - **Relative drop**: compare the latest backup's total size against the
+     **median** (not mean, to resist one anomalous data point skewing the
+     baseline) of the last N same-type backups — full-vs-full,
+     incr-vs-incr, never mixed.
+2. **How to get sizes cheaply** — today's job only lists common *prefixes*
+   (delimiter-scoped `list_objects_v2`, deliberately cheap — see the class
+   comment on object layout). Getting a size means listing objects *within*
+   one prefix (no delimiter, paginated) for just the N most recent full/incr
+   prefixes — bounded cost. IN's full backups run ~790 objects each; a few
+   extra paginated list calls per run is negligible next to S3 list pricing.
+   No persistent state file is needed — recompute the baseline fresh from S3
+   each run, matching this job's existing "derive everything live" design
+   (self-healing, nothing to get out of sync between runs).
+3. **Thresholds** (needs sign-off before implementing, not yet decided):
+   - Fulls: N=3 for the baseline (matches the stability observed above) —
+     WARN below ~70% of median, FAIL below ~40%.
+   - Incrementals: start with **just the absolute floor**, not a relative
+     check — a relative threshold tight enough to be useful would also be
+     tight enough to false-positive on a quiet traffic hour.
+4. **Rollout** — ship as WARN/log-only first (not wired into the same
+   `ExceptionNotifier.notify_exception` path that pages someone) for a week
+   or two, to see real-world noise before it can page anyone. A false alarm
+   on "size looks small" is worse than a slightly delayed real catch.
+5. **Open questions**: whether to check incrementals at all in v1, and
+   whether 70%/40% are the right thresholds once observed against more days
+   of real data.

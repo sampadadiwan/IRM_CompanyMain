@@ -106,12 +106,21 @@
   </div>
 
   <div class="collapse<%= ' show' if investor_kpi_mapping.rag_configured? %>" id="rag_rules_section">
-    <% rag_tag_options = (["Budget"] + KpiReport.where(portfolio_company_id: investor_kpi_mapping.investor_id).distinct.pluck(:tag_list)).compact_blank.uniq.sort %>
+    <%
+      # Real fund tags (Budget/PriorYear/etc.), sourced from this portco's own reports so a typo
+      # can't produce a comparator that never matches anything (see redesign doc §3.5). The
+      # reserved PRIOR_PERIOD_COMPARATOR sentinel is excluded here and offered as its own fixed
+      # option below instead, so it can't collide with a fund that happens to tag a report
+      # literally "PriorPeriod".
+      rag_tag_options = (["Budget"] + KpiReport.where(portfolio_company_id: investor_kpi_mapping.investor_id).distinct.pluck(:tag_list))
+                        .compact_blank.uniq.sort - [InvestorKpiMapping::PRIOR_PERIOD_COMPARATOR]
+      rag_comparator_options = [["Prior period (this KPI's own last report)", InvestorKpiMapping::PRIOR_PERIOD_COMPARATOR]] + rag_tag_options + ["Other"]
+    %>
     <div class="form-group" data-controller="otherselect" data-otherselect-select-id-value="#investor_kpi_mapping_rag_comparator_tag" data-otherselect-other-id-value="#rag_comparator_tag_other">
       <%= form.label :rag_comparator_tag, "RAG comparator tag" %>
-      <%= form.select :rag_comparator_tag, rag_tag_options + ["Other"], { include_blank: "None — judge the value directly" }, class: "form-control", "data-action": "change->otherselect#checkOtherName" %>
+      <%= form.select :rag_comparator_tag, rag_comparator_options, { include_blank: "None — judge the value directly" }, class: "form-control", "data-action": "change->otherselect#checkOtherName" %>
       <%= form.text_field :rag_comparator_tag, class: "form-control", disabled: true, id: "rag_comparator_tag_other", hidden: true, placeholder: "Enter a custom tag" %>
-      <small class="form-text text-muted">The tag of the report to compare the actual value against (e.g. "Budget", "PriorYear"). Choose "None — judge the value directly" for a KPI with no comparator (e.g. a margin % or a ratio that's already self-contained). Choose "Other" to type a tag not listed here yet.</small>
+      <small class="form-text text-muted">Choose "Prior period" to judge the value against this same KPI's own most recent earlier report (no separate tagged upload needed) — or the tag of a report to compare against instead (e.g. "Budget", "PriorYear"). Choose "None — judge the value directly" for a KPI with no comparator (e.g. a margin % or a ratio that's already self-contained). Choose "Other" to type a tag not listed here yet.</small>
     </div>
 
     <div class="form-group">
@@ -218,7 +227,15 @@
                 <td>Higher is better</td>
                 <td>1.10</td>
                 <td>1.20</td>
-                <td>Red if this year is below 110% of last year's figure (under 10% growth).</td>
+                <td>Red if this year is below 110% of last year's figure (under 10% growth). Needs a report separately tagged "PriorYear" for the same period.</td>
+              </tr>
+              <tr>
+                <td>Revenue (month-on-month)</td>
+                <td>Prior period</td>
+                <td>Higher is better</td>
+                <td>0.95</td>
+                <td>1.00</td>
+                <td>Red if this month's revenue is below 95% of last month's — compared automatically against whatever report this KPI's own previous period already has, no extra tagged upload needed.</td>
               </tr>
               <tr>
                 <td>Leverage Ratio (debt covenant)</td>
