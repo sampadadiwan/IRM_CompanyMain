@@ -14,7 +14,7 @@ class EoiDocGenerator
     io_doc_template.file.download do |tempfile|
       io_doc_template_path = tempfile.path
       create_working_dir(expression_of_interest)
-      generate(expression_of_interest, io_doc_template_path)
+      generate(expression_of_interest, io_doc_template_path, io_doc_template)
       upload(io_doc_template, expression_of_interest, user_id: user_id)
       notify(io_doc_template, expression_of_interest, user_id) if user_id
     ensure
@@ -33,7 +33,7 @@ class EoiDocGenerator
   end
 
   # io_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(expression_of_interest, io_doc_template_path)
+  def generate(expression_of_interest, io_doc_template_path, io_doc_template)
     template = Sablon.template(File.expand_path(io_doc_template_path))
 
     context = {}
@@ -53,7 +53,7 @@ class EoiDocGenerator
     add_image(context, :investor_signature, expression_of_interest.investor_kyc.signature)
 
     file_name = generated_file_name(expression_of_interest)
-    convert(template, context, file_name, template_name: @io_doc_template_name)
+    convert(template, context, file_name, template_name: @io_doc_template_name, doc_template: io_doc_template)
 
     additional_footers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Footer" + "#{@io_doc_template_name} Signature"])
     additional_headers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Header", "#{@io_doc_template_name} Stamp Paper"])

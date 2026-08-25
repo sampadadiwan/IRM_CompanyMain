@@ -58,6 +58,12 @@ class Document < ApplicationRecord
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id entity_id orignal send_email].freeze
+
+  # Which engine converts documents generated from this template to PDF. Read from the
+  # source template at generation time (see DocumentGeneratorBase#convert_to_accessible_pdf) --
+  # "libreoffice" is the existing soffice path and covers every template unless explicitly
+  # opted into "m365". See docs/technical/m365_graph_pdf_conversion.md.
+  PDF_CONVERSION_ENGINES = %w[libreoffice m365 google_docs].freeze
   # counter_culture :entity
   # counter_culture :folder
   # counter_culture :doc_shares # Uncomment if doc_shares_count column is added to documents table
@@ -75,6 +81,11 @@ class Document < ApplicationRecord
   normalizes :name, with: ->(name) { name.squish }
   validates :owner_tag, length: { maximum: 40 }
   validates :tag_list, length: { maximum: 120 }
+  # The DB default only applies when the column is left unset; an explicit nil (e.g. from an
+  # attributes hash written before this column existed) would otherwise fail the inclusion
+  # validation below instead of quietly falling back to the safe default.
+  normalizes :pdf_conversion_engine, with: ->(value) { value.presence || "libreoffice" }
+  validates :pdf_conversion_engine, inclusion: { in: PDF_CONVERSION_ENGINES }
 
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
@@ -268,6 +279,14 @@ class Document < ApplicationRecord
             .where("access_rights.access_to=?", current_user.email)
 
     end
+  end
+
+  def m365_pdf_conversion?
+    pdf_conversion_engine == "m365"
+  end
+
+  def google_docs_pdf_conversion?
+    pdf_conversion_engine == "google_docs"
   end
 
   def video?

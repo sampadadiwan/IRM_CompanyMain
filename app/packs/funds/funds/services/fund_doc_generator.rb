@@ -16,7 +16,7 @@ class FundDocGenerator
     fund_doc_template.file.download do |tempfile|
       fund_doc_template_path = tempfile.path
       create_working_dir(fund)
-      generate(fund, start_date, end_date, fund_doc_template_path)
+      generate(fund, start_date, end_date, fund_doc_template_path, fund_doc_template)
       upload(fund_doc_template, fund, user_id: user_id, as_of: end_date&.to_date)
       notify(fund_doc_template, fund, user_id) if user_id
     ensure
@@ -74,7 +74,7 @@ class FundDocGenerator
     UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{fund.investor_name}. Please refresh the page.", level: "success").broadcast
   end
 
-  def generate(fund, start_date, end_date, fund_doc_template_path)
+  def generate(fund, start_date, end_date, fund_doc_template_path, fund_doc_template)
     template = Sablon.template(File.expand_path(fund_doc_template_path))
     context = prepare_context(fund, start_date, end_date)
 
@@ -83,7 +83,7 @@ class FundDocGenerator
     Rails.logger.debug { "Using context #{context} to render template" }
 
     file_name = generated_file_name(fund)
-    convert(template, context, file_name, template_name: @fund_doc_template_name)
+    convert(template, context, file_name, template_name: @fund_doc_template_name, doc_template: fund_doc_template)
 
     additional_footers = fund.documents.where(name: ["#{@fund_doc_template_name} Footer", "#{@fund_doc_template_name} Signature"])
     additional_headers = fund.documents.where(name: ["#{@fund_doc_template_name} Header", "#{@fund_doc_template_name} Stamp Paper"])

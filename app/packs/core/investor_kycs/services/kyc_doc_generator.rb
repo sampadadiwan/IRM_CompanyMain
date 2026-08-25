@@ -182,7 +182,7 @@ class KycDocGenerator
     Rails.logger.debug "Rendering template"
 
     file_name ||= generated_file_name(investor_kyc)
-    convert(template, context, file_name, template_name: doc_template.name)
+    convert(template, context, file_name, template_name: doc_template.name, doc_template: doc_template)
 
     additional_footers = []
     if doc_template.template_docs_to_append.present?

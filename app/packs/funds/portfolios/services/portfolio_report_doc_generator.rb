@@ -45,7 +45,7 @@ class PortfolioReportDocGenerator
     "tmp/portfolio_company/#{rand(1_000_000)}/#{portfolio_company.id}"
   end
 
-  def generate(portfolio_company, portfolio_report_extract, _template_document, template_path, start_date, end_date)
+  def generate(portfolio_company, portfolio_report_extract, template_document, template_path, start_date, end_date)
     template = Sablon.template(File.expand_path(template_path))
 
     # This is where the data extracted from the documents and notes is stored. The extract can be
@@ -97,7 +97,10 @@ class PortfolioReportDocGenerator
     context.store :context, DocGenContext.new(context)
 
     file_name = generated_file_name(portfolio_company)
-    convert(template, context, file_name, to_pdf: false, template_name: @template_name)
+    # doc_template is inert here: to_pdf: false means convert_to_accessible_pdf (the only
+    # consumer of doc_template) never runs for this generator, which only ever produces a
+    # .docx. Threaded through anyway for consistency with every other doc generator.
+    convert(template, context, file_name, to_pdf: false, template_name: @template_name, doc_template: template_document)
   end
 
   def cap_table(portfolio_company, end_date)

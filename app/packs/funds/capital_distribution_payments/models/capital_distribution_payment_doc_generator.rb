@@ -31,7 +31,7 @@ class CapitalDistributionPaymentDocGenerator
         raise msg
       else
         create_working_dir(capital_distribution_payment)
-        generate(capital_distribution_payment, tempfile.path, options)
+        generate(capital_distribution_payment, tempfile.path, options, fund_doc_template)
         upload(fund_doc_template, capital_distribution_payment, nil, nil, nil, final_file_name(@fund_doc_template_name, capital_distribution_payment), user_id: user_id, as_of: capital_distribution_payment.payment_date)
         notify(fund_doc_template, capital_distribution_payment, user_id) if user_id
       end
@@ -60,7 +60,7 @@ class CapitalDistributionPaymentDocGenerator
   private
 
   # Generate the full document using Sablon and save it to file
-  def generate(capital_distribution_payment, template_path, options)
+  def generate(capital_distribution_payment, template_path, options, fund_doc_template)
     template = Sablon.template(File.expand_path(template_path))
 
     # Get the fund state as of a specific date
@@ -75,7 +75,7 @@ class CapitalDistributionPaymentDocGenerator
     context.merge!(amounts_context(fund_as_of))
     context.merge!(account_entries_breakdown_context(capital_distribution_payment, template_path))
 
-    convert(template, context, generated_file_name(capital_distribution_payment), template_name: @fund_doc_template_name)
+    convert(template, context, generated_file_name(capital_distribution_payment), template_name: @fund_doc_template_name, doc_template: fund_doc_template)
   end
 
   # Core data required for template substitution

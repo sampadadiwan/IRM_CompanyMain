@@ -28,7 +28,7 @@ class SoaGenerator
         create_working_dir(capital_commitment)
 
         # Generate the Investor Statement document
-        generate(capital_commitment, start_date, end_date, fund_doc_template_path)
+        generate(capital_commitment, start_date, end_date, fund_doc_template_path, fund_doc_template)
 
         # Upload the generated document
         upload(fund_doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder, user_id: user_id, as_of: Time.zone.parse(end_date).to_date)
@@ -170,7 +170,7 @@ class SoaGenerator
   end
 
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(capital_commitment, start_date, end_date, fund_doc_template_path)
+  def generate(capital_commitment, start_date, end_date, fund_doc_template_path, fund_doc_template)
     template = Sablon.template(File.expand_path(fund_doc_template_path))
     context = prepare_context(capital_commitment, start_date, end_date)
 
@@ -183,7 +183,7 @@ class SoaGenerator
     Rails.logger.debug "Rendering template"
 
     file_name = generated_file_name(capital_commitment)
-    convert(template, context, file_name, template_name: @fund_doc_template_name)
+    convert(template, context, file_name, template_name: @fund_doc_template_name, doc_template: fund_doc_template)
   end
 
   # This method is used to generate the portfolio allocation related data by portfolio company
