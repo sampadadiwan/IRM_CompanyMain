@@ -172,13 +172,21 @@ Given('an Investor KPI Mapping for {string} exists with RAG comparator {string},
 end
 
 Then('the KPI {string} should have RAG status {string}') do |kpi_name, expected_rag_status|
-  kpi = Kpi.find_by(name: kpi_name)
-  kpi.rag_status.should == expected_rag_status
+  kpi_under_test(kpi_name).rag_status.should == expected_rag_status
 end
 
 Then('the KPI {string} should have no RAG status') do |kpi_name|
-  kpi = Kpi.find_by(name: kpi_name)
-  kpi.rag_status.should be_nil
+  kpi_under_test(kpi_name).rag_status.should be_nil
+end
+
+# A comparator KPI (e.g. tag_list "Budget") often shares its name with the actual KPI it judges,
+# so Kpi.find_by(name:) is ambiguous. The actual is whichever same-named KPI's report is NOT
+# tagged with the mapping's rag_comparator_tag.
+def kpi_under_test(kpi_name)
+  mapping = InvestorKpiMapping.find_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company)
+  scope = Kpi.joins(:kpi_report).where(name: kpi_name, portfolio_company_id: @portfolio_company.id)
+  scope = scope.where.not('kpi_reports.tag_list': mapping.rag_comparator_tag) if mapping&.rag_comparator_tag.present?
+  scope.order(id: :desc).first.reload
 end
 
 When('I attempt to save an Investor KPI Mapping for {string} with RAG comparator {string}, direction {string}, red threshold {float}, green threshold {float}') do |kpi_name, comparator_tag, direction, red, green|
