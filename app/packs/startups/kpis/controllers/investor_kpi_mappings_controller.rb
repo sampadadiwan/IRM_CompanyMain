@@ -56,13 +56,12 @@ class InvestorKpiMappingsController < ApplicationController
   # Re-runs RAG evaluation for every approved KPI reported under this mapping — for when rules
   # were added/edited after KPIs using it were already approved (recompute_rag_status! only
   # fires from a Kpi's own after_save, so a rule change alone never touches existing rows).
+  # Queued rather than run inline, matching KpiApproveService's KpiCumulateJob/
+  # KpiPercentageChangeJob triggers elsewhere in this controller family — see
+  # RecomputeInvestorKpiMappingRagJob for why.
   def recompute_rag
-    count = 0
-    Kpi.approved.where(investor_kpi_mapping_id: @investor_kpi_mapping.id).find_each do |kpi|
-      kpi.recompute_rag_status!
-      count += 1
-    end
-    redirect_to investor_kpi_mapping_url(@investor_kpi_mapping), notice: "Recomputed RAG status for #{count} KPI(s)."
+    RecomputeInvestorKpiMappingRagJob.perform_later(@investor_kpi_mapping.id, current_user.id)
+    redirect_to investor_kpi_mapping_url(@investor_kpi_mapping), notice: "RAG recompute queued — you'll get a notification when it's done."
   end
 
   # PATCH/PUT /investor_kpi_mappings/1 or /investor_kpi_mappings/1.json
