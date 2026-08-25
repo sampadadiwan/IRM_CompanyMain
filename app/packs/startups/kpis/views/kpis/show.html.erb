@@ -152,6 +152,10 @@
       data: { action: "click->confirm#popup", turbo: false, method: :delete, notification: "no",
               msg: "Are you sure you want to reject and delete the unapproved value for #{@kpi.name}? This action cannot be undone." } if policy(@kpi).reject? %>
 
+  <%= button_to t_common(:unapprove), unapprove_kpi_path(@kpi), method: :patch, class: "btn btn-outline-secondary",
+      data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no",
+              msg: "This will revert #{@kpi.name} back to unapproved and clear its RAG status. Any KPI comparing itself against this figure will also be re-evaluated. Proceed?" } if policy(@kpi).unapprove? %>
+
   <%= button_to t_common(:delete), @kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@kpi).destroy? %>
 
   <%= link_to t_common(:edit), edit_kpi_path(@kpi), class: "btn btn-outline-success" if policy(@kpi).update? %>

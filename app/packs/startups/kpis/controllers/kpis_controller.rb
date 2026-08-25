@@ -1,5 +1,5 @@
 class KpisController < ApplicationController
-  before_action :set_kpi, only: %i[show edit update destroy approve reject]
+  before_action :set_kpi, only: %i[show edit update destroy approve reject unapprove]
 
   # GET /kpis or /kpis.json
   def index
@@ -142,6 +142,14 @@ class KpisController < ApplicationController
     respond_to do |format|
       format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI was successfully rejected.") }
       format.json { head :no_content }
+    end
+  end
+
+  def unapprove
+    @kpi.unapprove!
+    respond_to do |format|
+      format.html { redirect_back_or_to(kpi_path(@kpi), notice: "KPI was successfully unapproved.") }
+      format.json { render :show, status: :ok, location: @kpi }
     end
   end
 

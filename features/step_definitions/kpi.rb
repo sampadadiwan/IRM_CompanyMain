@@ -187,6 +187,15 @@ When('the KPI {string} as of {string} is approved') do |kpi_name, as_of|
   KpiApprover.call(kpi.id, @user.id)
 end
 
+# Mirrors "... is approved" above, but reverting via Kpi#unapprove! (the model method backing the
+# "Unapprove" button on the KPI show page) instead of KpiApprover — exercises the cascade that
+# clears this KPI's own rag_status and re-evaluates dependents that may have been judging
+# themselves against it as a comparator.
+When('the KPI {string} tagged {string} is unapproved') do |kpi_name, tag|
+  kpi = Kpi.joins(:kpi_report).where(name: kpi_name, portfolio_company_id: @portfolio_company.id, 'kpi_reports.tag_list': tag).first
+  kpi.unapprove!
+end
+
 Then('the KPI {string} should have RAG status {string}') do |kpi_name, expected_rag_status|
   kpi_under_test(kpi_name).rag_status.should == expected_rag_status
 end
@@ -222,6 +231,11 @@ end
 Then('the mapping save should fail with an error about RAG thresholds') do
   @attempted_mapping.errors.any?.should == true
   @attempted_mapping.persisted?.should == false
+end
+
+When('I visit the Investor KPI Mapping show page for {string}') do |kpi_name|
+  mapping = InvestorKpiMapping.find_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company)
+  visit investor_kpi_mapping_path(mapping)
 end
 
 Given('KPI is enabled for the user') do

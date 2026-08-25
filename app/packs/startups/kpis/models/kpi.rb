@@ -210,11 +210,9 @@ class Kpi < ApplicationRecord
 
   def rag_recompute_trigger?
     # approved? here reads the CURRENT (post-save) status, so this only ever fires while heading
-    # into/staying in approved — there is deliberately no "revert to unapproved" leg. That's safe
-    # only because no such transition exists anywhere in the app today (grep for status:
-    # :unapproved turns up nothing outside KPI creation). If one is ever added, it must also
-    # clear/recompute rag_status on the way out of approved, or a stale flag would keep showing on
-    # a figure that's no longer confirmed — exactly what approved-gating elsewhere here is for.
+    # into/staying in approved — there is deliberately no "revert to unapproved" leg here. That
+    # transition now exists (see unapprove! below), but it clears/cascades rag_status itself
+    # rather than relying on this after_save, so it doesn't need to trigger this leg too.
     approved? && (saved_change_to_value? || saved_change_to_status?)
   end
 
@@ -244,18 +242,43 @@ class Kpi < ApplicationRecord
     # the future without that gating already applied.
     return unless approved?
 
-    # Both cascade shapes run unconditionally, rather than branching on this KPI's own
-    # investor_kpi_mapping to pick one — same-as_of siblings (tag-based comparators, e.g. a
-    # Budget row saved after its Actual) and the next chronological report (the PriorPeriod
-    # comparator) are independent dependency shapes, and nothing guarantees every same-name KPI
-    # row shares one InvestorKpiMapping (no DB uniqueness constraint enforces that). Each
-    # dependent's own recompute_rag_status! call resolves correctness against ITS OWN mapping
-    # regardless of why it got re-checked, so cascading broadly here is always safe — at worst,
-    # one extra cheap query when a leg doesn't apply.
+    cascade_dependent_rag_recompute!
+  end
+
+  # The actual dependent-recompute cascade, factored out of recompute_dependent_rag_statuses! so
+  # unapprove! (below) can also trigger it without tripping that method's approved? guard — by
+  # the time unapprove! calls this, self is already unapproved, which is exactly the case that
+  # needs the cascade (siblings/next-period KPIs that were judging themselves against this KPI as
+  # a comparator can no longer find it via find_tagged_kpi/find_prior_period_kpi, both of which
+  # are approved-scoped, so they need to re-evaluate now that their comparator has disappeared).
+  #
+  # Both cascade shapes run unconditionally, rather than branching on this KPI's own
+  # investor_kpi_mapping to pick one — same-as_of siblings (tag-based comparators, e.g. a
+  # Budget row saved after its Actual) and the next chronological report (the PriorPeriod
+  # comparator) are independent dependency shapes, and nothing guarantees every same-name KPI
+  # row shares one InvestorKpiMapping (no DB uniqueness constraint enforces that). Each
+  # dependent's own recompute_rag_status! call resolves correctness against ITS OWN mapping
+  # regardless of why it got re-checked, so cascading broadly here is always safe — at worst,
+  # one extra cheap query when a leg doesn't apply.
+  def cascade_dependent_rag_recompute!
     Kpi.joins(:kpi_report)
        .where(name: name, portfolio_company_id: portfolio_company_id, 'kpi_reports.as_of': kpi_report.as_of)
        .where.not(id: id)
        .find_each(&:recompute_rag_status!)
     find_next_period_kpi&.recompute_rag_status!
+  end
+
+  # Reverts an approved KPI back to unapproved (e.g. an approver spots a mistake after the fact).
+  # Clears rag_status on self — an unapproved figure isn't confirmed, so it shouldn't keep
+  # showing a flag someone might act on (mirrors the reasoning in recompute_rag_status!'s
+  # approved?-gating) — and cascades to dependents, since this KPI may have been serving as
+  # someone else's approved comparator and now no longer qualifies.
+  def unapprove!
+    raise "KPI is not approved" unless approved?
+
+    transaction do
+      update!(status: :unapproved, rag_status: nil, approved_by_user_id: nil, approved_at: nil)
+      cascade_dependent_rag_recompute!
+    end
   end
 end

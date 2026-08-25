@@ -1,7 +1,7 @@
 class InvestorKpiMappingsController < ApplicationController
   after_action :verify_policy_scoped, only: [:index]
   after_action :verify_authorized, except: %i[index generate]
-  before_action :set_investor_kpi_mapping, only: %i[show edit update destroy]
+  before_action :set_investor_kpi_mapping, only: %i[show edit update destroy recompute_rag]
 
   # GET /investor_kpi_mappings or /investor_kpi_mappings.json
   def index
@@ -51,6 +51,18 @@ class InvestorKpiMappingsController < ApplicationController
     kpi_report = policy_scope(KpiReport).where(entity_id: investor.investor_entity_id).or(policy_scope(KpiReport).where(portfolio_company_id: investor.id)).last
     InvestorKpiMapping.create_from(current_user.entity, kpi_report)
     redirect_to investor_path(investor.id, tab: "kpi-mappings-tab"), notice: "Investor KPI Mappings generated"
+  end
+
+  # Re-runs RAG evaluation for every approved KPI reported under this mapping — for when rules
+  # were added/edited after KPIs using it were already approved (recompute_rag_status! only
+  # fires from a Kpi's own after_save, so a rule change alone never touches existing rows).
+  def recompute_rag
+    count = 0
+    Kpi.approved.where(investor_kpi_mapping_id: @investor_kpi_mapping.id).find_each do |kpi|
+      kpi.recompute_rag_status!
+      count += 1
+    end
+    redirect_to investor_kpi_mapping_url(@investor_kpi_mapping), notice: "Recomputed RAG status for #{count} KPI(s)."
   end
 
   # PATCH/PUT /investor_kpi_mappings/1 or /investor_kpi_mappings/1.json

@@ -139,10 +139,15 @@
 
     <%= display_custom_fields(@investor_kpi_mapping, collapsed: false) if current_user %>
   </table>
-  <div>
+  <div data-controller="confirm">
     <% if policy(@investor_kpi_mapping).edit? %>
       <%= link_to  t_common(:edit), edit_investor_kpi_mapping_path(@investor_kpi_mapping), {class: "btn btn-outline-primary"} %>
       <%= button_to t_common(:delete), @investor_kpi_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+    <% if policy(@investor_kpi_mapping).recompute_rag? %>
+      <%= button_to "Recompute RAG Status", recompute_rag_investor_kpi_mapping_path(@investor_kpi_mapping), method: :patch, class: "btn btn-outline-success",
+          data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no",
+                  msg: "This will re-evaluate RAG status for every approved KPI reported under this mapping. Proceed?" } %>
     <% end %>
   </div>
 <% end %>

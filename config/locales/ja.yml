@@ -40,6 +40,7 @@ ja:
     actions: アクション
     all: 全て
     all_docs: 全てのドキュメント
+    approve: 承認
     cancel: キャンセル
     close: 閉じる
     confirm: 確認
@@ -51,11 +52,13 @@ ja:
     next: 次へ
     ok: OK
     proceed: 続行
+    reject: 拒否
     save: 保存
     show: 表示
     step: ステップ
     upload: アップロード
     refetch: データを再取得
+    unapprove: 未承認
     view: 表示
   date:
     formats:

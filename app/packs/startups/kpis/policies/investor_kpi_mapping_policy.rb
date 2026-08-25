@@ -37,4 +37,8 @@ class InvestorKpiMappingPolicy < KpiPolicyBase
   def destroy?
     update?
   end
+
+  def recompute_rag?
+    update?
+  end
 end

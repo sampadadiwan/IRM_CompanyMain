@@ -1,9 +1,11 @@
 resources :investor_kpi_mappings do
   post 'generate', on: :collection
+  patch 'recompute_rag', on: :member
 end
 
 resources :kpis do
   patch 'approve', on: :member
+  patch 'unapprove', on: :member
   delete 'reject', on: :member
   patch 'approve_all', on: :collection
   put :restore_deleted, on: :member

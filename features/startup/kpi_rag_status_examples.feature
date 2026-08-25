@@ -11,6 +11,7 @@ Feature: KPI RAG status — real-world rule patterns
   Background:
     Given Im logged in as a user "first_name=Test;email=test@example.com" for an entity "name=Test Company;entity_type=Company"
     And the user has role "company_admin"
+    And KPI is enabled for the user
     Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
 
   @rag_status
@@ -152,6 +153,41 @@ Feature: KPI RAG status — real-world rule patterns
     Then the KPI "Revenue" should have no RAG status
     When the KPI "Revenue" as of "2024-01-31" is approved
     Then the KPI "Revenue" should have RAG status "red"
+
+  @rag_status
+  Scenario: Unapproving a KPI clears its own RAG status
+    Given an Investor KPI Mapping for "Revenue" exists with RAG comparator "Budget", direction "higher_is_better", red threshold 0.7, green threshold 0.9
+    And a KpiReport "as_of=2024-01-01;period=YTD;tag_list=Budget" exists for the entity
+    And a KPI "name=Revenue;value=120" exists for the kpi report
+    And a KpiReport "as_of=2024-01-01;period=YTD" exists for the entity
+    And a KPI "name=Revenue;value=100" exists for the kpi report
+    Then the KPI "Revenue" should have RAG status "amber"
+    When the KPI "Revenue" tagged "Actual" is unapproved
+    Then the KPI "Revenue" should have no RAG status
+
+  @rag_status
+  Scenario: Unapproving a comparator KPI reverts whatever was judged against it
+    Given an Investor KPI Mapping for "Revenue" exists with RAG comparator "Budget", direction "higher_is_better", red threshold 0.7, green threshold 0.9
+    And a KpiReport "as_of=2024-01-01;period=YTD;tag_list=Budget" exists for the entity
+    And a KPI "name=Revenue;value=120" exists for the kpi report
+    And a KpiReport "as_of=2024-01-01;period=YTD" exists for the entity
+    And a KPI "name=Revenue;value=100" exists for the kpi report
+    Then the KPI "Revenue" should have RAG status "amber"
+    When the KPI "Revenue" tagged "Budget" is unapproved
+    Then the KPI "Revenue" should have no RAG status
+
+  @rag_status
+  Scenario: Recomputing RAG status for a mapping's existing KPIs after rules are added retroactively
+    Given a KpiReport "as_of=2024-01-01;period=YTD;tag_list=Budget" exists for the entity
+    And a KPI "name=Revenue;value=120" exists for the kpi report
+    And a KpiReport "as_of=2024-01-01;period=YTD" exists for the entity
+    And a KPI "name=Revenue;value=100" exists for the kpi report
+    Then the KPI "Revenue" should have no RAG status
+    Given an Investor KPI Mapping for "Revenue" exists with RAG comparator "Budget", direction "higher_is_better", red threshold 0.7, green threshold 0.9
+    Then the KPI "Revenue" should have no RAG status
+    When I visit the Investor KPI Mapping show page for "Revenue"
+    And I click "Recompute RAG Status" and confirm
+    Then the KPI "Revenue" should have RAG status "amber"
 
   @rag_status
   Scenario: A KPI mapping with no RAG rules configured has no RAG status
