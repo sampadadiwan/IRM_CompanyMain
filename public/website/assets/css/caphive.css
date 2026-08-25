@@ -906,6 +906,11 @@ table.cmp thead th{
   font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
   color:var(--mut); font-weight:500;
 }
+/* Lobster's script glyphs are drawn to connect as lowercase; forced uppercase
+   (inherited from the header above) synthesises capital forms that overlap
+   into an illegible smear, and the header's wide tracking only spreads that
+   damage further. The wordmark keeps its own casing and tight fit here. */
+table.cmp thead th .wordmark{ text-transform:none; letter-spacing:0; }
 table.cmp tbody th{ font-weight:600; }
 table.cmp td .yes{ color:var(--orange); font-weight:700; }
 table.cmp td .no{ color:var(--mut); }
