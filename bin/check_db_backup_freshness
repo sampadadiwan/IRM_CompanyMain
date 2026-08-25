@@ -1,0 +1,121 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# bin/check_db_backup_freshness - runs `rake s3:check_backup_freshness` locally
+# for both IN and US production and fires a desktop notification when either
+# one fails. This is independent of (redundant with) the hourly
+# DbBackupFreshnessJob cron each region's own server already runs on itself
+# (config/initializers/sidekiq.rb) - a check from a machine outside either
+# AWS account catches the case where the alerting path on the server itself
+# is broken.
+#
+#   bin/check_db_backup_freshness run    run both checks now
+#   bin/check_db_backup_freshness cron   print the crontab line to install
+#
+# Why not rely on the job's own ExceptionNotifier e-mail path: this machine's
+# config/environments/development.rb sets action_mailer.delivery_method =
+# :letter_opener, so anything "sent" locally just writes an HTML file and
+# never reaches an inbox. notify-send is the channel that actually surfaces a
+# failure to whoever is logged into this desktop session.
+#
+# Rails is never booted directly here - each region's check runs in its own
+# `bundle exec rake` subprocess (needed anyway: the job builds its S3 client
+# from that environment's own encrypted credentials, resolved once at rake's
+# `:environment` boot per subprocess).
+
+require 'English'
+
+# Plain Ruby, deliberately: this never boots Rails (each region's check runs
+# in its own `bundle exec rake` subprocess instead), so Time.zone.now isn't
+# available - Time.now is the only option here.
+# rubocop:disable Rails/TimeZone
+
+REPO_ROOT = File.expand_path('..', __dir__)
+ENV_NAMES = %w[production.in production.us].freeze
+LOG_DIR = File.join(REPO_ROOT, 'log', 'db_backup_freshness_cron')
+# Deliberately NOT inside LOG_DIR: that directory is created lazily by
+# run_check below, but the crontab line's own `>> ... 2>&1` redirect happens
+# in the shell before this script ever runs - if it pointed inside LOG_DIR,
+# the very first cron tick would fail with "No such file or directory"
+# before the script got a chance to create it. log/ itself always exists
+# (part of the Rails app skeleton).
+CRON_LOG = File.join(REPO_ROOT, 'log', 'db_backup_freshness_cron.log')
+LOG_RETENTION_DAYS = 14
+
+def run_check(env_name)
+  require 'fileutils'
+  FileUtils.mkdir_p(LOG_DIR)
+  out_file = File.join(LOG_DIR, "#{env_name}_#{Time.now.strftime('%Y%m%d_%H%M%S')}.log")
+  system("bundle exec rake \"s3:check_backup_freshness[#{env_name}]\" > #{out_file} 2>&1")
+  passed = $CHILD_STATUS.success? && File.read(out_file).include?('DB backup freshness check passed')
+  [passed, out_file]
+end
+
+def notify_failure(env_name, out_file)
+  # cron does not set DISPLAY/DBUS_SESSION_BUS_ADDRESS the way a logged-in
+  # desktop session does - notify-send is silently a no-op without them.
+  # :0 and the default per-user bus are correct for a single-session desktop;
+  # override in the environment if this machine runs multiple sessions.
+  ENV['DISPLAY'] ||= ':0'
+  ENV['DBUS_SESSION_BUS_ADDRESS'] ||= "unix:path=/run/user/#{Process.uid}/bus"
+
+  lines = File.readlines(out_file).grep(/✗/).first(3).map(&:strip)
+  summary = lines.empty? ? "see #{out_file}" : lines.join("\n")
+  system('notify-send', '-u', 'critical', "DB backup check FAILED (#{env_name})", summary)
+end
+
+def prune_old_logs
+  Dir.glob(File.join(LOG_DIR, '*.log')).each do |f|
+    File.delete(f) if Time.now - File.mtime(f) > LOG_RETENTION_DAYS * 24 * 60 * 60
+  end
+end
+
+def cmd_run
+  Dir.chdir(REPO_ROOT)
+  results = ENV_NAMES.map do |env_name|
+    passed, out_file = run_check(env_name)
+    notify_failure(env_name, out_file) unless passed
+    [env_name, passed]
+  end
+  puts "#{Time.now}: #{results.map { |name, passed| "#{name}=#{passed ? 'PASS' : 'FAIL'}" }.join(', ')}"
+  prune_old_logs
+  exit(results.all? { |_, passed| passed } ? 0 : 1)
+end
+
+def cmd_cron
+  ruby = `which ruby`.strip
+  ruby = 'ruby' if ruby.empty?
+  # cron runs with a minimal PATH (typically /usr/bin:/bin), which finds
+  # neither the mise-managed ruby/bundle nor notify-send's usual location.
+  # Pin the directories actually needed, or the check silently never runs.
+  path = [File.dirname(ruby), '/usr/local/bin', '/usr/bin', '/bin'].uniq.join(':')
+
+  puts <<~CRON
+    # Add this to `crontab -e` to check both prod regions' backup freshness hourly
+    # (matches the cadence of the hourly check each server already runs on itself).
+    #
+    # cron does not read your shell profile, so PATH must be declared here or
+    # bundle/rake/notify-send will not be found.
+
+    PATH=#{path}
+
+    0 * * * * cd #{REPO_ROOT} && #{ruby} -S bundle exec ruby bin/check_db_backup_freshness run >> #{CRON_LOG} 2>&1
+
+    # Desktop notifications only fire while you're logged into a graphical
+    # session on this machine - see the DISPLAY/DBUS comment in notify_failure
+    # above if this machine runs more than one session.
+    #
+    # Verify it works before trusting it:
+    #   bin/check_db_backup_freshness run
+    #   tail -f #{CRON_LOG}
+  CRON
+end
+
+case ARGV[0]
+when 'run' then cmd_run
+when 'cron' then cmd_cron
+else
+  warn "Usage: #{$PROGRAM_NAME} [run|cron]"
+  exit 1
+end
+# rubocop:enable Rails/TimeZone
