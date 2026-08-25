@@ -134,6 +134,13 @@
               a template. Everyone else gets the (correct) default of "libreoffice" with no
               way to change it from this form. %>
           <% if document.template? && params[:debug].present? %>
+            <%# The gate above only sees params[:debug] on this GET request -- form_with's
+                default action URL (document_path(document)) carries no query string, so
+                without this hidden field the value picked here is silently dropped by
+                DocumentsController#apply_pdf_conversion_engine!'s matching server-side gate
+                on submit. Rails' params merges query-string and body params alike, so this
+                round-trips debug=1 through the POST/PATCH body instead. %>
+            <%= hidden_field_tag :debug, params[:debug] %>
             <div class="form-group" id="pdf_conversion_engine_div">
               <%= form.label :pdf_conversion_engine, "Template: PDF conversion engine" %>
               <%= form.select :pdf_conversion_engine,

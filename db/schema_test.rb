@@ -41,59 +41,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
-  create_table "account_entries", force: :cascade do |t|
-    t.bigint "allocation_run_id"
-    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
-    t.bigint "capital_commitment_id"
-    t.string "commitment_name"
-    t.datetime "created_at", precision: nil, null: false
-    t.boolean "cumulative", default: false
-    t.datetime "deleted_at", precision: nil
-    t.bigint "entity_id", null: false
-    t.string "entry_type", limit: 60
-    t.bigint "exchange_rate_id"
-    t.text "explanation"
-    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
-    t.string "folio_id", limit: 40
-    t.bigint "form_type_id"
-    t.bigint "fund_formula_id"
-    t.bigint "fund_id", null: false
-    t.boolean "generated", default: false
-    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
-    t.bigint "import_upload_id"
-    t.bigint "investor_id"
-    t.json "json_fields"
-    t.string "name", limit: 125, collation: "NOCASE"
-    t.text "notes"
-    t.bigint "parent_id"
-    t.string "parent_name"
-    t.string "parent_type"
-    t.string "period", limit: 25
-    t.integer "ref_id", default: 0, null: false
-    t.date "reporting_date", null: false
-    t.string "rule_for", limit: 10, default: "Accounting"
-    t.bigint "temp_sqlite_id"
-    t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "updated_at", precision: nil, null: false
-    t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
-    t.index ["capital_commitment_id", "name", "reporting_date"], name: "idx_ae_cc_name_date"
-    t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
-    t.index ["entity_id", "deleted_at", "name"], name: "idx_ae_entity_deleted_name"
-    t.index ["entity_id"], name: "index_account_entries_on_entity_id"
-    t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
-    t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
-    t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
-    t.index ["fund_id", "entry_type", "reporting_date"], name: "idx_fund_id_and_entry_type_and_reporting_date"
-    t.index ["fund_id", "generated", "reporting_date", "fund_formula_id"], name: "idx_ae_fund_gen_date_formula"
-    t.index ["fund_id", "name", "reporting_date"], name: "idx_fund_id_and_name_and_reporting_date"
-    t.index ["fund_id", "reporting_date", "fund_formula_id", "deleted_at"], name: "idx_ae_fund_date_formula_deleted"
-    t.index ["fund_id"], name: "index_account_entries_on_fund_id"
-    t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
-    t.index ["investor_id"], name: "index_account_entries_on_investor_id"
-    t.index ["parent_type", "parent_id", "fund_id", "name", "deleted_at", "cumulative"], name: "idx_ae_parent_fund_name_flags"
-    t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
-  end
-
   create_table "account_entry_report_insights", force: :cascade do |t|
     t.bigint "capital_commitment_id"
     t.json "content"
@@ -4372,10 +4319,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
 
-  add_foreign_key "access_rights", "entities"
-  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
-  add_foreign_key "access_rights", "users"
-  add_foreign_key "access_rights", "users", column: "granted_by_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
