@@ -83,23 +83,14 @@ def cmd_run
 end
 
 def cmd_cron
-  ruby = `which ruby`.strip
-  ruby = 'ruby' if ruby.empty?
-  # cron runs with a minimal PATH (typically /usr/bin:/bin), which finds
-  # neither the mise-managed ruby/bundle nor notify-send's usual location.
-  # Pin the directories actually needed, or the check silently never runs.
-  path = [File.dirname(ruby), '/usr/local/bin', '/usr/bin', '/bin'].uniq.join(':')
-
+  # Matches this repo's existing crontab convention (see `crontab -l`):
+  # `cd <repo> && /bin/bash -lc '...'` - the login shell (`-l`) sources the
+  # shell profile, which is what puts mise's ruby/bundle shims on PATH; cron's
+  # own PATH otherwise has neither them nor notify-send's usual location.
   puts <<~CRON
-    # Add this to `crontab -e` to check both prod regions' backup freshness hourly
-    # (matches the cadence of the hourly check each server already runs on itself).
-    #
-    # cron does not read your shell profile, so PATH must be declared here or
-    # bundle/rake/notify-send will not be found.
-
-    PATH=#{path}
-
-    0 * * * * cd #{REPO_ROOT} && #{ruby} -S bundle exec ruby bin/check_db_backup_freshness run >> #{CRON_LOG} 2>&1
+    # DB backup freshness check (IN + US prod) - desktop notification on failure only.
+    # See bin/check_db_backup_freshness for details.
+    0 * * * * cd #{REPO_ROOT} && /bin/bash -lc 'bundle exec ruby bin/check_db_backup_freshness run >> #{CRON_LOG} 2>&1'
 
     # Desktop notifications only fire while you're logged into a graphical
     # session on this machine - see the DISPLAY/DBUS comment in notify_failure
