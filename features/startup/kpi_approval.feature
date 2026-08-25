@@ -41,12 +41,12 @@ Feature: KPI Approval Workflow
 
   Scenario: Toggling a KPI between approved and unapproved from its own show page
     Given there is an approved KPI "name=Revenue;value=1000" for the company
-    When I visit the KPI show page for "Revenue"
+    When I am on the KPI show page for "Revenue"
     Then I should see an "Unapprove" button
     And I should not see an "Approve" button
     When I click "Unapprove" and confirm
     Then the KPI "Revenue" should have "unapproved" status in the database
-    When I visit the KPI show page for "Revenue"
+    When I am on the KPI show page for "Revenue"
     Then I should see an "Approve" button
     And I should not see an "Unapprove" button
 

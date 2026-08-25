@@ -152,7 +152,10 @@ And('all KPIs for {string} should have {string} status in the database') do |com
   expect(Kpi.where(portfolio_company_id: pc.id).pluck(:status).uniq).to eq([status])
 end
 
-When('I visit the KPI show page for {string}') do |kpi_name|
+# Named "I am on the KPI show page for" rather than "I visit the KPI show page for" to avoid
+# colliding with the generic "I visit the {word} show page for {string}" step in
+# workflow_instance_steps.rb, which would otherwise ambiguously match "KPI" as its {word}.
+When('I am on the KPI show page for {string}') do |kpi_name|
   kpi = Kpi.find_by(name: kpi_name, portfolio_company_id: @portfolio_company.id)
   visit kpi_path(kpi)
 end
@@ -171,10 +174,6 @@ When('I click {string} and confirm') do |button_label|
   sleep 1
 end
 
-Then('I should see an {string} button') do |label|
-  expect(page).to have_button(label)
-end
-
-Then('I should not see an {string} button') do |label|
-  expect(page).not_to have_button(label)
-end
+# "I should [not] see an {string} button" already defined in kyc_doc_extractor_agent_steps.rb —
+# reused as-is rather than duplicated here (it also matches on have_link, which button_to's
+# rendered <button> still satisfies).
