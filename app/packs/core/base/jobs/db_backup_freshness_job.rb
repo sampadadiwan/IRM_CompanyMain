@@ -31,24 +31,31 @@ class DbBackupFreshnessJob < ApplicationJob
   TIMESTAMP_FORMAT = "%Y-%m-%d_%H%M%S".freeze
   PREFIX_RE = /\A(\d{4}-\d{2}-\d{2}_\d{6})-(full|incr)\/\z/
 
-  def perform
-    failures = collect_failures
+  # env_name (e.g. production.in / production.us): lets this run locally against a
+  # specific prod deployment's AWS account. Rails.application.credentials only
+  # resolves to the right region's AWS keys on the deployed server (Capistrano
+  # symlinks config/credentials/production.yml.enc to the regional file there);
+  # locally, passing env_name reads that regional .yml.enc directly instead
+  # (see #credentials below).
+  def perform(env_name: nil)
+    failures = collect_failures(env_name: env_name)
 
     if failures.any?
       msg = "DB backup freshness check FAILED: #{failures.join(' | ')}"
-      Rails.logger.error msg
+      log(:error, msg)
       # Same alert channel S3CheckJob uses — lands wherever exception
       # notifications are delivered (email/Slack per environment config).
       ExceptionNotifier.notify_exception(StandardError.new(msg), data: { failures: failures })
     else
-      Rails.logger.info "✓ DB backup freshness check passed (primary + replica buckets)."
+      log(:info, "✓ DB backup freshness check passed (primary + replica buckets).")
     end
   end
 
   # Runs all freshness checks and returns the failure strings (empty = healthy).
   # Public so `rake aws:dr_readiness` can reuse the EXACT same checks as the
   # hourly alert and report them in its scorecard instead of alerting.
-  def collect_failures
+  def collect_failures(env_name: nil)
+    @env_name = env_name
     failures = []
     failures += check_bucket(
       bucket: "#{ENV.fetch('AWS_S3_BUCKET')}-backup-xtra",
@@ -72,11 +79,37 @@ class DbBackupFreshnessJob < ApplicationJob
 
   private
 
+  # Every check/status line goes to both Rails.logger (the persisted record —
+  # what the cron's log aggregation and ExceptionNotifier data rely on) and
+  # stdout (so a local `rake s3:check_backup_freshness[...]` run shows progress
+  # in the terminal instead of only landing in log/<env>.log).
+  def log(level, msg)
+    Rails.logger.public_send(level, msg)
+    puts msg # rubocop:disable Rails/Output -- deliberate: visible when run interactively via rake, not just in logs
+  end
+
+  # env_name-aware credentials source — see the comment on #perform.
+  def credentials
+    @credentials ||= if @env_name
+                       key_path = Rails.root.join("config", "credentials", "#{@env_name}.key")
+                       raise "Key file not found for environment '#{@env_name}' at #{key_path}" unless File.exist?(key_path)
+
+                       Rails.application.encrypted(
+                         Rails.root.join("config", "credentials", "#{@env_name}.yml.enc"),
+                         key_path: key_path
+                       )
+                     else
+                       Rails.application.credentials
+                     end
+  end
+
   # Returns a list of human-readable failure strings for one bucket (empty when healthy).
   def check_bucket(bucket:, region:, label:, grace:)
+    log(:info, "→ Checking #{label} bucket s3://#{bucket} (#{region})...")
+
     client = Aws::S3::Client.new(
-      access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
-      secret_access_key: Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
+      access_key_id: credentials[:AWS_ACCESS_KEY_ID],
+      secret_access_key: credentials[:AWS_SECRET_ACCESS_KEY],
       region: region
     )
 
@@ -84,7 +117,11 @@ class DbBackupFreshnessJob < ApplicationJob
 
     # No parseable backup prefixes at all — brand-new bucket or wrong bucket
     # name; either way there is nothing to restore from.
-    return ["#{label}: no backups found in s3://#{bucket}"] if latest_any.nil?
+    if latest_any.nil?
+      failure = "#{label}: no backups found in s3://#{bucket}"
+      log(:error, "  ✗ #{failure}")
+      return [failure]
+    end
 
     failures = []
     if latest_any < (INCR_MAX_AGE + grace).ago
@@ -95,11 +132,19 @@ class DbBackupFreshnessJob < ApplicationJob
     elsif latest_full < (FULL_MAX_AGE + grace).ago
       failures << "#{label}: newest FULL backup in s3://#{bucket} is #{time_ago(latest_full)} old (limit #{((FULL_MAX_AGE + grace) / 1.hour.to_f).round(1)}h)"
     end
+
+    if failures.empty?
+      log(:info, "  ✓ #{label}: newest backup #{time_ago(latest_any)} old, newest FULL #{time_ago(latest_full)} old")
+    else
+      failures.each { |f| log(:error, "  ✗ #{f}") }
+    end
     failures
   rescue Aws::S3::Errors::ServiceError => e
     # Being unable to see the backups is itself an alertable condition —
     # a restore attempt would hit the same wall.
-    ["#{label}: cannot list s3://#{bucket} (#{e.class}: #{e.message})"]
+    failure = "#{label}: cannot list s3://#{bucket} (#{e.class}: #{e.message})"
+    log(:error, "  ✗ #{failure}")
+    [failure]
   end
 
   # Scans only the top-level prefixes (one per backup) and returns
