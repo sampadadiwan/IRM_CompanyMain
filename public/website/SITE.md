@@ -110,15 +110,13 @@ site.
    - Case-study outcome figures are illustrative, carried over from the homepage.
    - Leadership cards on `about.html` and the testimonials sections are `hidden`
      with placeholder content — fill them in and remove the `hidden` attribute.
-   - Login is domain-aware: the nav link carries `data-login` and ships
-     `https://app.caphive.com/` so it works with JavaScript off, then the runtime
-     swaps in `https://app.caphive.us/` when the visitor is on `caphive.us`.
-     Matching is against an allowlist of `caphive.com` / `caphive.us` (with or
-     without `www.`) — deliberately not "prefix app. to the current host", which
-     would generate dead links on localhost and preview deploys. Add any new
-     regional domain to `APP_BY_DOMAIN` in **both** `assets/js/caphive.js` and the
-     homepage's inline script. The footer's "Login — IND" / "Login — USA" links
-     are pinned per region and carry no `data-login`, so they are never rewritten.
+   - Login is a non-navigating `<button>` (`.login`) that only opens the
+     `.nav-menu` dropdown on hover/focus — it carries no `href`/`data-login` and
+     the region-rewrite JS that used to target it has been removed from both
+     `assets/js/caphive.js` and the homepage's inline script. The two dropdown
+     items, "Login — IND" (`https://app.caphive.com/`) and "Login — USA"
+     (`https://app.caphive.us/`), are the only things in that menu that actually
+     navigate anywhere; add any new regional login link there directly.
 
 2. ~~**Wire the forms.**~~ **Done.** Both demo forms POST to our own `/website_leads`
    endpoint on the app host, which stores the lead and emails the support mailbox.

@@ -61,23 +61,6 @@
     });
   }
 
-  /* ---- login: send the visitor to the app on their own domain ----
-     The markup ships https://app.caphive.com/ so the link works with JavaScript
-     off. On a recognised regional domain this swaps in that region's app host,
-     matched against an allowlist rather than by prefixing "app." to whatever
-     hostname we happen to be on — otherwise localhost and preview deploys would
-     produce links to hosts that do not exist.
-     The footer's "Login — IND" / "Login — USA" links are deliberately pinned per
-     region and carry no data-login, so they are left alone. */
-  var APP_BY_DOMAIN = {
-    'caphive.com': 'https://app.caphive.com/',
-    'caphive.us':  'https://app.caphive.us/'
-  };
-  var appUrl = APP_BY_DOMAIN[location.hostname.replace(/^www\./, '')];
-  if(appUrl){
-    document.querySelectorAll('a[data-login]').forEach(function(a){ a.href = appUrl; });
-  }
-
   /* ---- footer year ---- */
   document.querySelectorAll('[data-year]').forEach(function(el){
     el.textContent = new Date().getFullYear();

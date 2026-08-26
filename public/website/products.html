@@ -126,7 +126,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=1828cab8">
+<link rel="stylesheet" href="assets/css/caphive.css?v=29e53cdf">
 </head>
 <body data-page="products">
 
@@ -166,12 +166,13 @@
   </nav>
   <div class="nav-cta">
     <div class="has-menu login-menu">
-      <a class="login nav-link" href="https://app.caphive.com/" data-login>
+      <button type="button" class="login nav-link">
         Login
         <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-      <!-- Pinned per region and carry no data-login, same as the footer's
-           "Login — IND" / "Login — USA" links (see caphive.js). -->
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
       <div class="nav-menu">
         <a href="https://app.caphive.com/">Login — IND</a>
         <a href="https://app.caphive.us/">Login — USA</a>
@@ -180,7 +181,7 @@
     <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
          header CTA, the contact page and the outbound email signature all carry the same
          link. Falls back to the contact form while no booking url is configured. -->
-    <a class="btn btn-dark btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
     <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -295,7 +296,7 @@
       <p>Most platforms are organised around what they do. A fund is organised around where its money is. These are the five places capital sits, and <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> holds the record at each of them.</p>
     </div>
     <div class="frame reveal" data-delay="1" aria-hidden="true">
-      <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">app.caphive.com/overview</span></div>
+      <div class="frame-bar"><i></i><i></i><i></i></div>
       <div class="frame-body" style="padding:34px 32px 38px">
         <div class="flow">
           <div class="flow-node" data-step="01">
@@ -445,7 +446,6 @@
             <div class="frame-body">
               <div class="frame-top">
                 <div class="frame-fund">Meridian Growth Fund III<small>GP DASHBOARD · Q2 2026</small></div>
-                <span class="frame-live">Live</span>
               </div>
               <div class="frame-nav" style="margin-top:20px">
                 <div class="lab">Net Asset Value</div>
@@ -480,11 +480,10 @@
             </ul>
           </div>
           <div class="frame" aria-hidden="true">
-            <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">app.caphive.com/investor/portal</span></div>
+            <div class="frame-bar"><i></i><i></i><i></i></div>
             <div class="frame-body">
               <div class="frame-top">
                 <div class="frame-fund">Meridian Family Office<small>CAPITAL ACCOUNT · FUND III</small></div>
-                <span class="frame-live">Live</span>
               </div>
               <div style="margin-top:22px">
                 <div class="pos"><span>Committed</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">US$ 10.0m</span></div>
@@ -515,11 +514,10 @@
             </ul>
           </div>
           <div class="frame" aria-hidden="true">
-            <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">app.caphive.com/close/q2-2026</span></div>
+            <div class="frame-bar"><i></i><i></i><i></i></div>
             <div class="frame-body">
               <div class="frame-top">
                 <div class="frame-fund">Q2 2026 close<small>FUND III · USD / EUR</small></div>
-                <span class="frame-live">Live</span>
               </div>
               <div class="frame-stats" style="margin-top:18px">
                 <div class="frame-stat"><div class="v">61 / 61</div><div class="k">STATEMENTS</div></div>
@@ -842,7 +840,7 @@
       </div>
     </div>
     <div class="foot-base">
-      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved. · Data encrypted in transit &amp; at rest.</p>
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
             <p class="legal-links">
         <a href="privacy.html">Privacy</a>
         <a href="terms.html">Terms</a>
@@ -921,6 +919,6 @@
 </script>
 
 
-<script src="assets/js/caphive.js?v=7bab08b2"></script>
+<script src="assets/js/caphive.js?v=da387eda"></script>
 </body>
 </html>

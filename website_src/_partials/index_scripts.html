@@ -5,20 +5,6 @@
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var finePointer = window.matchMedia('(pointer: fine)').matches;
 
-  /* ---- login: send the visitor to the app on their own domain ----
-     Mirrors the same block in assets/js/caphive.js. The homepage runs its own
-     script (its hero, scrollytelling and chat are homepage-only), so this logic
-     has to exist in both places — keep them in step. The markup ships
-     https://app.caphive.com/ so the link works with JavaScript off. */
-  var APP_BY_DOMAIN = {
-    'caphive.com': 'https://app.caphive.com/',
-    'caphive.us':  'https://app.caphive.us/'
-  };
-  var appUrl = APP_BY_DOMAIN[location.hostname.replace(/^www\./, '')];
-  if(appUrl){
-    document.querySelectorAll('a[data-login]').forEach(function(a){ a.href = appUrl; });
-  }
-
   /* ---- nav shadow on scroll ---- */
   var nav = document.getElementById('nav');
   function onScroll(){ nav.classList.toggle('scrolled', window.scrollY > 24); }
@@ -134,17 +120,14 @@
   /* ---- product story: one scroll driver syncs steps, rail and dashboard ---- */
   var steps = [].slice.call(document.querySelectorAll('.step'));
   var views = [].slice.call(document.querySelectorAll('.view'));
-  var stageUrl = document.getElementById('stageUrl');
   var storyFill = document.getElementById('storyFill');
   var storySteps = document.querySelector('.story-steps');
-  var STAGE_URLS = ['app.caphive.com/funds', 'app.caphive.com/portfolios', 'app.caphive.com/deals'];
   var storyIdx = -1;
   function setStory(i){
     if(i === storyIdx) return;
     storyIdx = i;
     steps.forEach(function(s, j){ s.classList.toggle('active', j === i); });
     views.forEach(function(v, j){ v.classList.toggle('active', j === i); });
-    if(stageUrl) stageUrl.textContent = STAGE_URLS[i] || STAGE_URLS[0];
   }
   function updateStory(){
     var mid = window.innerHeight * 0.5;
@@ -231,9 +214,9 @@
     { q: "Which positions missed plan this quarter?",
       a: "3 of 24. The widest variance is a Series B position at −12% ARR against plan. The full variance table is ready to open.",
       chip: "Portfolio · Variance analysis" },
-    { q: "Are we ready for the quarterly AIF filing?",
-      a: "11 of 12 checks complete. One investor's FATCA declaration is pending — reminder sent. The filing pack is otherwise assembled.",
-      chip: "Compliance · AIF quarterly checklist" }
+    { q: "Are we ready for the quarterly fund filings?",
+      a: "11 of 12 checks complete. The fund size and NAV is missing for Fund III. The filing pack is otherwise assembled.",
+      chip: "Compliance · Quarterly report" }
   ];
   var chatBody = document.getElementById('chatBody');
   var agentTabs = [].slice.call(document.querySelectorAll('.agent-tab'));

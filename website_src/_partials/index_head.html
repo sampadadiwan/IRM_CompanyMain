@@ -71,7 +71,7 @@
   /* ---------- floating pill nav ---------- */
   .nav{
     position:fixed; top:16px; left:50%; transform:translateX(-50%);
-    width:min(1120px, calc(100% - 28px)); z-index:60;
+    width:min(1232px, calc(100% - 48px)); z-index:60;
     display:flex; align-items:center; justify-content:space-between;
     padding:10px 12px 10px 20px; border-radius:999px;
     background:rgba(255,255,255,.94); border:1px solid var(--line);
@@ -90,7 +90,7 @@
   }
   .nav-link:hover{ color:var(--fg); background:var(--cream); }
   .nav-cta{ display:flex; align-items:center; gap:8px; }
-  .login{ font-size:14.5px; font-weight:500; color:var(--mut); padding:8px 14px; border-radius:999px; }
+  .login{ font:inherit; font-size:14.5px; font-weight:500; color:var(--mut); padding:8px 14px; border-radius:999px; background:none; border:0; cursor:pointer; }
   .login:hover{ color:var(--fg); background:var(--cream); }
   .btn-nav{ padding:10px 20px; font-size:14px; }
   .nav-toggle{ display:none; background:none; border:0; cursor:pointer; padding:10px; }
@@ -338,6 +338,7 @@
     content:""; width:9px; height:10.4px; background:var(--orange);
     clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
   }
+  .chat-head .wordmark{ text-transform:none; letter-spacing:0; }
   .chat-sub{ margin-left:auto; text-transform:none; letter-spacing:.02em; color:rgba(255,255,255,.35); }
   .chat-body{ padding:26px; display:flex; flex-direction:column; gap:14px; flex:1; text-align:left; }
   .msg{ max-width:85%; padding:13px 18px; border-radius:18px; font-size:14.5px; line-height:1.55; }
