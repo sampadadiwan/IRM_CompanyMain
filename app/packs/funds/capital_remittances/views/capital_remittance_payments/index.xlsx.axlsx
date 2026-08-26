@@ -4,7 +4,7 @@ wb = xlsx_package.workbook
 form_type, custom_field_names, custom_headers = get_form_type("CapitalRemittancePayment")
 
 wb.add_worksheet(name: "CapitalRemittancePayment") do |sheet|
-  headers = ["Fund", "Investing Entity", "Folio", "Amount", "Folio Amount", "Folio Currency", "Payment Date", "Payment Notification Sent", "Notes", "Reference No"] + custom_headers
+  headers = ["Fund", "Investor", "Investing Entity", "Folio", "Amount", "Folio Amount", "Folio Currency", "Payment Date", "Payment Notification Sent", "Notes", "Reference No"] + custom_headers
 
   has_tracking_currency = false
   if params[:fund_id].present? || params[:capital_remittance_id].present?
@@ -25,7 +25,7 @@ wb.add_worksheet(name: "CapitalRemittancePayment") do |sheet|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
     commitment = cc.capital_commitment
 
-    values = [cc.fund.name, cc.investor_kyc&.full_name || cc.investor&.investor_name, commitment.folio_id, cc.amount, cc.folio_amount, commitment.folio_currency.to_s, cc.payment_date, payment_notification_sent, cc.notes, cc.reference_no] + custom_field_values
+    values = [cc.fund.name, cc.investor&.investor_name, cc.investor_kyc&.full_name, commitment.folio_id, cc.amount, cc.folio_amount, commitment.folio_currency.to_s, cc.payment_date, payment_notification_sent, cc.notes, cc.reference_no] + custom_field_values
 
     values << cc.tracking_amount.to_d if has_tracking_currency
 

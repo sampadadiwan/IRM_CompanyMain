@@ -12,7 +12,7 @@ class FundUnitList < BaseList
   def call(&)
     @q = FundUnit.ransack(@params[:q])
     @fund_units = apply_policy_scope(@q.result, &)
-    @fund_units = @fund_units.includes(:fund, :capital_commitment)
+    @fund_units = @fund_units.includes(:fund, capital_commitment: :investor_kyc)
     @fund_units = filter_params(
       @fund_units,
       :capital_commitment_id,
