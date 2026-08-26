@@ -197,6 +197,53 @@ Then('the tax should reduce the income_with_fees_cents correctly') do
   end
 end
 
+When('I clone the capital distribution') do
+  visit(capital_distribution_path(@capital_distribution))
+  within "#capital_distribution_#{@capital_distribution.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Clone")
+end
+
+When('I create with fees from the capital distribution') do
+  visit(capital_distribution_path(@capital_distribution))
+  within "#capital_distribution_#{@capital_distribution.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Create With Fees")
+end
+
+Then('the new distribution form should show the source title as a copy with {string} fee rows') do |count|
+  expect(find_field('capital_distribution_title').value).to eq("#{@capital_distribution.title} (Copy)")
+  expect(all('.nested-fields').count).to eq(count.to_i)
+end
+
+Then('the new distribution form should have a blank title with {string} fee rows pre-filled') do |count|
+  expect(find_field('capital_distribution_title').value).to be_blank
+  expect(all('.nested-fields').count).to eq(count.to_i)
+end
+
+When('I save the cloned capital distribution') do
+  click_button 'Save'
+  expect(page).to have_content("Capital distribution was successfully created")
+end
+
+Then('a new Capital Distribution should exist as an independent clone with matching fee rows') do
+  cloned = CapitalDistribution.order(:id).last
+  expect(cloned.id).not_to eq(@capital_distribution.id)
+  expect(cloned.title).to eq("#{@capital_distribution.title} (Copy)")
+  expect(cloned.income_cents).to eq(@capital_distribution.income_cents)
+  expect(cloned.cost_of_investment_cents).to eq(@capital_distribution.cost_of_investment_cents)
+  expect(cloned.distribution_fees.count).to eq(@capital_distribution.distribution_fees.count)
+  expect(cloned.distribution_fees.pluck(:name, :fee_type)).to match_array(@capital_distribution.distribution_fees.pluck(:name, :fee_type))
+  expect(cloned.distribution_fees.pluck(:id) & @capital_distribution.distribution_fees.pluck(:id)).to be_empty
+end
+
+Then("the source capital distribution's fee rows should be unchanged") do
+  @capital_distribution.reload
+  expect(@capital_distribution.distribution_fees.count).to be_positive
+end
+
 Given('the fund has {string} capital distribution') do |count|
   (1..count.to_i).each do |_i|
     cc = FactoryBot.create(:capital_distribution, fund: @fund)

@@ -31,6 +31,10 @@ class CapitalDistributionPolicy < FundBasePolicy
     update?
   end
 
+  def clone?
+    create?
+  end
+
   def mark_payments_completed?
     update? && record.approved
   end

@@ -201,7 +201,7 @@
   <% end %>
 </div>
 
-<div class="container-fluid px-3 pb-3" id="capital_distribution_<%= @capital_distribution.id %>_actions">
+<div class="container-fluid px-3 pb-3" id="capital_distribution_<%= @capital_distribution.id %>_actions" data-controller="tooltip">
   <% if policy(@capital_distribution).update? %>
     <%= link_to edit_capital_distribution_path(@capital_distribution), class: "btn btn-outline-primary" do %>
       <i class="ti ti-edit"></i> <%= t_common(:edit) %>
@@ -284,6 +284,20 @@
                 <span class="dropdown-item disabled text-muted ti ti-shield-check" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Distribution Readiness Agent is disabled. Contact support to enable it">
                   Run Readiness Check <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
                 </span>
+              <% end %>
+
+              <% if policy(@capital_distribution).clone? %>
+                <div class="dropdown-divider"></div>
+
+                <%= link_to new_capital_distribution_path("capital_distribution[fund_id]": @capital_distribution.fund_id, clone_from_id: @capital_distribution.id, clone_mode: "full"),
+                      class: "dropdown-item", data: { turbo: false, bs_toggle: "tooltip", bs_container: "body", bs_title: "Start a new distribution pre-filled with this one's title, amounts, unit prices and fee rows" } do %>
+                  <i class="ti ti-copy"></i>Clone
+                <% end %>
+
+                <%= link_to new_capital_distribution_path("capital_distribution[fund_id]": @capital_distribution.fund_id, clone_from_id: @capital_distribution.id, clone_mode: "fees"),
+                      class: "dropdown-item", data: { turbo: false, bs_toggle: "tooltip", bs_container: "body", bs_title: "Start a blank new distribution with just this one's fee rows copied in" } do %>
+                  <i class="ti ti-copy"></i>Create With Fees
+                <% end %>
               <% end %>
             </div>
         </div>
