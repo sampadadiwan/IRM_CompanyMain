@@ -16,8 +16,13 @@ class AgentIngestedEmail < ApplicationRecord
   belongs_to :sender_user, class_name: "User"
 
   has_one :warehouse_item, dependent: :destroy
-  has_one :note, foreign_key: :source_email_id
-  has_one :task, foreign_key: :source_email_id
+
+  # Polymorphic reference to the Note or Task created from this email.
+  # Set when the email is filed (status: "filed"). Keeps all agent data
+  # in this table — core models have no agent-specific columns.
+  #
+  # @return [Note, Task, nil]
+  belongs_to :filed_as, polymorphic: true, optional: true
 
   # --- Statuses ---
 
@@ -41,9 +46,10 @@ class AgentIngestedEmail < ApplicationRecord
   #
   # @param confidence [BigDecimal] match confidence score (0.00–1.00)
   # @param match_tier [String] which tier matched (e.g. "A")
+  # @param filed_as [Note, Task] the record created from this email
   # @return [Boolean] save result
-  def mark_filed!(confidence:, match_tier:)
-    update!(status: "filed", confidence: confidence, match_tier: match_tier)
+  def mark_filed!(confidence:, match_tier:, filed_as:)
+    update!(status: "filed", confidence: confidence, match_tier: match_tier, filed_as: filed_as)
   end
 
   # Mark as warehoused (couldn't auto-file, needs manual review).

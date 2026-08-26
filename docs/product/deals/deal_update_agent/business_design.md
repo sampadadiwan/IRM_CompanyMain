@@ -20,7 +20,7 @@ This solves the post-call capture problem: notes and follow-ups often get delaye
 
 ### 1. Every User Gets a Unique Address Per Deal
 
-When a user visits a deal page, a unique email address is automatically generated for them — e.g., `d7f3a91c2b8e4406@updates.caphive.com`. This address is shown below the deal name with a copy button.
+When a user visits a deal page, a unique email address is automatically generated for them — e.g., `d7f3a91c2b8e4406@dev.caphive.app`. This address is shown below the deal name with a copy button. The address shares the platform's existing email domain — no separate subdomain is needed.
 
 The address is:
 - **Personal** — tied to one user + one deal
@@ -84,14 +84,14 @@ The sender is notified that their email needs manual review.
 ### Meeting Notes
 - Attached to the matched investor on the deal board
 - Date set to today
-- Flagged as "created by agent" for audit trail
+- Traceable to the source email via the agent's audit log (the link lives on the agent email record, not on the note itself)
 - Full email body preserved as note content
 
 ### Tasks
 - Attached to the matched investor on the deal board
 - Assigned to the sender
 - Due date extracted from the email (e.g., "by Friday" → next Friday)
-- Flagged as "created by agent" for audit trail
+- Traceable to the source email via the agent's audit log (the link lives on the agent email record, not on the task itself)
 
 ---
 
@@ -124,29 +124,41 @@ The Warehouse tab appears on the deal page when there are pending items. Each it
 | Message-ID deduplication | Yes |
 | Automated test suite (11 scenarios) | Yes |
 
-### Phase 2 — Planned
+### Phase 2 — Building
 
 | Feature | Description |
 |---------|-------------|
-| WhatsApp channel | Send updates via WhatsApp in addition to email |
-| Disambiguation replies | When multiple stakeholders match, the agent asks "did you mean 1) Sequoia or 2) Sequoia Capital India?" |
-| Global stakeholder search | Search beyond the deal's investors if no match found |
-| Attachments | File attachments alongside notes (e.g., term sheets, meeting decks) |
-| Undo (30-day) | Reply "undo" to a confirmation email to reverse the action |
+| Disambiguation replies | When multiple stakeholders match, the agent emails back "did you mean 1) Accel Partners or 2) Accel-KKR?" — user replies with a number |
+| Global stakeholder search | If no match on the deal, search across all investors in the org. If found, ask user to confirm attaching them to the deal before filing |
+| Signature/reply chain stripping | Strip quoted replies, signatures, disclaimers, and "Sent from my iPhone" before parsing — cleaner notes |
+| Auto-reply detection | Ignore out-of-office and auto-generated replies so they don't create garbage items |
+| Rate limiting | Max 30 emails/hour per address — excess is queued, not lost. Sender is notified |
+| Leak alert | If someone sends from the wrong email, alert the address owner that their address may have leaked |
+| Undo (30-day) | Confirmation email includes an "Undo" link — moves the item back to warehouse instead of deleting |
+| Agent-created badge | Notes and tasks created by the agent show an "AI" badge on the board until a human views or edits them |
+| Attachments | Email attachments (PDFs, decks) are filed to the deal's document store alongside the note/task |
+| 72h warehouse digest | Daily email nudge when warehouse items are older than 72 hours, plus a badge on the deal board |
+| VCF contact card | "Save to contacts" button on the deal page — downloads a .vcf file so the address autocompletes on the user's phone |
 
-### Phase 3 — Future
+### Phase 3 — Planned
 
 | Feature | Description |
 |---------|-------------|
-| New stakeholder creation | If no match at all, offer to add as a new investor on the deal |
+| New stakeholder creation | If no match at all, offer to create a new investor via email domain dedupe |
 | Warehouse bulk actions | Select multiple warehouse items and file/discard in batch |
 | Admin UI | Manage addresses, view usage stats, rotate addresses |
-| Merge tool | Merge duplicate warehouse items |
+| Merge tool | Merge duplicate stakeholders (safety net for domain-based creation) |
+| Multi-item per email | A single email producing multiple notes/tasks |
+| @name assignee parsing | Assign tasks to other deal team members via @name |
+| Sender timezone date resolution | Resolve relative dates in the sender's timezone |
+| mailto: button | "Email this deal" button on the deal page |
+| Address rotation | Rotate compromised addresses from admin UI |
 
 ### Phase 4 — Vision
 
 | Feature | Description |
 |---------|-------------|
+| WhatsApp channel | Send deal updates via WhatsApp forward |
 | Slack channel | Post deal updates from Slack |
 | AI queries via MCP | Ask the agent questions about the deal ("who haven't we spoken to in 2 weeks?") |
 

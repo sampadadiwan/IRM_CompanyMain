@@ -53,37 +53,46 @@ When("the job is performed") do
 end
 
 # --- Assertions: Note Creation ---
+# Notes are found by owner (DealInvestor), not by source_email FK.
+# The link between email and note lives on AgentIngestedEmail.filed_as.
 
 Then("a Note should exist on {string} with text {string}") do |investor_name, text_fragment|
   investor = Investor.find_by!(investor_name: investor_name)
   deal_investor = DealInvestor.find_by!(deal: @deal, investor: investor)
 
-  @created_note = Note.find_by(owner: deal_investor, source_email: @ingested_email)
+  @created_note = Note.find_by(owner: deal_investor)
   expect(@created_note).not_to be_nil,
     "Expected a Note on #{investor_name} but none found"
   expect(@created_note.details.to_plain_text).to include(text_fragment)
 end
 
+# Verifies the agent email's polymorphic filed_as points to the created note
+# and the match_tier is recorded on the agent email (not on the note itself).
 Then("the Note should be flagged as created_by_agent with match_tier {string}") do |tier|
-  expect(@created_note.created_by_agent).to be true
-  expect(@created_note.match_tier).to eq(tier)
+  @ingested_email.reload
+  expect(@ingested_email.filed_as).to eq(@created_note)
+  expect(@ingested_email.match_tier).to eq(tier)
 end
 
 # --- Assertions: Task Creation ---
+# Same pattern as notes — found by owner, linked via AgentIngestedEmail.filed_as.
 
 Then("a Task should exist on {string} with due date {string}") do |investor_name, due_date|
   investor = Investor.find_by!(investor_name: investor_name)
   deal_investor = DealInvestor.find_by!(deal: @deal, investor: investor)
 
-  @created_task = Task.find_by(owner: deal_investor, source_email: @ingested_email)
+  @created_task = Task.find_by(owner: deal_investor)
   expect(@created_task).not_to be_nil,
     "Expected a Task on #{investor_name} but none found"
   expect(@created_task.due_date).to eq(Date.parse(due_date))
 end
 
+# Verifies the agent email's polymorphic filed_as points to the created task
+# and the match_tier is recorded on the agent email (not on the task itself).
 Then("the Task should be flagged as created_by_agent with match_tier {string}") do |tier|
-  expect(@created_task.created_by_agent).to be true
-  expect(@created_task.match_tier).to eq(tier)
+  @ingested_email.reload
+  expect(@ingested_email.filed_as).to eq(@created_task)
+  expect(@ingested_email.match_tier).to eq(tier)
 end
 
 # --- Assertions: Email Status ---

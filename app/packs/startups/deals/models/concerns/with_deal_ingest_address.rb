@@ -27,8 +27,11 @@ module WithDealIngestAddress
   # If a revoked address exists (from a prior access grant), reactivate it
   # rather than creating a new one — MySQL's unconditional unique index on
   # [deal_id, user_id] prevents duplicate rows.
+  # Skipped when DEAL_INGEST_DOMAIN is not configured — no addresses are
+  # generated on environments where the feature is disabled.
   def generate_deal_ingest_address
     return unless deal_access_right_for_user?
+    return if DealIngestAddress.domain.blank?
 
     addr = DealIngestAddress.find_or_initialize_by(deal_id: owner_id, user_id: user_id)
     if addr.persisted? && addr.revoked?

@@ -8,9 +8,9 @@ class IncomingEmailsController < ApplicationController
   def sendgrid
     Rails.logger.debug { "Processing incoming email, to: #{params[:to]}, from: #{params[:from]}, subject: #{params[:subject]}" }
 
-    # Deal Update Agent — route emails to @updates.caphive.com to the
-    # deal ingest pipeline. All other domains fall through to the
-    # existing IncomingEmail logic below.
+    # Deal Update Agent — route emails whose local part matches a
+    # DealIngestAddress to the deal ingest pipeline. All other emails
+    # fall through to the existing IncomingEmail logic below.
     # @see DealIngestAuthenticator
     if deal_ingest_email?(params[:to])
       DealIngestAuthenticator.call(params)
@@ -130,14 +130,21 @@ class IncomingEmailsController < ApplicationController
     params.require(:incoming_email).permit(:from, :to, :subject, :body, :owner_id, :owner_type, :entity_id, :cc_emails, :message_id, :internet_message_id, :received_at)
   end
 
-  # Whether the inbound email is addressed to the deal ingest domain.
-  # Matches any address @updates.caphive.com (or whatever DEAL_INGEST_DOMAIN is set to).
+  # Whether the inbound email is addressed to a deal ingest address.
+  # Extracts the local part (16-hex token) from the To field and checks
+  # for an active DealIngestAddress record. This allows the deal update
+  # pipeline to share the same email domain as regular incoming emails,
+  # routing by address rather than by domain.
   #
-  # @param to [String] the To field from SendGrid
+  # @param to_field [String] the To field from SendGrid (may include display name)
   # @return [Boolean]
-  def deal_ingest_email?(to)
-    return false if to.blank?
+  def deal_ingest_email?(to_field)
+    return false if to_field.blank?
 
-    to.downcase.include?("@#{DealIngestAddress.domain}")
+    email = to_field.match(/<([^>]+)>/)&.[](1) || to_field.strip
+    local_part = email.split("@").first&.downcase
+    return false if local_part.blank?
+
+    DealIngestAddress.for_lookup(local_part).exists?
   end
 end

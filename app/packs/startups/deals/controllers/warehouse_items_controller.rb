@@ -57,6 +57,8 @@ class WarehouseItemsController < ApplicationController
   end
 
   # File a warehouse item — create the Note or Task and resolve.
+  # The created record is linked back to the email via the polymorphic
+  # filed_as association on AgentIngestedEmail (match_tier "M" = manual).
   # Wrapped in a transaction to prevent partial state if any step fails.
   def file_warehouse_item!
     deal_investor = @deal.deal_investors.find(params[:deal_investor_id])
@@ -71,33 +73,27 @@ class WarehouseItemsController < ApplicationController
              end
 
     ActiveRecord::Base.transaction do
-      if intent == "meeting_note"
-        Note.create!(
-          entity_id: @deal.entity_id,
-          user_id: current_user.id,
-          owner: deal_investor,
-          details: parsed["body"] || "Filed from warehouse",
-          on: Date.current,
-          source_email: email,
-          created_by_agent: true,
-          match_tier: "M"
-        )
-      else
-        Task.create!(
-          entity_id: @deal.entity_id,
-          for_entity_id: @deal.entity_id,
-          user_id: current_user.id,
-          assigned_to: current_user,
-          owner: deal_investor,
-          details: parsed["body"] || "Filed from warehouse",
-          due_date: safe_parse_date(parsed["due_date"]),
-          source_email: email,
-          created_by_agent: true,
-          match_tier: "M"
-        )
-      end
+      item = if intent == "meeting_note"
+               Note.create!(
+                 entity_id: @deal.entity_id,
+                 user_id: current_user.id,
+                 owner: deal_investor,
+                 details: parsed["body"] || "Filed from warehouse",
+                 on: Date.current
+               )
+             else
+               Task.create!(
+                 entity_id: @deal.entity_id,
+                 for_entity_id: @deal.entity_id,
+                 user_id: current_user.id,
+                 assigned_to: current_user,
+                 owner: deal_investor,
+                 details: parsed["body"] || "Filed from warehouse",
+                 due_date: safe_parse_date(parsed["due_date"])
+               )
+             end
 
-      email.mark_filed!(confidence: 1.0, match_tier: "M")
+      email.mark_filed!(confidence: 1.0, match_tier: "M", filed_as: item)
       @warehouse_item.resolve!(user: current_user, resolution: "filed")
     end
   end

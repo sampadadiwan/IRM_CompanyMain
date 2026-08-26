@@ -53,10 +53,12 @@ class DealIngestAddress < ApplicationRecord
   # --- Class Methods ---
 
   # The email domain for ingest addresses.
+  # Returns nil when not configured — callers use this to gate the
+  # feature: no domain = address UI hidden, no addresses generated.
   #
-  # @return [String] e.g. "updates.caphive.com"
+  # @return [String, nil] e.g. "updates.altconnects.com", or nil if not configured
   def self.domain
-    ENV.fetch("DEAL_INGEST_DOMAIN", "updates.caphive.com")
+    ENV.fetch("DEAL_INGEST_DOMAIN", nil)
   end
 
   private

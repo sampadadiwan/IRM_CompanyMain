@@ -76,7 +76,8 @@ class DealIngestProcessor
   end
 
   # Step 3a: Confident match — create a Note or Task on the deal board.
-  # Flags it as agent-created and links back to the source email.
+  # Links the created record back to this email via the polymorphic
+  # filed_as association on AgentIngestedEmail.
   #
   # @param parsed [Hash] LLM parse result
   # @param match_result [DealStakeholderMatcher::Result]
@@ -85,18 +86,19 @@ class DealIngestProcessor
     deal_investor = match_result.deal_investor
 
     ActiveRecord::Base.transaction do
-      case parsed["intent"]
-      when "meeting_note"
-        create_note!(parsed, deal_investor)
-      when "task"
-        create_task!(parsed, deal_investor)
-      else
-        raise ArgumentError, "Unexpected intent: #{parsed['intent']}"
-      end
+      item = case parsed["intent"]
+             when "meeting_note"
+               create_note!(parsed, deal_investor)
+             when "task"
+               create_task!(parsed, deal_investor)
+             else
+               raise ArgumentError, "Unexpected intent: #{parsed['intent']}"
+             end
 
       @email.mark_filed!(
         confidence: match_result.confidence,
-        match_tier: "A"
+        match_tier: "A",
+        filed_as: item
       )
     end
 
@@ -114,10 +116,7 @@ class DealIngestProcessor
       user_id: @user.id,
       owner: deal_investor,
       details: parsed["body"],
-      on: Date.current,
-      source_email: @email,
-      created_by_agent: true,
-      match_tier: "A"
+      on: Date.current
     )
   end
 
@@ -134,10 +133,7 @@ class DealIngestProcessor
       assigned_to: @user,
       owner: deal_investor,
       details: parsed["body"],
-      due_date: parse_due_date(parsed["due_date"]),
-      source_email: @email,
-      created_by_agent: true,
-      match_tier: "A"
+      due_date: parse_due_date(parsed["due_date"])
     )
   end
 

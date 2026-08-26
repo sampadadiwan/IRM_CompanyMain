@@ -58,14 +58,17 @@ Parking lot for emails that couldn't be auto-filed.
 | `resolved_by_id` | bigint, nullable | FK → users |
 | `resolution` | string(20) | `filed` / `discarded` |
 
-### Columns Added to Existing Tables
+### Polymorphic Link on `agent_ingested_emails`
 
-**`notes`** and **`tasks`**:
+The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed_as` association — the agent email points to the Note or Task it created. No columns are added to the `notes` or `tasks` tables; core models have zero knowledge of the agent system.
+
 | Column | Type | Notes |
 |--------|------|-------|
-| `source_email_id` | bigint, nullable | FK → agent_ingested_emails |
-| `created_by_agent` | boolean, default false | Audit flag |
-| `match_tier` | string(2) | `A` (auto-filed), `M` (manually filed from warehouse) |
+| `filed_as_type` | string, nullable | `"Note"` or `"Task"` (set on filing) |
+| `filed_as_id` | bigint, nullable | FK to the created note or task record |
+
+- `filed_as` is `nil` when the email is warehoused or dropped
+- To check if a note was agent-created: `AgentIngestedEmail.where(filed_as: note).exists?`
 
 ---
 
@@ -90,7 +93,7 @@ Parking lot for emails that couldn't be auto-filed.
 ### Controllers
 | File | Purpose |
 |------|---------|
-| `app/packs/misc/incoming_emails/controllers/incoming_emails_controller.rb` | SendGrid webhook — branches on `@updates.caphive.com` domain |
+| `app/packs/misc/incoming_emails/controllers/incoming_emails_controller.rb` | SendGrid webhook — routes by DealIngestAddress lookup on local part |
 | `app/packs/startups/deals/controllers/warehouse_items_controller.rb` | Warehouse UI — index (pending items), resolve (file/discard) |
 | `app/packs/startups/deals/controllers/deals_controller.rb` | Deal show — lazy ingest address generation via `ensure_deal_ingest_address` |
 
@@ -131,7 +134,7 @@ Parking lot for emails that couldn't be auto-filed.
 ## Processing Pipeline
 
 ### Step 1: Inbound Webhook
-The SendGrid webhook POST hits `IncomingEmailsController#sendgrid`. The controller checks if the `to` address contains `@{DEAL_INGEST_DOMAIN}`. If yes, it delegates to `DealIngestAuthenticator` and returns `200 OK`.
+The SendGrid webhook POST hits `IncomingEmailsController#sendgrid`. The controller extracts the local part (16-hex token) from the `to` address and checks for a matching `DealIngestAddress` record. If found, it delegates to `DealIngestAuthenticator` and returns `200 OK`. This address-based routing allows the deal update pipeline to share the same email domain as regular incoming emails.
 
 ### Step 2: Authentication (`DealIngestAuthenticator`)
 1. Look up the `to` address in `deal_ingest_addresses` → get `(deal_id, user_id)`
@@ -172,9 +175,8 @@ Tier A only (MVP): match against the deal's `DealInvestors`.
 
 ### Step 5: Create Note/Task
 Wrapped in `ActiveRecord::Base.transaction` with `Chewy.strategy(:atomic)`:
-- Create `Note` or `Task` on the matched `DealInvestor`
-- Set `created_by_agent: true`, `match_tier: "A"`, `source_email: @email`
-- Mark email as `filed` with confidence score
+- Create `Note` or `Task` on the matched `DealInvestor` (clean creation — no agent columns on the record)
+- Mark email as `filed` with confidence score, match tier `"A"`, and `filed_as:` pointing to the created item
 
 ### Step 6: Reply Email
 - **Success** → confirmation email with what was created
@@ -221,15 +223,30 @@ When an AccessRight is destroyed, the address is soft-revoked (`revoked_at` set)
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `DEAL_INGEST_DOMAIN` | Domain for ingest email addresses | `updates.caphive.com` |
+| `DEAL_INGEST_DOMAIN` | Domain for ingest email addresses. Used to compose the `full_address` shown on the deal page and in confirmation emails. **No fallback** — when not set, the feature is completely hidden (no addresses shown, no generation callbacks fire). | None |
+
+**Feature gate behavior:** `DealIngestAddress.domain` returns `nil` when the env var is absent. All callers guard on `DealIngestAddress.domain.present?` / `.blank?` — the deal page and AccessRight callbacks skip agent logic silently. This ensures the feature is invisible on any environment where SendGrid is not configured.
+
+**Routing note:** The inbound webhook does NOT check the domain. It extracts the local part (hex token) from the To field and looks up `DealIngestAddress` directly. This allows the deal update pipeline to share the same email domain as regular incoming emails — no separate subdomain or MX record is needed.
+
+| Environment | Value | Effect |
+|-------------|-------|--------|
+| Staging | `dev.caphive.app` | Feature active, shares existing SendGrid Inbound Parse setup |
+| Production | *(not set until ready)* | Feature hidden — no addresses shown, no ingest processing |
+| Production (future) | `prod.caphive.app` | Feature active, shares existing SendGrid Inbound Parse setup |
 
 ---
 
 ## DNS / Infrastructure Setup
 
-1. **MX record**: `updates.caphive.com MX 10 mx.sendgrid.net`
-2. **SendGrid Inbound Parse**: Add `updates.caphive.com` → webhook URL `https://app.caphive.com/incoming_emails/sendgrid`
-3. Separate from existing `prod.caphive.app` inbound email domain
+No additional DNS or SendGrid configuration is required. The deal update pipeline reuses the existing Inbound Parse setup:
+
+| Environment | Existing Domain | Existing Webhook | Shared? |
+|-------------|----------------|------------------|---------|
+| Staging | `dev.caphive.app` | `https://dev.altconnects.com/incoming_emails/sendgrid` | Yes |
+| Production | `prod.caphive.app` | `https://app.caphive.com/incoming_emails/sendgrid` | Yes |
+
+The controller routes by address lookup (one indexed DB query per inbound email) rather than by domain. Emails whose local part matches a `DealIngestAddress` go to the deal update pipeline; all others fall through to the existing `IncomingEmail` flow.
 
 ---
 
@@ -263,43 +280,93 @@ bundle exec cucumber --tags @deal_update_agent                        # by tag
 
 ---
 
-## Phase 2 — Planned Changes
+## Phase 2 — Building
 
-### WhatsApp Channel
-- Add a WhatsApp webhook handler alongside the email pipeline
-- Reuse the same `DealIngestProcessor` orchestrator
-- New `WhatsAppIngestAuthenticator` for sender verification via WhatsApp Business API
-- Address mapping: phone number → (deal, user) instead of email address → (deal, user)
+### Tier B Matching — Disambiguation (FR-17, §6.2)
+- When 2+ deal-attached stakeholders score ≥ 0.75 (or single 0.75–0.90), reply with a numbered list
+- User replies with "1", "2", "0" (none) from their email client
+- New status on `AgentIngestedEmail`: `pending_disambiguation`
+- Track reply chain via `In-Reply-To` header matching against pending emails
+- No reply within 48h → warehouse, sender notified once
+- New mailer template: `DealIngestMailer#disambiguation`
 
-### Tier B Matching — Disambiguation
-- When multiple stakeholders match above threshold, reply with a numbered list
-- User replies with "1", "2", etc. to pick the correct match
-- New status on `AgentIngestedEmail`: `awaiting_disambiguation`
-- Track reply chain via `In-Reply-To` header matching
-
-### Tier C Matching — Global Search
-- If no match in deal's investors, search globally across the entity's Investor table
-- If found, offer to attach the investor to the deal first, then create the note
+### Tier C Matching — Global Search (FR-17-20, §6.3)
+- If no match among deal-attached DealInvestors, search Investor table scoped by sender's org_id
+- Higher threshold (≥ 0.95) — global table has thousands of records vs 5–40 on a deal
+- Single global match → reply asking user to confirm attach + file (never auto-attach)
+- New status on `AgentIngestedEmail`: `pending_attach_confirm`
+- On "YES" reply: create DealInvestor association + file the note/task as one atomic action
+- New mailer template: `DealIngestMailer#attach_confirm`
 - New `match_tier: "C"` for audit trail
+- Confirmation shows stakeholder name, known domains, and how many other deals they appear on
 
-### Attachments
-- Extract attachments from SendGrid payload (`params[:attachments]`)
-- Upload to S3 via Shrine, attach as Documents to the created Note
-- Size/type validation (max 10MB, common document formats)
+### Signature/Reply Chain Stripping (FR-11)
+- New `EmailBodySanitizer` service (or method in DealEmailParser) runs before the LLM call
+- Strips: quoted reply chains (`On Mon, ... wrote:`), signature blocks (`--`), legal disclaimers, "Sent from my iPhone/Android", tracking pixels
+- Raw original preserved on `agent_ingested_emails.raw_payload` for reference
 
-### Undo (30-day)
-- Reply "undo" to a confirmation email within 30 days
-- Match via `In-Reply-To` header → find the original `AgentIngestedEmail`
-- Soft-delete the created Note/Task, mark email as `undone`
+### Auto-Reply Detection (FR-23)
+- New check in `DealIngestAuthenticator` after dedupe step
+- Inspect `Auto-Submitted:` and `Precedence:` headers
+- Auto-generated emails → drop silently (prevents mail loops with OOO responders)
+
+### Rate Limiting (FR-6)
+- Max 30 emails/hour per address
+- Counter in Redis (per address key, 1-hour TTL window)
+- Check in `DealIngestAuthenticator` after address lookup
+- Excess emails queued (not dropped), processed when window resets
+- Sender notified once per rate-limit event
+- New mailer template: `DealIngestMailer#rate_limited`
+
+### Leak Alert (FR-3)
+- When `verify_sender` fails (From email doesn't match address owner), alert the address owner
+- New mailer template: `DealIngestMailer#leak_alert`
+- Sent to the address owner (not the sender) — "Someone tried to use your deal update address from a different email"
+- Email is still dropped per existing FR-4 rules
+
+### Undo — 30-day (FR-31-32)
+- Confirmation email includes a signed "Undo" link (MessageVerifier token with 30-day expiry)
+- New controller action: `DealIngestUndoController#undo`
+- Undo returns the item to warehouse rather than deleting
+- New field on `AgentIngestedEmail`: `undone_at` (datetime)
+- Compound undo: if the email also attached a stakeholder via Tier C, undo reverses both — unless the stakeholder has since acquired other activity on the deal (then undo item only, explain in response)
+
+### Agent-Created Badge (FR-30)
+- New field on `AgentIngestedEmail`: `agent_reviewed_at` (datetime, null until human views/edits)
+- Board partials show "AI" badge when `filed_as` exists and `agent_reviewed_at.nil?`
+- Badge cleared when a user views the note/task detail page (set via controller callback)
+
+### Attachments (FR-33)
+- Extract attachments from SendGrid webhook payload
+- Upload to deal's document store via existing Shrine + S3 infrastructure
+- Link documents to the created Note/Task
+- Respect existing file type/size limits
+- Rejected attachments noted in confirmation reply ("1 attachment skipped — exceeds 10MB limit")
+- Attachment metadata stored on `AgentIngestedEmail` for audit
+
+### 72h Warehouse Digest (FR-27)
+- New sidekiq-cron job (daily): `WarehouseDigestJob`
+- Query `warehouse_items.pending.where("created_at < ?", 72.hours.ago)`, group by deal + sender
+- New mailer: `DealIngestMailer#warehouse_digest` — "You have 3 items waiting for Deal X"
+- Badge/counter on deal page next to the warehouse tab
+
+### VCF Contact Card (FR-7)
+- New controller action on `DealsController`: `download_vcf`
+- Generates a `.vcf` file with display name "[Deal Name] — Deal Board" and the user's ingest address
+- Download button on deal page next to the copy button
+- Makes the address autocomplete on phones — key adoption driver
 
 ---
 
-## Phase 3 — Future Changes
+## Phase 3 — Planned
 
-### New Stakeholder Creation
-- If no match at any tier, offer to create a new Investor and DealInvestor
-- Confirmation flow: "Create 'Goldman Sachs' as a new investor on this deal? Reply YES"
+### New Stakeholder Creation (PRD §11)
+- If no match at any tier, offer to create a new Investor via email domain dedupe
+- Domain matches existing stakeholder → Tier C flow (confirm attach, don't create)
+- No domain match → create as pending/unverified, one confirmation tap to promote
+- Free-mail domains (gmail.com, outlook.com) → warehouse for manual creation
 - New `match_tier: "N"` (new)
+- Depends on: stakeholders.email_domains, merge tool
 
 ### Warehouse Bulk Actions
 - Select multiple warehouse items via checkboxes
@@ -310,20 +377,36 @@ bundle exec cucumber --tags @deal_update_agent                        # by tag
 - View all ingest addresses for an entity
 - Usage stats: emails received, filed, warehoused, dropped per deal
 - Address rotation: revoke and regenerate addresses
-- Rate limiting configuration (Phase 2 PRD: 30/hour)
+- Dropped-mail log for admin review
 
 ### Merge Tool
-- Detect duplicate warehouse items (same sender + similar content within 24h)
-- Offer to merge into a single note/task
+- Stakeholder merge (not warehouse item merge) — safety net for domain-based creation
+- Required because stakeholders are org-wide: a bad duplicate pollutes every deal
+
+### Multi-item Per Email (FR-10)
+- Single email producing multiple notes/tasks
+- Parser returns `items[]` array instead of single item
+
+### Additional Parsing Enhancements
+- @name assignee parsing (FR-13) — assign to another deal team member
+- Sender timezone date resolution (FR-12) — resolve relative dates in sender's TZ
+- mailto: button on deal page (FR-7) — "Email this deal" producing mailto link
+- Address rotation from admin UI (FR-8)
 
 ---
 
 ## Phase 4 — Vision
 
+### WhatsApp Channel (PRD §9.2)
+- WhatsApp forward ingestion — new channel adapter
+- Phone number → user mapping (verified phone → user_id)
+- Same processor pipeline, different input adapter
+- Shorter/more elliptical messages — per-channel confidence thresholds
+
 ### Slack Channel
 - Slack bot integration: post to a deal-specific Slack channel
 - Map Slack user → platform user via email match
-- Same processor pipeline, different input adapter
+- Strip surrounding thread context (similar to quoted reply stripping)
 
 ### Known Limitations (to validate with real clients)
 

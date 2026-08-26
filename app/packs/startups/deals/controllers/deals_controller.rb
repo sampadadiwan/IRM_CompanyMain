@@ -91,8 +91,9 @@ class DealsController < ApplicationController
     else
       @investor_label = @deal.entity.is_fund? ? "Company" : "Investor"
       # Lazy-generate ingest address on first visit (covers role-based access
-      # where no AccessRight callback fires).
-      @deal_ingest_address = ensure_deal_ingest_address
+      # where no AccessRight callback fires). Skipped when DEAL_INGEST_DOMAIN
+      # is not configured — the feature is invisible on that environment.
+      @deal_ingest_address = ensure_deal_ingest_address if DealIngestAddress.domain.present?
       respond_to do |format|
         format.html do
           if params[:overview].present? || current_user.curr_role_investor?
