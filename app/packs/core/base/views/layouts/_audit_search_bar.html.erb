@@ -1,0 +1,23 @@
+<%
+  audit_search_uid = SecureRandom.hex(4)
+  audit_filter_actions = { "create" => ["ti-plus", "success"], "update" => ["ti-pencil", "primary"], "destroy" => ["ti-trash", "danger"] }
+%>
+<div class="d-flex align-items-center gap-3 flex-wrap">
+  <div class="btn-group" role="group" aria-label="Filter by action">
+    <% audit_filter_actions.each do |action_name, (icon, color)| %>
+      <% checkbox_id = "audit-filter-#{action_name}-#{audit_search_uid}" %>
+      <input type="checkbox" class="btn-check" id="<%= checkbox_id %>" value="<%= action_name %>" checked autocomplete="off"
+             data-audit-search-target="actionCheckbox" data-action="change->audit-search#filter">
+      <label class="btn btn-outline-<%= color %> px-3" for="<%= checkbox_id %>"
+             data-bs-toggle="tooltip" title="Untick to hide <%= action_name %> events">
+        <i class="ti <%= icon %> me-1"></i><%= action_name.capitalize %>
+      </label>
+    <% end %>
+  </div>
+  <div class="input-group" style="width: 260px;">
+    <span class="input-group-text bg-white"><i class="ti ti-search"></i></span>
+    <input type="text" class="form-control" placeholder="Search name, user, field, value&hellip;"
+           data-bs-toggle="tooltip" title="Matches expand automatically to show where they were found"
+           data-audit-search-target="input" data-action="input->audit-search#filter">
+  </div>
+</div>

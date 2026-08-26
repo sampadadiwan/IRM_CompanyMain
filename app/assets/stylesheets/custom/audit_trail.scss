@@ -1,0 +1,33 @@
+// Chevron rotation for the expand/collapse toggle on the Audit Trail page
+// (app/packs/core/base/views/audits/index.html.erb). Bootstrap's collapse JS
+// toggles the `collapsed` class on the trigger element itself, so we key off
+// that rather than adding any JS of our own.
+.audit-trail-toggle {
+  i {
+    transition: transform 0.15s ease-in-out;
+  }
+
+  &:not(.collapsed) i {
+    transform: rotate(90deg);
+  }
+}
+
+.audit-trail-row {
+  &:hover {
+    background-color: var(--bs-tertiary-bg);
+  }
+}
+
+// Custom-fields (json_fields) diffs render a nested Json2table <table> inside
+// a single <td> of the AuditTrail component (app/packs/core/components/audit_trail.html.erb,
+// via layouts/_audit_changes.html.erb). Left unbounded, a large JSON diff blows
+// out that row's height while sibling cells stay single-line, producing a wall
+// of blank space — cap it and let it scroll instead.
+.audit-json-diff {
+  max-height: 220px;
+  overflow-y: auto;
+
+  table {
+    margin-bottom: 0;
+  }
+}

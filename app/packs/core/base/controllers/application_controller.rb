@@ -48,6 +48,7 @@ class ApplicationController < ActionController::Base
     end
 
     record.restore(recursive: true)
+    fix_counter_culture_counts_after_restore(record)
     redirect_to record, notice: "#{model_class.model_name.human} was successfully restored."
   end
 
@@ -61,6 +62,33 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+  # counter_culture's before_restore hook already applies a +1 delta to each
+  # counter as restore(recursive: true) cascades — that part works. What it
+  # can't fix is a count that had already drifted before this record was
+  # deleted (e.g. from a bulk update_all/import that bypassed callbacks), so
+  # re-derive the true count here for the restored record and its immediate
+  # dependent: :destroy children, scoped by foreign key to avoid a full-table
+  # recount on the large tables (account_entries, capital_remittance_payments, ...).
+  def fix_counter_culture_counts_after_restore(record)
+    model_class = record.class
+    model_class.counter_culture_fix_counts(where: { model_class.primary_key => record.id }) if model_class.after_commit_counter_cache.any?
+
+    model_class.reflect_on_all_associations.each do |assoc|
+      next unless assoc.options[:dependent] == :destroy
+
+      begin
+        klass = assoc.klass
+        next unless klass.after_commit_counter_cache.any?
+
+        klass.counter_culture_fix_counts(where: { assoc.foreign_key => record.id })
+      rescue StandardError => e
+        Rails.logger.warn("[restore_deleted] counter_culture_fix_counts failed for #{klass || assoc.name}##{record.id}: #{e.message}")
+      end
+    end
+  rescue StandardError => e
+    Rails.logger.warn("[restore_deleted] counter_culture_fix_counts failed for #{record.class}##{record.id}: #{e.message}")
+  end
 
   def rss_kb
     # RSS in KB for current process

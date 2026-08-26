@@ -1,0 +1,140 @@
+<%
+  audit_action_style = { "create" => ["ti-plus", "success"], "update" => ["ti-pencil", "primary"], "destroy" => ["ti-trash", "danger"] }
+  audit_icon, audit_color = audit_action_style[audit.action] || ["ti-dots", "secondary"]
+  audit_collapse_id = "audit-changes-#{audit.id}-#{SecureRandom.hex(4)}"
+
+  display_rows = AuditChangeFlattener.call(changes)
+
+  # Find something identifying to name the record by, for the Created/Deleted summary.
+  record_name = nil
+  %w[name investor_name title label].each do |identifying_key|
+    match = display_rows.find { |r| r[:key] == identifying_key }
+    next unless match
+
+    candidate = match[:new] || match[:old]
+    next unless candidate.is_a?(String) && candidate.present?
+
+    record_name = candidate
+    break
+  end
+  record_name ||= audit.auditable.to_s if audit.auditable
+
+  audit_summary =
+    case audit.action
+    when "create"  then record_name ? "Created '#{record_name}'" : "Created record"
+    when "destroy" then record_name ? "Deleted '#{record_name}'" : "Deleted record"
+    else
+      if display_rows.size == 1
+        "Changed #{display_rows.first[:label]}"
+      elsif display_rows.size > 1
+        "Changed #{display_rows.first[:label]} and #{pluralize(display_rows.size - 1, 'more field')}"
+      end
+    end
+
+  # Offer an inline Restore when this destroy left the record soft-deleted and
+  # this app exposes a restore_deleted route for its type (see ApplicationController).
+  restore_klass = audit.action == "destroy" ? audit.auditable_type.to_s.safe_constantize : nil
+  restore_path_helper = "restore_deleted_#{audit.auditable_type.to_s.underscore}_path"
+  show_restore_button =
+    restore_klass &&
+    restore_klass.respond_to?(:only_deleted) &&
+    respond_to?(restore_path_helper) &&
+    restore_klass.only_deleted.exists?(id: audit.auditable_id)
+%>
+<tr class="audit-trail-row" data-audit-search-target="row" data-audit-action="<%= audit.action %>">
+  <td class="ps-4">
+    <% if display_rows.any? %>
+      <button class="audit-trail-toggle btn btn-sm btn-link text-muted p-0 collapsed" type="button"
+              data-bs-toggle="collapse" data-bs-target="#<%= audit_collapse_id %>"
+              aria-expanded="false" aria-controls="<%= audit_collapse_id %>"
+              title="Show the fields that changed, with their old and new values" data-toggle="tooltip">
+        <i class="ti ti-chevron-right"></i>
+      </button>
+    <% end %>
+  </td>
+  <td>
+    <span class="badge bg-<%= audit_color %>-subtle text-<%= audit_color %> rounded-pill px-2 py-1">
+      <i class="ti <%= audit_icon %> me-1"></i><%= audit.action.to_s.capitalize %>
+    </span>
+  </td>
+  <td>
+    <div class="fw-medium text-dark">
+      <% if audit.auditable && respond_to?("#{audit.auditable.model_name.singular_route_key}_path") %>
+        <%= link_to audit.auditable %>
+      <% else %>
+        #<%= audit.auditable_id %>
+      <% end %>
+    </div>
+    <div class="text-muted"><%= audit.auditable_type %></div>
+  </td>
+  <td>
+    <div class="d-flex align-items-center">
+      <span class="rounded-circle bg-secondary-subtle text-secondary d-inline-flex align-items-center justify-content-center me-2 flex-shrink-0"
+            style="width: 28px; height: 28px;">
+        <i class="ti ti-user fs-7"></i>
+      </span>
+      <%= audit.user || "System" %>
+    </div>
+  </td>
+  <td class="text-muted" title="<%= l(audit.created_at) %>"><%= time_ago_in_words(audit.created_at) %> ago</td>
+  <td class="text-end pe-4">
+    <% if audit_summary.present? %>
+      <div class="text-dark"><%= audit_summary %></div>
+    <% end %>
+    <div class="d-flex align-items-center justify-content-end gap-2 mt-1">
+      <% if display_rows.any? %>
+        <span class="badge bg-light text-dark border" data-bs-toggle="tooltip" title="Click the arrow on the left to see each field's before and after value">
+          <%= pluralize(display_rows.size, "field") %>
+        </span>
+      <% elsif audit_summary.blank? %>
+        <span class="text-muted">&mdash;</span>
+      <% end %>
+      <% if show_restore_button %>
+        <%= button_to send(restore_path_helper, audit.auditable_id),
+                      method: :put,
+                      form_class: "d-inline",
+                      title: "Bring this record back — it's currently deleted",
+                      data: { action: "click->confirm#popup", turbo: false, method: :put, notification: "no", msg: "Restore this #{restore_klass.model_name.human}?", "bs-toggle": "tooltip" },
+                      class: "btn btn-sm btn-outline-primary rounded-pill px-2 py-0" do %>
+          <i class="ti ti-restore me-1"></i>Restore
+        <% end %>
+      <% end %>
+    </div>
+  </td>
+</tr>
+
+<% if display_rows.any? %>
+  <tr class="collapse audit-trail-detail-row" id="<%= audit_collapse_id %>">
+    <td class="border-0"></td>
+    <td colspan="5" class="pb-3 pt-0">
+      <div class="table-responsive border rounded">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Field</th>
+              <th>Old Value</th>
+              <th>New Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% display_rows.each do |row| %>
+              <tr>
+                <td class="ps-3 text-muted"><%= row[:label] %></td>
+                <% if row[:old].is_a?(Hash) || row[:old].is_a?(Array) %>
+                  <td><div class="audit-json-diff"><%= Json2table.get_html_table(row[:old], JsonTable::TABLE_OPTIONS).html_safe %></div></td>
+                <% else %>
+                  <td class="<%= 'text-muted' if row[:old].blank? %>"><%= row[:old].presence || "—" %></td>
+                <% end %>
+                <% if row[:new].is_a?(Hash) || row[:new].is_a?(Array) %>
+                  <td><div class="audit-json-diff"><%= Json2table.get_html_table(row[:new], JsonTable::TABLE_OPTIONS).html_safe %></div></td>
+                <% else %>
+                  <td class="<%= 'text-muted' if row[:new].blank? %>"><%= row[:new].presence || "—" %></td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </td>
+  </tr>
+<% end %>

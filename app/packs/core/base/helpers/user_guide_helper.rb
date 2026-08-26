@@ -112,6 +112,9 @@ module UserGuideHelper
     'validation_rule_overrides' => 'validation_rule_engine_user_guide.md',
     'validation_rules' => 'validation_rule_engine_user_guide.md',
 
+    # Audit Trail
+    'audits' => 'audit_trail_user_guide.md',
+
     # Settings & Utilities
     'exchange_rates' => 'tracking_currency_guide.md',
     'db_dumps' => 'db_dumps_user_guide.md',

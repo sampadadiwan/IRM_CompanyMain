@@ -1,0 +1,58 @@
+<%# locals: field_history: (an AuditFieldHistory), container_id:, container_classes: %>
+<div id="<%= container_id %>" class="<%= container_classes %>" role="<%= 'tabpanel' if container_id %>" data-controller="field-history"
+     data-action="shown.bs.tab@document->field-history#reinitOnShow">
+  <% if !field_history.any? %>
+    <div class="text-center text-muted py-5">
+      <i class="ti ti-history-off fs-1 d-block mb-2"></i>
+      No field history available.
+    </div>
+  <% else %>
+    <div class="mb-2">
+      <label class="form-label mb-1 small text-muted">Compare fields</label>
+      <select multiple class="form-select select2" style="width: 100%;" data-field-history-target="picker">
+        <% field_history.available_fields.each do |key, label| %>
+          <option value="<%= key %>" selected><%= label %></option>
+        <% end %>
+      </select>
+    </div>
+    <p class="text-muted small mb-3">
+      Each column below is a moment when one of the fields you picked changed. Read across a row to follow one
+      field's history, or down a column to see everything that changed together in the same event.
+    </p>
+
+    <% timestamps = field_history.timestamps %>
+    <div class="table-responsive border rounded">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3" data-bs-toggle="tooltip" title="One row per field you've selected above">Attribute</th>
+            <% timestamps.each do |time| %>
+              <th class="text-nowrap" title="<%= l(time) %>" data-bs-toggle="tooltip"><%= time_ago_in_words(time) %> ago</th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% field_history.available_fields.each do |key, label| %>
+            <tr data-field-history-target="row" data-field-key="<%= key %>">
+              <td class="ps-3 fw-medium text-dark text-nowrap"><%= label %></td>
+              <% timestamps.each do |time| %>
+                <% cell = field_history.matrix[key][time] %>
+                <td>
+                  <% if cell.nil? %>
+                    <span class="text-muted">&mdash;</span>
+                  <% elsif cell[:value].is_a?(Hash) || cell[:value].is_a?(Array) %>
+                    <div class="audit-json-diff"><%= Json2table.get_html_table(cell[:value], JsonTable::TABLE_OPTIONS).html_safe %></div>
+                    <div class="text-muted small"><i class="ti ti-user me-1"></i><%= cell[:user] || "System" %></div>
+                  <% else %>
+                    <div><%= cell[:value].presence || "—" %></div>
+                    <div class="text-muted small"><i class="ti ti-user me-1"></i><%= cell[:user] || "System" %></div>
+                  <% end %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>
