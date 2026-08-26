@@ -55,9 +55,16 @@
 
                       <%# Hidden static confirm message shown below any validation rule messages %>
                       <div id="remittance_send_notification_confirm_msg" class="d-none">
-                        <p style="font-size:0.875rem;margin-bottom:0">
-                          This will send an email notification to the investor for this remittance.
+                        <p style="font-size:0.875rem;margin-bottom:0.5rem">
+                          <% if @capital_remittance.capital_call.send_call_notice_flag %>
+                            This will send an email notification to the investor for this remittance.
+                          <% else %>
+                            This will NOT send any notification to the investor as the call is setup to not send notifications.
+                          <% end %>
                         </p>
+                        <div class="d-flex gap-2 flex-wrap">
+                          <%= link_to "Update Call", edit_capital_call_path(@capital_remittance.capital_call), class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+                        </div>
                       </div>
 
                       <%# Runs CapitalRemittance-scoped validation rules (notice generated/approved) before sending %>
