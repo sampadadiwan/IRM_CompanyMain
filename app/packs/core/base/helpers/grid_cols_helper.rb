@@ -46,8 +46,8 @@ module GridColsHelper
     field_list -= ["capital_call_name"] if params[:capital_call_id].present?
 
     # Remove Investor and Folio if capital commitment is present
-    field_list -= %w[investor_name folio_id] if params[:capital_commitment_id].present?
+    field_list -= %w[investor_name investing_entity folio_id] if params[:capital_commitment_id].present?
 
-    field_list - %w[investor_name] if params[:investor_id].present?
+    field_list - %w[investor_name investing_entity] if params[:investor_id].present?
   end
 end

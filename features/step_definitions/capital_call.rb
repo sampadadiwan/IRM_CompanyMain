@@ -357,6 +357,19 @@ When('I mark the remittances as paid') do
   end
 end
 
+Then('I should see the remittance payments with investing entity names') do
+  # The remittance's own show page lists its payments via the same
+  # capital_remittance_payments/index row partial as the dedicated index page.
+  @capital_call.capital_remittances.each do |remittance|
+    visit(capital_remittance_url(remittance))
+    remittance.capital_remittance_payments.each do |payment|
+      within("#capital_remittance_payment_#{payment.id}") do
+        expect(page).to have_content(payment.investor_kyc&.full_name || payment.investor.investor_name)
+      end
+    end
+  end
+end
+
 When('I mark the remittances as verified') do
   @capital_call.capital_remittances.each do |remittance|
     visit(capital_call_url(@capital_call))
@@ -1098,7 +1111,9 @@ Then('I should see the remittances') do
 
   @capital_call.capital_remittances.each do |remittance|
     within("#capital_remittance_#{remittance.id}") do
-      expect(page).to have_content(remittance.investor.investor_name)
+      # The Investing Entity column shows the linked KYC's full_name once one exists,
+      # falling back to the plain investor_name until then.
+      expect(page).to have_content(remittance.investor_kyc&.full_name || remittance.investor.investor_name)
       expect(page).to have_content(remittance.verified ? "Yes" : "No")
       expect(page).to have_content(remittance.status)
       expect(page).to have_content(money_to_currency(remittance.due_amount))

@@ -1,4 +1,8 @@
 class AccountEntryDecorator < ApplicationDecorator
+  def investing_entity
+    object.investor_kyc&.full_name || object.investor&.investor_name
+  end
+
   def folio_id
     h.link_to object.folio_id, object.capital_commitment if object.folio_id.present?
   end

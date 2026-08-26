@@ -69,7 +69,11 @@
               <% if params[:view_unapproved] == 'true' %>
                 <%= link_to "Hide Staged", kpi_reports_path(params.to_unsafe_h.merge(view_unapproved: false)), class: "dropdown-item text-warning ti ti-eye-off" %>
               <% else %>
-                <%= link_to "View Including Staged", kpi_reports_path(params.to_unsafe_h.merge(view_unapproved: true)), class: "dropdown-item text-warning ti ti-eye" %>
+                <%# Drop :period — staged KPIs can land under a different period type than whatever
+                  the grid happens to be filtered to (e.g. a freshly-imported Quarter/Year report
+                  while the grid is filtered to Month), so carrying the filter over here would hide
+                  the very staged rows this link is meant to surface. %>
+                <%= link_to "View Including Staged", kpi_reports_path(params.to_unsafe_h.except("period").merge(view_unapproved: true)), class: "dropdown-item text-warning ti ti-eye" %>
               <% end %>
               <% if investor && params[:view_unapproved] == 'true' && Kpi.unapproved.where(portfolio_company_id: investor.id).exists? %>
                 <%

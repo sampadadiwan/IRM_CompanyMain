@@ -17,8 +17,8 @@
     col_params[:column_fields] = AccountEntry::STANDARD_COLUMNS.values
 
     if params[:capital_commitment_id].blank?
-      col_params[:column_names] = ["Fund", "Investor"] + col_params[:column_names]
-      col_params[:column_fields] = ["fund_name", "investor_name"] + col_params[:column_fields]
+      col_params[:column_names] = ["Fund", "Investing Entity"] + col_params[:column_names]
+      col_params[:column_fields] = ["fund_name", "investing_entity"] + col_params[:column_fields]
     end
 
     column_names, field_list = get_columns(AccountEntry, params: col_params)

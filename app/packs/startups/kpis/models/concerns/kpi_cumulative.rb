@@ -7,7 +7,8 @@
 #
 # NOTE: 'Year' cumulative records are only created when exactly 12 monthly 'Actual'
 # records exist within the SAME fiscal year. The fiscal year boundary is defined
-# by EntitySetting#start_of_financial_year_date (default: April 1st).
+# by EntitySetting#start_of_financial_year_date (default: April 1st on the India server,
+# January 1st on the US server, per EntitySetting.geo_default_month_offset_for_fy).
 #
 # Entities that report Actuals directly at Quarter granularity (no monthly 'Actual' data)
 # get YTD and Year derived from their quarters instead - see
@@ -31,9 +32,10 @@ module KpiCumulative
   # @return [Integer, String, Range<Date>]
   def fiscal_year_key(date, style: :start_year)
     # The fiscal year is determined by EntitySetting#start_of_financial_year_date.
-    # By default, month_offset_for_fy is 3 (April).
-    # Dates from Jan to March (month <= 3) belong to the previous year's fiscal year.
-    # Dates from April to Dec (month > 3) belong to the current year's fiscal year.
+    # When month_offset_for_fy isn't explicitly set, it falls back to
+    # EntitySetting.geo_default_month_offset_for_fy (April on the India server, January on US).
+    # Dates on/before the fiscal-year-start month belong to the previous year's fiscal year;
+    # dates after it belong to the current year's fiscal year.
     fy_start = (respond_to?(:start_of_financial_year_date) && start_of_financial_year_date(date, nil_if_not_set: true)) || (respond_to?(:entity) && entity&.entity_settings&.start_of_financial_year_date(date)) || (respond_to?(:entity_id) && entity_id && EntitySetting.find_by(entity_id: entity_id)&.start_of_financial_year_date(date))
     case style
     when :start_year

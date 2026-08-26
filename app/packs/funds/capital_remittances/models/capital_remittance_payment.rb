@@ -11,6 +11,7 @@ class CapitalRemittancePayment < ApplicationRecord
   has_one :capital_call, through: :capital_remittance
   has_one :investor, through: :capital_remittance
   has_one :capital_commitment, through: :capital_remittance
+  has_one :investor_kyc, through: :capital_commitment
   belongs_to :entity
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 

@@ -23,9 +23,14 @@
         </tr>
     </thead>
     <tbody>
-        <% 
-            @audits.each do |audit| 
-                audit.audited_changes.each do |key, value| 
+        <% if @audits.none? %>
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">No audit records found.</td>
+                    </tr>
+        <% end %>
+        <%
+            @audits.each do |audit|
+                audit.audited_changes.each do |key, value|
         %>
                     <tr>
                         <td><%= audit.id %></td>
@@ -48,9 +53,9 @@
 
                         <td><%= l audit.created_at %></td>
                     </tr>
-        <%  
+        <%
                 end
-            end 
+            end
         %>
     </tbody>
 </table>

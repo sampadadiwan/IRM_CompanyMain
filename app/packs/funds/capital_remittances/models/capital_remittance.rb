@@ -17,7 +17,7 @@ class CapitalRemittance < ApplicationRecord
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
   STANDARD_COLUMNS = {
-    "Stakeholder; text-col" => "investor_name; text-col",
+    "Investing Entity; text-col" => "investing_entity_name; text-col",
     "Folio No; text-col" => "folio_id; text-col",
     "Status; text-col" => "status; text-col",
     "Verified; text-col" => "verified; text-col",

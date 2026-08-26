@@ -1,4 +1,13 @@
 class KpiDateUtils
+  # 1-based fiscal-year-start month for a KPI report's period labels. Same precedence used by
+  # KpiWorkbookReader and KpiTemplateGenerate: the portco's own json_fields override wins, then
+  # the fund's EntitySetting, then the geo default (EntitySetting.geo_default_month_offset_for_fy).
+  def self.resolve_fiscal_year_start_month(portco, entity_id)
+    offset = portco.try(:json_fields)&.dig("month_offset_for_fy").presence
+    offset ||= EntitySetting.find_by(entity_id:)&.month_offset_for_fy.presence
+    (offset.presence || EntitySetting.geo_default_month_offset_for_fy).to_i + 1
+  end
+
   # Determines if a raw_period looks like a date or period label
   def self.date_like?(string)
     return false if string.blank?
@@ -293,39 +302,39 @@ class KpiDateUtils
     return nil if raw_period.blank?
 
     # === Normalize input ===
-    str = raw_period.to_s.strip.upcase
-    str = str.gsub(/\s+/, ' ') # collapse multiple spaces
-             .gsub(/\s*([^\w\s])\s*/, '\1') # remove spaces around symbols, like hyphens
+    # Strip ALL whitespace rather than just collapsing/trimming it around symbols, so arbitrary
+    # spacing anywhere in the header — "Q1 FY 24", "Q1  FY24", "FY 20 - 21", "H1 FY 2023" — is
+    # treated identically to its tightest form ("Q1FY24", "FY20-21", "H1FY2023"). This mirrors
+    # parse_quarter's own normalization (below), so type-detection and date-parsing never disagree
+    # about what a header means — the bug this fixed: "Q1 FY 25" parsed to a correct quarter-end
+    # date but detect_period_type didn't recognise it as a Quarter (no regex allowed a space
+    # between "FY" and the year) and silently fell back to "Month".
+    str = raw_period.to_s.strip.upcase.gsub(/\s+/, '')
 
     Rails.logger.debug { "Normalized string: #{str}" }
 
     # === Half-Year Formats ===
-    return "Half Year" if /\AH[12](?:\s?FY)?\s?\d{2,4}\z/.match?(str) # H1 2023, H2FY23, H1 FY2023
+    return "Half Year" if /\AH[12](?:FY)?\d{2,4}\z/.match?(str) # H1 2023, H2FY23, H1 FY2023
 
     # === YTD Formats ===
-    return "YTD" if /\AYTD[- ]?[A-Z]{3,9}[- ]?\d{2,4}\z/.match?(str) # e.g. YTD Nov 23, YTD-Jan 2022
-    return "YTD" if /\AYTD[- ]?[A-Z]{3,9}[- ]?[A-Z]{3,9}[- ]?\d{2,4}\z/.match?(str) # e.g. YTD Jan-Sept 2023
+    return "YTD" if /\AYTD-?[A-Z]{3,9}-?\d{2,4}\z/.match?(str) # e.g. YTD Nov 23, YTD-Jan 2022
+    return "YTD" if /\AYTD-?[A-Z]{3,9}-?[A-Z]{3,9}-?\d{2,4}\z/.match?(str) # e.g. YTD Jan-Sept 2023
 
     # === Year Formats ===
-    return "Year" if /\AFY\s?\d{2,4}[-–]\d{2}\z/.match?(str)         # FY 20-21 or FY20-21
-    return "Year" if /\AFY\s?\d{2,4}\z/.match?(str)                  # FY 2021 or FY2021
-    return "Year" if /\A(CY)?\d{2,4}\z/.match?(str)                  # CY2021 or 2021
+    return "Year" if /\AFY\d{2,4}[-–]\d{2}\z/.match?(str)         # FY 20-21 or FY20-21
+    return "Year" if /\AFY\d{2,4}\z/.match?(str)                  # FY 2021 or FY2021
+    return "Year" if /\A(CY)?\d{2,4}\z/.match?(str) # CY2021 or 2021
 
     # === Month Formats ===
-    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2,4})\z/.match?(str) # e.g. JAN 2024
-    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2,4})\z/.match?(str) # e.g. JANUARY 2024
-
-    # Special: 3-letter months with 2-digit years
-    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2})\z/.match?(str) # e.g. JAN 24
-    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2})\z/.match?(str) # e.g. JANUARY 24
+    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)(\d{2,4})\z/.match?(str) # e.g. JAN 2024
+    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)(\d{2,4})\z/.match?(str) # e.g. JANUARY 2024
 
     # === Quarter Formats ===
-    return "Quarter" if /\AQ([1-4])(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1FY24 or Q1CY2024 or Q12024
-    return "Quarter" if /\AQ([1-4])\s+(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1 FY24 or Q1 2024
+    return "Quarter" if /\AQ([1-4])(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1FY24, Q1 FY24, Q1 FY 24, Q1 2024
     # Any month range ("JAN-MAR 2024", "MAR-MAY 2026") is a quarter — parse_quarter case 4 handles the
     # start month, so quarters not aligned to Jan/Apr/Jul/Oct (odd fiscal starts) round-trip too.
-    return "Quarter" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str)
-    return "Quarter" if /\A(JFM|AMJ|JAS|OND)\s+(\d{2,4})\z/.match?(str) # e.g. JFM 2024
+    return "Quarter" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-[A-Z]{3,4}(\d{2,4})\z/.match?(str)
+    return "Quarter" if /\A(JFM|AMJ|JAS|OND)(\d{2,4})\z/.match?(str) # e.g. JFM 2024
 
     # === Fallback ===
     "Month"

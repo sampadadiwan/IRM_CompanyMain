@@ -32,7 +32,7 @@ class AccountEntryList < BaseList
     @q = AccountEntry.ransack(@params[:q])
 
     @account_entries = apply_policy_scope(@q.result, &)
-    @account_entries = @account_entries.includes(:capital_commitment, :fund)
+    @account_entries = @account_entries.includes(:fund, :investor, capital_commitment: :investor_kyc)
 
     sort_by_id_then_existing
     filter_index

@@ -1,4 +1,12 @@
 class CapitalDistributionPaymentDecorator < ApplicationDecorator
+  def investing_entity_name
+    if object.investor_kyc
+      h.link_to(object.investor_kyc.full_name, h.investor_kyc_path(id: object.investor_kyc))
+    else
+      h.link_to(object.investor_name, object.investor)
+    end
+  end
+
   def folio_id
     h.link_to object.folio_id, object.capital_commitment
   end

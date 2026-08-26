@@ -8,39 +8,39 @@ None of these are built yet — this is a proposal to prioritize from.
 
 ## For Fund Managers
 
-### Fee & Carry Checker
+### Fee & Carry Checker - Yes, Clarify
 - Recalculates management fees and carried interest from the fund's actual transaction
   records and compares the result to what was charged.
 - Flags any mismatch before it reaches an LP statement or an auditor's desk.
 - Value: catches fee and carry errors early, when they're a quick fix — not during an
   audit, when they're a credibility problem.
 
-### Capital Call Forecaster
+### Capital Call Forecaster - No
 - Looks ahead at the fund's spending pace and pipeline commitments to estimate when the
   next capital call will be needed and roughly how large it will be.
 - Gives the fund manager a heads-up instead of a scramble.
 - Value: more time to plan a call, and a smoother experience for LPs who get earlier notice.
 
-### Investor Concentration Watchdog
+### Investor Concentration Watchdog - No
 - Continuously checks the fund's investor base for risk signals: one investor holding
   too large a share of the fund, capital that's been sitting uncalled too long,
   commitment periods approaching their end date.
 - Value: surfaces concentration and timing risk before it becomes a fundraising or
   liquidity problem, not after.
 
-### Valuation Consistency Checker
+### Valuation Consistency Checker - No
 - Compares each portfolio company's recorded valuation against its most recent funding
   round or comparable company pricing.
 - Flags marks that look stale or inconsistent with the rest of the portfolio.
 - Value: stronger, more defensible valuations going into LP reporting and audits.
 
-### Deal Closing Checklist
+### Deal Closing Checklist - Yes
 - Before a deal is marked "Closed," confirms every required item is actually in
   place — signed agreements, reconciled ownership records, completed diligence items.
 - Value: prevents deals from closing with loose ends that surface later as disputes
   or cleanup work.
 
-### Investment Candidate Shortlister
+### Investment Candidate Shortlister - Yes
 - Given a folder of materials on a prospective investment — pitch decks, financial
   models, spreadsheets, data room PDFs — plus the fund's stated investment thesis
   (sector focus, stage, check size, must-have criteria), reviews everything and scores
@@ -61,13 +61,13 @@ None of these are built yet — this is a proposal to prioritize from.
   and edit.
 - Value: cuts the time spent assembling quarterly updates from scratch each cycle.
 
-### Audit Readiness Sweep
+### Audit Readiness Sweep - Yes
 - Ahead of year-end audit, checks that required documents are present and properly
   dated: tax forms, board minutes, financial statements.
 - Value: turns audit prep from a fire drill into a routine check, run well before the
   auditor asks.
 
-### Portfolio Company News & Market Watch
+### Portfolio Company News & Market Watch - Yes
 - Continuously pulls outside information about a portfolio company — news mentions,
   funding and M&A activity, leadership changes, litigation, and financial or market
   data from paid data providers — and summarizes what's new and relevant.
@@ -100,14 +100,14 @@ investors informed, instead of only answering when asked.
 - Value: investors stay current without having to log in and dig for it, and fund
   managers field fewer "what's new" emails.
 
-### Capital Call & Distribution Explainer
+### Capital Call & Distribution Explainer - No
 - When an investor receives a capital call or distribution notice, they can ask
   "why is this amount what it is?" and get a clear breakdown — how much is fees,
   how much is the actual investment, how it maps to their ownership share.
 - Value: fewer confused emails to the fund manager's team; investors get an answer
   immediately instead of waiting on a reply.
 
-### Document Concierge
+### Document Concierge - No
 - Investors can ask directly for a specific document — "my Q2 capital account
   statement," "my latest K-1" — and get it right away instead of searching the
   portal.
@@ -120,7 +120,7 @@ investors informed, instead of only answering when asked.
 - Value: fewer missed tax deadlines, fewer "where's my K-1" support requests during
   tax season.
 
-### Co-Investment Opportunity Matcher
+### Co-Investment Opportunity Matcher - No
 - With the investor's permission, flags new deal opportunities that match their
   stated interests (sector, check size) as the fund manager's pipeline develops.
 - Value: a genuinely new offering — turns the investor relationship into a two-way

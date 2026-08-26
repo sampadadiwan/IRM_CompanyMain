@@ -1269,12 +1269,10 @@ class KpiWorkbookReader
   # Fiscal year
   # ---------------------------------------------------------------------------
 
-  # 1-based month. month_offset_for_fy is a 0-based offset (3 → April) — portco's json_fields win,
-  # then the fund's EntitySetting, then April.
+  # See KpiDateUtils.resolve_fiscal_year_start_month for the resolution order
+  # (portco json_fields → fund's EntitySetting → geo default).
   def resolve_fiscal_year_start_month
-    offset = @portfolio_company.try(:json_fields)&.dig("month_offset_for_fy").presence
-    offset ||= EntitySetting.find_by(entity_id: @kpi_report.entity_id)&.month_offset_for_fy.presence
-    (offset.presence || 3).to_i + 1
+    KpiDateUtils.resolve_fiscal_year_start_month(@portfolio_company, @kpi_report.entity_id)
   end
 
   # ---------------------------------------------------------------------------

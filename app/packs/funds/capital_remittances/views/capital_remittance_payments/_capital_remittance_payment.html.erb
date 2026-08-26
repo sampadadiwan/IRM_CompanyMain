@@ -3,7 +3,11 @@
     <%= link_to capital_remittance_payment.fund.name, capital_remittance_payment.fund %>
   </td>
   <td class="text-col">
-    <%= link_to capital_remittance_payment.investor.investor_name, capital_remittance_payment.investor %>
+    <% if capital_remittance_payment.investor_kyc %>
+      <%= link_to(capital_remittance_payment.investor_kyc.full_name, investor_kyc_path(id: capital_remittance_payment.investor_kyc)) %>
+    <% else %>
+      <%= link_to(capital_remittance_payment.investor.investor_name, capital_remittance_payment.investor) %>
+    <% end %>
   </td>
   <td class="text-col">
     <%= link_to capital_remittance_payment.capital_commitment.folio_id, capital_remittance_payment.capital_commitment %>

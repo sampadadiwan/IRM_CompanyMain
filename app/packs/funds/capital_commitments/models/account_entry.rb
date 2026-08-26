@@ -22,6 +22,7 @@ class AccountEntry < ApplicationRecord
   PARENT_TYPES = %w[PortfolioInvestment AggregatePortfolioInvestment Investor AccountEntry].freeze
 
   belongs_to :capital_commitment, optional: true
+  has_one :investor_kyc, through: :capital_commitment
   belongs_to :entity, inverse_of: :account_entries
   belongs_to :fund, inverse_of: :account_entries
   belongs_to :allocation_run, optional: true

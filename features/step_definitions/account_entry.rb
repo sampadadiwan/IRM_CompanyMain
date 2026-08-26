@@ -76,6 +76,32 @@ Then('a new file is generated for the download') do
   expect(@doc.name).to include(@document_name.split('.').first)
 end
 
+Then('the downloaded account entries file shows the investing entity names') do
+  file = @doc.file.download
+  data = Roo::Spreadsheet.open(file.path)
+  headers = data.row(1)
+  folio_idx = headers.index("Folio")
+  investing_entity_idx = headers.index("Investing Entity")
+
+  checked = 0
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    folio_id = row[folio_idx]
+    next if folio_id.blank?
+
+    commitment = CapitalCommitment.find_by(fund_id: @fund.id, folio_id: folio_id.to_s)
+    next unless commitment&.investor_kyc
+
+    # The commitment's linked KYC full_name should appear in the Investing Entity
+    # column instead of the plain investor name.
+    expect(row[investing_entity_idx]).to eq(commitment.investor_kyc.full_name)
+    checked += 1
+  end
+
+  expect(checked).to be_positive
+end
+
 Given('the user can receive emails') do
   @user ||= User.first
   @user.entity.entity_setting.update_columns(sandbox: false)

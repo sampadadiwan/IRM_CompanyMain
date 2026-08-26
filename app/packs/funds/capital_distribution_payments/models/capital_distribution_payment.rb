@@ -14,7 +14,7 @@ class CapitalDistributionPayment < ApplicationRecord
 
   include WithFolder
 
-  STANDARD_COLUMNS = { "Stakeholder; text-col" => "investor_name; text-col",
+  STANDARD_COLUMNS = { "Investing Entity; text-col" => "investing_entity_name; text-col",
                        "Folio No; text-col" => "folio_id; text-col",
                        "Gross Payable; num-col" => "gross_payable; num-col",
                        "Net Payable; num-col" => "net_payable; num-col",

@@ -7,6 +7,18 @@
 require "caxlsx"
 require "base64"
 
+# Restores CURRENT_SITE after any scenario that stubbed it via "the deployment is the ... site"
+# below, so the geo-default fiscal-year test doesn't leak into later scenarios.
+After('@kpi_validation') do
+  if instance_variable_defined?(:@kpi_upload_original_current_site)
+    if @kpi_upload_original_current_site.nil?
+      ENV.delete("CURRENT_SITE")
+    else
+      ENV["CURRENT_SITE"] = @kpi_upload_original_current_site
+    end
+  end
+end
+
 # ── Setup ────────────────────────────────────────────────────────────────────
 
 # Like the Quarter-only shell step in portco_kpi_workflow_steps.rb, but with an explicit period so
@@ -81,6 +93,13 @@ end
 Given("the fund's financial year starts in January") do
   setting = @entity.entity_setting || @entity.create_entity_setting!
   setting.update!(month_offset_for_fy: 0)
+end
+
+# Simulates which deployment (India/US server) is handling this request, without an explicit
+# month_offset_for_fy override — exercises EntitySetting.geo_default_month_offset_for_fy.
+Given('the deployment is the {string} site with no fiscal-year override') do |current_site|
+  @kpi_upload_original_current_site = ENV["CURRENT_SITE"]
+  ENV["CURRENT_SITE"] = current_site
 end
 
 # ── Actions ──────────────────────────────────────────────────────────────────
@@ -222,6 +241,16 @@ end
 Then('an unapproved KPI {string} as of {string} exists with value {float}') do |name, as_of, value|
   kpi = Kpi.unapproved.joins(:kpi_report).where(name: name, portfolio_company_id: @portfolio_company.id, kpi_reports: { as_of: Date.parse(as_of) }).first
   expect(kpi).to be_present, "no unapproved #{name} as of #{as_of}"
+  expect(kpi.value.to_f).to eq(value)
+end
+
+# Checks the KpiReport's period type too (Month/Quarter/Half Year/Year/YTD) — used to confirm a
+# header was bucketed under the right period type, not just the right date (e.g. a "Q1 FY 25"
+# header that KpiDateUtils.detect_period_type mistakes for a Month would still parse to the
+# correct date, so the date-only assertion above wouldn't catch that kind of mislabeling).
+Then('an unapproved KPI {string} as of {string} period {string} exists with value {float}') do |name, as_of, period, value|
+  kpi = Kpi.unapproved.joins(:kpi_report).where(name: name, portfolio_company_id: @portfolio_company.id, kpi_reports: { as_of: Date.parse(as_of), period: period }).first
+  expect(kpi).to be_present, "no unapproved #{name} as of #{as_of} with period #{period}"
   expect(kpi.value.to_f).to eq(value)
 end
 

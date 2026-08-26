@@ -65,11 +65,8 @@ class KpiTemplateGenerate < Trailblazer::Operation
 
   private
 
-  # 1-based month; same resolution order as KpiWorkbookReader (portco json_fields → fund setting → April).
   def fiscal_year_start_month(kpi_report, portco)
-    offset = portco.try(:json_fields)&.dig("month_offset_for_fy").presence
-    offset ||= EntitySetting.find_by(entity_id: kpi_report.entity_id)&.month_offset_for_fy.presence
-    (offset.presence || 3).to_i + 1
+    KpiDateUtils.resolve_fiscal_year_start_month(portco, kpi_report.entity_id)
   end
 
   # Moves an end-of-period date by n periods (negative = earlier), staying on period ends.

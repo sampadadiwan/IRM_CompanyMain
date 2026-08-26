@@ -79,7 +79,8 @@ Then('I should be able to see my capital remittances') do
     puts "checking capital remittance for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id
       puts "Call Visible"
-      expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
+      # The Investing Entity column prefers the commitment's linked KYC full_name over the plain investor_name.
+      expect(page).to have_content(cc.investor_kyc&.full_name || @investor.investor_name) if @user.curr_role != "investor"
       expect(page).to have_content( money_to_currency(cc.due_amount) )
       expect(page).to have_content( money_to_currency(cc.collected_amount) )
     else

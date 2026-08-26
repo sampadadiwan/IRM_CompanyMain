@@ -53,6 +53,7 @@ Scenario Outline: Create new capital call
   And the capital call collected amount should be "0"
   When I mark the remittances as paid
   Then I should see the remittances
+  Then I should see the remittance payments with investing entity names
   And the capital call collected amount should be "0"
   When I mark the remittances as verified
   Then I should see the remittances

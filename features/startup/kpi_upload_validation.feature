@@ -164,6 +164,40 @@ Feature: Server-side validation of portco KPI workbooks
     Then the validation has no errors
     And the requested period is present with "1" KPIs filled
 
+  @kpi_validation
+  Scenario: Extra spacing around FY/CY tokens doesn't break period-type detection or import
+    Given the target KPIs are "Revenue"
+    And a KPI workbook with sheet "MIS":
+      | KPI     | Q1 FY 25 | H1 FY 2023 | FY 20 - 21 |
+      | Revenue | 140      | 200        | 300        |
+    When the workbook is imported for the KPI report
+    Then an unapproved KPI "Revenue" as of "2024-06-30" period "Quarter" exists with value 140
+    And an unapproved KPI "Revenue" as of "2022-09-30" period "Half Year" exists with value 200
+    And an unapproved KPI "Revenue" as of "2021-03-31" period "Year" exists with value 300
+
+  @kpi_validation
+  Scenario: With no explicit fiscal-year setting, the US deployment defaults to a January fiscal year
+    Given the target KPIs are "Revenue"
+    And a KPI report shell exists for "TestStartup" as of "2025-12-31" with status "link_sent" and period "Year"
+    And the deployment is the "US" site with no fiscal-year override
+    And a KPI workbook with sheet "MIS":
+      | KPI     | FY24 | FY25 |
+      | Revenue | 100  | 120  |
+    When the workbook is validated for the KPI report
+    Then the validation has no errors
+    And the requested period is present with "1" KPIs filled
+
+  @kpi_validation
+  Scenario: With no explicit fiscal-year setting, the India deployment defaults to an April fiscal year
+    Given the target KPIs are "Revenue"
+    And a KPI report shell exists for "TestStartup" as of "2025-12-31" with status "link_sent" and period "Year"
+    And the deployment is the "IN" site with no fiscal-year override
+    And a KPI workbook with sheet "MIS":
+      | KPI     | FY24 | FY25 |
+      | Revenue | 100  | 120  |
+    When the workbook is validated for the KPI report
+    Then the validation has error "requested_period_missing"
+
   # ─────────────────────────────────────────────────────────
   # §2.6 Duplicates and hidden sheets
   # ─────────────────────────────────────────────────────────

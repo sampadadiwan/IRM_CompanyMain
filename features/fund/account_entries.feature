@@ -111,9 +111,11 @@ Scenario Outline: AE download in a job
   Then I should see the "Import in progress"
   Then There should be "8" capital commitments created
   And Given I upload "account_entries.xlsx" file for Account Entries
+  Given each investor has a "verified" kyc linked to the commitment
   Given I filter the AEs
   And I download all the AEs
   Then a new file is generated for the download
+  Then the downloaded account entries file shows the investing entity names
   And I get an email with the file attached
   Given I filter and pivot the AEs
   And I download all the pivoted AEs

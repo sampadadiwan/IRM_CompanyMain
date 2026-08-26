@@ -61,14 +61,30 @@ class EntitySetting < ApplicationRecord
   end
 
   def start_of_financial_year_date(date = nil, nil_if_not_set: false)
-    if date.nil? && nil_if_not_set
-      nil
-    else
-      date ||= Time.zone.today
-      month_offset_for_fy = self.month_offset_for_fy.present? ? self.month_offset_for_fy.to_i : 3
-      fy_start_date = date.month > month_offset_for_fy ? date.beginning_of_year : (date.beginning_of_year - 1.year)
-      (fy_start_date + month_offset_for_fy.months)
+    return nil if date.nil? && nil_if_not_set
+
+    date ||= Time.zone.today
+    offset = month_offset_for_fy.present? ? month_offset_for_fy.to_i : self.class.geo_default_month_offset_for_fy
+    self.class.compute_start_of_financial_year_date(date, offset)
+  end
+
+  # 0-based fiscal-year-start-month fallback used whenever an entity/portco has not set
+  # month_offset_for_fy explicitly. Keyed off CURRENT_SITE, the per-country deployment marker
+  # already used for SMS/user-sync (see SmsDeliverable) — US server defaults to January; IN and
+  # any other/blank value keep the pre-existing April default.
+  def self.geo_default_month_offset_for_fy
+    case ENV.fetch("CURRENT_SITE", "").strip.upcase
+    when "US" then 0
+    else 3
     end
+  end
+
+  # Shared arithmetic behind start_of_financial_year_date, factored out so WithCustomField and
+  # ApplicationRecordSqlite (which resolve month_offset_for_fy from json_fields rather than this
+  # class's DB column) don't each reimplement it. Pure function: no DB access, no ActiveRecord.
+  def self.compute_start_of_financial_year_date(end_date, month_offset_for_fy)
+    fy_start_date = end_date.month > month_offset_for_fy ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
+    fy_start_date + month_offset_for_fy.months
   end
 
   def to_s
@@ -104,7 +120,7 @@ class EntitySetting < ApplicationRecord
   def self.disable_all(reset: false)
     if Rails.env.development?
       EntitySetting.update_all(sandbox: true)
-      User.update_all(whatsapp_enabled: false)
+      User.update_all(whatsapp_enabled: false, otp_secret: nil, otp_backup_codes: nil, two_factor_enabled: false)
 
       root_emails = ["admin@altx.com", "admin@caphive.us"]
 

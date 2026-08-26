@@ -22,6 +22,16 @@
           <%= link_to "Capital Remittance", capital_remittance_payment.capital_remittance %>
         </td>
       </tr>
+      <% if capital_remittance_payment.investor_kyc %>
+        <tr>
+          <td>
+            Investing Entity
+          </td>
+          <td>
+            <%= link_to capital_remittance_payment.investor_kyc.full_name, investor_kyc_path(id: capital_remittance_payment.investor_kyc) %>
+          </td>
+        </tr>
+      <% end %>
       <tr>
         <td>
           Entity
