@@ -1,65 +1,44 @@
 <%= render "layouts/filter", associations: [] %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Audit Trail</h1>
-    <%= link_to "Download", audits_path(params: params.to_unsafe_h, format: :xlsx), {class: "btn btn-outline-primary"} %>
-</div>
+<%
+  dom_uid = SecureRandom.hex(4)
+  download_path = audits_path(params: params.to_unsafe_h, format: :xlsx)
+  timeline_rows = @audits.map { |audit| { audit: audit, changes: (audit.audited_changes || {}) } }
+  events_count = @pagy&.count || @audits.size
+%>
+<div class="card" data-controller="tooltip">
+  <div class="card-header bg-white py-3">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          <h5 class="card-title mb-0">Audit Trail</h5>
+          <%= user_guide_info_icon %>
+        </div>
+        <span class="text-muted"><%= pluralize(events_count, "event") %> found</span>
+        <div class="text-muted small mt-1">
+          Every create, update, and delete across your organisation — who did it, when, and what changed.
+        </div>
+      </div>
+    </div>
+  </div>
 
-
-<div class="table-responsive">
-
-<table class="table table-bordered dataTable">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Type</th>
-            <th>Auditable</th>
-            <th>User</th>
-            <th>Action</th>
-            <th>Field</th>
-            <th>Old Value</th>
-            <th>New Value</th>
-            <th>Created At</th>
-        </tr>
-    </thead>
-    <tbody>
-        <% if @audits.none? %>
-                    <tr>
-                        <td colspan="9" class="text-center py-4 text-muted">No audit records found.</td>
-                    </tr>
-        <% end %>
-        <%
-            @audits.each do |audit|
-                audit.audited_changes.each do |key, value|
-        %>
-                    <tr>
-                        <td><%= audit.id %></td>
-                        <td><%= audit.auditable_type %></td>
-                        <% if respond_to?("#{audit.auditable.class.name.underscore}_path") %>
-                            <td><%= link_to audit.auditable %></td>
-                        <% else %>
-                            <td><%= audit.auditable %></td>
-                        <% end %>
-                        <td><%= audit.user %></td>
-                        <td><%= audit.action %></td>
-                        <td><%= key %></td>
-                        <% if value.kind_of?(Array) %>
-                            <td><%= value[0] %></td>
-                            <td><%= value[1] %></td>
-                        <% else %>
-                            <td></td>
-                            <td><%= value %></td>
-                        <% end %>
-
-                        <td><%= l audit.created_at %></td>
-                    </tr>
-        <%
-                end
-            end
-        %>
-    </tbody>
-</table>
-
-<%= raw pagy_bootstrap_nav(@pagy) %>
-
+  <div class="card-body p-0">
+    <% if @field_history %>
+      <%# Scoped to exactly one record (auditable_type + auditable_id) — safe to
+          also offer the Field History pivot, same as the embedded AuditTrail widget. %>
+      <%= render "layouts/audit_tabs_nav", dom_uid: dom_uid %>
+      <div class="tab-content">
+        <%= render "layouts/audit_timeline_tab",
+                   rows: timeline_rows, pagy: @pagy, download_path: download_path,
+                   container_id: "audit-timeline-#{dom_uid}", container_classes: "tab-pane fade show active" %>
+        <%= render "layouts/audit_field_history_tab",
+                   field_history: @field_history,
+                   container_id: "audit-field-history-#{dom_uid}", container_classes: "tab-pane fade p-3" %>
+      </div>
+    <% else %>
+      <%= render "layouts/audit_timeline_tab",
+                 rows: timeline_rows, pagy: @pagy, download_path: download_path,
+                 container_id: nil, container_classes: "" %>
+    <% end %>
+  </div>
 </div>
