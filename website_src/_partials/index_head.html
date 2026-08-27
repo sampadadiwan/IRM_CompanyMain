@@ -490,7 +490,11 @@
   .cta-card .hero-cta{ opacity:1; animation:none; }
 
   /* ---------- footer ---------- */
-  footer{ border-top:1px solid var(--line); padding:80px 0 0; overflow:hidden; }
+  /* overflow-x only, with bottom padding to match: .foot-mark's translateY(12%)
+     pushes the giant "CapHive" wordmark below its own compressed line-height
+     box, so clipping the y-axis (or omitting the bottom padding) crops it.
+     Keep in step with the footer rule in assets/css/caphive.css. */
+  footer{ border-top:1px solid var(--line); padding:80px 0 clamp(60px,10vw,140px); overflow-x:hidden; }
   .foot-grid{ display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr 1fr; gap:40px; padding-bottom:64px; }
   .foot-brand p{ color:var(--mut); font-size:14.5px; max-width:300px; margin-top:16px; }
   .foot-brand .addr{ margin-top:20px; font-size:13.5px; line-height:1.7; color:var(--mut); }
