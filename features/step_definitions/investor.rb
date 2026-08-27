@@ -577,6 +577,38 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   expect(page).to have_content("successfully")
 end
 
+Given('I fill the kyc form') do
+  @temp_kyc = FactoryBot.build(:investor_kyc, entity: @entity)
+  class_name = @investor_kyc.type_from_kyc_type.underscore
+
+  page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+    within '#custom_file_upload_pan_tax_id' do
+      click_on 'Choose file'
+    end
+  end
+  sleep(2)
+
+  fill_in("#{class_name}_full_name", with: @temp_kyc.full_name)
+  fill_in("#{class_name}_PAN", with: @temp_kyc.PAN)
+  fill_in("#{class_name}_birth_date", with: @temp_kyc.birth_date)
+  click_on("Next")
+
+  page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+    within '#custom_file_upload_address_proof' do
+      click_on 'Choose file'
+    end
+  end
+  sleep(2)
+
+  fill_in("#{class_name}_address", with: @temp_kyc.address)
+  fill_in("#{class_name}_corr_address", with: @temp_kyc.corr_address)
+  fill_in("#{class_name}_bank_name", with: @temp_kyc.bank_name)
+  fill_in("#{class_name}_bank_branch", with: @temp_kyc.bank_branch)
+  fill_in("#{class_name}_bank_account_number", with: @temp_kyc.bank_account_number)
+  fill_in("#{class_name}_ifsc_code", with: @temp_kyc.ifsc_code)
+  click_on("Next")
+end
+
 Then('I should see the kyc documents {string}') do |docs|
   @investor_kyc = InvestorKyc.last
   document_names = @investor_kyc.documents.pluck(:name)

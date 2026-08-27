@@ -127,7 +127,8 @@ class InvestorKycPolicy < ApplicationPolicy
 
   # Used to send notification to fund that kyc needs updates
   def send_notification?
-    record.investor.investor_entity_id == user.entity_id && record.verified
+    # the user should see the updates requires button when the record is verified (synched with submission_verified) or submission completed
+    record.investor.investor_entity_id == user.entity_id && (record.verified || record.submission_completed?)
   end
 
   def preview?
@@ -166,7 +167,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def request_updates?
-    permissioned_employee?(:investor_kyc_update)
+    permissioned_employee?(:investor_kyc_update) && !record.verified
   end
 
   def investor_pending?

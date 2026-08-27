@@ -97,8 +97,9 @@ Scenario: Investor cannot submit a KYC while mandatory fields are missing - stan
   Given there is an existing investor "investor_name=Investor 3" with "1" users
   Given there is a KYC for the investor with submission_status "link_sent" and no mandatory fields filled in
   When I open the KYC edit page as the investor via a valid signed link
+  Given I fill the kyc form
   And I click "Submit KYC" and confirm the dialog
-  Then I should see the "can't be blank"
+  Then I should see the "F3 is required"
   And the investor kyc submission_status should not be "completed"
 
 

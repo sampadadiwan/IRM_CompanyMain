@@ -9,7 +9,7 @@ class InvestorKycsController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[show edit update extract_docs_data doc_first_upload processing], if: -> { params[:signed_id].present? }
 
   before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report override_aml_status send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
-  before_action :set_workflowable, only: [:show]  # runs after set_investor_kyc so @investor_kyc is available
+  before_action :set_workflowable, only: [:show] # runs after set_investor_kyc so @investor_kyc is available
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc investor_pending]
 
   has_scope :uncalled, type: :boolean
@@ -177,7 +177,10 @@ class InvestorKycsController < ApplicationController
   def edit
     investor_facing = pundit_user&.curr_role_investor? || params[:signed_id].present?
     kyc_locked      = @investor_kyc.submission_completed? || @investor_kyc.submission_verified?
-    return redirect_to investor_kyc_url(@investor_kyc, signed_id: params[:signed_id]) if investor_facing && kyc_locked
+    if investor_facing && kyc_locked
+      return redirect_to investor_kyc_url(@investor_kyc, signed_id: params[:signed_id]),
+                         alert: "This KYC has already been submitted and cannot be edited."
+    end
 
     # Doc-first wizard for investors: when the entity has kyc_doc_first_wizard enabled,
     # an active KycDocExtractorAgent, the investor has not yet uploaded any documents,
@@ -463,7 +466,8 @@ class InvestorKycsController < ApplicationController
     validate = params[:validate].present? ? params[:validate] != "false" : investor_user
 
     was_already_completed = @investor_kyc.submission_completed? || @investor_kyc.submission_verified?
-
+    og_submission_status = @investor_kyc.submission_status
+    og_submitted_at = @investor_kyc.submitted_at
     # Guard: investors cannot update a completed/verified KYC (per PRD — fund admin is exempt).
     if was_already_completed && investor_user
       return redirect_to investor_kyc_url(@investor_kyc, signed_id: params[:signed_id]),
@@ -492,6 +496,8 @@ class InvestorKycsController < ApplicationController
         end
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
+        @investor_kyc.submission_status = og_submission_status
+        @investor_kyc.submitted_at = og_submitted_at
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
       end

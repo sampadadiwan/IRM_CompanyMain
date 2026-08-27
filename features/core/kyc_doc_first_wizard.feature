@@ -72,4 +72,8 @@ Feature: Doc-First KYC Wizard
     And I submit the doc-first upload form via magic link
     Then I should see "Fields pre-filled from your documents"
     And I should see a "Save Draft" button
+    # Below button now only shows on the last page
+    # And I should see a "Submit KYC" button
+    Then I click on "Next"
+    Then I click on "Next"
     And I should see a "Submit KYC" button
