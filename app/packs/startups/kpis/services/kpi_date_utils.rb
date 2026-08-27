@@ -130,11 +130,15 @@ class KpiDateUtils
       return end_of_quarter(current_year, calendar_quarter_start_month(quarter))
     end
 
-    # === Case 4: Jan-Mar 2021, Apr-Jun 2022, etc.
+    # === Case 4: Jan-Mar 2021, Apr-Jun 2022, etc. The trailing year is the END month's year (that's
+    # what KpiTemplateGenerate#period_label writes it as), so for a wrapping range like "Dec-Feb 2026"
+    # this must NOT go through end_of_quarter's start-year convention — that adds a further +1 for the
+    # wrap and lands a year late (28-Feb-2027 instead of 28-Feb-2026).
     if (match = str.match(/\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-[A-Z]{3,4}(\d{2,4})\z/))
       start_month = month_abbr_to_month(match[1])
-      year = normalize_year(match[2])
-      return end_of_quarter(year, start_month)
+      end_year = normalize_year(match[2])
+      end_month = ((start_month + 2 - 1) % 12) + 1
+      return Date.new(end_year, end_month, -1)
     end
 
     # === Case 5: JFM 2021, AMJ 2022, etc.

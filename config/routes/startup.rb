@@ -29,6 +29,7 @@ resources :kpi_reports do
   post "validate_upload", on: :collection  # same, for the New page (report context from form fields)
   patch "reopen", on: :member              # fund: reopen a submitted report and ask the portco to re-upload
   get "template", on: :member              # pre-filled KPI workbook template (portco + fund)
+  get "template", on: :collection          # same, for the New page (report context from form fields)
   get "portco_pending", on: :collection
 end
 

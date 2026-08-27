@@ -2,6 +2,15 @@
 <% is_portco_user = acting_user.nil? || acting_user.entity_id != @kpi_report.entity_id %>
 <% is_readonly = is_portco_user %>
 <% via_signed_id = params[:signed_id].present? %>
+<%# Persisted reports (incl. magic-link) use the member route (@kpi_report already has an id).
+    A brand-new report from the "New" page has no id yet, so it goes through the collection route,
+    which rebuilds an in-memory KpiReport from the portfolio_company_id already known at this point
+    (e.g. the grid-view "New" link passes it in) — see set_kpi_report_for_validation. %>
+<% template_download_path = if @kpi_report.persisted?
+     template_kpi_report_path(@kpi_report, format: :xlsx, signed_id: params[:signed_id].presence)
+   else
+     template_kpi_reports_path(format: :xlsx, kpi_report: { portfolio_company_id: @kpi_report.portfolio_company_id, period: @kpi_report.period, as_of: @kpi_report.as_of })
+   end %>
 
 <div class="wizard_container" data-controller="wizard">
 
@@ -179,8 +188,8 @@
             </div>
           </div>
 
-          <% if @kpi_report.persisted? && @kpi_report.portfolio_company.present? %>
-            <%= link_to template_kpi_report_path(@kpi_report, format: :xlsx, signed_id: params[:signed_id].presence), class: "btn btn-outline-secondary mb-3", data: { turbo: false } do %>
+          <% if @kpi_report.portfolio_company.present? %>
+            <%= link_to template_download_path, class: "d-inline-block mb-3", data: { turbo: false } do %>
               <i class="ti ti-download me-1"></i>Download KPI template
             <% end %>
           <% end %>
@@ -247,15 +256,15 @@
           <div class="form-group">
               <%# Spreadsheets only (§2.1 G) — the server re-checks the file type in KpiWorkbookReader (not_spreadsheet). %>
               <%= file_fields("KPIs", @kpi_report, form, required: false, meta_data: "KPIs", allowed_types: KpiReport::WORKBOOK_FILE_TYPES) %>
-              <small class="form-text text-muted">Please upload the KPIs as an Excel or CSV workbook (.xlsx, .xls, .csv).</small>
-              <% if @kpi_report.persisted? && @kpi_report.portfolio_company.present? %>
-                <div class="mt-1">
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <small class="form-text text-muted mb-0">Please upload the KPIs as an Excel or CSV workbook (.xlsx, .xls, .csv).</small>
+                <% if @kpi_report.portfolio_company.present? %>
                   <%# Pre-filled workbook: this portco's KPI names + the requested period, in a layout the importer reads without guesswork %>
-                  <%= link_to template_kpi_report_path(@kpi_report, format: :xlsx, signed_id: params[:signed_id].presence), class: "btn btn-outline-secondary", data: { turbo: false } do %>
+                  <%= link_to template_download_path, class: "d-inline-block", data: { turbo: false } do %>
                     <i class="ti ti-download me-1"></i>Download KPI template
                   <% end %>
-                </div>
-              <% end %>
+                <% end %>
+              </div>
               <small class="form-text text-danger">Please ensure the first row indicates the period (eg: January 2025, Q12025,FY2025 etc) and the first column contains the name of the relevant metric.</small>
           </div>
 

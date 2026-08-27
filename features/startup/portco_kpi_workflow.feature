@@ -83,6 +83,8 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And I fill in "Notes" with "Final numbers"
     And I click "Submit Report" and confirm the dialog
@@ -171,6 +173,8 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     When I open the KPI report edit page as the portco user via a valid signed link
     Then I should see "KPI Report"
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And I should see a "Save Draft" button
     And I should see a "Submit Report" button
@@ -208,6 +212,9 @@ Feature: Portco KPI Self-Reporting Workflow
     And I go to the "Additional Details" step of the KPI report wizard
     Then the "Save Draft" button should be disabled
     When I upload a KPI XLSX with valid date headers
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
+    And I acknowledge all KPI warnings
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the "Save Draft" button should be enabled
     And the "Submit Report" button should be enabled
     And I go to the "Upload & Validate KPIs" step of the KPI report wizard
@@ -256,6 +263,8 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And I click "Submit Report" and confirm the dialog
     Then the submitted_at timestamp is visible on the form
@@ -411,6 +420,8 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And I click "Submit Report"
     Then I should see "cannot be undone" in the confirmation dialog
@@ -489,6 +500,8 @@ Feature: Portco KPI Self-Reporting Workflow
     And the email queue is cleared
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And I click "Submit Report" and confirm the dialog
     Then the fund admin receives no submission email
@@ -569,6 +582,8 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And I click "Submit Report" and confirm the dialog
     Then the KPI report for "TestStartup" should have status "submitted"

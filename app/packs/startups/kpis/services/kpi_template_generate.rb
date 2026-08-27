@@ -3,8 +3,7 @@
 # Builds a KPI workbook template for a portco's KPI report — the file we would most like them to
 # send back (docs/technical/kpi_portco_upload_validation_review.md §3.4 P):
 #
-#   Row 1  note (col A only, so it never scores as a period header)
-#   Row 3  KPI | Unit | <previous period> | <previous period> | <requested period>
+#   Row 1  KPI | Unit | <previous period> | <previous period> | <requested period>
 #   Rows   one per non-computed InvestorKpiMapping, in the fund's configured order
 #
 # Period labels are written in a form KpiDateUtils parses back to exactly the shell's as_of/period,
@@ -38,7 +37,6 @@ class KpiTemplateGenerate < Trailblazer::Operation
     fy_start = ctx[:fy_start_month]
     dates = (0..PREVIOUS_PERIODS).map { |i| shift_period(as_of, period, -(PREVIOUS_PERIODS - i)) }
     ctx[:period_labels] = dates.map { |d| period_label(d, period, fy_start) }
-    ctx[:requested_label] = ctx[:period_labels].last
     true
   end
 
@@ -47,10 +45,6 @@ class KpiTemplateGenerate < Trailblazer::Operation
     package = Axlsx::Package.new
     package.workbook.add_worksheet(name: "KPIs") do |ws|
       bold = ws.styles.add_style(b: true)
-      note = "KPI template for #{portco&.investor_name}: fill the '#{ctx[:requested_label]}' column (earlier columns are optional corrections). " \
-             "Enter plain numbers; values are read in the unit shown unless you write a unit in the cell (e.g. 1.2 Cr)."
-      ws.add_row [note]
-      ws.add_row []
       ws.add_row ["KPI", "Unit", *period_labels], style: bold
       mappings.each do |m|
         ws.add_row [m.reported_kpi_name, unit_label(m)]

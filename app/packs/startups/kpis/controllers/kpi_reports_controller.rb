@@ -2,8 +2,8 @@ class KpiReportsController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[show edit update validate_upload template], if: -> { params[:signed_id].present? }
   # validate_upload is called by JS after Uppy finishes; the magic link's signed_id keeps it usable
   # by unauthenticated portco users, and CSRF is enforced by the token the form page carries.
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze refresh_import mark_reviewed reopen template]
-  before_action :set_kpi_report_for_validation, only: %i[validate_upload]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze refresh_import mark_reviewed reopen]
+  before_action :set_kpi_report_for_validation, only: %i[validate_upload template]
   after_action :verify_authorized, except: %i[index search show_performance chart_refresh refresh_import portco_pending]
   after_action :verify_policy_scoped, only: %i[index chart_refresh]
 
@@ -224,9 +224,12 @@ class KpiReportsController < ApplicationController
     redirect_to kpi_report_url(@kpi_report), notice: "Report reopened and the portfolio company has been asked to upload again."
   end
 
-  # GET /kpi_reports/:id/template.xlsx — a workbook pre-filled with this portco's KPI names and the
-  # requested period (plus the two previous ones), so uploads start from a file the importer reads
-  # without guesswork (§3.4 P). Magic-link users can download it (set_kpi_report handles signed_id).
+  # GET /kpi_reports/:id/template.xlsx (or /kpi_reports/template.xlsx before the report is saved) —
+  # a workbook pre-filled with this portco's KPI names and the requested period (plus the two
+  # previous ones), so uploads start from a file the importer reads without guesswork (§3.4 P).
+  # Magic-link users can download it too; set_kpi_report_for_validation resolves @kpi_report from
+  # params[:id]/params[:signed_id] when present, or from the New page's in-progress form fields
+  # otherwise (same split as validate_upload, for the same reason: the wizard has no id yet).
   def template
     result = KpiTemplateGenerate.call(kpi_report: @kpi_report)
     send_data result[:xlsx], filename: result[:filename],
@@ -496,8 +499,9 @@ class KpiReportsController < ApplicationController
     @signed_id_user || current_user
   end
 
-  # validate_upload works for a persisted report (member route, incl. magic link) or for the New page
-  # (collection route) where the report is built from the submitted form fields and never saved.
+  # Used by validate_upload and template: works for a persisted report (member route, incl. magic
+  # link) or for the New page (collection route) where the report is built from the submitted form
+  # fields and never saved.
   def set_kpi_report_for_validation
     if params[:id].present? || params[:signed_id].present?
       set_kpi_report

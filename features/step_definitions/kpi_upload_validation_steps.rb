@@ -395,7 +395,7 @@ Then('the generated KPI template lists unit {string} for {string}') do |unit, na
   tmp.write(result[:xlsx])
   tmp.flush
   wb = Roo::Spreadsheet.open(tmp.path)
-  row = (4..wb.last_row).map { |i| wb.row(i) }.find { |r| r.first.to_s == name }
+  row = (2..wb.last_row).map { |i| wb.row(i) }.find { |r| r.first.to_s == name }
   expect(row).to be_present
   expect(row[1].to_s).to eq(unit)
 end

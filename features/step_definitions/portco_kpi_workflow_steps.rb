@@ -871,10 +871,10 @@ Then('the generated KPI template for the report has header {string} and rows {st
   tmp.flush
   @template_path = tmp.path
   wb = Roo::Spreadsheet.open(tmp.path)
-  header = wb.row(3).map(&:to_s)
+  header = wb.row(1).map(&:to_s)
   expect(header).to include(header_label)
   names.split(',').map(&:strip).each do |n|
-    expect((4..wb.last_row).map { |i| wb.row(i).first.to_s }).to include(n)
+    expect((2..wb.last_row).map { |i| wb.row(i).first.to_s }).to include(n)
   end
 end
 
