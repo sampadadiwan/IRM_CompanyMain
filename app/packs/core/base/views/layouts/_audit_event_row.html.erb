@@ -44,7 +44,7 @@
 <tr class="audit-trail-row" data-audit-search-target="row" data-audit-action="<%= audit.action %>">
   <td class="ps-4">
     <% if display_rows.any? %>
-      <button class="audit-trail-toggle btn btn-sm btn-link text-muted p-0 collapsed" type="button"
+      <button class="audit-trail-toggle btn btn-sm btn-link text-primary p-0 collapsed" type="button"
               data-bs-toggle="collapse" data-bs-target="#<%= audit_collapse_id %>"
               aria-expanded="false" aria-controls="<%= audit_collapse_id %>"
               title="Show the fields that changed, with their old and new values" data-toggle="tooltip">
