@@ -269,15 +269,10 @@
             </div>
           <% end %>
 
-          <% unless is_readonly %>
-          <div class="form-group">
-            <%= form.label :update_existing_kpis, "Update existing KPIs"%>
-            <%= form.check_box :update_existing_kpis, class: "form-check-input", value: false  %>
-            <small class="form-text text-danger">Check this box to update existing KPIs with data from the file above. If unchecked only new values will be added.</small>
-          </div>
-          <% else %>
-            <%= form.hidden_field :update_existing_kpis, class: "form-check-input", value: true  %>
-          <% end %>
+          <%# update_existing_kpis has no effect on the import (KpiWorkbookReader never reads it — see
+              docs/technical/kpi_portco_upload_validation_review.md) — every uploaded value is staged as
+              an unapproved Kpi for review regardless, so there is nothing for this checkbox to control. %>
+          <%= form.hidden_field :update_existing_kpis, value: true %>
 
           <%= render "/kpi_reports/xlsx_preview", kpi_report: @kpi_report %>
 
