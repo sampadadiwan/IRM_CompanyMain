@@ -83,10 +83,7 @@
 
           <h4 class="fw-semibold mb-1">Reporting KPIs<% if kpi_report.for_name.present? %> for <%= kpi_report.for_name %><% end %></h4>
           <p class="text-muted mb-4">
-            <% if kpi_report.period.present? || kpi_report.as_of.present? %>
-              This report covers <strong><%= kpi_report.period.presence || "the" %></strong> period<% if kpi_report.as_of.present? %> ending <strong><%= l(kpi_report.as_of, format: :long) %></strong><% end %>.
-            <% end %>
-            A few quick things to know before you start.
+            A few quick things to know before you start. You'll confirm the exact period and reporting date on the next step.
           </p>
 
           <% if via_signed_id %>
@@ -228,7 +225,8 @@
             </div>
           <% end %>
 
-          <div class="d-flex justify-content-end mt-3">
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
             <button class="btn btn-outline-primary nextBtn btn-lg" type="button"><%= t_common(:next) %></button>
           </div>
 
@@ -283,7 +281,8 @@
 
           <%= render "/kpi_reports/xlsx_preview", kpi_report: @kpi_report %>
 
-          <div class="d-flex justify-content-end mt-3">
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
             <button class="btn btn-outline-primary nextBtn btn-lg" type="button"><%= t_common(:next) %></button>
           </div>
 
@@ -308,27 +307,31 @@
           </div>
 
 
-          <div class="form-group d-flex gap-2 align-items-center">
-            <% if is_portco_user %>
-              <% if @kpi_report.status_submitted? || @kpi_report.status_reviewed? %>
-                <span class="badge bg-success fs-6 p-2">Report Already Submitted</span>
+          <div class="form-group d-flex gap-2 align-items-center justify-content-between">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
+
+            <div class="d-flex gap-2 align-items-center">
+              <% if is_portco_user %>
+                <% if @kpi_report.status_submitted? || @kpi_report.status_reviewed? %>
+                  <span class="badge bg-success fs-6 p-2">Report Already Submitted</span>
+                <% else %>
+                  <%# data-kpi-submit-guard: "draft" is disabled only on blocking errors; "final" also while no
+                      workbook has been checked yet, or while any workbook warning is still unacknowledged
+                      (kpi_validation_panel_controller.js) %>
+                  <%= form.submit "Save Draft", class: "btn btn-outline-secondary", data: { kpi_submit_guard: "draft" } %>
+                  <button type="button" class="btn btn-success"
+                          data-bs-toggle="modal" data-bs-target="#submitReportModal"
+                          data-kpi-submit-guard="final"
+                          title="Upload your KPI workbook and acknowledge all warnings to enable submission">
+                    Submit Report
+                  </button>
+                <% end %>
               <% else %>
-                <%# data-kpi-submit-guard: "draft" is disabled only on blocking errors; "final" also while no
-                    workbook has been checked yet, or while any workbook warning is still unacknowledged
-                    (kpi_validation_panel_controller.js) %>
-                <%= form.submit "Save Draft", class: "btn btn-outline-secondary", data: { kpi_submit_guard: "draft" } %>
-                <button type="button" class="btn btn-success"
-                        data-bs-toggle="modal" data-bs-target="#submitReportModal"
-                        data-kpi-submit-guard="final"
-                        title="Upload your KPI workbook and acknowledge all warnings to enable submission">
-                  Submit Report
-                </button>
+                <%# Fund users are not gated on "no file yet", but a workbook with blocking errors cannot be saved
+                    (kpi_validation_panel_controller.js disables "draft"-guarded buttons on errors; the server re-checks) %>
+                <%= form.submit t_common(:save), class: "btn btn-outline-primary", data: { kpi_submit_guard: "draft" } %>
               <% end %>
-            <% else %>
-              <%# Fund users are not gated on "no file yet", but a workbook with blocking errors cannot be saved
-                  (kpi_validation_panel_controller.js disables "draft"-guarded buttons on errors; the server re-checks) %>
-              <%= form.submit t_common(:save), class: "btn btn-outline-primary", data: { kpi_submit_guard: "draft" } %>
-            <% end %>
+            </div>
           </div>
 
         </div>

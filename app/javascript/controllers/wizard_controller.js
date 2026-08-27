@@ -22,7 +22,8 @@ export default class extends Controller {
 
         var navListItems = $('div.setup-panel div a'),
             allWells = $('.setup-content'),
-            allNextBtn = $('.nextBtn');
+            allNextBtn = $('.nextBtn'),
+            allPrevBtn = $('.prevBtn');
 
         allWells.hide();
 
@@ -44,6 +45,18 @@ export default class extends Controller {
         allNextBtn.off("click").on("click", function () {
             console.log("WizardController: nextBtn clicked");
             validateSection(this, validateFields);
+        });
+
+        // Back navigation is not validated — the step being left already passed validation to get here.
+        allPrevBtn.off("click").on("click", function () {
+            console.log("WizardController: prevBtn clicked");
+            var curStep = $(this).closest(".setup-content"),
+                curStepBtn = curStep.attr("id"),
+                prevStepWizard = $('div.setup-panel div a[href="#' + curStepBtn + '"]').parent().prev().children("a");
+
+            if (prevStepWizard.length && !prevStepWizard.hasClass('disabled')) {
+                prevStepWizard.trigger('click');
+            }
         });
 
         $('div.setup-panel div a.btn-outline-primary').first().trigger('click');
