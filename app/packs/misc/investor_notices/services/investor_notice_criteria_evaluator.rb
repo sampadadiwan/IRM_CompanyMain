@@ -15,9 +15,12 @@
 # that method (not the expression syntax) to add new variables.
 class InvestorNoticeCriteriaEvaluator
   # Blank criteria always matches — preserves the pre-criteria behavior for
-  # every existing notice, which has no `criteria` value.
-  def self.matches?(investor_notice, user)
-    expression = investor_notice.criteria.to_s.strip
+  # every existing notice, which has no `criteria` value. `criteria:` lets a
+  # caller check an InvestorNoticeItem's own condition instead of the parent
+  # notice's — the variable context (investor/user/fund) still comes from
+  # `investor_notice`, since that's what determines the audience either way.
+  def self.matches?(investor_notice, user, criteria: investor_notice.criteria)
+    expression = criteria.to_s.strip
     return true if expression.blank?
 
     context = build_context(investor_notice, user)

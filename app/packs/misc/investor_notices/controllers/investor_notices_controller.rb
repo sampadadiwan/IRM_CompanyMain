@@ -77,14 +77,15 @@ class InvestorNoticesController < ApplicationController
     common = %i[entity_id owner_id owner_type start_date end_date active details title link access_rights_metadata btn_label generate category]
     nested_attrs = %i[id investor_notice_id title details position _destroy]
 
-    # criteria (a Dentaku expression) and the items' link (which can carry
-    # [user.xxx] variables via InvestorNoticeLinkInterpolator) are both
-    # powerful/technical enough to reserve for CapHive support — same gate
-    # used for the other Dentaku formula fields in this app (FundFormula#formula,
-    # CallFee#formula). A GP admin's update simply omits the keys rather than
-    # clearing them, so values already set by support survive their edits.
+    # criteria (a Dentaku expression, at both the notice and item level) and
+    # the items' link (which can carry [user.xxx] variables via
+    # InvestorNoticeLinkInterpolator) are all powerful/technical enough to
+    # reserve for CapHive support — same gate used for the other Dentaku
+    # formula fields in this app (FundFormula#formula, CallFee#formula). A GP
+    # admin's update simply omits the keys rather than clearing them, so
+    # values already set by support survive their edits.
     if current_user.support?
-      params.require(:investor_notice).permit(*common, :criteria, investor_notice_items_attributes: nested_attrs + [:link])
+      params.require(:investor_notice).permit(*common, :criteria, investor_notice_items_attributes: nested_attrs + %i[link criteria])
     else
       params.require(:investor_notice).permit(*common, investor_notice_items_attributes: nested_attrs)
     end

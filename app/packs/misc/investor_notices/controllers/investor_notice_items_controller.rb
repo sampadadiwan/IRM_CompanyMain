@@ -76,9 +76,10 @@ class InvestorNoticeItemsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_notice_item_params
     # link can carry [user.xxx] variables (see InvestorNoticeLinkInterpolator)
+    # and criteria is a Dentaku expression (see InvestorNoticeCriteriaEvaluator)
     # — same support-only gate as InvestorNotice#criteria.
     if current_user.support?
-      params.require(:investor_notice_item).permit(:investor_notice_id, :title, :details, :link)
+      params.require(:investor_notice_item).permit(:investor_notice_id, :title, :details, :link, :criteria)
     else
       params.require(:investor_notice_item).permit(:investor_notice_id, :title, :details)
     end

@@ -22,9 +22,15 @@
       </div>
     <% end %>
     <div class="<%= img.present? ? 'col-lg-7' : 'col-lg-12' %> mb-4 notice_items" style="margin: auto;">
-      <% if investor_notice.investor_notice_items.present? %>
+      <%# Per-item criteria (InvestorNoticeItem#criteria) works exactly like
+          InvestorNotice#criteria (see _carousel.html.erb) — a Dentaku
+          expression checked per viewer, on top of whoever the parent notice
+          already targets. Must be re-checked every render for the same
+          reason the notice-level check is: it isn't cacheable. %>
+      <% visible_items = investor_notice.investor_notice_items.select { |item| InvestorNoticeCriteriaEvaluator.matches?(investor_notice, current_user, criteria: item.criteria) } %>
+      <% if visible_items.present? %>
         <div class="row">
-          <% investor_notice.investor_notice_items.each_with_index do |item, idx| %>
+          <% visible_items.each_with_index do |item, idx| %>
           
             <div class="card col-12">
                 <div class="card-body">

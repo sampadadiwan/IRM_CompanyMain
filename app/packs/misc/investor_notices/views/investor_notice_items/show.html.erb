@@ -32,10 +32,20 @@
         </td>
         <td>
           <%= @investor_notice_item.link %>
-        </td>    
+        </td>
       </tr>
-    
-  
+          <% if current_user.support? %>
+      <tr>
+        <td>
+          Show Only If
+        </td>
+        <td>
+          <%= @investor_notice_item.criteria %>
+        </td>
+      </tr>
+          <% end %>
+
+
 </table>
 
 

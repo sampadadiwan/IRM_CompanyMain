@@ -29,4 +29,14 @@
         <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger" %>
     </div>
 
+    <%# Per-item condition, evaluated the same way as InvestorNotice#criteria
+        (InvestorNoticeCriteriaEvaluator) — narrows which viewers see this one
+        line item, on top of whoever the parent notice already targets. %>
+    <% if current_user.support? %>
+      <div class="form-group col-md-12">
+        <%= f.label :criteria, "Show Only If (optional, support only)" %>
+        <%= f.text_field :criteria, class: "form-control", placeholder: '[investor.category] == "Lead Investor"' %>
+      </div>
+    <% end %>
+
 </div>

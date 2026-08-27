@@ -107,6 +107,17 @@
       </td>
     </tr>
 
+    <% if current_user.support? %>
+      <tr>
+        <td>
+          Show Only If
+        </td>
+        <td>
+          <%= @investor_notice.criteria %>
+        </td>
+      </tr>
+    <% end %>
+
     <tr>
       <td>
         Button Label

@@ -7,6 +7,10 @@ class InvestorNoticeItem < ApplicationRecord
   # InvestorNoticeLinkInterpolator.validate) so an unsupported path is
   # rejected immediately instead of silently rendering as plain text later.
   validate :link_expression_is_valid, if: -> { link.present? }
+  # Same Dentaku dry-run as InvestorNotice#criteria (see
+  # InvestorNoticeCriteriaEvaluator.validate), so a per-item condition typo is
+  # caught at save time too.
+  validate :criteria_expression_is_valid, if: -> { criteria.present? }
 
   before_save :set_entity_id
 
@@ -19,5 +23,10 @@ class InvestorNoticeItem < ApplicationRecord
   def link_expression_is_valid
     result = InvestorNoticeLinkInterpolator.validate(link)
     errors.add(:link, "is invalid: #{result}") unless result == true
+  end
+
+  def criteria_expression_is_valid
+    result = InvestorNoticeCriteriaEvaluator.validate(criteria, investor_notice)
+    errors.add(:criteria, "is invalid: #{result}") unless result == true
   end
 end
