@@ -467,6 +467,18 @@ Then('the workbook check panel does not show {string}') do |text|
   end
 end
 
+# kpi_validation_panel_controller.js gates the wizard's "final" buttons (Submit Report / Confirm)
+# on every warning checkbox being ticked, not just on the error count — ticking "Acknowledge all"
+# checks every individual warning to match (see toggleAll in that controller). Must run while the
+# "Upload & Validate KPIs" step is still the visible wizard step, since that is where the panel
+# (and its checkboxes) live; the wizard only ever hides steps via CSS, so the ticked state survives
+# navigating to a later step afterwards.
+When('I acknowledge all KPI warnings') do
+  within('#kpi_validation_panel') do
+    check('kpi_warnings_ack_all') if page.has_field?('kpi_warnings_ack_all', wait: 5)
+  end
+end
+
 Given('the portfolio company has no KPI mappings') do
   @portfolio_company.investor_kpi_mappings.delete_all
   @portfolio_company.reload

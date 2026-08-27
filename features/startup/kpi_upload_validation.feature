@@ -302,6 +302,7 @@ Feature: Server-side validation of portco KPI workbooks
     And I should see "How we read your file"
     And I should see "1,250,000"
     And I should see "You were asked for Jun 2026 (Month)"
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
     And the KPI report has a stored validation result with "0" errors

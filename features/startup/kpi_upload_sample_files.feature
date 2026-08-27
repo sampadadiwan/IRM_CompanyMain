@@ -33,6 +33,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     And the workbook check panel shows "2,450"
     And the workbook check panel shows "-310"
     And the workbook check panel does not show "Scratch!"
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
     And I go to the "Additional Details" step of the KPI report wizard
@@ -59,6 +60,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     And the workbook check panel shows "Total shareholders equity"
     And the workbook check panel shows "25,000,000"
     And the workbook check panel shows "future — ignored"
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
 
@@ -68,6 +70,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     Then the workbook check panel shows "No blocking errors"
     And the workbook check panel shows "2,450.75"
     And the workbook check panel shows "-295.25"
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
 
@@ -166,6 +169,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     When I pick the sample KPI workbook "09_quarter_request_answered_monthly.xlsx" in the file picker
     Then the workbook check panel shows "No blocking errors"
     And the workbook check panel shows "You were asked for Jun 2026 (Quarter) but the file has monthly columns instead"
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
 

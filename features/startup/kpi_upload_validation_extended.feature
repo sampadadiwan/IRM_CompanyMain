@@ -425,6 +425,7 @@ Feature: Server-side KPI workbook validation — extended coverage
     Then the workbook check panel shows "No blocking errors"
     And the workbook check panel shows "KPIs filled: 5 of 5"
     And the workbook check panel shows "Revenue - North"
+    And I acknowledge all KPI warnings
     And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
     When I click "Submit Report" and confirm the dialog
