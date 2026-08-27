@@ -81,6 +81,16 @@ module UpdateInvestor
       deal_investors.update_all(investor_name:)
       update_folder_names
 
+      # AccountEntry#parent_name is a denormalized snapshot of parent.to_s, written once at
+      # creation (AccountEntryShared#setup_defaults: `self.parent_name ||= parent.to_s ...`)
+      # and never re-derived after that. An account_entry can be parented directly on this
+      # Investor, or indirectly via one of its AggregatePortfolioInvestment/PortfolioInvestment
+      # rows (both embed portfolio_company_name, just updated above, in their own #to_s) -- so
+      # without this resync, renaming an investor leaves every account_entry's cached
+      # parent_name (the grid's "For" column, and the parent name shown in the debug-mode
+      # account entry view) permanently stale.
+      resync_account_entry_parent_names
+
       # Check if investor entity has only one investor, and we changed its name
       if sole_investor?
         # If so also update the entity name
@@ -231,6 +241,33 @@ module UpdateInvestor
   def sole_investor?
     exclude_category = %w[Trust Founder Employee].include?(category)
     Investor.where(investor_entity_id:).one? && !exclude_category
+  end
+
+  # Resyncs the denormalized AccountEntry#parent_name column after an investor rename.
+  # Called only from update_association_name, which already confirmed saved_change_to_investor_name?.
+  #
+  # account_entries.parent_type/parent_id is polymorphic (see AccountEntry::PARENT_TYPES) and
+  # indexed as a leftmost pair (idx_ae_parent_fund_name_flags), so each `where(parent_type:,
+  # parent_id:)` below is an index-scoped update_all, not a scan of the (very large) table.
+  def resync_account_entry_parent_names
+    # Direct parent: account entries attached straight to this Investor (parent_type "Investor").
+    # Investor#to_s (InvestorShared#to_s) is "investor_name : category" -- category is unaffected
+    # by a name-only rename, and `self` already carries the new investor_name in memory, so
+    # `to_s` here reflects the post-rename value.
+    AccountEntry.where(parent_type: "Investor", parent_id: id).update_all(parent_name: to_s[0..254])
+
+    # Indirect parents: AggregatePortfolioInvestment / PortfolioInvestment rows whose
+    # portfolio_company_name we just rewrote above via update_all. Their #to_s also reads the
+    # investment_instrument association, so unlike the plain-column updates above we can't fold
+    # this into a single update_all -- reload each (a handful of rows per investor, not
+    # account_entries-scale) and recompute its to_s to catch up account_entries.parent_name.
+    aggregate_portfolio_investments.includes(:investment_instrument).find_each do |api|
+      AccountEntry.where(parent_type: "AggregatePortfolioInvestment", parent_id: api.id).update_all(parent_name: api.to_s[0..254])
+    end
+
+    portfolio_investments.includes(:investment_instrument).find_each do |pi|
+      AccountEntry.where(parent_type: "PortfolioInvestment", parent_id: pi.id).update_all(parent_name: pi.to_s[0..254])
+    end
   end
 
   # Cascade an investor_entity_id change to records that reference the old entity.
