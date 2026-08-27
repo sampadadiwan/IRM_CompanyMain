@@ -27,6 +27,11 @@ When("I create a Capital Distribution {string}") do |args|
 
   click_button 'Save'
   expect(page).to have_content("Capital distribution was successfully created")
+  # @capital_distribution above is the unsaved FactoryBot.build used only to fill in the form;
+  # the actual persisted record is a separate object created server-side by the Save submit.
+  # Steps further down the scenario (Clone/Create With Fees) need the real id, so re-point
+  # @capital_distribution at the row that was actually created.
+  @capital_distribution = CapitalDistribution.last
   # sleep(2)
 end
 
@@ -281,6 +286,32 @@ When('I create a new capital distribution {string}') do |args|
   click_on "Save"
   # sleep(2)
   expect(page).to have_content("Capital distribution was successfully")
+end
+
+When("I change the capital distribution's distribution date to {string}") do |new_date|
+  visit(edit_capital_distribution_path(@capital_distribution))
+  fill_in('capital_distribution_distribution_date', with: new_date)
+  click_on('Save')
+end
+
+Then('I should see the distribution date change warning naming all the payments') do
+  expect(page).to have_css('#distributionDateChangeModal.show')
+  expect(page).to have_content("#{@capital_distribution.capital_distribution_payments.count} payment")
+end
+
+When('I confirm the distribution date change') do
+  within('#distributionDateChangeModal') do
+    click_on('Change Distribution Date')
+  end
+  expect(page).to have_content('Capital distribution was successfully updated')
+end
+
+Then("every capital distribution payment's payment date should be {string}") do |new_date|
+  @capital_distribution.reload
+  @capital_distribution.capital_distribution_payments.each do |cdp|
+    cdp.reload
+    expect(cdp.payment_date).to eq(Date.parse(new_date))
+  end
 end
 
 Then('the capital distribution must reflect the payments') do

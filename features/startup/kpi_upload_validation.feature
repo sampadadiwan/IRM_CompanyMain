@@ -296,10 +296,12 @@ Feature: Server-side validation of portco KPI workbooks
   Scenario: The portco sees the server verdict and the raw → stored table before saving, and it is persisted on the report
     Given the target KPIs are "Revenue"
     When I open the KPI report edit page as the portco user via a valid signed link
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
     And I upload a KPI XLSX with a formatted revenue value for June 2026
     Then I should see "Workbook check"
     And I should see "How we read your file"
     And I should see "1,250,000"
     And I should see "You were asked for Jun 2026 (Month)"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
     And the KPI report has a stored validation result with "0" errors

@@ -66,6 +66,7 @@ Feature: Portco KPI Self-Reporting Workflow
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     And I fill in "Notes" with "Work in progress"
     And I click "Save Draft"
     Then I should see "Kpi report was successfully updated"
@@ -82,6 +83,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     And I fill in "Notes" with "Final numbers"
     And I click "Submit Report" and confirm the dialog
     Then I should see "KPI report submitted"
@@ -99,6 +101,7 @@ Feature: Portco KPI Self-Reporting Workflow
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     Then I should see "Report Already Submitted"
     And I should not see a "Save Draft" button
     And I should not see a "Submit Report" button
@@ -168,6 +171,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     When I open the KPI report edit page as the portco user via a valid signed link
     Then I should see "KPI Report"
+    And I go to the "Additional Details" step of the KPI report wizard
     And I should see a "Save Draft" button
     And I should see a "Submit Report" button
     When I fill in "Notes" with "Submitted unauthenticated"
@@ -184,7 +188,9 @@ Feature: Portco KPI Self-Reporting Workflow
     And the target KPIs are "Revenue"
     When I open the KPI report edit page as the portco user via a valid signed link
     And I upload a KPI XLSX with no date-like headers
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
     Then I should see "Please fix these errors before submitting"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Save Draft" button should be disabled
     And the "Submit Report" button should be disabled
 
@@ -199,10 +205,12 @@ Feature: Portco KPI Self-Reporting Workflow
     And the target KPIs are "Revenue"
     When I open the KPI report edit page as the portco user via a valid signed link
     And I upload a KPI XLSX with no date-like headers
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the "Save Draft" button should be disabled
     When I upload a KPI XLSX with valid date headers
     Then the "Save Draft" button should be enabled
     And the "Submit Report" button should be enabled
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
     And I should see "1 of 1 expected KPIs found"
 
   # ─────────────────────────────────────────────────────────
@@ -234,6 +242,7 @@ Feature: Portco KPI Self-Reporting Workflow
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     And I fill in "Notes" with "Work in progress"
     And I click "Save Draft"
     Then I should be on the edit page for the KPI report
@@ -247,6 +256,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     And I click "Submit Report" and confirm the dialog
     Then the submitted_at timestamp is visible on the form
 
@@ -260,11 +270,15 @@ Feature: Portco KPI Self-Reporting Workflow
     And the target KPIs are "Revenue"
     And I am logged in as the fund admin
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the "Save" button should be enabled
     When I upload a KPI XLSX with no date-like headers
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
     Then the workbook check panel shows "Please fix these errors before submitting"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Save" button should be disabled
     When I upload a KPI XLSX with valid date headers
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the "Save" button should be enabled
 
   # ─────────────────────────────────────────────────────────
@@ -274,6 +288,7 @@ Feature: Portco KPI Self-Reporting Workflow
   Scenario: Opening a submitted report via magic link shows the locked state
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     When I open the KPI report edit page as the portco user via a valid signed link
+    And I go to the "Additional Details" step of the KPI report wizard
     Then I should see "Report Already Submitted"
     And I should not see a "Submit Report" button
     And I should not see a "Save Draft" button
@@ -370,6 +385,7 @@ Feature: Portco KPI Self-Reporting Workflow
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
     When I open the KPI report edit page as the portco user via a valid signed link
     Then the status badge shows "Link Sent"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the notes field is editable
 
   # ─────────────────────────────────────────────────────────
@@ -380,6 +396,7 @@ Feature: Portco KPI Self-Reporting Workflow
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "draft_saved"
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     And I click "Save Draft"
     Then I should see "Kpi report was successfully updated"
     And the KPI report for "TestStartup" should have status "draft_saved"
@@ -394,6 +411,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     And I click "Submit Report"
     Then I should see "cannot be undone" in the confirmation dialog
 
@@ -405,6 +423,7 @@ Feature: Portco KPI Self-Reporting Workflow
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the notes field is not editable
 
   # ─────────────────────────────────────────────────────────
@@ -416,6 +435,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the target KPIs are "Revenue"
     When I open the KPI report edit page as the portco user via a valid signed link
     And I upload a KPI XLSX with valid date headers
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the "Save Draft" button should be enabled
     When I upload a KPI XLSX with no date-like headers
     Then the "Save Draft" button should be disabled
@@ -469,6 +489,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the email queue is cleared
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     And I click "Submit Report" and confirm the dialog
     Then the fund admin receives no submission email
     And the fund employee "FundEmployee2" receives a submission notification email
@@ -495,6 +516,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the target KPIs are "Revenue"
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the "Submit Report" button should be disabled
     And the "Save Draft" button should be enabled
     When I force a final submit of the KPI report form
@@ -509,6 +531,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a KPIs workbook attached that is missing the requested period
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the "Submit Report" button should be disabled
     When I force a final submit of the KPI report form
     Then I should see "Not submitted"
@@ -546,6 +569,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the KPI report has a valid KPIs workbook attached
     And I am logged in as the portco user
     When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I go to the "Additional Details" step of the KPI report wizard
     And I click "Submit Report" and confirm the dialog
     Then the KPI report for "TestStartup" should have status "submitted"
     And the KPI report import status is "imported"

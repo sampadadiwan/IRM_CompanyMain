@@ -46,6 +46,28 @@ Scenario Outline: Create new capital distrbution
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
     |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
 
+
+Scenario Outline: Editing the distribution date cascades to all capital distribution payments, including completed ones
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital distribution "cost_of_investment_cents=10000000;"
+  Then I should see the capital distrbution details
+  And when the capital distrbution payments are marked as paid
+  When I change the capital distribution's distribution date to "2026-09-15"
+  Then I should see the distribution date change warning naming all the payments
+  When I confirm the distribution date change
+  Then every capital distribution payment's payment date should be "2026-09-15"
+
+  Examples:
+  	|user	    |entity                                 |fund                 |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |
+
 @doc_gen @notification
 Scenario Outline: Capital Distribution Payment Doc Gen
   Given Im logged in as a user "<user>" for an entity "<entity>"

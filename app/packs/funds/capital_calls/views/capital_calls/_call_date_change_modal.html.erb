@@ -1,0 +1,82 @@
+<%#
+  "Change Call Date" confirmation — same layout as the 2FA-reset / KYC "Request Updates" popup
+  (users/_reset_two_factor_modal): an "Immediate Actions" callout followed by tinted cards
+  spelling out every consequence.
+
+  Locals:
+    capital_call - the CapitalCall whose call_date is being edited
+
+  Shown by the date-change-warning Stimulus controller only when the call_date field's value
+  actually changes; the underlying PATCH does not happen until "Change Call Date" is clicked here.
+%>
+<%
+  remittance_count = capital_call.capital_remittances.count
+  verified_count = capital_call.capital_remittances.verified.count
+%>
+<div class="modal fade" id="callDateChangeModal" tabindex="-1" aria-labelledby="callDateChangeModalLabel" aria-hidden="true" data-date-change-warning-target="modal">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="callDateChangeModalLabel">
+          <i class="ti ti-calendar-event me-1"></i>
+          Change Call Date
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-action="click->date-change-warning#cancel"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="action-summary__intro">
+          <div class="fw-bold text-dark">Immediate Actions</div>
+          <div class="text-muted">
+            The following will happen when you click <strong>Change Call Date</strong> and save,
+            changing the call date to <strong data-date-change-warning-target="newDate"></strong>:
+          </div>
+        </div>
+
+        <div class="action-summary__list">
+          <div class="action-summary__item action-summary__item--amber">
+            <span class="action-summary__icon"><i class="ti ti-calendar-repeat"></i></span>
+            <div>
+              <div class="action-summary__title">
+                Remittance date changed for <%= pluralize(remittance_count, "remittance") %>
+              </div>
+              <div class="action-summary__desc">
+                Every capital remittance under this call — including
+                <%= verified_count.positive? ? "the #{pluralize(verified_count, 'remittance')} already marked Verified" : "any that are marked Verified" %>
+                — will have its remittance date changed to match the new call date.
+              </div>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--blue">
+            <span class="action-summary__icon"><i class="ti ti-refresh"></i></span>
+            <div>
+              <div class="action-summary__title">Fees will be recomputed automatically</div>
+              <div class="action-summary__desc">
+                Called amounts that depend on an exchange rate use the remittance date to look up
+                that rate, so those amounts may change once fees are recomputed in the background
+                for every remittance.
+              </div>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--purple">
+            <span class="action-summary__icon"><i class="ti ti-file-off"></i></span>
+            <div>
+              <div class="action-summary__title">Already-generated documents are not affected</div>
+              <div class="action-summary__desc">
+                Call notices, receipts, and statements already generated using the old date will
+                not be regenerated or corrected automatically.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-danger" data-action="click->date-change-warning#cancel"><%= t_common(:cancel) %></button>
+        <button type="button" class="btn btn-outline-success" data-action="click->date-change-warning#confirm">Change Call Date</button>
+      </div>
+    </div>
+  </div>
+</div>

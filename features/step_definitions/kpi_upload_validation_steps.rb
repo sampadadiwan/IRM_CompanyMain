@@ -145,6 +145,7 @@ When('I pick a KPI workbook file with a formatted revenue value for June 2026 in
     p.serialize(tmp.path)
   end
   @picked_workbook_tmp = tmp
+  advance_kpi_wizard_to(:upload) # the file input lives on the wizard's "Upload & Validate KPIs" step
   attach_file('files[]', File.absolute_path(tmp.path), make_visible: true)
 end
 
@@ -448,6 +449,7 @@ Then('the cell {string} carries tag {string}') do |ref, tag|
 end
 
 When('I pick the sample KPI workbook {string} in the file picker') do |file|
+  advance_kpi_wizard_to(:upload) # the file input lives on the wizard's "Upload & Validate KPIs" step
   attach_file('files[]', SAMPLE_KPI_UPLOADS_DIR.join(file).to_s, make_visible: true)
 end
 

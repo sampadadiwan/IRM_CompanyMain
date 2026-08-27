@@ -83,7 +83,7 @@ class CapitalCallsController < ApplicationController
   def update
     @capital_call.assign_attributes(capital_call_params)
     respond_to do |format|
-      if CapitalCallUpdate.call(capital_call: @capital_call).success?
+      if CapitalCallUpdate.call(capital_call: @capital_call, current_user:).success?
         format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_call }
       else

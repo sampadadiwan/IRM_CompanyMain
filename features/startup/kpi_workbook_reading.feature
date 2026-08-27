@@ -46,7 +46,7 @@ Feature: KPI Workbook Reading
     Examples:
       | workbook_file                               | message                 | found_kpis | missing_kpis |
       | kpi_extraction/validation/all_found.xlsx    | 5 of 5 expected KPIs found | 5          | 0            |
-      | kpi_extraction/validation/missing_kpis.xlsx | Missing: Returns%          | 4          | 1            |
+      | kpi_extraction/validation/missing_kpis.xlsx | Returns%          | 4          | 1            |
 
   # invalid_header.xlsx has a blank row above the header: the old browser check (row 1 only) rejected
   # it, the server reads the header on row 2 — a valid file, and the panel must say so.

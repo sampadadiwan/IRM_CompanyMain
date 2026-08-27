@@ -18,6 +18,14 @@ class CapitalCallAction < Trailblazer::Operation
     true
   end
 
+  # Editing call_date after remittances already exist re-dates every capital_remittance to match
+  # (see docs/technical/call_and_distribution_date_cascade_plan.md) and triggers a fee recompute,
+  # since the new date changes the exchange-rate lookup used for fee/amount conversions.
+  def cascade_call_date_change(_ctx, capital_call:, current_user: nil, **)
+    CapitalCallDateChangeJob.perform_later(capital_call.id, current_user.id) if capital_call.saved_change_to_call_date? && current_user
+    true
+  end
+
   def send_notification(_ctx, capital_call:, **)
     capital_call.send_notification if capital_call.approved
     true

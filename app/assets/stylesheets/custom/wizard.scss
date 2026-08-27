@@ -60,6 +60,13 @@
   border-radius: 15px;
 }
 
+// Icon-circle badge used by the KPI report wizard's "What to Expect" orientation cards
+// (kpi_reports/_form.html.erb) — a fixed-size circle sitting on a tinted (bg-*-subtle) card.
+.kpi-info-icon {
+  width: 40px;
+  height: 40px;
+}
+
 // Investor-facing read-only state when KYC is completed/verified
 .kyc-locked-form {
   input:not([type="hidden"]),

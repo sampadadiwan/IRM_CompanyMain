@@ -252,11 +252,15 @@ Feature: Server-side KPI workbook validation — extended coverage
     Then I should see "Workbook check"
     And I should see "1,250,000"
     When I reload the page
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
     Then I should see "Upload your KPI workbook"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be disabled
     When I pick a KPI workbook file with a formatted revenue value for June 2026 in the file picker
     And I should see "Workbook check"
-    And I click "Save Draft"
+    And I go to the "Additional Details" step of the KPI report wizard
+    And I click "Save Draft" and wait for the page to reload
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
     Then I should see "Workbook check"
     And I should see "Re-check file"
     And the KPI report has a stored validation result for its attached document
@@ -417,9 +421,11 @@ Feature: Server-side KPI workbook validation — extended coverage
       | West    | 100      | 150      |
     And the KPI report has that workbook attached
     When I open the KPI report edit page as the portco user via a valid signed link
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
     Then the workbook check panel shows "No blocking errors"
     And the workbook check panel shows "KPIs filled: 5 of 5"
     And the workbook check panel shows "Revenue - North"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
     When I click "Submit Report" and confirm the dialog
     Then the KPI report for "TestStartup" should have status "submitted"

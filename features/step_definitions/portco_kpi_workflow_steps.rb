@@ -120,8 +120,10 @@ end
 When('I create a KPI report shell for {string} as of {string} with period {string}') do |portco_name, as_of, period|
   portco = Investor.find_by!(investor_name: portco_name)
   visit(new_kpi_report_path(kpi_report: { portfolio_company_id: portco.id }))
+  advance_kpi_wizard_to(:report_details) # as_of / period live on the wizard's "Report Details" step
   fill_in('kpi_report_as_of', with: as_of)
   select period, from: 'kpi_report_period'
+  advance_kpi_wizard_to(:additional_details) # Save lives on the wizard's last step
   click_on('Save')
   sleep(1)
   @kpi_report = KpiReport.order(created_at: :desc).first

@@ -13,6 +13,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     And the target KPIs are "Revenue, EBITDA, No. of orders, Total shareholders equity"
     And a KPI report shell exists for "TestStartup" as of "2026-06-30" with status "link_sent" and period "Month"
     And I open the KPI report edit page as the portco user via a valid signed link
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be disabled
 
   # ─────────────────────────────────────────────────────────
@@ -26,13 +27,15 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     And the workbook check panel shows "column present"
     And the workbook check panel shows "KPIs filled: 4 of 4"
     And the workbook check panel shows "header 'Comments' is not a period we recognise"
-    And the workbook check panel shows "Sheet 'Scratch' is hidden in the workbook and was ignored"
+    And the workbook check panel shows "Hidden sheets ignored: Scratch"
     And the workbook check panel shows "This file also updates 2 other periods"
     And the workbook check panel shows "How we read your file"
     And the workbook check panel shows "2,450"
     And the workbook check panel shows "-310"
     And the workbook check panel does not show "Scratch!"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Save Draft" button should be enabled
 
   @kpi_sample_files @kpi_magic_link
@@ -41,20 +44,22 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     Then the workbook check panel shows "No blocking errors"
     And the workbook check panel shows "KPIs filled: 4 of 4"
     And the workbook check panel shows "4 of 4 expected KPIs found"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
 
   @kpi_sample_files @kpi_magic_link
   Scenario: 07 — the warnings showcase passes with every warning explained
     When I pick the sample KPI workbook "07_warnings_showcase.xlsx" in the file picker
     Then the workbook check panel shows "No blocking errors"
-    And the workbook check panel shows "Please review — these do not block submission"
+    And the workbook check panel shows "Please review and acknowledge — these do not block submission"
     And the workbook check panel shows "its label in the Actual/Budget row is not one we recognise — column ignored"
     And the workbook check panel shows "'Dec 2027' was read as 31-Dec-2027, which is in the future"
     And the workbook check panel shows "appears more than once"
     And the workbook check panel shows "with the same value — imported once"
-    And the workbook check panel shows "Target KPI 'Total shareholders equity' not found"
+    And the workbook check panel shows "Total shareholders equity"
     And the workbook check panel shows "25,000,000"
     And the workbook check panel shows "future — ignored"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
 
   @kpi_sample_files @kpi_magic_link
@@ -63,6 +68,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     Then the workbook check panel shows "No blocking errors"
     And the workbook check panel shows "2,450.75"
     And the workbook check panel shows "-295.25"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
 
   # ─────────────────────────────────────────────────────────
@@ -75,7 +81,9 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     Then the workbook check panel shows "Please fix these errors before submitting"
     And the workbook check panel shows "No sheet in the file has a header row with at least two period columns"
     And the workbook check panel shows "column not found in the file"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be disabled
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Save Draft" button should be disabled
 
   @kpi_sample_files @kpi_magic_link
@@ -84,7 +92,8 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     Then the workbook check panel shows "Please fix these errors before submitting"
     And the workbook check panel shows "You were asked for Jun 2026 (Month), but no column in the file is that period"
     And the workbook check panel shows "Periods found: Jan 2026, Feb 2026, Mar 2026"
-    And the workbook check panel shows "Target KPI 'No. of orders' not found"
+    And the workbook check panel shows "No. of orders"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be disabled
 
   @kpi_sample_files @kpi_magic_link
@@ -96,6 +105,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     And the workbook check panel shows "MIS!B4 (No. of orders, May 2026): 'ten' is not a number"
     And the workbook check panel shows "'TBD' treated as blank"
     And the workbook check panel shows "Excel error cell"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be disabled
 
   @kpi_sample_files @kpi_magic_link
@@ -105,6 +115,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     And the workbook check panel shows "period 'Jun 2026' appears more than once in the header (columns C and D)"
     And the workbook check panel shows "'Revenue' for Jun 2026 appears at MIS!C2 (2,450) and MIS!C4 (2,999) with different values — keep one"
     And the workbook check panel shows "with the same value — imported once"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be disabled
 
   @kpi_sample_files @kpi_magic_link
@@ -112,6 +123,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     When I pick the sample KPI workbook "08_error_not_a_spreadsheet.xlsx" in the file picker
     Then the workbook check panel shows "Please fix these errors before submitting"
     And the workbook check panel shows "could not be opened as a spreadsheet"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be disabled
 
   # ─────────────────────────────────────────────────────────
@@ -121,10 +133,13 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
   @kpi_sample_files @kpi_magic_link
   Scenario: A blocked upload followed by a good one re-enables Submit, and Submit goes through
     When I pick the sample KPI workbook "05_error_bad_values.xlsx" in the file picker
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the "Submit Report" button should be disabled
     When I pick the sample KPI workbook "02_success_template_shape.xlsx" in the file picker
     Then the workbook check panel shows "No blocking errors"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
+    And I go to the "Additional Details" step of the KPI report wizard
     When I click "Submit Report" and confirm the dialog
     Then I should see "KPI report submitted"
     And the KPI report for "TestStartup" should have status "submitted"
@@ -135,9 +150,11 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
   @kpi_sample_files @kpi_magic_link
   Scenario: A blocked file cannot be forced through, and is kept as a draft with the errors shown
     When I pick the sample KPI workbook "04_error_requested_period_missing.xlsx" in the file picker
+    And I go to the "Additional Details" step of the KPI report wizard
     Then the "Submit Report" button should be disabled
     When I force a final submit of the KPI report form
     Then I should see "Not submitted"
+    And I go to the "Upload & Validate KPIs" step of the KPI report wizard
     And the workbook check panel shows "You were asked for Jun 2026 (Month), but no column in the file is that period"
     And the KPI report for "TestStartup" should have status "draft_saved"
     And the fund admin receives no submission email
@@ -149,6 +166,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     When I pick the sample KPI workbook "09_quarter_request_answered_monthly.xlsx" in the file picker
     Then the workbook check panel shows "No blocking errors"
     And the workbook check panel shows "You were asked for Jun 2026 (Quarter) but the file has monthly columns instead"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be enabled
 
   @kpi_sample_files @kpi_magic_link
@@ -158,6 +176,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     When I pick the sample KPI workbook "02_success_template_shape.xlsx" in the file picker
     Then the workbook check panel shows "Please fix these errors before submitting"
     And the workbook check panel shows "Your fund has not configured which KPIs to collect from TestStartup yet"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Submit Report" button should be disabled
 
   # ─────────────────────────────────────────────────────────
@@ -171,6 +190,7 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     Then the workbook check panel shows "Please fix these errors before submitting"
     And the workbook check panel shows "MIS!B2 (Revenue, May 2026): Excel error '#DIV/0!'"
     And the workbook check panel shows "This report is for"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Save" button should be disabled
     When I force a save of the KPI report form
     Then I should see "Not saved — the KPI workbook has 3 blocking errors"
@@ -182,4 +202,5 @@ Feature: Sample portco KPI workbooks — what the portco sees on the magic link
     When I open the New KPI report page for "TestStartup"
     And I pick the sample KPI workbook "02_success_template_shape.xlsx" in the file picker
     Then the workbook check panel shows "No blocking errors"
+    And I go to the "Additional Details" step of the KPI report wizard
     And the "Save" button should be enabled

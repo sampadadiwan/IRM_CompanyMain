@@ -22,6 +22,7 @@ When('I fill out the KPI report {string} for portfolio company {string} with not
   report = KpiReport.find_by(as_of: as_of_val, portfolio_company_id: portco.id)
   visit(edit_kpi_report_path(report))
   expect(page).to have_content("KPI Report")
+  advance_kpi_wizard_to(:additional_details) # Notes and the save button live on the wizard's last step
   fill_in("Notes", with: notes)
   click_on("Save")
   expect(page).to have_content("Kpi report was successfully updated.")

@@ -1,7 +1,9 @@
 
 <%= render FormCard.new(title: "Capital Call : #{capital_call.name}") do %>
 
-    <%= form_with(model: capital_call, validate: true) do |form| %>
+  <div data-controller="date-change-warning" data-date-change-warning-original-value-value="<%= capital_call.call_date&.iso8601 %>">
+
+    <%= form_with(model: capital_call, validate: true, data: { action: "submit->date-change-warning#interceptSubmit" }) do |form| %>
       <% if capital_call.errors.any? %>
         <div class="alert alert-danger">
           <h2><%= pluralize(capital_call.errors.count, "error") %> prohibited this capital_call from being saved:</h2>
@@ -22,6 +24,11 @@
       <div class="form-group">
         <%= form.label :name %>
         <%= form.text_field :name, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :call_date %>
+        <%= form.date_field :call_date, class: "form-control", data: { date_change_warning_target: "input" }  %>
       </div>
 
       <div class="form-group">
@@ -69,5 +76,9 @@
 
       </div>
     <% end %>
+
+    <%= render "capital_calls/call_date_change_modal", capital_call: capital_call %>
+
+  </div>
 
 <% end %>

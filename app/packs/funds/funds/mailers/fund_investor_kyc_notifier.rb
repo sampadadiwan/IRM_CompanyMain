@@ -30,7 +30,12 @@ class FundInvestorKycNotifier < BaseNotifier
       # Mirrors FundCommitmentNotifier's record.fund.custom_fields.from_email,
       # just resolved via the explicit fund_id instead of record.fund.
       from_email: params[:fund_id] ? Fund.find(params[:fund_id]).custom_fields.from_email : nil,
-      custom_notification_id: params[:custom_notification_id]
+      custom_notification_id: params[:custom_notification_id],
+      # Mirrors FundCommitmentNotifier's `record.cc` — InvestorKyc isn't scoped to one
+      # commitment (has_many :capital_commitments). An investor can hold more than one
+      # commitment to the same fund sharing this KYC, each with its own cc override, so
+      # combine every commitment's cc rather than picking just one.
+      additional_ccs: record.capital_commitments.where(fund_id: params[:fund_id]).filter_map(&:cc).compact_blank.uniq.join(",").presence
     }
   end
 

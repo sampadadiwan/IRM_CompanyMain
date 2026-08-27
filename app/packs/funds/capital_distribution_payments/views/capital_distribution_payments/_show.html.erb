@@ -35,7 +35,7 @@
               <div class="col-md-6">
                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investing Entity</label>
                  <div class="fs-4 fw-medium ">
-                    <%= link_to capital_distribution_payment.investor_kyc.full_name, investor_kyc_path(id: capital_distribution_payment.investor_kyc), class: "text-decoration-none fw-bold text-primary" %>
+                    <%= link_to capital_distribution_payment.investor_kyc.full_name, investor_kyc_url(capital_distribution_payment.investor_kyc), class: "text-decoration-none fw-bold text-primary" %>
                  </div>
               </div>
             <% end %>

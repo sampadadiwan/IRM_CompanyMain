@@ -95,6 +95,27 @@ Scenario Outline: Capital Call recompute fees
   |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B;currency=INR    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 40000 | This is a capital call for Fund 2 |
 
 
+Scenario Outline: Editing the call date cascades to all capital remittances, including verified ones
+  Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  Given there is a capital call "<call>"
+  Then the corresponding remittances should be created
+  When I mark the remittances as verified
+  When I change the capital call's call date to "2026-09-01"
+  Then I should see the call date change warning naming all the remittances
+  When I confirm the call date change
+  Then every capital remittance's remittance date should be "2026-09-01"
+
+  Examples:
+  	|entity                                 |fund                 | call |
+  	|entity_type=Investment Fund;enable_funds=true;currency=INR  |name=Test  | percentage_called=20 |
+
+
 Scenario Outline: Create a capital call
   Given there is a user "<user>" for an entity "<entity>"
   Given Im logged in as a user "<user>" for an entity "<entity>"

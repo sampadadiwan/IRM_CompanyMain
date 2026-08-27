@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_24_115935) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -39,6 +39,59 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.index ["owner_type", "owner_id", "user_id"], name: "index_access_rights_on_owner_and_user"
     t.index ["owner_type", "owner_id"], name: "index_access_rights_on_owner"
     t.index ["user_id"], name: "index_access_rights_on_user_id"
+  end
+
+  create_table "account_entries", force: :cascade do |t|
+    t.bigint "allocation_run_id"
+    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.bigint "capital_commitment_id"
+    t.string "commitment_name"
+    t.datetime "created_at", precision: nil, null: false
+    t.boolean "cumulative", default: false
+    t.datetime "deleted_at", precision: nil
+    t.bigint "entity_id", null: false
+    t.string "entry_type", limit: 60
+    t.bigint "exchange_rate_id"
+    t.text "explanation"
+    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.string "folio_id", limit: 40
+    t.bigint "form_type_id"
+    t.bigint "fund_formula_id"
+    t.bigint "fund_id", null: false
+    t.boolean "generated", default: false
+    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
+    t.bigint "import_upload_id"
+    t.bigint "investor_id"
+    t.json "json_fields"
+    t.string "name", limit: 125, collation: "NOCASE"
+    t.text "notes"
+    t.bigint "parent_id"
+    t.string "parent_name"
+    t.string "parent_type"
+    t.string "period", limit: 25
+    t.integer "ref_id", default: 0, null: false
+    t.date "reporting_date", null: false
+    t.string "rule_for", limit: 10, default: "Accounting"
+    t.bigint "temp_sqlite_id"
+    t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
+    t.index ["capital_commitment_id", "name", "reporting_date"], name: "idx_ae_cc_name_date"
+    t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
+    t.index ["entity_id", "deleted_at", "name"], name: "idx_ae_entity_deleted_name"
+    t.index ["entity_id"], name: "index_account_entries_on_entity_id"
+    t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
+    t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
+    t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
+    t.index ["fund_id", "entry_type", "reporting_date"], name: "idx_fund_id_and_entry_type_and_reporting_date"
+    t.index ["fund_id", "generated", "reporting_date", "fund_formula_id"], name: "idx_ae_fund_gen_date_formula"
+    t.index ["fund_id", "name", "reporting_date"], name: "idx_fund_id_and_name_and_reporting_date"
+    t.index ["fund_id", "reporting_date", "fund_formula_id", "deleted_at"], name: "idx_ae_fund_date_formula_deleted"
+    t.index ["fund_id"], name: "index_account_entries_on_fund_id"
+    t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
+    t.index ["investor_id"], name: "index_account_entries_on_investor_id"
+    t.index ["parent_type", "parent_id", "fund_id", "name", "deleted_at", "cumulative"], name: "idx_ae_parent_fund_name_flags"
+    t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
   end
 
   create_table "account_entry_report_insights", force: :cascade do |t|
@@ -247,6 +300,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.decimal "confidence", precision: 5, scale: 2
     t.datetime "created_at", null: false
     t.bigint "deal_id", null: false
+    t.bigint "filed_as_id"
+    t.string "filed_as_type"
     t.string "match_tier", limit: 2
     t.string "message_id", null: false
     t.json "parse_json"
@@ -256,6 +311,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.string "status", limit: 20, default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["deal_id"], name: "index_agent_ingested_emails_on_deal_id"
+    t.index ["filed_as_type", "filed_as_id"], name: "index_agent_ingested_emails_on_filed_as"
     t.index ["message_id"], name: "index_agent_ingested_emails_on_message_id", unique: true
     t.index ["sender_user_id"], name: "index_agent_ingested_emails_on_sender_user_id"
     t.index ["status"], name: "index_agent_ingested_emails_on_status"
@@ -1584,7 +1640,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.string "mcp_allowed_clients", default: "[]"
     t.string "mcp_allowed_roles", default: "[\"employee\"]"
     t.boolean "mcp_enabled", default: false, null: false
-    t.boolean "mcp_llm_tools_enabled", default: false, null: false
     t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
@@ -2861,16 +2916,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
 
   create_table "notes", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.boolean "created_by_agent", default: false, null: false
     t.datetime "deleted_at"
     t.text "details"
     t.integer "entity_id"
     t.integer "investor_id"
-    t.string "match_tier", limit: 2
     t.date "on"
     t.bigint "owner_id"
     t.string "owner_type", default: "Investor"
-    t.bigint "source_email_id"
     t.string "tags", limit: 100
     t.bigint "touch_point_id"
     t.datetime "updated_at", null: false
@@ -2879,7 +2931,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.index ["entity_id"], name: "index_notes_on_entity_id"
     t.index ["investor_id"], name: "index_notes_on_investor_id"
     t.index ["owner_type", "owner_id"], name: "index_notes_on_owner"
-    t.index ["source_email_id"], name: "index_notes_on_source_email_id"
     t.index ["touch_point_id"], name: "index_notes_on_touch_point_id"
     t.index ["user_id"], name: "index_notes_on_user_id"
   end
@@ -3900,7 +3951,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.boolean "completed", default: false
     t.date "completed_on"
     t.datetime "created_at", null: false
-    t.boolean "created_by_agent", default: false, null: false
     t.text "details"
     t.bigint "document_folder_id"
     t.date "due_date"
@@ -3910,12 +3960,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.bigint "form_type_id"
     t.integer "import_upload_id"
     t.boolean "is_exception", default: false
-    t.string "match_tier", limit: 2
     t.datetime "original_start_date"
     t.bigint "owner_id"
     t.string "owner_type"
     t.text "response"
-    t.bigint "source_email_id"
     t.string "status", limit: 20, default: "todo", null: false
     t.string "tags", limit: 50
     t.bigint "task_recurrence_rule_id"
@@ -3929,7 +3977,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
     t.index ["import_upload_id"], name: "index_tasks_on_import_upload_id"
     t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
-    t.index ["source_email_id"], name: "index_tasks_on_source_email_id"
     t.index ["status"], name: "index_tasks_on_status"
     t.index ["task_recurrence_rule_id"], name: "index_tasks_on_task_recurrence_rule_id"
     t.index ["task_template_id"], name: "index_tasks_on_task_template_id"
@@ -4319,6 +4366,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
 
+  add_foreign_key "access_rights", "entities"
+  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
+  add_foreign_key "access_rights", "users"
+  add_foreign_key "access_rights", "users", column: "granted_by_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
@@ -4613,7 +4664,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
-  add_foreign_key "notes", "agent_ingested_emails", column: "source_email_id"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
@@ -4728,7 +4778,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_090000) do
   add_foreign_key "taggings", "tags"
   add_foreign_key "task_recurrence_rules", "entities"
   add_foreign_key "task_templates", "entities"
-  add_foreign_key "tasks", "agent_ingested_emails", column: "source_email_id"
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "folders", column: "document_folder_id"
   add_foreign_key "tasks", "form_types"

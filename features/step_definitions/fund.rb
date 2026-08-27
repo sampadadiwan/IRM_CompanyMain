@@ -745,6 +745,18 @@ Given('the first two commitments share the same investor kyc') do
   first_two.each { |cc| cc.update!(investor_kyc_id: kyc.id) }
 end
 
+# Gives the shared kyc's two commitments distinct cc overrides — proves
+# FundInvestorKycNotifier#email_data combines every linked commitment's cc rather than
+# picking just one (an investor can hold multiple commitments to the same fund sharing
+# one KYC, each with its own cc).
+And('the first two commitments have ccs {string} and {string}') do |cc1, cc2|
+  first_two = @fund.capital_commitments.order(:id).limit(2).to_a
+  [[first_two.first, cc1], [first_two.second, cc2]].each do |cc, email|
+    cc.properties[:cc] = email
+    cc.save
+  end
+end
+
 # Overrides the shared investor kyc's full_name, which the step above sets equal to
 # investor_name by default — placeholder scenarios need the two distinct so a passing
 # assertion can't be coincidence of {{kyc_full_name}} and {{investor_name}} matching.
@@ -952,6 +964,22 @@ Then('all commitment investors receive the notification email') do
   end
 end
 
+# Every commitment's notification_users should have received the email, cc'd to the
+# commitment-level cc address (proves FundCommitmentNotifier#email_data forwards
+# CapitalCommitment#cc via additional_ccs, not just entity_setting.cc/InvestorAccess#cc).
+Then('all commitment investors receive the notification email cc\'d to {string}') do |cc_email|
+  @fund.capital_commitments.each do |cc|
+    recipients = cc.investor.notification_users(cc)
+    expect(recipients).not_to be_empty, "notification_users is empty for commitment #{cc}"
+    recipients.each do |user|
+      open_email(user.email)
+      expect(current_email).not_to be_nil, "No email delivered to #{user.email}"
+      expect(current_email.cc).to include(cc_email),
+                                  "Expected cc #{cc_email} on email to #{user.email}, got #{current_email.cc.inspect}"
+    end
+  end
+end
+
 # Only the first commitment's users should have received the email
 Then('only the first commitment investor receives the notification email') do
   first_cc = @fund.capital_commitments.order(:id).first
@@ -1117,6 +1145,19 @@ Then('exactly one notification email is sent for the shared investor kyc') do
     matching = ActionMailer::Base.deliveries.select { |m| m.to.include?(user.email) && m.subject.include?(@custom_notification.subject) }
     puts "## Matching deliveries for #{user.email}: #{matching.size}"
     expect(matching.size).to eq(1), "Expected exactly 1 email to #{user.email} with subject '#{@custom_notification.subject}' but got #{matching.size}"
+  end
+end
+
+# KYC-mode counterpart to "all commitment investors receive the notification email cc'd
+# to {string}" — proves FundInvestorKycNotifier#email_data forwards the shared kyc's
+# commitment-level cc via additional_ccs.
+And('the investor kyc notification email is cc\'d to {string}') do |cc_email|
+  investor = @shared_investor_kyc.investor
+  investor.notification_users(@shared_investor_kyc).each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil, "No email delivered to #{user.email}"
+    expect(current_email.cc).to include(cc_email),
+                                "Expected cc #{cc_email} on email to #{user.email}, got #{current_email.cc.inspect}"
   end
 end
 

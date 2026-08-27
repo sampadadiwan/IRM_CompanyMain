@@ -16,6 +16,21 @@
   # Sort the cell table by KPI then period so a KPI's periods read left→right like the sheet
   sorted_cells = cells.sort_by { |c| [c['standard_kpi'].to_s, c['parsed_period'].to_s, c['tag'].to_s] }
   fmt = ->(v) { v.present? ? number_with_delimiter(BigDecimal(v.to_s).round(4).to_s('F').sub(/\.0+\z/, '').sub(/(\.\d*?)0+\z/, '\1')) : '—' }
+  # Required KPIs — the exact set KpiUploadValidate/KpiWorkbookReader treat as "expected" for this
+  # portfolio company (`compute` mappings are derived from others and are never uploaded directly,
+  # so they're excluded — see InvestorKpiMapping.not_compute). Shown even before a file is checked
+  # so the portco knows what's needed up front, then cross-checked against the verdict once one exists.
+  # Deduped by name (reported_kpi_name has no DB uniqueness constraint) so a duplicate mapping row
+  # can't render two badges for the same KPI or inflate the "X of N" denominator past what
+  # found_names/missing_names (themselves deduped by KpiWorkbookReader#summary) can ever match.
+  required_mappings = kpi_report.portfolio_company.present? ? kpi_report.portfolio_company.investor_kpi_mappings.not_compute.order(:reported_kpi_name).uniq(&:reported_kpi_name) : []
+  found_names   = summary['kpis_found'].to_a
+  missing_names = summary['kpis_missing'].to_a
+  # These warning codes restate a fact already shown elsewhere on this panel (the requested-period
+  # ribbon, the periods/hidden-sheets tile, and the "Required KPIs" footer below) — dropped from the
+  # list so the same finding isn't read three times.
+  redundant_warning_codes = %w[kpi_missing hidden_sheet_skipped requested_period_missing]
+  displayed_warnings = warnings.reject { |w| redundant_warning_codes.include?(w['code']) }
 %>
 
 <div id="kpi_validation_panel" class="mt-3"
@@ -30,29 +45,43 @@
     </div>
   <% else %>
     <div class="card">
+      <%# Keep this bar to just the title + status badges — anything using .text-muted here would be
+          near-unreadable (grey text on the wizard's solid-blue header; .text-muted's !important beats
+          the header's own forced-white). Secondary details (filename, checked-when) live in the body
+          instead, where they're plain text on white and can use text-muted correctly. %>
       <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <div>
-          <span class="fw-bold">Workbook check</span>
-          <% if summary['file_name'].present? %>
-            <span class="text-muted ms-2"><%= summary['file_name'] %></span>
-          <% end %>
-        </div>
+        <span class="fw-bold text-white">Workbook check</span>
         <div class="d-flex align-items-center gap-2">
           <% if verdict['ok'] %>
             <span class="badge bg-success">No blocking errors</span>
           <% else %>
             <span class="badge bg-danger"><%= pluralize(errors.size, 'error') %></span>
           <% end %>
-          <% if warnings.any? %>
-            <span class="badge bg-warning text-dark"><%= pluralize(warnings.size, 'warning') %></span>
-          <% end %>
-          <% if verdict['generated_at'].present? %>
-            <span class="text-muted">checked <%= time_ago_in_words(Time.zone.parse(verdict['generated_at'])) %> ago</span>
+          <%# Counts displayed_warnings (not the raw verdict total) so this badge always matches what's
+              actually in the warnings box below — a fully-redundant-coded warning (filtered out because
+              it's already shown elsewhere on this panel) would otherwise show "1 warning" with nothing
+              underneath to acknowledge. %>
+          <% if displayed_warnings.any? %>
+            <span class="badge bg-warning text-dark"><%= pluralize(displayed_warnings.size, 'warning') %></span>
           <% end %>
         </div>
       </div>
 
       <div class="card-body">
+        <% if summary['file_name'].present? || verdict['generated_at'].present? %>
+          <div class="text-muted mb-3 d-flex align-items-center gap-2 flex-wrap">
+            <% if summary['file_name'].present? %>
+              <span><i class="ti ti-file-spreadsheet me-1"></i><%= summary['file_name'] %></span>
+            <% end %>
+            <% if summary['file_name'].present? && verdict['generated_at'].present? %>
+              <span>&middot;</span>
+            <% end %>
+            <% if verdict['generated_at'].present? %>
+              <span>checked <%= time_ago_in_words(Time.zone.parse(verdict['generated_at'])) %> ago</span>
+            <% end %>
+          </div>
+        <% end %>
+
         <%# ── Requested period ───────────────────────────────────────────── %>
         <% if requested.present? %>
           <div class="kpi-validation-requested mb-3 p-2 border rounded d-flex align-items-center gap-3 flex-wrap">
@@ -79,15 +108,34 @@
           </div>
         <% end %>
 
-        <%# ── Warnings (shown, not blocking) ────────────────────────────── %>
-        <% if warnings.any? %>
+        <%# ── Warnings (shown, not blocking) — always fully visible, never collapsed. Some of these
+            carry real signal (denomination/RAG plausibility, conflicting duplicate rows, changed
+            values), so each one is its own checkbox the user must tick (or "Acknowledge all") before
+            Submit Report unlocks — a plain list is too easy to skim past without reading.
+            kpi_validation_panel_controller.js tracks the checked state and gates the "final" submit
+            guard on it; nothing here is re-validated server-side (these never block the save itself). %>
+        <% if displayed_warnings.any? %>
           <div class="alert alert-warning">
-            <div class="fw-bold mb-1">Please review — these do not block submission.</div>
-            <ul class="mb-0 kpi-validation-list">
-              <% warnings.each do |w| %>
-                <li><%= w['message'] %></li>
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <span class="fw-bold">Please review and acknowledge — these do not block submission.</span>
+              <div class="form-check mb-0">
+                <input type="checkbox" class="form-check-input" id="kpi_warnings_ack_all"
+                       data-kpi-validation-panel-target="ackAll"
+                       data-action="change->kpi-validation-panel#toggleAll">
+                <label class="form-check-label" for="kpi_warnings_ack_all">Acknowledge all</label>
+              </div>
+            </div>
+            <ul class="mb-1 kpi-validation-list list-unstyled">
+              <% displayed_warnings.each_with_index do |w, idx| %>
+                <li class="form-check mb-1">
+                  <input type="checkbox" class="form-check-input" id="kpi_warning_ack_<%= idx %>"
+                         data-kpi-validation-panel-target="warningCheckbox"
+                         data-action="change->kpi-validation-panel#toggleOne">
+                  <label class="form-check-label" for="kpi_warning_ack_<%= idx %>"><%= w['message'] %></label>
+                </li>
               <% end %>
             </ul>
+            <div class="text-muted" data-kpi-validation-panel-target="ackCount"></div>
           </div>
         <% end %>
 
@@ -96,10 +144,28 @@
           <div class="row g-2 mb-3">
             <div class="col-md-6">
               <div class="p-2 border rounded h-100">
-                <div><strong><%= summary['kpis_found'].to_a.size %></strong> of <%= summary['kpis_expected'].to_a.size %> expected KPIs found</div>
-                <% if summary['kpis_missing'].to_a.any? %>
-                  <div class="text-muted">Missing: <%= summary['kpis_missing'].join(', ') %></div>
-                <% end %>
+                <div class="mb-2"><strong><%= found_names.size %></strong> of <%= required_mappings.size %> expected KPIs found</div>
+                <%# Same badges as the pre-upload checklist — found/missing per required KPI, right next
+                    to the count instead of a separate list elsewhere on the page. %>
+                <div class="d-flex flex-wrap gap-2">
+                  <% required_mappings.each do |mapping| %>
+                    <%
+                      status = if found_names.include?(mapping.reported_kpi_name)
+                                 :found
+                               elsif missing_names.include?(mapping.reported_kpi_name)
+                                 :missing
+                               else
+                                 :pending
+                               end
+                      badge_css = { pending: 'bg-light text-muted border', found: 'bg-success-subtle text-success-emphasis', missing: 'bg-danger-subtle text-danger-emphasis' }[status]
+                    %>
+                    <span class="badge rounded-pill fw-normal <%= badge_css %>">
+                      <% if status == :found %><i class="ti ti-check me-1"></i>
+                      <% elsif status == :missing %><i class="ti ti-x me-1"></i>
+                      <% end %><%= mapping.reported_kpi_name %>
+                    </span>
+                  <% end %>
+                </div>
               </div>
             </div>
             <div class="col-md-6">
@@ -120,7 +186,8 @@
           </div>
         <% end %>
 
-        <%# ── How we read your file ─────────────────────────────────────── %>
+        <%# ── How we read your file — always fully visible; this is the primary way a portco or fund
+            reviewer verifies their numbers were read correctly, not just an error-triage aid. ─── %>
         <% if sorted_cells.any? %>
           <div class="d-flex align-items-center justify-content-between mb-1">
             <span class="fw-bold">How we read your file</span>
@@ -178,6 +245,19 @@
           </div>
         <% end %>
       </div>
+    </div>
+  <% end %>
+
+  <%# Pre-upload checklist — same "expected" set the tile above cross-checks once a verdict exists.
+      Only shown before any file has been checked (nowhere else on the page has this list yet);
+      once a verdict exists, the "expected KPIs found" tile above shows these same badges with their
+      found/missing status, so it isn't repeated here too. %>
+  <% if verdict.blank? && required_mappings.any? %>
+    <div class="mt-4 pt-3 border-top">
+      <span class="text-muted">Required KPIs<% if kpi_report.portfolio_company.present? %> for <%= kpi_report.portfolio_company.investor_name %><% end %>:</span>
+      <% required_mappings.each do |mapping| %>
+        <span class="badge rounded-pill fw-normal bg-light text-muted border"><%= mapping.reported_kpi_name %></span>
+      <% end %>
     </div>
   <% end %>
 </div>

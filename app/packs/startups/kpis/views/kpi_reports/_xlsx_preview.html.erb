@@ -52,7 +52,12 @@
     data-xlsx-preview-all-sheets="true">
 
   <div data-xlsx-preview-target="card" class="card mt-3 d-none">
-    <div class="card-header fw-bold">
+    <%# bg-light/text-dark (both !important Bootstrap utilities) intentionally override the wizard's
+        forced blue/white card-header so this reads as a secondary "raw file" panel, not a second
+        primary section competing with the "Workbook check" card above — see also: the plain "h3" class
+        here used to pull in the theme's dark --bs-heading-color regardless of background, which is why
+        this bar previously showed dark text on blue while other headers showed white. %>
+    <div class="card-header bg-light text-dark border-bottom fw-bold">
       <span class="h3" data-xlsx-preview-target="filename"></span>
     </div>
     <div class="card-body" data-controller="datatable">

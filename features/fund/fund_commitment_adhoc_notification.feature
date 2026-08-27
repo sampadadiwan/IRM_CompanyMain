@@ -15,6 +15,18 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all commitments
     Then all commitment investors receive the notification email
 
+  Scenario: Notification is cc'd to the commitment's cc address
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And Given the commitments have a cc "advisor@gmail.com"
+    Given there is an adhoc custom notification for the fund with subject "Q4 Update"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email cc'd to "advisor@gmail.com"
+
   Scenario: Send notification to a selected commitment only
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -291,6 +303,21 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all investor kycs
     Then exactly one notification email is sent for the shared investor kyc
     And the investor kyc notification email has the document "PAN Card" attached
+
+  Scenario: Investor KYC mode notification is cc'd to every shared commitment's cc address
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given the first two commitments share the same investor kyc
+    And the first two commitments have ccs "advisor1@gmail.com" and "advisor2@gmail.com"
+    Given there is an adhoc custom notification for the fund with subject "KYC Update" and attachment_names "" and notify_via "investor_kyc"
+    When the adhoc notification is triggered for all investor kycs
+    Then the investor kyc notification email is cc'd to "advisor1@gmail.com"
+    And the investor kyc notification email is cc'd to "advisor2@gmail.com"
 
   Scenario: Investor KYC mode honors the specific-KYC selection
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"

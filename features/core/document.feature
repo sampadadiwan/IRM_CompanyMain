@@ -280,3 +280,18 @@ Scenario: Send a document owned by a capital commitment with placeholders resolv
   Given there is a Custom Notification with commitment placeholders for the entity
   When the commitment document is sent using that Custom Notification
   Then the document notification commitment placeholders are resolved correctly
+
+@notification
+Scenario: Send a document owned by a capital commitment is cc'd to the commitment's cc address
+  Given there is a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "name=Test fund" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  And the first commitment has an investor kyc with full_name "Jane Commitment Investor" and folio_id "FOLIO-99"
+  And there is a document "Commitment Statement" owned by the commitment with file "CapHive - GST Certificate.pdf"
+  Given there is a Custom Notification with commitment placeholders for the entity
+  When the commitment document is sent using that Custom Notification
+  Then the commitment document notification email is cc'd to "advisor@gmail.com"

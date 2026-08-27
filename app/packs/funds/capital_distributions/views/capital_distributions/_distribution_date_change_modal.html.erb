@@ -1,0 +1,95 @@
+<%#
+  "Change Distribution Date" confirmation — same layout as the 2FA-reset / KYC "Request Updates"
+  popup (users/_reset_two_factor_modal): an "Immediate Actions" callout followed by tinted cards
+  spelling out every consequence.
+
+  Locals:
+    capital_distribution - the CapitalDistribution whose distribution_date is being edited
+
+  Shown by the date-change-warning Stimulus controller only when the distribution_date field's
+  value actually changes; the underlying PATCH does not happen until "Change Distribution Date"
+  is clicked here.
+%>
+<%
+  payment_count = capital_distribution.capital_distribution_payments.count
+  completed_count = capital_distribution.capital_distribution_payments.completed.count
+%>
+<div class="modal fade" id="distributionDateChangeModal" tabindex="-1" aria-labelledby="distributionDateChangeModalLabel" aria-hidden="true" data-date-change-warning-target="modal">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="distributionDateChangeModalLabel">
+          <i class="ti ti-calendar-event me-1"></i>
+          Change Distribution Date
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-action="click->date-change-warning#cancel"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="action-summary__intro">
+          <div class="fw-bold text-dark">Immediate Actions</div>
+          <div class="text-muted">
+            The following will happen when you click <strong>Change Distribution Date</strong> and save,
+            changing the distribution date to <strong data-date-change-warning-target="newDate"></strong>:
+          </div>
+        </div>
+
+        <div class="action-summary__list">
+          <div class="action-summary__item action-summary__item--amber">
+            <span class="action-summary__icon"><i class="ti ti-calendar-repeat"></i></span>
+            <div>
+              <div class="action-summary__title">
+                Payment date changed for <%= pluralize(payment_count, "payment") %>
+              </div>
+              <div class="action-summary__desc">
+                Every distribution payment under this distribution — including
+                <%= completed_count.positive? ? "the #{pluralize(completed_count, 'payment')} already marked Completed" : "any that are marked Completed" %>
+                — will have its payment date changed to match the new distribution date.
+              </div>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--blue">
+            <span class="action-summary__icon"><i class="ti ti-refresh"></i></span>
+            <div>
+              <div class="action-summary__title">Fees will be recomputed automatically</div>
+              <div class="action-summary__desc">
+                Income, expense, tax, and reinvestment amounts are recomputed in the background for
+                every payment. Most of these are tied to fixed account-entry date ranges and won't
+                change from this alone.
+              </div>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--grey">
+            <span class="action-summary__icon"><i class="ti ti-currency-exchange"></i></span>
+            <div>
+              <div class="action-summary__title">Tracking-currency amounts are not refreshed automatically</div>
+              <div class="action-summary__desc">
+                If this fund tracks a secondary currency, those amounts are computed separately and
+                keyed to the old payment date. They will not update on their own — a separate
+                tracking-currency recompute is needed afterward if this matters here.
+              </div>
+            </div>
+          </div>
+
+          <div class="action-summary__item action-summary__item--purple">
+            <span class="action-summary__icon"><i class="ti ti-file-off"></i></span>
+            <div>
+              <div class="action-summary__title">Already-generated documents are not affected</div>
+              <div class="action-summary__desc">
+                Distribution notices and statements already generated using the old date will not
+                be regenerated or corrected automatically.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-danger" data-action="click->date-change-warning#cancel"><%= t_common(:cancel) %></button>
+        <button type="button" class="btn btn-outline-success" data-action="click->date-change-warning#confirm">Change Distribution Date</button>
+      </div>
+    </div>
+  </div>
+</div>

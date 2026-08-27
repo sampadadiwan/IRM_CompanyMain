@@ -330,6 +330,32 @@ Then('The remittances should have the updated proper fees and call amount') do
   end
 end
 
+When("I change the capital call's call date to {string}") do |new_date|
+  visit(edit_capital_call_path(@capital_call))
+  fill_in('capital_call_call_date', with: new_date)
+  click_on('Save')
+end
+
+Then('I should see the call date change warning naming all the remittances') do
+  expect(page).to have_css('#callDateChangeModal.show')
+  expect(page).to have_content("#{@capital_call.capital_remittances.count} remittance")
+end
+
+When('I confirm the call date change') do
+  within('#callDateChangeModal') do
+    click_on('Change Call Date')
+  end
+  expect(page).to have_content('Capital call was successfully updated')
+end
+
+Then("every capital remittance's remittance date should be {string}") do |new_date|
+  @capital_call.reload
+  @capital_call.capital_remittances.each do |cr|
+    cr.reload
+    expect(cr.remittance_date).to eq(Date.parse(new_date))
+  end
+end
+
 Then('I should see the capital call details') do
   find(".show_details_link").click
   @capital_call = CapitalCall.last

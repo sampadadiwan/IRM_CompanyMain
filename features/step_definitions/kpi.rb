@@ -332,6 +332,7 @@ end
 
 When('I upload the kpi workbook {string} for validation') do |workbook_file|
   @import_file = workbook_file
+  advance_kpi_wizard_to(:upload) # the file input lives on the wizard's "Upload & Validate KPIs" step
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
 end
 
@@ -351,12 +352,10 @@ And('the report should list {string} found KPIs') do |count|
 end
 
 And('the report should list {string} missing KPIs') do |count|
+  # "Missing" KPIs render as red badges (bg-danger-subtle) inside the "expected KPIs found" tile —
+  # there is no separate "Missing: ..." line to match on anymore.
   within('#kpi_validation_panel') do
-    if count.to_i.zero?
-      expect(page).not_to have_content("Missing:")
-    else
-      expect(page).to have_content("Missing:", wait: 15)
-    end
+    expect(page).to have_css('.badge.bg-danger-subtle', count: count.to_i, wait: 15)
   end
 end
 
