@@ -1,5 +1,27 @@
-<div class="card">
-  <div class="card-body p-4">
-    <%= render "user_guides/guide_body", html_content: @html_content %>
+<article>
+  <header class="page-hero article-hero hero-tinted <%= @hero_tint %>">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <%= link_to "Home", root_path %><span>/</span><%= link_to t('top_menus.user_guides'), user_guides_path %><span>/</span>
+            <% if @group_label %><%= @group_label %><span>/</span><% end %><%= @title %>
+          </nav>
+          <span class="chip-label"><%= @group_label || "User Guide" %></span>
+          <h1 style="margin-top:22px"><%= @title %></h1>
+          <p class="lede"><%= @lede %></p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <%= render "user_guides/guide_body", html_content: @html_content %>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+</article>

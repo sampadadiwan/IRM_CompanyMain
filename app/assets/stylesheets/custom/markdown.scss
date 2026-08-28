@@ -5,24 +5,26 @@
 
 .ai-md {
   /* ----------------------------------------------------------
-     Design tokens
+     Design tokens — pulled from the website's own palette
+     (public/website/assets/css/caphive.css :root), so guide typography
+     matches the site instead of the Modernize admin theme.
      ---------------------------------------------------------- */
-  --ai-primary:          var(--bs-primary, #5d87ff);
-  --ai-primary-rgb:      var(--bs-primary-rgb, 93, 135, 255);
-  --ai-primary-subtle:   var(--bs-primary-bg-subtle, #ecf2ff);
-  --ai-primary-border:   var(--bs-primary-border-subtle, #becfff);
-  --ai-border:           var(--bs-border-color, #dee2e6);
-  --ai-muted:            var(--bs-secondary-color, rgba(33,37,41,.65));
-  --ai-bg-soft:          var(--bs-tertiary-bg, #f8f9fa);
-  --ai-body-bg:          var(--bs-body-bg, #fff);
-  --ai-body-color:       var(--bs-body-color, #212529);
-  --ai-radius:           var(--bs-border-radius, 0.5rem);
+  --ai-primary:          var(--orange, #FF4D00);
+  --ai-primary-rgb:      255, 77, 0;
+  --ai-primary-subtle:   var(--cream, #F3F0E9);
+  --ai-primary-border:   var(--line, #E8E5DE);
+  --ai-border:           var(--line, #E8E5DE);
+  --ai-muted:            var(--mut, #6F6A62);
+  --ai-bg-soft:          var(--cream, #F3F0E9);
+  --ai-body-bg:          var(--tile, #fff);
+  --ai-body-color:       var(--fg, #101010);
+  --ai-radius:           var(--r-card, 16px);
   --ai-radius-sm:        0.3rem;
   --ai-code-bg:          #1e2130;
   --ai-code-color:       #cdd6f4;
   --ai-code-dim:         #6272a4;
 
-  font-family: inherit;
+  font-family: var(--font, "Geist", sans-serif);
   font-size: 1.02rem;
   color: var(--ai-body-color);
   line-height: 1.7;
@@ -187,34 +189,10 @@
   }
 
 
-  /* ==========================================================
-     FAQ  — p:has(> strong:first-child + br)
-     Bold question + hard-wrap br + answer text, all in one <p>.
-     ========================================================== */
-  p:has(> strong:first-child + br) {
-    background: var(--ai-bg-soft);
-    border: 1px solid var(--ai-border);
-    border-left: 3px solid var(--ai-primary);
-    border-radius: 0 var(--ai-radius) var(--ai-radius) 0;
-    padding: 0.85rem 1rem 0.85rem 1rem;
-    margin-top: 0.65rem;
-
-    /* The Q: question label */
-    strong:first-child {
-      display: block;
-      color: var(--ai-primary);
-      font-weight: 700;
-      font-size: 0.97rem;
-      margin-bottom: 0.4rem;
-      padding-bottom: 0.45rem;
-      border-bottom: 1px dashed var(--ai-primary-border);
-    }
-
-    /* Hide the hard-wrap <br> that separates Q from A */
-    br:first-of-type {
-      display: none;
-    }
-  }
+  /* FAQ sections ("## Frequently Asked Questions" / "## FAQ") are rewritten by
+     WithGuideRendering#wrap_faq_section into the website's own <div class="faq">
+     <details> accordion markup before this stylesheet ever sees them, so they
+     pick up caphive.css's .faq rules directly — nothing to style here. */
 
 
   /* ==========================================================

@@ -15,7 +15,7 @@
 class PublicGuidesController < ApplicationController
   include WithGuideRendering
 
-  layout "public_guide"
+  layout "guide"
 
   # Nothing here reads tenant data, so all three of the app-wide filters are opted out of:
   # authentication, Pundit's authorize check, and the subdomain -> tenant resolution (which
@@ -51,7 +51,9 @@ class PublicGuidesController < ApplicationController
 
     @guide_id     = raw_id
     @title        = guide_title(raw_id)
+    @lede         = strip_inline_markdown(first_content_line(path)) || "A guide to #{@title.downcase}."
     @html_content = render_guide_markdown(path)
+    @hero_tint    = hero_tint_for(raw_id)
   end
 
   private

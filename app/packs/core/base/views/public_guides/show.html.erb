@@ -1,23 +1,39 @@
 <%# Login-less guide page. Same rendered body as the signed-in viewer, wrapped in the
-    standalone public_guide layout instead of the app shell. %>
-<div class="card public-guide__card">
-  <div class="card-body p-4">
-    <%= render "user_guides/guide_body", html_content: @html_content %>
-  </div>
-</div>
+    website-styled "guide" layout instead of the app shell — see layouts/guide.html.erb. %>
+<article>
+  <header class="page-hero article-hero hero-tinted <%= @hero_tint %>">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <span class="chip-label">Help</span>
+          <h1 style="margin-top:22px"><%= @title %></h1>
+          <p class="lede"><%= @lede %></p>
+        </div>
+      </div>
+    </div>
+  </header>
 
-<%# Cross-link the other published guide so a visitor can move between them without a login. %>
-<% siblings = PublicGuidesController::PUBLIC_GUIDE_IDS - [@guide_id] %>
-<% if siblings.any? %>
-  <nav class="public-guide__related" aria-label="Related guides">
-    <h2 class="public-guide__related-heading">Related guides</h2>
-    <ul class="public-guide__related-list">
-      <% siblings.each do |guide_id| %>
-        <li>
-          <%= link_to guide_id.humanize.titleize.gsub(/ User Guide$/i, ""),
-                      public_guide_path(guide_id) %>
-        </li>
-      <% end %>
-    </ul>
-  </nav>
-<% end %>
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <%= render "user_guides/guide_body", html_content: @html_content %>
+
+          <%# Cross-link the other published guide so a visitor can move between them without a login. %>
+          <% siblings = PublicGuidesController::PUBLIC_GUIDE_IDS - [@guide_id] %>
+          <% if siblings.any? %>
+            <nav class="tag-group" style="margin-top:40px" aria-label="Related guides">
+              <h4>Related guides</h4>
+              <div class="tag-row">
+                <% siblings.each do |guide_id| %>
+                  <%= link_to guide_id.humanize.titleize.gsub(/ User Guide$/i, ""),
+                              public_guide_path(guide_id), class: "tag" %>
+                <% end %>
+              </div>
+            </nav>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
