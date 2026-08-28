@@ -35,6 +35,15 @@ scope path: 'report_builder', controller: :report_builder do
   get    'models',                   action: :models,            as: :report_builder_models
   get    'associations',             action: :associations,      as: :report_builder_associations
   post   '',                         action: :create,            as: :report_builder_create
+  # Guided wizard — a friendlier, step-by-step on-ramp that sits in front of
+  # the existing builder (below). It creates/mutates the same Report via the
+  # same actions as the advanced builder, so there is exactly one place that
+  # understands the report_builder template format.
+  get    'wizard',                   action: :wizard_new,        as: :wizard_report_builder
+  post   'wizard',                   action: :wizard_create,     as: :wizard_report_builder_create
+  get    ':id/wizard/:step',         action: :wizard_step,       as: :wizard_report_builder_step
+  post   ':id/wizard_filter',        action: :wizard_add_filter,    as: :wizard_report_builder_add_filter
+  delete ':id/wizard_filter',        action: :wizard_remove_filter, as: :wizard_report_builder_remove_filter
   get    ':id/edit',                 action: :edit,              as: :edit_report_builder
   get    ':id/preview',              action: :preview,           as: :preview_report_builder
   get    ':id/view',                 action: :view,              as: :view_report_builder
@@ -42,6 +51,7 @@ scope path: 'report_builder', controller: :report_builder do
   patch  ':id/template',             action: :update_template,   as: :update_report_builder_template
   post   ':id/columns',              action: :add_column,        as: :add_report_builder_column
   delete ':id/columns/:gvp_id',      action: :remove_column,     as: :remove_report_builder_column
+  patch  ':id/columns/:gvp_id',      action: :update_column_label, as: :update_report_builder_column_label
   post   ':id/join',                 action: :add_join,          as: :add_report_builder_join
   delete ':id/join',                 action: :remove_join,       as: :remove_report_builder_join
   patch  ':id/aggregate',            action: :update_aggregate,  as: :update_report_builder_aggregate

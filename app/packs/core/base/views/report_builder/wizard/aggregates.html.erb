@@ -1,0 +1,160 @@
+<% content_for :title, "Guided Report Wizard – Summarize" %>
+<%
+  agg_icons = { "sum" => "ti-sum", "count" => "ti-123", "avg" => "ti-chart-arrows",
+                "min" => "ti-arrow-down", "max" => "ti-arrow-up", "latest" => "ti-clock",
+                "list" => "ti-list" }
+%>
+
+<div class="wizard-shell container-fluid mw-100 px-3 px-lg-5 py-4" data-controller="tooltip">
+  <%= render "report_builder/wizard/header" %>
+  <%= render "report_builder/wizard/progress", report: @report, current_step: "aggregates" %>
+
+  <%= render "report_builder/wizard/help_box",
+        title: "Every row can have several related rows — how should we combine them?",
+        body: "For each related column you add below, pick a way to turn many rows into one value. Hover any option below to see what it does.",
+        example: nil %>
+
+  <div class="wizard-agg-legend d-flex flex-wrap gap-2 mb-4">
+    <% wizard_aggregate_help.each do |key, info| %>
+      <span class="badge wizard-agg-badge rounded-pill d-flex align-items-center gap-1"
+            data-bs-toggle="tooltip" data-bs-placement="top"
+            title="<%= info[:blurb] %> Example: <%= info[:example] %>">
+        <i class="ti <%= agg_icons[key] %>"></i> <%= info[:label] %>
+      </span>
+    <% end %>
+  </div>
+
+  <%= turbo_frame_tag "wizard_aggregates_panel" do %>
+  <% @config.joins.each do |join| %>
+    <% relation = join[:relation].to_s %>
+    <% jcols = @joined_columns[relation] || [] %>
+    <% selected_gvps = @gvps.select { |g| g.key.split(";").first.strip.start_with?("#{relation}.") } %>
+    <% selected_keys = selected_gvps.map { |g| g.key.split(";").first.strip.sub("#{relation}.", "") } %>
+    <% pivot_cfg = (join[:pivot] || {}).with_indifferent_access %>
+    <% pivot_group_bys = Array(pivot_cfg[:group_bys] || pivot_cfg[:group_by]).map(&:to_s).compact_blank %>
+    <% pivot_active = pivot_group_bys.any? && pivot_cfg[:value_col].to_s.present? %>
+
+    <div class="wizard-panel-card mb-4">
+      <div class="wizard-panel-card-header d-flex align-items-center gap-2">
+        <span class="wizard-card-icon"><i class="ti ti-git-merge"></i></span>
+        <h6 class="mb-0 fw-bold flex-grow-1"><%= relation.humanize %></h6>
+        <% if pivot_active %>
+          <span class="wizard-header-badge"><i class="ti ti-table-options"></i> Pivot</span>
+        <% end %>
+        <span class="wizard-header-badge"><%= join[:model] %></span>
+      </div>
+
+      <% if pivot_active %>
+        <%# Pivot is active for this join — its columns come from the pivot,
+            not from individually-added GridViewPreferences, so the regular
+            Add/Chosen panels are hidden entirely rather than shown alongside
+            it (the two are mutually exclusive in the query engine — a join
+            with a pivot config never runs the regular aggregate path at all). %>
+        <div class="p-3">
+          <p class="mb-3">
+            Turning <strong><%= jcols.find { |c| c[:key] == pivot_cfg[:value_col] }&.dig(:label) || pivot_cfg[:value_col] %></strong>
+            into one column per distinct
+            <strong><%= pivot_group_bys.map { |g| jcols.find { |c| c[:key] == g }&.dig(:label) || g }.join(", ") %></strong>,
+            combined with <strong><%= wizard_aggregate_help.dig(pivot_cfg[:aggregate], :label) || pivot_cfg[:aggregate] %></strong>.
+          </p>
+          <div class="d-flex gap-2 flex-wrap">
+            <details class="flex-grow-1">
+              <summary class="btn btn-sm btn-outline-wizard-accent">Edit pivot settings</summary>
+              <div class="mt-3 p-3 bg-light rounded">
+                <%= render "report_builder/wizard/pivot_form", report: @report, relation: relation, jcols: jcols, pivot_cfg: pivot_cfg %>
+              </div>
+            </details>
+            <%= button_to update_report_builder_pivot_path(@report),
+                  method: :patch,
+                  params: { relation: relation, clear: "1" },
+                  class: "btn btn-sm btn-outline-secondary" do %>
+              <i class="ti ti-x"></i> Switch back to regular columns
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <div class="p-0">
+          <div class="row g-0">
+            <div class="col-md-5 border-end">
+              <div class="p-3 text-uppercase text-muted small fw-bold">Add a column</div>
+              <div class="wizard-row-list wizard-scroll-list-sm">
+                <% jcols.each do |col| %>
+                  <% next if selected_keys.include?(col[:key]) %>
+                  <div class="wizard-row-card">
+                    <div class="d-flex align-items-center gap-2 min-width-0">
+                      <span class="wizard-row-icon"><i class="ti <%= wizard_type_icon_for(col[:raw_key]) %>"></i></span>
+                      <span class="text-truncate"><%= col[:label] %></span>
+                    </div>
+                    <%= button_to add_report_builder_column_path(@report),
+                          method: :post,
+                          params: { key: "#{relation}.#{col[:raw_key]}", name: col[:label], label: col[:label] },
+                          class: "btn btn-sm btn-outline-wizard-accent flex-shrink-0" do %>
+                      <i class="ti ti-plus"></i>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            <div class="col-md-7">
+              <div class="p-3 text-uppercase text-muted small fw-bold">Chosen — how should we combine it?</div>
+              <% if selected_gvps.empty? %>
+                <div class="text-center py-4 px-3">
+                  <p class="text-muted small mb-0">Add a column on the left to choose how it's summarized.</p>
+                </div>
+              <% else %>
+                <div class="wizard-row-list wizard-scroll-list-sm">
+                  <% selected_gvps.each do |gvp| %>
+                    <% clean_key = gvp.key.split(";").first.strip %>
+                    <% current_agg = @config.aggregate_for(clean_key) %>
+                    <div class="wizard-row-card wizard-row-card-stacked">
+                      <%= form_tag update_report_builder_column_label_path(@report, gvp_id: gvp.id), method: :patch, class: "d-flex align-items-center gap-2" do %>
+                        <span class="wizard-row-icon flex-shrink-0"><i class="ti <%= wizard_type_icon_for(gvp.key) %>"></i></span>
+                        <input type="text" name="label" value="<%= gvp.label.presence || gvp.name %>"
+                               class="form-control form-control-sm wizard-label-input border-0 bg-light"
+                               data-bs-toggle="tooltip" data-bs-placement="top" title="Give this column a friendlier header — saves automatically"
+                               onblur="this.form.requestSubmit()">
+                      <% end %>
+                      <div class="d-flex align-items-center gap-2">
+                        <%= form_tag update_report_builder_aggregate_path(@report), method: :patch, class: "d-flex align-items-center gap-2 flex-grow-1" do %>
+                          <%= hidden_field_tag :key, clean_key %>
+                          <select name="aggregate" class="form-select form-select-sm bg-light border-0" onchange="this.form.requestSubmit()">
+                            <% wizard_aggregate_help.each do |key, info| %>
+                              <option value="<%= key %>" <%= current_agg == key ? "selected" : "" %>><%= info[:label] %></option>
+                            <% end %>
+                          </select>
+                        <% end %>
+                        <%= button_to remove_report_builder_column_path(@report, gvp_id: gvp.id),
+                              method: :delete,
+                              class: "btn btn-link text-danger p-0 flex-shrink-0" do %>
+                          <i class="ti ti-trash fs-5"></i>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <details class="border-top">
+            <summary class="p-3 text-primary fw-semibold" style="cursor: pointer">
+              <i class="ti ti-table-options me-1"></i>Turn this into a pivot table instead (advanced)
+            </summary>
+            <div class="p-3 pt-0">
+              <p class="text-muted small">
+                Instead of rolling every <%= relation.humanize.singularize.downcase %> row into fixed columns, spread one category's
+                distinct values sideways — e.g. turn each <strong>Status</strong> into its own column, showing the summed
+                <strong>Collected Amount</strong> for each. This replaces the columns above for this related data — you can
+                always switch back.
+              </p>
+              <%= render "report_builder/wizard/pivot_form", report: @report, relation: relation, jcols: jcols, pivot_cfg: pivot_cfg %>
+            </div>
+          </details>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+  <% end %>
+
+  <%= render "report_builder/wizard/footer_nav", back_step: "joins", next_step: "filters", next_label: "Continue" %>
+</div>

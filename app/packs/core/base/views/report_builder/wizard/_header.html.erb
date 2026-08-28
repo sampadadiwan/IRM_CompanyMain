@@ -1,0 +1,16 @@
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <div class="text-muted small mb-1">
+      <i class="ti ti-wand me-1"></i>Guided Report Wizard
+    </div>
+    <h4 class="mb-0 fw-bolder"><%= @report.name %></h4>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to edit_report_builder_path(@report), class: "btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" do %>
+      <i class="ti ti-tools"></i> Advanced Builder
+    <% end %>
+    <%= link_to reports_path, class: "btn btn-link btn-sm text-muted" do %>
+      Exit
+    <% end %>
+  </div>
+</div>
