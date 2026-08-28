@@ -223,6 +223,7 @@ namespace :report_builder_demo do
         url: report.persisted? ? report.url : "/report_builder",
         report_builder: true,
         shared: true,
+        tag_list: "Builder",
         template: spec[:template]
       )
       report.save!
