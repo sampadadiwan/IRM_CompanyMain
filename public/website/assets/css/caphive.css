@@ -236,6 +236,17 @@ p, li, .lede, .step-detail, .faq details > div{ text-wrap:pretty; }
    [hidden]{display:none} — without this the panels would never collapse. */
 .mm-panel[hidden]{ display:none; }
 
+/* Login group: unlike Products/Resources the toggle *is* the row's only
+   label (there's no login landing page to link to), so it needs the same
+   26px/700 treatment as the plain <a> rows instead of the 44px icon-only
+   sizing above. */
+.mm-toggle-label{
+  width:auto; height:auto; margin:0; gap:8px;
+  font-size:26px; font-weight:700; letter-spacing:-0.03em; color:inherit;
+}
+.mm-toggle-label[aria-expanded="true"]{ color:var(--orange); }
+.mm-divider{ width:100%; max-width:220px; border:0; border-top:1px solid var(--line); margin:0; }
+
 /* ---------- page hero (interior pages) ---------- */
 .page-hero{ padding:170px 0 0; position:relative; }
 .page-hero::before{

@@ -126,7 +126,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/caphive.css?v=29e53cdf">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
 </head>
 <body data-page="portfolios">
 
@@ -189,6 +189,25 @@
 </header>
 
 <div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
   <a href="index.html">Home</a>
 
   <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
@@ -228,8 +247,11 @@
     </div>
   </div>
 
+  <hr class="mm-divider">
+
   <a href="about.html">About</a>
   <a href="contact.html">Contact</a>
+
   <!-- Same booking-url swap as the desktop header CTA. -->
   <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
 </div>
