@@ -60,6 +60,12 @@
     </div>
   </div>
   <div class="dark-transparent sidebartoggler"></div>
+
+  <%# Modals render here, outside the .overflow-hidden wrapper above — nested inside it,
+      Bootstrap's fixed-position modal gets clipped by that ancestor in this app (the same
+      reason ToggleCard-hosted modals have to live outside the card). %>
+  <%= yield :modals %>
+
   <!-- Import Js Files -->
 
 <script src="/modernize/libs/jquery/dist/jquery.min.js"></script>

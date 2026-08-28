@@ -22,7 +22,7 @@ class UserGuidesController < ApplicationController
       id       = relative.sub(/\.md$/, "")                               # e.g. "agents/data_quality_agent_user_guide"
       parts    = id.split("/")
       group    = parts.length > 1 ? parts.first.humanize.titleize : nil
-      title    = parts.last.humanize.titleize.gsub(/ User Guide$/i, '')
+      title    = guide_title(id, path)
 
       description = strip_inline_markdown(first_content_line(path))&.truncate(260) || "Learn how to use the #{title.downcase} features in IRM."
 
@@ -50,7 +50,7 @@ class UserGuidesController < ApplicationController
     @html_content = render_guide_markdown(safe_path)
 
     parts  = raw_id.split("/")
-    @title = guide_title(raw_id)
+    @title = guide_title(raw_id, safe_path)
     @lede  = strip_inline_markdown(first_content_line(safe_path)) || "A guide to #{@title.downcase}."
     @group_label = parts.first.humanize.titleize if parts.length > 1
     @hero_tint = hero_tint_for(raw_id, @group_label)

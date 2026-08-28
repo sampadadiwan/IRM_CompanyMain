@@ -26,8 +26,7 @@
               <h4>Related guides</h4>
               <div class="tag-row">
                 <% siblings.each do |guide_id| %>
-                  <%= link_to guide_id.humanize.titleize.gsub(/ User Guide$/i, ""),
-                              public_guide_path(guide_id), class: "tag" %>
+                  <%= link_to @sibling_titles[guide_id], public_guide_path(guide_id), class: "tag" %>
                 <% end %>
               </div>
             </nav>

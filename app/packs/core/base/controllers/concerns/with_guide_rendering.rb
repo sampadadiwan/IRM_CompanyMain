@@ -155,13 +155,32 @@ module WithGuideRendering
     details
   end
 
-  # Human-readable title for a guide id — the last path segment, titleised, with
-  # the redundant "User Guide" suffix trimmed.
+  # Human-readable title for a guide. Prefers the file's own "# Title" line
+  # (e.g. "Two-Factor Authentication User Guide") so hero and body always agree
+  # verbatim — humanizing the id alone loses punctuation the id can't carry
+  # (compare id "two_factor_authentication_user_guide" vs. the file's actual
+  # "Two-Factor" hyphen). Falls back to id humanization when no path is given
+  # or the file has no leading heading.
   #
   # @param raw_id [String] guide id from the URL
+  # @param path [Pathname, nil] resolved guide path, if already available
   # @return [String]
-  def guide_title(raw_id)
+  def guide_title(raw_id, path = nil)
+    heading = path && first_heading_line(path)
+    return heading.gsub(/ User Guide\z/i, "") if heading
+
     raw_id.to_s.sub(/\.md$/i, "").split("/").last.humanize.titleize.gsub(/ User Guide$/i, "")
+  end
+
+  # The file's first non-blank line, if it is a "# " H1 heading.
+  #
+  # @param path [Pathname]
+  # @return [String, nil] heading text with the "# " marker stripped, or nil
+  def first_heading_line(path)
+    first_line = File.foreach(path).lazy.map(&:strip).reject(&:empty?).first
+    return nil unless first_line&.start_with?("# ")
+
+    first_line.sub(/\A#\s+/, "")
   end
 
   # A guide's own opening line — every guide is written with a one-line H1 title

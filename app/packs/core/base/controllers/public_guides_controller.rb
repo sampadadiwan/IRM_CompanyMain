@@ -50,10 +50,15 @@ class PublicGuidesController < ApplicationController
     end
 
     @guide_id     = raw_id
-    @title        = guide_title(raw_id)
+    @title        = guide_title(raw_id, path)
     @lede         = strip_inline_markdown(first_content_line(path)) || "A guide to #{@title.downcase}."
     @html_content = render_guide_markdown(path)
     @hero_tint    = hero_tint_for(raw_id)
+    # Titles for the "Related guides" cross-links — resolved from each sibling's own
+    # file, same as @title above, so the sibling link text can't drift from the page
+    # it points to (see docs/user_guides/two_factor_authentication_user_guide.md's
+    # "Two-Factor" hyphen, which a plain id.humanize would drop).
+    @sibling_titles = (PUBLIC_GUIDE_IDS - [raw_id]).index_with { |id| guide_title(id, resolve_guide_path(id)) }
   end
 
   private

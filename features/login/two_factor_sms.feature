@@ -191,23 +191,20 @@ Feature: Two-Factor Authentication by SMS
     When I enter the texted code
     Then I should be signed in
 
-  Scenario: An authenticator user can still use their app after requesting a text
-    # The ambiguous case: they pressed "Text me a code" so a Verify code exists, but the
-    # same field must still accept the TOTP code from their app.
+  Scenario: Authenticator-mode user does not see a text fallback button
+    # App-only is the deliberate policy once a user has chosen the authenticator app:
+    # the WhatsApp/SMS fallback buttons are not offered on the login screen at all.
     Given the user has the phone number "+1" "4155550134"
     And the user has two-factor authentication enabled and configured
     And I am at the login page
     When I fill and submit the login page
     Then I should be on the 2FA verification page
-    When I request a code by text
-    Then exactly 1 text message should have been sent
-    When I enter a valid TOTP code
-    Then I should be signed in
+    And I should not see "Text me a code"
 
   Scenario: Verify is not consulted when no code was texted
     # Probing Verify after a failed TOTP entry would burn attempts on a verification the
-    # user never had. An authenticator user who never pressed the button must not trigger
-    # a single check call.
+    # user never had. An authenticator user, who has no way to request a text, must not
+    # trigger a single check call.
     Given the user has the phone number "+1" "4155550134"
     And the user has two-factor authentication enabled and configured
     And I am at the login page
