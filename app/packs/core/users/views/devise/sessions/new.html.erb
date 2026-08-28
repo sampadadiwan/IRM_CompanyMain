@@ -64,7 +64,13 @@
         <%# The mirror image: focusing here collapses the password form above.
             Whatever address is already typed is carried across by the controller. %>
         <div class="login-section" data-login-target="magicSection">
-            <%= form_for(resource, as: resource_name, url: "/users/magic_link", html: {id: "new_user_wo_pass", class: "magic-link-form", data: { action: "focusin->login#useMagic" }}) do |f| %>
+            <%# turbo: false, matching the password form above and every 2FA form: this POST's
+                redirect carries a one-time flash notice ("If that address is registered…").
+                Left Turbo-driven, Turbo fetches that redirect, Rails reads and clears the
+                flash rendering it, then the devise layout's turbo-visit-control meta tag
+                (see devise.html.erb) makes Turbo discard that response and issue a SECOND,
+                fresh request to the same URL — which arrives with the flash already swept. %>
+            <%= form_for(resource, as: resource_name, url: "/users/magic_link", html: {id: "new_user_wo_pass", class: "magic-link-form", data: { turbo: false, action: "focusin->login#useMagic" }}) do |f| %>
                 <input type="hidden" name="current_entity_id" value="<%= @current_entity&.id %>" />
                 <input type="hidden" name="redirect_to" value="<%= session[:user_return_to] %>" />
 
