@@ -134,15 +134,12 @@ class CapitalDistributionsController < ApplicationController
 
   # Pre-fills a new (unsaved) capital distribution from an existing one, for the "Clone"
   # and "Create With Fees" actions on the show page. Nothing is persisted here - the user
-  # reviews/edits on the new form and saves via the normal create action.
+  # reviews/edits on the new form and saves via the normal create action. Cross-fund copying
+  # is allowed - the caller already authorized `create?` on the target fund (in #new), and
+  # `authorize source, :show?` below covers the source fund, so both sides are permission-checked.
   def apply_clone_from(target, source_id, mode)
     source = CapitalDistribution.find(source_id)
     authorize source, :show?
-
-    unless source.fund_id == target.fund_id
-      flash.now[:alert] = "Could not copy from the selected distribution: it belongs to a different fund."
-      return
-    end
 
     if mode == "full"
       target.title = "#{source.title} (Copy)"
