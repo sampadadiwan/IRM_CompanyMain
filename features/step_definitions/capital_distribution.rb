@@ -249,6 +249,22 @@ Then("the source capital distribution's fee rows should be unchanged") do
   expect(@capital_distribution.distribution_fees.count).to be_positive
 end
 
+Then('the new distribution form should offer {string} as a fund choice') do |fund_name|
+  expect(page).to have_select('capital_distribution_fund_id', with_options: [fund_name])
+end
+
+When('I switch the new distribution\'s fund to {string}') do |fund_name|
+  select fund_name, from: 'capital_distribution_fund_id'
+end
+
+Then('the new Capital Distribution should belong to the fund {string} with matching fee rows') do |fund_name|
+  target_fund = Fund.find_by(name: fund_name)
+  cloned = CapitalDistribution.order(:id).last
+  expect(cloned.fund_id).to eq(target_fund.id)
+  expect(cloned.entity_id).to eq(target_fund.entity_id)
+  expect(cloned.distribution_fees.count).to eq(@capital_distribution.distribution_fees.count)
+end
+
 Given('the fund has {string} capital distribution') do |count|
   (1..count.to_i).each do |_i|
     cc = FactoryBot.create(:capital_distribution, fund: @fund)
