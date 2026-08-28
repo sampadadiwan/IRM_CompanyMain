@@ -93,6 +93,12 @@ Scenario Outline: Edit Account Entry parent
   Then an account entry is created for the commitment
   Then I edit the account entry with debug "true"
   Then the account entry parent is updated
+  # Regression coverage: re-pointing the parent a SECOND time, after parent_name is already
+  # cached from the first edit above, is what exposed the stale-parent_name bug -- the first
+  # edit alone would pass even with the bug, since parent_name starts blank.
+  Given there is a portfolio investment for the account entry parent test
+  Then I re-point the account entry parent to the portfolio investment with debug "true"
+  Then the account entry parent and parent name reflect the portfolio investment
 
 
   Examples:
