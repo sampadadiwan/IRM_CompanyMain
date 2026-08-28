@@ -97,8 +97,15 @@ class ReportBuilderQueryEngine
     key = sort_key
     return rows if key.blank?
 
+    # Row hashes are keyed by the raw GridViewPreference key, which usually
+    # carries a "; col-type" suffix (e.g. "capital_commitments.amount; num-col")
+    # — but `key` here is always the clean, suffix-stripped form. Resolve back
+    # to whichever raw key produced this sort_key so the lookup below actually
+    # hits instead of silently missing on every row (leaving rows unsorted).
+    row_key = columns.find { |c| c.key.split(";").first.strip == key }&.key || key
+
     sorted = begin
-      rows.sort_by { |r| [r[key].nil? ? 0 : 1, r[key]] }
+      rows.sort_by { |r| [r[row_key].nil? ? 0 : 1, r[row_key]] }
     rescue ArgumentError
       rows
     end
