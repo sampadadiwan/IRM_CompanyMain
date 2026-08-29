@@ -949,8 +949,26 @@ module AwsUtils
       port: destination_port
     )
 
-    # 8.4: SHOW MASTER STATUS -> SHOW BINARY LOG STATUS
-    result = source_client.query('SHOW BINARY LOG STATUS')
+    # MySQL 8.4 renamed SHOW MASTER STATUS -> SHOW BINARY LOG STATUS, and the
+    # old spelling was REMOVED rather than kept as an alias. The fleet runs both
+    # versions today — staging is on 8.4.7, production on 8.0.46 — so neither
+    # statement works everywhere and hardcoding the 8.4 form made this raise
+    # "syntax error ... near 'LOG STATUS'" on the first production DR that got
+    # this far, after the restore itself had already succeeded.
+    #
+    # Chosen by server version rather than by rescuing the syntax error: MySQL
+    # error text is localisable, so matching on it would be a latent trap.
+    #
+    # NOTE: this is a symptom of staging and production running different MySQL
+    # majors — a staging drill cannot validate production's replication path.
+    major, minor = source_client.server_info[:version].to_s.split('.').map(&:to_i)
+    binlog_status_sql = if major > 8 || (major == 8 && minor >= 4)
+                          'SHOW BINARY LOG STATUS'
+                        else
+                          'SHOW MASTER STATUS'
+                        end
+    puts "Source MySQL #{source_client.server_info[:version]} — using `#{binlog_status_sql}`"
+    result = source_client.query(binlog_status_sql)
     row = result.first
     raise "Binary logging not enabled on source" unless row
     binlog_file = row['File']

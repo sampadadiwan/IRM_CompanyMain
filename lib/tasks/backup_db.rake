@@ -151,7 +151,8 @@ namespace :db do
   # independent, so running them in parallel cuts the longest DR phase from
   # primary+replica to max(primary, replica). The ONLY ordering constraint is
   # reset_replication at the end: it reads the PRIMARY's live binlog position
-  # (SHOW BINARY LOG STATUS), so it must wait for BOTH restores to finish.
+  # (SHOW BINARY LOG STATUS on 8.4+, SHOW MASTER STATUS on 8.0 — the fleet runs
+  # both), so it must wait for BOTH restores to finish.
   # Safe because traffic is off (nginx maintenance mode) between restore and
   # replication setup — nothing writes to the primary in that window.
   desc "DR: restore primary AND replica in parallel, then re-point replication"

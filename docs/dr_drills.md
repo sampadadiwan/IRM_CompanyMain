@@ -42,3 +42,4 @@
 | 2026-08-29 16:52 | production | in | ap-south-2 | FAILED | 7.1 | dr_drill_production_in_2026_08_29_1652 |
 | 2026-08-29 17:02 | production | in | ap-south-2 | FAILED | 8.4 | dr_drill_production_in_2026_08_29_1702 |
 | 2026-08-29 17:13 | production | in | ap-south-2 | FAILED | 2.4 | dr_drill_production_in_2026_08_29_1713 |
+| 2026-08-29 17:17 | production | in | ap-south-2 | FAILED | 7.9 | dr_drill_production_in_2026_08_29_1717 |
