@@ -150,12 +150,13 @@
       <%= render "investor_kycs/bulk_actions" %>
     <% elsif @investor.blank? %>
       <% if policy(InvestorKyc).send_kyc_reminder_to_all? %>
-        <%= button_to send_kyc_reminder_to_all_investor_kycs_path("entity_id": entity_id),
-                        method: :post,
-                        class: "btn btn-outline-primary d-inline-flex align-items-center",
-                        data: { action: "click->confirm#popup", turbo: false, msg: "This will generate a notification to all investor users whose KYC is unverified", method: :post } do %>
+        <% pending_kyc_reminder_count = policy_scope(InvestorKyc).where(entity_id: entity_id, verified: false)
+                                                                  .where.not(submission_status: %w[completed verified]).count %>
+        <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center"
+                data-bs-toggle="modal" data-bs-target="#sendKycRemindersModal">
           <i class="ti ti-bell"></i> Send KYC Reminders
-        <% end %>
+        </button>
+        <%= render "investor_kycs/send_kyc_reminders_modal", entity_id: entity_id, pending_kyc_reminder_count: pending_kyc_reminder_count %>
       <% end %>
     <% end %>
     <% if current_user && policy(InvestorKyc).import? %>
