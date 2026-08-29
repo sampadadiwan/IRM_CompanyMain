@@ -78,28 +78,29 @@ namespace :dr do
     # redirect (https://localhost would be connection-refused → HTTP 000).
     # Retries: puma:restart fires seconds before this task (same
     # nginx:switch_app hook), so give a rebooting puma up to 30s per endpoint.
-    # The Host header has to address the APP, not the marketing website.
+    # The Host header must address the APP host — never the apex.
     #
-    # On production DOMAIN is the apex (caphive.com), which is also the first
-    # entry in WEBSITE_HOSTS — so both nginx (which serves the apex straight
-    # from public/website) and the Website middleware answer with the static
-    # site, and every health-check URL comes back 404. Staging never hit this
-    # because its DOMAIN is already a tenant subdomain (dev.altconnects.com)
-    # and so is absent from its WEBSITE_HOSTS.
+    # On production the apex (caphive.com) is the marketing website: nginx
+    # serves it straight from public/website and the Website middleware backs
+    # that up, so every /health_check/* URL there is a legitimate 404. Verified
+    # on a production DR box: caphive.com -> 404, www.caphive.com -> 301,
+    # app.caphive.com -> 200.
     #
-    # Verified on a production DR box: Host caphive.com -> 404,
-    # www.caphive.com -> 301, app.caphive.com -> 200.
+    # DOMAIN cannot be used as-is because it means different things per
+    # environment — production sets the apex, staging sets the app host
+    # (dev.altconnects.com). So reduce it to the base domain and rebuild the
+    # app host, which is correct for both without inspecting WEBSITE_HOSTS:
+    #   caphive.com         -> caphive.com     -> app.caphive.com
+    #   dev.altconnects.com -> altconnects.com -> dev.altconnects.com
     #
-    # Same convention as aws:dns_cutover — production is app.<domain>,
-    # anything else dev.<domain> — applied ONLY when DOMAIN is a website host,
-    # so a DOMAIN that already names the app is left untouched.
-    domain = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first
-    website_hosts = ENV["WEBSITE_HOSTS"].to_s.split(",").map(&:strip).reject(&:empty?)
-    host_header = if website_hosts.include?(domain)
-                    "#{Rails.env.production? ? 'app' : 'dev'}.#{domain.sub(/\Awww\./, '')}"
-                  else
-                    domain
-                  end
+    # Same convention as aws:dns_cutover and aws:dr_verify_edge. Base domain is
+    # the last two labels — every domain here is a .com; a multi-part public
+    # suffix (foo.co.uk) would need a real public-suffix list.
+    domain = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first.to_s
+    raise "DOMAIN is not set — cannot derive the health-check host" if domain.empty?
+
+    base_domain = domain.split(".").last(2).join(".")
+    host_header = "#{Rails.env.production? ? 'app' : 'dev'}.#{base_domain}"
     puts "🌐 Health checks will use Host: #{host_header}"
     http = lambda do |path, attempts: 6|
       code = nil
