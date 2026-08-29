@@ -33,6 +33,14 @@ module SidekiqRedisFetchError
 
       record(exception)
       true
+    rescue StandardError, ScriptError => e
+      # Fail open on our own bugs too. Anything raised here propagates into Sidekiq's
+      # error_handlers chain, which aborts the whole chain and drops the report — so a
+      # crash in the classifier would silently stop production alerting rather than
+      # merely misclassify one exception. ScriptError covers LoadError/NotImplementedError,
+      # neither of which is a StandardError.
+      Sidekiq.logger.error("[SidekiqRedisFetchError] classification failed, not suppressing: #{e.class}: #{e.message}") if defined?(Sidekiq)
+      false
     end
 
     # Every condition below fails OPEN — anything we cannot positively identify as a
