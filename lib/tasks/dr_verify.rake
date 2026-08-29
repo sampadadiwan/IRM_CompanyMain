@@ -160,7 +160,10 @@ namespace :dr do
     key_path = File.expand_path("~/.ssh/#{ENV.fetch('KEYNAME')}.pem")
 
     on_db_box = lambda do |host, cmd|
-      Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15) { |ssh| ssh.exec!(cmd).to_s.strip }
+      # verify_host_key: :never — see the matching comment in backup_db.rake's
+      # run_baked_restore; DB boxes get recreated with fresh host keys but
+      # often reuse the same private IP.
+      Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) { |ssh| ssh.exec!(cmd).to_s.strip }
     end
 
     guarded.call("Primary DB box (#{db_host})") do

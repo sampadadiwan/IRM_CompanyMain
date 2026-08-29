@@ -59,6 +59,23 @@ infrastructure down afterwards (`TEARDOWN=true`). For a real disaster **or a
 permanent region migration**, call `aws:setup_infra` directly with a branch
 name you intend to merge.
 
+`aws:dr_drill`'s 4th argument is `stack` (default `staging`). Passing
+`production` runs the identical unattended sequence against the real
+production Pulumi stack in the DR region, using live production backups and
+credentials — it is a genuine DR exercise against the production AWS account,
+not staging at larger scale. It requires `CONFIRM_PRODUCTION=true` in addition
+to the argument, so a staging command can't be turned into a production run by
+a copy-paste mistake:
+
+```bash
+CONFIRM_PRODUCTION=true TEARDOWN=true \
+  rake "aws:dr_drill[in, ap-south-2, production.in, production]"
+```
+
+`docs/dr_drills.md` and the drill-recency check in `aws:dr_readiness` both key
+on `stack`, so a passed staging drill is never read as satisfying production's
+recency requirement (or vice versa).
+
 ## 2. Scenario Assessment
 
 Match the failure to the response before running anything. Most incidents do

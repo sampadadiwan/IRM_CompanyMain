@@ -410,8 +410,12 @@ namespace :IRM do
 
     # Prove the sandbox is actually gone rather than assuming the restart took —
     # this is precisely the class of failure that was passing silently before.
-    nnp = capture(:systemctl, "show", "monit", "-p", "NoNewPrivileges", "--value").strip
-    caps = capture(:systemctl, "show", "monit", "-p", "CapabilityBoundingSet", "--value").strip
+    # --no-pager: `:pty, true` (above) makes stdout look like a real terminal to
+    # systemctl, and CapabilityBoundingSet's value is long enough that it pages
+    # through `less` — which then hangs forever waiting for a keypress that a
+    # non-interactive deploy will never send (found live during a DR drill).
+    nnp = capture(:systemctl, "show", "monit", "-p", "NoNewPrivileges", "--value", "--no-pager").strip
+    caps = capture(:systemctl, "show", "monit", "-p", "CapabilityBoundingSet", "--value", "--no-pager").strip
     info "monit sandbox now: NoNewPrivileges=#{nnp}, CapabilityBoundingSet=#{caps}"
     raise "monit is still sandboxed (NoNewPrivileges=#{nnp}) — drop-in did not apply" if nnp == "yes"
   end

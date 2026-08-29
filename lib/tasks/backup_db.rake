@@ -41,7 +41,13 @@ namespace :db do
     puts "#{prefix}→ Restoring via baked script on #{host} (this can take a while)"
 
     exit_code = nil
-    Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15) do |ssh|
+    # verify_host_key: :never — DR boxes get torn down and recreated with a
+    # fresh SSH host key but frequently land back on the same private IP
+    # (small subnet, low-order IP reuse); a strict host-key check rejects that
+    # as a fingerprint mismatch even though it's a legitimate new box. Matches
+    # config/deploy/staging_in.rb's ssh_options, which disables it for the
+    # same reason.
+    Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) do |ssh|
       # Instances from pre-bake AMIs (no rebake since the backup tooling was
       # added to the Packer template) don't have the baked script — bridge by
       # generating the env-specific script here and uploading it. Same script,
@@ -60,7 +66,7 @@ namespace :db do
           end
         end
         script = "/home/ubuntu/db_backup_xtra.sh"
-        Net::SCP.start(host, "ubuntu", keys: [key_path], timeout: 15) do |scp|
+        Net::SCP.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) do |scp|
           scp.upload!(local_script.to_s, script)
         end
         # Contains credentials — owner-only, executable

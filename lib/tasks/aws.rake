@@ -233,11 +233,14 @@ namespace :aws do
     last_pass = nil
     if File.exist?(drill_log)
       File.readlines(drill_log).each do |line|
-        cols = line.split("|").map(&:strip)
-        # | Date | Variant | Region | Result | RTO | Branch |
-        next unless cols[4] == "PASSED" && cols[2] == env_variant
+        # | Date | Stack | Variant | Region | Result | RTO | Branch |
+        cols = line.split("|").map(&:strip).reject(&:empty?)
+        next unless cols.size == 7 # skips the title line, header row, and separator row
 
-        last_pass = [last_pass, Time.parse(cols[1])].compact.max rescue last_pass
+        row_date, row_stack, row_variant, _region, row_result, = cols
+        next unless row_result == "PASSED" && row_stack == stack && row_variant == env_variant
+
+        last_pass = [last_pass, Time.parse(row_date)].compact.max rescue last_pass
       end
     end
     if last_pass.nil?
@@ -260,23 +263,43 @@ namespace :aws do
 
   # Quarterly DR drill: proves the WHOLE recovery chain (AMIs present, Pulumi
   # stack deployable, S3 backups restorable, deploy + migrations + cutover)
-  # by rebuilding STAGING in the DR region, unattended, and measuring the time.
+  # by rebuilding a stack in the DR region, unattended, and measuring the time.
   # An untested DR plan is a hypothesis — this turns it into a measurement.
   #
   #   rake "aws:dr_drill[in]"                      # staging IN → AWS_BACKUP_REGION
   #   rake "aws:dr_drill[in, ap-south-2]"          # explicit region
   #   TEARDOWN=true rake "aws:dr_drill[in]"        # pulumi destroy after the drill
   #
+  #   # production — same non-interactive sequence, real prod backups/creds:
+  #   CONFIRM_PRODUCTION=true TEARDOWN=true \
+  #     rake "aws:dr_drill[in, ap-south-2, production.in, production]"
+  #
   # Notes:
   # - Commits only to a dr_drill_* branch; main is never touched. The task
   #   returns your working tree to the original branch afterwards.
   # - Without TEARDOWN=true the drill infra keeps running (and costing) —
   #   the teardown command is printed at the end.
-  desc "Run an unattended DR drill against staging in the DR region and report RTO"
-  task :dr_drill, [:env_variant, :region, :env_name] do |t, args|
-    args.with_defaults(env_variant: 'in')
+  # - `stack` (4th arg) defaults to 'staging'. Passing 'production' rebuilds
+  #   the REAL production Pulumi stack (production-<region>) in the DR region
+  #   using live production backups and credentials — this is a genuine DR
+  #   exercise against the production account, not a scaled-up staging test.
+  #   It refuses to run unless CONFIRM_PRODUCTION=true is ALSO set, so a
+  #   staging command copy-pasted with the extra arg can't silently fire
+  #   against production.
+  desc "Run an unattended DR drill (staging by default; production requires CONFIRM_PRODUCTION=true) and report RTO"
+  task :dr_drill, [:env_variant, :region, :env_name, :stack] do |t, args|
+    args.with_defaults(env_variant: 'in', stack: 'staging')
     env_variant = args[:env_variant]
-    env_name = args[:env_name] || "staging.#{env_variant}"
+    stack = args[:stack]
+
+    if stack == 'production' && ENV['CONFIRM_PRODUCTION'] != 'true'
+      abort "❌ Refusing to drill stack 'production' without CONFIRM_PRODUCTION=true set. " \
+            "This rebuilds the real production Pulumi stack in the DR region using live " \
+            "production backups and credentials — set the env var deliberately if that's " \
+            "what you intend; it is not a typo-guard to silence casually."
+    end
+
+    env_name = args[:env_name] || "#{stack}.#{env_variant}"
 
     # Load .env.<env_name> + credentials BEFORE resolving the region, so an
     # AWS_BACKUP_REGION defined in the env file (not just the shell) is seen
@@ -286,15 +309,16 @@ namespace :aws do
     region = args[:region] || ENV["AWS_BACKUP_REGION"] || raise("Pass a region or set AWS_BACKUP_REGION (shell or .env.#{env_name})")
 
     original_branch = `git rev-parse --abbrev-ref HEAD`.strip
-    drill_branch = "dr_drill_#{env_variant}_#{Time.now.strftime('%Y_%m_%d_%H%M')}"
+    branch_prefix = stack == 'staging' ? "dr_drill_#{env_variant}" : "dr_drill_#{stack}_#{env_variant}"
+    drill_branch = "#{branch_prefix}_#{Time.now.strftime('%Y_%m_%d_%H%M')}"
     started_at = Time.now
     result = "FAILED"
 
-    puts "🚨 DR DRILL: rebuilding staging (#{env_variant}) in #{region} on branch #{drill_branch}"
+    puts "🚨 DR DRILL: rebuilding #{stack} (#{env_variant}) in #{region} on branch #{drill_branch}"
     begin
       # The full non-interactive DR sequence — the same code path a real
       # production DR uses, which is the point of the drill
-      setup_infra("staging", "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
+      setup_infra(stack, "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
       result = "PASSED"
     ensure
       duration_min = ((Time.now - started_at) / 60).round(1)
@@ -304,9 +328,9 @@ namespace :aws do
 
       # Append to the drill log — the audit trail that DR is tested, not assumed
       log_file = Rails.root.join("docs", "dr_drills.md")
-      File.write(log_file, "# DR Drill Log\n\n| Date | Variant | Region | Result | RTO (min) | Branch |\n|---|---|---|---|---|---|\n") unless File.exist?(log_file)
+      File.write(log_file, "# DR Drill Log\n\n| Date | Stack | Variant | Region | Result | RTO (min) | Branch |\n|---|---|---|---|---|---|---|\n") unless File.exist?(log_file)
       File.open(log_file, "a") do |f|
-        f.puts "| #{started_at.strftime('%Y-%m-%d %H:%M')} | #{env_variant} | #{region} | #{result} | #{duration_min} | #{drill_branch} |"
+        f.puts "| #{started_at.strftime('%Y-%m-%d %H:%M')} | #{stack} | #{env_variant} | #{region} | #{result} | #{duration_min} | #{drill_branch} |"
       end
 
       puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured RTO: #{duration_min} minutes (logged to docs/dr_drills.md)"
@@ -314,10 +338,10 @@ namespace :aws do
       if result == "PASSED"
         if ENV["TEARDOWN"] == "true"
           puts "🧹 TEARDOWN=true — destroying drill infra..."
-          run_cmd("pulumi destroy --stack staging-#{region} --yes --color=always", "../IRM-Infra")
+          run_cmd("pulumi destroy --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra")
         else
           puts "⚠️  Drill infra is still RUNNING (and costing money) in #{region}."
-          puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack staging-#{region} --yes"
+          puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack #{stack}-#{region} --yes"
         end
       end
     end
