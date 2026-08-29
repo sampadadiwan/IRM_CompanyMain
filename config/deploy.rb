@@ -462,6 +462,16 @@ namespace :IRM do
       # For Puma systemd service
       local_puma_service = "/tmp/puma_IRM_#{fetch(:stage)}.service"
       generate_and_upload('./config/deploy/services/puma_IRM_env.service.erb', local_puma_service, system_config_path)
+      # Enable (not just restart) the unit so systemd itself starts puma on
+      # every boot — WantedBy=multi-user.target in the unit file only takes
+      # effect once `enable` has created the symlink. Without this, puma had
+      # no boot-start path of its own, which is why config/schedule.rb used
+      # to also launch puma directly from an @reboot cron entry — a second,
+      # uncoordinated launcher that raced this systemd unit for the shared
+      # unix socket and could permanently win with a stale release. Enabling
+      # here is what makes removing that cron entry safe.
+      execute :sudo, "systemctl daemon-reload"
+      execute :sudo, "systemctl enable #{fetch(:puma_service_unit_name)}"
 
       # For Sidekiq Monit config
       local_sidekiq_monit = "/tmp/sidekiq_IRM_#{fetch(:stage)}.conf"
