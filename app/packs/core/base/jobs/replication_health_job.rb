@@ -2,10 +2,12 @@
 class ReplicationHealthJob < ApplicationJob
   def perform
     Chewy.strategy(:sidekiq) do
-      # Update the user
+      # Update the user. Reassign (merge into a new hash) rather than mutate
+      # json_fields in place — an in-place `user.json_fields["k"] = v` does
+      # not reliably mark the JSON column dirty, so `save!` silently writes
+      # nothing (confirmed live: reload showed the write never persisted).
       time = Time.zone.now.to_s
-      user.json_fields ||= {}
-      user.json_fields["replication_health"] = time
+      user.json_fields = (user.json_fields || {}).merge("replication_health" => time)
       user.save!
 
       # Wait for 10 seconds
@@ -22,11 +24,11 @@ class ReplicationHealthJob < ApplicationJob
         # case, not an error, so don't blow up on it.
         if (user_replica.json_fields || {})["replication_health"] == time
           Rails.logger.debug("✅ Replication is Ok")
-          user.json_fields["replication_health_status"] = "Ok"
+          user.json_fields = user.json_fields.merge("replication_health_status" => "Ok")
         else
           msg = "Lagging"
           Rails.logger.debug { "️⚠️ Replication is #{msg}" }
-          user.json_fields["replication_health_status"] = msg.to_s
+          user.json_fields = user.json_fields.merge("replication_health_status" => msg.to_s)
           ExceptionNotifier.notify_exception(StandardError.new("Replication is #{msg}"))
         end
       end
