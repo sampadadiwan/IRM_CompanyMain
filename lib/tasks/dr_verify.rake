@@ -96,17 +96,32 @@ namespace :dr do
     # Same convention as aws:dns_cutover and aws:dr_verify_edge. Base domain is
     # the last two labels — every domain here is a .com; a multi-part public
     # suffix (foo.co.uk) would need a real public-suffix list.
-    domain = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first.to_s
+    # Health checks must ask for the APP host, never the apex.
+    #
+    # On production the apex is the marketing website — nginx serves it from
+    # public/website — so /health_check/* there is a legitimate 404. Verified on
+    # a production DR box: caphive.com -> 404, app.caphive.com -> 200.
+    #
+    # DOMAIN is the deployment's domain (caphive.com / caphive.us /
+    # dev.altconnects.com); reduce it to the base domain and prefix the app
+    # host, matching aws:dns_cutover and aws:dr_verify_edge:
+    #   caphive.com         -> app.caphive.com
+    #   caphive.us          -> app.caphive.us
+    #   dev.altconnects.com -> dev.altconnects.com
+    domain = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first.to_s.sub(/\Awww\./, "")
     raise "DOMAIN is not set — cannot derive the health-check host" if domain.empty?
 
     base_domain = domain.split(".").last(2).join(".")
     host_header = "#{Rails.env.production? ? 'app' : 'dev'}.#{base_domain}"
     puts "🌐 Health checks will use Host: #{host_header}"
-    http = lambda do |path, attempts: 6|
+    # host:/expect: default to the app host and 200 so existing callers are
+    # unchanged; the website checks below need a different host, and the
+    # www alias legitimately answers 301 rather than 200.
+    http = lambda do |path, host: host_header, expect: "200", attempts: 6|
       code = nil
       attempts.times do |i|
-        code = `curl -s -o /dev/null -w "%{http_code}" --max-time 60 -H "Host: #{host_header}" http://localhost#{path}`.strip
-        break if code == "200"
+        code = `curl -s -o /dev/null -w "%{http_code}" --max-time 60 -H "Host: #{host}" http://localhost#{path}`.strip
+        break if code == expect
 
         sleep 5 if i < attempts - 1
       end
@@ -120,6 +135,37 @@ namespace :dr do
       guarded.call(label) do
         code = http.call("#{path}.json")
         check.call(label, code == "200" ? :ok : :fail, "HTTP #{code}")
+      end
+    end
+
+    # --- 2b. Static marketing website on the apex ----------------------------
+    # The apex is a SEPARATE serving path from the app: nginx serves it straight
+    # from public/website (the Website middleware is the fallback). Every check
+    # above uses the app host, so a recovery that brought the application back
+    # but lost the public website would pass silently — half a recovery
+    # reported as a whole one.
+    # Gated on WEBSITE_HOSTS, the same opt-in the middleware itself uses; the
+    # first entry is canonical and the rest 301 to it (see lib/middleware/website.rb).
+    website_hosts = ENV["WEBSITE_HOSTS"].to_s.split(",").map(&:strip).reject(&:empty?)
+    if website_hosts.empty?
+      check.call("Static website", :ok, "skipped — WEBSITE_HOSTS not set for this stack")
+    else
+      canonical, *alias_hosts = website_hosts
+      guarded.call("HTTP website apex (#{canonical})") do
+        code = http.call("/", host: canonical)
+        check.call("HTTP website apex (#{canonical})", code == "200" ? :ok : :fail,
+                   code == "200" ? "serving public/website" : "HTTP #{code} — apex not serving the website")
+      end
+      alias_hosts.each do |alias_host|
+        label = "HTTP website alias (#{alias_host})"
+        guarded.call(label) do
+          # A redirect to the canonical host is the CORRECT answer here, so
+          # don't retry-until-200 — that would burn 30s and then report a false
+          # failure on a perfectly healthy alias.
+          code = http.call("/", host: alias_host, expect: "301", attempts: 2)
+          check.call(label, %w[301 308].include?(code) ? :ok : :fail,
+                     %w[301 308].include?(code) ? "redirects to #{canonical}" : "HTTP #{code} — expected 301 to #{canonical}")
+        end
       end
     end
 
