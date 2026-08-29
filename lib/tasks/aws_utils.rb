@@ -110,26 +110,39 @@ module AwsUtils
 
 
   def run_cmd(command, cwd = nil)
-    puts "Running command: #{command}"
+    puts "▸ #{command}"
     opts = cwd ? { chdir: cwd } : {}
     Open3.popen3(command, opts) do |stdin, stdout, stderr, wait_thr|
-        # Handle stdout
-        while line = stdout.gets
-          puts line
+      stdin.close # nothing to feed it; leaving it open can hang an input-reading child
+
+      # Drain both pipes CONCURRENTLY, and label neither stream as an error.
+      #
+      # Two problems this replaces:
+      #
+      # 1. DEADLOCK. Reading stdout to EOF and only *then* reading stderr
+      #    hangs the moment the child fills the stderr pipe buffer (~64KB)
+      #    while we are still blocked on stdout: the child stops writing,
+      #    so stdout never reaches EOF, so we never get to stderr.
+      #    Capistrano/SSHKit writes its entire INFO/DEBUG log to stderr, so a
+      #    deploy blows past 64KB routinely — this was luck, not design.
+      #
+      # 2. FALSE ERRORS. Every stderr line was printed as "🚨 Error: ...",
+      #    but plenty of tools use stderr for ordinary output: git ("Switched
+      #    to a new branch"), SSHKit's whole log, pulumi diagnostics. These
+      #    transcripts are kept as DR audit evidence, and a successful run
+      #    that reads as a wall of errors misleads whoever reviews it.
+      #    Whether the command actually failed is decided by its EXIT STATUS.
+      lock = Mutex.new # serialise writes so two streams can't interleave mid-line
+      [stdout, stderr].map do |io|
+        Thread.new do
+          io.each_line { |line| lock.synchronize { puts line.chomp } }
         end
+      end.each(&:join)
 
-        # Optionally, you can handle errors by reading from stderr:
-        while err_line = stderr.gets
-
-          puts "🚨 Error: #{err_line}"
-        end
-
-        # Wait for the command to complete and fetch the exit status
-        exit_status = wait_thr.value
-        unless exit_status.success?
-
-          raise "Command failed with status (#{exit_status.exitstatus})"
-        end
+      exit_status = wait_thr.value
+      unless exit_status.success?
+        raise "Command failed with status #{exit_status.exitstatus}: #{command}"
+      end
     end
   end
 

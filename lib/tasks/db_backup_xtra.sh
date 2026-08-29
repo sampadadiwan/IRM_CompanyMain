@@ -169,7 +169,13 @@ restore_full() {
   retry 3 xbcloud "${XB_ARGS[@]}" get "$key" | xbstream -x -C "$dir"
 
   # Decompress the backup files. This is required if the backup was compressed.
-  xtrabackup --decompress --target-dir="$dir"
+  # --remove-original: delete each .zst as it is decompressed. Without it the
+  # compressed AND decompressed copies coexist for the whole staging step,
+  # doubling the peak disk requirement — on production (24G compressed, 25G
+  # decompressed) that alone is ~49G of staging, which is what put a 58G volume
+  # at "No space left on device". The .zst files are useless once expanded and
+  # re-downloadable from S3, so there is nothing to lose by dropping them.
+  xtrabackup --decompress --remove-original --target-dir="$dir"
 
   # Prepare the full backup. --apply-log-only is used because
   # incremental backups will be applied on top of this.
@@ -190,8 +196,8 @@ apply_incremental() {
   retry 3 xbcloud "${XB_ARGS[@]}" get "$key" \
     | xbstream -x -C "$incr_tmp_dir"
 
-  # Decompress the incremental backup files.
-  xtrabackup --decompress --target-dir="$incr_tmp_dir"
+  # Decompress the incremental backup files (see --remove-original note above).
+  xtrabackup --decompress --remove-original --target-dir="$incr_tmp_dir"
 
   # Apply the incremental logs to the staging directory using --incremental-dir.
   # This is the correct way to merge the delta files.
@@ -442,6 +448,32 @@ prune_parked_datadirs() {
   echo "→ Free space after pruning parked datadirs: $(df -h "$parent_dir" | tail -1 | awk '{print $4}')"
 }
 
+# Frees the CURRENT datadir before the restore stages anything.
+#
+# Restores never run in place, so this data is already destined for deletion by
+# restore_primary_datadir — doing it up front means the download does not have
+# to coexist with a full copy of the database being replaced. On production
+# that is the difference between needing ~3x the database size on one
+# filesystem and ~2x: a 25G database failed with "No space left on device" on a
+# 58G volume because the old datadir (25G), the compressed download (24G) and
+# the decompressed copy (25G) all had to fit at once.
+#
+# The trade-off, stated plainly: from here until restore_primary_datadir
+# finishes, this box has no local copy of the database. That is acceptable only
+# because restores run on new infrastructure or in DR, never against a box
+# holding data worth keeping — the source of truth is the backup chain in S3.
+purge_datadir() {
+  local datadir
+  datadir=$(mysql_datadir) || return 1
+  [[ -d "$datadir" ]] || return 0
+
+  echo "→ Freeing current datadir before staging: ${datadir} ($(sudo du -sh "$datadir" 2>/dev/null | awk '{print $1}'))"
+  # ${datadir:?} — refuse to expand to bare `rm -rf /` if the lookup ever
+  # returns empty despite the guard above
+  sudo rm -rf "${datadir:?}"
+  echo "→ Free space after freeing datadir: $(df -h "$(dirname "$datadir")" | tail -1 | awk '{print $4}')"
+}
+
 restore_primary_datadir() {
   local datadir
   datadir=$(mysql_datadir) || exit 1
@@ -623,6 +655,7 @@ main() {
       # Free space from earlier attempts BEFORE downloading/decompressing —
       # the download is what fills the disk, so this has to come first.
       prune_parked_datadirs
+      purge_datadir # frees the database being replaced, before staging needs the space
       restore_latest_chain
       restore_primary_datadir
       # A successful primary restore means this host now holds the real dataset:
@@ -661,6 +694,7 @@ main() {
       fi
       stop_mysql_server
       prune_parked_datadirs # same reason as restore_primary above
+      purge_datadir
       prepare_restore_from_keys "$full_key" "$incr_key"
       restore_primary_datadir
       # Same as restore_primary: a promoted host is the real primary — arm it.
