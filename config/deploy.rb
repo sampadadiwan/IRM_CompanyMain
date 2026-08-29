@@ -61,6 +61,26 @@ set :puma_systemctl_user, :system
 set :skip_notification, ENV['SKIP_NOTIFICATION'] == 'true'
 set :puma_service_unit_name, -> { "puma_#{fetch(:application)}_#{fetch(:rails_env)}" }
 
+# Take sidekiq's deploy lifecycle away from capistrano-sidekiq's default hooks.
+#
+# Those hooks drive sidekiq entirely through monit — `after deploy:updated ->
+# monit stop`, `after deploy:published -> monit start` — and EVERY monit CLI
+# action is asynchronous: the command signals the daemon and returns immediately
+# (measured at 0.13s), and the daemon acts on its next poll, which monitrc sets
+# to 60 seconds. So the deploy ran on ahead of a stop that had not happened yet,
+# deploy:cleanup deleted the outgoing release (keep_releases is 1 outside
+# production), and the still-running worker was left holding a deleted directory.
+# Ruby resolves `current` to a physical path at boot, so Zeitwerk kept autoloading
+# out of that deleted release and every lazily-loaded constant began raising
+# "cannot load such file" — while monit, whose `matching 'sidekiq .* '` matched
+# the orphan, reported the service healthy and never started a replacement.
+#
+# sidekiq:ensure_clean_restart (below) replaces them with a synchronous stop and
+# an explicit assertion that the surviving worker belongs to the new release.
+# This flag also gates the gem's monit monitor/unmonitor hooks, so the unmonitor
+# is re-declared by hand; ensure_clean_restart re-monitors on the way back up.
+set :sidekiq_default_hooks, false
+
 
 
 namespace :deploy do
@@ -130,6 +150,18 @@ namespace :deploy do
     end
   end
 
+  # Sidekiq's real deploy wiring. It used to hang off nginx:switch_app, which is
+  # NOT part of the normal deploy flow — nothing invokes it from a deploy:* stage;
+  # only the DR path and manual runs do (see docs/dr_review). So on an ordinary
+  # `cap <stage> deploy` the clean restart never fired at all, and sidekiq was
+  # left to the gem's async monit hooks that this replaces (see
+  # :sidekiq_default_hooks above). deploy:published is the first stage where the
+  # `current` symlink points at the new release, which is what the restart has to
+  # verify against; deploy:cleanup runs later, so the outgoing release still
+  # exists while the old worker is being shut down.
+  before 'deploy:updating', 'sidekiq:monit:unmonitor'
+  after 'deploy:published', 'sidekiq:ensure_clean_restart'
+
   before 'deploy:updated', 'IRM:set_rails_master_key'
   # before "deploy:updated", :ensure_rails_credentials
   # before 'deploy:finished', 'sidekiq:restart' # This is handled by the capistrano-sidekiq gem
@@ -175,6 +207,14 @@ namespace :sidekiq do
       service     = "sidekiq_IRM_#{fetch(:stage)}"
       stop_script = "#{shared_path}/bin/sidekiq_stop.sh"
 
+      # The script is installed by IRM:setup, which a normal deploy does NOT run.
+      # A stage that has not had IRM:setup since this change lands would otherwise
+      # fail here on a bare "No such file or directory"; say what to do instead.
+      unless test("[ -x #{stop_script} ]")
+        raise "#{stop_script} is missing — run `bundle exec cap #{fetch(:stage)}_#{fetch(:env_variant)} IRM:setup` " \
+              'once on this stage to install it along with the matching monit config'
+      end
+
       # Run the stop script directly instead of going through `monit stop`. Monit
       # swallows the script's exit status and output, and this is precisely the
       # step whose silent failure left orphaned workers running against release
@@ -182,22 +222,53 @@ namespace :sidekiq do
       # exit aborts the deploy instead of being discovered days later in a job.
       execute stop_script
 
-      execute :sudo, :monit, :monitor, service
-      execute :sudo, :monit, :start, service
+      # Start sidekiq directly rather than via `monit start`. Every monit CLI
+      # action is ASYNCHRONOUS — the command signals the daemon and returns
+      # (measured at 0.13s) and the daemon acts on its next poll, `set daemon 60`
+      # in monitrc. Going through monit here would make a "clean restart" mean
+      # "a restart that will probably have happened within a minute", which is
+      # exactly the uncertainty that made this so hard to pin down: `monit status`
+      # reports "OK - restart pending" and the pid looks unchanged. Starting it
+      # ourselves makes the task deterministic and lets the verification below
+      # mean something. `monit monitor` afterwards hands supervision back — its
+      # `matching 'sidekiq .* '` adopts whatever process is running.
+      #
+      # This start line duplicates the one in the monit template and in
+      # config/schedule.rb. Keep the three in sync (MALLOC_ARENA_MAX especially).
+      # < /dev/null detaches stdin so SSHKit's channel closes instead of hanging
+      # on the backgrounded process.
+      start_cmd = "cd #{current_path} && MALLOC_ARENA_MAX=2 ~/.rvm/bin/rvm default do " \
+                  "bundle exec sidekiq -e #{fetch(:stage)} " \
+                  ">> #{shared_path}/log/sidekiq.log 2>&1 < /dev/null & sleep 3"
+      execute :bash, '-lc', "'#{start_cmd}'"
 
-      # `monit start` returns as soon as it has forked the start program, so poll
-      # for the worker rather than asserting immediately. Then check the cwd of
-      # every sidekiq on the box against the release we just published: Ruby
-      # resolves the `current` symlink to a physical path at boot, so a worker
-      # left over from an earlier release reports that older (often deleted) path
-      # and is caught here. This is the assertion the deploy never made before.
+      execute :sudo, :monit, :monitor, service
+
+      # The start above is synchronous, but sidekiq still has to get through rvm,
+      # bundler and a full eager-load before it sets its proctitle and becomes
+      # visible to pgrep, so poll rather than asserting immediately. 120s is
+      # generous headroom over a cold boot on this box.
+      #
+      # Then check the cwd of every sidekiq on the box against the release we just
+      # published: Ruby resolves the `current` symlink to a physical path at boot,
+      # so a worker left over from an earlier release reports that older (often
+      # deleted) path. This is the assertion the deploy never made before.
+      # --dry-run swaps in SSHKit's Printer backend, which echoes commands but
+      # returns "" from every capture. The checks below would then always conclude
+      # no worker exists and fail the dry run — there is nothing real to assert
+      # about a deploy that never ran, so stop here.
+      if fetch(:sshkit_backend) == SSHKit::Backend::Printer
+        info 'dry run: skipping sidekiq worker verification'
+        next
+      end
+
       release = capture(:readlink, '-f', current_path).strip
-      probe   = "for i in $(seq 20); do pgrep -f '^sidekiq ' >/dev/null && break; sleep 2; done; " \
+      probe   = "for i in $(seq 60); do pgrep -f '^sidekiq ' >/dev/null && break; sleep 2; done; " \
                 "for p in $(pgrep -f '^sidekiq ' || true); do echo \"$p $(readlink /proc/$p/cwd 2>/dev/null || echo UNKNOWN)\"; done"
 
       workers = capture(probe).lines.map(&:strip).reject(&:empty?).map { |line| line.split(' ', 2) }
 
-      raise "sidekiq did not come up after `monit start #{service}` — check #{shared_path}/log/sidekiq.log" if workers.empty?
+      raise "sidekiq did not come up within 120s of being started — check #{shared_path}/log/sidekiq.log" if workers.empty?
 
       # readlink reports a removed directory as "/path/to/release (deleted)", so a
       # stale worker never compares equal to the live release path.
