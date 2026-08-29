@@ -7,5 +7,13 @@
   # the OS. Two arenas is the standard Ruby-server setting (same default Heroku
   # applies) and typically cuts steady-state Sidekiq RSS substantially.
   start program = "/bin/su - ubuntu -c 'cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 ~/.rvm/bin/rvm default do bundle exec sidekiq -e <%= fetch(:stage) %>     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 &'" with timeout 30 seconds
-  stop program = "/bin/su - ubuntu -c 'ps -ax | grep "sidekiq .* " | grep -v grep | awk "{print \$1}" | xargs --no-run-if-empty kill'" with timeout 10 seconds
+  # Delegated to a script (uploaded by IRM:setup) rather than inlined. The old
+  # inline pipeline sent a bare SIGTERM and gave up after 10 seconds, which is
+  # LESS than Sidekiq's own 25s graceful-shutdown timeout — so monit declared the
+  # stop failed while Sidekiq was still draining normally, then ran the start
+  # program anyway and left two workers behind. The survivor's release directory
+  # is deleted by the next deploy:cleanup, after which every lazy Zeitwerk
+  # autoload inside it raises "cannot load such file". See the script header.
+  # The 60s here must stay above SIDEKIQ_STOP_GRACE (45s) inside the script.
+  stop program = "/bin/su - ubuntu -c '/home/ubuntu/IRM/shared/bin/sidekiq_stop.sh'" with timeout 60 seconds
   group IRM-sidekiq

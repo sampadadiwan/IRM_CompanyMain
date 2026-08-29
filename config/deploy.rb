@@ -168,6 +168,55 @@ namespace :puma do
   end
 end
 
+namespace :sidekiq do
+  desc 'Stop sidekiq for real, start it on the new release, and prove exactly one worker is running there'
+  task :ensure_clean_restart do
+    on roles(:app) do
+      service     = "sidekiq_IRM_#{fetch(:stage)}"
+      stop_script = "#{shared_path}/bin/sidekiq_stop.sh"
+
+      # Run the stop script directly instead of going through `monit stop`. Monit
+      # swallows the script's exit status and output, and this is precisely the
+      # step whose silent failure left orphaned workers running against release
+      # directories that deploy:cleanup had already deleted. Run here, a non-zero
+      # exit aborts the deploy instead of being discovered days later in a job.
+      execute stop_script
+
+      execute :sudo, :monit, :monitor, service
+      execute :sudo, :monit, :start, service
+
+      # `monit start` returns as soon as it has forked the start program, so poll
+      # for the worker rather than asserting immediately. Then check the cwd of
+      # every sidekiq on the box against the release we just published: Ruby
+      # resolves the `current` symlink to a physical path at boot, so a worker
+      # left over from an earlier release reports that older (often deleted) path
+      # and is caught here. This is the assertion the deploy never made before.
+      release = capture(:readlink, '-f', current_path).strip
+      probe   = "for i in $(seq 20); do pgrep -f '^sidekiq ' >/dev/null && break; sleep 2; done; " \
+                "for p in $(pgrep -f '^sidekiq ' || true); do echo \"$p $(readlink /proc/$p/cwd 2>/dev/null || echo UNKNOWN)\"; done"
+
+      workers = capture(probe).lines.map(&:strip).reject(&:empty?).map { |line| line.split(' ', 2) }
+
+      raise "sidekiq did not come up after `monit start #{service}` — check #{shared_path}/log/sidekiq.log" if workers.empty?
+
+      # readlink reports a removed directory as "/path/to/release (deleted)", so a
+      # stale worker never compares equal to the live release path.
+      stale = workers.reject { |(_pid, cwd)| cwd == release }
+      unless stale.empty?
+        raise "sidekiq workers are running outside the current release #{release}: " \
+              "#{stale.map { |(pid, cwd)| "pid #{pid} cwd=#{cwd}" }.join(', ')}"
+      end
+
+      if workers.size > 1
+        raise "expected 1 sidekiq worker, found #{workers.size} (pids #{workers.map(&:first).join(', ')}) — " \
+              'duplicates split the queue and only some of them can load the new code'
+      end
+
+      info "sidekiq: 1 worker (pid #{workers.first.first}) running on #{release}"
+    end
+  end
+end
+
 namespace :nginx do
   desc 'Switch nginx configuration to maintenance or IRM_production'
   task :switch_maintenance do
@@ -181,9 +230,15 @@ namespace :nginx do
     end
   end
 
+  # Order matters: stop BEFORE unmonitor. `sidekiq:stop` is capistrano-sidekiq's
+  # monit task (`monit stop sidekiq_IRM_<stage>`), and it was previously declared
+  # after the unmonitor — asking monit to act on a service it had just been told
+  # to stop supervising. Capistrano runs before-hooks in declaration order, so the
+  # stop was reduced to a no-op and the old worker walked straight through the
+  # deploy. Unmonitor afterwards, so monit does not race us by restarting it.
+  before 'nginx:switch_maintenance', 'sidekiq:stop'
   before 'nginx:switch_maintenance', 'sidekiq:monit:unmonitor'
   # before 'nginx:switch_maintenance', 'puma:monit:unmonitor'
-  before 'nginx:switch_maintenance', 'sidekiq:stop'
   before 'nginx:switch_maintenance', 'puma:stop'
 
   task :switch_app do
@@ -194,7 +249,7 @@ namespace :nginx do
     end
   end
 
-  after 'nginx:switch_app', 'sidekiq:restart'
+  after 'nginx:switch_app', 'sidekiq:ensure_clean_restart'
   after 'nginx:switch_app', 'puma:ensure_clean_restart'
   before 'nginx:switch_app', 'sidekiq:monit:monitor'
   # before 'nginx:switch_app', 'puma:monit:monitor'
@@ -494,6 +549,14 @@ namespace :IRM do
       # here is what makes removing that cron entry safe.
       execute :sudo, "systemctl daemon-reload"
       execute :sudo, "systemctl enable #{fetch(:puma_service_unit_name)}"
+
+      # For Sidekiq: the stop script MUST land before the monit config that
+      # references it, or monit's first stop attempt runs a missing file and
+      # silently leaves the old worker alive — the exact failure this replaces.
+      execute :mkdir, "-p", "#{shared_path}/bin"
+      upload! StringIO.new(File.read('./config/deploy/templates/sidekiq_stop.sh')),
+              "#{shared_path}/bin/sidekiq_stop.sh"
+      execute :chmod, "755", "#{shared_path}/bin/sidekiq_stop.sh"
 
       # For Sidekiq Monit config
       local_sidekiq_monit = "/tmp/sidekiq_IRM_#{fetch(:stage)}.conf"
