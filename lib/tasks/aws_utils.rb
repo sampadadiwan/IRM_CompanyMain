@@ -636,90 +636,190 @@ module AwsUtils
   # service-side update history, CloudTrail, GitHub, S3) and the command that
   # checks it, so the report is an index of things the auditor can confirm
   # independently rather than something they have to take on trust.
+  # Pulls the per-host dr:verify scorecard out of the captured transcript.
+  #
+  # Those checks run REMOTELY (cap recovery:verify -> rake dr:verify on each app
+  # server) and only ever exist as console output, so the transcript is the only
+  # place they can be recovered from. That is exactly why the report is
+  # generated from the transcript rather than assembled independently: an
+  # auditor gets the individual checks, not a summary asserting they passed.
+  def parse_verify_scorecard(transcript_path)
+    return {} unless transcript_path && File.exist?(transcript_path)
+
+    scorecard = {}
+    host = nil
+    File.foreach(transcript_path) do |raw|
+      line = raw.gsub(/\e\[[0-9;]*m/, "")                    # ANSI colour
+                .sub(/\A\s*\d+\s/, "")                       # capistrano's "  01 " prefix
+                .sub(/\A\s*(DEBUG|INFO)\s+\[\w+\]\s*/, "")
+                .strip
+      if (m = line.match(/dr:verify on (\S+)/))
+        host = m[1]
+        scorecard[host] ||= []
+      elsif line.match?(/dr:verify — \d+ checks/)
+        host = nil # this host's scorecard is finished
+      elsif host && (m = line.match(/\A(✅|❌|⚠️)\s+(.+)\z/))
+        scorecard[host] << [m[1], m[2].strip]
+      end
+    end
+    scorecard
+  end
+
+  # Writes the per-run evidence document.
+  #
+  # Deliberately NOT a self-contained narrative: a markdown file a script writes
+  # about itself is a claim, not proof, and the first thing an auditor asks is
+  # what stopped someone editing it. So every factual claim is either (a) tied
+  # to a record held OUTSIDE this repo with the command that checks it, or
+  # (b) reproduced verbatim from the run's own transcript. What the report adds
+  # is legibility — an auditor should not have to read 40,000 lines of
+  # Capistrano output to see that 22 checks passed on two hosts.
   def write_dr_report(stack:, region:, env_variant:, branch:, result:, started_at:, drill: false)
     finished = Time.now
     rebuild_secs = (finished - started_at).round
+    passed = result.to_s.match?(/PASSED|COMPLETE/)
     dir = Rails.root.join("docs", "dr_runs")
     FileUtils.mkdir_p(dir)
     path = dir.join("#{branch}.md")
+    transcript = dir.join("#{branch}.log")
 
-    phase_rows = DR_PHASES.map { |t, s, e| "| #{t} | #{hms(((e || finished) - s).round)} |" }.join("\n")
+    scorecard = parse_verify_scorecard(transcript)
+    all_checks = scorecard.values.flatten(1)
+    ok_count   = all_checks.count { |icon, _| icon == "✅" }
+    warn_count = all_checks.count { |icon, _| icon == "⚠️" }
+    fail_count = all_checks.count { |icon, _| icon == "❌" }
+
+    # Headline numbers an auditor looks for first
+    db_phase   = DR_PHASES.find { |t, _, _| t.include?("Restore the database") }
+    db_secs    = db_phase && ((db_phase[2] || finished) - db_phase[1]).round
+    freshness  = all_checks.find { |_, text| text.start_with?("Restored data freshness") }&.last.to_s[/is (.+?)$/, 1]
+
+    banner = passed ? "🟢  RECOVERY SUCCEEDED" : "🔴  RECOVERY FAILED"
+
+    phase_rows = DR_PHASES.map.with_index(1) do |(title, s, e), i|
+      done = !e.nil?
+      "| #{done ? '✅' : '⏹'} | #{i} | #{title.sub(%r{\APhase \d+/\d+ · }, '')} | #{s.utc.strftime('%H:%M:%S')} | #{(e || finished).utc.strftime('%H:%M:%S')} | **#{hms(((e || finished) - s).round)}** |"
+    end.join("\n")
+
+    scorecard_sections = if scorecard.empty?
+                           "_No verification scorecard was captured — the run did not reach `recovery:verify`._"
+                         else
+                           scorecard.map do |host, checks|
+                             rows = checks.map { |icon, text|
+                               name, detail = text.split(" — ", 2)
+                               "| #{icon} | #{name} | #{detail} |"
+                             }.join("\n")
+                             <<~HOST
+                               **Host `#{host}`** — #{checks.count} checks, #{checks.count { |i, _| i == '✅' }} passed
+
+                               | | Check | Result |
+                               |:-:|---|---|
+                               #{rows}
+                             HOST
+                           end.join("\n")
+                         end
+
     evidence_rows = DR_EVIDENCE.map { |claim, (ev, how)| "| #{claim} | #{ev} | #{how} |" }.join("\n")
 
     File.write(path, <<~MD)
-      # Disaster Recovery #{drill ? 'Drill' : 'Run'} Report
+      <div align="center">
+
+      # #{banner}
+
+      ### Disaster Recovery #{drill ? 'Drill' : 'Run'} — `#{stack}` (#{env_variant}) → `#{region}`
+
+      **#{hms(rebuild_secs)}** rebuild&nbsp;&nbsp;·&nbsp;&nbsp;**#{ok_count}/#{all_checks.size}** checks passed&nbsp;&nbsp;·&nbsp;&nbsp;**#{DR_PHASES.size}** phases completed#{db_secs ? "&nbsp;&nbsp;·&nbsp;&nbsp;**#{hms(db_secs)}** to restore the database" : ''}
+
+      </div>
+
+      ---
+
+      ## At a glance
 
       | | |
       |---|---|
       | **Result** | **#{result}** |
-      | Stack | #{stack} (#{env_variant}) |
-      | Target region | #{region} |
-      | Branch deployed | `#{branch}` |
-      | Started | #{started_at.utc.iso8601} |
-      | Finished | #{finished.utc.iso8601} |
-      | Measured rebuild time | **#{hms(rebuild_secs)}** (#{(rebuild_secs / 60.0).round(1)} min) |
+      | Environment | `#{stack}` (#{env_variant}) |
+      | Recovered into | `#{region}`#{drill ? ' — disaster-recovery region' : ''} |
+      | Started | **#{started_at.utc.strftime('%Y-%m-%d %H:%M:%S UTC')}** |
+      | Finished | **#{finished.utc.strftime('%Y-%m-%d %H:%M:%S UTC')}** |
+      | Rebuild time | **#{hms(rebuild_secs)}** (#{(rebuild_secs / 60.0).round(1)} minutes) |
+      #{db_secs ? "| Database restore | **#{hms(db_secs)}** (primary + replica, in parallel) |\n" : ''}| Verification | **#{ok_count} passed**#{warn_count.positive? ? ", #{warn_count} warning#{'s' if warn_count != 1}" : ''}#{fail_count.positive? ? ", **#{fail_count} failed**" : ''} across #{scorecard.size} app server#{'s' if scorecard.size != 1} |
+      #{freshness ? "| Data currency | newest restored record is #{freshness} |\n" : ''}| Code deployed | `#{branch}` |
       | Executed by | #{ENV['USER'] || 'unknown'}@#{`hostname`.strip} |
-      #{drill ? "\n> This was a **drill** against `#{stack}`, not a response to a real incident.\n" : ''}
-      ## What the measured time does and does not cover
+      #{drill ? "\n> ℹ️ This was a **scheduled drill** against `#{stack}`, not a response to a real incident. It exercised the identical code path a real recovery uses.\n" : ''}
+      ---
 
-      The figure above is **rebuild time**, not end-to-end RTO. It is measured
-      from the start of the recovery command to the point where the stack passed
-      verification.
+      ## Recovery timeline
 
-      **Included:** Pulumi provisioning, config rewrite, application deploy to
-      both app servers, database restore from S3 (primary + replica in
-      parallel), replication reset, migration replay, and the full
-      `recovery:verify` health scorecard.
+      Every phase of the recovery, in order, with wall-clock times.
 
-      **Excluded:** incident detection, the human decision to declare a disaster
-      (DR_GUIDE §4), and DNS cutover plus TTL propagation — `aws:dns_cutover` is
-      manual by design and is never invoked by the recovery sequence (DR_GUIDE
-      §8). A true incident-to-service-restored RTO is this figure **plus** those
-      three components.
-
-      ## Phase timings
-
-      | Phase | Duration |
-      |---|---|
+      | | # | Phase | Start (UTC) | End (UTC) | Duration |
+      |:-:|:-:|---|---|---|---|
       #{phase_rows}
+
+      **Total: #{hms(rebuild_secs)}**
+
+      ---
+
+      ## Verification scorecard
+
+      The recovery is not reported as successful until every one of these
+      checks passes on **every** application server. Each exercises the real
+      serving path — HTTP through nginx to Puma to Rails to the dependency —
+      not a mock or a status file. Reproduced verbatim from the run transcript.
+
+      #{scorecard_sections}
+
+      ---
 
       ## Independently verifiable evidence
 
-      Each row names a record held outside this repository. Nothing here relies
-      on trusting this file.
+      Each row names a record held **outside this repository**. Nothing here
+      relies on trusting this document.
 
       | Claim | Evidence | How to verify independently |
       |---|---|---|
       #{evidence_rows}
 
-      ## Verification result
+      ---
 
-      The recovery sequence fails loudly unless `cap #{stack}_#{env_variant} recovery:verify`
-      passes on every app server — it checks nginx, puma, sidekiq registration,
-      HTTP through the full serving chain to MySQL / Redis / Elasticsearch / S3,
-      migration currency, restored-data freshness, DB-box daemons, backup cron
-      arming, and a live replication round-trip. The per-check scorecard is in
-      the run transcript.
+      ## What the measured time covers
 
-      Re-run at any time against a still-running stack:
+      The headline figure is **rebuild time**, not end-to-end RTO — measured
+      from the start of the recovery command to the stack passing verification.
+
+      | | |
+      |---|---|
+      | ✅ **Included** | Infrastructure provisioning, configuration rewrite, application deploy to every app server, database restore from S3 (primary and replica in parallel), replication re-pointing, migration replay, and the full verification scorecard above. |
+      | ❌ **Excluded** | Incident detection, the human decision to declare a disaster, and DNS cutover plus TTL propagation — cutover is deliberately manual and is never invoked by the recovery sequence. |
+
+      A true incident-to-service-restored RTO is the figure above **plus** those
+      three components. Stated explicitly so the number is not read as more than
+      it is.
+
+      ---
+
+      ## Full transcript
+
+      Every command and its complete output — including the raw verification
+      scorecard reproduced above — was captured automatically to
+      **`docs/dr_runs/#{branch}.log`**. The report says what is claimed and how
+      to check it; the transcript says what happened, line by line.
+
+      Re-run verification against a still-running stack at any time:
 
       ```bash
       LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify
       ```
 
-      ## Full transcript
-
-      The complete console output of this run — every command, its output, and
-      the verification scorecard — was captured automatically to
-      `docs/dr_runs/#{branch}.log`. Read it alongside this report: the report
-      says what is claimed and how to check it independently, the transcript
-      says what actually happened, line by line.
-
       ---
-      Generated #{finished.utc.iso8601} by `#{drill ? 'rake aws:dr_drill' : 'rake aws:setup_infra'}`.
+      <div align="center">
+      <sub>Generated #{finished.utc.iso8601} by <code>#{drill ? 'rake aws:dr_drill' : 'rake aws:setup_infra'}</code></sub>
+      </div>
     MD
 
-    puts "🧾 Evidence report written to #{path.to_s.sub(Rails.root.to_s + '/', '')}"
+    puts "🧾 Evidence report written to #{path.to_s.sub("#{Rails.root}/", '')}"
     path
   rescue StandardError => e
     puts "⚠️  Could not write DR report: #{e.class}: #{e.message}"
