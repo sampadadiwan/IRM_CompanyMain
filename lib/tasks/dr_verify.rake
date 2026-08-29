@@ -78,7 +78,29 @@ namespace :dr do
     # redirect (https://localhost would be connection-refused → HTTP 000).
     # Retries: puma:restart fires seconds before this task (same
     # nginx:switch_app hook), so give a rebooting puma up to 30s per endpoint.
-    host_header = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first
+    # The Host header has to address the APP, not the marketing website.
+    #
+    # On production DOMAIN is the apex (caphive.com), which is also the first
+    # entry in WEBSITE_HOSTS — so both nginx (which serves the apex straight
+    # from public/website) and the Website middleware answer with the static
+    # site, and every health-check URL comes back 404. Staging never hit this
+    # because its DOMAIN is already a tenant subdomain (dev.altconnects.com)
+    # and so is absent from its WEBSITE_HOSTS.
+    #
+    # Verified on a production DR box: Host caphive.com -> 404,
+    # www.caphive.com -> 301, app.caphive.com -> 200.
+    #
+    # Same convention as aws:dns_cutover — production is app.<domain>,
+    # anything else dev.<domain> — applied ONLY when DOMAIN is a website host,
+    # so a DOMAIN that already names the app is left untouched.
+    domain = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first
+    website_hosts = ENV["WEBSITE_HOSTS"].to_s.split(",").map(&:strip).reject(&:empty?)
+    host_header = if website_hosts.include?(domain)
+                    "#{Rails.env.production? ? 'app' : 'dev'}.#{domain.sub(/\Awww\./, '')}"
+                  else
+                    domain
+                  end
+    puts "🌐 Health checks will use Host: #{host_header}"
     http = lambda do |path, attempts: 6|
       code = nil
       attempts.times do |i|
