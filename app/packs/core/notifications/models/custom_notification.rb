@@ -145,6 +145,39 @@ class CustomNotification < ApplicationRecord
     mailer_classes.find { |klass| klass.instance_methods(false).map(&:to_s).include?(method_name.to_s) } || mailer_classes.first
   end
 
+  # Best-guess "first available record" this notification could actually render against,
+  # for the Preview button on custom_notifications#show. Mirrors mailer_classes' branching
+  # order/coverage. Returns [record, route_helper_symbol, extra_route_params] — record is
+  # nil when for_type/owner_type has no preview route wired up yet (Send Document,
+  # InvestmentOpportunity, Deal, SecondarySale) or there's simply nothing to preview against.
+  def first_preview_target
+    if for_type == "InvestorKyc"
+      [owner.try(:investor_kycs)&.first, :preview_investor_kyc_path, {}]
+    elsif for_type == "Send Document" || for_type == "InvestmentOpportunity"
+      # No preview route wired up yet for these — checked ahead of the owner_type
+      # branches below (mirroring mailer_classes' order) so a Fund/Entity-owned
+      # notification of one of these for_types doesn't fall through and wrongly
+      # resolve a CapitalCommitment/CapitalRemittance target instead.
+      [nil, nil, {}]
+    elsif owner_type == "CapitalCall" || for_type == "CapitalCall"
+      if mailer_class_for(email_method) == CapitalRemittancePaymentMailer
+        [owner.capital_remittances.first&.capital_remittance_payments&.first, :preview_capital_remittance_payment_path, {}]
+      else
+        [owner.capital_remittances.first, :preview_capital_remittance_path, {}]
+      end
+    elsif owner_type == "CapitalDistribution" || for_type == "CapitalDistribution"
+      [owner.capital_distribution_payments.first, :preview_capital_distribution_payment_path, {}]
+    elsif owner_type == "Fund" && email_method == "adhoc_kyc_notification"
+      [owner.investor_kycs.distinct.first, :preview_investor_kyc_path, { fund_id: owner.id }]
+    elsif owner_type == "Fund"
+      [owner.capital_commitments.first, :preview_capital_commitment_path, {}]
+    elsif owner_type == "Approval"
+      [owner.approval_responses.first, :preview_approval_response_path, {}]
+    else
+      [nil, nil, {}]
+    end
+  end
+
   def placeholders_for(method_name)
     klass = mailer_class_for(method_name)
     return [] unless klass

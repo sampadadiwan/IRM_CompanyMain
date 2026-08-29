@@ -345,6 +345,53 @@ Scenario Outline: Creating a distribution-specific notification warns when the f
 
 
 @notification
+Scenario: Preview button on a custom notification shows the rendered email for the first available record
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "name=SAAS Fund" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  Given there is an adhoc custom notification for the fund with subject "Q4 Update"
+  Given I visit the custom notification show page
+  Then I see a Preview button on the custom notification page
+  When I click the Preview button on the custom notification page
+  Then I see the notification preview with subject "Q4 Update"
+
+
+@notification
+Scenario: Preview button is hidden when there is no record yet to preview against
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  Given there is an adhoc custom notification for the fund with subject "No Commitments Yet"
+  Given I visit the custom notification show page
+  Then I do not see a Preview button on the custom notification page
+
+
+@notification
+Scenario: Preview button is hidden for a Send Document notification, which has no preview route wired up yet
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  Given there is a Custom Notification for the entity
+  Given I visit the custom notification show page
+  Then I do not see a Preview button on the custom notification page
+
+
+@notification
+Scenario: Preview button resolves a KYC notification to the investor's own InvestorKyc record
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "name=Investor 1" with "1" users
+  Given there is a custom notification "subject=KYC New 1;email_method=notify_kyc_required" in place for the KYC
+  Given a InvestorKyc is created with details "PAN=ABCD9870;send_kyc_form_to_user=true" by "false"
+  Given I visit the custom notification show page
+  Then I see a Preview button on the custom notification page
+  When I click the Preview button on the custom notification page
+  Then I see the notification preview with subject "KYC New 1"
+
+
+@notification
 Scenario Outline: Capital distribution specific notification overrides the fund-level default
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
