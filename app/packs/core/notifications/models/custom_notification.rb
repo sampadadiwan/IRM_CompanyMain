@@ -92,9 +92,8 @@ class CustomNotification < ApplicationRecord
       [CapitalDistributionPaymentsMailer]
     elsif owner_type == "Fund"
       # FundInvestorKycMailer backs the "adhoc_kyc_notification" email_method (one email
-      # per unique InvestorKyc, deduped across commitments that share one) — kept second
-      # so mailer_class_for's fallback (mailer_classes.first) still resolves the
-      # inherited-only "adhoc_notification" to CapitalCommitmentMailer.
+      # per unique InvestorKyc, deduped across commitments that share one); CapitalCommitmentMailer
+      # backs "adhoc_fund_notification" (its own explicit method, mirroring adhoc_kyc_notification).
       [CapitalCommitmentMailer, FundInvestorKycMailer]
     elsif owner_type == "Deal"
       [DealMailer]
@@ -119,12 +118,11 @@ class CustomNotification < ApplicationRecord
                      elsif owner_type == "CapitalDistribution" || for_type == "CapitalDistribution"
                        mailer_classes.first.instance_methods(false).map(&:to_s)
                      elsif owner_type == "Fund"
-                       # flat_map across both Fund mailers so FundInvestorKycMailer's own
-                       # adhoc_kyc_notification method is discovered automatically.
-                       # "adhoc_notification" is still appended manually because it's
-                       # inherited-only on CapitalCommitmentMailer (never redefined there),
-                       # so it never shows up via instance_methods(false).
-                       mailer_classes.flat_map { |klass| klass.instance_methods(false).map(&:to_s) } + ["adhoc_notification"]
+                       # flat_map across both Fund mailers so CapitalCommitmentMailer's own
+                       # adhoc_fund_notification and FundInvestorKycMailer's own
+                       # adhoc_kyc_notification methods are both discovered automatically
+                       # via instance_methods(false).
+                       mailer_classes.flat_map { |klass| klass.instance_methods(false).map(&:to_s) }
                      elsif owner_type == "Deal"
                        %w[adhoc_notification deal_activity_move]
                      elsif owner

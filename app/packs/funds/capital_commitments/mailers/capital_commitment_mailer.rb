@@ -22,8 +22,17 @@ class CapitalCommitmentMailer < ApplicationMailer
     @subject = @custom_notification&.subject || @notification&.message
   end
 
-  # We can add more specific notification methods here if needed
-  # For now, adhoc_notification from ApplicationMailer is used by FundCommitmentNotifier
+  # Defined explicitly (rather than relying on ApplicationMailer's generic
+  # adhoc_notification) so this is its own distinct email_method — "adhoc_fund_notification" —
+  # discoverable by CustomNotification#email_methods via instance_methods(false) (see
+  # custom_notification.rb), the same pattern FundInvestorKycMailer uses for its own
+  # "adhoc_kyc_notification". Renders the same shared application_mailer/adhoc_notification
+  # template as the generic ApplicationMailer#adhoc_notification action (still used as-is by
+  # DealMailer/SecondarySaleMailer) — only the method name (and therefore the stored
+  # email_method / dropdown label "Adhoc Fund Notification") is Fund-specific.
+  def adhoc_fund_notification
+    send_mail(subject: @custom_notification.subject, template_path: 'application_mailer', template_name: 'adhoc_notification')
+  end
 
   private
 
