@@ -48,6 +48,24 @@ namespace :db do
     # config/deploy/staging_in.rb's ssh_options, which disables it for the
     # same reason.
     Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) do |ssh|
+      # Clear staging left behind by a PREVIOUS failed restore, before anything
+      # else touches the box.
+      #
+      # Each attempt stages the backup in /tmp/xb_<pid> — tens of GB on
+      # production — and an aborted run never reaches the script's own
+      # cleanup(). Two failures in a row therefore fill the disk to 0 bytes, at
+      # which point the next attempt cannot even SCP this 24KB script onto the
+      # box: DR becomes unrecoverable without someone SSHing in by hand, which
+      # is the worst possible time to need manual intervention. Found on both
+      # staging and production DB boxes during the 2026-08-29 drills.
+      #
+      # Runs over the already-open SSH session and needs no disk space itself.
+      stale = ssh.exec!("sudo du -shc /tmp/xb_* 2>/dev/null | tail -1 | awk '{print $1}'").to_s.strip
+      unless stale.empty?
+        puts "#{prefix}🧹 Clearing #{stale} of staging left by a previous failed restore (/tmp/xb_*)"
+        ssh.exec!("sudo rm -rf /tmp/xb_*")
+      end
+
       # Instances from pre-bake AMIs (no rebake since the backup tooling was
       # added to the Packer template) don't have the baked script — bridge by
       # generating the env-specific script here and uploading it. Same script,
