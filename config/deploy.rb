@@ -144,6 +144,95 @@ namespace :puma do
       execute "mkdir #{shared_path}/tmp/pids -p"
     end
   end
+
+  # Kills any process bound to the puma unix socket that systemd does NOT
+  # consider part of #{puma_service_unit_name}.service. `systemctl restart`
+  # only has authority over processes it itself started — it has no idea a
+  # process from some other launcher (a cron @reboot entry, a stray manual
+  # start, anything) exists, so it can't stop one, and a fresh puma then
+  # fails to bind the socket (EADDRINUSE) and crash-loops while the rogue
+  # process keeps serving whatever release it happened to load at its own
+  # boot. This is exactly how a week-old release stayed live and silently
+  # failing DB/Redis/ES health checks through many deploys — the systemd
+  # unit reported success every time. cgroup.procs is systemd's own record
+  # of unit membership, so it's the authoritative way to tell "the unit's
+  # own worker" from "an impostor holding the same socket."
+  #
+  # Returns the list of PIDs it killed (empty if none) — callers use that to
+  # decide whether a retry is warranted, rather than re-invoking this on
+  # every poll tick: killing on every tick would also catch legitimately
+  # still-forking new workers in a detection race (ss reflects a new
+  # listener a moment before cgroup.procs catches up), which would make the
+  # master refork them and never actually let the state settle.
+  def kill_stray_puma_socket_holders
+    unit = fetch(:puma_service_unit_name)
+    holder_pids = capture(
+      "sudo ss -xlp 2>/dev/null | grep -F #{fetch(:puma_bind).sub('unix://', '')} | grep -oP 'pid=\\K[0-9]+' | sort -u",
+      raise_on_non_zero_exit: false
+    ).split("\n")
+    return [] if holder_pids.empty?
+
+    owned_pids = capture(
+      "sudo cat /sys/fs/cgroup/system.slice/#{unit}.service/cgroup.procs 2>/dev/null",
+      raise_on_non_zero_exit: false
+    ).split("\n")
+    rogue = holder_pids - owned_pids
+    return [] if rogue.empty?
+
+    error "🚨 puma socket held by #{rogue.size} process(es) NOT owned by systemd unit " \
+          "#{unit} (#{rogue.join(', ')}) — killing. Investigate what started them; " \
+          "this should be impossible now that config/schedule.rb no longer double-launches puma."
+    rogue.each { |pid| execute :sudo, :kill, "-9", pid }
+    rogue
+  end
+
+  def puma_socket_exclusively_owned?
+    unit = fetch(:puma_service_unit_name)
+    holder_pids = capture(
+      "sudo ss -xlp 2>/dev/null | grep -F #{fetch(:puma_bind).sub('unix://', '')} | grep -oP 'pid=\\K[0-9]+' | sort -u",
+      raise_on_non_zero_exit: false
+    ).split("\n")
+    return false if holder_pids.empty? # not up yet
+
+    owned_pids = capture(
+      "sudo cat /sys/fs/cgroup/system.slice/#{unit}.service/cgroup.procs 2>/dev/null",
+      raise_on_non_zero_exit: false
+    ).split("\n")
+    (holder_pids - owned_pids).empty?
+  end
+
+  desc 'Restart puma via systemd, killing any non-systemd process squatting on the socket first, and verify it actually took'
+  task :ensure_clean_restart do
+    on roles(:app) do
+      unit = fetch(:puma_service_unit_name)
+      kill_stray_puma_socket_holders
+      execute :sudo, "systemctl restart #{unit}"
+      sleep 3 # let the master fork its workers before the first check
+
+      # "restart" returning success only means systemd accepted the job, not
+      # that the new process actually ended up owning the socket. Poll
+      # READ-ONLY here — do not kill on every tick, that's what caused the
+      # flapping bug above. Only escalate to a second kill+restart if the
+      # socket is still not exclusive after giving it a real chance to settle.
+      clean = 15.times.any? do |i|
+        sleep 1 if i.positive?
+        puma_socket_exclusively_owned?
+      end
+
+      unless clean
+        warn "⚠️ puma socket not exclusively owned after the first restart — retrying once"
+        kill_stray_puma_socket_holders
+        execute :sudo, "systemctl restart #{unit}"
+        sleep 3
+        clean = 15.times.any? do |i|
+          sleep 1 if i.positive?
+          puma_socket_exclusively_owned?
+        end
+      end
+
+      raise "puma socket is still not exclusively owned by systemd unit #{unit} after two restart attempts — see above for what was killed" unless clean
+    end
+  end
 end
 
 namespace :nginx do
@@ -173,7 +262,7 @@ namespace :nginx do
   end
 
   after 'nginx:switch_app', 'sidekiq:restart'
-  after 'nginx:switch_app', 'puma:restart'
+  after 'nginx:switch_app', 'puma:ensure_clean_restart'
   before 'nginx:switch_app', 'sidekiq:monit:monitor'
   # before 'nginx:switch_app', 'puma:monit:monitor'
 
