@@ -316,6 +316,10 @@ namespace :aws do
 
     puts "🚨 DR DRILL: rebuilding #{stack} (#{env_variant}) in #{region} on branch #{drill_branch}"
     begin
+      # setup_infra writes the evidence report itself for a REAL recovery; for a
+      # drill we defer it to the ensure block below so a FAILED drill produces a
+      # report too — "we tried and it broke here" is itself audit-relevant.
+      @dr_report_deferred = true
       # The full non-interactive DR sequence — the same code path a real
       # production DR uses, which is the point of the drill
       setup_infra(stack, "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
@@ -328,12 +332,30 @@ namespace :aws do
 
       # Append to the drill log — the audit trail that DR is tested, not assumed
       log_file = Rails.root.join("docs", "dr_drills.md")
-      File.write(log_file, "# DR Drill Log\n\n| Date | Stack | Variant | Region | Result | RTO (min) | Branch |\n|---|---|---|---|---|---|---|\n") unless File.exist?(log_file)
+      unless File.exist?(log_file)
+        File.write(log_file, <<~HEADER)
+          # DR Drill Log
+
+          > **Rebuild (min)** is the time from the start of the recovery command to the
+          > stack passing `recovery:verify`. It is *not* end-to-end RTO: it excludes
+          > incident detection, the decision to declare a disaster, and DNS cutover plus
+          > TTL propagation. Per-run evidence reports are in `docs/dr_runs/`.
+
+          | Date | Stack | Variant | Region | Result | Rebuild (min) | Branch |
+          |---|---|---|---|---|---|---|
+        HEADER
+      end
       File.open(log_file, "a") do |f|
         f.puts "| #{started_at.strftime('%Y-%m-%d %H:%M')} | #{stack} | #{env_variant} | #{region} | #{result} | #{duration_min} | #{drill_branch} |"
       end
 
-      puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured RTO: #{duration_min} minutes (logged to docs/dr_drills.md)"
+      # Evidence report for every outcome, pass or fail
+      write_dr_report(stack: stack, region: region, env_variant: env_variant,
+                      branch: drill_branch, result: result, started_at: started_at, drill: true)
+
+      puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured rebuild time: #{duration_min} minutes (logged to docs/dr_drills.md)"
+      puts "   NOTE: that figure excludes detection, disaster declaration, and DNS cutover/TTL —"
+      puts "         it is rebuild time, not end-to-end RTO. See the report for the full scope."
 
       if result == "PASSED"
         if ENV["TEARDOWN"] == "true"

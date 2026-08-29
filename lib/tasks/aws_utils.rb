@@ -4,6 +4,7 @@ module AwsUtils
   require 'yaml'
   require 'fileutils'
   require 'open3'
+  require 'time' # Time#iso8601 in the DR evidence report
   require 'aws-sdk-ec2'
 
   def get_branch
@@ -415,14 +416,237 @@ module AwsUtils
   #   given      → NON-INTERACTIVE: auto-commits the rewritten config files to
   #                that branch, pushes, and runs the whole recovery unattended —
   #                including primary+replica restore and migration replay.
+  # ---------------------------------------------------------------------------
+  # DR run transcript
+  #
+  # The console output of a DR run IS the evidence record that a recovery
+  # happened — it gets captured for audit. These helpers give it a structure a
+  # reader (or an auditor) can follow without knowing the codebase: a
+  # timestamped banner per phase, elapsed time from the start of the run, and a
+  # closing summary with per-phase timings that shows where the RTO went.
+  # ---------------------------------------------------------------------------
+  DR_PHASES = [] # [[title, started_at, finished_at], ...]
+
+  # Externally verifiable references collected during the run — see
+  # write_dr_report. Keyed by claim; each value is [evidence, how_to_verify].
+  DR_EVIDENCE = {}
+
+  # Never let evidence-gathering break a recovery: a DR run failing because it
+  # could not look up an instance id would be an absurd trade.
+  def record_dr_evidence(claim, evidence, how_to_verify)
+    DR_EVIDENCE[claim] = [evidence, how_to_verify]
+  rescue StandardError => e
+    puts "⚠️  Could not record evidence for '#{claim}': #{e.message}"
+  end
+
+  # The Pulumi service keeps its own timestamped, server-side record of every
+  # stack update — evidence an operator cannot retroactively edit, unlike
+  # anything this script writes about itself.
+  def pulumi_update_record(stack_name)
+    out, _err, st = Open3.capture3("pulumi stack history --stack #{stack_name} --json --page-size 1",
+                                   chdir: "../IRM-Infra")
+    return nil unless st.success?
+
+    entry = JSON.parse(out).first or return nil
+    { version: entry["version"], result: entry["result"],
+      started: entry["startTime"], ended: entry["endTime"] }
+  rescue StandardError
+    nil
+  end
+
+  # Instance ids + launch times straight from the EC2 API. These are the join
+  # key an auditor uses against CloudTrail RunInstances events, which is the
+  # authoritative third-party record that this infrastructure was really
+  # created when the report claims it was.
+  def ec2_instance_records(region, private_ips)
+    ips = Array(private_ips).reject { |ip| ip.to_s.empty? }
+    return [] if ips.empty?
+
+    Aws::EC2::Client.new(region: region)
+                    .describe_instances(filters: [{ name: "private-ip-address", values: ips }])
+                    .reservations.flat_map(&:instances)
+                    .map { |i| "#{i.instance_id} (#{i.private_ip_address}, launched #{i.launch_time.utc.iso8601})" }
+  rescue StandardError
+    []
+  end
+
+  def dr_run_started_at
+    @dr_run_started_at ||= Time.now
+  end
+
+  def hms(seconds)
+    format('%d:%02d', seconds / 60, seconds % 60)
+  end
+
+  # Closes the open phase (if any) so its duration is recorded.
+  def finish_dr_phase
+    open_phase = DR_PHASES.last
+    open_phase[2] = Time.now if open_phase && open_phase[2].nil?
+  end
+
+  def dr_phase(title)
+    finish_dr_phase
+    started = Time.now
+    DR_PHASES << [title, started, nil]
+    puts ""
+    puts "═" * 78
+    puts "▶ #{title}"
+    puts "  #{started.strftime('%Y-%m-%d %H:%M:%S %Z')}   ·   T+#{hms((started - dr_run_started_at).round)} elapsed"
+    puts "═" * 78
+  end
+
+  # Closing block: the part that actually gets screenshotted / pasted into a
+  # compliance record, so it repeats the identifying facts rather than assuming
+  # the reader still has the top of the transcript.
+  def dr_summary(stack:, region:, env_variant:, branch:, result:, extra: {})
+    finish_dr_phase
+    finished = Time.now
+    puts ""
+    puts "═" * 78
+    puts "  DISASTER RECOVERY RUN — #{result}"
+    puts "═" * 78
+    {
+      "Stack" => "#{stack} (#{env_variant})",
+      "Region" => region,
+      "Branch deployed" => branch,
+      "Started" => dr_run_started_at.strftime('%Y-%m-%d %H:%M:%S %Z'),
+      "Finished" => finished.strftime('%Y-%m-%d %H:%M:%S %Z'),
+      # Deliberately NOT labelled "RTO": this excludes detection, disaster
+      # declaration and DNS cutover/TTL. See write_dr_report for the full scope.
+      "Rebuild time" => "#{hms((finished - dr_run_started_at).round)} (excludes detection, declaration, DNS cutover)"
+    }.merge(extra).each { |k, v| puts "  #{k.ljust(21)}: #{v}" }
+
+    unless DR_PHASES.empty?
+      puts ""
+      puts "  Phase timings:"
+      DR_PHASES.each do |title, started, ended|
+        puts "    #{hms(((ended || finished) - started).round).rjust(6)}  #{title}"
+      end
+    end
+    puts "═" * 78
+    puts ""
+  end
+
+  # Writes the per-run evidence file. Deliberately NOT a self-contained
+  # narrative: a markdown file a script writes about itself is a claim, not
+  # proof, and the first thing an auditor asks is what stopped someone editing
+  # it. Every row therefore names a record held OUTSIDE this repo (Pulumi's
+  # service-side update history, CloudTrail, GitHub, S3) and the command that
+  # checks it, so the report is an index of things the auditor can confirm
+  # independently rather than something they have to take on trust.
+  def write_dr_report(stack:, region:, env_variant:, branch:, result:, started_at:, drill: false)
+    finished = Time.now
+    rebuild_secs = (finished - started_at).round
+    dir = Rails.root.join("docs", "dr_runs")
+    FileUtils.mkdir_p(dir)
+    path = dir.join("#{branch}.md")
+
+    phase_rows = DR_PHASES.map { |t, s, e| "| #{t} | #{hms(((e || finished) - s).round)} |" }.join("\n")
+    evidence_rows = DR_EVIDENCE.map { |claim, (ev, how)| "| #{claim} | #{ev} | #{how} |" }.join("\n")
+
+    File.write(path, <<~MD)
+      # Disaster Recovery #{drill ? 'Drill' : 'Run'} Report
+
+      | | |
+      |---|---|
+      | **Result** | **#{result}** |
+      | Stack | #{stack} (#{env_variant}) |
+      | Target region | #{region} |
+      | Branch deployed | `#{branch}` |
+      | Started | #{started_at.utc.iso8601} |
+      | Finished | #{finished.utc.iso8601} |
+      | Measured rebuild time | **#{hms(rebuild_secs)}** (#{(rebuild_secs / 60.0).round(1)} min) |
+      | Executed by | #{ENV['USER'] || 'unknown'}@#{`hostname`.strip} |
+      #{drill ? "\n> This was a **drill** against `#{stack}`, not a response to a real incident.\n" : ''}
+      ## What the measured time does and does not cover
+
+      The figure above is **rebuild time**, not end-to-end RTO. It is measured
+      from the start of the recovery command to the point where the stack passed
+      verification.
+
+      **Included:** Pulumi provisioning, config rewrite, application deploy to
+      both app servers, database restore from S3 (primary + replica in
+      parallel), replication reset, migration replay, and the full
+      `recovery:verify` health scorecard.
+
+      **Excluded:** incident detection, the human decision to declare a disaster
+      (DR_GUIDE §4), and DNS cutover plus TTL propagation — `aws:dns_cutover` is
+      manual by design and is never invoked by the recovery sequence (DR_GUIDE
+      §8). A true incident-to-service-restored RTO is this figure **plus** those
+      three components.
+
+      ## Phase timings
+
+      | Phase | Duration |
+      |---|---|
+      #{phase_rows}
+
+      ## Independently verifiable evidence
+
+      Each row names a record held outside this repository. Nothing here relies
+      on trusting this file.
+
+      | Claim | Evidence | How to verify independently |
+      |---|---|---|
+      #{evidence_rows}
+
+      ## Verification result
+
+      The recovery sequence fails loudly unless `cap #{stack}_#{env_variant} recovery:verify`
+      passes on every app server — it checks nginx, puma, sidekiq registration,
+      HTTP through the full serving chain to MySQL / Redis / Elasticsearch / S3,
+      migration currency, restored-data freshness, DB-box daemons, backup cron
+      arming, and a live replication round-trip. The per-check scorecard is in
+      the run transcript.
+
+      Re-run at any time against a still-running stack:
+
+      ```bash
+      LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify
+      ```
+
+      ---
+      Generated #{finished.utc.iso8601} by `#{drill ? 'rake aws:dr_drill' : 'rake aws:setup_infra'}`.
+      Preserve the full console transcript alongside this file — capture it with
+      `rake "..." 2>&1 | tee docs/dr_runs/#{branch}.log`.
+    MD
+
+    puts "🧾 Evidence report written to #{path.to_s.sub(Rails.root.to_s + '/', '')}"
+    path
+  rescue StandardError => e
+    puts "⚠️  Could not write DR report: #{e.class}: #{e.message}"
+    nil
+  end
+
   def setup_infra(stack, web_server_name, db_server_name, region, env_variant, branch_name = nil)
+    # Reset the transcript so a re-run in the same process starts clean
+    DR_PHASES.clear
+    DR_EVIDENCE.clear
+    @dr_run_started_at = Time.now
+
+    puts ""
+    puts "█" * 78
+    puts "  DISASTER RECOVERY SEQUENCE"
+    puts "  #{stack} (#{env_variant}) → #{region}"
+    puts "  Operator: #{ENV['USER'] || 'unknown'}@#{`hostname`.strip}   ·   #{@dr_run_started_at.strftime('%Y-%m-%d %H:%M:%S %Z')}"
+    puts "█" * 78
+
+    dr_phase "Phase 1/8 · Refresh Pulumi stack configuration"
     setup_pulumi_config(stack, web_server_name, db_server_name, region, env_variant)
 
+    dr_phase "Phase 2/8 · Provision infrastructure (pulumi up)"
     puts "⬆️ Running pulumi up for stack: #{stack}. (This could take a long time, please be patient)"
     # Run pulumi to setup the aws infra
     run_cmd("pulumi up --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra")
+
+    if (upd = pulumi_update_record("#{stack}-#{region}"))
+      record_dr_evidence("Infrastructure provisioned in #{region}",
+                         "Pulumi update ##{upd[:version]} — #{upd[:result]}, #{upd[:started]} → #{upd[:ended]}",
+                         "`pulumi stack history --stack #{stack}-#{region}` (server-side record, Pulumi console)")
+    end
     # Get the pulumi output
 
+    dr_phase "Phase 3/8 · Rewrite config with the new host addresses"
     puts "📥 Getting pulumi output (authoritative, from the stack backend)"
     pulumi_output = pulumi_stack_output("#{stack}-#{region}")
 
@@ -456,6 +680,19 @@ module AwsUtils
 
     replace_ip_addresses(Rails.root.join('config', 'deploy', "#{stack}_#{env_variant}.rb"), app_server_ips)
 
+    # Instance ids are the join key against CloudTrail — the authoritative
+    # third-party record that these machines were created when we say they were.
+    db_hosts = [pulumi_output.dig("private_ips", "DB_HOST"), pulumi_output.dig("private_ips", "DB_HOST_REPLICA")]
+    instances = ec2_instance_records(region, db_hosts)
+    unless instances.empty?
+      record_dr_evidence("Database instances launched in #{region}",
+                         instances.join("; "),
+                         "CloudTrail `RunInstances` events in #{region}; `aws ec2 describe-instances --region #{region}`")
+    end
+    record_dr_evidence("Recovered stack endpoints",
+                       "app servers #{app_server_ips.join(', ')}; DB primary #{db_hosts[0]}, replica #{db_hosts[1]}",
+                       "`pulumi stack output --stack #{stack}-#{region}`")
+
     if branch_name.to_s.strip.empty?
       # ------------------- LEGACY INTERACTIVE MODE -------------------
       puts "\n#######################"
@@ -472,13 +709,20 @@ module AwsUtils
       restore_tasks = ["recovery:restore_replica_db"] # primary was restored by hand above
     else
       # ------------------- NON-INTERACTIVE MODE -------------------
+      dr_phase "Phase 4/8 · Commit and push the DR branch (#{branch_name})"
       commit_dr_changes(stack, env_variant, region, branch_name)
+      # The pushed SHA proves WHICH code was recovered onto — and GitHub's own
+      # push timestamp corroborates when, independently of this machine's clock.
+      record_dr_evidence("Application code deployed",
+                         "commit `#{`git rev-parse HEAD`.strip}` on branch `#{branch_name}` (pushed to origin)",
+                         "`git log -1 #{`git rev-parse --short HEAD`.strip}`; GitHub branch push timestamp")
       # Primary + replica restore both run remotely from the app server
       # (recovery:load_db_from_backups), then migrations newer than the backup
       # are replayed BEFORE traffic is switched back.
       restore_tasks = ["recovery:load_db_from_backups", "recovery:migrate"]
     end
 
+    dr_phase "Phase 5/8 · Deploy the application to both app servers"
     # Deploy the app
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:delete_old_assets")
     # SKIP_MIGRATE: deploy-time migrations are meaningless before the restore
@@ -490,12 +734,22 @@ module AwsUtils
     # start the services those entries would have started (xirr_py,
     # prometheus_exporter) — idempotent no-op on already-running boxes
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} IRM:start_boot_services")
+
+    dr_phase "Phase 6/8 · Take traffic offline (nginx maintenance mode)"
     # Now stop sidekiq, puma and monitoring and switch to maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_maintenance")
+
+    dr_phase "Phase 7/8 · Restore the database from S3 backups"
     # Load the DB from backups (and replay migrations in non-interactive mode)
     restore_tasks.each do |task|
       run_cmd("branch=#{branch_name} bundle exec cap #{stack}_#{env_variant} #{task}")
     end
+    backup_bucket = "#{ENV.fetch('AWS_S3_BUCKET', nil)}-backup-xtra"
+    record_dr_evidence("Data restored from real backups",
+                       "source bucket `#{backup_bucket}` (full + incremental chain; keys named in the transcript)",
+                       "`aws s3 ls s3://#{backup_bucket}/` — compare object timestamps against the run window")
+
+    dr_phase "Phase 8/8 · Restore traffic and verify the recovered stack"
     # Switch back to the app and remove maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_app")
 
@@ -505,8 +759,29 @@ module AwsUtils
     # replication flowing. run_cmd raises on failure, so a DR run (and
     # therefore a drill) can no longer report success while the site is dead.
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify")
+    # run_cmd raises on a non-zero exit and dr:verify aborts non-zero on any
+    # failed check, so reaching this line IS the proof the stack served.
+    record_dr_evidence("Recovered stack verified serving",
+                       "`recovery:verify` passed on every app server at #{Time.now.utc.iso8601} (per-check scorecard in the transcript)",
+                       "re-run `LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify`")
 
-    puts "\n✅ DR sequence complete and VERIFIED serving."
+    dr_summary(stack: stack, region: region, env_variant: env_variant,
+               branch: branch_name, result: "COMPLETE — STACK VERIFIED SERVING",
+               extra: {
+                 "App servers" => app_server_ips.join(", "),
+                 "DB primary" => pulumi_output.dig("private_ips", "DB_HOST").to_s,
+                 "DB replica" => pulumi_output.dig("private_ips", "DB_HOST_REPLICA").to_s,
+                 "Verification" => "recovery:verify — all checks passed"
+               })
+
+    # Only written here for a REAL recovery; aws:dr_drill writes its own (with
+    # drill: true) from its ensure block so failed drills get a report too.
+    unless @dr_report_deferred
+      write_dr_report(stack: stack, region: region, env_variant: env_variant,
+                      branch: branch_name, result: "COMPLETE — STACK VERIFIED SERVING",
+                      started_at: dr_run_started_at)
+    end
+
     puts "👉 Edge check before going live: rake \"aws:dr_verify_edge[#{stack}, #{region}]\" then aws:dns_cutover"
   end
 

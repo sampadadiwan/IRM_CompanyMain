@@ -1,6 +1,11 @@
 # DR Drill Log
 
-| Date | Stack | Variant | Region | Result | RTO (min) | Branch |
+> **Rebuild (min)** is the time from the start of the recovery command to the
+> stack passing `recovery:verify`. It is *not* end-to-end RTO: it excludes
+> incident detection, the decision to declare a disaster, and DNS cutover plus
+> TTL propagation. Per-run evidence reports are in `docs/dr_runs/`.
+
+| Date | Stack | Variant | Region | Result | Rebuild (min) | Branch |
 |---|---|---|---|---|---|---|
 | 2026-07-08 19:24 | staging | in | ap-south-2 | FAILED | 1.2 | dr_drill_in_2026_07_08_1924 |
 | 2026-07-08 19:29 | staging | in | ap-south-2 | FAILED | 3.7 | dr_drill_in_2026_07_08_1929 |
