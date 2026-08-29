@@ -417,6 +417,24 @@ restore_primary_datadir() {
   base_name=$(basename "$datadir")
   local backup_path="${parent_dir}/${base_name}.bak.$(date +%s)"
 
+  # Prune any datadirs parked by EARLIER restore attempts before parking this
+  # one. Each attempt parks a full copy and nothing ever removed the old
+  # ones, so repeated restores (a DR drill re-run, or a real incident that
+  # takes a few tries) accumulate one full datadir per attempt — found live
+  # after ~5 restores on one box: 7.4G of parked copies filled a 20G volume,
+  # making xtrabackup's decompress step fail with "No space left on device"
+  # on the NEXT attempt. Only the most-recently-parked copy is ever
+  # operationally useful for rollback (nobody rolls back to a datadir from
+  # several attempts ago), so there's no reason to keep more than one — and
+  # we're about to park a fresh one below regardless.
+  shopt -s nullglob
+  local old_bak
+  for old_bak in "${parent_dir}/${base_name}.bak."*; do
+    echo "  - Removing datadir parked by an earlier restore attempt: ${old_bak}"
+    sudo rm -rf "$old_bak"
+  done
+  shopt -u nullglob
+
   # Park the old datadir instead of deleting it: if the restored backup turns out
   # to be bad (only discovered when MySQL fails to start below), the pre-restore
   # data is still recoverable. mv on the same filesystem is an instant rename and
