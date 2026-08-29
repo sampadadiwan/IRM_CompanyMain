@@ -93,9 +93,12 @@ class ReportBuilderModelDiscovery
   CURATED_JOINS = {
     "Investor" => %w[capital_commitments investor_kycs capital_distribution_payments capital_remittances fund_units],
     "Fund" => %w[capital_commitments capital_calls capital_distribution_payments capital_remittances fund_units portfolio_investments],
-    "CapitalCommitment" => %w[investor fund capital_remittances capital_distribution_payments capital_remittance_payments fund_units],
+    "CapitalCommitment" => %w[investor fund capital_remittances capital_distribution_payments capital_remittance_payments fund_units investor_kyc],
     "CapitalCall" => %w[fund capital_remittances],
-    "CapitalDistributionPayment" => %w[fund investor capital_commitment capital_distribution]
+    "CapitalDistribution" => %w[fund capital_distribution_payments],
+    "CapitalDistributionPayment" => %w[fund investor capital_commitment capital_distribution investor_kyc],
+    "CapitalRemittance" => %w[fund capital_call capital_remittance_payments investor_kyc],
+    "CapitalRemittancePayment" => %w[capital_remittance capital_call fund investor capital_commitment investor_kyc],
   }.freeze
 
   # Packs that are gated behind an entity-level feature flag (Entity#permissions,
