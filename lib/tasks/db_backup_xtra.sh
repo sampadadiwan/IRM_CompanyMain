@@ -454,20 +454,22 @@ restore_primary_datadir() {
   echo "  - Backup size: $backup_size"
   echo "WARNING: This is a destructive operation and requires sudo."
 
-  # To avoid 'mv' errors, construct a backup path that is explicitly a sibling of the datadir.
-  local parent_dir
-  parent_dir=$(dirname "$datadir")
-  local base_name
-  base_name=$(basename "$datadir")
-  local backup_path="${parent_dir}/${base_name}.bak.$(date +%s)"
-
-  # Park the old datadir instead of deleting it: if the restored backup turns out
-  # to be bad (only discovered when MySQL fails to start below), the pre-restore
-  # data is still recoverable. mv on the same filesystem is an instant rename and
-  # uses no extra disk space; the parked copy is removed manually after the
-  # restore has been verified (command printed at the end of this function).
-  echo "  - Parking old datadir at ${backup_path} (rollback: sudo mv ${backup_path} ${datadir})"
-  sudo mv "$datadir" "$backup_path"
+  # Delete the existing datadir rather than parking it as <datadir>.bak.<ts>.
+  #
+  # Restores only ever run on NEW infra or in DR — never in place on a box
+  # holding data worth keeping — so the old contents are by definition either a
+  # virgin MySQL or a previous restore of this same backup chain. Parking them
+  # bought no recoverability and left a full datadir behind per attempt: five
+  # drill re-runs put 7.4G of parked copies on a 20G volume, after which the
+  # next restore died with "No space left on device" during decompress (and,
+  # once the disk hit 0 bytes, even the SCP of this script failed).
+  #
+  # Safe because this runs only AFTER restore_latest_chain has downloaded and
+  # prepared the replacement — set -euo pipefail aborts the run before reaching
+  # here if that failed, so the new data is already staged in $PRIMARY_RESTORE
+  # by the time the old datadir is removed.
+  echo "  - Removing old datadir ${datadir} (restores never run in place — nothing to roll back to)"
+  sudo rm -rf "$datadir"
 
   echo "  - Moving data from $PRIMARY_RESTORE..."
   # Recreate the original datadir for the new data and copy the contents.
@@ -490,10 +492,12 @@ restore_primary_datadir() {
     ((n++)) || :
     if (( n >= max_wait )); then
       echo "ERROR: MySQL failed to start within ${max_wait}s after restore." >&2
-      # The restore failed, but the pre-restore data was parked (not deleted),
-      # so the operator can put the old datadir back and restart.
-      echo "       Old datadir is intact at ${backup_path}." >&2
-      echo "       Roll back with: sudo systemctl stop mysql && sudo rm -rf ${datadir} && sudo mv ${backup_path} ${datadir} && sudo systemctl start mysql" >&2
+      # There is no local rollback copy by design (see restore_primary_datadir):
+      # restores only run on new infra or in DR, so the replaced datadir held
+      # nothing worth returning to.
+      echo "       The restored data is still staged at ${PRIMARY_RESTORE} for inspection." >&2
+      echo "       Recover by re-running the restore, or from an earlier backup in the S3 chain" >&2
+      echo "       (restore_from_primary <full_key> [incr_key])." >&2
       exit 1
     fi
     sleep 1
@@ -501,11 +505,6 @@ restore_primary_datadir() {
   echo "✓ Primary MySQL instance started successfully (waited ${n}s)."
   get_table_counts "$DATABASE_NAME" "$MYSQL_USER"
 
-  # The old datadir is intentionally kept on disk until a human confirms the
-  # restore is good — it may be the only remaining copy if the backup chain
-  # is later found to be incomplete. Freeing the space is a deliberate step.
-  echo "NOTE: old datadir kept at ${backup_path}"
-  echo "      After verifying the restore, free the space with: sudo rm -rf ${backup_path}"
 }
 
 full_backup() {
