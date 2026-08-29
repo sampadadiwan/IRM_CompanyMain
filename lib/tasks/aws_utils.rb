@@ -674,6 +674,202 @@ module AwsUtils
   # (b) reproduced verbatim from the run's own transcript. What the report adds
   # is legibility — an auditor should not have to read 40,000 lines of
   # Capistrano output to see that 22 checks passed on two hosts.
+  # Stylesheet for the HTML evidence record. Kept as a constant so the builder
+  # below stays readable — it is a document, not a template engine.
+  # Light-first with a full dark-theme token set: an auditor may read this in
+  # either, and a report that renders unreadably undermines the thing it exists
+  # to prove.
+  DR_REPORT_CSS = <<~CSS
+    :root{--paper:#F6F7F9;--surface:#FFF;--surface-2:#EFF2F5;--ink:#111820;--ink-soft:#566274;--ink-faint:#8894A3;--rule:#DCE1E7;--rule-firm:#C3CBD4;--verified:#16694A;--verified-bg:#E4F0EA;--caution:#8A5C0D;--caution-bg:#F7EEDC;--accent:#0F4C5C;--accent-soft:#E2EDF0;--serif:"IBM Plex Serif",Georgia,serif;--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+    @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0C1116;--surface:#131A21;--surface-2:#1A222B;--ink:#E4EBF2;--ink-soft:#98A5B3;--ink-faint:#6B7885;--rule:#232D37;--rule-firm:#33404C;--verified:#46BC8B;--verified-bg:#12291F;--caution:#DCA646;--caution-bg:#2A2113;--accent:#58B3C7;--accent-soft:#122730}}
+    :root[data-theme="dark"]{--paper:#0C1116;--surface:#131A21;--surface-2:#1A222B;--ink:#E4EBF2;--ink-soft:#98A5B3;--ink-faint:#6B7885;--rule:#232D37;--rule-firm:#33404C;--verified:#46BC8B;--verified-bg:#12291F;--caution:#DCA646;--caution-bg:#2A2113;--accent:#58B3C7;--accent-soft:#122730}
+    *{box-sizing:border-box}
+    body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+    .sheet{max-width:1080px;margin:0 auto;padding:48px 28px 96px;display:flex;flex-direction:column;gap:52px}
+    .masthead{border-top:3px solid var(--ink);border-bottom:1px solid var(--rule-firm);padding:22px 0 26px;display:flex;flex-direction:column;gap:20px}
+    .eyebrow{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);display:flex;flex-wrap:wrap;gap:8px 18px}
+    .masthead h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,5vw,44px);line-height:1.1;letter-spacing:-.015em;margin:0;text-wrap:balance}
+    .subject{font-family:var(--mono);font-size:15px;color:var(--ink-soft);display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+    .subject strong{color:var(--ink);font-weight:600}.subject .arrow{color:var(--ink-faint)}
+    .verdict{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;border-radius:2px;padding:7px 14px 7px 11px;font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+    .verdict.pass{background:var(--verified-bg);color:var(--verified);border:1px solid color-mix(in srgb,var(--verified) 35%,transparent)}
+    .verdict.fail{background:var(--caution-bg);color:var(--caution);border:1px solid color-mix(in srgb,var(--caution) 45%,transparent)}
+    .verdict .tick{width:16px;height:16px;display:grid;place-items:center;border-radius:50%;font-size:10px;font-weight:700}
+    .verdict.pass .tick{background:var(--verified);color:var(--verified-bg)}.verdict.fail .tick{background:var(--caution);color:var(--caution-bg)}
+    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+    .metric{background:var(--surface);padding:18px 20px 20px;display:flex;flex-direction:column;gap:6px}
+    .metric dt{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+    .metric dd{margin:0;font-family:var(--mono);font-size:28px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink)}
+    .metric .qualifier{font-family:var(--sans);font-size:12px;color:var(--ink-soft)}
+    section{display:flex;flex-direction:column;gap:18px}
+    h2{font-family:var(--serif);font-size:21px;font-weight:600;margin:0;letter-spacing:-.01em;display:flex;align-items:baseline;gap:12px}
+    h2::after{content:"";flex:1;height:1px;background:var(--rule)}
+    .lede{max-width:66ch;color:var(--ink-soft);margin:0;font-size:14.5px}
+    .scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:3px;background:var(--surface)}
+    table{border-collapse:collapse;width:100%;font-size:13.5px}
+    th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
+    thead th{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);font-weight:500;background:var(--surface-2);border-bottom:1px solid var(--rule-firm);white-space:nowrap}
+    tbody tr:last-child td{border-bottom:none}
+    .num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+    .key{color:var(--ink-soft);width:190px}
+    .val{font-family:var(--mono);font-variant-numeric:tabular-nums}
+    code{font-family:var(--mono);font-size:.93em;background:var(--surface-2);border:1px solid var(--rule);border-radius:2px;padding:1px 5px;word-break:break-word}
+    .mark{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-family:var(--mono);font-size:10px;font-weight:700;line-height:1}
+    .mark.pass{background:var(--verified-bg);color:var(--verified);border:1px solid color-mix(in srgb,var(--verified) 40%,transparent)}
+    .mark.warn{background:var(--caution-bg);color:var(--caution);border:1px solid color-mix(in srgb,var(--caution) 40%,transparent)}
+    .mark.fail{background:var(--caution-bg);color:var(--caution);border:1px solid var(--caution)}
+    td.markcell{width:40px;text-align:center;padding-top:11px}
+    .phase-name{font-weight:500}
+    .bar{display:block;height:6px;border-radius:1px;background:var(--accent);min-width:2px;margin-top:7px;opacity:.85}
+    .bar.dominant{background:var(--verified)}
+    .barcell{width:34%;min-width:150px}
+    .seq{font-family:var(--mono);font-size:11px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+    .host{border:1px solid var(--rule);border-radius:3px;background:var(--surface);overflow:hidden}
+    .host-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;padding:13px 16px;background:var(--surface-2);border-bottom:1px solid var(--rule-firm)}
+    .host-head .name{font-family:var(--mono);font-weight:600;font-size:13.5px}
+    .host-head .tally{font-family:var(--mono);font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+    .host .scroll{border:none;border-radius:0}
+    .hosts{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(430px,1fr))}
+    .scope{border:1px solid var(--rule-firm);border-radius:3px;background:var(--surface);overflow:hidden}
+    .scope-row{display:grid;grid-template-columns:132px 1fr;border-bottom:1px solid var(--rule)}
+    .scope-row:last-child{border-bottom:none}
+    .scope-label{padding:15px 16px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--surface-2);border-right:1px solid var(--rule)}
+    .scope-label.in{color:var(--verified)}.scope-label.out{color:var(--caution)}
+    .scope-body{padding:15px 18px;font-size:14px}
+    .scope-note{margin:0;padding:14px 18px;background:var(--accent-soft);border-top:1px solid var(--rule);font-size:14px}
+    footer{border-top:1px solid var(--rule-firm);padding-top:18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:space-between}
+    a{color:var(--accent);text-underline-offset:2px}
+    a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    @media(max-width:620px){.sheet{padding:32px 16px 64px;gap:40px}.key{width:auto}.scope-row{grid-template-columns:1fr}.scope-label{border-right:none;border-bottom:1px solid var(--rule)}}
+  CSS
+
+  def h(text) # minimal HTML escape — report data is our own output, not user input
+    text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
+  end
+
+  # Renders the same evidence as the markdown report as a self-contained HTML
+  # page, so it can be handed to an auditor (or printed to PDF) without them
+  # needing a markdown renderer or a checkout of this repository.
+  def write_dr_report_html(stack:, region:, env_variant:, branch:, result:, started_at:, finished:,
+                           scorecard:, drill:)
+    rebuild_secs = (finished - started_at).round
+    passed = result.to_s.match?(/PASSED|COMPLETE/)
+    all_checks = scorecard.values.flatten(1)
+    ok_count   = all_checks.count { |icon, _| icon == "✅" }
+    warn_count = all_checks.count { |icon, _| icon == "⚠️" }
+    fail_count = all_checks.count { |icon, _| icon == "❌" }
+    db_phase = DR_PHASES.find { |t, _, _| t.include?("Restore the database") }
+    db_secs  = db_phase && ((db_phase[2] || finished) - db_phase[1]).round
+    freshness = all_checks.find { |_, t| t.start_with?("Restored data freshness") }&.last.to_s[/is (.+?)$/, 1]
+    total = [rebuild_secs, 1].max
+
+    metric = lambda do |label, value, qualifier|
+      %(<div class="metric"><dt>#{h label}</dt><dd>#{value}</dd><span class="qualifier">#{h qualifier}</span></div>)
+    end
+
+    phase_rows = DR_PHASES.map.with_index(1) do |(title, s, e), i|
+      secs  = ((e || finished) - s).round
+      share = (secs * 100.0 / total).round(1)
+      name  = title.sub(%r{\APhase \d+/\d+ · }, "")
+      <<~ROW
+        <tr><td class="markcell"><span class="mark #{e ? 'pass' : 'warn'}">#{e ? '&check;' : '!'}</span></td>
+        <td class="seq">#{i}</td><td class="phase-name">#{h name}</td>
+        <td class="num">#{s.utc.strftime('%H:%M:%S')}</td><td class="num">#{(e || finished).utc.strftime('%H:%M:%S')}</td>
+        <td class="num">#{hms(secs)}</td>
+        <td class="barcell"><span class="bar#{' dominant' if share > 40}" style="width:#{[share, 100].min}%"></span></td></tr>
+      ROW
+    end.join
+
+    host_blocks = if scorecard.empty?
+                    %(<p class="lede">No verification scorecard was captured — this run did not reach the verification stage.</p>)
+                  else
+                    scorecard.map do |host, checks|
+                      rows = checks.map do |icon, text|
+                        name, detail = text.split(" — ", 2)
+                        css = { "✅" => "pass", "⚠️" => "warn", "❌" => "fail" }[icon] || "warn"
+                        glyph = css == "pass" ? "&check;" : "!"
+                        %(<tr><td class="markcell"><span class="mark #{css}">#{glyph}</span></td><td>#{h name}</td><td class="val">#{h(detail || '—')}</td></tr>)
+                      end.join
+                      ok = checks.count { |i, _| i == "✅" }
+                      <<~HOST
+                        <div class="host"><div class="host-head">
+                        <span class="name">#{h host}</span>
+                        <span class="tally">#{ok} passed · #{checks.count { |i, _| i == '⚠️' }} warning · #{checks.count { |i, _| i == '❌' }} failed</span>
+                        </div><div class="scroll"><table><tbody>#{rows}</tbody></table></div></div>
+                      HOST
+                    end.join
+                  end
+
+    evidence_rows = DR_EVIDENCE.map do |claim, (ev, how)|
+      %(<tr><td>#{h claim}</td><td class="val">#{h ev}</td><td>#{h how}</td></tr>)
+    end.join
+
+    particulars = {
+      "Environment" => "#{stack} (#{env_variant})",
+      "Recovered into" => "#{region}#{drill ? ' — disaster-recovery region' : ''}",
+      "Started" => started_at.utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
+      "Finished" => finished.utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
+      "Rebuild time" => "#{hms(rebuild_secs)} (#{(rebuild_secs / 60.0).round(1)} minutes)",
+      "Code deployed" => branch,
+      "Executed by" => "#{ENV['USER'] || 'unknown'}@#{`hostname`.strip}"
+    }.map { |k, v| %(<tr><td class="key">#{h k}</td><td class="val">#{h v}</td></tr>) }.join
+
+    <<~HTML
+      <title>#{drill ? 'Recovery Drill Record' : 'Recovery Record'} — #{h stack}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap">
+      <style>#{DR_REPORT_CSS}</style>
+      <div class="sheet">
+        <header class="masthead">
+          <div class="eyebrow"><span>Disaster Recovery Record</span><span>Ref · #{h branch}</span><span>#{started_at.utc.strftime('%d %B %Y')}</span></div>
+          <h1>#{passed ? "#{h stack.capitalize} recovery rebuilt and verified in #{hms(rebuild_secs)}" : "#{h stack.capitalize} recovery did not complete"}</h1>
+          <div class="subject"><strong>#{h stack}</strong> <span>(#{h env_variant})</span> <span class="arrow">&rarr;</span> <strong>#{h region}</strong></div>
+          <span class="verdict #{passed ? 'pass' : 'fail'}"><span class="tick">#{passed ? '&check;' : '!'}</span> #{h result}</span>
+        </header>
+
+        <dl class="metrics">
+          #{metric.call('Rebuild time', hms(rebuild_secs), 'command start to verified')}
+          #{db_secs ? metric.call('Database restore', hms(db_secs), 'primary + replica, in parallel') : ''}
+          #{metric.call('Checks passed', %(#{ok_count}<span style="color:var(--ink-faint);font-weight:400">/#{all_checks.size}</span>), "#{warn_count} warning#{'s' if warn_count != 1}, #{fail_count} failure#{'s' if fail_count != 1}")}
+          #{freshness ? metric.call('Data currency', h(freshness.split.first), 'age of newest restored record') : ''}
+        </dl>
+
+        <section><h2>Run particulars</h2><div class="scroll"><table><tbody>#{particulars}</tbody></table></div>
+        #{drill ? %(<p class="lede">Scheduled drill against <strong>#{h stack}</strong> — not a response to a real incident. It exercised the identical code path a real recovery uses.</p>) : ''}
+        </section>
+
+        <section><h2>Recovery sequence</h2>
+        <p class="lede">Every phase in the order it executed, with wall-clock times. Bars are drawn to scale against the #{hms(rebuild_secs)} total.</p>
+        <div class="scroll"><table>
+        <thead><tr><th></th><th>#</th><th>Phase</th><th>Start</th><th>End</th><th>Duration</th><th class="barcell">Share of run</th></tr></thead>
+        <tbody>#{phase_rows}</tbody></table></div></section>
+
+        <section><h2>Verification scorecard</h2>
+        <p class="lede">The recovery is not reported as successful until every one of these checks passes on <em>every</em> application server. Each exercises the real serving path — an HTTP request through nginx to Puma to Rails to the dependency itself — rather than a mock or a status file. Reproduced verbatim from the run transcript.</p>
+        <div class="hosts">#{host_blocks}</div></section>
+
+        <section><h2>Independently verifiable evidence</h2>
+        <p class="lede">Each row names a record held <em>outside</em> the application repository, together with the command that checks it. Nothing in this document has to be taken on trust.</p>
+        <div class="scroll"><table><thead><tr><th>Claim</th><th>Evidence</th><th>How to verify independently</th></tr></thead>
+        <tbody>#{evidence_rows}</tbody></table></div></section>
+
+        <section><h2>What the measured time covers</h2>
+        <p class="lede">The headline figure is <strong>rebuild time</strong>, not end-to-end recovery time objective. It is measured from the start of the recovery command to the stack passing verification.</p>
+        <div class="scope">
+          <div class="scope-row"><div class="scope-label in">Included</div><div class="scope-body">Infrastructure provisioning · configuration rewrite · application deploy to every server · database restore from backups, primary and replica in parallel · replication re-pointing · migration replay · the full verification scorecard above.</div></div>
+          <div class="scope-row"><div class="scope-label out">Excluded</div><div class="scope-body">Incident detection · the human decision to declare a disaster · DNS cutover and its propagation delay. Cutover is deliberately a manual step and is never performed by the recovery sequence.</div></div>
+          <p class="scope-note">A true incident-to-service-restored figure is the time above <strong>plus</strong> those three components. Stated explicitly so the number is not read as more than it is.</p>
+        </div></section>
+
+        <section><h2>Source record</h2>
+        <p class="lede">Every command issued during this recovery and its complete output — including the raw verification scorecard reproduced above — was captured automatically to <code>docs/dr_runs/#{h branch}.log</code>. This document states what is claimed and how to check it; the transcript records what happened, line by line.</p></section>
+
+        <footer><span>Disaster Recovery Record · #{h stack} (#{h env_variant}) &rarr; #{h region}</span><span>Generated #{finished.utc.iso8601}</span></footer>
+      </div>
+    HTML
+  end
+
   def write_dr_report(stack:, region:, env_variant:, branch:, result:, started_at:, drill: false)
     finished = Time.now
     rebuild_secs = (finished - started_at).round
@@ -820,6 +1016,19 @@ module AwsUtils
     MD
 
     puts "🧾 Evidence report written to #{path.to_s.sub("#{Rails.root}/", '')}"
+
+    # HTML alongside the markdown: the auditor-facing copy. Self-contained
+    # (styles inline, fonts from Google Fonts, no build step), so it can be
+    # opened straight from a filesystem, emailed, or printed to PDF without a
+    # markdown renderer or a checkout of this repository.
+    html_path = dir.join("#{branch}.html")
+    File.write(html_path, write_dr_report_html(
+                            stack: stack, region: region, env_variant: env_variant, branch: branch,
+                            result: result, started_at: started_at, finished: finished,
+                            scorecard: scorecard, drill: drill
+                          ))
+    puts "📄 Auditor report (HTML) written to #{html_path.to_s.sub("#{Rails.root}/", '')}"
+
     path
   rescue StandardError => e
     puts "⚠️  Could not write DR report: #{e.class}: #{e.message}"
