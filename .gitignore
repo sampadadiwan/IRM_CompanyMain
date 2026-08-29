@@ -109,6 +109,14 @@ logs
 npm-debug.log*
 yarn-error.log*
 dev-debug.log
+
+# DR run transcripts (docs/dr_runs/*.log) stay ignored by the *.log rule
+# above, deliberately. They are raw console capture of a production recovery:
+# multi-megabyte, and whatever any command happened to print. One of them was
+# found to contain the database password in plaintext, and a secret committed
+# to a repository is permanent in a way a local file is not. The reports and
+# the auditor HTML page ARE committed; the transcript behind them is retained
+# by the operator and produced on request.
 # Dependency directories
 # Environment variables
 .env

@@ -448,13 +448,46 @@ module AwsUtils
   # all of it. A bare `system()` call would bypass this — there are none in the
   # recovery sequence, and adding one would silently punch a hole in the record.
   class TeeIO
+    # Last-resort scrub for credentials that reach the transcript.
+    #
+    # A DR transcript is written to a file, kept as audit evidence, and handed
+    # to auditors — so a secret printed anywhere in the recovery ends up
+    # somewhere durable and shared. That already happened once: reset_replication
+    # echoed the full CHANGE REPLICATION SOURCE statement, database password
+    # included, and the file was one `git add` away from the repository.
+    #
+    # This is defence in depth, NOT permission to print secrets — pattern
+    # matching cannot catch what it has not been taught. The fix for a leak is
+    # always to stop emitting it at the source; this only limits the blast
+    # radius of the next one.
+    # Each pattern must be anchored on an unambiguous credential KEY. A pattern
+    # matching a bare flag is not safe here: `/-p(\S+)/` for `mysql -p<pw>` also
+    # eats `--parallel`, `pulumi-production` and `ap-south-2-production`, which
+    # silently corrupts the very evidence this file exists to preserve. Verified
+    # against a real 2MB production transcript: these patterns change exactly
+    # the credential line and nothing else.
+    SECRET_PATTERNS = [
+      /(SOURCE_PASSWORD\s*=\s*')[^']*(')/i,
+      /(IDENTIFIED\s+BY\s+')[^']*(')/i,
+      /(MYSQL_PWD\s*=\s*)(?!\[REDACTED\])(\S+)/i,
+      /(\b(?:aws_secret_access_key|secret_access_key)\s*[=:]\s*)(?!\[REDACTED\])(\S+)/i,
+      /(\b(?:password|passwd)\s*[=:]\s*)(?!\[REDACTED\])(\S+)/i
+    ].freeze
+
+    def self.scrub(text)
+      SECRET_PATTERNS.reduce(text.to_s) do |acc, pattern|
+        acc.gsub(pattern) { "#{Regexp.last_match(1)}[REDACTED]#{Regexp.last_match(2) if Regexp.last_match(2) == "'"}" }
+      end
+    end
+
     def initialize(*targets)
       @targets = targets
     end
 
     def write(*args)
+      scrubbed = args.map { |a| self.class.scrub(a) }
       @targets.each do |t|
-        t.write(*args)
+        t.write(*scrubbed)
         t.flush
       rescue StandardError
         nil # a failing transcript file must never take down a recovery
@@ -1302,7 +1335,14 @@ module AwsUtils
     # reset and configure replica
     destination_client.query('STOP REPLICA')
     destination_client.query('RESET REPLICA ALL')
-    puts "Setting up replication on the destination with query: #{change_source_query.squish}"
+    # REDACT the password before echoing the statement. This line printed the
+    # database credential in plaintext on every DR run — to the operator's
+    # console, into log/capistrano.log, and (once runs began capturing their own
+    # transcript for audit) into a file that was one `git add` away from being
+    # committed to the repository. Echo the shape of the statement, never the
+    # secret in it.
+    puts "Setting up replication on the destination with query: " \
+         "#{change_source_query.squish.sub(/SOURCE_PASSWORD='[^']*'/, "SOURCE_PASSWORD='[REDACTED]'")}"
     destination_client.query(change_source_query)
 
     puts 'Starting replica'
