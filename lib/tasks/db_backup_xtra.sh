@@ -392,15 +392,59 @@ stop_mysql_server() {
   fi
 }
 
-restore_primary_datadir() {
+# Resolves the MySQL data directory by asking the mysqld binary for its
+# configuration — more robust than parsing my.cnf, and works with the server
+# stopped (which it always is by the time a restore needs this).
+mysql_datadir() {
   local datadir
-  # Get the datadir by asking the mysqld binary for its configuration.
-  # This is more robust as it doesn't require a running server.
   datadir=$(mysqld --verbose --help | grep '^datadir' | awk '{print $2}')
   if [[ -z "$datadir" ]]; then
     echo "ERROR: Could not determine MySQL datadir from 'mysqld --verbose --help'." >&2
-    exit 1
+    return 1
   fi
+  echo "$datadir"
+}
+
+# Removes datadirs parked by EARLIER restore attempts.
+#
+# Every restore parks the pre-restore datadir as <datadir>.bak.<timestamp> for
+# rollback safety (see restore_primary_datadir), but nothing ever removed the
+# old ones. Repeated restores — a DR drill re-run, or a real incident that
+# takes a few attempts — therefore accumulate one FULL datadir copy per
+# attempt. Found live after ~5 restores on one box: 7.4G of parked copies
+# filled a 20G volume, and the next attempt died with "No space left on
+# device" during xtrabackup's decompress step (and, before that, with a
+# confusingly-worded InnoDB "OS error 71" that was the same disk exhaustion).
+#
+# This MUST run before restore_latest_chain downloads and decompresses into
+# /tmp, not just before the datadir is parked — by decompress time the disk is
+# already full, which is exactly how the original fix (placed inside
+# restore_primary_datadir) was still too late to help.
+#
+# Rollback safety is preserved: at this point the live datadir is untouched at
+# $datadir, and the current run parks it moments later, so there is always
+# exactly one rollback copy. Only copies from previous attempts are removed —
+# nobody rolls back to a datadir from several attempts ago.
+prune_parked_datadirs() {
+  local datadir parent_dir base_name old_bak freed
+  datadir=$(mysql_datadir) || return 1
+  parent_dir=$(dirname "$datadir")
+  base_name=$(basename "$datadir")
+
+  shopt -s nullglob
+  for old_bak in "${parent_dir}/${base_name}.bak."*; do
+    freed=$(sudo du -sh "$old_bak" 2>/dev/null | awk '{print $1}')
+    echo "→ Removing datadir parked by an earlier restore attempt: ${old_bak} (${freed:-unknown size})"
+    sudo rm -rf "$old_bak"
+  done
+  shopt -u nullglob
+
+  echo "→ Free space after pruning parked datadirs: $(df -h "$parent_dir" | tail -1 | awk '{print $4}')"
+}
+
+restore_primary_datadir() {
+  local datadir
+  datadir=$(mysql_datadir) || exit 1
 
   local backup_size
   backup_size=$(du -sh "$PRIMARY_RESTORE" | awk '{print $1}')
@@ -416,24 +460,6 @@ restore_primary_datadir() {
   local base_name
   base_name=$(basename "$datadir")
   local backup_path="${parent_dir}/${base_name}.bak.$(date +%s)"
-
-  # Prune any datadirs parked by EARLIER restore attempts before parking this
-  # one. Each attempt parks a full copy and nothing ever removed the old
-  # ones, so repeated restores (a DR drill re-run, or a real incident that
-  # takes a few tries) accumulate one full datadir per attempt — found live
-  # after ~5 restores on one box: 7.4G of parked copies filled a 20G volume,
-  # making xtrabackup's decompress step fail with "No space left on device"
-  # on the NEXT attempt. Only the most-recently-parked copy is ever
-  # operationally useful for rollback (nobody rolls back to a datadir from
-  # several attempts ago), so there's no reason to keep more than one — and
-  # we're about to park a fresh one below regardless.
-  shopt -s nullglob
-  local old_bak
-  for old_bak in "${parent_dir}/${base_name}.bak."*; do
-    echo "  - Removing datadir parked by an earlier restore attempt: ${old_bak}"
-    sudo rm -rf "$old_bak"
-  done
-  shopt -u nullglob
 
   # Park the old datadir instead of deleting it: if the restored backup turns out
   # to be bad (only discovered when MySQL fails to start below), the pre-restore
@@ -595,6 +621,9 @@ main() {
       ;;
     restore_primary)
       stop_mysql_server
+      # Free space from earlier attempts BEFORE downloading/decompressing —
+      # the download is what fills the disk, so this has to come first.
+      prune_parked_datadirs
       restore_latest_chain
       restore_primary_datadir
       # A successful primary restore means this host now holds the real dataset:
@@ -632,6 +661,7 @@ main() {
           incr_key=""
       fi
       stop_mysql_server
+      prune_parked_datadirs # same reason as restore_primary above
       prepare_restore_from_keys "$full_key" "$incr_key"
       restore_primary_datadir
       # Same as restore_primary: a promoted host is the real primary — arm it.
