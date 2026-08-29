@@ -23,3 +23,5 @@
 | 2026-08-29 13:51 | staging | in | ap-south-2 | FAILED | 4.1 | dr_drill_in_2026_08_29_1351 |
 | 2026-08-29 13:56 | staging | in | ap-south-2 | FAILED | 7.4 | dr_drill_in_2026_08_29_1356 |
 | 2026-08-29 14:08 | staging | in | ap-south-2 | FAILED | 5.4 | dr_drill_in_2026_08_29_1408 |
+| 2026-08-29 14:20 | staging | in | ap-south-2 | FAILED | 15.5 | dr_drill_in_2026_08_29_1420 |
+| 2026-08-29 14:36 | staging | in | ap-south-2 | FAILED | 4.1 | dr_drill_in_2026_08_29_1436 |
