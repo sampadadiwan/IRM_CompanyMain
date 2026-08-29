@@ -69,7 +69,7 @@
 
 // Classic (non-wizard) display mode: shows every step's fields on one page instead
 // of one at a time. Same underlying <form>/inputs as the wizard — just made all
-// visible at once — see notification_form_mode_controller.js.
+// visible at once — see form_mode_controller.js.
 .wizard_container.mode-classic {
   .stepwizard {
     display: none !important;

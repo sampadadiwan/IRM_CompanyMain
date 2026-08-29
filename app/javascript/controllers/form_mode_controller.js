@@ -1,9 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Toggles the custom-notification form between a guided step-by-step wizard and a
-// single "classic" page showing every field at once. Both modes share the exact
-// same <form>/inputs (CSS just shows/hides the .setup-content step cards), so
-// nothing entered is lost when switching and there is no duplicate-field risk.
+// Toggles a wizard form between a guided step-by-step mode and a single "classic"
+// page showing every field at once. Both modes share the exact same <form>/inputs
+// (CSS just shows/hides the .setup-content step cards), so nothing entered is lost
+// when switching and there is no duplicate-field risk. Generic — shared by every
+// wizard that offers a Classic Form toggle (Custom Notification, Capital Call, ...);
+// don't fork this per-wizard, see docs/technical/wizard_form_patterns.md.
 export default class extends Controller {
   static targets = ["wizardModeBtn", "classicModeBtn"]
 

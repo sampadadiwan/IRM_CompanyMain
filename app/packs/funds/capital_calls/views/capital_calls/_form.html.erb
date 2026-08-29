@@ -1,131 +1,442 @@
-<%= render FormCard.new(title: "Capital Call : #{capital_call.name}") do %>
+<%
+  # Shared by new.html.erb and edit.html.erb (like Custom Notification's wizard) — see
+  # docs/technical/wizard_form_patterns.md. `editing` gates the bits that only make sense
+  # once remittances already exist: call basis/fund closes/amounts become read-only (changing
+  # them post-creation isn't exposed here), the call-date-change cascade warning is wired up,
+  # and the account-entries upload shortcut (fund-level, not really a "finish creating" action)
+  # is dropped.
+  editing = capital_call.persisted?
+  form_title = "Capital Call : #{capital_call.name}"
+  fund_close_names = capital_call.fund.capital_commitments.pluck(:fund_close).uniq
+  unit_type_names = capital_call.fund.unit_types.present? ? capital_call.fund.unit_types.split(",").map(&:strip) : []
 
-  <%= form_with(model: capital_call, validate: true) do |form| %>
+  container_controllers = editing ? "wizard form-mode date-change-warning tooltip" : "wizard form-mode tooltip"
+  form_data = { controller: "call-copy" }
+  form_data[:action] = "submit->date-change-warning#interceptSubmit" if editing
+%>
+
+<div class="wizard_container" data-controller="<%= container_controllers %>"<% if editing %> data-date-change-warning-original-value-value="<%= capital_call.call_date&.iso8601 %>"<% end %>>
+
+  <%# Title + mode toggle — always visible above the steps, whichever mode is active. %>
+  <div class="row justify-content-md-center mb-2">
+    <div class="col-md-8 d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <h3 class="mb-0"><%= form_title %></h3>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Form display mode">
+        <button type="button" class="btn btn-outline-primary active" data-form-mode-target="wizardModeBtn" data-action="form-mode#showWizard">
+          <i class="ti ti-wand me-1"></i>Guided Wizard
+        </button>
+        <button type="button" class="btn btn-outline-primary" data-form-mode-target="classicModeBtn" data-action="form-mode#showClassic">
+          <i class="ti ti-list me-1"></i>Classic Form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row justify-content-md-center">
+    <div class="stepwizard hidden col-md-8">
+      <div class="stepwizard-row setup-panel">
+        <div class="stepwizard-step">
+          <a href="#step-1" type="button" class="btn btn-outline-primary btn-outline-circle">1</a>
+          <p>What to Expect</p>
+        </div>
+        <div class="stepwizard-step">
+          <a href="#step-2" type="button" class="btn disabled btn-outline-primary btn-outline-circle">2</a>
+          <p>Call Details</p>
+        </div>
+        <div class="stepwizard-step">
+          <a href="#step-3" type="button" class="btn disabled btn-outline-primary btn-outline-circle">3</a>
+          <p>Call Basis &amp; Amounts</p>
+        </div>
+        <div class="stepwizard-step">
+          <a href="#step-4" type="button" class="btn disabled btn-outline-primary btn-outline-circle">4</a>
+          <p>Fees &amp; Notifications</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%= form_with(model: capital_call, validate: true, class: "wizard_form row justify-content-md-center", data: form_data) do |form| %>
+
     <% if capital_call.errors.any? %>
-      <div class="alert alert-danger">
-        <h2><%= pluralize(capital_call.errors.count, "error") %> prohibited this capital call from being saved:</h2>
-        <ul>
-          <% capital_call.errors.each do |error| %>
-            <li><%= error.full_message %></li>
-          <% end %>
-        </ul>
+      <div class="col-md-8">
+        <div class="alert alert-danger">
+          <h2><%= pluralize(capital_call.errors.count, "error") %> prohibited this capital call from being saved:</h2>
+          <ul>
+            <% capital_call.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
       </div>
     <% end %>
 
-    <div data-controller="call-copy">
+    <%= form.text_field :entity_id, class: "form-control", hidden: true %>
+    <%= form.text_field :fund_id, class: "form-control", hidden: true %>
 
-      <%= form.text_field :entity_id, class: "form-control", hidden: true %>
-      <%= form.text_field :fund_id, class: "form-control", hidden: true %>
+    <%# ══════════════════════════════════════════════════════════════════
+        STEP 1 — What to Expect: a plain-language orientation before any inputs.
+        ══════════════════════════════════════════════════════════════════ %>
+    <div class="col-md-8 setup-content" id="step-1">
+      <div class="card">
+        <div class="card-header">1. What to Expect</div>
+        <div class="card-body">
 
-      <div class="form-group">
-        <%= form.label :name %>
-        <%= form.text_field :name, class: "form-control" %>
-      </div>
+          <% if editing %>
+            <h4 class="fw-semibold mb-1">Editing this Capital Call</h4>
+            <p class="text-muted mb-4">
+              You can update the name, dates, unit prices, fees, and notification settings for this call.
+              <strong>Call basis, applicable fund closes, and amounts</strong> were set when the call was
+              created and can't be changed here — remittances have already been generated against them.
+            </p>
+          <% else %>
+            <h4 class="fw-semibold mb-1">Creating a Capital Call</h4>
+            <p class="text-muted mb-4">
+              A capital call draws down money from investors against their commitments. Depending on the
+              <strong>call basis</strong> you choose, remittances for every applicable investor are generated
+              automatically — you won't need to compute individual amounts yourself.
+            </p>
+          <% end %>
 
-      <div class="form-group">
-        <%= form.label :call_basis %>
-        <%= form.select :call_basis, capital_call.call_basis_list, {}, { class: "form-control", data: { action: "change->call-copy#call_basis_changed" } } %>
-        <small class="text-muted">Select how the remittance amounts are computed</small>
-      </div>
-
-      <div class="form-group" id="applicable-to-group">
-        <%= form.label :fund_closes, "Applicable To" %>
-        <%
-          closes = ["All"] 
-          closes += capital_call.fund.capital_commitments.pluck(:fund_close).uniq 
-        %>
-        <%= form.select :fund_closes, closes, { include_blank: false, include_hidden: false }, 
-                        class: "form-control select2", multiple: "multiple" %>
-      </div>
-
-      <div id="close-percentages-container" class="field-group">
-        <% capital_call.fund.capital_commitments.pluck(:fund_close).uniq.each_with_index do |fund_close, index| %>
-          <% close_name = fund_close %>
-          <% percentage_value = capital_call.close_percentages&.dig(close_name) || 0 %>
-
-          <div class="row">
-            <div class="form-group col-md-4">
-              <%= form.label "Percentage for #{close_name}" %>
-              <%= form.number_field :close_percentages, step: :any, class: "form-control percentage", 
-                  name: "capital_call[close_percentages][#{close_name}]", 
-                  id: "#{close_name}_percentage", value: percentage_value %>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3 h-100 bg-primary-subtle">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-white">
+                  <i class="ti ti-list-details fs-5 text-primary-emphasis"></i>
+                </span>
+                <div>
+                  <% if editing %>
+                    <div class="fw-semibold text-dark">Review the basis</div>
+                    <div class="text-muted mt-1">
+                      Call basis, applicable fund closes, and computed amounts are shown read-only in step 3
+                      for reference — they were locked in when the call was created.
+                    </div>
+                  <% else %>
+                    <div class="fw-semibold text-dark">Pick a call basis</div>
+                    <div class="text-muted mt-1">
+                      Percentage of Commitment, Investable Capital Percentage, or Upload — each one changes
+                      which fields you fill in next and how remittances get computed.
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3 h-100 bg-success-subtle">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-white">
+                  <i class="ti ti-users fs-5 text-success-emphasis"></i>
+                </span>
+                <div>
+                  <% if editing %>
+                    <div class="fw-semibold text-dark">Update fees &amp; notifications</div>
+                    <div class="text-muted mt-1">
+                      Add or remove fees, and change whether call/payment notifications go out — same as
+                      when the call was created.
+                    </div>
+                  <% else %>
+                    <div class="fw-semibold text-dark">Choose who it applies to</div>
+                    <div class="text-muted mt-1">
+                      Apply the call to all investors, or only to specific fund closes — and set fees or
+                      call/payment notifications before saving.
+                    </div>
+                  <% end %>
+                </div>
+              </div>
             </div>
           </div>
 
-          <% if index == 0 %>
-            <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
-          <% end %>
-        <% end %>
-      </div>
-
-      <div id="percentage-fields-container"></div>
-
-      <!-- Global Percentage Called field that will be hidden if specific closes are selected -->
-      <div class="form-group" id="percentage_called_group">
-        <%= form.label :percentage_called %>
-        <%= form.number_field :percentage_called, class: "form-control", step: :any %>
-        <small class="text-muted">Write 100 for 100%</small>
-      </div>
-
-      <div class="form-group" id="amount_to_be_called_group" data-controller="currencyformat">
-        <%= form.label :amount_to_be_called %> <span class="formatted_currency"></span>
-        <%= form.number_field :amount_to_be_called, class: "form-control", data: { action: "input->currencyformat#format" } %>
-        <small class="text-muted">Total amount to be called, Call basis will be used for each folio.</small>
-      </div>
-
-      <div class="form-group">
-        <%= form.label :call_date %>
-        <%= form.date_field :call_date, class: "form-control" %>
-      </div>
-
-      <div class="form-group">
-        <%= form.label :due_date %>
-        <%= form.date_field :due_date, class: "form-control" %>
-      </div>
-
-      <% if capital_call.fund.unit_types.present? %>
-        <div id="price-container" class="field-group" >
-          <% capital_call.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
-            <% 
-              unit_type = unit_type.strip 
-              price = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : 0
-              premium = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : 0
-            %>
-            <div class="row">  
-              <div class="form-group col-md-4">
-                <%= form.label :unit_type, "#{unit_type} Unit Price" %>
-                <%= form.number_field :unit_type, step: :any, class: "form-control price", 
-                    name: "capital_call[unit_prices][#{unit_type}][price]", 
-                    id: "#{unit_type}_price", value: price %>
+          <div class="fw-semibold text-dark mb-2"><i class="ti ti-list-check me-1"></i>How this works</div>
+          <div class="row g-2 mb-4">
+            <div class="col-md-3">
+              <div class="p-3 border rounded-3 h-100">
+                <div class="text-muted mb-1">Step 1</div>
+                <div class="fw-semibold">What to Expect</div>
+                <div class="text-muted">You're here — a quick overview.</div>
               </div>
-              <div class="form-group col-md-3">
-                <%= form.label :unit_type, "Premium" %>      
-                <%= form.number_field :unit_type, step: :any, class: "form-control premium", 
-                    name: "capital_call[unit_prices][#{unit_type}][premium]", 
-                    id: "#{unit_type}_premium", value: premium %>
-              </div>
-              <% if index == 0 %>
-                <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
-              <% end %>
             </div>
-          <% end %>  
+            <div class="col-md-3">
+              <div class="p-3 border rounded-3 h-100">
+                <div class="text-muted mb-1">Step 2</div>
+                <div class="fw-semibold">Call Details</div>
+                <div class="text-muted">Name, call date, and due date.</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 border rounded-3 h-100">
+                <div class="text-muted mb-1">Step 3</div>
+                <div class="fw-semibold">Call Basis &amp; Amounts</div>
+                <div class="text-muted"><%= editing ? "Read-only recap, plus unit prices." : "How much is called, and from whom." %></div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 border rounded-3 h-100">
+                <div class="text-muted mb-1">Step 4</div>
+                <div class="fw-semibold">Fees &amp; Notifications</div>
+                <div class="text-muted">Extra fees, notices, and notes.</div>
+              </div>
+            </div>
+          </div>
+
+          <% if editing %>
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-4 bg-warning-subtle">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-white">
+                <i class="ti ti-alert-triangle fs-5 text-warning-emphasis"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark">Changing the call date cascades to every remittance</div>
+                <div class="text-muted mt-1">
+                  If you change the call date on the next step, you'll be asked to confirm — every
+                  remittance under this call (including verified ones) has its remittance date updated to
+                  match, and fees are recomputed in the background.
+                </div>
+              </div>
+            </div>
+          <% else %>
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-4 bg-warning-subtle">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-white">
+                <i class="ti ti-alert-triangle fs-5 text-warning-emphasis"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark">"Upload" basis skips automatic remittances</div>
+                <div class="text-muted mt-1">
+                  Choosing the <strong>Upload</strong> call basis means remittance amounts are not computed
+                  for you — you'll upload them separately after saving this call.
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+          <p class="text-muted mb-0">
+            Prefer one long page instead of steps? Use the <strong>Classic Form</strong> button above at any
+            time — nothing you've entered will be lost when you switch.
+          </p>
+
+          <div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-outline-primary nextBtn btn-lg" type="button"><%= editing ? "Continue" : "Let's get started" %> <i class="ti ti-arrow-right ms-1"></i></button>
+          </div>
+
         </div>
-      <% end %>
-
-      <%= render "/capital_calls/common_form_fields", capital_call: capital_call, form: form %>
-      <div class="form-group">
-        <%= link_to_add_association 'Add Fees', form, :call_fees, class: "btn btn-outline-success" %>
-        <%= link_to "Upload Account Entries", 
-                    new_import_upload_path("import_upload[owner_id]": capital_call.fund_id, 
-                    "import_upload[owner_type]": "Fund", 
-                    "import_upload[import_type]": "AccountEntry", 
-                    "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
-                    { class: "btn btn-outline-success", target: "_blank" } %> 
-
-        <%= form.submit t_common(:save), { class: "btn btn-outline-primary" } %>    
       </div>
-
     </div>
+    <!-- End step-1 -->
+
+    <%# ══════════════════════════════════════════════════════════════════
+        STEP 2 — Call Details: name and the two dates that anchor the call.
+        ══════════════════════════════════════════════════════════════════ %>
+    <div class="col-md-8 setup-content" id="step-2">
+      <div class="card">
+        <div class="card-header">2. Call Details</div>
+        <div class="card-body">
+
+          <div class="form-group">
+            <%= form.label :name, raw('<i class="ti ti-file-text me-1"></i>Name') %>
+            <%= form.text_field :name, class: "form-control" %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :call_date, raw('<i class="ti ti-calendar-event me-1"></i>Call Date') %>
+            <%= form.date_field :call_date, class: "form-control", data: { date_change_warning_target: "input" } %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :due_date, raw('<i class="ti ti-calendar-due me-1"></i>Due Date') %>
+            <%= form.date_field :due_date, class: "form-control" %>
+          </div>
+
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
+            <button class="btn btn-outline-primary nextBtn btn-lg" type="button"><%= t_common(:next) %></button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- End step-2 -->
+
+    <%# ══════════════════════════════════════════════════════════════════
+        STEP 3 — Call Basis & Amounts: how much is called and from whom.
+        call-copy#call_basis_changed toggles which of these fields show, all
+        scoped inside this one step so it never needs to reach into another.
+        On edit, call basis/fund closes/amounts are read-only — they're locked
+        in once remittances exist — but unit prices stay editable either way.
+        ══════════════════════════════════════════════════════════════════ %>
+    <div class="col-md-8 setup-content" id="step-3">
+      <div class="card">
+        <div class="card-header">3. Call Basis &amp; Amounts</div>
+        <div class="card-body">
+
+          <% if editing %>
+
+            <div class="alert alert-info d-flex align-items-start gap-2">
+              <i class="ti ti-lock fs-5 flex-shrink-0"></i>
+              <div>Call basis, applicable fund closes, and amounts are set when a call is created and can't be changed here.</div>
+            </div>
+
+            <dl class="row mb-4">
+              <dt class="col-sm-3"><i class="ti ti-list-details me-1 text-muted"></i>Call Basis</dt>
+              <dd class="col-sm-9"><%= capital_call.call_basis %></dd>
+
+              <dt class="col-sm-3"><i class="ti ti-git-branch me-1 text-muted"></i>Applicable To</dt>
+              <dd class="col-sm-9"><%= capital_call.fund_closes.presence&.join(", ") || "All" %></dd>
+
+              <% if capital_call.call_basis == "Upload" %>
+                <dt class="col-sm-3"><i class="ti ti-upload me-1 text-muted"></i>Amounts</dt>
+                <dd class="col-sm-9">Uploaded via account entries</dd>
+              <% elsif fund_close_names.present? && capital_call.close_percentages.present? %>
+                <dt class="col-sm-3"><i class="ti ti-percentage me-1 text-muted"></i>Close Percentages</dt>
+                <dd class="col-sm-9"><%= fund_close_names.map { |cn| "#{cn}: #{capital_call.close_percentages[cn] || 0}%" }.join(", ") %></dd>
+              <% else %>
+                <dt class="col-sm-3"><i class="ti ti-currency-dollar me-1 text-muted"></i>Amount To Be Called</dt>
+                <dd class="col-sm-9"><%= capital_call.amount_to_be_called %></dd>
+              <% end %>
+            </dl>
+
+          <% else %>
+
+            <div class="form-group">
+              <%= form.label :call_basis, raw('<i class="ti ti-list-details me-1"></i>Call Basis') %>
+              <%= form.select :call_basis, capital_call.call_basis_list, {}, { class: "form-control", data: { action: "change->call-copy#call_basis_changed" } } %>
+              <small class="text-muted">Select how the remittance amounts are computed</small>
+            </div>
+
+            <div class="form-group" id="applicable-to-group">
+              <%= form.label :fund_closes, raw('<i class="ti ti-git-branch me-1"></i>Applicable To') %>
+              <%
+                closes = ["All"]
+                closes += fund_close_names
+              %>
+              <%= form.select :fund_closes, closes, { include_blank: false, include_hidden: false },
+                              class: "form-control select2", multiple: "multiple" %>
+            </div>
+
+            <div id="close-percentages-container" class="field-group">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-semibold"><i class="ti ti-percentage me-1"></i>Close Percentages</span>
+                <% if fund_close_names.size > 1 %>
+                  <a href="#" data-action="click->call-copy#copy_all" class="link-primary text-decoration-none">
+                    <i class="ti ti-copy me-1"></i>Copy first to all
+                  </a>
+                <% end %>
+              </div>
+              <div class="row row-cols-2 row-cols-md-3 g-3">
+                <% fund_close_names.each do |fund_close| %>
+                  <% close_name = fund_close %>
+                  <% percentage_value = capital_call.close_percentages&.dig(close_name) || 0 %>
+
+                  <div class="col">
+                    <div class="form-group">
+                      <%= label_tag "#{close_name}_percentage", close_name %>
+                      <%= form.number_field :close_percentages, step: :any, class: "form-control percentage",
+                          name: "capital_call[close_percentages][#{close_name}]",
+                          id: "#{close_name}_percentage", value: percentage_value %>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+
+            <div id="percentage-fields-container"></div>
+
+            <!-- Global Percentage Called field that will be hidden if specific closes are selected -->
+            <div class="form-group" id="percentage_called_group">
+              <%= form.label :percentage_called, raw('<i class="ti ti-percentage me-1"></i>Percentage Called') %>
+              <%= form.number_field :percentage_called, class: "form-control", step: :any %>
+              <small class="text-muted">Write 100 for 100%</small>
+            </div>
+
+            <div class="form-group" id="amount_to_be_called_group" data-controller="currencyformat">
+              <%= form.label :amount_to_be_called, raw('<i class="ti ti-currency-dollar me-1"></i>Amount To Be Called') %> <span class="formatted_currency"></span>
+              <%= form.number_field :amount_to_be_called, class: "form-control", data: { action: "input->currencyformat#format" } %>
+              <small class="text-muted">Total amount to be called, Call basis will be used for each folio.</small>
+            </div>
+
+          <% end %>
+
+          <% if unit_type_names.present? %>
+            <div id="price-container" class="field-group">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-semibold"><i class="ti ti-coin me-1"></i>Unit Prices</span>
+                <% if unit_type_names.size > 1 %>
+                  <a href="#" data-action="click->call-copy#copy_all" class="link-primary text-decoration-none">
+                    <i class="ti ti-copy me-1"></i>Copy first to all
+                  </a>
+                <% end %>
+              </div>
+              <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                <% unit_type_names.each do |unit_type| %>
+                  <%
+                    price = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : 0
+                    premium = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : 0
+                  %>
+                  <div class="col">
+                    <div class="p-3 border rounded-3 h-100">
+                      <div class="fw-semibold mb-2"><%= unit_type %></div>
+                      <div class="row g-2">
+                        <div class="form-group col-6">
+                          <%= label_tag "#{unit_type}_price", "Price" %>
+                          <%= form.number_field :unit_type, step: :any, class: "form-control price",
+                              name: "capital_call[unit_prices][#{unit_type}][price]",
+                              id: "#{unit_type}_price", value: price %>
+                        </div>
+                        <div class="form-group col-6">
+                          <%= label_tag "#{unit_type}_premium", "Premium" %>
+                          <%= form.number_field :unit_type, step: :any, class: "form-control premium",
+                              name: "capital_call[unit_prices][#{unit_type}][premium]",
+                              id: "#{unit_type}_premium", value: premium %>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
+            <button class="btn btn-outline-primary nextBtn btn-lg" type="button"><%= t_common(:next) %></button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- End step-3 -->
+
+    <%# ══════════════════════════════════════════════════════════════════
+        STEP 4 — Fees & Notifications: additional fees, call/payment
+        notices, and notes.
+        ══════════════════════════════════════════════════════════════════ %>
+    <div class="col-md-8 setup-content" id="step-4">
+      <div class="card">
+        <div class="card-header">4. Fees &amp; Notifications</div>
+        <div class="card-body">
+
+          <%= render "/capital_calls/common_form_fields", capital_call: capital_call, form: form %>
+
+          <div class="form-group">
+            <%= link_to_add_association raw('<i class="ti ti-plus me-1"></i>Add Fees'), form, :call_fees, class: "btn btn-outline-success" %>
+            <% unless editing %>
+              <%= link_to raw('<i class="ti ti-upload me-1"></i>Upload Account Entries'),
+                          new_import_upload_path("import_upload[owner_id]": capital_call.fund_id,
+                          "import_upload[owner_type]": "Fund",
+                          "import_upload[import_type]": "AccountEntry",
+                          "sample_upload": "ACCOUNT_ENTRY_SAMPLE"),
+                          { class: "btn btn-outline-success", target: "_blank", data: { bs_toggle: "tooltip", bs_placement: "top",
+                            bs_title: "Opens a new tab to bulk-upload the Fee/Expense account entries these fees are summed from." } } %>
+            <% end %>
+          </div>
+
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
+            <%= form.submit t_common(:save), { class: "btn btn-outline-primary btn-lg" } %>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- End step-4 -->
+
   <% end %>
 
-<% end %>
+  <%= render "capital_calls/call_date_change_modal", capital_call: capital_call if editing %>
+
+</div>

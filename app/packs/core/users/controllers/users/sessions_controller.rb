@@ -10,6 +10,18 @@ module Users
     SMS_UNDELIVERABLE_MESSAGE = "We can't send a verification code to your phone right now. " \
                                 "Please contact your administrator.".freeze
 
+    def new
+      # A session-expired Turbo Frame fetch auto-follows Devise's redirect here and
+      # renders this page once to check for a matching <turbo-frame> (see
+      # turbo_frame_error_handler.js) — that render is thrown away, and with it the
+      # flash Rails would otherwise sweep after being read. The frame fetch still
+      # carries its Turbo-Frame header on the followed redirect, so `keep` only for
+      # that throwaway render; the real full-page reload that follows (plain
+      # navigation, no header) then sees the flash Devise originally set.
+      flash.keep if request.headers["Turbo-Frame"].present?
+      super
+    end
+
     def create
       self.resource = warden.authenticate!(auth_options)
 

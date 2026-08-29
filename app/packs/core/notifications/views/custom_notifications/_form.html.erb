@@ -1,17 +1,17 @@
 <% adhoc_to_available = custom_notification.owner.respond_to?(:adhoc_notifications_to) %>
 <% show_breakdown_field = %w[CapitalCall CapitalDistribution].include?(custom_notification.owner_type) || %w[CapitalCall CapitalDistribution].include?(custom_notification.for_type) %>
 
-<div class="wizard_container" data-controller="wizard notification-form-mode">
+<div class="wizard_container" data-controller="wizard form-mode">
 
   <%# Title + mode toggle — always visible above the steps, whichever mode is active. %>
   <div class="row justify-content-md-center mb-2">
     <div class="col-md-8 d-flex align-items-center justify-content-between flex-wrap gap-2">
       <h3 class="mb-0"><%= custom_notification.form_title %></h3>
       <div class="btn-group btn-group-sm" role="group" aria-label="Form display mode">
-        <button type="button" class="btn btn-outline-primary active" data-notification-form-mode-target="wizardModeBtn" data-action="notification-form-mode#showWizard">
+        <button type="button" class="btn btn-outline-primary active" data-form-mode-target="wizardModeBtn" data-action="form-mode#showWizard">
           <i class="ti ti-wand me-1"></i>Guided Wizard
         </button>
-        <button type="button" class="btn btn-outline-primary" data-notification-form-mode-target="classicModeBtn" data-action="notification-form-mode#showClassic">
+        <button type="button" class="btn btn-outline-primary" data-form-mode-target="classicModeBtn" data-action="form-mode#showClassic">
           <i class="ti ti-list me-1"></i>Classic Form
         </button>
       </div>
