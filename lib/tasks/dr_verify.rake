@@ -80,39 +80,34 @@ namespace :dr do
     # nginx:switch_app hook), so give a rebooting puma up to 30s per endpoint.
     # The Host header must address the APP host — never the apex.
     #
-    # On production the apex (caphive.com) is the marketing website: nginx
-    # serves it straight from public/website and the Website middleware backs
-    # that up, so every /health_check/* URL there is a legitimate 404. Verified
-    # on a production DR box: caphive.com -> 404, www.caphive.com -> 301,
+    # On production the apex (caphive.com) is the website: nginx serves it
+    # straight from public/website and the Website middleware backs that up, so
+    # every /health_check/* URL there is a legitimate 404. Verified on a
+    # production DR box: caphive.com -> 404, www.caphive.com -> 301,
     # app.caphive.com -> 200.
     #
-    # DOMAIN cannot be used as-is because it means different things per
-    # environment — production sets the apex, staging sets the app host
-    # (dev.altconnects.com). So reduce it to the base domain and rebuild the
-    # app host, which is correct for both without inspecting WEBSITE_HOSTS:
-    #   caphive.com         -> caphive.com     -> app.caphive.com
-    #   dev.altconnects.com -> altconnects.com -> dev.altconnects.com
-    #
-    # Same convention as aws:dns_cutover and aws:dr_verify_edge. Base domain is
-    # the last two labels — every domain here is a .com; a multi-part public
-    # suffix (foo.co.uk) would need a real public-suffix list.
-    # Health checks must ask for the APP host, never the apex.
-    #
-    # On production the apex is the marketing website — nginx serves it from
-    # public/website — so /health_check/* there is a legitimate 404. Verified on
-    # a production DR box: caphive.com -> 404, app.caphive.com -> 200.
-    #
-    # DOMAIN is the deployment's domain (caphive.com / caphive.us /
-    # dev.altconnects.com); reduce it to the base domain and prefix the app
-    # host, matching aws:dns_cutover and aws:dr_verify_edge:
-    #   caphive.com         -> app.caphive.com
-    #   caphive.us          -> app.caphive.us
-    #   dev.altconnects.com -> dev.altconnects.com
-    domain = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first.to_s.sub(/\Awww\./, "")
-    raise "DOMAIN is not set — cannot derive the health-check host" if domain.empty?
+    # HOST *is* the app host and every .env file sets it — app.caphive.com,
+    # app.caphive.us, dev.altconnects.com, dev.altconnects.us — so read it
+    # rather than re-deriving a value we already have.
+    host_header = ENV["HOST"].to_s.sub(%r{\Ahttps?://}, "").split("/").first.to_s.strip
+    if host_header.empty?
+      # Fallback for a stack whose env file predates HOST. DOMAIN can't be used
+      # as-is because it means different things per environment — production
+      # sets the apex, staging sets the app host — so reduce it to the base
+      # domain and re-prefix, matching aws:dns_cutover and aws:dr_verify_edge:
+      #   caphive.com         -> caphive.com     -> app.caphive.com
+      #   dev.altconnects.com -> altconnects.com -> dev.altconnects.com
+      # Note the two guesses this makes and HOST doesn't: the app prefix comes
+      # from RAILS_ENV, and the base domain is assumed to be the last two labels
+      # (fine for .com/.us; a multi-part suffix like foo.co.uk would need a real
+      # public-suffix list). That is why it is the fallback, not the primary.
+      domain = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first.to_s.sub(/\Awww\./, "")
+      raise "Neither HOST nor DOMAIN is set — cannot derive the health-check host" if domain.empty?
 
-    base_domain = domain.split(".").last(2).join(".")
-    host_header = "#{Rails.env.production? ? 'app' : 'dev'}.#{base_domain}"
+      base_domain = domain.split(".").last(2).join(".")
+      host_header = "#{Rails.env.production? ? 'app' : 'dev'}.#{base_domain}"
+      puts "⚠️  HOST not set — derived the health-check host from DOMAIN instead"
+    end
     puts "🌐 Health checks will use Host: #{host_header}"
     # host:/expect: default to the app host and 200 so existing callers are
     # unchanged; the website checks below need a different host, and the
@@ -148,7 +143,11 @@ namespace :dr do
     # first entry is canonical and the rest 301 to it (see lib/middleware/website.rb).
     website_hosts = ENV["WEBSITE_HOSTS"].to_s.split(",").map(&:strip).reject(&:empty?)
     if website_hosts.empty?
-      check.call("Static website", :ok, "skipped — WEBSITE_HOSTS not set for this stack")
+      # :warn, not :ok — a check that did not run must never be counted among
+      # the ones that passed. The scorecard feeds an auditor-facing report whose
+      # headline is "N of M checks passed"; a skip rendered as ✅ inflates it.
+      # (.env.staging.us has no WEBSITE_HOSTS today, so this path is live.)
+      check.call("Static website", :warn, "skipped — WEBSITE_HOSTS not set for this stack")
     else
       canonical, *alias_hosts = website_hosts
       guarded.call("HTTP website apex (#{canonical})") do

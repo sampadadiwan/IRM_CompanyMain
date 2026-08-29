@@ -411,26 +411,27 @@ mysql_datadir() {
   echo "$datadir"
 }
 
-# Removes datadirs parked by EARLIER restore attempts.
+# Removes datadirs parked by EARLIER restore attempts. LEGACY CLEANUP ONLY.
 #
-# Every restore parks the pre-restore datadir as <datadir>.bak.<timestamp> for
-# rollback safety (see restore_primary_datadir), but nothing ever removed the
-# old ones. Repeated restores — a DR drill re-run, or a real incident that
-# takes a few attempts — therefore accumulate one FULL datadir copy per
-# attempt. Found live after ~5 restores on one box: 7.4G of parked copies
-# filled a 20G volume, and the next attempt died with "No space left on
-# device" during xtrabackup's decompress step (and, before that, with a
-# confusingly-worded InnoDB "OS error 71" that was the same disk exhaustion).
+# Restores used to park the pre-restore datadir as <datadir>.bak.<timestamp>
+# for rollback safety, and nothing ever removed the old ones, so repeated
+# restores — a DR drill re-run, or a real incident that takes a few attempts —
+# accumulated one FULL datadir copy per attempt. Found live after ~5 restores
+# on one box: 7.4G of parked copies filled a 20G volume, and the next attempt
+# died with "No space left on device" during xtrabackup's decompress step (and,
+# before that, with a confusingly-worded InnoDB "OS error 71" that was the same
+# disk exhaustion).
 #
-# This MUST run before restore_latest_chain downloads and decompresses into
-# /tmp, not just before the datadir is parked — by decompress time the disk is
-# already full, which is exactly how the original fix (placed inside
-# restore_primary_datadir) was still too late to help.
+# Nothing creates .bak.<ts> directories any more (restore_primary_datadir
+# deletes instead of parking), so on a box that has only ever run the current
+# script this loop finds nothing and costs a stat. It is kept for boxes carrying
+# parked copies from the older script — which is every long-lived DB host that
+# has not been rebuilt since — and can be deleted once none remain.
 #
-# Rollback safety is preserved: at this point the live datadir is untouched at
-# $datadir, and the current run parks it moments later, so there is always
-# exactly one rollback copy. Only copies from previous attempts are removed —
-# nobody rolls back to a datadir from several attempts ago.
+# It runs before restore_latest_chain rather than just before the datadir is
+# replaced: by decompress time the disk is already full, which is exactly how
+# the original fix (placed inside restore_primary_datadir) was still too late
+# to help.
 prune_parked_datadirs() {
   local datadir parent_dir base_name old_bak freed
   datadir=$(mysql_datadir) || return 1
@@ -496,10 +497,13 @@ restore_primary_datadir() {
   # next restore died with "No space left on device" during decompress (and,
   # once the disk hit 0 bytes, even the SCP of this script failed).
   #
-  # Safe because this runs only AFTER restore_latest_chain has downloaded and
-  # prepared the replacement — set -euo pipefail aborts the run before reaching
-  # here if that failed, so the new data is already staged in $PRIMARY_RESTORE
-  # by the time the old datadir is removed.
+  # NOTE: on the restore_primary / restore_from_primary paths this is normally a
+  # no-op — purge_datadir already removed $datadir before restore_latest_chain
+  # ran, because the download needs that space to fit at all. The datadir is
+  # therefore gone from the moment staging starts, NOT from here; purge_datadir
+  # is where that trade-off is made and explained. This line stays so the
+  # function is correct on its own (a caller that skips purge_datadir, or a
+  # datadir mysqld recreated in between) rather than as the point of no return.
   echo "  - Removing old datadir ${datadir} (restores never run in place — nothing to roll back to)"
   sudo rm -rf "$datadir"
 

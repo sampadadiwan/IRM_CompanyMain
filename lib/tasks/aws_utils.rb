@@ -466,17 +466,44 @@ module AwsUtils
     # silently corrupts the very evidence this file exists to preserve. Verified
     # against a real 2MB production transcript: these patterns change exactly
     # the credential line and nothing else.
+    #
+    # Credential key spellings. The optional `[\w-]*[_-]` prefix is what makes
+    # the env-var forms match: an earlier version anchored on `\bpassword`,
+    # and `\b` does NOT match between `_` and `P`, so `DB_PASSWORD=…` and
+    # `MYSQL_ROOT_PASSWORD: …` — the spellings this codebase actually uses,
+    # DB_PASSWORD being the credentials key reset_replication itself reads —
+    # passed through untouched.
+    #
+    # `pwd` requires a prefix (MYSQL_PWD, DB_PWD) rather than allowing a bare
+    # match: `pwd` on its own is a shell command that legitimately appears in a
+    # transcript, and redacting around it would corrupt the evidence.
+    SECRET_KEY = /
+      (?:[\w-]*[_-])?(?:password|passwd|secret_access_key|secret_key)
+      |
+      (?:[\w-]+[_-])pwd
+    /xi
+
+    # Contract every pattern must honour, because `scrub` relies on it:
+    #   group 1 = key + separator + any OPENING quote  (kept verbatim)
+    #   group 2 = the matching CLOSING quote, if any   (kept verbatim)
+    #   everything between the two = the secret        (replaced)
     SECRET_PATTERNS = [
       /(SOURCE_PASSWORD\s*=\s*')[^']*(')/i,
       /(IDENTIFIED\s+BY\s+')[^']*(')/i,
-      /(MYSQL_PWD\s*=\s*)(?!\[REDACTED\])(\S+)/i,
-      /(\b(?:aws_secret_access_key|secret_access_key)\s*[=:]\s*)(?!\[REDACTED\])(\S+)/i,
-      /(\b(?:password|passwd)\s*[=:]\s*)(?!\[REDACTED\])(\S+)/i
+      # Generic `key = value` / `key: value`, quoted or bare. The value stops at
+      # a quote, comma or semicolon so it can't swallow the rest of a JSON
+      # object or a multi-clause SQL statement.
+      /(\b#{SECRET_KEY}["']?\s*[=:]\s*["']?)(?!\[REDACTED\])[^\s"',;]+(["']?)/
     ].freeze
 
     def self.scrub(text)
       SECRET_PATTERNS.reduce(text.to_s) do |acc, pattern|
-        acc.gsub(pattern) { "#{Regexp.last_match(1)}[REDACTED]#{Regexp.last_match(2) if Regexp.last_match(2) == "'"}" }
+        acc.gsub(pattern) do
+          closing = Regexp.last_match(2)
+          # Re-emit the closing quote only if there was one — group 2 is an
+          # empty string for the bare `KEY=value` form.
+          "#{Regexp.last_match(1)}[REDACTED]#{closing if ["'", '"'].include?(closing)}"
+        end
       end
     end
 

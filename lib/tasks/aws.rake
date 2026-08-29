@@ -331,8 +331,11 @@ namespace :aws do
     ensure
       duration_min = ((Time.now - started_at) / 60).round(1)
 
-      # Return the operator's working tree to where it was
-      run_cmd("git checkout #{original_branch}") unless original_branch.empty?
+      # Evidence FIRST, housekeeping second. Anything that can raise in here
+      # replaces the exception that actually failed the drill and skips
+      # everything below it — and the whole point of this ensure block is that a
+      # failed drill still leaves a record. The git checkout below is exactly
+      # such a statement, so it now runs last and swallows its own errors.
 
       # Append to the drill log — the audit trail that DR is tested, not assumed
       log_file = Rails.root.join("docs", "dr_drills.md")
@@ -360,6 +363,26 @@ namespace :aws do
       puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured rebuild time: #{duration_min} minutes (logged to docs/dr_drills.md)"
       puts "   NOTE: that figure excludes detection, disaster declaration, and DNS cutover/TTL —"
       puts "         it is rebuild time, not end-to-end RTO. See the report for the full scope."
+
+      # Return the operator's working tree to where it was.
+      #
+      # Runs AFTER the evidence is on disk, and never raises: a drill that dies
+      # between commit_dr_changes' `git checkout -B <drill_branch>` and its
+      # commit leaves modified config files on the drill branch, and `git
+      # checkout <original>` then fails with "local changes would be
+      # overwritten". Raising here would discard the real failure and take the
+      # drill log and the evidence report down with it — a worse outcome than
+      # leaving the operator on the drill branch, which the message below
+      # tells them how to fix.
+      unless original_branch.empty?
+        begin
+          run_cmd("git checkout #{original_branch}")
+        rescue StandardError => e
+          puts "⚠️  Could not return to '#{original_branch}': #{e.message}"
+          puts "   You are still on '#{drill_branch}'. The drill's config edits are here;"
+          puts "   switch back with: git checkout #{original_branch}  (add --force to discard them)"
+        end
+      end
 
       if result == "PASSED"
         if ENV["TEARDOWN"] == "true"
