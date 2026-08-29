@@ -522,6 +522,17 @@ namespace :IRM do
       # Remove the /etc/nginx/sites-enabled/default file
       execute :sudo, :rm, "-f", "/etc/nginx/sites-enabled/default"
 
+      # Legacy naming: AMIs baked before the IRM_<stage> convention ship an
+      # ENABLED `nginx_IRM_<stage>` site (symlink dated 2024-09 on the current
+      # production AMI) that declares the SAME `upstream puma_IRM_<stage>`
+      # block as the config installed above. Two enabled files declaring one
+      # upstream makes `nginx -t` fail with "duplicate upstream", so nginx
+      # refuses to start and the run dies at deploy:ensure_permissions'
+      # `service nginx restart`.
+      # Found by the FIRST production DR drill — staging AMIs don't carry the
+      # legacy file, so this was invisible to every staging drill.
+      execute :sudo, :rm, "-f", "/etc/nginx/sites-enabled/nginx_IRM_#{fetch(:stage)}"
+
       execute :mkdir, "-p", "/home/ubuntu/IRM/shared/tmp/sockets"
       execute :touch, "/home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock"
 
