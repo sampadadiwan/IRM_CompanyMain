@@ -425,6 +425,95 @@ module AwsUtils
   # timestamped banner per phase, elapsed time from the start of the run, and a
   # closing summary with per-phase timings that shows where the RTO went.
   # ---------------------------------------------------------------------------
+  # Writes to several IOs at once, so a DR run can capture its own console
+  # output to a file while still showing it live. Evidence that depends on the
+  # operator remembering `| tee` mid-incident is evidence you will not have.
+  #
+  # Safe for the DR path specifically because nothing there writes straight to
+  # fd 1: every external command goes through run_cmd (Open3.popen3, output
+  # re-emitted with Ruby `puts`) or Open3.capture3, so swapping $stdout catches
+  # all of it. A bare `system()` call would bypass this — there are none in the
+  # recovery sequence, and adding one would silently punch a hole in the record.
+  class TeeIO
+    def initialize(*targets)
+      @targets = targets
+    end
+
+    def write(*args)
+      @targets.each do |t|
+        t.write(*args)
+        t.flush
+      rescue StandardError
+        nil # a failing transcript file must never take down a recovery
+      end
+      args.sum { |a| a.to_s.bytesize }
+    end
+
+    def puts(*args)
+      return write("\n") if args.empty?
+
+      args.flatten.each do |arg|
+        str = arg.to_s
+        write(str.end_with?("\n") ? str : "#{str}\n")
+      end
+      nil
+    end
+
+    def print(*args)
+      args.each { |a| write(a.to_s) }
+      nil
+    end
+
+    def printf(fmt, *args)
+      write(format(fmt, *args))
+    end
+
+    def <<(obj)
+      write(obj.to_s)
+      self
+    end
+
+    def flush
+      @targets.each { |t| t.flush rescue nil }
+      self
+    end
+
+    def sync = true
+
+    # Not endless: Ruby forbids endless definitions for setter methods
+    def sync=(value)
+      value
+    end
+
+    def tty? = false
+    def isatty = false
+    def fileno = @targets.first.fileno
+  end
+
+  # Runs the block with stdout/stderr duplicated into docs/dr_runs/<name>.log.
+  # The transcript is the blow-by-blow record behind the evidence report:
+  # write_dr_report indexes independently verifiable claims, this is what
+  # actually happened, line by line.
+  def with_dr_transcript(name)
+    path = Rails.root.join("docs", "dr_runs", "#{name}.log")
+    FileUtils.mkdir_p(File.dirname(path))
+    file = File.open(path, "w")
+    file.sync = true # survive a hard failure mid-run
+    original_stdout = $stdout
+    original_stderr = $stderr
+    $stdout = TeeIO.new(original_stdout, file)
+    $stderr = TeeIO.new(original_stderr, file)
+    puts "📄 Capturing this run's transcript to #{path.to_s.sub("#{Rails.root}/", '')}"
+    yield path
+  ensure
+    # Restore the real streams FIRST so the closing message reaches the
+    # terminal even if the file handle is in a bad state
+    $stdout = original_stdout if original_stdout
+    $stderr = original_stderr if original_stderr
+    file&.close
+    puts "📄 Full transcript saved: #{path.to_s.sub("#{Rails.root}/", '')}" if path
+  end
+
   DR_PHASES = [] # [[title, started_at, finished_at], ...]
 
   # Externally verifiable references collected during the run — see
@@ -605,10 +694,16 @@ module AwsUtils
       LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify
       ```
 
+      ## Full transcript
+
+      The complete console output of this run — every command, its output, and
+      the verification scorecard — was captured automatically to
+      `docs/dr_runs/#{branch}.log`. Read it alongside this report: the report
+      says what is claimed and how to check it independently, the transcript
+      says what actually happened, line by line.
+
       ---
       Generated #{finished.utc.iso8601} by `#{drill ? 'rake aws:dr_drill' : 'rake aws:setup_infra'}`.
-      Preserve the full console transcript alongside this file — capture it with
-      `rake "..." 2>&1 | tee docs/dr_runs/#{branch}.log`.
     MD
 
     puts "🧾 Evidence report written to #{path.to_s.sub(Rails.root.to_s + '/', '')}"

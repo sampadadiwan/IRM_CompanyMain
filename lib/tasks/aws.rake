@@ -315,6 +315,10 @@ namespace :aws do
     result = "FAILED"
 
     puts "🚨 DR DRILL: rebuilding #{stack} (#{env_variant}) in #{region} on branch #{drill_branch}"
+    # Capture the whole run — including the ensure block's summary and report
+    # line — to docs/dr_runs/<branch>.log, so the transcript exists without the
+    # operator having to pipe through tee.
+    with_dr_transcript(drill_branch) do
     begin
       # setup_infra writes the evidence report itself for a REAL recovery; for a
       # drill we defer it to the ensure block below so a FAILED drill produces a
@@ -366,6 +370,7 @@ namespace :aws do
           puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack #{stack}-#{region} --yes"
         end
       end
+    end
     end
   end
 
