@@ -279,6 +279,51 @@ module FundsHelper
     [funds, selected_fund_ids]
   end
 
+  # Percentage of committed capital that has been called, clamped to 0..100.
+  # Used by the fund card variants to draw deployment bars / donuts.
+  def fund_called_pct(fund)
+    committed = fund.committed_amount.to_f
+    return 0 if committed <= 0
+
+    ((fund.call_amount.to_f / committed) * 100).round.clamp(0, 100)
+  end
+
+  # Percentage of called capital that has been returned to investors, clamped to 0..100.
+  def fund_distributed_pct(fund)
+    called = fund.call_amount.to_f
+    return 0 if called <= 0
+
+    ((fund.distribution_amount.abs.to_f / called) * 100).round.clamp(0, 100)
+  end
+
+  # Semantic tone for a fund ratio, used to colour the value on the fund cards.
+  # Returns one of "good" / "ok" / "poor" / "neutral" so the SCSS can map it to
+  # success / warning / danger / primary without the thresholds living in views.
+  def fund_ratio_tone(fund_ratio)
+    val = fund_ratio.value.to_f
+    case fund_ratio.name
+    when "XIRR", "IRR", "Gross Portfolio IRR", "Net IRR"
+      # IRR-style ratios are percentages
+      if val > 15 then "good"
+      elsif val > 8 then "ok"
+      else "poor"
+      end
+    when "TVPI", "MOIC", "Value To Cost", "Portfolio Value to Cost", "DPI"
+      # Multiples: above 2x is good, above 1x is break-even-plus
+      if val > 2.0 then "good"
+      elsif val > 1.0 then "ok"
+      else "poor"
+      end
+    else
+      "neutral"
+    end
+  end
+
+  # Short label for a ratio name on compact cards ("Portfolio Value to Cost" -> "Value to Cost")
+  def fund_ratio_short_name(fund_ratio)
+    fund_ratio.name.sub("Portfolio ", "")
+  end
+
   # Returns the latest values for specified ratios from pre-loaded fund_ratios
   # Expects fund_ratios to be eager-loaded via includes(:fund_ratios) in controller
   def get_latest_fund_ratios(fund, ratio_names = ["Gross Portfolio IRR", "Portfolio Value to Cost", "XIRR", "TVPI"])

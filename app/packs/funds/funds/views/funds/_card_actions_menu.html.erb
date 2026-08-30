@@ -1,0 +1,43 @@
+<%#
+  Shared "Actions" dropdown for every fund card variant (card, card2..card5).
+
+  Locals:
+    fund   - the Fund
+    style  - :button (outlined "Actions" button, default) or :dots (minimal vertical-dots trigger)
+%>
+<%
+  style ||= :button
+%>
+<div class="dropdown">
+  <% if style == :dots %>
+    <button class="fcv-dots-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Fund actions">
+      <i class="ti ti-dots-vertical"></i>
+    </button>
+  <% else %>
+    <button class="btn btn-outline-primary btn-actions dropdown-toggle d-flex align-items-center gap-2" type="button"
+            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <i class="ti ti-settings fs-5"></i> Actions
+    </button>
+  <% end %>
+  <div class="dropdown-menu dropdown-menu-end">
+    <%= link_to dashboard_fund_path(fund), class: "dropdown-item d-flex align-items-center gap-2" do %>
+      <i class="ti ti-layout-dashboard"></i> Dashboard
+    <% end %>
+    <%= link_to edit_fund_path(fund), class: "dropdown-item d-flex align-items-center gap-2" do %>
+      <i class="ti ti-edit"></i> <%= t_common(:edit) %> Fund
+    <% end %>
+    <div class="dropdown-divider"></div>
+    <%= link_to fund_path(fund, tab: "docs-tab"), class: "dropdown-item d-flex align-items-center gap-2" do %>
+      <i class="ti ti-file-text"></i> Documents
+    <% end %>
+    <%= link_to fund_path(fund, tab: "portfolio-investments-tab"), class: "dropdown-item d-flex align-items-center gap-2" do %>
+      <i class="ti ti-briefcase"></i> Portfolio
+    <% end %>
+    <%= link_to fund_unit_settings_path(fund_id: fund.id), class: "dropdown-item d-flex align-items-center gap-2" do %>
+      <i class="ti ti-settings"></i> Fund Unit Settings
+    <% end %>
+    <%= link_to account_entries_path(fund_id: fund.id, fund_accounts_only: true), class: "dropdown-item d-flex align-items-center gap-2" do %>
+      <i class="ti ti-book"></i> Fund Account Entries
+    <% end %>
+  </div>
+</div>

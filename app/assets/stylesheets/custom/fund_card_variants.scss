@@ -1,0 +1,504 @@
+// ── Fund card variants B / C / D ─────────────────────────────────────────────
+//
+// Styles for the fund card partials selected on the FM Landing Page "Funds"
+// widget via metadata {card_type: 'card3' | 'card4' | 'card5'}.
+//   card3 = .fc3-* "Refined current"  (full width, stacked bar + tile grid)
+//   card4 = .fc4-* "Stat strip"       (one row per fund)
+//   card5 = .fc5-* "Chart-forward"    (CSS donut + ratio tiles)
+// Variant A (card2) keeps its existing .fc2-* rules in fund_card.scss.
+//
+// Everything derives from the theme tokens set up in _base_card.scss
+// (--card-primary, --card-primary-rgb) plus Bootstrap's --bs-* colours, so the
+// cards follow all colour themes and dark mode without per-theme overrides.
+
+// Shared neutrals for the variants (light + dark)
+:root {
+  --fcv-surface: #ffffff;
+  --fcv-surface-2: #f6f8fc;
+  --fcv-line: #e4e8f1;
+  --fcv-line-2: #eef1f7;
+  --fcv-ink: #1b2437;
+  --fcv-ink-2: #4a5670;
+  --fcv-ink-3: #8590a6;
+  --fcv-shadow: 0 2px 10px rgba(27, 36, 55, 0.06);
+  --fcv-good: #0ea88b;
+  --fcv-ok: #d97706;
+  --fcv-poor: #dc2626;
+}
+
+[data-bs-theme=dark] {
+  --fcv-surface: #1f2637;
+  --fcv-surface-2: #242c3f;
+  --fcv-line: #2f3a52;
+  --fcv-line-2: #293349;
+  --fcv-ink: #eef1f7;
+  --fcv-ink-2: #b5bdd0;
+  --fcv-ink-3: #7c869d;
+  --fcv-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --fcv-good: #3be0c0;
+  --fcv-ok: #fbbf24;
+  --fcv-poor: #f87171;
+}
+
+// ── Shared pieces ────────────────────────────────────────────────────────────
+
+// Semantic tone on a value (set by FundsHelper#fund_ratio_tone)
+.fcv-good    { color: var(--fcv-good) !important; }
+.fcv-ok      { color: var(--fcv-ok) !important; }
+.fcv-poor    { color: var(--fcv-poor) !important; }
+.fcv-neutral { color: var(--card-primary) !important; }
+
+// Small category pill
+.fcv-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 9px;
+  border-radius: 20px;
+  vertical-align: middle;
+  background: rgba(var(--card-primary-rgb), 0.12);
+  color: var(--card-primary);
+}
+
+// Minimal vertical-dots actions trigger (used by card2 / card4 via card_actions_menu)
+.fcv-dots-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--fcv-ink-3);
+  padding: 4px 6px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  // Bootstrap adds a caret to .dropdown-toggle; the dots icon replaces it
+  &::after { display: none; }
+
+  &:hover, &:focus-visible, &[aria-expanded="true"] {
+    background: var(--fcv-surface-2);
+    border-color: var(--fcv-line);
+    color: var(--fcv-ink);
+  }
+}
+
+// Uppercase small label
+@mixin fcv-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fcv-ink-3);
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    &:hover { color: var(--card-primary); text-decoration: underline; }
+  }
+}
+
+// Tabular figure
+@mixin fcv-num($size: 1rem, $weight: 600) {
+  font-size: $size;
+  font-weight: $weight;
+  color: var(--fcv-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+// Card shell shared by card3 / card5
+@mixin fcv-shell($radius: 16px) {
+  background: var(--fcv-surface);
+  border: 1px solid var(--fcv-line);
+  border-radius: $radius;
+  box-shadow: var(--fcv-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(27, 36, 55, 0.09);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover { transform: none; }
+  }
+}
+
+// Title link
+@mixin fcv-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--fcv-ink);
+  line-height: 1.3;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    &:hover { color: var(--card-primary); }
+  }
+}
+
+// Dot-separated meta line under a title
+@mixin fcv-meta {
+  font-size: 0.78rem;
+  color: var(--fcv-ink-3);
+  margin-top: 2px;
+
+  span::after { content: ' · '; }
+  span:last-child::after { content: ''; }
+}
+
+// ── Variant B: .fc3 "Refined current" ────────────────────────────────────────
+
+.fc3-card {
+  @include fcv-shell(16px);
+  overflow: hidden;
+}
+
+.fc3-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--fcv-line-2);
+}
+
+.fc3-title { @include fcv-title; }
+.fc3-sub   { @include fcv-meta; }
+
+.fc3-body {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+
+  @media (max-width: 991px) { grid-template-columns: 1fr; }
+}
+
+.fc3-capital {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+  border-right: 1px solid var(--fcv-line-2);
+
+  @media (max-width: 991px) {
+    border-right: 0;
+    border-bottom: 1px solid var(--fcv-line-2);
+  }
+}
+
+// Stacked capital bar: whole width = committed; segments = called | uncalled | distributed
+.fc3-stack {
+  display: flex;
+  height: 16px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--fcv-line-2);
+
+  i { display: block; height: 100%; }
+
+  .fc3-stack-called      { background: var(--card-primary); }
+  .fc3-stack-uncalled    { background: var(--card-secondary, var(--bs-secondary)); }
+  .fc3-stack-distributed { background: var(--bs-success); }
+}
+
+.fc3-caption {
+  font-size: 0.8rem;
+  color: var(--fcv-ink-2);
+  margin-top: 8px;
+
+  b { @include fcv-num(0.9rem, 600); }
+}
+
+.fc3-legend {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.fc3-legend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 10px;
+  border-left: 3px solid var(--fcv-line);
+
+  &--called      { border-left-color: var(--card-primary); }
+  &--uncalled    { border-left-color: var(--card-secondary, var(--bs-secondary)); }
+  &--distributed { border-left-color: var(--bs-success); }
+}
+
+.fc3-num { @include fcv-num(1.05rem, 600); }
+.fc3-lbl { @include fcv-label; }
+
+// Right-hand tile grid, 1px gaps painted by the grid background
+.fc3-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--fcv-line-2);
+}
+
+.fc3-tile {
+  background: var(--fcv-surface);
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .fc3-num { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; }
+}
+
+.fc3-tile-lbl {
+  font-size: 0.85rem;
+  color: var(--fcv-ink-3);
+  font-weight: 500;
+
+  // Ratio names are links to the ratio page — shown in primary, as in the design
+  a {
+    color: var(--card-primary);
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+// ── Variant C: .fc4 "Stat strip" ─────────────────────────────────────────────
+
+.fc4-row {
+  @include fcv-shell(12px);
+  display: grid;
+  grid-template-columns: 200px 1fr auto auto;
+  gap: 24px;
+  align-items: center;
+  padding: 14px 20px;
+
+  @media (max-width: 991px) {
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+
+    // Stats and ratios drop to their own full-width rows
+    .fc4-stats, .fc4-ratios { grid-column: 1 / -1; }
+    .fc4-ratios { justify-content: flex-start; max-width: none; }
+  }
+}
+
+.fc4-name {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+
+  b {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--fcv-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    a { color: inherit; text-decoration: none; &:hover { color: var(--card-primary); } }
+  }
+
+  small { @include fcv-meta; margin-top: 0; }
+}
+
+.fc4-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+
+  @media (max-width: 575px) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.fc4-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.fc4-num { @include fcv-num(1rem, 600); }
+.fc4-lbl { @include fcv-label; }
+
+// Thin called-bar spanning the stat columns
+.fc4-track {
+  grid-column: 1 / -1;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--fcv-line-2);
+  overflow: hidden;
+  margin-top: 4px;
+
+  i { display: block; height: 100%; background: var(--card-primary); }
+}
+
+.fc4-ratios {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 280px;
+}
+
+.fc4-chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  border-radius: 8px;
+  padding: 5px 10px;
+  background: var(--fcv-surface-2);
+  border: 1px solid var(--fcv-line-2);
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--fcv-ink);
+  transition: border-color 0.15s;
+
+  &:hover { border-color: var(--card-primary); text-decoration: none; }
+
+  .fc4-num { font-weight: 700; font-size: 0.95rem; }
+  span:last-child { font-size: 0.72rem; color: var(--fcv-ink-3); }
+}
+
+// ── Variant D: .fc5 "Chart-forward" ──────────────────────────────────────────
+
+.fc5-card {
+  @include fcv-shell(18px);
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fc5-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.fc5-title {
+  @include fcv-title;
+  font-weight: 500; // lighter than the other variants — the whole card stays quiet
+  .fcv-pill { margin-left: 6px; }
+}
+
+.fc5-sub { @include fcv-meta; }
+
+.fc5-body {
+  display: grid;
+  // Donut column hugs the donut; figures and ratio tiles split the rest equally.
+  // One fixed gap between all three so the spacing reads as even.
+  // Figures column also hugs its content so label and value stay close;
+  // the ratio cards take whatever is left.
+  grid-template-columns: max-content max-content minmax(0, 1fr);
+  column-gap: 72px;
+  row-gap: 24px;
+  align-items: center;
+
+  @media (max-width: 991px) {
+    // Donut + figures side by side, ratio tiles drop below spanning full width
+    grid-template-columns: 150px minmax(0, 1fr);
+    column-gap: 32px;
+    .fc5-ratios { grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 575px) { grid-template-columns: 1fr; }
+}
+
+// Pure-CSS donut. --fc5-called and --fc5-distributed are set inline (0..100).
+// Ring: distributed (success) sits inside the called (primary) arc; the rest is track.
+.fc5-donut {
+  --fc5-called: 0;
+  --fc5-distributed: 0;
+  position: relative;
+  width: 190px;
+  height: 190px;
+  justify-self: center; // centred in its equal-width column
+
+  @media (max-width: 991px) { width: 150px; height: 150px; }
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--bs-success) 0 calc(var(--fc5-distributed) * 1%),
+    var(--card-primary) calc(var(--fc5-distributed) * 1%) calc(var(--fc5-called) * 1%),
+    var(--fcv-line-2) calc(var(--fc5-called) * 1%) 100%
+  );
+
+  // Punch the hole
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 22px;
+    border-radius: 50%;
+    background: var(--fcv-surface);
+  }
+
+  > div {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.fc5-donut-num { @include fcv-num(1.85rem, 500); line-height: 1; }
+.fc5-donut-lbl { @include fcv-label; font-size: 0.65rem; margin-top: 4px; }
+
+.fc5-figures {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fc5-kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 96px; // fixed breathing room between name and value (column is content-sized)
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--fcv-line-2);
+
+  &:last-child { border-bottom: 0; }
+}
+
+.fc5-kv-lbl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--fcv-ink-2);
+}
+
+// Colour key square matching the donut segments
+.fc5-key {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+  background: transparent;
+
+  &--committed   { background: var(--fcv-line); }
+  &--called      { background: var(--card-primary); }
+  &--distributed { background: var(--bs-success); }
+}
+
+.fc5-num { @include fcv-num(1.2rem, 400); }
+
+.fc5-ratios {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  // The theme's heading rules make .card-title bold; these ratio values stay light
+  .card-title {
+    font-weight: 400 !important;
+    letter-spacing: 0;
+  }
+}
+

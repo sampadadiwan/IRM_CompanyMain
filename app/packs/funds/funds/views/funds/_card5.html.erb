@@ -1,0 +1,108 @@
+<%#
+  Fund card variant D — "Chart-forward".
+  Full width. A pure-CSS capital donut (called ÷ committed in the centre) replaces
+  the column chart; capital figures sit beside it with colour keys; ratios become
+  tinted tiles whose top stripe encodes good / ok / poor.
+  Selected on the FM Landing Page Funds widget via metadata {card_type: 'card5'}.
+%>
+<%
+  fund ||= @fund
+  params[:force_units] = fund.default_currency_units
+
+  called_pct = fund_called_pct(fund)
+  # Distributed as a share of committed, so it can sit on the same ring as "called"
+  committed_f     = fund.committed_amount.to_f
+  distributed_pct = committed_f.positive? ? ((fund.distribution_amount.abs.to_f / committed_f) * 100).round.clamp(0, called_pct) : 0
+
+  # Ratio name => Tabler icon shown on its stat card
+  ratio_icons = {
+    "Gross Portfolio IRR"     => "ti-trending-up",
+    "Portfolio Value to Cost" => "ti-chart-dots",
+    "XIRR"                    => "ti-percentage",
+    "TVPI"                    => "ti-chart-arrows-vertical"
+  }
+  ratios = get_latest_fund_ratios(fund, ratio_icons.keys)
+
+  # Semantic tone (FundsHelper#fund_ratio_tone) => Bootstrap contextual colour
+  tone_colors = { "good" => "success", "ok" => "warning", "poor" => "danger", "neutral" => "primary" }
+%>
+
+<div class="col-lg-12 mb-4">
+  <div class="fc5-card">
+
+    <%# ── Header ──────────────────────────────────────────────────────── %>
+    <div class="fc5-header">
+      <div>
+        <h3 class="fc5-title">
+          <%= link_to fund.name, fund %>
+          <% if fund.category.present? %>
+            <span class="fcv-pill"><%= fund.category.sub("Category ", "Cat ") %></span>
+          <% end %>
+        </h3>
+        <div class="fc5-sub">
+          <% if fund.start_date.present? %><span>Vintage <%= fund.start_date.year %></span><% end %>
+          <span><%= fund.currency %></span>
+        </div>
+      </div>
+      <%= render "funds/card_actions_menu", fund: %>
+    </div>
+
+    <div class="fc5-body">
+      <%# ── Donut ───────────────────────────────────────────────────────── %>
+      <div class="fc5-donut"
+           style="--fc5-called: <%= called_pct %>; --fc5-distributed: <%= distributed_pct %>;"
+           role="img" aria-label="<%= called_pct %>% of commitments called">
+        <div>
+          <span class="fc5-donut-num"><%= called_pct %>%</span>
+          <span class="fc5-donut-lbl">called</span>
+        </div>
+      </div>
+
+      <%# ── Capital figures with colour keys ────────────────────────────── %>
+      <div class="fc5-figures">
+        <div class="fc5-kv">
+          <span class="fc5-kv-lbl"><i class="fc5-key fc5-key--committed"></i>Committed</span>
+          <span class="fc5-num"><%= money_to_currency(fund.committed_amount, params) %></span>
+        </div>
+        <div class="fc5-kv">
+          <span class="fc5-kv-lbl"><i class="fc5-key fc5-key--called"></i>Called</span>
+          <span class="fc5-num"><%= money_to_currency(fund.call_amount, params) %></span>
+        </div>
+        <div class="fc5-kv">
+          <span class="fc5-kv-lbl"><i class="fc5-key fc5-key--distributed"></i>Distributed</span>
+          <span class="fc5-num"><%= money_to_currency(fund.distribution_amount.abs, params) %></span>
+        </div>
+        <div class="fc5-kv">
+          <span class="fc5-kv-lbl"><i class="fc5-key"></i>Folios</span>
+          <span class="fc5-num"><%= fund.capital_commitments_count %></span>
+        </div>
+      </div>
+
+      <%# ── Ratio stat cards (Modernize border-top pattern) ─────────────── %>
+      <div class="fc5-ratios">
+        <% ratio_icons.each do |name, icon| %>
+          <% ratio = ratios[name] %>
+          <% next unless ratio %>
+          <% color = tone_colors[fund_ratio_tone(ratio)] %>
+          <div class="card border-top border-<%= color %> mb-0">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <div>
+                  <h4 class="card-title fs-7 fw-normal"><%= ratio.display_value %></h4>
+                  <p class="card-subtitle text-<%= color %> mb-0"><%= link_to fund_ratio_short_name(ratio), ratio, class: "text-#{color}" %></p>
+                </div>
+                <div class="ms-auto">
+                  <span class="text-<%= color %> display-6">
+                    <i class="ti <%= icon %>"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+  </div>
+</div>
+<% params[:force_units] = nil %>

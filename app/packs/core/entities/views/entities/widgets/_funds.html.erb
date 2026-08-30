@@ -1,7 +1,19 @@
+<%#
+  FM Landing Page "Funds" widget.
+
+  Metadata:
+    card_type - which fund card partial to render (default 'card'):
+      card  - classic card (column chart + icon metric rows)
+      card2 - A "Compact ledger": two per row, deployment bar, headline IRR
+      card3 - B "Refined current": full width, stacked capital bar + tile grid
+      card4 - C "Stat strip": one dense row per fund
+      card5 - D "Chart-forward": CSS donut + ratio tiles
+%>
 <%
   args ||= {}
-  card_type = args[:card_type] || 'card'
-  card_partial = card_type == 'card2' ? '/funds/card2' : '/funds/card'
+  card_types   = %w[card card2 card3 card4 card5]
+  card_type    = args[:card_type].to_s.presence_in(card_types) || 'card'
+  card_partial = "/funds/#{card_type}"
 %>
 
 <% if current_user.enable_funds %>
@@ -50,9 +62,13 @@
       <% end %>
 
       <% @pagy, funds = pagy(policy_scope(Fund)) %>
-      <% funds.ordered.includes(:fund_ratios).each do |fund| %>
-        <%= render card_partial, fund: %>
-      <% end %>
+      <%# Every card partial emits a .col-* wrapper, so lay them out in a row
+          (card2 is col-lg-6 and needs it to sit two-up; the rest are col-lg-12). %>
+      <div class="row">
+        <% funds.ordered.includes(:fund_ratios).each do |fund| %>
+          <%= render card_partial, fund: %>
+        <% end %>
+      </div>
 
       <div class="d-flex justify-content-between align-items-center">
         <%= raw pagy_info(@pagy) %>
