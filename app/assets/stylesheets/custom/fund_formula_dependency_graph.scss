@@ -1,0 +1,175 @@
+// Formula Dependencies page: the Mermaid diagram card, node hover affordance, the
+// custom formula-source tooltip (Mermaid can't render one itself alongside a click
+// callback), and the side panel formula details open into.
+.fund-formula-dependency-graph {
+  padding: 1.5rem;
+  background: var(--bs-tertiary-bg, #f6f9fc);
+  border: 1px solid var(--bs-border-color, #ebf1f6);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+  overflow-x: auto;
+
+  // Render at natural size and scroll, rather than scaling the diagram down to fit --
+  // a fund with many formulas would otherwise shrink to an unreadable size. Paired with
+  // useMaxWidth:false in the controller's Mermaid config.
+  .mermaid svg {
+    max-width: none;
+  }
+
+  // Edge lines and their arrowheads. Forced here rather than left to Mermaid's theme
+  // so the colour can't be lost to its internal colour derivation, and thickened
+  // because the default 1px hairline is nearly invisible on the light canvas.
+  .edgePaths path,
+  .flowchart-link {
+    stroke: var(--bs-body-color, #5a6a85) !important;
+    stroke-width: 1.75px !important;
+  }
+
+  marker path,
+  .marker {
+    fill: var(--bs-body-color, #5a6a85) !important;
+    stroke: var(--bs-body-color, #5a6a85) !important;
+  }
+
+  // Each node's label is a real Modernize stat-card (see
+  // FundFormulaDependencyGraph#node_html).
+  // Mermaid clips a node's label to the foreignObject it measured, so let it overflow.
+  .node {
+    cursor: pointer;
+
+    foreignObject {
+      overflow: visible;
+    }
+
+    // Mermaid still draws its own shape to size/position/hit-test each node; hide it
+    // so only the Bootstrap card shows, without a second border behind it. Matched as
+    // a descendant, not a direct child: Mermaid nests the shape inside the node group,
+    // so `> rect` misses it. Safe to cast this wide -- the only other thing inside a
+    // node is the foreignObject, whose contents are HTML, not SVG shapes.
+    rect,
+    polygon,
+    ellipse,
+    path {
+      fill: none !important;
+      stroke: none !important;
+    }
+
+    .card {
+      transition: box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    &:hover .card {
+      box-shadow: 0 6px 16px rgba(var(--bs-primary-rgb, 93, 135, 255), 0.35);
+      transform: translateY(-2px);
+    }
+  }
+
+  // Field-name labels on edges are real Bootstrap pill badges (see
+  // FundFormulaDependencyGraph#edge_label_html). Mermaid wraps every edge label in its
+  // own chrome -- an opaque themed background plus a <p> with default margins -- which
+  // renders as a grey block behind the badge, so that chrome is stripped here.
+  // Deliberately scoped to .edgeLabels and not to foreignObject generally: the node
+  // cards live in a foreignObject too, and would lose their own background.
+  .edgeLabels {
+    .edgeLabel,
+    .labelBkg,
+    div,
+    p,
+    span:not(.badge) {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    // Mermaid clips a label to the foreignObject it measured, which cut the longer
+    // field names short; a badge should always sit on one uncut line.
+    foreignObject {
+      overflow: visible;
+    }
+
+    // Bootstrap's bg-secondary-subtle resolves to an rgba(...) with 0.1 alpha in the
+    // Modernize skins, so the arrow line showed straight through the badge. Painting
+    // the canvas colour as an opaque base layer with that same tint composited over it
+    // (as a background-image layer) keeps the intended look but masks the line.
+    .badge {
+      white-space: nowrap;
+      background-color: var(--bs-tertiary-bg, #f6f9fc) !important;
+      background-image: linear-gradient(var(--bs-secondary-bg-subtle), var(--bs-secondary-bg-subtle));
+      font-size: 0.8rem;
+      padding: 0.45rem 0.9rem;
+    }
+  }
+}
+
+.fund-formula-graph-tooltip {
+  position: fixed;
+  z-index: 2000;
+  max-width: 420px;
+  padding: 0.5rem 0.75rem;
+  background: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, #5a6a85);
+  font-family: var(--bs-font-monospace, monospace);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  border-radius: 0.5rem;
+  border: 1px solid var(--bs-border-color, #ebf1f6);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.1s ease, transform 0.1s ease;
+
+  &.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// A self-contained slide-out, deliberately not a Bootstrap offcanvas: that component
+// keeps its open state in live JS (an internal flag, a generated backdrop element and a
+// body scroll-lock), none of which survives a Turbo page snapshot, so returning via the
+// browser's Back button left it unusable. Here "open" is one class, which a snapshot
+// captures and restores correctly by definition. No backdrop, so the page behind stays
+// scrollable and clickable, and there is no overlay left to strand over the page.
+.fund-formula-detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1045;
+  display: flex;
+  flex-direction: column;
+  width: 50vw;
+  min-width: 40rem;
+  max-width: 60rem;
+  height: 100%;
+  background: var(--bs-body-bg, #fff);
+  border-left: 1px solid var(--bs-border-color, #ebf1f6);
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.15);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 0.3s ease, visibility 0.3s;
+
+  &.is-open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  &__header {
+    display: flex;
+    padding: 1rem 1.25rem 0;
+  }
+
+  &__body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  @media (max-width: 48rem) {
+    width: 100vw;
+    min-width: 0;
+  }
+}

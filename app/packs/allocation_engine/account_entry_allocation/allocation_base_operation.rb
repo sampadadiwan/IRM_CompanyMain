@@ -1,5 +1,10 @@
 module AccountEntryAllocation
   class AllocationBaseOperation < Trailblazer::Operation
+    # Set unconditionally for every formula by #create_instance_variables below, never by a
+    # formula's own output -- FundFormulaDependencyGraph excludes these from "no producer"
+    # broken-reference detection alongside CommitmentCache::BASE_FIELDS.
+    ENGINE_PROVIDED_FIELDS = %w[fund start_date end_date].freeze
+
     # This method sets up all the variables required in a formula
     # It has to be called by the operation that is calling CreateAccountEntry
     # This is cause it passes its own bindings to CreateAccountEntry, and the formula is eval'ed using this binding
@@ -20,9 +25,7 @@ module AccountEntryAllocation
       end
     end
 
-    def to_varable_name(name)
-      name.strip.titleize.squeeze(" ").tr(" ", "_").underscore.gsub(/[^0-9A-Za-z_]/, '').squeeze("_")
-    end
+    delegate :to_varable_name, to: :FundFormula
 
     def notify(message, level, user_id)
       UserAlert.new(user_id:, message:, level:).broadcast if user_id.present?

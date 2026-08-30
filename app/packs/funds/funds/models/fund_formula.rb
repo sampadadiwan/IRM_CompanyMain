@@ -248,6 +248,24 @@ class FundFormula < ApplicationRecord
     variables.uniq
   end
 
+  # Field names (without the leading @) that this formula's source reads, e.g. a
+  # formula referencing "@net_income" returns ["net_income"]. Used by
+  # AccountEntryAllocation::RunFormulas to figure out which computed fields other
+  # formulas actually depend on, so CommitmentCache only retains those instead of
+  # every field ever computed during a run.
+  def referenced_field_names
+    interpolate_formula.map { |var| var.delete_prefix("@") }
+  end
+
+  # Turns an AccountEntry name into the cache-key/instance-variable form formulas
+  # read it by, e.g. "Net Income" -> "net_income". This is the one place that
+  # transform lives -- AccountEntryAllocation::CommitmentCache,
+  # AllocationBaseOperation, and FundFormulaDependencyGraph all delegate to it so
+  # the cache key and the dependency-graph edges can't drift apart.
+  def self.to_varable_name(name)
+    name.strip.titleize.squeeze(" ").tr(" ", "_").underscore.gsub(/[^0-9A-Za-z_]/, "").squeeze("_")
+  end
+
   # Evaluates a formula against a live binding and returns an ordered Hash of
   # { expression_string => evaluated_value } pairs suitable for display and LLM
   # explanation. The result is stored as explanation[2] on the AccountEntry.

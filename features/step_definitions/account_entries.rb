@@ -15,6 +15,47 @@ Given("there are Fund Formulas are added to the fund") do
 	fund_formula.save!
 end
 
+Given("there are chained Fund Formulas relying on a computed field without the cache flag set") do
+	AllocationRun.delete_all
+	# Deliberately leaves add_to_commitment_cache at its default (false, since
+	# 20260829090000_default_add_to_commitment_cache_to_false.rb) on both formulas.
+	# The second formula only computes correctly if AccountEntryAllocation::CommitmentCache
+	# caches "net_income" because the second formula's source references @net_income
+	# (FundFormula#referenced_field_names), not because a formula author remembered to
+	# flip the flag -- that's the whole point of this regression test.
+	base_formula = @fund.fund_formulas.build(
+															name: "Net Income",
+															description: "Base value the next formula depends on",
+															formula: "100000",
+															sequence: 10,
+															rule_type: "GenerateAccountEntry",
+															enabled: true,
+															entry_type: "Accounting",
+															roll_up: false,
+															rule_for: "Accounting",
+														)
+	base_formula.save!
+
+	dependent_formula = @fund.fund_formulas.build(
+															name: "Net Income Times Two",
+															description: "Depends on @net_income from the formula above",
+															formula: "@net_income * 2",
+															sequence: 20,
+															rule_type: "GenerateAccountEntry",
+															enabled: true,
+															entry_type: "Accounting",
+															roll_up: false,
+															rule_for: "Accounting",
+														)
+	dependent_formula.save!
+end
+
+Then("the dependent formula's account entry reflects the earlier formula's computed value") do
+	ae = AccountEntry.find_by(name: "Net Income Times Two", fund_id: @fund.id)
+	expect(ae).to(be_present)
+	expect(ae.amount_cents.to_i).to(eq(200_000))
+end
+
 Given("that Account Entries are allocated") do
 	visit allocate_form_fund_path(@fund.id, run_allocations: true)
 	sleep(1)

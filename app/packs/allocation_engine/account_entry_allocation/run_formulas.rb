@@ -161,12 +161,16 @@ module AccountEntryAllocation
       ctx[:form_type_id] = fund.entity.form_types.where(name: "AccountEntry").last
       ctx[:bulk_insert_records] = []
 
-      formulas = get_formulas(ctx)
+      # Loaded once as an array (not left as a lazy Relation) so this exact ordered
+      # list -- and its indices -- are shared between the dependency scan below and
+      # the execution loop further down; the two must agree on what "formula N" is.
+      formula_list = get_formulas(ctx).to_a
+      configure_commitment_cache_dependencies(ctx, formula_list)
 
       # Ensure that the portfolio_investments are up to date before running formulas. As this may compute the expenses for the portfolio investments
       fund.resave_portfolio_investments
 
-      ctx[:formula_count] = formulas.count
+      ctx[:formula_count] = formula_list.size
 
       # Mutex to ensure only one thread migrates from SQLite to Primary at a time
       ctx[:migration_mutex] = Thread::Mutex.new
@@ -178,9 +182,12 @@ module AccountEntryAllocation
       ctx[:queue] = queue
 
       with_scratch_sqlite(ctx[:sqlite_path]) do
-        formulas.each_with_index do |fund_formula, index|
+        formula_list.each_with_index do |fund_formula, index|
           execute_formula(ctx, fund_formula, index)
-          Rails.logger.info { "Completed formula #{index + 1} of #{formulas.count}. Pushing to loader queue #{fund_formula.id}." }
+          # Now that this formula has finished for every commitment, drop any cached
+          # commitment field nothing later will read. See CommitmentCache#formula_completed.
+          ctx[:commitment_cache].formula_completed(index)
+          Rails.logger.info { "Completed formula #{index + 1} of #{formula_list.size}. Pushing to loader queue #{fund_formula.id}." }
           # Push the completed formula ID to the queue for parallel loading
           queue << fund_formula.id
         end
@@ -457,6 +464,28 @@ module AccountEntryAllocation
       formulas = formulas.where(rule_for: rule_for) if rule_for.present?
       formulas = formulas.with_tags(tag_list.split(",")) if tag_list.present?
       formulas
+    end
+
+    # Scans every in-scope formula's source (FundFormula#referenced_field_names) to
+    # figure out which computed commitment fields are actually read by a later
+    # formula, and the last formula sequence-position that reads each one.
+    # CommitmentCache uses this to skip caching fields nothing reads, and to evict a
+    # field once its last reader has run. formula_list must be the same ordered
+    # array (and indices) used by the execution loop in #run_formulas.
+    def configure_commitment_cache_dependencies(ctx, formula_list)
+      referenced_field_names = Set.new
+      last_consumer_index = {}
+
+      formula_list.each_with_index do |formula, index|
+        formula.referenced_field_names.each do |field_name|
+          referenced_field_names << field_name
+          # Iterating in ascending sequence order, so the last assignment for a
+          # given name is always the highest (i.e. last) index that reads it.
+          last_consumer_index[field_name] = index
+        end
+      end
+
+      ctx[:commitment_cache].configure_dependencies(referenced_field_names, last_consumer_index)
     end
 
     def delete_existing_primary_entries(ctx)
