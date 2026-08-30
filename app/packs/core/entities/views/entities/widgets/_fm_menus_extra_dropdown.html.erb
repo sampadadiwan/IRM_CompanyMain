@@ -1,0 +1,32 @@
+<%#
+  Dropdown list of the extra configured links on the FM Menus widget, shared by
+  every card_type variant.
+
+  Locals:
+    extra_items    - [{label:, url:}, ...]
+    dropdown_color - contextual colour for the item icons
+    dropdown_id    - id of the toggling element (for aria-labelledby)
+    round_icons    - true for the classic card's round-40 icon style (default: rounded-circle badge)
+%>
+<%
+  round_icons ||= false
+%>
+<ul class="dropdown-menu shadow-sm p-2 fmw-extra-menu" aria-labelledby="<%= dropdown_id %>">
+  <% extra_items.each do |item| %>
+    <li>
+      <%= link_to item[:url], class: "dropdown-item d-flex align-items-center gap-3 py-2 rounded" do %>
+        <% if round_icons %>
+          <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-<%= dropdown_color %>">
+            <i class="ti ti-link fs-6"></i>
+          </div>
+        <% else %>
+          <div class="fmw-extra-icon rounded-circle d-flex align-items-center justify-content-center bg-<%= dropdown_color %>-subtle text-<%= dropdown_color %>">
+            <i class="ti ti-link fs-6"></i>
+          </div>
+        <% end %>
+        <span class="fw-semibold flex-grow-1"><%= item[:label] %></span>
+        <i class="ti ti-chevron-right text-muted fs-6"></i>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

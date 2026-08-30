@@ -1,6 +1,19 @@
+<%#
+  FM Landing Page "FM Menus" widget — four quick links (Reports, Portfolio Dashboard,
+  Quick Links, KYCs) plus an optional dropdown of extra configured links.
+
+  Metadata:
+    card_type - card  : classic round-icon cards (default)
+                card2 : left-border menu card with icon box
+                card3 : "Refined" single card split into tiles   (matches fund card3)
+                card4 : "Stat strip" one dense row              (matches fund card4)
+                card5 : "Chart-forward" border-top cards        (matches fund card5)
+    items     - "Label:/path, Label2:/path2" extra links shown in a dropdown card
+    color     - contextual colour for the extra-links card (success/info/primary/warning)
+%>
 <%
   args      ||= {}
-  card_type      = args[:card_type] || 'card'
+  card_type      = args[:card_type].to_s.presence_in(%w[card card2 card3 card4 card5]) || 'card'
   items_str      = args[:items].to_s
   dropdown_color = args[:color] || 'primary'
 
@@ -18,97 +31,50 @@
 
   # When extra items are present, switch to auto-width so all cards fit in one row
   col_class = extra_items.any? ? "col-sm-6 col-lg" : "col-sm-6 col-lg-3"
+
+  menus = [
+    { label: t('entities.fm_dashboard_menus.reports'),             sub: "View Reports",      icon: "ti-credit-card",      color: "success", url: reports_path },
+    { label: t('entities.fm_dashboard_menus.portfolio_dashboard'), sub: "Analyze Portfolio", icon: "ti-layout-dashboard", color: "info",    url: investors_path(multi_portfolio_dashboard: true) },
+    { label: t('entities.fm_dashboard_menus.quick_links'),         sub: "Quick Guides",      icon: "ti-grid-dots",        color: "primary", url: quick_links_path(tags: "Fund") },
+    { label: t('entities.fm_dashboard_menus.kycs'),                sub: "Your KYC Info",     icon: "ti-file-check",       color: "warning", url: investor_kycs_path }
+  ]
+
+  # card5 alternates the theme primary / secondary like the fund card5 ratio cards
+  card5_colors = %w[primary secondary secondary primary primary]
+  dropdown_id  = "fm-menus-extra-#{widget.object_id}"
 %>
 
 <% if show && current_user.enable_funds %>
-
-<% if card_type == 'card2' %>
+<% case card_type %>
+<% when 'card2' %>
 
 <div class="row mb-2">
-  <div class="<%= col_class %>">
-    <%= link_to reports_path, class: "text-decoration-none d-block h-100" do %>
-      <div class="card fm-menu-card fm-menu-card--success h-100">
-        <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
-          <div class="d-flex align-items-center gap-3">
-            <div class="fm-menu-icon bg-success-subtle text-success">
-              <i class="ti ti-credit-card fs-5"></i>
+  <% menus.each do |m| %>
+    <div class="<%= col_class %>">
+      <%= link_to m[:url], class: "text-decoration-none d-block h-100" do %>
+        <div class="card fm-menu-card fm-menu-card--<%= m[:color] %> h-100">
+          <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="fm-menu-icon bg-<%= m[:color] %>-subtle text-<%= m[:color] %>">
+                <i class="ti <%= m[:icon] %> fs-5"></i>
+              </div>
+              <div>
+                <div class="fw-semibold"><%= m[:label] %></div>
+                <small class="text-muted"><%= m[:sub] %></small>
+              </div>
             </div>
-            <div>
-              <div class="fw-semibold"><%= t('entities.fm_dashboard_menus.reports') %></div>
-              <small class="text-muted">View Reports</small>
-            </div>
+            <i class="ti ti-chevron-right text-muted fs-5"></i>
           </div>
-          <i class="ti ti-chevron-right text-muted fs-5"></i>
         </div>
-      </div>
-    <% end %>
-  </div>
-
-  <div class="<%= col_class %>">
-    <%= link_to investors_path(multi_portfolio_dashboard: true), class: "text-decoration-none d-block h-100" do %>
-      <div class="card fm-menu-card fm-menu-card--info h-100">
-        <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
-          <div class="d-flex align-items-center gap-3">
-            <div class="fm-menu-icon bg-info-subtle text-info">
-              <i class="ti ti-layout-dashboard fs-5"></i>
-            </div>
-            <div>
-              <div class="fw-semibold"><%= t('entities.fm_dashboard_menus.portfolio_dashboard') %></div>
-              <small class="text-muted">Analyze Portfolio</small>
-            </div>
-          </div>
-          <i class="ti ti-chevron-right text-muted fs-5"></i>
-        </div>
-      </div>
-    <% end %>
-  </div>
-
-  <div class="<%= col_class %>">
-    <%= link_to quick_links_path(tags: "Fund"), class: "text-decoration-none d-block h-100" do %>
-      <div class="card fm-menu-card fm-menu-card--primary h-100">
-        <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
-          <div class="d-flex align-items-center gap-3">
-            <div class="fm-menu-icon bg-primary-subtle text-primary">
-              <i class="ti ti-grid-dots fs-5"></i>
-            </div>
-            <div>
-              <div class="fw-semibold"><%= t('entities.fm_dashboard_menus.quick_links') %></div>
-              <small class="text-muted">Quick Guides</small>
-            </div>
-          </div>
-          <i class="ti ti-chevron-right text-muted fs-5"></i>
-        </div>
-      </div>
-    <% end %>
-  </div>
-
-  <div class="<%= col_class %>">
-    <%= link_to investor_kycs_path, class: "text-decoration-none d-block h-100" do %>
-      <div class="card fm-menu-card fm-menu-card--warning h-100">
-        <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
-          <div class="d-flex align-items-center gap-3">
-            <div class="fm-menu-icon bg-warning-subtle text-warning">
-              <i class="ti ti-file-check fs-5"></i>
-            </div>
-            <div>
-              <div class="fw-semibold"><%= t('entities.fm_dashboard_menus.kycs') %></div>
-              <small class="text-muted">Your KYC Info</small>
-            </div>
-          </div>
-          <i class="ti ti-chevron-right text-muted fs-5"></i>
-        </div>
-      </div>
-    <% end %>
-  </div>
+      <% end %>
+    </div>
+  <% end %>
 
   <% if extra_items.any? %>
     <div class="<%= col_class %>">
       <div class="dropdown h-100">
-        <div class="card fm-menu-card fm-menu-card--<%= dropdown_color %> h-100 user-select-none"
-             style="cursor: pointer;"
-             data-bs-toggle="dropdown"
-             aria-expanded="false"
-             id="fm-menus-extra-<%= widget.object_id %>">
+        <div class="card fm-menu-card fm-menu-card--<%= dropdown_color %> h-100 user-select-none cursor-pointer"
+             data-bs-toggle="dropdown" aria-expanded="false" id="<%= dropdown_id %>">
           <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
             <div class="d-flex align-items-center gap-3">
               <div class="fm-menu-icon bg-<%= dropdown_color %>-subtle text-<%= dropdown_color %>">
@@ -122,19 +88,109 @@
             <i class="ti ti-chevron-down text-muted fs-5"></i>
           </div>
         </div>
-        <ul class="dropdown-menu shadow-sm p-2" style="min-width: 220px;" aria-labelledby="fm-menus-extra-<%= widget.object_id %>">
-          <% extra_items.each do |item| %>
-            <li>
-              <%= link_to item[:url], class: "dropdown-item d-flex align-items-center gap-3 py-2 rounded" do %>
-                <div class="rounded-circle d-flex align-items-center justify-content-center bg-<%= dropdown_color %>-subtle text-<%= dropdown_color %>" style="width:34px;height:34px;min-width:34px;">
-                  <i class="ti ti-link fs-6"></i>
-                </div>
-                <span class="fw-semibold flex-grow-1"><%= item[:label] %></span>
-                <i class="ti ti-chevron-right text-muted fs-6"></i>
-              <% end %>
-            </li>
-          <% end %>
-        </ul>
+        <%= render "entities/widgets/fm_menus_extra_dropdown", extra_items:, dropdown_color:, dropdown_id: %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<% when 'card3' %>
+
+<%# One card split into tiles — same treatment as fund card3's tile grid %>
+<div class="fmw3-card mb-3">
+  <div class="fmw3-tiles fmw3-tiles--menus">
+    <% menus.each do |m| %>
+      <%= link_to m[:url], class: "fmw3-tile fmw3-tile--#{m[:color]}" do %>
+        <div class="fmw3-tile-head">
+          <span class="fmw3-icon text-<%= m[:color] %>"><i class="ti <%= m[:icon] %>"></i></span>
+          <span class="fmw3-lbl"><%= m[:sub] %></span>
+        </div>
+        <span class="fmw3-menu-title"><%= m[:label] %> <i class="ti ti-chevron-right"></i></span>
+      <% end %>
+    <% end %>
+    <% if extra_items.any? %>
+      <div class="dropdown fmw3-tile fmw3-tile--<%= dropdown_color %> cursor-pointer" data-bs-toggle="dropdown" aria-expanded="false" id="<%= dropdown_id %>">
+        <div class="fmw3-tile-head">
+          <span class="fmw3-icon text-<%= dropdown_color %>"><i class="ti ti-grid-dots"></i></span>
+          <span class="fmw3-lbl">More Links</span>
+        </div>
+        <span class="fmw3-menu-title"><%= widget.tags %> <i class="ti ti-chevron-down"></i></span>
+        <%= render "entities/widgets/fm_menus_extra_dropdown", extra_items:, dropdown_color:, dropdown_id: %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% when 'card4' %>
+
+<%# One dense strip of links — same as fund card4 %>
+<div class="fmw4-row mb-3">
+  <% menus.each do |m| %>
+    <%= link_to m[:url], class: "fmw4-stat" do %>
+      <span class="fmw4-icon text-<%= m[:color] %>"><i class="ti <%= m[:icon] %>"></i></span>
+      <span class="fmw4-body">
+        <span class="fmw4-menu-title"><%= m[:label] %></span>
+        <span class="fmw4-lbl"><%= m[:sub] %></span>
+      </span>
+      <i class="fmw4-bar bg-<%= m[:color] %>"></i>
+    <% end %>
+  <% end %>
+  <% if extra_items.any? %>
+    <div class="dropdown fmw4-stat cursor-pointer" data-bs-toggle="dropdown" aria-expanded="false" id="<%= dropdown_id %>">
+      <span class="fmw4-icon text-<%= dropdown_color %>"><i class="ti ti-grid-dots"></i></span>
+      <span class="fmw4-body">
+        <span class="fmw4-menu-title"><%= widget.tags %> <i class="ti ti-chevron-down"></i></span>
+        <span class="fmw4-lbl">More Links</span>
+      </span>
+      <i class="fmw4-bar bg-<%= dropdown_color %>"></i>
+      <%= render "entities/widgets/fm_menus_extra_dropdown", extra_items:, dropdown_color:, dropdown_id: %>
+    </div>
+  <% end %>
+</div>
+
+<% when 'card5' %>
+
+<%# Modernize border-top cards alternating primary / secondary — same as fund card5's ratio cards %>
+<div class="row g-3 mb-3 fmw5-cards">
+  <% menus.each_with_index do |m, i| %>
+    <% color = card5_colors[i] %>
+    <div class="<%= col_class %>">
+      <%= link_to m[:url], class: "text-decoration-none d-block h-100" do %>
+        <div class="card border-top border-<%= color %> h-100 mb-0">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div>
+                <h4 class="card-title fs-5 fw-normal"><%= m[:label] %></h4>
+                <p class="card-subtitle text-<%= color %> mb-0"><%= m[:sub] %></p>
+              </div>
+              <div class="ms-auto">
+                <span class="text-<%= color %> display-6"><i class="ti <%= m[:icon] %>"></i></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+  <% if extra_items.any? %>
+    <% color = card5_colors[menus.size] %>
+    <div class="<%= col_class %>">
+      <div class="dropdown h-100">
+        <div class="card border-top border-<%= color %> h-100 mb-0 user-select-none cursor-pointer"
+             data-bs-toggle="dropdown" aria-expanded="false" id="<%= dropdown_id %>">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div>
+                <h4 class="card-title fs-5 fw-normal"><%= widget.tags %></h4>
+                <p class="card-subtitle text-<%= color %> mb-0">More Links</p>
+              </div>
+              <div class="ms-auto">
+                <span class="text-<%= color %> display-6"><i class="ti ti-chevron-down"></i></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <%= render "entities/widgets/fm_menus_extra_dropdown", extra_items:, dropdown_color:, dropdown_id: %>
       </div>
     </div>
   <% end %>
@@ -143,88 +199,33 @@
 <% else %>
 
 <div class="row mb-2">
-  <div class="col-md">
-    <div class="card">
-      <div class="card-body">
-        <a href="<%= reports_path %>">
-          <div class="d-flex flex-row align-items-center">
-            <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
-              <i class="ti ti-credit-card fs-6"></i>
+  <% menus.each do |m| %>
+    <div class="col-md">
+      <div class="card">
+        <div class="card-body">
+          <%= link_to m[:url] do %>
+            <div class="d-flex flex-row align-items-center">
+              <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-<%= m[:color] %>">
+                <i class="ti <%= m[:icon] %> fs-6"></i>
+              </div>
+              <div class="ms-3 align-self-center">
+                <h3 class="mb-0 fs-6"><%= m[:label] %></h3>
+                <span class="text-muted"><%= m[:sub] %></span>
+              </div>
             </div>
-            <div class="ms-3 align-self-center">
-              <h3 class="mb-0 fs-6"><%= t('entities.fm_dashboard_menus.reports') %></h3>
-              <span class="text-muted">View Reports</span>
-            </div>
-          </div>
-        </a>
+          <% end %>
+        </div>
       </div>
     </div>
-  </div>
-
-  <div class="col-md">
-    <div class="card">
-      <div class="card-body">
-        <a href="<%= investors_path(multi_portfolio_dashboard: true) %>">
-          <div class="d-flex flex-row align-items-center">
-            <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-info">
-              <i class="ti ti-layout-dashboard fs-6"></i>
-            </div>
-            <div class="ms-3 align-self-center">
-              <h3 class="mb-0 fs-6"><%= t('entities.fm_dashboard_menus.portfolio_dashboard') %></h3>
-              <span class="text-muted">Analyze Portfolio</span>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md">
-    <div class="card">
-      <div class="card-body">
-        <a href="<%= quick_links_path(tags: "Fund") %>">
-          <div class="d-flex flex-row align-items-center">
-            <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
-              <i class="ti ti-grid-dots fs-6"></i>
-            </div>
-            <div class="ms-3 align-self-center">
-              <h3 class="mb-0 fs-6"><%= t('entities.fm_dashboard_menus.quick_links') %></h3>
-              <span class="text-muted">Quick Guides</span>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md">
-    <div class="card">
-      <div class="card-body">
-        <a href="<%= investor_kycs_path %>">
-          <div class="d-flex flex-row align-items-center">
-            <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-warning">
-              <i class="ti ti-file-check fs-6"></i>
-            </div>
-            <div class="ms-3 align-self-center">
-              <h3 class="mb-0 fs-6"><%= t('entities.fm_dashboard_menus.kycs') %></h3>
-              <span class="text-muted">Your KYC Info</span>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
-  </div>
+  <% end %>
 
   <% if extra_items.any? %>
     <div class="col-md">
       <div class="card">
         <div class="card-body">
           <div class="dropdown">
-            <a class="d-flex flex-row align-items-center text-decoration-none"
-               data-bs-toggle="dropdown"
-               aria-expanded="false"
-               id="fm-menus-extra-<%= widget.object_id %>"
-               style="cursor: pointer;">
+            <a class="d-flex flex-row align-items-center text-decoration-none cursor-pointer"
+               data-bs-toggle="dropdown" aria-expanded="false" id="<%= dropdown_id %>">
               <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-<%= dropdown_color %>">
                 <i class="ti ti-grid-dots fs-6"></i>
               </div>
@@ -232,19 +233,7 @@
                 <h3 class="mb-0 fs-6"><%= widget.tags %></h3>
               </div>
             </a>
-            <ul class="dropdown-menu shadow-sm p-2" style="min-width: 220px;" aria-labelledby="fm-menus-extra-<%= widget.object_id %>">
-              <% extra_items.each do |item| %>
-                <li>
-                  <%= link_to item[:url], class: "dropdown-item d-flex align-items-center gap-3 py-2 rounded" do %>
-                    <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-<%= dropdown_color %>">
-                      <i class="ti ti-link fs-6"></i>
-                    </div>
-                    <span class="fw-semibold flex-grow-1"><%= item[:label] %></span>
-                    <i class="ti ti-chevron-right text-muted fs-6"></i>
-                  <% end %>
-                </li>
-              <% end %>
-            </ul>
+            <%= render "entities/widgets/fm_menus_extra_dropdown", extra_items:, dropdown_color:, dropdown_id:, round_icons: true %>
           </div>
         </div>
       </div>

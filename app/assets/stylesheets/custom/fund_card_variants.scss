@@ -503,3 +503,129 @@
   }
 }
 
+
+// ── FM Landing Page Stats / Menus widget variants (card3 / card4 / card5) ────
+//
+// Shared by entities/widgets/_fm_stats.html.erb and _fm_menus.html.erb so the
+// widgets above the fund list echo whichever fund card variant is in use:
+//   .fmw3-* tile grid    (fund card3)
+//   .fmw4-* stat strip   (fund card4)
+//   .fmw5-* border-top   (fund card5; Bootstrap cards, only the weight override here)
+
+// Extra-links dropdown (all variants)
+.fmw-extra-menu { min-width: 220px; }
+.fmw-extra-icon { width: 34px; height: 34px; min-width: 34px; }
+
+// ── card3: one card split into tiles ─────────────────────────────────────────
+.fmw3-card {
+  @include fcv-shell(16px);
+  overflow: hidden;
+}
+
+.fmw3-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--fcv-line-2);
+
+  // Menus may carry a fifth "more links" tile — let them auto-fit
+  &--menus { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+  @media (max-width: 991px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 575px) { grid-template-columns: 1fr; }
+}
+
+.fmw3-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 24px;
+  background: var(--fcv-surface);
+  color: var(--fcv-ink);
+  text-decoration: none;
+  border-left: 3px solid var(--fcv-line);
+  transition: background 0.15s;
+
+  &:hover { background: var(--fcv-surface-2); color: var(--fcv-ink); text-decoration: none; }
+
+  &--success { border-left-color: var(--bs-success); }
+  &--info    { border-left-color: var(--bs-info); }
+  &--warning { border-left-color: var(--bs-warning); }
+  &--danger  { border-left-color: var(--bs-danger); }
+  &--primary { border-left-color: var(--card-primary); }
+}
+
+.fmw3-tile-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fmw3-icon { font-size: 1.1rem; line-height: 1; }
+.fmw3-lbl  { @include fcv-label; }
+.fmw3-num  { @include fcv-num(1.6rem, 500); }
+
+.fmw3-menu-title {
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .ti { color: var(--fcv-ink-3); font-size: 0.9rem; }
+}
+
+// ── card4: one dense strip ───────────────────────────────────────────────────
+// Row of separate compact cards with a gap between them (no shared shell)
+.fmw4-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.fmw4-stat {
+  @include fcv-shell(12px);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 18px 40px; // bottom = gap above bar (≈12) + bar + 18px clear space below it
+  color: var(--fcv-ink);
+  text-decoration: none;
+
+  &:hover { color: var(--fcv-ink); text-decoration: none; }
+  &:hover .fmw4-bar { height: 4px; }
+}
+
+.fmw4-icon { font-size: 1.35rem; line-height: 1; }
+
+.fmw4-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.fmw4-num        { @include fcv-num(1.25rem, 500); }
+.fmw4-lbl        { @include fcv-label; }
+.fmw4-menu-title { font-size: 0.95rem; font-weight: 500; white-space: nowrap; }
+
+// Thin colour bar along the bottom of each stat (mirrors fund card4's called-bar)
+.fmw4-bar {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px; // clear space below the bar, matching the side padding
+  height: 3px;
+  border-radius: 99px;
+  opacity: 0.8;
+  transition: height 0.15s;
+}
+
+// ── card5: Bootstrap border-top cards ────────────────────────────────────────
+// scaffolds.scss forces `.card .card-title { font-weight: 700 !important }`; keep these light
+.fmw5-cards .card .card-title {
+  font-weight: 400 !important;
+  letter-spacing: 0;
+}
