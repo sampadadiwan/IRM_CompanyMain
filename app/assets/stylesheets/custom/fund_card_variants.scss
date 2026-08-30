@@ -495,8 +495,9 @@
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 
-  // The theme's heading rules make .card-title bold; these ratio values stay light
-  .card-title {
+  // scaffolds.scss forces `.card .card-title { font-weight: 700 !important }` and is
+  // loaded after this file, so out-specify it (3 classes) to keep these values light
+  .card .card-title {
     font-weight: 400 !important;
     letter-spacing: 0;
   }
