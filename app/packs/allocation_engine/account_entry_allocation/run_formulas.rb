@@ -1,4 +1,7 @@
 # AccountEntryAllocationJob.perform_now 320, Date.parse("Thu, 01 Jan 2026"), Date.parse("Tue, 31 Mar 2026"), rule_for: "Accounting", tag_list: nil, run_allocations: true, explain: true, user_id: 24, generate_soa: false, template_id: nil, fund_ratios: false, sample: false, allocation_run_id: 1500
+require 'fileutils'
+require 'shellwords'
+
 module AccountEntryAllocation
   ############################################################
   # 1. RunFormulas Operation
@@ -44,9 +47,22 @@ module AccountEntryAllocation
 
       script_path = Rails.root.join("script/load_sqlite3_from_mysql.sh")
 
-      # Define unique temporary paths for this entity to allow concurrent runs
-      ctx[:sqlite_path] = "/tmp/irm_data_#{fund_ids.join('_')}.sqlite3"
-      ctx[:tsv_path] = "/tmp/irm_data_#{fund_ids.join('_')}.tsv"
+      # Define a unique temporary path for this run so concurrent runs stay isolated.
+      # The fund ids alone are not unique enough: two runs of the *same* fund (parallel
+      # cucumber processes all seed fund id 1, and two users can kick off the same fund
+      # in production) would otherwise share one scratch file and clobber each other.
+      # Development keeps the bare fund-id name so the "file already exists" shortcut
+      # below can still reuse a previously loaded DB across runs.
+      scratch_key = fund_ids.join("_")
+      scratch_key = "#{scratch_key}_#{Process.pid}" unless Rails.env.development?
+
+      # The scratch files run to several GB for a real fund, so they have to sit on real
+      # disk. /tmp is a tmpfs on most dev machines: a tmpfs is backed by RAM+swap rather
+      # than a device, so once memory is tight the import dies with "disk I/O error" while
+      # df still reports free space. Rails.root/tmp is disk-backed and already gitignored.
+      scratch_dir = ENV.fetch("ALLOCATION_SCRATCH_DIR", Rails.root.join("tmp/allocation").to_s)
+      FileUtils.mkdir_p(scratch_dir)
+      ctx[:sqlite_path] = File.join(scratch_dir, "irm_data_#{scratch_key}.sqlite3")
 
       # Extract the primary database configuration dynamically from ActiveRecord.
       # This ensures we use the correct credentials even in test/staging environments.
@@ -56,6 +72,11 @@ module AccountEntryAllocation
       # Prepare the environment variables required by the bash script
       env = {
         "FUND_IDS" => fund_ids.join(","),
+        # Tell the script exactly which file to build. It would otherwise re-derive the
+        # name from FUND_IDS alone and write somewhere we are not reading from.
+        "SQLITE_DB" => ctx[:sqlite_path],
+        # Keep the script's own intermediate TSVs beside our DB, off tmpfs
+        "SCRATCH_DIR" => scratch_dir,
         "ADAPTER" => adapter,
         "MYSQL_HOST" => db_config[:host].to_s,
         "MYSQL_PORT" => db_config[:port].to_s,
@@ -68,8 +89,28 @@ module AccountEntryAllocation
       # exactly where the source database file is located.
       env["SOURCE_SQLITE_DB"] = Rails.root.join(db_config[:database]).to_s if adapter == "sqlite3"
 
+      # Everything the script was told to do, so a failure can be reproduced from the log
+      # by hand without guessing at the environment. The password is deliberately omitted.
+      Rails.logger.info do
+        "load_sqlite_db: running #{script_path} for fund #{fund.id} (#{fund.name}) " \
+          "fund_ids=#{fund_ids.join(',')} entity_id=#{entity_id} adapter=#{adapter} " \
+          "source=#{env.fetch('SOURCE_SQLITE_DB', "#{env['MYSQL_HOST']}:#{env['MYSQL_PORT']}/#{env['MYSQL_DB']}")} " \
+          "target=#{ctx[:sqlite_path]}"
+      end
+
+      # A load that cannot fit should say so before spending minutes exporting. Warn rather
+      # than fail: we cannot know the required size up front, and a small fund fits anywhere.
+      fs_type, free_mb = scratch_dir_stats(scratch_dir)
+      Rails.logger.info { "load_sqlite_db: scratch dir #{scratch_dir} (fstype=#{fs_type || 'unknown'}, free=#{free_mb || '?'} MB)" }
+      if fs_type == "tmpfs"
+        notify("Allocation scratch dir #{scratch_dir} is RAM-backed (tmpfs) - a large fund may fail to load. Set ALLOCATION_SCRATCH_DIR to a disk path.", :warning, ctx[:user_id])
+        Rails.logger.warn { "load_sqlite_db: #{scratch_dir} is a tmpfs; a large load can fail with 'disk I/O error' once RAM+swap are exhausted" }
+      end
+
       # Execute the external migration script and wait for it to finish.
       # The script handles the heavy lifting of bulk exporting/importing via TSV.
+      started_at = Time.zone.now
+      status = nil
       if Rails.env.development? && File.exist?(ctx[:sqlite_path])
         Rails.logger.debug { "Skipping SQLite DB load in development as file already exists at #{ctx[:sqlite_path]}" }
         success = true
@@ -79,52 +120,134 @@ module AccountEntryAllocation
         script_output, status = Open3.capture2e(env, "bash #{script_path}")
         success = status.success?
       end
+      duration = (Time.zone.now - started_at).round(1)
 
-      if success
-        Rails.logger.debug { "Successfully loaded isolated SQLite DB for Entity ID: #{entity_id}" }
+      # Log the script's whole output on every run, not just failures. It ends with a
+      # per-table record count, which is the only way to tell a load that legitimately
+      # found no rows from one that silently exported the wrong thing.
+      Rails.logger.info do
+        "load_sqlite_db: #{script_path.basename} exited #{status&.exitstatus || 0} after #{duration}s\n" \
+          "----- script output -----\n#{script_output}----- end script output -----"
+      end
 
-        # Clear any existing connection pool for this path to ensure we see the fresh file
-        AccountEntryAllocation::WithScratchSqlite.disconnect_pool(ctx[:sqlite_path])
+      unless success
+        exit_code = status&.exitstatus || "unknown"
+        # Tail last 50 lines of output — the failure line is usually near the end.
+        # The full output is in the log line above.
+        tail_output = script_output.to_s.lines.last(50).join
+        return load_failed(
+          ctx,
+          "Failed to load isolated SQLite DB for Entity ID: #{entity_id} " \
+          "(fund_ids=#{fund_ids.join(',')}, adapter=#{adapter}, exit_code=#{exit_code}, " \
+          "duration=#{duration}s, script=#{script_path})\nScript output:\n#{tail_output}",
+          "Failed to load data for fund #{fund.name} (exit_code=#{exit_code}) — see the allocation run status for details"
+        )
+      end
 
+      # A zero exit code is not proof of a usable DB — the file can be missing if the
+      # script wrote somewhere else, so check before we hand the path to a connection pool.
+      unless File.exist?(ctx[:sqlite_path])
+        return load_failed(
+          ctx,
+          "Load script reported success but no SQLite DB exists at #{ctx[:sqlite_path]} " \
+          "(fund_ids=#{fund_ids.join(',')}, entity_id=#{entity_id})",
+          "Failed to load data for fund #{fund.name}: scratch database was not created"
+        )
+      end
+
+      Rails.logger.debug { "Successfully loaded isolated SQLite DB for Entity ID: #{entity_id}" }
+
+      # Clear any existing connection pool for this path to ensure we see the fresh file
+      AccountEntryAllocation::WithScratchSqlite.disconnect_pool(ctx[:sqlite_path])
+
+      # Reading the scratch DB is itself a failure point (missing table, unreadable file).
+      # Without this rescue the exception escaped the operation and the run stopped with
+      # no status recorded, which is what made this step look like it failed silently.
+      begin
         with_scratch_sqlite(ctx[:sqlite_path]) do
           AccountEntrySqlite.where(allocation_run_id: ctx[:allocation_run_id]).delete_all
-          count = AccountEntrySqlite.where(fund_id: fund.id).count
-          Rails.logger.debug { "Loaded #{count} account_entries for fund #{fund.name} into isolated SQLite DB" }
+          entry_count = AccountEntrySqlite.where(fund_id: fund.id).count
+          commitment_count = CapitalCommitmentSqlite.where(fund_id: fund.id).count
+          db_size_mb = (File.size(ctx[:sqlite_path]) / 1024.0 / 1024.0).round(1)
+
+          Rails.logger.info do
+            "load_sqlite_db: loaded #{entry_count} account_entries and #{commitment_count} " \
+              "capital_commitments for fund #{fund.id} (#{fund.name}) into #{ctx[:sqlite_path]} (#{db_size_mb} MB)"
+          end
+
+          # No commitments means every formula below will iterate an empty list and the run
+          # produces nothing. That is almost always a setup problem (wrong fund, everything
+          # dated after end_date), so say so loudly rather than reporting a silent success.
+          if commitment_count.zero?
+            warning = "No capital commitments were loaded for fund #{fund.id} (#{fund.name}) — " \
+                      "the allocation will not generate any entries"
+            Rails.logger.warn { "load_sqlite_db: #{warning}" }
+            notify(warning, :warning, ctx[:user_id])
+          end
+
+          notify("Loaded #{entry_count} account entries and #{commitment_count} commitments for fund #{fund.name}", :info, ctx[:user_id])
         end
-        notify("Loaded DB with account_entries for fund #{fund.name}", :info, ctx[:user_id])
-        true
-      else
-        exit_code = defined?(status) ? status.exitstatus : "unknown"
-        # Tail last 50 lines of output — the failure line is usually near the end
-        tail_output = script_output.to_s.lines.last(50).join
-        error_msg = "Failed to load isolated SQLite DB for Entity ID: #{entity_id} " \
-                    "(fund_ids=#{fund_ids.join(',')}, adapter=#{adapter}, exit_code=#{exit_code}, " \
-                    "script=#{script_path})\nScript output:\n#{tail_output}"
-        notify("Failed to load data for fund #{fund.name} (exit_code=#{exit_code})", :info, ctx[:user_id])
-        Rails.logger.error error_msg
-        ctx[:error] = error_msg
-        false
+      rescue StandardError => e
+        Rails.logger.error e.backtrace&.join("\n")
+        return load_failed(
+          ctx,
+          "Loaded SQLite DB at #{ctx[:sqlite_path]} could not be read: #{e.class}: #{e.message}",
+          "Failed to read loaded data for fund #{fund.name}: #{e.message}"
+        )
       end
+
+      true
+    end
+
+    # Filesystem type and free space (MB) for the scratch dir, or [nil, nil] if df is
+    # unavailable. Used only for diagnostics, so any failure here is swallowed.
+    def scratch_dir_stats(dir)
+      row = `df -PTk #{Shellwords.escape(dir)} 2>/dev/null`.lines[1]
+      return [nil, nil] if row.blank?
+
+      fields = row.split
+      [fields[1], fields[4].to_i / 1024]
+    rescue StandardError
+      [nil, nil]
+    end
+
+    # Single exit point for every load_sqlite_db failure.
+    # Records the failure in all four places a failed run gets diagnosed from: the log, the
+    # user's alert bar, ctx[:error] for the operation, and — the one that was missing — the
+    # AllocationRun status. Without the status write, a failed load left the run sitting at
+    # nil forever, so neither the UI nor a test could say what went wrong.
+    def load_failed(ctx, error_msg, user_msg)
+      Rails.logger.error { "load_sqlite_db: #{error_msg}" }
+      notify(user_msg, :danger, ctx[:user_id])
+      ctx[:error] = error_msg
+      # Truncated: status is a display column, and error_msg can carry 50 lines of script output.
+      ctx[:allocation_run]&.update_column(:status, error_msg.truncate(2000))
+      false
     end
 
     def cleanup_sqlite(ctx, **)
-      # Clean up the temporary isolated files from /tmp to keep the system lean
+      # Clean up the temporary isolated files from /tmp to keep the system lean.
+      # The intermediate per-table TSVs are owned and removed by the load script itself
+      # (it traps EXIT), so there is nothing to clean up for them here.
       sqlite_path = ctx[:sqlite_path]
-      tsv_path = ctx[:tsv_path]
 
       # First, disconnect the pool to close all file handles
       AccountEntryAllocation::WithScratchSqlite.disconnect_pool(sqlite_path) if sqlite_path
 
-      [sqlite_path, tsv_path].compact.each do |path|
+      [sqlite_path].compact.each do |path|
         if File.exist?(path)
           Rails.logger.debug { "Cleaning up isolated temporary file: #{path}" }
           File.delete(path) unless Rails.env.development?
         end
 
-        # Also cleanup WAL files if they exist
-        wal_path = "#{path}-wal"
-        shm_path = "#{path}-shm"
-        [wal_path, shm_path].each do |extra_path|
+        # Also cleanup the sidecar files if they exist. `-journal` matters as much as the
+        # WAL pair: the load script asks for journal_mode=OFF but SQLite falls back to
+        # rollback-journal mode, so aborted runs were leaving orphan `-journal` files behind.
+        [
+          "#{path}-wal",
+          "#{path}-shm",
+          "#{path}-journal"
+        ].each do |extra_path|
           File.delete(extra_path) if File.exist?(extra_path) && !Rails.env.development?
         end
       end
@@ -245,7 +368,11 @@ module AccountEntryAllocation
       links_html = entry_types.map do |entry_type, label|
         query_params = ransack_query_params_multiple([
                                                        ['allocation_run_id', :eq, ctx[:allocation_run_id]],
-                                                       ["reporting_date", :eq, I18n.l(end_date, format: :default)],
+                                                       # ISO, not l(end_date): this is a ransack filter value, not display text.
+                                                       # Ransack casts it back with Date._parse, which always reads a slashed
+                                                       # date as dd/mm/yyyy no matter the locale -- so an en-US "%m/%d/%Y"
+                                                       # string like 08/07/2026 came back as 8 July and the link showed nothing.
+                                                       ["reporting_date", :eq, end_date.to_fs(:db)],
                                                        [:entry_type, :eq, entry_type]
                                                      ])
         ActionController::Base.helpers.link_to(label, account_entries_path(fund_id: fund.id, filter: true, q: query_params), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
@@ -436,21 +563,42 @@ module AccountEntryAllocation
       notify(msg, :info, ctx[:user_id])
 
       # We use a direct SQL update to relink parents.
-      # This joins the table on itself, matching the child's old parent_id (SQLite)
-      # with the parent's stored sqlite_id in the json_fields.
-      # JSON_EXTRACT(json_fields, '$.sqlite_id') is used to retrieve the SQLite ID in MySQL.
-      # We cast it to UNSIGNED to ensure proper comparison with parent_id.
-      sql = <<~SQL.squish
-        UPDATE account_entries AS child
-        INNER JOIN account_entries AS parent ON
-          child.parent_id = CAST(JSON_UNQUOTE(JSON_EXTRACT(parent.json_fields, '$.sqlite_id')) AS UNSIGNED)
-          AND parent.allocation_run_id = child.allocation_run_id
-          AND parent.entry_type = 'AccountEntry'
-        SET child.parent_id = parent.id
-        WHERE child.allocation_run_id = ?
-          AND child.parent_type = 'AccountEntry'
-          AND child.parent_id IS NOT NULL
-      SQL
+      # This joins the table on itself, matching the child's old parent_id (the id it had
+      # in the scratch SQLite DB) with the parent's stored sqlite_id in the json_fields.
+      #
+      # The multi-table UPDATE ... INNER JOIN ... SET form is MySQL-only, and the test
+      # suite runs on SQLite, so each dialect gets its own statement:
+      #   * MySQL  — JSON_UNQUOTE(JSON_EXTRACT(...)) strips the quotes JSON_EXTRACT leaves
+      #              on a string value; CAST(... AS UNSIGNED) compares against parent_id.
+      #   * SQLite — UPDATE ... SET ... FROM (SQLite 3.33+). json_extract already returns
+      #              an unquoted value here, and json_valid guards rows whose json_fields
+      #              is not parseable JSON, which would otherwise abort the statement.
+      sql = if AccountEntry.connection.adapter_name.downcase.include?("sqlite")
+              <<~SQL.squish
+                UPDATE account_entries AS child
+                SET parent_id = parent.id
+                FROM account_entries AS parent
+                WHERE json_valid(parent.json_fields)
+                  AND child.parent_id = CAST(JSON_EXTRACT(parent.json_fields, '$.sqlite_id') AS INTEGER)
+                  AND parent.allocation_run_id = child.allocation_run_id
+                  AND parent.entry_type = 'AccountEntry'
+                  AND child.allocation_run_id = ?
+                  AND child.parent_type = 'AccountEntry'
+                  AND child.parent_id IS NOT NULL
+              SQL
+            else
+              <<~SQL.squish
+                UPDATE account_entries AS child
+                INNER JOIN account_entries AS parent ON
+                  child.parent_id = CAST(JSON_UNQUOTE(JSON_EXTRACT(parent.json_fields, '$.sqlite_id')) AS UNSIGNED)
+                  AND parent.allocation_run_id = child.allocation_run_id
+                  AND parent.entry_type = 'AccountEntry'
+                SET child.parent_id = parent.id
+                WHERE child.allocation_run_id = ?
+                  AND child.parent_type = 'AccountEntry'
+                  AND child.parent_id IS NOT NULL
+              SQL
+            end
 
       AccountEntry.connection.execute(AccountEntry.sanitize_sql_for_assignment([sql, allocation_run_id]))
     end

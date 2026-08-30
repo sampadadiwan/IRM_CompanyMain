@@ -70,9 +70,15 @@ module AccountEntryAllocation
     # (@referenced_field_names) or the formula is explicitly flagged to force it
     # (fund_formula.add_to_commitment_cache) -- otherwise it's a value nothing will
     # ever read again, and caching it just grows @cached_generated_fields forever.
-    def add_to_computed_fields_cache(ctx, capital_commitment, account_entry, fund_formula)
+    #
+    # The formula is read off ctx rather than taken as an argument: every caller runs
+    # inside RunFormulas#execute_formula, which merges the formula being executed into
+    # the sub-operation ctx, so ctx[:fund_formula] is always the right one. Passing it
+    # separately just gave four call sites an extra argument to keep in sync.
+    def add_to_computed_fields_cache(ctx, capital_commitment, account_entry)
+      fund_formula = ctx[:fund_formula]
       field_name = to_varable_name(account_entry.name)
-      return unless fund_formula.add_to_commitment_cache || @referenced_field_names.include?(field_name)
+      return unless fund_formula&.add_to_commitment_cache || @referenced_field_names.include?(field_name)
 
       cached_commitment_fields = computed_fields_cache(capital_commitment, ctx[:start_date], ctx[:end_date])
       cached_commitment_fields[field_name] = account_entry.amount_cents
