@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Dashboards & Widgets",
+    "quality_profile": "showcase",
+    "views": [
+      { "id": "merge", "label": "Widget resolution", "focus": ["registry", "dbrows", "helper"], "note": "Per-entity dashboard_widgets rows win; with none configured, the code registry's defaults render." },
+      { "id": "render", "label": "Render path", "focus": ["entry", "helper", "partials", "data"], "note": "Host pages render the shared dashboard partial, which loops the resolved widgets in position order." },
+      { "id": "portco", "label": "Portfolio company", "focus": ["partials", "reports", "agent", "compliance"], "note": "AI widgets read SupportAgentReports; the standalone compliance dashboard is a separate, non-widget page." }
+    ]
+  },
+  "components": [
+    { "id": "registry", "type": "backend", "label": "WIDGETS registry (code)", "sublabel": "9 dashboard types · defaults", "pos": [40, 40], "size": [280, 68] },
+    { "id": "dbrows", "type": "database", "label": "dashboard_widgets (MySQL)", "sublabel": "per-entity · position · enabled", "pos": [360, 40], "size": [280, 68] },
+    { "id": "entry", "type": "frontend", "label": "Entry points", "sublabel": "fund · investor · entity pages · #dashboard", "pos": [680, 40], "size": [280, 68] },
+
+    { "id": "helper", "type": "backend", "label": "dashboard_widgets() helper", "sublabel": "custom rows or defaults · tag filter · position order", "pos": [40, 180], "size": [600, 60] },
+
+    { "id": "partials", "type": "backend", "label": "Widget partials", "sublabel": "funds/widgets · investors/widgets · capital_commitments · aggregate_portfolio_investments · shared", "pos": [40, 320], "size": [920, 56] },
+
+    { "id": "data", "type": "database", "label": "Domain data (MySQL)", "sublabel": "KPIs · valuations · captable · ratios", "pos": [40, 450], "size": [280, 68] },
+    { "id": "reports", "type": "database", "label": "SupportAgentReports", "sublabel": "AI agent output rows", "pos": [400, 450], "size": [280, 68] },
+
+    { "id": "agent", "type": "backend", "label": "PortfolioCompanyAgent", "sublabel": "PortfolioValidationJob runs", "pos": [400, 590], "size": [280, 64] },
+    { "id": "compliance", "type": "backend", "label": "Compliance dashboard", "sublabel": "standalone · ai pack", "pos": [740, 590], "size": [260, 64] }
+  ],
+  "connections": [
+    { "id": "registry-helper", "from": "registry", "to": "helper", "label": "defaults", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "dbrows-helper", "from": "dbrows", "to": "helper", "label": "entity overrides", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "entry-helper", "from": "entry", "to": "helper", "label": "render dashboard partial", "variant": "emphasis", "fromSide": "bottom", "toSide": "right" },
+    { "id": "helper-partials", "from": "helper", "to": "partials", "label": "render path + metadata_args", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "partials-data", "from": "partials", "to": "data", "fromSide": "bottom", "toSide": "top" },
+    { "id": "partials-reports", "from": "partials", "to": "reports", "label": "AI widgets read", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "agent-reports", "from": "agent", "to": "reports", "label": "writes", "fromSide": "top", "toSide": "bottom", "labelDy": -24 },
+    { "id": "reports-compliance", "from": "reports", "to": "compliance", "label": "presenter reads", "fromSide": "right", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Widget resolution", "items": ["Enabled dashboard_widgets rows matching entity + dashboard_name + name win; with none, the registry defaults render (landing pages take only the first 4)", "Rows whose widget_name isn't in the registry are skipped; tag_list filters against owner tags (e.g. Fund category) or the user's role tags", "acts_as_list positions order the grid; metadata is a safe-eval'd Ruby hash passed to the partial as args (metadata_help documents each widget's options)"] },
+    { "dot": "violet", "title": "The 9 dashboard types", "items": ["FM / LP / Ops Landing Pages, Fund, Ops, Investor, Portfolio, Aggregated Portfolio, and Portfolio Company", "Each entity can keep several named variants per type (name column, default \"Default\"); resolve_dashboard orders the dropdown by the user's dashboard_sequence preference", "DashboardWidgetsController provides the CRUD, Ransack search, and a turbo-stream metadata_help preview"] },
+    { "dot": "cyan", "title": "Portfolio Company Dashboard", "items": ["Widget-based page whose owner is the portfolio company: KPI grids, budget-vs-actual, key numbers, valuations, captable, value bridge, portfolio investments & stats, documents, notes", "Its AI widgets — Scoring Report (PortfolioScoringAgent), Agent Chart, Presentation Analyst, Note Summaries — render SupportAgentReports content", "The standalone compliance dashboard (PortfolioCompanyDashboardController) is separate: PortfolioCompanyAgent runs via PortfolioValidationJob, with stat cards, look-back window status, and reminder sending"] }
+  ]
+}
