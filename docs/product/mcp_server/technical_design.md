@@ -96,12 +96,10 @@ config/
     ai.rb                               # post '/mcp' route
   routes.rb                             # use_doorkeeper, well-known metadata routes
 
-app/controllers/
-  oauth_metadata_controller.rb           # RFC 8414 + RFC 9728 metadata endpoints
-
 app/packs/ai/mcp_server/
   controllers/
     mcp_controller.rb                    # McpController — auth + entity governance + MCP request handling
+    oauth_metadata_controller.rb         # RFC 8414 + RFC 9728 metadata endpoints
   tools/
     application_mcp_tool.rb              # Base class for all MCP tools (MCP::Tool)
     fund_tools/                          # Fund domain (✅ all working)
@@ -204,7 +202,7 @@ get '/.well-known/oauth-protected-resource', to: 'oauth_metadata#protected_resou
 post '/mcp', to: 'mcp#create'
 ```
 
-**app/controllers/oauth_metadata_controller.rb:**
+**app/packs/ai/mcp_server/controllers/oauth_metadata_controller.rb:**
 ```ruby
 # Serves OAuth 2.0 Authorization Server Metadata (RFC 8414)
 # and Protected Resource Metadata (RFC 9728) for MCP client discovery.
