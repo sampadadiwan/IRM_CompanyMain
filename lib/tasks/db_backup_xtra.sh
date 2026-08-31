@@ -4,8 +4,9 @@ IFS=$'\n\t'
 # TODO
 # 1. Restore from specific full & specific incremental, ensure the incremental is after full and allow for nil incr backups (i.e restore from full only)
 # 2. [DONE — handled outside this script] Backup retention is enforced by S3
-#    lifecycle rules on the backup buckets (90d expiry, set idempotently by
-#    rake aws:provision_s3_buckets), so no script-side S3 cleanup is needed.
+#    lifecycle rules on the backup buckets (120d expiry, set idempotently by
+#    rake aws:provision_s3_buckets) plus the chain-safe
+#    rake xtrabackup:cleanup_old_backups task, so no script-side S3 cleanup is needed.
 # 3. Check if there is a way to do incr without downloading the full backup
 # If not then no need to delete the full backup dir, during the day, reuse for every hourly incr
 

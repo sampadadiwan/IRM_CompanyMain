@@ -852,7 +852,7 @@ namespace :aws do
       puts "🗓️  Lifecycle applied to '#{bucket}': expire after #{days}d, purge noncurrent versions after 30d."
     end
 
-    retention_days = ENV.fetch("DB_BACKUP_RETENTION_DAYS", "90").to_i
+    retention_days = ENV.fetch("DB_BACKUP_RETENTION_DAYS", "120").to_i
     ensure_lifecycle!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, days: retention_days)
     ensure_lifecycle!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket, days: retention_days)
 
@@ -865,7 +865,7 @@ namespace :aws do
     # key management, no extra KMS grants needed for replication, and the
     # instance-role IAM stays as scoped as Point 5 left it.
     # NOTE: applies to newly written objects only — pre-existing objects stay
-    # as they were (they age out via the 90d lifecycle anyway).
+    # as they were (they age out via the retention lifecycle anyway).
     def ensure_encryption!(client:, bucket:)
       begin
         client.get_bucket_encryption(bucket: bucket)
