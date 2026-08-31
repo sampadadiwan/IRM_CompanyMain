@@ -4,9 +4,11 @@ IFS=$'\n\t'
 # TODO
 # 1. Restore from specific full & specific incremental, ensure the incremental is after full and allow for nil incr backups (i.e restore from full only)
 # 2. [DONE — handled outside this script] Backup retention is enforced by S3
-#    lifecycle rules on the backup buckets (120d expiry, set idempotently by
-#    rake aws:provision_s3_buckets) plus the chain-safe
-#    rake xtrabackup:cleanup_old_backups task, so no script-side S3 cleanup is needed.
+#    lifecycle rules on the backup buckets (180d expiry default; note
+#    aws:provision_s3_buckets never overwrites an existing lifecycle, so
+#    already-provisioned buckets may still carry an older/absent rule) plus
+#    the chain-safe rake xtrabackup:cleanup_old_backups task (MANUAL/cron —
+#    nothing schedules it automatically yet), so no script-side S3 cleanup is needed.
 # 3. Check if there is a way to do incr without downloading the full backup
 # If not then no need to delete the full backup dir, during the day, reuse for every hourly incr
 
@@ -622,6 +624,28 @@ EOF
   exit 1
 }
 
+# Serializes backup WRITERS on this host. The 23:00 full stages locally
+# before uploading (~25G compressed on prod — can run past midnight) and only
+# rewrites $LSNDIR at the end; without a lock the 00:00/00:30 incr crons read
+# the PREVIOUS full's LSN and produce an incr that sorts after the new full
+# but is based on the old one — a chain the S3 retention cleanup
+# (rake xtrabackup:cleanup_old_backups) would later break by deleting the true
+# base. Incrs skip when a writer is active (the next one fires in 30 min);
+# fulls wait up to 30 min then fail loudly — a stuck lock must surface, not
+# silently cost the nightly full.
+WRITER_LOCK="/var/lock/db_backup_xtra_writer.lock"
+acquire_writer_lock() {
+  exec 9>"$WRITER_LOCK"
+  case "$1" in
+    wait)
+      flock -w 1800 9 || { echo "ERROR: backup writer lock not acquired within 30 min — another backup still running?" >&2; exit 1; }
+      ;;
+    skip)
+      flock -n 9 || { echo "ℹ️ Another backup writer is active — skipping this incremental."; exit 0; }
+      ;;
+  esac
+}
+
 # Exit quietly (status 0) when this host is not armed. Cron on every instance
 # baked from the DB AMI fires this script; only the restored primary may write
 # to the backup chain — a second writer would corrupt the restore lineage.
@@ -640,10 +664,12 @@ main() {
   case "${1:-}" in
     full)
       require_armed
+      acquire_writer_lock wait
       full_backup
       ;;
     incr)
       require_armed
+      acquire_writer_lock skip
       incr_backup
       ;;
     restore_test)

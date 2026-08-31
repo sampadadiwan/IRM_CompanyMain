@@ -820,13 +820,54 @@ namespace :aws do
     # server is rebuilt or a cron dies. Applied to both backup buckets — S3 does
     # NOT replicate lifecycle actions, so the replica needs its own copy.
     # App-asset buckets are deliberately excluded (assets are kept forever).
+    #
+    # "Never clobbers" applies to RETENTION: an existing config's rules are
+    # never modified or replaced. The expired-delete-marker cleanup rule is
+    # ADDITIVE, though — appended to existing configs that lack it, with every
+    # existing rule resent verbatim (put_bucket_lifecycle_configuration always
+    # replaces the whole config, so appending requires resending them).
+
+    # Strips nil members from an SDK rule struct converted via to_h so it can
+    # be resent in a put request. Empty hashes are kept — `filter: {}` is
+    # meaningful ("whole bucket") and required on a rule.
+    def lifecycle_rule_to_request_h(value)
+      case value
+      when Hash  then value.transform_values { |v| lifecycle_rule_to_request_h(v) }.reject { |_, v| v.nil? }
+      when Array then value.map { |v| lifecycle_rule_to_request_h(v) }
+      else value
+      end
+    end
+
     def ensure_lifecycle!(client:, bucket:, days:)
+      # Versioned buckets: when expiration (or any delete) removes an object,
+      # S3 leaves a zero-byte delete marker on top; noncurrent_version_expiration
+      # then purges the real bytes, and the markers linger FOREVER — thousands
+      # of "ghost" 0 GB snapshot prefixes cluttering every restore listing.
+      # expired_object_delete_marker removes markers whose versions are all
+      # gone. It cannot share an expiration block with `days`, hence its own rule.
+      marker_rule = {
+        id: "irm-expired-delete-marker-cleanup",
+        status: "Enabled",
+        filter: {}, # whole bucket
+        expiration: { expired_object_delete_marker: true }
+      }
+
       begin
-        client.get_bucket_lifecycle_configuration(bucket: bucket)
-        puts "✅ Lifecycle already configured on '#{bucket}' — leaving as-is."
+        existing = client.get_bucket_lifecycle_configuration(bucket: bucket).rules
+        if existing.any? { |r| r.expiration&.expired_object_delete_marker }
+          puts "✅ Lifecycle already configured on '#{bucket}' (incl. delete-marker cleanup) — leaving as-is."
+        else
+          client.put_bucket_lifecycle_configuration(
+            bucket: bucket,
+            lifecycle_configuration: {
+              rules: existing.map { |r| lifecycle_rule_to_request_h(r.to_h) } + [marker_rule]
+            }
+          )
+          puts "🧹 Appended expired-delete-marker cleanup rule to '#{bucket}' (#{existing.size} existing rule(s) preserved verbatim)."
+        end
         return
       rescue Aws::S3::Errors::NoSuchLifecycleConfiguration
-        # No lifecycle yet — apply the retention rule below
+        # No lifecycle yet — apply the retention + marker-cleanup rules below
       end
 
       client.put_bucket_lifecycle_configuration(
@@ -846,13 +887,13 @@ namespace :aws do
             # xbcloud uploads via multipart; failed uploads leave invisible,
             # billed parts behind — abort them after a week.
             abort_incomplete_multipart_upload: { days_after_initiation: 7 }
-          }]
+          }, marker_rule]
         }
       )
-      puts "🗓️  Lifecycle applied to '#{bucket}': expire after #{days}d, purge noncurrent versions after 30d."
+      puts "🗓️  Lifecycle applied to '#{bucket}': expire after #{days}d, purge noncurrent versions after 30d, clean expired delete markers."
     end
 
-    retention_days = ENV.fetch("DB_BACKUP_RETENTION_DAYS", "120").to_i
+    retention_days = ENV.fetch("DB_BACKUP_RETENTION_DAYS", "180").to_i
     ensure_lifecycle!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, days: retention_days)
     ensure_lifecycle!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket, days: retention_days)
 
