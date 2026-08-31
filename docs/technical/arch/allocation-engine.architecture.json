@@ -1,0 +1,463 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "AccountEntry Allocation Engine",
+  "quality_profile": "showcase",
+  "views": [
+   {
+    "id": "trigger",
+    "label": "Trigger path",
+    "focus": [
+     "controller",
+     "job",
+     "engine",
+     "runstat"
+    ],
+    "note": "Run Allocations in the UI creates an AllocationRun and enqueues the idempotent job on queue :high."
+   },
+   {
+    "id": "pipeline",
+    "label": "Formula pipeline",
+    "focus": [
+     "s-delete",
+     "s-scratch",
+     "s-commitments",
+     "s-loop",
+     "s-loader",
+     "s-final",
+     "s-ratios",
+     "s-statements",
+     "s-cleanup"
+    ],
+    "note": "The RunFormulas Trailblazer operation, step by step."
+   },
+   {
+    "id": "stores",
+    "label": "Data stores",
+    "focus": [
+     "formulas",
+     "scratch",
+     "mysql"
+    ],
+    "note": "Per-fund formula snippets, the per-run scratch SQLite file, and the MySQL account_entries ledger."
+   }
+  ]
+ },
+ "components": [
+  {
+   "id": "controller",
+   "type": "frontend",
+   "label": "FundsController",
+   "sublabel": "Run Allocations action",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    210,
+    64
+   ]
+  },
+  {
+   "id": "job",
+   "type": "backend",
+   "label": "AccountEntryAllocationJob",
+   "sublabel": "queue :high \u00b7 retry 0 \u00b7 idempotent",
+   "pos": [
+    40,
+    150
+   ],
+   "size": [
+    210,
+    64
+   ]
+  },
+  {
+   "id": "engine",
+   "type": "backend",
+   "label": "Engine (facade)",
+   "sublabel": "builds ctx \u00b7 CommitmentCache",
+   "pos": [
+    40,
+    260
+   ],
+   "size": [
+    210,
+    64
+   ]
+  },
+  {
+   "id": "runstat",
+   "type": "database",
+   "label": "AllocationRun",
+   "sublabel": "status \u00b7 failure message",
+   "pos": [
+    40,
+    400
+   ],
+   "size": [
+    210,
+    60
+   ]
+  },
+  {
+   "id": "s-delete",
+   "type": "backend",
+   "label": "delete prior entries",
+   "sublabel": "for the date range",
+   "pos": [
+    330,
+    40
+   ],
+   "size": [
+    250,
+    34
+   ]
+  },
+  {
+   "id": "s-scratch",
+   "type": "backend",
+   "label": "load scratch SQLite",
+   "pos": [
+    330,
+    100
+   ],
+   "size": [
+    250,
+    34
+   ]
+  },
+  {
+   "id": "s-commitments",
+   "type": "backend",
+   "label": "load commitments",
+   "sublabel": "CommitmentCache variables",
+   "pos": [
+    330,
+    160
+   ],
+   "size": [
+    250,
+    34
+   ]
+  },
+  {
+   "id": "s-loop",
+   "type": "backend",
+   "label": "run formulas loop",
+   "sublabel": "eval per folio \u00b7 threads",
+   "pos": [
+    330,
+    220
+   ],
+   "size": [
+    250,
+    34
+   ]
+  },
+  {
+   "id": "s-loader",
+   "type": "backend",
+   "label": "loader thread",
+   "sublabel": "migrate finished formula ids",
+   "pos": [
+    330,
+    280
+   ],
+   "size": [
+    250,
+    34
+   ]
+  },
+  {
+   "id": "s-final",
+   "type": "backend",
+   "label": "final catch-all migration",
+   "pos": [
+    330,
+    340
+   ],
+   "size": [
+    250,
+    34
+   ]
+  },
+  {
+   "id": "s-ratios",
+   "type": "backend",
+   "label": "generate fund ratios",
+   "pos": [
+    330,
+    400
+   ],
+   "size": [
+    250,
+    34
+   ]
+  },
+  {
+   "id": "s-statements",
+   "type": "backend",
+   "label": "generate investor statements",
+   "pos": [
+    330,
+    460
+   ],
+   "size": [
+    250,
+    34
+   ]
+  },
+  {
+   "id": "s-cleanup",
+   "type": "backend",
+   "label": "cleanup SQLite files",
+   "pos": [
+    330,
+    520
+   ],
+   "size": [
+    250,
+    34
+   ]
+  },
+  {
+   "id": "formulas",
+   "type": "database",
+   "label": "FundFormulas",
+   "sublabel": "per-fund Ruby snippets",
+   "pos": [
+    680,
+    620
+   ],
+   "size": [
+    220,
+    64
+   ]
+  },
+  {
+   "id": "scratch",
+   "type": "database",
+   "label": "Scratch SQLite",
+   "sublabel": "per-run file \u00b7 pooled conns",
+   "pos": [
+    680,
+    180
+   ],
+   "size": [
+    220,
+    64
+   ]
+  },
+  {
+   "id": "mysql",
+   "type": "database",
+   "label": "MySQL",
+   "sublabel": "account_entries \u00b7 fund ratios",
+   "pos": [
+    680,
+    480
+   ],
+   "size": [
+    220,
+    64
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "region",
+   "label": "AccountEntryAllocation::RunFormulas \u2014 step pipeline",
+   "wraps": [
+    "s-delete",
+    "s-scratch",
+    "s-commitments",
+    "s-loop",
+    "s-loader",
+    "s-final",
+    "s-ratios",
+    "s-statements",
+    "s-cleanup"
+   ],
+   "pad": 10
+  }
+ ],
+ "connections": [
+  {
+   "id": "controller-job",
+   "from": "controller",
+   "to": "job",
+   "label": "perform_later",
+   "variant": "emphasis",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "job-engine",
+   "from": "job",
+   "to": "engine",
+   "label": "Engine#call",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "engine-pipeline",
+   "from": "engine",
+   "to": "s-delete",
+   "label": "RunFormulas",
+   "labelAt": [
+    288,
+    120
+   ]
+  },
+  {
+   "id": "engine-runstat",
+   "from": "engine",
+   "to": "runstat",
+   "label": "status on failure",
+   "variant": "dashed",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "p1",
+   "from": "s-delete",
+   "to": "s-scratch",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "p2",
+   "from": "s-scratch",
+   "to": "s-commitments",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "p3",
+   "from": "s-commitments",
+   "to": "s-loop",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "p4",
+   "from": "s-loop",
+   "to": "s-loader",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "p5",
+   "from": "s-loader",
+   "to": "s-final",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "p6",
+   "from": "s-final",
+   "to": "s-ratios",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "p7",
+   "from": "s-ratios",
+   "to": "s-statements",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "p8",
+   "from": "s-statements",
+   "to": "s-cleanup",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "scratch-create",
+   "from": "s-scratch",
+   "to": "scratch",
+   "fromSide": "right",
+   "toSide": "left",
+   "via": [
+    [
+     610,
+     117
+    ],
+    [
+     610,
+     212
+    ]
+   ]
+  },
+  {
+   "id": "formulas-loop",
+   "from": "formulas",
+   "to": "s-loop",
+   "label": "eval snippet",
+   "variant": "dashed",
+   "fromSide": "left",
+   "toSide": "right",
+   "via": [
+    [
+     620,
+     652
+    ],
+    [
+     620,
+     237
+    ]
+   ],
+   "labelAt": [
+    648,
+    580
+   ]
+  },
+  {
+   "id": "loader-mysql",
+   "from": "scratch",
+   "to": "mysql",
+   "label": "loader thread batch-migrates",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelAt": [
+    790,
+    370
+   ]
+  }
+ ],
+ "cards": [
+  {
+   "dot": "emerald",
+   "title": "Why scratch SQLite",
+   "items": [
+    "Heavy per-folio formula evaluation runs against a temp SQLite file with a shared, mutex-guarded connection-pool registry \u2014 keeping load off the MySQL primary",
+    "A background loader thread migrates each finished formula's rows to MySQL while the loop continues; a final catch-all migration sweeps the rest",
+    "The job is idempotent (retry: 0) and runs with Chewy.strategy(:bypass) so reruns are safe and don't hammer Elasticsearch"
+   ]
+  },
+  {
+   "dot": "violet",
+   "title": "Formulas",
+   "items": [
+    "FundFormulas are per-fund Ruby snippets evaluated per folio; CommitmentCache exposes cached commitment fields as formula variables",
+    "A failing step stamps its error onto AllocationRun.status (truncated to 2000 chars) for the UI to show"
+   ]
+  },
+  {
+   "dot": "cyan",
+   "title": "Triggers & options",
+   "items": [
+    "Enqueued from FundsController's Run Allocations action with an AllocationRun for tracking",
+    "Options steer the run: run_allocations, explain, generate_soa, statement_for, template_id, fund_ratios, sample, rule_for, tag_list",
+    "Statement/SOA generation at the end feeds the shared doc-generation pipeline"
+   ]
+  }
+ ]
+}

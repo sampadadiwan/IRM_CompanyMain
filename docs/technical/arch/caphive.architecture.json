@@ -1,0 +1,364 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "CapHive Platform Architecture",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "request-path",
+        "label": "Request path",
+        "focus": [
+          "users",
+          "waf",
+          "rails",
+          "mysql"
+        ],
+        "note": "GP/LP browser traffic through AWS WAF into the Rails monolith and MySQL."
+      },
+      {
+        "id": "async-jobs",
+        "label": "Background jobs",
+        "focus": [
+          "rails",
+          "redis",
+          "sidekiq",
+          "ses",
+          "xirr"
+        ],
+        "note": "Jobs enqueued to Redis, drained by Sidekiq; email via SES, fund ratios via xirr_py."
+      },
+      {
+        "id": "integrations",
+        "label": "Docs and AI",
+        "focus": [
+          "rails",
+          "s3",
+          "llm",
+          "elastic",
+          "sendgrid"
+        ],
+        "note": "S3 documents, Elasticsearch search, LLM providers, SendGrid inbound email."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "users",
+      "type": "external",
+      "label": "GPs & LPs",
+      "sublabel": "Browser",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "waf",
+      "type": "security",
+      "label": "AWS WAF + ALB",
+      "sublabel": "HTTPS :443",
+      "pos": [
+        260,
+        300
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "rails",
+      "type": "backend",
+      "label": "Rails Monolith",
+      "sublabel": "Hotwire (Turbo + Stimulus)",
+      "pos": [
+        490,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": "Devise 2FA + Pundit"
+    },
+    {
+      "id": "mysql",
+      "type": "database",
+      "label": "MySQL",
+      "sublabel": "primary DB",
+      "pos": [
+        750,
+        300
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "messagebus",
+      "label": "Redis",
+      "sublabel": "job queues",
+      "pos": [
+        505,
+        470
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "sidekiq",
+      "type": "backend",
+      "label": "Sidekiq Workers",
+      "sublabel": "+ sidekiq-cron",
+      "pos": [
+        750,
+        470
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "s3",
+      "type": "cloud",
+      "label": "S3",
+      "sublabel": "documents",
+      "pos": [
+        750,
+        140
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "llm",
+      "type": "external",
+      "label": "LLM Providers",
+      "sublabel": "OpenAI / Gemini",
+      "pos": [
+        260,
+        140
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "sendgrid",
+      "type": "external",
+      "label": "SendGrid",
+      "sublabel": "Inbound Parse",
+      "pos": [
+        40,
+        140
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "replica",
+      "type": "database",
+      "label": "MySQL Replica",
+      "sublabel": "read replica",
+      "pos": [
+        960,
+        300
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "elastic",
+      "type": "database",
+      "label": "Elasticsearch",
+      "sublabel": "Chewy indexes",
+      "pos": [
+        240,
+        470
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "xirr",
+      "type": "backend",
+      "label": "xirr_py",
+      "sublabel": "Docker :8000",
+      "pos": [
+        750,
+        610
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "ses",
+      "type": "cloud",
+      "label": "Amazon SES",
+      "sublabel": "SMTP :587",
+      "pos": [
+        980,
+        470
+      ],
+      "size": [
+        140,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "AWS production account",
+      "wraps": [
+        "waf",
+        "rails",
+        "mysql",
+        "redis",
+        "sidekiq",
+        "s3",
+        "replica",
+        "elastic",
+        "xirr",
+        "ses"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "users-to-waf",
+      "from": "users",
+      "to": "waf",
+      "label": "HTTPS",
+      "variant": "emphasis",
+      "labelDx": -16
+    },
+    {
+      "id": "waf-to-rails",
+      "from": "waf",
+      "to": "rails"
+    },
+    {
+      "id": "rails-sql",
+      "from": "rails",
+      "to": "mysql",
+      "label": "SQL"
+    },
+    {
+      "id": "rails-enqueue",
+      "from": "rails",
+      "to": "redis",
+      "label": "enqueue jobs",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "redis-drain",
+      "from": "redis",
+      "to": "sidekiq",
+      "label": "drain"
+    },
+    {
+      "id": "sidekiq-ses",
+      "from": "sidekiq",
+      "to": "ses",
+      "label": "outbound email (SMTP)",
+      "labelDy": -24
+    },
+    {
+      "id": "rails-docs",
+      "from": "rails",
+      "to": "s3",
+      "label": "store / presign docs",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "rails-ai",
+      "from": "rails",
+      "to": "llm",
+      "label": "AI calls (ruby_llm)",
+      "variant": "dashed"
+    },
+    {
+      "id": "mysql-replication",
+      "from": "mysql",
+      "to": "replica",
+      "label": "replication",
+      "variant": "dashed"
+    },
+    {
+      "id": "rails-elastic",
+      "from": "rails",
+      "to": "elastic",
+      "label": "index / search (Chewy)"
+    },
+    {
+      "id": "sidekiq-xirr",
+      "from": "sidekiq",
+      "to": "xirr",
+      "label": "XIRR calc (HTTP)",
+      "labelDy": 24
+    },
+    {
+      "id": "sendgrid-inbound",
+      "from": "sendgrid",
+      "to": "waf",
+      "label": "Inbound Parse POST",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Application",
+      "items": [
+        "Rails monolith, server-rendered with Hotwire (Turbo + Stimulus)",
+        "Devise with two-factor auth; Pundit policies on every action",
+        "Domain packs: core, funds, ai, allocation_engine, secondaries, startups"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Data & jobs",
+      "items": [
+        "MySQL primary + read replica (SQLite in test env)",
+        "Sidekiq + sidekiq-cron workers drain Redis queues",
+        "Elasticsearch (Chewy) for search; fund documents on S3"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Integrations",
+      "items": [
+        "Outbound email over SMTP via Amazon SES; SendGrid Inbound Parse receives mail add-in filings",
+        "AI features call OpenAI / Gemini through ruby_llm",
+        "xirr_py Docker sidecar computes XIRR / fund ratios over HTTP",
+        "caphive.com website served by Rails middleware from public/website"
+      ]
+    }
+  ]
+}

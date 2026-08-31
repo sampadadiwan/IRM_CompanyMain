@@ -1,0 +1,298 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "startups Pack \u2014 Background Jobs",
+  "quality_profile": "showcase"
+ },
+ "components": [
+  {
+   "id": "j-clear-messages-count-job",
+   "type": "backend",
+   "label": "clear_messages_count",
+   "pos": [
+    40,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-deal-activities-job",
+   "type": "backend",
+   "label": "generate_deal_activities",
+   "pos": [
+    40,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-deal-step-tasks-job",
+   "type": "backend",
+   "label": "generate_deal_step_tasks",
+   "pos": [
+    40,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-process-deal-ingest-job",
+   "type": "backend",
+   "label": "process_deal_ingest",
+   "pos": [
+    40,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-convert-kpi-to-csv-job",
+   "type": "backend",
+   "label": "convert_kpi_to_csv",
+   "pos": [
+    290,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-periodic-kpi-reports-job",
+   "type": "backend",
+   "label": "generate_periodic_kpi_reports",
+   "pos": [
+    290,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-import-kpi-workbook-job",
+   "type": "backend",
+   "label": "import_kpi_workbook",
+   "pos": [
+    290,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-kpi-analyst-job",
+   "type": "backend",
+   "label": "kpi_analyst",
+   "pos": [
+    290,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-kpi-cumulate-job",
+   "type": "backend",
+   "label": "kpi_cumulate",
+   "pos": [
+    290,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-kpi-percentage-change-job",
+   "type": "backend",
+   "label": "kpi_percentage_change",
+   "pos": [
+    290,
+    520
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-recompute-investor-kpi-mapping-rag-job",
+   "type": "backend",
+   "label": "investor_kpi_mapping_rag",
+   "pos": [
+    290,
+    558
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-send-portco-notification-job",
+   "type": "backend",
+   "label": "send_portco_notification",
+   "pos": [
+    290,
+    596
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "rails",
+   "type": "backend",
+   "label": "Rails App",
+   "sublabel": "perform_later",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    130,
+    60
+   ]
+  },
+  {
+   "id": "redis",
+   "type": "messagebus",
+   "label": "Redis",
+   "sublabel": "queues",
+   "pos": [
+    200,
+    40
+   ],
+   "size": [
+    100,
+    60
+   ]
+  },
+  {
+   "id": "mysql",
+   "type": "database",
+   "label": "MySQL",
+   "sublabel": "every job r/w",
+   "pos": [
+    360,
+    40
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "sidekiq",
+   "type": "backend",
+   "label": "Sidekiq Workers",
+   "sublabel": "capsules: default \u00b7 serial \u00b7 doc_gen \u00b7 ai_checks \u00b7 db_restore",
+   "pos": [
+    40,
+    180
+   ],
+   "size": [
+    470,
+    52
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "region",
+   "label": "startups/deals (4)",
+   "wraps": [
+    "j-clear-messages-count-job",
+    "j-generate-deal-activities-job",
+    "j-generate-deal-step-tasks-job",
+    "j-process-deal-ingest-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "startups/kpis (8)",
+   "wraps": [
+    "j-convert-kpi-to-csv-job",
+    "j-generate-periodic-kpi-reports-job",
+    "j-import-kpi-workbook-job",
+    "j-kpi-analyst-job",
+    "j-kpi-cumulate-job",
+    "j-kpi-percentage-change-job",
+    "j-recompute-investor-kpi-mapping-rag-job",
+    "j-send-portco-notification-job"
+   ],
+   "pad": 8
+  }
+ ],
+ "connections": [
+  {
+   "id": "rails-redis",
+   "from": "rails",
+   "to": "redis",
+   "label": "enqueue",
+   "variant": "emphasis",
+   "labelDy": -26
+  },
+  {
+   "id": "redis-sidekiq",
+   "from": "redis",
+   "to": "sidekiq",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sidekiq-mysql",
+   "from": "sidekiq",
+   "to": "mysql",
+   "fromSide": "top",
+   "toSide": "bottom"
+  },
+  {
+   "id": "sk-col0",
+   "from": "sidekiq",
+   "to": "j-clear-messages-count-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col1",
+   "from": "sidekiq",
+   "to": "j-convert-kpi-to-csv-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "emerald",
+   "title": "What lives here",
+   "items": [
+    "Deal pipeline activity/task generation and ingest, plus the KPI pipeline: workbook import, cumulation, percentage change, periodic reports",
+    "kpi_analyst_job feeds the AI pack; send_portco_notification_job emails portfolio companies via the shared mailers"
+   ]
+  }
+ ]
+}

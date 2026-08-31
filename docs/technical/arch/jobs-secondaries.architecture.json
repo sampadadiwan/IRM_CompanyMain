@@ -1,0 +1,221 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "secondaries Pack \u2014 Background Jobs",
+  "quality_profile": "showcase"
+ },
+ "components": [
+  {
+   "id": "j-allocation-spa-job",
+   "type": "backend",
+   "label": "allocation_spa",
+   "pos": [
+    40,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-allocations-bulk-action-job",
+   "type": "backend",
+   "label": "allocations_bulk_action",
+   "pos": [
+    40,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-new-allocation-job",
+   "type": "backend",
+   "label": "new_allocation",
+   "pos": [
+    40,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-offer-spa-job",
+   "type": "backend",
+   "label": "offer_spa",
+   "pos": [
+    290,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-offers-bulk-action-job",
+   "type": "backend",
+   "label": "offers_bulk_action",
+   "pos": [
+    290,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-interest-doc-job",
+   "type": "backend",
+   "label": "interest_doc",
+   "pos": [
+    290,
+    432
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "rails",
+   "type": "backend",
+   "label": "Rails App",
+   "sublabel": "perform_later",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    130,
+    60
+   ]
+  },
+  {
+   "id": "redis",
+   "type": "messagebus",
+   "label": "Redis",
+   "sublabel": "queues",
+   "pos": [
+    200,
+    40
+   ],
+   "size": [
+    100,
+    60
+   ]
+  },
+  {
+   "id": "mysql",
+   "type": "database",
+   "label": "MySQL",
+   "sublabel": "every job r/w",
+   "pos": [
+    360,
+    40
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "sidekiq",
+   "type": "backend",
+   "label": "Sidekiq Workers",
+   "sublabel": "capsules: default \u00b7 serial \u00b7 doc_gen \u00b7 ai_checks \u00b7 db_restore",
+   "pos": [
+    40,
+    180
+   ],
+   "size": [
+    470,
+    52
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "region",
+   "label": "secondaries/secondary_sales (3)",
+   "wraps": [
+    "j-allocation-spa-job",
+    "j-allocations-bulk-action-job",
+    "j-new-allocation-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "secondaries/offers (2)",
+   "wraps": [
+    "j-offer-spa-job",
+    "j-offers-bulk-action-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "secondaries/interests (1)",
+   "wraps": [
+    "j-interest-doc-job"
+   ],
+   "pad": 8
+  }
+ ],
+ "connections": [
+  {
+   "id": "rails-redis",
+   "from": "rails",
+   "to": "redis",
+   "label": "enqueue",
+   "variant": "emphasis",
+   "labelDy": -26
+  },
+  {
+   "id": "redis-sidekiq",
+   "from": "redis",
+   "to": "sidekiq",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sidekiq-mysql",
+   "from": "sidekiq",
+   "to": "mysql",
+   "fromSide": "top",
+   "toSide": "bottom"
+  },
+  {
+   "id": "sk-col0",
+   "from": "sidekiq",
+   "to": "j-allocation-spa-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col1",
+   "from": "sidekiq",
+   "to": "j-offer-spa-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "emerald",
+   "title": "What lives here",
+   "items": [
+    "Secondary sale allocations and SPA/interest document jobs",
+    "SPA and interest docs render through the shared doc-generation pipeline and land on S3"
+   ]
+  }
+ ]
+}

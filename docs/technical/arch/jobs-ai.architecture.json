@@ -1,0 +1,503 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "ai Pack \u2014 Background Jobs",
+  "quality_profile": "showcase"
+ },
+ "components": [
+  {
+   "id": "j-assistant-query-job",
+   "type": "backend",
+   "label": "assistant_query",
+   "pos": [
+    40,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-assistant-report-job",
+   "type": "backend",
+   "label": "assistant_report",
+   "pos": [
+    40,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-slides-job",
+   "type": "backend",
+   "label": "generate_slides",
+   "pos": [
+    40,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-chat-stream-job",
+   "type": "backend",
+   "label": "chat_stream",
+   "pos": [
+    40,
+    470
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-agent-chart-job",
+   "type": "backend",
+   "label": "agent_chart",
+   "pos": [
+    40,
+    534
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-section-content-job",
+   "type": "backend",
+   "label": "generate_section_content",
+   "pos": [
+    40,
+    598
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-support-agent-job",
+   "type": "backend",
+   "label": "support_agent",
+   "pos": [
+    290,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-template-fix-job",
+   "type": "backend",
+   "label": "template_fix",
+   "pos": [
+    290,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-whatsapp-agent-job",
+   "type": "backend",
+   "label": "whatsapp_agent",
+   "pos": [
+    290,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-response-judge-job",
+   "type": "backend",
+   "label": "response_judge",
+   "pos": [
+    290,
+    470
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-support-bot-job",
+   "type": "backend",
+   "label": "support_bot",
+   "pos": [
+    290,
+    534
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-ai-checks-job",
+   "type": "backend",
+   "label": "ai_checks",
+   "pos": [
+    290,
+    598
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-ai-fund-checks-job",
+   "type": "backend",
+   "label": "ai_fund_checks",
+   "pos": [
+    290,
+    636
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-kpi-extractor-job",
+   "type": "backend",
+   "label": "kpi_extractor",
+   "pos": [
+    540,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-validation-job",
+   "type": "backend",
+   "label": "portfolio_validation",
+   "pos": [
+    540,
+    394
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-report-insight-job",
+   "type": "backend",
+   "label": "generate_report_insight",
+   "pos": [
+    540,
+    458
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "rails",
+   "type": "backend",
+   "label": "Rails App",
+   "sublabel": "perform_later",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    160,
+    60
+   ]
+  },
+  {
+   "id": "redis",
+   "type": "messagebus",
+   "label": "Redis",
+   "sublabel": "queues",
+   "pos": [
+    260,
+    40
+   ],
+   "size": [
+    130,
+    60
+   ]
+  },
+  {
+   "id": "mysql",
+   "type": "database",
+   "label": "MySQL",
+   "sublabel": "every job r/w",
+   "pos": [
+    590,
+    40
+   ],
+   "size": [
+    170,
+    60
+   ]
+  },
+  {
+   "id": "sidekiq",
+   "type": "backend",
+   "label": "Sidekiq Workers",
+   "sublabel": "capsules: default \u00b7 serial \u00b7 doc_gen \u00b7 ai_checks \u00b7 db_restore",
+   "pos": [
+    40,
+    180
+   ],
+   "size": [
+    720,
+    52
+   ]
+  },
+  {
+   "id": "ext-llm",
+   "type": "external",
+   "label": "LLM Providers",
+   "sublabel": "OpenAI \u00b7 Gemini",
+   "pos": [
+    290,
+    776
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "ext-wa",
+   "type": "external",
+   "label": "WhatsApp API",
+   "sublabel": "agent chat",
+   "pos": [
+    540,
+    776
+   ],
+   "size": [
+    150,
+    60
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "region",
+   "label": "ai/assistants (3)",
+   "wraps": [
+    "j-assistant-query-job",
+    "j-assistant-report-job",
+    "j-generate-slides-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/chats (1)",
+   "wraps": [
+    "j-chat-stream-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/agent_charts (1)",
+   "wraps": [
+    "j-agent-chart-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/ai_portfolio_reports (1)",
+   "wraps": [
+    "j-generate-section-content-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/support_agents (3)",
+   "wraps": [
+    "j-support-agent-job",
+    "j-template-fix-job",
+    "j-whatsapp-agent-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/customer_support_agent (1)",
+   "wraps": [
+    "j-response-judge-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/faqs (1)",
+   "wraps": [
+    "j-support-bot-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/ai_rules (2)",
+   "wraps": [
+    "j-ai-checks-job",
+    "j-ai-fund-checks-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/kpi_extractor (1)",
+   "wraps": [
+    "j-kpi-extractor-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/portfolio_company_dashboard (1)",
+   "wraps": [
+    "j-portfolio-validation-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "ai/report_insights (1)",
+   "wraps": [
+    "j-generate-report-insight-job"
+   ],
+   "pad": 8
+  }
+ ],
+ "connections": [
+  {
+   "id": "rails-redis",
+   "from": "rails",
+   "to": "redis",
+   "label": "enqueue",
+   "variant": "emphasis",
+   "labelDy": -26
+  },
+  {
+   "id": "redis-sidekiq",
+   "from": "redis",
+   "to": "sidekiq",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sidekiq-mysql",
+   "from": "sidekiq",
+   "to": "mysql",
+   "label": "ActiveRecord",
+   "fromSide": "top",
+   "toSide": "bottom"
+  },
+  {
+   "id": "sk-col0",
+   "from": "sidekiq",
+   "to": "j-assistant-query-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col1",
+   "from": "sidekiq",
+   "to": "j-support-agent-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col2",
+   "from": "sidekiq",
+   "to": "j-kpi-extractor-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "call-assistant-query-job",
+   "from": "j-assistant-query-job",
+   "to": "ext-llm",
+   "fromSide": "right",
+   "toSide": "top",
+   "via": [
+    [
+     275,
+     345
+    ],
+    [
+     275,
+     758
+    ],
+    [
+     365,
+     758
+    ]
+   ]
+  },
+  {
+   "id": "call-whatsapp-agent-job",
+   "from": "j-whatsapp-agent-job",
+   "to": "ext-wa",
+   "fromSide": "right",
+   "toSide": "top",
+   "via": [
+    [
+     529,
+     421
+    ],
+    [
+     529,
+     758
+    ],
+    [
+     615,
+     758
+    ]
+   ]
+  }
+ ],
+ "cards": [
+  {
+   "dot": "emerald",
+   "title": "What lives here",
+   "items": [
+    "Assistant queries, chat streaming, slide generation, KPI extraction, AI rule checks, and the support/deal agents",
+    "Every job in this pack ultimately calls the LLM providers through ruby_llm service wrappers"
+   ]
+  },
+  {
+   "dot": "violet",
+   "title": "Cadence",
+   "items": [
+    "SchedulerPollingJob (core) fires AgentSchedules every 10 minutes, enqueuing agent runs here",
+    "response_judge_job scores support-bot answers after the fact"
+   ]
+  }
+ ]
+}
