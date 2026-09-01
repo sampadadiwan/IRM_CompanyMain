@@ -11,9 +11,22 @@ class ReworkDealIngestAddressesOnePerDeal < ActiveRecord::Migration[8.1]
   def up
     # Order matters for MySQL FK constraints:
     #   1. Drop the standalone deal_id index (compound index still covers FK)
-    #   2. Add unique deal_id index (now the FK has a new covering index)
-    #   3. Drop the compound index (no longer needed)
-    remove_index :deal_ingest_addresses, :deal_id
+    #   2. Deduplicate rows so unique index can be applied
+    #   3. Add unique deal_id index (now the FK has a new covering index)
+    #   4. Drop the compound index (no longer needed)
+    remove_index :deal_ingest_addresses, :deal_id, if_exists: true
+
+    # Keep only the newest row per deal (old model allowed one per user)
+    execute <<~SQL.squish
+      DELETE a FROM deal_ingest_addresses a
+      INNER JOIN (
+        SELECT deal_id, MAX(id) AS keep_id
+        FROM deal_ingest_addresses
+        GROUP BY deal_id
+        HAVING COUNT(*) > 1
+      ) dupes ON a.deal_id = dupes.deal_id AND a.id != dupes.keep_id
+    SQL
+
     add_index :deal_ingest_addresses, :deal_id, unique: true
     remove_index :deal_ingest_addresses, %i[deal_id user_id]
 
