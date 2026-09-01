@@ -31,11 +31,11 @@ When("a v2 SendGrid webhook arrives with:") do |table|
 
   # Build headers with Message-ID.
   headers = row["headers"] || ""
-  if row["message_id"]
-    headers += "\nMessage-ID: <#{row['message_id']}>"
-  else
-    headers += "\nMessage-ID: <#{SecureRandom.uuid}@mail.test>"
-  end
+  headers += if row["message_id"]
+               "\nMessage-ID: <#{row['message_id']}>"
+             else
+               "\nMessage-ID: <#{SecureRandom.uuid}@mail.test>"
+             end
 
   @webhook_params = ActionController::Parameters.new(
     to: to_address,
@@ -75,12 +75,12 @@ end
 Then("no v2 AgentIngestedEmail should be created") do
   new_emails = AgentIngestedEmail.where(status: "pending")
   expect(new_emails.count).to eq(0),
-    "Expected no new AgentIngestedEmail but found #{new_emails.count}"
+                              "Expected no new AgentIngestedEmail but found #{new_emails.count}"
 end
 
 Then("no new v2 AgentIngestedEmail should be created") do
   expect(AgentIngestedEmail.count).to eq(1),
-    "Expected exactly 1 AgentIngestedEmail (the pre-existing one) but found #{AgentIngestedEmail.count}"
+                                      "Expected exactly 1 AgentIngestedEmail (the pre-existing one) but found #{AgentIngestedEmail.count}"
 end
 
 # --- Assertions: Jobs ---
@@ -99,5 +99,5 @@ end
 
 Then("no v2 email should be sent") do
   expect(ActionMailer::Base.deliveries).to be_empty,
-    "Expected no emails but found #{ActionMailer::Base.deliveries.count}: #{ActionMailer::Base.deliveries.map(&:subject)}"
+                                           "Expected no emails but found #{ActionMailer::Base.deliveries.count}: #{ActionMailer::Base.deliveries.map(&:subject)}"
 end

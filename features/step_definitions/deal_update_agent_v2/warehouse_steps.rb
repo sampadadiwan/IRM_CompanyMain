@@ -60,7 +60,7 @@ Then("a v2 Note should exist on {string} flagged as match_tier {string}") do |in
 
   note = Note.find_by(owner: deal_investor)
   expect(note).not_to be_nil,
-    "Expected a Note on #{investor_name} but none found"
+                      "Expected a Note on #{investor_name} but none found"
   @ingested_email.reload
   expect(@ingested_email.filed_as).to eq(note)
   expect(@ingested_email.match_tier).to eq(tier)
@@ -76,5 +76,5 @@ end
 Then("no v2 Note or Task should be created") do
   @ingested_email.reload
   expect(@ingested_email.filed_as).to be_nil,
-    "Expected no Note or Task but found #{@ingested_email.filed_as_type} ##{@ingested_email.filed_as_id}"
+                                      "Expected no Note or Task but found #{@ingested_email.filed_as_type} ##{@ingested_email.filed_as_id}"
 end

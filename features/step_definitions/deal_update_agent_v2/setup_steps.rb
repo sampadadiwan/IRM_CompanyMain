@@ -28,7 +28,7 @@ Before('@deal_update_agent_v2') do
   ActionMailer::Base.deliveries.clear
 
   # Set the domain so the feature is enabled.
-  @original_domain = ENV["DEAL_INGEST_DOMAIN"]
+  @original_domain = ENV.fetch("DEAL_INGEST_DOMAIN", nil)
   ENV["DEAL_INGEST_DOMAIN"] = "dev.caphive.app"
 end
 

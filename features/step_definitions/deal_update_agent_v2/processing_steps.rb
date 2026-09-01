@@ -61,7 +61,7 @@ Then("a v2 Note should exist on {string} with text {string}") do |investor_name,
 
   @created_note = Note.find_by(owner: deal_investor)
   expect(@created_note).not_to be_nil,
-    "Expected a Note on #{investor_name} but none found"
+                               "Expected a Note on #{investor_name} but none found"
   expect(@created_note.details.to_plain_text).to include(text_fragment)
 end
 
@@ -79,7 +79,7 @@ Then("a v2 Task should exist on {string} with due date {string}") do |investor_n
 
   @created_task = Task.find_by(owner: deal_investor)
   expect(@created_task).not_to be_nil,
-    "Expected a Task on #{investor_name} but none found"
+                               "Expected a Task on #{investor_name} but none found"
   expect(@created_task.due_date).to eq(Date.parse(due_date))
 end
 
@@ -94,7 +94,7 @@ end
 Then("the v2 AgentIngestedEmail status should be {string}") do |status|
   @ingested_email.reload
   expect(@ingested_email.status).to eq(status),
-    "Expected email status '#{status}' but got '#{@ingested_email.status}'"
+                                    "Expected email status '#{status}' but got '#{@ingested_email.status}'"
 end
 
 # --- Assertions: Mailers ---
@@ -104,7 +104,7 @@ Then("a v2 confirmation email should be sent to the user") do
     mail.to.include?(@user.email) && mail.subject&.include?("created on")
   end
   expect(confirmation).not_to be_nil,
-    "Expected a confirmation email to #{@user.email} but none found. Deliveries: #{ActionMailer::Base.deliveries.map(&:subject)}"
+                              "Expected a confirmation email to #{@user.email} but none found. Deliveries: #{ActionMailer::Base.deliveries.map(&:subject)}"
 end
 
 # --- Assertions: Warehouse ---
@@ -112,7 +112,7 @@ end
 Then("a v2 WarehouseItem should exist for the deal with intent {string}") do |intent|
   @warehouse_item = WarehouseItem.find_by(deal: @deal)
   expect(@warehouse_item).not_to be_nil,
-    "Expected a WarehouseItem for the deal but none found"
+                                 "Expected a WarehouseItem for the deal but none found"
   expect(@warehouse_item.parsed_intent).to eq(intent)
   expect(@warehouse_item).to be_pending
 end

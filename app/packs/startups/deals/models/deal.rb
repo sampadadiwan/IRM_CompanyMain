@@ -259,6 +259,6 @@ class Deal < ApplicationRecord
                  Array.wrap(value)
                end
 
-    statuses.map { |status| status.to_s.strip }.reject(&:blank?)
+    statuses.map { |status| status.to_s.strip }.compact_blank
   end
 end
