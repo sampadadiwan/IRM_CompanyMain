@@ -41,6 +41,56 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
+  create_table "account_entries", primary_key: ["id", "reporting_date"], force: :cascade do |t|
+    t.bigint "allocation_run_id"
+    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.bigint "capital_commitment_id"
+    t.string "commitment_name"
+    t.datetime "created_at", precision: nil, null: false
+    t.boolean "cumulative", default: false
+    t.datetime "deleted_at", precision: nil
+    t.bigint "entity_id", null: false
+    t.string "entry_type", limit: 60
+    t.bigint "exchange_rate_id"
+    t.text "explanation"
+    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.string "folio_id", limit: 40
+    t.bigint "form_type_id"
+    t.bigint "fund_formula_id"
+    t.bigint "fund_id", null: false
+    t.boolean "generated", default: false
+    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
+    t.bigint "id", null: false
+    t.bigint "import_upload_id"
+    t.bigint "investor_id"
+    t.json "json_fields"
+    t.string "name", limit: 125
+    t.text "notes"
+    t.bigint "parent_id"
+    t.string "parent_name"
+    t.string "parent_type"
+    t.string "period", limit: 25
+    t.integer "ref_id", default: 0, null: false
+    t.date "reporting_date", null: false
+    t.string "rule_for", limit: 10, default: "Accounting"
+    t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
+    t.index ["capital_commitment_id", "name", "reporting_date"], name: "idx_ae_cc_name_date"
+    t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
+    t.index ["entity_id", "deleted_at", "name"], name: "idx_ae_entity_deleted_name"
+    t.index ["entity_id"], name: "index_account_entries_on_entity_id"
+    t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
+    t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
+    t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
+    t.index ["fund_id", "entry_type", "reporting_date"], name: "idx_fund_id_and_entry_type_and_reporting_date"
+    t.index ["fund_id", "name", "reporting_date"], name: "idx_fund_id_and_name_and_reporting_date"
+    t.index ["fund_id"], name: "index_account_entries_on_fund_id"
+    t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
+    t.index ["investor_id"], name: "index_account_entries_on_investor_id"
+    t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
+  end
+
   create_table "account_entry_report_insights", force: :cascade do |t|
     t.bigint "capital_commitment_id"
     t.json "content"
@@ -320,7 +370,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.bigint "orignal_id"
     t.bigint "portfolio_company_id", null: false
     t.string "portfolio_company_name", limit: 100
-    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
     t.boolean "show_portfolio", default: false
     t.boolean "snapshot", default: false
@@ -359,8 +409,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.datetime "updated_at", null: false
     t.index ["ai_rule_id"], name: "index_ai_checks_on_ai_rule_id"
     t.index ["entity_id"], name: "index_ai_checks_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_compliance_checks_on_owner"
-    t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
+    t.index ["owner_type", "owner_id"], name: "index_ai_checks_on_owner"
+    t.index ["parent_type", "parent_id"], name: "index_ai_checks_on_parent"
   end
 
   create_table "ai_portfolio_reports", force: :cascade do |t|
@@ -749,7 +799,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "percentage", precision: 20, scale: 10, default: "0.0"
+    t.decimal "percentage", precision: 11, scale: 8, default: "0.0"
     t.bigint "ppm_number", default: 0
     t.string "slug"
     t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
@@ -902,6 +952,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.index ["exchange_rate_id"], name: "index_capital_remittance_payments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_capital_remittance_payments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_remittance_payments_on_fund_id"
+    t.index ["investor_id"], name: "index_capital_remittance_payments_on_investor_id"
     t.index ["payment_date"], name: "index_capital_remittance_payments_on_payment_date"
   end
 
@@ -1071,7 +1122,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.bigint "owner_id", null: false
     t.string "owner_type", null: false
     t.datetime "updated_at", null: false
-    t.index ["owner_id", "owner_type"], name: "index_custom_grid_views_on_owner_id_and_owner_type"
   end
 
   create_table "custom_notifications", force: :cascade do |t|
@@ -1323,7 +1373,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.string "fee_type", limit: 20
     t.boolean "formula", default: false
     t.bigint "fund_id", null: false
-    t.string "name", limit: 50
+    t.string "name", limit: 65
     t.string "notes"
     t.string "parent_ids"
     t.string "parent_type"
@@ -1368,7 +1418,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "display_on_page", limit: 6
-    t.boolean "download"
+    t.boolean "download", default: false
     t.boolean "embed", default: false
     t.bigint "entity_id", null: false
     t.string "esign_status", default: "", null: false
@@ -1383,12 +1433,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.datetime "last_status_updated_at"
     t.boolean "locked", default: false, null: false
     t.string "name"
-    t.boolean "orignal"
+    t.boolean "orignal", default: false
     t.bigint "owner_id"
     t.string "owner_tag", limit: 40
     t.string "owner_type"
     t.string "pdf_conversion_engine", default: "libreoffice", null: false
-    t.boolean "printing"
+    t.boolean "printing", default: false
     t.string "provider_doc_id"
     t.boolean "public_visibility", default: false
     t.text "qna"
@@ -1515,7 +1565,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.boolean "bank_verification"
     t.string "call_basis"
     t.string "cc"
-    t.boolean "ckyc_kra_enabled"
+    t.boolean "ckyc_kra_enabled", default: false
     t.datetime "created_at", null: false
     t.boolean "cs_judge_enabled", default: true, null: false
     t.string "cs_judge_model"
@@ -1543,7 +1593,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.string "from_email", limit: 100
     t.string "gemini_api_key"
     t.string "individual_kyc_doc_list"
-    t.string "investor_presentations_email", limit: 50
+    t.string "investor_presentations_email", limit: 100
     t.json "kanban_steps"
     t.string "kpi_doc_list"
     t.integer "kpi_reminder_before"
@@ -1606,9 +1656,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.datetime "start_time", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.bigint "user_id", default: 21, null: false
     t.index ["entity_id"], name: "index_events_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_events_on_owner"
+    t.index ["owner_type", "owner_id"], name: "index_events_on_owner_type_and_owner_id"
     t.index ["user_id"], name: "index_events_on_user_id"
   end
 
@@ -2094,7 +2145,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.bigint "custom_grid_view_id"
     t.string "data_type"
     t.boolean "derived_field"
-    t.bigint "entity_id", null: false
+    t.bigint "entity_id"
     t.string "key"
     t.string "label"
     t.string "name"
@@ -2103,10 +2154,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.boolean "selected"
     t.integer "sequence"
     t.datetime "updated_at", null: false
-    t.index ["custom_grid_view_id", "sequence"], name: "idx_on_custom_grid_view_id_sequence_ef881fc72b"
     t.index ["custom_grid_view_id"], name: "index_grid_view_preferences_on_custom_grid_view_id"
     t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
+    t.index ["owner_id", "owner_type"], name: "index_grid_view_preferences_on_owner_id_and_owner_type"
     t.index ["owner_type", "owner_id"], name: "index_grid_view_preferences_on_owner"
+    t.index ["sequence"], name: "index_grid_view_preferences_on_sequence"
   end
 
   create_table "import_uploads", force: :cascade do |t|
@@ -2372,7 +2424,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.string "denomination", limit: 20
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
-    t.string "fx_conversion_method", limit: 20, default: "not_applicable", null: false
     t.bigint "import_upload_id"
     t.bigint "investor_id", null: false
     t.json "json_fields"
@@ -2582,6 +2633,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.string "tags"
     t.string "title"
     t.datetime "updated_at", null: false
+    t.index ["data_source_type", "data_source_id"], name: "index_kanban_cards_on_data_source_type_and_data_source_id"
     t.index ["entity_id"], name: "index_kanban_cards_on_entity_id"
     t.index ["kanban_board_id"], name: "index_kanban_cards_on_kanban_board_id"
     t.index ["kanban_column_id"], name: "index_kanban_cards_on_kanban_column_id"
@@ -2671,14 +2723,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.string "display_value", limit: 30
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
-    t.decimal "fx_rate_used", precision: 20, scale: 8
     t.bigint "import_upload_id"
     t.bigint "investor_kpi_mapping_id"
     t.json "json_fields"
     t.bigint "kpi_report_id", null: false
     t.string "name", limit: 100
     t.string "notes"
-    t.decimal "original_value", precision: 20, scale: 6
     t.bigint "owner_id"
     t.decimal "percentage_change", precision: 6, scale: 2, default: "0.0"
     t.bigint "portfolio_company_id"
@@ -2963,7 +3013,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.datetime "created_at", null: false
     t.string "custom_matching_vals"
     t.datetime "deleted_at"
-    t.string "demat", limit: 20
+    t.string "demat", limit: 50
     t.text "docs_uploaded_check"
     t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
@@ -3092,7 +3142,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.bigint "fund_id", null: false
     t.bigint "import_upload_id"
     t.string "instrument"
-    t.bigint "investment_instrument_id", null: false
+    t.bigint "investment_instrument_id"
     t.json "json_fields"
     t.text "notes"
     t.date "payment_date"
@@ -3181,7 +3231,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.index ["id", "investment_date"], name: "idx_portfolio_investments_id_date"
     t.index ["investment_date"], name: "index_portfolio_investments_on_investment_date"
     t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
-    t.index ["portfolio_company_id", "id"], name: "idx_pi_company_id_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
     t.index ["snapshot_date"], name: "index_portfolio_investments_on_snapshot_date"
     t.index ["valuation_id"], name: "index_portfolio_investments_on_valuation_id"
@@ -3383,7 +3432,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
 
   create_table "reports", force: :cascade do |t|
     t.text "ai_prompt"
-    t.string "category", limit: 30
+    t.string "category", limit: 50
     t.datetime "created_at", null: false
     t.string "curr_role", limit: 10, default: "employee"
     t.text "description"
@@ -3412,6 +3461,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.bigint "user_id", null: false
     t.string "view_target"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
+    t.index ["notify_next_run_at"], name: "index_reports_on_notify_next_run_at"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end
 
@@ -3575,64 +3625,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.index ["entity_id"], name: "index_side_letters_on_entity_id"
   end
 
-  create_table "skill_candidates", force: :cascade do |t|
-    t.bigint "agent_chat_session_id", null: false
-    t.bigint "applied_version_id"
-    t.string "change_summary", limit: 500
-    t.string "content_hash", limit: 64, null: false
-    t.datetime "created_at", null: false
-    t.text "proposed_content", null: false
-    t.datetime "reviewed_at"
-    t.bigint "reviewed_by_user_id"
-    t.bigint "skill_id", null: false
-    t.string "status", limit: 32, default: "pending", null: false
-    t.datetime "updated_at", null: false
-    t.index ["agent_chat_session_id"], name: "idx_skill_candidates_session"
-    t.index ["applied_version_id"], name: "fk_rails_11e45fe45b"
-    t.index ["content_hash"], name: "idx_skill_candidates_content_hash"
-    t.index ["reviewed_by_user_id"], name: "fk_rails_cba648231e"
-    t.index ["skill_id"], name: "idx_skill_candidates_skill"
-    t.index ["status"], name: "idx_skill_candidates_status"
-  end
-
-  create_table "skill_versions", force: :cascade do |t|
-    t.string "change_reason", limit: 500
-    t.text "content", null: false
-    t.string "content_hash", limit: 64, null: false
-    t.datetime "created_at", null: false
-    t.bigint "created_by_user_id"
-    t.bigint "skill_id", null: false
-    t.bigint "source_candidate_id"
-    t.integer "version_number", null: false
-    t.index ["content_hash"], name: "idx_skill_versions_content_hash"
-    t.index ["created_by_user_id"], name: "fk_rails_2e3725f011"
-    t.index ["skill_id", "created_at"], name: "idx_skill_versions_skill_created"
-    t.index ["skill_id", "version_number"], name: "idx_skill_versions_unique_version", unique: true
-  end
-
-  create_table "skills", force: :cascade do |t|
-    t.string "agent_type", null: false
-    t.string "category"
-    t.datetime "created_at", null: false
-    t.bigint "current_version_id"
-    t.string "description", limit: 500
-    t.bigint "entity_id"
-    t.datetime "last_used_at"
-    t.string "name", null: false
-    t.string "scope", limit: 32, default: "global", null: false
-    t.string "status", limit: 32, default: "active", null: false
-    t.datetime "updated_at", null: false
-    t.integer "usage_count", default: 0, null: false
-    t.bigint "user_id"
-    t.index ["agent_type", "entity_id", "status"], name: "idx_skills_agent_entity_status"
-    t.index ["agent_type", "user_id", "status"], name: "idx_skills_agent_user_status"
-    t.index ["agent_type"], name: "idx_skills_agent_type"
-    t.index ["current_version_id"], name: "idx_skills_current_version"
-    t.index ["entity_id"], name: "fk_rails_45517eb2c4"
-    t.index ["name", "agent_type", "scope", "entity_id", "user_id"], name: "idx_skills_unique_identity", unique: true
-    t.index ["user_id"], name: "fk_rails_ee47b87d76"
-  end
-
   create_table "solid_cache_entries", force: :cascade do |t|
     t.integer "byte_size", null: false
     t.datetime "created_at", null: false
@@ -3707,7 +3699,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.bigint "owner_id", null: false
     t.string "owner_name", limit: 50
     t.string "owner_type", null: false
-    t.string "status", limit: 10
+    t.string "status", limit: 10, default: "pending", null: false
     t.bigint "support_agent_id", null: false
     t.string "support_agent_name", limit: 50
     t.datetime "updated_at", null: false
@@ -4245,6 +4237,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
 
+  add_foreign_key "access_rights", "entities"
+  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
+  add_foreign_key "access_rights", "users"
+  add_foreign_key "access_rights", "users", column: "granted_by_id"
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
   add_foreign_key "agent_chat_message_feedbacks", "agent_chat_messages"
@@ -4334,6 +4331,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   add_foreign_key "capital_remittance_payments", "exchange_rates"
   add_foreign_key "capital_remittance_payments", "form_types"
   add_foreign_key "capital_remittance_payments", "funds"
+  add_foreign_key "capital_remittance_payments", "investors"
   add_foreign_key "capital_remittances", "capital_calls"
   add_foreign_key "capital_remittances", "capital_commitments"
   add_foreign_key "capital_remittances", "entities"
@@ -4392,6 +4390,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   add_foreign_key "esign_logs", "documents"
   add_foreign_key "esign_logs", "entities"
   add_foreign_key "events", "entities"
+  add_foreign_key "events", "users"
   add_foreign_key "exchange_rates", "entities"
   add_foreign_key "exchange_rates", "folders", column: "document_folder_id"
   add_foreign_key "exchange_rates", "import_uploads"
@@ -4448,11 +4447,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   add_foreign_key "funds", "entities"
   add_foreign_key "funds", "folders", column: "data_room_folder_id"
   add_foreign_key "funds", "folders", column: "document_folder_id"
+  add_foreign_key "funds", "funding_rounds"
   add_foreign_key "funds", "funds", column: "master_fund_id"
   add_foreign_key "funds", "import_uploads"
   add_foreign_key "funds", "users", column: "fund_signatory_id"
   add_foreign_key "funds", "users", column: "trustee_signatory_id"
   add_foreign_key "grid_view_preferences", "custom_grid_views"
+  add_foreign_key "grid_view_preferences", "entities"
   add_foreign_key "import_uploads", "entities"
   add_foreign_key "import_uploads", "users"
   add_foreign_key "incoming_emails", "entities"
@@ -4476,6 +4477,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   add_foreign_key "investment_opportunities", "folders", column: "data_room_folder_id"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
+  add_foreign_key "investment_opportunities", "funding_rounds"
   add_foreign_key "investments", "form_types"
   add_foreign_key "investments", "investors", column: "portfolio_company_id"
   add_foreign_key "investor_accesses", "entities", column: "investor_entity_id"
@@ -4526,6 +4528,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
+  add_foreign_key "notifications", "entities"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
@@ -4559,6 +4562,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   add_foreign_key "portfolio_cashflows", "funds"
   add_foreign_key "portfolio_cashflows", "investment_instruments"
   add_foreign_key "portfolio_cashflows", "investors", column: "portfolio_company_id"
+  add_foreign_key "portfolio_investments", "aggregate_portfolio_investments"
   add_foreign_key "portfolio_investments", "capital_commitments"
   add_foreign_key "portfolio_investments", "capital_distributions"
   add_foreign_key "portfolio_investments", "entities"
@@ -4618,15 +4622,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   add_foreign_key "side_letters", "capital_commitments"
   add_foreign_key "side_letters", "documents"
   add_foreign_key "side_letters", "entities"
-  add_foreign_key "skill_candidates", "agent_chat_sessions", on_delete: :cascade
-  add_foreign_key "skill_candidates", "skill_versions", column: "applied_version_id", on_delete: :nullify
-  add_foreign_key "skill_candidates", "skills", on_delete: :cascade
-  add_foreign_key "skill_candidates", "users", column: "reviewed_by_user_id", on_delete: :nullify
-  add_foreign_key "skill_versions", "skills", on_delete: :cascade
-  add_foreign_key "skill_versions", "users", column: "created_by_user_id", on_delete: :nullify
-  add_foreign_key "skills", "entities", on_delete: :cascade
-  add_foreign_key "skills", "skill_versions", column: "current_version_id", on_delete: :nullify
-  add_foreign_key "skills", "users", on_delete: :cascade
   add_foreign_key "stamp_papers", "entities"
   add_foreign_key "stock_adjustments", "entities"
   add_foreign_key "stock_adjustments", "investment_instruments"

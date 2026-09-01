@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-# Step definitions for Deal Update Agent warehouse resolution scenarios.
+# Step definitions for Deal Update Agent v2 warehouse resolution scenarios.
 # Tests manual filing and discarding of items the agent couldn't auto-process.
 
 # --- Preconditions ---
 
-Given("a warehoused item exists for the deal with intent {string}") do |intent|
+Given("a v2 warehoused item exists for the deal with intent {string}") do |intent|
   @ingested_email = AgentIngestedEmail.create!(
     deal: @deal,
     sender_user: @user,
@@ -30,11 +30,8 @@ Given("a warehoused item exists for the deal with intent {string}") do |intent|
 end
 
 # --- Actions ---
-# Simulates the controller's file_warehouse_item! logic directly.
-# Creates a Note, links it to the email via filed_as, and resolves
-# the warehouse item. Match tier "M" = manual filing.
 
-When("I resolve the warehouse item as {string} for investor {string}") do |resolution, investor_name|
+When("I v2 resolve the warehouse item as {string} for investor {string}") do |resolution, investor_name|
   investor = Investor.find_by!(investor_name: investor_name)
   deal_investor = DealInvestor.find_by!(deal: @deal, investor: investor)
 
@@ -51,15 +48,13 @@ When("I resolve the warehouse item as {string} for investor {string}") do |resol
   end
 end
 
-When("I resolve the warehouse item as {string}") do |resolution|
+When("I v2 resolve the warehouse item as {string}") do |resolution|
   @warehouse_item.resolve!(user: @user, resolution: resolution)
 end
 
 # --- Assertions ---
-# Verifies the note was created and linked via AgentIngestedEmail.filed_as.
-# Match tier is checked on the agent email, not on the note itself.
 
-Then("a Note should exist on {string} flagged as match_tier {string}") do |investor_name, tier|
+Then("a v2 Note should exist on {string} flagged as match_tier {string}") do |investor_name, tier|
   investor = Investor.find_by!(investor_name: investor_name)
   deal_investor = DealInvestor.find_by!(deal: @deal, investor: investor)
 
@@ -71,15 +66,14 @@ Then("a Note should exist on {string} flagged as match_tier {string}") do |inves
   expect(@ingested_email.match_tier).to eq(tier)
 end
 
-Then("the WarehouseItem should be resolved as {string}") do |resolution|
+Then("the v2 WarehouseItem should be resolved as {string}") do |resolution|
   @warehouse_item.reload
   expect(@warehouse_item.resolution).to eq(resolution)
   expect(@warehouse_item.resolved_at).not_to be_nil
   expect(@warehouse_item.resolved_by).to eq(@user)
 end
 
-# Verifies no record was filed — AgentIngestedEmail.filed_as should remain nil.
-Then("no Note or Task should be created") do
+Then("no v2 Note or Task should be created") do
   @ingested_email.reload
   expect(@ingested_email.filed_as).to be_nil,
     "Expected no Note or Task but found #{@ingested_email.filed_as_type} ##{@ingested_email.filed_as_id}"

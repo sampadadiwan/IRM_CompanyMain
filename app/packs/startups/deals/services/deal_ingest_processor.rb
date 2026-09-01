@@ -137,6 +137,25 @@ class DealIngestProcessor
     )
   end
 
+  # Step 3b: Low-confidence or unknown intent — park in the warehouse
+  # for manual review. No notification email sent (decided in Aug 2026 call).
+  #
+  # @param parsed [Hash] LLM parse result
+  # @param match_result [DealStakeholderMatcher::Result, nil] nil for unknown intent
+  # @return [void]
+  def warehouse!(parsed, match_result = nil)
+    candidate_ids = match_result&.candidates&.map { |c| c[:deal_investor].id } || []
+
+    WarehouseItem.create!(
+      agent_ingested_email: @email,
+      deal: @deal,
+      parsed_intent: parsed["intent"],
+      candidate_stakeholder_ids: candidate_ids
+    )
+
+    @email.mark_warehoused!
+  end
+
   # Send a confirmation email to the sender with what was created.
   #
   # @param parsed [Hash] LLM parse result

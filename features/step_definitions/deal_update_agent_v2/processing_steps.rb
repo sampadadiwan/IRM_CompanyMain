@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
-# Step definitions for Deal Update Agent processing scenarios.
-# Tests the DealIngestProcessor pipeline — LLM parsing, stakeholder matching,
-# Note/Task creation, and warehouse flow.
+# Step definitions for Deal Update Agent v2 processing scenarios.
+# Tests the DealIngestProcessor pipeline — LLM parsing, stakeholder
+# matching, Note/Task creation, and warehouse flow.
+# Key v2 change: warehoused emails do NOT send a notification.
 
 # --- LLM Stubbing ---
 
-Given("the LLM will parse the email as a meeting note for {string}") do |stakeholder|
+Given("the v2 LLM will parse the email as a meeting note for {string}") do |stakeholder|
   @llm_parse_result = {
     "intent" => "meeting_note",
     "stakeholder_string" => stakeholder,
@@ -16,7 +17,7 @@ Given("the LLM will parse the email as a meeting note for {string}") do |stakeho
   }
 end
 
-Given("the LLM will parse the email as a task for {string} due {string}") do |stakeholder, due_date|
+Given("the v2 LLM will parse the email as a task for {string} due {string}") do |stakeholder, due_date|
   @llm_parse_result = {
     "intent" => "task",
     "stakeholder_string" => stakeholder,
@@ -26,7 +27,7 @@ Given("the LLM will parse the email as a task for {string} due {string}") do |st
   }
 end
 
-Given("the LLM will parse the email with intent {string}") do |intent|
+Given("the v2 LLM will parse the email with intent {string}") do |intent|
   @llm_parse_result = {
     "intent" => intent,
     "stakeholder_string" => nil,
@@ -38,12 +39,12 @@ end
 
 # --- Job Execution ---
 
-When("the job is performed") do
+When("the v2 job is performed") do
   @ingested_email ||= AgentIngestedEmail.last
   expect(@ingested_email).not_to be_nil, "No AgentIngestedEmail found to process"
 
-  # Execute the processor directly (bypasses Sidekiq for test determinism).
-  # Temporarily switch to inline so deliver_later actually delivers.
+  # Execute the processor directly. Temporarily switch to inline
+  # so deliver_later actually delivers (for confirmation email assertions).
   ActiveJob::Base.queue_adapter = :inline
   Chewy.strategy(:bypass) do
     DealIngestProcessor.call(@ingested_email.id)
@@ -53,10 +54,8 @@ When("the job is performed") do
 end
 
 # --- Assertions: Note Creation ---
-# Notes are found by owner (DealInvestor), not by source_email FK.
-# The link between email and note lives on AgentIngestedEmail.filed_as.
 
-Then("a Note should exist on {string} with text {string}") do |investor_name, text_fragment|
+Then("a v2 Note should exist on {string} with text {string}") do |investor_name, text_fragment|
   investor = Investor.find_by!(investor_name: investor_name)
   deal_investor = DealInvestor.find_by!(deal: @deal, investor: investor)
 
@@ -66,18 +65,15 @@ Then("a Note should exist on {string} with text {string}") do |investor_name, te
   expect(@created_note.details.to_plain_text).to include(text_fragment)
 end
 
-# Verifies the agent email's polymorphic filed_as points to the created note
-# and the match_tier is recorded on the agent email (not on the note itself).
-Then("the Note should be flagged as created_by_agent with match_tier {string}") do |tier|
+Then("the v2 Note should be flagged as created_by_agent with match_tier {string}") do |tier|
   @ingested_email.reload
   expect(@ingested_email.filed_as).to eq(@created_note)
   expect(@ingested_email.match_tier).to eq(tier)
 end
 
 # --- Assertions: Task Creation ---
-# Same pattern as notes — found by owner, linked via AgentIngestedEmail.filed_as.
 
-Then("a Task should exist on {string} with due date {string}") do |investor_name, due_date|
+Then("a v2 Task should exist on {string} with due date {string}") do |investor_name, due_date|
   investor = Investor.find_by!(investor_name: investor_name)
   deal_investor = DealInvestor.find_by!(deal: @deal, investor: investor)
 
@@ -87,9 +83,7 @@ Then("a Task should exist on {string} with due date {string}") do |investor_name
   expect(@created_task.due_date).to eq(Date.parse(due_date))
 end
 
-# Verifies the agent email's polymorphic filed_as points to the created task
-# and the match_tier is recorded on the agent email (not on the task itself).
-Then("the Task should be flagged as created_by_agent with match_tier {string}") do |tier|
+Then("the v2 Task should be flagged as created_by_agent with match_tier {string}") do |tier|
   @ingested_email.reload
   expect(@ingested_email.filed_as).to eq(@created_task)
   expect(@ingested_email.match_tier).to eq(tier)
@@ -97,7 +91,7 @@ end
 
 # --- Assertions: Email Status ---
 
-Then("the AgentIngestedEmail status should be {string}") do |status|
+Then("the v2 AgentIngestedEmail status should be {string}") do |status|
   @ingested_email.reload
   expect(@ingested_email.status).to eq(status),
     "Expected email status '#{status}' but got '#{@ingested_email.status}'"
@@ -105,8 +99,7 @@ end
 
 # --- Assertions: Mailers ---
 
-Then("a confirmation email should be sent to the user") do
-  # Subject format: "✓ Meeting Note created on {deal} — {stakeholder}"
+Then("a v2 confirmation email should be sent to the user") do
   confirmation = ActionMailer::Base.deliveries.find do |mail|
     mail.to.include?(@user.email) && mail.subject&.include?("created on")
   end
@@ -114,18 +107,9 @@ Then("a confirmation email should be sent to the user") do
     "Expected a confirmation email to #{@user.email} but none found. Deliveries: #{ActionMailer::Base.deliveries.map(&:subject)}"
 end
 
-Then("a warehouse notification email should be sent to the user") do
-  # Subject format: "⏳ Your update for {deal} needs manual review"
-  notification = ActionMailer::Base.deliveries.find do |mail|
-    mail.to.include?(@user.email) && mail.subject&.include?("manual review")
-  end
-  expect(notification).not_to be_nil,
-    "Expected a warehouse notification email to #{@user.email} but none found. Deliveries: #{ActionMailer::Base.deliveries.map(&:subject)}"
-end
-
 # --- Assertions: Warehouse ---
 
-Then("a WarehouseItem should exist for the deal with intent {string}") do |intent|
+Then("a v2 WarehouseItem should exist for the deal with intent {string}") do |intent|
   @warehouse_item = WarehouseItem.find_by(deal: @deal)
   expect(@warehouse_item).not_to be_nil,
     "Expected a WarehouseItem for the deal but none found"
