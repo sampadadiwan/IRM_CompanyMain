@@ -351,19 +351,16 @@ class DealsController < ApplicationController
 
   private
 
-  # Lazy-generate an ingest address for the current user on this deal.
+  # Lazy-generate the single ingest address for this deal.
   # Uses the writing connection to avoid read-replica errors.
   #
   # @return [DealIngestAddress, nil]
   def ensure_deal_ingest_address
-    addr = @deal.deal_ingest_addresses.active.find_by(user: current_user)
-    return addr if addr
-
-    ActiveRecord::Base.connected_to(role: :writing) do
-      DealIngestAddress.find_or_create_by(deal: @deal, user: current_user)
+    @deal.deal_ingest_address || ActiveRecord::Base.connected_to(role: :writing) do
+      DealIngestAddress.find_or_create_by(deal: @deal)
     end
   rescue ActiveRecord::RecordNotUnique
-    @deal.deal_ingest_addresses.active.find_by(user: current_user)
+    @deal.deal_ingest_address
   end
 
   # Use callbacks to share common setup or constraints between actions.
