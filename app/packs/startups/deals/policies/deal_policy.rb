@@ -73,6 +73,11 @@ class DealPolicy < ApplicationPolicy
     update?
   end
 
+  # @see DealsController#update_ingest_address
+  def update_ingest_address?
+    update?
+  end
+
   def edit?
     create?
   end

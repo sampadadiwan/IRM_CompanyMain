@@ -7,7 +7,7 @@ class DealsController < ApplicationController
 
   require 'pagy/extras/array'
 
-  before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights agent_settings update_agent_settings run_now weekly_summary]
+  before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights agent_settings update_agent_settings run_now weekly_summary update_ingest_address]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
   # GET /deals/analytics
@@ -90,10 +90,9 @@ class DealsController < ApplicationController
       render "deal_charts"
     else
       @investor_label = @deal.entity.is_fund? ? "Company" : "Investor"
-      # Lazy-generate ingest address on first visit (covers role-based access
-      # where no AccessRight callback fires). Skipped when DEAL_INGEST_DOMAIN
-      # is not configured — the feature is invisible on that environment.
-      @deal_ingest_address = ensure_deal_ingest_address if DealIngestAddress.domain.present?
+      # @see WithDealIngestAddress#ensure_deal_ingest_address — lazy-creates address for pre-existing deals
+      @deal_ingest_address = @deal.ensure_deal_ingest_address
+
       respond_to do |format|
         format.html do
           if params[:overview].present? || current_user.curr_role_investor?
@@ -189,6 +188,52 @@ class DealsController < ApplicationController
       redirect_to deal_path(@deal), notice: "Report queued — you'll receive an email shortly."
     else
       redirect_to deal_path(@deal), alert: "Please save agent settings first."
+    end
+  end
+
+  # PATCH /deals/1/update_ingest_address
+  #
+  # Updates the deal's ingest email address local-part (user-choosable).
+  # Restricted to company_admin (fund manager) — prevents team members
+  # from changing the address and breaking the inbound flow for others.
+  #
+  # Responds with Turbo Stream to replace the address display inline,
+  # showing validation errors if the address is taken or invalid.
+  #
+  # @see WithDealIngestAddress#ensure_deal_ingest_address
+  def update_ingest_address
+    authorize(@deal, :update?)
+
+    # Only company admins (fund managers) can change the deal email address
+    unless current_user.has_role?(:company_admin, @deal.entity)
+      redirect_to deal_path(@deal), alert: "Only admins can change the deal email address"
+      return
+    end
+
+    @deal_ingest_address = @deal.ensure_deal_ingest_address
+
+    if @deal_ingest_address.update(address: params[:address].to_s.strip.downcase)
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "deal-ingest-address",
+            partial: "deals/deal_ingest_address",
+            locals: { deal: @deal, ingest_address: @deal_ingest_address }
+          )
+        end
+        format.html { redirect_to deal_path(@deal), notice: "Email address updated" }
+      end
+    else
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "deal-ingest-address",
+            partial: "deals/deal_ingest_address",
+            locals: { deal: @deal, ingest_address: @deal_ingest_address }
+          )
+        end
+        format.html { redirect_to deal_path(@deal), alert: @deal_ingest_address.errors.full_messages.join(", ") }
+      end
     end
   end
 

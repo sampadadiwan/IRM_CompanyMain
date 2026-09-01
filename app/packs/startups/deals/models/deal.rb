@@ -27,9 +27,8 @@ class Deal < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
 
-  # Per-(deal, user) unguessable email addresses for the Deal Update Agent.
-  # @see DealIngestAddress
-  has_many :deal_ingest_addresses, dependent: :destroy
+  # @see WithDealIngestAddress — generates one ingest email address per deal on creation
+  include WithDealIngestAddress
 
   # Audit log of every authenticated email processed by the Deal Update Agent.
   # @see AgentIngestedEmail

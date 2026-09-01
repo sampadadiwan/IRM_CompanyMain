@@ -2,9 +2,9 @@
 
 # Reply emails for the Deal Update Agent pipeline.
 #
-# Every authenticated inbound email gets exactly one reply:
-#   - confirmation: a Note or Task was successfully created
-#   - warehoused: the email couldn't be auto-filed and is awaiting manual review
+# Sends a confirmation reply when a Note or Task is successfully
+# created from an inbound email. Warehoused emails do not get a
+# reply — users check the warehouse tab on the deal page.
 #
 # These are direct replies to the sender — no CC, no entity-level routing.
 # The From address uses the entity's from_email setting for consistency
@@ -32,23 +32,6 @@ class DealIngestMailer < ApplicationMailer
 
     item_type = @intent == "meeting_note" ? "Meeting Note" : "Task"
     subject = "✓ #{item_type} created on #{@deal.name} — #{@stakeholder}"
-
-    mail(from: @from, to: @to, subject: subject)
-  end
-
-  # Warehouse notification — the email couldn't be auto-filed.
-  #
-  # Params:
-  #   entity_id   [Integer] — for ApplicationMailer's setup_defaults
-  #   user_id     [Integer] — the sender, for setup_defaults
-  #   deal        [Deal]    — the deal this was intended for
-  #   reason      [String]  — why it was warehoused (e.g. "no stakeholder match")
-  def warehoused
-    @deal = params[:deal]
-    @reason = params[:reason]
-    @entity = Entity.find(params[:entity_id])
-
-    subject = "⏳ Your update for #{@deal.name} needs manual review"
 
     mail(from: @from, to: @to, subject: subject)
   end
