@@ -15,9 +15,18 @@ Given('there are following board tasks for the entity:') do |table|
     elsif row['status'].present?
       task.status = row['status']
     end
-    # "stakeholder: yes" owns the task by @investor — required for a touch point
-    # (contact) to be valid; other tasks stay entity-owned like the list steps do
-    task.owner = row['stakeholder'].present? ? @investor : @user.entity
+    # "stakeholder: yes" owns the task by @investor directly — required for a
+    # touch point (contact) to be valid. "pi"/"commitment" own it by one of the
+    # investor's PortfolioInvestment/CapitalCommitment sub-entities instead (see
+    # "the investor has a portfolio investment and a capital commitment"),
+    # exercising TaskList's investor_id union. Other tasks stay entity-owned
+    # like the list steps do.
+    task.owner = case row['stakeholder']
+                 when 'yes' then @investor
+                 when 'pi' then @portfolio_investment
+                 when 'commitment' then @capital_commitment
+                 else @user.entity
+                 end
     task.touch_point = InvestorAccess.find_by!(email: row['contact']) if row['contact'].present?
     task.assigned_to = User.find_by!(email: row['assigned_to']) if row['assigned_to'].present?
     task.tags = row['tags'] if row['tags'].present?
@@ -28,8 +37,55 @@ Given('there are following board tasks for the entity:') do |table|
   end
 end
 
+# Fixtures for the stakeholder-filter regression: a PortfolioInvestment ("PI")
+# and a CapitalCommitment both belonging to @investor, so a task logged under
+# either still counts as "the investor's" task on the board filter.
+Given('the investor has a portfolio investment and a capital commitment') do
+  fund = FactoryBot.build(:fund, entity: @user.entity, currency: 'USD')
+  fund.save!
+
+  investment_instrument = FactoryBot.create(:investment_instrument, entity: @user.entity, portfolio_company: @investor)
+  @portfolio_investment = create_valid_portfolio_investment!(
+    portfolio_company: @investor,
+    investment_instrument: investment_instrument,
+    entity: @user.entity,
+    fund: fund
+  )
+
+  @capital_commitment = FactoryBot.build(:capital_commitment, entity: @user.entity, fund: fund, investor: @investor,
+                                                                folio_id: SecureRandom.hex(4),
+                                                                unit_type: fund.unit_types.split(',').first&.strip,
+                                                                folio_currency: fund.currency)
+  @capital_commitment.skip_cf_before_save = true
+  @capital_commitment.save!
+end
+
 When('I go to the tasks board page') do
   visit tasks_path(board: true)
+end
+
+# Due-date filter fixtures: one task per bucket, picked to fall unambiguously
+# in only that bucket (see the scenario comment for why -60 rather than -1).
+Given('there are following board tasks due in each period') do
+  today = Time.zone.today
+  {
+    'Overdue task' => today - 60,
+    'Task due this week' => today,
+    'Task due this month' => today,
+    'Task due next month' => (today + 1.month).all_month.begin
+  }.each do |details, due_date|
+    task = Task.new(entity: @user.entity, user: @user, details: details, due_date: due_date, status: 'todo')
+    task.send_notification_flag = false
+    task.save!
+  end
+end
+
+# Table dates are day offsets from today (e.g. "-500", "+7", "0"), not absolute
+# dates — an absolute completed_on drifts stale as BOARD_DONE_WINDOW (a rolling
+# 30-day window) moves forward, eventually aging a fixture out of the Done
+# column it was written to test.
+def relative_test_date(offset)
+  Date.today + offset.to_i.days
 end
 
 # Ordering fixtures: due dates (including a deliberately undated task) and
@@ -38,12 +94,14 @@ end
 Given('there are following dated board tasks:') do |table|
   table.hashes.each do |row|
     task = Task.new(entity: @user.entity, user: @user, details: row['details'])
-    task.due_date = row['due_date'] if row['due_date'].present?
+    task.due_date = relative_test_date(row['due_date']) if row['due_date'].present?
     task.completed = true if row['status'] == 'done'
     task.status = row['status'] if row['status'].present?
     task.send_notification_flag = false
     task.save!
-    Task.where(id: task.id).update_all(completed_on: row['completed_on']) if row['completed_on'].present?
+    if row['completed_on'].present?
+      Task.where(id: task.id).update_all(completed_on: relative_test_date(row['completed_on']))
+    end
   end
 end
 

@@ -24,15 +24,24 @@ class AuditChangeFlattener
       elsif value.is_a?(Array)
         next if value[0].presence == value[1].presence
 
-        rows << { key: key, label: key.humanize, old: value[0], new: value[1] }
+        rows << { key: key, label: key.humanize, old: stringify_hash_keys(value[0]), new: stringify_hash_keys(value[1]) }
       else
-        rows << { key: key, label: key.humanize, old: nil, new: value }
+        rows << { key: key, label: key.humanize, old: nil, new: stringify_hash_keys(value) }
       end
     end
     rows
   end
 
   private
+
+  # audited_changes is YAML-serialized (not JSON), so any Hash value round-trips
+  # with its original key types intact — including stray Integer/Symbol keys,
+  # which crash Json2table.to_human's .gsub when the view later renders a Hash
+  # old/new value via Json2table.get_html_table. Applies to any json/jsonb
+  # column, not just "json_fields".
+  def stringify_hash_keys(value)
+    value.is_a?(Hash) ? value.deep_stringify_keys : value
+  end
 
   def json_fields_rows(value)
     old_json = parse_json(value[0])
@@ -47,10 +56,7 @@ class AuditChangeFlattener
   end
 
   def parse_json(value)
-    return value || {} unless value.is_a?(String)
-
-    JSON.parse(value)
-  rescue JSON::ParserError
-    {}
+    parsed = value.is_a?(String) ? (JSON.parse(value) rescue {}) : (value || {})
+    stringify_hash_keys(parsed)
   end
 end

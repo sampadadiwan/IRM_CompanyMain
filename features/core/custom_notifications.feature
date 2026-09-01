@@ -113,6 +113,7 @@ Scenario Outline: Capital call with custom notification
   When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
   Given there is a custom notification "<custom_notification_new>" in place for the Call 
   Then when the capital call is approved
+  And the capital call notifications are sent
   And notification should be sent "true" to the remittance investors for "<custom_notification_new>"
 
   Examples:
@@ -133,6 +134,7 @@ Scenario: Capital call notification placeholder substitution
   When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
   Given there is a custom notification with placeholders in place for the Call with email_method "notify_capital_remittance"
   Then when the capital call is approved
+  And the capital call notifications are sent
   Then the capital remittance notification placeholders are resolved correctly
 
 
@@ -153,6 +155,7 @@ Scenario: Capital call notification without a custom notification shows the due 
   When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
   Then I should see the capital call details
   Then when the capital call is approved
+  And the capital call notifications are sent
   Then the remittance investors should receive an email with the due date shown as Mon dd, yyyy
 
 
@@ -170,6 +173,7 @@ Scenario Outline: Capital call notification falls back to the fund-level default
   When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
   Given there is a custom notification "<fund_default>" in place for the Fund for Calls
   Then when the capital call is approved
+  And the capital call notifications are sent
   And notification should be sent "true" to the remittance investors for "<fund_default>"
   Then the remittance investors should receive an email with subject including "<subject>"
 
@@ -193,6 +197,7 @@ Scenario Outline: Capital call specific notification overrides the fund-level de
   Given there is a custom notification "<fund_default>" in place for the Fund for Calls
   Given there is a custom notification "<call_specific>" in place for the Call
   Then when the capital call is approved
+  And the capital call notifications are sent
   Then the remittance investors should receive an email with subject including "<subject>"
 
   Examples:

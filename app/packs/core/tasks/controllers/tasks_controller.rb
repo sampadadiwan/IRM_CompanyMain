@@ -368,6 +368,14 @@ class TasksController < ApplicationController
                              .distinct.pluck(:tags)
                              .flat_map { |t| t.split(",") }.map(&:strip).uniq.sort
 
+    # Category isn't an enum — Task::CATEGORIES is only the form's default
+    # list, and the "Other" free-text fallback means real data can hold values
+    # outside it. Pull what's actually in use (SQL-deduped, per hygiene rules)
+    # rather than offering categories no task on this board actually has.
+    @board_category_options = Task.where(entity_id: current_user.entity_id)
+                                  .where.not(category: [nil, ""])
+                                  .distinct.order(:category).pluck(:category)
+
     assign_board_scope!
   end
 

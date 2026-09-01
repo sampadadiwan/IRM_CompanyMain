@@ -11,6 +11,16 @@ class Task < ApplicationRecord
   # the form. Multi-word entries cannot use %w, hence the explicit array.
   CATEGORIES = ["Finance", "Ops", "Compliance", "IR", "Portfolio Company", "Other"].freeze
 
+  # Quick due-date filter offered on the board and list views (label => param
+  # value). Order is display order in the dropdown.
+  DUE_FILTERS = {
+    "Overdue" => "overdue",
+    "Due This Week" => "this_week",
+    "Due Next Week" => "next_week",
+    "Due This Month" => "this_month",
+    "Due Next Month" => "next_month"
+  }.freeze
+
   update_index('task') { self if index_record? }
   attr_accessor :send_notification_flag
 
@@ -49,6 +59,25 @@ class Task < ApplicationRecord
   scope :for_support, -> { where(for_support: true) }
   scope :not_for_support, -> { where(for_support: false) }
   scope :for_category, ->(category) { where(category: category) }
+  # Self-guarding: an unrecognized key returns `all` (no filter) — without the
+  # guard, due_filter_range's nil would become where(due_date: nil), silently
+  # narrowing to tasks with NO due date.
+  scope :due_in, ->(key) { (range = due_filter_range(key)) ? where(due_date: range) : all }
+
+  # Date range for a DUE_FILTERS key, or nil for an unrecognized one — callers
+  # skip the where(...) entirely rather than filtering to an empty scope.
+  # Weeks/months follow Rails' locale-configured start-of-week; overdue mirrors
+  # the `delayed` scope above (due_date strictly before today).
+  def self.due_filter_range(key)
+    today = Time.zone.today
+    case key
+    when "overdue" then ...today
+    when "this_week" then today.all_week
+    when "next_week" then (today + 1.week).all_week
+    when "this_month" then today.all_month
+    when "next_month" then (today + 1.month).all_month
+    end
+  end
 
   # counter_culture :entity, column_name: proc { |t| t.completed ? nil : 'tasks_count' }
 
@@ -138,6 +167,22 @@ class Task < ApplicationRecord
   # True when the text comes from the legacy column and still needs sanitizing.
   def legacy_details?
     details.body.blank? && self[:details].present?
+  end
+
+  # Label for the list's "For" column. Commitment/PI/API to_s pack in folio ids,
+  # instruments and dates — too much for a table cell, so those collapse to just
+  # the stakeholder name (the row still links to the full record). Both names
+  # are stored columns on their tables, so this adds no queries beyond the
+  # owner load the row already does. Every other owner type keeps its to_s.
+  def owner_display_name
+    case owner
+    when CapitalCommitment
+      owner.investor_name
+    when PortfolioInvestment, AggregatePortfolioInvestment
+      owner.portfolio_company_name
+    else
+      owner&.to_s
+    end
   end
 
   # The four numbers on the tasks dashboard, in one pass over the scope.

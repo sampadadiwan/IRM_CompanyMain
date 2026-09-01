@@ -76,7 +76,7 @@
       <%= audit.user || "System" %>
     </div>
   </td>
-  <td class="text-muted" title="<%= l(audit.created_at) %>"><%= time_ago_in_words(audit.created_at) %> ago</td>
+  <td class="text-muted" title="<%= time_ago_in_words(audit.created_at) %> ago"><%= l(audit.created_at, format: :abbr_date_time) %></td>
   <td class="text-end pe-4">
     <% if audit_summary.present? %>
       <div class="text-dark"><%= audit_summary %></div>

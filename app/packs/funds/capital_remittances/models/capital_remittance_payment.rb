@@ -54,7 +54,7 @@ class CapitalRemittancePayment < ApplicationRecord
     # 1. if the capital call has the send_payment_notification_flag set to true and
     # 2. if the capital remittance is verified
     # 3. if the payment notification has not been sent
-    if  capital_call.send_payment_notification_flag &&
+    if  capital_call.approved && capital_call.send_payment_notification_flag &&
         capital_remittance.verified && amount_cents.positive? &&
         !payment_notification_sent
       # Send email notification to all approved users of the investor

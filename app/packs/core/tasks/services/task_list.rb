@@ -7,8 +7,6 @@ class TaskList < BaseList
   BOARD_DONE_WINDOW = 30.days
 
   def call(&)
-    normalize_owner_filters!
-
     @q = Task.ransack(@params[:q])
     @tasks = apply_policy_scope(@q.result, &)
     # Preload only what each view renders (CLAUDE.md: no speculative eager
@@ -72,13 +70,43 @@ class TaskList < BaseList
     end
 
     # Board filter: narrow a deal board to one investor on that deal. A separate
-    # param from investor_id on purpose — that one maps to owner_type=Investor
-    # (normalize_owner_filters!), which would contradict the deal scope above and
-    # empty the board.
+    # param from investor_id on purpose — that one maps to Investor + its
+    # PI/Commitment children (below), which would contradict the deal scope
+    # above and empty the board.
     @tasks = @tasks.where(owner_type: "DealInvestor", owner_id: @params[:deal_investor_id]) if @params[:deal_investor_id].present?
+
+    # Stakeholder scope: the whole task set for an Investor — tasks owned by the
+    # Investor directly, PLUS tasks owned by any PortfolioInvestment ("PI") or
+    # CapitalCommitment ("Commitment") that belongs to it. A task logged under
+    # Ace Ltd's PI has owner_type=PortfolioInvestment, not owner_type=Investor,
+    # so a plain owner_id/owner_type match (the old normalize_owner_filters!
+    # behavior) silently dropped it. Drives the (non-deal) kanban board's
+    # stakeholder filter — see TasksController#prepare_board_filters.
+    #
+    # Guarded by owner_id.blank? so an explicit owner_id/owner_type pair (e.g.
+    # a direct Investor tab link) always wins over investor_id, matching the
+    # old normalize_owner_filters! precedence. PI/Commitment ids are subqueries
+    # (select(:id)), not plucks, per CLAUDE.md — dedup/filter in SQL, not Ruby.
+    if @params[:owner_id].blank? && @params[:investor_id].present?
+      investor = Investor.find_by(id: @params[:investor_id])
+      if investor
+        pi_ids = PortfolioInvestment.where(portfolio_company_id: investor.id).select(:id)
+        commitment_ids = CapitalCommitment.where(investor_id: investor.id).select(:id)
+        @tasks = @tasks.where(owner_type: "Investor", owner_id: investor.id)
+                       .or(@tasks.where(owner_type: "PortfolioInvestment", owner_id: pi_ids))
+                       .or(@tasks.where(owner_type: "CapitalCommitment", owner_id: commitment_ids))
+      end
+    end
 
     # Support filtering by multiple owner types (e.g., Deal and DealInvestor)
     @tasks = @tasks.where(owner_type: @params[:owner_type_in]) if @params[:owner_type_in].present?
+
+    # Quick due-date filter (board and list "Due" select). An unrecognized key
+    # (Task.due_filter_range returns nil) is ignored rather than emptying the scope.
+    if @params[:due_filter].present?
+      due_range = Task.due_filter_range(@params[:due_filter])
+      @tasks = @tasks.where(due_date: due_range) if due_range
+    end
 
     # Apply scope filters. The kanban board needs Done tasks too, but bounded to
     # a recent window so years of history can't crowd out active cards.
@@ -105,13 +133,5 @@ class TaskList < BaseList
   # whichever record it was logged against (see the filter comment above).
   def across_owners?
     @params[:touch_point_id].present? && @params[:touch_point_scope] == "all"
-  end
-
-  # Backward compatibility: some callers still pass investor_id instead of owner_id/owner_type.
-  def normalize_owner_filters!
-    return unless @params[:owner_id].blank? && @params[:investor_id].present?
-
-    @params[:owner_id] = @params[:investor_id]
-    @params[:owner_type] ||= "Investor"
   end
 end

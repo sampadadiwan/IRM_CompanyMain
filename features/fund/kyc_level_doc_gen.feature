@@ -21,6 +21,7 @@ Scenario Outline: Call Notice generation and notification for all
   Then call notice is generated for the remittances
   And remittance notice must be generated for each remittance
   Given I approve the capital call
+  Then I send the capital call notification
   # Normal scenario - call notice is generated for each remittance for its own data
   Then the notification must be sent to the investors where the call notice was generated
 
@@ -46,6 +47,7 @@ Scenario Outline: Call Notice generation and notification for all at kyc level
   # Now notice is generated at the kyc level but we havent set skip call notice in the commitment so it will be generated for all remittances but where the kyc has multiple remittances it will have cumulated data
   And remittance notice must be generated for each remittance
   Given I approve the capital call
+  Then I send the capital call notification
   Then the notification must be sent to the investors where the call notice was generated
 
 @import
@@ -71,6 +73,7 @@ Scenario Outline: Call Notice generation and notification for only the latest on
   # Now notice is generated at the kyc level but we have set skip call notice in the commitment that are from the same kyc and earlier i.e. only the latest remittance for the kyc should have notice generated
   And remittance notice must be generated for the latest remittance for each kyc
   Given I approve the capital call
+  Then I send the capital call notification
   Then the notification must be sent to the investors where the call notice was generated
 
 @import

@@ -158,6 +158,6 @@ class CapitalRemittancesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_remittance_params
-    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :call_amount, :notes, :remittance_date, :verified, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :call_amount, :notes, :remittance_date, :verified, :notification_sent, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

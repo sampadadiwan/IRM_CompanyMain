@@ -47,6 +47,22 @@ Feature: Tasks Kanban Board
     Then I should see "Chase signatures" in the "In Progress" board column
     And I should not see "Send the deck" in the "Todo" board column
 
+  # Regression: a task logged under a stakeholder's PortfolioInvestment ("PI")
+  # or CapitalCommitment has owner_type=PortfolioInvestment/CapitalCommitment,
+  # not owner_type=Investor — the stakeholder filter must still surface it.
+  @javascript
+  Scenario: Filter the board by stakeholder includes tasks logged under its PI and Commitment
+    Given the investor has a portfolio investment and a capital commitment
+    And there are following board tasks for the entity:
+      | details                         | status | stakeholder |
+      | Chase the PI signoff            | todo   | pi          |
+      | Chase the commitment paperwork  | todo   | commitment  |
+    When I go to the tasks board page
+    And I select "Blue Fort Capital" from the board "investor_id" filter
+    Then I should see "Chase the PI signoff" in the "Todo" board column
+    And I should see "Chase the commitment paperwork" in the "Todo" board column
+    And I should not see "Draft the LPA" in the "Todo" board column
+
   # A deal board is the whole deal: tasks owned by the Deal itself plus tasks
   # owned by every DealInvestor on it.
   Scenario: The deal board shows the deal's own tasks and its investors' tasks together
@@ -78,12 +94,12 @@ Feature: Tasks Kanban Board
   # genuinely overdue work.
   Scenario: Cards are ordered by urgency, and Done by most recently completed
     Given there are following dated board tasks:
-      | details          | status | due_date   | completed_on |
-      | Overdue by a lot | todo   | 2024-01-05 |              |
-      | Due next week    | todo   | 2030-01-05 |              |
-      | No due date      | todo   |            |              |
-      | Finished earlier | done   |            | 2026-08-01   |
-      | Finished today   | done   |            | 2026-08-09   |
+      | details          | status | due_date | completed_on |
+      | Overdue by a lot | todo   | -500     |              |
+      | Due next week    | todo   | +7       |              |
+      | No due date      | todo   |          |              |
+      | Finished earlier | done   |          | -8           |
+      | Finished today   | done   |          | 0            |
     When I go to the tasks board page
     Then the "Todo" board column should be ordered "Overdue by a lot, Due next week, No due date"
     And the "Done" board column should be ordered "Finished today, Finished earlier"
@@ -151,6 +167,22 @@ Feature: Tasks Kanban Board
     And I select "legal" from the board "q[tags_cont]" filter
     Then I should see "Draft the LPA" in the "Todo" board column
     And I should not see "Call the auditor" in the "Todo" board column
+
+  # Due dates are picked to be unambiguously in one bucket only regardless of
+  # what day "today" happens to be when this runs (e.g. overdue by 60 days is
+  # always a prior calendar month too, not just "before today").
+  @javascript
+  Scenario: Filter the board by due date
+    Given there are following board tasks due in each period
+    When I go to the tasks board page
+    And I select "Overdue" from the board "due_filter" filter
+    Then I should see "Overdue task" in the "Todo" board column
+    And I should not see "Task due this week" in the "Todo" board column
+    And I should not see "Task due this month" in the "Todo" board column
+    When I select "Due This Month" from the board "due_filter" filter
+    Then I should see "Task due this month" in the "Todo" board column
+    And I should not see "Overdue task" in the "Todo" board column
+    And I should not see "Task due next month" in the "Todo" board column
 
   @javascript
   Scenario: Dragging a card to Done completes the task without emailing anyone

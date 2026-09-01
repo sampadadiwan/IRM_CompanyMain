@@ -512,6 +512,57 @@ Then('when the capital call is approved') do
   @capital_call.reload
 end
 
+Then('the capital call notifications are sent') do
+  @capital_call.send_notification
+  @capital_call.reload
+end
+
+Given('the notification deliveries are cleared') do
+  ActionMailer::Base.deliveries.clear
+end
+
+Then('no capital call notification emails should have been sent') do
+  ActionMailer::Base.deliveries.should be_empty
+end
+
+Then('some capital call notification emails should have been sent') do
+  ActionMailer::Base.deliveries.should_not be_empty
+end
+
+Then('the capital call reminder should be blocked because the call is not approved') do
+  @capital_call.approved.should be_falsey
+  ActionMailer::Base.deliveries.clear
+  @capital_call.reminder_capital_call
+  ActionMailer::Base.deliveries.should be_empty
+end
+
+Then('the capital call payment notification should be blocked because the call is not approved') do
+  @capital_call.approved.should be_falsey
+  cr = @capital_call.capital_remittances.first
+  cr.update_columns(verified: true)
+  crp = FactoryBot.create(:capital_remittance_payment, fund: cr.fund, entity: cr.entity, capital_remittance: cr)
+  ActionMailer::Base.deliveries.clear
+  crp.notify_capital_remittance_payment
+  ActionMailer::Base.deliveries.should be_empty
+end
+
+Given('I visit the first capital remittance for the call') do
+  @capital_remittance = @capital_call.capital_remittances.first
+  visit(capital_remittance_path(@capital_remittance))
+end
+
+Then('I should see {string} as the notification action') do |label|
+  click_on("Actions")
+  expect(page).to have_button(label)
+end
+
+Given('I manually set Notification Sent to Yes on the remittance') do
+  visit(edit_capital_remittance_path(@capital_remittance))
+  check("Notification Sent")
+  click_on("Save")
+  @capital_remittance.reload
+end
+
 Then('Given I upload {string} file for Call remittances of the fund') do |file|
   visit(capital_call_path(@capital_call))
   click_on("Remittances")
@@ -941,6 +992,41 @@ Given('I approve the capital call') do
   end
   click_on("Approve")
   click_on("Confirm & Save")
+end
+
+Then('I send the capital call notification') do
+  # The Approve confirmation modal (shared #ruleValidationModal, reused for every rule-validation
+  # button on the page) and its backdrop may still be closing from the previous step's submit —
+  # wait for both to fully clear before opening the next one, otherwise a leftover backdrop or
+  # a not-yet-closed modal can intercept clicks on the new one.
+  expect(page).to have_no_css("#ruleValidationModal.show")
+  expect(page).to have_no_css(".modal-backdrop")
+
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Send Notification")
+
+  # Wait for the fade-in transition to finish (Bootstrap adds "show" once shown.bs.modal fires)
+  # before clicking inside it, otherwise the click can race the animation.
+  expect(page).to have_css("#ruleValidationModal.show")
+  within "#ruleValidationModal.show" do
+    click_on("Confirm & Save")
+  end
+end
+
+Then('I should see the sandbox warning when sending the call notification') do
+  expect(page).to have_no_css("#ruleValidationModal.show")
+  expect(page).to have_no_css(".modal-backdrop")
+
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Send Notification")
+
+  within "#ruleValidationModal.show" do
+    expect(page).to have_content("Sandbox is enabled")
+  end
 end
 
 Given('the remittances have proper notification users') do

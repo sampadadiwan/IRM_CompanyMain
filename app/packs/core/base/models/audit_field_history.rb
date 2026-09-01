@@ -23,7 +23,11 @@ class AuditFieldHistory
           label: row[:label],
           time: audit.created_at,
           user: audit.user,
-          value: row[:new].presence || row[:old],
+          # The cell is "the value this field changed to" — use row[:new] as-is.
+          # `.presence || row[:old]` (the old logic) treated a legitimate falsy
+          # new value (false, "", nil) as "missing" and fell back to the old
+          # value, so a field toggled true -> false kept showing true.
+          value: row[:new],
         }
       end
     end.sort_by { |row| row[:time] }

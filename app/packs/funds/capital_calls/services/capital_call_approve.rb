@@ -3,7 +3,6 @@ class CapitalCallApprove < CapitalCallAction
   step :save
   left :handle_errors, Output(:failure) => End(:failure)
   step :generate_capital_remittances
-  step :send_notification
 
   def check_unapproved_docs(ctx, capital_call:, **)
     # We need to check for unapproved but generated docs for the remittances of this call

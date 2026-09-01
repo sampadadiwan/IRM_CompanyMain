@@ -39,4 +39,8 @@ export default class extends Controller {
       row.style.display = selected.includes(row.dataset.fieldKey) ? "" : "none"
     })
   }
+
+  clearAll() {
+    $(this.pickerTarget).val(null).trigger("change")
+  }
 }

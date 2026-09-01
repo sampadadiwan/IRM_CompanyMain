@@ -60,5 +60,10 @@
 <%#=render SearchComponent.new(data_source: fund_formulas_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: fund_formulas_frame) %>
 <div class="" data-controller="datatable">
   <%# sortable: false — this table uses jQuery DataTables client-side sorting, so we suppress the Ransack sort links to avoid double sort arrows in the header %>
-  <%= render RansackTable.new(FundFormula, q: @q, default_columns_map:, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: fund_formulas, turbo_frame: fund_formulas_frame, referrer: request.referrer, pagy: @pagy, table_css_class: "dataTable jqDataTable", sortable: false) %>
+  <%# pagy: nil -- this table paginates client-side via jQuery DataTables (jqDataTable class below);
+      @pagy is still computed server-side in the controller to cap the number of rows loaded, but
+      passing it here would also render RansackTable's own pagy nav underneath DataTables' nav,
+      producing two conflicting pagers for the same rows (see "Use jq pagination if not using pagy"
+      convention in investments/_index.html.erb). %>
+  <%= render RansackTable.new(FundFormula, q: @q, default_columns_map:, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: fund_formulas, turbo_frame: fund_formulas_frame, referrer: request.referrer, pagy: nil, table_css_class: "dataTable jqDataTable", sortable: false) %>
 </div>

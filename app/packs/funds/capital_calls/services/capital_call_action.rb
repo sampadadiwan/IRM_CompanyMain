@@ -25,9 +25,4 @@ class CapitalCallAction < Trailblazer::Operation
     CapitalCallDateChangeJob.perform_later(capital_call.id, current_user.id) if capital_call.saved_change_to_call_date? && current_user
     true
   end
-
-  def send_notification(_ctx, capital_call:, **)
-    capital_call.send_notification if capital_call.approved
-    true
-  end
 end

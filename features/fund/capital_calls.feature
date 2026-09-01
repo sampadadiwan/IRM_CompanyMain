@@ -48,6 +48,7 @@ Scenario Outline: Create new capital call
   And the generated call notices have as_of set to the remittance date
   Given the generated call notices are approved
   Then when the capital call is approved
+  And the capital call notifications are sent
   And the investors must receive email with subject "<subject>" with the document "Sample.pdf" attached
   And the remittances must be marked with notification sent
   And the capital call collected amount should be "0"

@@ -43,8 +43,9 @@
 
   <div class="d-flex flex-wrap align-items-center gap-2">
     <%= form_with url: tasks_path, method: :get, local: true, data: { turbo_frame: "_top", controller: "autosubmit" }, class: "d-flex align-items-center" do |f| %>
-      <%# Preserve other Ransack filters and params except category %>
-      <% params.to_unsafe_h.except(:controller, :action, :q, :authenticity_token).each do |k, v| %>
+      <%# Preserve other Ransack filters and params except category and due_filter —
+          their own selects below submit those. %>
+      <% params.to_unsafe_h.except(:controller, :action, :q, :authenticity_token, :due_filter).each do |k, v| %>
         <%= hidden_field_tag k, v %>
       <% end %>
       <% if params[:q].is_a?(Hash) %>
@@ -56,6 +57,15 @@
       <%= select_tag "q[category_eq]", options_for_select(Task::CATEGORIES, params.dig(:q, :category_eq)),
                      id: "category_filter",
                      include_blank: "All Categories",
+                     class: "form-select form-select-sm me-2",
+                     onchange: "this.form.requestSubmit();" %>
+
+      <%# due_filter is a plain top-level param (TaskList#call), not a ransack
+          predicate — the preset ranges (this_week/next_month/...) can't be
+          expressed as a single ransack comparison. %>
+      <%= select_tag :due_filter, options_for_select(Task::DUE_FILTERS, params[:due_filter]),
+                     id: "due_filter",
+                     include_blank: "All Due Dates",
                      class: "form-select form-select-sm me-2",
                      onchange: "this.form.requestSubmit();" %>
     <% end %>
@@ -79,6 +89,7 @@
                              owner_type: (owner&.class&.name || params[:owner_type] unless deal_board),
                              touch_point_id: params[:touch_point_id],
                              side_letter_id: side_letter_id,
+                             due_filter: params[:due_filter],
                              q: base_query),
                   class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center",
                   data: { turbo_frame: "_top" } do %>

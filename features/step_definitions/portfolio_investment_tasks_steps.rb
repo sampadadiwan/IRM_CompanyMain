@@ -93,6 +93,14 @@ Then('the board title should name the portfolio investment') do
                             href: portfolio_investment_path(@portfolio_investment))
 end
 
+# The "For" column collapses a PI owner to its stakeholder (company) name —
+# the full to_s (with instrument, buy/sell and date) must not leak into the cell
+Then("the task's For column should link the company name to the portfolio investment") do
+  expect(page).to have_link(@portfolio_investment.portfolio_company_name,
+                            href: portfolio_investment_path(@portfolio_investment))
+  expect(page).not_to have_content(@portfolio_investment.to_s)
+end
+
 When('the portfolio investment is destroyed') do
   @destroyed_portfolio_investment_id = @portfolio_investment.id
   @portfolio_investment.destroy!

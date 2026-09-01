@@ -18,18 +18,19 @@ This guide walks you through the full journey - issuing a call, working out each
 8. [Generating Investor Remittances](#generating-investor-remittances)
 9. [Generating and Approving Call Notices](#generating-and-approving-call-notices)
 10. [Approving the Capital Call](#approving-the-capital-call)
-11. [Understanding Remittances](#understanding-remittances)
-12. [The Remittance Status Lifecycle](#the-remittance-status-lifecycle)
-13. [Recording Investor Payments](#recording-investor-payments)
-14. [Verifying a Remittance](#verifying-a-remittance)
-15. [Working Across Currencies](#working-across-currencies)
-16. [Investor Notifications](#investor-notifications)
-17. [Allocating Fund Units](#allocating-fund-units)
-18. [Refreshing Fees After a Change](#refreshing-fees-after-a-change)
-19. [Importing Calls, Remittances and Payments](#importing-calls-remittances-and-payments)
-20. [Worked Example, End to End](#worked-example-end-to-end)
-21. [Quick Calculation Reference](#quick-calculation-reference)
-22. [Frequently Asked Questions](#frequently-asked-questions)
+11. [Sending the Call Notice](#sending-the-call-notice)
+12. [Understanding Remittances](#understanding-remittances)
+13. [The Remittance Status Lifecycle](#the-remittance-status-lifecycle)
+14. [Recording Investor Payments](#recording-investor-payments)
+15. [Verifying a Remittance](#verifying-a-remittance)
+16. [Working Across Currencies](#working-across-currencies)
+17. [Investor Notifications](#investor-notifications)
+18. [Allocating Fund Units](#allocating-fund-units)
+19. [Refreshing Fees After a Change](#refreshing-fees-after-a-change)
+20. [Importing Calls, Remittances and Payments](#importing-calls-remittances-and-payments)
+21. [Worked Example, End to End](#worked-example-end-to-end)
+22. [Quick Calculation Reference](#quick-calculation-reference)
+23. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -77,12 +78,13 @@ flowchart TD
     B --> C[Generate call notices]
     C --> D[Review and approve each notice]
     D --> E[Approve the capital call]
-    E --> F[Investors pay]
+    E --> N[Send the call notice]
+    N --> F[Investors pay]
     F --> G[Verify remittances]
     G --> H[Allocate fund units]
 ```
 
-> **Why approval locks the call:** once notices have gone out, investors are acting on those numbers. Locking prevents the amounts, due dates, or investor list from changing after the fact, which protects everyone's audit trail.
+> **Why approval locks the call:** once notices have gone out, investors are acting on those numbers. Locking prevents the amounts, due dates, or investor list from changing after the fact, which protects everyone's audit trail. Approving the call and sending its notice are two separate, deliberate steps — see [Approving the Capital Call](#approving-the-capital-call) and [Sending the Call Notice](#sending-the-call-notice).
 
 ---
 
@@ -106,7 +108,7 @@ Open a **Fund** and click **New Capital Call**.
 | Field | What it does |
 |-------|--------------|
 | **Notes** | Internal notes, not shown to investors. |
-| **Send Call Notice** | Email investors when the call is approved. Default **Yes**. |
+| **Send Call Notice** | Whether **Send Notification** (after approval) is allowed to email investors at all. Default **Yes**. |
 | **Send Payment Notification** | Email investors when their payment is received and confirmed. Default **Yes**. |
 | **Generate Remittances** | Automatically create one remittance per investor on save. Default **Yes**. |
 | **Remittances Verified** | Create remittances already marked as paid and verified - useful for loading historical calls that were settled long ago. |
@@ -258,7 +260,9 @@ Only **approved** notices are attached to the investor email. Requiring explicit
 
 ## Approving the Capital Call
 
-Approval is the formal "go" step. It sends the notices and locks the call.
+Approval is the formal "go" step. It locks the call. Sending the call notice to investors is a
+**separate step you trigger afterwards** — see [Sending the Call Notice](#sending-the-call-notice)
+below.
 
 ### Before you approve, confirm
 
@@ -270,18 +274,32 @@ Approval is the formal "go" step. It sends the notices and locks the call.
 1. Open the capital call.
 2. Choose **Actions → Approve**.
 3. The system checks that all notices are approved. If any are outstanding, approval is blocked with a clear message and you'll need to approve those notices first.
-4. Once approved, the call locks and records who approved it.
+4. Once approved, the call locks and records who approved it. No email goes out yet.
 
 > **If Approve is greyed out:** your organisation may have a review workflow configured for capital call approvals. If so, this call must complete that review before Approve becomes available again. Check the call's Workflow tab to see the review's current status — see the [Workflow Templates guide](workflow_templates_user_guide.md) for details.
 
 ### What happens on approval
 
-- If **Send Call Notice** is on, investors with an outstanding remittance receive their notice email (unless that investor is set to skip notices).
-- The approved notice document is attached to the email.
-- The approved status becomes visible to investors in their portal.
-- **Edit, Delete, Refresh Fees, and Generate Documents are disabled.** Allocating fund units remains available.
+- The call locks and the approved status becomes visible to investors in their portal.
+- **Edit, Delete, Refresh Fees, and Generate Documents are disabled.** Allocating fund units and sending the call notice remain available.
+- Nothing is emailed to investors yet — that happens when you separately choose **Send Notification** (below).
 
-If a notice needs correcting after approval, that has to be handled outside the system - by then investors already hold the original figures.
+If a notice needs correcting after approval, that has to be handled outside the system - by then investors may already hold the original figures if the notice was sent.
+
+---
+
+## Sending the Call Notice
+
+Once a call is approved, notifying investors is a deliberate second step.
+
+1. Open the approved capital call.
+2. Choose **Actions → Send Notification**.
+3. Confirm in the dialog. It tells you whether an email will actually go out (it won't if **Send Call Notice** is off for this call) and links to see who will be notified.
+4. Investors with an outstanding remittance receive their notice email, with the approved notice document attached, unless that investor is set to skip notices.
+
+Clicking **Send Notification** again is safe — investors already notified are not emailed a second time; it only reaches investors who haven't received their notice yet. Use **Send Reminder** (see [Investor Notifications](#investor-notifications)) if you want to re-send to investors already notified.
+
+> **Sandbox mode:** if your organisation has Sandbox Mode turned on for this entity, the confirmation dialog warns you that the email will go to the sandbox address list instead of the real investors. The same warning appears when sending a notice from an individual remittance.
 
 ---
 
@@ -423,30 +441,36 @@ The system can email investors automatically at key moments.
 
 ### Call notice
 
-- **Sent when:** the call is approved (if **Send Call Notice** is on).
-- **To:** each investor with an outstanding remittance, unless their commitment is set to **Skip Call Notice**.
+- **Sent when:** you choose **Send Notification** on an approved call (if **Send Call Notice** is on) — see [Sending the Call Notice](#sending-the-call-notice). The call must be approved first; none of the notifications on this page can be sent for a call that isn't approved yet.
+- **To:** each investor with an outstanding remittance who hasn't already been notified, unless their commitment is set to **Skip Call Notice**.
 - **Contains:** the fund and call name, the approved notice document, and any documents you attached manually. A custom subject and body are used if a notification template applies (see [Custom Notification Templates](#custom-notification-templates) below).
 
-**Reminders:** click **Send Reminder** on the call to re-send to everyone still Pending or Overdue (the subject is prefixed "Reminder:"). You can also remind a single investor from their remittance. Once a notice has been sent to an investor, later sends are treated as reminders automatically.
+**Reminders:** click **Send Reminder** on the call to re-send to everyone still Pending or Overdue (the subject is prefixed "Reminder:"). You can also remind a single investor from their remittance. Once a notice has been sent to an investor, later sends from that investor's remittance are treated as reminders automatically.
 
 ### Payment-received confirmation
 
 - **Sent when:** a remittance is verified (or a payment is added to an already-verified remittance).
 - **To:** the investor.
-- **Conditions:** **Send Payment Notification** is on, the remittance is verified, the payment is positive, and a confirmation hasn't already been sent for that payment.
+- **Conditions:** the call is approved, **Send Payment Notification** is on, the remittance is verified, the payment is positive, and a confirmation hasn't already been sent for that payment.
 
 ### Skipping notices for an investor
 
 Set **Skip Call Notice = Yes** on a commitment to permanently exclude that investor from call and reminder emails - handy for internal or fund-of-funds investors who don't need these communications.
 
+### Correcting the notification status on a remittance
+
+Each remittance tracks whether its call notice has been sent (shown as **Notification Sent** on the remittance). This flips to Yes automatically the first time a notice goes out, and it's what decides whether the button on that remittance offers to send the initial notice or a reminder. If it's ever wrong — for example a notice was sent outside the system, or a bounced email needs to be resent as if it were new — open the remittance and edit **Notification Sent** directly.
+
 ### Notification summary
 
 | Event | Trigger | Who receives it | Controlled by |
 |-------|---------|-----------------|---------------|
-| Call issued | Call approved | Investors with outstanding remittances | Send Call Notice + Skip Call Notice |
+| Call issued | "Send Notification" clicked on an approved call | Investors with outstanding remittances, not yet notified | Send Call Notice + Skip Call Notice |
 | Reminder | "Send Reminder" clicked | Pending / Overdue investors | Same as above |
 | Single reminder | From a remittance | One investor | Same as above |
 | Payment received | Remittance verified | The investor | Send Payment Notification |
+
+All four require the capital call to be approved first.
 
 ### Custom Notification Templates
 
@@ -619,7 +643,10 @@ No. Each folio appears once per call.
 The remittance shows **Overpaid**. You can record a negative adjustment or carry the excess forward to a future call.
 
 **Can I send the notice without approving the call?**
-No. Notices go out on approval (or as a manual reminder afterwards).
+No. The call must be approved first. Approving and sending the notice are two separate actions though — approving no longer sends anything by itself, you choose **Send Notification** afterwards when you're ready. See [Sending the Call Notice](#sending-the-call-notice).
+
+**If I click Send Notification twice, will investors get duplicate emails?**
+No. It only emails investors who haven't been notified yet. Use **Send Reminder** to deliberately re-send to investors already notified.
 
 **What does "Skip Call Notice" do?**
 It permanently stops call and reminder emails for that commitment - useful for internal or fund-of-funds investors.

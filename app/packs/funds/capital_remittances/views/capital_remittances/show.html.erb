@@ -62,6 +62,7 @@
                             This will NOT send any notification to the investor as the call is setup to not send notifications.
                           <% end %>
                         </p>
+                        <%= render "shared/sandbox_notice", entity: @capital_remittance.entity %>
                         <div class="d-flex gap-2 flex-wrap">
                           <%= link_to "Update Call", edit_capital_call_path(@capital_remittance.capital_call), class: "badge bg-primary-subtle text-primary", target: "_blank" %>
                         </div>

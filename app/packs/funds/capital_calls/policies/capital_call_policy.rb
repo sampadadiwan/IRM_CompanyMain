@@ -44,7 +44,11 @@ class CapitalCallPolicy < FundBasePolicy
   end
 
   def reminder?
-    update?
+    update? && record.approved
+  end
+
+  def notify?
+    update? && record.approved
   end
 
   # Only company_admin can assign / remove a workflow template on a capital call,

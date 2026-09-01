@@ -61,6 +61,16 @@ Feature: Portfolio Investment Tasks
     And I should see "Collect the audited accounts" in the "Todo" board column
     And I should see "Chase the board pack" in the "In Progress" board column
 
+  # The global list's "For" column: a PI owner's to_s packs in instrument,
+  # buy/sell and date — the cell shows just the company name, still linked to
+  # the full investment record.
+  Scenario: The tasks list shows only the company name for the investment's task
+    Given the portfolio investment has the following tasks:
+      | details                      | status |
+      | Collect the audited accounts | todo   |
+    When I go to the tasks page
+    Then the task's For column should link the company name to the portfolio investment
+
   Scenario: Deleting the investment removes its tasks
     Given the portfolio investment has the following tasks:
       | details                      | status |

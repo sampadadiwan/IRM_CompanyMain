@@ -9,13 +9,11 @@
 #   - Widen address column: was 16-char hex, now deal ID or custom string
 class ReworkDealIngestAddressesOnePerDeal < ActiveRecord::Migration[8.1]
   def up
-    # Drop columns first — remove_column auto-drops associated FKs,
-    # indexes, and compound indexes that reference the column.
-    # This eliminates all the manual FK/index ordering headaches.
-    remove_column :deal_ingest_addresses, :user_id, if_exists: true
-    remove_column :deal_ingest_addresses, :revoked_at, if_exists: true
-
-    # Deduplicate: keep only the newest row per deal
+    # Deduplicate FIRST: keep only the newest row per deal. This must happen
+    # before any index/column changes — MySQL shrinks a composite index when
+    # one of its columns is dropped, so dropping user_id would turn the unique
+    # (deal_id, user_id) index into a unique (deal_id) index and fail on
+    # duplicate deal_ids before we ever got to dedupe.
     execute <<~SQL.squish
       DELETE a FROM deal_ingest_addresses a
       INNER JOIN (
@@ -26,11 +24,27 @@ class ReworkDealIngestAddressesOnePerDeal < ActiveRecord::Migration[8.1]
       ) dupes ON a.deal_id = dupes.deal_id AND a.id != dupes.keep_id
     SQL
 
+    # Drop the composite unique index explicitly rather than letting the
+    # user_id column drop mutate it (MySQL keeps the index, minus the column).
+    remove_index :deal_ingest_addresses, column: %i[deal_id user_id],
+                 if_exists: true
+
+    remove_column :deal_ingest_addresses, :user_id, if_exists: true
+    remove_column :deal_ingest_addresses, :revoked_at, if_exists: true
+
     # Replace the deal_id index with a unique one (one address per deal).
-    # Only drop+add if it's not already unique from a prior partial run.
+    # Add the new unique index BEFORE dropping the old one: the deals FK
+    # needs at least one index starting with deal_id at all times, so
+    # dropping first fails with "needed in a foreign key constraint".
     unless index_exists?(:deal_ingest_addresses, :deal_id, unique: true)
-      remove_index :deal_ingest_addresses, :deal_id, if_exists: true
-      add_index :deal_ingest_addresses, :deal_id, unique: true
+      add_index :deal_ingest_addresses, :deal_id, unique: true,
+                name: "index_deal_ingest_addresses_on_deal_id_unique"
+      remove_index :deal_ingest_addresses,
+                   name: "index_deal_ingest_addresses_on_deal_id",
+                   if_exists: true
+      rename_index :deal_ingest_addresses,
+                   "index_deal_ingest_addresses_on_deal_id_unique",
+                   "index_deal_ingest_addresses_on_deal_id"
     end
 
     # Widen address column

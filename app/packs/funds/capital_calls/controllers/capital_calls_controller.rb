@@ -1,7 +1,7 @@
 class CapitalCallsController < ApplicationController
   include HasWorkflowable
 
-  before_action :set_capital_call, only: %i[show edit update destroy reminder approve generate_docs allocate_units recompute_fees]
+  before_action :set_capital_call, only: %i[show edit update destroy reminder approve notify generate_docs allocate_units recompute_fees]
   before_action :set_workflowable, only: [:show]  # runs after set_capital_call so @capital_call is available
 
   # GET /capital_calls or /capital_calls.json
@@ -137,6 +137,11 @@ class CapitalCallsController < ApplicationController
   def reminder
     @capital_call.reminder_capital_call
     redirect_to capital_call_url(@capital_call), notice: "Reminder sent for capital call."
+  end
+
+  def notify
+    @capital_call.send_notification
+    redirect_to capital_call_url(@capital_call), notice: "Notification sending process started, please check back in a few mins."
   end
 
   private

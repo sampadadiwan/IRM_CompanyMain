@@ -88,7 +88,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def send_notification
-    CapitalCallJob.perform_later(id, "Notify") if send_call_notice_flag && !manual_generation && saved_change_to_approved?
+    CapitalCallJob.perform_later(id, "Notify") if approved? && send_call_notice_flag && !manual_generation
   end
 
   def folder_path
@@ -122,6 +122,8 @@ class CapitalCall < ApplicationRecord
   end
 
   def reminder_capital_call
+    return unless approved?
+
     capital_remittances.where(status: %w[Pending Overdue]).find_each do |cr|
       next if cr.capital_commitment.skip_doc_gen?
 

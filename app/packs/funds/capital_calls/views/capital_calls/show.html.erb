@@ -46,20 +46,14 @@
 
         <% if policy(@capital_call).approve? %>
           <%# Hidden element whose innerHTML the rule-validation controller reads as the confirm message.
-              Shown in the modal when no rules fire (so the user still sees the notification context
-              and links before proceeding) and above warning items when warnings fire. %>
+              Shown in the modal when no rules fire (so the user still sees the confirmation context
+              before proceeding) and above warning items when warnings fire. %>
           <div id="capital_call_approve_confirm_msg" class="d-none">
             <p style="font-size:0.875rem;margin-bottom:0.5rem">
-              <% if @capital_call.send_call_notice_flag %>
-                This will send a notification to your investors and attached Approved call notices.
-              <% else %>
-                This will NOT send any notification to your investors as the call is setup to not send notifications.
-              <% end %>
+              This will approve the capital call. No notification is sent to investors yet — use
+              "Send Notification" afterwards once you're ready to notify them.
             </p>
             <div class="d-flex gap-2 flex-wrap">
-              <%= link_to "View Who Gets Notified",
-                    show_email_list_fund_path(@capital_call.fund, capital_call_id: @capital_call.id),
-                    class: "badge bg-primary-subtle text-primary", target: "_blank" %>
               <%= link_to "View Generated Call Notices",
                     documents_path(no_folders: true, filter: true,
                       q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id],
@@ -79,8 +73,48 @@
                data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>"
                data-rule-validation-confirm-message-selector-value="#capital_call_approve_confirm_msg">
             <%= button_to approve_capital_call_path(@capital_call), id: "capital_call_approve_btn", method: :post, class: "dropdown-item ti ti-check", form_class: "deleteButton",
-                data: {turbo: false, bs_toggle: "tooltip", bs_title: "Approve call and send notification. Only 'Approved Documents' will be attached.", workflow_gate_label: "Approve"} do %>
+                data: {turbo: false, bs_toggle: "tooltip", bs_title: "Approve call. Only 'Approved Documents' will be attached.", workflow_gate_label: "Approve"} do %>
               Approve
+            <% end %>
+          </div>
+
+          <div class="dropdown-divider"></div>
+        <% end %>
+
+        <% if policy(@capital_call).notify? %>
+          <%# Hidden element whose innerHTML the rule-validation controller reads as the confirm message. %>
+          <div id="capital_call_notify_confirm_msg" class="d-none">
+            <p style="font-size:0.875rem;margin-bottom:0.5rem">
+              <% if @capital_call.send_call_notice_flag %>
+                This will send a notification to your investors and attached Approved call notices.
+                Investors already notified will not be emailed again.
+              <% else %>
+                This will NOT send any notification to your investors as the call is setup to not send notifications.
+              <% end %>
+            </p>
+            <%= render "shared/sandbox_notice", entity: @capital_call.entity %>
+            <div class="d-flex gap-2 flex-wrap">
+              <%= link_to "View Who Gets Notified",
+                    show_email_list_fund_path(@capital_call.fund, capital_call_id: @capital_call.id),
+                    class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+              <%= link_to "View Generated Call Notices",
+                    documents_path(no_folders: true, filter: true,
+                      q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id],
+                                                        [:owner_tag, :cont, "Generated"]])),
+                    class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+
+              <%= link_to "Update Call", edit_capital_call_path(@capital_call), class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+            </div>
+          </div>
+
+          <div data-controller="rule-validation"
+               data-rule-validation-target-model-value="CapitalCall"
+               data-rule-validation-record-id-value="<%= @capital_call.id %>"
+               data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>"
+               data-rule-validation-confirm-message-selector-value="#capital_call_notify_confirm_msg">
+            <%= button_to notify_capital_call_path(@capital_call), id: "capital_call_notify_btn", method: :post, class: "dropdown-item ti ti-mail", form_class: "deleteButton",
+                data: {turbo: false, bs_toggle: "tooltip", bs_title: "Send the call notification to investors.", workflow_gate_label: "Send Notification"} do %>
+              Send Notification
             <% end %>
           </div>
 

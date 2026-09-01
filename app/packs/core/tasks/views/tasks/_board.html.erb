@@ -1,6 +1,6 @@
 <%# Kanban board view of tasks (params[:board] branch of tasks/index).
     Filterable by assignee, stakeholder (Investor owner), touch point (LP
-    contact) and tag. Filter option data comes from
+    contact), tag, category, and due date. Filter option data comes from
     TasksController#prepare_board_filters; drag & drop is handled by
     task_board_controller.js hitting PATCH update_status. %>
 <% base_query = params[:q].to_unsafe_h rescue {} %>
@@ -37,17 +37,18 @@
             list view, so filter submits don't silently widen the board. An
             Investor owner is NOT pinned here — the stakeholder select owns that
             filter (a hidden owner_id would override a new selection, since
-            normalize_owner_filters! only maps investor_id when owner_id is blank). %>
+            TaskList's investor_id union only applies when owner_id is blank). %>
         <% unless params[:owner_type] == "Investor" %>
           <%= hidden_field_tag :owner_id, params[:owner_id] if params[:owner_id].present? %>
           <%= hidden_field_tag :owner_type, params[:owner_type] if params[:owner_type].present? %>
         <% end %>
         <%= hidden_field_tag :deal_id, params[:deal_id] if params[:deal_id].present? %>
-        <%# Preserve non-board ransack filters (e.g. category) across submits —
-            tags_cont excluded, its select below submits it. Arrays re-encode as
-            q[k][]; nested hashes (advanced grouping) can't ride hidden fields
-            without corruption, so they are dropped rather than stringified. %>
-        <% base_query.except("tags_cont").each do |k, v| %>
+        <%# Preserve other non-board ransack filters across submits — tags_cont
+            and category_eq excluded, their selects below submit them. Arrays
+            re-encode as q[k][]; nested hashes (advanced grouping) can't ride
+            hidden fields without corruption, so they are dropped rather than
+            stringified. %>
+        <% base_query.except("tags_cont", "category_eq").each do |k, v| %>
           <% if v.is_a?(Array) %>
             <% v.each do |vv| %>
               <%= hidden_field_tag "q[#{k}][]", vv %>
@@ -65,8 +66,8 @@
 
         <% if @board_deal %>
           <%# Deal board: the options ARE the deal's investors, so the filter has
-              to select a DealInvestor. investor_id would map to
-              owner_type=Investor and contradict the deal scope — TaskList reads
+              to select a DealInvestor. investor_id would map to the Investor
+              union below and contradict the deal scope — TaskList reads
               deal_investor_id for exactly this reason. %>
           <%= select_tag :deal_investor_id,
                          options_for_select(@board_stakeholder_options, @board_selected_deal_investor&.id),
@@ -74,8 +75,9 @@
                          class: "form-select form-select-sm w-auto",
                          onchange: "this.form.requestSubmit();" %>
         <% else %>
-          <%# Owner filter kept minimal: Investors only. TaskList#normalize_owner_filters!
-              maps investor_id -> owner_id/owner_type=Investor, so no new filter code. %>
+          <%# TaskList maps investor_id to the Investor itself PLUS any
+              PortfolioInvestment/CapitalCommitment belonging to it, so tasks
+              logged under a stakeholder's PI or Commitment show up here too. %>
           <%= select_tag :investor_id,
                          options_for_select(@board_stakeholder_options, @board_selected_investor&.id),
                          include_blank: "All Stakeholders",
@@ -103,6 +105,28 @@
                          class: "form-select form-select-sm w-auto",
                          onchange: "this.form.requestSubmit();" %>
         <% end %>
+
+        <% if @board_category_options.any? %>
+          <%# category is in Task.ransackable_attributes, so this rides the
+              existing ransack query. Options are the categories actually in use
+              on this board's tasks (prepare_board_filters), not the static
+              Task::CATEGORIES list — free-text "Other" values need to show up
+              here too. %>
+          <%= select_tag "q[category_eq]",
+                         options_for_select(@board_category_options, params.dig(:q, :category_eq)),
+                         include_blank: "All Categories",
+                         class: "form-select form-select-sm w-auto",
+                         onchange: "this.form.requestSubmit();" %>
+        <% end %>
+
+        <%# due_filter is a plain top-level param (TaskList#call), not a ransack
+            predicate — the preset ranges (this_week/next_month/...) can't be
+            expressed as a single ransack comparison. %>
+        <%= select_tag :due_filter,
+                       options_for_select(Task::DUE_FILTERS, params[:due_filter]),
+                       include_blank: "All Due Dates",
+                       class: "form-select form-select-sm w-auto",
+                       onchange: "this.form.requestSubmit();" %>
       <% end %>
 
       <%# Carries the full filter scope back — including an owner filter that
@@ -114,6 +138,7 @@
                              deal_id: params[:deal_id],
                              deal_investor_id: params[:deal_investor_id],
                              touch_point_id: params[:touch_point_id],
+                             due_filter: params[:due_filter],
                              q: base_query),
                   class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center",
                   data: { turbo_frame: "_top" } do %>

@@ -19,12 +19,14 @@
   <% if show_owner %>
   <td>
     <%# Linked like the notes list. The href comes from owner_type/owner_id, so
-        routing costs nothing; the name uses the preloaded owner. %>
+        routing costs nothing; the label uses the preloaded owner —
+        owner_display_name shows just the stakeholder name for Commitment/PI/API
+        owners (their to_s is too detailed for a cell), to_s for the rest. %>
     <% path = owner_path(task.owner_type, task.owner_id) %>
     <% if path && task.owner.present? %>
-      <%= link_to task.owner.to_s, path %>
+      <%= link_to task.owner_display_name, path %>
     <% else %>
-      <%= task.owner&.to_s %>
+      <%= task.owner_display_name %>
     <% end %>
   </td>
   <% end %>
