@@ -17,18 +17,16 @@ Email → SendGrid → Webhook POST → Auth → Sidekiq Job → LLM Parse → M
 ### New Tables
 
 #### `deal_ingest_addresses`
-Per-(deal, user) unguessable email address.
+One address per deal — readable, optionally customizable by admins.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `deal_id` | bigint, not null | FK → deals |
-| `user_id` | bigint, not null | FK → users |
-| `address` | string(16), not null | `SecureRandom.hex(8)`, unique index |
-| `revoked_at` | datetime, nullable | Set on access revocation, never deleted |
+| `address` | string(100), not null | Default = `deal.id.to_s`, unique index |
 | `created_at` | datetime | |
 | `updated_at` | datetime | |
 
-Indexes: unique on `address`, unique on `[deal_id, user_id]`.
+Indexes: unique on `address`, unique on `deal_id`.
 
 #### `agent_ingested_emails`
 Audit log of every authenticated inbound email.
@@ -77,15 +75,15 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 ### Models
 | File | Purpose |
 |------|---------|
-| `app/packs/startups/deals/models/deal_ingest_address.rb` | Address model — generation, revocation, lookup |
+| `app/packs/startups/deals/models/deal_ingest_address.rb` | Address model — generation, lookup, custom address validation |
 | `app/packs/startups/deals/models/agent_ingested_email.rb` | Email audit record — status machine, parse storage |
 | `app/packs/startups/deals/models/warehouse_item.rb` | Warehouse item — resolution, scopes |
-| `app/packs/startups/deals/models/concerns/with_deal_ingest_address.rb` | AccessRight concern — auto-generate/revoke on access changes |
+| `app/packs/startups/deals/models/concerns/with_deal_ingest_address.rb` | Deal concern — auto-generates one address per deal on creation, lazy generation on page visit |
 
 ### Services
 | File | Purpose |
 |------|---------|
-| `app/packs/startups/deals/services/deal_ingest_authenticator.rb` | Auth: address lookup, sender match, SPF/DKIM/DMARC, dedup, enqueue |
+| `app/packs/startups/deals/services/deal_ingest_authenticator.rb` | 5-step auth: address→deal, From→user, deal access check (AccessRight or role), SPF/DKIM/DMARC, dedupe |
 | `app/packs/ai/deal_update_agent/services/deal_email_parser.rb` | LLM parsing — structured JSON output (intent, stakeholder, body, due date) |
 | `app/packs/startups/deals/services/deal_stakeholder_matcher.rb` | Tier A matching — Dice coefficient fuzzy, entity suffix stripping |
 | `app/packs/startups/deals/services/deal_ingest_processor.rb` | Orchestrator — parse → match → create/warehouse → reply |
@@ -93,7 +91,7 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 ### Controllers
 | File | Purpose |
 |------|---------|
-| `app/packs/misc/incoming_emails/controllers/incoming_emails_controller.rb` | SendGrid webhook — routes by DealIngestAddress lookup on local part |
+| `app/packs/misc/incoming_emails/controllers/incoming_emails_controller.rb` | SendGrid webhook — routes by `DealIngestAddress` lookup on local part |
 | `app/packs/startups/deals/controllers/warehouse_items_controller.rb` | Warehouse UI — index (pending items), resolve (file/discard) |
 | `app/packs/startups/deals/controllers/deals_controller.rb` | Deal show — lazy ingest address generation via `ensure_deal_ingest_address` |
 
@@ -105,7 +103,12 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 ### Mailers
 | File | Purpose |
 |------|---------|
-| `app/packs/startups/deals/mailers/deal_ingest_mailer.rb` | Confirmation + warehoused reply emails |
+| `app/packs/startups/deals/mailers/deal_ingest_mailer.rb` | Confirmation reply email only (warehouse notification removed) |
+
+### Policies
+| File | Purpose |
+|------|---------|
+| `app/packs/startups/deals/policies/deal_policy.rb` | Pundit policy — includes `update_ingest_address?` for admin address editing |
 
 ### Views
 | File | Purpose |
@@ -119,34 +122,38 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 | File | Purpose |
 |------|---------|
 | `app/javascript/controllers/clipboard_controller.js` | Copy-to-clipboard with HTTP fallback |
+| `app/javascript/controllers/inline_edit_controller.js` | Stimulus controller for inline address editing |
 
 ### Cucumber Features
 | File | Purpose |
 |------|---------|
-| `features/deal/deal_update_agent.feature` | 11 scenarios — happy path, security drops, warehouse, resolution |
-| `features/step_definitions/deal_update_agent/shared_setup_steps.rb` | Before/After hooks, LLM stub, fixture setup |
-| `features/step_definitions/deal_update_agent/authentication_steps.rb` | Webhook simulation, drop assertions |
-| `features/step_definitions/deal_update_agent/processing_steps.rb` | LLM stubbing, job execution, Note/Task assertions |
-| `features/step_definitions/deal_update_agent/warehouse_steps.rb` | Warehouse preconditions, resolve/discard assertions |
+| `features/deal/deal_update_agent_v2.feature` | 14 scenarios — happy path, security drops, warehouse, resolution, address management |
+| `features/step_definitions/deal_update_agent_v2/setup_steps.rb` | Before/After hooks, LLM stub, fixture setup |
+| `features/step_definitions/deal_update_agent_v2/authentication_steps.rb` | Webhook simulation, drop assertions |
+| `features/step_definitions/deal_update_agent_v2/processing_steps.rb` | LLM stubbing, job execution, Note/Task assertions |
+| `features/step_definitions/deal_update_agent_v2/warehouse_steps.rb` | Warehouse preconditions, resolve/discard assertions |
+| `features/step_definitions/deal_update_agent_v2/address_steps.rb` | Address generation, custom address editing assertions |
 
 ---
 
 ## Processing Pipeline
 
 ### Step 1: Inbound Webhook
-The SendGrid webhook POST hits `IncomingEmailsController#sendgrid`. The controller extracts the local part (16-hex token) from the `to` address and checks for a matching `DealIngestAddress` record. If found, it delegates to `DealIngestAuthenticator` and returns `200 OK`. This address-based routing allows the deal update pipeline to share the same email domain as regular incoming emails.
+The SendGrid webhook POST hits `IncomingEmailsController#sendgrid`. The controller extracts the local part from the `to` address and checks for a matching `DealIngestAddress` record. If found, it delegates to `DealIngestAuthenticator` and returns `200 OK`. This address-based routing allows the deal update pipeline to share the same email domain as regular incoming emails.
 
 ### Step 2: Authentication (`DealIngestAuthenticator`)
-1. Look up the `to` address in `deal_ingest_addresses` → get `(deal_id, user_id)`
-2. Not found or revoked → **drop silently** (never reply, FR-4)
-3. Match the `from` email against the address owner's email (case-insensitive)
-4. Mismatch → **drop silently**
-5. Check SPF/DKIM/DMARC from SendGrid payload headers
-6. Fail → **drop silently**
-7. Dedupe on RFC-822 `Message-ID` (unique index on `agent_ingested_emails.message_id`)
-8. Duplicate → **skip**
-9. Create `AgentIngestedEmail` record (status: `pending`)
-10. Enqueue `ProcessDealIngestJob`
+5-step authentication pipeline — each failure drops silently (never reply, FR-4):
+
+1. Look up the `to` address in `deal_ingest_addresses` → get `deal_id`
+2. Not found → **drop silently**
+3. Look up user by `From` email in the deal's entity (`User.find_by(email:, entity_id:)`)
+4. Not found → **drop silently**
+5. Check user has deal access (`AccessRight` for the deal, or `company_admin` role on the entity)
+6. No access → **drop silently**
+7. Check SPF/DKIM/DMARC from SendGrid payload headers
+8. Fail → **drop silently**
+9. Dedupe on RFC-822 `Message-ID` (unique index on `agent_ingested_emails.message_id`)
+10. Create `AgentIngestedEmail` record (status: `pending`), enqueue `ProcessDealIngestJob`
 
 ### Step 3: LLM Parsing (`DealEmailParser`)
 Sends the email body to the LLM with a structured prompt. Returns:
@@ -180,20 +187,28 @@ Wrapped in `ActiveRecord::Base.transaction` with `Chewy.strategy(:atomic)`:
 
 ### Step 6: Reply Email
 - **Success** → confirmation email with what was created
-- **Warehouse** → warehouse notification with reason
+- **Warehouse** → no notification (sender is NOT notified; users check warehouse tab themselves)
 
 ---
 
 ## Address Generation
 
+### One Address Per Deal
+
+The `WithDealIngestAddress` concern is included in `Deal` (not `AccessRight`). Each deal has exactly one ingest address (`has_one :deal_ingest_address`).
+
 ### Two Triggers
 
-1. **`WithDealIngestAddress` concern** (on `AccessRight`) — auto-generates on `after_commit :create`, revokes on `after_destroy_commit`. Only for user-level AccessRights on Deal owners.
+1. **Auto-generation on deal creation** — `after_commit :create` on the deal generates a `DealIngestAddress` with `address = deal.id.to_s`.
 
-2. **Lazy generation** (in `DealsController#show`) — `ensure_deal_ingest_address` creates the address on first deal page visit. Uses `ActiveRecord::Base.connected_to(role: :writing)` to bypass read replica. Covers role-based access (e.g., `company_admin`) where no AccessRight exists.
+2. **Lazy generation on page visit** — `ensure_deal_ingest_address` in `DealsController#show` creates the address if it does not exist (covers deals created before the feature was deployed). Uses `ActiveRecord::Base.connected_to(role: :writing)` to bypass read replica.
 
-### Revocation
-When an AccessRight is destroyed, the address is soft-revoked (`revoked_at` set). If access is later re-granted, the existing row is reactivated (MySQL's unconditional unique index on `[deal_id, user_id]` prevents creating a new row).
+### Custom Addresses
+
+- Only `company_admin` users can edit a deal's address via inline edit UI on the deal page
+- Address is validated for uniqueness and format (alphanumeric, hyphens, underscores, max 100 chars)
+- Authorized via `DealPolicy#update_ingest_address?`
+- No revocation concept — the address is per-deal and is never revoked or soft-deleted
 
 ---
 
@@ -201,10 +216,10 @@ When an AccessRight is destroyed, the address is soft-revoked (`revoked_at` set)
 
 | Rule | Implementation |
 |------|----------------|
-| FR-2: Unknown/revoked address → drop | `DealIngestAuthenticator#authenticate_address` — `for_lookup` scope excludes revoked |
-| FR-3: Sender must match + SPF/DKIM/DMARC | `verify_sender` + `verify_email_auth` in authenticator |
+| FR-2: Unknown address → drop | `DealIngestAuthenticator#authenticate_address` — address → deal lookup, unknown address → drop |
+| FR-3: Sender auth + deal access | From → user lookup in entity, then check deal access (AccessRight or `company_admin` role), then SPF/DKIM/DMARC |
 | FR-4: Failed auth → no reply | Early return with `Result.new(status: :dropped)`, no mailer call |
-| FR-5: Revoking access revokes address | `WithDealIngestAddress#revoke_deal_ingest_address` in same `after_destroy_commit` |
+| FR-5: Only company_admin can edit deal address | `DealPolicy#update_ingest_address?` — enforced in controller and inline edit UI |
 | FR-15: Message-ID dedup | Unique index on `agent_ingested_emails.message_id` |
 
 ---
@@ -225,9 +240,9 @@ When an AccessRight is destroyed, the address is soft-revoked (`revoked_at` set)
 |----------|---------|---------|
 | `DEAL_INGEST_DOMAIN` | Domain for ingest email addresses. Used to compose the `full_address` shown on the deal page and in confirmation emails. **No fallback** — when not set, the feature is completely hidden (no addresses shown, no generation callbacks fire). | None |
 
-**Feature gate behavior:** `DealIngestAddress.domain` returns `nil` when the env var is absent. All callers guard on `DealIngestAddress.domain.present?` / `.blank?` — the deal page and AccessRight callbacks skip agent logic silently. This ensures the feature is invisible on any environment where SendGrid is not configured.
+**Feature gate behavior:** `DealIngestAddress.domain` returns `nil` when the env var is absent. All callers guard on `DealIngestAddress.domain.present?` / `.blank?` — the deal page and deal creation callbacks skip address generation silently. This ensures the feature is invisible on any environment where SendGrid is not configured.
 
-**Routing note:** The inbound webhook does NOT check the domain. It extracts the local part (hex token) from the To field and looks up `DealIngestAddress` directly. This allows the deal update pipeline to share the same email domain as regular incoming emails — no separate subdomain or MX record is needed.
+**Routing note:** The inbound webhook does NOT check the domain. It extracts the local part from the To field and looks up `DealIngestAddress` directly. This allows the deal update pipeline to share the same email domain as regular incoming emails — no separate subdomain or MX record is needed.
 
 | Environment | Value | Effect |
 |-------------|-------|--------|
@@ -252,16 +267,17 @@ The controller routes by address lookup (one indexed DB query per inbound email)
 
 ## Testing
 
-### Cucumber Features (`features/deal/deal_update_agent.feature`)
+### Cucumber Features (`features/deal/deal_update_agent_v2.feature`)
 
-11 scenarios tagged `@deal_update_agent`, organized into four groups:
+14 scenarios tagged `@deal_update_agent`, organized into five groups:
 
 | Group | Scenarios | What's Tested |
 |-------|-----------|---------------|
 | **Happy path** | 2 | Meeting note creation, task creation with due date |
-| **Security drops** | 5 | Unknown address, sender mismatch, SPF/DKIM fail, duplicate Message-ID, revoked address |
+| **Security drops** | 5 | Unknown address, unknown sender, no deal access, SPF/DKIM fail, duplicate Message-ID |
 | **Warehouse** | 2 | Unknown stakeholder → warehouse, unknown intent → warehouse |
 | **Resolution** | 2 | Manual file from warehouse, discard from warehouse |
+| **Address management** | 3 | Auto-generation on deal creation, lazy generation on page visit, custom address editing |
 
 ### Test Setup
 
@@ -273,9 +289,9 @@ The controller routes by address lookup (one indexed DB query per inbound email)
 ### Running
 
 ```bash
-bundle exec cucumber features/deal/deal_update_agent.feature          # all 11 scenarios
-bundle exec cucumber features/deal/deal_update_agent.feature:16       # single scenario by line
-bundle exec cucumber --tags @deal_update_agent                        # by tag
+bundle exec cucumber features/deal/deal_update_agent_v2.feature          # all 14 scenarios
+bundle exec cucumber features/deal/deal_update_agent_v2.feature:16       # single scenario by line
+bundle exec cucumber --tags @deal_update_agent                           # by tag
 ```
 
 ---
@@ -319,9 +335,9 @@ bundle exec cucumber --tags @deal_update_agent                        # by tag
 - New mailer template: `DealIngestMailer#rate_limited`
 
 ### Leak Alert (FR-3)
-- When `verify_sender` fails (From email doesn't match address owner), alert the address owner
+- When authentication fails (sender has no deal access), alert the deal's admin users
 - New mailer template: `DealIngestMailer#leak_alert`
-- Sent to the address owner (not the sender) — "Someone tried to use your deal update address from a different email"
+- Sent to deal admins (not the sender) — "Someone tried to use the deal update address from an unauthorized email"
 - Email is still dropped per existing FR-4 rules
 
 ### Undo — 30-day (FR-31-32)
@@ -352,7 +368,7 @@ bundle exec cucumber --tags @deal_update_agent                        # by tag
 
 ### VCF Contact Card (FR-7)
 - New controller action on `DealsController`: `download_vcf`
-- Generates a `.vcf` file with display name "[Deal Name] — Deal Board" and the user's ingest address
+- Generates a `.vcf` file with display name "[Deal Name] — Deal Board" and the deal's ingest address
 - Download button on deal page next to the copy button
 - Makes the address autocomplete on phones — key adoption driver
 
@@ -376,7 +392,7 @@ bundle exec cucumber --tags @deal_update_agent                        # by tag
 ### Admin UI
 - View all ingest addresses for an entity
 - Usage stats: emails received, filed, warehoused, dropped per deal
-- Address rotation: revoke and regenerate addresses
+- Address reset: change a deal's custom address back to the default (deal ID)
 - Dropped-mail log for admin review
 
 ### Merge Tool
@@ -391,7 +407,7 @@ bundle exec cucumber --tags @deal_update_agent                        # by tag
 - @name assignee parsing (FR-13) — assign to another deal team member
 - Sender timezone date resolution (FR-12) — resolve relative dates in sender's TZ
 - mailto: button on deal page (FR-7) — "Email this deal" producing mailto link
-- Address rotation from admin UI (FR-8)
+- Address reset from admin UI (FR-8)
 
 ---
 
