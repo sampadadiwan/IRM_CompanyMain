@@ -9,12 +9,12 @@
 #   - Widen address column: was 16-char hex, now deal ID or custom string
 class ReworkDealIngestAddressesOnePerDeal < ActiveRecord::Migration[8.1]
   def up
-    # Add the new unique index on deal_id BEFORE dropping the compound
-    # index — MySQL's FK on deal_id needs at least one index covering
-    # that column, so the new index must exist first
+    # Order matters for MySQL FK constraints:
+    #   1. Drop the standalone deal_id index (compound index still covers FK)
+    #   2. Add unique deal_id index (now the FK has a new covering index)
+    #   3. Drop the compound index (no longer needed)
+    remove_index :deal_ingest_addresses, :deal_id
     add_index :deal_ingest_addresses, :deal_id, unique: true
-
-    # Now safe to remove the old compound index
     remove_index :deal_ingest_addresses, %i[deal_id user_id]
 
     # Remove the standalone user_id index (from t.references)
@@ -37,5 +37,6 @@ class ReworkDealIngestAddressesOnePerDeal < ActiveRecord::Migration[8.1]
     add_column :deal_ingest_addresses, :revoked_at, :datetime
     add_column :deal_ingest_addresses, :user_id, :bigint, null: false
     add_index :deal_ingest_addresses, %i[deal_id user_id], unique: true
+    add_index :deal_ingest_addresses, :deal_id
   end
 end
