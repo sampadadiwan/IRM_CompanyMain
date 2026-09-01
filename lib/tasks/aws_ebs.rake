@@ -9,6 +9,9 @@
 #   EXECUTE=1 bundle exec rake "aws:ebs_cleanup[staging.in]"        # keep 3 AMIs/name, sweep orphans >7d
 #   EXECUTE=1 KEEP=0 DAYS=0 REGIONS=us-east-1 bundle exec rake "aws:ebs_cleanup[staging.in]"
 #                                                                   # decommission sweep (staging.us is dead)
+#   EXECUTE=1 bundle exec rake "aws:ebs_purge_superseded[production.us]"
+#                                                                   # delete unencrypted AMIs/snaps once a newer
+#                                                                   # encrypted equivalent exists (Retain honored)
 #   bundle exec rake "aws:ebs_encrypt_plan[production.in]"          # read-only: which machines would restart?
 #   EXECUTE=1 bundle exec rake "aws:ebs_encrypt_instance[AppServer,staging.in]"  # STOPS the instance!
 #   bundle exec rake "aws:ebs_delete_replaced[staging.in]"          # DRY RUN
@@ -191,6 +194,38 @@ module AwsEbs
     end
   end
 
+  # Group AMIs the same way cleanup_amis does — by Name tag (both the bake and
+  # the cross-region copy tag Name). AMIs without a Name tag fall back to
+  # their AMI name stripped of timestamp/copy noise so old hand-made images
+  # still group ("DB_Redis_ES-20250817..." → "DB_Redis_ES").
+  def group_images(images)
+    images.group_by do |img|
+      name_of(img) || img.name.to_s.delete_prefix('Copy-').sub(/[-_]?20\d{6}.*\z/, "").strip
+    end
+  end
+
+  # The one deletion path for an AMI: deregister it AND delete its backing
+  # snapshots (deregistering alone strands them — the historical pile-up).
+  # Honors Retain=true unconditionally. Appends deleted snapshot ids to
+  # doomed_snapshot_ids so later sweeps in the same run can skip them.
+  def expire_image(client, img, doomed_snapshot_ids)
+    if retain?(img)
+      puts "    ⏭  #{img.image_id} tagged Retain=true — skipped"
+      return
+    end
+
+    snap_ids = img.block_device_mappings.filter_map { |m| m.ebs&.snapshot_id }
+    act "deregister #{img.image_id} (#{img.name}, #{img.creation_date})" do
+      client.deregister_image(image_id: img.image_id)
+    end
+    snap_ids.each do |sid|
+      doomed_snapshot_ids << sid
+      act "delete backing snapshot #{sid}" do
+        client.delete_snapshot(snapshot_id: sid)
+      end
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # Retention cleanup: old AMIs + their snapshots + orphaned snapshots
   # ---------------------------------------------------------------------------
@@ -198,14 +233,7 @@ module AwsEbs
     client = ec2(region)
     # Pageable response: enumerate every page, not just the first.
     images = client.describe_images(owners: ["self"]).flat_map(&:images)
-
-    # Group AMIs the same way cleanup_amis does — by Name tag (both the bake and
-    # the cross-region copy tag Name). AMIs without a Name tag fall back to
-    # their AMI name stripped of timestamp/copy noise so old hand-made images
-    # still group ("DB_Redis_ES-20250817..." → "DB_Redis_ES").
-    grouped = images.group_by do |img|
-      name_of(img) || img.name.to_s.delete_prefix('Copy-').sub(/[-_]?20\d{6}.*\z/, "").strip
-    end
+    grouped = group_images(images)
 
     doomed_snapshot_ids = []
     grouped.sort.each do |label, imgs|
@@ -232,24 +260,7 @@ module AwsEbs
       survivors = sorted - doomed
       puts "  AMI group '#{label}': #{sorted.size} total, keeping #{survivors.size}, expiring #{doomed.size}"
 
-      doomed.each do |img|
-        if retain?(img)
-          puts "    ⏭  #{img.image_id} tagged Retain=true — skipped"
-          next
-        end
-        snap_ids = img.block_device_mappings.filter_map { |m| m.ebs&.snapshot_id }
-        act "deregister #{img.image_id} (#{img.name}, #{img.creation_date})" do
-          client.deregister_image(image_id: img.image_id)
-        end
-        # The snapshots behind a deregistered AMI serve nothing — deleting them
-        # here is the fix for the historical pile-up (cleanup_amis left them).
-        snap_ids.each do |sid|
-          doomed_snapshot_ids << sid
-          act "delete backing snapshot #{sid}" do
-            client.delete_snapshot(snapshot_id: sid)
-          end
-        end
-      end
+      doomed.each { |img| expire_image(client, img, doomed_snapshot_ids) }
     end
 
     # Orphan sweep: self-owned snapshots referenced by NO currently registered
@@ -273,6 +284,74 @@ module AwsEbs
     puts "  orphaned snapshots older than #{orphan_days}d: #{orphans.size} (#{orphans.sum(&:volume_size)} GiB)"
     orphans.sort_by(&:start_time).each do |s|
       act "delete orphan #{s.snapshot_id} (#{s.volume_size} GiB, #{s.start_time.strftime('%Y-%m-%d')}, #{name_of(s) || s.description[0, 60]})" do
+        client.delete_snapshot(snapshot_id: s.snapshot_id)
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Purge unencrypted AMIs/snapshots superseded by a newer ENCRYPTED equivalent
+  # ---------------------------------------------------------------------------
+  # Faster than waiting for keep-3 rotation, but strictly safer than KEEP=1:
+  # an unencrypted AMI is only expired when the SAME Name group already holds a
+  # newer, completed, fully-encrypted AMI — so every restore point it provided
+  # is covered by an encrypted one. Groups with no encrypted AMI yet are left
+  # entirely alone (bake one first). Retain=true is always honored.
+  def purge_superseded_region(region)
+    client = ec2(region)
+    images = client.describe_images(owners: ["self"]).flat_map(&:images)
+    doomed_snapshot_ids = []
+
+    group_images(images).sort.each do |label, imgs|
+      next if label.empty? # unnamed one-offs: not this task's to judge
+
+      available = imgs.select { |i| i.state == "available" }
+      # Ephemeral mappings have no .ebs — they can't be unencrypted EBS.
+      encrypted, unencrypted = available.partition do |i|
+        i.block_device_mappings.all? { |m| m.ebs.nil? || m.ebs.encrypted }
+      end
+      newest_encrypted = encrypted.max_by(&:creation_date)
+
+      if newest_encrypted.nil?
+        puts "  '#{label}': no encrypted AMI yet — keeping all #{unencrypted.size} unencrypted (bake one first)" if unencrypted.any?
+        next
+      end
+
+      # Strictly OLDER than the encrypted replacement: an unencrypted AMI baked
+      # after it (shouldn't happen once encryption-by-default is on, but…)
+      # represents newer state and must not be deleted.
+      doomed = unencrypted.select { |i| i.creation_date < newest_encrypted.creation_date }
+      skipped = unencrypted - doomed
+      puts "  '#{label}': encrypted #{newest_encrypted.image_id} (#{newest_encrypted.creation_date}) supersedes " \
+           "#{doomed.size} unencrypted AMI(s)#{"; #{skipped.size} newer-than-it kept" if skipped.any?}"
+      doomed.each { |img| expire_image(client, img, doomed_snapshot_ids) }
+    end
+
+    # Standalone snapshots: an unencrypted snapshot is superseded when a newer
+    # ENCRYPTED snapshot of the same source volume exists. Never touches
+    # AMI-backing snapshots (their AMI decides above), Retain=true, or
+    # DeleteAfterVerify recovery snapshots (ebs_delete_replaced's job).
+    already_deleted = doomed_snapshot_ids.to_set
+    referenced = images.flat_map { |i| i.block_device_mappings.filter_map { |m| m.ebs&.snapshot_id } }.to_set
+    snaps = client.describe_snapshots(owner_ids: ["self"]).flat_map(&:snapshots)
+    # COPIED snapshots all report the sentinel source volume "vol-ffffffff" —
+    # matching on it would let unrelated copies "supersede" each other, so only
+    # real volume ids participate in the same-volume comparison.
+    fake_volume = "vol-ffffffff"
+    newest_encrypted_by_volume = snaps.select(&:encrypted).reject { |s| s.volume_id == fake_volume }
+                                      .group_by(&:volume_id)
+                                      .transform_values { |list| list.map(&:start_time).max }
+    superseded = snaps.reject(&:encrypted).reject do |s|
+      s.volume_id == fake_volume ||
+        referenced.include?(s.snapshot_id) ||
+        already_deleted.include?(s.snapshot_id) || # deleted with their AMI above
+        retain?(s) ||
+        delete_after_verify?(s)
+    end.select { |s| newest_encrypted_by_volume[s.volume_id]&.> s.start_time }
+
+    puts "  standalone unencrypted snapshots with a newer encrypted copy of the same volume: #{superseded.size}"
+    superseded.sort_by(&:start_time).each do |s|
+      act "delete superseded #{s.snapshot_id} (#{s.volume_size} GiB, #{s.start_time.strftime('%Y-%m-%d')}, #{name_of(s) || s.description[0, 60]})" do
         client.delete_snapshot(snapshot_id: s.snapshot_id)
       end
     end
@@ -609,6 +688,16 @@ namespace :aws do
     AwsEbs.regions.each do |region|
       puts "\n-- #{region} --"
       AwsEbs.cleanup_region(region)
+    end
+    puts(AwsEbs.execute? ? "\n== done ==" : "\n== dry run complete — re-run with EXECUTE=1 to apply ==")
+  end
+
+  desc "Delete unencrypted AMIs/snapshots superseded by a newer encrypted equivalent (ENV: EXECUTE, REGIONS)"
+  task :ebs_purge_superseded, [:env_name] do |_t, args|
+    ebs_task_setup("aws:ebs_purge_superseded", args)
+    AwsEbs.regions.each do |region|
+      puts "\n-- #{region} --"
+      AwsEbs.purge_superseded_region(region)
     end
     puts(AwsEbs.execute? ? "\n== done ==" : "\n== dry run complete — re-run with EXECUTE=1 to apply ==")
   end

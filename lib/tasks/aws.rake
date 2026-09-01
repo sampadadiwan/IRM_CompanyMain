@@ -558,6 +558,25 @@ namespace :aws do
     cleanup_amis(args[:instance_name], args[:destination_region])
   end
 
+  desc "Create+copy AMIs for every weekly-baked instance (ENV: INSTANCES=comma,separated to override)"
+  task :create_all_amis, [:env_name] do |_t, args|
+    names = ENV["INSTANCES"].presence&.split(",")&.map(&:strip) || AwsUtils::BAKED_INSTANCE_NAMES
+    failures = []
+    names.each do |name|
+      puts "\n=== baking #{name} ==="
+      # reenable so the same task can run once per instance name; each
+      # invocation does the full create → cross-region copy → cleanup cycle.
+      Rake::Task["aws:create_and_copy_ami"].reenable
+      Rake::Task["aws:create_and_copy_ami"].invoke(name, nil, args[:env_name])
+    rescue StandardError => e
+      # One failed bake (e.g. instance not running) must not abandon the rest —
+      # collect and fail loudly at the end instead.
+      puts "❌ bake failed for #{name}: #{e.class}: #{e.message}"
+      failures << name
+    end
+    abort "\n❌ bakes failed for: #{failures.join(', ')} — re-run with INSTANCES=#{failures.join(',')}" if failures.any?
+    puts "\n✅ all #{names.size} bakes complete"
+  end
 
   desc "Delete old AMIs with the same name pattern"
   task :delete_old_amis, [:name_tag, :region, :env_name] do |t, args|

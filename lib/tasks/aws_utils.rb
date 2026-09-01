@@ -152,6 +152,11 @@ module AwsUtils
   # silently undo the other's retention policy every week.
   AMI_KEEP_DEFAULT = 3
 
+  # The instance names the weekly cron bakes AMIs for — keep in sync with the
+  # aws:create_and_copy_ami entries in config/schedule.rb (DB-Replica and
+  # DbCheckInstance have never been part of the weekly bake).
+  BAKED_INSTANCE_NAMES = %w[AppServer DB-Redis-ES Observability].freeze
+
   def cleanup_amis(name_tag, region, number_to_keep=AMI_KEEP_DEFAULT)
     name_tag = name_tag.strip
 
