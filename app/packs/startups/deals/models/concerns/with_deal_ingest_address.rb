@@ -1,59 +1,49 @@
 # frozen_string_literal: true
 
-# Automatically generates and revokes DealIngestAddress records when
-# deal access rights are created or destroyed.
+# Generates a DealIngestAddress when a deal is created.
 #
-# Included in AccessRight. Hooks into the existing after_commit and
-# after_destroy_commit lifecycle to keep ingest addresses in sync
-# with deal access — ensuring security rule FR-5 (revoking deal access
-# revokes the address).
+# Included in Deal. Creates one address per deal using the deal's ID
+# as the default local-part. Skipped when DEAL_INGEST_DOMAIN is not
+# configured (feature is disabled on that environment).
 #
-# Only fires for user-level access rights on Deal owners. Category-level
-# and investor-level access rights are ignored (they don't map to a
-# single user who can send emails).
+# No revocation — the address lives as long as the deal. Auth is
+# checked at send time (sender must have deal access).
 #
 # @see DealIngestAddress for the address model
+# @see DealIngestAuthenticator for the send-time auth check
 module WithDealIngestAddress
   extend ActiveSupport::Concern
 
   included do
-    after_commit :generate_deal_ingest_address, on: %i[create]
-    after_destroy_commit :revoke_deal_ingest_address
+    has_one :deal_ingest_address, dependent: :destroy
+    after_commit :generate_deal_ingest_address, on: :create
+  end
+
+  # Lazy-generate the address if it doesn't exist yet.
+  # Called from DealsController#show for existing deals that
+  # predate the feature. Uses the writing connection because
+  # show requests read from the replica by default.
+  #
+  # @return [DealIngestAddress, nil] nil when feature is disabled
+  def ensure_deal_ingest_address
+    return nil if DealIngestAddress.domain.blank?
+
+    deal_ingest_address || ActiveRecord::Base.connected_to(role: :writing) do
+      create_deal_ingest_address
+    end
+  rescue ActiveRecord::RecordNotUnique
+    reload_deal_ingest_address
   end
 
   private
 
-  # Generate a DealIngestAddress when a user is granted access to a deal.
-  # If a revoked address exists (from a prior access grant), reactivate it
-  # rather than creating a new one — MySQL's unconditional unique index on
-  # [deal_id, user_id] prevents duplicate rows.
-  # Skipped when DEAL_INGEST_DOMAIN is not configured — no addresses are
-  # generated on environments where the feature is disabled.
+  # Generate address on deal creation. Skipped when the feature
+  # is disabled (no DEAL_INGEST_DOMAIN configured).
   def generate_deal_ingest_address
-    return unless deal_access_right_for_user?
     return if DealIngestAddress.domain.blank?
 
-    addr = DealIngestAddress.find_or_initialize_by(deal_id: owner_id, user_id: user_id)
-    if addr.persisted? && addr.revoked?
-      addr.update!(revoked_at: nil)
-    else
-      addr.save!
-    end
-  end
-
-  # Revoke the DealIngestAddress when a user's deal access is removed.
-  # Sets revoked_at rather than deleting — preserves audit trail.
-  def revoke_deal_ingest_address
-    return unless deal_access_right_for_user?
-
-    DealIngestAddress.active.where(deal_id: owner_id, user_id: user_id).find_each(&:revoke!)
-  end
-
-  # Only act on user-level access rights for Deal owners.
-  # Category-level and investor-level rights don't map to a single user.
-  #
-  # @return [Boolean]
-  def deal_access_right_for_user?
-    owner_type == "Deal" && user_id.present?
+    create_deal_ingest_address unless deal_ingest_address
+  rescue ActiveRecord::RecordNotUnique
+    # Another thread/process beat us — safe to ignore
   end
 end

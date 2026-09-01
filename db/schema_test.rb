@@ -1250,16 +1250,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   end
 
   create_table "deal_ingest_addresses", force: :cascade do |t|
-    t.string "address", limit: 16, null: false
+    t.string "address", limit: 100, null: false
     t.datetime "created_at", null: false
     t.bigint "deal_id", null: false
-    t.datetime "revoked_at"
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["address"], name: "index_deal_ingest_addresses_on_address", unique: true
-    t.index ["deal_id", "user_id"], name: "index_deal_ingest_addresses_on_deal_id_and_user_id", unique: true
-    t.index ["deal_id"], name: "index_deal_ingest_addresses_on_deal_id"
-    t.index ["user_id"], name: "index_deal_ingest_addresses_on_user_id"
+    t.index ["deal_id"], name: "index_deal_ingest_addresses_on_deal_id", unique: true
   end
 
   create_table "deal_investors", force: :cascade do |t|
@@ -4368,7 +4364,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   add_foreign_key "deal_docs", "deals"
   add_foreign_key "deal_docs", "users"
   add_foreign_key "deal_ingest_addresses", "deals"
-  add_foreign_key "deal_ingest_addresses", "users"
   add_foreign_key "deal_investors", "deal_activities"
   add_foreign_key "deal_investors", "deals"
   add_foreign_key "deal_investors", "entities"

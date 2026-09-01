@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-# Step definitions for Deal Update Agent authentication scenarios.
-# Tests the DealIngestAuthenticator security boundary — address lookup,
-# sender verification, SPF/DKIM/DMARC, deduplication, and revocation.
+# Step definitions for Deal Update Agent v2 authentication scenarios.
+# Tests the access-based auth model: address → deal, From → user,
+# check deal access, SPF/DKIM/DMARC, deduplication.
 
 # --- Webhook Invocation ---
 
-When("a SendGrid webhook arrives with:") do |table|
+When("a v2 SendGrid webhook arrives with:") do |table|
   row = table.rows_hash
 
-  # Resolve dynamic values.
+  # Resolve dynamic To address.
   to_address = case row["to"]
                when "the deal ingest address"
                  @ingest_address.full_address
@@ -17,20 +17,25 @@ When("a SendGrid webhook arrives with:") do |table|
                  row["to"]
                end
 
+  # Resolve dynamic From address — supports multiple users.
   from_address = case row["from"]
                  when "the user's email"
                    @user.email
+                 when "the second user's email"
+                   @users.values.last.email
+                 when "the no-access user's email"
+                   @users["no_access"].email
                  else
                    row["from"]
                  end
 
-  # Build headers with Message-ID if provided.
+  # Build headers with Message-ID.
   headers = row["headers"] || ""
-  if row["message_id"]
-    headers += "\nMessage-ID: <#{row['message_id']}>"
-  else
-    headers += "\nMessage-ID: <#{SecureRandom.uuid}@mail.test>"
-  end
+  headers += if row["message_id"]
+               "\nMessage-ID: <#{row['message_id']}>"
+             else
+               "\nMessage-ID: <#{SecureRandom.uuid}@mail.test>"
+             end
 
   @webhook_params = ActionController::Parameters.new(
     to: to_address,
@@ -47,7 +52,7 @@ end
 
 # --- Preconditions ---
 
-Given("an AgentIngestedEmail already exists with message_id {string}") do |message_id|
+Given("a v2 AgentIngestedEmail already exists with message_id {string}") do |message_id|
   AgentIngestedEmail.create!(
     deal: @deal,
     sender_user: @user,
@@ -58,48 +63,41 @@ Given("an AgentIngestedEmail already exists with message_id {string}") do |messa
   )
 end
 
-Given("the deal ingest address has been revoked") do
-  @ingest_address.revoke!
-end
-
 # --- Assertions: Records Created ---
 
-Then("an AgentIngestedEmail should be created with status {string}") do |status|
+Then("a v2 AgentIngestedEmail should be created with status {string}") do |status|
   @ingested_email = AgentIngestedEmail.last
   expect(@ingested_email).not_to be_nil, "Expected an AgentIngestedEmail to exist"
   expect(@ingested_email.status).to eq(status)
   expect(@ingested_email.deal).to eq(@deal)
-  expect(@ingested_email.sender_user).to eq(@user)
 end
 
-Then("no AgentIngestedEmail should be created") do
-  # Exclude any pre-existing records created in Given steps.
+Then("no v2 AgentIngestedEmail should be created") do
   new_emails = AgentIngestedEmail.where(status: "pending")
   expect(new_emails.count).to eq(0),
-    "Expected no new AgentIngestedEmail but found #{new_emails.count}"
+                              "Expected no new AgentIngestedEmail but found #{new_emails.count}"
 end
 
-Then("no new AgentIngestedEmail should be created") do
-  # Only one should exist (the one from the Given step).
+Then("no new v2 AgentIngestedEmail should be created") do
   expect(AgentIngestedEmail.count).to eq(1),
-    "Expected exactly 1 AgentIngestedEmail (the pre-existing one) but found #{AgentIngestedEmail.count}"
+                                      "Expected exactly 1 AgentIngestedEmail (the pre-existing one) but found #{AgentIngestedEmail.count}"
 end
 
 # --- Assertions: Jobs ---
 
-Then("a ProcessDealIngestJob should be enqueued") do
+Then("a v2 ProcessDealIngestJob should be enqueued") do
   jobs = ActiveJob::Base.queue_adapter.enqueued_jobs.select { |j| j[:job] == ProcessDealIngestJob }
   expect(jobs).not_to be_empty, "Expected ProcessDealIngestJob to be enqueued but none found"
 end
 
-Then("no job should be enqueued") do
+Then("no v2 job should be enqueued") do
   jobs = ActiveJob::Base.queue_adapter.enqueued_jobs.select { |j| j[:job] == ProcessDealIngestJob }
   expect(jobs).to be_empty, "Expected no ProcessDealIngestJob but found #{jobs.count}"
 end
 
 # --- Assertions: Emails ---
 
-Then("no email should be sent") do
+Then("no v2 email should be sent") do
   expect(ActionMailer::Base.deliveries).to be_empty,
-    "Expected no emails but found #{ActionMailer::Base.deliveries.count}"
+                                           "Expected no emails but found #{ActionMailer::Base.deliveries.count}: #{ActionMailer::Base.deliveries.map(&:subject)}"
 end

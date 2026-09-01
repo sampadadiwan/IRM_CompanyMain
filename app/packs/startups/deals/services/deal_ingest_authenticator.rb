@@ -1,20 +1,20 @@
 # frozen_string_literal: true
 
-# Authenticates inbound emails arriving at @updates.caphive.com addresses
-# and creates AgentIngestedEmail records for valid ones.
+# Authenticates inbound emails for the Deal Update Agent pipeline.
 #
-# This is the security boundary of the Deal Update Agent pipeline.
-# Every check that fails results in a silent drop — no reply, no error,
-# no indication to the sender that the address exists (FR-4).
+# This is the security boundary. Every failed check results in a silent
+# drop — no reply, no error, no indication the address exists.
 #
 # Authentication checks (in order):
-#   1. Address lookup — is this a valid, non-revoked DealIngestAddress?
-#   2. Sender match — does the From email match the address owner's email?
-#   3. SPF/DKIM/DMARC — do the email auth headers pass?
-#   4. Dedupe — has this Message-ID already been processed?
+#   1. Address lookup — does this local-part match a DealIngestAddress? → deal
+#   2. Sender lookup — does the From email match a User in the entity? → user
+#   3. Access check — does that user have access to the deal?
+#   4. SPF/DKIM/DMARC — do the email auth headers pass?
+#   5. Dedupe — has this Message-ID already been processed?
 #
 # @see IncomingEmailsController#sendgrid for the webhook entry point
 # @see ProcessDealIngestJob for the async processing that follows
+
 class DealIngestAuthenticator
   # Result of the authentication attempt.
   #
@@ -39,14 +39,20 @@ class DealIngestAuthenticator
   end
 
   # Run all authentication checks in sequence.
-  # On first failure, return immediately — do not continue checking.
+  # Fails fast — on first failure, returns immediately without
+  # continuing to subsequent checks.
   #
-  # @return [Result]
+  # Flow: address → deal, From → user, access check, email auth, dedupe.
+  #
+  # @return [Result] success if all checks pass; failure with reason otherwise
   def authenticate
     result = lookup_address
     return result unless result.success
 
-    result = verify_sender
+    result = lookup_sender
+    return result unless result.success
+
+    result = verify_deal_access
     return result unless result.success
 
     result = verify_email_auth
@@ -60,8 +66,8 @@ class DealIngestAuthenticator
 
   private
 
-  # Step 1: Look up the 16-hex address in deal_ingest_addresses.
-  # Only active (non-revoked) addresses are considered.
+  # Step 1: Look up the address to identify the deal.
+  # Unknown address = drop silently.
   #
   # @return [Result]
   def lookup_address
@@ -74,28 +80,49 @@ class DealIngestAuthenticator
     end
 
     @deal = @ingest_address.deal
-    @user = @ingest_address.user
     Result.new(success: true)
   end
 
-  # Step 2: Verify the From email matches the address owner's email.
-  # Extracts the email from SendGrid's From field which may include
-  # a display name (e.g. "John Doe <john@example.com>").
+  # Step 2: Look up the sender by From email within the deal's entity.
+  # Unknown sender = drop silently.
   #
   # @return [Result]
-  def verify_sender
+  def lookup_sender
     sender_email = extract_email(@from)
-    user_email = @user.email&.downcase
 
-    if sender_email.blank? || sender_email != user_email
-      Rails.logger.debug { "DealIngestAuthenticator: sender mismatch — from=#{sender_email}, expected=#{user_email}" }
-      return Result.new(success: false, reason: "sender_mismatch")
+    if sender_email.blank?
+      Rails.logger.debug { "DealIngestAuthenticator: blank sender email" }
+      return Result.new(success: false, reason: "no_sender")
+    end
+
+    @user = User.find_by(email: sender_email, entity_id: @deal.entity_id)
+
+    if @user.nil?
+      Rails.logger.debug { "DealIngestAuthenticator: unknown sender #{sender_email} for entity ##{@deal.entity_id}" }
+      return Result.new(success: false, reason: "unknown_sender")
     end
 
     Result.new(success: true)
   end
 
-  # Step 3: Check SPF/DKIM/DMARC results from the email headers.
+  # Step 3: Check if the sender has access to this deal.
+  # Access via AccessRight on the deal, or a company_admin role on the entity.
+  # No access = drop silently.
+  #
+  # @return [Result]
+  def verify_deal_access
+    has_access = AccessRight.exists?(owner: @deal, user: @user) ||
+                 @user.has_role?(:company_admin, @deal.entity)
+
+    unless has_access
+      Rails.logger.debug { "DealIngestAuthenticator: user ##{@user.id} has no access to deal ##{@deal.id}" }
+      return Result.new(success: false, reason: "no_deal_access")
+    end
+
+    Result.new(success: true)
+  end
+
+  # Step 4: Check SPF/DKIM/DMARC results from the email headers.
   # SendGrid includes these in the raw headers string as
   # Received-SPF and Authentication-Results headers.
   #
@@ -118,7 +145,7 @@ class DealIngestAuthenticator
     Result.new(success: true)
   end
 
-  # Step 4: Dedupe on RFC-822 Message-ID.
+  # Step 5: Dedupe on RFC-822 Message-ID.
   # Prevents double-posting when SendGrid redelivers (FR-15).
   #
   # @return [Result]
@@ -152,9 +179,9 @@ class DealIngestAuthenticator
     Result.new(success: true)
   end
 
-  # Extract the local part (16-hex address) from the To field.
-  # Handles formats like "d7f3a91c2b8e4406@updates.caphive.com"
-  # and "Some Name <d7f3a91c2b8e4406@updates.caphive.com>".
+  # Extract the local part from the To field.
+  # Handles formats like "42@dev.caphive.app"
+  # and "Some Name <series-b-2026@dev.caphive.app>".
   #
   # @return [String, nil]
   def extract_local_part

@@ -69,6 +69,8 @@ resources :deals do
   patch :agent_settings, action: :update_agent_settings, on: :member
   post :run_now, on: :member
   get :weekly_summary, on: :member
+  patch :update_ingest_address, on: :member
+
   # Warehouse items — emails the Deal Update Agent couldn't auto-file.
   # Nested under deals because items are always deal-scoped.
   # @see WarehouseItemsController

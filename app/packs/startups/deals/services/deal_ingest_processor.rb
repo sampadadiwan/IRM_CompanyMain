@@ -137,10 +137,11 @@ class DealIngestProcessor
     )
   end
 
-  # Step 3b: No confident match — send to warehouse for manual review.
+  # Step 3b: Low-confidence or unknown intent — park in the warehouse
+  # for manual review. No notification email sent (decided in Aug 2026 call).
   #
   # @param parsed [Hash] LLM parse result
-  # @param match_result [DealStakeholderMatcher::Result, nil] match attempt (nil if intent was unknown)
+  # @param match_result [DealStakeholderMatcher::Result, nil] nil for unknown intent
   # @return [void]
   def warehouse!(parsed, match_result = nil)
     candidate_ids = match_result&.candidates&.map { |c| c[:deal_investor].id } || []
@@ -153,8 +154,6 @@ class DealIngestProcessor
     )
 
     @email.mark_warehoused!
-
-    send_warehouse_reply!
   end
 
   # Send a confirmation email to the sender with what was created.
@@ -174,18 +173,6 @@ class DealIngestProcessor
     ).confirmation.deliver_later
   end
 
-  # Send a warehouse notification email to the sender.
-  #
-  # @return [void]
-  def send_warehouse_reply!
-    DealIngestMailer.with(
-      entity_id: @deal.entity_id,
-      user_id: @user.id,
-      deal: @deal,
-      reason: warehouse_reason
-    ).warehoused.deliver_later
-  end
-
   # Parse a date string safely, returning nil for invalid dates.
   #
   # @param date_string [String, nil] ISO 8601 date string
@@ -196,19 +183,5 @@ class DealIngestProcessor
     Date.parse(date_string)
   rescue Date::Error
     nil
-  end
-
-  # Human-readable reason why the email was warehoused.
-  #
-  # @return [String]
-  def warehouse_reason
-    parsed = @email.parse_json || {}
-    if parsed["intent"] == "unknown"
-      "Could not determine whether this is a meeting note or a task"
-    elsif parsed["stakeholder_string"].blank?
-      "No stakeholder name was found in the email"
-    else
-      "Could not confidently match \"#{parsed['stakeholder_string']}\" to a stakeholder on this deal"
-    end
   end
 end

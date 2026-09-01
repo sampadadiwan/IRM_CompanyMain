@@ -1,26 +1,29 @@
 # frozen_string_literal: true
 
-# Per-(deal, user) unguessable email address for the Deal Update Agent.
+# One-per-deal email address for the Deal Update Agent.
 #
-# The address is the credential — possession proves both identity and deal
-# access. Generated automatically when a deal is created or a user is granted
-# access. Revoked (soft-delete via revoked_at) when access is removed.
+# The address identifies the deal; the sender's From email identifies the
+# user. Default address is the deal ID (e.g. "42@dev.caphive.app"), but
+# users can set a custom local-part (e.g. "fund-ii-2026@dev.caphive.app").
+# Global uniqueness is enforced at both model and DB level.
 #
 # @see DealIngestProcessor for the inbound processing pipeline
 # @see ProcessDealIngestJob for the async processing job
 class DealIngestAddress < ApplicationRecord
   belongs_to :deal
-  belongs_to :user
 
   # --- Scopes ---
 
-  scope :active, -> { where(revoked_at: nil) }
-  scope :for_lookup, ->(addr) { active.where(address: addr) }
+  scope :for_lookup, ->(addr) { where(address: addr) }
 
   # --- Validations ---
 
-  validates :address, presence: true, uniqueness: true, length: { is: 16 }
-  validates :deal_id, uniqueness: { scope: :user_id, message: "already has an address for this user" }
+  validates :address, presence: true,
+                      uniqueness: { case_sensitive: false, message: "is already in use — try another" },
+                      length: { maximum: 100 },
+                      format: { with: /\A[a-z0-9][a-z0-9._-]*\z/,
+                                message: "must start with a letter or number and contain only lowercase letters, numbers, dots, hyphens, or underscores" }
+  validates :deal_id, uniqueness: { message: "already has an ingest address" }
 
   # --- Callbacks ---
 
@@ -30,24 +33,9 @@ class DealIngestAddress < ApplicationRecord
 
   # Full email address including the domain.
   #
-  # @return [String] e.g. "d7f3a91c2b8e4406@updates.caphive.com"
+  # @return [String] e.g. "42@dev.caphive.app"
   def full_address
     "#{address}@#{self.class.domain}"
-  end
-
-  # Soft-revoke this address. Revoked addresses are invisible to the
-  # inbound pipeline but preserved for audit trail.
-  #
-  # @return [Boolean] save result
-  def revoke!
-    update!(revoked_at: Time.current)
-  end
-
-  # Whether this address has been revoked.
-  #
-  # @return [Boolean]
-  def revoked?
-    revoked_at.present?
   end
 
   # --- Class Methods ---
@@ -56,16 +44,16 @@ class DealIngestAddress < ApplicationRecord
   # Returns nil when not configured — callers use this to gate the
   # feature: no domain = address UI hidden, no addresses generated.
   #
-  # @return [String, nil] e.g. "updates.altconnects.com", or nil if not configured
+  # @return [String, nil] e.g. "dev.caphive.app", or nil if not configured
   def self.domain
     ENV.fetch("DEAL_INGEST_DOMAIN", nil)
   end
 
   private
 
-  # Generates a cryptographically random 16-hex-char address.
-  # 8 bytes = 2^64 possibilities — unguessable by brute force.
+  # Default address is the deal's ID — shortest, always unique, readable.
+  # Only sets on create when no custom address was provided.
   def generate_address
-    self.address = SecureRandom.hex(8) if address.blank?
+    self.address = deal&.id&.to_s if address.blank?
   end
 end
