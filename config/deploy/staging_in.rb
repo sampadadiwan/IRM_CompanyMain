@@ -10,8 +10,8 @@
 # Both lines deliberately carry the SAME IP while live staging is a single
 # box: Capistrano merges duplicate hosts, so LB=true degrades gracefully.
 # A DR rewrite (replace_ip_addresses) fills the two fresh IPs in file order.
-server "13.233.55.8", user: "ubuntu", roles: %w[app web] if ENV["LB"]
-server "13.233.55.8", user: "ubuntu", roles: %w[primary app web db]
+server "52.66.163.132", user: "ubuntu", roles: %w[app web] if ENV["LB"]
+server "52.66.163.132", user: "ubuntu", roles: %w[primary app web db]
 
 set :rails_env, "staging"
 set :stage, :staging

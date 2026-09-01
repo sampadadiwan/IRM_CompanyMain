@@ -98,7 +98,7 @@ set :puma_service_unit_name, "puma_IRM_#{fetch(:rails_env)}"
 |-------|-----------|---------|
 | `production_in` | `3.110.85.100` (+ `3.110.217.31` if LB) | `~/.ssh/caphive2.pem` |
 | `production_us` | `54.147.171.162` | `~/.ssh/caphive2.us.pem` |
-| `staging_in` | `13.233.55.8` | `~/.ssh/altxdev.pem` |
+| `staging_in` | `52.66.163.132` | `~/.ssh/altxdev.pem` |
 | `staging_us` | `13.222.236.84` (+ `34.229.217.208` if LB) | `~/.ssh/altx.us.pem` |
 
 ---
