@@ -12,6 +12,13 @@ Style/SafeNavigationChainLength:
   Enabled: false
 Rails/I18nLocaleTexts:
   Enabled: false
+Rails/UnknownEnv:
+  # config/environments/staging.rb exists — staging is a real env here
+  Environments:
+    - development
+    - test
+    - production
+    - staging
 Style/FrozenStringLiteralComment:
   Enabled: false
 Style/StringLiterals:

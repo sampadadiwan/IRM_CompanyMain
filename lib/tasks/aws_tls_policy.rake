@@ -23,7 +23,7 @@
 # SAFETY
 #   - Dry run by default; every mutating call goes through .act, so without
 #     EXECUTE=1 nothing can be modified.
-#   - env_name must be one of the four known envs, and the STS account id must
+#   - env_name must be one of the three known envs, and the STS account id must
 #     match that env's account. staging (174852986003) and production
 #     (825199636520) are separate AWS accounts, so exporting the wrong keys is
 #     an easy mistake — this refuses rather than silently retargeting.
@@ -66,9 +66,11 @@ module AwsTlsPolicy
   # Sweeping the DR region matters — a failover onto an unpinned listener would
   # quietly start serving TLS 1.0 again. Regions with no ALB are a no-op, so
   # us-east-2 is listed for production.us even though only S3 lives there today.
+  # staging.us is deliberately absent: that environment is decommissioned
+  # (same stance as aws_ebs.rake's ENV_ACCOUNTS) — any us-east-1 leftovers in
+  # the staging account are handled via REGIONS=us-east-1 under staging.in.
   ENV_TARGETS = {
-    "staging.in"    => { account: "174852986003", regions: %w[ap-south-1 ap-south-2] },
-    "staging.us"    => { account: "174852986003", regions: %w[us-east-1] },
+    "staging.in" => { account: "174852986003", regions: %w[ap-south-1 ap-south-2] },
     "production.in" => { account: "825199636520", regions: %w[ap-south-1 ap-south-2] },
     "production.us" => { account: "825199636520", regions: %w[us-east-1 us-east-2] }
   }.freeze
@@ -144,24 +146,55 @@ module AwsTlsPolicy
     pairs.map { |lb, _l| lb.dns_name }.uniq
   end
 
-  # Protocol versions to probe, and whether the pinned policy should accept them.
-  PROBE_MATRIX = {
-    "TLSv1.0" => { version: :TLS1, expect: false, legacy: true },
-    "TLSv1.1" => { version: :TLS1_1, expect: false, legacy: true },
-    "TLSv1.2" => { version: :TLS1_2, expect: true, legacy: false },
-    "TLSv1.3" => { version: :TLS1_3, expect: true, legacy: false }
+  # Protocol versions to probe. Whether each SHOULD be accepted is not
+  # hardcoded — it depends on the pinned policy (a POLICY override may be
+  # TLS1.3-only), so expectations are fetched from AWS per run; see
+  # expected_protocols. :legacy marks versions OpenSSL 3.x refuses client-side
+  # at default security level (see handshake?).
+  # rubocop:disable Naming/VariableNumber -- symbols mirror OpenSSL's own
+  # min_version/max_version constants (TLS1_1_VERSION etc.), not our naming.
+  PROBE_VERSIONS = {
+    "TLSv1.0" => { version: :TLS1, legacy: true },
+    "TLSv1.1" => { version: :TLS1_1, legacy: true },
+    "TLSv1.2" => { version: :TLS1_2, legacy: false },
+    "TLSv1.3" => { version: :TLS1_3, legacy: false }
   }.freeze
+  # rubocop:enable Naming/VariableNumber
+
+  # The authoritative accept-list for the target policy, straight from AWS —
+  # describe_ssl_policies names exactly the protocol versions it negotiates
+  # (e.g. ["TLSv1.2", "TLSv1.3"]), so any POLICY override gets correct
+  # expectations without a hand-maintained matrix.
+  def expected_protocols(elb)
+    elb.describe_ssl_policies(names: [policy]).ssl_policies.first.ssl_protocols
+  rescue Aws::ElasticLoadBalancingV2::Errors::ServiceError => e
+    abort "❌ could not look up policy '#{policy}': #{e.message}"
+  end
 
   # Handshake probe against the ALB's own DNS name. The wildcard cert will not
   # match that hostname, so certificate verification is disabled on purpose —
   # this is a protocol-version test, not a trust test.
-  def probe(host)
-    puts "  probing #{host}"
-    PROBE_MATRIX.each do |name, spec|
+  #
+  # With `expected` (EXECUTE mode, post-change): marks each version pass/fail
+  # against the policy's accept-list and RETURNS the mismatches so the task can
+  # fail loudly — a missed listener must not exit 0 looking like success.
+  # Without it (dry run): the listener hasn't been changed, so there is nothing
+  # to judge — report what the internet sees today, unmarked.
+  def probe(host, expected: nil)
+    puts "  probing #{host}#{' (baseline — no change applied)' if expected.nil?}"
+    mismatches = []
+    PROBE_VERSIONS.each do |name, spec|
       ok = handshake?(host, spec[:version], legacy: spec[:legacy])
-      mark = ok == spec[:expect] ? "✅" : "❌"
-      puts "    #{mark} #{name}: #{ok ? 'accepted' : 'refused'} (expected #{spec[:expect] ? 'accepted' : 'refused'})"
+      if expected.nil?
+        puts "    #{name}: #{ok ? 'accepted' : 'refused'}"
+      else
+        want = expected.include?(name)
+        mark = ok == want ? "✅" : "❌"
+        puts "    #{mark} #{name}: #{ok ? 'accepted' : 'refused'} (policy says #{want ? 'accepted' : 'refused'})"
+        mismatches << "#{host}: #{name} #{ok ? 'accepted' : 'refused'}, policy says #{want ? 'accept' : 'refuse'}" if ok != want
+      end
     end
+    mismatches
   end
 
   def handshake?(host, version, legacy: false)
@@ -217,11 +250,17 @@ namespace :aws do
       AwsTlsPolicy.apply_region(region)
     end
 
-    # Probing a dry run just reports the current (pre-change) state, which is
-    # still useful as a "what does the internet see today" baseline.
+    # EXECUTE: verify against the policy's own protocol list and FAIL on any
+    # mismatch — a listener still accepting TLS 1.0 must not exit 0.
+    # Dry run: probe as an unmarked "what does the internet see today" baseline.
     puts "\n-- verification --"
-    hosts.each { |host| AwsTlsPolicy.probe(host) }
+    expected = if AwsTlsPolicy.execute?
+                 region = AwsTlsPolicy.regions_for(args[:env_name]).first
+                 AwsTlsPolicy.expected_protocols(Aws::ElasticLoadBalancingV2::Client.new(region: region))
+               end
+    mismatches = hosts.flat_map { |host| AwsTlsPolicy.probe(host, expected: expected) }
 
+    abort "\n❌ verification FAILED:\n#{mismatches.map { |m| "  - #{m}" }.join("\n")}" if mismatches.any?
     puts(AwsTlsPolicy.execute? ? "\n== done ==" : "\n== dry run complete — re-run with EXECUTE=1 to apply ==")
   end
   # rubocop:enable Rails/RakeEnvironment

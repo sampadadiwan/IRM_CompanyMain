@@ -146,7 +146,13 @@ module AwsUtils
     end
   end
 
-  def cleanup_amis(name_tag, region, number_to_keep=3)
+  # AMIs kept per Name tag. Single source of truth shared with aws:ebs_cleanup
+  # (lib/tasks/aws_ebs.rake): both prune the same AMI groups two hours apart,
+  # so if the two keep counts ever disagreed, whichever ran later would
+  # silently undo the other's retention policy every week.
+  AMI_KEEP_DEFAULT = 3
+
+  def cleanup_amis(name_tag, region, number_to_keep=AMI_KEEP_DEFAULT)
     name_tag = name_tag.strip
 
     puts "🧹 Cleaning up old AMIs with name: #{name_tag} in region: #{region}"
@@ -154,42 +160,63 @@ module AwsUtils
 
     ec2 = Aws::EC2::Client.new
 
-    all_amis = ec2.describe_images({ owners: ['self'] }).images
+    # flat_map enumerates every page — .images alone reads only the first.
+    all_amis = ec2.describe_images({ owners: ['self'] }).flat_map(&:images)
     all_amis.each do |ami|
       tag_value = ami.tags.find { |t| t.key == 'Name' }&.value
 
       puts "🔍 AMI: #{ami.image_id}, Name Tag: '#{tag_value}'"  # Show exact tag value
     end
 
-    name_tag = name_tag.strip
-
     amis = all_amis.select do |ami|
       tag_value = ami.tags.find { |t| t.key == 'Name' }&.value
       tag_value&.strip == name_tag
     end.sort_by { |ami| ami.creation_date }
 
+    # Only completed images take part in the keep window: the cross-region copy
+    # this very bake just started is still "pending" here and must neither
+    # occupy a survivor slot (evicting the oldest good AMI) nor be deregistered
+    # mid-copy. Failed images don't count as survivors either, so a streak of
+    # failed copies can't age out the last restorable AMIs.
+    available = amis.select { |ami| ami.state == 'available' }
+    puts "ℹ️ Found #{amis.length} AMIs with name: #{name_tag} (#{available.length} completed). Retaining #{number_to_keep} AMIs"
 
+    # Retain the last number_to_keep completed AMIs, delete the rest
+    if available.length > number_to_keep
 
-    puts "ℹ️ Found #{amis.length} AMIs with name: #{name_tag}. Retaining #{number_to_keep} AMIs"
-
-    # Retain the last number_to_keep AMIs, delete the rest
-    if amis.length > number_to_keep
-
-      puts "🗑️ Deleting #{amis.length - number_to_keep} old AMIs"
-      amis_to_delete = amis[0...(amis.length - number_to_keep)]
+      puts "🗑️ Deleting #{available.length - number_to_keep} old AMIs"
+      amis_to_delete = available[0...(available.length - number_to_keep)]
     else
 
       puts "👍 No old AMIs to delete"
-      amis_to_delete = []  # Nothing to delete if there are fewer than or exactly 7 AMIs
+      amis_to_delete = []
     end
 
     amis_to_delete.each do |ami|
-      begin
+      if ami.tags.any? { |t| t.key == 'Retain' && t.value == 'true' }
+        puts "⏭ Skipping #{ami.image_id} — tagged Retain=true"
+        next
+      end
 
+      # Capture the backing snapshot ids BEFORE deregistering — the mappings
+      # are gone from describe_images afterwards.
+      snapshot_ids = ami.block_device_mappings.filter_map { |m| m.ebs&.snapshot_id }
+      begin
         ec2.deregister_image(image_id: ami.image_id)
         puts "✅ Deregistered old AMI: #{ami.image_id} with name: #{ami.name}"
       rescue Aws::EC2::Errors::ServiceError => e
         puts "❌ Failed to deregister AMI: #{ami.image_id}. Error: #{e.message}"
+        next # snapshots stay while the AMI still references them
+      end
+
+      # Delete the backing snapshots too — deregistering alone strands them,
+      # which is how hundreds of orphaned snapshots piled up historically
+      # (aws:ebs_cleanup mops up the backlog; this stops minting new ones).
+      snapshot_ids.each do |snapshot_id|
+        ec2.delete_snapshot(snapshot_id: snapshot_id)
+        puts "✅ Deleted backing snapshot: #{snapshot_id}"
+      rescue Aws::EC2::Errors::ServiceError => e
+        puts "❌ Failed to delete snapshot: #{snapshot_id}. Error: #{e.message}"
       end
     end
   end

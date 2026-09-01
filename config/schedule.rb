@@ -49,6 +49,19 @@ every 1.week, at: '02:00 am', roles: [:primary] do
   rake '"aws:create_and_copy_ami[Observability]"'
 end
 
+# Retention sweep AFTER the bake above has finished (the bake's cross-region
+# copy waiter can run ~40 min, so 4am leaves headroom). cleanup_amis inside
+# create_and_copy_ami deregisters old AMIs but never deleted their backing
+# snapshots — this task deletes those AND mops up the years of orphaned
+# snapshots already accumulated. EXECUTE=1 because aws:ebs_* tasks are
+# dry-run by default; regions come from the box's own AWS_REGION/AWS_BACKUP_REGION.
+every 1.week, at: '04:00 am', roles: [:primary] do
+  # Log what an unattended EXECUTE=1 deletion sweep actually did (or failed to
+  # do — act() prints-and-continues on AWS errors) — with MAILTO off, no
+  # :output would mean silent, invisible deletions.
+  rake '"aws:ebs_cleanup" EXECUTE=1', output: '/home/ubuntu/IRM/shared/log/ebs_cleanup.log'
+end
+
 # This is to ensure next year's partition exists for account_entries table
 every 1.year, at: 'December 15 02:00am', roles: [:primary] do
   rake "partitions:ensure_account_entries"
