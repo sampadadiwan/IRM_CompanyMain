@@ -9,14 +9,13 @@
 #   - Widen address column: was 16-char hex, now deal ID or custom string
 class ReworkDealIngestAddressesOnePerDeal < ActiveRecord::Migration[8.1]
   def up
-    # Order matters for MySQL FK constraints:
-    #   1. Drop the standalone deal_id index (compound index still covers FK)
-    #   2. Deduplicate rows so unique index can be applied
-    #   3. Add unique deal_id index (now the FK has a new covering index)
-    #   4. Drop the compound index (no longer needed)
+    # All steps use if_exists/idempotent guards so a partial prior run
+    # (staging failed midway twice) can be re-run safely.
+
+    # 1. Drop the standalone deal_id index (compound index still covers FK)
     remove_index :deal_ingest_addresses, :deal_id, if_exists: true
 
-    # Keep only the newest row per deal (old model allowed one per user)
+    # 2. Keep only the newest row per deal (old model allowed one per user)
     execute <<~SQL.squish
       DELETE a FROM deal_ingest_addresses a
       INNER JOIN (
@@ -27,15 +26,23 @@ class ReworkDealIngestAddressesOnePerDeal < ActiveRecord::Migration[8.1]
       ) dupes ON a.deal_id = dupes.deal_id AND a.id != dupes.keep_id
     SQL
 
-    add_index :deal_ingest_addresses, :deal_id, unique: true
-    remove_index :deal_ingest_addresses, %i[deal_id user_id]
+    # 3. Add unique deal_id index
+    unless index_exists?(:deal_ingest_addresses, :deal_id)
+      add_index :deal_ingest_addresses, :deal_id, unique: true
+    end
 
-    # Remove the standalone user_id index (from t.references)
+    # 4. Drop the compound index
+    remove_index :deal_ingest_addresses, %i[deal_id user_id], if_exists: true
+
+    # 5. Drop the user_id FK constraint, then its index, then the column.
+    #    MySQL requires the FK to be dropped before its covering index.
+    if foreign_key_exists?(:deal_ingest_addresses, :users)
+      remove_foreign_key :deal_ingest_addresses, :users
+    end
     remove_index :deal_ingest_addresses, :user_id, if_exists: true
+    remove_column :deal_ingest_addresses, :user_id, :bigint, if_exists: true
 
-    # Drop columns no longer needed
-    remove_column :deal_ingest_addresses, :user_id, :bigint
-    remove_column :deal_ingest_addresses, :revoked_at, :datetime
+    remove_column :deal_ingest_addresses, :revoked_at, :datetime, if_exists: true
 
     # Widen address column — was limit: 16 (hex), now needs to hold
     # deal IDs and user-chosen strings (e.g. "fund-ii-2026")
