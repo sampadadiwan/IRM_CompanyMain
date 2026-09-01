@@ -9,13 +9,13 @@
 #   - Widen address column: was 16-char hex, now deal ID or custom string
 class ReworkDealIngestAddressesOnePerDeal < ActiveRecord::Migration[8.1]
   def up
-    # Idempotent guards (if_exists / unless index_exists?) let this
-    # re-run safely after a partial failure on staging.
+    # Drop columns first — remove_column auto-drops associated FKs,
+    # indexes, and compound indexes that reference the column.
+    # This eliminates all the manual FK/index ordering headaches.
+    remove_column :deal_ingest_addresses, :user_id, if_exists: true
+    remove_column :deal_ingest_addresses, :revoked_at, if_exists: true
 
-    # 1. Swap the non-unique deal_id index for a unique one.
-    #    Drop non-unique first, deduplicate data, then add unique.
-    remove_index :deal_ingest_addresses, :deal_id, if_exists: true
-
+    # Deduplicate: keep only the newest row per deal
     execute <<~SQL.squish
       DELETE a FROM deal_ingest_addresses a
       INNER JOIN (
@@ -26,20 +26,14 @@ class ReworkDealIngestAddressesOnePerDeal < ActiveRecord::Migration[8.1]
       ) dupes ON a.deal_id = dupes.deal_id AND a.id != dupes.keep_id
     SQL
 
-    unless index_exists?(:deal_ingest_addresses, :deal_id)
+    # Replace the deal_id index with a unique one (one address per deal).
+    # Only drop+add if it's not already unique from a prior partial run.
+    unless index_exists?(:deal_ingest_addresses, :deal_id, unique: true)
+      remove_index :deal_ingest_addresses, :deal_id, if_exists: true
       add_index :deal_ingest_addresses, :deal_id, unique: true
     end
 
-    # 2. Drop the old compound index (unique index now covers the FK)
-    remove_index :deal_ingest_addresses, %i[deal_id user_id], if_exists: true
-
-    # 3. Drop user_id column — MySQL auto-drops its FK and index
-    remove_column :deal_ingest_addresses, :user_id, if_exists: true
-
-    # 4. Drop revoked_at column
-    remove_column :deal_ingest_addresses, :revoked_at, if_exists: true
-
-    # 5. Widen address column
+    # Widen address column
     change_column :deal_ingest_addresses, :address, :string, null: false, limit: 100
   end
 
