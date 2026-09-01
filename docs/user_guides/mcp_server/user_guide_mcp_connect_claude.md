@@ -8,7 +8,7 @@ A step-by-step guide for CapHive admins and entity admins to enable MCP access a
 
 The CapHive MCP Server lets users query fund management data from CapHive using Claude.ai. Users authenticate via OAuth, and Claude can then call 23 read-only tools covering funds, capital activity, portfolios, cap tables, documents, and commitments.
 
-**MCP URL:** `https://dev.altconnects.com/mcp`
+**MCP URL:** `https://app.caphive.com/mcp`
 
 ---
 
@@ -72,7 +72,7 @@ This is what the fund manager (or any authorized user) does:
 2. Click **Settings** (gear icon) → **Integrations** → **Add More**
 3. Enter the following:
    - **Name:** `CapHive` (or any name you prefer)
-   - **URL:** `https://dev.altconnects.com/mcp`
+   - **URL:** `https://app.caphive.com/mcp`
    - No Client ID or Secret needed — Claude auto-registers automatically
 4. Click **Add**
 
@@ -174,12 +174,12 @@ To verify the MCP server is running correctly on staging:
 
 ```bash
 # Check MCP endpoint is live (should return "Missing token")
-curl -X POST https://dev.altconnects.com/mcp \
+curl -X POST https://app.caphive.com/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"initialize","id":1}'
 
 # Check OAuth discovery metadata (should include registration_endpoint)
-curl -s https://dev.altconnects.com/.well-known/oauth-authorization-server | python3 -m json.tool
+curl -s https://app.caphive.com/.well-known/oauth-authorization-server | python3 -m json.tool
 ```
 
 ---

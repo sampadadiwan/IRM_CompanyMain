@@ -59,6 +59,23 @@ infrastructure down afterwards (`TEARDOWN=true`). For a real disaster **or a
 permanent region migration**, call `aws:setup_infra` directly with a branch
 name you intend to merge.
 
+`aws:dr_drill`'s 4th argument is `stack` (default `staging`). Passing
+`production` runs the identical unattended sequence against the real
+production Pulumi stack in the DR region, using live production backups and
+credentials — it is a genuine DR exercise against the production AWS account,
+not staging at larger scale. It requires `CONFIRM_PRODUCTION=true` in addition
+to the argument, so a staging command can't be turned into a production run by
+a copy-paste mistake:
+
+```bash
+CONFIRM_PRODUCTION=true TEARDOWN=true \
+  rake "aws:dr_drill[in, ap-south-2, production.in, production]"
+```
+
+`docs/dr_drills.md` and the drill-recency check in `aws:dr_readiness` both key
+on `stack`, so a passed staging drill is never read as satisfying production's
+recency requirement (or vice versa).
+
 ## 2. Scenario Assessment
 
 Match the failure to the response before running anything. Most incidents do
@@ -195,10 +212,24 @@ sudo env BUCKET_OVERRIDE=<bucket>-replica-backup-xtra AWS_REGION_OVERRIDE=<dr-re
 rake "db:restore_all_remote"                       # from an app server
 ```
 
-Built-in safety: the previous MySQL data directory is **parked** as
-`<datadir>.bak.<timestamp>`, never deleted. The script prints the rollback
-command to run if MySQL fails to start on the restored data, and the cleanup
-command to run once the restore is verified.
+The existing MySQL data directory is **deleted**, not preserved. Restores only
+ever run on new infrastructure or in DR — never in place on a box holding data
+worth keeping — so the replaced datadir is by definition either a virgin MySQL
+or a previous restore of the same backup chain, and keeping it bought no
+recoverability. The removal happens only *after* the replacement backup has been
+downloaded and prepared, so a failed download aborts before anything is touched.
+
+If MySQL fails to start on the restored data, there is no local rollback copy by
+design: re-run the restore, or restore an earlier point in the chain with
+`restore_from_primary <full_key> [incr_key]`. The prepared data is left staged
+in `/tmp/xb_*/primary_restore` for inspection.
+
+> This previously parked the old datadir as `<datadir>.bak.<timestamp>` and
+> never deleted it. Nothing reclaimed those copies, so repeated restores on one
+> box accumulated a full datadir each — five drill re-runs put 7.4G on a 20G
+> volume, and the next restore failed with "No space left on device".
+> `prune_parked_datadirs` still removes any such copies left by older versions
+> of the script at the start of every restore.
 
 ## 7. Post-Recovery Verification
 

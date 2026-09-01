@@ -44,6 +44,23 @@ Scenario Outline: Allocate Account Entries
       |user     |entity                                 |fund                 |
       |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
 
+Scenario Outline: Formula reads a computed field without the cache flag set
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there are chained Fund Formulas relying on a computed field without the cache flag set
+  When I am at the fund details page
+  Given that Account Entries are allocated
+  Then I see AllocationRun created
+  Then the dependent formula's account entry reflects the earlier formula's computed value
+
+  Examples:
+      |user     |entity                                 |fund                 |
+      |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
+
 Scenario Outline: When AllocationRun is locked
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -93,6 +110,12 @@ Scenario Outline: Edit Account Entry parent
   Then an account entry is created for the commitment
   Then I edit the account entry with debug "true"
   Then the account entry parent is updated
+  # Regression coverage: re-pointing the parent a SECOND time, after parent_name is already
+  # cached from the first edit above, is what exposed the stale-parent_name bug -- the first
+  # edit alone would pass even with the bug, since parent_name starts blank.
+  Given there is a portfolio investment for the account entry parent test
+  Then I re-point the account entry parent to the portfolio investment with debug "true"
+  Then the account entry parent and parent name reflect the portfolio investment
 
 
   Examples:

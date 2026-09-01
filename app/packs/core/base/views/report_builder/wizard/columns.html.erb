@@ -1,0 +1,85 @@
+<% content_for :title, "Guided Report Wizard – Columns" %>
+<%
+  selected_keys = @gvps.map { |g| g.key.split(";").first.strip }
+%>
+
+<div class="wizard-shell container-fluid mw-100 px-3 px-lg-5 py-4" data-controller="tooltip">
+  <%= render "report_builder/wizard/header" %>
+  <%= render "report_builder/wizard/progress", report: @report, current_step: "columns" %>
+
+  <%= render "report_builder/wizard/help_box",
+        title: "Pick the columns you want to see",
+        body: "These become the columns in your exported spreadsheet, in the order you add them. Start with a few obvious ones — you can add, remove, and reorder more at any point. Edit a column's name on the right to give it a friendlier header — it saves automatically.",
+        example: wizard_example_for(@config.root_model) %>
+
+  <%= turbo_frame_tag "wizard_columns_panels", class: "row g-4" do %>
+    <div class="col-lg-6">
+      <div class="wizard-panel-card h-100">
+        <div class="wizard-panel-card-header d-flex align-items-center gap-2">
+          <span class="wizard-card-icon"><i class="ti ti-list-search"></i></span>
+          <h6 class="mb-0 fw-bold">Available on <%= wizard_model_label(@root_class.name) %></h6>
+        </div>
+        <div class="wizard-row-list wizard-scroll-list">
+          <% @root_columns.each do |col| %>
+            <% already = selected_keys.include?(col[:key]) %>
+            <div class="wizard-row-card <%= 'wizard-row-added' if already %>">
+              <div class="d-flex align-items-center gap-2 min-width-0">
+                <span class="wizard-row-icon"><i class="ti <%= wizard_type_icon_for(col[:raw_key]) %>"></i></span>
+                <span class="text-truncate"><%= col[:label] %></span>
+              </div>
+              <% if already %>
+                <i class="ti ti-circle-check-filled text-success fs-5 flex-shrink-0"></i>
+              <% else %>
+                <%= button_to add_report_builder_column_path(@report),
+                      method: :post,
+                      params: { key: col[:raw_key], name: col[:label], label: col[:label] },
+                      class: "btn btn-sm btn-outline-primary d-flex align-items-center gap-1 flex-shrink-0" do %>
+                  <i class="ti ti-plus"></i> Add
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="wizard-panel-card h-100">
+        <div class="wizard-panel-card-header d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <span class="wizard-card-icon"><i class="ti ti-list-check"></i></span>
+            <h6 class="mb-0 fw-bold">Your columns so far</h6>
+          </div>
+          <span class="wizard-header-badge"><%= @gvps.size %></span>
+        </div>
+        <% if @gvps.empty? %>
+          <div class="text-center py-5 px-4">
+            <i class="ti ti-arrow-big-left text-light" style="font-size: 3rem"></i>
+            <p class="text-muted small mt-2 mb-0">Nothing added yet — click <strong>Add</strong> on the left to get started.</p>
+          </div>
+        <% else %>
+          <div class="wizard-row-list wizard-scroll-list">
+            <% @gvps.each do |gvp| %>
+              <div class="wizard-row-card">
+                <%= form_tag update_report_builder_column_label_path(@report, gvp_id: gvp.id), method: :patch, class: "d-flex align-items-center gap-2 flex-grow-1 min-width-0" do %>
+                  <span class="wizard-row-icon flex-shrink-0"><i class="ti <%= wizard_type_icon_for(gvp.key) %>"></i></span>
+                  <input type="text" name="label" value="<%= gvp.label.presence || gvp.name %>"
+                         class="form-control form-control-sm wizard-label-input border-0 bg-light"
+                         data-bs-toggle="tooltip" data-bs-placement="top" title="Give this column a friendlier header — saves automatically"
+                         onblur="this.form.requestSubmit()">
+                <% end %>
+                <%= button_to remove_report_builder_column_path(@report, gvp_id: gvp.id),
+                      method: :delete,
+                      class: "btn btn-link text-danger p-0 flex-shrink-0" do %>
+                  <i class="ti ti-trash fs-5"></i>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%= render "report_builder/wizard/footer_nav", next_step: "joins", next_label: "Continue" %>
+</div>

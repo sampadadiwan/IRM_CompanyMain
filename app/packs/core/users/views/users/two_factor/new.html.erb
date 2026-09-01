@@ -47,29 +47,6 @@
         </button>
       <% end %>
 
-      <%# Fallbacks for authenticator-mode users who cannot reach their app — a lost or
-          flat phone, typically. Getting in this way does not burn a backup code.
-          Note the trade-off this makes deliberately: it caps an authenticator user's
-          effective security at the strength of whichever fallback they have. %>
-      <% if @user.authenticator_mode? && (@user.whatsapp_otp_enabled? || @user.sms_otp_enabled?) %>
-        <div class="divider w-100"><span>OR</span></div>
-
-        <%# whatsapp_otp_enabled?, not the raw column: with no phone number on the account
-            the send is refused downstream, so the button would only ever report success
-            for a message that never goes out. %>
-        <% if @user.whatsapp_otp_enabled? %>
-          <button type="button" id="send-whatsapp-btn" class="btn btn-secondary w-100" data-action="click->two-factor#sendWhatsapp">
-            <i class="fab fa-whatsapp"></i> Send code via WhatsApp
-          </button>
-        <% end %>
-
-        <% if @user.sms_otp_enabled? %>
-          <button type="button" id="send-sms-btn" class="btn btn-secondary w-100 mt-2" data-action="click->two-factor#sendSms">
-            <i class="fas fa-comment-dots"></i> Text me a code
-          </button>
-        <% end %>
-      <% end %>
-
       <%# WhatsApp-mode users can request a resend %>
       <% if @user.whatsapp_mode? %>
         <div class="text-center mt-3">

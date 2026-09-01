@@ -540,7 +540,7 @@ end
 
 # ── Fund Commitment Adhoc Notification steps ─────────────────────────────────
 
-# Creates a fund-level CustomNotification wired to the adhoc_notification mailer method
+# Creates a fund-level CustomNotification wired to the adhoc_fund_notification mailer method
 Given('there is an adhoc custom notification for the fund with subject {string}') do |subject|
   @custom_notification = CustomNotification.create!(
     entity: @fund.entity,
@@ -548,7 +548,7 @@ Given('there is an adhoc custom notification for the fund with subject {string}'
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     enabled: true
   )
 end
@@ -564,7 +564,7 @@ Given('there is an adhoc custom notification for the fund with a blank body and 
     subject: subject,
     body: "<div><br></div>",
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     enabled: true
   )
 end
@@ -577,7 +577,7 @@ Given('there is an adhoc custom notification for the fund with placeholders and 
     subject: subject,
     body: "Dear {{investor_name}}, your commitment to {{fund_name}} of {{committed_amount}} is confirmed. Unsupported: {{not_a_real_placeholder}}.",
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     enabled: true
   )
 end
@@ -605,7 +605,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     enabled: true
   )
@@ -619,7 +619,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     latest_doc_only: latest_doc_only == "true",
     enabled: true
@@ -627,7 +627,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
 end
 
 # Same but with an explicit show_details_link, so a scenario can verify the "View Commitment"
-# link on the shared adhoc_notification template is gated by this flag
+# link on the shared adhoc_notification template (rendered by adhoc_fund_notification) is gated by this flag
 Given('there is an adhoc custom notification for the fund with subject {string} and show_details_link {string}') do |subject, show_details_link|
   @custom_notification = CustomNotification.create!(
     entity: @fund.entity,
@@ -635,7 +635,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     show_details_link: show_details_link == "true",
     enabled: true
   )
@@ -643,7 +643,7 @@ end
 
 # "notify_via" here is the Gherkin-readable name for what's actually just a different
 # email_method value: "investor_kyc" -> "adhoc_kyc_notification" (FundInvestorKycMailer),
-# anything else -> the regular "adhoc_notification" (CapitalCommitmentMailer). There is no
+# anything else -> "adhoc_fund_notification" (CapitalCommitmentMailer). There is no
 # separate notify_via field/column — this step just picks which mailer/iteration path runs.
 Given('there is an adhoc custom notification for the fund with subject {string} and attachment_names {string} and notify_via {string}') do |subject, attachment_names, notify_via|
   @custom_notification = CustomNotification.create!(
@@ -652,14 +652,15 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_notification",
+    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     enabled: true
   )
 end
 
 # Same but with an explicit show_details_link instead of attachment_names, so a scenario can
-# verify the "View KYC" link on the shared adhoc_notification template in investor_kyc mode
+# verify the "View KYC" link on the shared adhoc_notification template (rendered by
+# adhoc_kyc_notification) in investor_kyc mode
 Given('there is an adhoc custom notification for the fund with subject {string} and notify_via {string} and show_details_link {string}') do |subject, notify_via, show_details_link|
   @custom_notification = CustomNotification.create!(
     entity: @fund.entity,
@@ -667,7 +668,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_notification",
+    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_fund_notification",
     show_details_link: show_details_link == "true",
     enabled: true
   )
@@ -684,7 +685,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     password_protect_attachment: password_protect_attachment == "true",
     attachment_password: attachment_password.presence,
     enabled: true
@@ -700,7 +701,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     password_protect_attachment: password_protect_attachment == "true",
     attachment_password: attachment_password.presence,
@@ -718,7 +719,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     attachment_mandatory: attachment_mandatory == "true",
     enabled: true
@@ -1193,7 +1194,7 @@ Then('I do not see a preview adhoc notification button') do
 end
 
 When('I click the preview adhoc notification button for {string}') do |label|
-  click_on("Preview Adhoc Notification (#{label})")
+  click_on("Preview Adhoc Fund Notification (#{label})")
 end
 
 Then('I see the adhoc notification preview with subject {string}') do |subject|

@@ -1,0 +1,105 @@
+/* ============================================================
+   Guide pages (layouts/guide.html.erb) — signed-in /user_guides
+   and login-less /public_guides.
+
+   Structure and typography come from the website's own compiled
+   caphive.css, loaded directly by the layout — this file only fills
+   in the handful of elements the website has no component for
+   (search box, flash banner) plus one utility class that would
+   otherwise come from Bootstrap, which this shell does not load.
+   ============================================================ */
+
+.is-hidden { display: none !important; }
+
+/* Wider than caphive.css's own .wrap (1180px) — the guide index list reads as a
+   dense reference table, not marketing copy, so it earns the extra body width. */
+.wrap-wide { max-width: 1440px; margin: 0 auto; padding: 0 24px; }
+
+/* .article's own grid (150px date / 1fr / 44px arrow, from caphive.css — built
+   for a blog list's "Mar 31, 2026" date column) crushes a guide title into that
+   150px column instead. Widen column 1 for a title, and let rows top-align so a
+   4-line title and a 2-3 line description don't get vertically centered against
+   each other. */
+.guide-article {
+  grid-template-columns: minmax(260px, 340px) 1fr 44px;
+  align-items: start;
+  padding-top: 28px;
+  padding-bottom: 28px;
+}
+
+.guide-article h3 { line-height: 1.3; }
+.guide-article p { line-height: 1.55; }
+.guide-article .go { margin-top: 4px; }
+
+body.guide-shell .alert {
+  max-width: 780px;
+  margin: 0 auto 24px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  font-size: 14px;
+  border: 1px solid var(--line, #E8E5DE);
+  background: var(--tile, #fff);
+  color: var(--fg, #101010);
+
+  &.alert-info {
+    border-color: var(--orange, #FF4D00);
+    background: color-mix(in srgb, var(--orange, #FF4D00) 8%, var(--tile, #fff));
+  }
+
+  &.alert-danger, &.alert-warning {
+    border-color: #E04300;
+    background: #FFF5F0;
+    color: #9C2C00;
+  }
+}
+
+.guide-search {
+  margin-top: 40px;
+  max-width: 480px;
+}
+
+.guide-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 18px;
+  border: 1px solid var(--line, #E8E5DE);
+  border-radius: 999px;
+  background: var(--tile, #fff);
+
+  svg { flex-shrink: 0; color: var(--mut, #6F6A62); }
+}
+
+.guide-search-input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  color: var(--fg, #101010);
+
+  &::placeholder { color: var(--mut, #6F6A62); }
+}
+
+.guide-search-clear {
+  border: 0;
+  background: none;
+  color: var(--mut, #6F6A62);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 18px;
+  line-height: 1;
+
+  &:hover { color: var(--fg, #101010); background: var(--cream, #F3F0E9); }
+}
+
+.guide-group { margin-bottom: 56px; }
+.guide-group:last-child { margin-bottom: 0; }
+
+.guide-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--mut, #6F6A62);
+}

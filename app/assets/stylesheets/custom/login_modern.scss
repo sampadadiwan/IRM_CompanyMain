@@ -682,7 +682,78 @@
 .authenticator-apps__stores {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  // space-between, not just a wider gap: with only two items a fixed gap still
+  // leaves them clustered on the left of a wide card. Pinning iPhone/Android to
+  // opposite edges is what actually keeps a phone camera from framing both QRs
+  // at once. gap is the fallback spacing once flex-wrap stacks them on a narrow
+  // viewport, where space-between between two single-item rows does nothing.
+  justify-content: space-between;
+  gap: 24px;
+}
+
+// Pairs a scannable QR with its store pill so a desktop viewer can jump to the
+// same link on their phone instead of following it on the machine they're already on.
+.authenticator-apps__store-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+// Unstyled <button> wrapping the QR so it can open the zoom modal; the border/
+// background that used to sit on the <svg> itself now lives here.
+.authenticator-apps__qr-btn {
+  position: relative;
+  padding: 4px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  line-height: 0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  [data-bs-theme=dark] & {
+    border-color: #334155;
+  }
+
+  &:hover, &:focus-visible {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.35);
+  }
+}
+
+.authenticator-apps__qr {
+  display: block;
+  width: 64px;
+  height: 64px;
+}
+
+// Small badge hinting the QR is tappable to enlarge, not just decorative.
+.authenticator-apps__qr-zoom-icon {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4299e1;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 10px;
+  border: 2px solid #fff;
+
+  [data-bs-theme=dark] & {
+    border-color: #0f172a;
+  }
+}
+
+// The enlarged code shown in #qr-zoom-modal.
+.qr-zoom-modal__svg-wrap svg {
+  width: 260px;
+  height: 260px;
+  max-width: 100%;
 }
 
 // Store links are pill buttons rather than plain anchors so they read as

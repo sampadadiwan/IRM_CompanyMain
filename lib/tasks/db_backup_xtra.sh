@@ -4,8 +4,11 @@ IFS=$'\n\t'
 # TODO
 # 1. Restore from specific full & specific incremental, ensure the incremental is after full and allow for nil incr backups (i.e restore from full only)
 # 2. [DONE — handled outside this script] Backup retention is enforced by S3
-#    lifecycle rules on the backup buckets (90d expiry, set idempotently by
-#    rake aws:provision_s3_buckets), so no script-side S3 cleanup is needed.
+#    lifecycle rules on the backup buckets (180d expiry default; note
+#    aws:provision_s3_buckets never overwrites an existing lifecycle, so
+#    already-provisioned buckets may still carry an older/absent rule) plus
+#    the chain-safe rake xtrabackup:cleanup_old_backups task (MANUAL/cron —
+#    nothing schedules it automatically yet), so no script-side S3 cleanup is needed.
 # 3. Check if there is a way to do incr without downloading the full backup
 # If not then no need to delete the full backup dir, during the day, reuse for every hourly incr
 
@@ -169,7 +172,13 @@ restore_full() {
   retry 3 xbcloud "${XB_ARGS[@]}" get "$key" | xbstream -x -C "$dir"
 
   # Decompress the backup files. This is required if the backup was compressed.
-  xtrabackup --decompress --target-dir="$dir"
+  # --remove-original: delete each .zst as it is decompressed. Without it the
+  # compressed AND decompressed copies coexist for the whole staging step,
+  # doubling the peak disk requirement — on production (24G compressed, 25G
+  # decompressed) that alone is ~49G of staging, which is what put a 58G volume
+  # at "No space left on device". The .zst files are useless once expanded and
+  # re-downloadable from S3, so there is nothing to lose by dropping them.
+  xtrabackup --decompress --remove-original --target-dir="$dir"
 
   # Prepare the full backup. --apply-log-only is used because
   # incremental backups will be applied on top of this.
@@ -190,8 +199,8 @@ apply_incremental() {
   retry 3 xbcloud "${XB_ARGS[@]}" get "$key" \
     | xbstream -x -C "$incr_tmp_dir"
 
-  # Decompress the incremental backup files.
-  xtrabackup --decompress --target-dir="$incr_tmp_dir"
+  # Decompress the incremental backup files (see --remove-original note above).
+  xtrabackup --decompress --remove-original --target-dir="$incr_tmp_dir"
 
   # Apply the incremental logs to the staging directory using --incremental-dir.
   # This is the correct way to merge the delta files.
@@ -392,15 +401,86 @@ stop_mysql_server() {
   fi
 }
 
-restore_primary_datadir() {
+# Resolves the MySQL data directory by asking the mysqld binary for its
+# configuration — more robust than parsing my.cnf, and works with the server
+# stopped (which it always is by the time a restore needs this).
+mysql_datadir() {
   local datadir
-  # Get the datadir by asking the mysqld binary for its configuration.
-  # This is more robust as it doesn't require a running server.
   datadir=$(mysqld --verbose --help | grep '^datadir' | awk '{print $2}')
   if [[ -z "$datadir" ]]; then
     echo "ERROR: Could not determine MySQL datadir from 'mysqld --verbose --help'." >&2
-    exit 1
+    return 1
   fi
+  echo "$datadir"
+}
+
+# Removes datadirs parked by EARLIER restore attempts. LEGACY CLEANUP ONLY.
+#
+# Restores used to park the pre-restore datadir as <datadir>.bak.<timestamp>
+# for rollback safety, and nothing ever removed the old ones, so repeated
+# restores — a DR drill re-run, or a real incident that takes a few attempts —
+# accumulated one FULL datadir copy per attempt. Found live after ~5 restores
+# on one box: 7.4G of parked copies filled a 20G volume, and the next attempt
+# died with "No space left on device" during xtrabackup's decompress step (and,
+# before that, with a confusingly-worded InnoDB "OS error 71" that was the same
+# disk exhaustion).
+#
+# Nothing creates .bak.<ts> directories any more (restore_primary_datadir
+# deletes instead of parking), so on a box that has only ever run the current
+# script this loop finds nothing and costs a stat. It is kept for boxes carrying
+# parked copies from the older script — which is every long-lived DB host that
+# has not been rebuilt since — and can be deleted once none remain.
+#
+# It runs before restore_latest_chain rather than just before the datadir is
+# replaced: by decompress time the disk is already full, which is exactly how
+# the original fix (placed inside restore_primary_datadir) was still too late
+# to help.
+prune_parked_datadirs() {
+  local datadir parent_dir base_name old_bak freed
+  datadir=$(mysql_datadir) || return 1
+  parent_dir=$(dirname "$datadir")
+  base_name=$(basename "$datadir")
+
+  shopt -s nullglob
+  for old_bak in "${parent_dir}/${base_name}.bak."*; do
+    freed=$(sudo du -sh "$old_bak" 2>/dev/null | awk '{print $1}')
+    echo "→ Removing datadir parked by an earlier restore attempt: ${old_bak} (${freed:-unknown size})"
+    sudo rm -rf "$old_bak"
+  done
+  shopt -u nullglob
+
+  echo "→ Free space after pruning parked datadirs: $(df -h "$parent_dir" | tail -1 | awk '{print $4}')"
+}
+
+# Frees the CURRENT datadir before the restore stages anything.
+#
+# Restores never run in place, so this data is already destined for deletion by
+# restore_primary_datadir — doing it up front means the download does not have
+# to coexist with a full copy of the database being replaced. On production
+# that is the difference between needing ~3x the database size on one
+# filesystem and ~2x: a 25G database failed with "No space left on device" on a
+# 58G volume because the old datadir (25G), the compressed download (24G) and
+# the decompressed copy (25G) all had to fit at once.
+#
+# The trade-off, stated plainly: from here until restore_primary_datadir
+# finishes, this box has no local copy of the database. That is acceptable only
+# because restores run on new infrastructure or in DR, never against a box
+# holding data worth keeping — the source of truth is the backup chain in S3.
+purge_datadir() {
+  local datadir
+  datadir=$(mysql_datadir) || return 1
+  [[ -d "$datadir" ]] || return 0
+
+  echo "→ Freeing current datadir before staging: ${datadir} ($(sudo du -sh "$datadir" 2>/dev/null | awk '{print $1}'))"
+  # ${datadir:?} — refuse to expand to bare `rm -rf /` if the lookup ever
+  # returns empty despite the guard above
+  sudo rm -rf "${datadir:?}"
+  echo "→ Free space after freeing datadir: $(df -h "$(dirname "$datadir")" | tail -1 | awk '{print $4}')"
+}
+
+restore_primary_datadir() {
+  local datadir
+  datadir=$(mysql_datadir) || exit 1
 
   local backup_size
   backup_size=$(du -sh "$PRIMARY_RESTORE" | awk '{print $1}')
@@ -410,20 +490,25 @@ restore_primary_datadir() {
   echo "  - Backup size: $backup_size"
   echo "WARNING: This is a destructive operation and requires sudo."
 
-  # To avoid 'mv' errors, construct a backup path that is explicitly a sibling of the datadir.
-  local parent_dir
-  parent_dir=$(dirname "$datadir")
-  local base_name
-  base_name=$(basename "$datadir")
-  local backup_path="${parent_dir}/${base_name}.bak.$(date +%s)"
-
-  # Park the old datadir instead of deleting it: if the restored backup turns out
-  # to be bad (only discovered when MySQL fails to start below), the pre-restore
-  # data is still recoverable. mv on the same filesystem is an instant rename and
-  # uses no extra disk space; the parked copy is removed manually after the
-  # restore has been verified (command printed at the end of this function).
-  echo "  - Parking old datadir at ${backup_path} (rollback: sudo mv ${backup_path} ${datadir})"
-  sudo mv "$datadir" "$backup_path"
+  # Delete the existing datadir rather than parking it as <datadir>.bak.<ts>.
+  #
+  # Restores only ever run on NEW infra or in DR — never in place on a box
+  # holding data worth keeping — so the old contents are by definition either a
+  # virgin MySQL or a previous restore of this same backup chain. Parking them
+  # bought no recoverability and left a full datadir behind per attempt: five
+  # drill re-runs put 7.4G of parked copies on a 20G volume, after which the
+  # next restore died with "No space left on device" during decompress (and,
+  # once the disk hit 0 bytes, even the SCP of this script failed).
+  #
+  # NOTE: on the restore_primary / restore_from_primary paths this is normally a
+  # no-op — purge_datadir already removed $datadir before restore_latest_chain
+  # ran, because the download needs that space to fit at all. The datadir is
+  # therefore gone from the moment staging starts, NOT from here; purge_datadir
+  # is where that trade-off is made and explained. This line stays so the
+  # function is correct on its own (a caller that skips purge_datadir, or a
+  # datadir mysqld recreated in between) rather than as the point of no return.
+  echo "  - Removing old datadir ${datadir} (restores never run in place — nothing to roll back to)"
+  sudo rm -rf "$datadir"
 
   echo "  - Moving data from $PRIMARY_RESTORE..."
   # Recreate the original datadir for the new data and copy the contents.
@@ -446,10 +531,12 @@ restore_primary_datadir() {
     ((n++)) || :
     if (( n >= max_wait )); then
       echo "ERROR: MySQL failed to start within ${max_wait}s after restore." >&2
-      # The restore failed, but the pre-restore data was parked (not deleted),
-      # so the operator can put the old datadir back and restart.
-      echo "       Old datadir is intact at ${backup_path}." >&2
-      echo "       Roll back with: sudo systemctl stop mysql && sudo rm -rf ${datadir} && sudo mv ${backup_path} ${datadir} && sudo systemctl start mysql" >&2
+      # There is no local rollback copy by design (see restore_primary_datadir):
+      # restores only run on new infra or in DR, so the replaced datadir held
+      # nothing worth returning to.
+      echo "       The restored data is still staged at ${PRIMARY_RESTORE} for inspection." >&2
+      echo "       Recover by re-running the restore, or from an earlier backup in the S3 chain" >&2
+      echo "       (restore_from_primary <full_key> [incr_key])." >&2
       exit 1
     fi
     sleep 1
@@ -457,11 +544,6 @@ restore_primary_datadir() {
   echo "✓ Primary MySQL instance started successfully (waited ${n}s)."
   get_table_counts "$DATABASE_NAME" "$MYSQL_USER"
 
-  # The old datadir is intentionally kept on disk until a human confirms the
-  # restore is good — it may be the only remaining copy if the backup chain
-  # is later found to be incomplete. Freeing the space is a deliberate step.
-  echo "NOTE: old datadir kept at ${backup_path}"
-  echo "      After verifying the restore, free the space with: sudo rm -rf ${backup_path}"
 }
 
 full_backup() {
@@ -542,6 +624,28 @@ EOF
   exit 1
 }
 
+# Serializes backup WRITERS on this host. The 23:00 full stages locally
+# before uploading (~25G compressed on prod — can run past midnight) and only
+# rewrites $LSNDIR at the end; without a lock the 00:00/00:30 incr crons read
+# the PREVIOUS full's LSN and produce an incr that sorts after the new full
+# but is based on the old one — a chain the S3 retention cleanup
+# (rake xtrabackup:cleanup_old_backups) would later break by deleting the true
+# base. Incrs skip when a writer is active (the next one fires in 30 min);
+# fulls wait up to 30 min then fail loudly — a stuck lock must surface, not
+# silently cost the nightly full.
+WRITER_LOCK="/var/lock/db_backup_xtra_writer.lock"
+acquire_writer_lock() {
+  exec 9>"$WRITER_LOCK"
+  case "$1" in
+    wait)
+      flock -w 1800 9 || { echo "ERROR: backup writer lock not acquired within 30 min — another backup still running?" >&2; exit 1; }
+      ;;
+    skip)
+      flock -n 9 || { echo "ℹ️ Another backup writer is active — skipping this incremental."; exit 0; }
+      ;;
+  esac
+}
+
 # Exit quietly (status 0) when this host is not armed. Cron on every instance
 # baked from the DB AMI fires this script; only the restored primary may write
 # to the backup chain — a second writer would corrupt the restore lineage.
@@ -560,10 +664,12 @@ main() {
   case "${1:-}" in
     full)
       require_armed
+      acquire_writer_lock wait
       full_backup
       ;;
     incr)
       require_armed
+      acquire_writer_lock skip
       incr_backup
       ;;
     restore_test)
@@ -577,6 +683,10 @@ main() {
       ;;
     restore_primary)
       stop_mysql_server
+      # Free space from earlier attempts BEFORE downloading/decompressing —
+      # the download is what fills the disk, so this has to come first.
+      prune_parked_datadirs
+      purge_datadir # frees the database being replaced, before staging needs the space
       restore_latest_chain
       restore_primary_datadir
       # A successful primary restore means this host now holds the real dataset:
@@ -614,6 +724,8 @@ main() {
           incr_key=""
       fi
       stop_mysql_server
+      prune_parked_datadirs # same reason as restore_primary above
+      purge_datadir
       prepare_restore_from_keys "$full_key" "$incr_key"
       restore_primary_datadir
       # Same as restore_primary: a promoted host is the real primary — arm it.

@@ -8,26 +8,27 @@ og_description: How CapHive collects, uses, shares and protects personal data ac
   our website and platform.
 data_page: legal
 body_top: |+
-  <!-- ==========================================================================
-       ⚠  STOP — NOT LEGAL ADVICE. DO NOT PUBLISH AS-IS.
-       ==========================================================================
-       This Privacy Policy is a DRAFT TEMPLATE written to give the site a
-       complete, well-structured page. It has NOT been reviewed by a lawyer.
-
-       Before this page goes live, the team MUST:
-         1. Have qualified counsel (India + any other jurisdiction where CapHive
-            operates or has clients) review and rewrite this text.
-         2. Complete every [bracketed placeholder] — CIN, grievance officer,
-            Data Protection Officer, sub-processor list, retention periods,
-            transfer mechanism, and the "last updated" date.
-         3. Confirm every factual statement against how the platform actually
-            works (hosting regions, encryption, logging, access controls).
-         4. Delete the template-status .callout marked DELETE BEFORE LAUNCH below.
-
-       Publishing an unreviewed privacy policy creates real regulatory exposure
-       under the Digital Personal Data Protection Act, 2023 and the GDPR.
-       ========================================================================== -->
-
+  <!-- Finalized 2026-08-28 for launch: business/legal choices below were made
+       directly by the founder, not outside counsel — see decisions inline.
+         - No CIN quoted anywhere (not yet included by choice).
+         - No EU/UK representative or DPO named — CapHive has no EU/UK clients
+           today (privacy.html §9.2); revisit if/when that changes.
+         - Grievance/privacy contact: role inbox privacy@caphive.com, no named
+           individual (§9.1).
+         - Sub-processor table (§5) is the real, code-verified list from
+           docs/marketing/gtm_prerequisites_work/E4_subprocessor_list.md —
+           including AI/LLM providers, previously undisclosed. Two items that
+           doc flagged as undisclosed tracking (GA4, session recording) inside
+           the authenticated app, plus a QuickChart.io data-egress in report
+           exports, were removed from the app itself rather than disclosed —
+           see app/javascript/application.js and the two AI portfolio report
+           export views.
+         - Retention periods without a real system-enforced number are stated
+           by criteria (purpose/duration) rather than an invented figure;
+           where a real number exists (backups: 90-day S3 lifecycle, demo form
+           IP data: 90 days, GA4 cookies: 2 years) it's used directly.
+       Re-run a review pass if any of those choices change, or before this
+       shifts from "shipped pragmatically" to "battle-tested" reliance. -->
 ...
 ---
 
@@ -42,7 +43,7 @@ body_top: |+
         How <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited handles personal data — on this website, in our marketing,
         and inside the platform we operate for our clients.
       </p>
-      <p style="margin-top:28px"><span class="updated">Last updated — [Month DD, YYYY]</span></p>
+      <p style="margin-top:28px"><span class="updated">Last updated — August 28, 2026</span></p>
     </div>
   </div>
 </section>
@@ -50,17 +51,6 @@ body_top: |+
 <!-- ================= POLICY ================= -->
 <section class="section-sm">
   <div class="wrap-narrow">
-
-    <!-- ======================================================================
-         DELETE BEFORE LAUNCH — remove this entire .callout block (from the
-         opening <div class="callout"> to its closing </div>) once counsel has
-         reviewed and signed off on this page. It is a working notice for the
-         internal team and must not appear on the live site.
-         ====================================================================== -->
-    <div class="callout">
-      <p><strong>Template — pending legal review.</strong> This document is a working template. It has not been reviewed or approved by counsel and does not yet reflect a legal opinion on <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>'s obligations. Every item shown in square brackets — for example <strong>[CIN]</strong>, <strong>[grievance officer name]</strong> or <strong>[retention period]</strong> — is a placeholder that must be completed before publication. Do not rely on this page.</p>
-    </div>
-    <!-- ============== END DELETE BEFORE LAUNCH ============== -->
 
     <nav class="toc" aria-label="On this page">
       <p class="tile-kicker">On this page</p>
@@ -84,7 +74,7 @@ body_top: |+
     <div class="prose">
 
       <h2 id="scope">1. Who we are and what this policy covers</h2>
-      <p>This policy is issued by <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited ("<span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>", "we", "us"), a company incorporated in India with registered office at 801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel, Mumbai 400013. Our corporate identity number is <strong>[CIN]</strong>.</p>
+      <p>This policy is issued by <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited ("<span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>", "we", "us"), a company incorporated in India with registered office at 801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel, Mumbai 400013.</p>
       <p>This policy explains how we handle personal data in three situations:</p>
       <ul>
         <li>when you visit caphive.com or contact us through this website;</li>
@@ -159,7 +149,7 @@ body_top: |+
           </tbody>
         </table>
       </div>
-      <p>We do not use automated decision-making that produces legal effects for you without human involvement. Platform features that analyse data, including AI agents, produce outputs for review by the client's own staff.</p>
+      <p>We do not use automated decision-making that produces legal effects for you without human involvement. Platform features that analyse data, including AI agents, produce outputs for review by the client's own staff. Where an AI provider processes data on our behalf, our contract with that provider prohibits using it to train their general-purpose models.</p>
 
       <h2 id="sharing">5. Sharing and sub-processors</h2>
       <p>We do not sell personal data. We share it only in the following ways.</p>
@@ -171,54 +161,55 @@ body_top: |+
         <li><strong>Corporate transactions.</strong> A prospective buyer or investor in a reorganisation, merger or sale, under confidentiality obligations.</li>
       </ul>
       <p>Our current sub-processors are:</p>
-      <!-- TODO: replace the placeholder rows below with the real sub-processor register.
-           Each entry needs: legal entity name, service provided, hosting region,
-           and the transfer mechanism relied on. Keep this list in sync with the
-           sub-processor annex of the client DPA — clients are entitled to notice
-           of changes. -->
       <div class="table-scroll">
         <table>
           <thead>
-            <tr><th scope="col">Sub-processor</th><th scope="col">Service provided</th><th scope="col">Location</th></tr>
+            <tr><th scope="col">Sub-processor</th><th scope="col">Purpose</th><th scope="col">Location</th></tr>
           </thead>
           <tbody>
-            <tr><td>[Sub-processor name]</td><td>[Cloud hosting and storage]</td><td>[Country / region]</td></tr>
-            <tr><td>[Sub-processor name]</td><td>[Transactional email delivery]</td><td>[Country / region]</td></tr>
-            <tr><td>[Sub-processor name]</td><td>[Electronic signature]</td><td>[Country / region]</td></tr>
-            <tr><td>[Sub-processor name]</td><td>[KYC and screening]</td><td>[Country / region]</td></tr>
-            <tr><td>[Sub-processor name]</td><td>[Product analytics and error monitoring]</td><td>[Country / region]</td></tr>
-            <tr><td>[Sub-processor name]</td><td>[Customer support and ticketing]</td><td>[Country / region]</td></tr>
+            <tr><td>Amazon Web Services</td><td>Cloud hosting, compute, storage and database backups (including Amazon S3, SES and SNS)</td><td>India, United States</td></tr>
+            <tr><td>Digio</td><td>Electronic signature (default provider) and identity verification</td><td>India</td></tr>
+            <tr><td>DocuSign</td><td>Electronic signature (alternate provider, selected per client)</td><td>United States</td></tr>
+            <tr><td>IDfy</td><td>AML and sanctions screening for investor KYC</td><td>India</td></tr>
+            <tr><td>Twilio</td><td>SMS delivery for two-factor authentication codes</td><td>United States</td></tr>
+            <tr><td>WATI</td><td>WhatsApp notifications and two-factor authentication codes</td><td>Outside India</td></tr>
+            <tr><td>Twilio SendGrid</td><td>Inbound email parsing, so a user can file an email into the platform by forwarding it</td><td>United States</td></tr>
+            <tr><td>OpenAI</td><td>AI/LLM inference — document Q&amp;A, data extraction, drafting and report generation</td><td>United States</td></tr>
+            <tr><td>Anthropic</td><td>AI/LLM inference (Claude) — same class of use as above</td><td>United States</td></tr>
+            <tr><td>Google</td><td>AI/LLM inference (Gemini) — summarisation and report generation</td><td>United States</td></tr>
+            <tr><td>OpenRouter</td><td>Routes AI requests to model providers on our behalf; may in turn use further sub-processors for that routing</td><td>United States</td></tr>
+            <tr><td>SerpAPI</td><td>Web search results used by AI agents</td><td>United States</td></tr>
           </tbody>
         </table>
       </div>
-      <p>Clients who have signed a data processing agreement with us receive advance notice of changes to this list in accordance with that agreement, with a notice period of <strong>[notice period]</strong>.</p>
+      <p>Where our AI agents process fund, portfolio or investor data to generate an output, the underlying prompt content reaches the relevant AI provider above. We do not send data to an AI provider for any purpose other than producing the output the client's own staff requested.</p>
+      <p>We will give clients who have signed a data processing agreement with us at least <strong>30 days'</strong> notice before adding a new sub-processor that will process their personal data.</p>
 
       <h2 id="transfers">6. International transfers</h2>
-      <p><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> is based in India and serves clients with fund structures in India and other jurisdictions. Personal data may therefore be transferred to, stored in or accessed from countries other than the one you are in, including <strong>[list of countries]</strong>.</p>
+      <p><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> is based in India and serves clients with fund structures in India and other jurisdictions. Personal data may therefore be transferred to, stored in or accessed from countries other than the one you are in — currently <strong>India and the United States</strong>, reflecting where our hosting and sub-processors listed in section 5 operate.</p>
       <p>Where we transfer personal data across borders, we rely on the following safeguards:</p>
       <ul>
-        <li>for transfers out of India, compliance with the restrictions and any government notifications issued under the Digital Personal Data Protection Act, 2023;</li>
-        <li>for transfers out of the European Economic Area, the United Kingdom or Switzerland, the European Commission's Standard Contractual Clauses, the UK International Data Transfer Addendum, or another mechanism recognised under Article 46 of the GDPR, together with a transfer risk assessment; and</li>
-        <li><strong>[any additional mechanism or certification relied on]</strong>.</li>
+        <li>for transfers out of India, compliance with the restrictions and any government notifications issued under the Digital Personal Data Protection Act, 2023; and</li>
+        <li>for transfers out of the European Economic Area, the United Kingdom or Switzerland, the European Commission's Standard Contractual Clauses, the UK International Data Transfer Addendum, or another mechanism recognised under Article 46 of the GDPR, together with a transfer risk assessment.</li>
       </ul>
       <p>Where we act as processor, hosting location is a matter for the client's configuration and contract. Clients may request details of where their data is stored.</p>
 
       <h2 id="retention">7. How long we keep personal data</h2>
       <p>We keep personal data only as long as we need it for the purposes in section 4, or as long as the law requires.</p>
       <ul>
-        <li>Website and analytics data — <strong>[retention period]</strong>.</li>
+        <li>Website and analytics data — up to <strong>2 years</strong>, matching the lifetime of the analytics cookies described in our <a href="cookies.html">Cookie Policy</a>.</li>
         <li>Demo request form submissions — <strong>24 months</strong> after the last meaningful interaction.
           The IP address and browser identifier collected with a submission are kept for
           <strong>90 days</strong> and then permanently erased from the record, because they serve
           only to detect abuse of the form; the rest of your enquiry is retained for the period above.</li>
-        <li>Prospect and marketing records — <strong>[retention period]</strong> after the last meaningful interaction.</li>
-        <li>Platform account records — for the term of the client's agreement, then <strong>[retention period]</strong>.</li>
-        <li>Audit and security logs — <strong>[retention period]</strong>.</li>
-        <li>Support tickets — <strong>[retention period]</strong>.</li>
-        <li>Billing, tax and statutory records — <strong>[retention period, per applicable statutory minimum]</strong>.</li>
-        <li>Recruitment records — <strong>[retention period]</strong> after the process closes.</li>
+        <li>Prospect and marketing records — for as long as you remain a live prospect or subscriber, and deleted or anonymised a reasonable period after we lose contact or you unsubscribe.</li>
+        <li>Platform account records — for the term of the client's agreement, then as set out in that agreement.</li>
+        <li>Audit and security logs — for as long as the account or fund record they relate to exists, so the audit trail stays intact for as long as the record it explains.</li>
+        <li>Support tickets — for as long as needed to resolve the issue and handle reasonable follow-up, then deleted.</li>
+        <li>Billing, tax and statutory records — for the periods required by the Companies Act, 2013 and applicable tax law, currently up to eight years for financial records.</li>
+        <li>Recruitment records — for the hiring process plus a short follow-up period, then deleted, unless you ask us to keep your details on file for future roles.</li>
       </ul>
-      <p>For client data held under our processor role, retention is set by the client's instructions and their own regulatory obligations, which for KYC records are often long. On termination we return or delete client data in line with the signed agreement, within <strong>[period]</strong>, except where we must keep a copy by law. Backups are overwritten on a rolling cycle of <strong>[period]</strong>.</p>
+      <p>For client data held under our processor role, retention is set by the client's instructions and their own regulatory obligations, which for KYC records are often long. On termination we return or delete client data in line with the signed agreement, except where we must keep a copy by law. Backups are retained for <strong>90 days</strong> on a rolling basis and then automatically expired.</p>
 
       <h2 id="security">8. Security</h2>
       <p>We apply technical and organisational measures designed to protect personal data against unauthorised access, alteration, disclosure and loss. These include encryption in transit and at rest, role-based access control, single sign-on and multi-factor authentication, audit logging, environment separation, and background checks and training for our staff.</p>
@@ -226,19 +217,17 @@ body_top: |+
 
       <h2 id="rights">9. Your rights and how to exercise them</h2>
       <p>Subject to the law that applies to you, you may have the right to ask us to give you access to your personal data, correct it, complete it, update it, erase it, restrict how we use it, provide it in a portable form, or stop using it for direct marketing. You may also withdraw consent where we relied on consent, and object where we relied on legitimate interests.</p>
-      <p>To make a request, write to <a href="mailto:hello@caphive.com">hello@caphive.com</a> with enough detail for us to identify you. We do not charge for a first request. We will respond within the period the applicable law allows, and in any event within <strong>[number] days</strong>. We may ask you to verify your identity before we act. If your data is in the platform under a client's control, we will pass the request to that client.</p>
+      <p>To make a request, write to <a href="mailto:privacy@caphive.com">privacy@caphive.com</a> with enough detail for us to identify you. We do not charge for a first request. We will respond within the period the applicable law allows, and in any event within <strong>30 days</strong>. We may ask you to verify your identity before we act. If your data is in the platform under a client's control, we will pass the request to that client.</p>
       <h3>9.1 Grievance officer — India</h3>
-      <p>Under the Digital Personal Data Protection Act, 2023 and the Information Technology Act, 2000 and rules made under it, you may contact our grievance officer:</p>
+      <p>Under the Digital Personal Data Protection Act, 2023 and the Information Technology Act, 2000 and rules made under it, you may raise a grievance with us at:</p>
       <ul>
-        <li>Name: <strong>[grievance officer name]</strong></li>
-        <li>Designation: <strong>[designation]</strong></li>
-        <li>Email: <strong>[grievance officer email]</strong></li>
+        <li>Email: <strong><a href="mailto:privacy@caphive.com">privacy@caphive.com</a></strong></li>
         <li>Postal address: 801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel, Mumbai 400013</li>
-        <li>Response time: within <strong>[number] days</strong> of receipt</li>
+        <li>Response time: within <strong>30 days</strong> of receipt</li>
       </ul>
       <p>If you are not satisfied with our response, you may complain to the Data Protection Board of India.</p>
-      <h3>9.2 Rights under the GDPR and UK GDPR</h3>
-      <p>Where the GDPR or UK GDPR applies to our processing, you also have the right to lodge a complaint with your local supervisory authority. Our Data Protection Officer, where one is appointed, is <strong>[Data Protection Officer name and contact]</strong>. Our representative in the European Union or United Kingdom, where one is required, is <strong>[EU/UK representative name and address]</strong>.</p>
+      <h3>9.2 GDPR and UK GDPR</h3>
+      <p><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> does not currently have clients or establishments in the European Union or United Kingdom, so the GDPR and UK GDPR do not apply to our processing today, and we have not appointed a Data Protection Officer or an EU/UK representative. If that changes, we will update this section before we take on data covered by those laws.</p>
 
       <h2 id="cookies">10. Cookies and similar technologies</h2>
       <p>We use cookies and similar technologies on this website to keep it working, remember your preferences and, where you allow it, to analyse how the site is used. What we set, why, and how to control it is set out in our <a href="cookies.html">Cookie Policy</a>.</p>
@@ -247,12 +236,12 @@ body_top: |+
       <p><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> sells to institutions. This website and the platform are not directed at children, and we do not knowingly collect personal data from anyone under the age of 18. If you believe a child has provided us with personal data, write to <a href="mailto:hello@caphive.com">hello@caphive.com</a> and we will delete it. Where a client's investor records include data about a minor — for example a beneficiary — that data is processed on the client's instructions and the client is responsible for obtaining any consent required.</p>
 
       <h2 id="changes">12. Changes to this policy</h2>
-      <p>We may update this policy to reflect changes in our services, our suppliers or the law. When we do, we will change the "last updated" date at the top of this page. If the change is significant, we will give notice by email or through the platform before it takes effect, at least <strong>[notice period]</strong> in advance where the law or a contract requires it. Earlier versions are available on request.</p>
+      <p>We may update this policy to reflect changes in our services, our suppliers or the law. When we do, we will change the "last updated" date at the top of this page. If the change is significant, we will give reasonable advance notice by email or through the platform before it takes effect, meeting any minimum period the law or a contract requires. Earlier versions are available on request.</p>
 
       <h2 id="contact">13. How to contact us</h2>
       <p>For any question about this policy or about how we handle personal data:</p>
       <ul>
-        <li>Email: <a href="mailto:hello@caphive.com">hello@caphive.com</a></li>
+        <li>Email: <a href="mailto:privacy@caphive.com">privacy@caphive.com</a> (privacy questions and rights requests) or <a href="mailto:hello@caphive.com">hello@caphive.com</a> (everything else)</li>
         <li>Post: <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited, 801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel, Mumbai 400013, India</li>
       </ul>
       <p>You can also reach us through our <a href="contact.html">contact page</a>. Please see our <a href="terms.html">Terms of Service</a> for the terms that govern use of this website.</p>

@@ -1,0 +1,14 @@
+<div class="wizard-help-box d-flex gap-3 align-items-start mb-4">
+  <div class="wizard-help-icon flex-shrink-0 d-flex align-items-center justify-content-center">
+    <i class="ti ti-bulb"></i>
+  </div>
+  <div>
+    <div class="fw-bold mb-1"><%= title %></div>
+    <div class="text-muted small mb-0"><%= body %></div>
+    <% if defined?(example) && example.present? %>
+      <div class="wizard-help-example mt-2 small">
+        <i class="ti ti-sparkles me-1"></i><%= example %>
+      </div>
+    <% end %>
+  </div>
+</div>

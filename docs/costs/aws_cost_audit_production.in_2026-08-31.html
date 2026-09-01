@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AWS Cost Audit — production.in (825199636520)</title>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: #1f2933; background: #fff; max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.55; }
+    h1, h2, h3 { color: #102a43; }
+    h2 { border-bottom: 2px solid #d9e2ec; padding-bottom: .3rem; margin-top: 2.2rem; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95rem; }
+    th, td { border: 1px solid #d9e2ec; padding: .45rem .6rem; text-align: left; vertical-align: top; }
+    th { background: #f0f4f8; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    code, pre { background: #f0f4f8; border-radius: 4px; }
+    pre { padding: .8rem; overflow-x: auto; }
+    code { padding: .1rem .3rem; }
+    blockquote { border-left: 4px solid #f0b429; background: #fffbea; margin: 1rem 0; padding: .6rem 1rem; }
+  </style>
+</head>
+<body>
+<h1 id="aws-cost-audit-account-825199636520">AWS Cost Audit — account 825199636520</h1>
+
+<p><em>Generated 2026-08-31 · regions scanned: ap-south-1, ap-south-2, ap-southeast-1, us-east-1, us-east-2</em></p>
+
+<h2 id="1-cost-evaluation">1. Cost evaluation</h2>
+
+<h3 id="monthly-totals">Monthly totals</h3>
+
+<table><thead>
+<tr>
+<th>Month</th>
+<th style="text-align: right">Total (USD)</th>
+<th style="text-align: right">Δ vs prior</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>2026-06</td>
+<td style="text-align: right">1085.85</td>
+<td style="text-align: right">—</td>
+</tr>
+<tr>
+<td>2026-07</td>
+<td style="text-align: right">1278.88</td>
+<td style="text-align: right">+193.02</td>
+</tr>
+<tr>
+<td>2026-08</td>
+<td style="text-align: right">1280.44</td>
+<td style="text-align: right">+1.56</td>
+</tr>
+</tbody></table>
+
+<p>Current month: <strong>$1271.32</strong> over 30 days ($42.38/day, projecting ~<strong>$1271.32</strong>).</p>
+
+<h3 id="top-services-2026-08">Top services (2026-08)</h3>
+
+<table><thead>
+<tr>
+<th>Service</th>
+<th style="text-align: right">This month</th>
+<th style="text-align: right">Prior month</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>EC2 - Other</td>
+<td style="text-align: right">300.63</td>
+<td style="text-align: right">296.33</td>
+</tr>
+<tr>
+<td>Savings Plans for AWS Compute usage</td>
+<td style="text-align: right">282.72</td>
+<td style="text-align: right">282.72</td>
+</tr>
+<tr>
+<td>Amazon Elastic Compute Cloud - Compute</td>
+<td style="text-align: right">218.55</td>
+<td style="text-align: right">230.91</td>
+</tr>
+<tr>
+<td>Tax</td>
+<td style="text-align: right">195.33</td>
+<td style="text-align: right">195.10</td>
+</tr>
+<tr>
+<td>Amazon Simple Storage Service</td>
+<td style="text-align: right">132.77</td>
+<td style="text-align: right">121.91</td>
+</tr>
+<tr>
+<td>Amazon Virtual Private Cloud</td>
+<td style="text-align: right">43.39</td>
+<td style="text-align: right">44.48</td>
+</tr>
+<tr>
+<td>AWS Backup</td>
+<td style="text-align: right">35.92</td>
+<td style="text-align: right">34.98</td>
+</tr>
+<tr>
+<td>Amazon Elastic Load Balancing</td>
+<td style="text-align: right">33.53</td>
+<td style="text-align: right">34.67</td>
+</tr>
+<tr>
+<td>AWS WAF</td>
+<td style="text-align: right">21.65</td>
+<td style="text-align: right">22.39</td>
+</tr>
+<tr>
+<td>Amazon GuardDuty</td>
+<td style="text-align: right">12.30</td>
+<td style="text-align: right">11.43</td>
+</tr>
+<tr>
+<td>Amazon Simple Email Service</td>
+<td style="text-align: right">1.61</td>
+<td style="text-align: right">1.90</td>
+</tr>
+<tr>
+<td>Amazon Route 53</td>
+<td style="text-align: right">1.06</td>
+<td style="text-align: right">1.03</td>
+</tr>
+<tr>
+<td>AWS Key Management Service</td>
+<td style="text-align: right">0.96</td>
+<td style="text-align: right">1.00</td>
+</tr>
+<tr>
+<td>CloudWatch Events</td>
+<td style="text-align: right">0.01</td>
+<td style="text-align: right">0.03</td>
+</tr>
+</tbody></table>
+
+<p>Spend by region over the period: ap-south-1 ($1376.49), global ($842.15), NoRegion ($556.08), ap-south-2 ($439.56), us-east-1 ($328.60), ap-southeast-1 ($56.90), us-east-2 ($45.39).</p>
+
+<h2 id="2-active-reservations">2. Active reservations</h2>
+
+<p>No active EC2/RDS reservations — everything runs at on-demand rates. If the workload is steady, a 1-year Savings Plan or RI is typically a 30-40% cut.</p>
+
+<h2 id="3-findings-specific-waste-detected">3. Findings (specific waste detected)</h2>
+
+<p>26 findings; estimable waste ≈ <strong>$150.29/month</strong> (items without an estimate excluded — actual savings likely higher).</p>
+
+<table><thead>
+<tr>
+<th>Category</th>
+<th>Region</th>
+<th>Resource</th>
+<th>Detail</th>
+<th style="text-align: right">Est. $/mo</th>
+<th>Recommended action</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>old_snapshots</td>
+<td>ap-south-2</td>
+<td>198 snapshots &gt; 180d old (5588 GB referenced)</td>
+<td>Aged snapshots accumulate silently; verify none are needed for compliance/DR chains</td>
+<td style="text-align: right">83.82</td>
+<td>Review and delete unneeded ones; add a Data Lifecycle Manager policy for the rest</td>
+</tr>
+<tr>
+<td>nat_gateway</td>
+<td>ap-south-1</td>
+<td>nat-06db28e663067eceb</td>
+<td>NAT gateway: ~$33/mo base + $0.045/GB processed</td>
+<td style="text-align: right">32.85</td>
+<td>If only used by low-traffic private subnets, consider VPC endpoints for S3/DynamoDB or a NAT instance; consolidate multiple NATs if HA isn&#39;t required</td>
+</tr>
+<tr>
+<td>nat_gateway</td>
+<td>us-east-1</td>
+<td>nat-08d8e17fdc5370b31</td>
+<td>NAT gateway: ~$33/mo base + $0.045/GB processed</td>
+<td style="text-align: right">32.85</td>
+<td>If only used by low-traffic private subnets, consider VPC endpoints for S3/DynamoDB or a NAT instance; consolidate multiple NATs if HA isn&#39;t required</td>
+</tr>
+<tr>
+<td>old_snapshots</td>
+<td>ap-south-1</td>
+<td>3 snapshots &gt; 180d old (35 GB referenced)</td>
+<td>Aged snapshots accumulate silently; verify none are needed for compliance/DR chains</td>
+<td style="text-align: right">0.53</td>
+<td>Review and delete unneeded ones; add a Data Lifecycle Manager policy for the rest</td>
+</tr>
+<tr>
+<td>old_snapshots</td>
+<td>us-east-1</td>
+<td>2 snapshots &gt; 180d old (16 GB referenced)</td>
+<td>Aged snapshots accumulate silently; verify none are needed for compliance/DR chains</td>
+<td style="text-align: right">0.24</td>
+<td>Review and delete unneeded ones; add a Data Lifecycle Manager policy for the rest</td>
+</tr>
+<tr>
+<td>s3_no_lifecycle</td>
+<td>ap-southeast-1</td>
+<td>replica.docs.caphive.com.production.sg</td>
+<td>Bucket has no lifecycle configuration — old versions, incomplete multipart uploads and cold data are never expired or tiered</td>
+<td style="text-align: right">—</td>
+<td>Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</td>
+</tr>
+<tr>
+<td>s3_no_lifecycle</td>
+<td>us-east-2</td>
+<td>docs.caphive.us.production.us-east-2</td>
+<td>Bucket has no lifecycle configuration — old versions, incomplete multipart uploads and cold data are never expired or tiered</td>
+<td style="text-align: right">—</td>
+<td>Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</td>
+</tr>
+<tr>
+<td>s3_no_lifecycle</td>
+<td>us-east-1</td>
+<td>docs.caphive.us.production.us-east-1</td>
+<td>Bucket has no lifecycle configuration — old versions, incomplete multipart uploads and cold data are never expired or tiered</td>
+<td style="text-align: right">—</td>
+<td>Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</td>
+</tr>
+<tr>
+<td>s3_no_lifecycle</td>
+<td>ap-south-2</td>
+<td>docs.caphive.com.production.ap-south-2-backup-xtra</td>
+<td>Bucket has no lifecycle configuration — old versions, incomplete multipart uploads and cold data are never expired or tiered</td>
+<td style="text-align: right">—</td>
+<td>Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</td>
+</tr>
+<tr>
+<td>s3_no_lifecycle</td>
+<td>ap-south-2</td>
+<td>docs.caphive.com.production.ap-south-2</td>
+<td>Bucket has no lifecycle configuration — old versions, incomplete multipart uploads and cold data are never expired or tiered</td>
+<td style="text-align: right">—</td>
+<td>Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</td>
+</tr>
+<tr>
+<td>s3_no_lifecycle</td>
+<td>ap-south-1</td>
+<td>docs.caphive.com.production</td>
+<td>Bucket has no lifecycle configuration — old versions, incomplete multipart uploads and cold data are never expired or tiered</td>
+<td style="text-align: right">—</td>
+<td>Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</td>
+</tr>
+<tr>
+<td>s3_no_lifecycle</td>
+<td>ap-south-1</td>
+<td>caphive-vpc-flow-logs-ap-south-1</td>
+<td>Bucket has no lifecycle configuration — old versions, incomplete multipart uploads and cold data are never expired or tiered</td>
+<td style="text-align: right">—</td>
+<td>Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</td>
+</tr>
+<tr>
+<td>s3_no_lifecycle</td>
+<td>ap-south-1</td>
+<td>aws-cloudtrail-logs-825199636520-6c47ee8f</td>
+<td>Bucket has no lifecycle configuration — old versions, incomplete multipart uploads and cold data are never expired or tiered</td>
+<td style="text-align: right">—</td>
+<td>Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</td>
+</tr>
+<tr>
+<td>s3_no_lifecycle</td>
+<td>ap-south-1</td>
+<td>aws-cloudtrail-logs-825199636520-645dcd54</td>
+<td>Bucket has no lifecycle configuration — old versions, incomplete multipart uploads and cold data are never expired or tiered</td>
+<td style="text-align: right">—</td>
+<td>Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</td>
+</tr>
+<tr>
+<td>stopped_ec2</td>
+<td>us-east-1</td>
+<td>i-09d7645f5f7f0fe42 (DbCheckInstance, t3.large)</td>
+<td>Stopped instance — attached EBS volumes still accrue storage cost</td>
+<td style="text-align: right">—</td>
+<td>Terminate + snapshot (AMI) if not needed soon; snapshots are ~50% cheaper than volumes</td>
+</tr>
+<tr>
+<td>idle_ec2</td>
+<td>us-east-1</td>
+<td>i-0aa0f27511a26ee87 (Observability, t3.medium)</td>
+<td>14-day avg CPU 0.5% — likely idle or oversized</td>
+<td style="text-align: right">—</td>
+<td>Stop/terminate if unused, or downsize one size class</td>
+</tr>
+<tr>
+<td>idle_ec2</td>
+<td>us-east-1</td>
+<td>i-0049d8aa0824e4950 (AppServer, t3.large)</td>
+<td>14-day avg CPU 1.5% — likely idle or oversized</td>
+<td style="text-align: right">—</td>
+<td>Stop/terminate if unused, or downsize one size class</td>
+</tr>
+<tr>
+<td>idle_ec2</td>
+<td>us-east-1</td>
+<td>i-077af3844ab8b1eee (DB-Replica, t3.large)</td>
+<td>14-day avg CPU 1.9% — likely idle or oversized</td>
+<td style="text-align: right">—</td>
+<td>Stop/terminate if unused, or downsize one size class</td>
+</tr>
+<tr>
+<td>idle_ec2</td>
+<td>us-east-1</td>
+<td>i-07ad822a21a638969 (AppServer, t3.large)</td>
+<td>14-day avg CPU 1.9% — likely idle or oversized</td>
+<td style="text-align: right">—</td>
+<td>Stop/terminate if unused, or downsize one size class</td>
+</tr>
+<tr>
+<td>idle_ec2</td>
+<td>us-east-1</td>
+<td>i-0def9c125550e10f9 (DB-Redis-ES, t3.large)</td>
+<td>14-day avg CPU 2.5% — likely idle or oversized</td>
+<td style="text-align: right">—</td>
+<td>Stop/terminate if unused, or downsize one size class</td>
+</tr>
+<tr>
+<td>logs_no_retention</td>
+<td>ap-south-1</td>
+<td>1 log groups with retention=Never (0.0 GB stored)</td>
+<td>Log groups without a retention policy grow forever</td>
+<td style="text-align: right">0.00</td>
+<td>aws logs put-retention-policy --log-group-name <name> --retention-in-days 90</td>
+</tr>
+<tr>
+<td>stopped_ec2</td>
+<td>ap-south-1</td>
+<td>i-0ef1dd073cd3f1b13 (DbCheckInstance, t3.large)</td>
+<td>Stopped instance — attached EBS volumes still accrue storage cost</td>
+<td style="text-align: right">—</td>
+<td>Terminate + snapshot (AMI) if not needed soon; snapshots are ~50% cheaper than volumes</td>
+</tr>
+<tr>
+<td>idle_ec2</td>
+<td>ap-south-1</td>
+<td>i-0adfaa988493fb00d (DB-Replica, t3.large)</td>
+<td>14-day avg CPU 2.1% — likely idle or oversized</td>
+<td style="text-align: right">—</td>
+<td>Stop/terminate if unused, or downsize one size class</td>
+</tr>
+<tr>
+<td>idle_ec2</td>
+<td>ap-south-1</td>
+<td>i-03d6b23d2824bd90b (AppServer, t3.large)</td>
+<td>14-day avg CPU 3.1% — likely idle or oversized</td>
+<td style="text-align: right">—</td>
+<td>Stop/terminate if unused, or downsize one size class</td>
+</tr>
+<tr>
+<td>idle_ec2</td>
+<td>ap-south-1</td>
+<td>i-0fb9e609fceab846c (Observability, t3.large)</td>
+<td>14-day avg CPU 0.6% — likely idle or oversized</td>
+<td style="text-align: right">—</td>
+<td>Stop/terminate if unused, or downsize one size class</td>
+</tr>
+<tr>
+<td>idle_ec2</td>
+<td>ap-south-1</td>
+<td>i-001884b3ba632eb52 (AppServer, t3.large)</td>
+<td>14-day avg CPU 2.6% — likely idle or oversized</td>
+<td style="text-align: right">—</td>
+<td>Stop/terminate if unused, or downsize one size class</td>
+</tr>
+</tbody></table>
+
+<h2 id="4-recommendations-deterministic">4. Recommendations (deterministic)</h2>
+
+<ul>
+<li><strong>old_snapshots</strong> × 3 (~$84.59/mo): Review and delete unneeded ones; add a Data Lifecycle Manager policy for the rest</li>
+<li><strong>nat_gateway</strong> × 2 (~$65.70/mo): If only used by low-traffic private subnets, consider VPC endpoints for S3/DynamoDB or a NAT instance; consolidate multiple NATs if HA isn&#39;t required</li>
+<li><strong>idle_ec2</strong> × 9: Stop/terminate if unused, or downsize one size class</li>
+<li><strong>stopped_ec2</strong> × 2: Terminate + snapshot (AMI) if not needed soon; snapshots are ~50% cheaper than volumes</li>
+<li><strong>logs_no_retention</strong> × 1: aws logs put-retention-policy --log-group-name <name> --retention-in-days 90</li>
+<li><strong>s3_no_lifecycle</strong> × 9: Add lifecycle rules: abort incomplete multipart uploads after 7d, transition cold data to STANDARD_IA/Glacier, expire old noncurrent versions</li>
+</ul>
+
+<blockquote>
+<p>⚠️ Nothing above was executed. Review each action before running it — especially deletions of volumes, snapshots, and databases.</p>
+</blockquote>
+
+<h2 id="5-optimization-plan-llm-analysis">5. Optimization plan (LLM analysis)</h2>
+
+<h1 id="aws-cost-optimization-finops-assessment">AWS Cost Optimization &amp; FinOps Assessment</h1>
+
+<p><strong>Account ID:</strong> 825199636520<br>
+<strong>Current Run Rate:</strong> ~$1,271.32 / month (~$42.38 / day)</p>
+
+<hr>
+
+<h2 id="1-executive-evaluation-spend-movements">1. Executive Evaluation &amp; Spend Movements</h2>
+
+<h3 id="spend-profile-overview">Spend Profile Overview</h3>
+
+<p>The account&#39;s monthly spend increased by <strong>17.8%</strong> from June 2026 ($1,085.85) to July 2026 ($1,278.88) and stabilized in August 2026 ($1,280.44). </p>
+
+<p>The primary cost drivers across the account are:
+1. <strong>EC2 - Other ($300.63 / mo):</strong> Represents EBS volumes, snapshots, and IP allocations.
+2. <strong>Compute (EC2 Instances + Savings Plans) ($501.27 / mo):</strong> ~$282.72 in Compute Savings Plans and ~$218.55 in on-demand/uncovered EC2 compute.
+3. <strong>Tax ($195.33 / mo):</strong> Directly scales with operational spend.
+4. <strong>Amazon S3 ($132.77 / mo):</strong> Continuously increasing month-over-month (up 16% from June to August).</p>
+
+<h3 id="key-anomalies-observations">Key Anomalies &amp; Observations</h3>
+
+<ul>
+<li><strong>EC2 Compute Spike in July:</strong> EC2 Compute jumped <strong>112%</strong> between June ($108.70) and July ($230.91), while Savings Plan commitments remained steady (~$282.72). This indicates compute workloads expanded beyond the existing Savings Plan commitment threshold.</li>
+<li><strong>Savings Plans vs. Active Reservations:</strong> While the account incurs $282.72/month in Compute Savings Plans, <code>active_reservations</code> lists zero Standard/Convertible EC2 Reserved Instances. Compute Savings Plans apply automatically across all EC2/Fargate/Lambda usage globally, so downsizing or rightsizing individual instances will not strand standard RIs, but aggregate compute spend should be monitored against the commitment level.</li>
+<li><strong>Storage Accumulation:</strong> S3 spend has climbed steadily ($114.39 → $121.91 → $132.77) with 9 unmanaged buckets lacking lifecycle policies. Furthermore, snapshot storage in <code>ap-south-2</code> alone accounts for ~5.6 TB of aging snapshots.</li>
+</ul>
+
+<hr>
+
+<h2 id="2-prioritized-optimization-plan">2. Prioritized Optimization Plan</h2>
+
+<p>Prioritization is ranked by the <strong>Savings-to-Effort Ratio</strong> (quickest wins and highest impact first).</p>
+
+<hr>
+
+<h3 id="1-clean-up-aged-ebs-snapshots-in-ap-south-2">1. Clean Up Aged EBS Snapshots in <code>ap-south-2</code></h3>
+
+<ul>
+<li><strong>Resources:</strong> 198 snapshots (&gt;180 days old, referencing 5,588 GB) in <code>ap-south-2</code>.</li>
+<li><strong>Estimated Monthly Savings:</strong> <strong>$83.82 / month</strong></li>
+<li><strong>Effort:</strong> Low | <strong>Risk:</strong> Medium (Requires Human Verification)</li>
+<li><strong>Flag:</strong> ⚠️ <strong>Human Verification Required:</strong> Verify that snapshots are not part of compliance, audit, or disaster recovery retention baselines before running deletion.</li>
+<li><strong>Action Steps:</strong>
+
+<ol>
+<li>Identify candidate snapshot IDs:
+<code>bash
+aws ec2 describe-snapshots --region ap-south-2 --owner-ids self \
+--query &quot;Snapshots[?StartTime&lt;=&#39;2026-03-01&#39;].[SnapshotId,StartTime,VolumeSize,Description]&quot; \
+--output table
+</code></li>
+<li>After verification, delete obsolete snapshots:
+<code>bash
+aws ec2 delete-snapshot --region ap-south-2 --snapshot-id &lt;snapshot-id&gt;
+</code></li>
+<li>Deploy an AWS Data Lifecycle Manager (DLM) policy to enforce retention automation going forward.</li>
+</ol></li>
+</ul>
+
+<hr>
+
+<h3 id="2-implement-s3-lifecycle-rules-on-unmanaged-buckets">2. Implement S3 Lifecycle Rules on Unmanaged Buckets</h3>
+
+<ul>
+<li><strong>Resources:</strong>
+
+<ul>
+<li><code>aws-cloudtrail-logs-825199636520-645dcd54</code> (<code>ap-south-1</code>)</li>
+<li><code>aws-cloudtrail-logs-825199636520-6c47ee8f</code> (<code>ap-south-1</code>)</li>
+<li><code>caphive-vpc-flow-logs-ap-south-1</code> (<code>ap-south-1</code>)</li>
+<li><code>docs.caphive.com.production</code> (<code>ap-south-1</code>)</li>
+<li><code>docs.caphive.com.production.ap-south-2</code> (<code>ap-south-2</code>)</li>
+<li><code>docs.caphive.com.production.ap-south-2-backup-xtra</code> (<code>ap-south-2</code>)</li>
+<li><code>docs.caphive.us.production.us-east-1</code> (<code>us-east-1</code>)</li>
+<li><code>docs.caphive.us.production.us-east-2</code> (<code>us-east-2</code>)</li>
+<li><code>replica.docs.caphive.com.production.sg</code> (<code>ap-southeast-1</code>)</li>
+</ul></li>
+<li><strong>Estimated Monthly Savings:</strong> Variable (Reduces current $132.77/mo S3 baseline by 20–50% over time as cold data moves to Glacier/Deep Archive and unneeded logs expire).</li>
+<li><strong>Effort:</strong> Low | <strong>Risk:</strong> Low</li>
+<li><strong>Action Steps:</strong>
+Apply a standard lifecycle configuration to abort incomplete multipart uploads (7 days), transition objects to <code>INTELLIGENT_TIERING</code> or <code>GLACIER</code>, and expire non-current versions / log files.</li>
+</ul>
+
+<p>Create <code>lifecycle.json</code>:
+  <code>json
+  {
+    &quot;Rules&quot;: [
+      {
+        &quot;ID&quot;: &quot;AbortIncompleteMultipartUploads&quot;,
+        &quot;Status&quot;: &quot;Enabled&quot;,
+        &quot;Filter&quot;: {},
+        &quot;AbortIncompleteMultipartUpload&quot;: { &quot;DaysAfterInitiation&quot;: 7 }
+      },
+      {
+        &quot;ID&quot;: &quot;TransitionToIAAndExpireLogs&quot;,
+        &quot;Status&quot;: &quot;Enabled&quot;,
+        &quot;Filter&quot;: {},
+        &quot;Transitions&quot;: [
+          { &quot;Days&quot;: 90, &quot;StorageClass&quot;: &quot;STANDARD_IA&quot; },
+          { &quot;Days&quot;: 180, &quot;StorageClass&quot;: &quot;GLACIER&quot; }
+        ],
+        &quot;NoncurrentVersionExpiration&quot;: { &quot;NoncurrentDays&quot;: 30 }
+      }
+    ]
+  }
+</code>
+  Apply across target buckets:
+  <code>bash
+  aws s3api put-bucket-lifecycle-configuration \
+    --bucket &lt;bucket-name&gt; \
+    --lifecycle-configuration file://lifecycle.json
+</code></p>
+
+<hr>
+
+<h3 id="3-review-downsize-consolidate-idle-ec2-instances">3. Review &amp; Downsize/Consolidate Idle EC2 Instances</h3>
+
+<ul>
+<li><strong>Resources:</strong>
+
+<ul>
+<li><code>ap-south-1</code>:</li>
+<li><code>i-001884b3ba632eb52</code> (<code>AppServer</code>, <code>t3.large</code>, 2.6% CPU)</li>
+<li><code>i-0fb9e609fceab846c</code> (<code>Observability</code>, <code>t3.large</code>, 0.6% CPU)</li>
+<li><code>i-03d6b23d2824bd90b</code> (<code>AppServer</code>, <code>t3.large</code>, 3.1% CPU)</li>
+<li><code>i-0adfaa988493fb00d</code> (<code>DB-Replica</code>, <code>t3.large</code>, 2.1% CPU)</li>
+<li><code>us-east-1</code>:</li>
+<li><code>i-0def9c125550e10f9</code> (<code>DB-Redis-ES</code>, <code>t3.large</code>, 2.5% CPU)</li>
+<li><code>i-07ad822a21a638969</code> (<code>AppServer</code>, <code>t3.large</code>, 1.9% CPU)</li>
+<li><code>i-077af3844ab8b1eee</code> (<code>DB-Replica</code>, <code>t3.large</code>, 1.9% CPU)</li>
+<li><code>i-0049d8aa0824e4950</code> (<code>AppServer</code>, <code>t3.large</code>, 1.5% CPU)</li>
+<li><code>i-0aa0f27511a26ee87</code> (<code>Observability</code>, <code>t3.medium</code>, 0.5% CPU)</li>
+</ul></li>
+<li><strong>Estimated Monthly Savings:</strong> <strong>$150.00 – $220.00 / month</strong> (Downsizing 8 <code>t3.large</code> to <code>t3.medium</code>/<code>t3.small</code> saves ~$30–$45 per instance/mo on on-demand/uncovered compute).</li>
+<li><strong>Effort:</strong> Medium | <strong>Risk:</strong> Medium (Requires performance testing to ensure memory/I/O limits are not exceeded).</li>
+<li><strong>Flag:</strong> ⚠️ <strong>Human Verification Required:</strong> Check memory utilization (via CloudWatch Agent) before downsizing database and caching instances (<code>DB-Replica</code>, <code>DB-Redis-ES</code>).</li>
+<li><strong>Action Steps:</strong>
+
+<ol>
+<li>Downsize an instance (e.g., in <code>ap-south-1</code> from <code>t3.large</code> to <code>t3.medium</code>):
+<code>bash
+aws ec2 stop-instances --region ap-south-1 --instance-ids i-001884b3ba632eb52
+aws ec2 wait instance-stopped --region ap-south-1 --instance-ids i-001884b3ba632eb52
+aws ec2 modify-instance-attribute --region ap-south-1 --instance-id i-001884b3ba632eb52 --instance-type t3.medium
+aws ec2 start-instances --region ap-south-1 --instance-ids i-001884b3ba632eb52
+</code></li>
+<li>Repeat for non-production app and observability nodes in <code>ap-south-1</code> and <code>us-east-1</code>.</li>
+</ol></li>
+</ul>
+
+<hr>
+
+<h3 id="4-terminate-stopped-instances-archive-attached-volumes">4. Terminate Stopped Instances &amp; Archive Attached Volumes</h3>
+
+<ul>
+<li><strong>Resources:</strong>
+
+<ul>
+<li><code>i-0ef1dd073cd3f1b13</code> (<code>DbCheckInstance</code>, <code>t3.large</code>) in <code>ap-south-1</code></li>
+<li><code>i-09d7645f5f7f0fe42</code> (<code>DbCheckInstance</code>, <code>t3.large</code>) in <code>us-east-1</code></li>
+</ul></li>
+<li><strong>Estimated Monthly Savings:</strong> <strong>$10.00 – $25.00 / month</strong> (Eliminates unattached/idle EBS gp2/gp3 root volume costs).</li>
+<li><strong>Effort:</strong> Low | <strong>Risk:</strong> Low</li>
+<li><strong>Flag:</strong> ⚠️ <strong>Human Verification Required:</strong> Confirm no uncommitted diagnostic data resides on these test/check instances before terminating.</li>
+<li><strong>Action Steps:</strong>
+
+<ol>
+<li>Create AMI/Snapshot backup if retention is needed:
+<code>bash
+aws ec2 create-image --region ap-south-1 --instance-id i-0ef1dd073cd3f1b13 --name &quot;backup-i-0ef1dd073cd3f1b13&quot; --no-reboot
+aws ec2 create-image --region us-east-1 --instance-id i-09d7645f5f7f0fe42 --name &quot;backup-i-09d7645f5f7f0fe42&quot; --no-reboot
+</code></li>
+<li>Terminate the instances:
+<code>bash
+aws ec2 terminate-instances --region ap-south-1 --instance-ids i-0ef1dd073cd3f1b13
+aws ec2 terminate-instances --region us-east-1 --instance-ids i-09d7645f5f7f0fe42
+</code></li>
+</ol></li>
+</ul>
+
+<hr>
+
+<h3 id="5-evaluate-idle-nat-gateways-vs-vpc-endpoints">5. Evaluate Idle NAT Gateways vs. VPC Endpoints</h3>
+
+<ul>
+<li><strong>Resources:</strong>
+
+<ul>
+<li><code>nat-06db28e663067eceb</code> in <code>ap-south-1</code></li>
+<li><code>nat-08d8e17fdc5370b31</code> in <code>us-east-1</code></li>
+</ul></li>
+<li><strong>Estimated Monthly Savings:</strong> <strong>$32.85 – $65.70 / month</strong> ($32.85/mo per gateway base fee if decommissioned/consolidated).</li>
+<li><strong>Effort:</strong> Medium | <strong>Risk:</strong> High (Removing a NAT gateway cuts outbound internet egress for private subnets).</li>
+<li><strong>Flag:</strong> ⚠️ <strong>Human Verification Required:</strong> Analyze CloudWatch <code>BytesOutToDestination</code> on both NAT gateways. If traffic is primarily to S3, replace with a Gateway VPC Endpoint (free).</li>
+<li><strong>Action Steps:</strong>
+
+<ol>
+<li>Check NAT Gateway active throughput metrics in CloudWatch.</li>
+<li>If S3 traffic dominates, create a Gateway Endpoint:
+<code>bash
+aws ec2 create-vpc-endpoint --region ap-south-1 --vpc-id &lt;vpc-id&gt; --service-name com.amazonaws.ap-south-1.s3 --route-table-ids &lt;rtb-id&gt;
+</code></li>
+<li>If no outbound internet access is required by instances in the private subnet, delete the NAT Gateway and release the associated Elastic IP.</li>
+</ol></li>
+</ul>
+
+<hr>
+
+<h3 id="6-delete-aged-snapshots-in-ap-south-1-us-east-1">6. Delete Aged Snapshots in <code>ap-south-1</code> &amp; <code>us-east-1</code></h3>
+
+<ul>
+<li><strong>Resources:</strong>
+
+<ul>
+<li>3 snapshots (&gt;180d old, 35 GB) in <code>ap-south-1</code> ($0.53/mo)</li>
+<li>2 snapshots (&gt;180d old, 16 GB) in <code>us-east-1</code> ($0.24/mo)</li>
+</ul></li>
+<li><strong>Estimated Monthly Savings:</strong> <strong>$0.77 / month</strong></li>
+<li><strong>Effort:</strong> Low | <strong>Risk:</strong> Low</li>
+<li><strong>Action Steps:</strong>
+<code>bash
+aws ec2 describe-snapshots --region ap-south-1 --owner-ids self --query &quot;Snapshots[?StartTime&lt;=&#39;2026-03-01&#39;].SnapshotId&quot; --output text
+aws ec2 delete-snapshot --region ap-south-1 --snapshot-id &lt;snapshot-id&gt;
+aws ec2 delete-snapshot --region us-east-1 --snapshot-id &lt;snapshot-id&gt;
+</code></li>
+</ul>
+
+<hr>
+
+<h3 id="7-configure-retention-policy-on-cloudwatch-log-groups">7. Configure Retention Policy on CloudWatch Log Groups</h3>
+
+<ul>
+<li><strong>Resources:</strong> 1 Log Group with retention <code>Never</code> in <code>ap-south-1</code>.</li>
+<li><strong>Estimated Monthly Savings:</strong> Proactive (prevents unbounded storage charges).</li>
+<li><strong>Effort:</strong> Low | <strong>Risk:</strong> Low</li>
+<li><strong>Action Steps:</strong>
+
+<ol>
+<li>Identify the log group:
+<code>bash
+aws logs describe-log-groups --region ap-south-1 --query &quot;logGroups[?retentionInDays==null].logGroupName&quot; --output table
+</code></li>
+<li>Set retention policy (e.g., 90 days):
+<code>bash
+aws logs put-retention-policy --region ap-south-1 --log-group-name &lt;log-group-name&gt; --retention-in-days 90
+</code></li>
+</ol></li>
+</ul>
+
+<hr>
+
+<h2 id="3-summary-of-potential-savings">3. Summary of Potential Savings</h2>
+
+<table><thead>
+<tr>
+<th style="text-align: left">Optimization Target</th>
+<th style="text-align: left">Potential Monthly Savings</th>
+<th style="text-align: left">Effort</th>
+<th style="text-align: left">Risk Level</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left"><strong><code>ap-south-2</code> Old Snapshots</strong></td>
+<td style="text-align: left">~$83.82</td>
+<td style="text-align: left">Low</td>
+<td style="text-align: left">Medium</td>
+</tr>
+<tr>
+<td style="text-align: left"><strong>Idle/Oversized EC2 Rightsizing</strong></td>
+<td style="text-align: left">~$150.00 – $220.00</td>
+<td style="text-align: left">Medium</td>
+<td style="text-align: left">Medium</td>
+</tr>
+<tr>
+<td style="text-align: left"><strong>NAT Gateway Optimization</strong></td>
+<td style="text-align: left">~$32.85 – $65.70</td>
+<td style="text-align: left">Medium</td>
+<td style="text-align: left">High</td>
+</tr>
+<tr>
+<td style="text-align: left"><strong>Stopped Instances (<code>DbCheckInstance</code>)</strong></td>
+<td style="text-align: left">~$10.00 – $25.00</td>
+<td style="text-align: left">Low</td>
+<td style="text-align: left">Low</td>
+</tr>
+<tr>
+<td style="text-align: left"><strong>S3 Lifecycle Rules &amp; Cleanup</strong></td>
+<td style="text-align: left">~$25.00 – $50.00</td>
+<td style="text-align: left">Low</td>
+<td style="text-align: left">Low</td>
+</tr>
+<tr>
+<td style="text-align: left"><strong>Aged Snapshots (<code>ap-south-1</code>, <code>us-east-1</code>)</strong></td>
+<td style="text-align: left">~$0.77</td>
+<td style="text-align: left">Low</td>
+<td style="text-align: left">Low</td>
+</tr>
+<tr>
+<td style="text-align: left"><strong>Total Estimated Monthly Savings</strong></td>
+<td style="text-align: left"><strong>~$300 – $445 / month (~23% to 35% of total spend)</strong></td>
+<td style="text-align: left"></td>
+<td style="text-align: left"></td>
+</tr>
+</tbody></table>
+
+</body>
+</html>

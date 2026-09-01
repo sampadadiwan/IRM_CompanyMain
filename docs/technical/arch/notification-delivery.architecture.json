@@ -1,0 +1,337 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Notification Delivery",
+  "quality_profile": "showcase",
+  "views": [
+   {
+    "id": "trigger",
+    "label": "Triggering",
+    "focus": [
+     "domain",
+     "custom",
+     "notifiers"
+    ],
+    "note": "Domain models call Notifier.with(...).deliver_later; per-entity CustomNotification templates supply the content."
+   },
+   {
+    "id": "channels",
+    "label": "Channels",
+    "focus": [
+     "email",
+     "wa",
+     "ua",
+     "inapp"
+    ],
+    "note": "Noticed fans out to email, WhatsApp, live user alerts, and the in-app notification list."
+   },
+   {
+    "id": "email-path",
+    "label": "Email path",
+    "focus": [
+     "email",
+     "ses",
+     "sns",
+     "psj"
+    ],
+    "note": "SMTP to SES with a config-set header; bounces come back through SNS and are stamped onto the Notification."
+   }
+  ]
+ },
+ "components": [
+  {
+   "id": "domain",
+   "type": "backend",
+   "label": "Domain events",
+   "sublabel": "calls \u00b7 docs \u00b7 KYC \u00b7 approvals",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    300,
+    64
+   ]
+  },
+  {
+   "id": "custom",
+   "type": "database",
+   "label": "CustomNotification",
+   "sublabel": "per-entity templates \u00b7 subject \u00b7 body \u00b7 whatsapp",
+   "pos": [
+    520,
+    40
+   ],
+   "size": [
+    280,
+    64
+   ]
+  },
+  {
+   "id": "notifiers",
+   "type": "backend",
+   "label": "Notifiers \u2014 BaseNotifier (Noticed::Event)",
+   "sublabel": "creates Event + Notification rows \u00b7 per-recipient gates \u00b7 delivers via Sidekiq",
+   "pos": [
+    40,
+    170
+   ],
+   "size": [
+    890,
+    56
+   ]
+  },
+  {
+   "id": "email",
+   "type": "backend",
+   "label": "deliver_by :email",
+   "sublabel": "email_enabled \u00b7 random delay",
+   "pos": [
+    40,
+    300
+   ],
+   "size": [
+    200,
+    64
+   ]
+  },
+  {
+   "id": "wa",
+   "type": "backend",
+   "label": "WhatsApp method",
+   "sublabel": "entity + access + opt-in",
+   "pos": [
+    270,
+    300
+   ],
+   "size": [
+    200,
+    64
+   ]
+  },
+  {
+   "id": "ua",
+   "type": "backend",
+   "label": "UserAlerts method",
+   "sublabel": "UserAlert.broadcast",
+   "pos": [
+    500,
+    300
+   ],
+   "size": [
+    200,
+    64
+   ]
+  },
+  {
+   "id": "inapp",
+   "type": "frontend",
+   "label": "In-app list",
+   "sublabel": "NotificationsController",
+   "pos": [
+    730,
+    300
+   ],
+   "size": [
+    200,
+    64
+   ]
+  },
+  {
+   "id": "ses",
+   "type": "cloud",
+   "label": "Amazon SES",
+   "sublabel": "SMTP :587 \u00b7 config set",
+   "pos": [
+    40,
+    440
+   ],
+   "size": [
+    200,
+    64
+   ]
+  },
+  {
+   "id": "wati",
+   "type": "external",
+   "label": "WATI API",
+   "sublabel": "entity-configured endpoint",
+   "pos": [
+    270,
+    440
+   ],
+   "size": [
+    200,
+    64
+   ]
+  },
+  {
+   "id": "cable",
+   "type": "frontend",
+   "label": "Browser",
+   "sublabel": "Turbo Stream over /cable",
+   "pos": [
+    500,
+    440
+   ],
+   "size": [
+    200,
+    64
+   ]
+  },
+  {
+   "id": "sns",
+   "type": "cloud",
+   "label": "SNS webhook",
+   "sublabel": "bounces \u00b7 complaints",
+   "pos": [
+    40,
+    580
+   ],
+   "size": [
+    200,
+    60
+   ]
+  },
+  {
+   "id": "psj",
+   "type": "backend",
+   "label": "ProcessSesNotificationJob",
+   "sublabel": "stamps the Notification",
+   "pos": [
+    300,
+    580
+   ],
+   "size": [
+    230,
+    60
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "domain-notifiers",
+   "from": "domain",
+   "to": "notifiers",
+   "label": "Notifier.with(...).deliver_later",
+   "variant": "emphasis",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "custom-notifiers",
+   "from": "custom",
+   "to": "notifiers",
+   "label": "templates \u00b7 blank \u21d2 skip",
+   "variant": "dashed",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "n-email",
+   "from": "notifiers",
+   "to": "email",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "n-wa",
+   "from": "notifiers",
+   "to": "wa",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "n-ua",
+   "from": "notifiers",
+   "to": "ua",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "n-inapp",
+   "from": "notifiers",
+   "to": "inapp",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "email-ses",
+   "from": "email",
+   "to": "ses",
+   "label": "SMTP after delay",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "wa-wati",
+   "from": "wa",
+   "to": "wati",
+   "label": "POST (sanitized)",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "ua-cable",
+   "from": "ua",
+   "to": "cable",
+   "label": "broadcast_replace_to",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "ses-sns",
+   "from": "ses",
+   "to": "sns",
+   "label": "bounce / complaint",
+   "variant": "dashed",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "sns-psj",
+   "from": "sns",
+   "to": "psj",
+   "label": "SNS envelope",
+   "labelAt": [
+    270,
+    654
+   ]
+  }
+ ],
+ "cards": [
+  {
+   "dot": "emerald",
+   "title": "Recipient gating",
+   "items": [
+    "Email goes out when the recipient belongs to the entity or their investor_access has email_enabled; WhatsApp additionally needs the entity permission, the access flag, and the recipient's own opt-in",
+    "A blank CustomNotification body skips the channel \u2014 SkippedNotificationReportJob reports what was skipped",
+    "WhatsApp delivery is hard-disabled in the test environment; email is captured by the :test adapter"
+   ]
+  },
+  {
+   "dot": "violet",
+   "title": "Templates",
+   "items": [
+    "CustomNotification is scoped per entity + email_method with enabled/latest flags; whatsapp text capped at 255 chars and sanitized before sending",
+    "Each notifier supplies mailer_name, email_method, and email_data; mailers render under ApplicationMailer with the email date format forced to Mon dd, yyyy"
+   ]
+  },
+  {
+   "dot": "cyan",
+   "title": "Throttling & bounces",
+   "items": [
+    "config.wait = email_delay randomizes 1..entity_setting.email_delay_seconds (default up to 300s) so sends don't flood SES",
+    "ApplicationMailer's tag_for_bounce_tracking sets X-SES-CONFIGURATION-SET and a tracking header on notifier-driven sends",
+    "SES publishes bounces/complaints to SNS; ProcessSesNotificationJob parses the envelope and ties the result back to the Noticed::Notification (email_deliverability pack)"
+   ]
+  }
+ ]
+}

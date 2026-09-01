@@ -7,6 +7,19 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+<%# Forces every Turbo-driven visit that lands on a login/2FA page to be a full browser
+    reload instead of a soft Turbo render. Without it: an authenticated-app link clicked
+    after the session has expired is Turbo-intercepted, `authenticate_user!` redirects to
+    login, and Turbo follows that redirect as part of the SAME soft visit rather than a
+    hard navigation. The 2FA form's own `data: { turbo: false }` submit still does a real
+    POST from there, but by then the classic jQuery theme scripts (theme.js, app.init.js,
+    sidebarmenu.js — see public/modernize/js/) never got a fresh $(document).ready() to
+    bind their topbar/sidebar handlers to, since they only listen for that event and never
+    turbo:load (unlike app/javascript/application.js, which does). The dashboard the user
+    lands on afterwards inherits that half-initialized state, and only a manual reload
+    fixes it. See app/javascript/custom/turbo_handler.js for the same family of bug. %>
+<meta name="turbo-visit-control" content="reload" />
+
 <!-- Favicon icon-->
 <link rel="shortcut icon" type="image/png" href="/favicon.png" />
 
@@ -60,6 +73,12 @@
     </div>
   </div>
   <div class="dark-transparent sidebartoggler"></div>
+
+  <%# Modals render here, outside the .overflow-hidden wrapper above — nested inside it,
+      Bootstrap's fixed-position modal gets clipped by that ancestor in this app (the same
+      reason ToggleCard-hosted modals have to live outside the card). %>
+  <%= yield :modals %>
+
   <!-- Import Js Files -->
 
 <script src="/modernize/libs/jquery/dist/jquery.min.js"></script>

@@ -174,6 +174,7 @@ class User < ApplicationRecord
 
   before_create :setup_defaults
   after_create :update_investor_access
+  after_update :sync_investor_access_contact_details, if: :sync_investor_access_contact_details?
   before_save :update_kanban_permissions
 
   def update_kanban_permissions
@@ -264,6 +265,24 @@ class User < ApplicationRecord
     end
     add_role :investor if entity && (entity.entity_type == "Investor")
     save
+  end
+
+  def sync_investor_access_contact_details?
+    saved_change_to_email? || saved_change_to_phone? || saved_change_to_call_code?
+  end
+
+  # InvestorAccess keeps its own copies of email/phone. call_code has no persisted column on
+  # investor_accesses (dropped by db/migrate/archive/20260410113954_remove_extra_columns_from_db.rb;
+  # it now only survives as a transient attr_accessor used at InvestorAccess creation time), so
+  # there is nothing to write for it here even though it's part of the change we react to.
+  #
+  # Bypass validations/callbacks with update_all: InvestorAccess#update_user (before_validation)
+  # would otherwise re-derive `user` from the new email via User.find_by(email:), which could
+  # detach this investor_access from this user or spin up an unrelated new User. investor_accesses.phone
+  # is capped shorter (15) than users.phone (100), so truncate defensively rather than risk a
+  # DB-level "value too long" error aborting this user's save.
+  def sync_investor_access_contact_details
+    investor_accesses.update_all(email:, phone: phone.to_s[0, 15])
   end
 
   def send_devise_notification(notification, *)

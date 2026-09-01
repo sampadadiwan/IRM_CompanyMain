@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_28_063932) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_150000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1803,7 +1803,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_063932) do
   end
 
   create_table "fund_formulas", force: :cascade do |t|
-    t.boolean "add_to_commitment_cache", default: true, null: false
+    t.boolean "add_to_commitment_cache", default: false, null: false
     t.text "ai_description"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"

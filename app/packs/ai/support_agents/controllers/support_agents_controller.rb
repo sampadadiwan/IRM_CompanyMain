@@ -560,14 +560,22 @@ class SupportAgentsController < ApplicationController
 
   # Returns a Turbo Frame with step transition checkboxes for the selected deal.
   # Called via AJAX when the deal selector changes in the DealManagementAgent config partial.
+  # Works as both a member route (persisted agent, edit form) and collection route (new agent form).
   #
+  # @param id [Integer] optional — the support agent's ID (member route only)
   # @param deal_id [Integer] query param — the selected deal's ID
   # @return [void] renders the _deal_steps_frame partial inside a Turbo Frame
   def deal_steps
-    @support_agent = SupportAgent.find(params[:id])
-    authorize @support_agent, :edit?
+    if params[:id]
+      @support_agent = SupportAgent.find(params[:id])
+      authorize @support_agent, :edit?
+    else
+      @support_agent = SupportAgent.new(entity_id: current_user.entity_id)
+      authorize @support_agent, :new?
+    end
 
-    deal = Deal.find_by(id: params[:deal_id])
+    # Scope to current entity to prevent cross-entity deal data leakage via collection route
+    deal = Deal.find_by(id: params[:deal_id], entity_id: current_user.entity_id)
     templates = deal ? DealActivity.where(deal_id: deal.id, deal_investor_id: nil).order(:sequence).to_a : []
 
     transition_pairs = templates.each_cons(2).map do |from_step, to_step|
@@ -642,9 +650,13 @@ class SupportAgentsController < ApplicationController
   end
 
   # Permits trusted parameters for support agent creation/update.
+  # Merges submitted json_fields and properties into the existing record's json_fields
+  # to prevent silent data loss of keys not represented in the form.
   #
   # @return [ActionController::Parameters] permitted parameters
   def support_agent_params
+    return {} unless params.key?(:support_agent)
+
     permitted = params.require(:support_agent).permit(
       :name, :description, :category, :entity_id, :form_type_id, :agent_type, :json_fields,
       :document_folder_id, :with_steps, :enabled, :llm_model,
@@ -652,15 +664,23 @@ class SupportAgentsController < ApplicationController
       documents_attributes: Document::NESTED_ATTRIBUTES
     )
 
+    # Build merged json_fields: existing DB values → properties (custom form fields) → hidden field JSON.
+    # Properties go first so step toggles are captured; hidden field JSON goes last because
+    # it is the Stimulus-managed source of truth for agent-specific config (deal_ids, preset_steps, funds).
+    existing = (@support_agent&.json_fields || {}).deep_dup
+    # Always delete :properties to prevent assign_attributes from overwriting json_fields via alias
+    props = permitted.delete(:properties)
+    existing.merge!(props.to_h) if props.present?
+
     if permitted[:json_fields].is_a?(String) && permitted[:json_fields].start_with?("{")
       begin
-        config = JSON.parse(permitted[:json_fields])
-        config.merge!(permitted.delete(:properties).to_h) if permitted[:properties].present?
-        permitted[:json_fields] = config
+        existing.merge!(JSON.parse(permitted[:json_fields]))
       rescue JSON::ParserError => e
         Rails.logger.warn "[SupportAgentsController] Invalid json_fields JSON: #{e.message}"
       end
     end
+
+    permitted[:json_fields] = existing
     permitted
   end
 

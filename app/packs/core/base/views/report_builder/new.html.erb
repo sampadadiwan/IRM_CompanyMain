@@ -24,7 +24,7 @@
               <% @root_models.sort_by(&:first).each do |pack, models| %>
                 <optgroup label="<%= pack %>">
                   <% models.each do |m| %>
-                    <option value="<%= m.name %>"><%= m.name.humanize %></option>
+                    <option value="<%= m.name %>"><%= wizard_model_label(m.name) %></option>
                   <% end %>
                 </optgroup>
               <% end %>

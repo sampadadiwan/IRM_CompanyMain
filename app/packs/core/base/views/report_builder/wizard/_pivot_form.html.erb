@@ -1,0 +1,38 @@
+<%= form_tag update_report_builder_pivot_path(report), method: :patch, class: "row g-3" do %>
+  <%= hidden_field_tag :relation, relation %>
+
+  <div class="col-12">
+    <label class="form-label small fw-bold">Turn each distinct value of… into its own column</label>
+    <select name="group_bys[]" multiple class="form-select select2" style="width: 100%">
+      <% jcols.each do |c| %>
+        <option value="<%= c[:key] %>" <%= "selected" if Array(pivot_cfg[:group_bys] || pivot_cfg[:group_by]).map(&:to_s).include?(c[:key].to_s) %>><%= c[:label] %></option>
+      <% end %>
+    </select>
+    <div class="form-text small">Pick more than one to group by the combination.</div>
+  </div>
+
+  <div class="col-sm-6">
+    <label class="form-label small fw-bold">…showing this value</label>
+    <select name="value_col" class="form-select" required>
+      <option value="">— select —</option>
+      <% jcols.each do |c| %>
+        <option value="<%= c[:key] %>" <%= "selected" if pivot_cfg[:value_col].to_s == c[:key].to_s %>><%= c[:label] %></option>
+      <% end %>
+    </select>
+  </div>
+
+  <div class="col-sm-6">
+    <label class="form-label small fw-bold">…combined with</label>
+    <select name="aggregate" class="form-select">
+      <% wizard_aggregate_help.each do |key, info| %>
+        <option value="<%= key %>" <%= "selected" if (pivot_cfg[:aggregate].presence || "sum") == key %>><%= info[:label] %></option>
+      <% end %>
+    </select>
+  </div>
+
+  <div class="col-12">
+    <button type="submit" class="btn btn-sm btn-wizard-accent d-flex align-items-center gap-1">
+      <i class="ti ti-check"></i> Apply Pivot
+    </button>
+  </div>
+<% end %>

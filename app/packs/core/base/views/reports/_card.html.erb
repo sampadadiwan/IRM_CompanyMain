@@ -62,6 +62,11 @@
               <a class="note-social badge-group-item badge-social dropdown-item position-relative category-social d-flex ti ti-edit"
                  href="<%= report.report_builder? ? edit_report_builder_path(report) : edit_report_path(report) %>"> Edit</a>
 
+              <% if report.report_builder? %>
+                <a class="note-social badge-group-item badge-social dropdown-item position-relative category-social d-flex ti ti-wand"
+                   href="<%= wizard_report_builder_step_path(report, step: "columns") %>"> Guided Wizard</a>
+              <% end %>
+
                 <% if report.allow_custom_grid_columns? %>
 
                 <a class="

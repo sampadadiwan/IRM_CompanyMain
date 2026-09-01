@@ -233,11 +233,14 @@ namespace :aws do
     last_pass = nil
     if File.exist?(drill_log)
       File.readlines(drill_log).each do |line|
-        cols = line.split("|").map(&:strip)
-        # | Date | Variant | Region | Result | RTO | Branch |
-        next unless cols[4] == "PASSED" && cols[2] == env_variant
+        # | Date | Stack | Variant | Region | Result | RTO | Branch |
+        cols = line.split("|").map(&:strip).reject(&:empty?)
+        next unless cols.size == 7 # skips the title line, header row, and separator row
 
-        last_pass = [last_pass, Time.parse(cols[1])].compact.max rescue last_pass
+        row_date, row_stack, row_variant, _region, row_result, = cols
+        next unless row_result == "PASSED" && row_stack == stack && row_variant == env_variant
+
+        last_pass = [last_pass, Time.parse(row_date)].compact.max rescue last_pass
       end
     end
     if last_pass.nil?
@@ -260,23 +263,43 @@ namespace :aws do
 
   # Quarterly DR drill: proves the WHOLE recovery chain (AMIs present, Pulumi
   # stack deployable, S3 backups restorable, deploy + migrations + cutover)
-  # by rebuilding STAGING in the DR region, unattended, and measuring the time.
+  # by rebuilding a stack in the DR region, unattended, and measuring the time.
   # An untested DR plan is a hypothesis — this turns it into a measurement.
   #
   #   rake "aws:dr_drill[in]"                      # staging IN → AWS_BACKUP_REGION
   #   rake "aws:dr_drill[in, ap-south-2]"          # explicit region
   #   TEARDOWN=true rake "aws:dr_drill[in]"        # pulumi destroy after the drill
   #
+  #   # production — same non-interactive sequence, real prod backups/creds:
+  #   CONFIRM_PRODUCTION=true TEARDOWN=true \
+  #     rake "aws:dr_drill[in, ap-south-2, production.in, production]"
+  #
   # Notes:
   # - Commits only to a dr_drill_* branch; main is never touched. The task
   #   returns your working tree to the original branch afterwards.
   # - Without TEARDOWN=true the drill infra keeps running (and costing) —
   #   the teardown command is printed at the end.
-  desc "Run an unattended DR drill against staging in the DR region and report RTO"
-  task :dr_drill, [:env_variant, :region, :env_name] do |t, args|
-    args.with_defaults(env_variant: 'in')
+  # - `stack` (4th arg) defaults to 'staging'. Passing 'production' rebuilds
+  #   the REAL production Pulumi stack (production-<region>) in the DR region
+  #   using live production backups and credentials — this is a genuine DR
+  #   exercise against the production account, not a scaled-up staging test.
+  #   It refuses to run unless CONFIRM_PRODUCTION=true is ALSO set, so a
+  #   staging command copy-pasted with the extra arg can't silently fire
+  #   against production.
+  desc "Run an unattended DR drill (staging by default; production requires CONFIRM_PRODUCTION=true) and report RTO"
+  task :dr_drill, [:env_variant, :region, :env_name, :stack] do |t, args|
+    args.with_defaults(env_variant: 'in', stack: 'staging')
     env_variant = args[:env_variant]
-    env_name = args[:env_name] || "staging.#{env_variant}"
+    stack = args[:stack]
+
+    if stack == 'production' && ENV['CONFIRM_PRODUCTION'] != 'true'
+      abort "❌ Refusing to drill stack 'production' without CONFIRM_PRODUCTION=true set. " \
+            "This rebuilds the real production Pulumi stack in the DR region using live " \
+            "production backups and credentials — set the env var deliberately if that's " \
+            "what you intend; it is not a typo-guard to silence casually."
+    end
+
+    env_name = args[:env_name] || "#{stack}.#{env_variant}"
 
     # Load .env.<env_name> + credentials BEFORE resolving the region, so an
     # AWS_BACKUP_REGION defined in the env file (not just the shell) is seen
@@ -286,40 +309,91 @@ namespace :aws do
     region = args[:region] || ENV["AWS_BACKUP_REGION"] || raise("Pass a region or set AWS_BACKUP_REGION (shell or .env.#{env_name})")
 
     original_branch = `git rev-parse --abbrev-ref HEAD`.strip
-    drill_branch = "dr_drill_#{env_variant}_#{Time.now.strftime('%Y_%m_%d_%H%M')}"
+    branch_prefix = stack == 'staging' ? "dr_drill_#{env_variant}" : "dr_drill_#{stack}_#{env_variant}"
+    drill_branch = "#{branch_prefix}_#{Time.now.strftime('%Y_%m_%d_%H%M')}"
     started_at = Time.now
     result = "FAILED"
 
-    puts "🚨 DR DRILL: rebuilding staging (#{env_variant}) in #{region} on branch #{drill_branch}"
+    puts "🚨 DR DRILL: rebuilding #{stack} (#{env_variant}) in #{region} on branch #{drill_branch}"
+    # Capture the whole run — including the ensure block's summary and report
+    # line — to docs/dr_runs/<branch>.log, so the transcript exists without the
+    # operator having to pipe through tee.
+    with_dr_transcript(drill_branch) do
     begin
+      # setup_infra writes the evidence report itself for a REAL recovery; for a
+      # drill we defer it to the ensure block below so a FAILED drill produces a
+      # report too — "we tried and it broke here" is itself audit-relevant.
+      @dr_report_deferred = true
       # The full non-interactive DR sequence — the same code path a real
       # production DR uses, which is the point of the drill
-      setup_infra("staging", "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
+      setup_infra(stack, "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
       result = "PASSED"
     ensure
       duration_min = ((Time.now - started_at) / 60).round(1)
 
-      # Return the operator's working tree to where it was
-      run_cmd("git checkout #{original_branch}") unless original_branch.empty?
+      # Evidence FIRST, housekeeping second. Anything that can raise in here
+      # replaces the exception that actually failed the drill and skips
+      # everything below it — and the whole point of this ensure block is that a
+      # failed drill still leaves a record. The git checkout below is exactly
+      # such a statement, so it now runs last and swallows its own errors.
 
       # Append to the drill log — the audit trail that DR is tested, not assumed
       log_file = Rails.root.join("docs", "dr_drills.md")
-      File.write(log_file, "# DR Drill Log\n\n| Date | Variant | Region | Result | RTO (min) | Branch |\n|---|---|---|---|---|---|\n") unless File.exist?(log_file)
+      unless File.exist?(log_file)
+        File.write(log_file, <<~HEADER)
+          # DR Drill Log
+
+          > **Rebuild (min)** is the time from the start of the recovery command to the
+          > stack passing `recovery:verify`. It is *not* end-to-end RTO: it excludes
+          > incident detection, the decision to declare a disaster, and DNS cutover plus
+          > TTL propagation. Per-run evidence reports are in `docs/dr_runs/`.
+
+          | Date | Stack | Variant | Region | Result | Rebuild (min) | Branch |
+          |---|---|---|---|---|---|---|
+        HEADER
+      end
       File.open(log_file, "a") do |f|
-        f.puts "| #{started_at.strftime('%Y-%m-%d %H:%M')} | #{env_variant} | #{region} | #{result} | #{duration_min} | #{drill_branch} |"
+        f.puts "| #{started_at.strftime('%Y-%m-%d %H:%M')} | #{stack} | #{env_variant} | #{region} | #{result} | #{duration_min} | #{drill_branch} |"
       end
 
-      puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured RTO: #{duration_min} minutes (logged to docs/dr_drills.md)"
+      # Evidence report for every outcome, pass or fail
+      write_dr_report(stack: stack, region: region, env_variant: env_variant,
+                      branch: drill_branch, result: result, started_at: started_at, drill: true)
+
+      puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured rebuild time: #{duration_min} minutes (logged to docs/dr_drills.md)"
+      puts "   NOTE: that figure excludes detection, disaster declaration, and DNS cutover/TTL —"
+      puts "         it is rebuild time, not end-to-end RTO. See the report for the full scope."
+
+      # Return the operator's working tree to where it was.
+      #
+      # Runs AFTER the evidence is on disk, and never raises: a drill that dies
+      # between commit_dr_changes' `git checkout -B <drill_branch>` and its
+      # commit leaves modified config files on the drill branch, and `git
+      # checkout <original>` then fails with "local changes would be
+      # overwritten". Raising here would discard the real failure and take the
+      # drill log and the evidence report down with it — a worse outcome than
+      # leaving the operator on the drill branch, which the message below
+      # tells them how to fix.
+      unless original_branch.empty?
+        begin
+          run_cmd("git checkout #{original_branch}")
+        rescue StandardError => e
+          puts "⚠️  Could not return to '#{original_branch}': #{e.message}"
+          puts "   You are still on '#{drill_branch}'. The drill's config edits are here;"
+          puts "   switch back with: git checkout #{original_branch}  (add --force to discard them)"
+        end
+      end
 
       if result == "PASSED"
         if ENV["TEARDOWN"] == "true"
           puts "🧹 TEARDOWN=true — destroying drill infra..."
-          run_cmd("pulumi destroy --stack staging-#{region} --yes --color=always", "../IRM-Infra")
+          run_cmd("pulumi destroy --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra")
         else
           puts "⚠️  Drill infra is still RUNNING (and costing money) in #{region}."
-          puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack staging-#{region} --yes"
+          puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack #{stack}-#{region} --yes"
         end
       end
+    end
     end
   end
 
@@ -746,13 +820,54 @@ namespace :aws do
     # server is rebuilt or a cron dies. Applied to both backup buckets — S3 does
     # NOT replicate lifecycle actions, so the replica needs its own copy.
     # App-asset buckets are deliberately excluded (assets are kept forever).
+    #
+    # "Never clobbers" applies to RETENTION: an existing config's rules are
+    # never modified or replaced. The expired-delete-marker cleanup rule is
+    # ADDITIVE, though — appended to existing configs that lack it, with every
+    # existing rule resent verbatim (put_bucket_lifecycle_configuration always
+    # replaces the whole config, so appending requires resending them).
+
+    # Strips nil members from an SDK rule struct converted via to_h so it can
+    # be resent in a put request. Empty hashes are kept — `filter: {}` is
+    # meaningful ("whole bucket") and required on a rule.
+    def lifecycle_rule_to_request_h(value)
+      case value
+      when Hash  then value.transform_values { |v| lifecycle_rule_to_request_h(v) }.reject { |_, v| v.nil? }
+      when Array then value.map { |v| lifecycle_rule_to_request_h(v) }
+      else value
+      end
+    end
+
     def ensure_lifecycle!(client:, bucket:, days:)
+      # Versioned buckets: when expiration (or any delete) removes an object,
+      # S3 leaves a zero-byte delete marker on top; noncurrent_version_expiration
+      # then purges the real bytes, and the markers linger FOREVER — thousands
+      # of "ghost" 0 GB snapshot prefixes cluttering every restore listing.
+      # expired_object_delete_marker removes markers whose versions are all
+      # gone. It cannot share an expiration block with `days`, hence its own rule.
+      marker_rule = {
+        id: "irm-expired-delete-marker-cleanup",
+        status: "Enabled",
+        filter: {}, # whole bucket
+        expiration: { expired_object_delete_marker: true }
+      }
+
       begin
-        client.get_bucket_lifecycle_configuration(bucket: bucket)
-        puts "✅ Lifecycle already configured on '#{bucket}' — leaving as-is."
+        existing = client.get_bucket_lifecycle_configuration(bucket: bucket).rules
+        if existing.any? { |r| r.expiration&.expired_object_delete_marker }
+          puts "✅ Lifecycle already configured on '#{bucket}' (incl. delete-marker cleanup) — leaving as-is."
+        else
+          client.put_bucket_lifecycle_configuration(
+            bucket: bucket,
+            lifecycle_configuration: {
+              rules: existing.map { |r| lifecycle_rule_to_request_h(r.to_h) } + [marker_rule]
+            }
+          )
+          puts "🧹 Appended expired-delete-marker cleanup rule to '#{bucket}' (#{existing.size} existing rule(s) preserved verbatim)."
+        end
         return
       rescue Aws::S3::Errors::NoSuchLifecycleConfiguration
-        # No lifecycle yet — apply the retention rule below
+        # No lifecycle yet — apply the retention + marker-cleanup rules below
       end
 
       client.put_bucket_lifecycle_configuration(
@@ -772,13 +887,13 @@ namespace :aws do
             # xbcloud uploads via multipart; failed uploads leave invisible,
             # billed parts behind — abort them after a week.
             abort_incomplete_multipart_upload: { days_after_initiation: 7 }
-          }]
+          }, marker_rule]
         }
       )
-      puts "🗓️  Lifecycle applied to '#{bucket}': expire after #{days}d, purge noncurrent versions after 30d."
+      puts "🗓️  Lifecycle applied to '#{bucket}': expire after #{days}d, purge noncurrent versions after 30d, clean expired delete markers."
     end
 
-    retention_days = ENV.fetch("DB_BACKUP_RETENTION_DAYS", "90").to_i
+    retention_days = ENV.fetch("DB_BACKUP_RETENTION_DAYS", "180").to_i
     ensure_lifecycle!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, days: retention_days)
     ensure_lifecycle!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket, days: retention_days)
 
@@ -791,7 +906,7 @@ namespace :aws do
     # key management, no extra KMS grants needed for replication, and the
     # instance-role IAM stays as scoped as Point 5 left it.
     # NOTE: applies to newly written objects only — pre-existing objects stay
-    # as they were (they age out via the 90d lifecycle anyway).
+    # as they were (they age out via the retention lifecycle anyway).
     def ensure_encryption!(client:, bucket:)
       begin
         client.get_bucket_encryption(bucket: bucket)

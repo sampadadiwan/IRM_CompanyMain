@@ -78,6 +78,11 @@ gem "aws-sdk-ec2", require: false
 gem 'aws-sdk-iam'
 gem "aws-sdk-s3", require: false
 gem "aws-sdk-sns"
+# Cost-audit rake task (lib/tasks/aws_cost_audit.rake) — all share aws-sdk-core
+gem "aws-sdk-costexplorer", require: false
+gem "aws-sdk-cloudwatch", require: false
+gem "aws-sdk-cloudwatchlogs", require: false
+gem "aws-sdk-elasticloadbalancingv2", require: false
 # Elastic search client
 gem 'chewy'
 

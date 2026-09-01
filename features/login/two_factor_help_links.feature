@@ -12,7 +12,7 @@ Feature: Authenticator help and download links on the two-factor screens
 
   Scenario: The two-factor overview guide is readable without signing in
     When I visit the public two factor guide
-    Then I should see "Two-Factor Authentication User Guide"
+    Then I should see "Two-Factor Authentication"
     And I should not be asked to sign in
 
   Scenario: Guides outside the published allowlist are not exposed

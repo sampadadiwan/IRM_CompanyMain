@@ -94,7 +94,7 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all commitments
     Then all commitment investors receive the notification email
     And the notification email has the document "Company Letter" attached
-    And the notification email attachment "Company Letter" is password protected with password "adhoc_notification"
+    And the notification email attachment "Company Letter" is password protected with password "adhoc_fund_notification"
 
   Scenario: Notification attaches documents matching a wildcard attachment_names pattern
     Given there is a user "" for an entity "entity_type=Investment Fund"

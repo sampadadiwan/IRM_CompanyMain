@@ -1,0 +1,97 @@
+<%#
+  "Send KYC Reminders" confirmation — same layout as the "Request Updates" popup
+  (investor_kycs/_request_updates_modal) and users/_reset_two_factor_modal: an "Immediate
+  Actions" callout followed by tinted cards spelling out every consequence, then Cancel/Confirm.
+
+  Locals:
+    entity_id                 – current entity, forwarded to the submit URL
+    pending_kyc_reminder_count – number of InvestorKycs that will actually receive the reminder
+                                 (same scope as InvestorKycsController#send_kyc_reminder_to_all)
+%>
+<div class="modal fade" id="sendKycRemindersModal" tabindex="-1" aria-labelledby="sendKycRemindersModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="sendKycRemindersModalLabel">
+          <i class="ti ti-bell me-1"></i> Send KYC Reminders
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= form_with url: send_kyc_reminder_to_all_investor_kycs_path(entity_id: entity_id), method: :post, data: { turbo: false } do %>
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">Immediate Actions</div>
+            <div class="text-muted">The following will happen immediately when you click <strong>Send Reminders</strong>:</div>
+          </div>
+
+          <div class="action-summary__list">
+            <div class="action-summary__item action-summary__item--blue">
+              <span class="action-summary__icon"><i class="ti ti-mail"></i></span>
+              <div>
+                <div class="action-summary__title">
+                  Reminder email sent to
+                  <span class="badge bg-primary"><%= pluralize(pending_kyc_reminder_count, "investor") %></span>
+                </div>
+                <div class="action-summary__desc">
+                  Every investor whose KYC is unverified and not yet completed receives an email with a link to open and update their KYC form.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--amber">
+              <span class="action-summary__icon"><i class="ti ti-refresh"></i></span>
+              <div>
+                <div class="action-summary__title">Status set to <span class="badge bg-warning text-dark">Link Sent</span></div>
+                <div class="action-summary__desc">
+                  KYCs still at an earlier stage move to Link Sent so you can track that a reminder went out. This is skipped for KYCs already completed or verified.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--green">
+              <span class="action-summary__icon"><i class="ti ti-file-check"></i></span>
+              <div>
+                <div class="action-summary__title">Existing data preserved</div>
+                <div class="action-summary__desc">
+                  Investors edit and resubmit — nothing already entered is deleted or overwritten.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--purple">
+              <span class="action-summary__icon"><i class="ti ti-bell-check"></i></span>
+              <div>
+                <div class="action-summary__title">Reminder recorded for tracking</div>
+                <div class="action-summary__desc">
+                  Each KYC is marked as reminded with today's date, so you can see who has already been nudged.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--grey">
+              <span class="action-summary__icon"><i class="ti ti-shield-check"></i></span>
+              <div>
+                <div class="action-summary__title">Verified and completed KYCs are untouched</div>
+                <div class="action-summary__desc">
+                  Investors who are already verified or have completed their KYC are not included in this reminder round.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <% if pending_kyc_reminder_count.zero? %>
+            <div class="alert alert-secondary mb-0 mt-3" role="alert">
+              No investors currently have an unverified, incomplete KYC — there is nothing to remind.
+            </div>
+          <% end %>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+          <%= submit_tag "Send Reminders", class: "btn btn-outline-success", disabled: pending_kyc_reminder_count.zero? %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

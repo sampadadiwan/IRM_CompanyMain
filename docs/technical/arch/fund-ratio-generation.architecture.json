@@ -1,0 +1,309 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Fund Ratio Generation",
+  "quality_profile": "showcase",
+  "views": [
+   {
+    "id": "triggers",
+    "label": "Triggers",
+    "focus": [
+     "ui",
+     "alloc",
+     "docs",
+     "job"
+    ],
+    "note": "Ratio runs start from the UI, the allocation engine's post-step, or doc generation needing fresh numbers."
+   },
+   {
+    "id": "calculation",
+    "label": "Calculation path",
+    "focus": [
+     "job",
+     "init",
+     "calcs",
+     "entries",
+     "rform",
+     "xirr"
+    ],
+    "note": "The initializer picks the aggregation level; calculators build cash flows and call xirr_py."
+   },
+   {
+    "id": "outputs",
+    "label": "Outputs",
+    "focus": [
+     "calcs",
+     "ratios",
+     "es"
+    ],
+    "note": "FundRatio rows persist to MySQL and index into Elasticsearch via Chewy."
+   }
+  ]
+ },
+ "components": [
+  {
+   "id": "ui",
+   "type": "frontend",
+   "label": "FundsController",
+   "sublabel": "Generate Ratios action",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    220,
+    60
+   ]
+  },
+  {
+   "id": "alloc",
+   "type": "backend",
+   "label": "Allocation Engine",
+   "sublabel": "RunFormulas post-step",
+   "pos": [
+    290,
+    40
+   ],
+   "size": [
+    220,
+    60
+   ]
+  },
+  {
+   "id": "docs",
+   "type": "backend",
+   "label": "SOA & KYC doc gen",
+   "sublabel": "fresh ratios before docs",
+   "pos": [
+    540,
+    40
+   ],
+   "size": [
+    220,
+    60
+   ]
+  },
+  {
+   "id": "job",
+   "type": "backend",
+   "label": "FundRatiosJob",
+   "sublabel": "queue :low \u00b7 retry 1 \u00b7 idempotent \u00b7 Chewy :sidekiq",
+   "pos": [
+    40,
+    160
+   ],
+   "size": [
+    720,
+    56
+   ]
+  },
+  {
+   "id": "init",
+   "type": "backend",
+   "label": "FundRatioCalcInitializer",
+   "sublabel": "portfolio | commitment | KYC level",
+   "pos": [
+    230,
+    290
+   ],
+   "size": [
+    340,
+    56
+   ]
+  },
+  {
+   "id": "entries",
+   "type": "database",
+   "label": "Ledger (MySQL)",
+   "sublabel": "account_entries",
+   "pos": [
+    40,
+    410
+   ],
+   "size": [
+    150,
+    64
+   ]
+  },
+  {
+   "id": "calcs",
+   "type": "backend",
+   "label": "Level calculators",
+   "sublabel": "FundPortfolio \u00b7 CapitalCommitment \u00b7 InvestorKyc",
+   "pos": [
+    230,
+    410
+   ],
+   "size": [
+    340,
+    64
+   ]
+  },
+  {
+   "id": "rform",
+   "type": "database",
+   "label": "RatioFormulas",
+   "sublabel": "cashflow & term tweaks",
+   "pos": [
+    620,
+    410
+   ],
+   "size": [
+    200,
+    64
+   ]
+  },
+  {
+   "id": "ratios",
+   "type": "database",
+   "label": "fund_ratios (MySQL)",
+   "sublabel": "runs \u00b7 scenarios \u00b7 latest",
+   "pos": [
+    90,
+    560
+   ],
+   "size": [
+    260,
+    64
+   ]
+  },
+  {
+   "id": "xirr",
+   "type": "backend",
+   "label": "xirr_py",
+   "sublabel": "POST /calculate_xirr",
+   "pos": [
+    450,
+    560
+   ],
+   "size": [
+    240,
+    64
+   ]
+  },
+  {
+   "id": "es",
+   "type": "database",
+   "label": "Elasticsearch",
+   "sublabel": "fund_ratio_index (Chewy)",
+   "pos": [
+    90,
+    690
+   ],
+   "size": [
+    260,
+    60
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "ui-job",
+   "from": "ui",
+   "to": "job",
+   "label": "perform_later",
+   "variant": "emphasis",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  },
+  {
+   "id": "alloc-job",
+   "from": "alloc",
+   "to": "job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "docs-job",
+   "from": "docs",
+   "to": "job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "job-init",
+   "from": "job",
+   "to": "init",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "init-calcs",
+   "from": "init",
+   "to": "calcs",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "entries-calcs",
+   "from": "entries",
+   "to": "calcs",
+   "label": "cash flows",
+   "labelDy": -24
+  },
+  {
+   "id": "rform-calcs",
+   "from": "rform",
+   "to": "calcs",
+   "label": "adjustments",
+   "variant": "dashed",
+   "labelDy": -24
+  },
+  {
+   "id": "calcs-ratios",
+   "from": "calcs",
+   "to": "ratios",
+   "label": "persist",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "calcs-xirr",
+   "from": "calcs",
+   "to": "xirr",
+   "label": "XIRR via HTTParty",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "ratios-es",
+   "from": "ratios",
+   "to": "es",
+   "label": "index",
+   "fromSide": "bottom",
+   "toSide": "top",
+   "labelDy": 24
+  }
+ ],
+ "cards": [
+  {
+   "dot": "emerald",
+   "title": "Aggregation levels",
+   "items": [
+    "FundRatioCalcInitializer returns FundPortfolioCalcs (whole fund), CapitalCommitmentCalcs (one commitment), or InvestorKycCalcs when kyc_level_data_gen is on",
+    "Calculators compute DPI, RVPI, TVPI, XIRR and friends from ledger cash flows",
+    "RatioFormulas add/reduce cashflows, numerators, and denominators per ratio and label"
+   ]
+  },
+  {
+   "dot": "violet",
+   "title": "Scenario & batch runs",
+   "items": [
+    "FundRatiosScenarioJob handles cross-fund and cross-portfolio runs; parameters fingerprint into an auditable FundRatioRun (unique per entity + date + name)",
+    "FundRatio rows link to their run via the polymorphic computation_context",
+    "FundRatioRunTemplateBatchJob fans out template runs; suppress_notification lets a batch send one consolidated alert"
+   ]
+  },
+  {
+   "dot": "cyan",
+   "title": "After the run",
+   "items": [
+    "fund.update_latest_fund_ratios(end_date) flags the latest rows per fund",
+    "Success or failure lands as a user notification; commitment-level loops skip commitments marked to skip doc gen",
+    "xirr_py is the Docker sidecar at ENV[XIRR_API], health-checked by HealthCheckController"
+   ]
+  }
+ ]
+}

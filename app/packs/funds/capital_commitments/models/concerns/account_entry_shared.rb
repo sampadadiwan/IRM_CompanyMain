@@ -83,7 +83,13 @@ module AccountEntryShared
 
   def setup_defaults
     self.period = "Q#{(reporting_date.month / 3.0).ceil}-#{reporting_date.year}"
-    self.parent_name ||= parent.to_s[0..254] if parent_name.blank? && parent.present?
+    # parent_name is a denormalized cache of parent.to_s. The old `||= ... if parent_name.blank?`
+    # form only ever wrote it once: after the first save, parent_name is no longer blank, so
+    # re-pointing parent_id/parent_type to a different record later (e.g. via the debug-mode
+    # edit form's raw parent_type/parent_id fields) left the *previous* parent's name cached
+    # forever. Recompute whenever the parent association itself just changed, not only when
+    # parent_name happens to be empty.
+    self.parent_name = parent.to_s[0..254] if parent.present? && (parent_name.blank? || parent_id_changed? || parent_type_changed?)
     self.commitment_name ||= capital_commitment.to_s[0..254] if capital_commitment.present?
   end
 

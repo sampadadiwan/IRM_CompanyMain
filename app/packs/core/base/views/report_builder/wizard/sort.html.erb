@@ -1,0 +1,68 @@
+<% content_for :title, "Guided Report Wizard – Sort" %>
+<% current_sort_key = @config.sort[:key].to_s.split(";").first&.strip %>
+
+<div class="wizard-shell container-fluid mw-100 px-3 px-lg-5 py-4" data-controller="tooltip">
+  <%= render "report_builder/wizard/header" %>
+  <%= render "report_builder/wizard/progress", report: @report, current_step: "sort" %>
+
+  <%= render "report_builder/wizard/help_box",
+        title: "How should the rows be ordered? (Optional)",
+        body: "Pick a column to sort by — this can be one of your own columns, or a total you set up earlier. Leave it unset to keep the natural order.",
+        example: nil %>
+
+  <%= turbo_frame_tag "wizard_sort_panel", class: "d-block mx-auto", style: "max-width: 560px" do %>
+  <div class="wizard-panel-card">
+    <div class="wizard-panel-card-header d-flex align-items-center gap-2">
+      <span class="wizard-card-icon"><i class="ti ti-arrows-sort"></i></span>
+      <h6 class="mb-0 fw-bold">Sort Order</h6>
+    </div>
+    <div class="p-4">
+      <% if @gvps.empty? %>
+        <p class="text-muted small mb-0">You haven't added any columns yet, so there's nothing to sort by. That's fine — click Continue below.</p>
+      <% else %>
+        <%= form_tag update_report_builder_sort_path(@report), method: :patch do %>
+          <%= hidden_field_tag :wizard_next_step, "review" %>
+          <div class="mb-4">
+            <label class="form-label fw-bold">Sort by</label>
+            <select name="sort_key" class="form-select">
+              <option value="">— none —</option>
+              <% @gvps.each do |gvp| %>
+                <% ck = gvp.key.split(";").first.strip %>
+                <option value="<%= ck %>" <%= current_sort_key == ck ? "selected" : "" %>><%= gvp.label.presence || gvp.name %></option>
+              <% end %>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold d-block mb-2">Direction</label>
+            <div class="row g-3">
+              <div class="col-6">
+                <input type="radio" class="d-none wizard-direction-radio" name="sort_dir" id="sort_asc" value="asc" <%= @config.sort[:dir] != "desc" ? "checked" : "" %>>
+                <label for="sort_asc" class="wizard-direction-card w-100">
+                  <span class="wizard-direction-card-icon"><i class="ti ti-sort-ascending"></i></span>
+                  <span class="fw-bold">Ascending</span>
+                  <span class="text-muted small">A→Z, low→high</span>
+                </label>
+              </div>
+              <div class="col-6">
+                <input type="radio" class="d-none wizard-direction-radio" name="sort_dir" id="sort_desc" value="desc" <%= @config.sort[:dir] == "desc" ? "checked" : "" %>>
+                <label for="sort_desc" class="wizard-direction-card w-100">
+                  <span class="wizard-direction-card-icon"><i class="ti ti-sort-descending"></i></span>
+                  <span class="fw-bold">Descending</span>
+                  <span class="text-muted small">Z→A, high→low</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-wizard-accent w-100 d-flex align-items-center justify-content-center gap-2 shadow-sm" data-turbo-frame="_top">
+            Review & Finish <i class="ti ti-arrow-right"></i>
+          </button>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+  <% end %>
+
+  <%# No "Continue" here — the form's own submit button above saves the sort
+      and advances to Review in one click, so there's nothing left to repeat. %>
+  <%= render "report_builder/wizard/footer_nav", back_step: "filters", skip_ok: true, next_step: (@gvps.empty? ? "review" : nil), next_label: "Review & Finish" %>
+</div>

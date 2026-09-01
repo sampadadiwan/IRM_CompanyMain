@@ -94,6 +94,16 @@
         </div>
 
         <div class="d-flex gap-2">
+          <%# Counterpart to the wizard's own "Advanced Builder" button — lets
+              someone editing an existing report drop into the guided,
+              step-by-step flow for the same report instead of hunting for a
+              URL. Always starts on the columns step; the wizard's own
+              progress bar lets them jump to any step from there. %>
+          <%= link_to wizard_report_builder_step_path(@report, step: "columns"),
+                class: "btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm" do %>
+            <i class="ti ti-wand fs-5"></i> Guided Wizard
+          <% end %>
+
           <div class="btn-group shadow-sm" role="group">
             <input type="radio" class="btn-check" name="builder_mode" id="buildMode" autocomplete="off" checked data-action="change->report-builder#switchMode" value="build">
             <label class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" for="buildMode"><i class="ti ti-tools"></i> Build</label>

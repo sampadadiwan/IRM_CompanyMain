@@ -3,6 +3,10 @@ class UserGuidesController < ApplicationController
   # login-less subset of the same files.
   include WithGuideRendering
 
+  # Website-styled shell instead of the app's Modernize sidebar chrome — shared with
+  # PublicGuidesController so both guide surfaces look like the same product.
+  layout "guide"
+
   after_action :verify_authorized
   before_action :force_html_format, only: :show
 
@@ -18,11 +22,9 @@ class UserGuidesController < ApplicationController
       id       = relative.sub(/\.md$/, "")                               # e.g. "agents/data_quality_agent_user_guide"
       parts    = id.split("/")
       group    = parts.length > 1 ? parts.first.humanize.titleize : nil
-      title    = parts.last.humanize.titleize.gsub(/ User Guide$/i, '')
+      title    = guide_title(id, path)
 
-      content     = File.read(path)
-      lines       = content.split("\n").reject { |l| l.strip.empty? || l.start_with?("#") || l.start_with?("---") }
-      description = lines.first&.truncate(120) || "Learn how to use the #{title.downcase} features in IRM."
+      description = strip_inline_markdown(first_content_line(path))&.truncate(260) || "Learn how to use the #{title.downcase} features in IRM."
 
       { id: id, title: title, group: group, description: description }
     end
@@ -31,7 +33,6 @@ class UserGuidesController < ApplicationController
     @grouped_guides = @guides.group_by { |g| g[:group] }
                              .sort_by { |group, _| group.nil? ? "" : group }
                              .to_h
-    @bread_crumbs = { t('top_menus.user_guides') => nil }
   end
 
   def show
@@ -49,14 +50,10 @@ class UserGuidesController < ApplicationController
     @html_content = render_guide_markdown(safe_path)
 
     parts  = raw_id.split("/")
-    @title = guide_title(raw_id)
-
-    if parts.length > 1
-      group_label = parts.first.humanize.titleize
-      @bread_crumbs = { t('top_menus.user_guides') => user_guides_path, group_label => nil, @title => nil }
-    else
-      @bread_crumbs = { t('top_menus.user_guides') => user_guides_path, @title => nil }
-    end
+    @title = guide_title(raw_id, safe_path)
+    @lede  = strip_inline_markdown(first_content_line(safe_path)) || "A guide to #{@title.downcase}."
+    @group_label = parts.first.humanize.titleize if parts.length > 1
+    @hero_tint = hero_tint_for(raw_id, @group_label)
   end
 
   private

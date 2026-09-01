@@ -675,9 +675,11 @@ Then('I can send KYC reminder to approved users') do
   investor.entity.save!
   visit(investor_kycs_path)
   # sleep(2)
+  # The index toolbar button opens the sendKycRemindersModal (a Bootstrap confirmation
+  # modal); its footer submit is "Send Reminders" - it replaced the old confirm#popup
+  # "Proceed" button when the modal was introduced.
   click_on("Send KYC Reminders")
-  # sleep(1)
-  click_on("Proceed")
+  click_on("Send Reminders")
   # sleep(2)
   expect(page).to have_content("KYC Reminder sent successfully")
 end

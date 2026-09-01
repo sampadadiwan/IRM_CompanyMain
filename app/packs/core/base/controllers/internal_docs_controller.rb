@@ -85,7 +85,7 @@ class InternalDocsController < ApplicationController
     end
 
     @html_content = render_guide_markdown(safe_path)
-    @title        = guide_title(doc_id)
+    @title        = guide_title(doc_id, safe_path)
 
     # Never nil: doc_id is cleaned, and section_allowed? has already passed on it.
     section_label = section_for(doc_id.split("/").first)
@@ -136,7 +136,7 @@ class InternalDocsController < ApplicationController
       # guide_title, not a local titleize: show uses it too, and it trims a
       # trailing "User Guide". Titling them differently here would make a card
       # and the page it links to disagree about the document's name.
-      title    = guide_title(id)
+      title    = guide_title(id, path)
 
       { id: id, title: title, group: group, description: description_for(path, title) }
     end

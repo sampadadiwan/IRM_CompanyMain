@@ -41,3 +41,12 @@ Feature: Sidekiq fetch-loop Redis errors do not raise a production alert
     Given a "NoMethodError" raised inside Sidekiq's fetch loop
     And Sidekiq reports it with an empty context
     Then the Sidekiq error handler should send the notification
+
+  # A raise inside the classifier propagates into Sidekiq's error_handlers chain, which
+  # aborts the chain and drops the report — turning a misclassification into a total loss
+  # of production alerting. Seen in production when the deployed release directory was
+  # removed under a running Sidekiq and merely resolving the classifier raised LoadError.
+  Scenario: A classifier that blows up still lets the notification through
+    Given a "RedisClient::ReadTimeoutError" raised inside Sidekiq's fetch loop
+    And Sidekiq reports it with a context that raises when it is inspected
+    Then the Sidekiq error handler should send the notification

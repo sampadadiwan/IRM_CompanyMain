@@ -1,15 +1,63 @@
-<%= render FormCard.new(title: custom_notification.form_title) do %>
+<% adhoc_to_available = custom_notification.owner.respond_to?(:adhoc_notifications_to) %>
+<% show_breakdown_field = %w[CapitalCall CapitalDistribution].include?(custom_notification.owner_type) || %w[CapitalCall CapitalDistribution].include?(custom_notification.for_type) %>
 
-  <%= form_with(model: custom_notification, validate: true, data: { controller: "notification-placeholders", "notification-placeholders-placeholders-value": custom_notification.placeholders_by_email_method.to_json, "notification-placeholders-fund-defaults-value": custom_notification.fund_default_notifications.to_json }) do |form| %>
+<div class="wizard_container" data-controller="wizard form-mode">
+
+  <%# Title + mode toggle — always visible above the steps, whichever mode is active. %>
+  <div class="row justify-content-md-center mb-2">
+    <div class="col-md-8 d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <h3 class="mb-0"><%= custom_notification.form_title %></h3>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Form display mode">
+        <button type="button" class="btn btn-outline-primary active" data-form-mode-target="wizardModeBtn" data-action="form-mode#showWizard">
+          <i class="ti ti-wand me-1"></i>Guided Wizard
+        </button>
+        <button type="button" class="btn btn-outline-primary" data-form-mode-target="classicModeBtn" data-action="form-mode#showClassic">
+          <i class="ti ti-list me-1"></i>Classic Form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row justify-content-md-center">
+    <div class="stepwizard hidden col-md-8">
+      <div class="stepwizard-row setup-panel">
+        <div class="stepwizard-step">
+          <a href="#step-1" type="button" class="btn btn-outline-primary btn-outline-circle">1</a>
+          <p>What to Expect</p>
+        </div>
+        <div class="stepwizard-step">
+          <a href="#step-2" type="button" class="btn disabled btn-outline-primary btn-outline-circle">2</a>
+          <p>Notification &amp; Recipients</p>
+        </div>
+        <div class="stepwizard-step">
+          <a href="#step-3" type="button" class="btn disabled btn-outline-primary btn-outline-circle">3</a>
+          <p>Compose Message</p>
+        </div>
+        <div class="stepwizard-step">
+          <a href="#step-4" type="button" class="btn disabled btn-outline-primary btn-outline-circle">4</a>
+          <p>Attachments &amp; Options</p>
+        </div>
+        <div class="stepwizard-step">
+          <a href="#step-5" type="button" class="btn disabled btn-outline-primary btn-outline-circle">5</a>
+          <p>Review &amp; Save</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%= form_with(model: custom_notification, validate: true, id: "custom-notification-form", class: "wizard_form row justify-content-md-center", data: { controller: "notification-placeholders notification-summary", "notification-placeholders-placeholders-value": custom_notification.placeholders_by_email_method.to_json, "notification-placeholders-fund-defaults-value": custom_notification.fund_default_notifications.to_json, action: "input->notification-summary#refresh change->notification-summary#refresh trix-change->notification-summary#refresh" }) do |form| %>
+
     <% if custom_notification.errors.any? %>
-      <div class="alert alert-danger">
-        <h2><%= pluralize(custom_notification.errors.count, "error") %> prohibited this custom_notification from being saved:</h2>
+      <div class="col-md-8">
+        <div class="alert alert-danger">
+          <h2><%= pluralize(custom_notification.errors.count, "error") %> prohibited this custom_notification from being saved:</h2>
 
-        <ul>
-          <% custom_notification.errors.each do |error| %>
-            <li><%= error.full_message %></li>
-          <% end %>
-        </ul>
+          <ul>
+            <% custom_notification.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
       </div>
     <% end %>
 
@@ -18,144 +66,419 @@
     <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
     <%= form.text_field :for_type, class: "form-control", hidden: true  %>
 
-    <div data-controller="adhoc-notification">
-      <div class="form-group">
-        <%= form.label :email_method, "For Notification" %>
-        <%= form.select :email_method, custom_notification.email_methods.map{|x| [x.humanize, x]}.sort, {}, class: "form-control", "data-action": "change->adhoc-notification#change change->notification-placeholders#emailMethodChanged", "data-notification-placeholders-target": "emailMethodSelect"  %>
-        <small class="form-text text-muted">Which automatic email this template replaces. Only this one notification is customized - all others keep sending the default email.</small>
-        <div class="alert alert-warning d-none mt-2" data-notification-placeholders-target="overrideWarning" role="alert"></div>
-      </div>
+    <%# ══════════════════════════════════════════════════════════════════
+        STEP 1 — What to Expect: a plain-language orientation before any inputs.
+        ══════════════════════════════════════════════════════════════════ %>
+    <div class="col-md-8 setup-content" id="step-1">
+      <div class="card">
+        <div class="card-header">1. What to Expect</div>
+        <div class="card-body">
 
-      <% if custom_notification.owner.respond_to?(:adhoc_notifications_to) %>
-      <div class="form-group" id="adhoc_notifications_to_form_group">
-        <%= form.label :to %>
-        <%= form.select :to, custom_notification.owner.adhoc_notifications_to.sort, {include_blank: true}, class: "form-control"  %>
-        <small class="form-text text-muted">Which group of people should receive this notification. Leave blank to use the default recipients for this type of notification.</small>
-      </div>
-      <% end %>
-    </div>
+          <h4 class="fw-semibold mb-1">Customizing "<%= custom_notification.form_title %>"</h4>
+          <p class="text-muted mb-4">
+            A custom notification replaces <strong>one specific automatic email</strong> with a version you write.
+            Every other automatic email keeps using the default text — only the notification you pick on the next
+            step is affected. A few things to know before you start:
+          </p>
 
-    <div class="form-group">
-      <%= form.label :tag %>
-      <%= form.text_field :tag, class: "form-control"  %>
-      <small class="form-text text-muted">An internal label to help you find this template later. Recipients never see this.</small>
-    </div>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3 h-100 bg-primary-subtle">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-white">
+                  <i class="ti ti-target-arrow fs-5 text-primary-emphasis"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark">Pick one notification</div>
+                  <div class="text-muted mt-1">
+                    Choose which automatic email this template overrides, and optionally which group of
+                    people should receive it instead of the usual recipients.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3 h-100 bg-success-subtle">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-white">
+                  <i class="ti ti-writing fs-5 text-success-emphasis"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark">Write once, personalize per recipient</div>
+                  <div class="text-muted mt-1">
+                    Write the subject and body, then insert placeholders like <code>{{investor_name}}</code> —
+                    each one is swapped for the real value when the email is actually sent.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <div class="form-group">
-      <%= form.label :subject %>
-      <%= form.text_field :subject, class: "form-control"  %>
-      <small class="form-text text-muted">The subject line recipients see in their inbox. Placeholders are not supported here, only in the body below.</small>
-    </div>
+          <div class="fw-semibold text-dark mb-2"><i class="ti ti-list-check me-1"></i>How this works</div>
+          <div class="row g-2 mb-4">
+            <div class="col-md-3">
+              <div class="p-3 border rounded-3 h-100">
+                <div class="text-muted mb-1">Step 1</div>
+                <div class="fw-semibold">What to Expect</div>
+                <div class="text-muted">You're here — a quick overview.</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 border rounded-3 h-100">
+                <div class="text-muted mb-1">Step 2</div>
+                <div class="fw-semibold">Notification &amp; Recipients</div>
+                <div class="text-muted">Which email this replaces, and who gets it.</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 border rounded-3 h-100">
+                <div class="text-muted mb-1">Step 3</div>
+                <div class="fw-semibold">Compose Message</div>
+                <div class="text-muted">Subject, body with placeholders, WhatsApp text.</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 border rounded-3 h-100">
+                <div class="text-muted mb-1">Step 4</div>
+                <div class="fw-semibold">Attachments &amp; Options</div>
+                <div class="text-muted">Attach documents and set other toggles.</div>
+              </div>
+            </div>
+          </div>
 
-    <div class="form-group">
-      <%= form.label :body %>
-      <small class="form-text text-muted d-block mb-2">Write the email body, then use the dropdown below to personalize it. Selecting a placeholder inserts a token like <code>{{investor_name}}</code> into the text, which is automatically replaced with the real value for each recipient when the email is sent. The placeholders on offer depend on the notification chosen above. Any token you type by hand that isn't recognized (e.g. a typo) is sent as plain text rather than being replaced, so double-check spelling if typing one manually. <strong>If you leave this empty, no email will be sent at all</strong> - it will not fall back to a default message.</small>
-      <div class="mb-2" style="max-width: 320px;">
-        <select id="custom_notification_placeholder_picker" class="form-control" data-notification-placeholders-target="placeholderSelect" data-action="change->notification-placeholders#insert">
-          <option value="">+ Insert placeholder...</option>
-        </select>
-      </div>
-      <%= form.rich_text_area :body, class: "form-control trix", data: { "notification-placeholders-target": "editor" }  %>
-    </div>
+          <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-4 bg-warning-subtle">
+            <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-white">
+              <i class="ti ti-alert-triangle fs-5 text-warning-emphasis"></i>
+            </span>
+            <div>
+              <div class="fw-semibold text-dark">Empty fields mean "don't send"</div>
+              <div class="text-muted mt-1">
+                If you leave the email body empty, no email is sent at all — it will not fall back to the
+                default message. The same is true for the WhatsApp message field.
+              </div>
+            </div>
+          </div>
 
-    <div class="form-group">
-      <%= form.label :whatsapp %>
-      <%= form.text_area :whatsapp, class: "form-control"  %>
-      <small class="form-text text-muted">A short, plain-text version of this message sent over WhatsApp where it's enabled. Avoid the characters &amp; ^ # ` ~ - WhatsApp won't display them correctly. <strong>Leave this blank if you don't want a WhatsApp message sent at all</strong> - it will not fall back to the email body above.</small>
-    </div>
+          <p class="text-muted mb-0">
+            Prefer one long page instead of steps? Use the <strong>Classic Form</strong> button above at any time —
+            nothing you've entered will be lost when you switch.
+          </p>
 
-    <% if %w[CapitalCall CapitalDistribution].include?(custom_notification.owner_type) || %w[CapitalCall CapitalDistribution].include?(custom_notification.for_type) %>
-        <div class="form-group">
-          <%= form.label :show_details %>
-          <%= form.check_box :show_details, class: "form-check-input"  %>
-          <small class="form-text text-muted">Adds a table at the end of the email listing the full breakdown of this capital call/remittance or distribution (amount, fees, due date, etc).</small>
-        </div>
-    <% end %>
+          <div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-outline-primary nextBtn btn-lg" type="button">Let's get started <i class="ti ti-arrow-right ms-1"></i></button>
+          </div>
 
-    <% if params[:debug].present? %>
-
-      <div class="form-group">
-        <%= form.label :password_protect_attachment %>
-        <%= form.check_box :password_protect_attachment, class: "form-check-input"  %>
-        <small class="form-text text-muted">Password protect the attachment sent via email</small>
-      </div>
-
-      <div class="form-group">
-        <%= form.label :attachment_password, "Field used to set the password" %>
-        <%= form.text_field :attachment_password, class: "form-control"  %>
-        <small class="form-text text-muted">Contact support to set this up, if you are unsure. E.x investor_kyc.PAN </small>
-      </div>
-
-    <% end %>
-
-    <div data-controller="conditional-visibility">
-      <div class="form-group">
-        <%= form.label :attachment_names %>
-        <%= form.text_field :attachment_names, class: "form-control", "data-action": "input->conditional-visibility#toggle", "data-conditional-visibility-target": "source" %>
-        <small class="form-text text-muted">
-          Comma-separated names of documents already uploaded against this record
-          (e.g. "Statement of Account, KYC Certificate"). Use * as a wildcard to
-          match a family of documents, e.g. "SOA_*_03_2026" matches
-          "SOA_FundA_03_2026". If a document name itself contains a comma (e.g. a
-          date range like "01 July,2025 to 31 December,2025"), wrap that name in
-          double quotes so it isn't split into separate entries, e.g.
-          "SOA Unit 01 July,2025 to 31 December,2025 - *". Leave blank to send no
-          attachments.
-        </small>
-      </div>
-
-      <div data-conditional-visibility-target="conditional">
-        <div class="form-group">
-          <%= form.label :latest_doc_only, "Only attach the latest match" %>
-          <%= form.check_box :latest_doc_only, class: "form-check-input"  %>
-          <small class="form-text text-muted">
-            Checked: attach only the most recently uploaded document matching each
-            name/pattern above. Unchecked: attach every matching document. Examples:
-            "Statement of Account" + checked &rarr; newest exact match only.
-            "*Statement of Account*" + checked &rarr; newest document whose name contains
-            that text (old "close match" behavior). "SOA_*_03_2026" + unchecked &rarr;
-            every document matching that pattern is attached.
-          </small>
-        </div>
-
-        <div class="form-group">
-          <%= form.label :attachment_mandatory, "Attachment Mandatory" %>
-          <%= form.check_box :attachment_mandatory, class: "form-check-input"  %>
-          <small class="form-text text-muted">
-            Checked: a recipient missing any document named above does not receive this
-            email at all, instead of receiving it without the attachment. The admin who
-            triggered the send (or the entity's admins, if triggered automatically) gets
-            a periodic summary of anyone skipped this way and why.
-          </small>
         </div>
       </div>
     </div>
+    <!-- End step-1 -->
 
-    <% if current_user.support? %>
+    <%# ══════════════════════════════════════════════════════════════════
+        STEP 2 — Notification & Recipients: which email this replaces, and who
+        gets it, plus the internal tag used to find this template later.
+        ══════════════════════════════════════════════════════════════════ %>
+    <div class="col-md-8 setup-content" id="step-2">
+      <div class="card">
+        <div class="card-header">2. Notification &amp; Recipients</div>
+        <div class="card-body">
 
-      <div class="form-group">
-        <%= form.label :is_erb, "Dynamic Template" %>
-        <%= form.check_box :is_erb, class: "form-check-input"  %>
-        <small class="form-text text-muted">Support only. Renders the body as ERB with full access to the underlying record, instead of running it through the placeholder picker above. Clients cannot edit a template once this is on.</small>
+          <p class="text-muted mb-3">
+            Only the notification you choose here is customized — every other automatic email keeps sending
+            its default text.
+          </p>
+
+          <div data-controller="adhoc-notification">
+            <div class="form-group">
+              <%= form.label :email_method, raw('<i class="ti ti-replace me-1"></i>For Notification') %>
+              <%= form.select :email_method, custom_notification.email_methods.map{|x| [x.humanize, x]}.sort, {}, class: "form-control", "data-action": "change->adhoc-notification#change change->notification-placeholders#emailMethodChanged", "data-notification-placeholders-target": "emailMethodSelect"  %>
+              <small class="form-text text-muted">Which automatic email this template replaces. Only this one notification is customized - all others keep sending the default email.</small>
+              <div class="alert alert-warning d-none mt-2" data-notification-placeholders-target="overrideWarning" role="alert"></div>
+            </div>
+
+            <% if adhoc_to_available %>
+            <div class="form-group" id="adhoc_notifications_to_form_group">
+              <%= form.label :to, raw('<i class="ti ti-users me-1"></i>To') %>
+              <%= form.select :to, custom_notification.owner.adhoc_notifications_to.sort, {include_blank: true}, class: "form-control"  %>
+              <small class="form-text text-muted">Which group of people should receive this notification. Leave blank to use the default recipients for this type of notification.</small>
+            </div>
+            <% end %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :tag, raw('<i class="ti ti-tag me-1"></i>Tag') %>
+            <%= form.text_field :tag, class: "form-control"  %>
+            <small class="form-text text-muted">An internal label to help you find this template later. Recipients never see this.</small>
+          </div>
+
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
+            <button class="btn btn-outline-primary nextBtn btn-lg" type="button"><%= t_common(:next) %></button>
+          </div>
+
+        </div>
       </div>
-
-    <% end %>
-
-    <div class="form-group">
-      <%= form.label :show_details_link %>
-      <%= form.check_box :show_details_link, class: "form-check-input"  %>
-      <small class="form-text text-muted">Adds a "View Details" link at the bottom of the email so recipients can open this record directly.</small>
     </div>
+    <!-- End step-2 -->
 
-    <div class="form-group">
-      <%= form.label :enabled %>
-      <%= form.check_box :enabled, class: "form-check-input"  %>
-      <small class="form-text text-muted">When off, this template is saved but won't be used - the default email is sent instead.</small>
-    </div>
+    <%# ══════════════════════════════════════════════════════════════════
+        STEP 3 — Compose Message: subject, placeholder-aware body, WhatsApp text.
+        ══════════════════════════════════════════════════════════════════ %>
+    <div class="col-md-8 setup-content" id="step-3">
+      <div class="card">
+        <div class="card-header">3. Compose Message</div>
+        <div class="card-body">
 
-    <div class="form-group">
-      <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+          <div class="form-group">
+            <%= form.label :subject, raw('<i class="ti ti-heading me-1"></i>Subject') %>
+            <%= form.text_field :subject, class: "form-control"  %>
+            <small class="form-text text-muted">The subject line recipients see in their inbox. Placeholders are not supported here, only in the body below.</small>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :body, raw('<i class="ti ti-file-text me-1"></i>Body') %>
+            <small class="form-text text-muted d-block mb-2">Write the email body, then use the dropdown below to personalize it. Selecting a placeholder inserts a token like <code>{{investor_name}}</code> into the text, which is automatically replaced with the real value for each recipient when the email is sent. The placeholders on offer depend on the notification chosen in step 2. Any token you type by hand that isn't recognized (e.g. a typo) is sent as plain text rather than being replaced, so double-check spelling if typing one manually. <strong>If you leave this empty, no email will be sent at all</strong> - it will not fall back to a default message.</small>
+            <div class="mb-2" style="max-width: 320px;">
+              <select id="custom_notification_placeholder_picker" class="form-control" data-notification-placeholders-target="placeholderSelect" data-action="change->notification-placeholders#insert">
+                <option value="">+ Insert placeholder...</option>
+              </select>
+            </div>
+            <%= form.rich_text_area :body, class: "form-control trix", style: "min-height: 260px;", data: { "notification-placeholders-target": "editor" }  %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :whatsapp, raw('<i class="ti ti-brand-whatsapp me-1"></i>WhatsApp') %>
+            <%= form.text_area :whatsapp, class: "form-control", rows: 3  %>
+            <small class="form-text text-muted">A short, plain-text version of this message sent over WhatsApp where it's enabled. Avoid the characters &amp; ^ # ` ~ - WhatsApp won't display them correctly. <strong>Leave this blank if you don't want a WhatsApp message sent at all</strong> - it will not fall back to the email body above.</small>
+          </div>
+
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
+            <button class="btn btn-outline-primary nextBtn btn-lg" type="button"><%= t_common(:next) %></button>
+          </div>
+
+        </div>
+      </div>
     </div>
+    <!-- End step-3 -->
+
+    <%# ══════════════════════════════════════════════════════════════════
+        STEP 4 — Attachments & Options: document attachments and remaining toggles.
+        ══════════════════════════════════════════════════════════════════ %>
+    <div class="col-md-8 setup-content" id="step-4">
+      <div class="card">
+        <div class="card-header">4. Attachments &amp; Options</div>
+        <div class="card-body">
+
+          <% if show_breakdown_field %>
+            <div class="toggle-row">
+              <div>
+                <%= form.label :show_details, raw('<i class="ti ti-table me-1"></i>Show details'), class: "toggle-row-label" %>
+                <small class="form-text text-muted d-block">Adds a table at the end of the email listing the full breakdown of this capital call/remittance or distribution (amount, fees, due date, etc).</small>
+              </div>
+              <label class="ios-toggle">
+                <%= form.check_box :show_details, class: "ios-toggle-input" %>
+                <span class="ios-toggle-slider"></span>
+              </label>
+            </div>
+          <% end %>
+
+          <% if params[:debug].present? %>
+
+            <div class="toggle-row">
+              <div>
+                <%= form.label :password_protect_attachment, raw('<i class="ti ti-lock me-1"></i>Password protect attachment'), class: "toggle-row-label" %>
+                <small class="form-text text-muted d-block">Password protect the attachment sent via email</small>
+              </div>
+              <label class="ios-toggle">
+                <%= form.check_box :password_protect_attachment, class: "ios-toggle-input" %>
+                <span class="ios-toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <%= form.label :attachment_password, "Field used to set the password" %>
+              <%= form.text_field :attachment_password, class: "form-control"  %>
+              <small class="form-text text-muted">Contact support to set this up, if you are unsure. E.x investor_kyc.PAN </small>
+            </div>
+
+          <% end %>
+
+          <div data-controller="conditional-visibility">
+            <div class="form-group">
+              <%= form.label :attachment_names, raw('<i class="ti ti-paperclip me-1"></i>Attachment names') %>
+              <%= form.text_field :attachment_names, class: "form-control", placeholder: "Leave blank for no attachments, e.g. Statement of Account, KYC Certificate", "data-action": "input->conditional-visibility#toggle", "data-conditional-visibility-target": "source" %>
+
+              <div class="mt-2 p-3 rounded-3 bg-light border small">
+                <div class="fw-semibold text-dark mb-2"><i class="ti ti-bulb me-1 text-warning"></i>How to fill this in</div>
+                <ul class="mb-2 ps-3">
+                  <li class="mb-1">Leave it <strong>blank</strong> &mdash; this email is sent with no attachments.</li>
+                  <li class="mb-1">Type the exact name of an already-uploaded document, e.g. <code>Statement of Account</code>.</li>
+                  <li class="mb-1">List several names separated by commas: <code>Statement of Account, KYC Certificate</code>.</li>
+                  <li class="mb-1">Use <code>*</code> as a wildcard to match a family of names: <code>SOA_*_03_2026</code> matches <code>SOA_FundA_03_2026</code>.</li>
+                  <li>If a name itself contains a comma, wrap it in quotes so it isn't split up: <code>"SOA Unit 01 July,2025 to 31 December,2025 - *"</code></li>
+                </ul>
+                <div class="text-muted"><i class="ti ti-arrow-down me-1"></i>As soon as you type something here, two more options appear below to fine-tune which matching documents get attached.</div>
+              </div>
+            </div>
+
+            <div data-conditional-visibility-target="conditional" class="mt-3 ps-3 border-start border-3 border-primary-subtle">
+              <div class="fw-semibold text-dark mb-2">Fine-tune which matches get attached</div>
+
+              <div class="toggle-row">
+                <div>
+                  <%= form.label :latest_doc_only, raw('<i class="ti ti-clock me-1"></i>Only attach the latest match'), class: "toggle-row-label" %>
+                  <small class="form-text text-muted d-block">
+                    <strong>On</strong> &mdash; attach only the single most recently uploaded document matching each name/pattern above.<br>
+                    <strong>Off</strong> &mdash; attach every matching document.
+                  </small>
+                </div>
+                <label class="ios-toggle">
+                  <%= form.check_box :latest_doc_only, class: "ios-toggle-input" %>
+                  <span class="ios-toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <div>
+                  <%= form.label :attachment_mandatory, raw('<i class="ti ti-alert-circle me-1"></i>Attachment mandatory'), class: "toggle-row-label" %>
+                  <small class="form-text text-muted d-block">
+                    <strong>On</strong> &mdash; a recipient missing any document named above does not receive this email at all. Whoever triggered the send gets a periodic summary of anyone skipped this way and why.<br>
+                    <strong>Off</strong> &mdash; they still get the email, just without that attachment.
+                  </small>
+                </div>
+                <label class="ios-toggle">
+                  <%= form.check_box :attachment_mandatory, class: "ios-toggle-input" %>
+                  <span class="ios-toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <% if current_user.support? %>
+
+            <div class="toggle-row">
+              <div>
+                <%= form.label :is_erb, raw('<i class="ti ti-code me-1"></i>Dynamic Template'), class: "toggle-row-label" %>
+                <small class="form-text text-muted d-block">Support only. Renders the body as ERB with full access to the underlying record, instead of running it through the placeholder picker above. Clients cannot edit a template once this is on.</small>
+              </div>
+              <label class="ios-toggle">
+                <%= form.check_box :is_erb, class: "ios-toggle-input" %>
+                <span class="ios-toggle-slider"></span>
+              </label>
+            </div>
+
+          <% end %>
+
+          <div class="toggle-row">
+            <div>
+              <%= form.label :show_details_link, raw('<i class="ti ti-external-link me-1"></i>Show details link'), class: "toggle-row-label" %>
+              <small class="form-text text-muted d-block">Adds a "View Details" link at the bottom of the email so recipients can open this record directly.</small>
+            </div>
+            <label class="ios-toggle">
+              <%= form.check_box :show_details_link, class: "ios-toggle-input" %>
+              <span class="ios-toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <%= form.label :enabled, raw('<i class="ti ti-power me-1"></i>Template enabled'), class: "toggle-row-label" %>
+              <small class="form-text text-muted d-block">When off, this template is saved but won't be used - the default email is sent instead.</small>
+            </div>
+            <label class="ios-toggle">
+              <%= form.check_box :enabled, class: "ios-toggle-input" %>
+              <span class="ios-toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
+            <button class="btn btn-outline-primary nextBtn btn-lg" type="button"><%= t_common(:next) %></button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- End step-4 -->
+
+    <%# ══════════════════════════════════════════════════════════════════
+        STEP 5 — Review & Save: read-only recap of every step, then submit.
+        ══════════════════════════════════════════════════════════════════ %>
+    <div class="col-md-8 setup-content" id="step-5">
+      <div class="card">
+        <div class="card-header">5. Review &amp; Save</div>
+        <div class="card-body">
+
+          <p class="text-muted mb-4">
+            Here's a summary of what you've set up. Use Back, or the step numbers above, to change anything
+            before saving.
+          </p>
+
+          <div class="alert d-flex align-items-center gap-2 mb-4" data-notification-summary-target="enabledBanner" role="alert">
+            <i class="ti fs-5 flex-shrink-0" data-notification-summary-target="enabledIcon"></i>
+            <span data-notification-summary-target="enabled"></span>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="border rounded-3 p-3 h-100">
+                <div class="fw-semibold text-dark mb-2"><i class="ti ti-target-arrow me-1 text-primary"></i>Notification &amp; Recipients</div>
+                <dl class="row mb-0">
+                  <dt class="col-sm-4"><i class="ti ti-replace me-1 text-muted"></i>Replaces</dt>
+                  <dd class="col-sm-8" data-notification-summary-target="emailMethod"></dd>
+
+                  <% if adhoc_to_available %>
+                  <dt class="col-sm-4"><i class="ti ti-users me-1 text-muted"></i>Recipients</dt>
+                  <dd class="col-sm-8" data-notification-summary-target="to"></dd>
+                  <% end %>
+
+                  <dt class="col-sm-4"><i class="ti ti-tag me-1 text-muted"></i>Internal tag</dt>
+                  <dd class="col-sm-8" data-notification-summary-target="tag"></dd>
+                </dl>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="border rounded-3 p-3 h-100">
+                <div class="fw-semibold text-dark mb-2"><i class="ti ti-paperclip me-1 text-success"></i>Attachments &amp; Options</div>
+                <dl class="row mb-0">
+                  <dt class="col-sm-4"><i class="ti ti-paperclip me-1 text-muted"></i>Attachments</dt>
+                  <dd class="col-sm-8" data-notification-summary-target="attachmentNames"></dd>
+
+                  <% if show_breakdown_field %>
+                  <dt class="col-sm-4"><i class="ti ti-table me-1 text-muted"></i>Breakdown table</dt>
+                  <dd class="col-sm-8" data-notification-summary-target="showDetails"></dd>
+                  <% end %>
+
+                  <dt class="col-sm-4"><i class="ti ti-external-link me-1 text-muted"></i>"View Details" link</dt>
+                  <dd class="col-sm-8" data-notification-summary-target="showDetailsLink"></dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+
+          <div class="border rounded-3 p-3 mb-4">
+            <div class="fw-semibold text-dark mb-2"><i class="ti ti-mail me-1 text-info"></i>Message</div>
+            <dl class="row mb-2">
+              <dt class="col-sm-2"><i class="ti ti-heading me-1 text-muted"></i>Subject</dt>
+              <dd class="col-sm-10" data-notification-summary-target="subject"></dd>
+            </dl>
+            <div class="text-muted small mb-1"><i class="ti ti-file-text me-1"></i>Email body preview</div>
+            <div class="p-3 rounded-3 bg-light mb-3" style="white-space: pre-wrap;" data-notification-summary-target="body"></div>
+            <dl class="row mb-0">
+              <dt class="col-sm-2"><i class="ti ti-brand-whatsapp me-1 text-muted"></i>WhatsApp</dt>
+              <dd class="col-sm-10" data-notification-summary-target="whatsapp"></dd>
+            </dl>
+          </div>
+
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary prevBtn" type="button"><i class="ti ti-arrow-left me-1"></i>Back</button>
+            <%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg"}%>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- End step-5 -->
+
   <% end %>
 
-<% end %>
+</div>

@@ -6,7 +6,27 @@ module AccountEntryAllocation
     def initialize(engine)
       @engine = engine
       @cached_generated_fields = {}
+      @referenced_field_names = Set.new
+      @last_consumer_index = {}
     end
+
+    # Called once per run by RunFormulas after scanning every enabled formula's
+    # source for @field references (FundFormula#referenced_field_names).
+    # referenced_field_names: every field name some in-scope formula reads.
+    # last_consumer_index: field name -> sequence-position of the LAST in-scope
+    # formula that reads it, used by #formula_completed to evict early.
+    def configure_dependencies(referenced_field_names, last_consumer_index)
+      @referenced_field_names = referenced_field_names
+      @last_consumer_index = last_consumer_index
+    end
+
+    # Fields always available to a formula regardless of what earlier formulas produced.
+    # Keep this in sync with the literal keys assigned in #computed_fields_cache below --
+    # FundFormulaDependencyGraph relies on this list to avoid flagging these as "no producer".
+    BASE_FIELDS = %w[
+      remittances_collected remittances_called remittance_capital_fees remittance_other_fees
+      distributions income_before_start_date expense_before_start_date units start_of_financial_year
+    ].freeze
 
     # This is used to cache the computed values during allocation.
     # Each commitment has its own set of cached values
@@ -45,14 +65,41 @@ module AccountEntryAllocation
       cached_commitment_fields
     end
 
-    # This is used to simplify the formulas, use these variables inside the formulas
+    # This is used to simplify the formulas, use these variables inside the formulas.
+    # Only actually caches the field if some later formula's source reads it
+    # (@referenced_field_names) or the formula is explicitly flagged to force it
+    # (fund_formula.add_to_commitment_cache) -- otherwise it's a value nothing will
+    # ever read again, and caching it just grows @cached_generated_fields forever.
+    #
+    # The formula is read off ctx rather than taken as an argument: every caller runs
+    # inside RunFormulas#execute_formula, which merges the formula being executed into
+    # the sub-operation ctx, so ctx[:fund_formula] is always the right one. Passing it
+    # separately just gave four call sites an extra argument to keep in sync.
     def add_to_computed_fields_cache(ctx, capital_commitment, account_entry)
+      fund_formula = ctx[:fund_formula]
+      field_name = to_varable_name(account_entry.name)
+      return unless fund_formula&.add_to_commitment_cache || @referenced_field_names.include?(field_name)
+
       cached_commitment_fields = computed_fields_cache(capital_commitment, ctx[:start_date], ctx[:end_date])
-      cached_commitment_fields[to_varable_name(account_entry.name)] = account_entry.amount_cents
+      cached_commitment_fields[field_name] = account_entry.amount_cents
     end
 
-    def to_varable_name(name)
-      name.strip.titleize.squeeze(" ").tr(" ", "_").underscore.gsub(/[^0-9A-Za-z_]/, '').squeeze("_")
+    # Called by RunFormulas once a formula (at the given sequence-position) has
+    # finished running for every commitment. Drops any cached field whose last
+    # known reader was that formula, so memory reflects "fields still awaiting a
+    # reader" rather than every field ever computed across the whole run.
+    # Fields cached only because of the manual add_to_commitment_cache flag, with no
+    # detected reader, are never in @last_consumer_index and so are never evicted --
+    # we can't prove nothing still needs them.
+    def formula_completed(formula_index)
+      field_names_to_evict = @last_consumer_index.select { |_name, idx| idx == formula_index }.keys
+      return if field_names_to_evict.empty?
+
+      @cached_generated_fields.each_value do |fields|
+        field_names_to_evict.each { |name| fields.delete(name) }
+      end
     end
+
+    delegate :to_varable_name, to: :FundFormula
   end
 end

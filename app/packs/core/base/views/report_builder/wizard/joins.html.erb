@@ -1,0 +1,75 @@
+<% content_for :title, "Guided Report Wizard – Related Data" %>
+<%
+  added_relations = @config.joins.map { |j| j[:relation].to_s }
+  available_assocs = @associations.reject { |a| added_relations.include?(a[:name]) }
+  next_step = @config.joins.any? ? "aggregates" : "filters"
+%>
+
+<div class="wizard-shell container-fluid mw-100 px-3 px-lg-5 py-4" data-controller="tooltip">
+  <%= render "report_builder/wizard/header" %>
+  <%= render "report_builder/wizard/progress", report: @report, current_step: "joins" %>
+
+  <%= render "report_builder/wizard/help_box",
+        title: "Want to pull in related information too? (Optional)",
+        body: "For example, if you're reporting on #{wizard_model_label(@root_class.name).pluralize}, you could also add their Commitments or KYC records. Report Builder will roll every related row into your report for you — no need to add them one at a time.",
+        example: "Nothing to add? Just click Continue below — you can always come back later." %>
+
+  <%= turbo_frame_tag "wizard_joins_panel" do %>
+    <% if @config.joins.any? %>
+      <div class="mb-4">
+        <div class="wizard-review-section-label"><i class="ti ti-link"></i>Added</div>
+        <div class="d-flex flex-wrap gap-2">
+          <% @config.joins.each do |j| %>
+            <div class="wizard-chip d-flex align-items-center gap-2">
+              <i class="ti ti-git-merge"></i>
+              <span><%= j[:relation].to_s.humanize %></span>
+              <%= button_to remove_report_builder_join_path(@report),
+                    method: :delete,
+                    params: { relation: j[:relation] },
+                    class: "btn btn-link p-0 wizard-chip-remove",
+                    data: { turbo_confirm: "Remove '#{j[:relation].to_s.humanize}'? This also removes any columns you added from it." } do %>
+                <i class="ti ti-x"></i>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="wizard-review-section-label"><i class="ti ti-plus"></i>Available related data</div>
+    <% if available_assocs.empty? %>
+      <div class="text-center py-4 bg-light rounded border border-dashed">
+        <p class="text-muted small mb-0">You've added everything available here.</p>
+      </div>
+    <% else %>
+      <div class="row g-3">
+        <% available_assocs.each do |assoc| %>
+          <div class="col-md-4 col-sm-6">
+            <div class="wizard-join-card d-flex flex-column h-100 p-3">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="wizard-card-icon"><i class="ti ti-git-merge"></i></span>
+                <span class="fw-bold"><%= assoc[:label] %></span>
+              </div>
+              <span class="badge wizard-join-card-macro rounded-pill mb-3 align-self-start">
+                <%= assoc[:macro] == "has_many" ? "many per row" : "one per row" %>
+              </span>
+              <div class="mt-auto">
+                <%= button_to add_report_builder_join_path(@report),
+                      method: :post,
+                      params: { relation: assoc[:name], model: assoc[:model], fk: assoc[:foreign_key] },
+                      class: "btn btn-outline-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" do %>
+                  <i class="ti ti-plus"></i> Add
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Inside the frame (unlike the other wizard steps) because this page's own
+        Add/Remove changes whether the "Continue" target should be "aggregates" or
+        "filters" — the footer has to refresh along with the join list itself. %>
+    <%= render "report_builder/wizard/footer_nav", back_step: "columns", next_step: next_step, next_label: "Continue", skip_ok: true %>
+  <% end %>
+</div>

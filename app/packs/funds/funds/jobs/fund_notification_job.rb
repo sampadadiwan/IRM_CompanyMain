@@ -12,8 +12,9 @@ class FundNotificationJob < ApplicationJob
     custom_notification = CustomNotification.find(custom_notification_id)
 
     # "adhoc_kyc_notification" is FundInvestorKycMailer's own explicitly-defined email_method
-    # (see that class) — every other email_method (including the historical "adhoc_notification")
-    # keeps going through the CapitalCommitment path, unchanged.
+    # (see that class) — every other email_method (including "adhoc_fund_notification", formerly
+    # "adhoc_notification", and any historical rows not yet migrated) keeps going through the
+    # CapitalCommitment path, unchanged.
     if custom_notification.email_method == "adhoc_kyc_notification"
       perform_by_investor_kyc(fund, custom_notification, investor_kyc_ids, triggered_by_user_id)
     else

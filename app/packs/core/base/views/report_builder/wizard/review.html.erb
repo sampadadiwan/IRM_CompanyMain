@@ -1,0 +1,95 @@
+<% content_for :title, "Guided Report Wizard – Review" %>
+<%
+  sort_desc = @config.sort[:key].present? ? "#{@gvps.find { |g| g.key.split(';').first.strip == @config.sort[:key].to_s.split(';').first.to_s.strip }&.label || @config.sort[:key]} (#{@config.sort[:dir] == 'desc' ? 'descending' : 'ascending'})" : nil
+  total_filters = @config.root_filters.size + @config.joins.sum { |j| (j[:child_filters] || {}).size }
+%>
+
+<div class="wizard-shell container-fluid mw-100 px-3 px-lg-5 py-4" data-controller="tooltip">
+  <%= render "report_builder/wizard/header" %>
+  <%= render "report_builder/wizard/progress", report: @report, current_step: "review" %>
+
+  <div class="text-center mb-4">
+    <div class="wizard-hero-icon mx-auto mb-3 d-flex align-items-center justify-content-center">
+      <i class="ti ti-confetti"></i>
+    </div>
+    <h4 class="fw-bolder mb-1">Nice work — your report is ready</h4>
+    <p class="text-muted">Here's a quick summary of what you've built. You can always change any of this later.</p>
+  </div>
+
+  <div class="wizard-review-card mx-auto mb-4" style="max-width: 760px">
+    <div class="wizard-review-card-header">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <div class="wizard-review-card-header-label">Report Name</div>
+          <div class="wizard-review-card-header-title"><%= @report.name %></div>
+        </div>
+        <span class="wizard-review-model-badge">
+          <i class="ti <%= wizard_icon_for(@root_class.name) %>"></i> <%= wizard_model_label(@root_class.name) %>
+        </span>
+      </div>
+    </div>
+
+    <div class="wizard-review-card-body p-4">
+      <div class="row g-3 mb-4">
+        <div class="col-sm-4">
+          <div class="wizard-stat-tile wizard-stat-tile-blue">
+            <div class="wizard-stat-tile-icon"><i class="ti ti-columns"></i></div>
+            <div class="wizard-stat-tile-num"><%= @gvps.size %></div>
+            <div class="wizard-stat-tile-label">Columns</div>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="wizard-stat-tile wizard-stat-tile-purple">
+            <div class="wizard-stat-tile-icon"><i class="ti ti-git-merge"></i></div>
+            <div class="wizard-stat-tile-num"><%= @config.joins.size %></div>
+            <div class="wizard-stat-tile-label">Related Data Sources</div>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="wizard-stat-tile wizard-stat-tile-amber">
+            <div class="wizard-stat-tile-icon"><i class="ti ti-filter"></i></div>
+            <div class="wizard-stat-tile-num"><%= total_filters %></div>
+            <div class="wizard-stat-tile-label">Filters Applied</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="wizard-review-section-label"><i class="ti ti-list-check"></i>Columns</div>
+        <% if @gvps.empty? %>
+          <p class="text-muted small mb-0">No columns added yet — you can add some in the Advanced Builder.</p>
+        <% else %>
+          <div class="d-flex flex-wrap gap-2">
+            <% @gvps.each do |gvp| %>
+              <span class="wizard-review-chip">
+                <i class="ti <%= wizard_type_icon_for(gvp.key) %>"></i> <%= gvp.label.presence || gvp.name %>
+              </span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="wizard-review-sort-row d-flex align-items-center gap-2">
+        <div class="wizard-review-sort-icon d-flex align-items-center justify-content-center flex-shrink-0">
+          <i class="ti ti-arrows-sort"></i>
+        </div>
+        <div>
+          <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.05em">Sorted By</div>
+          <div class="fw-bold"><%= sort_desc || "Natural order (not set)" %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mb-4">
+    <%= link_to edit_report_builder_path(@report), class: "btn btn-primary btn-lg d-flex align-items-center justify-content-center gap-2 px-5 mx-auto", style: "max-width: 360px" do %>
+      <i class="ti ti-eye"></i> Open My Report
+    <% end %>
+    <p class="text-muted small mt-3 mb-0">
+      From there you can preview your data, export to Excel, and — if you want —<br>
+      add computed columns, pivot tables, or scheduled email delivery.
+    </p>
+  </div>
+
+  <%= render "report_builder/wizard/footer_nav", back_step: "sort" %>
+</div>

@@ -1,0 +1,1273 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "core Pack \u2014 Background Jobs",
+  "quality_profile": "showcase"
+ },
+ "components": [
+  {
+   "id": "j-application-job",
+   "type": "backend",
+   "label": "application",
+   "pos": [
+    40,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-audit-download-job",
+   "type": "backend",
+   "label": "audit_download",
+   "pos": [
+    40,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-bulk-action-job",
+   "type": "backend",
+   "label": "bulk_action",
+   "pos": [
+    40,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-daily-morning-job",
+   "type": "backend",
+   "label": "daily_morning",
+   "pos": [
+    40,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-db-backup-freshness-job",
+   "type": "backend",
+   "label": "db_backup_freshness",
+   "pos": [
+    40,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-db-restore-job",
+   "type": "backend",
+   "label": "db_restore",
+   "pos": [
+    40,
+    520
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-destroy-shrine-job",
+   "type": "backend",
+   "label": "destroy_shrine",
+   "pos": [
+    40,
+    558
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-esign-log-cleanup-job",
+   "type": "backend",
+   "label": "esign_log_cleanup",
+   "pos": [
+    40,
+    596
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-model-download-job",
+   "type": "backend",
+   "label": "model_download",
+   "pos": [
+    40,
+    634
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-replication-health-job",
+   "type": "backend",
+   "label": "replication_health",
+   "pos": [
+    40,
+    672
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-report-builder-export-job",
+   "type": "backend",
+   "label": "report_builder_export",
+   "pos": [
+    40,
+    710
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-report-builder-scheduler-job",
+   "type": "backend",
+   "label": "report_builder_scheduler",
+   "pos": [
+    40,
+    748
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-s3-check-job",
+   "type": "backend",
+   "label": "s3_check",
+   "pos": [
+    40,
+    786
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-doc-gen-job",
+   "type": "backend",
+   "label": "doc_gen",
+   "pos": [
+    290,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-doc-llm-qna-job",
+   "type": "backend",
+   "label": "doc_llm_qna",
+   "pos": [
+    290,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-doc-llm-validation-job",
+   "type": "backend",
+   "label": "doc_llm_validation",
+   "pos": [
+    290,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-document-approval-job",
+   "type": "backend",
+   "label": "document_approval",
+   "pos": [
+    290,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-document-download-job",
+   "type": "backend",
+   "label": "document_download",
+   "pos": [
+    290,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-document-esign-update-job",
+   "type": "backend",
+   "label": "document_esign_update",
+   "pos": [
+    290,
+    520
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-document-post-create-job",
+   "type": "backend",
+   "label": "document_post_create",
+   "pos": [
+    290,
+    558
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-documents-bulk-action-job",
+   "type": "backend",
+   "label": "documents_bulk_action",
+   "pos": [
+    290,
+    596
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-esign-job",
+   "type": "backend",
+   "label": "esign",
+   "pos": [
+    290,
+    634
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-esign-update-job",
+   "type": "backend",
+   "label": "esign_update",
+   "pos": [
+    290,
+    672
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-pdf-accessibility-check-job",
+   "type": "backend",
+   "label": "pdf_accessibility_check",
+   "pos": [
+    290,
+    710
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-folder-access-job",
+   "type": "backend",
+   "label": "folder_access",
+   "pos": [
+    540,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-folder-defaults-job",
+   "type": "backend",
+   "label": "folder_defaults",
+   "pos": [
+    540,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-folder-llm-report-job",
+   "type": "backend",
+   "label": "folder_llm_report",
+   "pos": [
+    540,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-llm-report-job",
+   "type": "backend",
+   "label": "llm_report",
+   "pos": [
+    540,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-update-document-folder-path-job",
+   "type": "backend",
+   "label": "update_document_folder_path",
+   "pos": [
+    540,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-entity-db-dump-job",
+   "type": "backend",
+   "label": "entity_db_dump",
+   "pos": [
+    540,
+    546
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-entity-deactivation-job",
+   "type": "backend",
+   "label": "entity_deactivation",
+   "pos": [
+    540,
+    584
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-exchange-rate-commitment-adjustment-job",
+   "type": "backend",
+   "label": "exchange_rate_commitment_adj",
+   "pos": [
+    540,
+    622
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-exchange-rate-portfolio-investment-job",
+   "type": "backend",
+   "label": "exchange_rate_portfolio_inv",
+   "pos": [
+    540,
+    660
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-kpi-reminder-job",
+   "type": "backend",
+   "label": "kpi_reminder",
+   "pos": [
+    540,
+    698
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-investor-merge-job",
+   "type": "backend",
+   "label": "investor_merge",
+   "pos": [
+    540,
+    762
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-access-rights-deleted-job",
+   "type": "backend",
+   "label": "access_rights_deleted",
+   "pos": [
+    540,
+    826
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-aml-report-async-download-job",
+   "type": "backend",
+   "label": "aml_report_async_download",
+   "pos": [
+    790,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-aml-report-job",
+   "type": "backend",
+   "label": "generate_aml_report",
+   "pos": [
+    790,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-investor-kycs-bulk-action-job",
+   "type": "backend",
+   "label": "investor_kycs_bulk_action",
+   "pos": [
+    790,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-kyc-doc-extractor-job",
+   "type": "backend",
+   "label": "kyc_doc_extractor",
+   "pos": [
+    790,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-kyc-doc-gen-job",
+   "type": "backend",
+   "label": "kyc_doc_gen",
+   "pos": [
+    790,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-kyc-level-soa-gen-job",
+   "type": "backend",
+   "label": "kyc_level_soa_gen",
+   "pos": [
+    790,
+    520
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-kyc-reminder-job",
+   "type": "backend",
+   "label": "kyc_reminder",
+   "pos": [
+    790,
+    558
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-send-kyc-form-job",
+   "type": "backend",
+   "label": "send_kyc_form",
+   "pos": [
+    790,
+    596
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-verify-bank-job",
+   "type": "backend",
+   "label": "verify_bank",
+   "pos": [
+    790,
+    634
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-verify-pan-job",
+   "type": "backend",
+   "label": "verify_pan",
+   "pos": [
+    790,
+    672
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-skipped-notification-report-job",
+   "type": "backend",
+   "label": "skipped_notification_report",
+   "pos": [
+    790,
+    736
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-reminder-job",
+   "type": "backend",
+   "label": "reminder",
+   "pos": [
+    790,
+    800
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-deployment-notification-worker",
+   "type": "backend",
+   "label": "deployment_notification_worker",
+   "pos": [
+    1040,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-multi-site-user-sync-all-job",
+   "type": "backend",
+   "label": "multi_site_user_sync_all",
+   "pos": [
+    1040,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-multi-site-user-sync-disable-job",
+   "type": "backend",
+   "label": "multi_site_user_sync_disable",
+   "pos": [
+    1040,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-multi-site-user-sync-job",
+   "type": "backend",
+   "label": "multi_site_user_sync",
+   "pos": [
+    1040,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-send-otp-to-sms-job",
+   "type": "backend",
+   "label": "send_otp_to_sms",
+   "pos": [
+    1040,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-send-otp-to-whatsapp-job",
+   "type": "backend",
+   "label": "send_otp_to_whatsapp",
+   "pos": [
+    1040,
+    520
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-whatsapp-chat-job",
+   "type": "backend",
+   "label": "whatsapp_chat",
+   "pos": [
+    1040,
+    558
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-whatsapp-general-notification",
+   "type": "backend",
+   "label": "whatsapp_general_notification",
+   "pos": [
+    1040,
+    596
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-recurring-task-generator-job",
+   "type": "backend",
+   "label": "recurring_task_generator",
+   "pos": [
+    1040,
+    660
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-workflow-auto-reminder-job",
+   "type": "backend",
+   "label": "workflow_auto_reminder",
+   "pos": [
+    1040,
+    724
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-process-ses-notification-job",
+   "type": "backend",
+   "label": "process_ses_notification",
+   "pos": [
+    1040,
+    788
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "rails",
+   "type": "backend",
+   "label": "Rails App",
+   "sublabel": "perform_later",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    160,
+    60
+   ]
+  },
+  {
+   "id": "redis",
+   "type": "messagebus",
+   "label": "Redis",
+   "sublabel": "queues",
+   "pos": [
+    260,
+    40
+   ],
+   "size": [
+    130,
+    60
+   ]
+  },
+  {
+   "id": "mysql",
+   "type": "database",
+   "label": "MySQL",
+   "sublabel": "every job r/w",
+   "pos": [
+    1090,
+    40
+   ],
+   "size": [
+    170,
+    60
+   ]
+  },
+  {
+   "id": "sidekiq",
+   "type": "backend",
+   "label": "Sidekiq Workers",
+   "sublabel": "capsules: default \u00b7 serial \u00b7 doc_gen \u00b7 ai_checks \u00b7 db_restore",
+   "pos": [
+    40,
+    180
+   ],
+   "size": [
+    1220,
+    52
+   ]
+  },
+  {
+   "id": "ext-s3",
+   "type": "cloud",
+   "label": "S3",
+   "sublabel": "docs \u00b7 backups",
+   "pos": [
+    150,
+    966
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "ext-digio",
+   "type": "external",
+   "label": "Digio eSign",
+   "sublabel": "REST API",
+   "pos": [
+    350,
+    966
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "ext-ses",
+   "type": "cloud",
+   "label": "Amazon SES",
+   "sublabel": "SMTP :587 \u00b7 bounces",
+   "pos": [
+    600,
+    966
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "ext-twilio",
+   "type": "external",
+   "label": "Twilio",
+   "sublabel": "OTP SMS",
+   "pos": [
+    760,
+    966
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "ext-wa",
+   "type": "external",
+   "label": "WhatsApp API",
+   "sublabel": "OTP \u00b7 chat",
+   "pos": [
+    920,
+    966
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "ext-sites",
+   "type": "external",
+   "label": "Other CapHive sites",
+   "sublabel": "user sync",
+   "pos": [
+    1100,
+    966
+   ],
+   "size": [
+    150,
+    60
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "region",
+   "label": "core/base (13)",
+   "wraps": [
+    "j-application-job",
+    "j-audit-download-job",
+    "j-bulk-action-job",
+    "j-daily-morning-job",
+    "j-db-backup-freshness-job",
+    "j-db-restore-job",
+    "j-destroy-shrine-job",
+    "j-esign-log-cleanup-job",
+    "j-model-download-job",
+    "j-replication-health-job",
+    "j-report-builder-export-job",
+    "j-report-builder-scheduler-job",
+    "j-s3-check-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/documents (11)",
+   "wraps": [
+    "j-doc-gen-job",
+    "j-doc-llm-qna-job",
+    "j-doc-llm-validation-job",
+    "j-document-approval-job",
+    "j-document-download-job",
+    "j-document-esign-update-job",
+    "j-document-post-create-job",
+    "j-documents-bulk-action-job",
+    "j-esign-job",
+    "j-esign-update-job",
+    "j-pdf-accessibility-check-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/folders (5)",
+   "wraps": [
+    "j-folder-access-job",
+    "j-folder-defaults-job",
+    "j-folder-llm-report-job",
+    "j-llm-report-job",
+    "j-update-document-folder-path-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/entities (5)",
+   "wraps": [
+    "j-entity-db-dump-job",
+    "j-entity-deactivation-job",
+    "j-exchange-rate-commitment-adjustment-job",
+    "j-exchange-rate-portfolio-investment-job",
+    "j-kpi-reminder-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/investors (1)",
+   "wraps": [
+    "j-investor-merge-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/access_rights (1)",
+   "wraps": [
+    "j-access-rights-deleted-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/investor_kycs (10)",
+   "wraps": [
+    "j-aml-report-async-download-job",
+    "j-generate-aml-report-job",
+    "j-investor-kycs-bulk-action-job",
+    "j-kyc-doc-extractor-job",
+    "j-kyc-doc-gen-job",
+    "j-kyc-level-soa-gen-job",
+    "j-kyc-reminder-job",
+    "j-send-kyc-form-job",
+    "j-verify-bank-job",
+    "j-verify-pan-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/notifications (1)",
+   "wraps": [
+    "j-skipped-notification-report-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/reminders (1)",
+   "wraps": [
+    "j-reminder-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/users (8)",
+   "wraps": [
+    "j-deployment-notification-worker",
+    "j-multi-site-user-sync-all-job",
+    "j-multi-site-user-sync-disable-job",
+    "j-multi-site-user-sync-job",
+    "j-send-otp-to-sms-job",
+    "j-send-otp-to-whatsapp-job",
+    "j-whatsapp-chat-job",
+    "j-whatsapp-general-notification"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/tasks (1)",
+   "wraps": [
+    "j-recurring-task-generator-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/workflow_templates (1)",
+   "wraps": [
+    "j-workflow-auto-reminder-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "core/email_deliverability (1)",
+   "wraps": [
+    "j-process-ses-notification-job"
+   ],
+   "pad": 8
+  }
+ ],
+ "connections": [
+  {
+   "id": "rails-redis",
+   "from": "rails",
+   "to": "redis",
+   "label": "enqueue",
+   "variant": "emphasis",
+   "labelDy": -26
+  },
+  {
+   "id": "redis-sidekiq",
+   "from": "redis",
+   "to": "sidekiq",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sidekiq-mysql",
+   "from": "sidekiq",
+   "to": "mysql",
+   "label": "ActiveRecord",
+   "fromSide": "top",
+   "toSide": "bottom"
+  },
+  {
+   "id": "sk-col0",
+   "from": "sidekiq",
+   "to": "j-application-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col1",
+   "from": "sidekiq",
+   "to": "j-doc-gen-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col2",
+   "from": "sidekiq",
+   "to": "j-folder-access-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col3",
+   "from": "sidekiq",
+   "to": "j-aml-report-async-download-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col4",
+   "from": "sidekiq",
+   "to": "j-deployment-notification-worker",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "call-doc-gen-job",
+   "from": "j-doc-gen-job",
+   "to": "ext-s3",
+   "fromSide": "left",
+   "toSide": "top",
+   "via": [
+    [
+     275,
+     345
+    ],
+    [
+     275,
+     948
+    ],
+    [
+     225,
+     948
+    ]
+   ]
+  },
+  {
+   "id": "call-esign-job",
+   "from": "j-esign-job",
+   "to": "ext-digio",
+   "fromSide": "right",
+   "toSide": "top",
+   "via": [
+    [
+     525,
+     649
+    ],
+    [
+     525,
+     948
+    ],
+    [
+     425,
+     948
+    ]
+   ]
+  },
+  {
+   "id": "call-reminder-job",
+   "from": "j-reminder-job",
+   "to": "ext-ses",
+   "fromSide": "left",
+   "toSide": "top",
+   "via": [
+    [
+     775,
+     815
+    ],
+    [
+     775,
+     948
+    ],
+    [
+     675,
+     948
+    ]
+   ]
+  },
+  {
+   "id": "call-send-otp-to-sms-job",
+   "from": "j-send-otp-to-sms-job",
+   "to": "ext-twilio",
+   "fromSide": "left",
+   "toSide": "top",
+   "via": [
+    [
+     1021,
+     497
+    ],
+    [
+     1021,
+     939
+    ],
+    [
+     835,
+     939
+    ]
+   ]
+  },
+  {
+   "id": "call-whatsapp-chat-job",
+   "from": "j-whatsapp-chat-job",
+   "to": "ext-wa",
+   "fromSide": "left",
+   "toSide": "top",
+   "via": [
+    [
+     1030,
+     573
+    ],
+    [
+     1030,
+     948
+    ],
+    [
+     995,
+     948
+    ]
+   ]
+  },
+  {
+   "id": "call-multi-site-user-sync-job",
+   "from": "j-multi-site-user-sync-job",
+   "to": "ext-sites",
+   "fromSide": "right",
+   "toSide": "top",
+   "via": [
+    [
+     1270,
+     459
+    ],
+    [
+     1270,
+     930
+    ],
+    [
+     1175,
+     930
+    ]
+   ]
+  }
+ ],
+ "cards": [
+  {
+   "dot": "emerald",
+   "title": "What lives here",
+   "items": [
+    "Platform base jobs (backups, restores, bulk actions, report builder) plus documents, folders, entities, KYC, users, and messaging",
+    "doc_llm_qna / doc_llm_validation and folder_llm_report call the LLM providers; s3_check and db_backup_freshness watch the backup buckets"
+   ]
+  },
+  {
+   "dot": "violet",
+   "title": "Cadence",
+   "items": [
+    "DailyMorningJob (01:30) sweeps cleanups; ReplicationHealthJob and DbBackupFreshnessJob alert on stale infra",
+    "KYC and KPI reminder jobs fan out scheduled investor nudges over SES"
+   ]
+  }
+ ]
+}

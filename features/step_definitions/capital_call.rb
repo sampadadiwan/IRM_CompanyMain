@@ -4,6 +4,7 @@ When('I create a Capital Call with percentage of commitment') do
   find('a.nav-link[href="#capital-calls-tab"]').click
   # sleep(0.2)
   click_on("New Call")
+  click_on("Classic Form")
   # sleep(0.2)
   fill_in 'capital_call_name', with: 'Demo call'
   # sleep(1)
@@ -23,6 +24,7 @@ When("I create a Capital Call with upload call basis") do
   find('a.nav-link[href="#capital-calls-tab"]').click
   # sleep(0.2)
   click_on("New Call")
+  click_on("Classic Form")
   # sleep(0.2)
   fill_in 'capital_call_name', with: 'Upload capital call'
   # sleep(1)
@@ -38,6 +40,7 @@ When("I create a Capital Call with investable call basis") do
   find('a.nav-link[href="#capital-calls-tab"]').click
   # sleep(0.2)
   click_on("New Call")
+  click_on("Classic Form")
   # sleep(0.2)
   fill_in 'capital_call_name', with: 'Investable capital call'
   # sleep(1)
@@ -171,6 +174,7 @@ When('I create a new capital call {string}') do |args|
 
   click_on "Calls"
   click_on "New Call"
+  click_on "Classic Form"
 
   fill_in('capital_call_name', with: @capital_call.name)
 
@@ -227,6 +231,7 @@ When('I create a new capital call {string} with fees') do |args|
 
   click_on "Calls"
   click_on "New Call"
+  click_on "Classic Form"
 
   fill_in('capital_call_name', with: @capital_call.name)
 
@@ -332,6 +337,7 @@ end
 
 When("I change the capital call's call date to {string}") do |new_date|
   visit(edit_capital_call_path(@capital_call))
+  click_on("Classic Form")
   fill_in('capital_call_call_date', with: new_date)
   click_on('Save')
 end

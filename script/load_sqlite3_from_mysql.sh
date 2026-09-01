@@ -14,13 +14,48 @@ MYSQL_DB="${MYSQL_DB:-IRM_development}"
 SOURCE_SQLITE_DB="${SOURCE_SQLITE_DB:-}"
 FUND_IDS="${FUND_IDS:-${FUND_ID:-}}"
 
+# Where the bulk scratch files (export TSVs + the SQLite DB) live. For a real fund these
+# run to several GB, so they must land on real disk. The old default of /tmp is a tmpfs on
+# most dev machines, and a tmpfs is backed by RAM+swap rather than a device: once memory is
+# tight the import dies with "INSERT failed: disk I/O error" while df still reports free
+# space, because df shows the mount's nominal size, not what RAM+swap can actually back.
+# /var/tmp is the conventional disk-backed location for large temp files.
+SCRATCH_DIR="${SCRATCH_DIR:-/var/tmp}"
+mkdir -p "$SCRATCH_DIR"
+
+# Say up front where we are working and how much room is left. A load that cannot possibly
+# fit should be obvious immediately, not 90 seconds later in the middle of an import.
+SCRATCH_FSTYPE=$(df -PT "$SCRATCH_DIR" 2>/dev/null | awk 'NR==2 {print $2}')
+SCRATCH_AVAIL_MB=$(df -Pk "$SCRATCH_DIR" 2>/dev/null | awk 'NR==2 {print int($4/1024)}')
+echo ">>> Scratch dir: $SCRATCH_DIR (fstype=${SCRATCH_FSTYPE:-unknown}, avail=${SCRATCH_AVAIL_MB:-?} MB)"
+if [ "$SCRATCH_FSTYPE" = "tmpfs" ]; then
+  echo ">>> WARNING: $SCRATCH_DIR is a tmpfs (RAM-backed). A large load can fail with"
+  echo ">>>          'disk I/O error' once RAM+swap are exhausted, even though df reports"
+  echo ">>>          free space. Point SCRATCH_DIR at a disk-backed path instead."
+fi
+
 if [ -n "$FUND_IDS" ]; then
   # Replace commas with underscores for filename if multiple IDs are provided
   SAFE_FUND_IDS=$(echo "$FUND_IDS" | tr ',' '_')
-  SQLITE_DB="${SQLITE_DB:-/tmp/irm_data_${SAFE_FUND_IDS}.sqlite3}"
+  SQLITE_DB="${SQLITE_DB:-$SCRATCH_DIR/irm_data_${SAFE_FUND_IDS}.sqlite3}"
 else
-  SQLITE_DB="${SQLITE_DB:-/tmp/irm_data.sqlite3}"
+  SAFE_FUND_IDS="all"
+  SQLITE_DB="${SQLITE_DB:-$SCRATCH_DIR/irm_data.sqlite3}"
 fi
+
+# Per-run scratch directory for the intermediate TSV exports.
+# These used to live at a fixed /tmp/<table>_export.tsv, which every concurrent run
+# of this script shared: two allocation runs (or a cucumber run alongside a dev run)
+# would overwrite each other's export between the write and the .import, so one run
+# imported the other run's rows. When the foreign file was large, .import inside a
+# single BEGIN/COMMIT exhausted memory and the script aborted with
+# "Error: out of memory". $$ (this script's PID) keeps every run isolated.
+EXPORT_DIR="${EXPORT_DIR:-$SCRATCH_DIR/irm_export_${SAFE_FUND_IDS}_$$}"
+rm -rf "$EXPORT_DIR"
+mkdir -p "$EXPORT_DIR"
+# Remove the scratch dir on every exit path -- including the `set -e` aborts, which
+# previously left multi-GB TSVs behind.
+trap 'rm -rf "$EXPORT_DIR"' EXIT
 
 START_TIME=$(date +%s)
 
@@ -966,7 +1001,8 @@ for table in "${TABLES[@]}"; do
   SCHEMA="${!schema_var}"
   INDEX_SQL="${!index_var}"
 
-  EXPORT_TSV="/tmp/${table}_export.tsv"
+  # Scoped to this run's scratch dir so concurrent runs never share an export file
+  EXPORT_TSV="${EXPORT_DIR}/${table}_export.tsv"
 
   ############################################
   # 1) Export Source → TSV

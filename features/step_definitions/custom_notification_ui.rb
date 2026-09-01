@@ -25,6 +25,10 @@ end
 When('I click {string} in the new notification dropdown') do |option|
   step 'I open the new notification dropdown'
   click_on(option)
+  # The form defaults to the guided wizard (fields split across steps, hidden until
+  # "Next" is clicked). Existing UI steps expect every field visible at once, so
+  # switch to the classic single-page mode right after landing on the form.
+  click_on("Classic Form") if page.has_button?("Classic Form", wait: 5)
 end
 
 Then('the new notification dropdown should offer {string}') do |option|
@@ -59,13 +63,42 @@ Then('I should not see a warning about overriding the fund default') do
 end
 
 # Latest Match Only / Attachment Mandatory only make sense once attachment_names has a value —
-# see the conditional-visibility controller wired up in custom_notifications/_form.html.erb
+# see the conditional-visibility controller wired up in custom_notifications/_form.html.erb.
+# Asserting on the checkboxes themselves doesn't work: they're `.ios-toggle-input`
+# (see docs/technical/wizard_form_patterns.md §5), which is deliberately
+# CSS-invisible (1px, opacity: 0) so the sibling `.ios-toggle-slider` can render the
+# pill/knob — Capybara never considers that element "visible", toggled or not. The
+# real, ancestor-level `hidden` toggle is on the wrapping conditional div instead.
+ATTACHMENT_CONDITIONAL_SELECTOR = '[data-conditional-visibility-target="conditional"]'.freeze
+
 Then('the attachment checkboxes should be hidden') do
-  expect(page).not_to have_field("custom_notification_latest_doc_only")
-  expect(page).not_to have_field("custom_notification_attachment_mandatory")
+  expect(page).to have_css(ATTACHMENT_CONDITIONAL_SELECTOR, visible: false)
 end
 
 Then('the attachment checkboxes should be visible') do
-  expect(page).to have_field("custom_notification_latest_doc_only", wait: 5)
-  expect(page).to have_field("custom_notification_attachment_mandatory")
+  expect(page).to have_css(ATTACHMENT_CONDITIONAL_SELECTOR, visible: true, wait: 5)
+  expect(page).to have_field("custom_notification_latest_doc_only", visible: :all)
+  expect(page).to have_field("custom_notification_attachment_mandatory", visible: :all)
+end
+
+Given('I visit the custom notification show page') do
+  visit(custom_notification_path(@custom_notification))
+end
+
+Then('I see a Preview button on the custom notification page') do
+  expect(page).to have_css("#custom_notification_preview_btn")
+end
+
+Then('I do not see a Preview button on the custom notification page') do
+  expect(page).not_to have_css("#custom_notification_preview_btn")
+end
+
+# The Preview button's target is forced to "_top" (instead of "_blank") in test env
+# specifically so this navigates the same tab — see custom_notifications/show.html.erb.
+When('I click the Preview button on the custom notification page') do
+  find("#custom_notification_preview_btn").click
+end
+
+Then('I see the notification preview with subject {string}') do |subject|
+  expect(page).to have_content(subject)
 end

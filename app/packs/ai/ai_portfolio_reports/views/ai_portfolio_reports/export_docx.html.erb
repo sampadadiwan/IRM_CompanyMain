@@ -1,90 +1,12 @@
 <%
-  # Helper to convert chart placeholder to QuickChart image URL for Word
+  # Chart rendering for Word exports used to call the QuickChart.io public API,
+  # which meant portfolio company chart data (including labels and values) left
+  # our infrastructure to an undisclosed third party. Removed deliberately — see
+  # website_src/pages/privacy.html §5. Reports fall back to the "[Chart]" text
+  # placeholder below until charts are rendered server-side instead.
   def chart_to_image_url_docx(chart_config, chart_type)
-  return nil unless chart_config.present?
-
-  pastel_colors = ['#93C5FD', '#A5B4FC', '#F9A8D4', '#FCD34D', '#6EE7B7', '#FDBA74', '#C4B5FD', '#FCA5A5', '#7DD3FC', '#67E8F9']
-
-  begin
-    parsed = JSON.parse(chart_config)
-    data = parsed.is_a?(Hash) ? (parsed['data'] || parsed[:data] || parsed) : parsed
-    data['datasets']&.each { |ds| ds.delete('yAxisID') } if data.is_a?(Hash)
-
-
-    if data.is_a?(Hash) && data['datasets']
-      data['datasets'].each_with_index do |dataset, idx|
-        color = pastel_colors[idx % pastel_colors.length]
-        if ['pie', 'doughnut'].include?(chart_type)
-          dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
-        elsif chart_type == 'line'
-          dataset['borderColor'] = color
-          dataset['backgroundColor'] = color + '40'
-          dataset['fill'] = true if chart_type == 'area'
-        else
-          dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
-          dataset['borderColor'] = 'transparent'
-        end
-      end
-    end
-
-    chart_type = 'line' if chart_type == 'area'
-
-    # chart_config_obj = {
-    #   type: chart_type,
-    #   data: data,
-    #   options: {
-    #     responsive: true,
-    #     plugins: { legend: { display: true, position: 'top' } },
-    #     scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
-    #   }
-    # }
-
-    chart_config_obj = if parsed.is_a?(Hash) && parsed.key?('data') && parsed.key?('type')
-                         parsed['data'] = data if data.is_a?(Hash)
-                         parsed['type'] ||= chart_type
-                         parsed
-                       else
-                         {
-                           type: chart_type,
-                           data: data,
-                           options: {
-                             responsive: true,
-                             plugins: { legend: { display: true, position: 'top' } },
-                             scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
-
-                           }
-                         }
-                       end
-
-    # encoded = ERB::Util.url_encode(chart_config_obj.to_json)
-    # return "https://quickchart.io/chart?c=#{encoded}&width=600&height=350&backgroundColor=white&v=3&format=png"
-
-
-    Rails.logger.info "=== QuickChart Debug ==="
-    Rails.logger.info "Chart type: #{chart_type}"
-    Rails.logger.info "Config length: #{chart_config.length}"
-    Rails.logger.info "Parsed data: #{data.inspect[0..500]}"
-    Rails.logger.info "Request body: #{{ chart: chart_config_obj }.to_json[0..1000]}"
-
-
-    response = HTTParty.post(
-      'https://quickchart.io/chart/create',
-      body: { chart: chart_config_obj.to_json, width: 600, height: 350, backgroundColor: 'white', version: '3' }.to_json,
-      headers: { 'Content-Type' => 'application/json' },
-      timeout: 15
-    )
-
-    if response.success?
-      JSON.parse(response.body)['url']
-    else
-      Rails.logger.error "QuickChart API failed: #{response.code} - #{response.body}"
-      nil
-    end
-  rescue => e
-    Rails.logger.error "Chart conversion error: #{e.message}"
     nil
   end
-end
 
 
   # Process section content to replace chart placeholders with images for Word

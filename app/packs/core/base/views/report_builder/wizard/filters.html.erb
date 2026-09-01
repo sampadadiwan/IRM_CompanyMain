@@ -1,0 +1,82 @@
+<% content_for :title, "Guided Report Wizard – Filters" %>
+<%
+  filter_ops = [["equals", "eq"], ["contains", "cont"], ["is any of (comma-separated)", "in"], ["does not equal", "not_eq"],
+                ["is at least (≥)", "gteq"], ["is at most (≤)", "lteq"], ["is empty", "null"], ["is not empty", "not_null"]]
+  no_value_ops = %w[null not_null].to_set
+  known_op_suffixes = %w[eq not_eq cont not_cont in not_in gteq lteq gt lt null not_null]
+
+  parse_pred = lambda do |pred_key|
+    op = known_op_suffixes.find { |s| pred_key.to_s.end_with?("_#{s}") }
+    op ? { field: pred_key.to_s[0..-(op.length + 2)], op: op } : { field: pred_key.to_s, op: "eq" }
+  end
+
+  op_label = lambda { |op| filter_ops.find { |_, v| v == op }&.first || op }
+
+  back_step = @config.joins.any? ? "aggregates" : "joins"
+%>
+
+<div class="wizard-shell container-fluid mw-100 px-3 px-lg-5 py-4" data-controller="tooltip">
+  <%= render "report_builder/wizard/header" %>
+  <%= render "report_builder/wizard/progress", report: @report, current_step: "filters" %>
+
+  <%= render "report_builder/wizard/help_box",
+        title: "Want to narrow down the results? (Optional)",
+        body: "Filters remove rows you don't want to see — for example, only investors of a certain type, or only calls due after a certain date. Leave this empty to include everything.",
+        example: nil %>
+
+  <%= turbo_frame_tag "wizard_filters_panel" do %>
+  <% [[nil, "Root: #{wizard_model_label(@root_class.name)}", @root_columns, @config.root_filters]].concat(
+       @config.joins.map { |j| [j[:relation].to_s, j[:relation].to_s.humanize, (@joined_columns[j[:relation].to_s] || []), (j[:child_filters] || {})] }
+     ).each do |relation, title, cols, existing_filters| %>
+    <div class="wizard-panel-card mb-4">
+      <div class="wizard-panel-card-header d-flex align-items-center gap-2">
+        <span class="wizard-card-icon"><i class="ti <%= relation ? 'ti-git-merge' : 'ti-table' %>"></i></span>
+        <h6 class="mb-0 fw-bold flex-grow-1"><%= title %></h6>
+        <% if existing_filters.any? %>
+          <span class="wizard-header-badge"><%= existing_filters.size %></span>
+        <% end %>
+      </div>
+      <div class="p-3">
+        <% if existing_filters.any? %>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <% existing_filters.each do |pred_key, val| %>
+              <% parsed = parse_pred.call(pred_key) %>
+              <% field_label = cols.find { |c| c[:key] == parsed[:field] }&.dig(:label) || parsed[:field].humanize %>
+              <div class="wizard-chip d-flex align-items-center gap-2">
+                <span><%= field_label %> <em><%= op_label.call(parsed[:op]) %></em> <%= Array(val).join(", ") unless no_value_ops.include?(parsed[:op]) %></span>
+                <%= button_to wizard_report_builder_remove_filter_path(@report),
+                      method: :delete,
+                      params: { pred_key: pred_key, relation: relation },
+                      class: "btn btn-link p-0 wizard-chip-remove" do %>
+                  <i class="ti ti-x"></i>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%= form_tag wizard_report_builder_add_filter_path(@report), method: :post, class: "d-flex flex-wrap gap-2 align-items-center" do %>
+          <%= hidden_field_tag :relation, relation %>
+          <select name="field" class="form-select form-select-sm bg-light border-0" style="max-width: 220px" required>
+            <option value="">— field —</option>
+            <% cols.each do |c| %>
+              <option value="<%= c[:key] %>"><%= c[:label] %></option>
+            <% end %>
+          </select>
+          <select name="op" class="form-select form-select-sm bg-light border-0" style="max-width: 220px">
+            <% filter_ops.each do |label, val| %>
+              <option value="<%= val %>"><%= label %></option>
+            <% end %>
+          </select>
+          <input type="text" name="value" class="form-control form-control-sm bg-light border-0" placeholder="value (leave blank for is empty / is not empty)" style="max-width: 220px">
+          <button type="submit" class="btn btn-sm btn-wizard-accent d-flex align-items-center gap-1">
+            <i class="ti ti-plus"></i> Add Filter
+          </button>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+  <% end %>
+
+  <%= render "report_builder/wizard/footer_nav", back_step: back_step, next_step: "sort", next_label: "Continue", skip_ok: true %>
+</div>

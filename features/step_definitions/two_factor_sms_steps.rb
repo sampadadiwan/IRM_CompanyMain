@@ -141,11 +141,6 @@ Then("no verification check should have been made") do
   expect(@twilio.checks).to eq(0)
 end
 
-When("I request a code by text") do
-  click_on("Text me a code")
-  expect(page).to have_css("#sms-status", visible: :visible, wait: 10)
-end
-
 When("the code is sent") do
   @send_error = nil
   begin

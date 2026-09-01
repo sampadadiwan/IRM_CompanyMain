@@ -11,6 +11,7 @@ resources :support_agents do
     get   'note_summaries'
     patch 'update_score'
     patch 'update_note_summary'
+    get   'deal_steps'
   end
   member do
     post 'run_with_steps'

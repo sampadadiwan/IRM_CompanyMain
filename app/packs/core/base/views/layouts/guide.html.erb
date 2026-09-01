@@ -1,0 +1,64 @@
+<%# Website-styled guide shell, shared by UserGuidesController (signed-in) and
+    PublicGuidesController (login-less, reached from the 2FA setup screens).
+    Loads the real compiled website assets (public/website/assets/) rather than
+    re-implementing the look — those assets are plain static files under public/,
+    unrelated to the WEBSITE_HOSTS-gated middleware (lib/middleware/website.rb),
+    which only intercepts requests by *host*, not by path. -%>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="shortcut icon" type="image/png" href="/favicon.png">
+<title><%= [@title, "CapHive"].compact.join(" — ") %></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/website/assets/css/caphive.css">
+<%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+<%= javascript_importmap_tags %>
+</head>
+
+<body class="guide-shell">
+<header class="nav" id="nav">
+  <a class="brand" href="<%= user_signed_in? ? root_path : "https://caphive.com/" %>" aria-label="CapHive home">
+    <img class="logo" src="/website/assets/img/caphive-logo-original.png" alt="CapHive" width="89" height="34">
+  </a>
+  <%# The one deliberate content swap vs. the marketing nav: no Products/Resources/Login
+      menu here, just a way back to wherever this reader came from. %>
+  <div class="nav-cta">
+    <% if user_signed_in? %>
+      <%= link_to "← Back to app", root_path, class: "nav-link" %>
+    <% else %>
+      <%= link_to "Sign in", new_user_session_path, class: "btn btn-primary btn-nav" %>
+    <% end %>
+  </div>
+</header>
+
+<main class="guide-main">
+  <%- flash.each do |name, msg| -%>
+    <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info" if msg.is_a?(String) %>
+  <%- end -%>
+
+  <%= yield %>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-base">
+      <p class="mb-0">&copy; <span data-year><%= Date.current.year %></span> CapHive Private Limited. All rights reserved.</p>
+      <p class="legal-links">
+        <a href="https://caphive.com/privacy.html">Privacy</a>
+        <a href="https://caphive.com/terms.html">Terms</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<%# caphive.js is defensive (querySelectorAll + null-guards throughout) so it's safe
+    to load even though this page has none of the marketing nav's dropdown/mobile-menu
+    markup. What it actually buys us here: the single-open <details> behaviour inside
+    any .faq block (see WithGuideRendering#wrap_faq_section). -%>
+<script src="/website/assets/js/caphive.js"></script>
+</body>
+</html>

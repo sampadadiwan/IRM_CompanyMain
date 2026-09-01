@@ -1,195 +1,154 @@
+<%#
+  FM Landing Page "FM Stats" widget — four counters (Funds, LPs, Portfolio Companies,
+  Opportunities), each linking to its list.
+
+  Metadata:
+    card_type - card  : classic card with progress bar (default)
+                card2 : left-border stat card with icon box
+                card3 : "Refined" single card split into tiles   (matches fund card3)
+                card4 : "Stat strip" one dense row              (matches fund card4)
+                card5 : "Chart-forward" border-top stat cards   (matches fund card5)
+%>
 <%
   args ||= {}
-  card_type = args[:card_type] || 'card'
+  card_type = args[:card_type].to_s.presence_in(%w[card card2 card3 card4 card5]) || 'card'
+
+  # Smooth-scroll to the opportunities section instead of navigating
+  scroll_to_opps = "document.querySelector('#opportunities-section')?.scrollIntoView({ behavior: 'smooth' }); return false;"
+
+  stats = [
+    { label: t('entities.fm_dashboard_stats.funds'),               value: policy_scope(current_user.entity.funds).count,
+      icon: "ti-currency-dollar", color: "success", url: funds_path },
+    { label: t('entities.fm_dashboard_stats.lps'),                 value: policy_scope(current_user.entity.investors.lps).count,
+      icon: "ti-users",           color: "info",    url: investors_path(category: "LP") },
+    { label: t('entities.fm_dashboard_stats.portfolio_companies'), value: policy_scope(current_user.entity.investors.portfolio_companies).count,
+      icon: "ti-chart-bar",       color: "warning", url: investors_path(q: ransack_query_params(:category, :eq, "Portfolio Company")) },
+    { label: t('entities.fm_dashboard_stats.opportunities'),       value: policy_scope(current_user.entity.investment_opportunities).count,
+      icon: "ti-filter",          color: "danger",  url: "#opportunities-section", onclick: scroll_to_opps }
+  ]
+
+  # card5 alternates the theme primary / secondary like the fund card5 ratio cards
+  card5_colors = %w[primary secondary secondary primary]
 %>
 
-<% if card_type == 'card2' %>
+<% case card_type %>
+<% when 'card2' %>
 
 <div class="row g-3">
-  <div class="col-lg-3 col-md-6">
-    <%= link_to funds_path, class: "text-decoration-none d-block h-100" do %>
-      <div class="card fm-stat-card fm-stat-card--success h-100">
-        <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
-          <div class="d-flex align-items-center gap-3">
-            <div class="fm-stat-icon bg-success-subtle text-success">
-              <i class="ti ti-currency-dollar fs-4"></i>
-            </div>
-            <div>
-              <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.funds).count %>">
-                <span class="fs-2 fw-bold lh-1 text-body" data-counters-target="output"></span>
+  <% stats.each do |s| %>
+    <div class="col-lg-3 col-md-6">
+      <%= link_to s[:url], class: "text-decoration-none d-block h-100", onclick: s[:onclick] do %>
+        <div class="card fm-stat-card fm-stat-card--<%= s[:color] %> h-100">
+          <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="fm-stat-icon bg-<%= s[:color] %>-subtle text-<%= s[:color] %>">
+                <i class="ti <%= s[:icon] %> fs-4"></i>
               </div>
-              <div class="text-muted small mt-1"><%= t('entities.fm_dashboard_stats.funds') %></div>
+              <div>
+                <div data-controller="counters" data-counters-value-value="<%= s[:value] %>">
+                  <span class="fs-2 fw-bold lh-1 text-body" data-counters-target="output"></span>
+                </div>
+                <div class="text-muted small mt-1"><%= s[:label] %></div>
+              </div>
             </div>
+            <i class="ti ti-chevron-right text-muted fs-4"></i>
           </div>
-          <i class="ti ti-chevron-right text-muted fs-4"></i>
         </div>
-      </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<% when 'card3' %>
+
+<%# One card, split into equal tiles by 1px grid lines — same treatment as fund card3's tile grid %>
+<div class="fmw3-card">
+  <div class="fmw3-tiles">
+    <% stats.each do |s| %>
+      <%= link_to s[:url], class: "fmw3-tile fmw3-tile--#{s[:color]}", onclick: s[:onclick] do %>
+        <div class="fmw3-tile-head">
+          <span class="fmw3-icon text-<%= s[:color] %>"><i class="ti <%= s[:icon] %>"></i></span>
+          <span class="fmw3-lbl"><%= s[:label] %></span>
+        </div>
+        <div data-controller="counters" data-counters-value-value="<%= s[:value] %>">
+          <span class="fmw3-num" data-counters-target="output"></span>
+        </div>
+      <% end %>
     <% end %>
   </div>
+</div>
 
-  <div class="col-lg-3 col-md-6">
-    <%= link_to investors_path(category: "LP"), class: "text-decoration-none d-block h-100" do %>
-      <div class="card fm-stat-card fm-stat-card--info h-100">
-        <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
-          <div class="d-flex align-items-center gap-3">
-            <div class="fm-stat-icon bg-info-subtle text-info">
-              <i class="ti ti-users fs-4"></i>
-            </div>
-            <div>
-              <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.investors.lps).count %>">
-                <span class="fs-2 fw-bold lh-1 text-body" data-counters-target="output"></span>
-              </div>
-              <div class="text-muted small mt-1"><%= t('entities.fm_dashboard_stats.lps') %></div>
-            </div>
-          </div>
-          <i class="ti ti-chevron-right text-muted fs-4"></i>
-        </div>
-      </div>
+<% when 'card4' %>
+
+<%# One dense strip: stats side by side with dividers and a thin colour bar — same as fund card4 %>
+<div class="fmw4-row">
+  <% stats.each do |s| %>
+    <%= link_to s[:url], class: "fmw4-stat", onclick: s[:onclick] do %>
+      <span class="fmw4-icon text-<%= s[:color] %>"><i class="ti <%= s[:icon] %>"></i></span>
+      <span class="fmw4-body">
+        <span data-controller="counters" data-counters-value-value="<%= s[:value] %>">
+          <span class="fmw4-num" data-counters-target="output"></span>
+        </span>
+        <span class="fmw4-lbl"><%= s[:label] %></span>
+      </span>
+      <i class="fmw4-bar bg-<%= s[:color] %>"></i>
     <% end %>
-  </div>
+  <% end %>
+</div>
 
-  <div class="col-lg-3 col-md-6">
-    <%= link_to investors_path(q: ransack_query_params(:category, :eq, "Portfolio Company")), class: "text-decoration-none d-block h-100" do %>
-      <div class="card fm-stat-card fm-stat-card--warning h-100">
-        <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
-          <div class="d-flex align-items-center gap-3">
-            <div class="fm-stat-icon bg-warning-subtle text-warning">
-              <i class="ti ti-chart-bar fs-4"></i>
-            </div>
-            <div>
-              <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.investors.portfolio_companies).count %>">
-                <span class="fs-2 fw-bold lh-1 text-body" data-counters-target="output"></span>
+<% when 'card5' %>
+
+<%# Modernize border-top stat cards alternating primary / secondary — same as fund card5's ratio cards %>
+<div class="row g-3 fmw5-cards">
+  <% stats.each_with_index do |s, i| %>
+    <% color = card5_colors[i] %>
+    <div class="col-lg-3 col-md-6">
+      <%= link_to s[:url], class: "text-decoration-none d-block h-100", onclick: s[:onclick] do %>
+        <div class="card border-top border-<%= color %> h-100 mb-0">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div>
+                <div data-controller="counters" data-counters-value-value="<%= s[:value] %>">
+                  <h4 class="card-title fs-7 fw-normal" data-counters-target="output"></h4>
+                </div>
+                <p class="card-subtitle text-<%= color %> mb-0"><%= s[:label] %></p>
               </div>
-              <div class="text-muted small mt-1"><%= t('entities.fm_dashboard_stats.portfolio_companies') %></div>
+              <div class="ms-auto">
+                <span class="text-<%= color %> display-6"><i class="ti <%= s[:icon] %>"></i></span>
+              </div>
             </div>
           </div>
-          <i class="ti ti-chevron-right text-muted fs-4"></i>
         </div>
-      </div>
-    <% end %>
-  </div>
-
-
-  <div class="col-lg-3 col-md-6">
-    <a href="#opportunities-section"
-       onclick="document.querySelector('#opportunities-section')?.scrollIntoView({ behavior: 'smooth' }); return false;"
-       class="text-decoration-none d-block h-100">
-      <div class="card fm-stat-card fm-stat-card--danger h-100">
-        <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
-          <div class="d-flex align-items-center gap-3">
-            <div class="fm-stat-icon bg-danger-subtle text-danger">
-              <i class="ti ti-filter fs-4"></i>
-            </div>
-            <div>
-              <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.investment_opportunities).count %>">
-                <span class="fs-2 fw-bold lh-1 text-body" data-counters-target="output"></span>
-              </div>
-              <div class="text-muted small mt-1"><%= t('entities.fm_dashboard_stats.opportunities') %></div>
-            </div>
-          </div>
-          <i class="ti ti-chevron-right text-muted fs-4"></i>
-        </div>
-      </div>
-    </a>
-  </div>
-
+      <% end %>
+    </div>
+  <% end %>
 </div>
 
 <% else %>
 
 <div class="row">
-  <div class="col-lg-3 col-md-6">
-    <a href="<%=funds_path %>">
-    <div class="card cursor-pointer">
-      <div class="card-body">
-        <div class="d-flex align-items-center mb-3">
-          <div>
-            <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.funds).count %>">
-              <h3 class="fs-8" data-counters-target="output"></h3>
-            </div>
-            <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.funds') %> </h6>
-          </div>
-          <div class="ms-auto">
-            <span class="text-success display-6"><i class="ti ti-currency-dollar"></i></span>
-          </div>
-        </div>
-          <div class="progress-bar text-bg-success" role="progressbar" style="width: 100%; height: 6px;"></div>
-      </div>
-    </div>
-    </a>
-  </div>
-  <div class="col-lg-3 col-md-6">
-    <a href="<%=investors_path(category: "LP")%>">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex align-items-center mb-3">
-          <div>
-            <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.investors.lps).count %>">
-              <h3 class="fs-8" data-counters-target="output"></h3>
-            </div>
-            <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.lps') %> </h6>
-          </div>
-          <div class="ms-auto">
-            <span class="text-info display-6"><i class="ti ti-users"></i></span>
-          </div>
-        </div>
-          <div class="progress-bar text-bg-info" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-      </div>
-    </div>
-    </a>
-  </div>
-  <div class="col-lg-3 col-md-6">
-    <a href="<%=investors_path(q: ransack_query_params(:category, :eq, "Portfolio Company"))%>">
-    <div class="card">
-      <div class="card-body">
-        <div class="row">
-          <div class="col-12">
+  <% stats.each do |s| %>
+    <div class="col-lg-3 col-md-6">
+      <%= link_to s[:url], onclick: s[:onclick] do %>
+        <div class="card cursor-pointer">
+          <div class="card-body">
             <div class="d-flex align-items-center mb-3">
               <div>
-                <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.investors.portfolio_companies).count %>">
+                <div data-controller="counters" data-counters-value-value="<%= s[:value] %>">
                   <h3 class="fs-8" data-counters-target="output"></h3>
                 </div>
-                <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.portfolio_companies') %> </h6>
+                <h6 class="card-subtitle mb-1 text-muted"><%= s[:label] %></h6>
               </div>
               <div class="ms-auto">
-                <span class="text-warning display-6"><i class="ti ti-chart-bar"></i></span>
+                <span class="text-<%= s[:color] %> display-6"><i class="ti <%= s[:icon] %>"></i></span>
               </div>
             </div>
-          </div>
-          <div class="col-12">
-              <div class="progress-bar text-bg-warning" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            <div class="progress-bar text-bg-<%= s[:color] %>" role="progressbar" style="width: 100%; height: 6px;"></div>
           </div>
         </div>
-      </div>
+      <% end %>
     </div>
-    </a>
-  </div>
-  <div class="col-lg-3 col-md-6">
-    <a href="#opportunities-section" onclick="document.querySelector('#opportunities-section').scrollIntoView({ behavior: 'smooth' }); return false;">
-    <div class="card cursor-pointer">
-      <div class="card-body">
-        <div class="row">
-          <div class="col-12">
-            <div class="d-flex align-items-center mb-3">
-              <div>
-                <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.investment_opportunities).count %>">
-                  <h3 class="fs-8" data-counters-target="output"></h3>
-                </div>
-                <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.opportunities') %> </h6>
-              </div>
-              <div class="ms-auto">
-                <span class="text-danger display-6"><i class="ti ti-filter"></i></span>
-              </div>
-            </div>
-          </div>
-          <div class="col-12">
-              <div class="progress-bar text-bg-danger" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    </a>
-  </div>
+  <% end %>
 </div>
 
 <% end %>

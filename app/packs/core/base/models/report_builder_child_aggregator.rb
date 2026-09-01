@@ -32,7 +32,13 @@ class ReportBuilderChildAggregator
   def call
     return {} if root_ids.empty? || valid_gvp_keys.empty?
 
-    result = Hash.new { |h, k| h[k] = {} }
+    # Plain Hash, not Hash.new { |h, k| h[k] = {} } — that auto-vivifying default
+    # makes `result[missing_root_id]` return a truthy `{}` instead of `nil` on
+    # read, which defeats QueryEngine#merge's `row_data ? ... : zero_value(...)`
+    # zero-fill check for root rows with no matching children (they'd render
+    # blank instead of the documented 0 for sum/count). Use `||= {}` at each
+    # write site below instead, so a genuinely-unpopulated id stays absent.
+    result = {}
     run_group_aggregates(result)
     run_latest_aggregates(result)
     result
@@ -131,7 +137,7 @@ class ReportBuilderChildAggregator
         id = row.send(fk)
         group_keys.each do |k|
           raw = row.send(agg_alias(k))
-          result[id][clean_key(k)] = monetized?(bare_col(k)) ? cents_to_amount(raw) : raw
+          (result[id] ||= {})[clean_key(k)] = monetized?(bare_col(k)) ? cents_to_amount(raw) : raw
         end
       end
   end
@@ -155,7 +161,7 @@ class ReportBuilderChildAggregator
         latest_keys.each do |k|
           col = bare_col(k)
           raw = row.send(db_col(col).split(".").last.delete("`"))
-          result[id][clean_key(k)] = monetized?(col) ? cents_to_amount(raw) : raw
+          (result[id] ||= {})[clean_key(k)] = monetized?(col) ? cents_to_amount(raw) : raw
         end
       end
   end

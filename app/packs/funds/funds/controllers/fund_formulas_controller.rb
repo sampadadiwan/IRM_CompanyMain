@@ -145,6 +145,27 @@ class FundFormulasController < ApplicationController
     end
   end
 
+  # GET /fund_formulas/dependencies?fund_id=X[&rule_for=Y][&tag_list=Z]
+  # Visualizes which formulas' computed fields are read by later formulas -- the
+  # same scan the allocation engine runs before allocating (see
+  # AccountEntryAllocation::RunFormulas#configure_commitment_cache_dependencies).
+  # rule_for/tag_list mirror RunFormulas#get_formulas' own filtering, so a run
+  # scoped to e.g. rule_for=Accounting shows the dependency graph for exactly the
+  # formulas that run together -- without them, a formula from a differently-scoped
+  # partial run could show as a dependency of one it would never actually run with.
+  def dependencies
+    authorize(FundFormula)
+    @fund = Fund.find(params[:fund_id])
+    formula_list = policy_scope(FundFormula.enabled.where(fund_id: @fund.id))
+    formula_list = formula_list.where(rule_for: params[:rule_for]) if params[:rule_for].present?
+    formula_list = formula_list.with_tags(params[:tag_list].split(",")) if params[:tag_list].present?
+    formula_list = formula_list.order(sequence: :asc).includes(:fund, :entity)
+    @dependency_graph = FundFormulaDependencyGraph.new(formula_list)
+    @bread_crumbs = { Funds: funds_path, "#{@fund}": fund_path(@fund),
+                      'Fund Formulas': fund_formulas_path(fund_id: @fund.id),
+                      Dependencies: nil }
+  end
+
   def fetch_templates
     authorize FundFormula
     fund_ids = params[:fund_ids]

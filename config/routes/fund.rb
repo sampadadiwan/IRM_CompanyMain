@@ -43,6 +43,7 @@ resources :fund_formulas do
   get "generate_ai_descriptions", on: :collection
   get "generate_ai_description", on: :member
   get "generate_formula", on: :collection
+  get "dependencies", on: :collection
   post 'bulk_actions', on: :collection
   post 'fetch_templates', on: :collection
 end

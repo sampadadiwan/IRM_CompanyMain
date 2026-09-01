@@ -44,6 +44,18 @@ Given('Sidekiq reports it with an empty context') do
   @sidekiq_context = {}
 end
 
+# Stands in for anything that can make the classifier itself raise. A context that
+# answers respond_to?(:empty?) but blows up when called reaches empty_context? and raises
+# a LoadError — a ScriptError, deliberately, since that is the family that took the
+# production handler down and the one a bare `rescue StandardError` would miss.
+Given('Sidekiq reports it with a context that raises when it is inspected') do
+  @sidekiq_context = Class.new do
+    def empty?
+      raise LoadError, 'cannot load such file -- lib/sidekiq_redis_fetch_error.rb'
+    end
+  end.new
+end
+
 # What Processor#dispatch passes for a job that raised.
 Given('Sidekiq reports it with the context of a failed job') do
   @sidekiq_context = { context: "Job raised exception", job: { "class" => "DocGenJob", "jid" => "abc123" } }

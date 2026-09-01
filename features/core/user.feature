@@ -24,3 +24,10 @@ Scenario Outline: Create new user
 #   And the user has role "company_admin"
 #   And update my password having phone "7721046692"
 #   Then a whatsapp notification is sent indicating account update
+
+Scenario: Updating a user's call_code, phone or email syncs to their investor access
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  And the user has role "company_admin"
+  And there is an existing investor "investor_name=SyncCo;primary_email=sync@b.c" with "1" users
+  When I update the investor user's call_code to "44", phone to "7700900123" and email to "synced@example.com"
+  Then the investor access for the investor user should have phone "7700900123" and email "synced@example.com"

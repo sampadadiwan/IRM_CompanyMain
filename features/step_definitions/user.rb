@@ -65,3 +65,14 @@
     @user.save!
   end
 
+  # @investor_user / @investor_access are set by "there is an existing investor ... with ... users"
+  When('I update the investor user\'s call_code to {string}, phone to {string} and email to {string}') do |call_code, phone, email|
+    @investor_user.update!(call_code:, phone:, email:)
+  end
+
+  Then('the investor access for the investor user should have phone {string} and email {string}') do |phone, email|
+    @investor_access.reload
+    expect(@investor_access.phone).to eq(phone)
+    expect(@investor_access.email).to eq(email)
+  end
+

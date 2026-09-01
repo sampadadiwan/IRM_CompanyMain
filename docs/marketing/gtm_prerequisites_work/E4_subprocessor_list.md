@@ -18,7 +18,7 @@
 | **Amazon Web Services** | Amazon Web Services, Inc. | All compute, storage, networking, load balancing, DNS, certificates | **All customer data.** Fund records, LP records, documents, backups | `ap-south-1` (Mumbai), `ap-south-2` (Hyderabad), `us-east-1` (N. Virginia) | `IRM-Infra/compute.py`, `network.py`, `alb.py`; `Pulumi.production-*.yaml` |
 | **Amazon S3** | Amazon Web Services, Inc. | Document storage + database backups | Subscription documents, KYC identity documents, fund reports, full DB backups | Same as above, replicated cross-region | `config/storage.yml:58-63`; `config/initializers/shrine.rb:11-22`; `lib/tasks/aws.rake` |
 | **Amazon SES** | Amazon Web Services, Inc. | Outbound transactional email | Recipient name + email, and message content: capital call notices, distribution notices, investor statements, invitations, password resets | `ap-south-1` / `us-east-1` | `config/application.rb:98-106`; `.env.production.in:30` |
-| **Amazon SNS** | Amazon Web Services, Inc. | Email bounce/complaint notifications | Recipient email addresses | Same | `Gemfile:78`; `app/controllers/ses_notifications_controller.rb` |
+| **Amazon SNS** | Amazon Web Services, Inc. | Email bounce/complaint notifications | Recipient email addresses | Same | `Gemfile:78`; `app/packs/core/email_deliverability/controllers/ses_notifications_controller.rb` |
 
 ### Document execution and identity
 

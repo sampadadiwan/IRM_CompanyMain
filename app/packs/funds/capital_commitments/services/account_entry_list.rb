@@ -67,7 +67,10 @@ class AccountEntryList < BaseList
     # Otherwise just use the start of the current year.
     upper_bound = reporting_date_conditions.find { |c| REPORTING_DATE_UPPER_BOUND_PREDICATES.include?(c.predicate_name) }
     year = reporting_date_condition_year(upper_bound) || Time.zone.today.year
-    @params[:q][:reporting_date_gt] = I18n.l(Date.new(year, 1, 1))
+    # ISO: ransack parses this back with Date._parse, which is locale-blind and reads
+    # slashed dates as dd/mm/yyyy. Jan 1 is symmetric so it never misparsed, but the
+    # localized form was still wrong in kind -- see the reporting_date link in RunFormulas.
+    @params[:q][:reporting_date_gt] = Date.new(year, 1, 1).to_fs(:db)
   end
 
   def reporting_date_condition_year(condition)

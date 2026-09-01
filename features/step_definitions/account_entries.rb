@@ -15,6 +15,47 @@ Given("there are Fund Formulas are added to the fund") do
 	fund_formula.save!
 end
 
+Given("there are chained Fund Formulas relying on a computed field without the cache flag set") do
+	AllocationRun.delete_all
+	# Deliberately leaves add_to_commitment_cache at its default (false, since
+	# 20260829090000_default_add_to_commitment_cache_to_false.rb) on both formulas.
+	# The second formula only computes correctly if AccountEntryAllocation::CommitmentCache
+	# caches "net_income" because the second formula's source references @net_income
+	# (FundFormula#referenced_field_names), not because a formula author remembered to
+	# flip the flag -- that's the whole point of this regression test.
+	base_formula = @fund.fund_formulas.build(
+															name: "Net Income",
+															description: "Base value the next formula depends on",
+															formula: "100000",
+															sequence: 10,
+															rule_type: "GenerateAccountEntry",
+															enabled: true,
+															entry_type: "Accounting",
+															roll_up: false,
+															rule_for: "Accounting",
+														)
+	base_formula.save!
+
+	dependent_formula = @fund.fund_formulas.build(
+															name: "Net Income Times Two",
+															description: "Depends on @net_income from the formula above",
+															formula: "@net_income * 2",
+															sequence: 20,
+															rule_type: "GenerateAccountEntry",
+															enabled: true,
+															entry_type: "Accounting",
+															roll_up: false,
+															rule_for: "Accounting",
+														)
+	dependent_formula.save!
+end
+
+Then("the dependent formula's account entry reflects the earlier formula's computed value") do
+	ae = AccountEntry.find_by(name: "Net Income Times Two", fund_id: @fund.id)
+	expect(ae).to(be_present)
+	expect(ae.amount_cents.to_i).to(eq(200_000))
+end
+
 Given("that Account Entries are allocated") do
 	visit allocate_form_fund_path(@fund.id, run_allocations: true)
 	sleep(1)
@@ -83,6 +124,71 @@ Then('the account entry parent is updated') do
 	puts "######## ACCOUNT ENTRY ##########"
 	puts @account_entry.reload.inspect
 	expect(@account_entry.reload.parent).to(eq(@parent))
+	# parent_name is a denormalized cache of parent.to_s (AccountEntryShared#setup_defaults) --
+	# assert it was populated alongside .parent, not just left to a separate manual check.
+	expect(@account_entry.parent_name).to(eq(@parent.to_s[0..254]))
+end
+
+# PortfolioInvestment fixture used to re-point an already-parented account entry (see the
+# "Edit Account Entry parent" scenario). Bypasses FactoryBot/validations via save!(validate:
+# false), mirroring "there is a portfolio investment record for the fund" in
+# access_rights_models_steps.rb -- kept as its own step (rather than reused directly) so this
+# scenario owns a dedicated @pi_parent ivar instead of the shared, easily-clobbered @record.
+Given('there is a portfolio investment for the account entry parent test') do
+	pc_entity = Entity.create!(
+		name: "PC Entity #{SecureRandom.hex(4)}",
+		entity_type: "Investor",
+		primary_email: "pc#{SecureRandom.hex(4)}@example.com"
+	)
+	portfolio_company = Investor.new(
+		entity: @fund.entity,
+		investor_entity: pc_entity,
+		investor_name: pc_entity.name,
+		category: "Portfolio Company"
+	)
+	portfolio_company.save!(validate: false)
+	instrument = FactoryBot.create(:investment_instrument, entity: @fund.entity, portfolio_company: portfolio_company)
+	aggregate = AggregatePortfolioInvestment.new(
+		fund: @fund,
+		entity: @fund.entity,
+		portfolio_company: portfolio_company,
+		investment_instrument: instrument
+	)
+	aggregate.save!(validate: false)
+	@pi_parent = PortfolioInvestment.new(
+		fund: @fund,
+		entity: @fund.entity,
+		investment_instrument: instrument,
+		portfolio_company: portfolio_company,
+		aggregate_portfolio_investment: aggregate,
+		amount_cents: 10_000_000,
+		investment_date: Time.zone.today - 1.month,
+		quantity: 100,
+		sub_category: "Equity",
+		category: "Unlisted",
+		excused_folio_ids: []
+	)
+	@pi_parent.save!(validate: false)
+end
+
+Then('I re-point the account entry parent to the portfolio investment with debug {string}') do |debug_string|
+	debug = debug_string == "true"
+	visit(edit_account_entry_path(@account_entry, debug: debug))
+	fill_in("account_entry_parent_type", with: @pi_parent.class.name)
+	fill_in("account_entry_parent_id", with: @pi_parent.id)
+	click_on("Save")
+end
+
+Then('the account entry parent and parent name reflect the portfolio investment') do
+	expect(page).to have_text("Account entry was successfully updated.")
+	@account_entry.reload
+	expect(@account_entry.parent).to(eq(@pi_parent))
+	# This is the actual regression check: setup_defaults used to write parent_name via
+	# `self.parent_name ||= parent.to_s[0..254] if parent_name.blank? && parent.present?`, which
+	# only ever fired once. Since @account_entry already had a parent_name cached from the
+	# Investor parent set earlier in this scenario, the old code left that stale name in place
+	# even though .parent (asserted above) correctly moved to @pi_parent.
+	expect(@account_entry.parent_name).to(eq(@pi_parent.to_s[0..254]))
 end
 
 
