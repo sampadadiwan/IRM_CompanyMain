@@ -247,6 +247,7 @@ Background:
 
   Scenario: Task with @name assigns to matching team member
     Given a v2 user "neil" exists with role "employee" in the entity
+    And the "neil" user has first name "Neil"
     And the "neil" user has deal access to the deal
     And the v2 LLM will parse the email as a task for "Sequoia Capital" due "2026-09-01" assigned to "Neil"
     When a v2 SendGrid webhook arrives with:
@@ -259,6 +260,7 @@ Background:
 
   Scenario: Task with natural language assigns to matching team member
     Given a v2 user "priya" exists with role "employee" in the entity
+    And the "priya" user has first name "Priya"
     And the "priya" user has deal access to the deal
     And the v2 LLM will parse the email as a task for "Sequoia Capital" due "2026-09-01" assigned to "Priya"
     When a v2 SendGrid webhook arrives with:

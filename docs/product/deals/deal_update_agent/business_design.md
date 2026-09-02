@@ -41,6 +41,8 @@ The team member sends an email to the address. The email body should mention:
 |-----------|-------------------|
 | "Had a great call with Sequoia Capital. They want to see the data room." | Meeting Note on Sequoia Capital |
 | "Need to send term sheet to Accel by Friday" | Task assigned to sender, due Friday, on Accel |
+| "Ask Neil to send term sheet to Accel by Friday" | Task assigned to Neil (if Neil has deal access), due Friday, on Accel |
+| "@Priya to follow up with Tiger Global on the data room" | Task assigned to Priya, on Tiger Global |
 | "Caught up with Tiger Global, positive signals on the 10M commitment" | Meeting Note on Tiger Global |
 
 ### 3. The Agent Processes Automatically
@@ -90,8 +92,9 @@ Team members check the warehouse tab on the deal page to review pending items.
 
 ### Tasks
 - Attached to the matched investor on the deal board
-- Assigned to the sender
+- Assigned to the person mentioned in the email (e.g., "Neil to follow up" or "@Priya"), or to the sender if no one is mentioned
 - Due date extracted from the email (e.g., "by Friday" → next Friday)
+- Email attachments (PDFs, decks) are automatically filed to the deal's document store alongside the task
 - Traceable to the source email via the agent's audit log (the link lives on the agent email record, not on the task itself)
 
 ---
@@ -125,16 +128,16 @@ The Warehouse tab appears on the deal page when there are pending items. Each it
 | Message-ID deduplication | Yes |
 | Automated test suite (14 scenarios) | Yes |
 
-### Phase 2 — Building
+### Phase 2 — Done
 
-| Feature | Description |
-|---------|-------------|
-| Signature/reply chain stripping | Strip quoted replies, signatures, disclaimers, and "Sent from my iPhone" before parsing — cleaner notes |
-| Auto-reply detection | Ignore out-of-office and auto-generated replies so they don't create garbage items |
-| Attachments | Email attachments (PDFs, decks) are filed to the deal's document store alongside the note/task |
-| Address edit/rotation | Inline edit exists; address rotation (replacing a compromised address) not yet built |
-| @name assignee parsing | Assign tasks to other deal team members via @name mentions (opportunistic) |
-| WhatsApp channel | Send deal updates via WhatsApp forward (pending Product spec) |
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Auto-reply detection | Out-of-office, bounce notifications, and auto-generated replies are silently dropped before processing — prevents garbage notes from mail loops | Done |
+| Signature/reply chain stripping | Quoted replies, signatures, disclaimers, and "Sent from my iPhone" are stripped before AI parsing — cleaner notes, fewer wasted AI tokens | Done |
+| Attachments (Tasks) | Email attachments (PDFs, decks) are filed to the deal's document store alongside created Tasks. Notes attachment support deferred until usage justifies it | Done |
+| Assignee parsing | Tasks can be assigned to other deal team members by mentioning their name naturally — "Neil to follow up", "Ask Priya to send", or "@Khushali". Falls back to sender if no match | Done |
+| Address rotation | Generate a new random address, invalidating the old one — a safety net for compromised addresses | Deferred — inline edit (already live) covers the "change address" use case; auth layer blocks unauthorized senders |
+| WhatsApp channel | Send deal updates via WhatsApp message (pending Product spec) | Blocked |
 
 ### Phase 3 — Planned
 

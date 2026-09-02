@@ -263,7 +263,7 @@ class DealIngestAuthenticator
   #
   # @return [Array<Hash>, nil] array of attachment metadata with Shrine data, or nil if none
   def extract_attachments
-    files = @params.select { |key, val| key.to_s.start_with?("attachment") && val.is_a?(ActionDispatch::Http::UploadedFile) }
+    files = @params.to_unsafe_h.select { |key, val| key.to_s.start_with?("attachment") && val.respond_to?(:tempfile) }
     return nil if files.empty?
 
     files.map do |_key, file|

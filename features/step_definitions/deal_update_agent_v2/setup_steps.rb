@@ -97,3 +97,11 @@ Given("the {string} user has deal access to the deal") do |user_key|
   user = @users[user_key]
   AccessRight.create!(owner: @deal, user: user, entity: @entity, access_type: "Deal")
 end
+
+# Set a user's first name explicitly for assignee matching scenarios.
+#
+# @param user_key [String] the user key from @users hash
+# @param first_name [String] the first name to set
+Given("the {string} user has first name {string}") do |user_key, first_name|
+  @users[user_key].update!(first_name: first_name)
+end
