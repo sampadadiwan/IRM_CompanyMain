@@ -6,6 +6,7 @@
 # drop — no reply, no error, no indication the address exists.
 #
 # Authentication checks (in order):
+#   0. Auto-reply detection — is this an OOO, bounce, or auto-generated email?
 #   1. Address lookup — does this local-part match a DealIngestAddress? → deal
 #   2. Sender lookup — does the From email match a User in the entity? → user
 #   3. Access check — does that user have access to the deal?
@@ -42,10 +43,14 @@ class DealIngestAuthenticator
   # Fails fast — on first failure, returns immediately without
   # continuing to subsequent checks.
   #
-  # Flow: address → deal, From → user, access check, email auth, dedupe.
+  # Flow: auto-reply check → address → deal, From → user, access check,
+  #       email auth, dedupe.
   #
   # @return [Result] success if all checks pass; failure with reason otherwise
   def authenticate
+    result = check_auto_reply
+    return result unless result.success
+
     result = lookup_address
     return result unless result.success
 
@@ -66,9 +71,50 @@ class DealIngestAuthenticator
 
   private
 
+  # Step 0: Detect auto-generated emails (OOO, bounces, mailing lists).
+  # Checks three standard headers that mail servers set on automated replies:
+  #   - Auto-Submitted (RFC 3834): any value other than "no" = auto-generated
+  #   - Precedence: "bulk", "junk", or "list" = mass/automated mail
+  #   - X-Auto-Response-Suppress: presence = auto-response flagged by sender's system
+  #
+  # @return [Result]
+  def check_auto_reply
+    return Result.new(success: true) if @headers.blank?
+
+    if auto_submitted? || bulk_precedence? || auto_response_suppressed?
+      Rails.logger.debug { "DealIngestAuthenticator: auto-reply detected, dropping" }
+      return Result.new(success: false, reason: "auto_reply")
+    end
+
+    Result.new(success: true)
+  end
+
+  # Check RFC 3834 Auto-Submitted header.
+  # "no" means a human sent it; any other value (auto-replied, auto-generated)
+  # means it's automated.
+  #
+  # @return [Boolean]
+  def auto_submitted?
+    @headers.match?(/Auto-Submitted:\s*(?!no\b)\S+/i)
+  end
+
+  # Check Precedence header for bulk/junk/list values.
+  #
+  # @return [Boolean]
+  def bulk_precedence?
+    @headers.match?(/Precedence:\s*(bulk|junk|list)/i)
+  end
+
+  # Check for presence of X-Auto-Response-Suppress header.
+  # Any value (OOF, DR, All, etc.) indicates automated mail.
+  #
+  # @return [Boolean]
+  def auto_response_suppressed?
+    @headers.match?(/X-Auto-Response-Suppress:/i)
+  end
+
   # Step 1: Look up the address to identify the deal.
   # Unknown address = drop silently.
-  #
   # @return [Result]
   def lookup_address
     address_local = extract_local_part
@@ -159,6 +205,8 @@ class DealIngestAuthenticator
   end
 
   # All checks passed — create the AgentIngestedEmail and enqueue processing.
+  # Uploads any attachments from the SendGrid payload to Shrine cache storage
+  # so they survive past the webhook request lifecycle.
   #
   # @return [Result]
   def create_ingested_email
@@ -170,7 +218,8 @@ class DealIngestAuthenticator
       message_id: @message_id || SecureRandom.uuid,
       raw_payload: email_body,
       received_at: Time.current,
-      status: "pending"
+      status: "pending",
+      attachment_data: extract_attachments
     )
 
     ProcessDealIngestJob.perform_later(ingested.id)
@@ -206,5 +255,25 @@ class DealIngestAuthenticator
   # @return [String, nil]
   def extract_message_id
     @headers&.match(/Message-ID:\s*<([^>]+)>/i)&.[](1)
+  end
+
+  # Extract file attachments from the SendGrid webhook params.
+  # SendGrid posts attachments as multipart fields named attachment1, attachment2, etc.
+  # Uploads each to Shrine cache storage so they persist beyond the request lifecycle.
+  #
+  # @return [Array<Hash>, nil] array of attachment metadata with Shrine data, or nil if none
+  def extract_attachments
+    files = @params.select { |key, val| key.to_s.start_with?("attachment") && val.is_a?(ActionDispatch::Http::UploadedFile) }
+    return nil if files.empty?
+
+    files.map do |_key, file|
+      uploaded = Shrine.upload(file.tempfile, :cache, metadata: { "filename" => file.original_filename, "mime_type" => file.content_type })
+      {
+        "shrine_data" => uploaded.data,
+        "filename" => file.original_filename,
+        "content_type" => file.content_type,
+        "size" => file.size
+      }
+    end
   end
 end

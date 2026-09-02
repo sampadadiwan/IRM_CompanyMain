@@ -22,7 +22,8 @@ class DealEmailParser
     "stakeholder_string" => nil,
     "body" => nil,
     "due_date" => nil,
-    "due_date_source_text" => nil
+    "due_date_source_text" => nil,
+    "assignee_string" => nil
   }.freeze
 
   # Parse an email body into structured deal update data.
@@ -85,7 +86,9 @@ class DealEmailParser
         "stakeholder_string": "name of the investor/stakeholder mentioned" or null,
         "body": "cleaned text for the note or task description",
         "due_date": "YYYY-MM-DD" or null,
-        "due_date_source_text": "original date phrase from email" or null
+        "due_date_source_text": "original date phrase from email" or null,
+        "assignee_string": "name of the person assigned to this task" or null
+
       }
 
       Rules:
@@ -97,6 +100,9 @@ class DealEmailParser
       - body is the cleaned, relevant text — remove email signatures, greetings, and boilerplate
       - due_date: resolve relative dates ("next Friday", "in two weeks") relative to today's date (#{@received_at.strftime('%Y-%m-%d')})
       - due_date_source_text: the original phrase the user wrote (e.g. "by next Friday")
+      - assignee_string: if the email mentions someone by name who should do the task (e.g. "Neil to follow up", "Ask Priya to send", "assign to @Khushali", "@Neil to handle"), extract their name. Look for patterns like "@Name", "Name to do X", "ask Name to", "assign to Name", "Name should", "Name will". Extract just the first name or full name — no titles, no email addresses. If no assignee is mentioned or the sender is doing it themselves, set to null.
+      - assignee_string only applies when intent is "task" — set to null for meeting_note
+
       - If no due date is mentioned, set both due_date and due_date_source_text to null
 
       Email:
@@ -150,7 +156,8 @@ class DealEmailParser
       "stakeholder_string" => parsed["stakeholder_string"]&.strip.presence,
       "body" => parsed["body"]&.strip.presence,
       "due_date" => parsed["due_date"]&.strip.presence,
-      "due_date_source_text" => parsed["due_date_source_text"]&.strip.presence
+      "due_date_source_text" => parsed["due_date_source_text"]&.strip.presence,
+      "assignee_string" => parsed["assignee_string"]&.strip.presence
     }
   end
 end

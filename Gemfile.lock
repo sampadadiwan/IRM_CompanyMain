@@ -470,6 +470,7 @@ GEM
     elasticsearch-api (8.19.3)
       multi_json
     elasticsearch-dsl (0.1.10)
+    email_reply_parser (0.5.11)
     enumerize (3.0.0)
       activesupport (>= 3.2)
     eqn (1.6.5)
@@ -1244,6 +1245,7 @@ DEPENDENCIES
   doorkeeper-openid_connect
   dotenv-rails
   draper
+  email_reply_parser
   enumerize
   eqn
   erubis

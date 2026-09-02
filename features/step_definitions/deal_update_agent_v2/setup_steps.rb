@@ -89,3 +89,11 @@ Given("a deal ingest address exists for the deal") do
   @ingest_address = @deal.ensure_deal_ingest_address ||
                     DealIngestAddress.create!(deal: @deal, address: @deal.id.to_s)
 end
+
+# Grant deal access to a named user (not the primary user).
+#
+# @param user_key [String] the user key from @users hash
+Given("the {string} user has deal access to the deal") do |user_key|
+  user = @users[user_key]
+  AccessRight.create!(owner: @deal, user: user, entity: @entity, access_type: "Deal")
+end

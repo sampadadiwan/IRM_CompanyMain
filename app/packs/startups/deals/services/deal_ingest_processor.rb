@@ -3,14 +3,15 @@
 # Orchestrates the full processing of an authenticated deal ingest email.
 #
 # Called by ProcessDealIngestJob after the email has passed authentication.
-# Chains: LLM parse → stakeholder match → create Note/Task or warehouse → reply email.
-#
+# Chains: body cleanup → LLM parse → stakeholder match → create Note/Task (+ attachments) or warehouse → reply email.
 # Each step updates the AgentIngestedEmail record with results as it goes,
 # so we have a full audit trail even if processing fails midway.
 #
 # @see ProcessDealIngestJob for the async wrapper
 # @see DealEmailParser for the LLM parsing step
 # @see DealStakeholderMatcher for the stakeholder matching step
+# @see EmailBodyCleaner for the signature/reply stripping step
+# @see AssigneeMatcher for the @name assignee matching step
 class DealIngestProcessor
   # Process a single authenticated email end-to-end.
   #
@@ -50,13 +51,17 @@ class DealIngestProcessor
 
   private
 
-  # Step 1: Parse the email body via LLM.
+  # Step 1: Clean and parse the email body via LLM.
+  # Strips signatures and quoted replies before parsing to avoid
+  # wasting LLM tokens and prevent quoted text from confusing the parser.
   # Stores the parse result on the email record for audit trail.
   #
   # @return [Hash] parsed result with intent, stakeholder_string, body, due_date
   def parse_email
+    cleaned_body = EmailBodyCleaner.call(@email.raw_payload)
+
     parsed = DealEmailParser.call(
-      email_body: @email.raw_payload,
+      email_body: cleaned_body,
       entity: @deal.entity,
       received_at: @email.received_at
     )
@@ -77,7 +82,8 @@ class DealIngestProcessor
 
   # Step 3a: Confident match — create a Note or Task on the deal board.
   # Links the created record back to this email via the polymorphic
-  # filed_as association on AgentIngestedEmail.
+  # filed_as association on AgentIngestedEmail. For tasks, attaches any
+  # email attachments as Documents via the WithFolder concern.
   #
   # @param parsed [Hash] LLM parse result
   # @param match_result [DealStakeholderMatcher::Result]
@@ -100,6 +106,8 @@ class DealIngestProcessor
         match_tier: "A",
         filed_as: item
       )
+
+      attach_documents!(item) if parsed["intent"] == "task"
     end
 
     send_confirmation_reply!(parsed, deal_investor)
@@ -121,19 +129,37 @@ class DealIngestProcessor
   end
 
   # Create a Task on the matched DealInvestor.
+  # Attempts to match an assignee from the email body — falls back
+  # to the sender if no confident match is found.
   #
   # @param parsed [Hash] LLM parse result
   # @param deal_investor [DealInvestor] the matched stakeholder
   # @return [Task]
   def create_task!(parsed, deal_investor)
+    assignee = resolve_assignee(parsed) || @user
+
     Task.create!(
       entity_id: @deal.entity_id,
       for_entity_id: @deal.entity_id,
       user_id: @user.id,
-      assigned_to: @user,
+      assigned_to: assignee,
       owner: deal_investor,
       details: parsed["body"],
       due_date: parse_due_date(parsed["due_date"])
+    )
+  end
+
+  # Resolve the assignee from the parsed email.
+  # Best-effort — returns nil if no match, caller falls back to sender.
+  #
+  # @param parsed [Hash] LLM parse result
+  # @return [User, nil]
+  def resolve_assignee(parsed)
+    return nil if parsed["assignee_string"].blank?
+
+    AssigneeMatcher.call(
+      assignee_string: parsed["assignee_string"],
+      deal: @deal
     )
   end
 
@@ -183,5 +209,32 @@ class DealIngestProcessor
     Date.parse(date_string)
   rescue Date::Error
     nil
+  end
+
+  # Attach uploaded files from the inbound email to the created Task.
+  # Documents are created via the polymorphic owner association provided
+  # by WithFolder on Task. Shrine promotes files from cache to permanent
+  # storage automatically.
+  #
+  # @param item [Task] the created task
+  # @return [void]
+  def attach_documents!(item)
+    return if @email.attachment_data.blank?
+
+    item.setup_document_folder
+
+    @email.attachment_data.each do |file_meta|
+      uploaded_file = Shrine.uploaded_file(file_meta["shrine_data"])
+      doc = Document.new(
+        entity_id: @deal.entity_id,
+        user_id: @user.id,
+        name: file_meta["filename"],
+        owner: item,
+        folder: item.document_folder,
+        orignal: true
+      )
+      doc.file_attacher.set(uploaded_file)
+      doc.save!
+    end
   end
 end
