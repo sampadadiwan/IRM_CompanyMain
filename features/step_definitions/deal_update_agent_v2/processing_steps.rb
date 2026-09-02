@@ -134,7 +134,7 @@ end
 # @param filename [String] expected document name
 Then("the v2 Task should have {int} attached document named {string}") do |count, filename|
   expect(@created_task.documents.count).to eq(count),
-    "Expected #{count} document(s) but found #{@created_task.documents.count}"
+                                           "Expected #{count} document(s) but found #{@created_task.documents.count}"
   expect(@created_task.documents.first.name).to eq(filename)
 end
 
@@ -143,15 +143,14 @@ end
 # @param count [Integer] expected document count
 Then("the v2 Task should have {int} attached documents") do |count|
   expect(@created_task.documents.count).to eq(count),
-    "Expected #{count} document(s) but found #{@created_task.documents.count}"
+                                           "Expected #{count} document(s) but found #{@created_task.documents.count}"
 end
 
 # Asserts no Documents were created during processing.
 Then("no v2 Document should be created") do
   expect(Document.count).to eq(0),
-    "Expected no Documents but found #{Document.count}"
+                            "Expected no Documents but found #{Document.count}"
 end
-
 
 # Stub the LLM to return a task parse result with an assignee.
 #
@@ -178,9 +177,9 @@ Then("a v2 Task should exist on {string} assigned to {string}") do |investor_nam
 
   @created_task = Task.find_by(owner: deal_investor)
   expect(@created_task).not_to be_nil,
-    "Expected a Task on #{investor_name} but none found"
+                               "Expected a Task on #{investor_name} but none found"
   expect(@created_task.assigned_to).to eq(@users[user_key]),
-    "Expected task assigned to #{user_key} but got user ##{@created_task.assigned_to_id}"
+                                       "Expected task assigned to #{user_key} but got user ##{@created_task.assigned_to_id}"
 end
 
 # Asserts the Task is assigned to the sender (primary user).
@@ -190,7 +189,7 @@ Then("a v2 Task should exist on {string} assigned to the sender") do |investor_n
 
   @created_task = Task.find_by(owner: deal_investor)
   expect(@created_task).not_to be_nil,
-    "Expected a Task on #{investor_name} but none found"
+                               "Expected a Task on #{investor_name} but none found"
   expect(@created_task.assigned_to).to eq(@user),
-    "Expected task assigned to sender but got user ##{@created_task.assigned_to_id}"
+                                       "Expected task assigned to sender but got user ##{@created_task.assigned_to_id}"
 end

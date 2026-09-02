@@ -144,4 +144,3 @@ When("a v2 SendGrid webhook arrives with attachment {string}:") do |filename, ta
 
   @auth_result = DealIngestAuthenticator.call(@webhook_params)
 end
-
