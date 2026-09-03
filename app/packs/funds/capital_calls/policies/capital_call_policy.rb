@@ -51,6 +51,20 @@ class CapitalCallPolicy < FundBasePolicy
     update? && record.approved
   end
 
+  def run_agent?
+    permissioned_employee?(:update)
+  end
+
+  # Confirming/reassigning a reconciliation deposit is the same permission as running the
+  # agent itself — both create a CapitalRemittancePayment on this call's behalf.
+  def confirm_reconciliation_deposit?
+    run_agent?
+  end
+
+  def reassign_reconciliation_deposit?
+    run_agent?
+  end
+
   # Only company_admin can assign / remove a workflow template on a capital call,
   # and only when the entity has workflow_templates enabled.
   def assign_workflow?

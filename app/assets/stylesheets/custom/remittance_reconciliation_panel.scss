@@ -1,0 +1,68 @@
+// ── Remittance Reconciliation Panel ──────────────────────────────────────────
+// Tier badges, deposit rows (Ready to confirm / Needs review / No match), and the
+// Reassign inline form on the Capital Call show page's Remittance Reconciliation panel.
+
+.reconciliation-badge {
+  padding: 0.4em 0.75em;
+  font-weight: 600;
+}
+
+.reconciliation-badge-exact { background-color: #2f7d5a; color: #fff; }
+.reconciliation-badge-probable { background-color: #b4791e; color: #fff; }
+.reconciliation-badge-review, .reconciliation-badge-needs_review { background-color: #b0562e; color: #fff; }
+.reconciliation-badge-none, .reconciliation-badge-no_match { background-color: #a33b3b; color: #fff; }
+.reconciliation-badge-internal { background-color: #6d7266; color: #fff; }
+.reconciliation-badge-discrepancy { background-color: #f5e4da; color: #8a3d1c; border: 1px solid #b0562e; }
+.reconciliation-badge-created, .reconciliation-badge-already_recorded { background-color: #e4f1ea; color: #1f5c40; border: 1px solid #2f7d5a; }
+.reconciliation-badge-error { background-color: #f5dfdf; color: #7a2727; border: 1px solid #a33b3b; }
+
+// Raw bank narration text — monospace for legibility of RTGS/NEFT strings, but never a
+// smaller font-size than the surrounding content.
+.reconciliation-narration {
+  font-family: var(--bs-font-monospace, "SFMono-Regular", Consolas, monospace);
+  word-break: break-word;
+}
+
+.reconciliation-reasoning {
+  color: var(--bs-secondary-color, #6c757d);
+  padding-left: 1.25rem;
+  margin-top: 0.25rem;
+}
+
+.reconciliation-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.reconciliation-row-main {
+  flex: 1 1 60%;
+  min-width: 240px;
+}
+
+.reconciliation-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.reconciliation-reassign-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+  justify-content: flex-end;
+
+  .form-control {
+    width: 160px;
+  }
+}

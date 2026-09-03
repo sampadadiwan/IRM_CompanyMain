@@ -1,0 +1,124 @@
+<%# frozen_string_literal: true %>
+<%#
+  Reconciliation results for the latest RemittanceReconciliationAgent report on this call.
+  Required locals: capital_call, support_agent, report (may be nil — no run yet)
+%>
+
+<div class="remittance-reconciliation-panel mb-3">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="fw-semibold fs-5"><i class="ti ti-file-check me-2"></i>Remittance Reconciliation</span>
+    <% if policy(capital_call).run_agent? %>
+      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#run-remittance-reconciliation-modal">
+        <i class="ti ti-play me-1"></i>Run Reconciliation
+      </button>
+    <% end %>
+  </div>
+
+  <% if report.nil? %>
+    <p class="text-muted">No reconciliation has been run yet for this call. Upload a bank statement to get started.</p>
+  <% else %>
+    <% deposits = report.json_fields["deposits"] || [] %>
+    <% tier_counts = report.json_fields["tier_counts"] || {} %>
+    <% last_run = report.json_fields["run_at"] %>
+
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <span class="badge reconciliation-badge reconciliation-badge-exact">Exact <%= tier_counts["exact"] || 0 %></span>
+      <span class="badge reconciliation-badge reconciliation-badge-probable">Probable <%= tier_counts["probable"] || 0 %></span>
+      <span class="badge reconciliation-badge reconciliation-badge-review">Needs review <%= tier_counts["needs_review"] || 0 %></span>
+      <span class="badge reconciliation-badge reconciliation-badge-none">No match <%= tier_counts["no_match"] || 0 %></span>
+      <span class="badge reconciliation-badge reconciliation-badge-internal">Internal <%= tier_counts["internal"] || 0 %></span>
+    </div>
+    <p class="text-muted mb-3">Last run: <%= l(Time.zone.parse(last_run)) if last_run.present? %></p>
+
+    <%# [deposit, real_index] pairs throughout, never a value-equality deposits.index(deposit)
+        lookup — two content-identical rows (e.g. repeat fixed-amount installments from the
+        same payer) would make that return the first match's index for both, submitting
+        Confirm/Reassign against the wrong deposit. %>
+    <% indexed_deposits = deposits.each_with_index.to_a %>
+    <% recorded = indexed_deposits.select { |d, _| d["payment_id"].present? } %>
+    <% pending_exact_or_probable = indexed_deposits.select { |d, _| d["payment_id"].blank? && %w[exact probable].include?(d["tier"]) } %>
+    <% needs_review = indexed_deposits.select { |d, _| d["payment_id"].blank? && d["tier"] == "needs_review" } %>
+    <% no_match = indexed_deposits.select { |d, _| d["payment_id"].blank? && d["tier"] == "no_match" } %>
+    <% internal = indexed_deposits.select { |d, _| d["tier"] == "internal" } %>
+
+    <%= render ToggleCard.new(title: "Payments recorded (#{recorded.size})", css_class: "recon-recorded", state: "hide") do %>
+      <% if recorded.empty? %>
+        <p class="text-muted">None yet.</p>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Investor</th><th>Narration</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <% recorded.each do |deposit, _idx| %>
+                <tr>
+                  <td><%= deposit["matched_investor_name"] || deposit["name"] %></td>
+                  <td class="reconciliation-narration"><%= deposit["raw_narration"] %></td>
+                  <td><%= number_to_currency(deposit["amount"], unit: "") %></td>
+                  <td><span class="badge reconciliation-badge reconciliation-badge-<%= deposit["tier"] %>"><%= deposit["payment_status"] %></span></td>
+                  <td>
+                    <%= button_to "Undo", capital_remittance_payment_path(deposit["payment_id"]), method: :delete,
+                        class: "btn btn-sm btn-outline-danger",
+                        form_class: "d-inline",
+                        data: { turbo: false, action: "click->confirm#popup",
+                                msg: "If units have already been allocated against this payment, undo will be blocked." } %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%= render ToggleCard.new(title: "Ready to confirm (#{pending_exact_or_probable.size})", css_class: "recon-ready", state: "show") do %>
+      <% if pending_exact_or_probable.empty? %>
+        <p class="text-muted">None.</p>
+      <% else %>
+        <% pending_exact_or_probable.each do |deposit, idx| %>
+          <%= render "capital_calls/reconciliation_deposit_row", capital_call: capital_call, report: report,
+                     deposit: deposit, deposit_index: idx, show_confirm: true %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= render ToggleCard.new(title: "Needs review (#{needs_review.size})", css_class: "recon-review", state: "show") do %>
+      <% if needs_review.empty? %>
+        <p class="text-muted">None.</p>
+      <% else %>
+        <% needs_review.each do |deposit, idx| %>
+          <%= render "capital_calls/reconciliation_deposit_row", capital_call: capital_call, report: report,
+                     deposit: deposit, deposit_index: idx,
+                     show_confirm: deposit["matched_remittance_id"].present? %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= render ToggleCard.new(title: "No match (#{no_match.size})", css_class: "recon-nomatch", state: "show") do %>
+      <% if no_match.empty? %>
+        <p class="text-muted">None.</p>
+      <% else %>
+        <% no_match.each do |deposit, idx| %>
+          <%= render "capital_calls/reconciliation_deposit_row", capital_call: capital_call, report: report,
+                     deposit: deposit, deposit_index: idx, show_confirm: false %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= render ToggleCard.new(title: "Internal — fund's own money (#{internal.size})", css_class: "recon-internal", state: "hide") do %>
+      <% if internal.empty? %>
+        <p class="text-muted">None.</p>
+      <% else %>
+        <ul class="list-unstyled mb-0">
+          <% internal.each do |deposit, _idx| %>
+            <li class="reconciliation-narration"><%= deposit["raw_narration"] %> — <%= deposit["notes"] %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>
+
+<% if policy(capital_call).run_agent? %>
+  <%= render "support_agents/remittance_run_modal", modal_id: "run-remittance-reconciliation-modal", capital_call: capital_call,
+             description: RemittanceReconciliationAgent::DESCRIPTION, long_description: RemittanceReconciliationAgent::LONG_DESCRIPTION %>
+<% end %>

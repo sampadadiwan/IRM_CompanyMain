@@ -507,6 +507,49 @@ class SupportAgentsSetupService
       ]
     },
 
+    # ── RemittanceReconciliationAgent ────────────────────────────────────
+    # Phase 3: ingests a bank statement, parses every deposit narration through the
+    # bank-specific parser registry, scores/tiers each against this call's outstanding
+    # remittances, and (opt-in via auto_apply_exact) auto-creates a CapitalRemittancePayment
+    # for every Exact-tier match.
+    {
+      tag: "RemittanceReconciliationAgent",
+      category: "Finance",
+      agent: {
+        name: "Remittance Reconciliation",
+        with_steps: true,
+        json_fields: {
+          "tolerance_amount" => "500",
+          "tolerance_pct" => "0",
+          "name_similarity_threshold" => "0.90",
+          "auto_apply_exact" => "No"
+        }
+        # No default schedule — runs on-demand at statement upload time, scoped to one
+        # CapitalCall per run.
+      },
+      # No File field here for the statement itself — uploaded per-run, same as RTA's
+      # rta_statement (see rta_run_modal.html.erb) once this agent gets its own run UI.
+      fields: [
+        { name: "tolerance_amount",
+          field_type: "NumberField", label: "Tolerance (absolute)", meta_data: "", position: 1,
+          help_text: "Maximum absolute shortfall/excess (fund currency) still treated as an exact amount " \
+                     "match. Absorbs wire charges deducted in transit. Default: 500." },
+        { name: "tolerance_pct",
+          field_type: "NumberField", label: "Tolerance (%)", meta_data: "", position: 2,
+          help_text: "Maximum percentage difference, OR'd with the absolute tolerance — either passing " \
+                     "is enough. Set to 0 to use the absolute tolerance only (default)." },
+        { name: "name_similarity_threshold",
+          field_type: "NumberField", label: "Name similarity threshold", meta_data: "", position: 3,
+          help_text: "Minimum Jaro-Winkler similarity (0-1) to accept a name-only match (no account number " \
+                     "in the narration) deterministically. Default: 0.90." },
+        { name: "auto_apply_exact",
+          field_type: "Select", label: "Auto-apply exact matches", meta_data: "Yes,No", position: 4,
+          help_text: "When Yes, Exact-tier deposits automatically create a CapitalRemittancePayment. " \
+                     "Defaults to No for every fund's first live run — a deliberate opt-in, not assumed. " \
+                     "Every other tier is always proposed only, regardless of this setting." }
+      ]
+    },
+
     # ── Additional agents (category provisioning only) ───────────────────────────
     {
       tag: "FundStatsAgent",

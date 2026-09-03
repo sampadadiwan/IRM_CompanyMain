@@ -1,0 +1,52 @@
+<%# frozen_string_literal: true %>
+<%#
+  One deposit row inside the reconciliation panel's Ready-to-confirm / Needs review / No match
+  sections. Required locals: capital_call, report, deposit, deposit_index, show_confirm
+%>
+
+<div class="reconciliation-row">
+  <div class="reconciliation-row-main">
+    <div>
+      <span class="fw-semibold"><%= deposit["matched_investor_name"] || deposit["name"] || "(unrecognized narration)" %></span>
+      <% if deposit["source_of_funds"] == "discrepancy" %>
+        <span class="badge reconciliation-badge reconciliation-badge-discrepancy ms-1">
+          <i class="ti ti-alert-triangle me-1"></i>Account differs from KYC
+        </span>
+      <% end %>
+    </div>
+    <div class="reconciliation-narration"><%= deposit["raw_narration"] %></div>
+    <div class="text-muted">
+      Amount: <%= number_to_currency(deposit["amount"], unit: "") %>
+      <% if deposit["due_amount"] %>
+        · Due: <%= number_to_currency(deposit["due_amount"], unit: "") %>
+      <% end %>
+      <% if deposit["account_number"] %>
+        · Account: <%= deposit["account_number"] %>
+      <% end %>
+    </div>
+    <% if deposit["reasoning"].present? %>
+      <ul class="reconciliation-reasoning mb-0">
+        <% Array(deposit["reasoning"]).each do |line| %>
+          <li><%= line %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+
+  <div class="reconciliation-row-actions">
+    <% if show_confirm %>
+      <%= button_to "Confirm", confirm_reconciliation_deposit_capital_call_path(capital_call),
+          params: { report_id: report.id, deposit_index: deposit_index }, method: :post,
+          class: "btn btn-sm btn-primary", form_class: "d-inline" %>
+    <% end %>
+
+    <%= form_with url: reassign_reconciliation_deposit_capital_call_path(capital_call), method: :post,
+                  class: "reconciliation-reassign-form", local: true do |f| %>
+      <%= f.hidden_field :report_id, value: report.id %>
+      <%= f.hidden_field :deposit_index, value: deposit_index %>
+      <%= f.text_field :folio_id, placeholder: "Folio No", class: "form-control form-control-sm" %>
+      <%= f.text_field :virtual_bank_account, placeholder: "Virtual Bank Account", class: "form-control form-control-sm" %>
+      <%= f.submit "Reassign", class: "btn btn-sm btn-outline-secondary" %>
+    <% end %>
+  </div>
+</div>

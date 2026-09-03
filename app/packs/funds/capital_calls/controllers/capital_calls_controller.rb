@@ -1,8 +1,9 @@
 class CapitalCallsController < ApplicationController
   include HasWorkflowable
 
-  before_action :set_capital_call, only: %i[show edit update destroy reminder approve notify generate_docs allocate_units recompute_fees]
-  before_action :set_workflowable, only: [:show]  # runs after set_capital_call so @capital_call is available
+  before_action :set_capital_call, only: %i[show edit update destroy reminder approve notify generate_docs allocate_units recompute_fees
+                                            confirm_reconciliation_deposit reassign_reconciliation_deposit]
+  before_action :set_workflowable, only: [:show] # runs after set_capital_call so @capital_call is available
 
   # GET /capital_calls or /capital_calls.json
   def index
@@ -144,6 +145,54 @@ class CapitalCallsController < ApplicationController
     redirect_to capital_call_url(@capital_call), notice: "Notification sending process started, please check back in a few mins."
   end
 
+  # Manually confirms a Probable/Needs review deposit from a RemittanceReconciliationAgent
+  # report against the identity it already matched — creates the payment via the same
+  # RemittanceDepositPaymentApplier the agent's own auto-apply step uses.
+  def confirm_reconciliation_deposit
+    report, deposit, idx = find_reconciliation_deposit
+    return unless deposit
+
+    remittance = @capital_call.capital_remittances.find_by(id: deposit["matched_remittance_id"])
+    return redirect_to_reconciliation(alert: "No matched remittance to confirm — use Reassign instead") unless remittance
+
+    outcome = RemittanceDepositPaymentApplier.call(deposit: deposit, capital_remittance: remittance, fund: @capital_call.fund)
+    save_reconciliation_outcome(report, idx, outcome)
+    redirect_to_reconciliation(notice: reconciliation_outcome_message(outcome))
+  end
+
+  # Manually assigns a No-match (or misidentified) deposit to a CapitalRemittance by Folio No
+  # or Virtual Bank Account, the same two lookup fields ImportCapitalRemittancePayment accepts,
+  # then applies it the same way confirm_reconciliation_deposit does.
+  def reassign_reconciliation_deposit
+    report, deposit, idx = find_reconciliation_deposit
+    return unless deposit
+
+    fund = @capital_call.fund
+    folio_id = params[:folio_id].presence
+    virtual_bank_account = params[:virtual_bank_account].presence
+    return redirect_to_reconciliation(alert: "Folio No or Virtual Bank Account must be specified") if folio_id.blank? && virtual_bank_account.blank?
+
+    commitment = fund.capital_commitments.where(folio_id: folio_id).first if folio_id
+    commitment ||= fund.capital_commitments.where(virtual_bank_account: virtual_bank_account).first if virtual_bank_account
+    return redirect_to_reconciliation(alert: "No commitment found for that Folio No / Virtual Bank Account") unless commitment
+
+    remittance = @capital_call.capital_remittances.find_by(capital_commitment: commitment)
+    return redirect_to_reconciliation(alert: "No remittance for folio #{commitment.folio_id} under this call — generate remittances first") unless remittance
+
+    outcome = RemittanceDepositPaymentApplier.call(deposit: deposit, capital_remittance: remittance, fund: fund)
+    # Only record the new match when a payment actually exists for it (created just now, or
+    # already existed) — on :error (e.g. "deposit has no amount"), leave matched_remittance_id
+    # etc. untouched rather than recording a match that has no payment behind it.
+    unless outcome[:status] == :error
+      deposit["matched_remittance_id"] = remittance.id
+      deposit["matched_commitment_id"] = remittance.capital_commitment_id
+      deposit["matched_investor_name"] = remittance.investor_name
+      deposit["identity_via"] = "manual_reassign"
+    end
+    save_reconciliation_outcome(report, idx, outcome)
+    redirect_to_reconciliation(notice: reconciliation_outcome_message(outcome))
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -152,6 +201,54 @@ class CapitalCallsController < ApplicationController
     authorize @capital_call
     @bread_crumbs = { Funds: funds_path, "#{@capital_call.fund.name}": fund_path(@capital_call.fund),
                       "#{@capital_call}": capital_call_path(@capital_call) }
+  end
+
+  # Looks up the report + deposit a confirm/reassign request refers to, scoped to
+  # @capital_call so a report_id/deposit_index for a different call can never be used here.
+  # Returns [report, deposit, index] — deposit is nil (with the redirect already issued) if
+  # anything doesn't resolve, so callers can just `return unless deposit`.
+  def find_reconciliation_deposit
+    report = SupportAgentReport.find_by(id: params[:report_id], owner: @capital_call)
+    unless report
+      redirect_to_reconciliation(alert: "Reconciliation report not found")
+      return [nil, nil, nil]
+    end
+
+    unless params[:deposit_index].present? && params[:deposit_index].match?(/\A\d+\z/)
+      redirect_to_reconciliation(alert: "Deposit not found in this report")
+      return [nil, nil, nil]
+    end
+
+    idx = params[:deposit_index].to_i
+    deposit = (report.json_fields["deposits"] || [])[idx]
+    redirect_to_reconciliation(alert: "Deposit not found in this report") unless deposit
+
+    [report, deposit, idx]
+  end
+
+  # Persists the outcome of applying one deposit back onto the report's json_fields, in place.
+  def save_reconciliation_outcome(report, idx, outcome)
+    deposits = report.json_fields["deposits"]
+    deposit = deposits[idx]
+    deposit["payment_id"] = outcome[:payment_id] if outcome[:payment_id]
+    deposit["reference_no"] = outcome[:reference_no] if outcome[:reference_no]
+    deposit["payment_status"] = outcome[:status].to_s
+    deposit["payment_error"] = outcome[:error] if outcome[:error]
+    report.json_fields = report.json_fields.merge("deposits" => deposits)
+    report.json_fields_will_change! # MySQL doesn't auto-detect JSON field changes
+    report.save!
+  end
+
+  def reconciliation_outcome_message(outcome)
+    case outcome[:status]
+    when :created then "Payment recorded."
+    when :already_recorded then "This deposit was already recorded as a payment."
+    else "Could not record payment: #{outcome[:error]}"
+    end
+  end
+
+  def redirect_to_reconciliation(notice: nil, alert: nil)
+    redirect_to capital_call_url(@capital_call), notice: notice, alert: alert
   end
 
   # Only allow a list of trusted parameters through.
