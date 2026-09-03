@@ -78,7 +78,11 @@ class CapitalRemittance < ApplicationRecord
   validates :folio_id, length: { maximum: 40 }
   validates :investor_name, length: { maximum: 255 }
 
-  validate :verified_requires_approval_or_collection, if: -> { verified? && verified_changed? }
+  # persisted? (not new_record?) is deliberate: this must NOT block CapitalRemittance being
+  # created already-verified by CapitalCommitmentRemittanceJob/CapitalCallJob when a call has
+  # generate_remittances_verified set (a bulk/import path for backfilling already-settled
+  # calls) — only the interactive Verify action, which always updates an existing record.
+  validate :verified_requires_approval_or_collection, if: -> { persisted? && verified? && verified_changed? }
 
   include CapitalRemittanceCounters
 

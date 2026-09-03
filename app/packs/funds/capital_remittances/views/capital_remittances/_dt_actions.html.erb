@@ -54,7 +54,9 @@
                 sandbox_msg = if payment_notification_reasons.empty? && object.entity.entity_setting&.sandbox
                   "<span class=\"text-warning\"><i class=\"ti ti-alert-triangle\"></i> Sandbox is enabled, so the notification will go to the sandbox email IDs and NOT to the investor.</span>"
                 end
-                msg = [notif_msg, amount_msg].compact.map { |m| "<p>#{m}</p>" }.join
+                # DefaultUnitAllocationEngine only allocates units for verified remittances
+                unit_msg = "Once verified, this remittance becomes eligible for fund unit allocation." if object.capital_call.unit_prices.present?
+                msg = [notif_msg, amount_msg, unit_msg].compact.map { |m| "<p>#{m}</p>" }.join
                 msg += "<p>#{sandbox_msg}</p>" if sandbox_msg
               end
               bs_title = object.verified ? "Unverify the remittance." : "Confirms the payment amount recorded and send payment confirmations notification (if enabled)."

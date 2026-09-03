@@ -35,6 +35,22 @@ Given('the first remittance is verified') do
   @remittance.reload
 end
 
+Given('the capital call has unit prices configured') do
+  @capital_call.update_columns(unit_prices: { "Series A" => { "price" => 100, "premium" => 10 } })
+end
+
+Then('the Verify option should be disabled for the first remittance with tooltip {string}') do |tooltip|
+  @remittance = @capital_call.capital_remittances.first
+  visit(capital_call_url(@capital_call))
+  click_on "Remittances"
+  within("#capital_remittance_#{@remittance.id}") do
+    click_on "Actions"
+    verify_item = find(".dropdown-item.disabled", text: "Verify")
+    expect(verify_item["data-bs-title"]).to eq(tooltip)
+    expect(page).not_to have_selector("button, a", text: "Verify")
+  end
+end
+
 When('I click verify on the first remittance') do
   @remittance = @capital_call.capital_remittances.first
   visit(capital_call_url(@capital_call))

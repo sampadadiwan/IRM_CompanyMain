@@ -106,6 +106,7 @@ Scenario Outline: Editing the call date cascades to all capital remittances, inc
   Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
   Given there is a capital call "<call>"
   Then the corresponding remittances should be created
+  Then when the capital call is approved
   When I mark the remittances as verified
   When I change the capital call's call date to "2026-09-01"
   Then I should see the call date change warning naming all the remittances
@@ -276,6 +277,24 @@ Scenario Outline: Approved capital call cannot be approved again
   Given there is a fund "name=TestFund" for the entity
   Given the fund has "1" capital call
   Given the capital calls are approved
+  Then user "false" have "approve" access to the capital calls
+
+  Examples:
+    | entity                                               |
+    | entity_type=Investment Fund;enable_funds=true        |
+
+
+# State machine: unapprove? requires record.approved, the inverse of approve? — the two
+# buttons are mutually exclusive by construction, never shown at the same time.
+Scenario Outline: Unapproved capital call cannot be unapproved, but an approved one can be
+  Given there is a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given the user has role "approver"
+  Given there is a fund "name=TestFund" for the entity
+  Given the fund has "1" capital call
+  Then user "false" have "unapprove" access to the capital calls
+  Given the capital calls are approved
+  Then user "true" have "unapprove" access to the capital calls
   Then user "false" have "approve" access to the capital calls
 
   Examples:

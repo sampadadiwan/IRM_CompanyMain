@@ -206,9 +206,11 @@ export default class extends Controller {
 
     const bannerHtml = this._bannerHtml()
 
-    // confirmHtml always shown below rule items (with a top divider when rules exist).
+    // confirmHtml always shown below rule items (with a top divider when rules exist),
+    // except when blockers fire — the action is already blocked (no Confirm & Save button
+    // below), so describing what confirming would do is just noise at that point.
     // The banner (if any) leads the confirm-only body since there's no rule section to sit under.
-    const confirmSection = confirmHtml
+    const confirmSection = (confirmHtml && !hasBlockers)
       ? `<div style="${hasRules ? 'margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f0f0f0' : ''}">${!hasRules && bannerHtml ? bannerHtml : ''}${confirmHtml}</div>`
       : ''
 
