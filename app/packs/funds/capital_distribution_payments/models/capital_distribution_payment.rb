@@ -9,6 +9,7 @@ class CapitalDistributionPayment < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
   include Trackable.new
+  include UnauditedAeAudit # must follow Trackable: keeps the fee audit trail out of audits.audited_changes
   include CapitalDistributionFees
   include RansackerAmounts.new(fields: %w[income cost_of_investment cost_of_investment_with_fees folio_amount net_of_account_entries net_payable income_with_fees reinvestment reinvestment_with_fees gross_payable gross_of_account_entries tracking_net_payable tax_with_fees expense_with_fees display_only_with_fees])
 

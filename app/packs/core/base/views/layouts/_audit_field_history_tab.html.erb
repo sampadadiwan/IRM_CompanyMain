@@ -46,7 +46,7 @@
                   <% if cell.nil? %>
                     <span class="text-muted">&mdash;</span>
                   <% elsif cell[:value].is_a?(Hash) || cell[:value].is_a?(Array) %>
-                    <div class="audit-json-diff"><%= Json2table.get_html_table(cell[:value], JsonTable::TABLE_OPTIONS).html_safe %></div>
+                    <div class="audit-json-diff"><%= Json2table.create_table(cell[:value], JsonTable::TABLE_OPTIONS).html_safe %></div>
                     <div class="text-muted small"><i class="ti ti-user me-1"></i><%= cell[:user] || "System" %></div>
                   <% else %>
                     <div><%= cell[:value].presence || "—" %></div>

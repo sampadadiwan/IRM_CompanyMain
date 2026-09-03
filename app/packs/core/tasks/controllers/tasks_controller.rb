@@ -386,21 +386,19 @@ class TasksController < ApplicationController
   # Sets the record too, so the heading can link back to it — the board is
   # usually reached from that page and this is the way back.
   def assign_board_scope!
-    @board_scope_owner, kind =
+    @board_scope_owner =
       if @board_deal
-        [@board_deal, "Deal"]
+        @board_deal
       elsif params[:owner_type].present? && params[:owner_id].present? &&
             BOARD_SCOPE_TYPES.include?(params[:owner_type])
-        # "DealInvestor" reads as "Deal Investor" for a business user
-        [params[:owner_type].constantize.find_by(id: params[:owner_id]),
-         params[:owner_type].underscore.humanize.titleize]
+        params[:owner_type].constantize.find_by(id: params[:owner_id])
       elsif @board_selected_investor
-        [@board_selected_investor, "Stakeholder"]
+        @board_selected_investor
       end
 
     return if @board_scope_owner.blank?
 
-    @board_scope_label = "#{kind}: #{@board_scope_owner}"
+    @board_scope_label = @board_scope_owner.to_s
     @board_scope_path = board_scope_path(@board_scope_owner)
   end
 
