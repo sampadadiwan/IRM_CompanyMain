@@ -263,10 +263,11 @@ class DealIngestAuthenticator
   #
   # @return [Array<Hash>, nil] array of attachment metadata with Shrine data, or nil if none
   def extract_attachments
-    files = @params.to_unsafe_h.select { |key, val| key.to_s.start_with?("attachment") && val.respond_to?(:tempfile) }
-    return nil if files.empty?
+    attachment_keys = @params.keys.select { |k| k.to_s.start_with?("attachment") && @params[k].respond_to?(:tempfile) }
+    return nil if attachment_keys.empty?
 
-    files.map do |_key, file|
+    attachment_keys.map do |key|
+      file = @params[key]
       uploaded = Shrine.upload(file.tempfile, :cache, metadata: { "filename" => file.original_filename, "mime_type" => file.content_type })
       {
         "shrine_data" => uploaded.data,
