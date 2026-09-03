@@ -78,6 +78,8 @@ class CapitalRemittance < ApplicationRecord
   validates :folio_id, length: { maximum: 40 }
   validates :investor_name, length: { maximum: 255 }
 
+  validate :verified_requires_approval_or_collection, if: -> { verified? && verified_changed? }
+
   include CapitalRemittanceCounters
 
   def set_call_amount(recompute_call_amount: false)
@@ -113,6 +115,41 @@ class CapitalRemittance < ApplicationRecord
 
   def exchange_rate_adjustments
     # Adjust for exchange rates on the day of the payment
+  end
+
+  # Reasons "Send Call Notification" would not actually reach an investor right now.
+  # Empty means it's safe to send. Used to grey out the action in the UI (with an
+  # explanatory tooltip) and to guard the controller so a direct request can't silently
+  # no-op the way send_notification's own internal checks would otherwise allow.
+  def notification_blocked_reasons
+    reasons = []
+    reasons << "the call is not approved" unless capital_call.approved?
+    reasons << "the call is set up to not send notifications" unless capital_call.send_call_notice_flag
+    reasons << "the commitment has 'Skip Doc Gen' set to Yes" if capital_commitment.skip_doc_gen?
+    # Mirrors CapitalRemittanceRuleContextProvider#notice_not_approved, promoted from a
+    # client-side-only blocker rule to a real server-side gate.
+    reasons << "the generated call notice for this remittance is pending approval" if Document.exists?(
+      owner_type: "CapitalRemittance", owner_id: id, owner_tag: "Generated", approved: false
+    )
+    reasons << "no investor contacts are subscribed to Capital Call notifications" if investor.notification_users(fund, with_tag: 'CapitalCall').none?
+    reasons
+  end
+
+  # Reasons the payment-received notification would not actually reach the investor.
+  # That notification has no manual send control of its own — it's fired automatically,
+  # once per payment, by CapitalRemittanceVerify's payment_received_notification step
+  # (see CapitalRemittancePayment#notify_capital_remittance_payment for the conditions
+  # mirrored here). Surfaced in the Verify confirm message instead of a separate button.
+  # `verified` itself is deliberately not checked — becoming verified is the point of the
+  # action this message is shown for.
+  def payment_notification_blocked_reasons
+    reasons = []
+    reasons << "the call is not approved" unless capital_call.approved?
+    reasons << "the call is set up to not send payment notifications" unless capital_call.send_payment_notification_flag
+    reasons << "there are no recorded payments with a positive amount" if capital_remittance_payments.where("amount_cents > 0").none?
+    reasons << "a payment notification has already been sent for every recorded payment" if capital_remittance_payments.any? && capital_remittance_payments.where(payment_notification_sent: false).none?
+    reasons << "no investor contacts are subscribed to Capital Call notifications" if investor.notification_users(fund, with_tag: 'CapitalCall').none?
+    reasons
   end
 
   def send_notification(reminder: false)
@@ -192,6 +229,12 @@ class CapitalRemittance < ApplicationRecord
 
   def net_call_amount
     call_amount + other_fee
+  end
+
+  def verified_requires_approval_or_collection
+    return if capital_call.approved? || collected_amount_cents.positive?
+
+    errors.add(:verified, "cannot be set while the call is not approved and no amount has been collected")
   end
 
   def due_amount

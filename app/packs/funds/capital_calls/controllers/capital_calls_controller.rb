@@ -1,7 +1,7 @@
 class CapitalCallsController < ApplicationController
   include HasWorkflowable
 
-  before_action :set_capital_call, only: %i[show edit update destroy reminder approve notify generate_docs allocate_units recompute_fees]
+  before_action :set_capital_call, only: %i[show edit update destroy reminder approve unapprove notify generate_docs allocate_units recompute_fees]
   before_action :set_workflowable, only: [:show]  # runs after set_capital_call so @capital_call is available
 
   # GET /capital_calls or /capital_calls.json
@@ -129,6 +129,19 @@ class CapitalCallsController < ApplicationController
         format.json { render :show, status: :created, location: @capital_call }
       else
         format.html { redirect_to capital_call_url(@capital_call), alert: "Call not approved: #{result[:errors]}" }
+        format.json { render json: @capital_call.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def unapprove
+    result = CapitalCallUnapprove.call(capital_call: @capital_call)
+    respond_to do |format|
+      if result.success?
+        format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was reverted to unapproved." }
+        format.json { render :show, status: :ok, location: @capital_call }
+      else
+        format.html { redirect_to capital_call_url(@capital_call), alert: "Call not unapproved: #{result[:errors]}" }
         format.json { render json: @capital_call.errors, status: :unprocessable_entity }
       end
     end

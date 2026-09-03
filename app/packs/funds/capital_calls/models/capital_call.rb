@@ -91,6 +91,15 @@ class CapitalCall < ApplicationRecord
     CapitalCallJob.perform_later(id, "Notify") if approved? && send_call_notice_flag && !manual_generation
   end
 
+  # True once any investor has actually been emailed the call notice
+  # (CapitalRemittance#notification_sent — a one-way flag, never reset). Used to warn
+  # before Unapprove: reverting approval won't un-notify. Deliberately does not consider
+  # CapitalRemittancePayment#payment_notification_sent — that's a separate notification
+  # (payment received) triggered independently of call approval, unrelated to this warning.
+  def any_remittance_notified?
+    capital_remittances.where(notification_sent: true).exists?
+  end
+
   def folder_path
     "#{fund.folder_path}/Capital Calls/#{name.delete('/')}"
   end

@@ -52,32 +52,37 @@
 
                     <% if policy(@capital_remittance).send_notification? %>
                       <% label = @capital_remittance.notification_sent ? "Send Call Reminder" : "Send Call Notification" %>
+                      <% blocked_reasons = @capital_remittance.notification_blocked_reasons %>
 
-                      <%# Hidden static confirm message shown below any validation rule messages %>
-                      <div id="remittance_send_notification_confirm_msg" class="d-none">
-                        <p style="font-size:0.875rem;margin-bottom:0.5rem">
-                          <% if @capital_remittance.capital_call.send_call_notice_flag %>
+                      <% if blocked_reasons.any? %>
+                        <span class="dropdown-item disabled text-muted" aria-disabled="true"
+                              data-bs-toggle="tooltip" data-bs-container="body"
+                              data-bs-title="Cannot send: <%= blocked_reasons.join(', ') %>.">
+                          <i class="ti ti-mail"></i><%= label %>
+                        </span>
+                      <% else %>
+                        <%# Hidden static confirm message shown below any validation rule messages %>
+                        <div id="remittance_send_notification_confirm_msg" class="d-none">
+                          <p style="font-size:0.875rem;margin-bottom:0.5rem">
                             This will send an email notification to the investor for this remittance.
-                          <% else %>
-                            This will NOT send any notification to the investor as the call is setup to not send notifications.
-                          <% end %>
-                        </p>
-                        <%= render "shared/sandbox_notice", entity: @capital_remittance.entity %>
-                        <div class="d-flex gap-2 flex-wrap">
-                          <%= link_to "Update Call", edit_capital_call_path(@capital_remittance.capital_call), class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+                          </p>
+                          <%= render "shared/sandbox_notice", entity: @capital_remittance.entity %>
+                          <div class="d-flex gap-2 flex-wrap">
+                            <%= link_to "Update Call", edit_capital_call_path(@capital_remittance.capital_call), class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+                          </div>
                         </div>
-                      </div>
 
-                      <%# Runs CapitalRemittance-scoped validation rules (notice generated/approved) before sending %>
-                      <div data-controller="rule-validation"
-                           data-rule-validation-target-model-value="CapitalRemittance"
-                           data-rule-validation-record-id-value="<%= @capital_remittance.id %>"
-                           data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>"
-                           data-rule-validation-confirm-message-selector-value="#remittance_send_notification_confirm_msg">
-                        <%= button_to label, send_notification_capital_remittance_path(@capital_remittance), method: :patch,
-                            class: "dropdown-item ti ti-mail", form_class: "deleteButton",
-                            data: {turbo: false, method: :patch} %>
-                      </div>
+                        <%# Runs CapitalRemittance-scoped validation rules (notice generated/approved) before sending %>
+                        <div data-controller="rule-validation"
+                             data-rule-validation-target-model-value="CapitalRemittance"
+                             data-rule-validation-record-id-value="<%= @capital_remittance.id %>"
+                             data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>"
+                             data-rule-validation-confirm-message-selector-value="#remittance_send_notification_confirm_msg">
+                          <%= button_to label, send_notification_capital_remittance_path(@capital_remittance), method: :patch,
+                              class: "dropdown-item ti ti-mail", form_class: "deleteButton",
+                              data: {turbo: false, method: :patch} %>
+                        </div>
+                      <% end %>
                     <% end %>
 
 

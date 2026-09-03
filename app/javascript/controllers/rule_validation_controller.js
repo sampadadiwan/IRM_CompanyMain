@@ -20,7 +20,16 @@ export default class extends Controller {
     // when the form is about to submit. Rendered above rule items when warnings fire;
     // shown alone (as a confirmation step) when no rules fire.
     // Suppressed entirely when blockers fire (approval is already blocked).
-    confirmMessageSelector: String
+    confirmMessageSelector: String,
+    // Modal heading shown in the confirm-only case (no rules fired). Defaults to
+    // "Confirm Approval" since most callers are approval flows; override per-usage
+    // (e.g. the Send Notification action) via data-rule-validation-confirm-title-value.
+    confirmTitle: { type: String, default: "Confirm Approval" },
+    // Optional CSS selector for a hidden element whose innerHTML is a high-priority
+    // notice (e.g. "this will NOT send anything"). Shown directly under the rule
+    // items (above the "warnings only" note) when rules fire, or at the top of the
+    // confirm-only body when they don't — always the first thing the user sees.
+    bannerMessageSelector: String
   }
 
   connect() {
@@ -192,17 +201,21 @@ export default class extends Controller {
          </svg>`
 
     const title = confirmOnly
-      ? 'Confirm Approval'
+      ? this.confirmTitleValue
       : hasBlockers ? 'Cannot Approve — Issues Found' : 'Review Before Approving'
 
-    // confirmHtml always shown below rule items (with a top divider when rules exist)
+    const bannerHtml = this._bannerHtml()
+
+    // confirmHtml always shown below rule items (with a top divider when rules exist).
+    // The banner (if any) leads the confirm-only body since there's no rule section to sit under.
     const confirmSection = confirmHtml
-      ? `<div style="${hasRules ? 'margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f0f0f0' : ''}">${confirmHtml}</div>`
+      ? `<div style="${hasRules ? 'margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f0f0f0' : ''}">${!hasRules && bannerHtml ? bannerHtml : ''}${confirmHtml}</div>`
       : ''
 
     const ruleSection = hasRules ? `
       ${hasBlockers ? this._renderRuleItems(blockers, '#f87171', '#fff5f5') : ''}
       ${hasWarnings ? this._renderRuleItems(warnings, '#fbbf24', '#fffbeb') : ''}
+      ${bannerHtml ? `<div style="margin-top:0.5rem">${bannerHtml}</div>` : ''}
       <p style="font-size:0.8rem;color:#888;margin-top:0.75rem;margin-bottom:0">
         ${hasBlockers
           ? 'Fix the issues above before approving.'
@@ -281,6 +294,12 @@ export default class extends Controller {
   _confirmHtml() {
     if (!this.hasConfirmMessageSelectorValue || !this.confirmMessageSelectorValue) return null
     return document.querySelector(this.confirmMessageSelectorValue)?.innerHTML?.trim() || null
+  }
+
+  // Returns the innerHTML of the element matching bannerMessageSelectorValue, or null.
+  _bannerHtml() {
+    if (!this.hasBannerMessageSelectorValue || !this.bannerMessageSelectorValue) return null
+    return document.querySelector(this.bannerMessageSelectorValue)?.innerHTML?.trim() || null
   }
 
   // Each rule on its own row: pastel background tint, coloured left border, plain dark text

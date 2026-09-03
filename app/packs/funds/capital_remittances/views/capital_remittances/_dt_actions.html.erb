@@ -21,29 +21,51 @@
           <%
             object = capital_remittance.respond_to?(:object) ? capital_remittance.object : capital_remittance
             label = object.verified ? "Unverify" : "Verify"
-            if object.verified
-              msg = "Mark as Unverified?"
-            else
-              notif_msg = object.capital_call.send_payment_notification_flag \
-                ? "This will confirm the payment amount as recorded and send a notification for the collected amount to the investor. Please preview the notification before sending it." \
-                : "This will confirm the payment amount as recorded but NOT trigger any notification to the investor as 'Send Payment Notification' is disabled."
-              due = object.due_amount
-              amount_msg = if due.positive?
-                "The collected amount is less than the call amount. Are you sure you want to verify the remittance?"
-              elsif due.negative?
-                "The collected amount is more than the call amount. Are you sure you want to verify the remittance?"
-              end
-              msg = [notif_msg, amount_msg].compact.map { |m| "<p>#{m}</p>" }.join
-            end
-            bs_title = object.verified ? "Unverify the remittance." : "Confirms the payment amount recorded and send payment confirmations notification (if enabled)."
-            notification = object.verified ? "no" : "yes"
+            # Verifying (not unverifying) is blocked once the call is unapproved and nothing has
+            # been collected yet — see CapitalRemittance#verified_requires_approval_or_collection.
+            verify_blocked = !object.verified && !object.capital_call.approved? && !object.collected_amount_cents.positive?
             icon_class = object.verified ? "ti ti-user-x" : "ti ti-user-check"
           %>
 
-          <%= button_to verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]),
-                        method: :patch, class: "dropdown-item", form_class: "deleteButton",
-                        data: { action: "click->confirm#popup", msg:, notification:, bs_toggle: "tooltip", bs_container: "body", bs_title: , turbo: true, method: :patch } do %>
-            <i class="<%= icon_class %>"></i><%= label %>
+          <% if verify_blocked %>
+            <span class="dropdown-item disabled text-muted" aria-disabled="true"
+                  data-bs-toggle="tooltip" data-bs-container="body"
+                  data-bs-title="Cannot verify: the call is not approved and no amount has been collected for this remittance yet.">
+              <i class="<%= icon_class %>"></i><%= label %>
+            </span>
+          <% else %>
+            <%
+              if object.verified
+                msg = "Mark as Unverified?"
+              else
+                payment_notification_reasons = object.payment_notification_blocked_reasons
+                notif_msg = if payment_notification_reasons.empty?
+                  "This will confirm the payment amount as recorded and send a notification for the collected amount to the investor. Please preview the notification before sending it."
+                else
+                  "This will confirm the payment amount as recorded but NOT send a notification to the investor because #{payment_notification_reasons.join(', ')}."
+                end
+                due = object.due_amount
+                amount_msg = if due.positive?
+                  "The collected amount is less than the call amount. Are you sure you want to verify the remittance?"
+                elsif due.negative?
+                  "The collected amount is more than the call amount. Are you sure you want to verify the remittance?"
+                end
+                # Only relevant when a notification will actually be attempted
+                sandbox_msg = if payment_notification_reasons.empty? && object.entity.entity_setting&.sandbox
+                  "<span class=\"text-warning\"><i class=\"ti ti-alert-triangle\"></i> Sandbox is enabled, so the notification will go to the sandbox email IDs and NOT to the investor.</span>"
+                end
+                msg = [notif_msg, amount_msg].compact.map { |m| "<p>#{m}</p>" }.join
+                msg += "<p>#{sandbox_msg}</p>" if sandbox_msg
+              end
+              bs_title = object.verified ? "Unverify the remittance." : "Confirms the payment amount recorded and send payment confirmations notification (if enabled)."
+              notification = object.verified ? "no" : "yes"
+            %>
+
+            <%= button_to verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]),
+                          method: :patch, class: "dropdown-item", form_class: "deleteButton",
+                          data: { action: "click->confirm#popup", msg:, notification:, bs_toggle: "tooltip", bs_container: "body", bs_title: , turbo: true, method: :patch } do %>
+              <i class="<%= icon_class %>"></i><%= label %>
+            <% end %>
           <% end %>
         <% end %>
 
