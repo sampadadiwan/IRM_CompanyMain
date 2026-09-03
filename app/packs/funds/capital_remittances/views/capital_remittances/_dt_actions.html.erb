@@ -1,5 +1,5 @@
 <% if capital_remittance.entity_id == current_user.entity_id %>
-  <div class="btn-group">
+  <div class="btn-group" data-controller="tooltip">
     <div class="dropdown">
       <button class="btn btn-outline-primary dropdown-toggle" type="button"
               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -21,16 +21,18 @@
           <%
             object = capital_remittance.respond_to?(:object) ? capital_remittance.object : capital_remittance
             label = object.verified ? "Unverify" : "Verify"
-            # Verifying (not unverifying) is blocked once the call is unapproved and nothing has
-            # been collected yet — see CapitalRemittance#verified_requires_approval_or_collection.
-            verify_blocked = !object.verified && !object.capital_call.approved? && !object.collected_amount_cents.positive?
+            # Verifying (not unverifying) requires the call to be approved —
+            # see CapitalRemittance#verified_requires_approval.
+            verify_blocked = !object.verified && !object.capital_call.approved?
             icon_class = object.verified ? "ti ti-user-x" : "ti ti-user-check"
           %>
 
           <% if verify_blocked %>
-            <span class="dropdown-item disabled text-muted" aria-disabled="true"
+            <%# pointer-events: auto overrides Bootstrap's .disabled rule (pointer-events: none),
+                which would otherwise silently block the hover that triggers the tooltip. %>
+            <span class="dropdown-item disabled text-muted" aria-disabled="true" style="pointer-events: auto;"
                   data-bs-toggle="tooltip" data-bs-container="body"
-                  data-bs-title="Cannot verify: the call is not approved and no amount has been collected for this remittance yet.">
+                  data-bs-title="Cannot verify: the call is not approved.">
               <i class="<%= icon_class %>"></i><%= label %>
             </span>
           <% else %>

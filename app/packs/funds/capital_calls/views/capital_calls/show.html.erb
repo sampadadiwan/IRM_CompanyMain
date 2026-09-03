@@ -5,7 +5,7 @@
 <%= render "/capital_calls/show", capital_call: @capital_call %>
 
 <div id="capital_call_<%= @capital_call.id %>_actions"
-     data-controller="workflow-gate"
+     data-controller="workflow-gate tooltip"
      data-workflow-gate-labels-value="<%= (@workflow_gated_button_labels || []).to_json %>"
      data-workflow-gate-reason-value="<%= @workflow_gate_status_label.present? ? "Blocked — workflow is #{@workflow_gate_status_label}" : '' %>">
 
@@ -155,10 +155,21 @@
                data-rule-validation-confirm-title-value="Confirm – Send Notification"
                data-rule-validation-confirm-message-selector-value="#capital_call_notify_confirm_msg"
                data-rule-validation-banner-message-selector-value="#capital_call_notify_banner">
-            <%= button_to notify_capital_call_path(@capital_call), id: "capital_call_notify_btn", method: :post, class: "dropdown-item ti ti-mail", form_class: "deleteButton",
-                disabled: !@capital_call.send_call_notice_flag,
-                data: {turbo: false, bs_toggle: "tooltip", bs_title: "Send the call notification to investors.", workflow_gate_label: "Send Notification"} do %>
-              Send Notification
+            <%
+              notify_disabled = !@capital_call.send_call_notice_flag
+              # A real `disabled` attribute makes the <button> inert in every browser — it never
+              # fires hover events, so a tooltip on the button itself can never show. Wrap it in a
+              # non-disabled element that carries the tooltip instead (Bootstrap's own pattern for
+              # tooltips on disabled elements).
+              notify_title = notify_disabled ? "Cannot send: the call is set up to not send notifications." : "Send the call notification to investors."
+              wrapper_data = notify_disabled ? {bs_toggle: "tooltip", bs_title: notify_title} : {}
+            %>
+            <%= content_tag :span, data: wrapper_data do %>
+              <%= button_to notify_capital_call_path(@capital_call), id: "capital_call_notify_btn", method: :post, class: "dropdown-item ti ti-mail", form_class: "deleteButton",
+                  disabled: notify_disabled,
+                  data: {turbo: false, bs_toggle: "tooltip", bs_title: notify_title, workflow_gate_label: "Send Notification"} do %>
+                Send Notification
+              <% end %>
             <% end %>
           </div>
 

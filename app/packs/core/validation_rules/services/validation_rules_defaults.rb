@@ -149,7 +149,7 @@ module ValidationRulesDefaults
       },
       params: {},
       severity: "warning",
-      message_template: "Call notices have not been generated for: %{remittances_without_notices}. Please generate documents before approving."
+      message_template: "Call notices have not been generated for: %{remittances_without_notices}. Please generate documents for these remittances."
     },
     {
       name: "capital_call_notices_not_approved",

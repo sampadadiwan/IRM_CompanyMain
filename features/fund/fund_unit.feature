@@ -15,6 +15,7 @@ Scenario Outline: Generate fund units from capital call
   Given the investors are added to the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
+  Given the capital calls are approved
   Given the remittances are paid and verified
   Given the units are generated
   Then there should be correct units for the calls payment for each investor
@@ -42,6 +43,7 @@ Scenario Outline: Generate fund units from capital call when remittance is overp
   Given the investors are added to the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
+  Given the capital calls are approved
   Given the remittances are overpaid and verified
   Given the units are generated
   Then there should be correct units for the calls payment for each investor

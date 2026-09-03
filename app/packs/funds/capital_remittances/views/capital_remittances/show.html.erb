@@ -9,7 +9,7 @@
         <%= button_to t_common(:delete), @capital_remittance, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@capital_remittance).destroy?  %>
 
         <% unless current_user.curr_role_investor? %>
-        <div class="btn-group">
+        <div class="btn-group" data-controller="tooltip">
             <div class="dropdown">
                 <button class="btn btn-outline-success dropdown-toggle ti ti-settings" type="button"
                         data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -18,16 +18,18 @@
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
                     <%
-                        # Verifying (not unverifying) is blocked once the call is unapproved and nothing has
-                        # been collected yet — see CapitalRemittance#verified_requires_approval_or_collection.
-                        verify_blocked = !@capital_remittance.verified && !@capital_remittance.capital_call.approved? && !@capital_remittance.collected_amount_cents.positive?
+                        # Verifying (not unverifying) requires the call to be approved —
+                        # see CapitalRemittance#verified_requires_approval.
+                        verify_blocked = !@capital_remittance.verified && !@capital_remittance.capital_call.approved?
                         label = @capital_remittance.verified ? "Unverify" : "Verify"
                         verified_icon = @capital_remittance.verified ? "ti ti-x" : "ti ti-check"
                     %>
                     <% if policy(@capital_remittance).verify? && verify_blocked %>
-                      <span class="dropdown-item disabled text-muted" aria-disabled="true"
+                      <%# pointer-events: auto overrides Bootstrap's .disabled rule (pointer-events: none),
+                          which would otherwise silently block the hover that triggers the tooltip. %>
+                      <span class="dropdown-item disabled text-muted" aria-disabled="true" style="pointer-events: auto;"
                             data-bs-toggle="tooltip" data-bs-container="body"
-                            data-bs-title="Cannot verify: the call is not approved and no amount has been collected for this remittance yet.">
+                            data-bs-title="Cannot verify: the call is not approved.">
                         <i class="<%= verified_icon %>"></i><%= label %>
                       </span>
                     <% elsif policy(@capital_remittance).verify? %>
@@ -78,7 +80,9 @@
                       <% blocked_reasons = @capital_remittance.notification_blocked_reasons %>
 
                       <% if blocked_reasons.any? %>
-                        <span class="dropdown-item disabled text-muted" aria-disabled="true"
+                        <%# pointer-events: auto overrides Bootstrap's .disabled rule (pointer-events: none),
+                            which would otherwise silently block the hover that triggers the tooltip. %>
+                        <span class="dropdown-item disabled text-muted" aria-disabled="true" style="pointer-events: auto;"
                               data-bs-toggle="tooltip" data-bs-container="body"
                               data-bs-title="Cannot send: <%= blocked_reasons.join(', ') %>.">
                           <i class="ti ti-mail"></i><%= label %>

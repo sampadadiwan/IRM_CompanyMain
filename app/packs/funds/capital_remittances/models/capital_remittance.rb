@@ -82,7 +82,7 @@ class CapitalRemittance < ApplicationRecord
   # created already-verified by CapitalCommitmentRemittanceJob/CapitalCallJob when a call has
   # generate_remittances_verified set (a bulk/import path for backfilling already-settled
   # calls) — only the interactive Verify action, which always updates an existing record.
-  validate :verified_requires_approval_or_collection, if: -> { persisted? && verified? && verified_changed? }
+  validate :verified_requires_approval, if: -> { persisted? && verified? && verified_changed? }
 
   include CapitalRemittanceCounters
 
@@ -235,10 +235,10 @@ class CapitalRemittance < ApplicationRecord
     call_amount + other_fee
   end
 
-  def verified_requires_approval_or_collection
-    return if capital_call.approved? || collected_amount_cents.positive?
+  def verified_requires_approval
+    return if capital_call.approved?
 
-    errors.add(:verified, "cannot be set while the call is not approved and no amount has been collected")
+    errors.add(:verified, "cannot be set while the call is not approved")
   end
 
   def due_amount

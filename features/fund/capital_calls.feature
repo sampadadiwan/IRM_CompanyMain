@@ -178,6 +178,7 @@ Scenario Outline: Generate fund units from capital call
   Given the investors are added to the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
+  Given the capital calls are approved
   Given the remittances are paid and verified
   Given the remittances has some units already allocated
   Given the units are generated
@@ -199,6 +200,7 @@ Scenario Outline: Generate fund units from capital call with phased remittance p
   Given there are capital commitments of "<commitment>" from each investor
   Given there is a capital call "<call>"
   Then the corresponding remittances should be created
+  Given the capital calls are approved
 
   # Phase 1: Pay 50%
   Given remittances are paid "<paid_percentage1>" and verified
@@ -244,6 +246,7 @@ Scenario Outline: Delete Remittance with payment units alocated
   Given there are capital commitments of "<commitment>" from each investor
   Given there is a capital call "<call>"
   Then the corresponding remittances should be created
+  Given the capital calls are approved
   Given remittances are paid "<paid_percentage1>" and verified
   Given the units are generated
   Then there should be correct units generated for the latest payment
