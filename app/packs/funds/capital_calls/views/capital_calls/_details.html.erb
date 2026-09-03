@@ -1,20 +1,18 @@
-<%# Call Notice Agent Panel - collapsible %>
-<% support_agent = SupportAgent.find_by(agent_type: "CallNoticeAgent", entity_id: current_user.entity_id) %>
-<% if support_agent.present? %>
-  <% report = SupportAgentReport.find_by(owner: capital_call, support_agent: support_agent) %>
-  <%= render "support_agents/progress_panel",
-      report: report,
-      support_agent: support_agent,
-      target: capital_call %>
-<% end %>
+<%# Call Notice Agent — triggered from the Actions dropdown (show.html.erb); results are
+    visible via the agent's own Execution History, so no panel is rendered here. %>
 
 <%# Remittance Reconciliation Agent Panel %>
 <% if capital_call.entity.support_agents.set?(:capital_remittance_reconciliation_agent) && policy(capital_call).run_agent? %>
   <% remit_support_agent = SupportAgent.find_by(agent_type: "RemittanceReconciliationAgent", entity_id: current_user.entity_id) %>
   <% if remit_support_agent.present? %>
     <% remit_report = SupportAgentReport.find_by(owner: capital_call, support_agent: remit_support_agent, latest: true) %>
-    <%= render "capital_calls/capital_remittance_reconciliation_panel",
-        capital_call: capital_call, support_agent: remit_support_agent, report: remit_report %>
+    <%# Nothing to show before the first run — that status is already visible on the agent's
+        own Execution History tab, so this section stays out of the way until there's a report
+        with actual deposits to review/confirm/reassign. %>
+    <% if remit_report.present? %>
+      <%= render "capital_calls/capital_remittance_reconciliation_panel",
+          capital_call: capital_call, support_agent: remit_support_agent, report: remit_report %>
+    <% end %>
   <% end %>
 <% end %>
 

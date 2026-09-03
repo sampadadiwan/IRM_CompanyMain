@@ -1,22 +1,17 @@
 <%# frozen_string_literal: true %>
 <%#
   Reconciliation results for the latest RemittanceReconciliationAgent report on this call.
-  Required locals: capital_call, support_agent, report (may be nil — no run yet)
+  The run trigger lives in the capital call's Actions dropdown (show.html.erb), not here.
+  Only rendered once a report exists — see _details.html.erb — so `report` is never nil here.
+  Required locals: capital_call, report
+  support_agent is accepted but currently unused — kept so callers don't need to special-case this partial.
 %>
 
 <div class="remittance-reconciliation-panel mb-3">
   <div class="d-flex justify-content-between align-items-center mb-2">
     <span class="fw-semibold fs-5"><i class="ti ti-file-check me-2"></i>Remittance Reconciliation</span>
-    <% if policy(capital_call).run_agent? %>
-      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#run-remittance-reconciliation-modal">
-        <i class="ti ti-play me-1"></i>Run Reconciliation
-      </button>
-    <% end %>
   </div>
 
-  <% if report.nil? %>
-    <p class="text-muted">No reconciliation has been run yet for this call. Upload a bank statement to get started.</p>
-  <% else %>
     <% deposits = report.json_fields["deposits"] || [] %>
     <% tier_counts = report.json_fields["tier_counts"] || {} %>
     <% last_run = report.json_fields["run_at"] %>
@@ -115,10 +110,4 @@
         </ul>
       <% end %>
     <% end %>
-  <% end %>
 </div>
-
-<% if policy(capital_call).run_agent? %>
-  <%= render "support_agents/remittance_run_modal", modal_id: "run-remittance-reconciliation-modal", capital_call: capital_call,
-             description: RemittanceReconciliationAgent::DESCRIPTION, long_description: RemittanceReconciliationAgent::LONG_DESCRIPTION %>
-<% end %>

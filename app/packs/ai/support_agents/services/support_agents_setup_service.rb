@@ -661,7 +661,8 @@ class SupportAgentsSetupService
     "NoteSummarizerAgent" => :note_summarization_agent,
     "LpAssistantAgent" => :folio_assistant,
     "PortfolioAssistantAgent" => :portfolio_assistant,
-    "CashFlowAssistantAgent" => :cash_flow_assistant_agent # explicit for clarity
+    "CashFlowAssistantAgent" => :cash_flow_assistant_agent, # explicit for clarity
+    "RemittanceReconciliationAgent" => :capital_remittance_reconciliation_agent # flag predates the class's 30-char rename
   }.freeze
 
   # @param entity_id [Integer]
