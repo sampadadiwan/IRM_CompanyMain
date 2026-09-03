@@ -1,0 +1,127 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# bin/check_grafana_health - watches the "CapHive Overview" Grafana dashboard
+# (all health indicators: infra, DB, Rails, Sidekiq — one dashboard per region)
+# for IN and US production from a machine OUTSIDE either AWS account. This is
+# redundant with Grafana's own alert rules (config/initializers/observability/
+# grafana_provision.yml) on purpose — a check from here catches the case where
+# Grafana's own alerting path (contact point, notification policy, webhook) is
+# broken, the same reasoning as bin/check_db_backup_freshness re-checking S3
+# instead of trusting DbBackupFreshnessJob's own email.
+#
+#   bin/check_grafana_health run     twice-daily check (8am + 6pm), notifies on FAILURE only
+#   bin/check_grafana_health report  reprint the last run's output
+#   bin/check_grafana_health cron    print the crontab lines to install
+#
+# Silent while healthy — like the hourly DB backup watchdog, a popup every run
+# would train you to dismiss it unread. A run is a FAILURE only when a panel is
+# in its RED threshold band or returned no data at all (exporter unreachable);
+# YELLOW (early-warning) panels are logged but never pop a notification — no
+# Grafana alert rule pages on yellow either, so parity says this shouldn't.
+#
+# Rails is never booted directly here - each region's check runs in its own
+# `bundle exec rake` subprocess (needed anyway: the task reads that region's
+# own encrypted GRAFANA_PASS from config/credentials/<env_name>.yml.enc,
+# resolved once at rake's `:environment` boot per subprocess).
+
+require 'English'
+
+REPO_ROOT = File.expand_path('..', __dir__)
+ENV_NAMES = %w[production.in production.us].freeze
+
+LOG_DIR = File.join(REPO_ROOT, 'log', 'grafana_health_cron')
+CRON_LOG = File.join(REPO_ROOT, 'log', 'grafana_health_cron.log')
+REPORT_FILE = File.join(REPO_ROOT, 'log', 'grafana_health_report.txt')
+LOG_RETENTION_DAYS = 14
+
+def run_check(env_name)
+  require 'fileutils'
+  FileUtils.mkdir_p(LOG_DIR)
+  out_file = File.join(LOG_DIR, "#{env_name}_#{Time.now.strftime('%Y%m%d_%H%M%S')}.log")
+  system("bundle exec rake \"grafana:health_check[#{env_name}]\" > #{out_file} 2>&1")
+  passed = $CHILD_STATUS.success? && File.read(out_file).include?('Grafana health check passed')
+  [passed, out_file]
+end
+
+# cron does not set DISPLAY/DBUS_SESSION_BUS_ADDRESS the way a logged-in desktop
+# session does - notify-send is silently a no-op without them.
+def ensure_desktop_env
+  ENV['DISPLAY'] ||= ':0'
+  ENV['DBUS_SESSION_BUS_ADDRESS'] ||= "unix:path=/run/user/#{Process.uid}/bus"
+end
+
+def notify(urgency, title, body)
+  ensure_desktop_env
+  system('notify-send', '-u', urgency, title, body)
+end
+
+def notify_failure(env_name, out_file)
+  lines = File.readlines(out_file).grep(/[✗?]/).first(6).map(&:strip)
+  summary = lines.empty? ? "see #{out_file}" : lines.join("\n")
+  notify('critical', "Grafana health check FAILED (#{env_name})", summary)
+end
+
+def prune_old_logs
+  Dir.glob(File.join(LOG_DIR, '*.log')).each do |f|
+    File.delete(f) if Time.now - File.mtime(f) > LOG_RETENTION_DAYS * 24 * 60 * 60
+  end
+end
+
+def cmd_run
+  Dir.chdir(REPO_ROOT)
+  results = ENV_NAMES.map do |env_name|
+    passed, out_file = run_check(env_name)
+    notify_failure(env_name, out_file) unless passed
+    [env_name, passed, out_file]
+  end
+
+  File.write(REPORT_FILE, <<~REPORT)
+    Grafana health check - generated #{Time.now}
+    Regenerate any time with: bin/check_grafana_health run
+
+    #{results.map { |name, _passed, out_file| "== #{name} ==\n#{File.read(out_file)}" }.join("\n")}
+  REPORT
+
+  puts "#{Time.now}: #{results.map { |name, passed, _f| "#{name}=#{passed ? 'PASS' : 'FAIL'}" }.join(', ')}"
+  prune_old_logs
+  exit(results.all? { |_, passed, _| passed } ? 0 : 1)
+end
+
+def cmd_report
+  unless File.exist?(REPORT_FILE)
+    warn 'No report yet - run: bin/check_grafana_health run'
+    exit 1
+  end
+  puts File.read(REPORT_FILE)
+end
+
+def cmd_cron
+  invoke = "cd #{REPO_ROOT} && /bin/bash -lc 'bundle exec ruby bin/check_grafana_health run >> #{CRON_LOG} 2>&1'"
+
+  puts <<~CRON
+    # Twice-daily Grafana health check (IN + US prod) - all health indicators
+    # (infra, DB, Rails, Sidekiq) via the CapHive Overview dashboard.
+    # Notifies on FAILURE only - see bin/check_grafana_health for why.
+    0 8 * * * #{invoke}
+    0 18 * * * #{invoke}
+
+    # Desktop notifications only fire while you're logged into a graphical
+    # session on this machine, and cron does not fire while the machine is
+    # suspended.
+    #
+    # Verify it works before trusting it:
+    #   bin/check_grafana_health run
+    #   bin/check_grafana_health report
+    #   tail -f #{CRON_LOG}
+  CRON
+end
+
+case ARGV[0]
+when 'run' then cmd_run
+when 'report' then cmd_report
+when 'cron' then cmd_cron
+else
+  warn "Usage: #{$PROGRAM_NAME} [run|report|cron]"
+  exit 1
+end
