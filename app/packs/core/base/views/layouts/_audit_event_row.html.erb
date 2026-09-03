@@ -121,12 +121,12 @@
               <tr>
                 <td class="ps-3 text-muted"><%= row[:label] %></td>
                 <% if row[:old].is_a?(Hash) || row[:old].is_a?(Array) %>
-                  <td><div class="audit-json-diff"><%= Json2table.get_html_table(row[:old], JsonTable::TABLE_OPTIONS).html_safe %></div></td>
+                  <td><div class="audit-json-diff"><%= Json2table.create_table(row[:old], JsonTable::TABLE_OPTIONS).html_safe %></div></td>
                 <% else %>
                   <td class="<%= 'text-muted' if row[:old].blank? %>"><%= row[:old].presence || "—" %></td>
                 <% end %>
                 <% if row[:new].is_a?(Hash) || row[:new].is_a?(Array) %>
-                  <td><div class="audit-json-diff"><%= Json2table.get_html_table(row[:new], JsonTable::TABLE_OPTIONS).html_safe %></div></td>
+                  <td><div class="audit-json-diff"><%= Json2table.create_table(row[:new], JsonTable::TABLE_OPTIONS).html_safe %></div></td>
                 <% else %>
                   <td class="<%= 'text-muted' if row[:new].blank? %>"><%= row[:new].presence || "—" %></td>
                 <% end %>
