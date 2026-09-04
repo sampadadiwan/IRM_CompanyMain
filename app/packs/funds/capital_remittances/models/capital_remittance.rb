@@ -135,7 +135,7 @@ class CapitalRemittance < ApplicationRecord
     reasons << "the generated call notice for this remittance is pending approval" if Document.exists?(
       owner_type: "CapitalRemittance", owner_id: id, owner_tag: "Generated", approved: false
     )
-    reasons << "no investor contacts are subscribed to Capital Call notifications" if investor.notification_users(fund, with_tag: 'CapitalCall').none?
+    reasons << "no investor contacts are subscribed to Capital Call notifications" unless investor.capital_call_subscribers?(fund)
     reasons
   end
 
@@ -152,7 +152,7 @@ class CapitalRemittance < ApplicationRecord
     reasons << "the call is set up to not send payment notifications" unless capital_call.send_payment_notification_flag
     reasons << "there are no recorded payments with a positive amount" if capital_remittance_payments.where("amount_cents > 0").none?
     reasons << "a payment notification has already been sent for every recorded payment" if capital_remittance_payments.any? && capital_remittance_payments.where(payment_notification_sent: false).none?
-    reasons << "no investor contacts are subscribed to Capital Call notifications" if investor.notification_users(fund, with_tag: 'CapitalCall').none?
+    reasons << "no investor contacts are subscribed to Capital Call notifications" unless investor.capital_call_subscribers?(fund)
     reasons
   end
 
@@ -253,7 +253,10 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[call_amount collected_amount capital_fee other_fee folio_id investor_name payment_date remittance_date status verified arrear_amount fund_id capital_call_id capital_commitment_id].sort
+    # notification_sent is whitelisted so the remittance search page can be filtered down to
+    # exactly the investors to change before running the bulk "Mark Notification Sent / Unsent"
+    # actions — see CapitalRemittanceSetNotificationSent.
+    %w[call_amount collected_amount capital_fee other_fee folio_id investor_name payment_date remittance_date status verified notification_sent arrear_amount fund_id capital_call_id capital_commitment_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

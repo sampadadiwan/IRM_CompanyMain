@@ -373,6 +373,16 @@ class Investor < ApplicationRecord
     end
   end
 
+  # The one definition of "someone at this investor will actually receive Capital Call emails"
+  # for the given fund. Shared by the send-time grey-out (CapitalRemittance#notification_blocked_reasons),
+  # the payment-confirmation gate, and the proactive checks at commitment-create and call-approve
+  # time, so the four places can never drift apart. Note the semantics: a CC address on the
+  # commitment does not count — only a named, approved contact does (see
+  # docs/user_guides/capital_call_actions_and_notifications_matrix.md, Question 6).
+  def capital_call_subscribers?(fund)
+    notification_users(fund, with_tag: 'CapitalCall').any?
+  end
+
   # add_to_user_access_rights_cache / remove_from_user_access_rights_cache removed:
   # AR grants are now read live from the DB; no per-investor cache propagation needed.
 

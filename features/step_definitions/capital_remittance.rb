@@ -130,6 +130,20 @@ Then('the remittances have verified set to {string}') do |flag|
   end
 end
 
+# Test-only setup for the "Notification Sent" flag — in the real app it's only ever set by
+# CapitalRemittance#send_notification after an actual email delivery, never by hand, so this
+# bypasses that to put a remittance into the "already notified" state a correction would need
+# to fix.
+Given('the remittances are directly marked with notification_sent {string}') do |flag|
+  CapitalRemittance.all.each { |cr| cr.update_column(:notification_sent, flag == "true") }
+end
+
+Then('the remittances have notification_sent set to {string}') do |flag|
+  CapitalRemittance.all.each do |cr|
+    cr.reload.notification_sent.should == (flag == "true")
+  end
+end
+
 Given('there are payments for each remittance') do
   CapitalRemittance.all.each do |cr|
     unless cr.capital_remittance_payments.exists?

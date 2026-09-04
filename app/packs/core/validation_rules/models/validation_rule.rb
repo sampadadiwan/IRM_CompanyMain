@@ -4,7 +4,7 @@ class ValidationRule < ApplicationRecord
   SEVERITIES = %w[warning blocker].freeze
 
   # Extend this list when wiring new models into the engine
-  TARGET_MODELS = %w[Valuation AllocationRun FundRatio FundRatioRunTemplate CapitalCall CapitalRemittance].freeze
+  TARGET_MODELS = %w[Valuation AllocationRun FundRatio FundRatioRunTemplate CapitalCall CapitalRemittance CapitalCommitment].freeze
 
   # ── Associations ─────────────────────────────────────────────────────────────
 

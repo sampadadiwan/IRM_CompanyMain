@@ -163,6 +163,27 @@ To support a new context key for a model, add it to that model's provider class 
 |---|---|
 | `prev_ratio_value` | Most recent prior `FundRatio.value` for the same fund and form type |
 
+**CapitalCall** (all keys `nil` when the call has no remittances, so no rule fires)
+
+| Key | Description |
+|---|---|
+| `remittances_without_notices` | Comma-separated investor names whose remittance has no generated notice document |
+| `unapproved_notices_count` | Count of generated notice documents not yet approved |
+| `investors_without_notification_subscribers` | Comma-separated investor names with nobody subscribed to Capital Call notifications (first 10, then "and N more"); skip_doc_gen commitments excluded |
+
+**CapitalCommitment**
+
+| Key | Description |
+|---|---|
+| `investor_without_subscribers` | The investor's name when nobody is subscribed to Capital Call notifications for the commitment's fund; `nil` if subscribed or skip_doc_gen |
+
+**CapitalRemittance**
+
+| Key | Description |
+|---|---|
+| `notice_not_generated` | Truthy when this remittance has no generated notice document |
+| `notice_not_approved` | Count of this remittance's generated notices pending approval |
+
 ---
 
 ## 7. Default Rules (seeded via rake task)
@@ -188,6 +209,36 @@ To support a new context key for a model, add it to that model's provider class 
 |---|---|---|
 | `fund_ratio_date_not_quarter_end` | `created_at` date not quarter-end | Warning |
 | `fund_ratio_value_out_of_range` | Absolute value < min or > max | Warning |
+
+### CapitalCall (enabled by default)
+
+Evaluated manually by `CapitalCallsController#approve` (not via `WithValidationRules`).
+
+| Name | Condition | Default Severity |
+|---|---|---|
+| `capital_call_notices_not_generated` | Some remittances have no generated call notice document | Warning |
+| `capital_call_notices_not_approved` | Generated call notice documents pending approval | Blocker |
+| `capital_call_investors_without_notification_subscribers` | Investors on the call with nobody subscribed to Capital Call notifications (`Investor#capital_call_subscribers?`); skip_doc_gen commitments excluded; name list capped at 10 to keep the flash under the cookie-session limit | Warning |
+
+### CapitalCommitment (enabled by default)
+
+Evaluated after a successful save by `CapitalCommitmentsController#create` (form) and once per imported row in `ImportCapitalCommitment#post_process` (after fund access is granted — the check depends on it).
+
+| Name | Condition | Default Severity |
+|---|---|---|
+| `capital_commitment_investor_without_notification_subscribers` | The commitment's investor has nobody subscribed to Capital Call notifications; skip_doc_gen commitments excluded | Warning |
+
+### CapitalRemittance (enabled by default)
+
+| Name | Condition | Default Severity |
+|---|---|---|
+| `capital_remittance_notice_not_generated` | No generated call notice for this remittance | Warning |
+| `capital_remittance_notice_not_approved` | Generated call notice pending approval | Blocker |
+
+> **Rollout:** `ValidationRuleEvaluator` reads rules from the database only. A rule added to
+> `DEFAULT_RULES` does not exist in an environment until `rails rules:seed_defaults` has been run
+> there — Capistrano does not run it. Cucumber seeds from the constant directly, so a missing seed
+> is invisible to the test suite. Add the task to the deploy checklist whenever this list changes.
 
 ---
 

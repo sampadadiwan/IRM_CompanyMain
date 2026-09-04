@@ -176,7 +176,15 @@ class CapitalCommitmentsController < ApplicationController
 
     respond_to do |format|
       if CapitalCommitmentCreate.call(capital_commitment: @capital_commitment).success?
-        format.html { redirect_to capital_commitment_url(@capital_commitment), notice: "Capital commitment was successfully created." }
+        notice = "Capital commitment was successfully created."
+        # Question 6 (docs/user_guides/capital_call_actions_and_notifications_matrix.md): the
+        # proactive "nobody is subscribed to Capital Call notifications" check, run through the
+        # rule engine (CapitalCommitmentRuleContextProvider) so it's admin-configurable and shares
+        # its definition with the Approve-time check. Evaluated after save because the check
+        # depends on the fund access rights that give_access_rights grants.
+        warnings = ValidationRuleEvaluator.call(record: @capital_commitment, entity: current_user.entity).select(&:warning?)
+        notice += " Warning: #{warnings.map(&:message).join(' ')}" if warnings.any?
+        format.html { redirect_to capital_commitment_url(@capital_commitment), notice: notice }
         format.json { render :show, status: :created, location: @capital_commitment }
       else
         format.html { render :new, status: :unprocessable_entity }
