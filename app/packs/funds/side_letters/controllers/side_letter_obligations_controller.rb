@@ -9,11 +9,12 @@ class SideLetterObligationsController < ApplicationController
 
   def index
     authorize SideLetterObligation
-    @bread_crumbs = { "Side Letters": side_letters_path, "Obligation Matrix": side_letter_obligations_path }
+    @bread_crumbs = { 'Side Letters': side_letters_path, 'Obligation Matrix': side_letter_obligations_path }
+    # Eager-load tasks alongside obligations to avoid N+1 when rendering the
+    # fired-task due date and count in the matrix's "Next Due" column.
     scope = policy_scope(SideLetterObligation)
-            .includes(:owner_user, side_letter: { capital_commitment: %i[investor fund] })
+            .includes(:owner_user, :tasks, side_letter: { capital_commitment: %i[investor fund] })
     scope = scope.joins(side_letter: :capital_commitment).where(capital_commitments: { fund_id: params[:fund_id] }) if params[:fund_id].present?
-
     @q = scope.ransack(params[:q])
     @side_letter_obligations = @q.result.order(Arel.sql("next_due_date IS NULL, next_due_date ASC"))
     @funds = Fund.where(entity_id: current_user.entity_id).order(:name)
@@ -22,7 +23,7 @@ class SideLetterObligationsController < ApplicationController
   def show
     # Layout breadcrumb card: Home • Side Letters • Investor • Obligation
     @bread_crumbs = {
-      "Side Letters": side_letters_path,
+      'Side Letters': side_letters_path,
       "#{@obligation.investor.investor_name}": side_letter_path(@obligation.side_letter),
       "#{@obligation.title}": side_letter_obligation_path(@obligation)
     }
@@ -64,9 +65,7 @@ class SideLetterObligationsController < ApplicationController
   end
 
   def update
-    unless @obligation.pending_review?
-      return redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited."
-    end
+    return redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited." unless @obligation.pending_review?
 
     if @obligation.update(obligation_params)
       redirect_to side_letter_path(@obligation.side_letter), notice: "Obligation updated."
@@ -76,38 +75,67 @@ class SideLetterObligationsController < ApplicationController
   end
 
   def destroy
-    if @obligation.approved?
-      return redirect_to side_letter_obligations_path, alert: "Approved obligations cannot be deleted — waive them instead."
-    end
+    return redirect_to side_letter_obligations_path, alert: "Approved obligations cannot be deleted — waive them instead." if @obligation.approved?
 
     @obligation.destroy
     redirect_to side_letter_obligations_path, notice: "Obligation deleted."
   end
 
+  # Approve an obligation: projects it into the task system (recurring, one-time,
+  # or armed). Responds with a Turbo Stream row replacement so the matrix updates
+  # in-place without a full page reload.
+  # @note Only pending_review obligations can be approved (enforced by ObligationApprove)
   def approve
     result = ObligationApprove.call(obligation: @obligation, user: current_user)
     if result.success?
-      redirect_back fallback_location: side_letter_obligations_path, notice: "Obligation approved#{@obligation.reload.dated? ? ' — tasks scheduled.' : ' — armed.'}"
+      @obligation.reload
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            @obligation,
+            partial: "side_letter_obligations/side_letter_obligation",
+            locals: { obligation: @obligation }
+          )
+        end
+        format.html do
+          redirect_back_or_to(side_letter_obligations_path, notice: "Obligation approved#{@obligation.dated? ? ' — tasks scheduled.' : ' — armed.'}")
+        end
+      end
     else
-      redirect_back fallback_location: side_letter_obligations_path, alert: result[:error]
+      redirect_back_or_to(side_letter_obligations_path, alert: result[:error])
     end
   end
 
+  # Reject an obligation: marks it as rejected so it never creates tasks or alerts.
+  # Responds with a Turbo Stream row replacement to update status in-place.
+  # @note Rejected obligations are not resurfaced on re-extraction of the same clause
   def reject
     result = ObligationReject.call(obligation: @obligation, user: current_user)
     if result.success?
-      redirect_back fallback_location: side_letter_obligations_path, notice: "Obligation rejected."
+      @obligation.reload
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            @obligation,
+            partial: "side_letter_obligations/side_letter_obligation",
+            locals: { obligation: @obligation }
+          )
+        end
+        format.html do
+          redirect_back_or_to(side_letter_obligations_path, notice: "Obligation rejected.")
+        end
+      end
     else
-      redirect_back fallback_location: side_letter_obligations_path, alert: result[:error]
+      redirect_back_or_to(side_letter_obligations_path, alert: result[:error])
     end
   end
 
   def waive
     result = ObligationTeardown.call(obligation: @obligation, new_status: "waived", user: current_user)
     if result.success?
-      redirect_back fallback_location: side_letter_obligations_path, notice: "Obligation waived — open tasks removed, history kept."
+      redirect_back_or_to(side_letter_obligations_path, notice: "Obligation waived — open tasks removed, history kept.")
     else
-      redirect_back fallback_location: side_letter_obligations_path, alert: result[:error]
+      redirect_back_or_to(side_letter_obligations_path, alert: result[:error])
     end
   end
 
@@ -115,18 +143,21 @@ class SideLetterObligationsController < ApplicationController
   def revert
     result = ObligationRevert.call(obligation: @obligation, user: current_user)
     if result.success?
-      redirect_back fallback_location: side_letter_obligations_path, notice: "Obligation reverted to active — tasks and alerts resume."
+      redirect_back_or_to(side_letter_obligations_path, notice: "Obligation reverted to active — tasks and alerts resume.")
     else
-      redirect_back fallback_location: side_letter_obligations_path, alert: result[:error]
+      redirect_back_or_to(side_letter_obligations_path, alert: result[:error])
     end
   end
 
+  # Fire an armed obligation: creates a dated task with the user-supplied deadline.
+  # The obligation remains armed (re-firable for the next event occurrence).
+  # Redirects to the obligation matrix so the user sees the updated row.
   def fire
     result = ObligationFire.call(obligation: @obligation, due_date: params[:due_date].presence, user: current_user)
     if result.success?
-      redirect_back fallback_location: side_letter_obligations_path, notice: "Obligation fired — task due #{result[:task].due_date}."
+      redirect_to side_letter_obligations_path, notice: "Obligation fired — task due #{result[:task].due_date.strftime('%d %b %Y')}."
     else
-      redirect_back fallback_location: side_letter_obligations_path, alert: result[:error]
+      redirect_back_or_to side_letter_obligations_path, alert: result[:error]
     end
   end
 
@@ -138,10 +169,9 @@ class SideLetterObligationsController < ApplicationController
 
     if fulfillment.save
       @obligation.update!(status: "fulfilled") if @obligation.trigger_one_time? && @obligation.approved?
-      redirect_back fallback_location: side_letter_obligation_path(@obligation), notice: "Fulfillment recorded."
+      redirect_back_or_to(side_letter_obligation_path(@obligation), notice: "Fulfillment recorded.")
     else
-      redirect_back fallback_location: side_letter_obligation_path(@obligation),
-                    alert: fulfillment.errors.full_messages.to_sentence
+      redirect_back_or_to(side_letter_obligation_path(@obligation), alert: fulfillment.errors.full_messages.to_sentence)
     end
   end
 

@@ -22,18 +22,27 @@
   </td>
   <td><%= obligation.owner_label || tag.span("Unassigned", class: "text-muted") %></td>
   <td>
-    <% if obligation.next_due_date.present? %>
-      <%= obligation.next_due_date.strftime("%d %b %Y") %>
-    <% elsif obligation.armed? %>
-      <span class="text-muted">On event</span>
-    <% end %>
+    <%# Next Due column: show due date for dated obligations, or the latest fired
+    task's due date for armed obligations (with "On event" as the base label) %>
+<% if obligation.next_due_date.present? %>
+  <%= obligation.next_due_date.strftime("%d %b %Y") %>
+<% elsif obligation.armed? %>
+  <% latest_task = obligation.tasks.where(completed: [nil, false]).order(due_date: :asc).first %>
+  <% if latest_task&.due_date %>
+    <%= latest_task.due_date.strftime("%d %b %Y") %>
+    <div class="text-muted small">On event · <%= obligation.tasks.count %> task(s)</div>
+  <% else %>
+    <span class="text-muted">On event</span>
+  <% end %>
+<% end %>
   </td>
   <td><%= obligation_status_badge(obligation) %></td>
   <td>
     <% if obligation.pending_review? %>
       <div class="d-flex gap-1 flex-wrap">
+        <%# Approve via Turbo Stream — replaces this row in-place without page reload %>
         <%= button_to approve_side_letter_obligation_path(obligation), method: :patch,
-                      class: "btn btn-success", form: { data: { turbo: false } },
+                      class: "btn btn-success",
                       title: "Activate this obligation: dated items become tracked tasks with due-date alerts; event-driven ones go armed",
                       data: { bs_toggle: "tooltip" } do %>
           <i class="ti ti-check"></i> Approve
@@ -43,10 +52,11 @@
                     data: { bs_toggle: "tooltip" } do %>
           <i class="ti ti-edit"></i> Edit
         <% end %>
-        <%= button_to reject_side_letter_obligation_path(obligation), method: :patch,
-                      class: "btn btn-outline-danger", form: { data: { turbo: false } },
-                      title: "Discard — a rejected obligation never creates tasks or alerts",
-                      data: { bs_toggle: "tooltip" } do %>
+        <%# Reject via Turbo Stream — replaces this row in-place without page reload %>
+<%= button_to reject_side_letter_obligation_path(obligation), method: :patch,
+              class: "btn btn-outline-danger",
+              title: "Discard — a rejected obligation never creates tasks or alerts",
+              data: { bs_toggle: "tooltip" } do %>
           <i class="ti ti-x"></i> Reject
         <% end %>
       </div>
