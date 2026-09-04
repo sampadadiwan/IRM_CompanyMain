@@ -26,7 +26,8 @@ require "caxlsx"
 # stops after the role rows — one row per outcome, a short readable statement.
 #
 # Nothing is created or modified in the database; the only output is the xlsx
-# (public/sample_uploads/remittance_recon_call_<id>_<bank>[_sample].xlsx) and, with run: true,
+# (public/sample_uploads/remittance_reconciliation/remittance_recon_call_<id>_<bank>[_sample].xlsx)
+# and, with run: true,
 # an agent run against the call (which does create a Document and a SupportAgentReport, and
 # — only if the agent's auto_apply_exact is Yes — payments).
 #
@@ -34,7 +35,8 @@ require "caxlsx"
 #        rake "remittance_reconciliation:statement[<capital_call_id>,axis,sample]"
 #        rake "remittance_reconciliation:statement[<capital_call_id>,icici,full,run]"
 class RemittanceReconciliationStatementGenerator
-  SAMPLE_DIR = Rails.public_path.join('sample_uploads')
+  # All statements this feature generates live in their own subfolder of sample_uploads.
+  SAMPLE_DIR = Rails.public_path.join('sample_uploads/remittance_reconciliation')
   BANKS = %w[icici axis].freeze
 
   # Each role: what the remittance must have, how the amount is derived from the remittance's

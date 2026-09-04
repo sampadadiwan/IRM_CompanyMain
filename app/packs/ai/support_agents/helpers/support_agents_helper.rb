@@ -16,6 +16,32 @@ module SupportAgentsHelper
   end
 
   # Renders execution result_summary hash as stat pill cards (Total / Processed / Failed).
+  # Links from an execution-history row back to the record(s) the run processed, read from
+  # result_summary["targets"] ({id, name, type} per target, written by SupportAgentJob).
+  # Where the target page has a tab holding the agent's output, the link opens that tab
+  # (the `tabs` Stimulus controller reads ?tab=<pane id>). Unknown target types render as
+  # plain text rather than guessing a route. Returns nil when the summary carries no targets
+  # (runs logged before targets were recorded).
+  def execution_target_links(support_agent, summary)
+    targets = Array((summary || {})["targets"] || (summary || {})[:targets])
+    return nil if targets.empty?
+
+    links = targets.map do |t|
+      t = t.with_indifferent_access
+      path =
+        case t[:type]
+        when "CapitalCall"
+          tab = support_agent.agent_type == "RemittanceReconciliationAgent" ? "reconciliation-tab" : nil
+          capital_call_path(t[:id], tab: tab)
+        when "Fund" then fund_path(t[:id])
+        when "Investor" then investor_path(t[:id])
+        when "CapitalDistribution" then capital_distribution_path(t[:id])
+        end
+      path ? link_to(t[:name], path, class: "exec-target-link") : content_tag(:span, t[:name])
+    end
+    safe_join(links, ", ")
+  end
+
   def format_result_summary(summary)
     return "".html_safe if summary.blank?
 

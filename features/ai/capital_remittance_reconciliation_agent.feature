@@ -362,6 +362,16 @@ Feature: Capital Remittance Reconciliation Agent
     When the RemittanceReconciliationAgent runs for the capital call
     Then the deposit with narration "TRF/SAMRATH BEDI/TRANSFER" has amount 1049763.03
 
+  # ── 19f. Statement generator (rake remittance_reconciliation:statement) ──────
+
+  @capital_remittance_reconciliation @generator
+  Scenario: The statement generator writes the workbook into the feature's own sample_uploads subfolder and it parses back
+    Given there is a remittance under the capital call for investor "Deepak Agarwal" with call amount 699842.06 and KYC bank account "50100602457893"
+    And there is a remittance under the capital call for investor "Samrath Bedi" with call amount 1049763.03
+    When the statement generator runs for the capital call with bank "icici"
+    Then the generated workbook exists under "public/sample_uploads/remittance_reconciliation"
+    And the generated workbook parses as an ICICI statement with 3 deposits
+
   # ── 20. Reconciliation panel visibility ─────────────────────────────────────
 
   @capital_remittance_reconciliation @ui
@@ -417,6 +427,7 @@ Feature: Capital Remittance Reconciliation Agent
     When I visit the capital call page as the fund admin
     And I open the Reconciliation tab
     And I click "Confirm"
+    And I proceed with the confirmation popup
     Then I should see the payment recorded confirmation
     And a CapitalRemittancePayment should exist for "Samrath Bedi"
     When I open the Reconciliation tab

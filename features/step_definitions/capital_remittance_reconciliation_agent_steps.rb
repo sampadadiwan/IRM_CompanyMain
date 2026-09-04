@@ -403,6 +403,38 @@ Then('no reconciliation report email is sent') do
   expect(reconciliation_report_emails).to be_empty
 end
 
+# ── Statement generator (lib/remittance_reconciliation_statement_generator.rb) ────────────
+#
+# Runs the real generator against the scenario's call with the default output folder, so the
+# folder the rake task writes to is the one under test. The file is removed again afterwards
+# (see the After hook below) so a test run never leaves workbooks in public/.
+
+When('the statement generator runs for the capital call with bank {string}') do |bank|
+  require Rails.root.join("lib/remittance_reconciliation_statement_generator")
+  @generator_output = StringIO.new
+  RemittanceReconciliationStatementGenerator.new(@capital_call.id, bank: bank, output: @generator_output).call
+  @generated_workbook = @generator_output.string[/^Statement: (.+)$/, 1]
+  expect(@generated_workbook).to be_present, "generator printed no Statement: line:\n#{@generator_output.string}"
+end
+
+Then('the generated workbook exists under {string}') do |relative_dir|
+  expect(File.exist?(@generated_workbook)).to be(true)
+  expect(Pathname.new(@generated_workbook).dirname).to eq(Rails.root.join(relative_dir))
+end
+
+# Round-trips the file through the same parser registry the agent uses, so the generated
+# layout is proven to be one the agent can read.
+Then('the generated workbook parses as an ICICI statement with {int} deposits') do |count|
+  xlsx = Roo::Spreadsheet.open(@generated_workbook)
+  sheet = xlsx.sheet(xlsx.sheets.first)
+  expect(BankDepositNarrationParser.detect_bank(sheet)).to eq(IciciNarrationParser)
+  expect(BankDepositNarrationParser.each_deposit_narration(sheet).size).to eq(count)
+end
+
+After('@generator') do
+  FileUtils.rm_f(@generated_workbook) if @generated_workbook
+end
+
 # ── Phase 4 (UI) ─────────────────────────────────────────────────────────────────
 #
 # These scenarios visit the real Capital Call page and click real buttons — unlike the

@@ -174,7 +174,7 @@ class SupportAgentJob < ApplicationJob
 
           # Track successes for the batch summary AND the execution log — single
           # runs must count too, or their log summary records "0 processed".
-          successes << { id: target.id, name: target_name }
+          successes << { id: target.id, name: target_name, type: target.class.name }
           unless is_batch_run
             # Send individual notification for non-batch or non-PortfolioCompanyAgent
             message = "#{support_agent.agent_type} processed #{target.class.name} '#{target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"}' successfully"
@@ -236,7 +236,12 @@ class SupportAgentJob < ApplicationJob
         # Mark execution log as completed. build_summary is the shared canonical
         # shape (total/processed/failed + capped error_details) used by both the
         # manual and scheduled paths — the execution history tab reads these keys.
-        execution_log.mark_completed!(AgentExecutionLog.build_summary(total: targets.size, processed: successes.count, errors: errors))
+        # `targets` lets the execution history link back to what was processed (e.g. the capital
+        # call a reconciliation ran against); capped so a large batch doesn't bloat the JSON.
+        execution_log.mark_completed!(
+          AgentExecutionLog.build_summary(total: targets.size, processed: successes.count, errors: errors)
+                           .merge(targets: successes.first(AgentExecutionLog::MAX_TARGET_LINKS).map { |t| t.slice(:id, :name, :type) })
+        )
         # Email the failure details for batch runs (must come after mark_completed!
         # so the mailer templates see the final status and summary).
         notify_batch_errors(execution_log, successes.count) if is_batch_run && errors.any?

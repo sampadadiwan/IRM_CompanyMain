@@ -186,9 +186,28 @@
                 <% end %>
 
                 <% if can_confirm %>
+                  <%# Tooltip says what Confirm does; the click goes through the global confirm modal
+                      (layouts/_confirm) which spells out the exact payment before it submits. %>
+                  <% amount_text = number_to_currency(deposit["amount"], unit: "") %>
+                  <% confirm_msg =
+                       case deposit["amount_status"]
+                       when "partial"
+                         "Record a payment of #{amount_text} for #{deposit['matched_investor_name']}? This is a partial payment — " \
+                         "#{number_to_currency(deposit['due_amount'].to_f - deposit['amount'].to_f, unit: '')} will remain due on the remittance."
+                       when "overpaid"
+                         "Record a payment of #{amount_text} for #{deposit['matched_investor_name']}? This exceeds the amount due " \
+                         "(#{number_to_currency(deposit['due_amount'], unit: '')}) — the remittance will show as overpaid."
+                       else
+                         "Record a payment of #{amount_text} for #{deposit['matched_investor_name']} against this call?"
+                       end %>
+                  <% confirm_msg += " The sender's account does not match this investor's KYC account — verify the source of funds first." if deposit["source_of_funds"] == "discrepancy" %>
                   <%= button_to "Confirm", confirm_reconciliation_deposit_capital_call_path(capital_call),
                       params: { report_id: report.id, deposit_index: idx }, method: :post,
-                      class: "btn btn-sm btn-primary", form_class: "d-inline" %>
+                      class: "btn btn-sm btn-primary", form_class: "d-inline",
+                      data: { turbo: false, action: "click->confirm#popup", method: :post,
+                              title: "Confirm this payment?", msg: confirm_msg, reversible: "yes", notification: "no",
+                              bs_toggle: "tooltip", bs_container: "body",
+                              bs_title: "Records this deposit as a payment of #{amount_text} against #{deposit['matched_investor_name']}'s remittance. Nothing is verified; you can undo it afterwards." } %>
                 <% end %>
 
                 <% if can_reassign %>

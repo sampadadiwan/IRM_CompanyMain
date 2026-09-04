@@ -88,6 +88,10 @@ class AgentExecutionLog < ApplicationRecord
   #   @return [ActiveRecord::Relation<AgentExecutionLog>]
   scope :by_schedule, ->(schedule_id) { where(agent_schedule_id: schedule_id) }
 
+  # Cap on processed-target links persisted in result_summary["targets"] (see SupportAgentJob) —
+  # enough to link every call/fund of a normal run without bloating a large batch's JSON.
+  MAX_TARGET_LINKS = 50
+
   # Cap on per-target error details persisted in result_summary — enough for a
   # useful failure email without bloating the column on huge batches.
   MAX_ERROR_DETAILS = 20
