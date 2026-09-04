@@ -522,7 +522,10 @@ class SupportAgentsSetupService
           "tolerance_amount" => "500",
           "tolerance_pct" => "0",
           "name_similarity_threshold" => "0.90",
-          "auto_apply_exact" => "No"
+          "auto_apply_exact" => "No",
+          "llm_fuzzy_matching" => "No",
+          "send_report" => "Yes",
+          "notify_email" => ""
         }
         # No default schedule — runs on-demand at statement upload time, scoped to one
         # CapitalCall per run.
@@ -546,7 +549,20 @@ class SupportAgentsSetupService
           field_type: "Select", label: "Auto-apply exact matches", meta_data: "Yes,No", position: 4,
           help_text: "When Yes, Exact-tier deposits automatically create a CapitalRemittancePayment. " \
                      "Defaults to No for every fund's first live run — a deliberate opt-in, not assumed. " \
-                     "Every other tier is always proposed only, regardless of this setting." }
+                     "Every other tier is always proposed only, regardless of this setting." },
+        { name: "llm_fuzzy_matching",
+          field_type: "Select", label: "AI-assisted name matching", meta_data: "Yes,No", position: 5,
+          help_text: "Reserved for a later phase: when Yes, names that deterministic similarity can't confidently " \
+                     "resolve are scored by the LLM in one batched call per statement. Not active yet — " \
+                     "the setting is stored but has no effect on a run until that phase ships." },
+        { name: "send_report",
+          field_type: "Select", label: "Email report after run", meta_data: "Yes,No", position: 6,
+          help_text: "When Yes, the run summary (tier counts, every funding-source discrepancy, every deposit " \
+                     "needing review) is emailed to the address below after each run." },
+        { name: "notify_email",
+          field_type: "TextField", label: "Notify email", meta_data: "", position: 7,
+          help_text: "Recipient of the reconciliation summary email. Leave blank to skip the email even when " \
+                     "'Email report after run' is Yes." }
       ]
     },
 

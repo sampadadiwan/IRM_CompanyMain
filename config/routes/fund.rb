@@ -138,6 +138,7 @@ resources :capital_calls do
   patch 'recompute_fees', on: :member
   post 'confirm_reconciliation_deposit', on: :member
   post 'reassign_reconciliation_deposit', on: :member
+  post 'undo_reconciliation_deposit', on: :member
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
 end

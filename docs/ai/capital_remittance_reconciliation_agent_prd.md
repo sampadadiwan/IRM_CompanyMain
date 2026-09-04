@@ -1,9 +1,9 @@
 # PRD: Capital Remittance Reconciliation Agent
 
-**Status:** Draft
+**Status:** Phases 1–4 implemented (see §14); Phases 5–7 open
 **Author:** Fund Operations / Platform Engineering
 **Date:** 2026-09-03
-**Last Updated:** 2026-09-03
+**Last Updated:** 2026-09-04
 
 ---
 
@@ -129,7 +129,7 @@ graph TD
 | `tolerance_pct` | NumberField | `0` | Percentage tolerance, OR'd with `tolerance_amount` — either passing is enough. |
 | `name_similarity_threshold` | NumberField | `0.90` | Minimum normalized name similarity accepted deterministically for a name-only (Probable) match. |
 | `auto_apply_exact` | Select (Yes/No) | **No** | Kill switch: when No, even Exact-tier matches are queued for confirm rather than auto-applied. Defaults to No for every fund's first live run — flipped to Yes deliberately once trust is established, never assumed. |
-| `llm_fuzzy_matching` | Select (Yes/No) | No until Phase 5 | Whether ambiguous-band names are scored by the LLM (see §6.4) or left as Needs review. |
+| `llm_fuzzy_matching` | Select (Yes/No) | No | Whether ambiguous-band names are scored by the LLM (see §6.4) or left as Needs review. Present on the form from Phase 1 so the setting exists per fund, but **read nowhere until Phase 5** — it has no effect on a run before then (the help text says so). |
 | `send_report` | Select (Yes/No) | Yes | Email the reconciliation summary after each run. |
 | `notify_email` | TextField | _(blank)_ | Recipient for the reconciliation report email. |
 
@@ -183,10 +183,10 @@ flowchart TD
     SoFCheck -->|"Yes — contradicts"| Review2["Bucket: Needs review\nfunding-source discrepancy flagged"]
     SoFCheck -->|"No account exposed"| AmountA{"Amount within\ntolerance of due?"}
     SoFOK --> AmountB{"Amount within\ntolerance of due?"}
-    AmountA -->|Yes| Probable["Bucket: Probable\n(name-only — propose, await confirm)"]
-    AmountA -->|No| Review3["Bucket: Needs review\n(amount outside tolerance)"]
-    AmountB -->|"Yes, single candidate"| Exact["Bucket: Exact\nauto-create CapitalRemittancePayment\n(if auto_apply_exact = Yes)"]
-    AmountB -->|No| Review4["Bucket: Needs review\n(amount outside tolerance)"]
+    AmountA -->|"Within tolerance, or partial"| Probable["Bucket: Probable\n(name-only — propose, await confirm)"]
+    AmountA -->|Overpaid| Review3["Bucket: Needs review\n(overpayment)"]
+    AmountB -->|"Within tolerance, or partial"| Exact["Bucket: Exact\nauto-create CapitalRemittancePayment\n(if auto_apply_exact = Yes)"]
+    AmountB -->|Overpaid| Review4["Bucket: Needs review\n(overpayment)"]
 ```
 
 **Illustrative scoring logic** (not a literal diff — see §11 for the real implementation surface):
@@ -217,15 +217,24 @@ if identity && parsed.account_number.present? && identity[:via] != :kyc_account
   discrepancy = kyc_account.present? && kyc_account != parsed.account_number
 end
 
-# 4. Tier decision
+# 4. Amount classification — partial payments are accepted, overpayments are not
+amount_status =
+  if amount_within_tolerance?(deposit.amount, due) then :within_tolerance
+  elsif deposit.amount < due then :partial   # a tranche; recorded for the amount received
+  else :overpaid                             # surplus may belong to a call this run can't see
+  end
+
+# 5. Tier decision
 tier =
   if identity.nil? then :no_match
   elsif discrepancy then :needs_review
-  elsif !amount_within_tolerance?(deposit.amount, identity[:candidate].due_amount) then :needs_review
+  elsif amount_status == :overpaid then :needs_review
   elsif identity[:via] == :kyc_account then :exact
   elsif identity[:via] == :virtual_account then :exact
   else :probable # name-only, no account exposed to check
   end
+# Every deposit's `reasoning` carries one line per signal (identity, source-of-funds,
+# amount), so a Needs review row always says *why* — see the §8 sample.
 ```
 
 **Name normalization and matching:** uppercase, strip punctuation, collapse whitespace, and separate common legal suffixes (`PVT LTD`, `LLP`, `HUF`, `TRUST`, `LIMITED`) into their own comparison rather than penalizing the core name for their presence/absence. Because several banks strip **all** whitespace from the beneficiary name entirely — observed in the ICICI sample as `SANDEEPKUMARSINGH`, `RADHIKARAMAKRISHNAN`, `HIMANSHUVARSHNEY` — a plain edit-distance comparison against `"Sandeep Kumar Singh"` scores far lower than it should. Run a second pass with whitespace stripped from **both** sides before falling back to token-set similarity for names with no such collision. Jaro-Winkler is proposed as the base similarity function (rewards a shared prefix, tolerant of transpositions — well suited to name matching).
@@ -236,13 +245,13 @@ tier =
 
 **Tolerance.** Reuses the pattern already proven in `RtaReconciliationAgent`: `tolerance_amount` (absolute) OR `tolerance_pct` — either passing is enough. Default `₹500` absolute, since intermediary/correspondent banks routinely deduct wire charges before an RTGS/NEFT lands — a deposit landing a few hundred rupees short is the single most common "almost exact" pattern observed, not an anomaly.
 
-**Partial payment.** A deposit below tolerance of the due amount is not rejected — `CapitalRemittance#status` already models `Overpaid`/partial-due. The agent creates the payment for the amount actually received (Exact tier only if identity is unambiguous) and the remittance's own `due_amount` reflects the shortfall.
+**Partial payment.** A deposit short of the due amount by more than tolerance is **not** downgraded — `CapitalRemittance#status` already models partial-due. The deposit keeps the tier its identity earned (Exact for an unambiguous account match, Probable for a name match), is tagged `amount_status: "partial"` with a reasoning line stating the shortfall, and the payment is created for the amount actually received; the remittance's own `due_amount` carries the balance. **Decided 2026-09-04** — this resolves the earlier contradiction between this paragraph and the §6.4 table, which had sent every out-of-tolerance amount to Needs review.
 
 **Multiple deposits → one remittance.** An investor sometimes pays in two tranches. Because matching is call-scoped, this stays a bounded search: combinations of **up to 3** unmatched, same-day-to-few-days deposits whose sum lands within tolerance of one remittance's due amount, where each deposit already has a plausible identity link to that investor. Always **Needs review** — never auto-applied.
 
 **One deposit → multiple remittances (cross-call) — not supported, by decision.** An investor who missed a prior call sometimes pays the current and a past call together in one wire. Reconciliation is single-call only, permanently — a call-scoped run has no visibility into another call's remittance, and this PRD deliberately does not build an exception to give it one. The deposit simply reads as an overpayment against *this* call; applying the surplus to another call is always a manual, separate action (a second ordinary reconciliation run against that call, or a manual payment entry).
 
-**Overpayment.** Flagged via the existing `Overpaid` status. The agent does not guess whether the surplus belongs to a different call (that call's remittances aren't loaded in a call-scoped run) — it notes the overpayment plainly and suggests checking the investor's other open calls manually.
+**Overpayment.** A deposit exceeding the due amount by more than tolerance is always **Needs review** (`amount_status: "overpaid"`), with a reasoning line stating the surplus. The agent does not guess whether the surplus belongs to a different call (that call's remittances aren't loaded in a call-scoped run) — it notes the overpayment plainly and suggests checking the investor's other open calls manually. Confirming it manually records the full deposit and the remittance's existing `Overpaid` status takes over.
 
 ---
 
@@ -257,7 +266,7 @@ Run independently of which tier the identity/amount signals land on, whenever th
 | Contradicts | Joint account, family member, corporate treasury paying on the LP's behalf — or a genuine error | **Always** surfaced as a discrepancy, **always** caps the tier at Needs review, regardless of how strong name/amount look. Never AI-judged — this is a plain equality check. |
 | No `InvestorKyc#bank_account_number` on file at all | KYC incomplete for this investor | **Decided:** not a blocker. A `virtual_bank_account` match alone is sufficient to reach Exact — with no KYC account on file there is simply nothing to check a contradiction against, so none is raised. See §12.6 (Closed). |
 
-`CapitalCommitment#virtual_bank_account` is a **secondary** identity signal only — very few funds configure one, so the design leans on the KYC account number as the default path, not a virtual-account convention that may not exist for a given fund.
+`CapitalCommitment#virtual_bank_account` is a **secondary** identity signal only — very few funds configure one, so the design leans on the KYC account number as the default path, not a virtual-account convention that may not exist for a given fund. **An account number exposed in a narration is always the sender's account, the virtual-account case included** (decided 2026-09-04): a deposit whose identity resolved via `virtual_bank_account` is still checked against the investor's `InvestorKyc#bank_account_number` when one is on file, and a mismatch is a discrepancy exactly as for a name match. Only a missing KYC account leaves it `unverifiable`.
 
 ---
 
@@ -311,11 +320,12 @@ sequenceDiagram
 | Concern | Behaviour |
 |---|---|
 | **LLM cost** | Zero LLM calls in Phase 1–4 (deterministic engine). From Phase 5, at most one batched call per statement for the ambiguous name band — never one call per row. |
-| **Idempotency** | Every created payment's `reference_no` is the bank's own transaction id (e.g. `S16767980`); re-running on the same or overlapping statement is a safe no-op for rows already imported. |
+| **Idempotency** | Every created payment's `reference_no` is the bank's own transaction id (e.g. `S16767980`), or a deterministic `SYN-` hash of sheet/row/narration/amount when the export has no id column; re-running on the same or overlapping statement is a safe no-op for rows already imported. The check is **call-aware**: a reference already applied under a *different* call of the same fund comes back as `recorded_elsewhere` — never re-applied, never counted as recorded on this call, never offered for Undo here. |
 | **Soft failures** | A row the parser can't classify becomes `UNMATCHED`/`No match`, not a pipeline failure — one bad narration never blocks the rest of the statement. |
 | **Reversibility** | An Exact-tier auto-payment can be deleted like any manually entered one (subject to the existing `check_units_before_deletion` guard once units are allocated). |
 | **Authorization** | Trigger and confirm actions follow the same permission surface as today's CSV importer, pending §12.3. |
 | **Multi-tenancy** | Candidate remittances always scoped to `entity_id` via the selected fund/call — no cross-entity data access. |
+| **Report email** | When `send_report = Yes` and `notify_email` is set, `RemittanceReconciliationMailer` sends the run summary (tier counts, every funding-source discrepancy with sender vs KYC account, every Needs review row with its reasoning, every No match) via `deliver_now` before the report is saved. A mail failure is a warning on the report, never a pipeline failure. |
 | **No silent auto-verification** | `CapitalRemittancePayment`'s `after_commit` hook already flips `capital_remittance.verified = false` on any payment change; the agent never sets `verified = true` itself — see §8. |
 
 ---
@@ -374,11 +384,15 @@ erDiagram
       "matched_commitment_id": 108,
       "matched_investor_name": "Deepak Agarwal",
       "identity_via": "kyc_account",
+      "kyc_account_number": "50100602457893",
       "source_of_funds": "confirmed",
       "amount": 699842.06,
       "due_amount": 699842.06,
+      "amount_status": "within_tolerance",
       "payment_id": 5231,
-      "reasoning": ["account matches InvestorKyc#bank_account_number", "amount within ₹500 tolerance"]
+      "reference_no": "S16767980",
+      "payment_status": "created",
+      "reasoning": ["account 50100602457893 matches InvestorKyc#bank_account_number", "amount 699,842.06 within tolerance of due 699,842.06"]
     },
     {
       "sheet": "Axis",
@@ -388,15 +402,23 @@ erDiagram
       "tier": "probable",
       "matched_commitment_id": 114,
       "identity_via": "name",
-      "source_of_funds": "unverifiable — no account in narration",
-      "amount": 699842.06,
+      "kyc_account_number": null,
+      "source_of_funds": "unverifiable",
+      "amount": 400000.00,
       "due_amount": 699842.06,
-      "reasoning": ["name similarity 0.94 to Krishnakumar R Boob (HUF)", "amount within tolerance"]
+      "amount_status": "partial",
+      "reasoning": ["name similarity 0.94 to \"Krishnakumar R Boob (HUF)\"", "partial payment: 400,000.00 received against due 699,842.06 (shortfall 299,842.06)"]
     }
   ],
-  "summary": { "exact": 12, "probable": 4, "needs_review": 3, "no_match": 2, "internal": 6 },
-  "discrepancy_count": 1
+  "tier_counts": { "exact": 12, "probable": 4, "needs_review": 3, "no_match": 2, "internal": 6 },
+  "discrepancy_count": 1,
+  "payments_created": 12, "payments_already_recorded": 0, "payments_recorded_elsewhere": 0, "payments_failed": 0
 }
+```
+
+`amount_status` ∈ `within_tolerance | partial | overpaid | unknown`; `source_of_funds` ∈ `confirmed | discrepancy | unverifiable`; `payment_status` ∈ `created | already_recorded | recorded_elsewhere | error` (absent until a payment is attempted; cleared again by Undo).
+
+```json
 ```
 
 **Changelog:**
@@ -409,6 +431,8 @@ erDiagram
 | `SupportAgentReport` | `owner_type: "CapitalCall"` — full JSON schema above |
 | `app/packs/funds/capital_remittances/services/bank_deposit_narration_parser.rb` | **Refactored** — split into a bank-module registry (§6.3) |
 | `entity_enabled.rb` | `:capital_remittance_reconciliation_agent` appended to `support_agents` flag list |
+| `RemittanceReconciliationMailer` + view | **New** — the `send_report` summary email (§7) |
+| `RemittanceDepositPaymentApplier` | **New** — builds the payment for a deposit; shared by auto-apply and the manual Confirm/Reassign actions; call-aware dedup; derives the folio-currency amount through `WithExchangeRate#convert_currency` (fund → folio, as of the payment date) so a foreign-currency folio's `folio_collected_amount` moves and the remittance can reach Paid — refuses with an error when no rate is on file rather than recording a zero folio amount |
 | *(Phase 7, optional)* `fund_bank_accounts` table | `fund_id`, `bank_code`, `account_number`, `ifsc`, `label` |
 
 ---
@@ -423,8 +447,9 @@ Capital Call Show Page
     ├── Upload Bank Statement(s)   (xlsx file picker, one or more)
     ├── [Run Now] button            → triggers agent for this call
     ├── Tier summary badges         Exact 12 · Probable 4 · Review 3 · No match 2
-    ├── Exact tier                  collapsed confirmation list, expandable, with Undo
-    ├── Probable / Needs review     one row per proposed match — Confirm / Reassign
+    ├── Live progress panel         step-by-step run progress (shared with Call Notice agent)
+    ├── Payments recorded           collapsed list, expandable, with Undo (call-scoped; clears the row)
+    ├── Ready to confirm / Needs review   one row per proposed match — Confirm / Reassign; Partial / Overpayment / Account-differs badges + reasoning lines
     ├── No match                    manual folio/virtual-account entry (reuses CSV importer fields)
     ├── Internal                    collapsed, override link per row
     └── Last run: DD Mon YYYY HH:MM · [View Full Report]
@@ -517,6 +542,10 @@ graph LR
 | `app/packs/funds/capital_calls/views/capital_calls/show.html.erb` | **Modified** — add Reconciliation panel partial |
 | `app/packs/funds/capital_calls/views/capital_calls/_capital_remittance_reconciliation_panel.html.erb` | **Created** — panel partial |
 | `lib/tasks/support_agents.rake` | **Modified** — agent config added |
+| `app/packs/funds/capital_remittances/services/remittance_deposit_payment_applier.rb` | **Created** — shared payment builder (auto-apply + manual confirm/reassign) |
+| `app/packs/ai/support_agents/mailers/remittance_reconciliation_mailer.rb` + view | **Created** — summary email |
+| `capital_calls_controller.rb` | **Modified** — `confirm_reconciliation_deposit`, `reassign_reconciliation_deposit`, `undo_reconciliation_deposit` |
+| `lib/remittance_reconciliation_statement_generator.rb`, `lib/tasks/remittance_reconciliation.rake` | **Created** — `rake "remittance_reconciliation:statement[<capital_call_id>,<icici|axis>,run]"`: from an existing call's own remittances, writes one bank statement xlsx in the chosen bank's export format whose rows produce every outcome (Exact, Partial, Probable, discrepancy, overpayment, No match, Internal, ignored withdrawal); creates nothing in the DB; `run` also executes the agent |
 | `features/capital_remittance_reconciliation_agent.feature` | **Created** — Cucumber acceptance tests |
 
 No DB migrations required through Phase 6. Phase 7 adds `fund_bank_accounts`.
@@ -532,7 +561,8 @@ No DB migrations required through Phase 6. Phase 7 adds `fund_bank_accounts`.
 | 3 | Who can trigger a run and who can confirm a Probable/Needs review match — same role as today's CSV importer, or a narrower "verified reconciler" permission? | Product | Open |
 | 4 | Default `tolerance_amount = ₹500` — confirm against real short-payment history, or expose as a per-fund override from day one? | Fund Ops | Open |
 | 5 | Is cross-call bundled-payment detection worth building, or should a surplus after this call's due amount always be a manual follow-up in a second, ordinary run? | Product | **Closed** — no. Reconciliation is single-call only, permanently; cross-call bundling is not built in any phase. See §4, §6.5. |
-| 6 | When the matched investor has no `InvestorKyc#bank_account_number` on file (KYC incomplete), should a `virtual_bank_account` match alone still reach Exact, or always cap at Needs review since there's nothing to check a contradiction against? | Engineering | **Closed** — either signal is sufficient for Exact; a missing KYC account is not a blocker. See §6.6. |
+| 6 | When the matched investor has no `InvestorKyc#bank_account_number` on file (KYC incomplete), should a `virtual_bank_account` match alone still reach Exact, or always cap at Needs review since there's nothing to check a contradiction against? | Engineering | **Closed** — either signal is sufficient for Exact; a missing KYC account is not a blocker. When a KYC account *is* on file, the virtual account in the narration is the sender's account and must agree with it (§6.6). |
+| 9 | Partial payments: Exact-with-payment (§6.5) or Needs review (§6.4 table)? | Fund Ops | **Closed 2026-09-04** — partial payments keep their tier and record the amount received; only overpayments cap at Needs review. §6.4 and §6.5 now agree. |
 | 7 | Combinatorial matching depth — proposed cap of 3 deposits combined per remittance. Confirm this covers real multi-signatory payment patterns without needing to go higher. | Engineering | Open |
 | 8 | Should `auto_apply_exact` default to **No** for a fund's first live run (extra-cautious rollout), flipped to Yes once trust is established, rather than defaulting Yes everywhere? | Fund Ops | **Closed** — yes, default No everywhere; a fund opts into auto-apply explicitly. See §6.1, §10. |
 
@@ -541,34 +571,40 @@ No DB migrations required through Phase 6. Phase 7 adds `fund_bank_accounts`.
 ## 13. Acceptance Criteria
 
 **Agent setup**
-- [ ] Agent appears in the Support Agents index and can be created/edited.
-- [ ] Provisioned via `rake 'support_agents:setup[ENTITY_ID]'` with default config.
-- [ ] Agent is disabled for entities where the `:capital_remittance_reconciliation_agent` flag is unset.
+- [x] Agent appears in the Support Agents index and can be created/edited.
+- [x] Provisioned via `rake 'support_agents:setup[ENTITY_ID]'` with default config (all eight §6.1 fields except `bank_statement`, which is a per-run upload on the capital call page, not an agent setting).
+- [x] Agent is disabled for entities where the `:capital_remittance_reconciliation_agent` flag is unset.
+- [x] Untargeted/batch runs process nothing (`targets` returns an empty relation) — a statement always belongs to one specific call.
 
 **Parser registry**
-- [ ] Each sheet's bank is identified from its header/IFSC, not re-derived per row.
-- [ ] `Icici` and `Axis` modules reproduce the exact behaviour of today's unified `BankDepositNarrationParser` (validated against the 101-row sample statement, 0 unparsed).
-- [ ] An unrecognized bank falls to the generic fallback, not a crash.
+- [x] Each sheet's bank is identified from its header/IFSC, not re-derived per row.
+- [x] `Icici` and `Axis` modules reproduce the exact behaviour of today's unified `BankDepositNarrationParser` (validated against the 101-row sample statement, 0 unparsed).
+- [x] An unrecognized bank falls to the generic fallback, not a crash.
+- [x] Amount cells exported as text with comma grouping (`"6,99,842.06"`) parse as the full figure; an unreadable amount yields `amount_status: "unknown"` (Needs review), never a wrong number.
 
 **Candidate loading & scoring**
-- [ ] Candidates are always `CapitalRemittance.where(capital_call: call)` — never a fund-wide query.
-- [ ] An account number matching `InvestorKyc#bank_account_number` resolves identity with `via: :kyc_account`, unambiguously.
-- [ ] A narration account number that contradicts the name-matched investor's KYC record is **always** flagged and caps the tier at Needs review, even when amount matches exactly.
-- [ ] Name-only matches (no account in narration) never exceed Probable, never auto-apply.
-- [ ] A `virtual_bank_account` match reaches Exact even when the investor has no `InvestorKyc#bank_account_number` on file — missing KYC is not a blocker.
-- [ ] A deposit that overpays this call's due amount is never checked against, or split across, another capital call — it is reported as a plain overpayment on this call only.
+- [x] Candidates are always `CapitalRemittance.where(capital_call: call)` — never a fund-wide query.
+- [x] An account number matching `InvestorKyc#bank_account_number` resolves identity with `via: :kyc_account`, unambiguously.
+- [x] A narration account number that contradicts the matched investor's KYC record — whether identity came from the name or from a `virtual_bank_account` — is **always** flagged and caps the tier at Needs review, even when amount matches exactly.
+- [x] Name-only matches (no account in narration) never exceed Probable, never auto-apply.
+- [x] A `virtual_bank_account` match reaches Exact when the investor has no `InvestorKyc#bank_account_number` on file — missing KYC is not a blocker.
+- [x] A deposit that overpays this call's due amount is never checked against, or split across, another capital call — it is reported as a plain overpayment (Needs review, `amount_status: "overpaid"`) on this call only.
+- [x] A partial payment from an unambiguous account match stays Exact (`amount_status: "partial"`) and, when applied, records the amount received; a name-only partial stays Probable.
+- [x] Every scored deposit's `reasoning` states the amount outcome (within tolerance / partial with shortfall / overpayment with surplus) and, when present, the KYC contradiction.
 
 **Payment creation**
-- [ ] Exact-tier rows create a `CapitalRemittancePayment` via `CapitalRemittancePaymentCreate` (not a direct `amount_cents` write), with `reference_no` = the bank's transaction id.
-- [ ] Re-running the agent against the same or an overlapping statement produces zero duplicate payments.
-- [ ] No created payment ever sets `capital_remittance.verified = true`.
-- [ ] A freshly provisioned agent defaults to `auto_apply_exact = No` — Exact-tier rows queue for confirm out of the box; a fund opts into auto-apply explicitly.
-- [ ] `auto_apply_exact = No` produces the same tiering but creates zero payments — all Exact rows queue for confirm instead.
+- [x] Exact-tier rows create a `CapitalRemittancePayment` via `CapitalRemittancePaymentCreate`, with `reference_no` = the bank's transaction id. The fund-currency amount is the statement figure; the folio-currency amount is derived through the fund's recorded exchange rate (`convert_currency`, fund → folio), never invented — and a missing rate refuses the payment rather than recording a zero folio amount.
+- [x] Re-running the agent against the same or an overlapping statement produces zero duplicate payments, and a reference already applied under another call of the fund is reported `recorded_elsewhere`, not claimed by this call.
+- [x] No created payment ever sets `capital_remittance.verified = true`.
+- [x] A freshly provisioned agent defaults to `auto_apply_exact = No` — Exact-tier rows queue for confirm out of the box; a fund opts into auto-apply explicitly.
+- [x] `auto_apply_exact = No` produces the same tiering but creates zero payments — all Exact rows queue for confirm instead.
+- [x] `send_report = Yes` + `notify_email` emails the run summary; `No` sends nothing.
 
 **Reports**
-- [ ] `SupportAgentReport` is owned by the `CapitalCall` (`owner_type: "CapitalCall"`).
-- [ ] Every deposit in the report links back to its source sheet + row number + raw narration.
-- [ ] Reconciliation panel is visible on the Capital Call show page with the latest report data.
+- [x] `SupportAgentReport` is owned by the `CapitalCall` (`owner_type: "CapitalCall"`).
+- [x] Every deposit in the report links back to its source sheet + row number + raw narration.
+- [x] Reconciliation panel is visible on the Capital Call show page with the latest report data, and the live step-progress panel streams back after Run Reconciliation.
+- [x] Undo on a recorded payment deletes it through `CapitalRemittancePaymentDestroy` (so `check_units_before_deletion` still applies), clears the deposit's payment fields, and returns the row to its review section on this page.
 
 ---
 
@@ -624,7 +660,7 @@ Wire Exact-tier matches to actually create payments, safely and repeatably. Deli
 | Record `payment_id` back onto the deposit's `json_fields` entry | `capital_remittance_reconciliation_agent.rb` |
 | Cucumber: run agent twice on the same statement, assert exactly one payment per Exact row; run with `auto_apply_exact = No`, assert zero payments but full tiering | `capital_remittance_reconciliation_agent.feature` |
 
-**Gate:** `/code-review` — verify no direct `amount_cents` writes (must go through `CapitalRemittancePaymentCreate` → `set_amount` → `WithExchangeRate#convert_currency`), verify re-run idempotency.
+**Gate:** `/code-review` — verify the folio-currency amount is never invented: the statement figure is fund currency, so the payment goes through `CapitalRemittancePaymentCreate` with `convert_to_fund_currency: false` and derives `folio_amount_cents` via `WithExchangeRate#convert_currency` (fund → folio) from the fund's own recorded rate; verify re-run idempotency, including the cross-call `recorded_elsewhere` case.
 
 ---
 
@@ -637,6 +673,8 @@ Surface the reconciliation results on the Capital Call show page. Deliverable: a
 | Create `_capital_remittance_reconciliation_panel.html.erb`: upload picker, Run Now, tier summary badges, Exact collapsed list w/ Undo, Probable/Review rows w/ Confirm & Reassign, No match manual-entry form (reusing CSV importer fields), Internal collapsed list | `capital_calls/_capital_remittance_reconciliation_panel.html.erb` (new) |
 | Wire partial into Capital Call show page, gated on the entity flag + `run_agent?` | `capital_calls/show.html.erb` |
 | Reassign action reuses the manual Folio No / Virtual Bank Account picker from `ImportCapitalRemittancePayment` | new controller action |
+| Undo action on the capital call (`undo_reconciliation_deposit`): destroys via `CapitalRemittancePaymentDestroy`, clears the deposit's payment fields, redirects back | `capital_calls_controller.rb`, `capital_call_policy.rb` |
+| Live progress panel placeholder on the capital call page so the run's Turbo stream has a target | `capital_calls/_details.html.erb` |
 | Cucumber: verify panel visible/hidden per flag+policy; verify Confirm creates a payment; verify Undo removes an Exact auto-payment | `capital_remittance_reconciliation_agent.feature` |
 
 **Gate:** `/code-review` — verify gating, no inline styles (SCSS only), Undo respects `check_units_before_deletion`.

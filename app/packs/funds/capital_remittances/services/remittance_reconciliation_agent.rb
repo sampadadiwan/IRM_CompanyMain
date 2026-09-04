@@ -28,6 +28,11 @@
 #   tolerance_pct              — float, percentage (default 0, disabled) — OR'd with tolerance_amount
 #   name_similarity_threshold  — float 0-1 (default 0.90) — minimum score to accept a name-only match
 #   auto_apply_exact           — "Yes"/"No" (default No) — whether Exact-tier rows create payments
+#   send_report                — "Yes"/"No" (default Yes) — email the run summary to notify_email
+#   notify_email               — string — recipient of the reconciliation summary email
+#   llm_fuzzy_matching         — "Yes"/"No" (default No) — reserved for Phase 5 (AI-assisted
+#                                scoring of the ambiguous name band); read nowhere yet, so it has
+#                                no effect on a run until that phase lands
 #
 # @see docs/ai/capital_remittance_reconciliation_agent_prd.md
 # @see SupportAgentService
@@ -44,10 +49,15 @@ class RemittanceReconciliationAgent < SupportAgentService
     several open calls is reconciled one run per call, never merged across calls.
 
     Each deposit is bucketed into Exact (account number matches the investor's KYC record or
-    assigned virtual account, amount within tolerance, unambiguous), Probable (name-only match,
-    amount within tolerance), Needs review (ambiguous identity, amount outside tolerance, or a
-    funding-source discrepancy — an exposed account number that contradicts the matched
-    investor's KYC record), No match, or Internal (the fund's own FD/loan movements).
+    assigned virtual account, unambiguous), Probable (name-only match), Needs review (ambiguous
+    identity, an overpayment beyond tolerance, or a funding-source discrepancy — an exposed
+    sender account number that contradicts the matched investor's KYC record), No match, or
+    Internal (the fund's own FD/loan movements). A partial payment (short of the due amount
+    beyond tolerance) keeps its tier — the payment is recorded for the amount received and the
+    remittance carries the shortfall.
+
+    When send_report is Yes, the run summary (tier counts, every discrepancy, every row needing
+    review) is emailed to notify_email.
 
     When auto_apply_exact is Yes, Exact-tier deposits automatically create a
     CapitalRemittancePayment (idempotent — re-running never duplicates one). Every other tier
@@ -63,6 +73,7 @@ class RemittanceReconciliationAgent < SupportAgentService
     load_candidates: "Load Candidates",
     score_deposits: "Score & Bucket",
     apply_exact_matches: "Apply Exact Matches",
+    send_reconciliation_report: "Email Report",
     generate_progress_reports: "Save Report"
   }.freeze
 
@@ -72,6 +83,7 @@ class RemittanceReconciliationAgent < SupportAgentService
   step :load_candidates
   step :score_deposits
   step :apply_exact_matches
+  step :send_reconciliation_report
   step :generate_progress_reports
 
   # Name-only identity is accepted deterministically only when the top match clears the
@@ -95,12 +107,17 @@ class RemittanceReconciliationAgent < SupportAgentService
                 "Set explicitly if this fund's typical wire-fee shortfall differs."
     end
 
-    issues
+    issues + missing_toggle_issues(support_agent, "send_report" => "the reconciliation report email")
   end
 
-  # Runs against a single CapitalCall the agent is triggered for.
+  # Deliberately empty: every run needs a bank statement uploaded for one specific CapitalCall
+  # (the run modal on the capital call page), so there is no meaningful "run for every call"
+  # batch — an untargeted run from the Support Agents index, or a scheduled AgentSchedule run,
+  # would otherwise create one failed "No bank statement uploaded" report per capital call in
+  # the entity. Still a CapitalCall relation (not nil) because the support agents UI infers the
+  # agent's target type from `targets(...).model`. Scheduled/batch runs are Phase 7.
   def targets(entity_id)
-    CapitalCall.where(entity_id: entity_id)
+    CapitalCall.where(entity_id: entity_id).none
   end
 
   private
@@ -311,6 +328,7 @@ class RemittanceReconciliationAgent < SupportAgentService
     fund = ctx[:capital_call].fund
     created = 0
     already_recorded = 0
+    recorded_elsewhere = 0
     failed = 0
 
     ctx[:deposits].select { |d| d["tier"] == "exact" }.each do |deposit|
@@ -328,13 +346,23 @@ class RemittanceReconciliationAgent < SupportAgentService
       end
 
       outcome = RemittanceDepositPaymentApplier.call(deposit: deposit, capital_remittance: remittance, fund: fund)
-      deposit["payment_id"] = outcome[:payment_id] if outcome[:payment_id]
       deposit["reference_no"] = outcome[:reference_no] if outcome[:reference_no]
+      # payment_id is only recorded for a payment that belongs to THIS call — a
+      # :recorded_elsewhere payment lives under another call's remittance, and the panel
+      # treats a present payment_id as "recorded here, offer Undo".
+      deposit["payment_id"] = outcome[:payment_id] if outcome[:payment_id] && outcome[:status] != :recorded_elsewhere
 
       case outcome[:status]
       when :already_recorded
         deposit["payment_status"] = "already_recorded"
         already_recorded += 1
+      when :recorded_elsewhere
+        deposit["payment_status"] = "recorded_elsewhere"
+        deposit["payment_error"] = outcome[:error]
+        ctx[:issues] << { type: :warning,
+                          message: "Deposit for #{deposit['matched_investor_name']} was #{outcome[:error]} — not re-applied to this call",
+                          severity: :warning }
+        recorded_elsewhere += 1
       when :created
         deposit["payment_status"] = "created"
         created += 1
@@ -350,8 +378,37 @@ class RemittanceReconciliationAgent < SupportAgentService
 
     ctx[:payments_created] = created
     ctx[:payments_already_recorded] = already_recorded
+    ctx[:payments_recorded_elsewhere] = recorded_elsewhere
     ctx[:payments_failed] = failed
-    mark_step_success(report, :apply_exact_matches, message: "#{created} created, #{already_recorded} already recorded, #{failed} failed") if report
+    if report
+      mark_step_success(report, :apply_exact_matches,
+                        message: "#{created} created, #{already_recorded} already recorded, #{recorded_elsewhere} recorded on another call, #{failed} failed")
+    end
+    true
+  end
+
+  # Emails the run summary (tier counts, every discrepancy, every Needs review row) to
+  # notify_email when send_report is Yes. Runs before generate_progress_reports so the email
+  # reflects exactly what that step is about to persist. Soft-fails: a mail error becomes a
+  # warning on the report, never a pipeline failure.
+  def send_reconciliation_report(ctx, support_agent:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :send_reconciliation_report) if report
+
+    email = support_agent.json_fields["notify_email"].to_s.strip
+    unless enabled?("send_report") && email.present?
+      mark_step_skipped(report, :send_reconciliation_report, message: "Disabled or no email configured") if report
+      return true
+    end
+
+    RemittanceReconciliationMailer.reconciliation_report(support_agent, ctx[:capital_call], ctx).deliver_now
+    Rails.logger.info { "[RemittanceReconciliationAgent] Report emailed to #{email}" }
+    mark_step_success(report, :send_reconciliation_report, message: "Sent to #{email}") if report
+    true
+  rescue StandardError => e
+    Rails.logger.error { "[RemittanceReconciliationAgent] Email failed: #{e.message}" }
+    ctx[:issues] << { type: :warning, message: "Report email failed: #{e.message}", severity: :warning }
+    mark_step_failed(report, :send_reconciliation_report, message: "Email error: #{e.message}") if report
     true
   end
 
@@ -363,46 +420,74 @@ class RemittanceReconciliationAgent < SupportAgentService
 
     kyc_account = candidate.investor_kyc&.bank_account_number.presence
     narration_account = deposit["account_number"]
+    due_amount = candidate.due_amount.to_f
+    reasoning = Array(identity[:reasoning]).dup
 
-    # The narration's account number is only a meaningful "did this come from the investor's
-    # own registered account" signal when identity was resolved via name (an account exposed
-    # incidentally alongside a name match). A :virtual_account match's "account" *is* the
-    # fund-assigned collection account, not the sender's personal bank account, so comparing
-    # it to KYC there is comparing two different identifiers that are *expected* to differ,
-    # not a genuine source-of-funds check - discrepancy only ever applies to :name matches.
-    discrepancy = via == :name && narration_account.present? && kyc_account.present? && kyc_account != narration_account
+    # Source-of-funds check, independent of how identity was resolved (PRD §6.4/§6.6): any
+    # account number the narration exposes is the SENDER's account — including the virtual
+    # account case, where the investor remits from the account assigned to them — so whenever
+    # the investor has a KYC-registered account on file, the two must agree. A :kyc_account
+    # match agrees by construction; a :virtual_account or :name match is checked here. With no
+    # KYC account on file there is nothing to contradict, so nothing is raised (§12.6).
+    discrepancy = via != :kyc_account && narration_account.present? && kyc_account.present? && kyc_account != narration_account
+    reasoning << "narration account #{narration_account} contradicts the investor's KYC-registered account #{kyc_account}" if discrepancy
 
-    amount_ok = amount_within_tolerance?(deposit["amount"], candidate.due_amount.to_f)
+    # Amount classification drives both the tier and the reviewer-facing reasoning line, so a
+    # Needs review row always says *why* it landed there (PRD §8 sample report).
+    amount_status, amount_line = classify_amount(deposit["amount"], due_amount)
+    reasoning << amount_line
 
     deposit["matched_remittance_id"] = candidate.id
     deposit["matched_commitment_id"] = candidate.capital_commitment_id
     deposit["matched_investor_name"] = candidate.investor_name
     deposit["identity_via"] = via.to_s
-    deposit["due_amount"] = candidate.due_amount.to_f
-    deposit["reasoning"] = identity[:reasoning]
+    deposit["kyc_account_number"] = kyc_account # what the sender account was checked against; shown next to a discrepancy
+    deposit["due_amount"] = due_amount
+    deposit["amount_status"] = amount_status.to_s
+    deposit["reasoning"] = reasoning
     deposit["source_of_funds"] =
-      if via == :virtual_account
-        # Only "confirmed" in the coincidental case where the virtual account happens to
-        # equal the investor's own KYC account too - otherwise there's nothing here that
-        # actually verifies the sender's personal account, so it stays unverifiable rather
-        # than falsely claiming confirmation.
-        kyc_account.present? && kyc_account == narration_account ? "confirmed" : "unverifiable"
-      elsif narration_account.blank? || kyc_account.blank?
+      if narration_account.blank? || kyc_account.blank?
         "unverifiable"
       elsif discrepancy
         "discrepancy"
       else
-        "confirmed" # via == :kyc_account (narration_account == kyc_account by construction) or via == :name with no contradiction
+        "confirmed"
       end
 
+    # Tier (PRD §6.4 + §6.5): a discrepancy or an overpayment always caps at Needs review. A
+    # partial payment (shortfall beyond tolerance) does NOT downgrade — the payment is created
+    # for the amount actually received and the remittance's own due_amount carries the
+    # shortfall — so an unambiguous account match stays Exact and a name match stays Probable.
     deposit["tier"] =
-      if discrepancy || !amount_ok
+      if discrepancy || %i[overpaid unknown].include?(amount_status)
         "needs_review"
       elsif %i[kyc_account virtual_account].include?(via)
         "exact"
       else
         "probable"
       end
+  end
+
+  # Compares a deposit against the remittance's outstanding due amount and returns
+  # [status, reviewer-facing reasoning line]:
+  #   :within_tolerance — |deposit - due| inside tolerance_amount OR tolerance_pct
+  #   :partial          — deposit short of due by more than tolerance (a tranche; accepted)
+  #   :overpaid         — deposit exceeds due by more than tolerance (surplus may belong to
+  #                       another call, which a call-scoped run can't see — flagged, PRD §6.5)
+  #   :unknown          — the statement row carried no readable amount at all
+  def classify_amount(deposit_amount, due_amount)
+    return [:unknown, "no readable amount on the statement row — amount could not be checked"] if deposit_amount.nil?
+
+    fmt = ->(v) { ActiveSupport::NumberHelper.number_to_delimited(format("%.2f", v)) }
+    diff = deposit_amount - due_amount
+    return [:within_tolerance, "amount #{fmt.call(deposit_amount)} within tolerance of due #{fmt.call(due_amount)}"] if amount_within_tolerance?(deposit_amount, due_amount)
+
+    if diff.negative?
+      [:partial, "partial payment: #{fmt.call(deposit_amount)} received against due #{fmt.call(due_amount)} (shortfall #{fmt.call(diff.abs)})"]
+    else
+      [:overpaid, "overpayment: #{fmt.call(deposit_amount)} exceeds due #{fmt.call(due_amount)} by #{fmt.call(diff)} — " \
+                  "check whether the surplus belongs to one of this investor's other open calls"]
+    end
   end
 
   # Account number first (strong signal, checked against InvestorKyc#bank_account_number then
@@ -423,15 +508,15 @@ class RemittanceReconciliationAgent < SupportAgentService
     kyc_matches = candidates.select { |c| c.investor_kyc&.bank_account_number.presence == account }
     if kyc_matches.size == 1
       return { status: :resolved, candidate: kyc_matches.first, via: :kyc_account,
-               reasoning: ["account #{account} matches InvestorKyc#bank_account_number"] }
+               reasoning: ["sender account #{account} matches the investor's KYC bank account"] }
     elsif kyc_matches.size > 1
-      return { status: :ambiguous, reasoning: ["account #{account} matches KYC records for #{kyc_matches.size} different investors"] }
+      return { status: :ambiguous, reasoning: ["sender account #{account} is on the KYC of #{kyc_matches.size} different investors"] }
     end
 
     virtual_matches = candidates.select { |c| c.capital_commitment.virtual_bank_account.presence == account }
     if virtual_matches.size == 1
       return { status: :resolved, candidate: virtual_matches.first, via: :virtual_account,
-               reasoning: ["account #{account} matches CapitalCommitment#virtual_bank_account"] }
+               reasoning: ["sender account #{account} matches the investor's assigned virtual account"] }
     elsif virtual_matches.size > 1
       return { status: :ambiguous, reasoning: ["account #{account} matches the virtual account of #{virtual_matches.size} different investors"] }
     end
@@ -583,6 +668,7 @@ class RemittanceReconciliationAgent < SupportAgentService
       "auto_apply_exact" => enabled?("auto_apply_exact"),
       "payments_created" => ctx[:payments_created] || 0,
       "payments_already_recorded" => ctx[:payments_already_recorded] || 0,
+      "payments_recorded_elsewhere" => ctx[:payments_recorded_elsewhere] || 0,
       "payments_failed" => ctx[:payments_failed] || 0
     }
     rpt.status = has_blocking ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]

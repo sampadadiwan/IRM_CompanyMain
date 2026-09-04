@@ -65,6 +65,12 @@ class CapitalCallPolicy < FundBasePolicy
     run_agent?
   end
 
+  # Undoing a reconciliation payment deletes a CapitalRemittancePayment, so it needs the same
+  # destroy permission the payment's own controller checks, not just run/update.
+  def undo_reconciliation_deposit?
+    run_agent? && permissioned_employee?(:destroy)
+  end
+
   # Only company_admin can assign / remove a workflow template on a capital call,
   # and only when the entity has workflow_templates enabled.
   def assign_workflow?

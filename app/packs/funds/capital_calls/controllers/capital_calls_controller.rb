@@ -2,7 +2,7 @@ class CapitalCallsController < ApplicationController
   include HasWorkflowable
 
   before_action :set_capital_call, only: %i[show edit update destroy reminder approve notify generate_docs allocate_units recompute_fees
-                                            confirm_reconciliation_deposit reassign_reconciliation_deposit]
+                                            confirm_reconciliation_deposit reassign_reconciliation_deposit undo_reconciliation_deposit]
   before_action :set_workflowable, only: [:show] # runs after set_capital_call so @capital_call is available
 
   # GET /capital_calls or /capital_calls.json
@@ -168,13 +168,16 @@ class CapitalCallsController < ApplicationController
     return unless deposit
 
     fund = @capital_call.fund
-    folio_id = params[:folio_id].presence
-    virtual_bank_account = params[:virtual_bank_account].presence
-    return redirect_to_reconciliation(alert: "Folio No or Virtual Bank Account must be specified") if folio_id.blank? && virtual_bank_account.blank?
+    # The panel sends one `lookup` value (a Folio No or a Virtual Bank Account); the explicit
+    # folio_id / virtual_bank_account params are still accepted for API-style callers.
+    lookup = params[:lookup].to_s.strip.presence
+    folio_id = params[:folio_id].presence || lookup
+    virtual_bank_account = params[:virtual_bank_account].presence || lookup
+    return redirect_to_reconciliation(alert: "Enter a Folio No or Virtual Bank Account to reassign") if folio_id.blank? && virtual_bank_account.blank?
 
     commitment = fund.capital_commitments.where(folio_id: folio_id).first if folio_id
     commitment ||= fund.capital_commitments.where(virtual_bank_account: virtual_bank_account).first if virtual_bank_account
-    return redirect_to_reconciliation(alert: "No commitment found for that Folio No / Virtual Bank Account") unless commitment
+    return redirect_to_reconciliation(alert: "No commitment found for Folio No / Virtual Bank Account \"#{lookup || folio_id || virtual_bank_account}\"") unless commitment
 
     remittance = @capital_call.capital_remittances.find_by(capital_commitment: commitment)
     return redirect_to_reconciliation(alert: "No remittance for folio #{commitment.folio_id} under this call — generate remittances first") unless remittance
@@ -191,6 +194,34 @@ class CapitalCallsController < ApplicationController
     end
     save_reconciliation_outcome(report, idx, outcome)
     redirect_to_reconciliation(notice: reconciliation_outcome_message(outcome))
+  end
+
+  # Reverses a payment recorded from a reconciliation deposit (auto-applied Exact, or a manual
+  # Confirm/Reassign) and clears the deposit's payment fields on the report so the row returns
+  # to its review section instead of lingering under "Payments recorded" with a dead link.
+  # Scoped so only a payment on one of THIS call's remittances can be undone here, and goes
+  # through CapitalRemittancePaymentDestroy so check_units_before_deletion still applies —
+  # a payment with units already allocated against it is refused with the model's own message.
+  def undo_reconciliation_deposit
+    report, deposit, idx = find_reconciliation_deposit
+    return unless deposit
+
+    payment = CapitalRemittancePayment.joins(:capital_remittance)
+                                      .where(capital_remittances: { capital_call_id: @capital_call.id })
+                                      .find_by(id: deposit["payment_id"])
+    unless payment
+      # Already gone (deleted from the remittance page, say) — just clear the stale pointer.
+      save_reconciliation_undo(report, idx)
+      return redirect_to_reconciliation(notice: "That payment no longer exists — the deposit is back in its review section.")
+    end
+
+    result = CapitalRemittancePaymentDestroy.wtf?(capital_remittance_payment: payment)
+    if result.success?
+      save_reconciliation_undo(report, idx)
+      redirect_to_reconciliation(notice: "Payment removed. The deposit is back in its review section.")
+    else
+      redirect_to_reconciliation(alert: "Could not undo: #{payment.errors.full_messages.join(', ')}")
+    end
   end
 
   private
@@ -230,10 +261,22 @@ class CapitalCallsController < ApplicationController
   def save_reconciliation_outcome(report, idx, outcome)
     deposits = report.json_fields["deposits"]
     deposit = deposits[idx]
-    deposit["payment_id"] = outcome[:payment_id] if outcome[:payment_id]
+    # payment_id only for a payment under THIS call — a :recorded_elsewhere payment belongs to
+    # another call's remittance, and a present payment_id is what makes the panel offer Undo.
+    deposit["payment_id"] = outcome[:payment_id] if outcome[:payment_id] && outcome[:status] != :recorded_elsewhere
     deposit["reference_no"] = outcome[:reference_no] if outcome[:reference_no]
     deposit["payment_status"] = outcome[:status].to_s
     deposit["payment_error"] = outcome[:error] if outcome[:error]
+    report.json_fields = report.json_fields.merge("deposits" => deposits)
+    report.json_fields_will_change! # MySQL doesn't auto-detect JSON field changes
+    report.save!
+  end
+
+  # Drops every payment-related key from one deposit entry after an Undo, so the panel's
+  # "payment_id present" test puts the row back under Ready to confirm / Needs review / No match.
+  def save_reconciliation_undo(report, idx)
+    deposits = report.json_fields["deposits"]
+    deposits[idx] = deposits[idx].except("payment_id", "reference_no", "payment_status", "payment_error")
     report.json_fields = report.json_fields.merge("deposits" => deposits)
     report.json_fields_will_change! # MySQL doesn't auto-detect JSON field changes
     report.save!
@@ -243,6 +286,7 @@ class CapitalCallsController < ApplicationController
     case outcome[:status]
     when :created then "Payment recorded."
     when :already_recorded then "This deposit was already recorded as a payment."
+    when :recorded_elsewhere then "Not recorded: this deposit was #{outcome[:error]}. Undo it there first if it belongs to this call."
     else "Could not record payment: #{outcome[:error]}"
     end
   end

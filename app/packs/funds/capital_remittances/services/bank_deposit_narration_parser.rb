@@ -177,11 +177,25 @@ module BankDepositNarrationParser
       {
         row: r,
         remark: remark,
-        amount: amount_col ? row[amount_col].to_f : nil,
+        amount: amount_col ? parse_statement_amount(row[amount_col]) : nil,
         tran_id: tran_id_col ? row[tran_id_col].to_s.strip.presence : nil,
         value_date: date_col ? parse_statement_date(row[date_col]) : nil
       }
     end
+  end
+
+  # Amount cells are normally numeric (Roo hands back a Float for a real number cell), but some
+  # exports write them as text with Indian digit grouping ("6,99,842.06") - a bare `to_f` on
+  # that string silently yields 6.0, which would then be scored as a wildly short payment.
+  # Strip grouping separators and whitespace first; anything still non-numeric returns nil
+  # (the agent reports "no readable amount") rather than a wrong number.
+  def parse_statement_amount(value)
+    return value.to_f if value.is_a?(Numeric)
+
+    str = value.to_s.delete(',').delete("\u20B9").strip # also drop a stray rupee sign
+    return nil if str.empty?
+
+    str.match?(/\A-?\d+(\.\d+)?\z/) ? str.to_f : nil
   end
 
   # Bank statement date cells arrive as either a genuine Date/DateTime (Roo parses a real

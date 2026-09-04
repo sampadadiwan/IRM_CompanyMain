@@ -1,0 +1,94 @@
+<%#
+  Reconciliation summary email for one RemittanceReconciliationAgent run.
+  Instance vars set by RemittanceReconciliationMailer#reconciliation_report:
+    @capital_call, @fund, @deposits, @issues, @tier_counts, @discrepancies, @needs_review,
+    @no_match, @payments_created, @auto_apply
+  Inline styles are unavoidable here — this is an email body, not a screen view.
+%>
+<%
+  blocking = @issues.select { |i| (i[:severity] || i["severity"]).to_s == "blocking" }
+  tone     = blocking.any? ? :danger : (@discrepancies.any? || @needs_review.any? ? :warning : :success)
+  label    = blocking.any? ? "Run Blocked" : (@discrepancies.any? ? "#{@discrepancies.size} Discrepancy(ies)" : (@needs_review.any? ? "#{@needs_review.size} Need Review" : "All Matched"))
+  subtitle = [@fund.name, @capital_call.name, "Due #{l(@capital_call.due_date)}"].compact.join(" · ")
+  fmt      = ->(v) { v.nil? ? "—" : number_with_precision(v, precision: 2, delimiter: ",") }
+%>
+
+<%= sa_banner(title: "Remittance Reconciliation Report", label: label, subtitle: subtitle, tone: tone) %>
+
+<% if blocking.any? %>
+  <%= sa_callout(tone: :danger, heading: "The run could not complete", body: blocking.map { |i| h(i[:message] || i["message"]) }.join("<br>").html_safe) %>
+<% else %>
+  <%= sa_section(title: "Summary", top_margin: false) %>
+  <%= sa_kv_table(rows: [
+        ["Deposits on statement", @deposits.size],
+        ["Exact", @tier_counts["exact"] || 0],
+        ["Probable", @tier_counts["probable"] || 0],
+        ["Needs review", @tier_counts["needs_review"] || 0, { tone: (@tier_counts["needs_review"].to_i.positive? ? :warning : nil) }],
+        ["No match", @tier_counts["no_match"] || 0],
+        ["Internal (fund's own money)", @tier_counts["internal"] || 0],
+        ["Funding-source discrepancies", @discrepancies.size, { tone: (@discrepancies.any? ? :danger : nil), bold: @discrepancies.any? }],
+        ["Payments auto-recorded", @auto_apply ? @payments_created : "0 (auto-apply is off — Exact rows are queued for confirm)"]
+      ]) %>
+
+  <% if @discrepancies.any? %>
+    <%= sa_section(title: "Funding-source discrepancies (#{@discrepancies.size})") %>
+    <%= sa_callout(tone: :danger, heading: "Source of funds contradicts KYC",
+                   body: "These deposits matched an investor, but the sender's account number differs from that investor's KYC-registered account. Verify before confirming.") %>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:12px;font-size:13px">
+      <%= sa_th("Investor", ["Amount", { align: :right }], "Sender account", "KYC account", "Narration") %>
+      <tbody>
+        <% @discrepancies.each do |d| %>
+          <tr>
+            <%= sa_td(h(d["matched_investor_name"])) %>
+            <%= sa_td(fmt.call(d["amount"]), align: :right, nowrap: true) %>
+            <%= sa_td(h(d["account_number"])) %>
+            <%= sa_td(h(d["kyc_account_number"])) %>
+            <%= sa_td(h(d["raw_narration"])) %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% other_review = @needs_review.reject { |d| d["source_of_funds"] == "discrepancy" } %>
+  <% if other_review.any? %>
+    <%= sa_section(title: "Needs review (#{other_review.size})") %>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:12px;font-size:13px">
+      <%= sa_th("Investor / depositor", ["Amount", { align: :right }], ["Due", { align: :right }], "Why") %>
+      <tbody>
+        <% other_review.each do |d| %>
+          <tr>
+            <%= sa_td(h(d["matched_investor_name"] || d["name"])) %>
+            <%= sa_td(fmt.call(d["amount"]), align: :right, nowrap: true) %>
+            <%= sa_td(fmt.call(d["due_amount"]), align: :right, nowrap: true) %>
+            <%= sa_td(Array(d["reasoning"]).map { |r| h(r) }.join("<br>").html_safe) %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% if @no_match.any? %>
+    <%= sa_section(title: "No match (#{@no_match.size})") %>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:12px;font-size:13px">
+      <%= sa_th("Depositor (as parsed)", ["Amount", { align: :right }], "Narration") %>
+      <tbody>
+        <% @no_match.each do |d| %>
+          <tr>
+            <%= sa_td(h(d["name"] || "(unrecognized)")) %>
+            <%= sa_td(fmt.call(d["amount"]), align: :right, nowrap: true) %>
+            <%= sa_td(h(d["raw_narration"])) %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% end %>
+
+<% warnings = @issues.select { |i| (i[:severity] || i["severity"]).to_s == "warning" } %>
+<% if warnings.any? %>
+  <%= sa_callout(tone: :warning, heading: "Warnings (#{warnings.size})", body: warnings.map { |i| h(i[:message] || i["message"]) }.join("<br>").html_safe) %>
+<% end %>
+
+<%= sa_cta(label: "Open capital call", url: capital_call_url(@capital_call, subdomain: @capital_call.entity.sub_domain)) %>
+<%= sa_footer("Sent by the #{h @support_agent.name} agent. Review and confirm matches on the capital call page.") %>

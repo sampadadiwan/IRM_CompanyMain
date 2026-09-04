@@ -1,113 +1,196 @@
 <%# frozen_string_literal: true %>
 <%#
-  Reconciliation results for the latest RemittanceReconciliationAgent report on this call.
-  The run trigger lives in the capital call's Actions dropdown (show.html.erb), not here.
-  Only rendered once a report exists — see _details.html.erb — so `report` is never nil here.
+  Reconciliation results for the latest RemittanceReconciliationAgent report on this call,
+  rendered inside the capital call's Reconciliation tab (_details.html.erb) as ONE table —
+  every deposit on the statement is a row, in statement order, tagged with its outcome and
+  carrying its own actions (Confirm / Reassign / Undo). The run trigger lives in the Actions
+  dropdown (show.html.erb).
   Required locals: capital_call, report
   support_agent is accepted but currently unused — kept so callers don't need to special-case this partial.
 %>
 
+<% deposits = report.json_fields["deposits"] || [] %>
+<% tier_counts = report.json_fields["tier_counts"] || {} %>
+<% last_run = report.json_fields["run_at"] %>
+<% can_undo = policy(capital_call).undo_reconciliation_deposit? %>
+<%# Reassign choices: every remittance under THIS call, as [folio, investor] pairs. One cheap
+    query (both are columns on capital_remittances — no joins), rendered ONCE as a shared
+    <datalist> that every row's input points at, so a call with 200 remittances and 50 deposit
+    rows costs 200 <option>s, not 10,000. The input is a native searchable dropdown: typing
+    matches on folio or investor name and submits the folio, which the controller resolves. %>
+<% reassign_choices = capital_call.capital_remittances.order(:investor_name).pluck(:folio_id, :investor_name) %>
+
+<%# Tag label + theme badge classes per json value — the same solid bg-* utilities every other
+    badge in the app uses, so every tag is readable without a bespoke palette. Anything
+    unexpected falls back to the raw value on a neutral badge so a new status is never hidden. %>
+<% tier_tags = {
+     "exact" => ["Exact", "bg-success"],
+     "probable" => ["Probable", "bg-warning text-dark"],
+     "needs_review" => ["Needs review", "bg-danger"],
+     "no_match" => ["No match", "bg-secondary"],
+     "internal" => ["Internal", "bg-light text-muted"]
+   } %>
+<% amount_tags = {
+     "partial" => ["Partial", "bg-warning text-dark"],
+     "overpaid" => ["Overpaid", "bg-danger"],
+     "unknown" => ["No amount", "bg-secondary"]
+   } %>
+<% funds_tags = {
+     "discrepancy" => ["Account ≠ KYC", "bg-danger"],
+     "confirmed" => ["Account = KYC", "bg-success"]
+   } %>
+<% payment_tags = {
+     "created" => ["Paid", "bg-primary"],
+     "already_recorded" => ["Paid", "bg-primary"],
+     "recorded_elsewhere" => ["Paid on another call", "bg-info text-dark"],
+     "error" => ["Payment failed", "bg-danger"]
+   } %>
+<% tag_for = ->(tags, key) { tags.fetch(key, [key.to_s.humanize, "bg-secondary"]) } %>
+
 <div class="remittance-reconciliation-panel mb-3">
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <span class="fw-semibold fs-5"><i class="ti ti-file-check me-2"></i>Remittance Reconciliation</span>
+  <%# Same header shape as the index pages (e.g. capital_remittances/_index): h3 title on the
+      left, the page's actions on the right. %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Remittance Reconciliation</h1>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <% if last_run.present? %>
+        <span class="text-muted">Last run <%= l(Time.zone.parse(last_run)) %></span>
+      <% end %>
+      <%# Same modal the Actions dropdown opens (rendered by show.html.erb). %>
+      <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#run-remittance-reconciliation-modal">
+        <i class="ti ti-file-check"></i> Run Reconciliation
+      </button>
+    </div>
   </div>
 
-    <% deposits = report.json_fields["deposits"] || [] %>
-    <% tier_counts = report.json_fields["tier_counts"] || {} %>
-    <% last_run = report.json_fields["run_at"] %>
-
-    <div class="d-flex flex-wrap gap-2 mb-3">
-      <span class="badge reconciliation-badge reconciliation-badge-exact">Exact <%= tier_counts["exact"] || 0 %></span>
-      <span class="badge reconciliation-badge reconciliation-badge-probable">Probable <%= tier_counts["probable"] || 0 %></span>
-      <span class="badge reconciliation-badge reconciliation-badge-review">Needs review <%= tier_counts["needs_review"] || 0 %></span>
-      <span class="badge reconciliation-badge reconciliation-badge-none">No match <%= tier_counts["no_match"] || 0 %></span>
-      <span class="badge reconciliation-badge reconciliation-badge-internal">Internal <%= tier_counts["internal"] || 0 %></span>
-    </div>
-    <p class="text-muted mb-3">Last run: <%= l(Time.zone.parse(last_run)) if last_run.present? %></p>
-
-    <%# [deposit, real_index] pairs throughout, never a value-equality deposits.index(deposit)
-        lookup — two content-identical rows (e.g. repeat fixed-amount installments from the
-        same payer) would make that return the first match's index for both, submitting
-        Confirm/Reassign against the wrong deposit. %>
-    <% indexed_deposits = deposits.each_with_index.to_a %>
-    <% recorded = indexed_deposits.select { |d, _| d["payment_id"].present? } %>
-    <% pending_exact_or_probable = indexed_deposits.select { |d, _| d["payment_id"].blank? && %w[exact probable].include?(d["tier"]) } %>
-    <% needs_review = indexed_deposits.select { |d, _| d["payment_id"].blank? && d["tier"] == "needs_review" } %>
-    <% no_match = indexed_deposits.select { |d, _| d["payment_id"].blank? && d["tier"] == "no_match" } %>
-    <% internal = indexed_deposits.select { |d, _| d["tier"] == "internal" } %>
-
-    <%= render ToggleCard.new(title: "Payments recorded (#{recorded.size})", css_class: "recon-recorded", state: "hide") do %>
-      <% if recorded.empty? %>
-        <p class="text-muted">None yet.</p>
-      <% else %>
-        <div class="table-responsive">
-          <table class="table table-sm align-middle">
-            <thead><tr><th>Investor</th><th>Narration</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-            <tbody>
-              <% recorded.each do |deposit, _idx| %>
-                <tr>
-                  <td><%= deposit["matched_investor_name"] || deposit["name"] %></td>
-                  <td class="reconciliation-narration"><%= deposit["raw_narration"] %></td>
-                  <td><%= number_to_currency(deposit["amount"], unit: "") %></td>
-                  <td><span class="badge reconciliation-badge reconciliation-badge-<%= deposit["tier"] %>"><%= deposit["payment_status"] %></span></td>
-                  <td>
-                    <%= button_to "Undo", capital_remittance_payment_path(deposit["payment_id"]), method: :delete,
-                        class: "btn btn-sm btn-outline-danger",
-                        form_class: "d-inline",
-                        data: { turbo: false, action: "click->confirm#popup",
-                                msg: "If units have already been allocated against this payment, undo will be blocked." } %>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
-      <% end %>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <% tier_tags.each do |key, (label, css)| %>
+      <span class="badge reconciliation-badge <%= css %>"><%= label %> <%= tier_counts[key] || 0 %></span>
     <% end %>
-
-    <%= render ToggleCard.new(title: "Ready to confirm (#{pending_exact_or_probable.size})", css_class: "recon-ready", state: "show") do %>
-      <% if pending_exact_or_probable.empty? %>
-        <p class="text-muted">None.</p>
-      <% else %>
-        <% pending_exact_or_probable.each do |deposit, idx| %>
-          <%= render "capital_calls/reconciliation_deposit_row", capital_call: capital_call, report: report,
-                     deposit: deposit, deposit_index: idx, show_confirm: true %>
-        <% end %>
-      <% end %>
+    <% if report.json_fields["discrepancy_count"].to_i.positive? %>
+      <span class="badge reconciliation-badge bg-danger"><i class="ti ti-alert-triangle me-1"></i>Account ≠ KYC <%= report.json_fields["discrepancy_count"] %></span>
     <% end %>
+  </div>
 
-    <%= render ToggleCard.new(title: "Needs review (#{needs_review.size})", css_class: "recon-review", state: "show") do %>
-      <% if needs_review.empty? %>
-        <p class="text-muted">None.</p>
-      <% else %>
-        <% needs_review.each do |deposit, idx| %>
-          <%= render "capital_calls/reconciliation_deposit_row", capital_call: capital_call, report: report,
-                     deposit: deposit, deposit_index: idx,
-                     show_confirm: deposit["matched_remittance_id"].present? %>
-        <% end %>
-      <% end %>
-    <% end %>
+  <% if deposits.empty? %>
+    <p class="text-muted">The statement had no deposit rows.</p>
+  <% else %>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle reconciliation-table">
+        <thead>
+          <tr>
+            <th>Investor</th>
+            <th>Narration</th>
+            <th class="text-end">Amount</th>
+            <th class="text-end">Due</th>
+            <th>Outcome</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%# each_with_index keeps the REAL index — two content-identical rows (e.g. repeat
+              fixed-amount installments from the same payer) must submit Confirm/Reassign/Undo
+              against their own entry, never a value-equality lookup. %>
+          <% deposits.each_with_index do |deposit, idx| %>
+            <% recorded_here = deposit["payment_id"].present? %>
+            <% recorded_elsewhere = deposit["payment_status"] == "recorded_elsewhere" %>
+            <% internal = deposit["tier"] == "internal" %>
+            <% can_confirm = !recorded_here && !recorded_elsewhere && !internal && deposit["matched_remittance_id"].present? %>
+            <% can_reassign = !recorded_here && !recorded_elsewhere && !internal %>
+            <% reasoning = Array(deposit["reasoning"]) %>
+            <%# The one line a reviewer needs inline: the contradiction or the amount problem.
+                Everything else stays in the tooltip on the outcome tag. %>
+            <% attention = deposit["tier"] == "needs_review" ? reasoning.find { |l| l.include?("contradicts") || l.start_with?("overpayment", "no readable amount") } : nil %>
+            <tr id="reconciliation_deposit_<%= idx %>">
+              <td>
+                <span class="fw-semibold"><%= deposit["matched_investor_name"] || deposit["name"] || "(unrecognized)" %></span>
+                <% if deposit["account_number"].present? %>
+                  <div class="text-muted">a/c <%= deposit["account_number"] %></div>
+                <% end %>
+                <% if deposit["source_of_funds"] == "discrepancy" && deposit["kyc_account_number"].present? %>
+                  <div class="text-muted">KYC a/c <%= deposit["kyc_account_number"] %></div>
+                <% end %>
+              </td>
+              <td>
+                <div class="reconciliation-narration"><%= deposit["raw_narration"] %></div>
+                <div class="text-muted"><%= deposit["sheet"] %> · row <%= deposit["row"] %></div>
+              </td>
+              <td class="text-end text-nowrap"><%= number_to_currency(deposit["amount"], unit: "") %></td>
+              <td class="text-end text-nowrap"><%= deposit["due_amount"] ? number_to_currency(deposit["due_amount"], unit: "") : "—" %></td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  <% label, css = tag_for.call(tier_tags, deposit["tier"]) %>
+                  <span class="badge reconciliation-badge <%= css %>"
+                        <% if reasoning.any? %>data-bs-toggle="tooltip" data-bs-title="<%= reasoning.join(' · ') %>"<% end %>><%= label %></span>
+                  <% if amount_tags.key?(deposit["amount_status"]) %>
+                    <% label, css = amount_tags[deposit["amount_status"]] %>
+                    <span class="badge reconciliation-badge <%= css %>"><%= label %></span>
+                  <% end %>
+                  <% if !internal && funds_tags.key?(deposit["source_of_funds"]) %>
+                    <% label, css = funds_tags[deposit["source_of_funds"]] %>
+                    <span class="badge reconciliation-badge <%= css %>"><%= label %></span>
+                  <% end %>
+                  <% if deposit["identity_via"] == "manual_reassign" %>
+                    <span class="badge reconciliation-badge bg-secondary">Reassigned</span>
+                  <% end %>
+                  <% if deposit["payment_status"].present? %>
+                    <% label, css = tag_for.call(payment_tags, deposit["payment_status"]) %>
+                    <span class="badge reconciliation-badge <%= css %>"><%= label %></span>
+                  <% end %>
+                </div>
+                <% if attention.present? %>
+                  <div class="text-muted"><%= attention %></div>
+                <% end %>
+                <% if deposit["payment_error"].present? %>
+                  <div class="text-danger"><%= deposit["payment_error"] %></div>
+                <% end %>
+              </td>
+              <td class="reconciliation-actions">
+                <% if recorded_here && can_undo %>
+                  <%# Goes through the call-scoped undo action (not the generic payment destroy) so the
+                      report's deposit entry is cleared and the redirect lands back on this page. The
+                      global confirm modal (layouts/_confirm) intercepts the click and submits this form
+                      on Proceed. %>
+                  <%= button_to "Undo", undo_reconciliation_deposit_capital_call_path(capital_call),
+                      params: { report_id: report.id, deposit_index: idx }, method: :post,
+                      class: "btn btn-sm btn-outline-danger",
+                      form_class: "d-inline",
+                      data: { turbo: false, action: "click->confirm#popup",
+                              title: "Undo this payment?",
+                              msg: "The payment will be deleted and the deposit returned to review. " \
+                                   "If units have already been allocated against this payment, undo will be blocked." } %>
+                <% end %>
 
-    <%= render ToggleCard.new(title: "No match (#{no_match.size})", css_class: "recon-nomatch", state: "show") do %>
-      <% if no_match.empty? %>
-        <p class="text-muted">None.</p>
-      <% else %>
-        <% no_match.each do |deposit, idx| %>
-          <%= render "capital_calls/reconciliation_deposit_row", capital_call: capital_call, report: report,
-                     deposit: deposit, deposit_index: idx, show_confirm: false %>
-        <% end %>
-      <% end %>
-    <% end %>
+                <% if can_confirm %>
+                  <%= button_to "Confirm", confirm_reconciliation_deposit_capital_call_path(capital_call),
+                      params: { report_id: report.id, deposit_index: idx }, method: :post,
+                      class: "btn btn-sm btn-primary", form_class: "d-inline" %>
+                <% end %>
 
-    <%= render ToggleCard.new(title: "Internal — fund's own money (#{internal.size})", css_class: "recon-internal", state: "hide") do %>
-      <% if internal.empty? %>
-        <p class="text-muted">None.</p>
-      <% else %>
-        <ul class="list-unstyled mb-0">
-          <% internal.each do |deposit, _idx| %>
-            <li class="reconciliation-narration"><%= deposit["raw_narration"] %> — <%= deposit["notes"] %></li>
+                <% if can_reassign %>
+                  <%# Pick the remittance (folio) this deposit belongs to. The value submitted is the
+                      folio; the controller also still accepts a Virtual Bank Account typed here. %>
+                  <%= form_with url: reassign_reconciliation_deposit_capital_call_path(capital_call), method: :post,
+                                class: "input-group input-group-sm reconciliation-reassign-form", local: true do |f| %>
+                    <%= f.hidden_field :report_id, value: report.id %>
+                    <%= f.hidden_field :deposit_index, value: idx %>
+                    <%= f.text_field :lookup, list: "reconciliation_folios", placeholder: "Pick investor / folio",
+                                     autocomplete: "off", class: "form-control", required: true %>
+                    <%= f.submit "Reassign", class: "btn btn-outline-secondary" %>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
           <% end %>
-        </ul>
+        </tbody>
+      </table>
+    </div>
+
+    <%# Shared by every Reassign input above (see reassign_choices). %>
+    <datalist id="reconciliation_folios">
+      <% reassign_choices.each do |folio_id, investor_name| %>
+        <option value="<%= folio_id %>"><%= investor_name %></option>
       <% end %>
-    <% end %>
+    </datalist>
+  <% end %>
 </div>

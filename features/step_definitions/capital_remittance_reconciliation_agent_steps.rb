@@ -4,10 +4,11 @@
 #
 # Strategy: agent runs go through RemittanceReconciliationAgent.wtf?() directly,
 # same as RtaReconciliationAgent's feature. Unlike RTA (which stubs the LLM entirely since
-# extraction is AI-driven), Phase 1 of this agent has no LLM step at all — narration parsing
-# is fully deterministic — so scenarios build a *real* xlsx workbook (via Axlsx) and attach it
+# extraction is AI-driven), this agent has no LLM step at all — narration parsing and matching
+# are fully deterministic — so scenarios build a *real* xlsx workbook (via Axlsx) and attach it
 # to a real Document, exercising the genuine Roo + BankDepositNarrationParser pipeline rather
-# than stubbing it out.
+# than stubbing it out. The summary email is asserted via ActionMailer::Base.deliveries
+# (Cucumber runs the :inline ActiveJob adapter, and the agent uses deliver_now anyway).
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -22,13 +23,15 @@ def remit_report_json
   (remit_call_report&.json_fields || {}).deep_symbolize_keys
 end
 
-# ICICI-shape header: Sl No / Transaction Remarks / Withdrawal (Dr) / Deposit (Cr).
+# ICICI-shape header: Sl No / Tran Id / Transaction Remarks / Withdrawal (Dr) / Deposit (Cr).
 # withdrawal_amount and deposit_amount are mutually exclusive per row, same as a real
-# statement — exactly one is populated, the other left blank.
+# statement — exactly one is populated, the other left blank. Tran Id is the bank's own
+# transaction id ("TXN-<n>", deterministic so a scenario can refer to it) — the reference_no
+# every payment applied from that row carries, which is what makes re-runs idempotent.
 def icici_sheet_rows(deposits: [], withdrawals: [])
-  header = ["Sl No", "Transaction Remarks", "Withdrawal (Dr)", "Deposit (Cr)"]
-  rows = deposits.each_with_index.map { |(narration, amount), i| [i + 1, narration, nil, amount] }
-  rows += withdrawals.each_with_index.map { |(narration, amount), i| [deposits.size + i + 1, narration, amount, nil] }
+  header = ["Sl No", "Tran Id", "Transaction Remarks", "Withdrawal (Dr)", "Deposit (Cr)"]
+  rows = deposits.each_with_index.map { |(narration, amount), i| [i + 1, "TXN-#{i + 1}", narration, nil, amount] }
+  rows += withdrawals.each_with_index.map { |(narration, amount), i| [deposits.size + i + 1, "TXN-#{deposits.size + i + 1}", narration, amount, nil] }
   [header] + rows
 end
 
@@ -96,8 +99,10 @@ def run_remit_agent(bank_statement_document_id: :_use_doc)
   )
 end
 
+# An amount written with comma grouping ("10,49,763.03") is deliberately kept as a String so
+# the workbook carries a text cell, the way some bank exports do — the parser must cope.
 def parse_amount_table(table)
-  table.hashes.map { |row| [row["narration"], row["amount"].to_f] }
+  table.hashes.map { |row| [row["narration"], row["amount"].include?(",") ? row["amount"] : row["amount"].to_f] }
 end
 
 # ── Background ─────────────────────────────────────────────────────────────────
@@ -114,9 +119,20 @@ Given('there is a RemittanceReconciliationAgent configured for the entity') do
   )
 end
 
+Given('the RemittanceReconciliationAgent is disabled') do
+  @remit_agent.update!(enabled: false)
+end
+
 Given("the agent's auto_apply_exact is {string}") do |value|
   @remit_agent.json_fields["auto_apply_exact"] = value
   @remit_agent.save!
+end
+
+Given("the agent's send_report is {string} and notify_email is {string}") do |send_report, email|
+  @remit_agent.json_fields["send_report"] = send_report
+  @remit_agent.json_fields["notify_email"] = email
+  @remit_agent.save!
+  ActionMailer::Base.deliveries.clear
 end
 
 # ── Given: remittance candidates ────────────────────────────────────────────────
@@ -125,13 +141,14 @@ end
 # @capital_call. investor_kyc is assigned onto the commitment explicitly — CapitalCommitment
 # belongs_to :investor_kyc is a real FK, not auto-resolved from the investor, so a KYC record
 # floating unassociated would never be found by capital_remittance.investor_kyc.
-def create_remittance_candidate(investor_name:, call_amount:, bank_account_number: nil, virtual_bank_account: nil)
+def create_remittance_candidate(investor_name:, call_amount:, bank_account_number: nil, virtual_bank_account: nil, folio_currency: nil)
   investor_entity = FactoryBot.create(:entity, entity_type: "Individual", name: investor_name)
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: investor_entity)
   kyc = bank_account_number ? FactoryBot.create(:investor_kyc, entity: @entity, investor: investor, bank_account_number: bank_account_number) : nil
   commitment = FactoryBot.create(
     :capital_commitment, fund: @fund, entity: @entity, investor: investor, investor_kyc: kyc,
-                         folio_id: "F-#{SecureRandom.hex(3)}", virtual_bank_account: virtual_bank_account
+                         folio_id: "F-#{SecureRandom.hex(3)}", virtual_bank_account: virtual_bank_account,
+                         folio_currency: folio_currency || @fund.currency
   )
   remittance = FactoryBot.build(
     :capital_remittance, capital_call: @capital_call, fund: @fund, entity: @entity,
@@ -161,6 +178,34 @@ end
 Given('there is a remittance under the capital call for investor {string} with call amount {float} and KYC bank account {string} and virtual bank account {string}') do |investor_name, call_amount, kyc_account, virtual_account|
   create_remittance_candidate(investor_name: investor_name, call_amount: call_amount,
                               bank_account_number: kyc_account, virtual_bank_account: virtual_account)
+end
+
+# call_amount stays in fund currency (that is what the bank statement deposit is compared to);
+# only the commitment's folio currency differs, so the payment's folio amount has to be derived
+# through the fund's exchange rate.
+Given('there is a remittance under the capital call for investor {string} with call amount {float} and KYC bank account {string} in folio currency {string}') do |investor_name, call_amount, account, folio_currency|
+  create_remittance_candidate(investor_name: investor_name, call_amount: call_amount, bank_account_number: account, folio_currency: folio_currency)
+end
+
+# Simulates the same statement having already been run against a different call of the same
+# fund: a second CapitalCall with its own remittance for the same commitment, and a payment
+# carrying the bank transaction id in question applied there.
+Given('the deposit with tran id {string} was already recorded against another capital call of the fund for investor {string}') do |tran_id, investor_name|
+  original = @remittances_by_investor[investor_name]
+  other_call = FactoryBot.build(:capital_call, fund: @fund, entity: @entity, name: "Other Call #{SecureRandom.hex(2)}")
+  other_call.save(validate: false)
+  other_remittance = FactoryBot.build(
+    :capital_remittance, capital_call: other_call, fund: @fund, entity: @entity,
+                         investor: original.investor, capital_commitment: original.capital_commitment, folio_id: original.folio_id,
+                         call_amount: original.call_amount, collected_amount: 0, status: "Pending"
+  )
+  other_remittance.save(validate: false)
+  outcome = RemittanceDepositPaymentApplier.call(
+    deposit: { "amount" => original.call_amount.to_f, "value_date" => Time.zone.today.iso8601,
+               "sheet" => "ICICI", "row" => 1, "raw_narration" => "RTGS-OTHER-CALL", "tran_id" => tran_id },
+    capital_remittance: other_remittance, fund: @fund
+  )
+  expect(outcome[:status]).to eq(:created), "fixture payment on the other call failed: #{outcome[:error]}"
 end
 
 # ── Given: bank statement setup ─────────────────────────────────────────────────
@@ -272,6 +317,70 @@ Then('the deposit with narration {string} has source_of_funds {string}') do |nar
   expect(deposit[:source_of_funds]).to eq(source_of_funds)
 end
 
+Then('the deposit with narration {string} has amount_status {string}') do |narration, amount_status|
+  deposit = find_deposit_by_narration(narration)
+  expect(deposit[:amount_status]).to eq(amount_status), "Expected amount_status '#{amount_status}', got '#{deposit[:amount_status]}' (reasoning: #{deposit[:reasoning]})"
+end
+
+Then('the deposit with narration {string} has a reasoning line matching {string}') do |narration, text|
+  deposit = find_deposit_by_narration(narration)
+  lines = Array(deposit[:reasoning])
+  expect(lines.any? { |l| l.to_s.include?(text) }).to be(true), "No reasoning line containing '#{text}' — got: #{lines.join(' | ')}"
+end
+
+Then('the deposit with narration {string} has payment_status {string}') do |narration, status|
+  deposit = find_deposit_by_narration(narration)
+  expect(deposit[:payment_status]).to eq(status), "Expected payment_status '#{status}', got '#{deposit[:payment_status]}' (#{deposit[:payment_error]})"
+end
+
+Then('the deposit with narration {string} has no payment_id') do |narration|
+  deposit = find_deposit_by_narration(narration)
+  expect(deposit[:payment_id]).to be_nil
+end
+
+Then('the deposit with narration {string} has amount {float}') do |narration, amount|
+  deposit = find_deposit_by_narration(narration)
+  expect(deposit[:amount]).to be_within(0.001).of(amount)
+end
+
+Then('the report payments_recorded_elsewhere is {int}') do |count|
+  expect(remit_report_json[:payments_recorded_elsewhere]).to eq(count)
+end
+
+Then('exactly {int} CapitalRemittancePayment exists on the fund with reference {string}') do |count, reference|
+  expect(CapitalRemittancePayment.where(fund: @fund, reference_no: reference).count).to eq(count)
+end
+
+Then('the CapitalRemittancePayment for {string} has amount {float}') do |investor_name, amount|
+  payment = CapitalRemittancePayment.find_by!(capital_remittance: @remittances_by_investor[investor_name])
+  expect(payment.amount.to_f).to be_within(0.01).of(amount)
+end
+
+Then('the CapitalRemittancePayment for {string} has folio amount {float}') do |investor_name, amount|
+  payment = CapitalRemittancePayment.find_by!(capital_remittance: @remittances_by_investor[investor_name])
+  expect(payment.folio_amount.to_f).to be_within(0.01).of(amount)
+end
+
+def reconciliation_report_emails
+  ActionMailer::Base.deliveries.select { |m| m.subject.to_s.start_with?("[RECON") }
+end
+
+Then('a reconciliation report email is sent to {string} with subject matching {string}') do |email, subject_fragment|
+  mail = reconciliation_report_emails.find { |m| m.to.include?(email) }
+  expect(mail).to be_present, "No reconciliation email to #{email}; deliveries: #{ActionMailer::Base.deliveries.map(&:subject).join(' | ')}"
+  expect(mail.subject).to include(subject_fragment)
+  @reconciliation_email = mail
+end
+
+Then('the reconciliation report email mentions {string}') do |text|
+  body = @reconciliation_email.html_part&.body&.decoded || @reconciliation_email.body.decoded
+  expect(body).to include(text)
+end
+
+Then('no reconciliation report email is sent') do
+  expect(reconciliation_report_emails).to be_empty
+end
+
 # ── Phase 4 (UI) ─────────────────────────────────────────────────────────────────
 #
 # These scenarios visit the real Capital Call page and click real buttons — unlike the
@@ -294,16 +403,49 @@ When('I click {string}') do |button_text|
   click_button button_text
 end
 
+# The run trigger lives inside the capital call's Actions dropdown (closed on load), so it
+# has to be opened before the button is visible to the Playwright driver.
+When('I open the capital call actions menu') do
+  click_on "Actions"
+end
+
+# Undo goes through the global confirm modal (layouts/_confirm): the button click only opens
+# it, Proceed submits the intercepted form.
+When('I proceed with the confirmation popup') do
+  expect(page).to have_css("#confirmModal", visible: true)
+  within("#confirmModal") { click_on "Proceed" }
+end
+
+Then('I should see {string}') do |text|
+  expect(page).to have_content(text)
+end
+
+Then('I should not see {string}') do |text|
+  expect(page).not_to have_content(text)
+end
+
+# The panel lives in its own tab on the capital call page (show pages keep everything in
+# tabs), so it has to be opened before any of its content is visible to Playwright.
+When('I open the Reconciliation tab') do
+  click_on "Reconciliation"
+end
+
 Then('I should see the reconciliation panel') do
   expect(page).to have_content("Remittance Reconciliation")
 end
 
-Then('I should not see the reconciliation panel') do
-  expect(page).not_to have_content("Remittance Reconciliation")
+Then('I should not see the Reconciliation tab') do
+  expect(page).not_to have_link("Reconciliation")
 end
 
 Then('I should see the run reconciliation button') do
   expect(page).to have_button("Run Reconciliation")
+end
+
+# A locked item is a non-clickable span carrying the lock icon, not a button.
+Then('the run reconciliation menu item is locked') do
+  expect(page).not_to have_button("Run Reconciliation")
+  expect(page).to have_css("span.dropdown-item--locked", text: "Run Reconciliation")
 end
 
 Then('I should see the payment recorded confirmation') do
@@ -328,6 +470,12 @@ def build_reconciliation_report(deposits:)
   )
 end
 
+# A report with no deposits at all — enough for the panel to render (it is hidden until a
+# results report exists) without needing any remittance fixtures.
+Given('there is an empty reconciliation report for the capital call') do
+  @reconciliation_report = build_reconciliation_report(deposits: [])
+end
+
 Given('there is a reconciliation report for the capital call with a probable deposit matched to {string}') do |investor_name|
   remittance = @remittances_by_investor[investor_name]
   deposit = {
@@ -338,8 +486,9 @@ Given('there is a reconciliation report for the capital call with a probable dep
     "amount" => remittance.call_amount.to_f, "tran_id" => nil, "value_date" => Time.zone.today.iso8601,
     "tier" => "probable", "matched_remittance_id" => remittance.id,
     "matched_commitment_id" => remittance.capital_commitment_id, "matched_investor_name" => remittance.investor_name,
-    "identity_via" => "name", "due_amount" => remittance.call_amount.to_f,
-    "source_of_funds" => "unverifiable", "reasoning" => ["name similarity 1.0 to \"#{remittance.investor_name}\""]
+    "identity_via" => "name", "kyc_account_number" => nil, "due_amount" => remittance.call_amount.to_f,
+    "amount_status" => "within_tolerance",
+    "source_of_funds" => "unverifiable", "reasoning" => ["name similarity 1.0 to \"#{remittance.investor_name}\"", "amount within tolerance of due"]
   }
   @reconciliation_report = build_reconciliation_report(deposits: [deposit])
 end
@@ -360,8 +509,9 @@ Given('there is a reconciliation report for the capital call with an exact payme
     "amount" => remittance.call_amount.to_f, "tran_id" => outcome[:reference_no], "value_date" => Time.zone.today.iso8601,
     "tier" => "exact", "matched_remittance_id" => remittance.id,
     "matched_commitment_id" => remittance.capital_commitment_id, "matched_investor_name" => remittance.investor_name,
-    "identity_via" => "kyc_account", "due_amount" => remittance.call_amount.to_f,
-    "source_of_funds" => "confirmed", "reasoning" => ["account matches InvestorKyc#bank_account_number"],
+    "identity_via" => "kyc_account", "kyc_account_number" => "50100602457893", "due_amount" => remittance.call_amount.to_f,
+    "amount_status" => "within_tolerance",
+    "source_of_funds" => "confirmed", "reasoning" => ["sender account 50100602457893 matches the investor's KYC bank account", "amount within tolerance of due"],
     "payment_id" => outcome[:payment_id], "reference_no" => outcome[:reference_no], "payment_status" => outcome[:status].to_s
   }
   @reconciliation_report = build_reconciliation_report(deposits: [deposit])
