@@ -274,11 +274,27 @@ class RemittanceReconciliationAgent < SupportAgentService
     candidates = ctx[:candidates] || []
     tier_counts = Hash.new(0)
     discrepancy_count = 0
+    already_recorded = 0
+    recorded_elsewhere = 0
+    existing_by_ref = existing_payments_by_reference(ctx)
 
     ctx[:deposits].each do |deposit|
       if deposit["internal"]
         deposit["tier"] = "internal"
         tier_counts["internal"] += 1
+        next
+      end
+
+      # A deposit this fund has ALREADY recorded a payment for (same bank reference) must be
+      # recognised before its amount is scored: the earlier payment reduced the remittance's
+      # due amount, so a re-run of the same statement would otherwise read its own payment as
+      # an overpayment and push the row to Needs review.
+      deposit["reference_no"] = RemittanceDepositPaymentApplier.reference_no_for(deposit)
+      existing = existing_by_ref[deposit["reference_no"]]
+      if existing && existing.capital_remittance&.capital_call_id == ctx[:capital_call].id
+        apply_recorded_payment(deposit, existing)
+        already_recorded += 1
+        tier_counts[deposit["tier"]] += 1
         next
       end
 
@@ -295,11 +311,25 @@ class RemittanceReconciliationAgent < SupportAgentService
         discrepancy_count += 1 if deposit["source_of_funds"] == "discrepancy"
       end
 
+      # Same reference already applied under a DIFFERENT call of this fund: keep the tiering
+      # (so the reviewer sees who it matched here) but flag it — never re-applied, no Undo here.
+      if existing
+        other_call = existing.capital_remittance&.capital_call
+        deposit["payment_status"] = "recorded_elsewhere"
+        deposit["payment_error"] = "already recorded as a payment against #{other_call&.name || 'another capital call'} (payment ##{existing.id})"
+        ctx[:issues] << { type: :warning,
+                          message: "Deposit for #{deposit['matched_investor_name'] || deposit['name']} was #{deposit['payment_error']} — not re-applied to this call",
+                          severity: :warning }
+        recorded_elsewhere += 1
+      end
+
       tier_counts[deposit["tier"]] += 1
     end
 
     ctx[:tier_counts] = tier_counts
     ctx[:discrepancy_count] = discrepancy_count
+    ctx[:payments_already_recorded] = already_recorded
+    ctx[:payments_recorded_elsewhere] = recorded_elsewhere
     if discrepancy_count.positive?
       ctx[:issues] << { type: :warning,
                         message: "#{discrepancy_count} deposit(s) matched an investor by name but the narration's account " \
@@ -327,11 +357,13 @@ class RemittanceReconciliationAgent < SupportAgentService
 
     fund = ctx[:capital_call].fund
     created = 0
-    already_recorded = 0
-    recorded_elsewhere = 0
+    already_recorded = ctx[:payments_already_recorded] || 0
+    recorded_elsewhere = ctx[:payments_recorded_elsewhere] || 0
     failed = 0
 
-    ctx[:deposits].select { |d| d["tier"] == "exact" }.each do |deposit|
+    # Exact rows with no payment outcome yet — score_deposits already settled the ones whose
+    # reference was found on this fund (already_recorded / recorded_elsewhere).
+    ctx[:deposits].select { |d| d["tier"] == "exact" && d["payment_status"].blank? }.each do |deposit|
       # Scoped through capital_call.capital_remittances (not a bare CapitalRemittance.find_by)
       # as defense in depth: matched_remittance_id is always sourced from ctx[:candidates],
       # itself already scoped to this call, so this can't fire in the normal flow - it's here
@@ -410,6 +442,40 @@ class RemittanceReconciliationAgent < SupportAgentService
     ctx[:issues] << { type: :warning, message: "Report email failed: #{e.message}", severity: :warning }
     mark_step_failed(report, :send_reconciliation_report, message: "Email error: #{e.message}") if report
     true
+  end
+
+  # One query for every payment on this fund whose reference_no matches a deposit on the
+  # statement, keyed by reference. Loads the remittance too since the caller needs its call.
+  def existing_payments_by_reference(ctx)
+    refs = ctx[:deposits].reject { |d| d["internal"] }.map { |d| RemittanceDepositPaymentApplier.reference_no_for(d) }.uniq
+    return {} if refs.empty?
+
+    CapitalRemittancePayment.where(fund_id: ctx[:capital_call].fund_id, reference_no: refs)
+                            .includes(capital_remittance: :capital_call)
+                            .index_by(&:reference_no)
+  end
+
+  # Marks a deposit as the payment this call already holds for it: identity comes from the
+  # payment's own remittance (no re-matching needed), the amount is judged against the due
+  # amount as it stood BEFORE that payment, and the row is tagged already_recorded so the
+  # apply step skips it and the panel offers Undo rather than Confirm.
+  def apply_recorded_payment(deposit, payment)
+    remittance = payment.capital_remittance
+    due_before_payment = remittance.due_amount.to_f + payment.amount.to_f
+    amount_status, amount_line = classify_amount(deposit["amount"], due_before_payment)
+
+    deposit["matched_remittance_id"] = remittance.id
+    deposit["matched_commitment_id"] = remittance.capital_commitment_id
+    deposit["matched_investor_name"] = remittance.investor_name
+    deposit["identity_via"] = "recorded_payment"
+    deposit["kyc_account_number"] = remittance.investor_kyc&.bank_account_number.presence
+    deposit["due_amount"] = due_before_payment
+    deposit["amount_status"] = amount_status.to_s
+    deposit["source_of_funds"] = "unverifiable"
+    deposit["reasoning"] = ["already recorded as payment ##{payment.id} on #{I18n.l(payment.payment_date)} (reference #{payment.reference_no})", amount_line]
+    deposit["payment_id"] = payment.id
+    deposit["payment_status"] = "already_recorded"
+    deposit["tier"] = "exact"
   end
 
   # Mutates `deposit` in place for a :resolved identity — separated from score_deposits'

@@ -187,6 +187,12 @@ Given('there is a remittance under the capital call for investor {string} with c
   create_remittance_candidate(investor_name: investor_name, call_amount: call_amount, bank_account_number: account, folio_currency: folio_currency)
 end
 
+# Test entities come with default exchange rates seeded (dated years back), so "no rate on
+# file" has to be made true explicitly.
+Given('there is no exchange rate from {string} to {string} for the entity') do |from, to|
+  ExchangeRate.where(entity: @entity, from: from, to: to).delete_all
+end
+
 # Simulates the same statement having already been run against a different call of the same
 # fund: a second CapitalCall with its own remittance for the same commitment, and a payment
 # carrying the bank transaction id in question applied there.
@@ -250,13 +256,13 @@ Then('a capital-call-level SupportAgentReport is saved') do
   expect(remit_call_report).to be_present
 end
 
-Then('the report has a blocking issue matching {string}') do |text|
+Then('the reconciliation report has a blocking issue matching {string}') do |text|
   issues = remit_report_json[:issues] || []
   match  = issues.any? { |i| (i[:severity] || i["severity"]).to_s == "blocking" && (i[:message] || i["message"]).to_s.include?(text) }
   expect(match).to be(true), "Expected a blocking issue containing '#{text}', got: #{issues.map { |i| i[:message] || i['message'] }.join('; ')}"
 end
 
-Then('the report has a warning issue matching {string}') do |text|
+Then('the reconciliation report has a warning issue matching {string}') do |text|
   issues = remit_report_json[:issues] || []
   match  = issues.any? { |i| (i[:severity] || i["severity"]).to_s == "warning" && (i[:message] || i["message"]).to_s.include?(text) }
   expect(match).to be(true), "Expected a warning issue containing '#{text}', got: #{issues.map { |i| i[:message] || i['message'] }.join('; ')}"
@@ -399,14 +405,15 @@ When('I visit the capital call page as the fund admin') do
   visit capital_call_path(@capital_call)
 end
 
-When('I click {string}') do |button_text|
-  click_button button_text
-end
+# "I click {string}", "I should see {string}" and "I should not see {string}" come from
+# features/common.rb — do not redefine them here (Cucumber::Ambiguous).
 
 # The run trigger lives inside the capital call's Actions dropdown (closed on load), so it
 # has to be opened before the button is visible to the Playwright driver.
 When('I open the capital call actions menu') do
-  click_on "Actions"
+  # By id: the Remittances tab (active by default) renders a per-row "Actions" dropdown too,
+  # so a plain click_on "Actions" is ambiguous.
+  find("#capital_call_actions_btn").click
 end
 
 # Undo goes through the global confirm modal (layouts/_confirm): the button click only opens
@@ -416,18 +423,11 @@ When('I proceed with the confirmation popup') do
   within("#confirmModal") { click_on "Proceed" }
 end
 
-Then('I should see {string}') do |text|
-  expect(page).to have_content(text)
-end
-
-Then('I should not see {string}') do |text|
-  expect(page).not_to have_content(text)
-end
-
 # The panel lives in its own tab on the capital call page (show pages keep everything in
 # tabs), so it has to be opened before any of its content is visible to Playwright.
 When('I open the Reconciliation tab') do
-  click_on "Reconciliation"
+  # exact: a substring match would also hit the "Run Reconciliation" buttons.
+  click_link "Reconciliation", exact: true
 end
 
 Then('I should see the reconciliation panel') do
@@ -435,11 +435,20 @@ Then('I should see the reconciliation panel') do
 end
 
 Then('I should not see the Reconciliation tab') do
-  expect(page).not_to have_link("Reconciliation")
+  expect(page).not_to have_link("Reconciliation", exact: true)
 end
 
 Then('I should see the run reconciliation button') do
   expect(page).to have_button("Run Reconciliation")
+end
+
+# Button-based, not text-based: plain page text would also match e.g. a user named "UndoAdmin".
+Then('there is no Undo button in the reconciliation table') do
+  expect(page).not_to have_button("Undo")
+end
+
+Then('there is a Confirm button in the reconciliation table') do
+  expect(page).to have_button("Confirm")
 end
 
 # A locked item is a non-clickable span carrying the lock icon, not a button.

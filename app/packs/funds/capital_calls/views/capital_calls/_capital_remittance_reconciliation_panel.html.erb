@@ -155,7 +155,7 @@
                       params: { report_id: report.id, deposit_index: idx }, method: :post,
                       class: "btn btn-sm btn-outline-danger",
                       form_class: "d-inline",
-                      data: { turbo: false, action: "click->confirm#popup",
+                      data: { turbo: false, action: "click->confirm#popup", method: :post,
                               title: "Undo this payment?",
                               msg: "The payment will be deleted and the deposit returned to review. " \
                                    "If units have already been allocated against this payment, undo will be blocked." } %>

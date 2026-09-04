@@ -25,7 +25,7 @@ Feature: Capital Remittance Reconciliation Agent
   Scenario: Running without an uploaded bank statement records a blocking issue
     When the RemittanceReconciliationAgent runs for the capital call without a bank statement
     Then a capital-call-level SupportAgentReport is saved
-    And the report has a blocking issue matching "No bank statement uploaded"
+    And the reconciliation report has a blocking issue matching "No bank statement uploaded"
 
   # ── 3. ICICI narration parsing ─────────────────────────────────────────────
 
@@ -106,7 +106,7 @@ Feature: Capital Remittance Reconciliation Agent
       | XYZQ123 SOMETHING WEIRD | 1000.0 |
     When the RemittanceReconciliationAgent runs for the capital call
     Then a capital-call-level SupportAgentReport is saved
-    And the report has a warning issue matching "didn't match any known narration pattern"
+    And the reconciliation report has a warning issue matching "didn't match any known narration pattern"
 
   # ── 10. Re-running is safe ─────────────────────────────────────────────────
 
@@ -306,7 +306,8 @@ Feature: Capital Remittance Reconciliation Agent
 
   @capital_remittance_reconciliation @auto_apply @multi_currency
   Scenario: A payment on a USD folio with no exchange rate on file is refused rather than recorded with a zero folio amount
-    Given there is a remittance under the capital call for investor "Deepak Agarwal" with call amount 699842.06 and KYC bank account "50100602457893" in folio currency "USD"
+    Given there is no exchange rate from "INR" to "USD" for the entity
+    And there is a remittance under the capital call for investor "Deepak Agarwal" with call amount 699842.06 and KYC bank account "50100602457893" in folio currency "USD"
     And the agent's auto_apply_exact is "Yes"
     And the bank statement has an ICICI sheet with deposit rows:
       | narration                                                              | amount    |
@@ -314,7 +315,7 @@ Feature: Capital Remittance Reconciliation Agent
     When the RemittanceReconciliationAgent runs for the capital call
     Then the report payments_created is 0
     And the deposit with narration "RTGS-HDFCR5202606247 4674383-DEEPAKAGARWAL-50100602457893-HDFC0000240" has payment_status "error"
-    And the report has a warning issue matching "No exchange rate from INR to USD"
+    And the reconciliation report has a warning issue matching "No exchange rate from INR to USD"
 
   # ── 19d. Summary email ───────────────────────────────────────────────────────
 
@@ -413,7 +414,7 @@ Feature: Capital Remittance Reconciliation Agent
 
   @capital_remittance_reconciliation @ui
   Scenario: Undo removes an Exact auto-applied payment
-    Given there is a user "first_name=UndoAdmin" for an entity "name=UndoTestEntity;entity_type=Investment Fund"
+    Given there is a user "first_name=RevertAdmin" for an entity "name=RevertTestEntity;entity_type=Investment Fund"
     And the user has role "company_admin"
     And the entity has the capital_remittance_reconciliation_agent flag enabled
     And there is a RemittanceReconciliationAgent configured for the entity
@@ -428,5 +429,5 @@ Feature: Capital Remittance Reconciliation Agent
     Then the CapitalRemittancePayment for "Deepak Agarwal" should be destroyed
     And I should see "Payment removed"
     When I open the Reconciliation tab
-    Then I should see "Confirm"
-    And I should not see "Undo"
+    Then there is a Confirm button in the reconciliation table
+    And there is no Undo button in the reconciliation table
