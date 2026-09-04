@@ -117,6 +117,7 @@ Scenario Outline: Transfer Fund Units
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   When fund units are transferred "<transfer>"
@@ -146,6 +147,7 @@ Scenario Outline: Transfer Fund Units Validations
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   Given there is a fund "name=Demo Fund 3;currency=INR;unit_types=A1,A2" for the entity
@@ -208,6 +210,7 @@ Scenario: Transfer Fund Units - fails when from commitment has no remaining unit
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   Given the fund units are fully transferred
@@ -229,6 +232,7 @@ Scenario: Transfer Fund Units without account entries
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   When fund units are transferred "price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=false,account_entries_excluded=nil"
@@ -253,6 +257,7 @@ Scenario: Transfer Fund Units with excluded account entries
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   When the fund units are transferred excluding the first account entry
@@ -274,6 +279,7 @@ Scenario: Fund unit counter caches are correct after transfer
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   When fund units are transferred "price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil"
