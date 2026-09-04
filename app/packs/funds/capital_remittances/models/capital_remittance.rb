@@ -168,12 +168,6 @@ class CapitalRemittance < ApplicationRecord
     end
   end
 
-  def payment_received_notification
-    investor.notification_users(fund, with_tag: 'CapitalCall').each do |user|
-      CapitalRemittanceNotifier.with(record: self, entity_id:, email_method: :payment_received).deliver_later(user)
-    end
-  end
-
   before_save :set_investor_name
   def set_investor_name
     self.investor_name = investor.investor_name
