@@ -18,13 +18,21 @@ require "caxlsx"
 # (an account-based role needs the investor's InvestorKyc#bank_account_number on file; the
 # virtual-account role needs CapitalCommitment#virtual_bank_account), so it works on any call
 # with a few remittances — on a call whose investors have no KYC bank accounts, only the
-# name-only roles are produced and the summary says so. Nothing is created or modified in the
-# database; the only output is the xlsx (public/sample_uploads/remittance_recon_call_<id>_<bank>.xlsx)
-# and, with run: true, an agent run against the call (which does create a Document and a
-# SupportAgentReport, and — only if the agent's auto_apply_exact is Yes — payments).
+# name-only roles are produced and the summary says so.
+#
+# Coverage: "full" (default) then adds an ordinary deposit for EVERY other outstanding
+# remittance on the call (Exact for those with a KYC account, name-only Probable otherwise), so
+# the statement pays the whole call and the reviewer sees one row per remittance. "sample"
+# stops after the role rows — one row per outcome, a short readable statement.
+#
+# Nothing is created or modified in the database; the only output is the xlsx
+# (public/sample_uploads/remittance_recon_call_<id>_<bank>[_sample].xlsx) and, with run: true,
+# an agent run against the call (which does create a Document and a SupportAgentReport, and
+# — only if the agent's auto_apply_exact is Yes — payments).
 #
 # Usage: rake "remittance_reconciliation:statement[<capital_call_id>,icici]"
-#        rake "remittance_reconciliation:statement[<capital_call_id>,axis,run]"
+#        rake "remittance_reconciliation:statement[<capital_call_id>,axis,sample]"
+#        rake "remittance_reconciliation:statement[<capital_call_id>,icici,full,run]"
 class RemittanceReconciliationStatementGenerator
   SAMPLE_DIR = Rails.public_path.join('sample_uploads')
   BANKS = %w[icici axis].freeze
@@ -49,19 +57,30 @@ class RemittanceReconciliationStatementGenerator
       expect: "Needs review — overpayment of 2,50,000 beyond tolerance (surplus may belong to another call)" }
   ].freeze
 
-  def initialize(capital_call_id, bank: "icici", run_agent: false, output: $stdout)
+  COVERAGES = %w[sample full].freeze
+
+  # Roles used only by full coverage for the remaining remittances — plain, in-full payments.
+  FULL_EXACT_ROLE = { key: :exact, needs: :kyc_account, amount: ->(due) { due },
+                      expect: "Exact — paid in full from the KYC account" }.freeze
+  FULL_PROBABLE_ROLE = { key: :probable, needs: :none, amount: ->(due) { due },
+                         expect: "Probable — paid in full, name only (no KYC account on file)" }.freeze
+
+  def initialize(capital_call_id, bank: "icici", coverage: "full", run_agent: false, output: $stdout)
     @capital_call = CapitalCall.find(capital_call_id)
     @fund = @capital_call.fund
     @entity = @capital_call.entity
     @bank = bank.to_s.downcase
     raise ArgumentError, "bank must be one of #{BANKS.join(', ')} (got #{bank.inspect})" unless BANKS.include?(@bank)
 
+    @coverage = coverage.to_s.downcase
+    raise ArgumentError, "coverage must be one of #{COVERAGES.join(', ')} (got #{coverage.inspect})" unless COVERAGES.include?(@coverage)
+
     @run_agent = run_agent
     @out = output
   end
 
   def call
-    @out.puts "== #{@bank.upcase} statement for Capital Call ##{@capital_call.id} (#{@fund.name} / #{@capital_call.name}) =="
+    @out.puts "== #{@bank.upcase} statement (#{@coverage}) for Capital Call ##{@capital_call.id} (#{@fund.name} / #{@capital_call.name}) =="
     remittances = @capital_call.capital_remittances.includes(capital_commitment: :investor_kyc).order(:id).to_a
     abort_with "This call has no remittances — generate them first (approve the call / run CapitalCallJob)." if remittances.empty?
 
@@ -95,6 +114,15 @@ class RemittanceReconciliationStatementGenerator
 
       available.delete(remittance)
       rows << build_row(role, remittance)
+    end
+
+    # Full coverage: everyone else pays too, in the plainest way their data allows.
+    if @coverage == "full"
+      available.each do |remittance|
+        role = kyc_account(remittance).present? ? FULL_EXACT_ROLE : FULL_PROBABLE_ROLE
+        rows << build_row(role, remittance)
+      end
+      available.clear
     end
 
     rows << { narration: name_only_narration("NOBODY MATCHES ME"), amount: 100_000.0, investor: nil,
@@ -177,7 +205,7 @@ class RemittanceReconciliationStatementGenerator
   # SYN- reference path is exercised there instead.
   def write_workbook(rows)
     FileUtils.mkdir_p(SAMPLE_DIR)
-    path = SAMPLE_DIR.join("remittance_recon_call_#{@capital_call.id}_#{@bank}.xlsx")
+    path = SAMPLE_DIR.join("remittance_recon_call_#{@capital_call.id}_#{@bank}#{'_sample' if @coverage == 'sample'}.xlsx")
     package = Axlsx::Package.new
     value_date = [@capital_call.due_date, Time.zone.today].min
 
@@ -213,12 +241,21 @@ class RemittanceReconciliationStatementGenerator
   # ── Reporting ──────────────────────────────────────────────────────────────
 
   def print_expectations(rows)
+    bulk_expects = [FULL_EXACT_ROLE[:expect], FULL_PROBABLE_ROLE[:expect]]
     @out.puts "#   | Investor                     |         Amount |            Due | Expected outcome"
     rows.each_with_index do |row, i|
+      next if bulk_expects.include?(row[:expect]) # the bulk "paid in full" rows are summarised below
+
       @out.puts format("%-3s | %-28s | %14s | %14s | %s", i + 1, (row[:investor] || "-")[0, 28],
                        delimited(row[:amount]), row[:due] ? delimited(row[:due]) : "-", row[:expect])
       @out.puts format("%-3s | %s", "", row[:narration])
     end
+    bulk = rows.select { |r| bulk_expects.include?(r[:expect]) }
+    return if bulk.empty?
+
+    @out.puts "... plus #{bulk.size} remaining remittance(s) paid in full: " \
+              "#{bulk.count { |r| r[:expect] == FULL_EXACT_ROLE[:expect] }} Exact (KYC account), " \
+              "#{bulk.count { |r| r[:expect] == FULL_PROBABLE_ROLE[:expect] }} Probable (name only)"
   end
 
   # Roles nobody could fill (and why), and outstanding remittances left with no deposit —

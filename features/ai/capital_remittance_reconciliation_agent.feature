@@ -214,6 +214,19 @@ Feature: Capital Remittance Reconciliation Agent
     And the deposit with narration "TRF/SAMRATH BEDI/TRANSFER" is tiered "probable"
     And the deposit with narration "TRF/SAMRATH BEDI/TRANSFER" has amount_status "partial"
 
+  # ── 15d. Same investor, two folios on the call, one KYC account ──────────────
+
+  @capital_remittance_reconciliation @matching
+  Scenario: A deposit from an investor holding two folios on the call is ambiguous and says which folios to pick from
+    Given there is a remittance under the capital call for investor "Deepak Agarwal" with call amount 699842.06 and KYC bank account "50100602457893"
+    And there is a second remittance under the capital call for the same investor "Deepak Agarwal" with call amount 300000.0
+    And the bank statement has an ICICI sheet with deposit rows:
+      | narration                                                              | amount    |
+      | RTGS-HDFCR5202606247 4674383-DEEPAKAGARWAL-50100602457893-HDFC0000240 | 699842.06 |
+    When the RemittanceReconciliationAgent runs for the capital call
+    Then the deposit with narration "RTGS-HDFCR5202606247 4674383-DEEPAKAGARWAL-50100602457893-HDFC0000240" is tiered "needs_review"
+    And the deposit with narration "RTGS-HDFCR5202606247 4674383-DEEPAKAGARWAL-50100602457893-HDFC0000240" has a reasoning line matching "2 folios of the same investor"
+
   # ── 16. No match ─────────────────────────────────────────────────────────────
 
   @capital_remittance_reconciliation @matching
@@ -409,6 +422,32 @@ Feature: Capital Remittance Reconciliation Agent
     When I open the Reconciliation tab
     Then I should see "Payment recorded"
     And I should see "Undo"
+
+  # ── 21b. Confirm all Exact ──────────────────────────────────────────────────
+
+  @capital_remittance_reconciliation @ui
+  Scenario: Confirm all Exact records every pending Exact row and leaves the Probable row alone
+    Given there is a user "first_name=BulkAdmin" for an entity "name=BulkTestEntity;entity_type=Investment Fund"
+    And the user has role "company_admin"
+    And the entity has the capital_remittance_reconciliation_agent flag enabled
+    And there is a RemittanceReconciliationAgent configured for the entity
+    And there is a fund "name=Test Fund" for the entity
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And there is a remittance under the capital call for investor "Deepak Agarwal" with call amount 699842.06 and KYC bank account "50100602457893"
+    And there is a remittance under the capital call for investor "Sandeep Kumar Singh" with call amount 349920.97 and KYC bank account "50100584951278"
+    And there is a remittance under the capital call for investor "Samrath Bedi" with call amount 1049763.03
+    And there is a reconciliation report for the capital call with exact deposits for "Deepak Agarwal, Sandeep Kumar Singh" and a probable deposit for "Samrath Bedi"
+    When I visit the capital call page as the fund admin
+    And I open the Reconciliation tab
+    And I click "Confirm all Matched (2)"
+    And I confirm the bulk confirmation modal
+    Then I should see "2 payments recorded"
+    And a CapitalRemittancePayment should exist for "Deepak Agarwal"
+    And a CapitalRemittancePayment should exist for "Sandeep Kumar Singh"
+    And no CapitalRemittancePayment should exist for "Samrath Bedi"
+    When I open the Reconciliation tab
+    Then there is a Confirm button in the reconciliation table
+    And there is no Confirm all Matched button
 
   # ── 22. Undo removes an auto-applied payment ────────────────────────────────
 

@@ -1,8 +1,10 @@
 class CapitalCallsController < ApplicationController
   include HasWorkflowable
+  include ActionView::Helpers::TextHelper # pluralize, for the bulk-confirm flash
 
   before_action :set_capital_call, only: %i[show edit update destroy reminder approve notify generate_docs allocate_units recompute_fees
-                                            confirm_reconciliation_deposit reassign_reconciliation_deposit undo_reconciliation_deposit]
+                                            confirm_reconciliation_deposit reassign_reconciliation_deposit undo_reconciliation_deposit
+                                            confirm_all_exact_reconciliation_deposits]
   before_action :set_workflowable, only: [:show] # runs after set_capital_call so @capital_call is available
 
   # GET /capital_calls or /capital_calls.json
@@ -196,6 +198,45 @@ class CapitalCallsController < ApplicationController
     redirect_to_reconciliation(notice: reconciliation_outcome_message(outcome))
   end
 
+  # Records a payment for every Exact-tier deposit on the report that has no payment outcome
+  # yet — the bulk form of confirm_reconciliation_deposit, through the same applier, one
+  # report save at the end. Rows in any other tier, and Exact rows already recorded (here or
+  # on another call), are left exactly as they are.
+  def confirm_all_exact_reconciliation_deposits
+    report = SupportAgentReport.find_by(id: params[:report_id], owner: @capital_call)
+    return redirect_to_reconciliation(alert: "Reconciliation report not found") unless report
+
+    deposits = report.json_fields["deposits"] || []
+    counts = Hash.new(0)
+    errors = []
+    deposits.each do |deposit|
+      next unless deposit["tier"] == "exact" && deposit["payment_status"].blank? && deposit["matched_remittance_id"].present?
+
+      remittance = @capital_call.capital_remittances.find_by(id: deposit["matched_remittance_id"])
+      outcome = if remittance
+                  RemittanceDepositPaymentApplier.call(deposit: deposit, capital_remittance: remittance, fund: @capital_call.fund)
+                else
+                  { status: :error, error: "matched remittance no longer exists" }
+                end
+      apply_outcome_to_deposit(deposit, outcome)
+      counts[outcome[:status]] += 1
+      errors << "#{deposit['matched_investor_name']}: #{outcome[:error]}" if outcome[:status] == :error
+    end
+
+    report.json_fields = report.json_fields.merge("deposits" => deposits)
+    report.json_fields_will_change! # MySQL doesn't auto-detect JSON field changes
+    report.save!
+
+    summary = ["#{pluralize(counts[:created], 'payment')} recorded."]
+    summary << "#{counts[:already_recorded]} already recorded." if counts[:already_recorded].positive?
+    summary << "#{counts[:recorded_elsewhere]} skipped (recorded on another call)." if counts[:recorded_elsewhere].positive?
+    if counts[:error].positive?
+      redirect_to_reconciliation(alert: "#{summary.join(' ')} #{counts[:error]} failed: #{errors.join('; ')}")
+    else
+      redirect_to_reconciliation(notice: summary.join(" "))
+    end
+  end
+
   # Reverses a payment recorded from a reconciliation deposit (auto-applied Exact, or a manual
   # Confirm/Reassign) and clears the deposit's payment fields on the report so the row returns
   # to its review section instead of lingering under "Payments recorded" with a dead link.
@@ -257,16 +298,20 @@ class CapitalCallsController < ApplicationController
     [report, deposit, idx]
   end
 
-  # Persists the outcome of applying one deposit back onto the report's json_fields, in place.
-  def save_reconciliation_outcome(report, idx, outcome)
-    deposits = report.json_fields["deposits"]
-    deposit = deposits[idx]
-    # payment_id only for a payment under THIS call — a :recorded_elsewhere payment belongs to
-    # another call's remittance, and a present payment_id is what makes the panel offer Undo.
+  # Writes one applier outcome onto a deposit entry (in memory). payment_id only for a payment
+  # under THIS call — a :recorded_elsewhere payment belongs to another call's remittance, and
+  # a present payment_id is what makes the panel offer Undo.
+  def apply_outcome_to_deposit(deposit, outcome)
     deposit["payment_id"] = outcome[:payment_id] if outcome[:payment_id] && outcome[:status] != :recorded_elsewhere
     deposit["reference_no"] = outcome[:reference_no] if outcome[:reference_no]
     deposit["payment_status"] = outcome[:status].to_s
     deposit["payment_error"] = outcome[:error] if outcome[:error]
+  end
+
+  # Persists the outcome of applying one deposit back onto the report's json_fields, in place.
+  def save_reconciliation_outcome(report, idx, outcome)
+    deposits = report.json_fields["deposits"]
+    apply_outcome_to_deposit(deposits[idx], outcome)
     report.json_fields = report.json_fields.merge("deposits" => deposits)
     report.json_fields_will_change! # MySQL doesn't auto-detect JSON field changes
     report.save!

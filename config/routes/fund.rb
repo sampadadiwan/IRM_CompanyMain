@@ -139,6 +139,7 @@ resources :capital_calls do
   post 'confirm_reconciliation_deposit', on: :member
   post 'reassign_reconciliation_deposit', on: :member
   post 'undo_reconciliation_deposit', on: :member
+  post 'confirm_all_exact_reconciliation_deposits', on: :member
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
 end

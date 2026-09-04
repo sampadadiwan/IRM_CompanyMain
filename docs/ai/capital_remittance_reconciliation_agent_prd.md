@@ -416,6 +416,8 @@ erDiagram
 }
 ```
 
+**Display labels (decided 2026-09-04):** the internal tier keys stay `exact | probable | needs_review | no_match | internal`, but the UI and email show them as **Matched**, **Likely match**, **Needs review**, **No match**, **Internal** — "Exact" read as "exact amount" when it means exact *identity*. Amount tags read **Partial payment** / **Overpayment** / **Amount unreadable** ("Partial" alone read as "partial match"); source-of-funds tags read **From KYC account** / **Not from KYC account**. Every tag carries a tooltip defining it.
+
 `amount_status` ∈ `within_tolerance | partial | overpaid | unknown`; `source_of_funds` ∈ `confirmed | discrepancy | unverifiable`; `payment_status` ∈ `created | already_recorded | recorded_elsewhere | error` (absent until a payment is attempted; cleared again by Undo).
 
 ```json
@@ -545,7 +547,7 @@ graph LR
 | `app/packs/funds/capital_remittances/services/remittance_deposit_payment_applier.rb` | **Created** — shared payment builder (auto-apply + manual confirm/reassign) |
 | `app/packs/ai/support_agents/mailers/remittance_reconciliation_mailer.rb` + view | **Created** — summary email |
 | `capital_calls_controller.rb` | **Modified** — `confirm_reconciliation_deposit`, `reassign_reconciliation_deposit`, `undo_reconciliation_deposit` |
-| `lib/remittance_reconciliation_statement_generator.rb`, `lib/tasks/remittance_reconciliation.rake` | **Created** — `rake "remittance_reconciliation:statement[<capital_call_id>,<icici|axis>,run]"`: from an existing call's own remittances, writes one bank statement xlsx in the chosen bank's export format whose rows produce every outcome (Exact, Partial, Probable, discrepancy, overpayment, No match, Internal, ignored withdrawal); creates nothing in the DB; `run` also executes the agent |
+| `lib/remittance_reconciliation_statement_generator.rb`, `lib/tasks/remittance_reconciliation.rake` | **Created** — `rake "remittance_reconciliation:statement[<capital_call_id>,<icici|axis>,<sample|full>,run]"`: from an existing call's own remittances, writes one bank statement xlsx in the chosen bank's export format whose rows produce every outcome (Exact, Partial, Probable, discrepancy, overpayment, No match, Internal, ignored withdrawal); `full` (default) also pays every other outstanding remittance in full, `sample` is one row per outcome only; creates nothing in the DB; `run` also executes the agent |
 | `features/capital_remittance_reconciliation_agent.feature` | **Created** — Cucumber acceptance tests |
 
 No DB migrations required through Phase 6. Phase 7 adds `fund_bank_accounts`.

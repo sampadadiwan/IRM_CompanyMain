@@ -50,7 +50,7 @@
               <div>
                 <div class="action-summary__title">Matches are proposed, not recorded</div>
                 <div class="action-summary__desc">
-                  Results are bucketed into Exact, Probable, Needs review, No match, and Internal.
+                  Results are tagged Matched, Likely match, Needs review, No match, or Internal.
                   Nothing is written to a remittance until you confirm or reassign a row yourself in
                   the results panel afterwards.
                 </div>
@@ -65,12 +65,12 @@
                 </div>
                 <div class="action-summary__desc">
                   <% if auto_apply %>
-                    Exact-tier deposits (account number confirmed against KYC or the assigned virtual
+                    Matched deposits (account number confirmed against KYC or the assigned virtual
                     account) automatically create a payment. Re-running the same statement never
                     creates a duplicate.
                   <% else %>
-                    Every match — including Exact tier — waits for you to confirm it manually. Turn
-                    this on in the agent's settings if you want Exact matches to record automatically.
+                    Every match — including Matched — waits for you to confirm it manually. Turn
+                    this on in the agent's settings if you want Matched deposits to record automatically.
                   <% end %>
                 </div>
               </div>

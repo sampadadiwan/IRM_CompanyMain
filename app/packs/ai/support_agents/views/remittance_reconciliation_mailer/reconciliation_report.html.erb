@@ -21,13 +21,13 @@
   <%= sa_section(title: "Summary", top_margin: false) %>
   <%= sa_kv_table(rows: [
         ["Deposits on statement", @deposits.size],
-        ["Exact", @tier_counts["exact"] || 0],
-        ["Probable", @tier_counts["probable"] || 0],
+        ["Matched", @tier_counts["exact"] || 0],
+        ["Likely match", @tier_counts["probable"] || 0],
         ["Needs review", @tier_counts["needs_review"] || 0, { tone: (@tier_counts["needs_review"].to_i.positive? ? :warning : nil) }],
         ["No match", @tier_counts["no_match"] || 0],
         ["Internal (fund's own money)", @tier_counts["internal"] || 0],
         ["Funding-source discrepancies", @discrepancies.size, { tone: (@discrepancies.any? ? :danger : nil), bold: @discrepancies.any? }],
-        ["Payments auto-recorded", @auto_apply ? @payments_created : "0 (auto-apply is off — Exact rows are queued for confirm)"]
+        ["Payments auto-recorded", @auto_apply ? @payments_created : "0 (auto-apply is off — Matched rows are queued for confirm)"]
       ]) %>
 
   <% if @discrepancies.any? %>

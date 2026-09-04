@@ -180,6 +180,22 @@ Given('there is a remittance under the capital call for investor {string} with c
                               bank_account_number: kyc_account, virtual_bank_account: virtual_account)
 end
 
+# A second commitment (and remittance) for an investor already set up above — same investor
+# record and same KYC, a new folio — for the "which folio?" ambiguity case.
+Given('there is a second remittance under the capital call for the same investor {string} with call amount {float}') do |investor_name, call_amount|
+  original = @remittances_by_investor.fetch(investor_name)
+  commitment = FactoryBot.create(
+    :capital_commitment, fund: @fund, entity: @entity, investor: original.investor, investor_kyc: original.investor_kyc,
+                         folio_id: "F-#{SecureRandom.hex(3)}", folio_currency: @fund.currency
+  )
+  remittance = FactoryBot.build(
+    :capital_remittance, capital_call: @capital_call, fund: @fund, entity: @entity,
+                         investor: original.investor, capital_commitment: commitment, folio_id: commitment.folio_id,
+                         call_amount: call_amount, collected_amount: 0, status: "Pending"
+  )
+  remittance.save(validate: false)
+end
+
 # call_amount stays in fund currency (that is what the bank statement deposit is compared to);
 # only the commitment's folio currency differs, so the payment's folio amount has to be derived
 # through the fund's exchange rate.
@@ -500,6 +516,48 @@ Given('there is a reconciliation report for the capital call with a probable dep
     "source_of_funds" => "unverifiable", "reasoning" => ["name similarity 1.0 to \"#{remittance.investor_name}\"", "amount within tolerance of due"]
   }
   @reconciliation_report = build_reconciliation_report(deposits: [deposit])
+end
+
+# Builds one deposit hash for an investor already set up via create_remittance_candidate.
+def fixture_deposit_for(investor_name, tier:, row:)
+  remittance = @remittances_by_investor.fetch(investor_name)
+  kyc_account = remittance.investor_kyc&.bank_account_number
+  base = {
+    "sheet" => "ICICI", "row" => row, "bank" => "IciciNarrationParser",
+    "name" => investor_name.upcase, "pattern" => "RTGS-hyphen", "confidence" => "high", "internal" => false, "notes" => nil,
+    "amount" => remittance.call_amount.to_f, "tran_id" => "TXN-#{row}", "value_date" => Time.zone.today.iso8601,
+    "tier" => tier, "matched_remittance_id" => remittance.id,
+    "matched_commitment_id" => remittance.capital_commitment_id, "matched_investor_name" => remittance.investor_name,
+    "due_amount" => remittance.call_amount.to_f, "amount_status" => "within_tolerance"
+  }
+  if tier == "exact"
+    base.merge("raw_narration" => "RTGS-TEST-#{investor_name.upcase}-#{kyc_account}-HDFC0000240", "account_number" => kyc_account,
+               "identity_via" => "kyc_account", "kyc_account_number" => kyc_account, "source_of_funds" => "confirmed",
+               "reasoning" => ["sender account #{kyc_account} matches the investor's KYC bank account", "amount within tolerance of due"])
+  else
+    base.merge("raw_narration" => "TRFR FROM:#{investor_name.upcase}", "account_number" => nil, "identity_via" => "name",
+               "kyc_account_number" => nil, "source_of_funds" => "unverifiable",
+               "reasoning" => ["name similarity 1.0 to \"#{remittance.investor_name}\"", "amount within tolerance of due"])
+  end
+end
+
+Given('there is a reconciliation report for the capital call with exact deposits for {string} and a probable deposit for {string}') do |exact_names, probable_name|
+  deposits = exact_names.split(",").map(&:strip).each_with_index.map { |name, i| fixture_deposit_for(name, tier: "exact", row: i + 1) }
+  deposits << fixture_deposit_for(probable_name, tier: "probable", row: deposits.size + 1)
+  @reconciliation_report = build_reconciliation_report(deposits: deposits)
+end
+
+When('I confirm the bulk confirmation modal') do
+  expect(page).to have_css("#confirm-all-exact-modal", visible: true)
+  within("#confirm-all-exact-modal") { click_button "Record 2 payments" }
+end
+
+Then('no CapitalRemittancePayment should exist for {string}') do |investor_name|
+  expect(CapitalRemittancePayment.where(capital_remittance: @remittances_by_investor[investor_name])).not_to exist
+end
+
+Then('there is no Confirm all Matched button') do
+  expect(page).not_to have_css("#confirm_all_exact_btn")
 end
 
 Given('there is a reconciliation report for the capital call with an exact payment already recorded for {string}') do |investor_name|

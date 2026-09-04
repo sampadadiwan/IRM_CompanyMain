@@ -65,6 +65,10 @@ class CapitalCallPolicy < FundBasePolicy
     run_agent?
   end
 
+  def confirm_all_exact_reconciliation_deposits?
+    run_agent?
+  end
+
   # Undoing a reconciliation payment deletes a CapitalRemittancePayment, so it needs the same
   # destroy permission the payment's own controller checks, not just run/update.
   def undo_reconciliation_deposit?

@@ -576,7 +576,7 @@ class RemittanceReconciliationAgent < SupportAgentService
       return { status: :resolved, candidate: kyc_matches.first, via: :kyc_account,
                reasoning: ["sender account #{account} matches the investor's KYC bank account"] }
     elsif kyc_matches.size > 1
-      return { status: :ambiguous, reasoning: ["sender account #{account} is on the KYC of #{kyc_matches.size} different investors"] }
+      return { status: :ambiguous, reasoning: [ambiguous_account_reason(account, kyc_matches, "KYC bank account")] }
     end
 
     virtual_matches = candidates.select { |c| c.capital_commitment.virtual_bank_account.presence == account }
@@ -584,10 +584,25 @@ class RemittanceReconciliationAgent < SupportAgentService
       return { status: :resolved, candidate: virtual_matches.first, via: :virtual_account,
                reasoning: ["sender account #{account} matches the investor's assigned virtual account"] }
     elsif virtual_matches.size > 1
-      return { status: :ambiguous, reasoning: ["account #{account} matches the virtual account of #{virtual_matches.size} different investors"] }
+      return { status: :ambiguous, reasoning: [ambiguous_account_reason(account, virtual_matches, "virtual account")] }
     end
 
     nil # account present but matches no candidate on this call - fall through to name matching
+  end
+
+  # An account shared by several candidate remittances is ambiguous either way, but the two
+  # cases read very differently to a reviewer: one investor holding several folios on this
+  # call (pick the folio) versus genuinely different investors registered with the same
+  # account (investigate).
+  def ambiguous_account_reason(account, matches, label)
+    investors = matches.map(&:investor_id).uniq
+    if investors.size == 1
+      folios = matches.map(&:folio_id).join(", ")
+      "sender account #{account} is the #{label} of #{matches.size} folios of the same investor (#{matches.first.investor_name}: #{folios}) — pick the folio via Reassign"
+    else
+      names = matches.map(&:investor_name).uniq.join(", ")
+      "sender account #{account} is the #{label} of #{investors.size} different investors (#{names})"
+    end
   end
 
   def resolve_by_name(deposit, candidates)

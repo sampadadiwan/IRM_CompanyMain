@@ -13,6 +13,9 @@
 <% tier_counts = report.json_fields["tier_counts"] || {} %>
 <% last_run = report.json_fields["run_at"] %>
 <% can_undo = policy(capital_call).undo_reconciliation_deposit? %>
+<%# Matched (tier "exact") rows still awaiting confirmation — what "Confirm all Matched" will record. %>
+<% pending_exact = deposits.select { |d| d["tier"] == "exact" && d["payment_status"].blank? && d["matched_remittance_id"].present? } %>
+<% pending_partial_count = pending_exact.count { |d| d["amount_status"] == "partial" } %>
 <%# Reassign choices: every remittance under THIS call, as [folio, investor] pairs. One cheap
     query (both are columns on capital_remittances — no joins), rendered ONCE as a shared
     <datalist> that every row's input points at, so a call with 200 remittances and 50 deposit
@@ -20,34 +23,48 @@
     matches on folio or investor name and submits the folio, which the controller resolves. %>
 <% reassign_choices = capital_call.capital_remittances.order(:investor_name).pluck(:folio_id, :investor_name) %>
 
-<%# Tag label + theme badge classes per json value — the same solid bg-* utilities every other
-    badge in the app uses, so every tag is readable without a bespoke palette. Anything
-    unexpected falls back to the raw value on a neutral badge so a new status is never hidden. %>
+<%# Tag label, theme badge classes and a plain-language tooltip per json value — the same
+    solid bg-* utilities every other badge in the app uses, so every tag is readable without a
+    bespoke palette. The tooltip says what the tag means: "Exact" is about WHO paid (identity),
+    the amount tags are about HOW MUCH — a row can legitimately be Exact and Partial at once.
+    Anything unexpected falls back to the raw value on a neutral badge so a new status is
+    never hidden. %>
 <% tier_tags = {
-     "exact" => ["Exact", "bg-success"],
-     "probable" => ["Probable", "bg-warning text-dark"],
-     "needs_review" => ["Needs review", "bg-danger"],
-     "no_match" => ["No match", "bg-secondary"],
-     "internal" => ["Internal", "bg-light text-muted"]
+     "exact" => ["Matched", "bg-success",
+                 "Identity is certain: the sender's account number matches this investor's KYC bank account or assigned virtual account, and no other remittance on this call could be the one. Says nothing about how much arrived — see the amount tag."],
+     "probable" => ["Likely match", "bg-warning text-dark",
+                    "Identity by name only: the narration carries no sender account, so the match rests on name similarity. Proposed for you to confirm, never recorded automatically."],
+     "needs_review" => ["Needs review", "bg-danger",
+                        "Something contradicts or is ambiguous — a sender account that differs from the investor's KYC account, an overpayment, or more than one remittance the deposit could belong to. Read the reason under the tags before confirming."],
+     "no_match" => ["No match", "bg-secondary",
+                    "No remittance on this call matches the depositor. Use Reassign to pick the investor or folio it belongs to."],
+     "internal" => ["Internal", "bg-light text-muted",
+                    "The fund's own money moving (fixed deposit maturity, loan credit), not an investor payment. Excluded from matching."]
    } %>
 <% amount_tags = {
-     "partial" => ["Partial", "bg-warning text-dark"],
-     "overpaid" => ["Overpaid", "bg-danger"],
-     "unknown" => ["No amount", "bg-secondary"]
+     "partial" => ["Partial payment", "bg-warning text-dark",
+                   "Less than the amount due arrived, by more than the tolerance. Confirming records exactly what was received; the remittance keeps the shortfall as still due."],
+     "overpaid" => ["Overpayment", "bg-danger",
+                    "More than the amount due arrived, by more than the tolerance. The surplus may belong to one of this investor's other calls — check before confirming."],
+     "unknown" => ["Amount unreadable", "bg-secondary",
+                   "The statement row had no readable amount, so it could not be compared with the amount due."]
    } %>
 <% funds_tags = {
-     "discrepancy" => ["Account ≠ KYC", "bg-danger"],
-     "confirmed" => ["Account = KYC", "bg-success"]
+     "discrepancy" => ["Not from KYC account", "bg-danger",
+                       "The sender's account number is not the account registered on this investor's KYC. Funds came from somewhere else — a joint or family account, a corporate treasury, or a genuine error. Verify the source of funds before confirming."],
+     "confirmed" => ["From KYC account", "bg-success",
+                     "The sender's account number is the one registered on this investor's KYC — the payment came from the investor's own account."]
    } %>
 <% payment_tags = {
-     "created" => ["Paid", "bg-primary"],
-     "already_recorded" => ["Paid", "bg-primary"],
-     "recorded_elsewhere" => ["Paid on another call", "bg-info text-dark"],
-     "error" => ["Payment failed", "bg-danger"]
+     "created" => ["Payment recorded", "bg-primary", "A payment has been recorded for this deposit on this call. Undo removes it."],
+     "already_recorded" => ["Payment recorded", "bg-primary", "A payment for this bank reference was already on this call before this run. Undo removes it."],
+     "recorded_elsewhere" => ["Recorded on another call", "bg-info text-dark",
+                              "A payment with this bank reference already exists on a different call of this fund. Nothing can be recorded here; undo it there first if it belongs to this call."],
+     "error" => ["Payment failed", "bg-danger", "Recording the payment failed — the reason is shown under the tags."]
    } %>
-<% tag_for = ->(tags, key) { tags.fetch(key, [key.to_s.humanize, "bg-secondary"]) } %>
+<% tag_for = ->(tags, key) { tags.fetch(key, [key.to_s.humanize, "bg-secondary", nil]) } %>
 
-<div class="remittance-reconciliation-panel mb-3">
+<div class="remittance-reconciliation-panel mb-3" data-controller="tooltip">
   <%# Same header shape as the index pages (e.g. capital_remittances/_index): h3 title on the
       left, the page's actions on the right. %>
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -55,6 +72,11 @@
     <div class="d-flex align-items-center gap-2 flex-wrap">
       <% if last_run.present? %>
         <span class="text-muted">Last run <%= l(Time.zone.parse(last_run)) %></span>
+      <% end %>
+      <% if pending_exact.any? %>
+        <button type="button" id="confirm_all_exact_btn" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#confirm-all-exact-modal">
+          <i class="ti ti-checks"></i> Confirm all Matched (<%= pending_exact.size %>)
+        </button>
       <% end %>
       <%# Same modal the Actions dropdown opens (rendered by show.html.erb). %>
       <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#run-remittance-reconciliation-modal">
@@ -64,11 +86,11 @@
   </div>
 
   <div class="d-flex flex-wrap gap-2 mb-3">
-    <% tier_tags.each do |key, (label, css)| %>
-      <span class="badge reconciliation-badge <%= css %>"><%= label %> <%= tier_counts[key] || 0 %></span>
+    <% tier_tags.each do |key, (label, css, help)| %>
+      <span class="badge reconciliation-badge <%= css %>" data-bs-toggle="tooltip" data-bs-title="<%= help %>"><%= label %> <%= tier_counts[key] || 0 %></span>
     <% end %>
     <% if report.json_fields["discrepancy_count"].to_i.positive? %>
-      <span class="badge reconciliation-badge bg-danger"><i class="ti ti-alert-triangle me-1"></i>Account ≠ KYC <%= report.json_fields["discrepancy_count"] %></span>
+      <span class="badge reconciliation-badge bg-danger" data-bs-toggle="tooltip" data-bs-title="<%= funds_tags["discrepancy"][2] %>"><i class="ti ti-alert-triangle me-1"></i>Not from KYC account <%= report.json_fields["discrepancy_count"] %></span>
     <% end %>
   </div>
 
@@ -98,9 +120,10 @@
             <% can_confirm = !recorded_here && !recorded_elsewhere && !internal && deposit["matched_remittance_id"].present? %>
             <% can_reassign = !recorded_here && !recorded_elsewhere && !internal %>
             <% reasoning = Array(deposit["reasoning"]) %>
-            <%# The one line a reviewer needs inline: the contradiction or the amount problem.
-                Everything else stays in the tooltip on the outcome tag. %>
-            <% attention = deposit["tier"] == "needs_review" ? reasoning.find { |l| l.include?("contradicts") || l.start_with?("overpayment", "no readable amount") } : nil %>
+            <%# The one line a reviewer needs inline: why the row needs attention — a KYC
+                contradiction, an amount problem, or an ambiguous identity. Everything else
+                stays in the tooltip on the outcome tag. %>
+            <% attention = deposit["tier"] == "needs_review" ? reasoning.find { |l| l.match?(/contradicts|overpayment|no readable amount|folios of the same investor|different investors|within .* of each other/) } : nil %>
             <tr id="reconciliation_deposit_<%= idx %>">
               <td>
                 <span class="fw-semibold"><%= deposit["matched_investor_name"] || deposit["name"] || "(unrecognized)" %></span>
@@ -119,23 +142,24 @@
               <td class="text-end text-nowrap"><%= deposit["due_amount"] ? number_to_currency(deposit["due_amount"], unit: "") : "—" %></td>
               <td>
                 <div class="d-flex flex-wrap gap-1">
-                  <% label, css = tag_for.call(tier_tags, deposit["tier"]) %>
-                  <span class="badge reconciliation-badge <%= css %>"
-                        <% if reasoning.any? %>data-bs-toggle="tooltip" data-bs-title="<%= reasoning.join(' · ') %>"<% end %>><%= label %></span>
+                  <% label, css, help = tag_for.call(tier_tags, deposit["tier"]) %>
+                  <span class="badge reconciliation-badge <%= css %>" data-bs-toggle="tooltip"
+                        data-bs-title="<%= [help, *reasoning].compact.join(' — ') %>"><%= label %></span>
                   <% if amount_tags.key?(deposit["amount_status"]) %>
-                    <% label, css = amount_tags[deposit["amount_status"]] %>
-                    <span class="badge reconciliation-badge <%= css %>"><%= label %></span>
+                    <% label, css, help = amount_tags[deposit["amount_status"]] %>
+                    <span class="badge reconciliation-badge <%= css %>" data-bs-toggle="tooltip" data-bs-title="<%= help %>"><%= label %></span>
                   <% end %>
                   <% if !internal && funds_tags.key?(deposit["source_of_funds"]) %>
-                    <% label, css = funds_tags[deposit["source_of_funds"]] %>
-                    <span class="badge reconciliation-badge <%= css %>"><%= label %></span>
+                    <% label, css, help = funds_tags[deposit["source_of_funds"]] %>
+                    <span class="badge reconciliation-badge <%= css %>" data-bs-toggle="tooltip" data-bs-title="<%= help %>"><%= label %></span>
                   <% end %>
                   <% if deposit["identity_via"] == "manual_reassign" %>
-                    <span class="badge reconciliation-badge bg-secondary">Reassigned</span>
+                    <span class="badge reconciliation-badge bg-secondary" data-bs-toggle="tooltip"
+                          data-bs-title="A reviewer assigned this deposit to the investor/folio by hand via Reassign.">Reassigned</span>
                   <% end %>
                   <% if deposit["payment_status"].present? %>
-                    <% label, css = tag_for.call(payment_tags, deposit["payment_status"]) %>
-                    <span class="badge reconciliation-badge <%= css %>"><%= label %></span>
+                    <% label, css, help = tag_for.call(payment_tags, deposit["payment_status"]) %>
+                    <span class="badge reconciliation-badge <%= css %>" data-bs-toggle="tooltip" data-bs-title="<%= help %>"><%= label %></span>
                   <% end %>
                 </div>
                 <% if attention.present? %>
@@ -185,6 +209,11 @@
         </tbody>
       </table>
     </div>
+
+    <% if pending_exact.any? %>
+      <%= render "capital_calls/confirm_all_exact_modal", modal_id: "confirm-all-exact-modal", capital_call: capital_call,
+                 report: report, pending_exact: pending_exact, partial_count: pending_partial_count %>
+    <% end %>
 
     <%# Shared by every Reassign input above (see reassign_choices). %>
     <datalist id="reconciliation_folios">
