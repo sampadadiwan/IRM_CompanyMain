@@ -59,7 +59,7 @@ class SupportAgentJob < ApplicationJob
   # @param batch_ids_type [String, nil] the type of IDs provided for batch processing (must match agent's target type)
   # @param execution_mode [Symbol, nil] mode of execution (:adhoc_batch, :single_company_with_steps, :scheduled)
   # @return [void]
-  def perform(support_agent_id: nil, target_id: nil, target_type: nil, user_id: nil, with_steps: false, batch_ids: nil, batch_ids_type: nil, execution_mode: :adhoc_batch, rta_pdf_document_id: nil)
+  def perform(support_agent_id: nil, target_id: nil, target_type: nil, user_id: nil, with_steps: false, batch_ids: nil, batch_ids_type: nil, execution_mode: :adhoc_batch, rta_pdf_document_id: nil, bank_statement_document_id: nil)
     if support_agent_id.nil?
       support_agents = SupportAgent.enabled
       support_agents.each do |agent|
@@ -167,14 +167,14 @@ class SupportAgentJob < ApplicationJob
             # Initialize report with steps and pass to agent
             agent_instance = support_agent.agent.new
             report = agent_instance.initialize_report_with_steps({}, model: target, support_agent: support_agent, user_id: user_id)
-            support_agent.agent.call(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, support_agent_report: report, rta_pdf_document_id: rta_pdf_document_id)
+            support_agent.agent.call(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, support_agent_report: report, rta_pdf_document_id: rta_pdf_document_id, bank_statement_document_id: bank_statement_document_id)
           else
-            support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, rta_pdf_document_id: rta_pdf_document_id)
+            support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id, rta_pdf_document_id: rta_pdf_document_id, bank_statement_document_id: bank_statement_document_id)
           end
 
           # Track successes for the batch summary AND the execution log — single
           # runs must count too, or their log summary records "0 processed".
-          successes << { id: target.id, name: target_name }
+          successes << { id: target.id, name: target_name, type: target.class.name }
           unless is_batch_run
             # Send individual notification for non-batch or non-PortfolioCompanyAgent
             message = "#{support_agent.agent_type} processed #{target.class.name} '#{target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"}' successfully"
@@ -236,7 +236,12 @@ class SupportAgentJob < ApplicationJob
         # Mark execution log as completed. build_summary is the shared canonical
         # shape (total/processed/failed + capped error_details) used by both the
         # manual and scheduled paths — the execution history tab reads these keys.
-        execution_log.mark_completed!(AgentExecutionLog.build_summary(total: targets.size, processed: successes.count, errors: errors))
+        # `targets` lets the execution history link back to what was processed (e.g. the capital
+        # call a reconciliation ran against); capped so a large batch doesn't bloat the JSON.
+        execution_log.mark_completed!(
+          AgentExecutionLog.build_summary(total: targets.size, processed: successes.count, errors: errors)
+                           .merge(targets: successes.first(AgentExecutionLog::MAX_TARGET_LINKS).map { |t| t.slice(:id, :name, :type) })
+        )
         # Email the failure details for batch runs (must come after mark_completed!
         # so the mailer templates see the final status and summary).
         notify_batch_errors(execution_log, successes.count) if is_batch_run && errors.any?

@@ -22,7 +22,7 @@
 
   <div class="btn-group">
     <div class="dropdown">
-      <button class="btn btn-outline-success dropdown-toggle" type="button"
+      <button id="capital_call_actions_btn" class="btn btn-outline-success dropdown-toggle" type="button"
               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <i class="ti ti-settings"></i> <%= t_common(:actions) %>
       </button>
@@ -193,6 +193,38 @@
           <% end %>
         <% end %>
 
+        <%# The reconciliation agent counts as enabled only when the entity flag is set AND the
+            SupportAgent record exists and is enabled — one lookup, reused by the dropdown item,
+            the run modal, and the Reconciliation tab (details partial). %>
+        <% reconciliation_agent = if @capital_call.entity.support_agents.set?(:capital_remittance_reconciliation_agent) && policy(@capital_call).run_agent?
+                                    SupportAgent.find_by(agent_type: "RemittanceReconciliationAgent", entity_id: current_user.entity_id, enabled: true)
+                                  end %>
+        <% if policy(@capital_call).run_agent? %>
+          <div class="dropdown-divider"></div>
+
+          <% if @capital_call.entity.support_agents.set?(:call_notice_agent) %>
+            <button type="button" id="capital_call_run_call_notice_btn" class="dropdown-item ti ti-list-check"
+                    data-bs-toggle="modal" data-bs-target="#run-call-notice-modal">
+              Run Call Notice Check
+            </button>
+          <% else %>
+            <span class="dropdown-item dropdown-item--locked text-muted ti ti-list-check" data-bs-toggle="tooltip" data-bs-title="Call Notice Agent is disabled. Contact support to enable it">
+              Run Call Notice Check <i class="ti ti-lock ms-1"></i>
+            </span>
+          <% end %>
+
+          <% if reconciliation_agent %>
+            <button type="button" id="capital_call_run_reconciliation_btn" class="dropdown-item ti ti-file-check"
+                    data-bs-toggle="modal" data-bs-target="#run-remittance-reconciliation-modal">
+              Run Reconciliation
+            </button>
+          <% else %>
+            <span class="dropdown-item dropdown-item--locked text-muted ti ti-file-check" data-bs-toggle="tooltip" data-bs-title="Remittance Reconciliation Agent is not enabled. Enable it under Support Agents, or contact support">
+              Run Reconciliation <i class="ti ti-lock ms-1"></i>
+            </span>
+          <% end %>
+        <% end %>
+
       </div>
     </div>
   </div>
@@ -200,5 +232,21 @@
 </div>
 </div>
 
+<% if @capital_call.entity.support_agents.set?(:call_notice_agent) && policy(@capital_call).run_agent? %>
+  <%= render "support_agents/agent_run_modal",
+             modal_id:         "run-call-notice-modal",
+             agent_type:       "CallNoticeAgent",
+             target_type:      "CapitalCall",
+             target_id:        @capital_call.id,
+             description:      CallNoticeAgent::DESCRIPTION,
+             long_description: CallNoticeAgent::LONG_DESCRIPTION %>
+<% end %>
 
-<%= render "/capital_calls/details", capital_call: @capital_call %>
+<% if reconciliation_agent %>
+  <%= render "support_agents/remittance_run_modal",
+             modal_id:      "run-remittance-reconciliation-modal",
+             capital_call:  @capital_call,
+             support_agent: reconciliation_agent %>
+<% end %>
+
+<%= render "/capital_calls/details", capital_call: @capital_call, reconciliation_agent: reconciliation_agent %>

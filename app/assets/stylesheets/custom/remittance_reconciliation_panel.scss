@@ -1,0 +1,55 @@
+// ── Remittance Reconciliation Panel ──────────────────────────────────────────
+// Layout only for the single results table (one row per statement deposit, with its
+// Confirm / Reassign / Undo actions) inside the Capital Call page's Reconciliation tab.
+// Tag colours come from the theme's own badge utilities (bg-success, bg-danger-subtle
+// text-danger, ...) applied in the ERB — no bespoke palette here.
+
+.reconciliation-badge {
+  padding: 0.4em 0.75em;
+  font-weight: 600;
+}
+
+// Raw bank narration text — monospace for legibility of RTGS/NEFT strings, but never a
+// smaller font-size than the surrounding content.
+.reconciliation-narration {
+  font-family: var(--bs-font-monospace, "SFMono-Regular", Consolas, monospace);
+  word-break: break-all;
+}
+
+.reconciliation-table {
+  th,
+  td {
+    vertical-align: top;
+  }
+
+  // Narration column gets the room; the rest stay compact.
+  td:nth-child(3) {
+    min-width: 320px;
+  }
+}
+
+.reconciliation-actions {
+  min-width: 220px;
+
+  form + form {
+    margin-top: 0.375rem;
+  }
+}
+
+.reconciliation-reassign-form {
+  max-width: 260px;
+}
+
+// A dropdown item for an agent the entity hasn't enabled: greyed out but still hoverable so
+// the "contact support to enable" tooltip can show (Bootstrap's own .disabled kills
+// pointer events, which would suppress the tooltip). Lives here rather than inline in
+// capital_calls/show.html.erb so the ERB stays style-free.
+.dropdown-item--locked {
+  opacity: 0.65;
+  pointer-events: auto;
+  cursor: default;
+
+  .ti-lock {
+    font-size: 0.7rem;
+  }
+}

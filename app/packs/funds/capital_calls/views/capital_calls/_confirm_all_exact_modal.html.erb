@@ -1,0 +1,84 @@
+<%# frozen_string_literal: true %>
+<%#
+  "Confirm all Matched" consequence modal for the reconciliation panel. Same "Immediate
+  Actions" layout as the run modal (support_agents/_remittance_run_modal): intro, tinted
+  consequence cards, then Cancel / Confirm.
+  Required locals: modal_id, capital_call, report, pending_exact (deposits still awaiting confirm),
+                   partial_count (how many of those are partial payments)
+%>
+
+<div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>Label" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="<%= modal_id %>Label">
+          <i class="ti ti-checks me-2"></i>Confirm all Matched deposits
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= form_with url: confirm_all_exact_reconciliation_deposits_capital_call_path(capital_call), method: :post, local: true do |f| %>
+        <%= f.hidden_field :report_id, value: report.id %>
+
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">Immediate Actions</div>
+            <div class="text-muted">The following will happen when you click <strong>Confirm</strong>:</div>
+          </div>
+
+          <div class="action-summary__list">
+            <div class="action-summary__item action-summary__item--green">
+              <span class="action-summary__icon"><i class="ti ti-cash"></i></span>
+              <div>
+                <div class="action-summary__title"><%= pluralize(pending_exact.size, "payment") %> will be recorded</div>
+                <div class="action-summary__desc">
+                  One payment per Matched row still awaiting confirmation on
+                  <strong><%= capital_call.name %></strong>, dated from the bank statement, with the bank's
+                  transaction reference so a re-run can never record it twice.
+                </div>
+              </div>
+            </div>
+
+            <% if partial_count.positive? %>
+              <div class="action-summary__item action-summary__item--amber">
+                <span class="action-summary__icon"><i class="ti ti-chart-pie"></i></span>
+                <div>
+                  <div class="action-summary__title"><%= pluralize(partial_count, "partial payment") %> recorded for the amount received</div>
+                  <div class="action-summary__desc">
+                    The remittance keeps the shortfall as its outstanding due amount.
+                  </div>
+                </div>
+              </div>
+            <% end %>
+
+            <div class="action-summary__item action-summary__item--blue">
+              <span class="action-summary__icon"><i class="ti ti-hand-stop"></i></span>
+              <div>
+                <div class="action-summary__title">Likely match, Needs review and No match rows are untouched</div>
+                <div class="action-summary__desc">
+                  Only rows tagged Matched are included. Everything else still needs its own Confirm or Reassign.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--grey">
+              <span class="action-summary__icon"><i class="ti ti-shield-check"></i></span>
+              <div>
+                <div class="action-summary__title">Nothing is marked verified</div>
+                <div class="action-summary__desc">
+                  Recording a payment never verifies a remittance. Verification stays a separate, deliberate step
+                  on the Remittances tab, and each payment can still be undone from this table.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Record #{pluralize(pending_exact.size, 'payment')}", class: "btn btn-outline-success" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
