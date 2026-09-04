@@ -22,6 +22,9 @@
     rows costs 200 <option>s, not 10,000. The input is a native searchable dropdown: typing
     matches on folio or investor name and submits the folio, which the controller resolves. %>
 <% reassign_choices = capital_call.capital_remittances.order(:investor_name).pluck(:folio_id, :investor_name) %>
+<%# Folio per matched remittance, one query, so the investor cell can name the folio and link
+    to the remittance (a matched deposit is only ever tied to a remittance of THIS call). %>
+<% matched_folios = CapitalRemittance.where(id: deposits.filter_map { |d| d["matched_remittance_id"] }.uniq).pluck(:id, :folio_id).to_h %>
 
 <%# Tag label, theme badge classes and a plain-language tooltip per json value — the same
     solid bg-* utilities every other badge in the app uses, so every tag is readable without a
@@ -126,7 +129,17 @@
             <% attention = deposit["tier"] == "needs_review" ? reasoning.find { |l| l.match?(/contradicts|overpayment|no readable amount|folios of the same investor|different investors|within .* of each other/) } : nil %>
             <tr id="reconciliation_deposit_<%= idx %>">
               <td>
-                <span class="fw-semibold"><%= deposit["matched_investor_name"] || deposit["name"] || "(unrecognized)" %></span>
+                <% remittance_id = deposit["matched_remittance_id"] %>
+                <% if remittance_id.present? && matched_folios.key?(remittance_id) %>
+                  <%# Matched / Likely match / manually reassigned: name links to the remittance, in a
+                      new tab so the reviewer keeps their place in this table. %>
+                  <%= link_to deposit["matched_investor_name"], capital_remittance_path(remittance_id),
+                              target: "_blank", rel: "noopener", class: "fw-semibold",
+                              data: { bs_toggle: "tooltip", bs_title: "Open the matched remittance (folio #{matched_folios[remittance_id]}) in a new tab" } %>
+                  <div class="text-muted">Folio <%= matched_folios[remittance_id] %></div>
+                <% else %>
+                  <span class="fw-semibold"><%= deposit["matched_investor_name"] || deposit["name"] || "(unrecognized)" %></span>
+                <% end %>
                 <% if deposit["account_number"].present? %>
                   <div class="text-muted">a/c <%= deposit["account_number"] %></div>
                 <% end %>
@@ -159,7 +172,16 @@
                   <% end %>
                   <% if deposit["payment_status"].present? %>
                     <% label, css, help = tag_for.call(payment_tags, deposit["payment_status"]) %>
-                    <span class="badge reconciliation-badge <%= css %>" data-bs-toggle="tooltip" data-bs-title="<%= help %>"><%= label %></span>
+                    <% if deposit["payment_id"].present? %>
+                      <%# A payment on this call: the tag opens it in a new tab. %>
+                      <%= link_to capital_remittance_payment_path(deposit["payment_id"]), target: "_blank", rel: "noopener",
+                                  class: "badge reconciliation-badge #{css} text-decoration-none",
+                                  data: { bs_toggle: "tooltip", bs_title: "#{help} Opens the payment in a new tab." } do %>
+                        <%= label %> <i class="ti ti-external-link"></i>
+                      <% end %>
+                    <% else %>
+                      <span class="badge reconciliation-badge <%= css %>" data-bs-toggle="tooltip" data-bs-title="<%= help %>"><%= label %></span>
+                    <% end %>
                   <% end %>
                 </div>
                 <% if attention.present? %>

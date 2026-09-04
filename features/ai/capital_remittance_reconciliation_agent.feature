@@ -433,6 +433,7 @@ Feature: Capital Remittance Reconciliation Agent
     When I open the Reconciliation tab
     Then I should see "Payment recorded"
     And I should see "Undo"
+    And the row for "Samrath Bedi" links to its remittance and its payment in a new tab
 
   # ── 21b. Confirm all Exact ──────────────────────────────────────────────────
 

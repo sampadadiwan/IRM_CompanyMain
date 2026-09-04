@@ -588,6 +588,15 @@ Then('no CapitalRemittancePayment should exist for {string}') do |investor_name|
   expect(CapitalRemittancePayment.where(capital_remittance: @remittances_by_investor[investor_name])).not_to exist
 end
 
+Then('the row for {string} links to its remittance and its payment in a new tab') do |investor_name|
+  remittance = @remittances_by_investor.fetch(investor_name)
+  payment = CapitalRemittancePayment.find_by!(capital_remittance: remittance)
+  expect(page).to have_link(investor_name, href: capital_remittance_path(remittance))
+  expect(find_link(investor_name, href: capital_remittance_path(remittance))[:target]).to eq("_blank")
+  expect(page).to have_link(href: capital_remittance_payment_path(payment))
+  expect(find_link(href: capital_remittance_payment_path(payment))[:target]).to eq("_blank")
+end
+
 Then('there is no Confirm all Matched button') do
   expect(page).not_to have_css("#confirm_all_exact_btn")
 end
