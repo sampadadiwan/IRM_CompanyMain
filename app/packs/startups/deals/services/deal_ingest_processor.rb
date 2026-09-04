@@ -3,7 +3,7 @@
 # Orchestrates the full processing of an authenticated deal ingest email.
 #
 # Called by ProcessDealIngestJob after the email has passed authentication.
-# Chains: body cleanup → LLM parse → stakeholder match → create Note/Task (+ attachments) or warehouse → reply email.
+# Chains: body cleanup → LLM parse → stakeholder match → create Note/Task (+ attachments) or warehouse → reply email (confirmation or warehoused reason).
 # Each step updates the AgentIngestedEmail record with results as it goes,
 # so we have a full audit trail even if processing fails midway.
 #
@@ -164,7 +164,8 @@ class DealIngestProcessor
   end
 
   # Step 3b: Low-confidence or unknown intent — park in the warehouse
-  # for manual review. No notification email sent (decided in Aug 2026 call).
+  # for manual review. Sends a reply to the sender explaining why the
+  # email couldn't be auto-filed.
   #
   # @param parsed [Hash] LLM parse result
   # @param match_result [DealStakeholderMatcher::Result, nil] nil for unknown intent
@@ -180,6 +181,8 @@ class DealIngestProcessor
     )
 
     @email.mark_warehoused!
+
+    send_warehoused_reply!(parsed)
   end
 
   # Send a confirmation email to the sender with what was created.
@@ -197,6 +200,26 @@ class DealIngestProcessor
       due_date: parsed["due_date"],
       body_preview: parsed["body"]
     ).confirmation.deliver_later
+  end
+
+  # Send a warehoused reply to the sender explaining why the email
+  # couldn't be auto-filed. Two reasons:
+  # - unknown_intent: the LLM couldn't determine note vs task
+  # - unmatched_stakeholder: the stakeholder name didn't match any deal investor
+  #
+  # @param parsed [Hash] LLM parse result
+  # @return [void]
+  def send_warehoused_reply!(parsed)
+    reason = parsed["intent"] == "unknown" ? "unknown_intent" : "unmatched_stakeholder"
+
+    DealIngestMailer.with(
+      entity_id: @deal.entity_id,
+      user_id: @user.id,
+      deal: @deal,
+      reason: reason,
+      body_preview: parsed["body"],
+      stakeholder_string: parsed["stakeholder_string"]
+    ).warehoused.deliver_later
   end
 
   # Parse a date string safely, returning nil for invalid dates.
