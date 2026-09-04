@@ -478,6 +478,13 @@ When('I open the Reconciliation tab') do
   click_link "Reconciliation", exact: true
 end
 
+# After a Confirm / Reassign / Undo the controller redirects with ?tab=reconciliation-tab and
+# the tabs controller activates it — the reviewer must not have to click the tab again.
+Then('the Reconciliation tab is already open') do
+  expect(page).to have_css("a.nav-link.active", text: "Reconciliation", exact_text: true)
+  expect(page).to have_css("#reconciliation-tab.active")
+end
+
 Then('I should see the reconciliation panel') do
   expect(page).to have_content("Remittance Reconciliation")
 end

@@ -349,8 +349,11 @@ class CapitalCallsController < ApplicationController
     end
   end
 
+  # Every reconciliation action (confirm / confirm all / reassign / undo) lands back on the
+  # call with the Reconciliation tab already open — the `tabs` Stimulus controller reads
+  # ?tab=<pane id> — so the reviewer never has to re-open it after each row.
   def redirect_to_reconciliation(notice: nil, alert: nil)
-    redirect_to capital_call_url(@capital_call), notice: notice, alert: alert
+    redirect_to capital_call_url(@capital_call, tab: "reconciliation-tab"), notice: notice, alert: alert
   end
 
   # Only allow a list of trusted parameters through.

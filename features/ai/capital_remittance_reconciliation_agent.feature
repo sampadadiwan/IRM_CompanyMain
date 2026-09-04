@@ -430,7 +430,7 @@ Feature: Capital Remittance Reconciliation Agent
     And I proceed with the confirmation popup
     Then I should see the payment recorded confirmation
     And a CapitalRemittancePayment should exist for "Samrath Bedi"
-    When I open the Reconciliation tab
+    And the Reconciliation tab is already open
     Then I should see "Payment recorded"
     And I should see "Undo"
     And the row for "Samrath Bedi" links to its remittance and its payment in a new tab
@@ -457,7 +457,7 @@ Feature: Capital Remittance Reconciliation Agent
     And a CapitalRemittancePayment should exist for "Deepak Agarwal"
     And a CapitalRemittancePayment should exist for "Sandeep Kumar Singh"
     And no CapitalRemittancePayment should exist for "Samrath Bedi"
-    When I open the Reconciliation tab
+    And the Reconciliation tab is already open
     Then there is a Confirm button in the reconciliation table
     And there is no Confirm all Matched button
 
@@ -479,6 +479,6 @@ Feature: Capital Remittance Reconciliation Agent
     And I proceed with the confirmation popup
     Then the CapitalRemittancePayment for "Deepak Agarwal" should be destroyed
     And I should see "Payment removed"
-    When I open the Reconciliation tab
+    And the Reconciliation tab is already open
     Then there is a Confirm button in the reconciliation table
     And there is no Undo button in the reconciliation table
