@@ -86,10 +86,10 @@ When('I go to the tasks board page for the portfolio investment') do
 end
 
 Then('the board title should name the portfolio investment') do
-  # Otherwise every board reads as a bare "Tasks Board" with no way back to the
-  # record it was opened from
-  expect(page).to have_content('Tasks Board')
-  expect(page).to have_link("Portfolio Investment: #{@portfolio_investment}",
+  # A scoped board replaces the generic "Tasks Board" heading with the scope
+  # link itself (the owner's bare #to_s, no type prefix), which is the way
+  # back to the record it was opened from
+  expect(page).to have_link(@portfolio_investment.to_s,
                             href: portfolio_investment_path(@portfolio_investment))
 end
 

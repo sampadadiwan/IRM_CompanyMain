@@ -15,6 +15,7 @@ Scenario Outline: Compute Fund Ratios
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   And given the fund_ratios are computed for the date "31-03-2024"
   Then the fund ratios computed must match the ratios in "fund_ratios/fund_ratios.xlsx"
@@ -55,6 +56,7 @@ Scenario Outline: Compute KYC Fund Ratios
   And Given import file "kyc_fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "kyc_fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "kyc_fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "kyc_fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the second commitment of the kyc has custom_fields "skip_doc_gen:yes"
   Given the KYC has commitments in different funds also

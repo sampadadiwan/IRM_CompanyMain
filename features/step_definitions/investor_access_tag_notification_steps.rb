@@ -90,9 +90,9 @@ When('the capital call is approved') do
   puts result
   result.success?.should
   @capital_call.reload
-  # saved_change_to_approved? is reset by generate_capital_remittances' internal save;
-  # call notify_capital_call directly so notification fires regardless of dirty-tracking state.
-  @capital_call.notify_capital_call
+  # Approving no longer sends anything by itself, so run the same "Notify" job the
+  # call-level Send Notification button enqueues (approved + send flag + not yet notified).
+  CapitalCallJob.perform_now(@capital_call.id, "Notify")
 end
 
 # ─────────────────────────────────────────────────────────────────────────────

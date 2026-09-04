@@ -5,7 +5,7 @@
 <%= render "/capital_calls/show", capital_call: @capital_call %>
 
 <div id="capital_call_<%= @capital_call.id %>_actions"
-     data-controller="workflow-gate"
+     data-controller="workflow-gate tooltip"
      data-workflow-gate-labels-value="<%= (@workflow_gated_button_labels || []).to_json %>"
      data-workflow-gate-reason-value="<%= @workflow_gate_status_label.present? ? "Blocked — workflow is #{@workflow_gate_status_label}" : '' %>">
 
@@ -73,7 +73,7 @@
                data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>"
                data-rule-validation-confirm-message-selector-value="#capital_call_approve_confirm_msg">
             <%= button_to approve_capital_call_path(@capital_call), id: "capital_call_approve_btn", method: :post, class: "dropdown-item ti ti-check", form_class: "deleteButton",
-                data: {turbo: false, bs_toggle: "tooltip", bs_title: "Approve call. Only 'Approved Documents' will be attached.", workflow_gate_label: "Approve"} do %>
+                data: {turbo: false, bs_toggle: "tooltip", bs_title: "Approve call. No notification would be sent to investors.", workflow_gate_label: "Approve"} do %>
               Approve
             <% end %>
           </div>
@@ -81,22 +81,63 @@
           <div class="dropdown-divider"></div>
         <% end %>
 
+        <% if policy(@capital_call).unapprove? %>
+          <%
+            msg = "This will revert the capital call to unapproved. It can be approved again later."
+            msg += " Note: some remittances have already been notified — reverting will not un-notify investors." if @capital_call.any_remittance_notified?
+            msg += " Note: fund units have already been allocated for remittances under this call — reverting will not undo that allocation." if @capital_call.fund_units.exists?
+          %>
+          <%= button_to unapprove_capital_call_path(@capital_call), id: "capital_call_unapprove_btn", method: :patch, class: "dropdown-item ti ti-x", form_class: "deleteButton",
+              data: {action: "click->confirm#popup", turbo: false, method: :patch, notification: "no", msg:,
+                     bs_toggle: "tooltip", bs_container: "body", bs_title: "Revert this call to unapproved.", workflow_gate_label: "Unapprove"} do %>
+            Unapprove
+          <% end %>
+
+          <div class="dropdown-divider"></div>
+        <% end %>
+
         <% if policy(@capital_call).notify? %>
+          <%# Hidden element whose innerHTML the rule-validation controller shows first,
+              above rule warnings when they fire, at the top of the confirm body otherwise. %>
+          <% unless @capital_call.send_call_notice_flag %>
+            <div id="capital_call_notify_banner" class="d-none">
+              <p class="text-danger" style="font-size:0.875rem;margin-bottom:0.5rem">
+                This will NOT send any notification to your investors as the call is setup to not send notifications.
+              </p>
+            </div>
+          <% end %>
+
           <%# Hidden element whose innerHTML the rule-validation controller reads as the confirm message. %>
           <div id="capital_call_notify_confirm_msg" class="d-none">
-            <p style="font-size:0.875rem;margin-bottom:0.5rem">
-              <% if @capital_call.send_call_notice_flag %>
+            <% if @capital_call.send_call_notice_flag %>
+              <p style="font-size:0.875rem;margin-bottom:0.5rem">
                 This will send a notification to your investors and attached Approved call notices.
                 Investors already notified will not be emailed again.
-              <% else %>
-                This will NOT send any notification to your investors as the call is setup to not send notifications.
+              </p>
+              <%
+                # Mirrors CapitalCallJob#notify's per-remittance skip_doc_gen? gate — those
+                # remittances are silently skipped by the job itself, so call it out here
+                # rather than leaving the user to wonder why an investor was never emailed.
+                skip_doc_gen_count = @capital_call.capital_remittances.includes(:capital_commitment).count { |cr| cr.capital_commitment&.skip_doc_gen? }
+              %>
+              <% if skip_doc_gen_count.positive? %>
+                <p class="text-danger" style="font-size:0.875rem;margin-bottom:0.5rem">
+                  <i class="ti ti-alert-triangle"></i>
+                  <%= pluralize(skip_doc_gen_count, "remittance") %> will NOT be notified because its commitment has 'Skip Doc Gen' set to Yes.
+                </p>
               <% end %>
+            <% end %>
+            <p class="text-danger" style="font-size:0.875rem;margin-bottom:0.5rem">
+              <i class="ti ti-alert-triangle"></i>
+              This notification will go to all the remittances that have not been sent a notification yet.
             </p>
-            <%= render "shared/sandbox_notice", entity: @capital_call.entity %>
+            <%= render "shared/sandbox_notice", entity: @capital_call.entity, color_class: "text-danger" %>
             <div class="d-flex gap-2 flex-wrap">
-              <%= link_to "View Who Gets Notified",
-                    show_email_list_fund_path(@capital_call.fund, capital_call_id: @capital_call.id),
-                    class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+              <% if @capital_call.send_call_notice_flag %>
+                <%= link_to "View Who Gets Notified",
+                      show_email_list_fund_path(@capital_call.fund, capital_call_id: @capital_call.id),
+                      class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+              <% end %>
               <%= link_to "View Generated Call Notices",
                     documents_path(no_folders: true, filter: true,
                       q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id],
@@ -111,10 +152,24 @@
                data-rule-validation-target-model-value="CapitalCall"
                data-rule-validation-record-id-value="<%= @capital_call.id %>"
                data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>"
-               data-rule-validation-confirm-message-selector-value="#capital_call_notify_confirm_msg">
-            <%= button_to notify_capital_call_path(@capital_call), id: "capital_call_notify_btn", method: :post, class: "dropdown-item ti ti-mail", form_class: "deleteButton",
-                data: {turbo: false, bs_toggle: "tooltip", bs_title: "Send the call notification to investors.", workflow_gate_label: "Send Notification"} do %>
-              Send Notification
+               data-rule-validation-confirm-title-value="Confirm – Send Notification"
+               data-rule-validation-confirm-message-selector-value="#capital_call_notify_confirm_msg"
+               data-rule-validation-banner-message-selector-value="#capital_call_notify_banner">
+            <%
+              notify_disabled = !@capital_call.send_call_notice_flag
+              # A real `disabled` attribute makes the <button> inert in every browser — it never
+              # fires hover events, so a tooltip on the button itself can never show. Wrap it in a
+              # non-disabled element that carries the tooltip instead (Bootstrap's own pattern for
+              # tooltips on disabled elements).
+              notify_title = notify_disabled ? "Cannot send: the call is set up to not send notifications." : "Send the call notification to investors."
+              wrapper_data = notify_disabled ? {bs_toggle: "tooltip", bs_title: notify_title} : {}
+            %>
+            <%= content_tag :span, data: wrapper_data do %>
+              <%= button_to notify_capital_call_path(@capital_call), id: "capital_call_notify_btn", method: :post, class: "dropdown-item ti ti-mail", form_class: "deleteButton",
+                  disabled: notify_disabled,
+                  data: {turbo: false, bs_toggle: "tooltip", bs_title: notify_title, workflow_gate_label: "Send Notification"} do %>
+                Send Notification
+              <% end %>
             <% end %>
           </div>
 

@@ -132,6 +132,7 @@ resources :capital_calls do
   get 'search', on: :collection
   post 'reminder', on: :member
   post 'approve', on: :member
+  patch 'unapprove', on: :member
   post 'notify', on: :member
   patch 'generate_docs', on: :member
   patch 'allocate_units', on: :member

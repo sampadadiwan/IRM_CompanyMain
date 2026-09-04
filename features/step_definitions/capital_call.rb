@@ -563,6 +563,79 @@ Given('I manually set Notification Sent to Yes on the remittance') do
   @capital_remittance.reload
 end
 
+# CapitalRemittance#notification_blocked_reasons grey-out — the dropdown item renders as a
+# disabled, tooltipped span (not a button) whenever any blocking reason applies.
+Then('I should see the notification action disabled with reason {string}') do |reason_substring|
+  click_on("Actions")
+  item = find(".dropdown-item.disabled", text: /Send Call Notification|Send Call Reminder/)
+  expect(item["data-bs-title"]).to include(reason_substring)
+end
+
+Given("the remittance's generated call notice is marked as pending approval again") do
+  remittance = @capital_call.capital_remittances.first
+  Document.where(owner_type: "CapitalRemittance", owner_id: remittance.id, owner_tag: "Generated").update_all(approved: false)
+end
+
+Given('the first commitment has skip_doc_gen enabled') do
+  @capital_call.capital_remittances.first.capital_commitment.update!(json_fields: { "skip_doc_gen" => "yes" })
+end
+
+# CapitalCallJob#notify silently skips remittances whose commitment has skip_doc_gen? true;
+# the Send Notification confirm message calls this out instead of leaving it unexplained.
+Then('I should see the skip doc gen warning when sending the call notification') do
+  visit(capital_call_path(@capital_call))
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Send Notification")
+
+  within "#ruleValidationModal.show" do
+    expect(page).to have_content("will NOT be notified because its commitment has 'Skip Doc Gen' set to Yes")
+  end
+end
+
+# rule_validation_controller.js suppresses confirmSection entirely once blockers fire, so the
+# Approve modal shouldn't show "This will approve..." copy alongside a blocked state.
+Then('I should see the approve blocker without the approval confirmation text') do
+  visit(capital_call_path(@capital_call))
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Approve")
+
+  within "#ruleValidationModal.show" do
+    expect(page).to have_content("Cannot Approve")
+    expect(page).to have_content("pending approval")
+    expect(page).not_to have_content("No notification is sent to investors yet")
+    expect(page).not_to have_button("Confirm & Save")
+  end
+end
+
+Given('I open the unapprove confirmation for the capital call') do
+  visit(capital_call_path(@capital_call))
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Unapprove")
+end
+
+Then('the unapprove confirmation popup should contain {string}') do |text|
+  expect(page).to have_css('#confirmModal', visible: true)
+  within('#confirmModal') do
+    expect(page).to have_content(text)
+  end
+end
+
+Given('I confirm the unapprove action') do
+  click_on "Proceed"
+  @capital_call.reload
+end
+
+Then('the capital call should no longer be approved') do
+  @capital_call.reload
+  expect(@capital_call.approved).to be_falsey
+end
+
 Then('Given I upload {string} file for Call remittances of the fund') do |file|
   visit(capital_call_path(@capital_call))
   click_on("Remittances")

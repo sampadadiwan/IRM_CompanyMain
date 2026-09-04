@@ -23,6 +23,10 @@ class CapitalCallPolicy < FundBasePolicy
     !record.approved && update? && user.has_cached_role?(:approver)
   end
 
+  def unapprove?
+    record.approved && update? && user.has_cached_role?(:approver)
+  end
+
   def edit?
     update?
   end

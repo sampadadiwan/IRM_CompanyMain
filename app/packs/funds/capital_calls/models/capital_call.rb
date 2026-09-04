@@ -91,6 +91,15 @@ class CapitalCall < ApplicationRecord
     CapitalCallJob.perform_later(id, "Notify") if approved? && send_call_notice_flag && !manual_generation
   end
 
+  # True once any investor has actually been emailed the call notice
+  # (CapitalRemittance#notification_sent — a one-way flag, never reset). Used to warn
+  # before Unapprove: reverting approval won't un-notify. Deliberately does not consider
+  # CapitalRemittancePayment#payment_notification_sent — that's a separate notification
+  # (payment received) triggered independently of call approval, unrelated to this warning.
+  def any_remittance_notified?
+    capital_remittances.exists?(notification_sent: true)
+  end
+
   def folder_path
     "#{fund.folder_path}/Capital Calls/#{name.delete('/')}"
   end
@@ -111,16 +120,10 @@ class CapitalCall < ApplicationRecord
     call_amount_cents.positive? ? (collected_amount_cents * 100.0 / call_amount_cents).round(6) : 0
   end
 
-  def notify_capital_call
-    capital_remittances.pending.each do |cr|
-      next if cr.capital_commitment.skip_doc_gen?
-
-      cr.investor.notification_users(fund, with_tag: 'CapitalCall').each do |user|
-        CapitalRemittanceNotifier.with(record: cr, entity_id:, email_method: :notify_capital_remittance, msg: "Capital Call: #{fund.name}").deliver_later(user)
-      end
-    end
-  end
-
+  # Call-level "Capital Call Reminder" button (remittances tab). Sends the reminder template to
+  # every Pending/Overdue remittance. Deliberately does NOT check send_call_notice_flag,
+  # notification_sent or notice approval, and does not set notification_sent — see
+  # docs/user_guides/capital_call_actions_and_notifications_matrix.md.
   def reminder_capital_call
     return unless approved?
 
