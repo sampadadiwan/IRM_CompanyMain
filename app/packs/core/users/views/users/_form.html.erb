@@ -43,10 +43,12 @@
     </div>
 
 
-    <div class="form-group">
-      <%= form.label :dept, "Department" %>
-      <%= form.text_field :dept, class: "form-control" %>
-    </div>
+    <% unless user.curr_role_investor? %>
+      <div class="form-group">
+        <%= form.label :dept, "Department" %>
+        <%= form.text_field :dept, class: "form-control" %>
+      </div>
+    <% end %>
 
 
     <% if !user.id.present? %>
@@ -133,7 +135,7 @@
         <div>
           <%= form.label :two_factor_enabled, "Enable Two-Factor Authentication", class: "toggle-row-label" %>
           <small class="form-text text-muted d-block">
-            Require a verification code when signing in. You will choose between WhatsApp or an authenticator app on your next login.
+            Require a verification code when signing in. You can choose between SMS, WhatsApp, or an authenticator app on your next login.
             <%= link_to "Learn more", public_guide_path("two_factor_authentication_user_guide"), target: "_blank", rel: "noopener", class: "badge bg-primary-subtle text-primary text-decoration-none" %>
           </small>
         </div>
