@@ -15,3 +15,13 @@
     min-height: calc(1.5em + 0.75rem + 2px);
   }
 }
+
+// Column widths for the two multi-selects. Previously inline `style="min-width: ..."`
+// attributes on the ERB; moved here so the markup carries no styling.
+.account-entry-report-filter__folio {
+  min-width: 220px;
+}
+
+.account-entry-report-filter__names {
+  min-width: 260px;
+}

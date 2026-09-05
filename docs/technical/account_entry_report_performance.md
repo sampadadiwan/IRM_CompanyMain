@@ -1,8 +1,9 @@
 # Account Entries Period Report — Performance Assessment and Plan
 
 Assessment of `/account_entry_reports/fund_report` (and the sibling `folio_report`)
-written 2026-09-05. Status: **assessment only, nothing implemented yet**. Entities with
-very large `account_entries` ledgers can take the replica down with a single page load.
+written 2026-09-05. **Step 1 was implemented the same day** (section 5 records exactly
+what shipped); steps 2 and 3 are still proposals. Entities with very large
+`account_entries` ledgers could take the replica down with a single page load.
 
 Code under review:
 
@@ -55,7 +56,7 @@ click repeats all of them because the whole page re-renders.
   report views loads every commitment as a full AR object per page load.
 - **Trend chart ignores the filters** (correctness bug): `AccountEntryReport#trailing_trend`
   applies neither `@capital_commitment_ids` nor `@entry_names`, so a filtered fund-level
-  report shows fund-wide trend numbers next to filtered KPIs.
+  report shows fund-wide trend numbers next to filtered KPIs. (Fixed in step 1.)
 - The `AccountEntryReportInsight.fingerprint_for` staleness check is itself a
   `COUNT + SUM` full pass over the scope.
 
@@ -152,7 +153,116 @@ handle comfortably.
 
 - Fraction of `cumulative = true` rows per fund — affects whether `cumulative` belongs
   early in the covering index.
-- Whether `deleted_at` rows must be excluded: `AccountEntry` has no soft-delete default
-  scope, so today the report includes them if any exist.
+- ~~Whether `deleted_at` rows must be excluded~~ — **answered, and it changed the index.**
+  `AccountEntry` includes `Trackable`, which calls `acts_as_paranoid`, so `deleted_at IS
+  NULL` is appended to every query. The first draft of the covering index omitted
+  `deleted_at`; `EXPLAIN` then showed the optimizer ignoring it, because it still needed a
+  row lookup to test that column. With `deleted_at` in the key both aggregate passes
+  report `Using index`.
 - Index rollout window on production (replica first, then primary) and expected duration
   at current table size.
+
+---
+
+## 5. What step 1 actually changed (2026-09-05)
+
+| File | Change |
+|---|---|
+| `services/account_entry_report.rb` | Two aggregate passes (`name_date_totals`, `folio_rows`) now feed every KPI, the breakdown and the pivot headers. Added the MySQL `MAX_EXECUTION_TIME` hint. Fixed the trend folio filter. |
+| `services/account_entry_report_page.rb` | `MAX_RANGE_DAYS` clamp (731) with the requested start preserved for the notice; entry-name dropdown scoped to the range; `commitment_options` built by join + pluck; dropdown and insight queries made lazy so a pivot-only request skips them. |
+| `services/account_entry_pivot.rb` | Accepts `precomputed_rows` / `precomputed_group_dates` so the report's aggregates are reused instead of two more `DISTINCT` scans. Clamps an out-of-range page instead of raising `Pagy::OverflowError`. Buckets `dates_by_group` in one pass. |
+| `controllers/account_entry_reports_controller.rb` | Turbo Frame short-circuit for pivot pagination; `rescue_from ActiveRecord::StatementInvalid` turns a query timeout into a "narrow your range" redirect rather than a 500. |
+| `views/account_entry_reports/_filter_form.html.erb` | New shared partial replacing the byte-identical filter form duplicated in both report views; carries the clamped-range warning. |
+| `views/account_entry_reports/_detail_pivot.html.erb` | Wrapped in the Turbo Frame the controller matches on. |
+| `db/migrate/20260905120000_*.rb` | The covering index, built with `ALGORITHM=INPLACE, LOCK=NONE` on MySQL. |
+| `features/fund/account_entry_report_performance.feature` | Regression cover for the query budget, the clamp, the overflow page and the trend filter. |
+
+### The request path after step 1
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as AccountEntryReportsController
+    participant P as AccountEntryReportPage
+    participant R as AccountEntryReport
+    participant V as AccountEntryPivot
+    participant DB as account_entries
+
+    U->>C: GET fund_report (dates, folios, entry names)
+    C->>P: new(fund, params)
+    Note over P: clamp range to MAX_RANGE_DAYS,<br/>record requested start for the notice
+    C->>P: detail_pivot(page)
+    P->>R: folio_rows
+    R->>DB: pass 2 - GROUP BY commitment, folio (covering index)
+    P->>R: name_date_pairs
+    R->>DB: pass 1 - GROUP BY name, reporting_date (covering index)
+    P->>V: new(scope, precomputed_rows, precomputed_group_dates)
+    V->>DB: cells for the 20 folios on this page only
+    V-->>C: pivot
+
+    alt Turbo Frame request for the pivot
+        C-->>U: detail pivot frame only (3 queries)
+        Note over C,P: available_entry_names and insights are lazy,<br/>so neither runs on this path
+    else Full page
+        C->>P: available_entry_names, insights, commitment_options
+        P->>DB: DISTINCT name within range
+        C->>R: summary_kpis, breakdown_by_name (from pass 1, no new queries)
+        C->>R: trailing_trend
+        R->>DB: trend window, honouring folio + name filters
+        C-->>U: full report (5 queries)
+    end
+
+    Note over DB,C: A query that exceeds MAX_EXECUTION_TIME raises<br/>StatementInvalid, which the controller turns into a<br/>"narrow your range" redirect, never a 500
+```
+
+### Measured on the dev database
+
+| Request | account_entries queries, before | after |
+|---|---|---|
+| Full fund report | ~10 | 5 |
+| Pivot pagination (Turbo Frame) | ~10 | 3 |
+
+`EXPLAIN` on both aggregate passes reports `Using index` with the new index chosen by the
+optimizer unprompted. KPI totals, counts and the breakdown were checked against the old
+implementation's queries and match exactly.
+
+### Deliberate deviations from the plan above
+
+- **The default range was left as the single latest reporting date**, not "the latest
+  quarter" as section 2 suggested. A one-day default is cheaper than a quarter, so
+  widening it would have made the common load heavier for no benefit.
+- **The folio dropdown was not converted to a Select2 AJAX source.** It is now one
+  join + pluck with no object instantiation and no `investor_kyc` N+1, which removes the
+  cost that mattered. A remote source is still the right answer for funds with very many
+  folios, and needs its own endpoint and Pundit policy method.
+
+### Caught by review, fixed
+
+- **Folio KPI double-counted.** `distinct_folio_count` was first derived by counting rows
+  of the pass-2 query, which groups by `(commitment_name, capital_commitment_id)`.
+  `commitment_name` is denormalized onto `account_entries`, so a folio whose investor was
+  renamed mid-period produced two rows and inflated the KPI. Now counts distinct ids.
+  Covered by a scenario in the feature.
+- **Timeout rescue could not fire.** The report's aggregates were evaluated inside the view
+  partials, so a statement timeout landed mid-render and `rescue_from` would have raised
+  `DoubleRenderError` instead of redirecting. `AccountEntryReport#preload!` now forces every
+  query from the controller action, `trailing_trend` is memoised per argument set so nothing
+  runs twice, and the handler re-raises if a response has already started.
+
+A third review finding, that clamping the pivot page could still raise `Pagy::OverflowError`
+on an empty row set, does not apply: on Pagy 9.4 `Pagy.new(count: 0, page: 1)` is valid
+(`last` is at least 1), and the clamp is precisely what turns a `page=3` request on an empty
+pivot into that valid call.
+
+### Known issue left alone
+
+`AccountEntryPivot` drops rows whose `capital_commitment_id` is NULL when it fetches cell
+values, so a fund-level entry appears as a row of dashes. This predates step 1 and behaves
+identically before and after it; fixing it would also change `AccountEntryList`, so it is
+left for a separate change.
+
+### Before deploying
+
+The migration is written but **must not run inside a normal production deploy** — see the
+operational note in the migration itself. Add the index on the replica first, in a
+low-traffic window, or with `pt-online-schema-change`.

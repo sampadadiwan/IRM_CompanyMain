@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -84,6 +84,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_100000) do
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
+    t.index ["fund_id", "cumulative", "deleted_at", "reporting_date", "name", "capital_commitment_id", "commitment_name", "amount_cents"], name: "idx_ae_report_fund_cumulative_date"
     t.index ["fund_id", "entry_type", "reporting_date"], name: "idx_fund_id_and_entry_type_and_reporting_date"
     t.index ["fund_id", "generated", "reporting_date", "fund_formula_id"], name: "idx_ae_fund_gen_date_formula"
     t.index ["fund_id", "name", "reporting_date"], name: "idx_fund_id_and_name_and_reporting_date"
@@ -542,6 +543,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_100000) do
     t.index ["entity_id"], name: "index_allocation_group_runs_on_entity_id"
     t.index ["resumed_from_id"], name: "index_allocation_group_runs_on_resumed_from_id"
     t.index ["user_id"], name: "index_allocation_group_runs_on_user_id"
+  end
+
+  create_table "allocation_run_reports", force: :cascade do |t|
+    t.bigint "allocation_run_id", null: false
+    t.datetime "checked_at"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.json "json_fields"
+    t.text "message"
+    t.string "status", limit: 10, default: "Pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["allocation_run_id"], name: "idx_allocation_run_reports_unique_run", unique: true
+    t.index ["entity_id"], name: "index_allocation_run_reports_on_entity_id"
+    t.index ["fund_id"], name: "index_allocation_run_reports_on_fund_id"
+    t.index ["user_id"], name: "index_allocation_run_reports_on_user_id"
   end
 
   create_table "allocation_run_template_group_items", force: :cascade do |t|
@@ -4433,6 +4451,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_100000) do
   add_foreign_key "allocation_group_runs", "allocation_run_template_groups"
   add_foreign_key "allocation_group_runs", "entities"
   add_foreign_key "allocation_group_runs", "users"
+  add_foreign_key "allocation_run_reports", "allocation_runs"
+  add_foreign_key "allocation_run_reports", "entities"
+  add_foreign_key "allocation_run_reports", "funds"
+  add_foreign_key "allocation_run_reports", "users"
   add_foreign_key "allocation_run_template_group_items", "allocation_run_template_groups"
   add_foreign_key "allocation_run_template_group_items", "allocation_run_templates"
   add_foreign_key "allocation_run_template_groups", "entities"

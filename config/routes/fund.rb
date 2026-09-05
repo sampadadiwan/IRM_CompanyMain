@@ -235,3 +235,7 @@ resources :allocation_runs do
   patch 'unlock', on: :member
   patch 'unlock_all', on: :collection
 end
+
+# Allocation run checker — see docs/business_requirements/allocation_run_checker.md.
+# create takes an allocation_run_id and queues the checks; show renders the report.
+resources :allocation_run_reports, only: %i[show create]

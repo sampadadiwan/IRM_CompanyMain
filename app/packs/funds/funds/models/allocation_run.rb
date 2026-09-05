@@ -6,6 +6,8 @@ class AllocationRun < ApplicationRecord
   belongs_to :user
   # Set when this run was produced by an allocation run group; nil for a manual run.
   has_one :allocation_group_run_item, dependent: :nullify
+  # The allocation run checker's report, at most one per run — re-checking overwrites it.
+  has_one :allocation_run_report, dependent: :destroy
   has_one :allocation_group_run, through: :allocation_group_run_item
 
   # Not persisted. AllocationGroupRunJob sets this when creating a template's own run, so the
@@ -21,6 +23,9 @@ class AllocationRun < ApplicationRecord
   validate :fund_not_busy_with_another_group_run, on: :create, unless: :skip_fund_busy_check
 
   scope :locked, -> { where(locked: true) }
+  scope :successful, -> { where(status: "Success") }
+  scope :pending, -> { where(status: "Pending") }
+
 
   def self.locked_and_overlapping(fund_id, start_date, end_date)
     where(fund_id:)

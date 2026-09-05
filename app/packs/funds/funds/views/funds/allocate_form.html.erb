@@ -192,8 +192,10 @@
         # Loaded once and reused below for the "Save as template" modal loop (an in-memory
         # filter on this same array), and the create? policy is evaluated once — neither
         # depends on which row is being rendered, so per-row re-evaluation was pure waste.
-        all_runs = @fund.allocation_runs.includes(:user, :fund).order(created_at: :desc).to_a
+        all_runs = @fund.allocation_runs.includes(:user, :fund, :allocation_run_report).order(created_at: :desc).to_a
         can_save_template = policy(AllocationRunTemplate.new(entity_id: @fund.entity_id, fund: @fund)).create?
+        # The checker's rights do not vary by run, so the policy is evaluated once for the fund.
+        can_check_run = policy(AllocationRunReport.new(entity_id: @fund.entity_id, fund: @fund)).create?
       %>
       <% all_runs.each do |runs|  %>
         <tr>
@@ -227,6 +229,22 @@
           </td>
           <td>
             <%= runs.status %>
+            <%# Allocation run checker result, under the run's own status. Deliberately not its
+                own column: this table's DataTable is responsive and drops columns from the
+                right when they do not fit, so a 13th column hides the actions cell. %>
+            <% report = runs.allocation_run_report %>
+            <div class="mt-1">
+              <% if report.nil? %>
+                <span class="text-muted">Not checked</span>
+              <% else %>
+                <%= link_to allocation_run_report_path(report), class: "text-decoration-none",
+                            title: "Allocation run check: #{report.pending? ? 'still running' : report.status}" do %>
+                  <span class="badge <%= AllocationRunReport.badge_class(report.status) %>">
+                    <%= report.pending? ? "Checking…" : report.status %>
+                  </span>
+                <% end %>
+              <% end %>
+            </div>
           </td>
           <td>
             <%= display_boolean runs.locked %>
@@ -281,6 +299,17 @@
               <% if policy(@fund).period_report? %>
                 <%= link_to fund_report_account_entry_reports_path(fund_id: @fund.id, start_date: runs.start_date, end_date: runs.end_date), class: "btn btn-sm btn-outline-success", data: { bs_toggle: "tooltip" }, title: "View Report" do %>
                   <i class="ti ti-report-analytics"></i>
+                <% end %>
+              <% end %>
+              <% if can_check_run %>
+                <%# Runs the allocation run checker over this run and opens its report. Re-checking
+                    an already-checked run overwrites its report, so the badge is never stale.
+                    Native title tooltip, not data-bs-toggle="tooltip" — Bootstrap moves the title
+                    to data-bs-original-title on init and Capybara's :button locator reads title. %>
+                <%= button_to allocation_run_reports_path(allocation_run_id: runs.id), method: :post,
+                              class: "btn btn-sm btn-outline-dark", form_class: "d-inline",
+                              title: "Check this allocation run — reports whether the run finished and whether the numbers add up" do %>
+                  <i class="ti ti-checkup-list"></i>
                 <% end %>
               <% end %>
             </div>
