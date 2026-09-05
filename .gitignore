@@ -11,6 +11,7 @@
 app/.tmp
 app/.gitnexus
 graphify-out/
+vendor/*
 
 # Ignore the default SQLite database.
 /db/*.sqlite3
