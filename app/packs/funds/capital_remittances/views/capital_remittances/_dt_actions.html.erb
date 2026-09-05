@@ -69,7 +69,10 @@
                 msg += "<p>#{sandbox_msg}</p>" if sandbox_msg
               end
               bs_title = object.verified ? "Unverify the remittance." : "Confirms the payment amount recorded and send payment confirmations notification (if enabled)."
-              notification = object.verified ? "no" : "yes"
+              # Reflects whether the payment confirmation will actually fire — mirrors notif_msg
+              # above, which already accounts for the call's send_payment_notification_flag and
+              # the other conditions in payment_notification_blocked_reasons.
+              notification = (!object.verified && payment_notification_reasons.empty?) ? "yes" : "no"
             %>
 
             <%= button_to verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]),

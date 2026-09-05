@@ -234,8 +234,13 @@
           <td>
             <div class="d-flex gap-1 flex-wrap">
               <% if runs.locked %>
+                <%# data-bs-toggle="tooltip" would make tooltip_controller#initTooltips hand this
+                    element to Bootstrap's Tooltip, which clears the title attribute on init (moving
+                    it to data-bs-original-title) — Capybara's :button locator reads title, so that
+                    would make this icon-only button unfindable by "Unlock". Native title tooltip only,
+                    same workaround as "Save as template" below. %>
                 <%= form_with model: false, url: unlock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
-                  <%= button_tag class: "btn btn-sm btn-outline-warning", data: { confirm: "Are you sure you want to unlock this AllocationRun?", bs_toggle: "tooltip" }, title: "Unlock" do %>
+                  <%= button_tag class: "btn btn-sm btn-outline-warning", data: { confirm: "Are you sure you want to unlock this AllocationRun?" }, title: "Unlock" do %>
                     <i class="ti ti-lock-open"></i>
                   <% end %>
                 <% end %>
@@ -244,23 +249,26 @@
                   <i class="ti ti-refresh"></i>
                 <% end %>
                 <% if can_save_template %>
-                  <%# data-bs-toggle is already claimed by the modal trigger here, so the Bootstrap
-                      tooltip is wired up via the legacy data-toggle="tooltip" attribute instead —
-                      tooltip_controller#initTooltips selects both data-bs-toggle='tooltip' and
-                      data-toggle='tooltip', and Bootstrap 5's own JS ignores unprefixed data-toggle,
-                      so the two attributes don't collide on the same element. %>
-                  <%# The title has to start with the button's accessible name, "Save as template" — Capybara's
-                      default :button locator matches on the title attribute (substring, Capybara.exact = false
-                      in this suite), and this app doesn't enable aria-label matching, so an icon-only button
-                      is only findable by its title text. %>
+                  <%# data-bs-toggle is already claimed by the modal trigger here, so this uses the
+                      browser's native title tooltip rather than data-bs-toggle="tooltip" — same
+                      workaround used elsewhere in the app for modal-trigger buttons. Deliberately
+                      NOT also given a plain data-toggle="tooltip": tooltip_controller#initTooltips
+                      matches that attribute too, and Bootstrap's Tooltip clears an element's title
+                      attribute on init (moving it to data-bs-original-title), which would make
+                      Capybara's button locator — which reads the title attribute — find nothing.
+                      The title has to start with the button's accessible name, "Save as template" —
+                      Capybara's default :button locator matches on the title attribute (substring,
+                      Capybara.exact = false in this suite), and this app doesn't enable aria-label
+                      matching, so an icon-only button is only findable by its title text. %>
                   <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#saveTemplateModal-<%= runs.id %>"
-                          data-toggle="tooltip"
                           title="Save as template — copies this run's fund and options into a reusable allocation run template (the period is not saved)">
                     <i class="ti ti-template"></i>
                   </button>
                 <% end %>
+                <%# Same tooltip/title conflict as "Unlock" above — data-bs-toggle="tooltip" clears
+                    the title attribute Capybara's :button locator relies on to find "Lock". %>
                 <%= form_with model: false, url: lock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
-                  <%= button_tag class: "btn btn-sm btn-outline-danger", data: { confirm: "Are you sure you want to lock this AllocationRun?", bs_toggle: "tooltip" }, title: "Lock" do %>
+                  <%= button_tag class: "btn btn-sm btn-outline-danger", data: { confirm: "Are you sure you want to lock this AllocationRun?" }, title: "Lock" do %>
                     <i class="ti ti-lock"></i>
                   <% end %>
                 <% end %>

@@ -107,6 +107,7 @@ Scenario Outline: Editing the call date cascades to all capital remittances, inc
   Given there is a capital call "<call>"
   Then the corresponding remittances should be created
   Then when the capital call is approved
+  When I mark the remittances as paid
   When I mark the remittances as verified
   When I change the capital call's call date to "2026-09-01"
   Then I should see the call date change warning naming all the remittances
