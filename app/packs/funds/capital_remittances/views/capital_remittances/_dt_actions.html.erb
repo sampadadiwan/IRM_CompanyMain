@@ -24,6 +24,7 @@
             # Verifying (not unverifying) requires the call to be approved —
             # see CapitalRemittance#verified_requires_approval.
             verify_blocked = !object.verified && !object.capital_call.approved?
+            no_payment_blocked = !object.verified && !verify_blocked && object.no_payment_received?
             icon_class = object.verified ? "ti ti-user-x" : "ti ti-user-check"
           %>
 
@@ -33,6 +34,12 @@
             <span class="dropdown-item disabled text-muted" aria-disabled="true" style="pointer-events: auto;"
                   data-bs-toggle="tooltip" data-bs-container="body"
                   data-bs-title="Cannot verify: the call is not approved.">
+              <i class="<%= icon_class %>"></i><%= label %>
+            </span>
+          <% elsif no_payment_blocked %>
+            <span class="dropdown-item disabled text-muted" aria-disabled="true" style="pointer-events: auto;"
+                  data-bs-toggle="tooltip" data-bs-container="body"
+                  data-bs-title="Cannot verify: no payment has been received.">
               <i class="<%= icon_class %>"></i><%= label %>
             </span>
           <% else %>

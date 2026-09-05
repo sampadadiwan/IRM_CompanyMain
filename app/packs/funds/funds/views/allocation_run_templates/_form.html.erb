@@ -1,0 +1,124 @@
+<%#
+  Shared form for new and edit. Same fields as the allocation screen minus the period.
+  Locals: template (AllocationRunTemplate), url, from_run (AllocationRun or nil)
+%>
+<%
+  funds = policy_scope(Fund).where(entity_id: current_user.entity_id).order(:name)
+  entity_tags = current_user.entity.entity_setting&.formula_tag_list.to_s.split(",").map(&:strip).compact_blank
+  documents = template.fund ? template.available_statement_documents : Document.none
+%>
+<%= render NewCard.new(col_md: "col-md-8") do %>
+  <%= render FormCard.new(title: template.persisted? ? "Edit Allocation Run Template" : "New Allocation Run Template",
+                          note: "Everything the fund's allocation screen asks for, except the period — that is chosen each time the template is run.") do %>
+
+    <%= form_with model: template, url:, data: { controller: "allocation-run-template-form",
+                                                 allocation_run_template_form_documents_url_value: statement_documents_allocation_run_templates_path } do |f| %>
+      <% if template.errors.any? %>
+        <div class="alert alert-danger">
+          <ul class="mb-0">
+            <% template.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <% if from_run %>
+        <div class="action-summary__intro">
+          <div class="fw-bold text-dark">Copied from a past run</div>
+          <div class="text-muted">
+            Pre-filled from the run of <strong><%= from_run.fund.name %></strong> for
+            <%= l from_run.start_date %> – <%= l from_run.end_date %>. Give it a name and save.
+          </div>
+        </div>
+      <% end %>
+
+      <div class="form-group">
+        <%= f.label :name, "Template name" %>
+        <%= f.text_field :name, class: "form-control", placeholder: "e.g. Master Fund — quarterly", required: true,
+                         data: { bs_toggle: "tooltip" }, title: "Shown in groups and run history. Must be unique in your entity." %>
+        <small class="text-muted">Say which fund and which close it is for, e.g. <em>Feeder A — annual</em>.</small>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :description, "Notes (optional)" %>
+        <%= f.text_area :description, class: "form-control", rows: 2, placeholder: "Anything the next person should know before running this" %>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :fund_id, "Fund" %>
+        <%= f.select :fund_id, funds.map { |fd| [fd.name, fd.id] }, { include_blank: "— select a fund —" },
+                     class: "form-control select2", required: true,
+                     data: { allocation_run_template_form_target: "fund", action: "change->allocation-run-template-form#fundChanged" } %>
+        <small class="text-muted">The fund whose allocation this template runs. One template covers one fund.</small>
+      </div>
+
+      <div data-controller="conditional-visibility">
+        <div class="form-group">
+          <%= f.check_box :run_allocations, class: "form-check-input", data: { action: "conditional-visibility#toggle", conditional_visibility_target: "source" } %>
+          <%= f.label :run_allocations, "Run allocation formulas", class: "form-check-label ms-1" %>
+          <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Runs the fund's allocation formulas for the period and writes the resulting account entries."></i>
+        </div>
+
+        <div data-conditional-visibility-target="conditional" class="art-subfields">
+          <div class="form-group">
+            <%= f.label :rule_for, "Formula scope" %>
+            <%= f.select :rule_for, AllocationRunTemplate::RULE_FOR_OPTIONS, { include_blank: "Both" }, class: "form-control" %>
+            <small class="text-muted"><strong>Both</strong> runs Accounting and Reporting formulas. Pick one to limit the run to that scope.</small>
+          </div>
+
+          <div class="form-group">
+            <%= f.label :tags, "Formula tags" %>
+            <%= f.select :tags, entity_tags | template.tags, { include_hidden: false, selected: template.tags },
+                         class: "form-control select2", multiple: true, name: "allocation_run_template[tags][]" %>
+            <small class="text-muted">Leave empty to run every enabled formula. Select tags to run only the formulas carrying them — e.g. a quarterly set versus a year-end set. A tag removed from entity settings later blocks the run rather than silently running fewer formulas.</small>
+          </div>
+
+          <div class="form-group">
+            <%= f.check_box :fund_ratios, class: "form-check-input" %>
+            <%= f.label :fund_ratios, "Generate fund ratios", class: "form-check-label ms-1" %>
+            <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="After the allocation finishes, the fund ratios (IRR, TVPI, …) are recalculated as of the end date."></i>
+          </div>
+
+          <div class="form-group">
+            <%= f.check_box :explain, class: "form-check-input" %>
+            <%= f.label :explain, "Explain formulas", class: "form-check-label ms-1" %>
+            <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Records how each formula was evaluated on every entry, for checking a calculation. Slower."></i>
+          </div>
+
+          <div class="form-group">
+            <%= f.check_box :sample, class: "form-check-input" %>
+            <%= f.label :sample, "Sample run (a few folios only)", class: "form-check-label ms-1" %>
+            <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="Runs on three folios only, to test formulas quickly. A group run warns if this is on — a real close needs every folio."></i>
+          </div>
+        </div>
+      </div>
+
+      <div data-controller="conditional-visibility">
+        <div class="form-group">
+          <%= f.check_box :generate_soa, class: "form-check-input", data: { action: "conditional-visibility#toggle", conditional_visibility_target: "source" } %>
+          <%= f.label :generate_soa, "Generate investor statements", class: "form-check-label ms-1" %>
+          <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="After the allocation, an investor statement is generated for every LP from the chosen statement document."></i>
+        </div>
+
+        <div data-conditional-visibility-target="conditional" class="art-subfields">
+          <div class="form-group">
+            <%= f.label :statement_for, "Statement for" %>
+            <%= f.select :statement_for, AllocationRunTemplate::STATEMENT_FOR_OPTIONS, { include_blank: "— select —" }, class: "form-control" %>
+            <small class="text-muted">One statement per commitment, or one per investing entity combining its commitments.</small>
+          </div>
+
+          <div class="form-group">
+            <%= f.label :statement_document_id, "Statement document" %>
+            <%= f.select :statement_document_id, documents.map { |d| [d.name, d.id] }, { include_blank: "— select a document —" },
+                         class: "form-control", data: { allocation_run_template_form_target: "document" } %>
+            <small class="text-muted">The investor statement document on the fund (owner tag <em>SOA Template</em> or <em>Investor Statement Template</em>). Saved by reference: if it is deleted, runs are blocked until another is chosen.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group mt-3">
+        <%= f.submit template.persisted? ? "Save changes" : "Save template", class: "btn btn-outline-primary" %>
+        <%= link_to "Cancel", template.persisted? ? allocation_run_template_path(template) : allocation_run_templates_path(tab: "templates"), class: "btn btn-outline-secondary ms-2" %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

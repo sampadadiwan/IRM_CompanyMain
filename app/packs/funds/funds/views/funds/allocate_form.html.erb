@@ -7,7 +7,19 @@
   title = run_allocations ? "Allocate Account Entries For : #{@fund.name}" : "Generate Investor Statements For : #{@fund.name}"
 %>
 
+<%
+  # A running allocation run group that is using this fund, or has yet to reach it, blocks a manual run.
+  group_busy = AllocationGroupRun.fund_busy?(@fund.id)
+%>
 <%= render NewCard.new do %>
+
+  <% if group_busy %>
+    <div class="alert alert-warning">
+      <i class="ti ti-loader me-1"></i>
+      An <strong>allocation run group</strong> is currently running on this fund. A manual run is refused until it finishes —
+      <%= link_to "see its progress", allocation_run_templates_path(tab: "runs") %>.
+    </div>
+  <% end %>
 
   <div data-controller="rule-validation"
        data-rule-validation-target-model-value="AllocationRun"
@@ -82,14 +94,25 @@
 
         <div class="form-group">
           <%= form.label :template_name, "Investor Statement Template" %>
-          <%= form.select :template_name, @fund.capital_commitments.first.templates(["SOA Template", "Investor Statement Template"]).map{|d| [d.name, d.id]}, {}, class: "form-control", name: "template_id"  %>
+          <%
+            # This block renders unconditionally regardless of the generate_soa checkbox
+            # (conditional-visibility only hides it with CSS/JS), so a fund with zero
+            # capital commitments — a brand new fund, or a Cucumber fixture that only sets
+            # up an allocation run — must not crash the whole page just to show this select.
+            statement_document_options = @fund.capital_commitments.first&.templates(["SOA Template", "Investor Statement Template"])&.map { |d| [d.name, d.id] } || []
+          %>
+          <%= form.select :template_name, statement_document_options, {}, class: "form-control", name: "template_id"  %>
           <small class="text-muted">Select the template to be used for Investor Statement generation. </small>
         </div>
       </div>
     </div>
 
     <div class="form-group">
-      <%= form.submit "Submit", {class: "btn btn-outline-primary"}%>
+      <%= form.submit "Submit", {class: "btn btn-outline-primary", disabled: group_busy}%>
+      <%= link_to allocation_run_templates_path, class: "btn btn-outline-secondary ms-2", data: { bs_toggle: "tooltip" },
+                  title: "Save these settings once and run several funds in order with one action" do %>
+        <i class="ti ti-template"></i> Allocation Run Templates
+      <% end %>
     </div>
   <% end %>
 
@@ -99,11 +122,15 @@
 
 <% end %>
 
-<div class="associated_entity" data-controller="datatable">
+<div class="associated_entity" data-controller="datatable tooltip">
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Previous Runs</h1>
     <div>
+      <%= link_to allocation_run_templates_path, class: "btn btn-sm btn-outline-secondary", data: { bs_toggle: "tooltip" },
+                  title: "Save these settings once and run several funds in order with one action" do %>
+        <i class="ti ti-template"></i> Allocation Run Templates
+      <% end %>
       <% if policy(@fund).period_report? %>
         <%= form_with url: fund_report_account_entry_reports_path, method: :get, local: true, class: "d-inline-flex align-items-end gap-2" do |f| %>
           <%= f.hidden_field :fund_id, value: @fund.id, id: nil %>
@@ -161,7 +188,14 @@
     </thead>
 
     <tbody>
-      <% @fund.allocation_runs.includes(:user).order(created_at: :desc).each do |runs|  %>
+      <%
+        # Loaded once and reused below for the "Save as template" modal loop (an in-memory
+        # filter on this same array), and the create? policy is evaluated once — neither
+        # depends on which row is being rendered, so per-row re-evaluation was pure waste.
+        all_runs = @fund.allocation_runs.includes(:user, :fund).order(created_at: :desc).to_a
+        can_save_template = policy(AllocationRunTemplate.new(entity_id: @fund.entity_id, fund: @fund)).create?
+      %>
+      <% all_runs.each do |runs|  %>
         <tr>
           <td>
             <%= l runs.start_date, format: :abbr_month_day_year %>
@@ -198,21 +232,61 @@
             <%= display_boolean runs.locked %>
           </td>
           <td>
-            <% if runs.locked %>
-              <%= form_with model: false, url: unlock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
-                <%= button_tag "Unlock", class: "btn btn-sm btn-outline-warning", data: { confirm: "Are you sure you want to unlock this AllocationRun?" } %>
+            <div class="d-flex gap-1 flex-wrap">
+              <% if runs.locked %>
+                <%= form_with model: false, url: unlock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
+                  <%= button_tag class: "btn btn-sm btn-outline-warning", data: { confirm: "Are you sure you want to unlock this AllocationRun?", bs_toggle: "tooltip" }, title: "Unlock" do %>
+                    <i class="ti ti-lock-open"></i>
+                  <% end %>
+                <% end %>
+              <% else %>
+                <%= link_to allocate_form_fund_path(runs.attributes), class: "btn btn-sm btn-outline-primary", data: { bs_toggle: "tooltip" }, title: "Rerun" do %>
+                  <i class="ti ti-refresh"></i>
+                <% end %>
+                <% if can_save_template %>
+                  <%# data-bs-toggle is already claimed by the modal trigger here, so the Bootstrap
+                      tooltip is wired up via the legacy data-toggle="tooltip" attribute instead —
+                      tooltip_controller#initTooltips selects both data-bs-toggle='tooltip' and
+                      data-toggle='tooltip', and Bootstrap 5's own JS ignores unprefixed data-toggle,
+                      so the two attributes don't collide on the same element. %>
+                  <%# The title has to start with the button's accessible name, "Save as template" — Capybara's
+                      default :button locator matches on the title attribute (substring, Capybara.exact = false
+                      in this suite), and this app doesn't enable aria-label matching, so an icon-only button
+                      is only findable by its title text. %>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#saveTemplateModal-<%= runs.id %>"
+                          data-toggle="tooltip"
+                          title="Save as template — copies this run's fund and options into a reusable allocation run template (the period is not saved)">
+                    <i class="ti ti-template"></i>
+                  </button>
+                <% end %>
+                <%= form_with model: false, url: lock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
+                  <%= button_tag class: "btn btn-sm btn-outline-danger", data: { confirm: "Are you sure you want to lock this AllocationRun?", bs_toggle: "tooltip" }, title: "Lock" do %>
+                    <i class="ti ti-lock"></i>
+                  <% end %>
+                <% end %>
               <% end %>
-            <% else %>
-              <%= link_to "Rerun", allocate_form_fund_path(runs.attributes), class: "btn btn-sm btn-outline-primary" %>
-              <%= form_with model: false, url: lock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
-                <%= button_tag "Lock", class: "btn btn-sm btn-outline-danger", data: { confirm: "Are you sure you want to lock this AllocationRun?" } %>
+              <% if runs.created_at > Date.local_parse("29/03/2025") %>
+                <%= link_to account_entries_path(filter: true, fund_id: @fund.id, q: ransack_query_params_multiple([["allocation_run_id", :eq, runs.id], ["reporting_date", :eq, runs.end_date.to_fs(:db)]])), class: "btn btn-sm btn-outline-info", data: { bs_toggle: "tooltip" }, title: "Account Entries" do %>
+                  <i class="ti ti-list-details"></i>
+                <% end %>
               <% end %>
-            <% end %>
-            <%= link_to "Account Entries", account_entries_path(filter: true, fund_id: @fund.id, q: ransack_query_params_multiple([["allocation_run_id", :eq, runs.id], ["reporting_date", :eq, runs.end_date.to_fs(:db)]])), class: "btn btn-sm btn-outline-info" if runs.created_at > Date.local_parse("29/03/2025") %>
-            <%= link_to "View Report", fund_report_account_entry_reports_path(fund_id: @fund.id, start_date: runs.start_date, end_date: runs.end_date), class: "btn btn-sm btn-outline-success" if policy(@fund).period_report? %>
+              <% if policy(@fund).period_report? %>
+                <%= link_to fund_report_account_entry_reports_path(fund_id: @fund.id, start_date: runs.start_date, end_date: runs.end_date), class: "btn btn-sm btn-outline-success", data: { bs_toggle: "tooltip" }, title: "View Report" do %>
+                  <i class="ti ti-report-analytics"></i>
+                <% end %>
+              <% end %>
+            </div>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
 </div>
+
+<%# "Save as allocation run template" modals, one per unlocked run, rendered outside the table.
+    Filters the already-loaded all_runs in memory instead of re-querying. %>
+<% if can_save_template %>
+  <% all_runs.reject(&:locked).each do |runs| %>
+    <%= render "allocation_run_templates/save_as_template_modal", run: runs %>
+  <% end %>
+<% end %>

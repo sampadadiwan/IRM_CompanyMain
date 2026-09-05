@@ -91,6 +91,17 @@ resources :fund_ratio_run_templates do
   get  'runs',           on: :member
 end
 
+# Allocation run templates and groups — see docs/technical/allocation_run_templates.md
+resources :allocation_run_templates do
+  # JSON: statement documents available on a fund, for the template form's fund switch
+  get 'statement_documents', on: :collection
+end
+resources :allocation_run_template_groups, except: :index do
+  get  'preflight', on: :member # the up-front check page, before anything runs
+  post 'run',       on: :member # records the group run and enqueues the job
+end
+resources :allocation_group_runs, only: %i[index show]
+
 resources :capital_remittance_payments do
   get "preview", on: :member
 end

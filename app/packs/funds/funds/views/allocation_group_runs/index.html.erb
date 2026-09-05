@@ -1,0 +1,10 @@
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Allocation Run Group History</h1>
+      <div class="text-muted">Every time a group was run, newest first. Open a run to see the allocation run each template produced.</div>
+    </div>
+    <%= link_to "Allocation Run Templates", allocation_run_templates_path, class: "btn btn-outline-secondary" %>
+  </div>
+  <%= render "runs_table", runs: @group_runs, show_group: true %>
+<% end %>

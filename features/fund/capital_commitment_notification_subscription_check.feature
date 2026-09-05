@@ -9,6 +9,8 @@ Feature: Proactive missing Capital Call notification subscription check
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
     Given the user has role "company_admin"
     Given there is a fund "name=TestFund;currency=INR" for the entity
+    # The proactive check is a rule-engine rule, so the defaults must exist for it to fire
+    And the default validation rules are seeded
 
 
   Scenario: Adding a commitment for an investor with nobody subscribed shows a warning

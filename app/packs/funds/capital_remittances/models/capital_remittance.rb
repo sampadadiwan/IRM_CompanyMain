@@ -239,6 +239,14 @@ class CapitalRemittance < ApplicationRecord
     call_amount + other_fee - collected_amount
   end
 
+  # Whether the interactive Verify action should be disabled because nothing has been
+  # collected yet while money is actually owed. A remittance with a legitimately zero
+  # call_amount (e.g. call_basis_account_entry uploads) still has due_amount <= 0 and is
+  # NOT blocked here — see #set_status, which already treats that as "Paid".
+  def no_payment_received?
+    due_amount.positive? && collected_amount_cents.zero?
+  end
+
   def folio_due_amount
     folio_call_amount + folio_other_fee - folio_collected_amount
   end

@@ -21,6 +21,7 @@
                         # Verifying (not unverifying) requires the call to be approved —
                         # see CapitalRemittance#verified_requires_approval.
                         verify_blocked = !@capital_remittance.verified && !@capital_remittance.capital_call.approved?
+                        no_payment_blocked = !@capital_remittance.verified && !verify_blocked && @capital_remittance.no_payment_received?
                         label = @capital_remittance.verified ? "Unverify" : "Verify"
                         verified_icon = @capital_remittance.verified ? "ti ti-x" : "ti ti-check"
                     %>
@@ -30,6 +31,12 @@
                       <span class="dropdown-item disabled text-muted" aria-disabled="true" style="pointer-events: auto;"
                             data-bs-toggle="tooltip" data-bs-container="body"
                             data-bs-title="Cannot verify: the call is not approved.">
+                        <i class="<%= verified_icon %>"></i><%= label %>
+                      </span>
+                    <% elsif policy(@capital_remittance).verify? && no_payment_blocked %>
+                      <span class="dropdown-item disabled text-muted" aria-disabled="true" style="pointer-events: auto;"
+                            data-bs-toggle="tooltip" data-bs-container="body"
+                            data-bs-title="Cannot verify: no payment has been received.">
                         <i class="<%= verified_icon %>"></i><%= label %>
                       </span>
                     <% elsif policy(@capital_remittance).verify? %>

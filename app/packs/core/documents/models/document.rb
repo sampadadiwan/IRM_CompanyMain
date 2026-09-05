@@ -20,6 +20,10 @@ class Document < ApplicationRecord
   has_many :permissions, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :e_signatures, dependent: :destroy
+  # Allocation run templates that use this document as their statement document. Nullified on
+  # delete: the template then fails its pre-run check instead of silently producing nothing.
+  has_many :allocation_run_templates, foreign_key: :statement_document_id, dependent: :nullify,
+                                      inverse_of: :statement_document
   has_one :esign_log, dependent: :destroy
   has_many :viewed_bies, as: :owner, dependent: :destroy
   has_many :doc_shares, dependent: :destroy
@@ -79,6 +83,26 @@ class Document < ApplicationRecord
   # UI while exact/LIKE matching (CustomNotification#attachment_names) silently missed it.
   # Applies on assignment and save, so existing rows are untouched until they're next saved.
   normalizes :name, with: ->(name) { name.squish }
+  # Doc-gen jobs look a template up by (entity, owner, owner_tag, name) — see
+  # CommitmentDocuments#templates — and then key their "delete the previously generated
+  # document" step on template.name. A second live template with the same four values is
+  # therefore never a "new version": the job renders from both, and the second render deletes
+  # the first (investors saw a call notice link go "access denied" seconds after it appeared).
+  # Reject it at upload; the user should edit/replace the file on the existing template or
+  # delete the old one first. Only tagged templates are checked — an untagged template
+  # (owner_tag nil, e.g. TemplateFixAgent's "(AI Fix - draft)" copies) is never picked up by
+  # the jobs' owner_tag-filtered scans, so duplicates there are harmless. `conditions` limits
+  # the check to live rows: Trackable soft-deletes via paranoia, and a deleted template must
+  # not block re-uploading its name. Checked only when the identifying attributes are being
+  # set (create, rename, re-tag, re-own): duplicates that pre-date this validation exist in
+  # production, and CommitmentDocuments#templates already tolerates them by collapsing to the
+  # newest — they must stay editable (file replace, approval, e-sign settings) rather than
+  # failing every save until someone notices and deletes one.
+  validates :name, uniqueness: { scope: %i[entity_id owner_type owner_id owner_tag],
+                                 conditions: -> { where(deleted_at: nil) },
+                                 message: "already exists as a template with this tag here. Edit that template " \
+                                          "(replace its file) or delete it before uploading another with the same name" },
+                   if: :template_identity_changing?
   validates :owner_tag, length: { maximum: 40 }
   validates :tag_list, length: { maximum: 120 }
   # The DB default only applies when the column is left unset; an explicit nil (e.g. from an
@@ -239,6 +263,14 @@ class Document < ApplicationRecord
 
   def setup_entity
     self.entity_id = folder.entity_id
+  end
+
+  # Guard for the template-name uniqueness validation above: a tagged template whose
+  # identifying attributes (name, tag, owner, entity) are new or changing on this save.
+  def template_identity_changing?
+    return false unless template? && owner_tag.present?
+
+    new_record? || name_changed? || owner_tag_changed? || owner_id_changed? || owner_type_changed? || entity_id_changed?
   end
 
   def send_notification_for_owner

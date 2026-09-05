@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -472,6 +472,93 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_060000) do
     t.string "tags"
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_ai_rules_on_entity_id"
+  end
+
+  create_table "allocation_group_run_items", force: :cascade do |t|
+    t.bigint "allocation_group_run_id", null: false
+    t.bigint "allocation_run_id"
+    t.bigint "allocation_run_template_id"
+    t.datetime "created_at", null: false
+    t.datetime "finished_at"
+    t.bigint "fund_id", null: false
+    t.text "message"
+    t.integer "position", null: false
+    t.datetime "started_at"
+    t.string "status", limit: 20, default: "pending", null: false
+    t.string "template_name", limit: 100, null: false
+    t.datetime "updated_at", null: false
+    t.index ["allocation_group_run_id"], name: "idx_agr_items_on_run"
+    t.index ["allocation_run_id"], name: "index_allocation_group_run_items_on_allocation_run_id"
+    t.index ["allocation_run_template_id"], name: "idx_agr_items_on_template"
+    t.index ["fund_id"], name: "index_allocation_group_run_items_on_fund_id"
+  end
+
+  create_table "allocation_group_runs", force: :cascade do |t|
+    t.bigint "allocation_run_template_group_id"
+    t.datetime "created_at", null: false
+    t.date "end_date", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "finished_at"
+    t.string "group_name", limit: 100, null: false
+    t.text "message"
+    t.bigint "resumed_from_id"
+    t.date "start_date", null: false
+    t.datetime "started_at"
+    t.string "status", limit: 20, default: "queued", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["allocation_run_template_group_id"], name: "idx_agr_on_group"
+    t.index ["entity_id", "status"], name: "index_allocation_group_runs_on_entity_id_and_status"
+    t.index ["entity_id"], name: "index_allocation_group_runs_on_entity_id"
+    t.index ["resumed_from_id"], name: "index_allocation_group_runs_on_resumed_from_id"
+    t.index ["user_id"], name: "index_allocation_group_runs_on_user_id"
+  end
+
+  create_table "allocation_run_template_group_items", force: :cascade do |t|
+    t.bigint "allocation_run_template_group_id", null: false
+    t.bigint "allocation_run_template_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "position", default: 1, null: false
+    t.datetime "updated_at", null: false
+    t.index ["allocation_run_template_group_id", "allocation_run_template_id"], name: "idx_atg_items_unique_template_per_group", unique: true
+    t.index ["allocation_run_template_group_id"], name: "idx_atg_items_on_group"
+    t.index ["allocation_run_template_id"], name: "idx_atg_items_on_template"
+  end
+
+  create_table "allocation_run_template_groups", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.bigint "entity_id", null: false
+    t.string "name", limit: 100, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["entity_id", "name"], name: "index_allocation_run_template_groups_on_entity_id_and_name", unique: true
+    t.index ["entity_id"], name: "index_allocation_run_template_groups_on_entity_id"
+    t.index ["user_id"], name: "index_allocation_run_template_groups_on_user_id"
+  end
+
+  create_table "allocation_run_templates", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.bigint "entity_id", null: false
+    t.boolean "explain", default: false, null: false
+    t.bigint "fund_id", null: false
+    t.boolean "fund_ratios", default: false, null: false
+    t.boolean "generate_soa", default: false, null: false
+    t.string "name", limit: 100, null: false
+    t.string "rule_for", limit: 10
+    t.boolean "run_allocations", default: true, null: false
+    t.boolean "sample", default: false, null: false
+    t.bigint "statement_document_id"
+    t.string "statement_for", limit: 20
+    t.string "tag_list"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["entity_id", "name"], name: "index_allocation_run_templates_on_entity_id_and_name", unique: true
+    t.index ["entity_id"], name: "index_allocation_run_templates_on_entity_id"
+    t.index ["fund_id"], name: "index_allocation_run_templates_on_fund_id"
+    t.index ["statement_document_id"], name: "index_allocation_run_templates_on_statement_document_id"
+    t.index ["user_id"], name: "index_allocation_run_templates_on_user_id"
   end
 
   create_table "allocation_runs", force: :cascade do |t|
@@ -961,7 +1048,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_060000) do
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.string "call_basis", limit: 40
     t.bigint "capital_call_id", null: false
-    t.bigint "capital_commitment_id"
+    t.bigint "capital_commitment_id", null: false
     t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -4272,6 +4359,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_060000) do
   add_foreign_key "ai_presentations", "entities"
   add_foreign_key "ai_report_sections", "ai_portfolio_reports"
   add_foreign_key "ai_rules", "entities"
+  add_foreign_key "allocation_group_run_items", "allocation_group_runs"
+  add_foreign_key "allocation_group_run_items", "allocation_run_templates"
+  add_foreign_key "allocation_group_run_items", "allocation_runs"
+  add_foreign_key "allocation_group_run_items", "funds"
+  add_foreign_key "allocation_group_runs", "allocation_group_runs", column: "resumed_from_id"
+  add_foreign_key "allocation_group_runs", "allocation_run_template_groups"
+  add_foreign_key "allocation_group_runs", "entities"
+  add_foreign_key "allocation_group_runs", "users"
+  add_foreign_key "allocation_run_template_group_items", "allocation_run_template_groups"
+  add_foreign_key "allocation_run_template_group_items", "allocation_run_templates"
+  add_foreign_key "allocation_run_template_groups", "entities"
+  add_foreign_key "allocation_run_template_groups", "users"
+  add_foreign_key "allocation_run_templates", "documents", column: "statement_document_id"
+  add_foreign_key "allocation_run_templates", "entities"
+  add_foreign_key "allocation_run_templates", "funds"
+  add_foreign_key "allocation_run_templates", "users"
+  add_foreign_key "allocation_runs", "entities"
+  add_foreign_key "allocation_runs", "funds"
+  add_foreign_key "allocation_runs", "users"
   add_foreign_key "allocation_runs", "entities"
   add_foreign_key "allocation_runs", "funds"
   add_foreign_key "allocation_runs", "users"

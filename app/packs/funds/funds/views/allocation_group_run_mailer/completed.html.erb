@@ -1,0 +1,50 @@
+<%
+  sub = @entity.sub_domain
+  run_url = allocation_group_run_url(@group_run, subdomain: sub)
+  tone = @group_run.success? ? "#16a34a" : "#dc2626"
+  status_label = { "success" => "Success", "reused" => "Reused from earlier run", "failed" => "Failed",
+                   "skipped" => "Skipped", "pending" => "Not run", "running" => "Interrupted" }
+%>
+<p>Hi <%= @user.first_name %>,</p>
+
+<p>
+  The allocation run group <strong><%= @group_run.group_name %></strong> for the period
+  <strong><%= l(@group_run.start_date) %> – <%= l(@group_run.end_date) %></strong>
+  <strong style="color:<%= tone %>"><%= @group_run.success? ? "finished successfully" : "stopped after a failure" %></strong>.
+</p>
+
+<% if @group_run.failed? && @group_run.message.present? %>
+  <p style="color:#dc2626"><%= @group_run.message %></p>
+  <p>Templates after the failed one were not run. Once the cause is fixed, run the group again for the same period — templates that already succeeded can be skipped.</p>
+<% end %>
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:16px 0">
+  <thead>
+    <tr>
+      <th align="left" style="padding:8px 12px;border:1px solid #e0e0e0;background:#f6f6f6">#</th>
+      <th align="left" style="padding:8px 12px;border:1px solid #e0e0e0;background:#f6f6f6">Template</th>
+      <th align="left" style="padding:8px 12px;border:1px solid #e0e0e0;background:#f6f6f6">Fund</th>
+      <th align="left" style="padding:8px 12px;border:1px solid #e0e0e0;background:#f6f6f6">Result</th>
+      <th align="left" style="padding:8px 12px;border:1px solid #e0e0e0;background:#f6f6f6">Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @items.each do |item| %>
+      <tr>
+        <td style="padding:8px 12px;border:1px solid #e0e0e0"><%= item.position %></td>
+        <td style="padding:8px 12px;border:1px solid #e0e0e0"><%= item.template_name %></td>
+        <td style="padding:8px 12px;border:1px solid #e0e0e0"><%= item.fund.name %></td>
+        <td style="padding:8px 12px;border:1px solid #e0e0e0;font-weight:bold;color:<%= %w[success reused].include?(item.status) ? '#16a34a' : (item.status == 'failed' ? '#dc2626' : '#6c757d') %>">
+          <%= status_label[item.status] || item.status.humanize %>
+        </td>
+        <td style="padding:8px 12px;border:1px solid #e0e0e0"><%= item.message %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p>
+  <a href="<%= run_url %>" style="display:inline-block;padding:10px 18px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:4px">View the run</a>
+</p>
+
+<p>Lock and unlock stay on each individual allocation run, exactly as before.</p>

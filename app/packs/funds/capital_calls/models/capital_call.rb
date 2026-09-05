@@ -25,7 +25,11 @@ class CapitalCall < ApplicationRecord
   belongs_to :approved_by_user, class_name: "User", optional: true
   # Stores the prices for unit types for this call
   serialize :unit_prices, type: Hash
-  serialize :close_percentages, type: Hash
+  # close_percentages is a native `json` column (see migration
+  # AddClosePercentagesToCapitalCalls) — Rails' json type already casts it to/from a
+  # Hash automatically. Layering `serialize type: Hash` on top double-decodes it: the
+  # json type deserializes the column into a Hash first, then the YAML coder tries to
+  # YAML-parse that Hash and blows up with "no implicit conversion of Hash into String".
   serialize :fund_closes, type: Array
 
   has_many :capital_remittances, dependent: :destroy

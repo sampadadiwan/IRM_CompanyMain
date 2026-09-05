@@ -745,7 +745,11 @@ Then('if the first remittance is deleted') do
 end
 
 Given('the fund has capital call template') do
-  @call_template = Document.create!(name: "Call Doc", owner_tag: "Call Template",
+  # Idempotent: some scenarios invoke this step twice. Document now rejects a second live
+  # template with the same owner/tag/name (that duplicate is exactly what made call-notice
+  # generation render, delete and re-render every notice), so reuse the existing one.
+  @call_template = @fund.documents.templates.find_by(name: "Call Doc", owner_tag: "Call Template") ||
+                   Document.create!(name: "Call Doc", owner_tag: "Call Template",
                                     owner: @fund, entity_id: @fund.entity_id, user: @user,
                                     file: File.new("public/sample_uploads/Drawdown notice format.docx", "r"))
 end
@@ -1383,4 +1387,69 @@ Then('the generated doc must be attached to the capital remittances') do
       expect(page).to have_content("Generated")
     end
   end
+end
+
+# ---------------------------------------------------------------------------
+# Duplicate call template regression (features/fund/call_notice_duplicate_template.feature)
+# ---------------------------------------------------------------------------
+
+Given('the fund also has a legacy duplicate of the capital call template') do
+  # Mimic a row created before Document validated template uniqueness: create it under a
+  # throwaway name so every callback (folder, entity, template flag) runs normally, then
+  # rename it past the validation with update_column. It is the newer of the two (higher id),
+  # so it is the one the de-duplicated lookup must pick.
+  @legacy_duplicate_template = Document.create!(name: "Call Doc (legacy duplicate)", owner_tag: "Call Template",
+                                                owner: @fund, entity_id: @fund.entity_id, user: @user,
+                                                file: File.new("public/sample_uploads/Drawdown notice format.docx", "r"))
+  @legacy_duplicate_template.update_column(:name, @call_template.name)
+  # Both are live and identical on (entity, owner, tag, name) - the exact production shape
+  expect(@fund.documents.templates.where(owner_tag: "Call Template", name: @call_template.name).count).to eq(2)
+end
+
+Then('each remittance must have exactly one call notice from the newest call template and no deleted notices') do
+  @capital_call ||= @fund.capital_calls.first
+  newest_template = @fund.documents.templates.where(owner_tag: "Call Template", name: @call_template.name).order(:id).last
+  expect(newest_template.id).to eq(@legacy_duplicate_template.id)
+
+  @capital_call.capital_remittances.each do |cr|
+    expected_name = "#{@call_template.name} - #{cr.investor_kyc} - #{cr.folio_id}"
+    # The job runs inline but its "started" broadcast fires before docs are committed; retry.
+    eventually { expect(cr.documents.where(name: expected_name).count).to eq(1) }
+
+    notice = cr.documents.find_by(name: expected_name)
+    # Rendered once, from the newest of the two same-named templates
+    expect(notice.from_template_id).to eq(newest_template.id)
+    # Nothing was generated-then-destroyed: Document soft-deletes (paranoia), so a
+    # delete-and-regenerate cycle would leave a deleted_at row behind for this remittance.
+    expect(Document.unscoped.where(owner: cr).where.not(deleted_at: nil)).to be_none
+  end
+end
+
+When('I try to upload another template {string} of type {string} from {string} for the fund') do |name, owner_tag, file|
+  # Same UI path as "the fund has a template ... of type ..." but without expecting success
+  visit(fund_path(@fund))
+  expect(page).to have_button("Actions", wait: 15)
+  click_on("Actions")
+  find('#misc_action_menu', wait: 10).hover
+  new_template_link = find_link("New Template", wait: 10)
+  # bypass Playwright's hover/stability checks: the link carries a Bootstrap tooltip that
+  # fades in on real mouse hover and intermittently blocks the click
+  page.execute_script("arguments[0].click()", new_template_link.native)
+  fill_in('document_name', with: name)
+  select(owner_tag, from: "document_owner_tag")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file}"), make_visible: true)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  sleep(10) # JS direct-upload to /upload endpoint; larger window for parallel load
+  check("document_template")
+  click_on("Save")
+end
+
+Then('the template upload must be rejected as a duplicate') do
+  # Server-side uniqueness error rendered by documents/_form's error list
+  expect(page).to have_content("already exists as a template with this tag here", wait: 15)
+  expect(page).not_to have_content("successfully")
+end
+
+Then('the fund must still have exactly one {string} template named {string}') do |owner_tag, name|
+  expect(@fund.documents.templates.where(owner_tag:, name:).count).to eq(1)
 end

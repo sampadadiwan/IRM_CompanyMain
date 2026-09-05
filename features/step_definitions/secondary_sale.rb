@@ -502,16 +502,25 @@ Then('existing investor user {string} have {string} access to the sale') do |tru
   end
 end
 
-Given('the sale has a SPA template') do
-  doc = Document.new(entity_id: @sale.entity_id, owner: @sale, name: "SPA", user: User.first, owner_tag: "Offer Template")
+# Both SPA template steps are idempotent: Document rejects a second live template with the same
+# owner/tag/name (that duplicate is what made doc-gen jobs render, delete and re-render every
+# generated document), so a scenario that repeats the step reuses the existing template.
+def ensure_sale_spa_template(owner_tag)
+  existing = @sale.documents.templates.find_by(name: "SPA", owner_tag:)
+  return existing if existing
+
+  doc = Document.new(entity_id: @sale.entity_id, owner: @sale, name: "SPA", user: User.first, owner_tag:)
   doc.file = File.open("public/sample_uploads/Purchase-Agreement-1.docx", "rb")
   doc.save!
+  doc
+end
+
+Given('the sale has a SPA template') do
+  ensure_sale_spa_template("Offer Template")
 end
 
 Given('the sale has an allocation SPA template') do
-  doc = Document.new(entity_id: @sale.entity_id, owner: @sale, name: "SPA", user: User.first, owner_tag: "Allocation Template")
-  doc.file = File.open("public/sample_uploads/Purchase-Agreement-1.docx", "rb")
-  doc.save!
+  ensure_sale_spa_template("Allocation Template")
 end
 
 

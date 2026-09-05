@@ -9,6 +9,24 @@
   font-weight: 600;
 }
 
+// Summary stat cards atop the panel (see investor_kycs/_stats for the shape they copy).
+// These don't navigate — they toggle a client-side filter over the table below — so the
+// clickable affordance and the "currently filtering by this" state are drawn here instead
+// of relying on link/hover styling.
+.reconciliation-stat-card {
+  cursor: pointer;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+  &:hover {
+    border-color: var(--bs-primary);
+  }
+
+  &--active {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 1px var(--bs-primary);
+  }
+}
+
 // Raw bank narration text — monospace for legibility of RTGS/NEFT strings, but never a
 // smaller font-size than the surrounding content.
 .reconciliation-narration {

@@ -177,28 +177,14 @@ end
 Given('there is a capital remittance without a generated notice for the capital call') do
   investor_entity = FactoryBot.create(:entity)
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: investor_entity)
-  @capital_remittance = FactoryBot.build(:capital_remittance,
-    capital_call: @capital_call,
-    fund:         @fund,
-    entity:       @entity,
-    investor:     investor,
-    folio_id:     "TEST-#{SecureRandom.hex(4)}"
-  )
-  @capital_remittance.save(validate: false)
+  @capital_remittance = create_rule_test_remittance(investor)
 end
 
 # Creates a CapitalRemittance with a generated-but-unapproved Document and stores it as @capital_remittance.
 Given('there is a capital remittance with an unapproved generated notice for the capital call') do
   investor_entity = FactoryBot.create(:entity)
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: investor_entity)
-  @capital_remittance = FactoryBot.build(:capital_remittance,
-    capital_call: @capital_call,
-    fund:         @fund,
-    entity:       @entity,
-    investor:     investor,
-    folio_id:     "TEST-#{SecureRandom.hex(4)}"
-  )
-  @capital_remittance.save(validate: false)
+  @capital_remittance = create_rule_test_remittance(investor)
 
   folder = FactoryBot.create(:folder, entity: @entity)
   FactoryBot.create(:document,
@@ -215,14 +201,7 @@ end
 Given('there is a capital remittance with an approved generated notice for the capital call') do
   investor_entity = FactoryBot.create(:entity)
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: investor_entity)
-  @capital_remittance = FactoryBot.build(:capital_remittance,
-    capital_call: @capital_call,
-    fund:         @fund,
-    entity:       @entity,
-    investor:     investor,
-    folio_id:     "TEST-#{SecureRandom.hex(4)}"
-  )
-  @capital_remittance.save(validate: false)
+  @capital_remittance = create_rule_test_remittance(investor)
 
   folder = FactoryBot.create(:folder, entity: @entity)
   FactoryBot.create(:document,
@@ -312,32 +291,17 @@ When('the validation rules are evaluated for the capital remittance') do
   end
 end
 
-# Creates a minimal CapitalRemittance (no generated document) linked to @capital_call.
-# FactoryBot.build + save(validate:false) because the :capital_remittance factory doesn't
-# satisfy the capital_commitment, folio_id, and folio_committed_amount_cents requirements.
+# Creates a minimal CapitalRemittance (no generated document) linked to @capital_call,
+# with its own commitment — see create_rule_test_remittance.
 Given('the capital call has a remittance without a generated notice') do
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: @entity)
-  remittance = FactoryBot.build(:capital_remittance,
-    capital_call: @capital_call,
-    fund:         @fund,
-    entity:       @entity,
-    investor:     investor,
-    folio_id:     "TEST-#{SecureRandom.hex(4)}"
-  )
-  remittance.save(validate: false)
+  remittance = create_rule_test_remittance(investor)
 end
 
 # Creates a minimal CapitalRemittance plus a generated-but-unapproved Document.
 Given('the capital call has a remittance with an unapproved generated notice') do
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: @entity)
-  remittance = FactoryBot.build(:capital_remittance,
-    capital_call: @capital_call,
-    fund:         @fund,
-    entity:       @entity,
-    investor:     investor,
-    folio_id:     "TEST-#{SecureRandom.hex(4)}"
-  )
-  remittance.save(validate: false)
+  remittance = create_rule_test_remittance(investor)
 
   folder = FactoryBot.create(:folder, entity: @entity)
   FactoryBot.create(:document,
@@ -384,34 +348,18 @@ def create_subscribed_investor(name)
   investor
 end
 
-def create_bare_remittance(investor)
-  remittance = FactoryBot.build(:capital_remittance,
-    capital_call: @capital_call,
-    fund:         @fund,
-    entity:       @entity,
-    investor:     investor,
-    folio_id:     "TEST-#{SecureRandom.hex(4)}"
-  )
-  remittance.save(validate: false)
-  remittance
-end
-
-Given('the capital call has a remittance for an investor with no notification subscribers') do
-  create_bare_remittance(create_unsubscribed_investor("Unsubscribed Investor"))
-end
-
-Given('the capital call has a remittance for an investor with a subscribed notification user') do
-  create_bare_remittance(create_subscribed_investor("Subscribed Investor"))
-end
-
-# A skip_doc_gen commitment is excluded from every send path, so a missing subscription must
-# not be reported for it. The remittance and its commitment are created unvalidated, like the
-# other CapitalCall fixtures in this file.
-Given('the capital call has a remittance for an unsubscribed investor whose commitment skips doc generation') do
-  investor = create_unsubscribed_investor("Skipped Investor")
+# Builds a CapitalRemittance for @capital_call the way production data is shaped: every
+# remittance hangs off a CapitalCommitment (CapitalRemittance belongs_to :capital_commitment,
+# and a remittance without one cannot exist), so the commitment is created first and the
+# remittance keyed to its folio. Both are saved with validate: false because the factories
+# don't satisfy the full validation set (unit types, KYC, amounts) and none of the rule
+# scenarios depend on those fields. skip_doc_gen: true marks the commitment as excluded from
+# every send path, which the subscription rules must ignore.
+def create_rule_test_remittance(investor, skip_doc_gen: false)
   commitment = FactoryBot.build(:capital_commitment, fund: @fund, entity: @entity, investor: investor, folio_id: "TEST-#{SecureRandom.hex(4)}")
-  commitment.json_fields = { "skip_doc_gen" => "Yes" }
+  commitment.json_fields = { "skip_doc_gen" => "Yes" } if skip_doc_gen
   commitment.save(validate: false)
+
   remittance = FactoryBot.build(:capital_remittance,
     capital_call:       @capital_call,
     fund:               @fund,
@@ -421,6 +369,22 @@ Given('the capital call has a remittance for an unsubscribed investor whose comm
     folio_id:           commitment.folio_id
   )
   remittance.save(validate: false)
+  remittance
+end
+
+Given('the capital call has a remittance for an investor with no notification subscribers') do
+  create_rule_test_remittance(create_unsubscribed_investor("Unsubscribed Investor"))
+end
+
+Given('the capital call has a remittance for an investor with a subscribed notification user') do
+  create_rule_test_remittance(create_subscribed_investor("Subscribed Investor"))
+end
+
+# A skip_doc_gen commitment is excluded from every send path, so a missing subscription must
+# not be reported for it. The remittance and its commitment are created unvalidated, like the
+# other CapitalCall fixtures in this file.
+Given('the capital call has a remittance for an unsubscribed investor whose commitment skips doc generation') do
+  create_rule_test_remittance(create_unsubscribed_investor("Skipped Investor"), skip_doc_gen: true)
 end
 
 Given('there is a capital commitment for an investor with no notification subscribers') do
@@ -452,14 +416,7 @@ end
 # Creates a minimal CapitalRemittance plus a generated AND approved Document.
 Given('the capital call has a remittance with an approved generated notice') do
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: @entity)
-  remittance = FactoryBot.build(:capital_remittance,
-    capital_call: @capital_call,
-    fund:         @fund,
-    entity:       @entity,
-    investor:     investor,
-    folio_id:     "TEST-#{SecureRandom.hex(4)}"
-  )
-  remittance.save(validate: false)
+  remittance = create_rule_test_remittance(investor)
 
   folder = FactoryBot.create(:folder, entity: @entity)
   FactoryBot.create(:document,

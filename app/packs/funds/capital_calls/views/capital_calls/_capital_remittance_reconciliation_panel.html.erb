@@ -67,7 +67,7 @@
    } %>
 <% tag_for = ->(tags, key) { tags.fetch(key, [key.to_s.humanize, "bg-secondary", nil]) } %>
 
-<div class="remittance-reconciliation-panel mb-3" data-controller="tooltip">
+<div class="remittance-reconciliation-panel mb-3" data-controller="tooltip reconciliation-filter">
   <%# Same header shape as the index pages (e.g. capital_remittances/_index): h3 title on the
       left, the page's actions on the right. %>
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -88,12 +88,41 @@
     </div>
   </div>
 
-  <div class="d-flex flex-wrap gap-2 mb-3">
-    <% tier_tags.each do |key, (label, css, help)| %>
-      <span class="badge reconciliation-badge <%= css %>" data-bs-toggle="tooltip" data-bs-title="<%= help %>"><%= label %> <%= tier_counts[key] || 0 %></span>
-    <% end %>
-    <% if report.json_fields["discrepancy_count"].to_i.positive? %>
-      <span class="badge reconciliation-badge bg-danger" data-bs-toggle="tooltip" data-bs-title="<%= funds_tags["discrepancy"][2] %>"><i class="ti ti-alert-triangle me-1"></i>Not from KYC account <%= report.json_fields["discrepancy_count"] %></span>
+  <%# Same stat-card shape as investor_kycs/_stats: a row of cards, count + icon + colored
+      progress bar, one per outcome tier. Unlike that partial these don't navigate — there's
+      no separate index for a single call's deposits — they filter the table below in place
+      via the reconciliation-filter Stimulus controller. %>
+  <% stat_cards = [
+       { filter: "exact", label: "Matched", count: tier_counts["exact"] || 0, color: "success", icon: "ti ti-check" },
+       { filter: "probable", label: "Likely match", count: tier_counts["probable"] || 0, color: "warning", icon: "ti ti-help" },
+       { filter: "needs_review", label: "Needs review", count: tier_counts["needs_review"] || 0, color: "danger", icon: "ti ti-alert-triangle" },
+       { filter: "no_match", label: "No match", count: tier_counts["no_match"] || 0, color: "secondary", icon: "ti ti-ban" },
+       { filter: "internal", label: "Internal", count: tier_counts["internal"] || 0, color: "info", icon: "ti ti-building-bank" },
+       { filter: "discrepancy", label: "Not from KYC account", count: report.json_fields["discrepancy_count"].to_i, color: "danger", icon: "ti ti-shield-x" }
+     ] %>
+  <div class="row mb-3">
+    <% stat_cards.each do |card| %>
+      <div class="col">
+        <div class="card reconciliation-stat-card" role="button" tabindex="0"
+             data-reconciliation-filter-target="card" data-filter="<%= card[:filter] %>"
+             data-action="click->reconciliation-filter#toggle keydown.enter->reconciliation-filter#toggle"
+             data-bs-toggle="tooltip" data-bs-title="<%= (tier_tags[card[:filter]] || funds_tags[card[:filter]])&.last %>">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <div data-controller="counters" data-counters-value-value="<%= card[:count] %>">
+                  <h3 class="fs-7" data-counters-target="output">0</h3>
+                </div>
+                <h6 class="card-subtitle mb-1 text-muted"><%= card[:label] %></h6>
+              </div>
+              <div class="ms-auto">
+                <span class="text-<%= card[:color] %> display-6"><i class="<%= card[:icon] %>"></i></span>
+              </div>
+            </div>
+            <div class="progress-bar text-bg-<%= card[:color] %>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+      </div>
     <% end %>
   </div>
 
@@ -112,7 +141,7 @@
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody data-reconciliation-filter-target="body">
           <%# each_with_index keeps the REAL index — two content-identical rows (e.g. repeat
               fixed-amount installments from the same payer) must submit Confirm/Reassign/Undo
               against their own entry, never a value-equality lookup. %>
@@ -127,7 +156,8 @@
                 contradiction, an amount problem, or an ambiguous identity. Everything else
                 stays in the tooltip on the outcome tag. %>
             <% attention = deposit["tier"] == "needs_review" ? reasoning.find { |l| l.match?(/contradicts|overpayment|no readable amount|folios of the same investor|different investors|within .* of each other/) } : nil %>
-            <tr id="reconciliation_deposit_<%= idx %>">
+            <tr id="reconciliation_deposit_<%= idx %>" data-reconciliation-filter-target="row"
+                data-filter="<%= deposit["tier"] %>" data-discrepancy="<%= (deposit["source_of_funds"] == "discrepancy").to_s %>">
               <td>
                 <% remittance_id = deposit["matched_remittance_id"] %>
                 <% if remittance_id.present? && matched_folios.key?(remittance_id) %>
@@ -247,6 +277,9 @@
               </td>
             </tr>
           <% end %>
+          <tr data-reconciliation-filter-target="emptyRow" class="d-none">
+            <td colspan="6" class="text-muted text-center">No deposits match this filter.</td>
+          </tr>
         </tbody>
       </table>
     </div>

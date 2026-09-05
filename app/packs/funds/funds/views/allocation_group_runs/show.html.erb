@@ -1,0 +1,60 @@
+<%# Progress view for one group run. The progress tab polls itself while the run is active. %>
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">
+        <%= @group_run.group_name %>
+        <%= group_run_status_badge(@group_run.status) %>
+      </h1>
+      <div class="text-muted">Allocation run group for <strong><%= l @group_run.start_date %> – <%= l @group_run.end_date %></strong></div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <% if @group_run.allocation_run_template_group %>
+        <%= link_to "Group", allocation_run_template_group_path(@group_run.allocation_run_template_group), class: "btn btn-outline-secondary" %>
+      <% end %>
+      <%= link_to "All runs", allocation_group_runs_path, class: "btn btn-outline-info" %>
+    </div>
+  </div>
+
+  <div data-controller="tabs">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a class="nav-link <%= 'active' if @tab == 'progress' %>" data-bs-toggle="tab" href="#progress">Progress</a>
+      <a class="nav-link <%= 'active' if @tab == 'details' %>" data-bs-toggle="tab" href="#details">Details</a>
+    </nav>
+    <div class="tab-content">
+      <div id="progress" class="tab-pane fade <%= 'show active' if @tab == 'progress' %>">
+        <%= turbo_frame_tag "group_run_progress" do %>
+          <%= render "progress", group_run: @group_run, items: @items %>
+        <% end %>
+      </div>
+      <div id="details" class="tab-pane fade <%= 'show active' if @tab == 'details' %>">
+        <table class="table table-bordered align-middle">
+          <tr><th class="w-25">Group</th>
+            <td>
+              <% if @group_run.allocation_run_template_group %>
+                <%= link_to @group_run.group_name, allocation_run_template_group_path(@group_run.allocation_run_template_group) %>
+              <% else %>
+                <%= @group_run.group_name %> <span class="text-muted">(group since deleted; history kept)</span>
+              <% end %>
+            </td>
+          </tr>
+          <tr><th>Period</th><td><%= l @group_run.start_date %> – <%= l @group_run.end_date %></td></tr>
+          <tr><th>Status</th><td><%= group_run_status_badge(@group_run.status) %> <%= @group_run.message %></td></tr>
+          <tr><th>Started by</th><td><%= @group_run.user.full_name %></td></tr>
+          <tr><th>Queued at</th><td><%= l @group_run.created_at, format: :abbr_date_time %></td></tr>
+          <tr><th>Started at</th><td><%= @group_run.started_at ? l(@group_run.started_at, format: :abbr_date_time) : "—" %></td></tr>
+          <tr><th>Finished at</th><td><%= @group_run.finished_at ? l(@group_run.finished_at, format: :abbr_date_time) : "—" %></td></tr>
+          <tr><th>Duration</th><td><%= format_run_duration(@group_run.duration) %></td></tr>
+          <tr><th>Resumed from</th>
+            <td>
+              <% if @group_run.resumed_from %>
+                <%= link_to "Run of #{l @group_run.resumed_from.created_at, format: :abbr_date_time}", allocation_group_run_path(@group_run.resumed_from) %>
+                <span class="text-muted">— templates that succeeded there were reused, not re-run.</span>
+              <% else %>—<% end %>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -353,6 +353,31 @@ FactoryBot.define do
     sectors     { [] }
   end
 
+  factory :allocation_run_template do
+    entity          { nil }
+    user            { nil }
+    fund            { nil }
+    sequence(:name) { |n| "Allocation Template #{n}" }
+    run_allocations { true }
+    generate_soa    { false }
+    fund_ratios     { false }
+  end
+
+  factory :allocation_run_template_group do
+    entity          { nil }
+    user            { nil }
+    sequence(:name) { |n| "Allocation Group #{n}" }
+  end
+
+  factory :allocation_group_run do
+    entity     { nil }
+    user       { nil }
+    group_name { "Group" }
+    start_date { Date.new(2024, 1, 1) }
+    end_date   { Date.new(2024, 3, 31) }
+    status     { "queued" }
+  end
+
   factory :fund_ratio do
     entity { nil }
     fund { nil }
