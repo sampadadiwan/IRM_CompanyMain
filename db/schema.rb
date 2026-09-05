@@ -1759,6 +1759,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.boolean "test_account", default: false
     t.boolean "trial"
     t.date "trial_end_date"
+    t.string "ui_theme", limit: 20, default: "classic", null: false
     t.datetime "updated_at", null: false
     t.boolean "use_ai_kpi_reader", default: false, null: false
     t.string "valuation_math"
@@ -2908,6 +2909,76 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.index ["investor_kyc_id"], name: "index_kyc_data_on_investor_kyc_id"
   end
 
+  create_table "kyc_inspection_records", force: :cascade do |t|
+    t.string "agent_name", null: false
+    t.string "check_name", null: false
+    t.datetime "created_at", null: false
+    t.json "details"
+    t.bigint "entity_id", null: false
+    t.bigint "investor_kyc_id"
+    t.bigint "kyc_onboarding_id"
+    t.text "resolution_note"
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_id"
+    t.string "severity", null: false
+    t.string "status", default: "open", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "investor_kyc_id", "check_name", "created_at"], name: "idx_kyc_inspection_records_idempotency"
+    t.index ["entity_id", "status", "severity"], name: "idx_inspection_entity_status_severity"
+    t.index ["entity_id"], name: "index_kyc_inspection_records_on_entity_id"
+    t.index ["investor_kyc_id"], name: "index_kyc_inspection_records_on_investor_kyc_id"
+    t.index ["kyc_onboarding_id"], name: "index_kyc_inspection_records_on_kyc_onboarding_id"
+    t.index ["resolved_by_id"], name: "index_kyc_inspection_records_on_resolved_by_id"
+  end
+
+  create_table "kyc_onboarding_wizards", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "current_step", default: 1, null: false
+    t.bigint "kyc_onboarding_id", null: false
+    t.json "segment_data"
+    t.text "staged_file_data"
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.index ["kyc_onboarding_id"], name: "idx_kyc_onboarding_wizards_onboarding_unique", unique: true
+    t.index ["kyc_onboarding_id"], name: "index_kyc_onboarding_wizards_on_kyc_onboarding_id"
+  end
+
+  create_table "kyc_onboardings", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.string "last_weekly_report_sent_week"
+    t.datetime "launched_at"
+    t.integer "max_open_window_days", default: 30, null: false
+    t.string "name", null: false
+    t.json "nudge_schedule_days"
+    t.date "onboarding_deadline"
+    t.integer "stale_threshold_days", default: 14, null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "name"], name: "idx_kyc_onboardings_entity_name", unique: true
+    t.index ["entity_id"], name: "index_kyc_onboardings_on_entity_id"
+  end
+
+  create_table "mcp_audit_logs", force: :cascade do |t|
+    t.text "arguments"
+    t.string "client_name"
+    t.datetime "created_at", null: false
+    t.integer "duration_ms"
+    t.bigint "entity_id", null: false
+    t.string "error"
+    t.string "method", null: false
+    t.bigint "oauth_application_id"
+    t.string "tool_name"
+    t.bigint "user_id", null: false
+    t.index ["entity_id", "created_at"], name: "index_mcp_audit_logs_on_entity_id_and_created_at"
+    t.index ["entity_id"], name: "index_mcp_audit_logs_on_entity_id"
+    t.index ["oauth_application_id"], name: "index_mcp_audit_logs_on_oauth_application_id"
+    t.index ["tool_name"], name: "index_mcp_audit_logs_on_tool_name"
+    t.index ["user_id", "created_at"], name: "index_mcp_audit_logs_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_mcp_audit_logs_on_user_id"
+  end
+
   create_table "messages", force: :cascade do |t|
     t.integer "cache_creation_tokens"
     t.integer "cached_tokens"
@@ -3797,6 +3868,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.index ["entity_id"], name: "index_side_letters_on_entity_id"
   end
 
+  create_table "simulation_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "event_type", null: false
+    t.bigint "investor_kyc_id"
+    t.string "message", null: false
+    t.json "payload"
+    t.bigint "simulation_run_id", null: false
+    t.integer "virtual_day", null: false
+    t.index ["investor_kyc_id"], name: "index_simulation_events_on_investor_kyc_id"
+    t.index ["simulation_run_id", "virtual_day"], name: "index_simulation_events_on_simulation_run_id_and_virtual_day"
+    t.index ["simulation_run_id"], name: "index_simulation_events_on_simulation_run_id"
+  end
+
+  create_table "simulation_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "kyc_onboarding_id", null: false
+    t.json "response_config"
+    t.string "scenario_key", null: false
+    t.string "status", default: "pending", null: false
+    t.json "stub_config"
+    t.datetime "updated_at", null: false
+    t.integer "virtual_day", default: 0, null: false
+    t.index ["kyc_onboarding_id"], name: "index_simulation_runs_on_kyc_onboarding_id"
+    t.index ["status"], name: "index_simulation_runs_on_status"
+  end
+
   create_table "solid_cache_entries", force: :cascade do |t|
     t.integer "byte_size", null: false
     t.datetime "created_at", null: false
@@ -4405,10 +4502,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
 
-  add_foreign_key "access_rights", "entities"
-  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
-  add_foreign_key "access_rights", "users"
-  add_foreign_key "access_rights", "users", column: "granted_by_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
@@ -4710,6 +4803,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
   add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"
   add_foreign_key "kyc_data", "investor_kycs"
+  add_foreign_key "kyc_inspection_records", "entities"
+  add_foreign_key "kyc_inspection_records", "investor_kycs"
+  add_foreign_key "kyc_inspection_records", "kyc_onboardings"
+  add_foreign_key "kyc_inspection_records", "users", column: "resolved_by_id"
+  add_foreign_key "kyc_onboarding_wizards", "kyc_onboardings"
+  add_foreign_key "kyc_onboardings", "entities"
+  add_foreign_key "mcp_audit_logs", "entities"
+  add_foreign_key "mcp_audit_logs", "oauth_applications"
+  add_foreign_key "mcp_audit_logs", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
@@ -4810,6 +4912,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
   add_foreign_key "side_letters", "capital_commitments"
   add_foreign_key "side_letters", "documents"
   add_foreign_key "side_letters", "entities"
+  add_foreign_key "simulation_events", "simulation_runs"
+  add_foreign_key "simulation_runs", "kyc_onboardings"
   add_foreign_key "stamp_papers", "entities"
   add_foreign_key "stock_adjustments", "entities"
   add_foreign_key "stock_adjustments", "investment_instruments"
