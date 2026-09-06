@@ -1,0 +1,214 @@
+<%
+  fund ||= @fund
+%>
+
+<div class="associated_entity" data-controller="datatable tooltip">
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Previous Runs</h1>
+    <div>
+      <%= link_to allocation_run_templates_path, class: "btn btn-sm btn-outline-secondary", data: { bs_toggle: "tooltip" },
+                  title: "Save these settings once and run several funds in order with one action" do %>
+        <i class="ti ti-template"></i> Allocation Run Templates
+      <% end %>
+      <% if policy(fund).period_report? %>
+        <%= form_with url: fund_report_account_entry_reports_path, method: :get, local: true, class: "d-inline-flex align-items-end gap-2" do |f| %>
+          <%= f.hidden_field :fund_id, value: fund.id, id: nil %>
+          <%= f.date_field :start_date, value: start_date, class: "form-control form-control-sm", title: "Report start date" %>
+          <%= f.date_field :end_date, value: end_date, class: "form-control form-control-sm", title: "Report end date" %>
+          <%= f.submit "View Account Entries Report", class: "btn btn-sm btn-outline-success" %>
+        <% end %>
+      <% end %>
+      <% if policy(AllocationRun).unlock_all? && fund.present? %>
+        <%= button_to "Unlock All", unlock_all_allocation_runs_path(fund_id: fund.id), class: "btn btn-sm btn-outline-warning", method: :patch, form_class: "deleteButton", data: { action: "click->confirm#popup", method: :patch, msg: "Are you sure you want to unlock all AllocationRuns?" } %>
+      <% end %>
+    </div>
+  </div>
+
+  <table class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+          <th>
+            Start Date
+          </th>
+          <th>
+            End Date
+          </th>
+          <th>
+            Run Allocations
+          </th>
+          <th>
+            Generate Fund Ratios
+          </th>
+          <th>
+            Generate SOA
+          </th>
+          <th>
+            Template
+          </th>
+          <th>
+            On
+          </th>
+          <th>
+            By
+          </th>
+          <th>
+            For
+          </th>
+          <th>
+            Status
+          </th>
+          <th>
+            Locked
+          </th>
+          <th>
+
+          </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <%
+        # Loaded once and reused below for the "Save as template" modal loop (an in-memory
+        # filter on this same array), and the create? policy is evaluated once — neither
+        # depends on which row is being rendered, so per-row re-evaluation was pure waste.
+        all_runs = fund.allocation_runs.includes(:user, :fund, :allocation_run_report).order(created_at: :desc).to_a
+        can_save_template = policy(AllocationRunTemplate.new(entity_id: fund.entity_id, fund: fund)).create?
+        # The checker's rights do not vary by run, so the policy is evaluated once for the fund.
+        can_check_run = policy(AllocationRunReport.new(entity_id: fund.entity_id, fund: fund)).create?
+      %>
+      <% all_runs.each do |runs|  %>
+        <tr>
+          <td>
+            <%= l runs.start_date, format: :abbr_month_day_year %>
+          </td>
+          <td>
+            <%= l runs.end_date, format: :abbr_month_day_year %>
+          </td>
+          <td>
+            <%= display_boolean runs.run_allocations %>
+          </td>
+          <td>
+            <%= display_boolean runs.fund_ratios %>
+          </td>
+          <td>
+            <%= display_boolean runs.generate_soa %>
+          </td>
+          <td>
+            <%= runs.template_name %>
+          </td>
+          <td>
+            <%= l runs.created_at %>
+          </td>
+          <td>
+            <%= runs.user.full_name %>
+          </td>
+          <td>
+            <%= runs.rule_for.presence || "Both" %> <br>
+            <%= runs.tag_list %>
+          </td>
+          <td>
+            <%= runs.status %>
+            <%# Allocation run checker result, under the run's own status. Deliberately not its
+                own column: this table's DataTable is responsive and drops columns from the
+                right when they do not fit, so a 13th column hides the actions cell. %>
+            <% report = runs.allocation_run_report %>
+            <div class="mt-1">
+              <% if report.nil? %>
+                <span class="text-muted">Not checked</span>
+              <% else %>
+                <%= link_to allocation_run_report_path(report), class: "text-decoration-none",
+                            title: "Allocation run check: #{report.pending? ? 'still running' : report.status}" do %>
+                  <span class="badge <%= AllocationRunReport.badge_class(report.status) %>">
+                    <%= report.pending? ? "Checking…" : report.status %>
+                  </span>
+                <% end %>
+              <% end %>
+            </div>
+          </td>
+          <td>
+            <%= display_boolean runs.locked %>
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              <%# Rerun and Save as template act on a *new* run seeded from this one's attributes
+                  (or just read them for a template) — they never modify this run itself, so
+                  they're available regardless of runs.locked. Only Lock/Unlock toggles on it. %>
+              <%= link_to allocate_form_fund_path(runs.attributes), class: "btn btn-sm btn-outline-primary", data: { bs_toggle: "tooltip" },
+                          title: "Rerun — start a new allocation run pre-filled with this run's date range and options" do %>
+                <i class="ti ti-refresh"></i>
+              <% end %>
+              <% if can_save_template %>
+                <%# data-bs-toggle is already claimed by the modal trigger here, so the tooltip
+                    is opted in via data-bs-title alone (tooltip_controller#initTooltips matches
+                    on that attribute too) rather than data-bs-toggle="tooltip", which would
+                    overwrite "modal" and break the dialog trigger. aria-label — not title —
+                    carries the accessible name Capybara's :button locator finds "Save as
+                    template" by, so Bootstrap's title-clearing on init can't touch it. %>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#saveTemplateModal-<%= runs.id %>"
+                        data-bs-title="Save as template — copies this run's fund and options into a reusable allocation run template (the period is not saved)"
+                        aria-label="Save as template">
+                  <i class="ti ti-template"></i>
+                </button>
+              <% end %>
+              <%# Tooltip text goes on data-bs-title, not title: Bootstrap's Tooltip clears the
+                  title attribute on init (moving it to data-bs-original-title), which would make
+                  this icon-only button unfindable by Capybara's :button locator (which reads
+                  title). aria-label carries the accessible name instead — same pattern used for
+                  "Save as template" and "Check" below. %>
+              <% if runs.locked %>
+                <%= form_with model: false, url: unlock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
+                  <%= button_tag class: "btn btn-sm btn-outline-warning",
+                                 data: { confirm: "Are you sure you want to unlock this AllocationRun?",
+                                         bs_title: "Unlock — allow this run's period to be edited or re-run again" },
+                                 "aria-label": "Unlock" do %>
+                    <i class="ti ti-lock-open"></i>
+                  <% end %>
+                <% end %>
+              <% else %>
+                <%= form_with model: false, url: lock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
+                  <%= button_tag class: "btn btn-sm btn-outline-danger",
+                                 data: { confirm: "Are you sure you want to lock this AllocationRun?",
+                                         bs_title: "Lock — prevent this run's period from being edited or run again until it's unlocked" },
+                                 "aria-label": "Lock" do %>
+                    <i class="ti ti-lock"></i>
+                  <% end %>
+                <% end %>
+              <% end %>
+              <% if runs.created_at > Date.local_parse("29/03/2025") %>
+                <%= link_to account_entries_path(filter: true, fund_id: fund.id, q: ransack_query_params_multiple([["allocation_run_id", :eq, runs.id], ["reporting_date", :eq, runs.end_date.to_fs(:db)]])), class: "btn btn-sm btn-outline-info", data: { bs_toggle: "tooltip" },
+                            title: "Account Entries — view the account entries this allocation run generated" do %>
+                  <i class="ti ti-list-details"></i>
+                <% end %>
+              <% end %>
+              <% if false && policy(fund).period_report? %>
+                <%= link_to fund_report_account_entry_reports_path(fund_id: fund.id, start_date: runs.start_date, end_date: runs.end_date), class: "btn btn-sm btn-outline-success", data: { bs_toggle: "tooltip" }, title: "View Report" do %>
+                  <i class="ti ti-report-analytics"></i>
+                <% end %>
+              <% end %>
+              <% if can_check_run %>
+                <%# Runs the allocation run checker over this run and opens its report. Re-checking
+                    an already-checked run overwrites its report, so the badge is never stale.
+                    data-bs-title / aria-label, not title — same reasoning as "Unlock" above. %>
+                <%= button_to allocation_run_reports_path(allocation_run_id: runs.id), method: :post,
+                              class: "btn btn-sm btn-outline-dark", form_class: "d-inline",
+                              data: { bs_title: "Check this allocation run — reports whether the run finished and whether the numbers add up" },
+                              "aria-label": "Check this allocation run" do %>
+                  <i class="ti ti-checkup-list"></i>
+                <% end %>
+              <% end %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# "Save as allocation run template" modals, one per run, rendered outside the table.
+    Reuses the already-loaded all_runs in memory instead of re-querying. %>
+<% if can_save_template %>
+  <% all_runs.each do |runs| %>
+    <%= render "allocation_run_templates/save_as_template_modal", run: runs %>
+  <% end %>
+<% end %>

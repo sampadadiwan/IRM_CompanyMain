@@ -255,8 +255,9 @@ When('I visit the allocation screen of the fund') do
 end
 
 When('I press the check button for that allocation run') do
-  # Icon-only button; Capybara's :button locator matches on the title attribute.
-  click_button("Check this allocation run", match: :first)
+  # Icon-only button; found by aria-label since Bootstrap's Tooltip (data-bs-title) doesn't
+  # touch it the way it would a title attribute.
+  find(:css, "button[aria-label='Check this allocation run']", match: :first).click
 end
 
 Then('I should be on the report page') do

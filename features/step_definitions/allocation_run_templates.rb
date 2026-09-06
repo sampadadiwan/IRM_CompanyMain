@@ -472,7 +472,9 @@ When('I visit the allocation screen of the first fund') do
 end
 
 When('I save the first past run as a template named {string}') do |name|
-  first(:button, "Save as template").click
+  # Icon-only button; found by aria-label since Bootstrap's Tooltip (data-bs-title) doesn't
+  # touch it the way it would a title attribute.
+  first(:css, "button[aria-label='Save as template']").click
   within(".modal.show") do
     fill_in "allocation_run_template[name]", with: name
     click_button "Save template"
