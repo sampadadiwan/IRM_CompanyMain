@@ -58,7 +58,13 @@
                       <td>
                         <% path = finding_entries_path(allocation_run, filters[index]) %>
                         <% if path %>
-                          <%= link_to path, class: "btn btn-sm btn-outline-info", data: { bs_toggle: "tooltip" },
+                          <%# turbo_frame: "_top" -- this row sits inside the show page's
+                              "allocation_run_report" frame (see show.html.erb), which polls while
+                              the check is running. Without this the click navigates inside that
+                              frame instead of the full page; the account entries screen has no
+                              matching turbo-frame id, so Turbo finds nothing to swap in and the
+                              link appears to do nothing. %>
+                          <%= link_to path, class: "btn btn-sm btn-outline-info", data: { bs_toggle: "tooltip", turbo_frame: "_top" },
                                       title: "Open the account entries behind this row" do %>
                             <i class="ti ti-list-details"></i>
                           <% end %>

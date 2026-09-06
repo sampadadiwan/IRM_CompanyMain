@@ -83,7 +83,7 @@
   <table class="table table-bordered align-middle">
     <tr>
       <th class="w-25">Fund</th>
-      <td><%= link_to allocation_run.fund.name, fund_path(allocation_run.fund) %></td>
+      <td><%= link_to allocation_run.fund.name, fund_path(allocation_run.fund), data: { turbo_frame: "_top" } %></td>
     </tr>
     <tr>
       <th>Period</th>
@@ -108,7 +108,7 @@
     <tr>
       <th>Account entries</th>
       <td>
-        <%= link_to run_account_entries_path(allocation_run), class: "btn btn-sm btn-outline-info" do %>
+        <%= link_to run_account_entries_path(allocation_run), class: "btn btn-sm btn-outline-info", data: { turbo_frame: "_top" } do %>
           <i class="ti ti-list-details"></i> Entries this run produced
         <% end %>
       </td>
