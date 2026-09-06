@@ -358,9 +358,29 @@ module AwsUtils
       ]
     }).images.sort_by { |ami| ami.creation_date }.last
 
+    # `.last` on no matches is nil, and the log line below dereferences it —
+    # so an AMI that was never copied to this region surfaced as
+    # "undefined method 'image_id' for nil" raised from INSIDE this method,
+    # before any caller could check the return value. Return nil cleanly and
+    # let callers decide what a missing AMI means.
+    if latest_ami.nil?
+      puts "⚠️  No AMI tagged '#{name_tag}' owned by this account in #{region}."
+      return nil
+    end
 
     puts "✨ Latest AMI found: #{latest_ami.image_id} with name: #{latest_ami.name}, date: #{latest_ami.creation_date}"
     latest_ami
+  end
+
+  # latest_ami, but fatal when nothing matches — for callers that cannot
+  # meaningfully continue (writing a stack config with a nil AMI id would
+  # produce a stack that fails at `pulumi up` instead of here, with a much
+  # worse message).
+  def latest_ami!(name_tag, region)
+    latest_ami(name_tag, region) or
+      raise "No AMI tagged '#{name_tag}' owned by this account in #{region}. " \
+            "Copy one first: rake \"aws:copy_ami[<source-ami-id>, #{region}, <env_name>]\" " \
+            "or bake and copy: rake \"aws:create_and_copy_ami[#{name_tag}, #{region}, <env_name>]\""
   end
 
   # Reads a single Pulumi config value for a stack. Returns nil when the key is
@@ -398,9 +418,9 @@ module AwsUtils
     # prefix (the prefixed form caused wrong-region copy-paste bugs; __main__.py
     # keeps a legacy fallback for old files but plain is canonical).
     pulumi_config = {
-      "IRM-infra:web_server_ami" => latest_ami(web_server_name, region).image_id,
-      "IRM-infra:db_server_ami" => latest_ami(db_server_name, region).image_id,
-      "IRM-infra:observability_ami" => latest_ami("Observability", region).image_id
+      "IRM-infra:web_server_ami" => latest_ami!(web_server_name, region).image_id,
+      "IRM-infra:db_server_ami" => latest_ami!(db_server_name, region).image_id,
+      "IRM-infra:observability_ami" => latest_ami!("Observability", region).image_id
     }
 
     # Select or create the Pulumi stack. --create makes a brand-new region a
