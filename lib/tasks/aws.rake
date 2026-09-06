@@ -87,6 +87,11 @@ namespace :aws do
 
     puts "🩺 DR readiness for #{stack} (#{env_variant}) → DR region #{region}\n\n"
 
+    # Point at this env's state bucket before the checks read anything from
+    # Pulumi. Non-fatal: a scorecard reports problems, it does not refuse to
+    # run because of one — check 4b below records whatever state we end up in.
+    ensure_pulumi_backend!(env_name, fatal: false)
+
     results = [] # [status, label, detail]
     check = ->(label, status, detail = "") { results << [status, label, detail] }
 

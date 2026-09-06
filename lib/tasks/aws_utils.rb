@@ -1683,8 +1683,38 @@ module AwsUtils
     nil
   end
 
+  # Does the env's primary state bucket exist yet? That is how we tell a
+  # migrated env from one still on Pulumi Cloud, without hardcoding a list that
+  # would go stale as each env moves.
+  def pulumi_state_bucket_exists?(bucket, region)
+    require "aws-sdk-s3"
+    Aws::S3::Client.new(region: region).head_bucket(bucket: bucket)
+    true
+  rescue StandardError
+    false
+  end
+
+  def pulumi_login!(target)
+    out, err, st = Open3.capture3("pulumi login #{target}", chdir: "../IRM-Infra")
+    return true if st.success?
+
+    raise "pulumi login #{target} failed: #{(err.to_s + out.to_s).lines.first.to_s.strip}"
+  end
+
   # Call at the start of any task that shells out to pulumi.
-  def ensure_pulumi_backend!(env_name)
+  #
+  # Logs in to the env's state bucket itself rather than telling the operator to
+  # — the task knows exactly which bucket it needs, so making a human retype it
+  # only creates a chance to get it wrong. Two cases are NOT auto-corrected:
+  #
+  #   * the replica bucket, which someone may be on deliberately during a real
+  #     failover; switching them to a primary in a dead region would break
+  #     incident response. Requires PULUMI_ALLOW_REPLICA=true to proceed.
+  #   * an env with no state bucket yet, i.e. not migrated. Stays on Pulumi
+  #     Cloud with a warning.
+  #
+  # PULUMI_NO_AUTO_LOGIN=true turns the switch back into an instruction.
+  def ensure_pulumi_backend!(env_name, fatal: true)
     buckets = pulumi_state_buckets(env_name)
     backend = pulumi_current_backend
 
@@ -1693,25 +1723,45 @@ module AwsUtils
             "Is the Pulumi CLI installed and logged in?"
     end
 
-    unless backend.start_with?("s3://")
-      puts "⚠️  Pulumi backend is #{backend} (Pulumi Cloud), not #{env_name}'s state bucket."
-      puts "   Fine while #{env_name} is still on Pulumi Cloud. Once migrated, use:"
-      puts "     pulumi login \"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\""
-      return :cloud
+    current_bucket = backend.start_with?("s3://") ? backend.sub(%r{\As3://}, "").split("?").first : nil
+
+    if current_bucket == buckets[:replica]
+      if ENV["PULUMI_ALLOW_REPLICA"] == "true"
+        puts "⚠️  Using the REPLICA bucket #{current_bucket} (PULUMI_ALLOW_REPLICA=true)."
+        puts "   Only correct during a real #{buckets[:primary_region]} outage — see IRM-Infra/PULUMI_STATE.md."
+        load_pulumi_passphrase!(env_name, buckets[:dr_region])
+        return :replica
+      end
+      raise "Pulumi is logged into the REPLICA bucket #{current_bucket}, which is read-only " \
+            "outside a real #{buckets[:primary_region]} outage; writing to it creates " \
+            "split-brain state (IRM-Infra/PULUMI_STATE.md).\n" \
+            "   Not switching automatically, in case this is a deliberate failover.\n" \
+            "   Normal operation: pulumi login \"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\"\n" \
+            "   Real failover:    re-run with PULUMI_ALLOW_REPLICA=true"
     end
 
-    # s3://bucket?region=... — compare the bucket only.
-    current_bucket = backend.sub(%r{\As3://}, "").split("?").first
-    if current_bucket == buckets[:replica]
-      raise "Pulumi is logged into the REPLICA bucket #{current_bucket}. That copy is " \
-            "read-only outside a real #{buckets[:primary_region]} outage; writing to it " \
-            "creates split-brain state (see IRM-Infra/PULUMI_STATE.md).\n" \
-            "   Use: pulumi login \"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\""
-    end
     if current_bucket != buckets[:primary]
-      raise "Pulumi is logged into #{current_bucket}, but #{env_name} state lives in " \
-            "#{buckets[:primary]}. Every pulumi read would describe the wrong environment.\n" \
-            "   Use: pulumi login \"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\""
+      target = "\"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\""
+
+      unless pulumi_state_bucket_exists?(buckets[:primary], buckets[:primary_region])
+        puts "⚠️  Pulumi backend is #{backend}; #{env_name} has no state bucket yet"
+        puts "   (#{buckets[:primary]} does not exist), so it is still on Pulumi Cloud."
+        puts "   Migrate with: IRM-Infra/migrate_state_to_s3.sh #{env_name}"
+        return :cloud
+      end
+
+      if ENV["PULUMI_NO_AUTO_LOGIN"] == "true"
+        raise "Pulumi backend is #{backend}, but #{env_name} state lives in #{buckets[:primary]}.\n" \
+              "   Run: pulumi login #{target}"
+      end
+
+      puts "🔀 Switching Pulumi backend: #{backend} → s3://#{buckets[:primary]}"
+      pulumi_login!(target)
+
+      now = pulumi_current_backend.to_s
+      unless now.sub(%r{\As3://}, "").split("?").first == buckets[:primary]
+        raise "Tried to switch to #{buckets[:primary]} but the backend is now '#{now}'."
+      end
     end
 
     case load_pulumi_passphrase!(env_name, buckets[:primary_region])
@@ -1722,6 +1772,10 @@ module AwsUtils
     end
     puts "✅ Pulumi backend: s3://#{buckets[:primary]} (#{buckets[:primary_region]})"
     :s3
-  end
+  rescue StandardError => e
+    raise if fatal
 
+    puts "⚠️  Pulumi backend preflight: #{e.message.lines.first.to_s.strip}"
+    :error
+  end
 end
