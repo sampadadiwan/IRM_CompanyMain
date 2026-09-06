@@ -172,6 +172,36 @@ scenario (once in `before_js`/`before_non_js`, once in `after`).
 The `@javascript` run confirms the restore is visible correctly across the separate
 server-thread connection, not just within a single-threaded scenario.
 
+**Isolated DB-operation benchmark.** The timings above are whole-scenario wall-clock,
+which include Playwright page loads/HTTP — a real signal since that part is identical
+between the two runs, but not a clean measurement of the DB operation alone. Isolated
+it directly with a `rails runner` script (`DatabaseCleaner.start`/`.clean` vs.
+`SqliteSnapshotStrategy`'s restore, no Capybara/browser/HTTP involved), covering two
+cases:
+
+| Case | Truncation | Restore | Advantage |
+|---|---|---|---|
+| Small scenario (entity+fund+3 rows, avg of 30 cycles) | 245ms/cycle | 121ms/cycle | ~2x |
+| Bulk scenario (20,000 `account_entries` rows via `insert_all`) | 110ms | 10ms | ~11x |
+
+Why the advantage *grows* with data volume rather than shrinking: truncation's cost is
+dominated by fixed per-table overhead — it issues a DELETE against all ~160
+non-excluded tables every time, regardless of whether they hold 0 rows or 20,000
+(confirmed by the bulk case's single truncation run being *faster* than the small
+case's per-cycle average — the 20,000-row table didn't meaningfully add to a cost
+already dominated by ~160 fixed round trips). Restore's cost is instead bounded by the
+*template's* size, which is captured right after migration (near-empty, since
+`db/seeds.rb` is 8 lines) — restoring a 20,000-row-bloated live file back down to that
+small template is cheap because the Backup API copies template-sized data across and
+lets the destination's excess pages get deallocated, rather than deleting rows table
+by table. That matters here specifically because CLAUDE.md flags exactly this kind of
+bulk-import scenario (`account_entries` and friends) as the highest-risk case for this
+app.
+
+Caveat: this assumes the template itself stays small. If a future change made the
+baseline schema load ship with a large seed/fixture set, restore cost would grow with
+*that* — worth re-running this benchmark if `db/seeds.rb` ever stops being trivial.
+
 **Not yet done:**
 - Full-suite run (only a handful of files have been exercised so far).
 - Removing the now-dead 41-table `DatabaseCleaner` truncation exclusion list in
