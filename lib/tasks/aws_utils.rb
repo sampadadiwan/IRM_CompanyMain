@@ -1579,4 +1579,137 @@ module AwsUtils
     puts "   aws s3 sync s3://#{source_bucket} s3://#{dest_bucket} (or S3 Batch Replication)."
     true
   end
+
+  # ---------------------------------------------------------------------------
+  # Pulumi state backend preflight
+  # ---------------------------------------------------------------------------
+  # Every rake task that shells out to pulumi does so with `chdir: "../IRM-Infra"`
+  # and inherits whatever backend the operator happens to be logged into, plus
+  # whatever is (or is not) in PULUMI_CONFIG_PASSPHRASE. Before the S3 migration
+  # that was harmless. After it, two things can go wrong silently:
+  #
+  #   1. You are logged into a DIFFERENT env's state bucket. Every pulumi read
+  #      then describes the wrong environment — during a DR drill, the one you
+  #      are not recovering. This must be fatal.
+  #   2. The passphrase is unset, so `stack export`, `stack output`, `config
+  #      get`, `preview` and `up` all fail partway through a drill.
+  #
+  # Being logged into Pulumi Cloud is NOT an error: production is migrated after
+  # staging, so both backends are legitimate during the transition. Warn and
+  # carry on.
+
+  PULUMI_STATE_PRIMARY_REGIONS = { "in" => "ap-south-1", "us" => "us-east-1" }.freeze
+
+  # The bucket pair for an env. Single source of truth — aws:provision_pulumi_state_bucket
+  # creates exactly these names, and migrate_state_to_s3.sh expects them.
+  def pulumi_state_buckets(env_name)
+    account, geo = env_name.to_s.split(".")
+    primary_region = PULUMI_STATE_PRIMARY_REGIONS[geo] or
+      raise "No primary region known for geography '#{geo}' (env '#{env_name}')"
+    dr_region = S3_DR_REGION_PAIRS[primary_region]
+    {
+      primary_region: primary_region,
+      dr_region: dr_region,
+      primary: "irm-pulumi-state-#{account}-primary-#{primary_region}",
+      replica: "irm-pulumi-state-#{account}-replica-#{dr_region}"
+    }
+  end
+
+  # Current pulumi backend URL, or nil if it cannot be determined.
+  def pulumi_current_backend
+    out, = Open3.capture3("pulumi whoami --verbose", chdir: "../IRM-Infra")
+    line = out.lines.grep(/Backend URL/i).first
+    line && line.split(/URL:?\s*/i).last.to_s.strip
+  rescue StandardError
+    nil
+  end
+
+  # Load the state passphrase into this process's environment.
+  #
+  # Precedence:
+  #   1. an already-exported PULUMI_CONFIG_PASSPHRASE — an operator overriding
+  #      deliberately always wins
+  #   2. the env's Rails credentials, decrypted the same way aws:environment
+  #      decrypts the AWS keys, so a drill needs nothing but the .key file
+  #   3. SSM /irm/pulumi/passphrase, the cross-region source of truth
+  #      (PULUMI_STATE.md) — the fallback for a machine without the .key
+  def load_pulumi_passphrase!(env_name, region)
+    return :already_set unless ENV["PULUMI_CONFIG_PASSPHRASE"].to_s.empty?
+
+    from_credentials = pulumi_passphrase_from_credentials(env_name)
+    if from_credentials
+      ENV["PULUMI_CONFIG_PASSPHRASE"] = from_credentials
+      return :credentials
+    end
+
+    require "aws-sdk-ssm"
+    ENV["PULUMI_CONFIG_PASSPHRASE"] =
+      Aws::SSM::Client.new(region: region)
+                      .get_parameter(name: "/irm/pulumi/passphrase", with_decryption: true)
+                      .parameter.value
+    :ssm
+  rescue StandardError => e
+    raise "PULUMI_CONFIG_PASSPHRASE is not set, is absent from config/credentials/#{env_name}.yml.enc, " \
+          "and could not be read from SSM /irm/pulumi/passphrase in #{region}: #{e.message}\n" \
+          "   Export it manually:\n" \
+          "     export PULUMI_CONFIG_PASSPHRASE=$(aws ssm get-parameter --name /irm/pulumi/passphrase \\\n" \
+          "       --with-decryption --region #{region} --query Parameter.Value --output text)"
+  end
+
+  # Returns the passphrase from the env's encrypted credentials, or nil if the
+  # file, key or entry is absent. Never raises: a missing entry is expected
+  # before the key has been added, and SSM is the fallback.
+  def pulumi_passphrase_from_credentials(env_name)
+    key_path = Rails.root.join("config", "credentials", "#{env_name}.key")
+    enc_path = Rails.root.join("config", "credentials", "#{env_name}.yml.enc")
+    return nil unless File.exist?(key_path) && File.exist?(enc_path)
+
+    creds = Rails.application.encrypted(enc_path, key_path: key_path)
+    value = creds[:PULUMI_CONFIG_PASSPHRASE] || creds[:pulumi_config_passphrase]
+    value.to_s.empty? ? nil : value.to_s
+  rescue StandardError
+    nil
+  end
+
+  # Call at the start of any task that shells out to pulumi.
+  def ensure_pulumi_backend!(env_name)
+    buckets = pulumi_state_buckets(env_name)
+    backend = pulumi_current_backend
+
+    if backend.to_s.empty?
+      raise "Could not determine the Pulumi backend (`pulumi whoami` failed in ../IRM-Infra). " \
+            "Is the Pulumi CLI installed and logged in?"
+    end
+
+    unless backend.start_with?("s3://")
+      puts "⚠️  Pulumi backend is #{backend} (Pulumi Cloud), not #{env_name}'s state bucket."
+      puts "   Fine while #{env_name} is still on Pulumi Cloud. Once migrated, use:"
+      puts "     pulumi login \"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\""
+      return :cloud
+    end
+
+    # s3://bucket?region=... — compare the bucket only.
+    current_bucket = backend.sub(%r{\As3://}, "").split("?").first
+    if current_bucket == buckets[:replica]
+      raise "Pulumi is logged into the REPLICA bucket #{current_bucket}. That copy is " \
+            "read-only outside a real #{buckets[:primary_region]} outage; writing to it " \
+            "creates split-brain state (see IRM-Infra/PULUMI_STATE.md).\n" \
+            "   Use: pulumi login \"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\""
+    end
+    if current_bucket != buckets[:primary]
+      raise "Pulumi is logged into #{current_bucket}, but #{env_name} state lives in " \
+            "#{buckets[:primary]}. Every pulumi read would describe the wrong environment.\n" \
+            "   Use: pulumi login \"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\""
+    end
+
+    case load_pulumi_passphrase!(env_name, buckets[:primary_region])
+    when :credentials
+      puts "🔑 PULUMI_CONFIG_PASSPHRASE loaded from config/credentials/#{env_name}.yml.enc"
+    when :ssm
+      puts "🔑 PULUMI_CONFIG_PASSPHRASE loaded from SSM (#{buckets[:primary_region]})"
+    end
+    puts "✅ Pulumi backend: s3://#{buckets[:primary]} (#{buckets[:primary_region]})"
+    :s3
+  end
+
 end

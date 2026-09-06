@@ -65,6 +65,11 @@ def dr_assess_resolve_env(env_name)
   region = ENV["AWS_REGION"].to_s
   raise "AWS_REGION not set in .env.#{env_name}" if region.empty?
 
+  # Confirm we will read this env's state, not another env's, and make the
+  # passphrase available before anything shells out to pulumi. See
+  # ensure_pulumi_backend! in aws_utils.rb.
+  ensure_pulumi_backend!(env_name)
+
   cfg.merge(
     env_name: env_name,
     region: region,
