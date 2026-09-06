@@ -121,6 +121,18 @@ namespace :aws do
     # --- 2. AMIs present + recent in the DR region ---------------------------
     %w[AppServer DB-Redis-ES Observability].each do |name|
       ami = latest_ami(name, region)
+      # latest_ami returns nil when nothing matches. Without this the next line
+      # raises NoMethodError and the scorecard reports "undefined method
+      # 'image_id' for nil", which says nothing about what is actually wrong or
+      # how to fix it — the AMI was simply never copied to this region.
+      if ami.nil?
+        check.("AMI #{name} in #{region}", :fail,
+               "no AMI tagged '#{name}' in #{region} — copy one with " \
+               "rake \"aws:copy_ami[<source-ami-id>, #{region}, #{env_name}]\" " \
+               "or bake+copy with rake \"aws:create_and_copy_ami[#{name}, #{region}, #{env_name}]\"")
+        next
+      end
+
       age_days = ((Time.now - Time.parse(ami.creation_date)) / 86_400).round
       status = age_days > 8 ? :warn : :ok # weekly bake → >8d means the cron missed
       check.("AMI #{name} in #{region}", status,
