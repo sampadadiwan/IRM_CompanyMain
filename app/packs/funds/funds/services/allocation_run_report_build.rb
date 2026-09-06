@@ -16,8 +16,12 @@
 # what is in the ledger now. Where a check departs from the engine, the comment says why.
 class AllocationRunReportBuild < Trailblazer::Operation
   # Decimal amounts are summed by the database, so an exact match is expected; the epsilon
-  # only absorbs the last-place noise of DECIMAL(30,8) arithmetic.
-  AMOUNT_EPSILON = BigDecimal("0.000001")
+  # absorbs last-place noise from formula chains involving division (percentages, FX rates),
+  # which can leave a remainder of a few millionths after DECIMAL(30,8) arithmetic — bigger
+  # than a single last-place unit, but many orders of magnitude below a cent. 0.005 is half
+  # the smallest unit `fmt` displays (2dp), so a difference this check now passes always
+  # rounds to "0.00" on screen too — no more "the report says Fail but I see no difference".
+  AMOUNT_EPSILON = BigDecimal("0.005")
 
   # ComputeCustomPercentage rounds to a float before storing, so a fund with several thousand
   # folios can legitimately land a little either side of 100.
