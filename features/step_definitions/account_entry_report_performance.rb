@@ -149,12 +149,19 @@ end
 # A Turbo Frame request for the pivot's own frame. The controller matches on the frame id
 # and must build the pivot alone, skipping the KPIs, both charts and the filter dropdowns.
 When('I request page {string} of the detail pivot as a Turbo Frame, counting account entry queries') do |page_number|
-  # NB: the block arg must not be called `page` - it would shadow Capybara's `page`.
-  page.driver.header("Turbo-Frame", AccountEntryReportsController::DETAIL_FRAME_ID)
+  # The rack_test driver exposes `page.driver.header`, but this suite runs on the
+  # Playwright driver, which has no such method - extra headers go through the
+  # underlying browser context instead. NB: the block arg must not be called `page` -
+  # it would shadow Capybara's `page`.
+  page.driver.with_playwright_page do |pw_page|
+    pw_page.context.set_extra_http_headers("Turbo-Frame" => AccountEntryReportsController::DETAIL_FRAME_ID)
+  end
   @aerp_queries = aerp_count_account_entry_queries do
     visit aerp_fund_report_path("2024-01-01", "2024-12-31", page: page_number)
   end
-  page.driver.header("Turbo-Frame", nil)
+  page.driver.with_playwright_page do |pw_page|
+    pw_page.context.set_extra_http_headers({})
+  end
 end
 
 ### Assertions #################################################################

@@ -12,6 +12,8 @@ Feature: Account Entries Period Report stays bounded on large ledgers
   Background:
     Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
     Given the user has role "company_admin"
+    And I am at the login page
+    When I fill and submit the login page
     Given there is a fund "name=Report Fund;currency=INR;unit_types=A1" for the entity
     And the report fund has folios "101,102,103"
 

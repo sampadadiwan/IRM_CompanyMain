@@ -299,6 +299,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
   end
 
   create_table "agent_ingested_emails", force: :cascade do |t|
+    t.json "attachment_data"
     t.decimal "confidence", precision: 5, scale: 2
     t.datetime "created_at", null: false
     t.bigint "deal_id", null: false
@@ -1556,6 +1557,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.boolean "download"
     t.boolean "embed", default: false
     t.bigint "entity_id", null: false
+    t.boolean "esign_email_reminders", default: true, null: false
+    t.integer "esign_expiration_days"
+    t.datetime "esign_expires_at"
+    t.integer "esign_reminder_period"
     t.string "esign_status", default: "", null: false
     t.text "file_data"
     t.bigint "folder_id", null: false
@@ -1759,7 +1764,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.boolean "test_account", default: false
     t.boolean "trial"
     t.date "trial_end_date"
-    t.string "ui_theme", limit: 20, default: "classic", null: false
     t.datetime "updated_at", null: false
     t.boolean "use_ai_kpi_reader", default: false, null: false
     t.string "valuation_math"
@@ -3802,6 +3806,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.decimal "position_amount", precision: 20, scale: 2
     t.date "position_date"
     t.string "position_type", limit: 50, null: false
+    t.decimal "quantity_actual", precision: 20, scale: 2
     t.string "round_name"
     t.string "subgroup"
     t.datetime "updated_at", null: false
@@ -4502,6 +4507,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
 
+  add_foreign_key "access_rights", "entities"
+  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
+  add_foreign_key "access_rights", "users"
+  add_foreign_key "access_rights", "users", column: "granted_by_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
