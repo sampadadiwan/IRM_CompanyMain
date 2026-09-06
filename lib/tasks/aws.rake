@@ -37,6 +37,11 @@ namespace :aws do
     Rake::Task['aws:environment'].reenable
     Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"])
+    # setup_pulumi_config runs `pulumi stack select --create`, so without this
+    # the stack is created in whichever backend happens to be logged in —
+    # creating a production stack on Pulumi Cloud after its state has moved to
+    # S3 is exactly the split-brain PULUMI_STATE.md warns about.
+    ensure_pulumi_backend!(args[:env_name] || "#{args[:stack]}.#{args[:env_variant]}")
     setup_infra(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant], args[:branch])
   end
 
@@ -52,6 +57,8 @@ namespace :aws do
     Rake::Task['aws:environment'].reenable
     Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"], web_server_name: "AppServer", db_server_name: "DB-Redis-ES")
+    # Same reason as aws:setup_infra: this creates the stack.
+    ensure_pulumi_backend!(args[:env_name] || "#{args[:stack]}.#{args[:env_variant]}")
     setup_pulumi_config(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant])
   end
 
@@ -186,7 +193,20 @@ namespace :aws do
         check.("Pulumi stack #{stack}-#{region}", :ok, "config complete (#{domain})")
       end
     else
-      check.("Pulumi stack #{stack}-#{region}", :fail, "#{stack_file} not found")
+      # A warning, not a failure — and deliberately consistent with check 4b
+      # below, which tolerates the same fact ("a brand-new DR region
+      # legitimately has no stack yet"). setup_infra runs setup_pulumi_config,
+      # which does `pulumi stack select --create` and writes this file, so a DR
+      # run creates it.
+      #
+      # Still worth flagging: generating it at DR time needs the region's AMIs
+      # to already exist, and IRM-Infra's CI validates the key set of every
+      # Pulumi.*.yaml — a file that does not exist is a file that has never
+      # been validated. Pre-creating it moves both checks before the incident.
+      check.("Pulumi stack #{stack}-#{region}", :warn,
+             "#{stack_file} not found — setup_infra creates it during a DR run, but " \
+             "pre-create it so CI validates it: " \
+             "rake \"aws:setup_pulumi_config[#{stack}, AppServer, DB-Redis-ES, #{region}, #{env_variant}, #{env_name}]\"")
     end
 
     # --- 4b. Pulumi state backend reachable ----------------------------------
