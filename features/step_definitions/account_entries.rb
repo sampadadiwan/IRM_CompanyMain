@@ -76,7 +76,7 @@ end
 
 Given("I lock the AllocationRun") do
 	first('tbody tr').find('.dtr-control').click
-	click_on("Lock")
+	find(:css, "button[aria-label='Lock']").click
 	sleep(1)
 end
 
