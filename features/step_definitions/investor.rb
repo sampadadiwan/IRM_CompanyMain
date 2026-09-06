@@ -968,11 +968,19 @@ Then('we get the email with approved document exists error') do
 end
 
 Then('the {string} is successfully generated') do |name|
-  expect(page).to have_content("Documentation generation started, please check back in a few mins")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N documents generated successfully") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Documentation generation started|documents generated/i,
+    wait: 20
+  )
   # sleep(2)
   visit(current_url)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  expect(page).to have_content("Generated")
+  # The doc list below is lazy-loaded, and under parallel-worker CPU contention
+  # the (synchronous, :inline) job's DB write can lag behind the default 15s wait.
+  expect(page).to have_content("Generated", wait: 20)
   generated_doc = Document.where(owner_tag: "Generated").last
   generated_doc.name.should
   if name.include?("Investor Statement")

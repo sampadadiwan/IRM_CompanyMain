@@ -208,7 +208,13 @@ Then('when the capital commitment docs are generated') do
     click_on("Generate All Documents")
     #sleep((1)
     click_on("Proceed")
-    expect(page).to have_content("Documentation generation started")
+    # With :inline job adapter the job runs synchronously and the completion flash
+    # ("N documents generated successfully") replaces the async "started" flash
+    # before this assertion could catch it. Accept either message.
+    expect(page).to have_content(
+      /Documentation generation started|documents generated/i,
+      wait: 20
+    )
     sleep(8)
     # expect(page).to have_content("generated successfully")
   end
