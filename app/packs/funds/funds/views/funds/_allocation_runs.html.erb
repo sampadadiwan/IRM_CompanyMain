@@ -196,9 +196,11 @@
                   <i class="ti ti-report-analytics"></i>
                 <% end %>
               <% end %>
-              <% if can_check_run %>
+              <% if can_check_run && !report&.pending? %>
                 <%# Runs the allocation run checker over this run and opens its report. Re-checking
                     an already-checked run overwrites its report, so the badge is never stale.
+                    Hidden while a check is already in flight (report.pending?) so a second click
+                    can't queue a duplicate job racing the one already running.
                     data-bs-title / aria-label, not title — same reasoning as "Unlock" above. %>
                 <%= button_to allocation_run_reports_path(allocation_run_id: runs.id), method: :post,
                               class: "btn btn-sm btn-outline-dark", form_class: "d-inline",

@@ -14,7 +14,7 @@
       <%= link_to run_account_entries_path(@allocation_run), class: "btn btn-outline-info" do %>
         <i class="ti ti-list-details"></i> Account Entries
       <% end %>
-      <% if policy(@report).create? %>
+      <% if policy(@report).create? && @report.finished? %>
         <%= button_to allocation_run_reports_path(allocation_run_id: @allocation_run.id),
                       method: :post, class: "btn btn-outline-primary", form_class: "d-inline" do %>
           <i class="ti ti-refresh"></i> Check again
