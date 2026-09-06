@@ -1,10 +1,11 @@
 <%= render "/funds/stats" if current_user.curr_role_employee? %>
 <% if params[:card].present? %>
   <% title = link_to("Funds", funds_path) %>
+  <% card_type = params[:card].to_s.presence_in(%w[card card2 card3 card4 card5]) || "card" %>
   <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
-    <%= render "entities/vc_dashboard_menus" %>
+    <%= render "entities/vc_dashboard_menus" if current_user.curr_role_investor? %>
     <% funds.includes([:capital_commitments]).each do |fund| %>
-      <%= render "/funds/card", fund: fund %>
+      <%= render "/funds/#{card_type}", fund: fund %>
     <% end %>
     <div class="d-flex justify-content-between align-items-center">
       <%= raw pagy_info(@pagy) %>
@@ -46,7 +47,7 @@
       <% end %>
       <% if current_user.curr_role == "employee" %>
         <a  class="p-8 bg-primary-subtle rounded-1 me-3 d-inline-flex align-middle align-items-center justify-content-center"
-              href="<%=funds_path(card: true)%>" >
+              href="<%=funds_path(card: :card5)%>" >
           <i class="ti ti-grid-dots text-primary fs-6"></i>
         </a>
       <% end %>
@@ -85,6 +86,15 @@
           </th>
           <th class="text-col">
             Tag List
+          </th>
+          <th class="amount-col text-end">
+            Committed
+          </th>
+          <th class="amount-col text-end">
+            Collected
+          </th>
+          <th class="amount-col text-end">
+            Distributed
           </th>
           <% if params[:snapshot].present? %>
             <th class="date-col">
