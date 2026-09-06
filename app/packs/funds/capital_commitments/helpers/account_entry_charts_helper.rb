@@ -28,7 +28,7 @@ module AccountEntryChartsHelper
     end
 
     # Time-series aggregation (Month, Quarter or Year)
-    group_field = AccountEntryPeriodGrouping.group_field_sql(aggregate_by)
+    group_field = AccountEntryPeriodGrouping.group_field_sql(aggregate_by, entries.connection)
 
     # Get the raw data: { [period, name] => sum }
     raw_data = entries.group(Arel.sql(group_field), :name).sum(:amount_cents)

@@ -133,7 +133,7 @@ class AccountEntryReport
     base = base.where(allocation_run_id: @allocation_run_id) if @allocation_run_id
     base = with_statement_timeout(base)
 
-    group_field = AccountEntryPeriodGrouping.group_field_sql(aggregate_by)
+    group_field = AccountEntryPeriodGrouping.group_field_sql(aggregate_by, base.connection)
     raw_data = base.group(Arel.sql(group_field), :name).sum(:amount_cents)
 
     all_periods = raw_data.keys.map(&:first).uniq.sort.last(periods)
