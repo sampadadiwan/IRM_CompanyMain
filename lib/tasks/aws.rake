@@ -652,6 +652,25 @@ namespace :aws do
       access_key_id: credentials[:AWS_ACCESS_KEY_ID],
       secret_access_key: credentials[:AWS_SECRET_ACCESS_KEY],
     })
+
+    # Aws.config only reaches SDK clients created IN THIS PROCESS. Several
+    # checks and every pulumi call shell out — `aws ssm get-parameter`,
+    # `aws route53 list-hosted-zones-by-name`, `pulumi stack ls` — and a
+    # subprocess inherits the shell's AWS environment, not Aws.config. Without
+    # this, those calls silently ran as whoever the operator happened to be:
+    # dr_readiness reported "security token is invalid" for SSM, "zone not
+    # found" for Route53, and AccessDenied on the Pulumi state bucket, while
+    # every in-process check passed against the right account.
+    ENV["AWS_ACCESS_KEY_ID"]     = credentials[:AWS_ACCESS_KEY_ID].to_s
+    ENV["AWS_SECRET_ACCESS_KEY"] = credentials[:AWS_SECRET_ACCESS_KEY].to_s
+    ENV["AWS_DEFAULT_REGION"]    = ENV["AWS_REGION"].to_s
+
+    # A session token or profile left over from an assumed role belongs to
+    # DIFFERENT keys; pairing either with these static credentials is what
+    # produces UnrecognizedClientException rather than a clean AccessDenied.
+    ENV.delete("AWS_SESSION_TOKEN")
+    ENV.delete("AWS_SECURITY_TOKEN")
+    ENV.delete("AWS_PROFILE")
   end
 
 

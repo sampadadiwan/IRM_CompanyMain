@@ -241,9 +241,15 @@ def dr_account_guard!(env)
   end
 
   if cli_account && cli_account != expected
-    abort "\n❌ ABORT: your shell's AWS credentials are account #{cli_account}, but #{env[:env_name]} " \
-          "lives in #{expected}.\n   Export the right account's keys before assessing or repairing " \
-          "#{env[:env_name]}.\n   (Override intentionally with EXPECTED_AWS_ACCOUNT=#{cli_account}.)"
+    # aws:environment now exports the env's credentials into ENV, so subprocesses
+    # no longer run as whoever the operator happened to be — meaning this
+    # compares the keys in config/credentials/#{env[:env_name]}.yml.enc against
+    # the account that env is supposed to live in. A mismatch is a wrong or
+    # rotated key in the credentials file, not a stale shell export.
+    abort "\n❌ ABORT: the AWS credentials for #{env[:env_name]} resolve to account #{cli_account}, " \
+          "but #{env[:env_name]} lives in #{expected}.\n   Check AWS_ACCESS_KEY_ID in " \
+          "config/credentials/#{env[:env_name]}.yml.enc (and that the matching .key is the right one)." \
+          "\n   (Override intentionally with EXPECTED_AWS_ACCOUNT=#{cli_account}.)"
   end
 
   if sdk_account && sdk_account != expected
