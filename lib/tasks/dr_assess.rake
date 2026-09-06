@@ -707,7 +707,9 @@ namespace :dr do
     # Reuses the hourly alert's own logic, so assess and the alert can never
     # disagree about what "stale" means.
     guarded.call("Backup freshness") do
-      failures = DbBackupFreshnessJob.new.collect_failures
+      # See the note in aws.rake's dr_readiness: without env_name the job uses
+      # the default credentials, not this env's.
+      failures = DbBackupFreshnessJob.new.collect_failures(env_name: env[:env_name])
       if failures.empty?
         check.call("Backup freshness", :ok, "primary + replica buckets within thresholds")
       else

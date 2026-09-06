@@ -99,7 +99,12 @@ namespace :aws do
     # Exact same checks the hourly alert runs — covers cadence, full-age,
     # replica presence, and bucket reachability in one shot
     begin
-      failures = DbBackupFreshnessJob.new.collect_failures
+      # env_name is REQUIRED here. Without it the job falls back to
+      # Rails.application.credentials, which locally are the default (staging)
+      # keys — so a production scorecard checked production's backup buckets
+      # using staging's IAM user and reported AccessDenied, or worse would have
+      # silently reported on the wrong account had the permission existed.
+      failures = DbBackupFreshnessJob.new.collect_failures(env_name: env_name)
       if failures.empty?
         check.("Backup freshness (primary + replica)", :ok, "within thresholds")
       else
