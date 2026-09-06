@@ -1411,4 +1411,172 @@ module AwsUtils
     puts status.first.inspect
   end
 
+
+  # ---------------------------------------------------------------------------
+  # S3 bucket + cross-region replication helpers
+  # ---------------------------------------------------------------------------
+  # Extracted so both aws:provision_s3_buckets (app + xtrabackup buckets) and
+  # aws:provision_pulumi_state_bucket (Pulumi state) share one implementation.
+  #
+  # FOLLOW-UP: provision_s3_buckets still carries its own inline copies of
+  # ensure_bucket! / ensure_replication_role! / ensure_replication!. They are
+  # behaviourally identical to these (the defaults below were chosen to match).
+  # Converge that task onto these helpers next time someone is in it with a
+  # reason to re-test it — it provisions live app buckets, so it is not worth
+  # refactoring blind.
+
+  # Which region each primary region fails over to. Mirrors the xtrabackup
+  # bucket layout and AWS_S3_REPLICA_REGION in .env.production.*.
+  S3_DR_REGION_PAIRS = {
+    "ap-south-1" => "ap-south-2",
+    "us-east-1"  => "us-east-2"
+  }.freeze
+
+  # Create the bucket if absent, then enforce versioning (mandatory: it is both
+  # the backup story and a hard prerequisite for replication on BOTH ends),
+  # encryption and public-access-block.
+  def s3_ensure_bucket!(client:, bucket:, region:, encrypt: true, block_public: true)
+    begin
+      client.head_bucket(bucket: bucket)
+      puts "✅ Bucket '#{bucket}' already exists in region #{region}."
+    rescue Aws::S3::Errors::NotFound, Aws::S3::Errors::NoSuchBucket
+      if region == "us-east-1"
+        client.create_bucket(bucket: bucket)
+      else
+        client.create_bucket(
+          bucket: bucket,
+          create_bucket_configuration: { location_constraint: region }
+        )
+      end
+      client.wait_until(:bucket_exists, bucket: bucket)
+      puts "🪣 Created bucket '#{bucket}' in #{region}."
+    rescue Aws::S3::Errors::Http301Error => e
+      actual = (e.context.http_response.headers["x-amz-bucket-region"] rescue nil)
+      raise "Bucket '#{bucket}' exists in region '#{actual}'. Use a client in that region."
+    end
+
+    client.put_bucket_versioning(
+      bucket: bucket,
+      versioning_configuration: { status: "Enabled" }
+    )
+    puts "📜 Enabled versioning on '#{bucket}'."
+
+    if encrypt
+      client.put_bucket_encryption(
+        bucket: bucket,
+        server_side_encryption_configuration: {
+          rules: [{ apply_server_side_encryption_by_default: { sse_algorithm: "AES256" } }]
+        }
+      )
+    end
+
+    if block_public
+      client.put_public_access_block(
+        bucket: bucket,
+        public_access_block_configuration: {
+          block_public_acls: true, ignore_public_acls: true,
+          block_public_policy: true, restrict_public_buckets: true
+        }
+      )
+    end
+    puts "🔒 Encryption + public-access-block ensured on '#{bucket}'." if encrypt || block_public
+  end
+
+  # Idempotent: create_role is guarded, put_role_policy is an upsert.
+  def s3_ensure_replication_role!(iam:, role_name:, source_buckets:, dest_buckets:)
+    trust_policy = {
+      Version: "2012-10-17",
+      Statement: [{ Effect: "Allow", Principal: { Service: "s3.amazonaws.com" }, Action: "sts:AssumeRole" }]
+    }
+    begin
+      iam.create_role(role_name: role_name, assume_role_policy_document: trust_policy.to_json)
+      puts "🔐 Created S3 replication role '#{role_name}'."
+    rescue Aws::IAM::Errors::EntityAlreadyExists
+      puts "✅ Replication role '#{role_name}' already exists."
+    end
+
+    permission_policy = {
+      Version: "2012-10-17",
+      Statement: [
+        { Effect: "Allow",
+          Action: ["s3:GetReplicationConfiguration", "s3:ListBucket"],
+          Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}" } },
+        { Effect: "Allow",
+          Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging"],
+          Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}/*" } },
+        { Effect: "Allow",
+          Action: ["s3:ReplicateObject", "s3:ReplicateDelete", "s3:ReplicateTags"],
+          Resource: dest_buckets.map { |b| "arn:aws:s3:::#{b}/*" } }
+      ]
+    }
+    iam.put_role_policy(role_name: role_name, policy_name: "s3-replication", policy_document: permission_policy.to_json)
+    iam.get_role(role_name: role_name).role.arn
+  end
+
+  # Configure source -> dest replication.
+  #
+  # replicate_delete_markers defaults to FALSE: a bad delete (or ransomware) on
+  # the source must not propagate to the DR copy. The cost is that the
+  # destination can retain objects the source no longer has — deliberate.
+  #
+  # replication_time_control adds the 15-minute replication SLA plus CloudWatch
+  # metrics. Worth it where replication lag is the main risk and data volume is
+  # small (Pulumi state); pointless cost on multi-TB backup buckets.
+  #
+  # Never clobbers by default: an existing config is reported and left alone,
+  # because already-live regions have hand-tuned rules. Pass overwrite: true to
+  # replace one deliberately (e.g. to add RTC to a rule created without it).
+  def s3_ensure_replication!(client:, source_bucket:, dest_bucket:, role_arn:,
+                             rule_id: "irm-replicate-all",
+                             replicate_delete_markers: false,
+                             replication_time_control: false,
+                             overwrite: false)
+    if source_bucket == dest_bucket
+      puts "⚠️  Skipping replication for '#{source_bucket}': destination equals source."
+      puts "   A distinct replica bucket in a different region is required for DR to mean anything."
+      return false
+    end
+
+    dest_arn = "arn:aws:s3:::#{dest_bucket}"
+    begin
+      existing = client.get_bucket_replication(bucket: source_bucket).replication_configuration
+      existing_dests = existing.rules.map { |r| r.destination.bucket }
+      if existing_dests.include?(dest_arn) && !overwrite
+        puts "✅ Replication #{source_bucket} → #{dest_bucket} already configured — leaving as-is."
+        puts "   (pass overwrite: true to rewrite the rule, e.g. to add Replication Time Control)"
+        return true
+      elsif !existing_dests.include?(dest_arn) && !overwrite
+        puts "⚠️  #{source_bucket} already replicates to #{existing_dests.join(', ')} but not to #{dest_bucket}."
+        puts "   Not overwriting an existing replication config — reconcile manually if this is unexpected."
+        return false
+      end
+    rescue Aws::S3::Errors::ReplicationConfigurationNotFoundError
+      # No config yet — fall through and create it
+    end
+
+    destination = { bucket: dest_arn }
+    if replication_time_control
+      destination[:replication_time] = { status: "Enabled", time: { minutes: 15 } }
+      destination[:metrics]          = { status: "Enabled", event_threshold: { minutes: 15 } }
+    end
+
+    client.put_bucket_replication(
+      bucket: source_bucket,
+      replication_configuration: {
+        role: role_arn,
+        rules: [{
+          id: rule_id,
+          status: "Enabled",
+          priority: 1,
+          delete_marker_replication: { status: replicate_delete_markers ? "Enabled" : "Disabled" },
+          filter: {}, # whole bucket
+          destination: destination
+        }]
+      }
+    )
+    puts "🔁 Replication configured: #{source_bucket} → #{dest_bucket} (RTC=#{replication_time_control})."
+    puts "   ℹ️  Replication covers NEW objects only — backfill existing ones with"
+    puts "   aws s3 sync s3://#{source_bucket} s3://#{dest_bucket} (or S3 Batch Replication)."
+    true
+  end
 end
