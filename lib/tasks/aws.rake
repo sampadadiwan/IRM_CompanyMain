@@ -178,7 +178,22 @@ namespace :aws do
         # Which backend are we actually talking to? (personal cloud vs S3)
         who, = Open3.capture3("pulumi whoami --verbose", chdir: "../IRM-Infra")
         backend = who.lines.grep(/Backend URL/i).first.to_s.split(/URL:?\s*/i).last.to_s.strip
-        if names.include?("#{stack}-#{region}")
+        # After the S3 migration, "reachable" is not enough: being logged into
+        # ANOTHER env's bucket reads a different environment entirely, and the
+        # replica bucket is read-only outside a real outage. Report which.
+        expected = (pulumi_state_buckets(env_name)[:primary] rescue nil)
+        replica  = (pulumi_state_buckets(env_name)[:replica] rescue nil)
+        current_bucket = backend.start_with?("s3://") ? backend.sub(%r{\As3://}, "").split("?").first : nil
+
+        if current_bucket && replica && current_bucket == replica
+          check.("Pulumi state backend", :fail,
+                 "logged into the REPLICA bucket #{current_bucket} — read-only outside a real outage; " \
+                 "use s3://#{expected} (see IRM-Infra/PULUMI_STATE.md)")
+        elsif current_bucket && expected && current_bucket != expected
+          check.("Pulumi state backend", :fail,
+                 "logged into #{current_bucket}, but #{env_name} state lives in #{expected} — " \
+                 "pulumi reads would describe the wrong environment")
+        elsif names.include?("#{stack}-#{region}")
           check.("Pulumi state backend", :ok, "stack #{stack}-#{region} present#{" on #{backend}" unless backend.empty?}")
         else
           # Not fatal: a brand-new DR region legitimately has no stack yet —
@@ -307,6 +322,13 @@ namespace :aws do
     Rake::Task['aws:environment'].invoke(env_name)
 
     region = args[:region] || ENV["AWS_BACKUP_REGION"] || raise("Pass a region or set AWS_BACKUP_REGION (shell or .env.#{env_name})")
+
+    # A drill runs `pulumi up` against real infrastructure, so the backend must
+    # be right BEFORE any of it starts: the wrong bucket would rebuild the wrong
+    # environment, and a missing passphrase would fail the drill partway
+    # through, after it had already provisioned. Fatal here, unlike the
+    # dr_readiness scorecard which only reports. See aws_utils.rb.
+    ensure_pulumi_backend!(env_name)
 
     original_branch = `git rev-parse --abbrev-ref HEAD`.strip
     branch_prefix = stack == 'staging' ? "dr_drill_#{env_variant}" : "dr_drill_#{stack}_#{env_variant}"

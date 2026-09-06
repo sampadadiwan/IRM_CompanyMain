@@ -1642,17 +1642,29 @@ module AwsUtils
       return :credentials
     end
 
+    # Per-env parameter: production.in and production.us share an AWS account
+    # but are separately encrypted. The legacy account-wide path is still read
+    # as a fallback for envs migrated before the split.
     require "aws-sdk-ssm"
-    ENV["PULUMI_CONFIG_PASSPHRASE"] =
-      Aws::SSM::Client.new(region: region)
-                      .get_parameter(name: "/irm/pulumi/passphrase", with_decryption: true)
-                      .parameter.value
+    ssm = Aws::SSM::Client.new(region: region)
+    value = nil
+    ["/irm/pulumi/passphrase/#{env_name}", "/irm/pulumi/passphrase"].each do |name|
+      begin
+        value = ssm.get_parameter(name: name, with_decryption: true).parameter.value
+        break
+      rescue Aws::SSM::Errors::ParameterNotFound
+        next
+      end
+    end
+    raise "no passphrase parameter found in SSM (#{region})" if value.nil?
+
+    ENV["PULUMI_CONFIG_PASSPHRASE"] = value
     :ssm
   rescue StandardError => e
     raise "PULUMI_CONFIG_PASSPHRASE is not set, is absent from config/credentials/#{env_name}.yml.enc, " \
-          "and could not be read from SSM /irm/pulumi/passphrase in #{region}: #{e.message}\n" \
+          "and could not be read from SSM /irm/pulumi/passphrase/#{env_name} in #{region}: #{e.message}\n" \
           "   Export it manually:\n" \
-          "     export PULUMI_CONFIG_PASSPHRASE=$(aws ssm get-parameter --name /irm/pulumi/passphrase \\\n" \
+          "     export PULUMI_CONFIG_PASSPHRASE=$(aws ssm get-parameter --name /irm/pulumi/passphrase/#{env_name} \\\n" \
           "       --with-decryption --region #{region} --query Parameter.Value --output text)"
   end
 
