@@ -6,42 +6,56 @@
         start_date: @start_date, end_date: @end_date,
         commitment_options: @commitment_options, commitment_ids: @commitment_ids,
         available_entry_names: @available_entry_names, entry_names: @entry_names,
-        range_clamped: @range_clamped, requested_start_date: @requested_start_date %>
+        available_entry_types: @available_entry_types, entry_types: @entry_types,
+        range_clamped: @range_clamped, requested_start_date: @requested_start_date,
+        allocation_run_id: @allocation_run_id %>
 
-  <%= render "account_entry_reports/summary_kpis", report: @report, fund: @fund %>
-  <%= render "account_entry_reports/commentary", insight: @insights["summary_kpis"], fund: @fund, capital_commitment: nil, section_key: "summary_kpis", start_date: @start_date, end_date: @end_date %>
+  <% if @filter_selected %>
+    <%= render "account_entry_reports/summary_kpis", report: @report, fund: @fund %>
+    <%= render "account_entry_reports/commentary", insight: @insights["summary_kpis"], fund: @fund, capital_commitment: nil, section_key: "summary_kpis", start_date: @start_date, end_date: @end_date %>
 
-  <div class="row mb-4">
-    <div class="col-md-6">
-      <div class="card shadow mb-4 border-bottom-primary">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Breakdown by Entry Name</h6>
-        </div>
-        <div class="card-body">
-          <div class="chart-area">
-            <%= render "account_entry_reports/breakdown_chart", report: @report, fund: @fund %>
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card shadow mb-4 border-bottom-primary">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Breakdown by Entry Name</h6>
           </div>
-          <%= render "account_entry_reports/commentary", insight: @insights["breakdown"], fund: @fund, capital_commitment: nil, section_key: "breakdown", start_date: @start_date, end_date: @end_date %>
+          <div class="card-body">
+            <div class="chart-area">
+              <%= render "account_entry_reports/breakdown_chart", report: @report, fund: @fund %>
+            </div>
+            <%= render "account_entry_reports/commentary", insight: @insights["breakdown"], fund: @fund, capital_commitment: nil, section_key: "breakdown", start_date: @start_date, end_date: @end_date %>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card shadow mb-4 border-bottom-primary">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Trailing-Period Trend</h6>
+          </div>
+          <div class="card-body">
+            <div class="chart-area">
+              <%= render "account_entry_reports/trend_chart", report: @report, fund: @fund %>
+            </div>
+            <%= render "account_entry_reports/commentary", insight: @insights["trend"], fund: @fund, capital_commitment: nil, section_key: "trend", start_date: @start_date, end_date: @end_date %>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="card shadow mb-4 border-bottom-primary">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Trailing-Period Trend</h6>
-        </div>
-        <div class="card-body">
-          <div class="chart-area">
-            <%= render "account_entry_reports/trend_chart", report: @report, fund: @fund %>
-          </div>
-          <%= render "account_entry_reports/commentary", insight: @insights["trend"], fund: @fund, capital_commitment: nil, section_key: "trend", start_date: @start_date, end_date: @end_date %>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <h4>Detail</h4>
-  <%# Paging inside this frame re-requests the action, which detects the frame id and
-      builds only the pivot - the KPIs and both charts above are not recomputed. %>
-  <%= render "account_entry_reports/detail_pivot", pivot: @detail_pivot %>
+    <h4>Detail</h4>
+    <%# Paging inside this frame re-requests the action, which detects the frame id and
+        builds only the pivot - the KPIs and both charts above are not recomputed. %>
+    <%= render "account_entry_reports/detail_pivot", pivot: @detail_pivot %>
+  <% else %>
+    <%# Fund-level account_entries can run into the hundreds of millions of rows across a
+        fund's history - see docs/technical/account_entry_report_performance.md. Nothing
+        is queried against it until a folio, entry name or entry type narrows the scan. %>
+    <div class="alert alert-info" role="alert">
+      <i class="ti ti-filter me-1"></i>
+      Pick at least one <strong>Investor / Folio</strong>, <strong>Entry Name</strong>, or
+      <strong>Entry Type</strong> above, then click <strong>View Report</strong>. This report
+      isn't run until you do &mdash; a fund's full ledger is too large to load by default.
+    </div>
+  <% end %>
 </div>

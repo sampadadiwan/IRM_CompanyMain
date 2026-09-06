@@ -14,6 +14,11 @@
       <% if policy(fund).period_report? %>
         <%= form_with url: fund_report_account_entry_reports_path, method: :get, local: true, class: "d-inline-flex align-items-end gap-2" do |f| %>
           <%= f.hidden_field :fund_id, value: fund.id, id: nil %>
+          <%# The fund's whole ledger is too large to load without a filter (see
+              docs/technical/account_entry_report_performance.md) — the report action
+              itself now always requires a folio, entry name, entry type or
+              allocation_run_id before it queries account_entries, so this quick link just
+              lands on the report's own filter form. %>
           <%= f.date_field :start_date, value: start_date, class: "form-control form-control-sm", title: "Report start date" %>
           <%= f.date_field :end_date, value: end_date, class: "form-control form-control-sm", title: "Report end date" %>
           <%= f.submit "View Account Entries Report", class: "btn btn-sm btn-outline-success" %>
@@ -181,8 +186,13 @@
                   <i class="ti ti-list-details"></i>
                 <% end %>
               <% end %>
-              <% if false && policy(fund).period_report? %>
-                <%= link_to fund_report_account_entry_reports_path(fund_id: fund.id, start_date: runs.start_date, end_date: runs.end_date), class: "btn btn-sm btn-outline-success", data: { bs_toggle: "tooltip" }, title: "View Report" do %>
+              <% if policy(fund).period_report? %>
+                <%# allocation_run_id pins the report to just this run's entries whenever a
+                    query does run, but - same as the header's quick link - the user still
+                    has to pick a folio, entry name or entry type on the report's own filter
+                    form first; nothing here bypasses that. %>
+                <%= link_to fund_report_account_entry_reports_path(fund_id: fund.id, allocation_run_id: runs.id, start_date: runs.start_date, end_date: runs.end_date), class: "btn btn-sm btn-outline-success", data: { bs_toggle: "tooltip" },
+                            title: "View Report — the account entries this specific run generated" do %>
                   <i class="ti ti-report-analytics"></i>
                 <% end %>
               <% end %>

@@ -62,8 +62,13 @@ ensure
 end
 
 def aerp_fund_report_path(start_date, end_date, extra = {})
-  fund_report_account_entry_reports_path({ fund_id: @fund.id,
-                                           start_date: start_date, end_date: end_date }.merge(extra))
+  # The fund-level report now refuses to run at all until a folio, entry name, entry type
+  # or allocation_run_id narrows it - so every visit here defaults to "all fixture
+  # folios" (equivalent to the old unfiltered view for these scenarios, since none of them
+  # have folios outside @aerp_commitments) unless the caller already passed its own filter.
+  defaults = { fund_id: @fund.id, start_date: start_date, end_date: end_date }
+  defaults[:capital_commitment_id] = @aerp_commitments.values.map(&:id) if @aerp_commitments
+  fund_report_account_entry_reports_path(defaults.merge(extra))
 end
 
 ### Setup ######################################################################

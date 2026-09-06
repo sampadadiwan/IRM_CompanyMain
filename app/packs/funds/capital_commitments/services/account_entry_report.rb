@@ -19,13 +19,19 @@ class AccountEntryReport
   # capital_commitment scopes the report to a single folio (folio-level report).
   # capital_commitment_ids instead filters a fund-level report down to a chosen set of
   # folios, without narrowing the report to any one investor's identity.
-  def initialize(fund:, start_date:, end_date:, capital_commitment: nil, capital_commitment_ids: nil, entry_names: nil)
+  # allocation_run_id scopes the report to the entries one specific AllocationRun
+  # generated. It's indexed on its own (index_account_entries_on_allocation_run_id) and,
+  # unlike the other filters, is never left to the user to choose - see the "View Report"
+  # link on the fund's allocation screen.
+  def initialize(fund:, start_date:, end_date:, capital_commitment: nil, capital_commitment_ids: nil, entry_names: nil, entry_types: nil, allocation_run_id: nil)
     @fund = fund
     @capital_commitment = capital_commitment
     @capital_commitment_ids = capital_commitment_ids.presence
     @start_date = start_date
     @end_date = end_date
     @entry_names = entry_names.presence
+    @entry_types = entry_types.presence
+    @allocation_run_id = allocation_run_id.presence
   end
 
   def scoped_entries
@@ -33,6 +39,8 @@ class AccountEntryReport
     entries = entries.where(capital_commitment_id: @capital_commitment.id) if @capital_commitment
     entries = entries.where(capital_commitment_id: @capital_commitment_ids) if @capital_commitment_ids
     entries = entries.where(name: @entry_names) if @entry_names
+    entries = entries.where(entry_type: @entry_types) if @entry_types
+    entries = entries.where(allocation_run_id: @allocation_run_id) if @allocation_run_id
     with_statement_timeout(entries)
   end
 
@@ -119,6 +127,10 @@ class AccountEntryReport
     # subset too, otherwise the chart silently shows fund-wide numbers next to
     # folio-filtered KPIs. (`names` already carries the entry_names filter.)
     base = base.where(capital_commitment_id: @capital_commitment_ids) if @capital_commitment_ids
+    # A name isn't necessarily unique to one entry_type, so this can't rely on `names`
+    # (above) having already narrowed it — same reasoning as the folio filter above.
+    base = base.where(entry_type: @entry_types) if @entry_types
+    base = base.where(allocation_run_id: @allocation_run_id) if @allocation_run_id
     base = with_statement_timeout(base)
 
     group_field = AccountEntryPeriodGrouping.group_field_sql(aggregate_by)

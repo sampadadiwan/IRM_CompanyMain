@@ -23,18 +23,30 @@ class AccountEntryReportsController < ApplicationController
       skip_authorization
       redirect_to folio_report_account_entry_reports_path(capital_commitment_id: commitment_ids_param,
                                                             start_date: params[:start_date], end_date: params[:end_date],
-                                                            entry_names: entry_names_param) and return
+                                                            entry_names: entry_names_param, entry_types: entry_types_param,
+                                                            allocation_run_id: allocation_run_id_param) and return
     end
 
     @fund = policy_scope(Fund).find(params[:fund_id])
     authorize @fund, :period_report?
 
     page = build_page(fund: @fund)
-    @detail_pivot = page.detail_pivot(page: params[:page])
-    # Pivot pagination: render the frame alone and skip the rest of the page's queries.
-    return render(partial: "account_entry_reports/detail_pivot", locals: { pivot: @detail_pivot }) if detail_frame_request?
+    # A fund-level, unfiltered scan of account_entries is one of the most expensive things
+    # this app can be asked to do (see docs/technical/account_entry_report_performance.md):
+    # account_entries is unboundedly large, so nothing is queried against it until the
+    # request already carries a folio, entry name or entry type - a bare allocation_run_id
+    # (see the "View Report" link on the allocation screen) is always ANDed onto the query
+    # once it runs, but does not by itself excuse picking one of those three; with none
+    # picked this only resolves dates and populates the filter dropdowns.
+    @filter_selected = page.filter_selected?
 
-    assign_page(page)
+    if @filter_selected
+      @detail_pivot = page.detail_pivot(page: params[:page])
+      # Pivot pagination: render the frame alone and skip the rest of the page's queries.
+      return render(partial: "account_entry_reports/detail_pivot", locals: { pivot: @detail_pivot }) if detail_frame_request?
+    end
+
+    assign_page(page, load_report: @filter_selected)
     fund_bread_crumbs("Account Entries Report")
   end
 
@@ -47,15 +59,19 @@ class AccountEntryReportsController < ApplicationController
       skip_authorization
       redirect_to fund_report_account_entry_reports_path(fund_id: params[:fund_id], capital_commitment_id: commitment_ids_param,
                                                            start_date: params[:start_date], end_date: params[:end_date],
-                                                           entry_names: entry_names_param) and return
+                                                           entry_names: entry_names_param, entry_types: entry_types_param,
+                                                           allocation_run_id: allocation_run_id_param) and return
     end
 
     @capital_commitment = policy_scope(CapitalCommitment).find(commitment_ids_param.first)
     authorize @capital_commitment, :period_report?
     @fund = @capital_commitment.fund
 
+    # Already scoped to a single folio (that's what got the request routed here in the
+    # first place), so it's cheap regardless of entry_names/entry_types — no need for the
+    # fund-level gate above.
     page = build_page(fund: @fund, capital_commitment: @capital_commitment)
-    assign_page(page)
+    assign_page(page, load_report: true)
     @entries = page.entries
 
     @bread_crumbs = { Funds: funds_path,
@@ -115,23 +131,32 @@ class AccountEntryReportsController < ApplicationController
     AccountEntryReportPage.new(
       fund: fund, capital_commitment: capital_commitment,
       start_date_param: params[:start_date], end_date_param: params[:end_date],
-      entry_names: entry_names_param, commitment_ids: commitment_ids_param
+      entry_names: entry_names_param, entry_types: entry_types_param, commitment_ids: commitment_ids_param,
+      allocation_run_id: allocation_run_id_param
     )
   end
 
-  def assign_page(page)
+  # load_report is false only for the fund-level, no-filter-yet state: the filter form
+  # (dates, dropdowns) still needs start_date/end_date/available options/commitment_ids to
+  # render, but @report itself is left unpreloaded so nothing hits account_entries.
+  def assign_page(page, load_report:)
     @start_date = page.start_date
     @end_date = page.end_date
     @entry_names = page.entry_names
+    @entry_types = page.entry_types
     @commitment_ids = page.commitment_ids
+    @allocation_run_id = page.allocation_run_id
     @available_entry_names = page.available_entry_names
+    @available_entry_types = page.available_entry_types
     @commitment_options = page.commitment_options
     @report = page.report
-    # Force every account_entries query now, while a statement timeout can still become a
-    # redirect. Left lazy, these run inside the view partials, and rescue_from firing
-    # mid-render yields a DoubleRenderError rather than the intended message.
-    @report.preload!
-    @insights = page.insights
+    if load_report
+      # Force every account_entries query now, while a statement timeout can still become
+      # a redirect. Left lazy, these run inside the view partials, and rescue_from firing
+      # mid-render yields a DoubleRenderError rather than the intended message.
+      @report.preload!
+      @insights = page.insights
+    end
     # Surfaced by the views so a clamped range is visible, not silent.
     @range_clamped = page.range_clamped
     @requested_start_date = page.requested_start_date
@@ -139,6 +164,14 @@ class AccountEntryReportsController < ApplicationController
 
   def entry_names_param
     Array(params[:entry_names]).reject(&:blank?)
+  end
+
+  def entry_types_param
+    Array(params[:entry_types]).reject(&:blank?)
+  end
+
+  def allocation_run_id_param
+    params[:allocation_run_id].presence
   end
 
   def commitment_ids_param

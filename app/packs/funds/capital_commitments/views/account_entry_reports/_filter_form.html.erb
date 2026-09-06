@@ -13,16 +13,36 @@
     commitment_ids        - currently selected folio ids
     available_entry_names - entry names offered in the range
     entry_names           - currently selected entry names
+    available_entry_types - entry types offered in the range
+    entry_types           - currently selected entry types
     range_clamped         - true when the requested range was too wide and was shortened
     requested_start_date  - the start date the user actually asked for, when clamped
+    allocation_run_id     - optional; when set, the report is locked to one AllocationRun's
+                             entries (see the "View Report" link on the allocation screen)
+                             and is carried through resubmissions of this same form
 %>
 <% header_link = local_assigns.fetch(:header_link, nil) %>
+<% allocation_run_id = local_assigns.fetch(:allocation_run_id, nil) %>
 <div class="card shadow mb-4">
   <div class="card-header py-3 d-flex align-items-center justify-content-between">
-    <h5 class="m-0"><%= heading %></h5>
+    <h5 class="m-0">
+      <%= heading %>
+      <% if allocation_run_id.present? %>
+        <span class="badge bg-secondary fw-normal">Allocation Run #<%= allocation_run_id %></span>
+      <% end %>
+    </h5>
     <%= header_link %>
   </div>
   <div class="card-body">
+    <% if allocation_run_id.present? %>
+      <%# Worded to hold in both states: once a folio/name/type is picked below and the
+          report actually runs, it's additionally limited to this run; until then, this is
+          just telling the user what constraint will apply. %>
+      <div class="alert alert-secondary py-2" role="alert">
+        <i class="ti ti-filter me-1"></i>
+        This report is limited to allocation run #<%= allocation_run_id %>.
+      </div>
+    <% end %>
     <% if range_clamped %>
       <%# The report silently returning a different range than the one requested would be
           worse than refusing: say what happened and what range is actually on screen. %>
@@ -35,6 +55,7 @@
 
     <%= form_with url: url, method: :get, local: true, class: "row g-2 align-items-end account-entry-report-filter" do |f| %>
       <%= f.hidden_field :fund_id, value: fund.id %>
+      <%= f.hidden_field :allocation_run_id, value: allocation_run_id if allocation_run_id.present? %>
       <div class="col-auto">
         <%= f.label :start_date, class: "form-label" %>
         <%= f.date_field :start_date, value: start_date, class: "form-control" %>
@@ -53,6 +74,11 @@
         <%= f.label :entry_names, "Entry Names", class: "form-label" %>
         <%= f.select :entry_names, available_entry_names, { selected: entry_names, include_blank: false },
               { class: "form-control select2", multiple: true, name: "entry_names[]" } %>
+      </div>
+      <div class="col-auto account-entry-report-filter__types">
+        <%= f.label :entry_types, "Entry Types", class: "form-label" %>
+        <%= f.select :entry_types, available_entry_types, { selected: entry_types, include_blank: false },
+              { class: "form-control select2", multiple: true, name: "entry_types[]" } %>
       </div>
       <div class="col-auto">
         <%= f.submit "View Report", class: "btn btn-primary" %>

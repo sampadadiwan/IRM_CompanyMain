@@ -12,23 +12,26 @@ class AccountEntryReportPage
   # the user we did, rather than silently returning a report for a different range.
   MAX_RANGE_DAYS = 731 # ~24 months
 
-  attr_reader :start_date, :end_date, :entry_names, :commitment_ids,
-              :report, :requested_start_date, :range_clamped
+  attr_reader :start_date, :end_date, :entry_names, :entry_types, :commitment_ids,
+              :allocation_run_id, :report, :requested_start_date, :range_clamped
 
-  def initialize(fund:, start_date_param:, end_date_param:, entry_names:, commitment_ids:, capital_commitment: nil)
+  def initialize(fund:, start_date_param:, end_date_param:, entry_names:, entry_types:, commitment_ids:, capital_commitment: nil, allocation_run_id: nil)
     @fund = fund
     @capital_commitment = capital_commitment
     @entry_names = entry_names
+    @entry_types = entry_types
     @commitment_ids = commitment_ids
+    @allocation_run_id = allocation_run_id.presence
 
     set_date_range(start_date_param, end_date_param)
-    # available_entry_names and insights are deliberately NOT built here. A Turbo Frame
-    # request that only re-renders the detail pivot (pagination) constructs this object
-    # and calls detail_pivot alone, and must not pay for the filter dropdown query or
-    # the insight lookups it will never render.
+    # available_entry_names, available_entry_types and insights are deliberately NOT built
+    # here. A Turbo Frame request that only re-renders the detail pivot (pagination)
+    # constructs this object and calls detail_pivot alone, and must not pay for the filter
+    # dropdown queries or the insight lookups it will never render.
     @report = AccountEntryReport.new(
       fund: fund, capital_commitment: capital_commitment, start_date: @start_date, end_date: @end_date,
-      capital_commitment_ids: capital_commitment ? nil : @commitment_ids, entry_names: @entry_names
+      capital_commitment_ids: capital_commitment ? nil : @commitment_ids, entry_names: @entry_names,
+      entry_types: @entry_types, allocation_run_id: @allocation_run_id
     )
   end
 
@@ -43,11 +46,38 @@ class AccountEntryReportPage
       # Carries the same MAX_EXECUTION_TIME ceiling as the report scopes: this is still
       # a DISTINCT over account_entries and must not outlive the request either.
       in_range = @report.with_statement_timeout(
-        scope_for_available_names.not_cumulative
-                                 .where(reporting_date: @start_date..@end_date)
+        scope_for_available_filters.not_cumulative
+                                   .where(reporting_date: @start_date..@end_date)
       ).distinct.pluck(:name)
       (in_range | Array(@entry_names)).compact.sort
     end
+  end
+
+  # Same as available_entry_names, but for the entry_type column. entry_type is a coarser
+  # grouping than name (e.g. several formula names can share one type), and is indexed
+  # with fund_id and reporting_date (idx_fund_id_and_entry_type_and_reporting_date), so
+  # filtering by it is the cheaper of the two for a wide-ledger fund.
+  def available_entry_types
+    @available_entry_types ||= begin
+      in_range = @report.with_statement_timeout(
+        scope_for_available_filters.not_cumulative
+                                   .where(reporting_date: @start_date..@end_date)
+      ).distinct.pluck(:entry_type)
+      (in_range | Array(@entry_types)).compact.sort
+    end
+  end
+
+  # True once the user picked at least one folio, entry name or entry type. Deliberately
+  # NOT satisfied by allocation_run_id alone: that's always applied as an extra AND
+  # condition on the query once it does run (see the "View Report" link on the allocation
+  # screen), but it must not by itself excuse the user from picking a filter - landing on
+  # this report with none of the three chosen has to show the filter form, full stop, no
+  # matter what other params the URL carries. account_entries is large enough that a
+  # fund-wide, unfiltered scan is expensive (see
+  # docs/technical/account_entry_report_performance.md) — the controller uses this to
+  # decide whether to actually run the report or just show the filter form.
+  def filter_selected?
+    @entry_names.present? || @entry_types.present? || @commitment_ids.present?
   end
 
   # Returns { section_key => AccountEntryReportInsight or nil }. Lazy - see the
@@ -79,7 +109,14 @@ class AccountEntryReportPage
   # Options for the Investor/Folio multi-select. Built with a join + pluck because
   # `fund.capital_commitments.map(&:to_s)` instantiated every commitment AND fired one
   # investor_kyc query per row (an N+1 on a fund with thousands of folios). The label
-  # here must stay in sync with CapitalCommitment#to_s.
+  # here must stay in sync with CapitalCommitment#to_s: that's exactly what
+  # account_entries.commitment_name is a snapshot of at the moment an entry is generated
+  # (see AccountEntry::CreateAccountEntry), so under normal conditions this dropdown's
+  # label and the detail pivot's Folio column read identically. They can still drift for
+  # older entries if the investor's name or KYC changed since - that's a real change in
+  # the investor's identity over time, not a bug, and the same reason the "folio touched"
+  # KPI counts by capital_commitment_id rather than by this label (see
+  # AccountEntryReport#summary_kpis).
   def commitment_options
     @commitment_options ||= @fund.capital_commitments
                                  .left_joins(:investor_kyc)
@@ -96,8 +133,10 @@ class AccountEntryReportPage
 
   private
 
-  def scope_for_available_names
-    (@capital_commitment || @fund).account_entries
+  def scope_for_available_filters
+    scope = (@capital_commitment || @fund).account_entries
+    scope = scope.where(allocation_run_id: @allocation_run_id) if @allocation_run_id
+    scope
   end
 
   # not_cumulative here so the default date always matches what AccountEntryReport
