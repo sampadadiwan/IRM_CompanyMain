@@ -51,7 +51,10 @@ Rails.application.configure do
 
   config.action_dispatch.show_exceptions = false
 
-  Bullet.enable        = true
+  # Bullet instruments every request to detect N+1s, which adds overhead across
+  # 1500+ scenarios. Opt in with BULLET=1 when hunting N+1s instead of paying
+  # that cost on every run.
+  Bullet.enable        = ENV["BULLET"].present?
   Bullet.bullet_logger = true  # writes N+1 warnings to log/bullet.log
   Bullet.rails_logger  = true  # also echoes into log/test.log for correlation
   Bullet.raise         = false # let the full suite run; we'll analyze after
@@ -186,8 +189,10 @@ Rails.application.configure do
     Bullet.add_safelist type: :unused_eager_loading, class_name: klass, association: assoc
   end
   # config.logger = Logger.new(STDOUT)
-  config.log_level = :debug
-  config.active_record.verbose_query_logs = true
+  # :debug + verbose_query_logs logs every SQL statement with its call site across
+  # 1500+ scenarios. Bump back up with LOG_LEVEL=debug when debugging a specific run.
+  config.log_level = ENV.fetch("LOG_LEVEL", "warn").to_sym
+  config.active_record.verbose_query_logs = ENV["LOG_LEVEL"] == "debug"
 
   config.after_initialize do
     Chewy.logger = Rails.logger
