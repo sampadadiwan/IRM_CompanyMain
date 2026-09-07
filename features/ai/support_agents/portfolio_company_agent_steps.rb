@@ -33,6 +33,15 @@ def kpi_as_of_in_window
   prev_period
 end
 
+# PortfolioCompanyAgent is deterministic and never uses the LLM, but
+# SupportAgentService#initialize_agent unconditionally calls LlmService.ruby_llm_chat,
+# which requires API keys. Stub at the service layer, not RubyLLM directly (see
+# call_notice_agent_steps.rb for the same pattern).
+def stub_llm_service
+  mock_chat = double('chat', ask: double(content: 'mocked response'))
+  allow(LlmService).to receive(:ruby_llm_chat).and_return(mock_chat)
+end
+
 # ── Background / agent configuration ─────────────────────────────────────────
 
 Given("the portfolio company agent is enabled") do
@@ -129,6 +138,7 @@ end
 # ── Agent execution ───────────────────────────────────────────────────────────
 
 When("I run the portfolio company agent") do
+  stub_llm_service
   PortfolioCompanyAgent.call(
     support_agent_id: @support_agent.id,
     target:           @portfolio_company
@@ -138,6 +148,7 @@ When("I run the portfolio company agent") do
 end
 
 When("I run the portfolio company agent for the LP investor") do
+  stub_llm_service
   PortfolioCompanyAgent.call(
     support_agent_id: @support_agent.id,
     target:           @investor
@@ -146,6 +157,7 @@ When("I run the portfolio company agent for the LP investor") do
 end
 
 When("I run the portfolio company agent in batch mode") do
+  stub_llm_service
   targets = Investor.where(
     id:       [@portfolio_company.id, @second_portfolio_company.id],
     entity:   @entity,
