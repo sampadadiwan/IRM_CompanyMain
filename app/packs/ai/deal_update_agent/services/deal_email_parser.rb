@@ -158,6 +158,9 @@ class DealEmailParser
 
   # Validate and normalize the parsed result.
   # Ensures all expected keys exist and intent is valid.
+  # Overrides intent to "unknown" when subject and body name
+  # different stakeholders — deterministic safety net since
+  # LLMs don't reliably follow the conflict rule in the prompt.
   #
   # @param parsed [Hash] raw parsed JSON
   # @return [Hash] validated result
@@ -165,10 +168,20 @@ class DealEmailParser
     intent = parsed["intent"]
     intent = "unknown" unless %w[meeting_note task].include?(intent)
 
+    stakeholder = parsed["stakeholder_string"]&.strip.presence
+    subject_stakeholder = parsed["subject_stakeholder_string"]&.strip.presence
+
+    # Code-level conflict check: if subject and body name different
+    # stakeholders, warehouse it — can't confidently pick one.
+    if subject_stakeholder && stakeholder &&
+       subject_stakeholder.downcase != stakeholder.downcase
+      intent = "unknown"
+    end
+
     {
       "intent" => intent,
-      "stakeholder_string" => parsed["stakeholder_string"]&.strip.presence,
-      "subject_stakeholder_string" => parsed["subject_stakeholder_string"]&.strip.presence,
+      "stakeholder_string" => stakeholder,
+      "subject_stakeholder_string" => subject_stakeholder,
       "body" => parsed["body"]&.strip.presence,
       "due_date" => parsed["due_date"]&.strip.presence,
       "due_date_source_text" => parsed["due_date_source_text"]&.strip.presence,
