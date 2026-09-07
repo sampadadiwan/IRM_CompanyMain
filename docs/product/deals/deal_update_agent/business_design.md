@@ -62,13 +62,17 @@ The sender receives a confirmation email showing exactly what was created:
 - Due date (for tasks)
 - A preview of the filed content
 
-### 5. When the Agent Is Unsure → Warehouse
+### 5. When the Agent Is Unsure → Warehouse + Reply
 
-If the agent can't confidently match the stakeholder or determine the intent, the email goes to the **Warehouse** — a holding area on the deal page. A team member can:
-- **File it** — pick the correct stakeholder and create the note/task manually
+If the agent can't confidently match the stakeholder or determine the intent, the email goes to the **Warehouse** — a holding area on the deal page. The sender receives a reply email explaining why it couldn't be auto-filed:
+- **Unknown intent** — the agent couldn't determine if it was a meeting note or a task
+- **Unmatched stakeholder** — the investor name didn't match anyone on the deal
+
+A team member can then review the warehouse tab and:
+- **File it** — pick the correct stakeholder, choose note or task, and for tasks: set the due date and assign to a team member before filing
 - **Discard it** — mark it as irrelevant
 
-Team members check the warehouse tab on the deal page to review pending items.
+After resolving the last warehouse item, the page redirects back to the deal.
 
 ---
 
@@ -108,6 +112,12 @@ The Warehouse tab appears on the deal page when there are pending items. Each it
 - A preview of the content
 - Actions: File (pick stakeholder) or Discard
 
+When filing as a **Task**, additional fields appear:
+- **Due date** — pre-filled from the AI parse if available, editable before filing
+- **Assignee** — dropdown of all team members with deal access, so the reviewer can assign to the right person
+
+After the last item is resolved (filed or discarded), the page redirects to the deal instead of staying on the empty warehouse list.
+
 ---
 
 ## Phase Roadmap
@@ -121,7 +131,7 @@ The Warehouse tab appears on the deal page when there are pending items. Each it
 | AI parsing of email intent and stakeholder | Yes |
 | Stakeholder matching against deal investors | Yes |
 | Auto-creation of Meeting Notes and Tasks | Yes |
-| Confirmation email only (warehouse does NOT notify sender) | Yes |
+| Confirmation email (success) and warehouse reply email (explains why it wasn't auto-filed) | Yes |
 | Warehouse UI for manual filing | Yes |
 | Sender verification (email + SPF/DKIM/DMARC) | Yes |
 | Access-based auth (user must have deal access to send) | Yes |

@@ -98,7 +98,7 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 | File | Purpose |
 |------|---------|
 | `app/packs/misc/incoming_emails/controllers/incoming_emails_controller.rb` | SendGrid webhook — routes by `DealIngestAddress` lookup on local part |
-| `app/packs/startups/deals/controllers/warehouse_items_controller.rb` | Warehouse UI — index (pending items), resolve (file/discard) |
+| `app/packs/startups/deals/controllers/warehouse_items_controller.rb` | Warehouse UI — index (pending items), resolve (file with editable task fields / discard), redirects to deal page when warehouse is empty |
 | `app/packs/startups/deals/controllers/deals_controller.rb` | Deal show — lazy ingest address generation via `ensure_deal_ingest_address` |
 
 ### Jobs
@@ -109,7 +109,7 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 ### Mailers
 | File | Purpose |
 |------|---------|
-| `app/packs/startups/deals/mailers/deal_ingest_mailer.rb` | Confirmation reply email only (warehouse notification removed) |
+| `app/packs/startups/deals/mailers/deal_ingest_mailer.rb` | Reply emails: `confirmation` (success) and `warehoused` (explains why not auto-filed) |
 
 ### Policies
 | File | Purpose |
@@ -122,7 +122,9 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 | `app/packs/startups/deals/views/deals/_deal_ingest_address.html.erb` | Address display with copy button and tooltip |
 | `app/packs/startups/deals/views/deals/_list_view_header.html.erb` | Deal header — renders ingest address partial |
 | `app/packs/startups/deals/views/warehouse_items/index.html.erb` | Warehouse items table with Turbo Frame |
-| `app/packs/startups/deals/views/warehouse_items/_resolve_form.html.erb` | File/discard controls for each item |
+| `app/packs/startups/deals/views/warehouse_items/_resolve_form.html.erb` | File/discard controls — task filing includes due date and assignee fields |
+| `app/packs/startups/deals/views/deal_ingest_mailer/warehoused.html.erb` | Warehouse reply email template — reason-specific messaging |
+| `app/javascript/controllers/warehouse_resolve_controller.js` | Stimulus controller — toggles task fields on intent change |
 
 ### JavaScript
 | File | Purpose |
@@ -210,8 +212,8 @@ Wrapped in `ActiveRecord::Base.transaction` with `Chewy.strategy(:atomic)`:
 - Mark email as `filed` with confidence score, match tier `"A"`, and `filed_as:` pointing to the created item
 
 ### Step 6: Reply Email
-- **Success** → confirmation email with what was created
-- **Warehouse** → no notification (sender is NOT notified; users check warehouse tab themselves)
+- **Success** → confirmation email with what was created (item type, deal, stakeholder, due date, body preview)
+- **Warehouse** → warehouse reply email explaining why the email couldn't be auto-filed (unknown intent or unmatched stakeholder) and that it's parked for manual review
 
 ---
 
@@ -376,6 +378,26 @@ Two-part implementation:
 
 Integration: `DealIngestProcessor.create_task!` calls `resolve_assignee(parsed) || @user`.
 
+### Warehouse Reply Email
+
+Added `warehoused` action to `DealIngestMailer`. When an email is warehoused, the sender receives a reply explaining why:
+- `unknown_intent` — "We couldn't determine whether this was a meeting note or a task"
+- `unmatched_stakeholder` — "We couldn't match 'XYZ' to any investor on this deal"
+
+The email includes a body preview and directs the user to the warehouse tab. Triggered from `DealIngestProcessor#warehouse!` via `send_warehoused_reply!`. Only sent to authenticated senders (passed all 6 auth steps) — no information leakage.
+
+### Warehouse UX Improvements
+
+Two UX fixes based on user feedback:
+
+1. **Redirect after resolve** — `WarehouseItemsController#resolve` now redirects to the deal page (`deal_path`) when no pending warehouse items remain, instead of staying on the empty warehouse list. If items remain, stays on the warehouse.
+
+2. **Editable task fields** — When filing a warehouse item as a task, the resolve form now shows:
+   - **Due date** — date picker pre-filled from LLM parse result (`parse_json["due_date"]`)
+   - **Assignee** — dropdown of all deal team members (AccessRight + company_admin users)
+   - Fields are toggled by `warehouse_resolve_controller.js` (Stimulus) based on the selected intent
+   - Controller accepts `due_date` and `assigned_to_id` params, falling back to LLM values / current user
+
 ### P2-6: WhatsApp Channel — Blocked
 
 Blocked on Product's functional spec. Scope questions listed in `docs/product/deals/deal_update_agent/whatsapp_channel_brief.md`.
@@ -391,6 +413,11 @@ Blocked on Product's functional spec. Scope questions listed in `docs/product/de
 | `app/packs/startups/deals/services/assignee_matcher.rb` | **New** — name matching against deal team members |
 | `db/migrate/20260902063108_add_attachment_data_to_agent_ingested_emails.rb` | **New** — JSON column for attachment metadata |
 | `Gemfile` | Added `gem 'email_reply_parser'` |
+| `app/packs/startups/deals/mailers/deal_ingest_mailer.rb` | Added `warehoused` action with reason-specific messaging |
+| `app/packs/startups/deals/views/deal_ingest_mailer/warehoused.html.erb` | **New** — warehouse reply email template |
+| `app/packs/startups/deals/controllers/warehouse_items_controller.rb` | Redirect logic, `resolve_task_assignee`, `resolve_task_due_date`, `deal_team_members` |
+| `app/packs/startups/deals/views/warehouse_items/_resolve_form.html.erb` | Due date + assignee fields for task filing, Stimulus integration |
+| `app/javascript/controllers/warehouse_resolve_controller.js` | **New** — toggles task fields on intent change |
 | `features/deal/deal_update_agent_v2.feature` | 11 new scenarios (auto-reply, signature, attachments, assignee) |
 
 ---
@@ -446,7 +473,7 @@ Blocked on Product's functional spec. Scope questions listed in `docs/product/de
 
 ### Known Limitations (to validate with real clients)
 
-- **Malformed due dates in warehouse filing:** If the LLM stored an unparseable date string in `parse_json["due_date"]` (e.g. "TBD", "next Friday" unresolved), the warehouse resolution path creates the Task with `due_date: nil` silently. The user is not warned that the date was dropped. Acceptable for MVP since the LLM parser resolves relative dates at ingestion time, but should be revisited once real client usage reveals whether malformed dates occur in practice. Options: flash warning, inline date picker in the resolve form, or re-parse the date at filing time.
+- **Malformed due dates in warehouse filing:** If the LLM stored an unparseable date string in `parse_json["due_date"]` (e.g. "TBD", "next Friday" unresolved), the date picker in the resolve form will be empty. The user can enter a correct date manually before filing. The `safe_parse_date` helper returns nil for unparseable values, so the Task is created without a due date if left empty.
 
 ### AI Queries via MCP
 - Surface the deal update agent as an MCP tool
