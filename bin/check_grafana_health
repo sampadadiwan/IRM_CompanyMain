@@ -11,21 +11,35 @@
 # instead of trusting DbBackupFreshnessJob's own email.
 #
 #   bin/check_grafana_health run     twice-daily check (8am + 6pm), notifies on FAILURE only
-#   bin/check_grafana_health report  reprint the last run's output
+#   bin/check_grafana_health report  reprint the last run's output + the dashboard path
 #   bin/check_grafana_health cron    print the crontab lines to install
+#
+# Every run also (re)writes a dashboard you can leave open all day:
+# log/grafana_health_dashboard.html - per-region panel tables plus a strip of
+# dots for the last two weeks of runs, same spirit as
+# bin/check_db_backup_freshness's log/db_backup_dashboard.html. By default it
+# only opens in the browser when something needs attention (DASHBOARD_OPEN=problem);
+# set DASHBOARD_OPEN=always to open it on every run, or =never for notification only.
 #
 # Silent while healthy — like the hourly DB backup watchdog, a popup every run
 # would train you to dismiss it unread. A run is a FAILURE only when a panel is
 # in its RED threshold band or returned no data at all (exporter unreachable);
 # YELLOW (early-warning) panels are logged but never pop a notification — no
-# Grafana alert rule pages on yellow either, so parity says this shouldn't.
+# Grafana alert rule pages on yellow either, so parity says this shouldn't. The
+# same reasoning is why DASHBOARD_OPEN defaults to problem-only, not always.
 #
 # Rails is never booted directly here - each region's check runs in its own
 # `bundle exec rake` subprocess (needed anyway: the task reads that region's
 # own encrypted GRAFANA_PASS from config/credentials/<env_name>.yml.enc,
 # resolved once at rake's `:environment` boot per subprocess).
 
-require 'English'
+require 'open3'
+
+# Plain Ruby, deliberately: this never boots Rails (each region's check runs
+# in its own `bundle exec rake` subprocess instead), so Time.zone.now isn't
+# available - Time.now is the only option here. Same reasoning as
+# bin/check_db_backup_freshness.
+# rubocop:disable Rails/TimeZone
 
 REPO_ROOT = File.expand_path('..', __dir__)
 ENV_NAMES = %w[production.in production.us].freeze
@@ -33,14 +47,25 @@ ENV_NAMES = %w[production.in production.us].freeze
 LOG_DIR = File.join(REPO_ROOT, 'log', 'grafana_health_cron')
 CRON_LOG = File.join(REPO_ROOT, 'log', 'grafana_health_cron.log')
 REPORT_FILE = File.join(REPO_ROOT, 'log', 'grafana_health_report.txt')
+# The page you actually open. Deliberately a local file, not something hosted:
+# regenerated here on every run, 8am and 6pm.
+DASHBOARD_FILE = File.join(REPO_ROOT, 'log', 'grafana_health_dashboard.html')
 LOG_RETENTION_DAYS = 14
 
 def run_check(env_name)
   require 'fileutils'
   FileUtils.mkdir_p(LOG_DIR)
   out_file = File.join(LOG_DIR, "#{env_name}_#{Time.now.strftime('%Y%m%d_%H%M%S')}.log")
-  system("bundle exec rake \"grafana:health_check[#{env_name}]\" > #{out_file} 2>&1")
-  passed = $CHILD_STATUS.success? && File.read(out_file).include?('Grafana health check passed')
+  # Captured via a pipe (Open3), not `system("... > out_file 2>&1")`: when ruby
+  # is installed as a snap (as IRM:install_ruby sets it up), a nested `bundle
+  # exec rake` whose stdout/stderr are redirected straight to a REGULAR FILE
+  # fails snap-confine's capability check and silently produces an empty,
+  # exit-1 log - the exact same command works fine writing to a pipe (or a
+  # terminal). Capturing through a pipe here and writing the file ourselves
+  # sidesteps that.
+  output, status = Open3.capture2e("bundle exec rake \"grafana:health_check[#{env_name}]\"")
+  File.write(out_file, output)
+  passed = status.success? && output.include?('Grafana health check passed')
   [passed, out_file]
 end
 
@@ -56,16 +81,157 @@ def notify(urgency, title, body)
   system('notify-send', '-u', urgency, title, body)
 end
 
+def which(cmd)
+  ENV.fetch('PATH', '').split(File::PATH_SEPARATOR)
+     .map { |dir| File.join(dir, cmd) }
+     .find { |path| File.executable?(path) && !File.directory?(path) }
+end
+
+# Opens the dashboard in the browser. DASHBOARD_OPEN tunes this:
+#   problem (default) open only when something needs attention - this run is
+#           twice a day, every day, so opening a browser window on a clean run
+#           would contradict the "silent while healthy" design above
+#   always  open every run regardless, like check_db_backup_freshness's daily
+#   never   notification only
+#
+# Spawn + detach for the same reason as check_db_backup_freshness#open_dashboard:
+# when the browser is NOT already running, `google-chrome <url>` BECOMES the
+# browser process and blocks until the window closes - a plain system() here
+# would leave the cron job alive until you quit the browser.
+def open_dashboard(problem:)
+  mode = ENV.fetch('DASHBOARD_OPEN', 'problem')
+  return if mode == 'never' || (mode == 'problem' && !problem)
+
+  browser = ENV['DASHBOARD_BROWSER'] || %w[google-chrome google-chrome-stable xdg-open].filter_map { |b| which(b) }.first
+  unless browser
+    warn 'No browser found (looked for google-chrome, google-chrome-stable, xdg-open)'
+    return
+  end
+
+  ensure_desktop_env
+  pid = Process.spawn(browser, "file://#{DASHBOARD_FILE}", out: File::NULL, err: File::NULL)
+  Process.detach(pid)
+end
+
 def notify_failure(env_name, out_file)
   lines = File.readlines(out_file).grep(/[✗?]/).first(6).map(&:strip)
   summary = lines.empty? ? "see #{out_file}" : lines.join("\n")
-  notify('critical', "Grafana health check FAILED (#{env_name})", summary)
+  notify('critical', "Grafana health check FAILED (#{env_name})", "#{summary}\n\n#{DASHBOARD_FILE}")
 end
 
 def prune_old_logs
   Dir.glob(File.join(LOG_DIR, '*.log')).each do |f|
     File.delete(f) if Time.now - File.mtime(f) > LOG_RETENTION_DAYS * 24 * 60 * 60
   end
+end
+
+# Turns one "✓ Title: detail" line from GrafanaHealthChecker#format_line back
+# into structured data, rather than having the rake task emit a second,
+# machine-readable line format alongside its human one.
+def parse_panel_line(line)
+  m = line.match(/\A(✓|⚠|✗|\?)\s+(.*)\z/)
+  return nil unless m
+
+  title, detail = m[2].split(': ', 2)
+  status = { '✓' => 'ok', '⚠' => 'warn', '✗' => 'bad', '?' => 'nodata' }.fetch(m[1])
+  { status: status, title: title, detail: detail }
+end
+
+# Last N runs for one region, oldest first. LOG_DIR filenames sort
+# chronologically (env_name_YYYYMMDD_HHMMSS.log) and prune_old_logs already
+# caps how far back these go, so this is free history - nothing extra to store.
+def recent_runs(env_name, limit: LOG_RETENTION_DAYS * 2)
+  Dir.glob(File.join(LOG_DIR, "#{env_name}_*.log")).last(limit).map do |f|
+    stamp = File.basename(f, '.log').sub("#{env_name}_", '')
+    { stamp: stamp, passed: File.read(f).include?('Grafana health check passed') }
+  end
+end
+
+def history_html(runs)
+  return '<span class="muted">no history yet</span>' if runs.empty?
+
+  runs.map do |r|
+    s = r[:stamp]
+    label = "#{s[0, 4]}-#{s[4, 2]}-#{s[6, 2]} #{s[9, 2]}:#{s[11, 2]} — #{r[:passed] ? 'passed' : 'FAILED'}"
+    %(<span class="dot #{r[:passed] ? 'ok' : 'bad'}" title="#{label}"></span>)
+  end.join
+end
+
+# Worst first: a red/no-data panel is the reason you opened this page, so it
+# shouldn't be buried below thirty healthy ones. Ties keep the rake task's
+# own panel order (stable sort).
+PANEL_SEVERITY = { 'bad' => 0, 'nodata' => 0, 'warn' => 1, 'ok' => 2 }.freeze
+
+def write_dashboard(results)
+  require 'cgi'
+
+  regions_html = results.map do |env_name, passed, out_file|
+    raw = File.read(out_file)
+    panels = raw.lines.filter_map { |l| parse_panel_line(l.strip) }
+                .sort_by.with_index { |p, i| [PANEL_SEVERITY.fetch(p[:status], 3), i] }
+    rows = panels.map do |p|
+      "<tr><td>#{CGI.escapeHTML(p[:title].to_s)}</td><td>#{CGI.escapeHTML(p[:detail].to_s)}</td>" \
+        "<td><span class=\"pill #{p[:status]}\">#{p[:status]}</span></td></tr>"
+    end.join("\n")
+
+    summary = raw.lines.find { |l| l.include?('Grafana health check') }&.strip
+    region_label = env_name.sub('production.', '').upcase
+
+    <<~HTML
+      <div class="region">
+      <h2>#{region_label} <span class="pill #{passed ? 'ok' : 'bad'}">#{passed ? 'PASS' : 'FAIL'}</span></h2>
+      <p class="lede">#{CGI.escapeHTML(summary.to_s)}</p>
+      <p class="history">Last #{LOG_RETENTION_DAYS * 2} runs: #{history_html(recent_runs(env_name))}</p>
+      <table>
+        <tr><th>Panel</th><th>Detail</th><th>Status</th></tr>
+        #{rows}
+      </table>
+      </div>
+    HTML
+  end.join("\n")
+
+  raw_report = File.exist?(REPORT_FILE) ? File.read(REPORT_FILE) : ''
+
+  File.write(DASHBOARD_FILE, <<~HTML)
+    <!doctype html>
+    <html lang="en"><head><meta charset="utf-8">
+    <title>Grafana health — CapHive</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 1400px;
+             color: #1f2937; background: #fff; }
+      h1 { font-size: 1.4rem; margin-bottom: .25rem; }
+      h2 { font-size: 1.05rem; margin-top: 0; display: flex; align-items: center; gap: .5rem; }
+      .regions { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+                 gap: 0 2rem; margin-top: 1.5rem; align-items: start; }
+      .region { min-width: 0; }
+      .gen { color: #6b7280; margin-top: 0; }
+      .lede { color: #4b5563; margin: .3rem 0 0; }
+      .history { color: #4b5563; margin: .5rem 0; }
+      table { border-collapse: collapse; width: 100%; margin-top: .5rem; }
+      th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid #e5e7eb; }
+      th { font-weight: 600; color: #374151; }
+      .pill { padding: .1rem .5rem; border-radius: 999px; font-size: .85em; }
+      .pill.ok { background: #dcfce7; color: #166534; }
+      .pill.warn { background: #fef9c3; color: #854d0e; }
+      .pill.bad, .pill.nodata { background: #fee2e2; color: #991b1b; }
+      .muted { color: #9ca3af; }
+      .dot { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; margin-right: 2px; }
+      .dot.ok { background: #16a34a; }
+      .dot.bad { background: #dc2626; }
+      details { margin-top: 2rem; }
+      pre { background: #f9fafb; padding: 1rem; overflow-x: auto; font-size: .85em; }
+    </style></head><body>
+    <h1>Grafana health — IN + US production</h1>
+    <p class="gen">Generated <strong>#{Time.now}</strong><br>
+    Regenerate: <code>bin/check_grafana_health run</code></p>
+
+    <div class="regions">
+    #{regions_html}
+    </div>
+
+    <details><summary>Raw report</summary><pre>#{CGI.escapeHTML(raw_report)}</pre></details>
+    </body></html>
+  HTML
 end
 
 def cmd_run
@@ -83,8 +249,10 @@ def cmd_run
     #{results.map { |name, _passed, out_file| "== #{name} ==\n#{File.read(out_file)}" }.join("\n")}
   REPORT
 
-  puts "#{Time.now}: #{results.map { |name, passed, _f| "#{name}=#{passed ? 'PASS' : 'FAIL'}" }.join(', ')}"
+  puts "#{Time.now}: #{results.map { |name, passed, _f| "#{name}=#{passed ? 'PASS' : 'FAIL'}" }.join(', ')} (#{DASHBOARD_FILE})"
   prune_old_logs
+  write_dashboard(results)
+  open_dashboard(problem: results.any? { |_, passed, _| !passed })
   exit(results.all? { |_, passed, _| passed } ? 0 : 1)
 end
 
@@ -94,6 +262,7 @@ def cmd_report
     exit 1
   end
   puts File.read(REPORT_FILE)
+  puts "Dashboard (open in a browser): file://#{DASHBOARD_FILE}"
 end
 
 def cmd_cron
@@ -103,6 +272,11 @@ def cmd_cron
     # Twice-daily Grafana health check (IN + US prod) - all health indicators
     # (infra, DB, Rails, Sidekiq) via the CapHive Overview dashboard.
     # Notifies on FAILURE only - see bin/check_grafana_health for why.
+    # Leaves a dashboard you can open any time (panel status + last two weeks
+    # of runs per region): log/grafana_health_dashboard.html
+    # Opens it in Chrome automatically when something needs attention. Put
+    # DASHBOARD_OPEN=always in front of the command below to open it on every
+    # run, or =never for notification only.
     0 8 * * * #{invoke}
     0 18 * * * #{invoke}
 
@@ -125,3 +299,4 @@ else
   warn "Usage: #{$PROGRAM_NAME} [run|report|cron]"
   exit 1
 end
+# rubocop:enable Rails/TimeZone
