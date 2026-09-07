@@ -698,5 +698,48 @@ namespace :IRM do
     end
   end
 
+  # Installs an RVM Ruby on the box (if it isn't already) and makes it the RVM
+  # default, so every rvm-wrapped command picks it up: capistrano-rvm's own
+  # command prefix (rvm_ruby_version defaults to "default" — see
+  # lib/capistrano/tasks/rvm.rake in the gem), and the sidekiq start command's
+  # literal `~/.rvm/bin/rvm default do` above. The AMI's baked-in Ruby comes
+  # from the same `rvm install` mechanism (see get.rvm.io line in
+  # config/deploy/templates/packer/appserver.ami.pkr.hcl) — this task is what
+  # to run afterwards on a box that needs a *different* Ruby than the AMI
+  # shipped with, without re-baking an AMI. Idempotent: re-running is a no-op
+  # once the target is installed and already default.
+  #
+  # Does NOT touch the app's gems — with the default Ruby switched, RVM gems
+  # live in a fresh gemset, so the next `deploy` (via capistrano-bundler) is
+  # what (re)installs them under the new Ruby.
+  #
+  # Version defaults to the repo's own .ruby-version; override for a one-off:
+  #   bundle exec cap staging_in IRM:install_ruby
+  #   RUBY_VERSION=4.0.6 bundle exec cap staging_us IRM:install_ruby
+  desc 'Install an RVM Ruby on the box and set it as the RVM default'
+  task :install_ruby do
+    on roles(:app) do
+      target = (ENV["RUBY_VERSION"] || File.read("./.ruby-version").strip).sub(/\Aruby-/, "")
+      rvm = "source ~/.rvm/scripts/rvm &&"
+
+      installed = capture(:bash, "-lc", "'#{rvm} rvm list strings'").split("\n")
+      unless installed.include?("ruby-#{target}")
+        info "ruby-#{target} not found on this box — installing via RVM (this can take several minutes)"
+        # Same dpkg-lock wait as IRM:setup/apt_update: `rvm install` calls
+        # apt-get for build deps under the hood and would otherwise race
+        # unattended-upgrades on a freshly booted or freshly-upgraded box.
+        execute :sudo, "apt-get -o DPkg::Lock::Timeout=600 update"
+        execute :bash, "-lc", "'#{rvm} rvm install ruby-#{target}'"
+      end
+
+      execute :bash, "-lc", "'#{rvm} rvm --default use ruby-#{target}'"
+
+      current = capture(:bash, "-lc", "'#{rvm} rvm current'").strip
+      raise "expected ruby-#{target} to be the RVM default, got #{current}" unless current == "ruby-#{target}"
+
+      info "RVM default on #{host} is now #{current}"
+    end
+  end
+
   # before 'IRM:setup', 'IRM:set_rails_master_key'
 end
