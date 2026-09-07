@@ -378,7 +378,15 @@ module AccountEntryAllocation
         ActionController::Base.helpers.link_to(label, account_entries_path(fund_id: fund.id, filter: true, q: query_params), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
       end.join
 
-      notify("#{msg}<br>#{links_html}", :success, user_id)
+      # POST via data-turbo-method: this HTML is broadcast from a background job, not rendered
+      # inside a real request, so a baked-in authenticity token (button_to) would not match the
+      # viewer's session and the click would fail CSRF verification. Turbo reads the token live
+      # from the page's own csrf-token meta tag when the link is clicked, so it works regardless
+      # of where the markup was generated.
+      check_run_link = ActionController::Base.helpers.link_to("Check This Allocation Run", allocation_run_reports_path(allocation_run_id: ctx[:allocation_run_id]),
+                                                                class: 'mb-1 badge bg-primary-subtle text-primary', data: { turbo_method: :post })
+
+      notify("#{msg}<br>#{links_html} #{check_run_link}", :success, user_id)
     end
 
     # rubocop:disable Lint/RescueException

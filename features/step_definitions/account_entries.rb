@@ -64,9 +64,13 @@ Given("that Account Entries are allocated") do
 end
 
 Then("I see AllocationRun created") do
-	visit allocate_form_fund_path(@fund.id, run_allocations: true)
+	# Wait for the DB record before visiting: the run is created by a background
+	# thread/job the "Submit" step doesn't block on, and this table is plain
+	# server-rendered HTML with no live refresh -- visiting first and then waiting on
+	# the DB left the already-rendered page with no way to ever show the new row.
 	eventually { expect(AllocationRun.last).to be_present }
 	@allocation_run = AllocationRun.last
+	visit allocate_form_fund_path(@fund.id, run_allocations: true)
 	within('table') do
     expect(page).to have_css('tr', text: I18n.l(@allocation_run.start_date, format: :abbr_month_day_year))
     expect(page).to have_css('tr', text: I18n.l(@allocation_run.end_date, format: :abbr_month_day_year))
@@ -76,7 +80,7 @@ end
 
 Given("I lock the AllocationRun") do
 	first('tbody tr').find('.dtr-control').click
-	click_on("Lock")
+	find(:css, "button[aria-label='Lock']").click
 	sleep(1)
 end
 
@@ -251,7 +255,6 @@ Then('the account entries generated match the account entries in {string}') do |
 
 	if account_entry.nil?
 		puts "capital_commitment_id: #{capital_commitment&.id}, fund_id: #{fund.id}, reporting_date: #{user_data["Reporting Date"]}, cumulative: #{cumulative}, parent_name: #{parent_name}, ref_id: #{user_data["Ref Id"]}, reporting_date: #{reporting_date}"
-		binding.pry
 	end
 	account_entry.should_not be_nil, "Account entry not found for row #{idx + 1} with data: #{user_data.inspect}"
 
@@ -260,11 +263,9 @@ Then('the account entries generated match the account entries in {string}') do |
 
 	if account_entry.entry_type == "Percentage" || account_entry.name.include?("Percentage")
 		tolerance = 0.5
-		binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8)).abs > tolerance
 		account_entry.amount_cents.round(8).should be_within(tolerance).of(user_data["Amount"].to_f.round(8))
 	else
 		tolerance = 2
-		binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > tolerance
 		account_entry.amount_cents.round(8).should be_within(tolerance).of(user_data["Amount"].to_f.round(8) * 100)
 	end
 

@@ -1,3 +1,11 @@
+# Ruby 4.0 removed CGI from the standard library; the interpreter's own cgi.rb stub
+# (higher priority on $LOAD_PATH than any gem, even after `gem "cgi"` in the Gemfile)
+# now only defines CGI.escape/unescape via cgi/escape, so a plain `require "cgi"` here
+# still resolves to that stub and CGI.parse stays undefined. Rack/Rails already loads
+# cgi/escape elsewhere (CGI.escape/unescape/escapeHTML work fine app-wide), so pulling
+# in just cgi/core -- the piece nothing else loads -- from the "cgi" gem is what's needed.
+require 'cgi/core'
+
 class Report < ApplicationRecord
   include WithGridViewPreferences
 

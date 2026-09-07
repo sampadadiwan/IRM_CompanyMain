@@ -507,6 +507,65 @@ class SupportAgentsSetupService
       ]
     },
 
+    # ── RemittanceReconciliationAgent ────────────────────────────────────
+    # Phase 3: ingests a bank statement, parses every deposit narration through the
+    # bank-specific parser registry, scores/tiers each against this call's outstanding
+    # remittances, and (opt-in via auto_apply_exact) auto-creates a CapitalRemittancePayment
+    # for every Exact-tier match.
+    {
+      tag: "RemittanceReconciliationAgent",
+      category: "Finance",
+      agent: {
+        name: "Remittance Reconciliation",
+        with_steps: true,
+        json_fields: {
+          "tolerance_amount" => "500",
+          "tolerance_pct" => "0",
+          "name_similarity_threshold" => "0.90",
+          "auto_apply_exact" => "No",
+          "llm_fuzzy_matching" => "No",
+          "send_report" => "Yes",
+          "notify_email" => ""
+        }
+        # No default schedule — runs on-demand at statement upload time, scoped to one
+        # CapitalCall per run.
+      },
+      # No File field here for the statement itself — uploaded per-run, same as RTA's
+      # rta_statement (see rta_run_modal.html.erb) once this agent gets its own run UI.
+      fields: [
+        { name: "tolerance_amount",
+          field_type: "NumberField", label: "Tolerance (absolute)", meta_data: "", position: 1,
+          help_text: "Maximum absolute shortfall/excess (fund currency) still treated as an exact amount " \
+                     "match. Absorbs wire charges deducted in transit. Default: 500." },
+        { name: "tolerance_pct",
+          field_type: "NumberField", label: "Tolerance (%)", meta_data: "", position: 2,
+          help_text: "Maximum percentage difference, OR'd with the absolute tolerance — either passing " \
+                     "is enough. Set to 0 to use the absolute tolerance only (default)." },
+        { name: "name_similarity_threshold",
+          field_type: "NumberField", label: "Name similarity threshold", meta_data: "", position: 3,
+          help_text: "Minimum Jaro-Winkler similarity (0-1) to accept a name-only match (no account number " \
+                     "in the narration) deterministically. Default: 0.90." },
+        { name: "auto_apply_exact",
+          field_type: "Select", label: "Auto-apply exact matches", meta_data: "Yes,No", position: 4,
+          help_text: "When Yes, Exact-tier deposits automatically create a CapitalRemittancePayment. " \
+                     "Defaults to No for every fund's first live run — a deliberate opt-in, not assumed. " \
+                     "Every other tier is always proposed only, regardless of this setting." },
+        { name: "llm_fuzzy_matching",
+          field_type: "Select", label: "AI-assisted name matching", meta_data: "Yes,No", position: 5,
+          help_text: "Reserved for a later phase: when Yes, names that deterministic similarity can't confidently " \
+                     "resolve are scored by the LLM in one batched call per statement. Not active yet — " \
+                     "the setting is stored but has no effect on a run until that phase ships." },
+        { name: "send_report",
+          field_type: "Select", label: "Email report after run", meta_data: "Yes,No", position: 6,
+          help_text: "When Yes, the run summary (tier counts, every funding-source discrepancy, every deposit " \
+                     "needing review) is emailed to the address below after each run." },
+        { name: "notify_email",
+          field_type: "TextField", label: "Notify email", meta_data: "", position: 7,
+          help_text: "Recipient of the reconciliation summary email. Leave blank to skip the email even when " \
+                     "'Email report after run' is Yes." }
+      ]
+    },
+
     # ── Additional agents (category provisioning only) ───────────────────────────
     {
       tag: "FundStatsAgent",
@@ -618,7 +677,8 @@ class SupportAgentsSetupService
     "NoteSummarizerAgent" => :note_summarization_agent,
     "LpAssistantAgent" => :folio_assistant,
     "PortfolioAssistantAgent" => :portfolio_assistant,
-    "CashFlowAssistantAgent" => :cash_flow_assistant_agent # explicit for clarity
+    "CashFlowAssistantAgent" => :cash_flow_assistant_agent, # explicit for clarity
+    "RemittanceReconciliationAgent" => :capital_remittance_reconciliation_agent # flag predates the class's 30-char rename
   }.freeze
 
   # @param entity_id [Integer]

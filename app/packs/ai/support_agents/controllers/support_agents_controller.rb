@@ -240,6 +240,23 @@ class SupportAgentsController < ApplicationController
       rta_pdf_document_id = doc.id
     end
 
+    # RemittanceReconciliationAgent: save the uploaded bank statement xlsx as a Document now
+    # (before the async job runs), same pattern as the RTA PDF above.
+    bank_statement_document_id = nil
+    if params[:agent_type] == "RemittanceReconciliationAgent" && params[:bank_statement].present?
+      doc = Document.new(
+        name: "Bank Statement",
+        entity: current_user.entity,
+        owner: target,
+        user: current_user,
+        send_email: false,
+        orignal: true
+      )
+      doc.file = params[:bank_statement]
+      doc.save!
+      bank_statement_document_id = doc.id
+    end
+
     if target
       steps = @support_agent.agent.step_definitions.map do |s|
         { "step" => s[:step], "id" => s[:id], "label" => s[:label], "short_label" => s[:short_label], "status" => "pending" }
@@ -260,7 +277,8 @@ class SupportAgentsController < ApplicationController
       user_id: current_user.id,
       with_steps: target.present?,
       execution_mode: target.present? ? :single_company_with_steps : :adhoc_batch,
-      rta_pdf_document_id: rta_pdf_document_id
+      rta_pdf_document_id: rta_pdf_document_id,
+      bank_statement_document_id: bank_statement_document_id
     )
 
     respond_to do |format|

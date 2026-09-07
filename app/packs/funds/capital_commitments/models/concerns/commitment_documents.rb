@@ -47,6 +47,25 @@ module CommitmentDocuments
       fund_templates = name ? [] : fund.documents.where(owner_tag:).where.not(name: template_names)
     end
 
-    commitment_templates + fund_templates
+    # Legacy data can hold two live templates with the same owner_tag AND name on one owner
+    # (a revised template uploaded without deleting the old one; Document now validates
+    # against this, but rows created before that validation still exist). Every DocGenJob
+    # subclass keys its "delete the previous generated doc" step on template.name, so feeding
+    # it two same-named templates makes it generate a notice, delete it, and generate it again
+    # — which the investor sees as a document link that goes "access denied" seconds later.
+    # Collapse to one template per name, preferring the newest upload (highest id): that's
+    # the one the user most recently intended to use, and it's stable across runs.
+    dedupe_templates_by_name(commitment_templates + fund_templates)
+  end
+
+  private
+
+  # Keeps one Document per name, the most recently created (highest id). Commitment-level
+  # overrides are listed before fund-level ones by the caller, and the two sets never share
+  # a name (fund templates overridden by the commitment are excluded above), so the
+  # collapse only ever removes true duplicates within the same owner. Order of first
+  # appearance is preserved so job notification numbering stays deterministic.
+  def dedupe_templates_by_name(templates)
+    templates.group_by(&:name).values.map { |same_name| same_name.max_by(&:id) }
   end
 end

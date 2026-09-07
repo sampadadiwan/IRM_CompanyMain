@@ -48,6 +48,11 @@ export default class extends Controller {
           controller.restrictFocusableElements(table[key]);
           table[key].on('draw.dt', () => setupAccessiblePagination(table[key]));
           table[key].on('draw.dt', () => controller.restrictFocusableElements(table[key]));
+          // Responsive's collapsed-column "child" row is only built (cloning cell markup,
+          // buttons included) the first time it's expanded — well after the tooltip
+          // controller's initial scan — so any data-bs-toggle="tooltip" buttons that landed
+          // in a hidden column never got a Bootstrap Tooltip instance. Re-scan on expand.
+          table[key].on('responsive-display.dt', () => controller.element.dispatchEvent(new CustomEvent('tooltip:reinit')));
         }
 
       });

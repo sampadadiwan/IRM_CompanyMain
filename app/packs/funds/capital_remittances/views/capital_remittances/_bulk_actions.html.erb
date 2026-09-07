@@ -88,6 +88,19 @@
               bulk_actions_capital_remittances_path("bulk_action": "Verify", params: params.to_unsafe_h),
               class: "dropdown-item",
               data: {msg:, action: "click->confirm#popup", method: :post}  %>
+          <%# Self-service reset of the Call Notice "Notification Sent" flag (user guide, Question 3).
+              Two idempotent actions rather than a toggle so a mixed selection can't silently flip
+              never-notified investors to "sent" and hide them from the next Send Notification. %>
+          <% unsent_msg = "This will mark every remittance in the search results (including results on other pages) as NOT having received the Call Notice, so the next call-level Send Notification includes them again. Use this after a correction or a bounced email. Proceed?" %>
+          <%= button_to "Mark Notification Unsent",
+              bulk_actions_capital_remittances_path("bulk_action": "Mark Notification Unsent", params: params.to_unsafe_h),
+              class: "dropdown-item",
+              data: {msg: unsent_msg, action: "click->confirm#popup", method: :post}  %>
+          <% sent_msg = "This will mark every remittance in the search results (including results on other pages) as having already received the Call Notice, so the call-level Send Notification skips them. Use this for investors notified outside the system. Proceed?" %>
+          <%= button_to "Mark Notification Sent",
+              bulk_actions_capital_remittances_path("bulk_action": "Mark Notification Sent", params: params.to_unsafe_h),
+              class: "dropdown-item",
+              data: {msg: sent_msg, action: "click->confirm#popup", method: :post}  %>
         </div>
       </div>
     <% end %>

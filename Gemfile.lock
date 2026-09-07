@@ -288,6 +288,7 @@ GEM
     caxlsx_rails (0.7.2)
       actionpack (>= 6.1)
       caxlsx (>= 4.0)
+    cgi (0.5.2)
     character_set (1.8.0)
     chartkick (5.2.1)
     chewy (8.4.1)
@@ -1224,6 +1225,7 @@ DEPENDENCIES
   capybara-playwright-driver
   caxlsx
   caxlsx_rails
+  cgi
   chartkick
   chewy
   client_side_validations

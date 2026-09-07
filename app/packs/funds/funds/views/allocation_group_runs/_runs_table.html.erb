@@ -1,0 +1,49 @@
+<%# Run history table. Locals: runs (AllocationGroupRun relation/array), show_group (bool) %>
+<% if runs.empty? %>
+  <p class="text-muted">No runs yet.</p>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead>
+        <tr>
+          <% if show_group %><th>Group</th><% end %>
+          <th>Period</th>
+          <th>Status</th>
+          <th title="Templates finished out of the total">Progress</th>
+          <th>Started by</th>
+          <th>Started</th>
+          <th>Duration</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% runs.each do |run| %>
+          <% done, total = run.progress %>
+          <tr>
+            <% if show_group %>
+              <td>
+                <% if run.allocation_run_template_group %>
+                  <%= link_to run.group_name, allocation_run_template_group_path(run.allocation_run_template_group) %>
+                <% else %>
+                  <%= run.group_name %> <span class="badge bg-secondary-subtle text-secondary" data-bs-toggle="tooltip" title="The group was deleted; its history is kept">deleted</span>
+                <% end %>
+              </td>
+            <% end %>
+            <td><%= l run.start_date %> – <%= l run.end_date %></td>
+            <td><%= group_run_status_badge(run.status) %></td>
+            <td>
+              <div class="progress art-progress" data-bs-toggle="tooltip" title="<%= done %> of <%= total %> templates finished">
+                <div class="progress-bar <%= run.failed? ? 'bg-danger' : 'bg-success' %>" role="progressbar" style="width: <%= run.progress_percent %>%"></div>
+              </div>
+              <small class="text-muted"><%= done %> / <%= total %></small>
+            </td>
+            <td><%= run.user.full_name %></td>
+            <td><%= l run.created_at, format: :abbr_date_time %></td>
+            <td><%= format_run_duration(run.duration) %></td>
+            <td><%= link_to "View", allocation_group_run_path(run), class: "btn btn-sm btn-outline-info" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

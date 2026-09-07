@@ -3,11 +3,18 @@ class S3CheckJob < ApplicationJob
   # newer than this to avoid false alarms while replication is still in progress.
   REPLICATION_GRACE_PERIOD = 15.minutes
 
-  def perform
-    # Note AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY will no longer be set, the EC2 instance will use IAM roles for this.
+  # env_name (e.g. production.in / production.us): lets this run locally against
+  # a specific deployment's AWS account, exactly as DbBackupFreshnessJob#perform
+  # does. On the deployed server Capistrano symlinks the regional credentials
+  # file, so the hourly cron keeps calling this with no argument and resolves
+  # correctly; from a laptop, Rails.application.credentials is whatever the
+  # default (development) credentials hold — a DIFFERENT account — so the DR
+  # verification entry point s3:check_latest_file must pass env_name.
+  def perform(env_name: nil)
+    @env_name = env_name
     client = Aws::S3::Client.new(
-      access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
-      secret_access_key: Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
+      access_key_id: credentials[:AWS_ACCESS_KEY_ID],
+      secret_access_key: credentials[:AWS_SECRET_ACCESS_KEY],
       region: ENV.fetch('AWS_S3_REGION', nil)
     )
 
@@ -53,8 +60,8 @@ class S3CheckJob < ApplicationJob
 
     # S3 client for the destination bucket
     client = Aws::S3::Client.new(
-      access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
-      secret_access_key: Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
+      access_key_id: credentials[:AWS_ACCESS_KEY_ID],
+      secret_access_key: credentials[:AWS_SECRET_ACCESS_KEY],
       region: ENV.fetch('AWS_S3_REPLICA_REGION', nil)
     )
 
@@ -81,5 +88,22 @@ class S3CheckJob < ApplicationJob
         source_last_modified: source_latest_file.last_modified
       })
     end
+  end
+
+  private
+
+  # Mirrors DbBackupFreshnessJob#credentials.
+  def credentials
+    @credentials ||= if @env_name
+                       key_path = Rails.root.join("config", "credentials", "#{@env_name}.key")
+                       raise "Key file not found for environment '#{@env_name}' at #{key_path}" unless File.exist?(key_path)
+
+                       Rails.application.encrypted(
+                         Rails.root.join("config", "credentials", "#{@env_name}.yml.enc"),
+                         key_path: key_path
+                       )
+                     else
+                       Rails.application.credentials
+                     end
   end
 end

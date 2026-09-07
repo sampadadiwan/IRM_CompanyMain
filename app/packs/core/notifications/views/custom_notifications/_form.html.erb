@@ -45,7 +45,7 @@
     </div>
   </div>
 
-  <%= form_with(model: custom_notification, validate: true, id: "custom-notification-form", class: "wizard_form row justify-content-md-center", data: { controller: "notification-placeholders notification-summary", "notification-placeholders-placeholders-value": custom_notification.placeholders_by_email_method.to_json, "notification-placeholders-fund-defaults-value": custom_notification.fund_default_notifications.to_json, action: "input->notification-summary#refresh change->notification-summary#refresh trix-change->notification-summary#refresh" }) do |form| %>
+  <%= form_with(model: custom_notification, validate: true, id: "custom-notification-form", class: "wizard_form row justify-content-md-center", data: { controller: "notification-placeholders notification-summary", "notification-placeholders-placeholders-value": custom_notification.placeholders_by_email_method.to_json, "notification-placeholders-fund-defaults-value": custom_notification.fund_default_notifications.to_json, "notification-placeholders-auto-attach-methods-value": custom_notification.auto_attach_email_methods.to_json, action: "input->notification-summary#refresh change->notification-summary#refresh trix-change->notification-summary#refresh" }) do |form| %>
 
     <% if custom_notification.errors.any? %>
       <div class="col-md-8">
@@ -309,7 +309,7 @@
               <div class="mt-2 p-3 rounded-3 bg-light border small">
                 <div class="fw-semibold text-dark mb-2"><i class="ti ti-bulb me-1 text-warning"></i>How to fill this in</div>
                 <ul class="mb-2 ps-3">
-                  <li class="mb-1">Leave it <strong>blank</strong> &mdash; this email is sent with no attachments.</li>
+                  <li class="mb-1">Leave it <strong>blank</strong> &mdash; <span data-notification-placeholders-target="blankAttachmentHint">this email is sent with no attachments.</span></li>
                   <li class="mb-1">Type the exact name of an already-uploaded document, e.g. <code>Statement of Account</code>.</li>
                   <li class="mb-1">List several names separated by commas: <code>Statement of Account, KYC Certificate</code>.</li>
                   <li class="mb-1">Use <code>*</code> as a wildcard to match a family of names: <code>SOA_*_03_2026</code> matches <code>SOA_FundA_03_2026</code>.</li>

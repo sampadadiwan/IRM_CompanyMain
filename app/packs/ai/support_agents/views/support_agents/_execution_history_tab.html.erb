@@ -81,6 +81,10 @@
                       <%# normalized_result_summary handles legacy summary key shapes %>
                       <% counts = normalized_result_summary(log.result_summary) %>
                       <%= counts[:processed] %> processed<% if counts[:failed] > 0 %><span class="text-danger ms-1">· <%= counts[:failed] %> failed</span><% end %>
+                      <% target_links = execution_target_links(support_agent, log.result_summary, log: log) %>
+                      <% if target_links %>
+                        <div class="mt-1"><i class="ti ti-arrow-right me-1"></i><%= target_links %></div>
+                      <% end %>
                     <% end %>
                   </div>
                 <% end %>

@@ -37,6 +37,11 @@ namespace :aws do
     Rake::Task['aws:environment'].reenable
     Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"])
+    # setup_pulumi_config runs `pulumi stack select --create`, so without this
+    # the stack is created in whichever backend happens to be logged in —
+    # creating a production stack on Pulumi Cloud after its state has moved to
+    # S3 is exactly the split-brain PULUMI_STATE.md warns about.
+    ensure_pulumi_backend!(args[:env_name] || "#{args[:stack]}.#{args[:env_variant]}")
     setup_infra(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant], args[:branch])
   end
 
@@ -52,6 +57,8 @@ namespace :aws do
     Rake::Task['aws:environment'].reenable
     Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"], web_server_name: "AppServer", db_server_name: "DB-Redis-ES")
+    # Same reason as aws:setup_infra: this creates the stack.
+    ensure_pulumi_backend!(args[:env_name] || "#{args[:stack]}.#{args[:env_variant]}")
     setup_pulumi_config(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant])
   end
 
@@ -87,6 +94,11 @@ namespace :aws do
 
     puts "🩺 DR readiness for #{stack} (#{env_variant}) → DR region #{region}\n\n"
 
+    # Point at this env's state bucket before the checks read anything from
+    # Pulumi. Non-fatal: a scorecard reports problems, it does not refuse to
+    # run because of one — check 4b below records whatever state we end up in.
+    ensure_pulumi_backend!(env_name, fatal: false)
+
     results = [] # [status, label, detail]
     check = ->(label, status, detail = "") { results << [status, label, detail] }
 
@@ -94,7 +106,12 @@ namespace :aws do
     # Exact same checks the hourly alert runs — covers cadence, full-age,
     # replica presence, and bucket reachability in one shot
     begin
-      failures = DbBackupFreshnessJob.new.collect_failures
+      # env_name is REQUIRED here. Without it the job falls back to
+      # Rails.application.credentials, which locally are the default (staging)
+      # keys — so a production scorecard checked production's backup buckets
+      # using staging's IAM user and reported AccessDenied, or worse would have
+      # silently reported on the wrong account had the permission existed.
+      failures = DbBackupFreshnessJob.new.collect_failures(env_name: env_name)
       if failures.empty?
         check.("Backup freshness (primary + replica)", :ok, "within thresholds")
       else
@@ -111,6 +128,18 @@ namespace :aws do
     # --- 2. AMIs present + recent in the DR region ---------------------------
     %w[AppServer DB-Redis-ES Observability].each do |name|
       ami = latest_ami(name, region)
+      # latest_ami returns nil when nothing matches. Without this the next line
+      # raises NoMethodError and the scorecard reports "undefined method
+      # 'image_id' for nil", which says nothing about what is actually wrong or
+      # how to fix it — the AMI was simply never copied to this region.
+      if ami.nil?
+        check.("AMI #{name} in #{region}", :fail,
+               "no AMI tagged '#{name}' in #{region} — copy one with " \
+               "rake \"aws:copy_ami[<source-ami-id>, #{region}, #{env_name}]\" " \
+               "or bake+copy with rake \"aws:create_and_copy_ami[#{name}, #{region}, #{env_name}]\"")
+        next
+      end
+
       age_days = ((Time.now - Time.parse(ami.creation_date)) / 86_400).round
       status = age_days > 8 ? :warn : :ok # weekly bake → >8d means the cron missed
       check.("AMI #{name} in #{region}", status,
@@ -164,7 +193,20 @@ namespace :aws do
         check.("Pulumi stack #{stack}-#{region}", :ok, "config complete (#{domain})")
       end
     else
-      check.("Pulumi stack #{stack}-#{region}", :fail, "#{stack_file} not found")
+      # A warning, not a failure — and deliberately consistent with check 4b
+      # below, which tolerates the same fact ("a brand-new DR region
+      # legitimately has no stack yet"). setup_infra runs setup_pulumi_config,
+      # which does `pulumi stack select --create` and writes this file, so a DR
+      # run creates it.
+      #
+      # Still worth flagging: generating it at DR time needs the region's AMIs
+      # to already exist, and IRM-Infra's CI validates the key set of every
+      # Pulumi.*.yaml — a file that does not exist is a file that has never
+      # been validated. Pre-creating it moves both checks before the incident.
+      check.("Pulumi stack #{stack}-#{region}", :warn,
+             "#{stack_file} not found — setup_infra creates it during a DR run, but " \
+             "pre-create it so CI validates it: " \
+             "rake \"aws:setup_pulumi_config[#{stack}, AppServer, DB-Redis-ES, #{region}, #{env_variant}, #{env_name}]\"")
     end
 
     # --- 4b. Pulumi state backend reachable ----------------------------------
@@ -178,7 +220,22 @@ namespace :aws do
         # Which backend are we actually talking to? (personal cloud vs S3)
         who, = Open3.capture3("pulumi whoami --verbose", chdir: "../IRM-Infra")
         backend = who.lines.grep(/Backend URL/i).first.to_s.split(/URL:?\s*/i).last.to_s.strip
-        if names.include?("#{stack}-#{region}")
+        # After the S3 migration, "reachable" is not enough: being logged into
+        # ANOTHER env's bucket reads a different environment entirely, and the
+        # replica bucket is read-only outside a real outage. Report which.
+        expected = (pulumi_state_buckets(env_name)[:primary] rescue nil)
+        replica  = (pulumi_state_buckets(env_name)[:replica] rescue nil)
+        current_bucket = backend.start_with?("s3://") ? backend.sub(%r{\As3://}, "").split("?").first : nil
+
+        if current_bucket && replica && current_bucket == replica
+          check.("Pulumi state backend", :fail,
+                 "logged into the REPLICA bucket #{current_bucket} — read-only outside a real outage; " \
+                 "use s3://#{expected} (see IRM-Infra/PULUMI_STATE.md)")
+        elsif current_bucket && expected && current_bucket != expected
+          check.("Pulumi state backend", :fail,
+                 "logged into #{current_bucket}, but #{env_name} state lives in #{expected} — " \
+                 "pulumi reads would describe the wrong environment")
+        elsif names.include?("#{stack}-#{region}")
           check.("Pulumi state backend", :ok, "stack #{stack}-#{region} present#{" on #{backend}" unless backend.empty?}")
         else
           # Not fatal: a brand-new DR region legitimately has no stack yet —
@@ -307,6 +364,13 @@ namespace :aws do
     Rake::Task['aws:environment'].invoke(env_name)
 
     region = args[:region] || ENV["AWS_BACKUP_REGION"] || raise("Pass a region or set AWS_BACKUP_REGION (shell or .env.#{env_name})")
+
+    # A drill runs `pulumi up` against real infrastructure, so the backend must
+    # be right BEFORE any of it starts: the wrong bucket would rebuild the wrong
+    # environment, and a missing passphrase would fail the drill partway
+    # through, after it had already provisioned. Fatal here, unlike the
+    # dr_readiness scorecard which only reports. See aws_utils.rb.
+    ensure_pulumi_backend!(env_name)
 
     original_branch = `git rev-parse --abbrev-ref HEAD`.strip
     branch_prefix = stack == 'staging' ? "dr_drill_#{env_variant}" : "dr_drill_#{stack}_#{env_variant}"
@@ -625,6 +689,25 @@ namespace :aws do
       access_key_id: credentials[:AWS_ACCESS_KEY_ID],
       secret_access_key: credentials[:AWS_SECRET_ACCESS_KEY],
     })
+
+    # Aws.config only reaches SDK clients created IN THIS PROCESS. Several
+    # checks and every pulumi call shell out — `aws ssm get-parameter`,
+    # `aws route53 list-hosted-zones-by-name`, `pulumi stack ls` — and a
+    # subprocess inherits the shell's AWS environment, not Aws.config. Without
+    # this, those calls silently ran as whoever the operator happened to be:
+    # dr_readiness reported "security token is invalid" for SSM, "zone not
+    # found" for Route53, and AccessDenied on the Pulumi state bucket, while
+    # every in-process check passed against the right account.
+    ENV["AWS_ACCESS_KEY_ID"]     = credentials[:AWS_ACCESS_KEY_ID].to_s
+    ENV["AWS_SECRET_ACCESS_KEY"] = credentials[:AWS_SECRET_ACCESS_KEY].to_s
+    ENV["AWS_DEFAULT_REGION"]    = ENV["AWS_REGION"].to_s
+
+    # A session token or profile left over from an assumed role belongs to
+    # DIFFERENT keys; pairing either with these static credentials is what
+    # produces UnrecognizedClientException rather than a clean AccessDenied.
+    ENV.delete("AWS_SESSION_TOKEN")
+    ENV.delete("AWS_SECURITY_TOKEN")
+    ENV.delete("AWS_PROFILE")
   end
 
 

@@ -601,7 +601,13 @@ Given('We Generate documents for the capital distribution') do
   click_on("Generate Documents")
   click_on("Proceed")
   sleep(5) # Wait for the job to complete
-  expect(page).to have_content("Documentation generation started")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N documents generated successfully") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Documentation generation started|documents? generated/i,
+    wait: 20
+  )
 end
 
 When('I generate distribution payment documents directly for the capital distribution') do
@@ -632,7 +638,10 @@ end
 Given('The distribution payment documents are approved') do
   @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
   @capital_distribution_payments.each do |cdp|
-    eventually { expect(cdp.documents.count).to be_positive }
+    # perform_now runs the job's own code synchronously, but doc conversion happens on
+    # a separate LibreOffice-profile thread (see DocumentGeneratorBase), so the document
+    # row can still land after this call returns. Same 20s as the sibling doc-gen waits.
+    eventually(timeout: 20) { expect(cdp.documents.count).to be_positive }
     cdp.documents.each do |doc|
       doc.approved = true
       res = doc.save
@@ -749,7 +758,13 @@ Given('dist notice is generated for the dist payments') do
   click_on("Generate Documents")
   click_on("Proceed")
   sleep(10) # Wait for the job to complete
-  expect(page).to have_content("Documentation generation started, please check back in a few mins. Each distribution payment will have the customized document attached")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N documents generated successfully") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Documentation generation started|documents? generated/i,
+    wait: 20
+  )
 end
 
 Then('dist notice must be generated for each dist payment') do
@@ -757,9 +772,14 @@ Then('dist notice must be generated for each dist payment') do
   distribution_template_name = @capital_distribution.fund.documents.where(owner_tag: "Distribution Template").first.name
   @capital_distribution.capital_distribution_payments.each do |cdp|
     puts "Checking distribution payment #{cdp.id} for investor #{cdp.investor_name} for document #{distribution_template_name} - #{cdp.investor_kyc} - #{cdp.folio_id}"
-    puts "All Available documents for distribution payment #{cdp.id}: #{cdp.documents.pluck(:name)}"
+    # The generate-docs job runs inline but ActionCable broadcasts "started" before docs
+    # are committed, so the previous step can return while the job is mid-flight. Retry
+    # (same gap fixed for the analogous capital-call/commitment doc-gen checks).
+    eventually(timeout: 20) do
+      puts "All Available documents for distribution payment #{cdp.id}: #{cdp.documents.pluck(:name)}"
+      cdp.documents.reload.pluck(:name).include?("#{distribution_template_name} - #{cdp.investor_kyc} - #{cdp.folio_id}").should == true
+    end
     puts "------------------------------------------------------------------------"
-    cdp.documents.pluck(:name).include?("#{distribution_template_name} - #{cdp.investor_kyc} - #{cdp.folio_id}").should == true
   end
 end
 

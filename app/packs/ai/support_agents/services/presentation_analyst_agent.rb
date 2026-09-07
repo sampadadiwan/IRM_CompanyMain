@@ -716,7 +716,10 @@ class PresentationAnalystAgent < SupportAgentService
     return nil unless system("which soffice > /dev/null 2>&1")
 
     out_dir = File.dirname(file_path)
-    system("soffice --headless --convert-to txt:Text --outdir #{Shellwords.shellescape(out_dir)} #{Shellwords.shellescape(file_path)} > /dev/null 2>&1")
+    # See DocumentGeneratorBase.libreoffice_profile_dir: an isolated per-process
+    # profile avoids concurrent soffice invocations silently losing a shared lock.
+    profile_dir = Shellwords.shellescape(DocumentGeneratorBase.libreoffice_profile_dir)
+    system("soffice --headless -env:UserInstallation=file://#{profile_dir} --convert-to txt:Text --outdir #{Shellwords.shellescape(out_dir)} #{Shellwords.shellescape(file_path)} > /dev/null 2>&1")
     txt_path = file_path.sub(/\.[^.]+$/, '.txt')
     File.exist?(txt_path) ? File.read(txt_path, encoding: 'UTF-8') : nil
   rescue StandardError

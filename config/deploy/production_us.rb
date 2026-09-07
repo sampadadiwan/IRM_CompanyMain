@@ -5,8 +5,8 @@
 # You can define all roles on a single server, or split them:
 
 # ap_south_1
-server "54.147.171.162", user: "ubuntu", roles: %w[primary app db web]
-server "35.153.176.117", user: "ubuntu", roles: %w[app web]
+server "3.91.253.138", user: "ubuntu", roles: %w[primary app db web]
+server "100.24.62.166", user: "ubuntu", roles: %w[app web]
 # ap_south_2
 # server "", user: "ubuntu", roles: %w[primary app db web]
 # server "", user: "ubuntu", roles: %w[app web] if ENV["LB"]

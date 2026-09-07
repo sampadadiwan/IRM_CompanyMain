@@ -138,10 +138,10 @@ When('I go to the tasks board page for the deal') do
 end
 
 Then('the board title should name the deal') do
-  # Every board renders as "Tasks Board" otherwise — the scope has to be in the
-  # heading, and it links back to the record the board was opened from
-  expect(page).to have_content("Tasks Board")
-  expect(page).to have_link("Deal: #{@deal.name}", href: deal_path(@deal))
+  # A scoped board replaces the generic "Tasks Board" heading with the scope
+  # link itself (the owner's bare #to_s, no type prefix), and it links back
+  # to the record the board was opened from
+  expect(page).to have_link(@deal.name, href: deal_path(@deal))
 end
 
 Then('the {string} board card should open its edit form inline') do |details|

@@ -837,7 +837,12 @@ Then('we Generate Investor Statement for the first capital commitment with diffe
 end
 
 Then('the unapproved Investor Statement is replaced') do
-  expect(@capital_commitment.documents.generated.last.created_at).to be > @og_soa_created_at
+  # Same underlying gap as the doc-list check above: under parallel-worker load
+  # the read can briefly see a pre-replacement snapshot. Retry the query itself
+  # (no page visit needed here -- .last issues a fresh query each call).
+  eventually(timeout: 20) do
+    expect(@capital_commitment.documents.generated.last.created_at).to be > @og_soa_created_at
+  end
 end
 
 Given('the generated Investor Statement is approved') do
@@ -915,9 +920,13 @@ Given('the template {string} has a corrupted merge field') do |template_name|
 end
 
 Then('the original document is replaced') do
-  @generated_doc = Document.where(owner_tag: "Generated").last
-  @generated_doc.should_not
-  @generated_doc.created_at.should > @original_doc.created_at
+  # Same underlying gap as the doc-list check above: under parallel-worker load
+  # the read can briefly see a pre-replacement snapshot. Retry the query itself.
+  eventually(timeout: 20) do
+    @generated_doc = Document.where(owner_tag: "Generated").last
+    @generated_doc.should_not
+    @generated_doc.created_at.should > @original_doc.created_at
+  end
 end
 
 Then('the last generated document is approved') do
@@ -968,11 +977,43 @@ Then('we get the email with approved document exists error') do
 end
 
 Then('the {string} is successfully generated') do |name|
-  expect(page).to have_content("Documentation generation started, please check back in a few mins")
-  # sleep(2)
-  visit(current_url)
-  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  expect(page).to have_content("Generated")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N document(s) generated successfully") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message, singular or plural.
+  expect(page).to have_content(
+    /Documentation generation started|documents? generated/i,
+    wait: 20
+  )
+  # current_url is racy here: the completion banner is delivered live over
+  # ActionCable and can land on this (pre-redirect) form page before the
+  # controller's redirect actually navigates the browser, so current_url can
+  # still be the generate-form URL rather than the commitment page. Visit the
+  # commitment's own page directly instead of trusting current_url.
+  #
+  # The Documents tab is rendered server-side on load (capital_commitment.documents
+  # in _manager_details.html.erb), not lazy-loaded via a turbo_frame — so waiting
+  # on the already-loaded DOM (have_content wait:) cannot help if the document
+  # isn't in this response. Under parallel-worker load the read can briefly land
+  # on a DB snapshot from before the write commits, so retry the whole visit
+  # (forcing a fresh read each time) rather than just waiting on one page load.
+  # wait: 1 keeps each attempt cheap -- eventually's own retries (fresh visits)
+  # are what actually help here, not Capybara's default 15s intra-page poll.
+  begin
+    eventually(timeout: 40) do
+      visit(capital_commitment_path(@capital_commitment))
+      page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+      expect(page).to have_content("Generated", wait: 1)
+    end
+  rescue RSpec::Expectations::ExpectationNotMetError => e
+    # Diagnostic-only: after 40s of genuine retries the doc still isn't showing.
+    # Dump what actually happened server-side instead of guessing blind next time.
+    @capital_commitment.reload
+    puts "DEBUG [doc gen]: capital_commitment##{@capital_commitment.id} documents.count = #{@capital_commitment.documents.count}"
+    puts "DEBUG [doc gen]: recent UserAlerts for entity##{@capital_commitment.entity_id} = " \
+         "#{UserAlert.where(entity_id: @capital_commitment.entity_id).order(created_at: :desc).limit(5).pluck(:level, :message, :created_at).inspect}"
+    puts "DEBUG [doc gen]: last mail delivered = #{ActionMailer::Base.deliveries.last&.subject.inspect}"
+    raise e
+  end
   generated_doc = Document.where(owner_tag: "Generated").last
   generated_doc.name.should
   if name.include?("Investor Statement")

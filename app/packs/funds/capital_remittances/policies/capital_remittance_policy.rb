@@ -24,8 +24,12 @@ class CapitalRemittancePolicy < FundBasePolicy
     update?
   end
 
+  # Permission only — whether notification can actually be sent right now (call approved,
+  # send flag on, doc-gen not skipped, recipients exist) is surfaced separately via
+  # CapitalRemittance#notification_blocked_reasons so the UI can grey the action out with
+  # an explanation instead of hiding it outright.
   def send_notification?
-    update? && record.capital_call.approved
+    update?
   end
 
   def update?

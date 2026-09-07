@@ -62,6 +62,22 @@ class CustomNotification < ApplicationRecord
 
   FUND_FALLBACK_OWNER_TYPES = %w[CapitalCall CapitalDistribution].freeze
 
+  # email_method values whose mailer attaches the owner's own generated/approved documents
+  # unconditionally (attach_all_files in CapitalRemittanceMailer / CapitalDistributionPaymentsMailer)
+  # - e.g. the call notice itself - regardless of what attachment_names says. Does NOT cover
+  # notify_capital_remittance_payment (CapitalRemittancePaymentMailer), which has no attach_all_files
+  # and so genuinely sends nothing unless attachment_names matches something.
+  AUTO_ATTACHED_EMAIL_METHODS = {
+    "CapitalCall" => %w[notify_capital_remittance reminder_capital_remittance],
+    "CapitalDistribution" => %w[send_notification]
+  }.freeze
+
+  # email_methods (for this owner_type/for_type) where leaving attachment_names blank still sends
+  # an attachment, so the "How to fill this in" hint can't claim blank means no attachments.
+  def auto_attach_email_methods
+    AUTO_ATTACHED_EMAIL_METHODS[owner_type] || AUTO_ATTACHED_EMAIL_METHODS[for_type] || []
+  end
+
   # { email_method => subject } of the fund-level default(s) this owner would otherwise fall back
   # to, so the form can warn that saving here overrides the fund's default for that email.
   def fund_default_notifications

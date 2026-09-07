@@ -1,0 +1,64 @@
+<%# One group on the index page. Locals: group, active_run (entity-wide active run or nil) %>
+<% last = group.latest_run %>
+<% can_run = policy(group).run? && active_run.nil? %>
+<div class="card shadow-sm h-100 art-group-card">
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <div>
+      <%= link_to group.name, allocation_run_template_group_path(group), class: "fw-bold text-decoration-none" %>
+      <% if group.description.present? %><div class="text-muted"><%= group.description %></div><% end %>
+    </div>
+    <div class="d-flex align-items-center gap-1">
+      <% if can_run %>
+        <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#runGroupModal-<%= group.id %>"
+                title="Choose a period, check every template, then run them in order">
+          <i class="ti ti-player-play"></i> Run
+        </button>
+      <% elsif active_run %>
+        <button class="btn btn-sm btn-outline-success" type="button" disabled data-bs-toggle="tooltip"
+                title="Another group is running. Only one group can run at a time for your entity.">
+          <i class="ti ti-player-play"></i> Run
+        </button>
+      <% end %>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-settings"></i></button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><%= link_to allocation_run_template_group_path(group), class: "dropdown-item" do %><i class="ti ti-eye me-1"></i> View<% end %></li>
+          <li><%= link_to edit_allocation_run_template_group_path(group), class: "dropdown-item" do %><i class="ti ti-pencil me-1"></i> Edit order and templates<% end %></li>
+          <li><%= link_to allocation_run_template_group_path(group, tab: "runs"), class: "dropdown-item" do %><i class="ti ti-history me-1"></i> Run history<% end %></li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <%= button_to allocation_run_template_group_path(group), method: :delete, class: "dropdown-item text-danger", form_class: "deleteButton",
+                          data: { action: "click->confirm#popup", turbo: false, msg: "Delete group \"#{group.name}\"? Its templates and its run history are kept." } do %>
+              <i class="ti ti-trash me-1"></i> Delete
+            <% end %>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="card-body py-2">
+    <ol class="art-order">
+      <% group.ordered_items.each do |item| %>
+        <li class="art-order__item">
+          <span class="art-pos" data-bs-toggle="tooltip" title="Run order"><%= item.position %></span>
+          <div class="flex-grow-1">
+            <%= link_to item.allocation_run_template.name, allocation_run_template_path(item.allocation_run_template), class: "fw-semibold text-decoration-none" %>
+            <span class="text-muted">· <%= item.allocation_run_template.fund.name %></span>
+            <div><%= template_option_badges(item.allocation_run_template) %></div>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+  </div>
+  <div class="card-footer py-2 d-flex align-items-center justify-content-between">
+    <% if last %>
+      <span>
+        Last run: <%= group_run_status_badge(last.status) %>
+        <span class="text-muted">for <%= l last.start_date %> – <%= l last.end_date %>, <%= l last.created_at, format: :abbr_date_time %></span>
+      </span>
+      <%= link_to "Details", allocation_group_run_path(last), class: "btn btn-sm btn-outline-info" %>
+    <% else %>
+      <span class="text-muted">Never run yet.</span>
+    <% end %>
+  </div>
+</div>

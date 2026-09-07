@@ -15,22 +15,24 @@
         there is no way to tell a scoped board from the firm-wide one. The name
         links back to that record: the board is normally opened from there, and
         this is the way back. Plain text when it has no show route. %>
-    <h1 class="h3 mb-0 text-gray-800">
+    <h1 class="h3 mb-0 text-gray-800 flex-shrink-0">
       <% if @board_scope_label.present? %>
         <% if @board_scope_path.present? %>
           <%= link_to @board_scope_label, @board_scope_path %>
         <% else %>
           <%= @board_scope_label %>
         <% end %>
-        &mdash;
+      <% else %>
+        Tasks Board
       <% end %>
-      Tasks Board
     </h1>
 
-    <div class="d-flex flex-wrap align-items-center gap-2">
+    <%# flex-nowrap + overflow-auto: the row scrolls horizontally instead of
+        wrapping to a second line when the heading + selects don't fit. %>
+    <div class="d-flex flex-nowrap align-items-center gap-2 overflow-auto">
       <%# w-auto keeps the selects on one horizontal row — form-select is
           width:100% by default, which made each one wrap to its own line %>
-      <%= form_with url: tasks_path, method: :get, local: true, class: "d-flex flex-wrap align-items-center gap-2" do %>
+      <%= form_with url: tasks_path, method: :get, local: true, class: "d-flex flex-nowrap align-items-center gap-2" do %>
         <%# Without this, submitting a filter would fall back to the list view %>
         <%= hidden_field_tag :board, true %>
         <%# Preserve the owner/deal scope the Board link carried over from the
@@ -61,7 +63,7 @@
         <%= select_tag :assigned_to_id,
                        options_for_select(@board_assignee_options, params[:assigned_to_id]),
                        include_blank: "All Assignees",
-                       class: "form-select form-select-sm w-auto",
+                       class: "form-select form-select-sm w-auto flex-shrink-0",
                        onchange: "this.form.requestSubmit();" %>
 
         <% if @board_deal %>
@@ -72,7 +74,7 @@
           <%= select_tag :deal_investor_id,
                          options_for_select(@board_stakeholder_options, @board_selected_deal_investor&.id),
                          include_blank: "All Investors",
-                         class: "form-select form-select-sm w-auto",
+                         class: "form-select form-select-sm w-auto flex-shrink-0",
                          onchange: "this.form.requestSubmit();" %>
         <% else %>
           <%# TaskList maps investor_id to the Investor itself PLUS any
@@ -81,7 +83,7 @@
           <%= select_tag :investor_id,
                          options_for_select(@board_stakeholder_options, @board_selected_investor&.id),
                          include_blank: "All Stakeholders",
-                         class: "form-select form-select-sm w-auto",
+                         class: "form-select form-select-sm w-auto flex-shrink-0",
                          onchange: "this.form.requestSubmit();" %>
         <% end %>
 
@@ -92,7 +94,7 @@
           <%= select_tag :touch_point_id,
                          options_for_select(@board_touch_point_owner.touch_point_options, params[:touch_point_id]),
                          include_blank: "All Contacts",
-                         class: "form-select form-select-sm w-auto",
+                         class: "form-select form-select-sm w-auto flex-shrink-0",
                          onchange: "this.form.requestSubmit();" %>
         <% end %>
 
@@ -102,7 +104,7 @@
           <%= select_tag "q[tags_cont]",
                          options_for_select(@board_tag_options, params.dig(:q, :tags_cont)),
                          include_blank: "All Tags",
-                         class: "form-select form-select-sm w-auto",
+                         class: "form-select form-select-sm w-auto flex-shrink-0",
                          onchange: "this.form.requestSubmit();" %>
         <% end %>
 
@@ -115,7 +117,7 @@
           <%= select_tag "q[category_eq]",
                          options_for_select(@board_category_options, params.dig(:q, :category_eq)),
                          include_blank: "All Categories",
-                         class: "form-select form-select-sm w-auto",
+                         class: "form-select form-select-sm w-auto flex-shrink-0",
                          onchange: "this.form.requestSubmit();" %>
         <% end %>
 
@@ -125,7 +127,7 @@
         <%= select_tag :due_filter,
                        options_for_select(Task::DUE_FILTERS, params[:due_filter]),
                        include_blank: "All Due Dates",
-                       class: "form-select form-select-sm w-auto",
+                       class: "form-select form-select-sm w-auto flex-shrink-0",
                        onchange: "this.form.requestSubmit();" %>
       <% end %>
 
@@ -140,7 +142,7 @@
                              touch_point_id: params[:touch_point_id],
                              due_filter: params[:due_filter],
                              q: base_query),
-                  class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center",
+                  class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center flex-shrink-0",
                   data: { turbo_frame: "_top" } do %>
         <i class="ti ti-list"></i> List
       <% end %>

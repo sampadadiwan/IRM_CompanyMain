@@ -1,0 +1,77 @@
+<%# Group show page: templates in run order and the run history, in tabs. %>
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800"><%= @group.name %></h1>
+      <div class="text-muted">Allocation run group<%= " · #{@group.description}" if @group.description.present? %></div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <%= link_to "Back", allocation_run_templates_path, class: "btn btn-outline-secondary" %>
+      <%= link_to edit_allocation_run_template_group_path(@group), class: "btn btn-outline-primary" do %><i class="ti ti-pencil"></i> Edit<% end %>
+      <% entity_active = AllocationGroupRun.active_for_entity(current_user.entity_id) %>
+      <% if policy(@group).run? && entity_active.nil? %>
+        <button class="btn btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#runGroupModal-<%= @group.id %>">
+          <i class="ti ti-player-play"></i> Run
+        </button>
+      <% elsif entity_active %>
+        <button class="btn btn-outline-success" type="button" disabled data-bs-toggle="tooltip" title="Another group is running. Only one group can run at a time for your entity.">
+          <i class="ti ti-player-play"></i> Run
+        </button>
+      <% end %>
+      <%= button_to allocation_run_template_group_path(@group), method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton d-inline",
+                    data: { action: "click->confirm#popup", turbo: false, msg: "Delete group \"#{@group.name}\"? Its templates and its run history are kept." } do %>
+        <i class="ti ti-trash"></i> Delete
+      <% end %>
+    </div>
+  </div>
+
+  <% if @active_run %>
+    <div class="alert alert-primary d-flex align-items-center justify-content-between">
+      <div><i class="ti ti-loader me-1"></i> This group is <%= @active_run.status %> for <%= l @active_run.start_date %> – <%= l @active_run.end_date %> (<%= @active_run.progress.join(" of ") %> templates done).</div>
+      <%= link_to "View progress", allocation_group_run_path(@active_run), class: "btn btn-sm btn-primary" %>
+    </div>
+  <% end %>
+
+  <div data-controller="tabs">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a class="nav-link <%= 'active' if @tab == 'templates' %>" data-bs-toggle="tab" href="#templates">Templates in run order <span class="badge bg-secondary-subtle text-secondary ms-1"><%= @group.items.size %></span></a>
+      <a class="nav-link <%= 'active' if @tab == 'runs' %>" data-bs-toggle="tab" href="#runs">Run history <span class="badge bg-secondary-subtle text-secondary ms-1"><%= @runs.size %></span></a>
+    </nav>
+    <div class="tab-content">
+      <div id="templates" class="tab-pane fade <%= 'show active' if @tab == 'templates' %>">
+        <table class="table table-bordered align-middle">
+          <thead>
+            <tr>
+              <th class="text-center" title="Run order">Position</th>
+              <th>Template</th>
+              <th>Fund</th>
+              <th>What it does</th>
+              <th>Statement document</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @group.ordered_items.each do |item| %>
+              <% tmpl = item.allocation_run_template %>
+              <tr>
+                <td class="text-center"><span class="art-pos"><%= item.position %></span></td>
+                <td><%= link_to tmpl.name, allocation_run_template_path(tmpl) %></td>
+                <td><%= link_to tmpl.fund.name, fund_path(tmpl.fund) %></td>
+                <td><%= template_option_badges(tmpl) %></td>
+                <td>
+                  <% if tmpl.generate_soa? %>
+                    <%= tmpl.statement_document&.name || content_tag(:span, "Missing", class: "badge bg-danger-subtle text-danger") %>
+                  <% else %>—<% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <div id="runs" class="tab-pane fade <%= 'show active' if @tab == 'runs' %>">
+        <%= render "allocation_group_runs/runs_table", runs: @runs, show_group: false %>
+      </div>
+    </div>
+  </div>
+
+  <%= render "allocation_run_template_groups/run_modal", group: @group, active_run: @active_run %>
+<% end %>

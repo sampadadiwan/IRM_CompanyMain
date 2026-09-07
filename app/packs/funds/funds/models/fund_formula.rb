@@ -1,6 +1,7 @@
 class FundFormula < ApplicationRecord
   include ForInvestor
   include Trackable.new
+  include WithValidationRules
 
   # Make all models searchable
   update_index('fund_formula') { self if index_record? }
@@ -47,6 +48,11 @@ class FundFormula < ApplicationRecord
   scope :without_ai_description, -> { where(ai_description: [nil, ""]) }
 
   validates :rule_type, length: { maximum: 50 }
+  # Prevents a typo'd or truncated rule_type (e.g. a copy-paste that dropped the
+  # "-Name"/"-EntryType" suffix) from silently matching no branch in
+  # AccountEntryAllocation::RunFormula's dispatch and producing zero entries with
+  # no error at all.
+  validates :rule_type, inclusion: { in: TYPES }, allow_blank: true
   validates :entry_type, length: { maximum: 60 }
   validates :name, length: { maximum: 125 }
   validates :formula, :entry_type, :name, :rule_type, presence: true

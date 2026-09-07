@@ -11,7 +11,13 @@ Given('I generate Crisil report for the fund') do
 end
 
 Then('the Crisil report should be generated') do
-  expect(page).to have_content("Fund report will be generated, please check back in a few mins.")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("... generation completed.") replaces the async "will be generated" flash
+  # before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Fund report will be generated|generation completed/i,
+    wait: 20
+  )
   sleep(5)
   # expect(page).to have_content("CRISIL Report generation completed.")
   crisil_report = Document.where("name like ?", "%CRISIL Report%").last

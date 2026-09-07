@@ -14,7 +14,16 @@ class AccountEntryPivot
        .gsub(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD]/u, "")
   end
 
-  def initialize(account_entries, group_by:, show_breakdown: true, page: nil, per_page: 20)
+  # precomputed_rows / precomputed_group_dates let a caller that has ALREADY aggregated
+  # this exact scope hand the results over, instead of making this class re-run two more
+  # DISTINCT scans of account_entries. AccountEntryReport passes both - it derives them
+  # from the two aggregate passes it already runs for the KPIs and the breakdown chart.
+  # Callers that pass nothing keep the original self-service behaviour.
+  #   precomputed_rows        - [[commitment_name, capital_commitment_id], ...]
+  #                             (only honoured when show_breakdown is false)
+  #   precomputed_group_dates - [[group_value, reporting_date], ...]
+  def initialize(account_entries, group_by:, show_breakdown: true, page: nil, per_page: 20,
+                 precomputed_rows: nil, precomputed_group_dates: nil)
     # We strip out order and includes to prevent the database from doing unnecessary work
     # while we are just gathering metadata for pagination and structure.
     @account_entries = account_entries.except(:includes, :order)
@@ -23,12 +32,20 @@ class AccountEntryPivot
     @page = page
     @per_page = per_page
     @row_limit_exceeded = false
+    # Breakdown mode keys rows by the parent_* columns too, which the 2-column
+    # precomputed shape cannot supply - ignore the injection there rather than
+    # silently build wrong keys.
+    @precomputed_rows = precomputed_rows unless show_breakdown
+    @precomputed_group_dates = precomputed_group_dates
   end
 
   def call
     # 1. Determine all unique rows for pagination using a minimal pluck
     # This avoids loading any full ActiveRecord objects.
-    all_rows = if @show_breakdown
+    all_rows = if @precomputed_rows
+                 # Caller already aggregated this scope - no query at all.
+                 @precomputed_rows.map { |name, id| [self.class.sanitize_str(name), id, nil, nil, nil] }
+               elsif @show_breakdown
                  @account_entries.distinct
                                  .pluck(:commitment_name, :capital_commitment_id, :parent_name, :parent_type, :parent_id)
                                  .map { |c, id, p, pt, pi| [self.class.sanitize_str(c), id, self.class.sanitize_str(p), self.class.sanitize_str(pt), pi] }
@@ -44,6 +61,12 @@ class AccountEntryPivot
     per_page_num = (@per_page.presence || 20).to_i
 
     if page_num.positive?
+      # Pagy raises OverflowError for a page outside 1..total_pages instead of clamping.
+      # Clamp ourselves so a stale bookmarked page, or a filter change that shrinks the
+      # row count, shows the nearest valid page instead of 500ing. Same approach as
+      # ReportBuilderController.
+      total_pages = all_rows.empty? ? 1 : (all_rows.size.to_f / per_page_num).ceil
+      page_num = page_num.clamp(1, total_pages)
       @pagy = Pagy.new(count: all_rows.size, page: page_num, items: per_page_num)
       limit = @pagy.respond_to?(:limit) ? @pagy.limit : @pagy.vars[:items]
       @rows = all_rows[@pagy.offset, limit] || []
@@ -105,13 +128,19 @@ class AccountEntryPivot
     end
 
     # 4. Consistent Columns (Groups/Dates) - Minimal memory footprint
-    group_dates = @account_entries.distinct.pluck(@group_by_field, :reporting_date)
-                                  .map { |g, d| [self.class.sanitize_str(g), d] }
+    group_dates = if @precomputed_group_dates
+                    # Caller already aggregated this scope - no query at all.
+                    @precomputed_group_dates.map { |g, d| [self.class.sanitize_str(g), d] }
+                  else
+                    @account_entries.distinct.pluck(@group_by_field, :reporting_date)
+                                    .map { |g, d| [self.class.sanitize_str(g), d] }
+                  end
     @groups = group_dates.map(&:first).uniq
-    @dates_by_group = {}
-    @groups.each do |group|
-      @dates_by_group[group] = group_dates.select { |g, _| g == group }.map(&:last).sort
-    end
+    # Bucket in one pass. The previous `group_dates.select` inside the group loop was
+    # O(groups x pairs), which is slow enough to matter on a wide report where a fund
+    # has hundreds of entry names across many reporting dates.
+    buckets = group_dates.each_with_object(Hash.new { |h, k| h[k] = [] }) { |(g, d), acc| acc[g] << d }
+    @dates_by_group = @groups.index_with { |group| buckets[group].uniq.sort }
 
     self
   end

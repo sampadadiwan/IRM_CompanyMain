@@ -65,6 +65,11 @@ def dr_assess_resolve_env(env_name)
   region = ENV["AWS_REGION"].to_s
   raise "AWS_REGION not set in .env.#{env_name}" if region.empty?
 
+  # Confirm we will read this env's state, not another env's, and make the
+  # passphrase available before anything shells out to pulumi. See
+  # ensure_pulumi_backend! in aws_utils.rb.
+  ensure_pulumi_backend!(env_name)
+
   cfg.merge(
     env_name: env_name,
     region: region,
@@ -236,9 +241,15 @@ def dr_account_guard!(env)
   end
 
   if cli_account && cli_account != expected
-    abort "\n❌ ABORT: your shell's AWS credentials are account #{cli_account}, but #{env[:env_name]} " \
-          "lives in #{expected}.\n   Export the right account's keys before assessing or repairing " \
-          "#{env[:env_name]}.\n   (Override intentionally with EXPECTED_AWS_ACCOUNT=#{cli_account}.)"
+    # aws:environment now exports the env's credentials into ENV, so subprocesses
+    # no longer run as whoever the operator happened to be — meaning this
+    # compares the keys in config/credentials/#{env[:env_name]}.yml.enc against
+    # the account that env is supposed to live in. A mismatch is a wrong or
+    # rotated key in the credentials file, not a stale shell export.
+    abort "\n❌ ABORT: the AWS credentials for #{env[:env_name]} resolve to account #{cli_account}, " \
+          "but #{env[:env_name]} lives in #{expected}.\n   Check AWS_ACCESS_KEY_ID in " \
+          "config/credentials/#{env[:env_name]}.yml.enc (and that the matching .key is the right one)." \
+          "\n   (Override intentionally with EXPECTED_AWS_ACCOUNT=#{cli_account}.)"
   end
 
   if sdk_account && sdk_account != expected
@@ -696,7 +707,9 @@ namespace :dr do
     # Reuses the hourly alert's own logic, so assess and the alert can never
     # disagree about what "stale" means.
     guarded.call("Backup freshness") do
-      failures = DbBackupFreshnessJob.new.collect_failures
+      # See the note in aws.rake's dr_readiness: without env_name the job uses
+      # the default credentials, not this env's.
+      failures = DbBackupFreshnessJob.new.collect_failures(env_name: env[:env_name])
       if failures.empty?
         check.call("Backup freshness", :ok, "primary + replica buckets within thresholds")
       else
