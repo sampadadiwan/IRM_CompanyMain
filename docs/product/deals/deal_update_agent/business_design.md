@@ -65,6 +65,7 @@ The sender receives a confirmation email showing exactly what was created:
 ### 5. When the Agent Is Unsure → Warehouse + Reply
 
 If the agent can't confidently match the stakeholder or determine the intent, the email goes to the **Warehouse** — a holding area on the deal page. The sender receives a reply email explaining why it couldn't be auto-filed:
+- **Conflicting stakeholder** — the subject line mentions one investor but the email body mentions a different one (e.g., subject says "Update on Sequoia" but body talks about "Met with Accel today"). The agent can't determine which investor the update is about. Sender is advised to send separate emails — one per investor.
 - **Unknown intent** — the agent couldn't determine if it was a meeting note or a task
 - **Unmatched stakeholder** — the investor name didn't match anyone on the deal
 
@@ -108,13 +109,13 @@ After resolving the last warehouse item, the page redirects back to the deal.
 The Warehouse tab appears on the deal page when there are pending items. Each item shows:
 - When it was received
 - Who sent it
-- The detected intent (Meeting Note / Task / Unknown)
+- The detected intent badge: **Meeting Note** (blue), **Task** (blue), **Conflicting** (yellow — subject and body named different investors), or **Unknown** (grey)
 - A preview of the content
 - Actions: File (pick stakeholder) or Discard
 
-When filing as a **Task**, additional fields appear:
-- **Due date** — pre-filled from the AI parse if available, editable before filing
-- **Assignee** — dropdown of all team members with deal access, so the reviewer can assign to the right person
+When filing as a **Task**, additional fields appear inline:
+- **Due date** — calendar picker (read-only text input, consistent with app-wide date format), pre-filled from the AI parse if available
+- **Assignee** — dropdown of team members with direct deal access only (not all company admins)
 
 After the last item is resolved (filed or discarded), the page redirects to the deal instead of staying on the empty warehouse list.
 
