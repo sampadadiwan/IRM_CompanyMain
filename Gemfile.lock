@@ -39,7 +39,7 @@ GIT
 
 GIT
   remote: https://github.com/thimmaiah/rupees.git
-  revision: db8a7e8b7b4ae6f1728831d38cdb094c18aba30b
+  revision: 04c2ed68bf2f642715968c25e1f40931401b7338
   specs:
     rupees (0.1.0)
 
