@@ -1,11 +1,22 @@
-<%# Warehoused reply — the email couldn't be auto-filed by the Deal Update Agent. %>
+<%# Warehoused reply — the email couldn't be auto-filed by the Deal Update Agent.
+    Three reasons: conflicting_stakeholder, unknown_intent, unmatched_stakeholder.
+    @see DealIngestMailer#warehoused for the mailer action %>
 <h2>Your update needs manual review</h2>
 
 <p>
   We received your email for <strong><%= @deal.name %></strong>, but couldn't file it automatically.
 </p>
 
-<% if @reason == "unknown_intent" %>
+<% if @reason == "conflicting_stakeholder" %>
+  <p>
+    <strong>Reason:</strong> Your subject line mentions
+    <strong>"<%= @subject_stakeholder_string %>"</strong>
+    but the email body refers to
+    <strong>"<%= @stakeholder_string %>"</strong>.
+    The agent couldn't determine which investor you meant.
+    Try sending separate emails — one per investor.
+  </p>
+<% elsif @reason == "unknown_intent" %>
   <p>
     <strong>Reason:</strong> We couldn't determine whether this was a meeting note or a task.
     Try rephrasing your email to clearly describe a meeting/call (for a note) or an action item (for a task).

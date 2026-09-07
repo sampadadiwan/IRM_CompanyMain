@@ -205,14 +205,15 @@ class DealIngestProcessor
   end
 
   # Send a warehoused reply to the sender explaining why the email
-  # couldn't be auto-filed. Two reasons:
+  # couldn't be auto-filed. Three reasons:
+  # - conflicting_stakeholder: subject and body name different stakeholders
   # - unknown_intent: the LLM couldn't determine note vs task
   # - unmatched_stakeholder: the stakeholder name didn't match any deal investor
   #
   # @param parsed [Hash] LLM parse result
   # @return [void]
   def send_warehoused_reply!(parsed)
-    reason = parsed["intent"] == "unknown" ? "unknown_intent" : "unmatched_stakeholder"
+    reason = warehouse_reason(parsed)
 
     DealIngestMailer.with(
       entity_id: @deal.entity_id,
@@ -220,8 +221,27 @@ class DealIngestProcessor
       deal: @deal,
       reason: reason,
       body_preview: parsed["body"],
-      stakeholder_string: parsed["stakeholder_string"]
+      stakeholder_string: parsed["stakeholder_string"],
+      subject_stakeholder_string: parsed["subject_stakeholder_string"]
     ).warehoused.deliver_later
+  end
+
+  # Determine the warehouse reason from the parse result.
+  # Conflict check takes priority — if subject and body name
+  # different stakeholders, that's the reason regardless of intent.
+  #
+  # @param parsed [Hash] LLM parse result
+  # @return [String] one of "conflicting_stakeholder", "unknown_intent", "unmatched_stakeholder"
+  def warehouse_reason(parsed)
+    if parsed["subject_stakeholder_string"].present? &&
+       parsed["stakeholder_string"].present? &&
+       parsed["subject_stakeholder_string"].downcase != parsed["stakeholder_string"].downcase
+      "conflicting_stakeholder"
+    elsif parsed["intent"] == "unknown"
+      "unknown_intent"
+    else
+      "unmatched_stakeholder"
+    end
   end
 
   # Parse a date string safely, returning nil for invalid dates.
