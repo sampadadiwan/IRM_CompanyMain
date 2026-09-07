@@ -17,14 +17,16 @@
         class: "form-select form-select-sm", style: "width: auto; min-width: 150px;" %>
     <%= f.select :intent,
         [["Meeting Note", "meeting_note"], ["Task", "task"]],
-        {},
+        { selected: "meeting_note" },
         class: "form-select form-select-sm", style: "width: auto;",
         data: { warehouse_resolve_target: "intentSelect", action: "warehouse-resolve#toggleTaskFields" } %>
     <%= f.submit "File", class: "btn btn-success btn-sm" %>
   </div>
 
-  <%# Row 2: task-specific fields — shown/hidden by Stimulus controller %>
-  <div class="d-flex flex-wrap gap-1 align-items-center mb-1" data-warehouse-resolve-target="taskFields" hidden>
+  <%# Row 2: task-specific fields — shown/hidden by Stimulus controller.
+      Uses flex-wrap and gap-1 only when visible; d-flex is set via JS
+      to avoid !important override on the hidden attribute. %>
+  <div class="flex-wrap gap-1 align-items-center mb-1" data-warehouse-resolve-target="taskFields" hidden>
     <% parsed_due = item.agent_ingested_email.parse_json&.dig("due_date") %>
     <%= f.date_field :due_date,
         value: parsed_due,
