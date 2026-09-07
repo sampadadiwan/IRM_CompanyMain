@@ -33,11 +33,15 @@
             <tr>
               <td><%= l(email.received_at, format: :short) %></td>
               <td><%= email.sender_user.full_name %></td>
+              <%# Intent badge — show "Conflicting" when subject/body stakeholders differ %>
               <td>
-                <% case item.parsed_intent %>
-                <% when "meeting_note" %>
+                <% if parsed["subject_stakeholder_string"].present? &&
+                      parsed["stakeholder_string"].present? &&
+                      parsed["subject_stakeholder_string"].downcase != parsed["stakeholder_string"].downcase %>
+                  <span class="badge bg-warning text-dark">Conflicting</span>
+                <% elsif item.parsed_intent == "meeting_note" %>
                   <span class="badge bg-info">Meeting Note</span>
-                <% when "task" %>
+                <% elsif item.parsed_intent == "task" %>
                   <span class="badge bg-primary">Task</span>
                 <% else %>
                   <span class="badge bg-secondary">Unknown</span>
