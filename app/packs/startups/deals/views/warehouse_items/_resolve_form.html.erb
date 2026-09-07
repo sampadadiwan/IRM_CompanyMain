@@ -32,7 +32,7 @@
         value: parsed_due,
         class: "form-control form-control-sm",
         style: "width: auto;",
-        placeholder: "Due date" %>
+        readonly: true %>
     <%= f.select :assigned_to_id,
         team_members.map { |u| [u.full_name, u.id] },
         { prompt: "Assignee..." },
