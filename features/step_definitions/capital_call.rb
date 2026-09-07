@@ -1040,7 +1040,7 @@ Then('call notice is generated for the remittances') do
   # ("N documents generated successfully") replaces the async "started" flash
   # before any fixed sleep could catch it.  Accept either message.
   expect(page).to have_content(
-    /Documentation generation started|documents generated/i,
+    /Documentation generation started|documents? generated/i,
     wait: 20
   )
 end
@@ -1052,8 +1052,10 @@ Then('remittance notice must be generated for each remittance') do
     expected_name = "#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}"
     # The generate-docs job runs inline but ActionCable broadcasts "started" before
     # docs are committed, so the previous step can return while the job is mid-flight.
-    # Retry until this remittance's document lands in the DB.
-    eventually { cr.documents.pluck(:name).include?(expected_name).should == true }
+    # Retry until this remittance's document lands in the DB. The default 15s wait
+    # is too tight when many parallel workers are all driving LibreOffice conversions
+    # at once; give it the same 20s used elsewhere for this exact race.
+    eventually(timeout: 20) { cr.documents.pluck(:name).include?(expected_name).should == true }
   end
 end
 
@@ -1079,10 +1081,22 @@ Then('I send the capital call notification') do
   expect(page).to have_no_css("#ruleValidationModal.show")
   expect(page).to have_no_css(".modal-backdrop")
 
-  within "#capital_call_#{@capital_call.id}_actions" do
-    click_on("Actions")
+  # The previous step's approve submission can still be re-rendering this actions
+  # panel (e.g. a Turbo Stream update after "Confirm & Save"), detaching the "Actions"
+  # button between when Capybara finds it and when Playwright clicks it. Same
+  # retry-once pattern as "I switch to becoming the advisor for" above.
+  attempts = 0
+  begin
+    within "#capital_call_#{@capital_call.id}_actions" do
+      click_on("Actions")
+    end
+    click_on("Send Notification")
+  rescue Playwright::Error => e
+    attempts += 1
+    raise if attempts > 1 || !e.message.include?("not attached to the DOM")
+
+    retry
   end
-  click_on("Send Notification")
 
   # Wait for the fade-in transition to finish (Bootstrap adds "show" once shown.bs.modal fires)
   # before clicking inside it, otherwise the click can race the animation.
@@ -1135,8 +1149,12 @@ Then('the notification must be sent to the investors where the call notice was g
       # The approve action submits via Turbo (requestSubmit), which Capybara's
       # load-state wait doesn't block on, so CapitalCallJob may still be
       # in-flight when this step runs. Retry until the notification email lands.
+      # This scenario (multiple KYC-level remittances/notices) has repeatedly shown
+      # up as the last one still timing out under parallel load even after the
+      # doc-gen and stale-element races earlier in the same flow were fixed, so it
+      # gets more headroom than the plain single-remittance case.
       current_email = nil
-      eventually do
+      eventually(timeout: 30) do
         current_email = nil
         emails_sent_to(nu.email).each do |email|
           current_email = email if email.subject.include?("#{cr.fund.name}: #{cr.capital_call.name}")
@@ -1204,7 +1222,7 @@ Then('remittance notice must be generated for the latest remittance for each kyc
     if group.size == 1
       cr = group.first
       puts "Only one remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id}, checking if notice is generated"
-      eventually { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
+      eventually(timeout: 20) { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
       next
     end
 
@@ -1215,7 +1233,7 @@ Then('remittance notice must be generated for the latest remittance for each kyc
     end
     group.last.tap do |cr|
       puts "Checking remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id} IS generated"
-      eventually { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
+      eventually(timeout: 20) { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
     end
   end
 end
@@ -1376,9 +1394,15 @@ Then('the corresponding remittances should be created with fees') do
 end
 
 Then('the generated doc must be attached to the capital remittances') do
-  CapitalRemittance.find_each do |cc|
-    docs = cc.documents.where(from_template_id: @call_template.id)
-    docs.count.should
+  @capital_call.capital_remittances.each do |cc|
+    # The generate-docs job runs inline but ActionCable broadcasts "started" before docs
+    # are committed, so the previous step can return while the job is mid-flight. Retry
+    # until this remittance's document lands in the DB (same gap as elsewhere in this file).
+    docs = nil
+    eventually(timeout: 20) do
+      docs = cc.documents.where(from_template_id: @call_template.id)
+      expect(docs.count).to eq(1)
+    end
     puts "Checking documents for remittance #{cc.id}. Got #{docs.first.name}"
     visit(capital_remittance_path(cc))
     within("#remittance_details") do
@@ -1414,7 +1438,7 @@ Then('each remittance must have exactly one call notice from the newest call tem
   @capital_call.capital_remittances.each do |cr|
     expected_name = "#{@call_template.name} - #{cr.investor_kyc} - #{cr.folio_id}"
     # The job runs inline but its "started" broadcast fires before docs are committed; retry.
-    eventually { expect(cr.documents.where(name: expected_name).count).to eq(1) }
+    eventually(timeout: 20) { expect(cr.documents.where(name: expected_name).count).to eq(1) }
 
     notice = cr.documents.find_by(name: expected_name)
     # Rendered once, from the newest of the two same-named templates

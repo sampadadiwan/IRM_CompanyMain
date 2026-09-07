@@ -23,7 +23,7 @@ module CapitalRemittanceCallBasis
     self.folio_call_amount_cents += folio_capital_fee_cents + folio_investment_amount_cents
     self.call_amount_cents = computed_amount_cents + capital_fee_cents + investment_amount_cents
 
-    logger.error "call_basis_percentage: computed_amount_cents = #{computed_amount_cents}, \
+    logger.info "call_basis_percentage: computed_amount_cents = #{computed_amount_cents}, \
                   call_amount_cents = #{call_amount_cents}, \
                   folio_call_amount_cents = #{folio_call_amount_cents} \
                   for #{capital_commitment} in #{capital_call}"
@@ -42,9 +42,9 @@ module CapitalRemittanceCallBasis
 
     # Log the result for debugging purposes.
     if ae.nil?
-      logger.error "No #{account_entry_name} found for #{capital_commitment} in #{capital_call}"
+      logger.warn "No #{account_entry_name} found for #{capital_commitment} in #{capital_call}"
     else
-      logger.error "#{ae.amount_cents} found for #{capital_commitment} in #{capital_call.to_json}"
+      logger.info "#{ae.amount_cents} found for #{capital_commitment} in #{capital_call.to_json}"
     end
 
     # Compute the call amount based on the retrieved percentage.
@@ -57,7 +57,7 @@ module CapitalRemittanceCallBasis
     )
 
     # Log computation details for auditing purposes.
-    logger.error "call_basis_account_entry: computed_amount_cents = #{computed_amount_cents}, \
+    logger.info "call_basis_account_entry: computed_amount_cents = #{computed_amount_cents}, \
                   call_amount_cents = #{call_amount_cents}, \
                   folio_call_amount_cents = #{folio_call_amount_cents} \
                   for #{capital_commitment} in #{capital_call}"
@@ -87,7 +87,7 @@ module CapitalRemittanceCallBasis
                       end
     # if percentage is less than -100 then limit to -100.0
     self.percentage = -100.0 if percentage < -100.0
-    logger.error "call_basis_upload: computed_amount_cents = #{computed_amount_cents}, \
+    logger.info "call_basis_upload: computed_amount_cents = #{computed_amount_cents}, \
                   call_amount_cents = #{call_amount_cents}, \
                   folio_call_amount_cents = #{folio_call_amount_cents} \
                   for #{capital_commitment} in #{capital_call}"
