@@ -104,14 +104,15 @@ class WarehouseItemsController < ApplicationController
     end
   end
 
-  # Fetch all users who have access to this deal.
-  # Used to populate the assignee dropdown in the resolve form.
+  # Fetch users with explicit access to this deal.
+  # Only includes users with a direct AccessRight on the deal —
+  # company admins are excluded because they aren't necessarily
+  # working on the deal and inflate the assignee dropdown.
   #
   # @return [ActiveRecord::Relation<User>]
   def deal_team_members
     access_user_ids = AccessRight.where(owner: @deal).pluck(:user_id)
-    admin_user_ids = User.with_role(:company_admin, @deal.entity).pluck(:id)
-    User.where(id: (access_user_ids + admin_user_ids).uniq).order(:first_name, :last_name)
+    User.where(id: access_user_ids).order(:first_name, :last_name)
   end
 
   # Resolve the assignee for a task filed from the warehouse.

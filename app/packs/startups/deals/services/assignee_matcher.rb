@@ -56,14 +56,13 @@ class AssigneeMatcher
 
   private
 
-  # Fetch all users who have access to this deal.
-  # Includes users with AccessRight on the deal and company_admins.
+  # Fetch users with explicit access to this deal.
+  # Only includes users with a direct AccessRight — company admins
+  # excluded to avoid matching against users not working on the deal.
   #
-  # @return [Array<User>]
+  # @return [ActiveRecord::Relation<User>]
   def deal_team_members
     access_user_ids = AccessRight.where(owner: @deal).pluck(:user_id)
-    admin_user_ids = User.with_role(:company_admin, @deal.entity).pluck(:id)
-
-    User.where(id: (access_user_ids + admin_user_ids).uniq)
+    User.where(id: access_user_ids)
   end
 end
