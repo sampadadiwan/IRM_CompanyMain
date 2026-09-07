@@ -45,7 +45,7 @@
               </td>
               <td><%= truncate((parsed["body"] || email.raw_payload).to_s, length: 80) %></td>
               <td>
-                  <%= render "warehouse_items/resolve_form", item: item, deal: @deal, deal_investors: @deal_investors %>
+                  <%= render "warehouse_items/resolve_form", item: item, deal: @deal, deal_investors: @deal_investors, team_members: @team_members %>
               </td>
             </tr>
           <% end %>
