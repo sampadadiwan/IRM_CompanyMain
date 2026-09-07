@@ -1,6 +1,6 @@
 <%# Inline resolve controls for a single warehouse item.
     Lets the user pick a stakeholder and file as note/task, or discard.
-    When filing as a task, shows due date and assignee fields on a second row.
+    When filing as a task, due date and assignee appear on a second row via Stimulus.
     @param item [WarehouseItem] the warehouse item to resolve
     @param deal [Deal] the parent deal (for the form URL and investor list)
     @param deal_investors [Array<DealInvestor>] investors on the deal
@@ -9,41 +9,40 @@
     data: { controller: "warehouse-resolve" } do |f| %>
   <%= f.hidden_field :resolution, value: "filed" %>
 
-  <%# Row 1: stakeholder, intent, file/discard buttons %>
-  <div class="d-flex flex-wrap gap-1 align-items-center mb-1">
+  <%# Row 1: stakeholder + intent + File button %>
+  <div class="d-flex gap-1 align-items-center mb-1">
     <%= f.select :deal_investor_id,
         deal_investors.map { |di| [di.investor.investor_name, di.id] },
         { prompt: "Pick stakeholder..." },
-        class: "form-select form-select-sm", style: "width: auto; min-width: 150px;" %>
+        class: "form-select form-select-sm", style: "width: 160px;" %>
     <%= f.select :intent,
         [["Meeting Note", "meeting_note"], ["Task", "task"]],
         { selected: "meeting_note" },
-        class: "form-select form-select-sm", style: "width: auto;",
+        class: "form-select form-select-sm", style: "width: 160px;",
         data: { warehouse_resolve_target: "intentSelect", action: "warehouse-resolve#toggleTaskFields" } %>
     <%= f.submit "File", class: "btn btn-success btn-sm" %>
   </div>
 
-  <%# Row 2: task-specific fields — shown/hidden by Stimulus controller.
-      Uses flex-wrap and gap-1 only when visible; d-flex is set via JS
-      to avoid !important override on the hidden attribute. %>
-  <div class="flex-wrap gap-1 align-items-center mb-1" data-warehouse-resolve-target="taskFields" hidden>
+  <%# Row 2: task-only fields — due date + assignee; toggled by Stimulus %>
+  <div class="gap-1 align-items-center" data-warehouse-resolve-target="taskFields" hidden style="display: none;">
     <% parsed_due = item.agent_ingested_email.parse_json&.dig("due_date") %>
-    <%= f.date_field :due_date,
-        value: parsed_due,
-        class: "form-control form-control-sm",
-        style: "width: auto;",
-        readonly: true %>
+    <div class="d-inline-block" style="width: 160px; vertical-align: middle;">
+      <%= f.date_field :due_date,
+          value: parsed_due,
+          class: "form-control form-control-sm",
+          readonly: true %>
+    </div>
     <%= f.select :assigned_to_id,
         team_members.map { |u| [u.full_name, u.id] },
         { prompt: "Assignee..." },
-        class: "form-select form-select-sm", style: "width: auto; min-width: 130px;" %>
+        class: "form-select form-select-sm d-inline-block", style: "width: 160px; vertical-align: middle;" %>
   </div>
 <% end %>
 
 <%= button_to resolve_deal_warehouse_item_path(deal, item),
     method: :patch,
     params: { resolution: "discarded" },
-    class: "btn btn-outline-danger btn-sm",
+    class: "btn btn-outline-danger btn-sm mt-1",
     data: { turbo_confirm: "Discard this email? It won't be recoverable." } do %>
   <i class="ti ti-trash"></i>
 <% end %>

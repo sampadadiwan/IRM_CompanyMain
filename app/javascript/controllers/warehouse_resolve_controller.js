@@ -16,7 +16,7 @@ export default class extends Controller {
     const isTask = this.intentSelectTarget.value === "task"
     if (isTask) {
       this.taskFieldsTarget.removeAttribute("hidden")
-      this.taskFieldsTarget.style.display = "flex"
+      this.taskFieldsTarget.style.display = "block"
     } else {
       this.taskFieldsTarget.setAttribute("hidden", "")
       this.taskFieldsTarget.style.display = "none"
