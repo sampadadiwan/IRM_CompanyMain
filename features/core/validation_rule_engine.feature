@@ -268,6 +268,67 @@ Feature: Validation Rule Engine
     When the validation rules are evaluated for the capital call
     Then the rule "capital_call_notices_not_generated" fires as a "warning"
 
+  # Open Question 6 (docs/user_guides/capital_call_actions_and_notifications_matrix.md): a fund
+  # manager should learn about a missing investor subscription before they try to send anything,
+  # not only when a Send Call Notification button greys out later. Approve is where that
+  # proactive check now happens.
+  Scenario: Capital call with an investor who has no notification subscribers fires a warning
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And the entity has opted in to all validation rules
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance for an investor with no notification subscribers
+    When the validation rules are evaluated for the capital call
+    Then the rule "capital_call_investors_without_notification_subscribers" fires as a "warning"
+    And the rule message includes "Unsubscribed Investor"
+
+  Scenario: Capital call where every investor has a notification subscriber does not fire the warning
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And the entity has opted in to all validation rules
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance for an investor with a subscribed notification user
+    When the validation rules are evaluated for the capital call
+    Then the rule "capital_call_investors_without_notification_subscribers" does not fire
+
+  # Every send path skips a commitment flagged skip_doc_gen, so a missing subscription there is
+  # not actionable and must not be reported.
+  Scenario: Capital call ignores unsubscribed investors whose commitment skips doc generation
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And the entity has opted in to all validation rules
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance for an unsubscribed investor whose commitment skips doc generation
+    When the validation rules are evaluated for the capital call
+    Then the rule "capital_call_investors_without_notification_subscribers" does not fire
+
+  # ── CapitalCommitment rules ────────────────────────────────────────────────────
+
+  # The commitment-time half of the Question 6 proactive check: the same "nobody subscribed"
+  # definition as the CapitalCall rule, evaluated when an investor is added to a fund.
+  Scenario: Commitment for an investor with no notification subscribers fires a warning
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is a capital commitment for an investor with no notification subscribers
+    When the validation rules are evaluated for the capital commitment
+    Then the rule "capital_commitment_investor_without_notification_subscribers" fires as a "warning"
+    And the rule message includes "Unsubscribed Investor"
+
+  Scenario: Commitment for an investor with a subscribed notification user does not fire the warning
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is a capital commitment for an investor with a subscribed notification user
+    When the validation rules are evaluated for the capital commitment
+    Then the rule "capital_commitment_investor_without_notification_subscribers" does not fire
+
+  Scenario: Commitment that skips doc generation does not fire the warning
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is a capital commitment that skips doc generation for an investor with no notification subscribers
+    When the validation rules are evaluated for the capital commitment
+    Then the rule "capital_commitment_investor_without_notification_subscribers" does not fire
+
+  Scenario: Commitment subscription warning can be switched off per entity
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is a validation rule override for "capital_commitment_investor_without_notification_subscribers" with "enabled=false"
+    And there is a capital commitment for an investor with no notification subscribers
+    When the validation rules are evaluated for the capital commitment
+    Then the rule "capital_commitment_investor_without_notification_subscribers" does not fire
+
   # ── CapitalRemittance rules ───────────────────────────────────────────────────
 
   Scenario: Remittance with no generated notice fires a warning

@@ -27,6 +27,20 @@
     expect(page).to have_content("Capital commitment was successfully")
   end
 
+  # The commitment importer raises one persisted UserAlert (not a per-row note) for investors
+  # with nobody subscribed to Capital Call notifications — see
+  # ImportCapitalCommitment#warn_about_unsubscribed_investors. The name list is capped at 5, so
+  # only the first few names (sorted) are asserted; the count in the message covers the rest.
+  Then('the import should have raised a warning alert naming every imported investor without Capital Call subscribers') do
+    alert = UserAlert.where(user_id: @user.id, level: "warning").order(:id).last
+    expect(alert).not_to be_nil, "expected a warning UserAlert for the importing user, found none"
+    expect(alert.message).to include("no investor contacts are subscribed to Capital Call notifications")
+
+    names = ImportUpload.last.imported_data.includes(:investor).map { |cc| cc.investor.investor_name }.uniq.sort
+    expect(alert.message).to include("#{names.size} investor(s)")
+    names.first(ImportCapitalCommitment::MAX_NAMES_IN_ALERT).each { |name| expect(alert.message).to include(name) }
+  end
+
   Then('I should see the capital commitment details') do
     # find(".show_details_link").click
 
@@ -194,7 +208,13 @@ Then('when the capital commitment docs are generated') do
     click_on("Generate All Documents")
     #sleep((1)
     click_on("Proceed")
-    expect(page).to have_content("Documentation generation started")
+    # With :inline job adapter the job runs synchronously and the completion flash
+    # ("N documents generated successfully") replaces the async "started" flash
+    # before this assertion could catch it. Accept either message.
+    expect(page).to have_content(
+      /Documentation generation started|documents generated/i,
+      wait: 20
+    )
     sleep(8)
     # expect(page).to have_content("generated successfully")
   end

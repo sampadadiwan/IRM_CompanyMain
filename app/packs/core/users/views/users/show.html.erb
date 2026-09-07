@@ -225,8 +225,11 @@
 
       <div>
         <%= link_to  t_common(:edit) , edit_user_path(@user), {class: "btn btn-outline-primary ti ti-pencil" } if policy(@user).update? %>
-      </div>
 
+        <%= link_to root_path, class: "btn btn-outline-secondary ti ti-arrow-left" do %>
+          Back to Dashboard
+        <% end %>
+      </div>
 
     </div>
   </div>

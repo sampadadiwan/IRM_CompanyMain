@@ -1,0 +1,81 @@
+<%#
+  Progress panel — rendered inside the group_run_progress Turbo Frame and reloaded every few
+  seconds by the auto-refresh controller while the run is queued or running. The controller
+  sits on this inner div so each reload re-reads the fresh "active" value.
+  Locals: group_run, items
+%>
+<% done, total = group_run.progress %>
+<div data-controller="auto-refresh"
+     data-auto-refresh-url-value="<%= allocation_group_run_path(group_run) %>"
+     data-auto-refresh-active-value="<%= group_run.active? %>"
+     data-auto-refresh-interval-value="5000">
+
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+    <div>
+      <% if group_run.active? %>
+        <i class="ti ti-loader me-1"></i> <strong><%= done %> of <%= total %></strong> templates done — this page refreshes itself every few seconds.
+      <% elsif group_run.success? %>
+        <i class="ti ti-circle-check text-success me-1"></i> <strong>All <%= total %> templates finished.</strong> Review each allocation run and lock it when you are satisfied.
+      <% else %>
+        <i class="ti ti-alert-triangle text-danger me-1"></i> <strong><%= group_run.message %></strong>
+        Fix the cause, then run the group again for the same period — the templates that succeeded can be skipped.
+      <% end %>
+    </div>
+    <div class="text-muted">Duration: <%= format_run_duration(group_run.duration) %></div>
+  </div>
+
+  <div class="progress art-progress art-progress--lg mb-3" data-bs-toggle="tooltip" title="<%= done %> of <%= total %> templates finished">
+    <div class="progress-bar <%= group_run.failed? ? 'bg-danger' : 'bg-success' %> <%= 'progress-bar-striped progress-bar-animated' if group_run.active? %>"
+         role="progressbar" style="width: <%= group_run.progress_percent %>%" aria-valuenow="<%= group_run.progress_percent %>" aria-valuemin="0" aria-valuemax="100"></div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead>
+        <tr>
+          <th class="text-center" title="Run order">#</th>
+          <th>Template</th>
+          <th>Fund</th>
+          <th>Status</th>
+          <th>Started</th>
+          <th>Duration</th>
+          <th>Details</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.each do |item| %>
+          <tr class="art-item-row--<%= item.status %>">
+            <td class="text-center"><span class="art-pos"><%= item.position %></span></td>
+            <td>
+              <% if item.allocation_run_template %>
+                <%= link_to item.template_name, allocation_run_template_path(item.allocation_run_template), data: { turbo_frame: "_top" } %>
+              <% else %>
+                <%= item.template_name %> <span class="text-muted">(template since deleted)</span>
+              <% end %>
+            </td>
+            <td><%= link_to item.fund.name, fund_path(item.fund), data: { turbo_frame: "_top" } %></td>
+            <td><%= group_run_item_status_badge(item.status) %></td>
+            <td><%= item.started_at ? l(item.started_at, format: :abbr_date_time) : "—" %></td>
+            <td><%= format_run_duration(item.duration) %></td>
+            <td>
+              <%= item.message %>
+              <% if item.allocation_run && item.allocation_run.locked %>
+                <span class="badge bg-secondary-subtle text-secondary" data-bs-toggle="tooltip" title="The allocation run has been locked">Locked</span>
+              <% end %>
+            </td>
+            <td class="text-nowrap">
+              <% if item.allocation_run %>
+                <%= link_to "Account entries",
+                            account_entries_path(filter: true, fund_id: item.fund_id, q: ransack_query_params_multiple([["allocation_run_id", :eq, item.allocation_run_id], ["reporting_date", :eq, group_run.end_date.to_fs(:db)]])),
+                            class: "btn btn-sm btn-outline-info", data: { turbo_frame: "_top", bs_toggle: "tooltip" }, title: "The entries this run produced" %>
+              <% end %>
+              <%= link_to "Allocation screen", allocate_form_fund_path(item.fund, run_allocations: true), class: "btn btn-sm btn-outline-secondary",
+                          data: { turbo_frame: "_top", bs_toggle: "tooltip" }, title: "The fund's allocation screen, where the run can be locked or re-run manually" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

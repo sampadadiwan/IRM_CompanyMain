@@ -141,7 +141,7 @@ Feature: InvestorAccess tag_list — subscription-based notification filtering
   # ─────────────────────────────────────────────────────────────────────────
   # 8. Capital Remittance domain
   #    Proves tag filtering works for CapitalRemittanceNotifier#send_notification,
-  #    a separate code path from capital_call.notify_capital_call (scenario 5)
+  #    a separate code path from the call-level Notify job (scenario 5)
   # ─────────────────────────────────────────────────────────────────────────
 
   Scenario Outline: Capital remittance notification filtered by contact tag_list

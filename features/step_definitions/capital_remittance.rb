@@ -35,6 +35,22 @@ Given('the first remittance is verified') do
   @remittance.reload
 end
 
+Given('the capital call has unit prices configured') do
+  @capital_call.update_columns(unit_prices: { "Series A" => { "price" => 100, "premium" => 10 } })
+end
+
+Then('the Verify option should be disabled for the first remittance with tooltip {string}') do |tooltip|
+  @remittance = @capital_call.capital_remittances.first
+  visit(capital_call_url(@capital_call))
+  click_on "Remittances"
+  within("#capital_remittance_#{@remittance.id}") do
+    click_on "Actions"
+    verify_item = find(".dropdown-item.disabled", text: "Verify")
+    expect(verify_item["data-bs-title"]).to eq(tooltip)
+    expect(page).not_to have_selector("button, a", text: "Verify")
+  end
+end
+
 When('I click verify on the first remittance') do
   @remittance = @capital_call.capital_remittances.first
   visit(capital_call_url(@capital_call))
@@ -111,6 +127,20 @@ end
 Then('the remittances have verified set to {string}') do |flag|
   CapitalRemittance.all.each do |cr|
     cr.verified.should == (flag == "true")
+  end
+end
+
+# Test-only setup for the "Notification Sent" flag — in the real app it's only ever set by
+# CapitalRemittance#send_notification after an actual email delivery, never by hand, so this
+# bypasses that to put a remittance into the "already notified" state a correction would need
+# to fix.
+Given('the remittances are directly marked with notification_sent {string}') do |flag|
+  CapitalRemittance.all.each { |cr| cr.update_column(:notification_sent, flag == "true") }
+end
+
+Then('the remittances have notification_sent set to {string}') do |flag|
+  CapitalRemittance.all.each do |cr|
+    cr.reload.notification_sent.should == (flag == "true")
   end
 end
 

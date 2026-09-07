@@ -358,9 +358,29 @@ module AwsUtils
       ]
     }).images.sort_by { |ami| ami.creation_date }.last
 
+    # `.last` on no matches is nil, and the log line below dereferences it —
+    # so an AMI that was never copied to this region surfaced as
+    # "undefined method 'image_id' for nil" raised from INSIDE this method,
+    # before any caller could check the return value. Return nil cleanly and
+    # let callers decide what a missing AMI means.
+    if latest_ami.nil?
+      puts "⚠️  No AMI tagged '#{name_tag}' owned by this account in #{region}."
+      return nil
+    end
 
     puts "✨ Latest AMI found: #{latest_ami.image_id} with name: #{latest_ami.name}, date: #{latest_ami.creation_date}"
     latest_ami
+  end
+
+  # latest_ami, but fatal when nothing matches — for callers that cannot
+  # meaningfully continue (writing a stack config with a nil AMI id would
+  # produce a stack that fails at `pulumi up` instead of here, with a much
+  # worse message).
+  def latest_ami!(name_tag, region)
+    latest_ami(name_tag, region) or
+      raise "No AMI tagged '#{name_tag}' owned by this account in #{region}. " \
+            "Copy one first: rake \"aws:copy_ami[<source-ami-id>, #{region}, <env_name>]\" " \
+            "or bake and copy: rake \"aws:create_and_copy_ami[#{name_tag}, #{region}, <env_name>]\""
   end
 
   # Reads a single Pulumi config value for a stack. Returns nil when the key is
@@ -398,9 +418,9 @@ module AwsUtils
     # prefix (the prefixed form caused wrong-region copy-paste bugs; __main__.py
     # keeps a legacy fallback for old files but plain is canonical).
     pulumi_config = {
-      "IRM-infra:web_server_ami" => latest_ami(web_server_name, region).image_id,
-      "IRM-infra:db_server_ami" => latest_ami(db_server_name, region).image_id,
-      "IRM-infra:observability_ami" => latest_ami("Observability", region).image_id
+      "IRM-infra:web_server_ami" => latest_ami!(web_server_name, region).image_id,
+      "IRM-infra:db_server_ami" => latest_ami!(db_server_name, region).image_id,
+      "IRM-infra:observability_ami" => latest_ami!("Observability", region).image_id
     }
 
     # Select or create the Pulumi stack. --create makes a brand-new region a
@@ -1411,4 +1431,371 @@ module AwsUtils
     puts status.first.inspect
   end
 
+
+  # ---------------------------------------------------------------------------
+  # S3 bucket + cross-region replication helpers
+  # ---------------------------------------------------------------------------
+  # Extracted so both aws:provision_s3_buckets (app + xtrabackup buckets) and
+  # aws:provision_pulumi_state_bucket (Pulumi state) share one implementation.
+  #
+  # FOLLOW-UP: provision_s3_buckets still carries its own inline copies of
+  # ensure_bucket! / ensure_replication_role! / ensure_replication!. They are
+  # behaviourally identical to these (the defaults below were chosen to match).
+  # Converge that task onto these helpers next time someone is in it with a
+  # reason to re-test it — it provisions live app buckets, so it is not worth
+  # refactoring blind.
+
+  # Which region each primary region fails over to. Mirrors the xtrabackup
+  # bucket layout and AWS_S3_REPLICA_REGION in .env.production.*.
+  S3_DR_REGION_PAIRS = {
+    "ap-south-1" => "ap-south-2",
+    "us-east-1"  => "us-east-2"
+  }.freeze
+
+  # Create the bucket if absent, then enforce versioning (mandatory: it is both
+  # the backup story and a hard prerequisite for replication on BOTH ends),
+  # encryption and public-access-block.
+  def s3_ensure_bucket!(client:, bucket:, region:, encrypt: true, block_public: true)
+    begin
+      client.head_bucket(bucket: bucket)
+      puts "✅ Bucket '#{bucket}' already exists in region #{region}."
+    rescue Aws::S3::Errors::NotFound, Aws::S3::Errors::NoSuchBucket
+      if region == "us-east-1"
+        client.create_bucket(bucket: bucket)
+      else
+        client.create_bucket(
+          bucket: bucket,
+          create_bucket_configuration: { location_constraint: region }
+        )
+      end
+      client.wait_until(:bucket_exists, bucket: bucket)
+      puts "🪣 Created bucket '#{bucket}' in #{region}."
+    rescue Aws::S3::Errors::Http301Error => e
+      actual = (e.context.http_response.headers["x-amz-bucket-region"] rescue nil)
+      raise "Bucket '#{bucket}' exists in region '#{actual}'. Use a client in that region."
+    end
+
+    client.put_bucket_versioning(
+      bucket: bucket,
+      versioning_configuration: { status: "Enabled" }
+    )
+    puts "📜 Enabled versioning on '#{bucket}'."
+
+    if encrypt
+      client.put_bucket_encryption(
+        bucket: bucket,
+        server_side_encryption_configuration: {
+          rules: [{ apply_server_side_encryption_by_default: { sse_algorithm: "AES256" } }]
+        }
+      )
+    end
+
+    if block_public
+      client.put_public_access_block(
+        bucket: bucket,
+        public_access_block_configuration: {
+          block_public_acls: true, ignore_public_acls: true,
+          block_public_policy: true, restrict_public_buckets: true
+        }
+      )
+    end
+    puts "🔒 Encryption + public-access-block ensured on '#{bucket}'." if encrypt || block_public
+  end
+
+  # Idempotent: create_role is guarded, put_role_policy is an upsert.
+  def s3_ensure_replication_role!(iam:, role_name:, source_buckets:, dest_buckets:)
+    trust_policy = {
+      Version: "2012-10-17",
+      Statement: [{ Effect: "Allow", Principal: { Service: "s3.amazonaws.com" }, Action: "sts:AssumeRole" }]
+    }
+    begin
+      iam.create_role(role_name: role_name, assume_role_policy_document: trust_policy.to_json)
+      puts "🔐 Created S3 replication role '#{role_name}'."
+    rescue Aws::IAM::Errors::EntityAlreadyExists
+      puts "✅ Replication role '#{role_name}' already exists."
+    end
+
+    permission_policy = {
+      Version: "2012-10-17",
+      Statement: [
+        { Effect: "Allow",
+          Action: ["s3:GetReplicationConfiguration", "s3:ListBucket"],
+          Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}" } },
+        { Effect: "Allow",
+          Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging"],
+          Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}/*" } },
+        { Effect: "Allow",
+          Action: ["s3:ReplicateObject", "s3:ReplicateDelete", "s3:ReplicateTags"],
+          Resource: dest_buckets.map { |b| "arn:aws:s3:::#{b}/*" } }
+      ]
+    }
+    iam.put_role_policy(role_name: role_name, policy_name: "s3-replication", policy_document: permission_policy.to_json)
+    iam.get_role(role_name: role_name).role.arn
+  end
+
+  # Configure source -> dest replication.
+  #
+  # replicate_delete_markers defaults to FALSE: a bad delete (or ransomware) on
+  # the source must not propagate to the DR copy. The cost is that the
+  # destination can retain objects the source no longer has — deliberate.
+  #
+  # replication_time_control adds the 15-minute replication SLA plus CloudWatch
+  # metrics. Worth it where replication lag is the main risk and data volume is
+  # small (Pulumi state); pointless cost on multi-TB backup buckets.
+  #
+  # Never clobbers by default: an existing config is reported and left alone,
+  # because already-live regions have hand-tuned rules. Pass overwrite: true to
+  # replace one deliberately (e.g. to add RTC to a rule created without it).
+  def s3_ensure_replication!(client:, source_bucket:, dest_bucket:, role_arn:,
+                             rule_id: "irm-replicate-all",
+                             replicate_delete_markers: false,
+                             replication_time_control: false,
+                             overwrite: false)
+    if source_bucket == dest_bucket
+      puts "⚠️  Skipping replication for '#{source_bucket}': destination equals source."
+      puts "   A distinct replica bucket in a different region is required for DR to mean anything."
+      return false
+    end
+
+    dest_arn = "arn:aws:s3:::#{dest_bucket}"
+    begin
+      existing = client.get_bucket_replication(bucket: source_bucket).replication_configuration
+      existing_dests = existing.rules.map { |r| r.destination.bucket }
+      if existing_dests.include?(dest_arn) && !overwrite
+        puts "✅ Replication #{source_bucket} → #{dest_bucket} already configured — leaving as-is."
+        puts "   (pass overwrite: true to rewrite the rule, e.g. to add Replication Time Control)"
+        return true
+      elsif !existing_dests.include?(dest_arn) && !overwrite
+        puts "⚠️  #{source_bucket} already replicates to #{existing_dests.join(', ')} but not to #{dest_bucket}."
+        puts "   Not overwriting an existing replication config — reconcile manually if this is unexpected."
+        return false
+      end
+    rescue Aws::S3::Errors::ReplicationConfigurationNotFoundError
+      # No config yet — fall through and create it
+    end
+
+    destination = { bucket: dest_arn }
+    if replication_time_control
+      destination[:replication_time] = { status: "Enabled", time: { minutes: 15 } }
+      destination[:metrics]          = { status: "Enabled", event_threshold: { minutes: 15 } }
+    end
+
+    client.put_bucket_replication(
+      bucket: source_bucket,
+      replication_configuration: {
+        role: role_arn,
+        rules: [{
+          id: rule_id,
+          status: "Enabled",
+          priority: 1,
+          delete_marker_replication: { status: replicate_delete_markers ? "Enabled" : "Disabled" },
+          filter: {}, # whole bucket
+          destination: destination
+        }]
+      }
+    )
+    puts "🔁 Replication configured: #{source_bucket} → #{dest_bucket} (RTC=#{replication_time_control})."
+    puts "   ℹ️  Replication covers NEW objects only — backfill existing ones with"
+    puts "   aws s3 sync s3://#{source_bucket} s3://#{dest_bucket} (or S3 Batch Replication)."
+    true
+  end
+
+  # ---------------------------------------------------------------------------
+  # Pulumi state backend preflight
+  # ---------------------------------------------------------------------------
+  # Every rake task that shells out to pulumi does so with `chdir: "../IRM-Infra"`
+  # and inherits whatever backend the operator happens to be logged into, plus
+  # whatever is (or is not) in PULUMI_CONFIG_PASSPHRASE. Before the S3 migration
+  # that was harmless. After it, two things can go wrong silently:
+  #
+  #   1. You are logged into a DIFFERENT env's state bucket. Every pulumi read
+  #      then describes the wrong environment — during a DR drill, the one you
+  #      are not recovering. This must be fatal.
+  #   2. The passphrase is unset, so `stack export`, `stack output`, `config
+  #      get`, `preview` and `up` all fail partway through a drill.
+  #
+  # Being logged into Pulumi Cloud is NOT an error: production is migrated after
+  # staging, so both backends are legitimate during the transition. Warn and
+  # carry on.
+
+  PULUMI_STATE_PRIMARY_REGIONS = { "in" => "ap-south-1", "us" => "us-east-1" }.freeze
+
+  # The bucket pair for an env. Single source of truth — aws:provision_pulumi_state_bucket
+  # creates exactly these names, and migrate_state_to_s3.sh expects them.
+  def pulumi_state_buckets(env_name)
+    account, geo = env_name.to_s.split(".")
+    primary_region = PULUMI_STATE_PRIMARY_REGIONS[geo] or
+      raise "No primary region known for geography '#{geo}' (env '#{env_name}')"
+    dr_region = S3_DR_REGION_PAIRS[primary_region]
+    {
+      primary_region: primary_region,
+      dr_region: dr_region,
+      primary: "irm-pulumi-state-#{account}-primary-#{primary_region}",
+      replica: "irm-pulumi-state-#{account}-replica-#{dr_region}"
+    }
+  end
+
+  # Current pulumi backend URL, or nil if it cannot be determined.
+  def pulumi_current_backend
+    out, = Open3.capture3("pulumi whoami --verbose", chdir: "../IRM-Infra")
+    line = out.lines.grep(/Backend URL/i).first
+    line && line.split(/URL:?\s*/i).last.to_s.strip
+  rescue StandardError
+    nil
+  end
+
+  # Load the state passphrase into this process's environment.
+  #
+  # Precedence:
+  #   1. an already-exported PULUMI_CONFIG_PASSPHRASE — an operator overriding
+  #      deliberately always wins
+  #   2. the env's Rails credentials, decrypted the same way aws:environment
+  #      decrypts the AWS keys, so a drill needs nothing but the .key file
+  #   3. SSM /irm/pulumi/passphrase, the cross-region source of truth
+  #      (PULUMI_STATE.md) — the fallback for a machine without the .key
+  def load_pulumi_passphrase!(env_name, region)
+    return :already_set unless ENV["PULUMI_CONFIG_PASSPHRASE"].to_s.empty?
+
+    from_credentials = pulumi_passphrase_from_credentials(env_name)
+    if from_credentials
+      ENV["PULUMI_CONFIG_PASSPHRASE"] = from_credentials
+      return :credentials
+    end
+
+    # Per-env parameter: production.in and production.us share an AWS account
+    # but are separately encrypted. The legacy account-wide path is still read
+    # as a fallback for envs migrated before the split.
+    require "aws-sdk-ssm"
+    ssm = Aws::SSM::Client.new(region: region)
+    value = nil
+    ["/irm/pulumi/passphrase/#{env_name}", "/irm/pulumi/passphrase"].each do |name|
+      begin
+        value = ssm.get_parameter(name: name, with_decryption: true).parameter.value
+        break
+      rescue Aws::SSM::Errors::ParameterNotFound
+        next
+      end
+    end
+    raise "no passphrase parameter found in SSM (#{region})" if value.nil?
+
+    ENV["PULUMI_CONFIG_PASSPHRASE"] = value
+    :ssm
+  rescue StandardError => e
+    raise "PULUMI_CONFIG_PASSPHRASE is not set, is absent from config/credentials/#{env_name}.yml.enc, " \
+          "and could not be read from SSM /irm/pulumi/passphrase/#{env_name} in #{region}: #{e.message}\n" \
+          "   Export it manually:\n" \
+          "     export PULUMI_CONFIG_PASSPHRASE=$(aws ssm get-parameter --name /irm/pulumi/passphrase/#{env_name} \\\n" \
+          "       --with-decryption --region #{region} --query Parameter.Value --output text)"
+  end
+
+  # Returns the passphrase from the env's encrypted credentials, or nil if the
+  # file, key or entry is absent. Never raises: a missing entry is expected
+  # before the key has been added, and SSM is the fallback.
+  def pulumi_passphrase_from_credentials(env_name)
+    key_path = Rails.root.join("config", "credentials", "#{env_name}.key")
+    enc_path = Rails.root.join("config", "credentials", "#{env_name}.yml.enc")
+    return nil unless File.exist?(key_path) && File.exist?(enc_path)
+
+    creds = Rails.application.encrypted(enc_path, key_path: key_path)
+    value = creds[:PULUMI_CONFIG_PASSPHRASE] || creds[:pulumi_config_passphrase]
+    value.to_s.empty? ? nil : value.to_s
+  rescue StandardError
+    nil
+  end
+
+  # Does the env's primary state bucket exist yet? That is how we tell a
+  # migrated env from one still on Pulumi Cloud, without hardcoding a list that
+  # would go stale as each env moves.
+  def pulumi_state_bucket_exists?(bucket, region)
+    require "aws-sdk-s3"
+    Aws::S3::Client.new(region: region).head_bucket(bucket: bucket)
+    true
+  rescue StandardError
+    false
+  end
+
+  def pulumi_login!(target)
+    out, err, st = Open3.capture3("pulumi login #{target}", chdir: "../IRM-Infra")
+    return true if st.success?
+
+    raise "pulumi login #{target} failed: #{(err.to_s + out.to_s).lines.first.to_s.strip}"
+  end
+
+  # Call at the start of any task that shells out to pulumi.
+  #
+  # Logs in to the env's state bucket itself rather than telling the operator to
+  # — the task knows exactly which bucket it needs, so making a human retype it
+  # only creates a chance to get it wrong. Two cases are NOT auto-corrected:
+  #
+  #   * the replica bucket, which someone may be on deliberately during a real
+  #     failover; switching them to a primary in a dead region would break
+  #     incident response. Requires PULUMI_ALLOW_REPLICA=true to proceed.
+  #   * an env with no state bucket yet, i.e. not migrated. Stays on Pulumi
+  #     Cloud with a warning.
+  #
+  # PULUMI_NO_AUTO_LOGIN=true turns the switch back into an instruction.
+  def ensure_pulumi_backend!(env_name, fatal: true)
+    buckets = pulumi_state_buckets(env_name)
+    backend = pulumi_current_backend
+
+    if backend.to_s.empty?
+      raise "Could not determine the Pulumi backend (`pulumi whoami` failed in ../IRM-Infra). " \
+            "Is the Pulumi CLI installed and logged in?"
+    end
+
+    current_bucket = backend.start_with?("s3://") ? backend.sub(%r{\As3://}, "").split("?").first : nil
+
+    if current_bucket == buckets[:replica]
+      if ENV["PULUMI_ALLOW_REPLICA"] == "true"
+        puts "⚠️  Using the REPLICA bucket #{current_bucket} (PULUMI_ALLOW_REPLICA=true)."
+        puts "   Only correct during a real #{buckets[:primary_region]} outage — see IRM-Infra/PULUMI_STATE.md."
+        load_pulumi_passphrase!(env_name, buckets[:dr_region])
+        return :replica
+      end
+      raise "Pulumi is logged into the REPLICA bucket #{current_bucket}, which is read-only " \
+            "outside a real #{buckets[:primary_region]} outage; writing to it creates " \
+            "split-brain state (IRM-Infra/PULUMI_STATE.md).\n" \
+            "   Not switching automatically, in case this is a deliberate failover.\n" \
+            "   Normal operation: pulumi login \"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\"\n" \
+            "   Real failover:    re-run with PULUMI_ALLOW_REPLICA=true"
+    end
+
+    if current_bucket != buckets[:primary]
+      target = "\"s3://#{buckets[:primary]}?region=#{buckets[:primary_region]}\""
+
+      unless pulumi_state_bucket_exists?(buckets[:primary], buckets[:primary_region])
+        puts "⚠️  Pulumi backend is #{backend}; #{env_name} has no state bucket yet"
+        puts "   (#{buckets[:primary]} does not exist), so it is still on Pulumi Cloud."
+        puts "   Migrate with: IRM-Infra/migrate_state_to_s3.sh #{env_name}"
+        return :cloud
+      end
+
+      if ENV["PULUMI_NO_AUTO_LOGIN"] == "true"
+        raise "Pulumi backend is #{backend}, but #{env_name} state lives in #{buckets[:primary]}.\n" \
+              "   Run: pulumi login #{target}"
+      end
+
+      puts "🔀 Switching Pulumi backend: #{backend} → s3://#{buckets[:primary]}"
+      pulumi_login!(target)
+
+      now = pulumi_current_backend.to_s
+      unless now.sub(%r{\As3://}, "").split("?").first == buckets[:primary]
+        raise "Tried to switch to #{buckets[:primary]} but the backend is now '#{now}'."
+      end
+    end
+
+    case load_pulumi_passphrase!(env_name, buckets[:primary_region])
+    when :credentials
+      puts "🔑 PULUMI_CONFIG_PASSPHRASE loaded from config/credentials/#{env_name}.yml.enc"
+    when :ssm
+      puts "🔑 PULUMI_CONFIG_PASSPHRASE loaded from SSM (#{buckets[:primary_region]})"
+    end
+    puts "✅ Pulumi backend: s3://#{buckets[:primary]} (#{buckets[:primary_region]})"
+    :s3
+  rescue StandardError => e
+    raise if fatal
+
+    puts "⚠️  Pulumi backend preflight: #{e.message.lines.first.to_s.strip}"
+    :error
+  end
 end

@@ -1,0 +1,113 @@
+<%#
+  The up-front check for one group and period. Either lists the templates that would be
+  refused (and starts nothing) or shows what is about to run and asks for confirmation.
+%>
+<%
+  counts = @checks.group_by(&:status).transform_values(&:size)
+  period_ok = @start_date.present? && @end_date.present?
+%>
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Pre-flight check — <%= @group.name %></h1>
+      <div class="text-muted">
+        <% if period_ok %>
+          Period <strong><%= l @start_date %> – <%= l @end_date %></strong>, applied to every template.
+          <% if @resume_from %>· Resuming from the run of <%= l @resume_from.created_at, format: :abbr_date_time %>.<% end %>
+        <% else %>
+          No valid period given.
+        <% end %>
+      </div>
+    </div>
+    <%= link_to "Change dates", allocation_run_template_group_path(@group), class: "btn btn-outline-secondary" %>
+  </div>
+
+  <%# Summary strip %>
+  <div class="art-summary mb-3">
+    <div class="art-summary__cell art-summary__cell--success" data-bs-toggle="tooltip" title="All checks passed">
+      <div class="art-summary__num"><%= counts[:ready] || 0 %></div><div>Ready</div>
+    </div>
+    <div class="art-summary__cell art-summary__cell--warning" data-bs-toggle="tooltip" title="Will run, but read the warnings">
+      <div class="art-summary__num"><%= counts[:warning] || 0 %></div><div>With warnings</div>
+    </div>
+    <div class="art-summary__cell art-summary__cell--danger" data-bs-toggle="tooltip" title="Would be refused — nothing runs while any template is blocked">
+      <div class="art-summary__num"><%= counts[:blocked] || 0 %></div><div>Blocked</div>
+    </div>
+    <div class="art-summary__cell art-summary__cell--info" data-bs-toggle="tooltip" title="Succeeded in the previous run for this period; will be skipped">
+      <div class="art-summary__num"><%= counts[:reused] || 0 %></div><div>Already done</div>
+    </div>
+  </div>
+
+  <% if @group_blockers.any? %>
+    <div class="alert alert-danger">
+      <div class="fw-bold"><i class="ti ti-ban me-1"></i> The group cannot start</div>
+      <ul class="mb-0">
+        <% @group_blockers.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% elsif !@startable %>
+    <div class="alert alert-danger">
+      <div class="fw-bold"><i class="ti ti-ban me-1"></i> Nothing will run</div>
+      At least one template would be refused. A close is never left half done: fix the blocked templates below, then check again.
+    </div>
+  <% elsif counts[:warning].to_i.positive? %>
+    <div class="alert alert-warning">
+      <div class="fw-bold"><i class="ti ti-alert-circle me-1"></i> Read the warnings before starting</div>
+      Warnings do not stop the run, but they usually point at a typo in the dates or a setting worth a second look.
+    </div>
+  <% else %>
+    <div class="alert alert-success">
+      <div class="fw-bold"><i class="ti ti-circle-check me-1"></i> Every template passed</div>
+      Confirm below to start. Templates run one after another; you will be alerted and emailed when the group finishes.
+    </div>
+  <% end %>
+
+  <%# Per-template results in run order %>
+  <ol class="art-order art-order--preflight">
+    <% @checks.each do |check| %>
+      <li class="art-order__item art-order__item--<%= check.status %>">
+        <span class="art-pos" data-bs-toggle="tooltip" title="Run order"><%= check.position %></span>
+        <div class="flex-grow-1">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+              <%= link_to check.template.name, allocation_run_template_path(check.template), class: "fw-semibold text-decoration-none" %>
+              <span class="text-muted">· <%= check.fund.name %></span>
+            </div>
+            <%= preflight_check_badge(check.status) %>
+          </div>
+          <div class="mt-1"><%= template_option_badges(check.template) %></div>
+          <% if check.messages.any? %>
+            <ul class="art-messages mt-2">
+              <% check.messages.each do |m| %>
+                <li class="art-messages__item art-messages__item--<%= m.severity %>">
+                  <i class="ti <%= { 'blocker' => 'ti-ban', 'warning' => 'ti-alert-circle', 'info' => 'ti-info-circle' }[m.severity] %> me-1"></i>
+                  <%= m.text %>
+                  <% if m.blocker? && check.reused_run.nil? %>
+                    <%= link_to "Open the fund's allocation screen", allocate_form_fund_path(check.fund, run_allocations: true), class: "ms-1", target: "_blank", rel: "noopener" %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ol>
+
+  <div class="d-flex align-items-center gap-2 mt-3">
+    <% if @startable %>
+      <%= form_with url: run_allocation_run_template_group_path(@group), method: :post, data: { turbo: false } do |f| %>
+        <%= hidden_field_tag :start_date, @start_date.iso8601 %>
+        <%= hidden_field_tag :end_date, @end_date.iso8601 %>
+        <%= hidden_field_tag :resume, @resume ? "1" : "0" %>
+        <%= f.submit "Start run", class: "btn btn-success", data: { bs_toggle: "tooltip" },
+                     title: "Runs #{@checks.count(&:will_run?)} #{'template'.pluralize(@checks.count(&:will_run?))} in order for #{l @start_date} – #{l @end_date}" %>
+      <% end %>
+    <% end %>
+    <% if period_ok %>
+      <%= link_to "Check again", preflight_allocation_run_template_group_path(@group, start_date: @start_date.iso8601, end_date: @end_date.iso8601, resume: @resume ? 1 : 0),
+                  class: "btn btn-outline-secondary", data: { bs_toggle: "tooltip" }, title: "Re-run the checks, e.g. after unlocking a run or fixing a template" %>
+    <% end %>
+    <%= link_to "Cancel", allocation_run_template_group_path(@group), class: "btn btn-outline-danger" %>
+  </div>
+<% end %>

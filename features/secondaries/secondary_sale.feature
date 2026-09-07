@@ -23,7 +23,6 @@ Scenario Outline: Sale Notifications
   Given the user has role "company_admin"
   Given there is a sale "<sale>"
   And the sale has an allocation SPA template
-  And the sale has an allocation SPA template
   And Given I upload an investors file for the company
   And Given I upload an investor access file for employees
   And Given I upload a offer file "offers_allocate.xlsx"

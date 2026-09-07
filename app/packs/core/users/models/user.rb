@@ -107,6 +107,19 @@ class User < ApplicationRecord
     "qa" => "974"
   }.freeze
 
+  # Site-aware default dial code for new users, overriding the "91" schema default. Keyed
+  # off CURRENT_SITE, the per-country deployment marker already used for SMS/user-sync and
+  # FY month offset (see SmsDeliverable, EntitySetting) — US server defaults to "1", IN and
+  # any other/blank value keep the pre-existing "91" default.
+  attribute :call_code, :string, default: -> { geo_default_call_code }
+
+  def self.geo_default_call_code
+    case ENV.fetch("CURRENT_SITE", "").strip.upcase
+    when "US" then "1"
+    else "91"
+    end
+  end
+
   has_many :faq_threads, dependent: :destroy
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy

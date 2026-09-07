@@ -1,0 +1,186 @@
+<%#
+  The one page for allocation run templates: groups (the closes), templates (the building
+  blocks) and run history, in tabs. Run modals are rendered after the tabs so they never sit
+  inside a card.
+%>
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0 text-gray-800">Allocation Run Templates</h1>
+    <div class="d-flex align-items-center gap-2">
+      <%= user_guide_icon_for('allocation_run_templates', tooltip: 'Allocation Run Templates User Guide') %>
+      <%= link_to allocation_group_runs_path, class: "btn btn-outline-info",
+                  data: { bs_toggle: "tooltip" }, title: "Every time any group was run, with the allocation run each template produced" do %>
+        <i class="ti ti-history"></i> Run History
+      <% end %>
+      <%= link_to new_allocation_run_template_path, class: "btn btn-outline-secondary",
+                  data: { bs_toggle: "tooltip" }, title: "Define a template from scratch. Most people instead use Save as template on a past run in the fund's allocation screen." do %>
+        <i class="ti ti-plus"></i> New Template
+      <% end %>
+      <%= link_to new_allocation_run_template_group_path, class: "btn btn-outline-primary",
+                  data: { bs_toggle: "tooltip" }, title: "Put templates in run order under a name such as Quarterly close" do %>
+        <i class="ti ti-list-numbers"></i> New Group
+      <% end %>
+    </div>
+  </div>
+
+  <%# Three-step explainer so a first-time visitor knows what to do %>
+  <div class="art-steps mb-3">
+    <div class="art-steps__step">
+      <span class="art-steps__num">1</span>
+      <div>
+        <div class="fw-semibold">Save a template</div>
+        <div class="text-muted">On a fund's allocation screen, choose <strong>Save as template</strong> on a past run. The fund and every option are copied; only the period is left out.</div>
+      </div>
+    </div>
+    <div class="art-steps__step">
+      <span class="art-steps__num">2</span>
+      <div>
+        <div class="fw-semibold">Arrange a group</div>
+        <div class="text-muted">Create a group such as <em>Quarterly close</em> and place templates in run order, e.g. master before feeders.</div>
+      </div>
+    </div>
+    <div class="art-steps__step">
+      <span class="art-steps__num">3</span>
+      <div>
+        <div class="fw-semibold">Run the group</div>
+        <div class="text-muted">Enter a start and end date. Every template is checked first; then they run one after another and you are told when it finishes.</div>
+      </div>
+    </div>
+  </div>
+
+  <% if @active_run %>
+    <div class="alert alert-primary d-flex align-items-center justify-content-between" role="alert">
+      <div>
+        <i class="ti ti-loader me-1"></i>
+        <strong><%= @active_run.group_name %></strong> is <%= @active_run.status %> for
+        <%= l @active_run.start_date %> – <%= l @active_run.end_date %>
+        (<%= @active_run.progress.join(" of ") %> templates done). No other group can start until it finishes.
+      </div>
+      <%= link_to "View progress", allocation_group_run_path(@active_run), class: "btn btn-sm btn-primary" %>
+    </div>
+  <% end %>
+
+  <div data-controller="tabs">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a class="nav-link <%= 'active' if @tab == 'groups' %>" data-bs-toggle="tab" href="#groups"
+         title="A close: an ordered list of templates run together">
+        <i class="ti ti-list-numbers me-1"></i>Groups <span class="badge bg-secondary-subtle text-secondary ms-1"><%= @groups.size %></span>
+      </a>
+      <a class="nav-link <%= 'active' if @tab == 'templates' %>" data-bs-toggle="tab" href="#templates"
+         title="One fund plus the options it is always run with">
+        <i class="ti ti-template me-1"></i>Templates <span class="badge bg-secondary-subtle text-secondary ms-1"><%= @templates.size %></span>
+      </a>
+      <a class="nav-link <%= 'active' if @tab == 'runs' %>" data-bs-toggle="tab" href="#runs"
+         title="Every time a group was run">
+        <i class="ti ti-history me-1"></i>Run History <span class="badge bg-secondary-subtle text-secondary ms-1"><%= @group_runs.size %></span>
+      </a>
+    </nav>
+
+    <div class="tab-content">
+      <%# ── Groups ─────────────────────────────────────────────────────── %>
+      <div id="groups" class="tab-pane fade <%= 'show active' if @tab == 'groups' %>">
+        <% if @groups.empty? %>
+          <div class="art-empty">
+            <i class="ti ti-list-numbers"></i>
+            <div class="fw-semibold">No groups yet</div>
+            <div class="text-muted">A group is a close you can run with one action. Save at least one template, then create a group and put the templates in run order.</div>
+            <%= link_to "New Group", new_allocation_run_template_group_path, class: "btn btn-outline-primary mt-2" %>
+          </div>
+        <% else %>
+          <div class="row">
+            <% @groups.each do |group| %>
+              <div class="col-lg-6 mb-3">
+                <%= render "allocation_run_template_groups/group_card", group:, active_run: @active_run %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <%# ── Templates ──────────────────────────────────────────────────── %>
+      <div id="templates" class="tab-pane fade <%= 'show active' if @tab == 'templates' %>">
+        <% if @templates.empty? %>
+          <div class="art-empty">
+            <i class="ti ti-template"></i>
+            <div class="fw-semibold">No templates yet</div>
+            <div class="text-muted">The quickest way is <strong>Save as template</strong> on a past run in a fund's allocation screen — the settings you already worked out are copied for you.</div>
+            <%= link_to "New Template", new_allocation_run_template_path, class: "btn btn-outline-secondary mt-2" %>
+          </div>
+        <% else %>
+          <div class="table-responsive" data-controller="datatable">
+            <table class="table table-bordered dataTable jqDataTable">
+              <thead>
+                <tr>
+                  <th class="text-col">Name</th>
+                  <th class="text-col">Fund</th>
+                  <th class="text-col" title="Formula scope, tags, statements and ratios carried by the template">What it does</th>
+                  <th class="text-col" title="The investor statement document used when statements are generated">Statement document</th>
+                  <th class="text-col" title="Groups this template is part of. A template in a group cannot be deleted.">In groups</th>
+                  <th class="action-col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @templates.each do |tmpl| %>
+                  <tr>
+                    <td><%= link_to tmpl.name, allocation_run_template_path(tmpl) %></td>
+                    <td><%= link_to tmpl.fund.name, fund_path(tmpl.fund) %></td>
+                    <td><%= template_option_badges(tmpl) %></td>
+                    <td>
+                      <% if tmpl.generate_soa? %>
+                        <% if tmpl.statement_document %>
+                          <%= tmpl.statement_document.name %>
+                        <% else %>
+                          <span class="badge bg-danger-subtle text-danger" data-bs-toggle="tooltip" title="The document was deleted. Runs of this template will be blocked until another is chosen.">Missing</span>
+                        <% end %>
+                      <% else %>
+                        —
+                      <% end %>
+                    </td>
+                    <td>
+                      <% tmpl.allocation_run_template_groups.each do |g| %>
+                        <%= link_to g.name, allocation_run_template_group_path(g), class: "badge bg-primary-subtle text-primary text-decoration-none me-1" %>
+                      <% end %>
+                    </td>
+                    <td class="text-end">
+                      <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="ti ti-settings"></i> Actions
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                          <li><%= link_to allocation_run_template_path(tmpl), class: "dropdown-item" do %><i class="ti ti-eye me-1"></i> View<% end %></li>
+                          <li><%= link_to edit_allocation_run_template_path(tmpl), class: "dropdown-item" do %><i class="ti ti-pencil me-1"></i> Edit<% end %></li>
+                          <li><%= link_to allocate_form_fund_path(tmpl.fund, run_allocations: true), class: "dropdown-item" do %><i class="ti ti-calculator me-1"></i> Fund allocation screen<% end %></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li>
+                            <% if tmpl.allocation_run_template_groups.any? %>
+                              <span class="dropdown-item text-muted" data-bs-toggle="tooltip" title="Remove it from its groups first, then delete."><i class="ti ti-trash me-1"></i> Delete (in a group)</span>
+                            <% else %>
+                              <%= button_to allocation_run_template_path(tmpl), method: :delete, class: "dropdown-item text-danger", form_class: "deleteButton",
+                                            data: { action: "click->confirm#popup", turbo: false, msg: "Delete allocation run template \"#{tmpl.name}\"? Past runs are kept." } do %>
+                                <i class="ti ti-trash me-1"></i> Delete
+                              <% end %>
+                            <% end %>
+                          </li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </div>
+
+      <%# ── Run history ────────────────────────────────────────────────── %>
+      <div id="runs" class="tab-pane fade <%= 'show active' if @tab == 'runs' %>">
+        <%= render "allocation_group_runs/runs_table", runs: @group_runs, show_group: true %>
+      </div>
+    </div>
+  </div>
+
+  <%# Run modals live outside the cards and tabs %>
+  <% @groups.each do |group| %>
+    <%= render "allocation_run_template_groups/run_modal", group:, active_run: @active_run %>
+  <% end %>
+<% end %>

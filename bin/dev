@@ -1,32 +1,52 @@
 #!/usr/bin/env ruby
-def container_running?(name)
-  `docker inspect -f "{{.State.Running}}" #{name} 2>/dev/null`.strip == "true"
+require "socket"
+
+def container_state(name)
+  output = `docker inspect -f "{{.State.Running}}" #{name} 2>/dev/null`.strip
+  return :absent if output.empty?
+  output == "true" ? :running : :stopped
 end
 
-def start_container_unless_running(name, *docker_args)
-  unless container_running?(name)
-    puts "Starting container #{name}..."
-    system("docker", "run", "-d", "--rm", "--name", name, *docker_args)
-  end
-end
-
-def resume_container_unless_running(name)
-  unless container_running?(name)
+# Resumes an existing stopped container, or creates it (with the given
+# `docker run` args) if it has never been created on this machine.
+def ensure_container_running(name, *docker_run_args)
+  case container_state(name)
+  when :running
+    # nothing to do
+  when :stopped
     puts "Resuming container #{name}..."
     system("docker", "start", name)
+  when :absent
+    puts "Starting container #{name}..."
+    system("docker", "run", "-d", "--name", name, *docker_run_args)
   end
 end
 
-start_container_unless_running("xirr_py", "-p", "8000:80", "-v", "/tmp:/tmp", "thimmaiah/xirr_py:v2.6")
-resume_container_unless_running("mysql8")
-start_container_unless_running("elasticsearch", "-p", "9200:9200", "-p", "9300:9300",
-                                "-e", "ES_JAVA_OPTS=-Xms512m -Xmx512m",
-                                "-e", "discovery.type=single-node",
-                                "-e", "xpack.security.enabled=false",
-                                "elasticsearch:8.15.0")
+ensure_container_running("xirr_py", "--rm", "-p", "8000:80", "-v", "/tmp:/tmp", "thimmaiah/xirr_py:v2.6")
+ensure_container_running("mysql8", "-p", "3306:3306",
+                          "-e", "MYSQL_ROOT_PASSWORD=root",
+                          "-v", "mysql8-data:/var/lib/mysql",
+                          "mysql:8")
+ensure_container_running("redis", "-p", "6379:6379", "redis/redis-stack-server:latest")
+ensure_container_running("elasticsearch", "--rm", "-p", "9200:9200", "-p", "9300:9300",
+                          "-e", "ES_JAVA_OPTS=-Xms512m -Xmx512m",
+                          "-e", "discovery.type=single-node",
+                          "-e", "xpack.security.enabled=false",
+                          "elasticsearch:8.15.0")
 
-puts "Starting Prometheus exporter..."
-Process.detach(spawn("bundle exec prometheus_exporter -b 0.0.0.0"))
+def port_open?(port, host: "localhost")
+  TCPSocket.new(host, port).close
+  true
+rescue Errno::ECONNREFUSED, SocketError
+  false
+end
+
+if port_open?(9394)
+  puts "Prometheus exporter already running, skipping..."
+else
+  puts "Starting Prometheus exporter..."
+  Process.detach(spawn("bundle exec prometheus_exporter -b 0.0.0.0"))
+end
 
 puts "Starting Rails server on port 3001..."
 exec "./bin/rails", "server", "-p", "3001", *ARGV

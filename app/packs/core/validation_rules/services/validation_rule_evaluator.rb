@@ -16,7 +16,9 @@ class ValidationRuleEvaluator
     "FundRatio" => FundRatioRuleContextProvider,
     "FundRatioRunTemplate" => FundRatioRunTemplateRuleContextProvider,
     "CapitalCall" => CapitalCallRuleContextProvider,
-    "CapitalRemittance" => CapitalRemittanceRuleContextProvider
+    "CapitalRemittance" => CapitalRemittanceRuleContextProvider,
+    "CapitalCommitment" => CapitalCommitmentRuleContextProvider,
+    "FundFormula" => FundFormulaRuleContextProvider
   }.freeze
 
   # What the caller gets back for each fired rule

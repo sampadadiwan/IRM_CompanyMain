@@ -46,6 +46,7 @@ Scenario Outline: Compute KYC Fund Ratios with ratio formulas
   And Given import file "kyc_fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "kyc_fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "kyc_fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "kyc_fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the second commitment of the kyc has custom_fields "skip_doc_gen:yes"
   Given the KYC has commitments in different funds also
@@ -101,6 +102,7 @@ Scenario Outline: Compute KYC Fund Ratios with ratio formulas with labels
   And Given import file "kyc_fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "kyc_fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "kyc_fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "kyc_fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the second commitment of the kyc has custom_fields "skip_doc_gen:yes"
   Given the KYC has commitments in different funds also
@@ -171,6 +173,7 @@ Scenario Outline: Compute KYC Fund Ratios with skip_portfolio_fmv ratio formulas
   And Given import file "kyc_fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "kyc_fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "kyc_fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "kyc_fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the second commitment of the kyc has custom_fields "skip_doc_gen:yes"
   Given the KYC has commitments in different funds also

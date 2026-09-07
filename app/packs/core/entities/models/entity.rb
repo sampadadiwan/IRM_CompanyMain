@@ -78,6 +78,11 @@ class Entity < ApplicationRecord
   has_many :access_rights, dependent: :destroy
   has_many :investments, dependent: :destroy
 
+  # Declared before :funds on purpose: templates restrict fund deletion, so groups (which
+  # restrict template deletion), run history and templates must go before the funds do.
+  has_many :allocation_run_template_groups, dependent: :destroy
+  has_many :allocation_group_runs, dependent: :destroy
+  has_many :allocation_run_templates, dependent: :destroy
   has_many :funds, dependent: :destroy, inverse_of: :entity
   has_many :account_entries, dependent: :destroy
   has_many :capital_calls, dependent: :destroy

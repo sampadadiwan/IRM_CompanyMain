@@ -14,6 +14,7 @@ Feature: Bulk Verify Remittances from Capital Call Show Page
     Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
     Given there is a capital call "percentage_called=20;send_payment_notification_flag=true"
     Then the corresponding remittances should be created
+    Given the capital calls are approved
     Given the remittances are paid
 
 

@@ -346,7 +346,13 @@ Given('The user generates all fund reports for the fund') do
 end
 
 Then('There should be {string} reports created') do |string|
-  expect(page).to have_content("Fund report will be generated, please check back in a few mins")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("Fund report generation completed...") replaces the async "will be generated"
+  # flash before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Fund report will be generated|Fund report generation completed/i,
+    wait: 20
+  )
   FundReport.where(fund_id: @fund.id).count.should == string.to_i
   SebiReportJob::ALL_REPORT_JOBS.each do |report_name|
     FundReport.where(fund_id: @fund.id).pluck(:name).include?(report_name).should == true
@@ -599,7 +605,13 @@ Given('I generate a portfolio as of report for {string}') do |string|
   fill_in('as_of', with: Time.zone.parse(string))
   click_on("Generate")
   sleep(1)
-  expect(page).to have_content("Report generation started, please check back in a few mins")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("Portfolio Investment Report created") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Report generation started|Portfolio Investment Report created/i,
+    wait: 20
+  )
 end
 
 Then('the portfolio as of report should be generated for the date {string} with expected data') do |string|

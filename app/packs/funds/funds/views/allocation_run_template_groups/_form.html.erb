@@ -1,0 +1,96 @@
+<%#
+  Group form: name, notes, and every template of the entity with an "include" tick and a
+  position. Unticked rows are submitted with _destroy=1, which Rails drops for new rows
+  and removes for existing ones. Locals: group, url
+%>
+<%
+  all_templates = policy_scope(AllocationRunTemplate).includes(:fund).ordered
+  # Existing rows first (by position), then the rest so the form is stable to read.
+  existing = group.items.index_by(&:allocation_run_template_id)
+  next_pos = (existing.values.map(&:position).max || 0)
+  # A template not yet a member gets a placeholder row, built pre-unticked via AR's own
+  # mark_for_destruction — the same flag has_at_least_one_template already reads — rather
+  # than a custom ivar the object has no other way of remembering.
+  rows = all_templates.map do |tmpl|
+    existing[tmpl.id] || group.items.build(allocation_run_template: tmpl, position: (next_pos += 1)).tap(&:mark_for_destruction)
+  end
+  rows = rows.sort_by { |i| [i.marked_for_destruction? ? 1 : 0, i.position.to_i] }
+%>
+<%= render NewCard.new(col_md: "col-md-10") do %>
+  <%= render FormCard.new(title: group.persisted? ? "Edit Allocation Run Group" : "New Allocation Run Group",
+                          note: "Tick the templates that belong to this close and give each a position. They run strictly one after another, lowest position first.") do %>
+    <%= form_with model: group, url: do |f| %>
+      <% if group.errors.any? %>
+        <div class="alert alert-danger">
+          <ul class="mb-0"><% group.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %></ul>
+        </div>
+      <% end %>
+
+      <div class="row">
+        <div class="col-md-5 form-group">
+          <%= f.label :name, "Group name" %>
+          <%= f.text_field :name, class: "form-control", required: true, placeholder: "e.g. Quarterly close",
+                           data: { bs_toggle: "tooltip" }, title: "Name the close, not the funds: Quarterly close, Annual close, Month-end NAV…" %>
+        </div>
+        <div class="col-md-7 form-group">
+          <%= f.label :description, "Notes (optional)" %>
+          <%= f.text_field :description, class: "form-control", placeholder: "e.g. Run after valuations are approved; master must finish before feeders" %>
+        </div>
+      </div>
+
+      <div class="action-summary__intro mt-2">
+        <div class="fw-bold text-dark">Run order matters</div>
+        <div class="text-muted">A feeder fund's formulas read entries produced by its master, so put the <strong>master fund first</strong>. If any template fails, the ones after it are not run.</div>
+      </div>
+
+      <% if all_templates.empty? %>
+        <div class="alert alert-warning">
+          There are no allocation run templates yet. <%= link_to "Create one", new_allocation_run_template_path %> or use <strong>Save as template</strong> on a past run in a fund's allocation screen.
+        </div>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle art-group-form">
+            <thead>
+              <tr>
+                <th class="text-center" title="Tick to include this template in the group">Include</th>
+                <th class="text-center" title="Run order: lowest runs first">Position</th>
+                <th>Template</th>
+                <th>Fund</th>
+                <th>What it does</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%= f.fields_for :items, rows do |item_f| %>
+                <% item = item_f.object %>
+                <% included = !item.marked_for_destruction? %>
+                <tr class="<%= 'art-group-form__row--in' if included %>">
+                  <td class="text-center">
+                    <%= item_f.hidden_field :allocation_run_template_id %>
+                    <%# Unticked => _destroy=1 (hidden), ticked => _destroy=0 (checkbox value) %>
+                    <%= item_f.hidden_field :_destroy, value: "1", id: nil %>
+                    <%= item_f.check_box :_destroy, { checked: included, class: "form-check-input art-group-form__tick", include_hidden: false,
+                                                       data: { bs_toggle: "tooltip" }, title: "Include \"#{item.allocation_run_template.name}\" in this group" }, "0", "1" %>
+                  </td>
+                  <td class="text-center">
+                    <%= item_f.number_field :position, class: "form-control form-control-sm art-group-form__pos", min: 1, step: 1,
+                                            data: { bs_toggle: "tooltip" }, title: "Lower numbers run first. Ties run in the order they were added." %>
+                  </td>
+                  <td>
+                    <%= link_to item.allocation_run_template.name, allocation_run_template_path(item.allocation_run_template), target: "_blank", rel: "noopener" %>
+                  </td>
+                  <td><%= item.allocation_run_template.fund.name %></td>
+                  <td><%= template_option_badges(item.allocation_run_template) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+
+      <div class="form-group mt-3">
+        <%= f.submit group.persisted? ? "Save changes" : "Save group", class: "btn btn-outline-primary" %>
+        <%= link_to "Cancel", group.persisted? ? allocation_run_template_group_path(group) : allocation_run_templates_path, class: "btn btn-outline-secondary ms-2" %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

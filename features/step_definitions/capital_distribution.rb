@@ -601,7 +601,13 @@ Given('We Generate documents for the capital distribution') do
   click_on("Generate Documents")
   click_on("Proceed")
   sleep(5) # Wait for the job to complete
-  expect(page).to have_content("Documentation generation started")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N documents generated successfully") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Documentation generation started|documents generated/i,
+    wait: 20
+  )
 end
 
 When('I generate distribution payment documents directly for the capital distribution') do
@@ -749,7 +755,13 @@ Given('dist notice is generated for the dist payments') do
   click_on("Generate Documents")
   click_on("Proceed")
   sleep(10) # Wait for the job to complete
-  expect(page).to have_content("Documentation generation started, please check back in a few mins. Each distribution payment will have the customized document attached")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N documents generated successfully") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Documentation generation started|documents generated/i,
+    wait: 20
+  )
 end
 
 Then('dist notice must be generated for each dist payment') do

@@ -3,8 +3,15 @@ require 'dotenv'
 
 namespace :s3 do
   desc 'Check if the latest file in the source bucket is present in the destination bucket'
-  task :check_latest_file do
-    S3CheckJob.perform_now
+  task :check_latest_file, [:env_name] do |_t, args|
+    # env_name is what makes this usable from a laptop. Without it the job (and
+    # the AWS_S3_* bucket vars) resolve to the default credentials/.env, i.e.
+    # a different account than the one being verified.
+    if args[:env_name]
+      Rake::Task['aws:environment'].reenable
+      Rake::Task['aws:environment'].invoke(args[:env_name])
+    end
+    S3CheckJob.perform_now(env_name: args[:env_name])
   end
 
   # Manual/DR-verification entry point for the hourly cron job (see

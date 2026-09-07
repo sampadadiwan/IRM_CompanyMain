@@ -85,8 +85,14 @@ export default class extends Controller {
   }
 
   initTooltips(root) {
+    // data-bs-title is included on its own (not just alongside data-bs-toggle="tooltip")
+    // because a trigger's data-bs-toggle slot is sometimes already claimed by another
+    // Bootstrap component (e.g. data-bs-toggle="modal") — Bootstrap only reads that
+    // attribute for its own auto data-api, our getOrCreateInstance call below works on
+    // any element regardless of what data-bs-toggle says, so data-bs-title alone is
+    // enough to opt an element into a tooltip without disturbing its other behavior.
     const elements = Array.from(
-      root.querySelectorAll("[data-bs-toggle='tooltip'], [data-toggle='tooltip']")
+      root.querySelectorAll("[data-bs-toggle='tooltip'], [data-toggle='tooltip'], [data-bs-title]")
     )
     // console.log(`TooltipController#initTooltips found ${elements.length} elements in`, root)
 
