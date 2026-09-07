@@ -206,7 +206,8 @@ class DealIngestAuthenticator
 
   # All checks passed — create the AgentIngestedEmail and enqueue processing.
   # Uploads any attachments from the SendGrid payload to Shrine cache storage
-  # so they survive past the webhook request lifecycle.
+  # so they survive past the webhook request lifecycle. Stores the email
+  # subject for subject/body stakeholder conflict detection in the LLM parser.
   #
   # @return [Result]
   def create_ingested_email
@@ -217,6 +218,7 @@ class DealIngestAuthenticator
       sender_user: @user,
       message_id: @message_id || SecureRandom.uuid,
       raw_payload: email_body,
+      subject: @params[:subject],
       received_at: Time.current,
       status: "pending",
       attachment_data: extract_attachments

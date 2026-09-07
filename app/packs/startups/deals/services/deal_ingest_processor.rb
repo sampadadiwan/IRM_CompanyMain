@@ -54,14 +54,16 @@ class DealIngestProcessor
   # Step 1: Clean and parse the email body via LLM.
   # Strips signatures and quoted replies before parsing to avoid
   # wasting LLM tokens and prevent quoted text from confusing the parser.
+  # Passes the email subject for subject/body stakeholder conflict detection.
   # Stores the parse result on the email record for audit trail.
   #
-  # @return [Hash] parsed result with intent, stakeholder_string, body, due_date
+  # @return [Hash] parsed result with intent, stakeholder_string, subject_stakeholder_string, body, due_date
   def parse_email
     cleaned_body = EmailBodyCleaner.call(@email.raw_payload)
 
     parsed = DealEmailParser.call(
       email_body: cleaned_body,
+      subject: @email.subject,
       entity: @deal.entity,
       received_at: @email.received_at
     )
