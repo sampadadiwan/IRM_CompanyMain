@@ -1,0 +1,253 @@
+# Ontology for CapitalCommitment (a "folio") as exposed over MCP.
+---
+entity: capital_commitment
+label: Capital Commitment
+model: CapitalCommitment
+description: >-
+  One investor's commitment to one fund, identified by a folio ID. It is the account against
+  which capital is called, remitted and distributed, and it carries that investor's running
+  committed / called / collected / distributed totals.
+
+relationships:
+  fund:
+    target: fund
+    cardinality: many_to_one
+    note: Pass fund_ids rather than a Ransack condition on fund_id.
+    resolve_with: list_funds
+  investor:
+    target: investor
+    cardinality: many_to_one
+    note: The investor's name is denormalised onto investor_name, so filtering by name needs no join.
+  capital_remittances:
+    target: capital_remittance
+    cardinality: one_to_many
+    note: One remittance per capital call that applies to this folio.
+    resolve_with: list_capital_remittances
+  fund_units:
+    target: fund_unit
+    cardinality: one_to_many
+    note: Units issued against this commitment.
+    resolve_with: list_fund_units
+  account_entries:
+    target: account_entry
+    cardinality: one_to_many
+    note: The folio's ledger. Very large — only ever queried in aggregate.
+    resolve_with: list_account_entries
+
+fields:
+  folio_id:
+    type: string
+    description: >-
+      The folio identifier. An investor who commits to several funds can hold the same folio
+      ID in each, which is why folio_ids can be passed without fund_ids to see one
+      investor's position across the whole platform.
+    sortable: true
+  investor_name:
+    type: string
+    description: Denormalised investor name. Use investor_name_cont to search by person or firm.
+    sortable: true
+  commitment_date:
+    type: date
+    description: Date the investor's commitment was recorded.
+    sortable: true
+  fund_close:
+    type: string
+    description: Name of the fund close this commitment came in at.
+    sortable: true
+  unit_type:
+    type: string
+    description: Unit class the commitment subscribes to (e.g. "Class A").
+    sortable: true
+  onboarding_completed:
+    type: boolean
+    description: Whether the investor has finished onboarding for this folio.
+    sortable: true
+  folio_currency:
+    type: string
+    description: >-
+      Currency the folio is denominated in. It CAN differ from the fund's currency — this is
+      the fund-currency vs folio-currency duality, and it is the single biggest source of
+      wrong totals on this entity.
+    sortable: true
+  percentage:
+    type: percent
+    scale: 0-100
+    description: This folio's share of the fund's total commitments.
+    sortable: true
+    aggregatable: false
+  committed_amount:
+    type: money
+    stored_as: committed_amount_cents
+    currency: the fund's currency
+    description: Capital this investor has committed.
+    sortable: true
+    aggregatable: true
+  call_amount:
+    type: money
+    stored_as: call_amount_cents
+    currency: the fund's currency
+    description: Capital called from this folio to date.
+    sortable: true
+    aggregatable: true
+  collected_amount:
+    type: money
+    stored_as: collected_amount_cents
+    currency: the fund's currency
+    description: Capital received from this folio to date.
+    sortable: true
+    aggregatable: true
+  distribution_amount:
+    type: money
+    stored_as: distribution_amount_cents
+    currency: the fund's currency
+    description: Capital distributed to this folio to date.
+    sortable: true
+    aggregatable: true
+  total_units_amount:
+    type: money
+    stored_as: total_units_amount_cents
+    currency: the fund's currency
+    description: Value of units issued against this commitment.
+    sortable: true
+    aggregatable: true
+  foreign_currency_commitment:
+    type: boolean
+    description: >-
+      Computed in SQL: true when folio_currency differs from the fund's currency. Filter
+      foreign_currency_commitment_true to find the folios that make a naive money total wrong.
+    sortable: false
+    groupable: false
+  units_amount_minus_collected:
+    type: money
+    currency: the fund's currency
+    description: Computed in SQL as total_units_amount minus collected_amount; a reconciliation gap.
+    sortable: false
+    aggregatable: false
+  esign_emails:
+    type: string
+    description: Signatory addresses configured on the commitment.
+    sortable: false
+  fund_id:
+    type: reference
+    target: fund
+    description: Owning fund. Prefer the fund_ids parameter.
+    sortable: false
+  investor_id:
+    type: reference
+    target: investor
+    description: Owning investor.
+    sortable: false
+  investor_kyc_id:
+    type: reference
+    target: investor_kyc
+    description: KYC record backing this commitment, when one exists.
+    sortable: false
+  created_at:
+    type: datetime
+    description: When the commitment row was created. Not the commitment date.
+    sortable: true
+  updated_at:
+    type: datetime
+    description: When the commitment row last changed.
+    sortable: true
+
+returned_only:
+  investor:
+    type: string
+    description: The investor name, returned under this key. Filter with investor_name, not investor.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the commitment.
+
+unavailable:
+  id:
+    reason: Not declared in CapitalCommitment.ransackable_attributes, so conditions on it are ignored.
+  committed_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: committed_amount
+  collected_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: collected_amount
+  call_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: call_amount
+  distribution_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: distribution_amount
+  folio_committed_amount:
+    reason: >-
+      The folio-currency restatements (folio_committed_amount, folio_collected_amount,
+      folio_call_amount) are real columns but are not ransackable, so conditions on them are
+      silently ignored.
+
+scopes:
+  query_class: FundAssistantDataManager::CapitalCommitmentQuery
+  descriptions:
+    lp_onboarding_complete: Folios whose investor has finished onboarding.
+    lp_onboarding_incomplete: Folios still waiting on investor onboarding.
+
+measures:
+  total_committed:
+    expression: sum of committed_amount
+    description: Total commitments across the matching folios.
+  total_collected:
+    expression: sum of collected_amount
+    description: Total capital received across the matching folios.
+  uncalled:
+    expression: committed_amount - call_amount
+    description: >-
+      Undrawn commitment. Not available as an aggregate; compute per row, or subtract the
+      two sums when every matching folio shares one currency.
+
+caveats:
+  - >-
+    A folio can be denominated in a different currency from its fund (folio_currency vs the
+    fund's currency). Aggregated money sums on this entity are NOT currency-resolved and come
+    back marked currency_unresolved — treat such a total as indicative only, and prefer
+    grouping by fund or filtering to one fund.
+  - >-
+    Money filters take MAJOR units, not cents.
+  - >-
+    To see one investor's position across every fund, pass folio_ids alone and no fund_ids.
+    Calling this repeatedly, once per fund, for the same folio is the wrong shape.
+
+tools:
+  list_capital_commitments:
+    kind: list
+    summary: >-
+      Use it to find who has committed what, and to resolve folio IDs for the remittance,
+      distribution-payment and account-entry tools.
+    notes:
+      - >-
+        To get every commitment for one folio across all funds, pass ONLY folio_ids. If you
+        find yourself calling this repeatedly with different fund_ids for the same folio,
+        stop and make one call with folio_ids instead.
+    params:
+      fund_ids:
+      folio_ids:
+      scope:
+  get_commitment_details:
+    kind: detail
+    summary: >-
+      Use it after list_capital_commitments when you need one folio's full position
+      including its folio currency.
+    params:
+      commitment_id:
+        required: true
+    returns:
+      id: Commitment ID.
+      folio_id: Folio identifier.
+      investor: Investor name.
+      fund: Fund name.
+      unit_type: Unit class subscribed to.
+      commitment_date: Date the commitment was recorded.
+      committed_amount: Capital committed, formatted with its currency.
+      call_amount: Capital called to date.
+      collected_amount: Capital received to date.
+      distribution_amount: Capital distributed to date.
+      onboarding_completed: Whether investor onboarding is finished.
+      fund_close: The close this commitment came in at.
+      currency: >-
+        The FOLIO currency, which may differ from the fund's currency. The amounts above are
+        formatted in the fund's currency.
+      view_link: Relative CapHive URL for the commitment.

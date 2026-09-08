@@ -1,0 +1,122 @@
+# Ontology for Investment (cap-table lines) as exposed over MCP.
+---
+entity: investment
+label: Cap Table Investment
+model: Investment
+description: >-
+  One line on a portfolio company's cap table — who holds what, from which round, at what
+  price. These are the company's own shareholders, which is a different question from what
+  the funds hold (that is portfolio_investment).
+
+relationships:
+  portfolio_company:
+    target: portfolio_company
+    cardinality: many_to_one
+    note: Pass portfolio_company_ids rather than a Ransack condition.
+    resolve_with: list_portfolio_companies
+
+fields:
+  investor_name:
+    type: string
+    description: Name of the shareholder on this line — not necessarily one of your funds.
+    sortable: true
+  category:
+    type: string
+    description: Shareholder category (founder, employee, institutional, and so on).
+    sortable: true
+  investment_type:
+    type: string
+    description: Instrument type of the holding (equity, preference, convertible, option).
+    sortable: true
+  funding_round:
+    type: string
+    description: >-
+      Round the line came in at, e.g. "Series A". get_cap_table's funding_rounds parameter
+      filters on the same values.
+    sortable: true
+  currency:
+    type: string
+    description: Currency of the line's price and amount.
+    sortable: true
+  investment_date:
+    type: date
+    description: Date of the investment.
+    sortable: true
+  quantity:
+    type: decimal
+    description: Number of shares or units held.
+    sortable: true
+    aggregatable: true
+
+returned_only:
+  portfolio_company:
+    type: string
+    description: Company name, joined for readability.
+  price:
+    type: money
+    description: Price per share, formatted. Not ransackable.
+  amount:
+    type: money
+    description: Line amount, formatted. Not ransackable.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the investment.
+
+unavailable:
+  amount_cents:
+    reason: >-
+      Not ransackable on Investment. The old tool description advertised it as a filter, so a
+      condition on it was silently ignored and the whole cap table came back.
+  amount:
+    reason: Returned on each row but not ransackable, so a condition on it is silently ignored.
+  price:
+    reason: Returned on each row but not ransackable.
+  id:
+    reason: Not declared in Investment.ransackable_attributes, so conditions on it are ignored.
+
+caveats:
+  - >-
+    A cap-table line is a shareholder's holding in the company. It is NOT the same as a
+    portfolio investment, which is what one of your funds bought. Do not mix the two when
+    answering "how much do we own".
+  - >-
+    Lines can be in different currencies. Check `currency` before comparing or totalling
+    amounts.
+
+tools:
+  get_investments_in_cap_table:
+    kind: list
+    aggregatable: false
+    summary: >-
+      Use it for the line-by-line cap table. For an aggregated shareholding view use
+      get_cap_table instead.
+    params:
+      portfolio_company_ids:
+        required: true
+  get_cap_table:
+    kind: detail
+    summary: >-
+      Use it for an aggregated shareholding view — who owns how much, grouped. For individual
+      lines use get_investments_in_cap_table instead.
+    notes:
+      - >-
+        When funding_rounds is omitted, every round the company has is included.
+    params:
+      portfolio_company_id:
+        required: true
+      funding_rounds:
+        type: array
+        items:
+          type: string
+        description: >-
+          Restrict to these funding rounds, e.g. ["Series A", "Series B"]. Values come from
+          the funding_round attribute. Omit for all rounds.
+      group_by_field:
+        type: string
+        enum: [investor_name, funding_round, category]
+        description: How to group the cap table. Defaults to investor_name.
+    returns:
+      cap_table: >-
+        Shareholding rows grouped by the requested field, as computed by CapHive's cap-table
+        generator. Percentages are of the rounds included, so they change when funding_rounds
+        is narrowed.

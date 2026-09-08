@@ -696,6 +696,43 @@ class FundAssistantDataManager
 
   private
 
+  # Rejects an aggregate/group_by field that is not a real column on the model.
+  #
+  # This is a SQL injection guard, not a typo guard. `relation.sum(field)` and
+  # `relation.group(field)` interpolate their argument as RAW SQL -- unlike `order`,
+  # ActiveRecord does not check either against the model's columns. Both values originate
+  # from an LLM (the MCP tools' `query` hash, and the embedded assistants' tool arguments),
+  # so an unvalidated field is directly executable:
+  #
+  #   sum("(SELECT max(id) FROM users)")                  -> executes the subquery
+  #   group("(SELECT email FROM users LIMIT 1)")          -> returns that email as the
+  #                                                          GROUP KEY, i.e. an arbitrary
+  #                                                          read that bypasses Pundit
+  #
+  # Checking at the sink covers every caller -- MCP tools, embedded assistants and anything
+  # added later -- rather than relying on each one to validate first.
+  #
+  # @return [Hash, nil] an error hash when a field is not a column, nil when both are safe
+  def aggregation_column_error(model, aggregate, field, group_by)
+    columns = model.column_names
+    column = lambda do |name|
+      name = name.to_s
+      name == 'id' || columns.include?(name) || columns.include?("#{name}_cents")
+    end
+
+    # Written as a skip for the one branch that demonstrably ignores `field` ('count'),
+    # rather than an allowlist of the two that read it today: a branch added later (avg,
+    # min, max) then inherits the check instead of silently bypassing it back into raw SQL.
+    return { error: "Unknown aggregate field '#{field}' for #{model.name}." } if aggregate.to_s != 'count' && field.present? && !column.call(field)
+    return nil if group_by.blank? || column.call(group_by)
+    # investor_category is the one joined-table dimension, and ONLY the group_by branch
+    # maps it (to investors.category) -- as a sum field it would still reach invalid SQL.
+    return nil if group_by.to_s == 'investor_category'
+
+    { error: "Unknown group_by field '#{group_by}' for #{model.name}." }
+  end
+  private :aggregation_column_error
+
   # Performs aggregation on a relation using database queries.
   # This method ensures that aggregations (count, sum, group_by) are performed
   # at the database level rather than loading all records into memory.
@@ -707,6 +744,9 @@ class FundAssistantDataManager
   # @return [Hash] Aggregation result.
   def perform_aggregation(results, aggregate, field: nil, group_by: nil)
     Rails.logger.debug { "[FundAssistantDataManager] perform_aggregation: aggregate=#{aggregate}, field=#{field}, group_by=#{group_by}" }
+
+    column_error = aggregation_column_error(results.model, aggregate, field, group_by)
+    return column_error if column_error
 
     case aggregate
     when 'count'

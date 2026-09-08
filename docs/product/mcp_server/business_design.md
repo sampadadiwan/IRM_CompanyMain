@@ -198,7 +198,7 @@ Both serve different user needs. The FM Assistant is our product differentiator.
 - Tested with Claude.ai on staging (2026-05-18)
 
 ### Phase 3: Full Domain Coverage (2 weeks) — DONE
-- All 23 tools across 6 domains: funds, capital, portfolio, cap table, documents, commitments
+- All 22 tools across 6 domains: funds, capital, portfolio, cap table, documents, commitments
 - Streamable HTTP transport via official `mcp` gem (v0.15.0)
 - Two-level entity governance: CapHive admin billing gate + entity admin self-serve config
 - Doorkeeper OAuth admin restricted to super/support roles

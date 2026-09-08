@@ -1,0 +1,125 @@
+# Ontology for FundRatio as exposed over MCP.
+---
+entity: fund_ratio
+label: Fund Ratio
+model: FundRatio
+description: >-
+  A stored performance metric for a fund at a point in time — TVPI, DPI, RVPI, IRR and
+  similar. Values are computed by CapHive's ratio engine under the fund's own methodology,
+  so prefer them over deriving a multiple yourself from calls and distributions.
+
+relationships:
+  fund:
+    target: fund
+    cardinality: many_to_one
+    note: Pass fund_ids rather than a Ransack condition on fund_id.
+    resolve_with: list_funds
+
+fields:
+  name:
+    type: string
+    description: >-
+      Metric name. Commonly TVPI, DPI, RVPI or IRR, but an entity can configure others, so
+      treat that list as the common cases rather than a closed set.
+    sortable: true
+  value:
+    type: decimal
+    description: >-
+      Numeric value of the metric. A multiple like TVPI is a multiple (1.8 means 1.8x); an
+      IRR is a percentage. Read display_value on the returned row when presenting it.
+    sortable: true
+    aggregatable: false
+  end_date:
+    type: date
+    description: The as-of date the metric was computed for.
+    sortable: true
+  latest:
+    type: boolean
+    description: >-
+      True on the most recent computation for that fund/metric/scenario. Filter latest_true
+      for "current" values, otherwise you get the whole time series.
+    sortable: false
+  scenario:
+    type: string
+    description: Named scenario the metric was computed under, when the fund uses scenarios.
+    sortable: true
+  fund_id:
+    type: reference
+    target: fund
+    description: Owning fund. Prefer the fund_ids parameter.
+    sortable: false
+  computation_context_id:
+    type: reference
+    target: computation_context
+    description: Portfolio scenario the metric was computed in, when one applies.
+    sortable: false
+  computation_context_type:
+    type: string
+    description: Model name behind computation_context_id.
+    sortable: false
+
+returned_only:
+  fund_name:
+    type: string
+    description: Name of the owning fund, joined for readability.
+  display_value:
+    type: string
+    description: >-
+      The value formatted the way CapHive presents it (percent sign, x multiple, decimal
+      places). Prefer this over value when quoting a metric to a person.
+  portfolio_scenario:
+    type: string
+    description: Name of the computation context, when one applies.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the ratio.
+
+unavailable:
+  owner_type:
+    reason: >-
+      list_fund_ratios pins owner_type to 'Fund' itself, so a condition on it is overwritten
+      rather than applied. Portfolio-company ratios are reached through
+      get_portfolio_company_snapshot instead.
+  owner_id:
+    reason: Set by the tool from fund_ids; a client condition on it is overwritten.
+    use_instead: fund_ids
+  id:
+    reason: Not declared in FundRatio.ransackable_attributes, so conditions on it are ignored.
+
+scopes:
+  query_class: FundAssistantDataManager::FundRatioQuery
+  descriptions:
+    latest: Only the most recent computation per fund/metric.
+    default: Only ratios flagged as the fund's default set.
+
+measures:
+  current_tvpi:
+    expression: value where name_eq 'TVPI' and latest_true
+    description: Total value to paid-in. One row per fund; do not sum across funds.
+  current_dpi:
+    expression: value where name_eq 'DPI' and latest_true
+    description: Distributions to paid-in.
+  current_irr:
+    expression: value where name_eq 'IRR' and latest_true
+    description: Internal rate of return, as a percentage.
+
+caveats:
+  - >-
+    Ratios are per fund and per as-of date. Summing or averaging `value` across funds is
+    almost always wrong — a portfolio-level TVPI is not the mean of its funds' TVPIs.
+  - >-
+    Without latest_true you get the full history, so "the fund's TVPI" will come back as many
+    rows. Always pin latest_true (or scope 'latest') for a current value.
+  - >-
+    Different metrics live in the same `value` column, so never aggregate without also
+    filtering on name.
+
+tools:
+  list_fund_ratios:
+    kind: list
+    summary: >-
+      Use it for "how is this fund performing" questions instead of deriving multiples from
+      calls and distributions.
+    params:
+      fund_ids:
+      scope:

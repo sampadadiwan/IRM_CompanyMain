@@ -1,0 +1,802 @@
+---
+title: The semantic layer | CapHive
+description: An AI assistant connected to fund data will answer confidently whether
+  or not it understood the question. How we made a wrong question impossible to ask —
+  and a wrong answer impossible to return quietly.
+og_title: The number was right. The question wasn't.
+og_description: An AI assistant connected to fund data will answer confidently whether
+  or not it understood the question. How we made a wrong question impossible to ask.
+data_page: resources
+og_type: article
+body_extra: |
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "The number was right. The question wasn't.",
+    "description": "An AI assistant connected to fund data will answer confidently whether or not it understood the question. How we made a wrong question impossible to ask.",
+    "datePublished": "2026-09-08",
+    "author": { "@type": "Organization", "name": "CapHive" },
+    "publisher": { "@type": "Organization", "name": "CapHive" },
+    "mainEntityOfPage": "https://caphive.com/semantic-layer.html"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "Isn't this just a better system prompt?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No. A prompt is advice the model may follow. The semantic layer also generates the tool's input schema, so an invalid option cannot be expressed, and the validator every request passes through, so an invalid request is refused before it reaches the database. Two of the three enforcement points do not depend on the model cooperating." } },
+      { "@type": "Question", "name": "Isn't this the hallucination problem? Doesn't better grounding solve it?",
+        "acceptedAnswer": { "@type": "Answer", "text": "It is the opposite of hallucination. The model invents nothing; it reports faithfully on what it retrieved, so every measure of grounding scores the answer as correct. Grounding tells you the answer came from your data. It says nothing about whether the retrieval understood the question, and that second gap is what a semantic layer closes." } },
+      { "@type": "Question", "name": "Does this make answers slower?",
+        "acceptedAnswer": { "@type": "Answer", "text": "It makes them faster in practice. Validation is an in-memory check against a definition file and costs nothing measurable. The saving comes from removing round trips: the assistant is told the right field name in the error, so it corrects on the next call instead of exploring." } },
+      { "@type": "Question", "name": "Who writes the definitions?",
+        "acceptedAnswer": { "@type": "Answer", "text": "CapHive ships definitions for the whole platform. Where your firm's conventions differ — what you mean by outstanding, whether a recallable distribution counts toward DPI — those are yours to set, and the change is a text edit reviewed like any other policy change." } },
+      { "@type": "Question", "name": "Can the AI change anything in our data?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No write tool exists. Every one of the 22 tools reads. There is no create, update or delete path to disable because none was ever built." } },
+      { "@type": "Question", "name": "Does this work with ChatGPT and Gemini or only Claude?",
+        "acceptedAnswer": { "@type": "Answer", "text": "All three, plus anything else that speaks the Model Context Protocol. The definitions generate a standard tool interface, so one definition serves every assistant your firm uses now and any it adopts later." } },
+      { "@type": "Question", "name": "Can an assistant see data the person asking cannot?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No. Every request runs inside the requesting user's own authorisation scope, the same one that governs what they see in the web application. Access is additionally gated at the organisation, role and client-application level, and every call is logged and attributable." } }
+    ]
+  }
+  </script>
+---
+<style>
+  /* Page-scoped: the wire traces, the two-answer comparison, and the diagrams.
+     Everything else comes from the shared design system. */
+  .wire{
+    font-family:var(--mono); font-size:12.5px; line-height:1.8; white-space:pre;
+    background:#F7F5F0; border:1px solid var(--line); border-left:2px solid var(--mut);
+    border-radius:0 10px 10px 0; padding:14px 16px; overflow-x:auto; color:var(--mut);
+    margin:18px 0;
+  }
+  .wire b{ color:var(--fg); font-weight:500; }
+  .wire i{ color:var(--orange-2); font-style:normal; font-weight:500; }
+
+  .two-up{ display:grid; grid-template-columns:1fr; gap:18px; margin:26px 0; }
+  @media(min-width:700px){ .two-up{ grid-template-columns:1fr 1fr; } }
+  .two-up > div{
+    background:var(--tile); border:1px solid var(--line); border-radius:16px; padding:20px 22px;
+    border-top:3px solid var(--line);
+  }
+  .two-up .before{ border-top-color:var(--orange); }
+  .two-up .after{ border-top-color:var(--fg); }
+  .prose .two-up h4{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+    font-weight:500; color:var(--mut); margin-bottom:12px;
+  }
+  .prose .two-up .before h4{ color:var(--orange-2); }
+  .prose .two-up .num{
+    display:block; font-family:var(--mono); font-size:26px; font-weight:600;
+    letter-spacing:-0.02em; color:var(--fg); margin-bottom:6px;
+  }
+  .prose .two-up .before .num{ color:var(--orange-2); text-decoration:line-through; text-decoration-thickness:1px; }
+  .prose .two-up p{ font-size:14.5px; line-height:1.65; color:var(--mut); }
+  .prose .two-up p + p{ margin-top:10px; }
+
+  .takeaways{
+    background:var(--cream); border:1px solid var(--line); border-radius:20px;
+    padding:28px 32px; margin:0 0 40px;
+  }
+  .takeaways .lbl{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--orange-2); display:block; margin-bottom:16px;
+  }
+  .prose .takeaways ul{ margin:0; padding:0; list-style:none; }
+  .prose .takeaways ul li{
+    position:relative; padding-left:26px; margin-bottom:14px;
+    font-size:16px; line-height:1.6; color:var(--fg);
+  }
+  .prose .takeaways ul li:last-child{ margin-bottom:0; }
+  .prose .takeaways ul li::before{
+    content:""; position:absolute; left:2px; top:9px; width:8px; height:8px;
+    border-radius:50%; background:var(--orange);
+  }
+  .prose .takeaways .bottom{
+    margin-top:20px; padding-top:18px; border-top:1px solid var(--line);
+    font-size:16px; color:var(--fg);
+  }
+  .prose .takeaways .bottom strong{ font-weight:600; }
+
+  .dgm{ margin:34px 0; }
+  .dgm > div{
+    background:#FFFFFF; border:1px solid var(--line); border-radius:14px;
+    padding:22px; overflow-x:auto;
+  }
+  .dgm svg{ display:block; width:100%; height:auto; min-width:560px; }
+  .dgm figcaption{
+    margin-top:14px; font-size:14px; line-height:1.6; color:var(--mut); max-width:720px;
+  }
+  .dgm text{ font-family:var(--font); }
+  .d-box{ fill:#FFFFFF; stroke:var(--fg); stroke-width:1.3; }
+  .d-box-soft{ fill:var(--cream); stroke:var(--line); stroke-width:1.3; }
+  .d-box-hot{ fill:#FFF3ED; stroke:var(--orange); stroke-width:1.3; }
+  .d-t{ font-size:13px; font-weight:600; fill:var(--fg); }
+  .d-s{ font-family:var(--mono); font-size:10.5px; fill:var(--mut); letter-spacing:.02em; }
+  .d-hot{ fill:var(--orange-2); }
+  .d-line{ stroke:var(--fg); stroke-width:1.3; fill:none; }
+  .d-line-hot{ stroke:var(--orange); stroke-width:1.6; fill:none; }
+  .d-line-soft{ stroke:var(--mut); stroke-width:1.1; fill:none; opacity:.7; }
+
+  /* Every selector here is prefixed with .prose so it outranks the shared
+     `.prose ol li` / `.prose ol li::before` rules, which are (0,1,2) and would
+     otherwise win on content, padding-left, left and colour — putting the site's
+     "1." marker inside this box and pulling the text back under it. */
+  .prose ol.gate-list{ counter-reset:g; margin:26px 0 0; padding-left:0; list-style:none; }
+  .prose ol.gate-list > li{
+    position:relative; padding-left:58px; margin-bottom:24px; counter-increment:g; list-style:none;
+  }
+  .prose ol.gate-list > li::before{
+    content:counter(g); position:absolute; left:0; top:1px;
+    width:36px; height:36px; border-radius:10px; border:1px solid var(--line); background:var(--tile);
+    font-family:var(--mono); font-size:13px; color:var(--orange-2);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .prose .gate-list h4{ font-size:16px; font-weight:600; letter-spacing:-0.02em; margin-bottom:4px; color:var(--fg); }
+  .prose .gate-list p{ font-size:15px; color:var(--mut); line-height:1.7; }
+  .prose .gate-list .stops{
+    display:inline-block; margin-top:8px; font-family:var(--mono); font-size:11px;
+    letter-spacing:.06em; color:var(--mut); border:1px solid var(--line);
+    border-radius:999px; padding:4px 12px; background:var(--tile);
+  }
+</style>
+
+<article>
+  <!-- ================= HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-black tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>The semantic layer
+          </nav>
+          <span class="chip-label">AI · Data governance</span>
+          <h1 style="margin-top:22px">The number was right. <em>The question wasn&rsquo;t.</em></h1>
+          <p class="lede">Point an AI assistant at your fund data and it will answer confidently whether
+            or not it understood what you asked. There is no error, no warning, and no empty result —
+            just a specific figure that belongs to a different question. This is the layer we built so
+            that cannot happen.</p>
+          <div class="article-meta">
+            <time datetime="2026-09-08">Sep 8, 2026</time>
+            <span class="dot">·</span>
+            <span>22 min read</span>
+            <span class="dot">·</span>
+            <span>AI</span>
+          </div>
+        </div>
+        <div class="stat-band">
+          <div><strong>16</strong><span>Entities defined</span></div>
+          <div><strong>22</strong><span>Tools governed</span></div>
+          <div><strong>1,728</strong><span>Rules re-checked every build</span></div>
+          <div><strong>0</strong><span>Silently ignored fields</span></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+
+        <div class="takeaways">
+          <span class="lbl">Key takeaways</span>
+          <ul>
+            <li>The real risk of connecting an AI assistant to fund data is not that it invents a number. It is that it returns a <strong>real number for a question nobody asked</strong>, with no error to warn you.</li>
+            <li>It happens when the system quietly ignores part of the request &mdash; a fund, a date range, an approval status. The total is correctly computed. It is just the total for the wrong set of records.</li>
+            <li><strong>A smarter model does not fix this</strong>, because the assistant was never told anything went wrong. Nor does a human reviewing the answer: it looks exactly like the right one.</li>
+            <li>The fix is to write down what your data means &mdash; every field, every measure, every rule &mdash; and generate the AI&rsquo;s interface from that, so an unanswerable question is <strong>refused rather than guessed</strong>.</li>
+            <li>Those definitions are re-tested against the live database on <strong>every release</strong>, so they cannot quietly go stale and start giving confident instructions to do the wrong thing.</li>
+            <li>Nothing changes about access. Read-only, inside the asking person&rsquo;s own permissions, enabled per role, every query logged.</li>
+          </ul>
+          <p class="bottom"><strong>The bottom line:</strong> your team can put fund questions to the assistant they already use, and the answers carry the same definitions your finance team would apply by hand &mdash; or the assistant tells them it cannot answer.</p>
+        </div>
+
+        <p>Every fund platform that shipped an AI feature in the last two years solved the same first problem: how to let a language model reach the data. That part is now standard. A protocol, an OAuth flow, a set of read-only tools, and the assistant your team already uses can ask about your funds.</p>
+        <p>The second problem is much harder, gets much less attention, and is the one that will eventually produce a wrong number in front of a limited partner.</p>
+        <p>It is this: <strong>a query layer does not refuse a filter it does not recognise. It discards it and returns everything else.</strong></p>
+        <p>No exception. No warning. HTTP 200, a well-formed result set, and an assistant that reports it as a filtered answer in a fluent, specific sentence.</p>
+
+        <h2>The failure that produces no error</h2>
+        <p>Here is the shape of it, at the wire level. Someone asks what one fund paid in management fees. The assistant composes a request with two conditions — the fund, and the type of ledger entry.</p>
+
+        <div class="wire"><b>request</b>   fund_id      = 4
+          entry_type   = "Management Fee"
+          reporting_date &gt;= 2025-01-01
+
+<b>parsed</b>    entry_type   <b>→ recognised, applied</b>
+          reporting_date <b>→ recognised, applied</b>
+          fund_id      <i>→ not recognised, discarded</i>
+
+<b>response</b>  200 OK · { "total": 18412000 }</div>
+
+        <p>The fund condition was dropped because the attribute was not on the list of things that entity accepts as a filter. Everything else worked. The total is real, correctly computed, and returned without complaint — it is simply the total across <em>every</em> fund the user can see.</p>
+        <p>The assistant has no way to know. It asked for three conditions and got a successful response. It says: <em>&ldquo;Fund II paid $18.41m in management fees in 2025.&rdquo;</em></p>
+
+        <figure class="dgm">
+          <div>
+            <svg viewBox="0 0 900 300" role="img" aria-label="A request with three conditions enters the query builder; two are recognised and applied to the SQL, one is not recognised and is discarded without an error; both paths converge on a successful response, which the assistant reports as a filtered answer.">
+              <defs>
+                <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#101010"/></marker>
+                <marker id="a1h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF4D00"/></marker>
+              </defs>
+
+              <rect class="d-box-soft" x="8" y="106" width="150" height="72" rx="10"/>
+              <text class="d-t" x="83" y="136" text-anchor="middle">3 conditions</text>
+              <text class="d-s" x="83" y="155" text-anchor="middle">from the assistant</text>
+
+              <rect class="d-box" x="216" y="106" width="150" height="72" rx="10"/>
+              <text class="d-t" x="291" y="136" text-anchor="middle">Query builder</text>
+              <text class="d-s" x="291" y="155" text-anchor="middle">is this recognised?</text>
+
+              <rect class="d-box" x="424" y="34" width="176" height="66" rx="10"/>
+              <text class="d-t" x="512" y="62" text-anchor="middle">2 applied</text>
+              <text class="d-s" x="512" y="80" text-anchor="middle">reach the SQL</text>
+
+              <rect class="d-box-hot" x="424" y="184" width="176" height="66" rx="10"/>
+              <text class="d-t d-hot" x="512" y="212" text-anchor="middle">1 discarded</text>
+              <text class="d-s d-hot" x="512" y="230" text-anchor="middle">no error raised</text>
+
+              <rect class="d-box" x="666" y="106" width="180" height="72" rx="10"/>
+              <text class="d-t" x="756" y="130" text-anchor="middle">200 OK</text>
+              <text class="d-s" x="756" y="148" text-anchor="middle">valid result set</text>
+              <text class="d-s d-hot" x="756" y="165" text-anchor="middle">wrong population</text>
+
+              <path class="d-line" d="M158 142 L212 142" marker-end="url(#a1)"/>
+              <path class="d-line" d="M366 130 C 398 130 396 67 420 67" marker-end="url(#a1)"/>
+              <path class="d-line-hot" d="M366 154 C 398 154 396 217 420 217" marker-end="url(#a1h)"/>
+              <path class="d-line" d="M600 67 C 630 67 634 130 662 130" marker-end="url(#a1)"/>
+              <path class="d-line-hot" d="M600 217 C 630 217 634 154 662 154" marker-end="url(#a1h)"/>
+              <text class="d-s" x="393" y="98" text-anchor="middle">yes</text>
+              <text class="d-s d-hot" x="381" y="206" text-anchor="middle">no</text>
+              <text class="d-s" x="756" y="204" text-anchor="middle">assistant reports it</text>
+              <text class="d-s" x="756" y="220" text-anchor="middle">as a filtered answer</text>
+              <path class="d-line-soft" d="M756 178 L756 194" marker-end="url(#a1)"/>
+            </svg>
+          </div>
+          <figcaption>The discarded condition is the whole problem. Both paths produce a successful
+            response, so nothing downstream — not the protocol, not the model, not the person reading
+            the answer — has any signal that a third of the question was thrown away.</figcaption>
+        </figure>
+
+        <div class="callout">
+          <p><strong>Why this is worse than an error.</strong> An error is a bad afternoon. A silently
+          discarded filter is a number that gets pasted into a board pack, because it looked exactly
+          like the right answer and arrived faster than asking an analyst.</p>
+        </div>
+
+        <h2>Three ways the same failure shows up</h2>
+        <p>The dropped filter is the most consequential variant, but it is not the only one. All three below share a property: the request succeeds, so nothing surfaces.</p>
+
+        <table>
+          <thead>
+            <tr><th>What the assistant sends</th><th>What actually happens</th><th>What the person is told</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A filter on an attribute that isn&rsquo;t queryable — <code>status</code> on a capital call, when approval is held in a different field</td>
+              <td>Condition discarded. Every row returns.</td>
+              <td>A total for &ldquo;active calls&rdquo; that is the total for all calls.</td>
+            </tr>
+            <tr>
+              <td>A sort on a key the layer won&rsquo;t honour — the physical column <code>call_amount_cents</code> rather than the queryable <code>call_amount</code></td>
+              <td>Sort discarded. Rows return in arbitrary order.</td>
+              <td>&ldquo;The five largest capital calls&rdquo; — which are five calls, not the five largest.</td>
+            </tr>
+            <tr>
+              <td>A request with no limit against a large table</td>
+              <td>Server caps the result at 500 rows.</td>
+              <td>&ldquo;There are 500 remittances outstanding.&rdquo; There are 2,300.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>Notice that a smarter model does not fix any of these. The assistant behaved correctly at every step. It asked a reasonable question, received a successful answer, and reported it. The information needed to know better was never in the response.</p>
+
+        <div class="pull">
+          <p>The model isn&rsquo;t guessing. It&rsquo;s being told, correctly, the answer to a question nobody asked.</p>
+        </div>
+
+        <h2>This is not hallucination &mdash; which is why a better model won&rsquo;t fix it</h2>
+        <p>The industry has spent three years learning to worry about fabrication: a model inventing a figure that was never in the data. That is a real problem, and it is not this one.</p>
+        <p>Here the model fabricates nothing. It is perfectly <strong>faithful</strong> to what it was handed. The retrieval was wrong; the generation was an accurate report of a wrong retrieval. Every metric the AI industry uses to measure grounding would score this answer as correct.</p>
+        <p><strong>Retrieval-augmented generation</strong> — the pattern behind essentially every &ldquo;AI on your data&rdquo; product since Lewis et al. formalised it in 2020 — rests on an assumption almost no one states out loud: that the retrieval step either returns what was asked for, or fails loudly. Ground a model in your documents and it stops making things up. Ground it in a query layer that discards conditions it doesn&rsquo;t recognise and you have grounded it in something worse than nothing.</p>
+
+        <div class="pull">
+          <p>Grounding a model in a retrieval layer that silently drops your filters isn&rsquo;t grounding. It&rsquo;s a confident falsehood with a database behind it.</p>
+        </div>
+
+        <p>The research on querying databases in natural language points at the same gap from the other direction. The field&rsquo;s first serious benchmark, <em>Spider</em>, used clean schemas and questions answerable from column names alone. Its successor, <em>BIRD</em>, was built on large, messy, real-world databases — and accuracy fell sharply. The telling detail is what BIRD had to add to make the task tractable at all: <strong>external knowledge evidence</strong>, shipped alongside each question, because the schema by itself did not carry enough meaning to answer correctly.</p>
+        <p>That external evidence is what a semantic layer is. A fund ledger is a BIRD database, not a Spider one — multi-currency, temporally qualified, full of columns whose names understate what they mean and fields whose correctness depends on the state of another field entirely.</p>
+
+        <h3>And &ldquo;a human checks it&rdquo; is the weakest control you have</h3>
+        <p>The instinctive answer is that someone reviews the number before it goes anywhere. Four decades of human-factors research says that is the control most likely to fail.</p>
+        <p>Lisanne Bainbridge set out the paradox in <em>Ironies of Automation</em> (1983): the more reliable an automated system becomes, the less practised its supervisor is at catching the failures it does have — and the more the supervisor&rsquo;s attention drifts from the task they are meant to be checking. Parasuraman and Riley&rsquo;s work on <strong>automation bias</strong> sharpened it: people accept a confident automated answer more readily than an equally confident human one, and they verify it less, precisely when it looks well-formed.</p>
+        <p>A fee total that arrives in eleven seconds, correctly formatted, with a plausible breakdown and a citation to your own system, is exactly the artefact this literature predicts will not be checked. The control has to sit before the answer is produced, not after.</p>
+
+        <div class="pull">
+          <p>You cannot review your way out of this. The answer that is wrong looks exactly like the answer that is right.</p>
+        </div>
+
+        <h2>Where this idea comes from</h2>
+        <p>A semantic layer is not a new invention, and that is a point in its favour — this is a proven architecture being pointed at a new consumer.</p>
+        <p>Analytics has had one for over a decade. <strong>LookML</strong> established the pattern in 2012: define dimensions, measures and joins once, above the warehouse, and let every chart inherit them so two dashboards cannot disagree about revenue. The <strong>metrics layer</strong> generation that followed — dbt&rsquo;s Semantic Layer, Cube, Malloy — pulled those definitions out of the BI tool entirely so any consumer could use them. In enterprise software the same idea is sold as an <strong>ontology</strong>: a governed model of objects, properties and relationships sitting between raw tables and the applications — now the agents — that act on them. It is the central concept in Palantir&rsquo;s platform, and it is why they talk about the ontology rather than the database.</p>
+        <p>What changes when the consumer is a model rather than a person is not the definitions. It is what has to happen when the request does not fit them. A dashboard has a human in front of it who notices an implausible chart. An agent has no such reader, so the layer needs three properties BI never had to provide:</p>
+
+        <ol>
+          <li><strong>Refusal instead of best effort.</strong> Jon Postel&rsquo;s robustness principle — be liberal in what you accept — built the internet and is exactly wrong here. A query layer that liberally ignores what it cannot parse is the entire failure described above. For an agent, a precise refusal is more useful than a permissive success, because the refusal is information it can act on.</li>
+          <li><strong>Illegal states made unrepresentable.</strong> Yaron Minsky&rsquo;s formulation from typed programming — the best way to prevent an invalid value is to make it impossible to construct. Enumerating every valid sort key and aggregate in the tool&rsquo;s JSON Schema does exactly that: modern assistants constrain their output to the schema, so the invalid option is never generated, not merely rejected afterwards.</li>
+          <li><strong>Contracts enforced by the build.</strong> The <strong>data contracts</strong> movement made the case that an interface between a producer and a consumer of data should be explicit, versioned and tested in CI rather than assumed. A semantic layer is a data contract whose consumer happens to be a language model — so the same discipline applies, and the same thing goes wrong without it.</li>
+        </ol>
+
+        <p>Those three are what separate this from a document describing your data, and they are what the rest of this piece is about.</p>
+
+        <h2>From theory to implementation</h2>
+        <p>None of the ideas above are ours. What follows in the rest of this piece is each of them made concrete in a fund platform &mdash; and this is the map.</p>
+
+        <table>
+          <thead>
+            <tr><th>Concept</th><th>What it holds</th><th>Where it lives in CapHive</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Semantic layer</strong><br><span style="font-size:13px">LookML, 2012; dbt, Cube, Malloy</span></td>
+              <td>Define entities, dimensions and measures once, above the store, so no two consumers disagree.</td>
+              <td>Sixteen definition files, one per entity, holding every field an assistant may touch and every measure it may quote.</td>
+            </tr>
+            <tr>
+              <td><strong>Ontology</strong><br><span style="font-size:13px">The enterprise framing; central to Palantir&rsquo;s platform</span></td>
+              <td>A governed model of objects, properties and links that applications &mdash; and now agents &mdash; act through rather than around.</td>
+              <td>The relationship map in each definition: cardinality, the route from fund to folio to payment, and which tool resolves each hop.</td>
+            </tr>
+            <tr>
+              <td><strong>External knowledge evidence</strong><br><span style="font-size:13px">BIRD text-to-SQL benchmark, 2023</span></td>
+              <td>Real databases cannot be queried correctly from the schema alone; the model needs the domain knowledge the columns omit.</td>
+              <td>The description and caveat on every field &mdash; that a status is meaningless until verified, that an amount excludes fees.</td>
+            </tr>
+            <tr>
+              <td><strong>Grounding</strong><br><span style="font-size:13px">Retrieval-augmented generation, Lewis et al., 2020</span></td>
+              <td>Condition the answer on retrieved facts rather than model memory.</td>
+              <td>Every figure in an answer comes from a tool call against your data. Nothing is recalled from training.</td>
+            </tr>
+            <tr>
+              <td><strong>Faithfulness is not correctness</strong><br><span style="font-size:13px">The grounded-generation literature</span></td>
+              <td>An answer can be perfectly faithful to what was retrieved and still wrong, if the retrieval was.</td>
+              <td>Why the validation sits on the request, not the answer. Checking the output cannot catch this class at all.</td>
+            </tr>
+            <tr>
+              <td><strong>Make illegal states unrepresentable</strong><br><span style="font-size:13px">Minsky; typed functional programming</span></td>
+              <td>The strongest way to prevent an invalid value is to make it impossible to construct.</td>
+              <td>Sort keys, aggregate fields and grouping dimensions are enumerated in the tool&rsquo;s JSON Schema, so an invalid one is never generated.</td>
+            </tr>
+            <tr>
+              <td><strong>Parse, don&rsquo;t validate</strong><br><span style="font-size:13px">Alexis King, 2019</span></td>
+              <td>Turn loose input into a known-good value once, at the boundary, and carry the guarantee inward.</td>
+              <td>The validator runs at the tool boundary. Past it, the query is known to be expressible &mdash; nothing downstream re-checks or silently repairs it.</td>
+            </tr>
+            <tr>
+              <td><strong>Design by contract</strong><br><span style="font-size:13px">Meyer; preconditions as errors</span></td>
+              <td>A caller must satisfy stated preconditions, and a violation is an error rather than undefined behaviour.</td>
+              <td>Tools over very large tables declare their preconditions &mdash; at least one filter, or aggregation only &mdash; and refuse a call that does not meet them.</td>
+            </tr>
+            <tr>
+              <td><strong>Fail fast, not liberal</strong><br><span style="font-size:13px">Inverting Postel&rsquo;s robustness principle</span></td>
+              <td>Accepting what you cannot honour produces silent wrongness rather than resilience.</td>
+              <td>An unrecognised attribute returns an error naming the correct one. It is never dropped.</td>
+            </tr>
+            <tr>
+              <td><strong>Data contracts in CI</strong><br><span style="font-size:13px">The data-contracts movement</span></td>
+              <td>An interface between a data producer and consumer should be explicit, versioned and tested, not assumed.</td>
+              <td>1,728 rules executed against the live schema on every build. A definition that has drifted stops the release.</td>
+            </tr>
+            <tr>
+              <td><strong>Automation bias</strong><br><span style="font-size:13px">Parasuraman &amp; Riley, 1997</span></td>
+              <td>People verify confident automated output less than equally confident human output.</td>
+              <td>Every control sits before the answer is produced. None of them depends on someone catching it afterwards.</td>
+            </tr>
+            <tr>
+              <td><strong>Ironies of automation</strong><br><span style="font-size:13px">Bainbridge, 1983</span></td>
+              <td>The more reliable the system, the less able its supervisor is to catch the failures it still has.</td>
+              <td>Refusals are surfaced to the user, not swallowed. The boundary of what the system can answer stays visible instead of eroding.</td>
+            </tr>
+            <tr>
+              <td><strong>Least privilege</strong><br><span style="font-size:13px">Saltzer &amp; Schroeder, 1975</span></td>
+              <td>Every access runs with the minimum authority needed, authorised in its own right.</td>
+              <td>Each request executes inside the asking user&rsquo;s own scope, gated again by role and client application, against a tool set with no write path.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>What we built instead</h2>
+        <p>A semantic layer is a single, machine-readable definition of what your data means: every entity, every field, every measure, and every rule about how they may legitimately be combined. It is authored once, by people who know the difference between gross and net distributions, and it is the source that everything else is generated from.</p>
+        <p>Not documentation that sits beside the system. The system.</p>
+
+        <h3>The map</h3>
+        <p>Which entities exist and how they relate — a fund has commitments, a commitment has remittances, a remittance has payments — with the cardinality and the route between them recorded. The assistant no longer infers a join from column names, and it knows which tool resolves a name into an identifier before it starts.</p>
+
+        <h3>The fields</h3>
+        <p>Every attribute that may be filtered, sorted or totalled, with its type, its unit, its currency basis, the comparisons it accepts, and the values it can hold. Critically, it also records the fields that <em>look</em> available and are not, and why — the physical column behind a formatted amount, the value computed after the query that can never be filtered, the attribute that exists on a related record rather than this one.</p>
+
+        <h3>The measures</h3>
+        <p>What <em>called capital</em>, <em>outstanding</em>, <em>DPI</em> and <em>total distributed</em> mean at your firm, written as formulas over those fields, with the caveats attached. The assistant uses your definitions rather than inventing a plausible one from the column names — and a plausible one is exactly what it will invent, every time, if you don&rsquo;t give it yours.</p>
+
+        <div class="pull">
+          <p>Ask a model what &ldquo;total distributed&rdquo; means and it will give you a plausible answer. Plausible is the whole problem.</p>
+        </div>
+
+        <figure class="dgm">
+          <div>
+            <svg viewBox="0 0 900 396" role="img" aria-label="One definition file generates the tool description, the input schema and the request validator. The first two shape what the assistant can ask for, the third governs what reaches the fund data, and a build-time check re-verifies the definition against the live database schema.">
+              <defs>
+                <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#101010"/></marker>
+                <marker id="a2h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF4D00"/></marker>
+              </defs>
+
+              <rect class="d-box-soft" x="8" y="126" width="168" height="92" rx="10"/>
+              <text class="d-t" x="92" y="158" text-anchor="middle">The definition</text>
+              <text class="d-s" x="92" y="177" text-anchor="middle">one file per entity</text>
+              <text class="d-s" x="92" y="193" text-anchor="middle">versioned, reviewed</text>
+
+              <rect class="d-box" x="288" y="26" width="196" height="62" rx="10"/>
+              <text class="d-t" x="386" y="52" text-anchor="middle">Tool description</text>
+              <text class="d-s" x="386" y="70" text-anchor="middle">what the data means</text>
+
+              <rect class="d-box" x="288" y="112" width="196" height="62" rx="10"/>
+              <text class="d-t" x="386" y="138" text-anchor="middle">Input schema</text>
+              <text class="d-s" x="386" y="156" text-anchor="middle">the only valid options</text>
+
+              <rect class="d-box" x="288" y="198" width="196" height="62" rx="10"/>
+              <text class="d-t" x="386" y="224" text-anchor="middle">Request validator</text>
+              <text class="d-s" x="386" y="242" text-anchor="middle">refuses everything else</text>
+
+              <rect class="d-box" x="600" y="44" width="196" height="78" rx="10"/>
+              <text class="d-t" x="698" y="76" text-anchor="middle">Claude · ChatGPT</text>
+              <text class="d-t" x="698" y="96" text-anchor="middle">Gemini</text>
+
+              <rect class="d-box-soft" x="600" y="198" width="196" height="62" rx="10"/>
+              <text class="d-t" x="698" y="224" text-anchor="middle">Your fund data</text>
+              <text class="d-s" x="698" y="242" text-anchor="middle">read-only, user-scoped</text>
+
+              <path class="d-line" d="M176 156 C 224 156 236 57 284 57" marker-end="url(#a2)"/>
+              <path class="d-line" d="M176 170 L284 143" marker-end="url(#a2)"/>
+              <path class="d-line" d="M176 186 C 224 186 236 229 284 229" marker-end="url(#a2)"/>
+              <text class="d-s" x="222" y="104" text-anchor="middle">generates</text>
+
+              <path class="d-line" d="M484 57 L596 72" marker-end="url(#a2)"/>
+              <text class="d-s" x="540" y="50" text-anchor="middle">informs</text>
+              <path class="d-line" d="M484 143 L596 100" marker-end="url(#a2)"/>
+              <text class="d-s" x="546" y="136" text-anchor="middle">constrains</text>
+              <path class="d-line" d="M484 229 L596 229" marker-end="url(#a2)"/>
+              <text class="d-s" x="556" y="221" text-anchor="middle">valid queries only</text>
+
+              <path class="d-line-soft" d="M698 126 L698 164 L410 164 L410 194" stroke-dasharray="4 4" marker-end="url(#a2)"/>
+              <text class="d-s" x="552" y="178" text-anchor="middle">every request, checked</text>
+
+              <rect class="d-box-hot" x="288" y="306" width="196" height="62" rx="10"/>
+              <text class="d-t d-hot" x="386" y="332" text-anchor="middle">Build-time check</text>
+              <text class="d-s d-hot" x="386" y="350" text-anchor="middle">1,728 rules, every build</text>
+              <path class="d-line-hot" d="M92 218 L92 337 L284 337" marker-end="url(#a2h)"/>
+              <path class="d-line-hot" d="M484 337 L698 337 L698 264" marker-end="url(#a2h)"/>
+              <text class="d-s d-hot" x="596" y="329" text-anchor="middle">re-verified against the live schema</text>
+            </svg>
+          </div>
+          <figcaption>One source, three points of enforcement. Because the assistant&rsquo;s instructions,
+            the options it is offered, and the gate every request passes through are generated from the
+            same file, they cannot contradict each other. The build-time check is what stops them
+            contradicting your database.</figcaption>
+        </figure>
+
+        <h2>What a definition actually says</h2>
+        <p>This is not an abstraction. It is a text file your team can read, and here are three fragments of the one that governs capital remittances.</p>
+
+        <div class="wire"><b># A field, with the trap that makes it dangerous.</b>
+<b>status:</b>
+  type: enum
+  values: [Pending, Paid, Overpaid, Overdue]
+  description: &gt;-
+    Payment status, derived rather than set by hand. It stays "Pending"
+    while verified is false, so an unverified remittance is never
+    reported as Paid no matter how much money arrived.
+
+<b># A measure, so "outstanding" means one thing to everyone.</b>
+<b>measures:</b>
+  outstanding:
+    expression: call_amount + other_fee - collected_amount
+    description: Computed per remittance, so it cannot be totalled in SQL.
+      Filter to one fund before quoting a figure.
+
+<b># A rule every answer about this entity must respect.</b>
+<b>caveats:</b>
+  - status is meaningless while verified is false. Filter verified
+    before answering "how much is outstanding".</div>
+
+        <p>Three pieces of finance knowledge that no model could infer from a schema, and that every answer about payment status now depends on. A firm that reconciles differently edits the file; the change is reviewed like any other control, and it applies to every assistant, every question, from that moment on.</p>
+
+        <h2>Three questions, walked through</h2>
+        <p>The same three requests, before and after.</p>
+
+        <h3>&ldquo;What did Fund II pay in management fees last year?&rdquo;</h3>
+        <div class="two-up">
+          <div class="before">
+            <h4>Ungoverned</h4>
+            <span class="num">$18,412,000</span>
+            <p>The fund condition is discarded. The figure is the ledger total across all six funds, reported as one fund&rsquo;s.</p>
+          </div>
+          <div class="after">
+            <h4>With the semantic layer</h4>
+            <span class="num">$3,940,000</span>
+            <p>The fund filter is part of the published contract for that entity, and the build check proves it still works against the live schema before the code ships.</p>
+          </div>
+        </div>
+
+        <h3>&ldquo;Show me the five largest capital calls.&rdquo;</h3>
+        <div class="two-up">
+          <div class="before">
+            <h4>Ungoverned</h4>
+            <span class="num">Five calls</span>
+            <p>The assistant sorts by the column name it can see. That key isn&rsquo;t sortable, the sort is dropped, and five rows come back in whatever order the database chose. None of them is necessarily large.</p>
+          </div>
+          <div class="after">
+            <h4>With the semantic layer</h4>
+            <span class="num">The five largest</span>
+            <p>Every valid sort is enumerated in the input schema, so the invalid key cannot be expressed. If one arrives anyway, it is refused with the correct key named.</p>
+          </div>
+        </div>
+
+        <h3>&ldquo;What&rsquo;s our total committed capital?&rdquo;</h3>
+        <div class="two-up">
+          <div class="before">
+            <h4>Ungoverned</h4>
+            <span class="num">One number</span>
+            <p>US dollars, euros and rupees added together, then labelled with whichever currency the first fund happened to use. Feeder and master funds both counted, so the capital that flows between them appears twice.</p>
+          </div>
+          <div class="after">
+            <h4>With the semantic layer</h4>
+            <span class="num">One per currency</span>
+            <p>Totals come back grouped by currency. The feeder-to-master relationship is declared, so the assistant is told to choose feeders or masters before totalling — and says which it chose.</p>
+          </div>
+        </div>
+
+        <h2>The traps a definition closes</h2>
+        <p>None of these are model failures. They are the questions a careful analyst asks before answering, and that an assistant reading raw column names has no way to know it should ask.</p>
+
+        <table>
+          <thead>
+            <tr><th>The trap</th><th>What an ungoverned answer does</th><th>What the definition enforces</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Mixed currencies</strong></td><td>Adds USD, EUR and INR into one &ldquo;total committed capital&rdquo;.</td><td>Totals are grouped by currency and returned separately, or the assistant is told to pick one fund first.</td></tr>
+            <tr><td><strong>Gross versus net</strong></td><td>Reports gross distributions — before carry and fees — as what investors received.</td><td>Both are defined, DPI is pinned to the net figure, and adding the two is flagged as double counting.</td></tr>
+            <tr><td><strong>Feeder and master funds</strong></td><td>Sums every fund row, counting capital that flows through a feeder into its master twice.</td><td>The relationship is declared and totals require choosing feeders or masters.</td></tr>
+            <tr><td><strong>Unapproved records</strong></td><td>Includes calls and distributions that were never issued in &ldquo;called to date&rdquo;.</td><td>Approval is a first-class field, and the definition names the questions that need it filtered.</td></tr>
+            <tr><td><strong>Unverified payments</strong></td><td>Quotes an unreconciled remittance status as settled fact.</td><td>The field records that its status is meaningless until verified, so the assistant filters first.</td></tr>
+            <tr><td><strong>Running totals</strong></td><td>Sums cumulative ledger lines alongside period lines, inflating every figure.</td><td>The two are named and a ledger total requires choosing one.</td></tr>
+            <tr><td><strong>Stale valuations</strong></td><td>Quotes a fair value without noting it was struck eleven months ago.</td><td>The valuation date travels with the value, and system-derived valuations are excluded unless asked for.</td></tr>
+            <tr><td><strong>Silent truncation</strong></td><td>Reads the first 500 rows, counts them, reports &ldquo;500&rdquo;.</td><td>Row caps are declared, and counting questions are routed to a database count instead.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="pull">
+          <p>Every line in that table is a question your finance team already knows to ask. The assistant doesn&rsquo;t &mdash; until somebody writes it down.</p>
+        </div>
+
+        <h2>Five gates every request passes</h2>
+        <p>Correctness is one layer of this. The others were already there, and the semantic layer sits inside them rather than around them.</p>
+
+        <figure class="dgm">
+          <div>
+            <svg viewBox="0 0 900 196" role="img" aria-label="A request passes through five gates in order: the input schema, the request validator, the user's permission scope, the row cap, and a read-only tool set, before a typed answer returns to the assistant.">
+              <defs>
+                <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#101010"/></marker>
+              </defs>
+              <text class="d-s" x="8" y="26">REQUEST</text>
+              <text class="d-s" x="846" y="26" text-anchor="end">ANSWER</text>
+
+              <rect class="d-box" x="8" y="44" width="152" height="72" rx="10"/>
+              <text class="d-t" x="84" y="72" text-anchor="middle">Input schema</text>
+              <text class="d-s" x="84" y="90" text-anchor="middle">can&#8217;t be expressed</text>
+
+              <rect class="d-box" x="180" y="44" width="152" height="72" rx="10"/>
+              <text class="d-t" x="256" y="72" text-anchor="middle">Validator</text>
+              <text class="d-s" x="256" y="90" text-anchor="middle">refused by name</text>
+
+              <rect class="d-box" x="352" y="44" width="160" height="72" rx="10"/>
+              <text class="d-t" x="432" y="72" text-anchor="middle">Permission scope</text>
+              <text class="d-s" x="432" y="90" text-anchor="middle">the asker&#8217;s own</text>
+
+              <rect class="d-box" x="532" y="44" width="152" height="72" rx="10"/>
+              <text class="d-t" x="608" y="72" text-anchor="middle">Row cap</text>
+              <text class="d-s" x="608" y="90" text-anchor="middle">500, declared</text>
+
+              <rect class="d-box" x="704" y="44" width="152" height="72" rx="10"/>
+              <text class="d-t" x="780" y="72" text-anchor="middle">Read-only</text>
+              <text class="d-s" x="780" y="90" text-anchor="middle">no write tool exists</text>
+
+              <path class="d-line" d="M160 80 L176 80" marker-end="url(#a3)"/>
+              <path class="d-line" d="M332 80 L348 80" marker-end="url(#a3)"/>
+              <path class="d-line" d="M512 80 L528 80" marker-end="url(#a3)"/>
+              <path class="d-line" d="M684 80 L700 80" marker-end="url(#a3)"/>
+
+              <text class="d-s" x="8" y="146">EACH GATE STOPS</text>
+              <text class="d-s" x="84" y="172" text-anchor="middle">an invalid option</text>
+              <text class="d-s" x="256" y="172" text-anchor="middle">an invalid request</text>
+              <text class="d-s" x="432" y="172" text-anchor="middle">data they can&#8217;t see</text>
+              <text class="d-s" x="608" y="172" text-anchor="middle">an unbounded read</text>
+              <text class="d-s" x="780" y="172" text-anchor="middle">any modification</text>
+            </svg>
+          </div>
+          <figcaption>The first two gates are new and address correctness. The last three were already
+            how the platform worked. A request has to survive all five.</figcaption>
+        </figure>
+
+        <ol class="gate-list">
+          <li>
+            <h4>The input schema</h4>
+            <p>Sort keys, aggregate fields and grouping dimensions are enumerated, not free text. A client that respects the schema — all the major ones do — cannot compose an invalid option in the first place.</p>
+            <span class="stops">Stops the request being formed</span>
+          </li>
+          <li>
+            <h4>The request validator</h4>
+            <p>Anything that arrives anyway is checked against the definition before it reaches the database. The refusal names the attribute that was wrong and the one to use instead, so the assistant corrects itself on the next call rather than exploring.</p>
+            <span class="stops">Stops the request being served</span>
+          </li>
+          <li>
+            <h4>The asker&rsquo;s permission scope</h4>
+            <p>Every request runs as the person who asked it, inside the same authorisation scope that governs the web application. An analyst&rsquo;s assistant sees exactly what the analyst sees. Access is separately gated at organisation, role and client-application level.</p>
+            <span class="stops">Stops data they could not otherwise reach</span>
+          </li>
+          <li>
+            <h4>The row cap</h4>
+            <p>Results are capped server-side when no limit is supplied — prompt instructions are not a reliable guardrail. The cap is declared in the definition, so the assistant knows a count must come from a database count rather than the length of a list.</p>
+            <span class="stops">Stops an unbounded read</span>
+          </li>
+          <li>
+            <h4>Read-only by construction</h4>
+            <p>There is no write path to disable, because none was built. All 22 tools read. Every call is logged and attributable to a user.</p>
+            <span class="stops">Stops any modification</span>
+          </li>
+        </ol>
+
+        <h2>A definition that drifts is worse than none</h2>
+        <p>Written guidance about data always rots. Someone renames a field, and the document that says otherwise becomes a set of confident instructions to do the wrong thing — now with the authority of having been written down.</p>
+        <p>So the definitions are not trusted. They are tested.</p>
+        <p>On every build, every filter, every sort key, every aggregate and every grouping dimension the definitions advertise is <strong>executed against the live database</strong>. Anything that no longer resolves — or that the database would quietly ignore — fails the build. It cannot reach a customer&rsquo;s assistant, because it cannot reach production.</p>
+
+        <table>
+          <thead>
+            <tr><th>What is verified</th><th>Count</th><th>How</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Filter conditions</td><td>1,414</td><td>Each is executed; the generated SQL is compared before and after to prove the condition was actually applied and not discarded.</td></tr>
+            <tr><td>Sort options</td><td>314</td><td>Each must produce an ordering clause. A key that is silently ignored fails.</td></tr>
+            <tr><td>Aggregate and grouping fields</td><td>Every one</td><td>Must resolve to a real column, since a total is computed in the database rather than in memory.</td></tr>
+            <tr><td>Predefined filters</td><td>Every one</td><td>Read from the code that implements them, so the published list cannot drift from the real one.</td></tr>
+            <tr><td>Cross-references</td><td>Every one</td><td>A definition that tells the assistant to call another tool must name a tool that exists.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>What that check prevents</h3>
+        <p>A filter that no longer binds to the column it names. A sort key the database will accept and ignore. A total that no longer resolves. Each of those is a wrong answer with nothing to warn you, and each is caught the moment it appears — because the definitions are not read, they are executed.</p>
+        <p>That is a stronger guarantee than review can offer. Nobody reading a definition file can tell whether a field still filters; the database can, and it is asked before every release. A definition that has drifted does not reach a customer&rsquo;s assistant, because it does not reach production.</p>
+
+        <div class="pull">
+          <p>Ambiguity gets found by a build, or it gets found by a limited partner reading a wrong number. Those are the only two options.</p>
+        </div>
+
+        <h2>For your technical team</h2>
+        <p>The semantic layer is a set of versioned, human-readable definition files held in the CapHive codebase — one per entity — reviewed through the same process as application code. Each generates three artefacts at load time: the assistant-facing description of the entity, the JSON Schema for the tool&rsquo;s arguments, and the validator every request passes through. Because all three come from one file, they cannot diverge from one another; because the build check executes them against the live schema, they cannot diverge from the database.</p>
+        <p>Connection is over the <strong>Model Context Protocol</strong> with OAuth 2.0. The AI client registers itself dynamically (RFC 7591) and authorises with PKCE, so no client secret ever exists to be transmitted, stored or leaked. Tokens are scoped to the individual user; disabling an account ends AI access at the same moment it ends web access. Access is gated at four levels — platform, organisation, role, and named client application — and every tool call is logged individually.</p>
+        <p>Queries reach the database through the same authorisation policies as the web application. There are no write tools. Result sets are capped server-side. Aggregations are computed in the database rather than by loading rows, and money aggregates are grouped by currency wherever the entity has an unambiguous one — where it does not, the result is explicitly marked as unresolved rather than presented as a trustworthy total.</p>
+
+        <h2 id="questions">Questions</h2>
+        <div class="faq">
+          <details>
+            <summary>Isn&rsquo;t this just a better system prompt?</summary>
+            <div>
+              <p>No, and the difference is the whole point. A prompt is advice the model may follow. The definition also generates the tool&rsquo;s input schema — so an invalid option cannot be composed — and the validator every request passes through — so an invalid request is refused before it reaches the database.</p>
+              <p>Two of the three enforcement points do not depend on the model cooperating. A prompt-only approach has none.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Isn&rsquo;t this the hallucination problem? Doesn&rsquo;t better grounding solve it?</summary>
+            <div>
+              <p>It is the opposite of hallucination, which is what makes it dangerous. The model invents nothing &mdash; it reports faithfully on what it retrieved. Every measure of grounding would score the answer as correct, because the answer <em>is</em> correct with respect to the data it was given.</p>
+              <p>Grounding tells you the answer came from your data. It says nothing about whether the retrieval understood the question. That second gap is the one a semantic layer closes, and no amount of better grounding closes it.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Does this make answers slower or more expensive?</summary>
+            <div>
+              <p>Faster, in practice. Validation is an in-memory check against a definition and costs nothing measurable.</p>
+              <p>The saving comes from removing round trips. An assistant that guesses a field name and gets an empty list will try three more variations. An assistant that gets told <em>&ldquo;that attribute doesn&rsquo;t exist; use this one&rdquo;</em> corrects on the next call.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Who writes the definitions — do we have to?</summary>
+            <div>
+              <p>CapHive ships definitions covering the whole platform, so nothing is required of you to start.</p>
+              <p>Where your firm&rsquo;s conventions differ — what you mean by <em>outstanding</em>, whether a recallable distribution counts toward DPI, which fee categories belong in a management fee total — those are yours to set. It is a text edit, reviewed like any other policy change, and it applies to every assistant from that moment on.</p>
+              <p>That conversation is worth having regardless of AI. Most firms discover that two teams have been answering the same question two different ways.</p>
+            </div>
+          </details>
+          <details>
+            <summary>What happens when you add a field or rename one?</summary>
+            <div>
+              <p>The build check fails, and the release stops. A renamed field whose definition still names the old one is exactly the drift this is designed to catch, and it is caught before the code ships rather than by a customer.</p>
+              <p>Adding a queryable field to the platform does not automatically expose it to assistants. It appears when the definition says it does — which is deliberate, so the AI surface is a decision rather than a side effect.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Can the assistant still get an answer wrong?</summary>
+            <div>
+              <p>It can still reason badly about numbers it was given correctly — no vendor can honestly claim otherwise, and be sceptical of one who does.</p>
+              <p>What it can no longer do is receive a confidently wrong <em>dataset</em>. The class of error where the filter was ignored, the sort was dropped, or two currencies were added together is closed. That is the class that produces answers no one can catch by reading them.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Does this work with ChatGPT and Gemini, or only Claude?</summary>
+            <div>
+              <p>All three, and anything else that speaks the Model Context Protocol. The definitions generate a standard interface, so one definition serves every assistant your firm uses today and any it adopts later, with no work on your side when that changes.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Can an AI assistant change anything in our data?</summary>
+            <div>
+              <p>No. Every one of the 22 tools reads. There is no create, update or delete path to disable, because none was ever built — which is a stronger property than a write path that is switched off.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Can an assistant see data the person asking cannot?</summary>
+            <div>
+              <p>No. Every request runs inside the requesting user&rsquo;s own authorisation scope — the same one that governs what they see in the web application. An analyst&rsquo;s assistant sees an analyst&rsquo;s data.</p>
+              <p>Beyond that, an administrator enables AI access per role and, if they choose, restricts it to named client applications. Every call is logged and attributable.</p>
+            </div>
+          </details>
+          <details>
+            <summary>What happens when someone asks something the definitions don&rsquo;t cover?</summary>
+            <div>
+              <p>The assistant is told, specifically, that the thing it reached for is not available and what the nearest available field is. It then either answers a narrower question honestly or says it cannot answer.</p>
+              <p>A refusal is a good outcome here. The alternative — the one this replaces — is a plausible number with nothing behind it.</p>
+            </div>
+          </details>
+          <details>
+            <summary>How is this different from a BI semantic layer, or giving the AI SQL access?</summary>
+            <div>
+              <p>A BI semantic layer defines measures for a dashboard a person reads. It assumes a human chose the filters and will notice if a chart looks wrong. Neither assumption holds when the consumer is a model composing its own queries.</p>
+              <p>Direct SQL is worse still: it hands the model the entire schema with none of the meaning, so every trap on this page is live at once, and a mistake is a query against your production database rather than a refused tool call.</p>
+              <p>This is a semantic layer built for a caller that will not notice it was misunderstood — which is why refusal, and a build-time proof that the definitions are still true, matter more here than they do in BI.</p>
+            </div>
+          </details>
+        </div>
+
+        <h2>See it against your own structure</h2>
+        <p>The fastest way to judge this is to ask your own hard question — the cross-fund, multi-currency one that usually needs an analyst and a workbook — and watch what comes back, including what the assistant refuses to do.</p>
+        <p>Worth doing even if you go no further: it makes the AI governance conversation concrete in a way a policy document never manages.</p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="fund-data-in-your-ai-client.html">How the connection works</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>

@@ -1,0 +1,199 @@
+# Ontology for CapitalRemittance as exposed over MCP.
+---
+entity: capital_remittance
+label: Capital Remittance
+model: CapitalRemittance
+description: >-
+  One investor's share of one capital call — generated per applicable commitment when a call
+  is created. This is where investor-level called/collected amounts and payment status live;
+  the capital call itself only carries fund-level totals.
+
+relationships:
+  capital_call:
+    target: capital_call
+    cardinality: many_to_one
+    note: The call this remittance was generated from.
+    resolve_with: list_capital_calls
+  capital_commitment:
+    target: capital_commitment
+    cardinality: many_to_one
+    note: The folio being called. Pass folio_ids rather than a Ransack condition.
+    resolve_with: list_capital_commitments
+  fund:
+    target: fund
+    cardinality: many_to_one
+    note: Pass fund_ids rather than a Ransack condition on fund_id.
+    resolve_with: list_funds
+  capital_remittance_payments:
+    target: capital_remittance_payment
+    cardinality: one_to_many
+    note: The individual payments received against this remittance.
+    resolve_with: list_capital_remittance_payments
+
+fields:
+  investor_name:
+    type: string
+    description: Denormalised investor name.
+    sortable: true
+  folio_id:
+    type: string
+    description: Folio the remittance belongs to. Prefer the folio_ids parameter.
+    sortable: true
+  status:
+    type: enum
+    values: ["Pending", "Paid", "Overpaid", "Overdue"]
+    description: >-
+      Payment status, derived rather than set by hand. It stays "Pending" while verified is
+      false, so an unverified remittance is never reported as Paid no matter how much money
+      arrived. Once verified: "Paid" when the folio due amount is within 10 of zero,
+      "Overpaid" when it is below -10, otherwise "Pending" before the call's due date and
+      "Overdue" after it.
+    sortable: true
+  verified:
+    type: boolean
+    description: >-
+      Whether the remittance has been verified by the fund team. Gates status, and can only
+      be set once the underlying capital call is approved.
+    sortable: true
+  notification_sent:
+    type: boolean
+    description: >-
+      Whether the call notice has been emailed to the investor. One-way — it is never reset,
+      so it records that a notice went out, not that the current notice did.
+    sortable: true
+  payment_date:
+    type: date
+    description: Date payment was received. Null while unpaid.
+    sortable: true
+  remittance_date:
+    type: date
+    description: Date the remittance was raised against the folio.
+    sortable: true
+  call_amount:
+    type: money
+    stored_as: call_amount_cents
+    currency: the fund's currency
+    description: Capital demanded from this folio by the call, excluding fees.
+    sortable: true
+    aggregatable: true
+  collected_amount:
+    type: money
+    stored_as: collected_amount_cents
+    currency: the fund's currency
+    description: Capital received against this remittance so far.
+    sortable: true
+    aggregatable: true
+  capital_fee:
+    type: money
+    stored_as: capital_fee_cents
+    currency: the fund's currency
+    description: Management/capital fee charged with this remittance.
+    sortable: true
+    aggregatable: true
+  other_fee:
+    type: money
+    stored_as: other_fee_cents
+    currency: the fund's currency
+    description: Other fees charged with this remittance.
+    sortable: true
+    aggregatable: true
+  arrear_amount:
+    type: money
+    stored_as: arrear_amount_cents
+    currency: the fund's currency
+    description: Amount in arrears on this remittance.
+    sortable: true
+    aggregatable: true
+  fund_id:
+    type: reference
+    target: fund
+    description: Owning fund. Prefer the fund_ids parameter.
+    sortable: false
+  capital_call_id:
+    type: reference
+    target: capital_call
+    description: The call this remittance came from.
+    sortable: false
+  capital_commitment_id:
+    type: reference
+    target: capital_commitment
+    description: The folio being called. Prefer folio_ids when you have a folio string.
+    sortable: false
+
+returned_only:
+  investor:
+    type: string
+    description: The investor name, returned under this key. Filter with investor_name.
+  capital_call:
+    type: string
+    description: Name of the originating capital call.
+  due_amount:
+    type: money
+    formula: call_amount + other_fee - collected_amount
+    description: Outstanding balance. Computed per row, so it cannot be filtered or summed in SQL.
+  fees:
+    type: object
+    description: >-
+      An object carrying the capital, other and investment amounts for the remittance.
+      The individual fee fields are filterable as capital_fee and other_fee.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the remittance.
+
+unavailable:
+  id:
+    reason: Not declared in CapitalRemittance.ransackable_attributes, so conditions on it are ignored.
+  investment_amount:
+    reason: >-
+      Returned inside the fees object but not ransackable, so a condition on it is silently
+      ignored.
+  call_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: call_amount
+  collected_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: collected_amount
+
+scopes:
+  query_class: FundAssistantDataManager::CapitalRemittanceQuery
+  descriptions:
+    paid: Remittances settled in full.
+    unpaid: Remittances not yet settled.
+    pending: Remittances awaiting payment.
+    verified: Remittances the fund team has verified.
+    unverified: Remittances not yet verified — their status is still "Pending" regardless of money received.
+
+measures:
+  total_called:
+    expression: sum of call_amount
+    description: Capital demanded across the matching remittances, excluding fees.
+  total_collected:
+    expression: sum of collected_amount
+    description: Capital received across the matching remittances.
+  outstanding:
+    expression: sum of due_amount
+    description: >-
+      Not available as an aggregate — due_amount is computed per row. Fetch rows and sum, or
+      subtract total_collected from total_called when fees can be ignored.
+
+caveats:
+  - >-
+    Aggregated money sums on this entity are NOT currency-resolved (a folio can be
+    denominated differently from its fund) and come back marked currency_unresolved. Restrict
+    to one fund, or group by fund, before quoting a total.
+  - >-
+    status is meaningless while verified is false — it reads "Pending" no matter what has
+    been received. Filter verified_true before answering "how much is outstanding".
+  - Money filters take MAJOR units, not cents.
+
+tools:
+  list_capital_remittances:
+    kind: list
+    summary: >-
+      Use it for investor-level questions about a capital call — who has paid, who is
+      overdue, how much each investor owes.
+    params:
+      fund_ids:
+      folio_ids:
+      scope:
+    require_one_of: [fund_ids, folio_ids, scope, query, aggregate]

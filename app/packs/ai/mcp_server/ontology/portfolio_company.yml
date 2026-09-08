@@ -1,0 +1,152 @@
+# Ontology for a portfolio company (an Investor row in the "Portfolio Company" category).
+---
+entity: portfolio_company
+label: Portfolio Company
+model: Investor
+description: >-
+  A company the funds have invested in. Stored as an Investor row, which is why its name
+  attribute is investor_name rather than name.
+
+relationships:
+  portfolio_investments:
+    target: portfolio_investment
+    cardinality: one_to_many
+    note: The buys, sells and conversions the funds hold in this company.
+    resolve_with: list_portfolio_investments
+  valuations:
+    target: valuation
+    cardinality: one_to_many
+    note: Per-share valuations over time.
+    resolve_with: list_valuations
+  kpis:
+    target: kpi
+    cardinality: one_to_many
+    note: Reported operating metrics.
+    resolve_with: list_portfolio_kpis
+  documents:
+    target: document
+    cardinality: one_to_many
+    note: Documents filed against the company or its KPI reports.
+    resolve_with: list_documents
+
+fields:
+  investor_name:
+    type: string
+    description: >-
+      The company's name. Note the attribute is investor_name, not name — this is the field
+      to search when someone names a company.
+    sortable: true
+  category:
+    type: string
+    description: >-
+      Investor category. Every row this tool returns is already in the portfolio-company
+      category, so filtering on it further is rarely useful.
+    sortable: true
+  city:
+    type: string
+    description: City recorded on the company.
+    sortable: true
+  tag_list:
+    type: string
+    description: Comma-separated tags (sector, stage, theme). Use tag_list_cont to match one tag.
+    sortable: false
+  investor_access_count:
+    type: integer
+    description: Number of portal users with access to this company.
+    sortable: true
+    aggregatable: false
+  unapproved_investor_access_count:
+    type: integer
+    description: Number of access requests still awaiting approval.
+    sortable: true
+    aggregatable: false
+
+returned_only:
+  name:
+    type: string
+    description: investor_name under a different key on the returned row. Filter with investor_name.
+  tags:
+    type: string
+    description: tag_list under a different key on the returned row. Filter with tag_list.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the company.
+
+unavailable:
+  name:
+    reason: Output key only; the queryable attribute is investor_name.
+    use_instead: investor_name
+  id:
+    reason: Not declared in Investor.ransackable_attributes, so conditions on it are ignored.
+  primary_email:
+    reason: >-
+      Returned by get_portfolio_company_details but not ransackable, so a condition on it is
+      silently ignored.
+  amount_invested:
+    reason: >-
+      Returned by get_portfolio_company_details but not ransackable. For amounts invested,
+      aggregate list_portfolio_investments instead.
+
+scopes:
+  query_class: PortfolioAssistantDataManager::InvestorQuery
+  descriptions:
+    portfolio_companies: Redundant here — the tool already restricts to portfolio companies.
+    not_portfolio_companies: Returns nothing from this tool, which pre-filters to portfolio companies.
+    advisors: Returns nothing from this tool, which pre-filters to portfolio companies.
+    rms: Returns nothing from this tool, which pre-filters to portfolio companies.
+    without_investor_accesses: Portfolio companies with no portal users attached.
+
+caveats:
+  - >-
+    This tool always pre-filters to portfolio companies before applying `scope`, so the
+    scopes that select other kinds of investor (advisors, rms, not_portfolio_companies)
+    return an empty list rather than what their names suggest.
+  - >-
+    Money about a company lives on its investments and valuations, not on the company row.
+    Use get_portfolio_company_snapshot for a summary, or aggregate list_portfolio_investments.
+
+tools:
+  list_portfolio_companies:
+    kind: list
+    summary: >-
+      START HERE for portfolio questions — most other portfolio tools need a
+      portfolio_company_id, and this is how you resolve a company name to one.
+    params:
+      scope:
+  get_portfolio_company_details:
+    kind: detail
+    summary: Use it when you need the company's contact details, tags and total invested.
+    params:
+      portfolio_company_id:
+        required: true
+    returns:
+      id: Portfolio company ID.
+      name: Company name.
+      category: Investor category.
+      primary_email: Primary contact address.
+      tags: Comma-separated tags.
+      city: City.
+      amount_invested: Total invested in the company, formatted with its currency.
+      last_interaction: Date of the most recent recorded interaction, when there is one.
+      view_link: Relative CapHive URL for the company.
+  get_portfolio_company_snapshot:
+    kind: detail
+    summary: >-
+      Use it for a quick executive summary before drilling into investments, valuations or
+      KPIs.
+    params:
+      portfolio_company_id:
+        required: true
+    returns:
+      id: Portfolio company ID.
+      name: Company name.
+      total_invested: Total invested across the funds.
+      current_fmv: >-
+        Current fair market value. When the company's instruments span several currencies
+        this is a "+"-joined breakdown rather than one number, because adding them would be
+        meaningless — quote it as given.
+      latest_valuation: The most recent valuation's date, per-share value and currency.
+      multiples: >-
+        TVPI and RVPI read from the stored fund ratios for this company, using each metric's
+        latest computation. Null when the ratio has not been computed.
+      view_link: Relative CapHive URL for the company.
