@@ -12,16 +12,43 @@ class SideLetterObligation < ApplicationRecord
   OWNER_TEAMS = %w[ir finance legal deal_team operations].freeze
 
   belongs_to :entity
-  belongs_to :side_letter
+  # @return [SideLetter, nil] anchor for commitment-sourced obligations; nil for
+  #   portfolio investment obligations which use sourceable instead
+  belongs_to :side_letter, optional: true
   belongs_to :owner_user, class_name: "User", optional: true
   belongs_to :reviewed_by, class_name: "User", optional: true
   belongs_to :task_recurrence_rule, optional: true
+  # @return [SideLetter, PortfolioInvestment, nil] Polymorphic source record.
+  #   Existing side letter obligations use side_letter_id; portfolio investment
+  #   obligations use this polymorphic link instead.
+  belongs_to :sourceable, polymorphic: true, optional: true
 
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :obligation_fulfillments, dependent: :destroy
   has_many :obligation_reminders, dependent: :destroy
 
-  delegate :capital_commitment, :fund, :investor, to: :side_letter
+  delegate :capital_commitment, :fund, :investor, to: :side_letter, allow_nil: true
+
+  # @return [Investor, nil] The investor/portfolio company linked to this obligation,
+  #   regardless of source. Commitment path: side_letter -> capital_commitment -> investor.
+  #   Portfolio path: sourceable -> portfolio_company.
+  def source_investor
+    if sourceable_type == "PortfolioInvestment"
+      sourceable&.portfolio_company
+    else
+      investor
+    end
+  end
+
+  # @return [Fund, nil] The fund this obligation belongs to, regardless of source.
+  #   Commitment path: side_letter -> fund. Portfolio path: sourceable -> fund.
+  def source_fund
+    if sourceable_type == "PortfolioInvestment"
+      sourceable&.fund
+    else
+      fund
+    end
+  end
 
   enum :obligation_type, {
     reporting: "reporting", fees: "fees", co_investment: "co_investment",
@@ -52,6 +79,13 @@ class SideLetterObligation < ApplicationRecord
   }, prefix: :mfn
 
   enum :extracted_by, { manual: "manual", ai: "ai" }, prefix: :extracted_by
+
+  # @return [String] Legal classification assigned by the LLM during extraction.
+  #   CP = must be satisfied before an event; CS = ongoing with breach consequences;
+  #   SLO = standard promise/covenant. Counsel can correct before approval.
+  enum :legal_category, {
+    condition_precedent: 0, condition_subsequent: 1, side_letter_obligation: 2
+  }, prefix: :legal
 
   validates :title, presence: true
   validates :owner_team, inclusion: { in: OWNER_TEAMS }, allow_blank: true
@@ -108,7 +142,7 @@ class SideLetterObligation < ApplicationRecord
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[obligation_type title owner_team trigger_type review_status status
-       next_due_date mfn_relevant source_clause]
+       next_due_date mfn_relevant source_clause legal_category]
   end
 
   def self.ransackable_associations(_auth_object = nil)

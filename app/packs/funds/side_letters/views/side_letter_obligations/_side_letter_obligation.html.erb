@@ -3,9 +3,15 @@
     armed    -> fire (with due date)
     active   -> waive / record fulfillment %>
 <tr id="<%= dom_id(obligation) %>">
+  <%# Investor column: commitment obligations link to their side letter;
+      portfolio investment obligations link to the obligation detail page %>
   <td>
-    <%= link_to obligation.investor.investor_name, side_letter_path(obligation.side_letter) %>
-    <div class="text-muted"><%= obligation.fund.name %></div>
+    <% if obligation.side_letter.present? %>
+      <%= link_to obligation.source_investor&.investor_name, side_letter_path(obligation.side_letter) %>
+    <% else %>
+      <%= link_to obligation.source_investor&.investor_name || "Unknown", side_letter_obligation_path(obligation) %>
+    <% end %>
+    <div class="text-muted"><%= obligation.source_fund&.name %></div>
   </td>
   <td><%= obligation.obligation_type.humanize %></td>
   <td>
@@ -37,6 +43,8 @@
 <% end %>
   </td>
   <td><%= obligation_status_badge(obligation) %></td>
+    <%# Legal classification assigned by the LLM — counsel can correct via edit before approving %>
+  <td><%= legal_category_badge(obligation) %></td>
   <td>
     <% if obligation.pending_review? %>
       <div class="d-flex gap-1 flex-wrap">

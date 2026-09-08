@@ -606,7 +606,9 @@ class SupportAgentsSetupService
         name: "Side Letter Obligations",
         with_steps: true, # extraction runs show the step progress panel
         json_fields: {
+          "source_type" => "capital_commitments",
           "side_letter_doc_label" => "Side Letter",
+          "investment_doc_tag" => "",
           "auto_extract_on_upload" => "No",
           "default_reminder_days_before" => "7",
           "overdue_escalation_days" => "3",
@@ -621,26 +623,48 @@ class SupportAgentsSetupService
         }
       },
       fields: [
+        # @field source_type [Select] Record type the agent scans — capital commitments
+        #   (side letters) or portfolio investments (SHA/SSA).
+        { name: "source_type",
+          field_type: "Select", label: "Source type",
+          meta_data: "capital_commitments,portfolio_investments", position: 1,
+          help_text: "What the agent scans. 'capital_commitments' extracts from side letters " \
+                     "on LP commitments (default). 'portfolio_investments' extracts from " \
+                     "investment agreements (SHA, SSA) on portfolio investments." },
+        # @field side_letter_doc_label [TextField] Document name for side letter matching.
+        #   Only relevant when source_type is capital_commitments.
         { name: "side_letter_doc_label",
-          field_type: "TextField", label: "Side letter document name", meta_data: "", position: 1,
+          field_type: "TextField", label: "Side letter document name", meta_data: "", position: 2,
           help_text: "Exact document name that identifies a side letter on a commitment " \
-                     "(e.g. 'Side Letter'). Extraction only reads documents with this name." },
+                     "(e.g. 'Side Letter'). Extraction only reads documents with this name. " \
+                     "Only used when source type is 'capital_commitments'." },
+        # @field investment_doc_tag [TextField] Document tag for portfolio investment matching.
+        #   Only relevant when source_type is portfolio_investments.
+        { name: "investment_doc_tag",
+          field_type: "TextField", label: "Investment document tag", meta_data: "", position: 3,
+          help_text: "Document tag that identifies investment agreements on portfolio investments " \
+                     "(e.g. 'SHA', 'SSA'). The agent extracts from documents tagged with this value. " \
+                     "Only used when source type is 'portfolio_investments'." },
+        # @field auto_extract_on_upload [Select] Auto-trigger extraction on document upload.
         { name: "auto_extract_on_upload",
-          field_type: "Select", label: "Auto-extract on upload", meta_data: "Yes,No", position: 2,
+          field_type: "Select", label: "Auto-extract on upload", meta_data: "Yes,No", position: 4,
           help_text: "When Yes, extraction runs automatically when a matching side letter " \
                      "document is uploaded to a commitment. When No, extraction is run " \
                      "manually from the agent page." },
+        # @field default_reminder_days_before [NumberField] Lead time for pre-due alerts.
         { name: "default_reminder_days_before",
-          field_type: "NumberField", label: "Default reminder lead time (days)", meta_data: "", position: 3,
+          field_type: "NumberField", label: "Default reminder lead time (days)", meta_data: "", position: 5,
           help_text: "How many days before an obligation's due date the upcoming alert is sent. " \
                      "Stamped on newly extracted obligations; adjustable per obligation. " \
                      "0 suppresses pre-due alerts. Default: 7." },
+        # @field overdue_escalation_days [NumberField] Re-alert cadence for overdue items.
         { name: "overdue_escalation_days",
-          field_type: "NumberField", label: "Overdue escalation cadence (days)", meta_data: "", position: 4,
+          field_type: "NumberField", label: "Overdue escalation cadence (days)", meta_data: "", position: 6,
           help_text: "How often an overdue obligation is re-alerted. Overdue alerts also " \
                      "escalate to the notify tag group. Default: 3." },
+        # @field notify_tag [TextField] Employee tag for ownerless and escalation alerts.
         { name: "notify_tag",
-          field_type: "TextField", label: "Notify tag", meta_data: "", position: 5,
+          field_type: "TextField", label: "Notify tag", meta_data: "", position: 7,
           help_text: "Employee tag receiving alerts for obligations without an owner user " \
                      "and all overdue escalations, e.g. 'legal'. Leave blank to send these " \
                      "to the entity's company admins instead." }

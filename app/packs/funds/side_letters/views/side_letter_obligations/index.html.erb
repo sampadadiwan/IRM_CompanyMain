@@ -35,6 +35,10 @@
                    { include_blank: "All" }, class: "form-select" %>
     </div>
     <div class="col-md-2">
+      <%= f.label :legal_category_eq, "Legal category", class: "form-label" %>
+      <%= f.select :legal_category_eq, legal_category_options, { include_blank: "All" }, class: "form-select" %>
+    </div>
+    <div class="col-md-2">
       <%= f.label :next_due_date_gteq, "Due from", class: "form-label" %>
       <%= f.date_field :next_due_date_gteq, class: "form-control" %>
     </div>

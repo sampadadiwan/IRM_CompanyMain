@@ -39,6 +39,28 @@ module SideLetterObligationsHelper
     SideLetterObligation::OWNER_TEAMS.map { |k| [k.humanize, k] }
   end
 
+  # @return [String] Compact badge showing the LLM-assigned legal classification.
+  #   CP (blue) = condition precedent, CS (teal) = condition subsequent,
+  #   SLO (grey) = standard side-letter obligation (default).
+  def legal_category_badge(obligation)
+    case obligation.legal_category
+    when "condition_precedent"
+      obligation_badge_tag("CP", "bg-primary",
+                           "Condition Precedent — must be satisfied before the relevant event or closing")
+    when "condition_subsequent"
+      obligation_badge_tag("CS", "bg-info text-dark",
+                           "Condition Subsequent — ongoing obligation with breach consequences")
+    else
+      obligation_badge_tag("SLO", "bg-secondary",
+                           "Side Letter Obligation — standard promise or covenant")
+    end
+  end
+
+  # @return [Array<Array(String, String)>] Options for the legal_category filter dropdown.
+  def legal_category_options
+    SideLetterObligation.legal_categories.keys.map { |k| [k.humanize, k] }
+  end
+
   private
 
   # Active + dated: show urgency relative to the nearest open task.
