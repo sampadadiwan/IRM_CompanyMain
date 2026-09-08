@@ -1,7 +1,8 @@
 # Side Letter & LP Obligation Matrix
 
 **Approach:** Build — delivered as a new SupportAgent (`SideLetterObligationAgent`) plus a small `funds/side_letters` pack
-**Phase:** P1 — AI extraction ships in the MVP behind a mandatory human review gate; MFN comparison and automatic event-trigger firing are deferred
+**Status:** Delivered. `SideLetterObligationAgent`, the `funds/side_letters` models/controllers/policies, and the enforcement mailer are live in the codebase (see `app/packs/ai/support_agents/services/side_letter_obligation_agent.rb` and `app/packs/funds/side_letters/`), with Cucumber coverage in `features/ai/support_agents/side_letter_obligation_agent.feature` and `features/fund/side_letter_obligation_e2e.feature`.
+**Phase:** P1 — AI extraction ships behind a mandatory human review gate; MFN comparison and automatic (non-manual) event-trigger firing remain deferred
 **Terminology:** obligations extracted from side letters are sometimes called *covenants*. This feature uses **obligation** throughout — "covenant" is reserved for the private-credit loan covenant feature (`private_credit_funds.md`, `LoanCovenant`) to avoid a model-name collision.
 
 ---
@@ -69,15 +70,15 @@ After a closing, 15 side letters are uploaded to the respective commitments. The
 |------------|--------|-------|
 | Document upload and storage per commitment | ✅ Exists | `CapitalCommitment` includes `WithFolder`; documents attach polymorphically (`owner_type = "CapitalCommitment"`) |
 | SupportAgent framework | ✅ Exists | `agent_type` string → Trailblazer `SupportAgentService` subclass; config via `FormType(name: "SupportAgent", tag: agent_type)` custom fields; `AgentSchedule`, `AgentExecutionLog`, `SupportAgentReport`, batch/single runs, step UI |
-| Document→field LLM extraction pattern | ✅ Exists | `KycDocExtractorAgent` (rules in `json_fields`, docs matched by name, RubyLLM via `LlmService.ruby_llm_chat`); `FolderDocumentExtractor` for PDF/Excel/PPT text |
+| Document→field LLM extraction pattern | ✅ Exists | `KycDocExtractorAgent` (rules in `json_fields`, docs matched by name, RubyLLM via `LlmService.ruby_llm_chat`) established the pattern this agent reuses — but `SideLetterObligationAgent` itself skips any local text-extraction step and hands the file URL straight to `RubyLLM::Chat#ask` (see *Document formats* below) |
 | Recurring tasks | ✅ Exists | `TaskRecurrenceRule` (iCal RRULE via ice_cube) + nightly `RecurringTaskGeneratorJob` materializes occurrences 3 months ahead |
 | Tasks module | ✅ Exists | Polymorphic `owner`, `due_date`, `assigned_to`, kanban `status`, `delayed` scope |
-| Task due-date alerting | ❌ Missing | `TaskNotifier` fires on create/update only. `Reminder` model exists but is not exposed on the task form and its notifier is mis-wired (`ReminderNotifier#mailer_name` returns `InvestorKycMailer`) |
-| Side letter model | ❌ Missing | Side letters are plain documents (fund Data Room or commitment folder) with no structured data |
-| LP obligation record | ❌ Missing | No obligation model |
-| MFN tracking | ❌ Missing | No comparison logic across investor side letters |
-| Obligation trigger and reminder workflow | ❌ Missing | Nothing ties obligations to fund calendar events or scans for due dates |
-| AI-assisted obligation extraction | ❌ Missing | Built here, as the agent's extraction mode |
+| Task due-date alerting (generic tasks) | ❌ Missing | `TaskNotifier` fires on create/update only. `Reminder` model exists but is not exposed on the task form and its notifier is mis-wired (`ReminderNotifier#mailer_name` returns `InvestorKycMailer`). Not used by this feature — obligation alerting has its own notifier, below |
+| Side letter model | ✅ Exists | `SideLetter` (`app/packs/funds/side_letters/models/side_letter.rb`) |
+| LP obligation record | ✅ Exists | `SideLetterObligation`, `ObligationFulfillment`, `ObligationReminder` (`app/packs/funds/side_letters/models/`) |
+| MFN tracking | ⚠️ Partial | `mfn_relevant` flag and `mfn_review_status` enum exist for counsel to mark during review; no automatic cross-investor comparison dashboard yet (deferred, see below) |
+| Obligation trigger and reminder workflow | ✅ Exists | `ObligationEnforcement` (daily) + `ObligationAlertNotifier` / `SideLetterObligationMailer` |
+| AI-assisted obligation extraction | ✅ Exists | `SideLetterObligationAgent#extract_obligations`, prompt-based (see *How obligations are extracted* below) |
 
 ---
 
@@ -152,8 +153,9 @@ Registered like every other agent type: entry in `SupportAgent::AGENT_TYPES`, co
 **Run modes (mirrors `PortfolioCompanyAgent`'s mode matrix):**
 
 1. **Extraction run** (per commitment; manual, batch, or document-upload triggered)
-   - locate side letter document(s) on the commitment by configured label
-   - extract text (`FolderDocumentExtractor` pattern), prompt LLM for structured obligations: type, title, description, source clause, trigger type, frequency, deadline formula, suggested owner team, confidence
+   - locate side letter document(s) on the commitment by configured label, tag, or manual link
+   - hand the document straight to the LLM as a file attachment — no local text-extraction pass (see *Document formats* below)
+   - prompt LLM for structured obligations: type, title, description, source clause, trigger type, frequency, deadline formula, suggested owner team, confidence (see *How obligations are extracted*)
    - obligations without a source clause citation are not surfaced
    - diff against existing obligations for that side letter — re-extraction after an amendment produces a reviewable delta, never duplicates or silent overwrites
    - create/refresh `SideLetterObligation` rows in `pending_review`
@@ -165,6 +167,68 @@ Registered like every other agent type: entry in `SupportAgent::AGENT_TYPES`, co
    - **overdue**: re-alert on `overdue_escalation_days` cadence, escalating to the `notify_tag` group
    - every alert logged as an `ObligationReminder`; consolidated per owner (one email listing all their items, the `PortfolioCompanyAgent` consolidated-reminder pattern)
    - alerts delivered through the Noticed stack (email; in-app/WhatsApp per entity settings)
+
+### Document formats
+
+The agent has **no file-type whitelist**. It matches a side letter by document *name* or *tag*
+(see functional requirement 1), never by extension, and there is no PDF/DOCX validation anywhere
+in `Document` or the extraction path. In practice:
+
+- The extraction step (`SideLetterObligationAgent#extract_obligations`) resolves the document's
+  storage URL and calls `ctx[:llm].ask(extraction_prompt, with: [doc.file.url])` — it does **not**
+  run the file through a text-extraction library (no `pdf-reader`, `docx`, `pandoc`, OCR, or the
+  `FolderDocumentExtractor` pattern used by KYC extraction). The file is passed to the LLM as a
+  raw attachment.
+- `LlmService.ruby_llm_chat` builds this call on the `ruby_llm` gem, whose `RubyLLM::Attachment`
+  class auto-detects the attachment's mime type and classifies it as `:pdf`, `:document`
+  (`RubyLLM::Attachment::DOCUMENT_EXTENSIONS` explicitly includes `doc docx dot key numbers odp
+  ods odt pages pot pps ppt pptx rtf xls xlsx`), `:image`, or `:text`, then base64-encodes or
+  inlines it appropriately for the underlying model (OpenAI/Gemini/Anthropic/OpenRouter,
+  whichever the entity is configured with).
+- **Net effect: both PDF and Word (`.docx`/`.doc`) side letters work today**, along with the
+  other office formats in that list, as long as the configured LLM provider can read the format
+  as a multimodal/document input. This is LLM-native document understanding, not a
+  dedicated OCR or text-extraction pipeline — there is no intermediate "extracted text" artifact
+  to inspect if something goes wrong, only the LLM's JSON response.
+- Because there is no format gate, an unsupported or corrupt file simply produces an extraction
+  failure (surfaced as a blocking `SupportAgentReport` issue) rather than being rejected up front
+  at upload time.
+
+### How obligations are extracted
+
+Extraction is entirely LLM-prompt based — there is no regex or rules engine involved beyond
+enum normalization on the response. The prompt (`SideLetterObligationAgent#extraction_prompt`)
+asks the model to read the attached side letter and return a JSON array, one element per
+obligation:
+
+```json
+{
+  "obligation_type": "reporting | fees | co_investment | notice | transfer | excuse | confidentiality | key_person | mfn | other",
+  "title": "short label, e.g. \"Quarterly ESG report\"",
+  "description": "the obligation in full, paraphrased faithfully",
+  "source_clause": "REQUIRED — e.g. \"Section 4.3(b)\"; omit the item entirely if it can't be cited",
+  "trigger_type": "calendar_event | one_time | fund_event | deal_event | status_change | ongoing",
+  "trigger_description": "when/how it triggers, e.g. \"Within 45 days of each quarter-end\"",
+  "frequency_rrule": "iCal RRULE for recurring obligations, else null",
+  "next_due_date": "YYYY-MM-DD if determinable, else null",
+  "owner_team": "ir | finance | legal | deal_team | operations, else null",
+  "confidence": "0.0-1.0"
+}
+```
+
+The prompt is explicit that the model must **not invent obligations** and must only include
+items it can cite to a specific clause. This citation requirement is enforced twice, not just
+requested: rows with a blank `source_clause` are dropped by the agent before anything is
+persisted, and `SideLetterObligation` itself validates `source_clause` presence whenever
+`extracted_by_ai?` — so a citation-less row cannot reach the database even if the drop logic
+were ever bypassed.
+
+Re-extraction (e.g. after a side letter amendment) is diffed, not replayed blindly: new rows are
+matched to existing ones by `(source_clause, obligation_type)`. An obligation already `approved`
+is **never** silently overwritten — if the re-extracted content differs, a new row is created
+with `delta: true` and dropped back into `pending_review` for counsel to reconcile against the
+original. Untouched obligations are left exactly as they are on every re-run, so extraction is
+safe to run repeatedly.
 
 ```mermaid
 sequenceDiagram
@@ -195,6 +259,87 @@ sequenceDiagram
     Owner->>Tasks: Complete task
     Tasks->>Obl: Record ObligationFulfillment
 ```
+
+### Approval workflow
+
+Nothing an LLM extracts is trusted by default — every obligation carries its own `review_status`
+(`pending_review → approved | rejected`) independent of the operational `status` it gets once
+approved. All lifecycle transitions are implemented as small Trailblazer operations in
+`app/packs/funds/side_letters/services/`, not a state-machine gem:
+
+| Operation | What it does |
+|-----------|--------------|
+| `ObligationApprove` | Requires an owner (`owner_user_id` or `owner_team`) to already be set — approval is blocked otherwise. Sets `review_status: approved`, `status: active`, `reviewed_by_id`, `reviewed_at`, then calls `ObligationProjection`. |
+| `ObligationReject` | Sets `review_status: rejected`. A rejected obligation never generates a task, recurrence rule, or alert. |
+| `ObligationProjection` | Turns an approved obligation into its runtime form: recurring (`calendar_event` + RRULE) → `TaskRecurrenceRule`; one-off dated → a single `Task`; event-triggered/ongoing → nothing yet — the obligation stays **armed** (see below). |
+| `ObligationFire` | Manually triggers an armed obligation with a user-supplied due date, creating a `Task` on the spot. Rejects the request unless `obligation.armed?`. |
+| `ObligationTeardown` | Ends an approved obligation (`waived`, `expired`, or `disputed`): destroys incomplete projected tasks, detaches completed ones, and removes the `TaskRecurrenceRule` if any. |
+| `ObligationRevert` | Undoes a waive/expire/dispute back to `active` and re-projects. |
+
+**Who can approve:** the whole feature is gated behind the entity's `support_agents` license flag
+for `side_letter_obligation_agent`. Viewing the matrix (`index?`/`show?`) is open to company
+admins, employees, and support users, but **every mutating action — create, update, destroy,
+approve, reject, waive, revert, fire, fulfill — requires the `company_admin` cached role**
+(`SideLetterObligationPolicy`). In the UI this is presented as the counsel/ops-lead review gate;
+there is no separate "reviewer" role below company admin today.
+
+**Obligation lifecycle:**
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending_review : AI extraction /<br/>manual entry
+    pending_review --> rejected : ObligationReject
+    rejected --> [*]
+
+    pending_review --> approved : ObligationApprove<br/>(owner required)
+
+    state approved {
+        [*] --> dated : calendar_event / one_time<br/>(Task / TaskRecurrenceRule created)
+        [*] --> armed : fund_event / deal_event /<br/>status_change / ongoing<br/>(no task yet)
+        armed --> armed : ObligationFire<br/>(creates one dated Task<br/>for this occurrence only)
+        dated --> fulfilled : task completed<br/>(ObligationFulfillment)
+        fulfilled --> [*]
+    }
+
+    approved --> waived : ObligationTeardown
+    approved --> expired : ObligationTeardown
+    approved --> disputed : ObligationTeardown
+    waived --> approved : ObligationRevert
+    expired --> approved : ObligationRevert
+    disputed --> approved : ObligationRevert
+```
+
+*"Armed" is not a stored column — it is a computed property (`approved? && !dated?`, driven by
+`trigger_type`). Firing doesn't flip the obligation into a "dated" record; it creates one dated
+`Task` for the current occurrence while the obligation's own trigger stays event-based, ready to
+be fired again the next time the event recurs.*
+
+### Arming
+
+"Armed" is not a security or alarm concept here — it describes an **approved obligation whose
+trigger is an event, not a date**, and which therefore has nothing to schedule yet.
+
+An obligation is armed exactly when `approved? && !dated?` — i.e. `review_status == approved` and
+`trigger_type` is one of `fund_event`, `deal_event`, `status_change`, or `ongoing` (as opposed to
+`calendar_event`/`one_time`, which get a `Task`/`TaskRecurrenceRule` immediately on approval).
+Typical armed obligations: "notify the LP within 5 business days if a key person leaves," "offer
+co-invest on deals over $15M," "apply the reduced fee once the commitment period ends."
+
+Because there's no date to alert against, an armed obligation:
+- shows up in the Obligation Matrix and on its own page with an **"Armed"** badge, and a banner
+  explaining it is waiting on its triggering event — not overdue, not scheduled;
+- generates **no task and no reminder** until someone acts on it;
+- is moved out of the armed state only by `ObligationFire`, which requires a user to supply the
+  concrete due date once the triggering event actually happens (e.g. the key person leaves on a
+  known date, so the 5-business-day clock can start). Firing creates a dated `Task` immediately —
+  the obligation itself is not re-projected as recurring.
+
+Automatically detecting the triggering event (a deal closing above threshold, a key-person change
+recorded elsewhere in the platform, a fee-notice run) and firing without human involvement is
+explicitly out of MVP scope — see *Out of MVP scope* below. Today, arming is the deliberate
+design answer to "this is a real, approved obligation, but nothing is due until something else
+happens" — it keeps such obligations visible and owned instead of either fabricating a false due
+date or losing them because they don't fit the task model.
 
 ### LP Obligation Matrix View
 
