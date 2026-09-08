@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_115719) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_062454) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3849,7 +3849,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_115719) do
     t.string "review_status", limit: 20, default: "pending_review", null: false
     t.datetime "reviewed_at"
     t.bigint "reviewed_by_id"
-    t.bigint "side_letter_id", null: false
+    t.bigint "side_letter_id"
     t.string "source_clause", limit: 100
     t.bigint "sourceable_id"
     t.string "sourceable_type", limit: 50

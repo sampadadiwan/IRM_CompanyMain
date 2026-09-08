@@ -11,8 +11,10 @@
     </div>
   <% end %>
 
-  <div class="row g-3">
-    <% if obligation.side_letter_id.present? %>
+    <div class="row g-3">
+    <% if obligation.sourceable_type == "PortfolioInvestment" %>
+      <%# Portfolio investment obligations have no side letter — skip the dropdown %>
+    <% elsif obligation.side_letter_id.present? %>
       <%= f.hidden_field :side_letter_id %>
     <% else %>
       <div class="col-md-6">
@@ -79,7 +81,7 @@
   </div>
 
   <div class="mt-3">
-    <%= f.submit class: "btn btn-primary" %>
+    <%= f.submit "Save obligation", class: "btn btn-primary" %>
     <%= link_to "Cancel", obligation.side_letter.present? ? side_letter_path(obligation.side_letter) : side_letter_obligations_path,
                 class: "btn btn-outline-secondary" %>
   </div>

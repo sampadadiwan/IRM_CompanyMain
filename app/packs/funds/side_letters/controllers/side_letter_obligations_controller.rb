@@ -12,9 +12,18 @@ class SideLetterObligationsController < ApplicationController
     @bread_crumbs = { 'Side Letters': side_letters_path, 'Obligation Matrix': side_letter_obligations_path }
     # Eager-load tasks alongside obligations to avoid N+1 when rendering the
     # fired-task due date and count in the matrix's "Next Due" column.
+    # Eager-load side_letter chain for commitment obligations; portfolio
+    # obligations have no side_letter — they use sourceable instead.
     scope = policy_scope(SideLetterObligation)
-            .includes(:owner_user, :tasks, side_letter: { capital_commitment: %i[investor fund] })
-    scope = scope.joins(side_letter: :capital_commitment).where(capital_commitments: { fund_id: params[:fund_id] }) if params[:fund_id].present?
+            .includes(:owner_user, :tasks, :sourceable,
+                      side_letter: { capital_commitment: %i[investor fund] })
+    if params[:fund_id].present?
+      # Fund filter: commitment obligations join through side_letter;
+      # portfolio obligations join through sourceable (PortfolioInvestment).
+      scope = scope.left_joins(side_letter: :capital_commitment)
+                   .left_joins(:sourceable)
+                   .where("capital_commitments.fund_id = :fid OR portfolio_investments.fund_id = :fid", fid: params[:fund_id])
+    end
     @q = scope.ransack(params[:q])
     @side_letter_obligations = @q.result.order(Arel.sql("next_due_date IS NULL, next_due_date ASC"))
     @funds = Fund.where(entity_id: current_user.entity_id).order(:name)
@@ -68,7 +77,7 @@ class SideLetterObligationsController < ApplicationController
     return redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited." unless @obligation.pending_review?
 
     if @obligation.update(obligation_params)
-      redirect_to side_letter_path(@obligation.side_letter), notice: "Obligation updated."
+      redirect_to (@obligation.side_letter.present? ? side_letter_path(@obligation.side_letter) : side_letter_obligations_path), notice: "Obligation updated."
     else
       render :edit, status: :unprocessable_entity
     end

@@ -530,27 +530,65 @@ class SideLetterObligationAgent < SupportAgentService
   # @return [String] extraction prompt for investment agreements (SHA/SSA) on portfolio investments
   def portfolio_extraction_prompt
     <<~PROMPT
-      You are reviewing an investment agreement (such as a Shareholders Agreement, Share
-      Subscription Agreement, or similar). Extract every obligation, condition precedent,
-      and condition subsequent the agreement creates — closing conditions, reporting
-      requirements, consent rights, transfer restrictions, board composition requirements,
-      information rights, anti-dilution provisions, exit obligations.
+      You are a legal analyst reviewing an investment agreement (Shareholders Agreement,
+      Share Subscription Agreement, Share Purchase Agreement, or similar). Extract every
+      actionable obligation, condition precedent (CP), and condition subsequent (CS).
 
+      ## What to extract — scan every clause for these categories:
+
+      **Conditions Precedent (CP)** — must be satisfied or waived BEFORE closing/transfer:
+      - Board/shareholder approvals required before transfer
+      - ROFR, pre-emption, or tag-along rights that must be complied with or waived
+      - Regulatory approvals or filings required before closing
+      - Evidence of clear title / no encumbrances on shares
+      - KYC/AML documentation required before transaction proceeds
+      - No-injunction / no-prohibition conditions
+      - Warranty bring-down conditions (warranties must remain true at closing)
+
+      **Conditions Subsequent (CS)** — arise AFTER closing, breach triggers consequences:
+      - Post-closing statutory filings (company registrar, tax authority)
+      - Updating statutory registers, share registers, capitalisation records
+      - Post-closing tax documentation (residency certificates, cost-basis statements)
+      - Post-closing notifications to regulators or counterparties
+      - Indemnification obligations with survival periods
+
+      **Standard Obligations (SLO)** — actionable covenants and undertakings:
+      - Payment mechanics (purchase price, escrow, adjustments)
+      - Pre-closing covenants (ordinary course, no-shop, lock-up, notification of breach)
+      - Closing deliverables (transfer forms, share certificates, board resolutions, power of attorney)
+      - Information rights, inspection rights, audit rights
+      - Reporting obligations (periodic financial statements, compliance certificates)
+      - Transfer restrictions, drag-along, tag-along ongoing rights
+      - Non-compete, non-solicitation covenants
+      - Confidentiality obligations
+      - Consent requirements (public announcements, further share issues)
+      - Fee allocation (stamp duty, transaction costs, withholding tax)
+      - Notice procedures with specific delivery requirements
+
+      ## What NOT to extract:
+      - Definitions, interpretation clauses, recitals
+      - Boilerplate: governing law, jurisdiction, arbitration, severability, counterparts, entire agreement
+      - Amendment/waiver mechanics (unless they impose a specific obligation)
+      - Warranty statements themselves (extract only if there is an actionable bring-down condition)
+      - The transaction description itself ("Seller agrees to sell" is not a trackable obligation)
+
+      ## Output format
       Reply strictly as a JSON array. Each element:
       {
         "obligation_type": one of ["reporting","fees","co_investment","notice","transfer","excuse","confidentiality","key_person","mfn","other"],
-        "legal_category": one of ["condition_precedent","condition_subsequent","side_letter_obligation"] — CP = must be satisfied before closing or a specific event; CS = ongoing obligation where breach triggers consequences; SLO = standard promise/covenant,
-        "title": short label (e.g. "Board observer appointment"),
+        "legal_category": one of ["condition_precedent","condition_subsequent","side_letter_obligation"],
+        "title": short label (e.g. "Board approval for share transfer"),
         "description": the obligation in full, paraphrased faithfully,
-        "source_clause": the section reference (e.g. "Clause 5.2(a)") — REQUIRED; omit the item entirely if you cannot cite it,
+        "source_clause": the section/clause/schedule reference (e.g. "Clause 5.2(a)") — REQUIRED; omit the item entirely if you cannot cite it,
         "trigger_type": one of ["calendar_event","one_time","fund_event","deal_event","status_change","ongoing"],
-        "trigger_description": when/how it triggers (e.g. "Prior to first closing"),
+        "trigger_description": when/how it triggers (e.g. "Prior to first closing", "Within 30 days after Closing"),
         "frequency_rrule": iCal RRULE for recurring calendar obligations (e.g. "FREQ=QUARTERLY;INTERVAL=1"), else null,
         "next_due_date": next concrete deadline as YYYY-MM-DD if determinable, else null,
         "owner_team": best-fit team, one of ["ir","finance","legal","deal_team","operations"], else null,
-        "confidence": 0.0-1.0 how certain you are this is a real obligation
+        "confidence": 0.0-1.0 how certain you are this is a real, actionable obligation
       }
 
+      Be thorough — extract every actionable item from every clause and schedule.
       Do not invent obligations. Only include items you can cite to a specific clause.
     PROMPT
   end
