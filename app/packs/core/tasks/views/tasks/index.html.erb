@@ -1,5 +1,11 @@
-<%= render "/layouts/filter", associations: [:for_entity, :user, :assigned_to], hidden_fields: {owner_id: params[:owner_id], owner_type: params[:owner_type], assigned_to_id: params[:assigned_to_id]} %>
-<%= render "/tasks/stats" %>
+<%# Both of these sit outside tasks_frame, so a frame request drops them
+    whatever we render — and every embedded tab loads and re-filters this page
+    through a frame. Skipping them there saves the stat counts (four aggregates)
+    and the ransack filter card on each of those requests. %>
+<% unless turbo_frame_request? %>
+  <%= render "/layouts/filter", associations: [:for_entity, :user, :assigned_to], hidden_fields: {owner_id: params[:owner_id], owner_type: params[:owner_type], assigned_to_id: params[:assigned_to_id]} %>
+  <%= render "/tasks/stats" %>
+<% end %>
 <%= turbo_frame_tag "tasks_frame", target: "_top" do %>
     <% if params[:timeline].present? %>
         <%= render "/tasks/timeline", tasks: @tasks, q: @q, lazy_load_data: false %>

@@ -8,6 +8,10 @@ class InvestorsController < ApplicationController
   before_action :set_workflowable, only: [:show]
   after_action :verify_authorized, except: %i[merge portfolio_investments_report_all]
 
+  # Rows the stakeholder typeahead returns per keystroke. The cap is the whole
+  # point of it: the control it replaced inlined every investor in the tenant.
+  TYPEAHEAD_LIMIT = 20
+
   # GET /investors or /investors.json
   def index
     @bread_crumbs = { Stakeholders: investors_path }
@@ -316,15 +320,22 @@ class InvestorsController < ApplicationController
 
   def search
     authorize(Investor)
-    query = params[:query]
-    if query.present?
-      @investors = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
-                                .query(simple_query_string: { fields: InvestorIndex::SEARCH_FIELDS,
-                                                              query:, default_operator: 'and' }).objects
+    # jQuery UI autocomplete sends ?term=; the search form sends ?query=.
+    query = params[:query].presence || params[:term].presence
 
-      render "index"
-    else
-      redirect_to investors_path
+    respond_to do |format|
+      format.json { render json: typeahead_matches(query) }
+      format.html do
+        if query.present?
+          @investors = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
+                                    .query(simple_query_string: { fields: InvestorIndex::SEARCH_FIELDS,
+                                                                  query:, default_operator: 'and' }).objects
+
+          render "index"
+        else
+          redirect_to investors_path
+        end
+      end
     end
   end
 
@@ -460,4 +471,17 @@ class InvestorsController < ApplicationController
     params.require(:investor).permit(:investor_entity_id, :tag_list, :investor_name, :form_type_id, :sector,
                                      :pan, :entity_id, :category, :city, :primary_email, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
+
+  # [{label:, value:}] for the tasks filter bar's stakeholder typeahead
+  # (tasks/_filter_bar). Deliberately SQL rather than InvestorIndex: a filter
+  # control has to keep working when the search cluster is not running, and it
+  # needs nothing but a name and an id. Scoped exactly like the select it
+  # replaced — this tenant's own investors, nothing else.
+  def typeahead_matches(query)
+    scope = current_user.entity.investors
+    scope = scope.where("investor_name LIKE ?", "%#{Investor.sanitize_sql_like(query)}%") if query.present?
+    scope.order(:investor_name).limit(TYPEAHEAD_LIMIT).pluck(:investor_name, :id)
+         .map { |name, id| { label: name, value: id } }
+  end
+
 end

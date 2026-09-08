@@ -1,7 +1,7 @@
 <%
   owner||= nil;
   for_entity ||= nil
-  base_query = params[:q].to_unsafe_h rescue {}
+  base_query = filter_query
   label = "Tasks"
   if params[:owner_type] && params[:owner_id]
     owner ||= params[:owner_type].constantize.find_by(id: params[:owner_id])
@@ -11,8 +11,8 @@
     label = owner.to_s if owner
   end
 
-  if params[:q] && params[:q][:category_eq].present?
-    label += " : #{params[:q][:category_eq].titleize}"
+  if base_query["category_eq"].present?
+    label += " : #{base_query["category_eq"].titleize}"
   end
 
   # "For" repeats the same stakeholder on every row of a single-owner list, so it
@@ -28,6 +28,11 @@
   # side letter's obligations (multi-owner, so owner_id alone can't express it).
   side_letter_id = local_assigns[:side_letter_id] || params[:side_letter_id]
 
+  # A deal scope supersedes the owner params everywhere below: `owner` is the
+  # Deal here, and owner_type=Deal ANDed with the deal scope hides every
+  # DealInvestor task the scope exists to include.
+  deal_board = params[:deal_id].presence
+
   investor = local_assigns[:investor]
   task_owner = owner || investor
   task_owner_id = task_owner&.id || params[:owner_id]
@@ -42,38 +47,26 @@
   <h1 class="h3 mb-0 text-gray-800"><%= label %></h1>
 
   <div class="d-flex flex-wrap align-items-center gap-2">
-    <%= form_with url: tasks_path, method: :get, local: true, data: { turbo_frame: "_top", controller: "autosubmit" }, class: "d-flex align-items-center" do |f| %>
-      <%# Preserve other Ransack filters and params except category and due_filter —
-          their own selects below submit those. %>
-      <% params.to_unsafe_h.except(:controller, :action, :q, :authenticity_token, :due_filter).each do |k, v| %>
-        <%= hidden_field_tag k, v %>
-      <% end %>
-      <% if params[:q].is_a?(Hash) %>
-        <% params[:q].to_unsafe_h.except(:category_eq).each do |k, v| %>
-          <%= hidden_field_tag "q[#{k}]", v %>
-        <% end %>
-      <% end %>
-
-      <%= select_tag "q[category_eq]", options_for_select(Task::CATEGORIES, params.dig(:q, :category_eq)),
-                     id: "category_filter",
-                     include_blank: "All Categories",
-                     class: "form-select form-select-sm me-2",
-                     onchange: "this.form.requestSubmit();" %>
-
-      <%# due_filter is a plain top-level param (TaskList#call), not a ransack
-          predicate — the preset ranges (this_week/next_month/...) can't be
-          expressed as a single ransack comparison. %>
-      <%= select_tag :due_filter, options_for_select(Task::DUE_FILTERS, params[:due_filter]),
-                     id: "due_filter",
-                     include_blank: "All Due Dates",
-                     class: "form-select form-select-sm me-2",
-                     onchange: "this.form.requestSubmit();" %>
+    <%# Assignee / stakeholder / contact / tag / category / due date — the same
+        bar the board renders, minus whatever this scope has already fixed.
+        Search results come from Elasticsearch (TasksController#search) and no
+        filter here applies to them, so the bar is left off there. %>
+    <% unless search %>
+      <%# The scope this list is showing, for pages that pass it as locals rather
+          than as params (a side letter's covenant tasks, an event's tasks) —
+          without it the bar there would filter the firm-wide list instead. %>
+      <%= render "/tasks/filter_bar", scope: {
+            owner_id: (owner&.id || params[:owner_id] unless deal_board),
+            owner_type: (owner&.class&.name || params[:owner_type] unless deal_board),
+            deal_id: deal_board,
+            side_letter_id: side_letter_id,
+            embedded_task_context: embedded_task_context
+          } %>
     <% end %>
 
     <%# The deal's Tasks tab is embedded but still gets a Board link: its board is
         the whole deal (the Deal's own tasks plus every DealInvestor's), which is
         exactly the view that tab is for. Other embedded grids keep the list only. %>
-    <% deal_board = params[:deal_id].presence %>
     <% unless search || (embedded_task_context && deal_board.blank?) %>
       <%# Kanban board view of the same (filtered) tasks — full-page nav is fine,
           surrounding frames target _top anyway %>
@@ -84,6 +77,8 @@
           task the deal scope exists to include. %>
       <%= link_to tasks_path(board: true,
                              assigned_to_id: params[:assigned_to_id],
+                             investor_id: params[:investor_id],
+                             deal_investor_id: params[:deal_investor_id],
                              deal_id: deal_board,
                              owner_id: (owner&.id || params[:owner_id] unless deal_board),
                              owner_type: (owner&.class&.name || params[:owner_type] unless deal_board),
@@ -102,7 +97,7 @@
     <% if investor && can_create_task %>
       <%# LP CRM: carry the touch-point filter into the form so the new task is
           pre-linked to that person (TasksController#new builds from task[...] params) %>
-      <%= link_to new_task_path("task[owner_id]": investor.id, "task[owner_type]": "Investor", "task[touch_point_id]": params[:touch_point_id].presence, list_touch_point_id: params[:touch_point_id].presence, "task[category]": params.dig(:q, :category_eq), show_owner: show_owner, embedded_task_context: embedded_task_context),
+      <%= link_to new_task_path("task[owner_id]": investor.id, "task[owner_type]": "Investor", "task[touch_point_id]": params[:touch_point_id].presence, list_touch_point_id: params[:touch_point_id].presence, "task[category]": base_query["category_eq"], show_owner: show_owner, embedded_task_context: embedded_task_context),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
         <i class="ti ti-plus"></i> New Task
@@ -118,6 +113,10 @@
             task (the tab then looks empty). deal_id alone is the right scope. %>
         <%= link_to tasks_path(
                       assigned_to_id: params[:assigned_to_id],
+                      investor_id: params[:investor_id],
+                      deal_investor_id: params[:deal_investor_id],
+                      touch_point_id: params[:touch_point_id],
+                      due_filter: params[:due_filter],
                       owner_id: (owner&.id unless deal_board),
                       owner_type: (owner&.class&.name unless deal_board),
                       deal_id: params[:deal_id],
@@ -133,6 +132,10 @@
         <%# Same as Show All above: no owner params when the scope is a deal %>
         <%= link_to tasks_path(
                       assigned_to_id: params[:assigned_to_id],
+                      investor_id: params[:investor_id],
+                      deal_investor_id: params[:deal_investor_id],
+                      touch_point_id: params[:touch_point_id],
+                      due_filter: params[:due_filter],
                       owner_id: (owner&.id unless deal_board),
                       owner_type: (owner&.class&.name unless deal_board),
                       deal_id: params[:deal_id],
@@ -151,7 +154,7 @@
             <%= link_to new_task_path(
                           "task[owner_type]": "DealInvestor",
                           deal_id: params[:deal_id],
-                          "task[category]": params.dig(:q, :category_eq),
+                          "task[category]": base_query["category_eq"],
                           show_owner: show_owner,
                           embedded_task_context: embedded_task_context),
                         class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
@@ -168,7 +171,7 @@
                           "task[owner_type]": owner&.class&.name || params[:owner_type],
                           "task[touch_point_id]": params[:touch_point_id].presence,
                           list_touch_point_id: params[:touch_point_id].presence,
-                          "task[category]": params.dig(:q, :category_eq),
+                          "task[category]": base_query["category_eq"],
                           show_owner: show_owner,
                           embedded_task_context: embedded_task_context),
                         class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",

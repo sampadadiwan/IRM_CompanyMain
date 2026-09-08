@@ -38,5 +38,5 @@ Feature: Task Due Date Filtering
   @javascript
   Scenario: Board stat cards reflect the due date filter
     When I go to the tasks board page
-    And I select "Overdue" from the board "due_filter" filter
+    And I select "Overdue" from the task "due_filter" filter
     Then I should see "1" in the "Delayed" stat card

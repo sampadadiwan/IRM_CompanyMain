@@ -44,7 +44,7 @@ class TasksController < ApplicationController
     end
 
     if params[:board].present?
-      prepare_board_filters
+      assign_board_scope!
       # Kanban board renders all three columns at once — pagination would split
       # columns across pages, so cap defensively instead. Order by urgency so the
       # capped subset keeps the work that matters: most overdue first, then
@@ -292,13 +292,42 @@ class TasksController < ApplicationController
 
     partial = params[:timeline].present? ? "tasks/timeline_task" : "tasks/task"
     respond_to do |format|
-      if @task.save
-        format.turbo_stream do
+      # format.turbo_stream is registered unconditionally. It used to sit inside
+      # the `if @task.save`, so a rejected save left respond_to with no format at
+      # all — ActionController::UnknownFormat, a 406, and a checkbox that sprang
+      # back with nothing said about why.
+      #
+      # A rejected save is reachable from data the user cannot see: WithFolder
+      # adds `validates_associated :documents`, so one invalid document attached
+      # to the task blocks every completion toggle on it. Same failure shape as
+      # a rejected board drag — see update_status, which this mirrors.
+      format.turbo_stream do
+        if @task.save
           render turbo_stream: turbo_stream.replace(
             @task,
             partial: partial,
             locals: { task: @task }
           )
+        else
+          # Two streams: the row re-renders from persisted state (reload) so the
+          # checkbox returns to what the database actually holds, and the reason
+          # goes to #user_alert.
+          #
+          # #user_alert, not the flash. WithTurboFlash would append one, but it
+          # targets #page_alerts — which layouts/_alerts only emits when there is
+          # already a flash to show, so on a page loaded without one the update
+          # lands on an element that isn't there and says nothing. #user_alert is
+          # the empty div every layout renders unconditionally; destroy targets
+          # it for the same reason. Passing `alert` as a local (not via flash)
+          # also keeps WithTurboFlash out of it entirely, so no second, nested
+          # alerts block arrives.
+          message = @task.errors.full_messages.to_sentence.presence ||
+                    "Task could not be updated."
+          @task.reload
+          render turbo_stream: [
+            turbo_stream.replace(@task, partial: partial, locals: { task: @task }),
+            turbo_stream.update("user_alert", partial: "layouts/alerts", locals: { alert: message })
+          ], status: :unprocessable_entity
         end
       end
     end
@@ -335,50 +364,6 @@ class TasksController < ApplicationController
 
   private
 
-  # Filter dropdown data for the kanban board (tasks/_board.html.erb) — kept out
-  # of the view so the queries live at the controller layer.
-  def prepare_board_filters
-    @board_assignee_options = current_user.entity.employees.order(:first_name).map { |u| [u.name, u.id] }
-
-    # A deal board spans the Deal and every DealInvestor on it, so its
-    # stakeholder filter has to select a DealInvestor. Filtering by Investor here
-    # would add owner_type='Investor' on top of the deal scope — a contradiction
-    # that empties the board.
-    @board_deal = Deal.find_by(id: params[:deal_id], entity_id: current_user.entity_id) if params[:deal_id].present?
-
-    if @board_deal
-      @board_stakeholder_options = @board_deal.deal_investors.order(:investor_name).pluck(:investor_name, :id)
-      @board_selected_deal_investor = @board_deal.deal_investors.find_by(id: params[:deal_investor_id]) if params[:deal_investor_id].present?
-      # DealInvestor delegates touch_point_options to its LP, so the contact
-      # filter works the same on either kind of board (see WithTouchPoint).
-      @board_touch_point_owner = @board_selected_deal_investor
-    else
-      # Stakeholder filter value: the board's own investor_id param, or an
-      # Investor owner filter carried over from the list view
-      selected_id = params[:investor_id].presence ||
-                    (params[:owner_type] == "Investor" ? params[:owner_id].presence : nil)
-      @board_selected_investor = Investor.find_by(id: selected_id, entity_id: current_user.entity_id) if selected_id
-      @board_stakeholder_options = current_user.entity.investors.order(:investor_name).pluck(:investor_name, :id)
-      @board_touch_point_owner = @board_selected_investor
-    end
-
-    # tags is a comma-separated string column, so the split/uniq has to happen
-    # in Ruby — acceptable, tasks is a small table
-    @board_tag_options = Task.where(entity_id: current_user.entity_id).where.not(tags: [nil, ""])
-                             .distinct.pluck(:tags)
-                             .flat_map { |t| t.split(",") }.map(&:strip).uniq.sort
-
-    # Category isn't an enum — Task::CATEGORIES is only the form's default
-    # list, and the "Other" free-text fallback means real data can hold values
-    # outside it. Pull what's actually in use (SQL-deduped, per hygiene rules)
-    # rather than offering categories no task on this board actually has.
-    @board_category_options = Task.where(entity_id: current_user.entity_id)
-                                  .where.not(category: [nil, ""])
-                                  .distinct.order(:category).pluck(:category)
-
-    assign_board_scope!
-  end
-
   # What this board covers, for the heading: every board otherwise renders as a
   # bare "Tasks Board", so a deal's board, one stakeholder's board and the
   # firm-wide board are indistinguishable once you've navigated to them.
@@ -387,13 +372,15 @@ class TasksController < ApplicationController
   # usually reached from that page and this is the way back.
   def assign_board_scope!
     @board_scope_owner =
-      if @board_deal
-        @board_deal
+      if params[:deal_id].present?
+        Deal.find_by(id: params[:deal_id], entity_id: current_user.entity_id)
       elsif params[:owner_type].present? && params[:owner_id].present? &&
             BOARD_SCOPE_TYPES.include?(params[:owner_type])
         params[:owner_type].constantize.find_by(id: params[:owner_id])
-      elsif @board_selected_investor
-        @board_selected_investor
+      elsif params[:investor_id].present?
+        # The stakeholder select's own value — owner_type=Investor is covered by
+        # the whitelisted owner branch above.
+        Investor.find_by(id: params[:investor_id], entity_id: current_user.entity_id)
       end
 
     return if @board_scope_owner.blank?

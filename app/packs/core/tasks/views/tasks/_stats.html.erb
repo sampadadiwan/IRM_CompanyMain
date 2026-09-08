@@ -1,5 +1,5 @@
   <%
-    base_query = params[:q].to_unsafe_h rescue {}
+    base_query = filter_query
     # permit only scalar values for these keys - to_unsafe_h would also pass nested hashes/arrays into the where clause
     # compact_blank: an unselected filter (e.g. the board's assigned_to_id select
     # auto-submitting as "") must not survive into owner_params — `where("" )`
