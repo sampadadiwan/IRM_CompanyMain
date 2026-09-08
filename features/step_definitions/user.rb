@@ -76,3 +76,64 @@
     expect(@investor_access.email).to eq(email)
   end
 
+  # Submits the roles form for another user directly against the update endpoint (rather than
+  # driving the select2 widget), since these scenarios exercise UsersController#update's role
+  # handling rather than the JS widget. The default Capybara driver here is a real browser
+  # (Playwright), which has no rack_test-style driver.post/submit, so we build and submit a
+  # real hidden form via JS instead - the same workaround used in portco_kpi_workflow_steps.rb.
+  When('I update the roles of {string} to {string}') do |email, roles|
+    submit_role_update(User.find_by!(email:), roles.split(",").map(&:strip))
+  end
+
+  # Simulates a crafted request from a user who cannot see the roles field at all (it's only
+  # rendered for company admins), to prove the server-side guard - not just the hidden UI -
+  # blocks a non company admin from granting themselves the company_admin role.
+  When('I directly submit a role update of {string} for myself') do |role|
+    submit_role_update(@user, [role])
+  end
+
+  # Deselecting every option in the roles <select> still submits one user[role_name][] field
+  # with an empty value - that's Rails' auto hidden field for multiple selects (see the
+  # include_hidden comment in _form.html.erb) - rather than omitting the param entirely.
+  When('I remove all roles from {string}') do |email|
+    submit_role_update(User.find_by!(email:), [""])
+  end
+
+  def submit_role_update(target_user, roles)
+    # Any already-rendered page on the app gives us a document to build the form in and the
+    # right origin to submit against - the user's own show page is used elsewhere in this
+    # suite (see "I should see the user details on the details page"), so it's known to render.
+    visit(user_path(target_user))
+
+    role_inputs = roles.map { |role| "add('user[role_name][]', #{role.to_json});" }.join("\n      ")
+
+    page.execute_script(<<~JS)
+      (function () {
+        const f = document.createElement('form'); f.method = 'POST'; f.action = '#{user_path(target_user)}';
+        const add = (n, v) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); };
+        add('authenticity_token', document.querySelector('meta[name="csrf-token"]')?.content || '');
+        add('_method', 'patch');
+        #{role_inputs}
+        document.body.appendChild(f); f.submit();
+      })();
+    JS
+    sleep(1)
+    expect(page).to have_text("User was successfully updated.")
+  end
+
+  Then('the user {string} should have the roles {string}') do |email, roles|
+    target = User.find_by!(email:)
+    roles.split(",").each do |role|
+      expect(target.has_cached_role?(role.strip.to_sym)).to be true
+    end
+  end
+
+  Then('the user {string} should not have the role {string}') do |email, role|
+    target = User.find_by!(email:)
+    expect(target.has_cached_role?(role.to_sym)).to be false
+  end
+
+  Then('the user should not have the role {string}') do |role|
+    @user.reload
+    expect(@user.has_cached_role?(role.to_sym)).to be false
+  end

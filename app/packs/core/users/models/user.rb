@@ -89,7 +89,11 @@ class User < ApplicationRecord
     "#{first_name[0].upcase}#{last_name[0].upcase}"
   end
 
-  UPDATABLE_ROLES = %w[company_admin approver signatory].freeze
+  # Keep this in sync with the role list offered in _form.html.erb's roles select — any name
+  # listed here that isn't also offered there (e.g. the old "signatory" entry) gets silently
+  # removed from every user a company admin saves, since UsersController#update treats "not
+  # present in the submitted role_name list" as "remove this role".
+  UPDATABLE_ROLES = %w[company_admin approver employee].freeze
   CALL_CODES = {
     "in" => "91",
     "us" => "1",
