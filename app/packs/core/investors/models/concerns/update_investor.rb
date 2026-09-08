@@ -1,6 +1,10 @@
 module UpdateInvestor
   extend ActiveSupport::Concern
 
+  # Caps how many account_entries rows a single UPDATE statement in
+  # resync_account_entry_parent_names may lock at once -- see the comment there.
+  RESYNC_BATCH_SIZE = 5_000
+
   included do
     after_commit :update_association_name, only: :update?
     before_validation :reassign_entity_on_email_change, if: :persisted?
@@ -254,7 +258,7 @@ module UpdateInvestor
     # Investor#to_s (InvestorShared#to_s) is "investor_name : category" -- category is unaffected
     # by a name-only rename, and `self` already carries the new investor_name in memory, so
     # `to_s` here reflects the post-rename value.
-    AccountEntry.where(parent_type: "Investor", parent_id: id).update_all(parent_name: to_s[0..254])
+    resync_parent_name_for("Investor", id, to_s)
 
     # Indirect parents: AggregatePortfolioInvestment / PortfolioInvestment rows whose
     # portfolio_company_name we just rewrote above via update_all. Their #to_s also reads the
@@ -262,12 +266,27 @@ module UpdateInvestor
     # this into a single update_all -- reload each (a handful of rows per investor, not
     # account_entries-scale) and recompute its to_s to catch up account_entries.parent_name.
     aggregate_portfolio_investments.includes(:investment_instrument).find_each do |api|
-      AccountEntry.where(parent_type: "AggregatePortfolioInvestment", parent_id: api.id).update_all(parent_name: api.to_s[0..254])
+      resync_parent_name_for("AggregatePortfolioInvestment", api.id, api.to_s)
     end
 
     portfolio_investments.includes(:investment_instrument).find_each do |pi|
-      AccountEntry.where(parent_type: "PortfolioInvestment", parent_id: pi.id).update_all(parent_name: pi.to_s[0..254])
+      resync_parent_name_for("PortfolioInvestment", pi.id, pi.to_s)
     end
+  end
+
+  # One parent's worth of the resync above, batched so a single UPDATE never locks more
+  # account_entries rows than InnoDB's lock table can hold (Mysql2::Error: The total number
+  # of locks exceeds the lock table size).
+  #
+  # Every parent type goes through here, not just the direct one: the count of API/PI rows per
+  # investor is small, but the account_entries hanging off ONE of them is not -- the allocation
+  # engine writes an entry per (capital_commitment x portfolio_investment) per fund_formula per
+  # run (AccountEntryAllocation::AllocatePortfolioInvestments), so a single portfolio_investment
+  # reaches the same row counts as the direct-Investor case.
+  def resync_parent_name_for(parent_type, parent_id, parent_name)
+    AccountEntry.where(parent_type:, parent_id:)
+                .in_batches(of: RESYNC_BATCH_SIZE, cursor: :id)
+                .update_all(parent_name: parent_name[0..254])
   end
 
   # Cascade an investor_entity_id change to records that reference the old entity.

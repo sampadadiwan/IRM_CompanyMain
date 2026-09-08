@@ -16,6 +16,9 @@ Given('a fund exists for the template fix entity') do
 end
 
 Given('the fund has a commitment template document {string}') do |fixture_name|
+  # name is derived from the fixture so distinct scenarios (or a scenario that layers a
+  # second template document on top of the Background's) don't collide under Document's
+  # name+owner_tag+owner uniqueness validation (see document.rb) for two different files.
   @template_document = FactoryBot.create(
     :document,
     entity: @entity,
@@ -23,7 +26,7 @@ Given('the fund has a commitment template document {string}') do |fixture_name|
     folder: @fund.document_folder,
     user: @user,
     owner_tag: "Commitment Template",
-    name: "Commitment Agreement",
+    name: File.basename(fixture_name, ".*"),
     file: Rails.public_path.join("sample_uploads", fixture_name).open
   )
   expect(@template_document.template?).to be(true)
