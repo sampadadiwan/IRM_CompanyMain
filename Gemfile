@@ -8,6 +8,11 @@ gem 'faraday-typhoeus'
 # Gem for segmenting paragraphs into sentences
 gem 'pragmatic_segmenter'
 
+# Ruby 4.0 removed cgi from the standard library (require "cgi" now only pulls in
+# cgi/escape); several models/views need CGI.parse/CGI.unescapeHTML, which only the
+# standalone gem still provides.
+gem 'cgi'
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'dentaku'
 gem 'pdf-reader'

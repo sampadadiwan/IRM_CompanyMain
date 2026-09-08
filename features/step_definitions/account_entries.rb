@@ -64,9 +64,13 @@ Given("that Account Entries are allocated") do
 end
 
 Then("I see AllocationRun created") do
-	visit allocate_form_fund_path(@fund.id, run_allocations: true)
+	# Wait for the DB record before visiting: the run is created by a background
+	# thread/job the "Submit" step doesn't block on, and this table is plain
+	# server-rendered HTML with no live refresh -- visiting first and then waiting on
+	# the DB left the already-rendered page with no way to ever show the new row.
 	eventually { expect(AllocationRun.last).to be_present }
 	@allocation_run = AllocationRun.last
+	visit allocate_form_fund_path(@fund.id, run_allocations: true)
 	within('table') do
     expect(page).to have_css('tr', text: I18n.l(@allocation_run.start_date, format: :abbr_month_day_year))
     expect(page).to have_css('tr', text: I18n.l(@allocation_run.end_date, format: :abbr_month_day_year))

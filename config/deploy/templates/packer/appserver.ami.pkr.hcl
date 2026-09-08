@@ -132,13 +132,13 @@ build {
       "sudo apt-get install --yes pandoc",
 
       // RVM
-      "echo INSTALLING- RVM and Ruby 3.3.3",
+      "echo INSTALLING- RVM and Ruby 4.0.6",
       "sudo apt-get install -y curl gnupg build-essential",
       "gpg --keyserver keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB",
       // "curl -sSL https://get.rvm.io | bash",
       // "curl -sSL https://get.rvm.io | bash -s stable --rails"
       // intalling ruby along with rvm as rvm is not recognized as a package unless the terminal is reopened
-      "curl -sSL https://get.rvm.io | bash -s stable --ruby=3.4.4",
+      "curl -sSL https://get.rvm.io | bash -s stable --ruby=4.0.6",
 
 
       // docker

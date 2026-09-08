@@ -51,6 +51,10 @@ Tagging is the most flexible option if your firm has its own file-naming
 conventions. Uploading a file that is neither named nor tagged, with no side letter
 recorded against it, is the one case the agent cannot see.
 
+**File format:** both PDF and Word (`.doc`/`.docx`) side letters are supported, along with most
+other common office formats — the agent reads the document directly rather than requiring a
+particular format. There's nothing to convert before uploading.
+
 ## Day-to-day flow
 
 1. **Upload** the executed side letter to the investor's commitment — either pick the
@@ -61,13 +65,73 @@ recorded against it, is the one case the agent cannot see.
    clause, assigns an owner, and approves or rejects it. Items flagged
    "Changed on re-extraction" mean an amended side letter altered something that was
    previously approved.
-4. **Track** — approved obligations with dates become tasks on the task board.
-   Event-driven obligations (such as "notify the investor if a key person leaves")
-   stay visible as "Armed" with no date; when the event happens, fire them with a
-   deadline and a task is created on the spot.
+4. **Track** — from here the path splits depending on what kind of obligation it is:
+   - An obligation with a **date or a repeating schedule** (a quarterly report, a
+     one-off deliverable) becomes a task on the task board immediately, with
+     reminders running automatically.
+   - An obligation tied to an **event, not a date** (notify on a key-person departure,
+     offer a co-investment right) has nothing to schedule yet, so it stays visible as
+     **"Armed"** — approved and waiting, but no task and no reminders until something
+     actually happens. When the event occurs, someone **fires** it: enters the date the
+     clock actually started, and a task is created on the spot, due-date reminders and
+     all.
 5. **Complete** — finishing the task records the fulfilment, building an audit trail
    of who fulfilled what, when, and how. You can also record a fulfilment directly on
    the obligation page, attaching evidence if you have it.
+
+```mermaid
+flowchart TD
+    A["1. Upload<br/>side letter to the commitment"] --> B["2. Extract<br/>agent reads the file,<br/>obligations land in 'Pending review'"]
+    B --> C{"3. Review<br/>legal checks the cited clause<br/>and assigns an owner"}
+    C -->|Rejected| X["Discarded — no task,<br/>no reminders, nothing tracked"]
+    C -->|"Approved — has a date<br/>or repeating schedule"| D["4. Track<br/>task created now<br/>reminders start automatically"]
+    C -->|"Approved — tied to an event"| E["4. Track<br/>stays 'Armed'<br/>no task yet, nothing due"]
+    E -->|Event happens| F["Fire: enter the date<br/>the clock actually started"]
+    F --> D
+    D --> G["5. Complete<br/>finish the task →<br/>fulfilment recorded"]
+```
+
+### Example: a dated obligation (recurring)
+
+LP Alpha's side letter requires a quarterly ESG report within 45 days of each
+quarter-end.
+
+1. **Upload** — the executed side letter is added to LP Alpha's commitment, tagged
+   "Side Letter."
+2. **Extract** — the agent reads it and creates a "Pending review" obligation:
+   *Reporting — Quarterly ESG report, cited to Section 4.3(b), due 45 days after each
+   quarter-end.*
+3. **Review** — legal checks the clause matches, assigns the IR team as owner, and
+   approves it.
+4. **Track** — because this is calendar-driven, approval immediately creates a
+   repeating task. For Q3 2026 (quarter-end September 30), that's a task due
+   **October 14**, and it will regenerate every quarter without anyone re-entering it.
+   Seven days before the due date (the default lead time), IR gets a reminder email;
+   another goes out if the 14th arrives and it's still open.
+5. **Complete** — IR sends the report and marks the task done. That logs a fulfilment
+   ("Q3 2026 ESG report sent via portal," dated, with the person's name) — and the
+   cycle quietly repeats itself for Q4.
+
+### Example: an armed obligation (event-triggered)
+
+LP Delta's side letter requires the GP to notify LP Delta within 5 business days if
+a key person leaves the firm.
+
+1. **Upload** and **2. Extract** happen the same way, producing a "Pending review"
+   obligation: *Notice — Key person departure, cited to Section 7.1, notify within 5
+   business days of the event.*
+3. **Review** — legal assigns Legal as owner and approves it. There's no date to
+   schedule, so nothing happens yet.
+4. **Track** — the obligation shows up in the matrix with an **"Armed"** badge. It sits
+   there, quietly correct, for as long as no key person leaves — months or years,
+   possibly. No task, no reminder, nothing to miss because there's nothing due.
+   Six months later, a key person actually does leave, on March 2. Legal opens the
+   obligation and **fires** it, entering March 2 as the triggering date. That creates a
+   task due 5 business days out — **March 9** — with the same reminder emails a dated
+   obligation would get.
+5. **Complete** — Legal sends the notice and marks the task done, recording the
+   fulfilment. The obligation itself goes back to sitting "Armed," ready for the next
+   time a key person leaves.
 
 ## The Obligation Matrix
 

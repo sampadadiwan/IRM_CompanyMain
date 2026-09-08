@@ -212,7 +212,7 @@ Then('when the capital commitment docs are generated') do
     # ("N documents generated successfully") replaces the async "started" flash
     # before this assertion could catch it. Accept either message.
     expect(page).to have_content(
-      /Documentation generation started|documents generated/i,
+      /Documentation generation started|documents? generated/i,
       wait: 20
     )
     sleep(8)
@@ -222,7 +222,14 @@ end
 
 Then('the generated doc must be attached to the capital commitments') do
   CapitalCommitment.all.each do |cc|
-    cc.documents.where(name: "#{@commitment_template.name} - #{cc}", owner_tag: "Generated").count.should == 1
+    # Same doc-gen race as "the ... is successfully generated for all intended
+    # commitments" above: retry rather than relying solely on the fixed sleep in the
+    # preceding "Generate All Documents" step. The unit-fund example generates docs
+    # for multiple commitments back to back, so give it more room than the plain-fund
+    # case needs before giving up.
+    eventually(timeout: 30) do
+      expect(cc.documents.where(name: "#{@commitment_template.name} - #{cc}", owner_tag: "Generated").count).to eq(1)
+    end
     visit(capital_commitment_path(cc))
     expect(page).to have_content(@commitment_template.name)
     expect(page).to have_content("Generated")
@@ -503,27 +510,38 @@ Then('the {string} is successfully generated for all intended commitments') do |
     doc_name = "#{template_name} #{@start_date.strftime("%d %B,%Y")} to #{@end_date.strftime("%d %B,%Y")} - #{cc.to_s}"
     puts "Checking document #{doc_name} for commitment #{cc.id}"
     cc.reload
-    cc.documents.reload
-    if cc.skip_doc_gen?
-      puts "Commitment #{cc.id} is marked to SKIP"
-      puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
-      @errors[:skip_doc_gen] += 1
-      expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).to eq(0)
-    else
-      if cc.investor_kyc.nil?
+
+    should_skip =
+      if cc.skip_doc_gen?
+        puts "Commitment #{cc.id} is marked to SKIP"
+        @errors[:skip_doc_gen] += 1
+        true
+      elsif cc.investor_kyc.nil?
         puts "Commitment #{cc.id} has no KYC, should be skipped for statement generation"
-        puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
         @errors[:no_kyc] += 1
-        expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).to eq(0)
+        true
       elsif !cc.investor_kyc.verified
         puts "Commitment #{cc.id} has unverified KYC, should be skipped for statement generation"
-        puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
         @errors[:unverified_kyc] += 1
-        expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).to eq(0)
+        true
       else
         puts "Commitment #{cc.id} should have the statement generated"
-        puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
-        expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).not_to eq(0)
+        false
+      end
+
+    # Same underlying gap fixed elsewhere in this file (see "the unapproved Investor
+    # Statement is replaced" / "the original document is replaced"): under
+    # parallel-worker load this process's read can briefly land on a DB snapshot from
+    # before the bulk-generation request's write commits, so retry the query (a fresh
+    # reload each attempt) rather than reading once.
+    eventually(timeout: 20) do
+      cc.documents.reload
+      generated_count = cc.documents.where(owner_tag: "Generated", name: doc_name).count
+      puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
+      if should_skip
+        expect(generated_count).to eq(0)
+      else
+        expect(generated_count).not_to eq(0)
       end
     end
   end

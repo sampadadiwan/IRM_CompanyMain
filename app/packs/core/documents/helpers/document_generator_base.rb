@@ -2,6 +2,7 @@ require "hexapdf"
 require "open3"
 require "json"
 require "fileutils"
+require "tmpdir"
 
 module DocumentGeneratorBase
   IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .gif].freeze
@@ -9,6 +10,23 @@ module DocumentGeneratorBase
   # The Document record created by the most recent #upload call, if any.
   # Portfolio report gen needs this to combine all portfolio reports into one
   attr_reader :generated_document
+
+  # soffice --headless locks a single shared user profile (~/.config/libreoffice by
+  # default); concurrent conversions racing for that lock silently fail for the
+  # loser (non-zero exit, no output, no error message). Sidekiq/Puma run multiple
+  # jobs/requests as threads within one OS process, so a profile keyed per-process
+  # would still leave those threads sharing (and contending for) one profile --
+  # this is keyed per-thread instead, giving every concurrently-running job/request
+  # its own profile regardless of whether it shares a process with another.
+  # Memoized so repeat conversions on the same thread reuse it rather than paying
+  # LibreOffice's first-run profile initialization cost on every call.
+  def self.libreoffice_profile_dir
+    Thread.current[:libreoffice_profile_dir] ||= begin
+      dir = Dir.mktmpdir("libreoffice-profile-")
+      at_exit { FileUtils.rm_rf(dir) }
+      dir
+    end
+  end
 
   def convert(template, context, file_name, to_pdf: true, template_name: nil, doc_template: nil)
     # Mail Merge
@@ -406,6 +424,7 @@ module DocumentGeneratorBase
     cmd = [
       "soffice",
       "--headless",
+      "-env:UserInstallation=file://#{DocumentGeneratorBase.libreoffice_profile_dir}",
       "--convert-to", filter,
       "--outdir", pdf_dir,
       docx_path

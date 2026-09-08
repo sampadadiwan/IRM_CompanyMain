@@ -222,8 +222,15 @@ end
 
 Then("the not-analyzed breakdown should show {int} blocked and {int} never run") do |blocked, never_run|
   card = find("a.scoring-tier-card[href*='status=not_analyzed']", match: :first)
-  expect(card).to have_content("#{blocked} found nothing")
-  expect(card).to have_content("#{never_run} never run")
+  # _stats.html.erb collapses to "Every company analyzed" when both counts are zero, and
+  # even otherwise only renders a sub-count's text when it's positive (see presenter's
+  # not_analyzed_breakdown) — a literal "0 found nothing"/"0 never run" is never rendered.
+  if blocked.zero? && never_run.zero?
+    expect(card).to have_content("Every company analyzed")
+  else
+    expect(card).to have_content("#{blocked} found nothing") if blocked.positive?
+    expect(card).to have_content("#{never_run} never run") if never_run.positive?
+  end
 end
 
 Then("I should see {string} listed as never analyzed") do |company|
@@ -274,7 +281,8 @@ end
 # :all is required or Capybara reports it as not present at all, matching the
 # pattern used elsewhere in this suite for unopened Bootstrap modals.
 Then("the run analysis modal should offer {int} never-analyzed company") do |count|
-  expect(page).to have_content("Only companies never analyzed (#{count})", visible: :all)
+  expect(page).to have_css("#presentation-target-mode option",
+                            text: "Only companies never analyzed (#{count})", visible: :all)
 end
 
 Then("the run analysis modal should offer {int} never-analyzed companies") do |count|
