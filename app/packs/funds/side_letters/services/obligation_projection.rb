@@ -19,13 +19,16 @@ class ObligationProjection < Trailblazer::Operation
     false
   end
 
+  # Projects based on shape: recurring → recurrence rule, dated → single task,
+  # undated → armed (manual Fire). Any obligation with a concrete next_due_date
+  # gets a task regardless of trigger_type — armed is only for obligations
+  # where the deadline is genuinely unknown until an event occurs.
   def project(ctx, obligation:, **)
     if obligation.recurring?
       project_recurring(ctx, obligation)
-    elsif obligation.next_due_date.present? && (obligation.trigger_one_time? || obligation.trigger_calendar_event?)
+    elsif obligation.next_due_date.present?
       project_one_time(ctx, obligation)
     else
-      # Armed shape — visible in the matrix, fired manually via ObligationFire
       ctx[:projected] = :none
       true
     end
@@ -69,13 +72,36 @@ class ObligationProjection < Trailblazer::Operation
   # so keys must be valid Task attributes (string keys per the generator).
   def task_payload(obligation)
     {
-      "details" => "#{obligation.title} — #{obligation.side_letter.investor.investor_name} (#{obligation.source_clause.presence || 'side letter'})",
-      "category" => "Compliance",
+      "details" => obligation_task_details(obligation),
+      "category" => task_category_for(obligation),
       "owner_type" => "SideLetterObligation",
       "owner_id" => obligation.id,
       "assigned_to_id" => obligation.owner_user_id,
       "entity_id" => obligation.entity_id,
       "for_entity_id" => obligation.entity_id
     }
+  end
+
+  # @return [String] Task category derived from the obligation's legal classification.
+  #   CP and CS get their own categories so task boards can separate them visually;
+  #   standard SLOs (and nil) fall back to the original "Compliance" bucket.
+  def task_category_for(obligation)
+    case obligation.legal_category
+    when "condition_precedent"  then "Condition Precedent"
+    when "condition_subsequent" then "Condition Subsequent"
+    else "Compliance"
+    end
+  end
+
+  # @return [String] Human-readable task description line. Portfolio investment
+  #   obligations reference the portfolio company; commitment obligations reference
+  #   the side letter investor.
+  def obligation_task_details(obligation)
+    source_label = if obligation.sourceable_type == "PortfolioInvestment"
+                     obligation.sourceable&.portfolio_company&.investor_name || "Portfolio Investment"
+                   else
+                     obligation.side_letter&.investor&.investor_name || "Side Letter"
+                   end
+    "#{obligation.title} — #{source_label} (#{obligation.source_clause.presence || 'side letter'})"
   end
 end

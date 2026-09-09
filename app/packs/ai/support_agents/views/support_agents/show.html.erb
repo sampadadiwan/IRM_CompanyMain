@@ -56,7 +56,7 @@
           Reconciliation History
         </a>
       <% end %>
-      <% if @support_agent.agent_type == "SideLetterObligationAgent" %>
+      <% if @support_agent.agent_type.in?(%w[SideLetterObligationAgent CpCsExtractionAgent]) %>
         <a class="nav-link <%= 'active' if active_tab == 'obligations' %>" data-bs-toggle="pill" href="#obligations-tab">
           Obligation Matrix
         </a>
@@ -127,7 +127,7 @@
         </div>
       <% end %>
 
-      <% if @support_agent.agent_type == "SideLetterObligationAgent" %>
+      <% if @support_agent.agent_type.in?(%w[SideLetterObligationAgent CpCsExtractionAgent]) %>
         <div id="obligations-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'obligations' %>">
           <%= render 'obligation_matrix_tab', support_agent: @support_agent, obligations: @side_letter_obligations %>
         </div>
