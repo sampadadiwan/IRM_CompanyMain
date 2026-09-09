@@ -46,9 +46,12 @@
       <%= f.label :next_due_date_lteq, "Due until", class: "form-label" %>
       <%= f.date_field :next_due_date_lteq, class: "form-control" %>
     </div>
-    <div class="col-md-2 form-check ms-2">
-      <%= f.check_box :mfn_relevant_eq, { class: "form-check-input" }, "true", "" %>
-      <%= f.label :mfn_relevant_eq, "MFN relevant only", class: "form-check-label" %>
+    <%# Stakeholder filter: narrows to obligations from a specific portfolio company %>
+    <div class="col-md-2">
+      <%= label_tag :stakeholder_id, "Stakeholder", class: "form-label" %>
+      <%= select_tag :stakeholder_id,
+                     options_from_collection_for_select(@stakeholders, :id, :investor_name, params[:stakeholder_id]),
+                     include_blank: "All companies", class: "form-select" %>
     </div>
     <div class="col-md-2">
       <%= f.submit "Filter", class: "btn btn-primary" %>

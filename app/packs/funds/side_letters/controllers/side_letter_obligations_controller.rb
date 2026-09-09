@@ -14,19 +14,41 @@ class SideLetterObligationsController < ApplicationController
     # fired-task due date and count in the matrix's "Next Due" column.
     # Eager-load side_letter chain for commitment obligations; portfolio
     # obligations have no side_letter — they use sourceable instead.
+    # preload(:sourceable) instead of includes(:sourceable) because Rails
+    # cannot eager-load a polymorphic association via LEFT JOIN — preload
+    # uses a separate query per type, which works with polymorphics.
     scope = policy_scope(SideLetterObligation)
-            .includes(:owner_user, :tasks, :sourceable,
+            .includes(:owner_user, :tasks,
                       side_letter: { capital_commitment: %i[investor fund] })
+            .preload(:sourceable)
     if params[:fund_id].present?
-      # Fund filter: commitment obligations join through side_letter;
-      # portfolio obligations join through sourceable (PortfolioInvestment).
-      scope = scope.left_joins(side_letter: :capital_commitment)
-                   .left_joins(:sourceable)
-                   .where("capital_commitments.fund_id = :fid OR portfolio_investments.fund_id = :fid", fid: params[:fund_id])
+      # Fund filter: both paths use subqueries to avoid polymorphic JOIN issues.
+      # Commitment obligations: side_letter → capital_commitment → fund_id
+      commitment_ids = SideLetterObligation
+                         .joins(side_letter: :capital_commitment)
+                         .where(capital_commitments: { fund_id: params[:fund_id] })
+                         .select(:id)
+      # Portfolio obligations: sourceable → portfolio_investment → fund_id
+      pi_ids = PortfolioInvestment.where(fund_id: params[:fund_id]).select(:id)
+      scope = scope.where(id: commitment_ids)
+                   .or(scope.where(sourceable_type: "PortfolioInvestment", sourceable_id: pi_ids))
+    end
+    # Stakeholder filter: narrows to portfolio obligations linked to a specific
+    # portfolio company. Uses a subquery to avoid conflicting with the
+    # polymorphic :sourceable eager-load on the base scope.
+    if params[:stakeholder_id].present?
+      pi_ids = PortfolioInvestment.where(portfolio_company_id: params[:stakeholder_id]).select(:id)
+      scope = scope.where(sourceable_type: "PortfolioInvestment", sourceable_id: pi_ids)
     end
     @q = scope.ransack(params[:q])
     @side_letter_obligations = @q.result.order(Arel.sql("next_due_date IS NULL, next_due_date ASC"))
     @funds = Fund.where(entity_id: current_user.entity_id).order(:name)
+    # Stakeholder options: portfolio companies that have at least one obligation
+    @stakeholders = Investor.where(
+      id: PortfolioInvestment.where(
+        id: SideLetterObligation.where(entity_id: current_user.entity_id, sourceable_type: "PortfolioInvestment").select(:sourceable_id)
+      ).select(:portfolio_company_id)
+    ).order(:investor_name)
   end
 
   # Displays the obligation detail page. Turbo Stream requests (e.g. the
@@ -86,9 +108,23 @@ class SideLetterObligationsController < ApplicationController
   # receive the inline edit row partial (swapped in-place); standard requests
   # fall back to the full-page edit layout.
   # @note Only pending_review obligations may be edited (approved ones have live projections)
+  # Renders the edit form. Portfolio obligations (no side_letter) are always
+  # editable inline; commitment obligations are restricted to pending_review
+  # because approved ones have live task projections.
+  # @note Turbo Stream requests get the inline row; standard requests get the full page
   def edit
-    unless @obligation.pending_review?
-      return redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited."
+    unless editable_obligation?
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            @obligation,
+            partial: "side_letter_obligations/side_letter_obligation",
+            locals: { obligation: @obligation }
+          )
+        end
+        format.html { redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited." }
+      end
+      return
     end
 
     respond_to do |format|
@@ -103,12 +139,13 @@ class SideLetterObligationsController < ApplicationController
     end
   end
 
-  # Persists counsel edits. Turbo Frame requests receive the display row
-  # partial so the matrix row snaps back to read mode after save; validation
-  # failures re-render the inline form. Standard requests redirect as before.
-  # @note Only pending_review obligations may be edited
+  # Persists counsel edits. Portfolio obligations are always editable;
+  # commitment obligations are restricted to pending_review status.
+  # Turbo Stream requests receive the display row partial so the matrix row
+  # snaps back to read mode after save; validation failures re-render the
+  # inline form. Standard requests redirect as before.
   def update
-    return redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited." unless @obligation.pending_review?
+    return redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited." unless editable_obligation?
 
     if @obligation.update(obligation_params)
       respond_to do |format|
@@ -245,6 +282,14 @@ class SideLetterObligationsController < ApplicationController
   def set_obligation
     @obligation = SideLetterObligation.find(params[:id])
     authorize @obligation
+  end
+
+  # Portfolio obligations (from CP/CS extraction) are always editable because
+  # they have no live task projections tied to approval. Commitment obligations
+  # (side letter) are restricted to pending_review to protect live projections.
+  # @return [Boolean] whether the current obligation can be edited
+  def editable_obligation?
+    @obligation.sourceable_type == "PortfolioInvestment" || @obligation.pending_review?
   end
 
   # @return [ActionController::Parameters] permitted obligation attributes.

@@ -19,13 +19,16 @@ class ObligationProjection < Trailblazer::Operation
     false
   end
 
+  # Projects based on shape: recurring → recurrence rule, dated → single task,
+  # undated → armed (manual Fire). Any obligation with a concrete next_due_date
+  # gets a task regardless of trigger_type — armed is only for obligations
+  # where the deadline is genuinely unknown until an event occurs.
   def project(ctx, obligation:, **)
     if obligation.recurring?
       project_recurring(ctx, obligation)
-    elsif obligation.next_due_date.present? && (obligation.trigger_one_time? || obligation.trigger_calendar_event?)
+    elsif obligation.next_due_date.present?
       project_one_time(ctx, obligation)
     else
-      # Armed shape — visible in the matrix, fired manually via ObligationFire
       ctx[:projected] = :none
       true
     end

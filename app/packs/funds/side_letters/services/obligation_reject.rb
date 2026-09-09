@@ -22,8 +22,10 @@ class ObligationReject < Trailblazer::Operation
     )
   end
 
+  # Portfolio investment obligations have no side_letter — skip the refresh
+  # for those; their extraction status is tracked per-agent-run, not per-document.
   def refresh_side_letter(_ctx, obligation:, **)
-    obligation.side_letter.refresh_extraction_status!
+    obligation.side_letter&.refresh_extraction_status!
     true
   end
 

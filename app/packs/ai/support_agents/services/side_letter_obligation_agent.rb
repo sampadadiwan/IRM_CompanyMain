@@ -620,61 +620,143 @@ class SideLetterObligationAgent < SupportAgentService
   # @return [String] LLM prompt scoped to CP/CS extraction only
   def portfolio_extraction_prompt
     <<~PROMPT
-      You are a legal analyst reviewing an investment agreement (Shareholders Agreement,
-      Share Subscription Agreement, Share Purchase Agreement, or similar).
+      You are a legal analyst reviewing transaction documents relating to an investment,
+      acquisition, subscription, or transfer of securities — including Shareholders
+      Agreements (SHA), Share Subscription Agreements (SSA), Share Purchase Agreements
+      (SPA), Investment Agreements, and related schedules, annexures and exhibits.
 
-      Extract ONLY conditions precedent (CP) and conditions subsequent (CS).
-      Do NOT extract general covenants, standard obligations, or other clauses
-      that do not fit the CP or CS definition below.
+      Extract every genuine Condition Precedent (CP) and Condition Subsequent (CS).
+      Be exhaustive in finding CPs and CSs, but conservative in classification.
+      Do not classify an obligation as CP or CS merely because it is important,
+      time-bound, or actionable.
 
-      ## What to extract — scan every clause for these two categories ONLY:
+      ## Classification test
 
-      **Conditions Precedent (CP)** — must be satisfied or waived BEFORE closing/transfer:
-      - Board/shareholder approvals required before transfer
-      - ROFR, pre-emption, or tag-along rights that must be complied with or waived
-      - Regulatory approvals or filings required before closing
-      - Evidence of clear title / no encumbrances on shares
-      - KYC/AML documentation required before transaction proceeds
-      - No-injunction / no-prohibition conditions
-      - Warranty bring-down conditions (warranties must remain true at closing)
+      ### Condition Precedent (CP)
+      Classify as condition_precedent only where the agreement requires the matter to
+      be completed, satisfied, delivered, obtained, complied with, confirmed, or waived
+      BEFORE Closing/Completion or as a condition to a party being required to complete.
 
-      **Conditions Subsequent (CS)** — arise AFTER closing, breach triggers consequences:
-      - Post-closing statutory filings (company registrar, tax authority)
-      - Updating statutory registers, share registers, capitalisation records
-      - Post-closing tax documentation (residency certificates, cost-basis statements)
-      - Post-closing notifications to regulators or counterparties
-      - Indemnification obligations with survival periods
+      CPs may appear in dedicated CP clauses, Closing clauses, schedules of closing
+      conditions, or anywhere the legal effect is that completion is conditional on
+      that requirement. The document need not call it a "Condition Precedent."
 
-      ## What NOT to extract:
-      - General covenants and standard obligations (payment mechanics, purchase price,
-        escrow, closing deliverables, information rights, reporting obligations,
-        transfer restrictions, non-compete, confidentiality, fee allocation, notice
-        procedures) — these are NOT conditions precedent or subsequent
+      Typical CPs include:
+      - Board, shareholder, or investor approvals
+      - Amendment or adoption of constitutional documents
+      - Execution of transaction documents or employment/IP/founder agreements
+      - Third-party, regulatory, governmental, or competition/antitrust approvals
+      - Compliance with ROFR, ROFO, pre-emption, tag, drag or other transfer rights
+      - Waiver of contractual or statutory rights
+      - KYC/AML completion required before Closing
+      - Evidence of title to shares or securities
+      - Removal or release of encumbrances
+      - Conversion, subdivision, or reclassification of securities before Closing
+      - Creation or increase of authorised share capital; reservation of shares
+      - Receipt of valuation reports, legal opinions, or certificates
+      - Lender or counterparty consents
+      - Repayment or restructuring of identified debt required before Closing
+      - Settlement of identified litigation or liabilities required before Closing
+      - Completion of specified corporate restructuring
+      - Employee/founder actions required before Closing
+      - IP transfers or registrations required before Closing
+      - No material adverse change conditions
+      - No injunction, prohibition or illegality conditions
+      - Warranties being true at Closing (bring-down conditions)
+      - Delivery of specified documents or certificates required before Closing
+
+      ### Condition Subsequent (CS)
+      Classify as condition_subsequent only where the agreement requires a specific
+      action, filing, approval, registration, or deliverable to be completed AFTER
+      Closing, usually within a specified period, and the obligation is directly
+      connected to completing, perfecting, or implementing the transaction.
+
+      Typical CSs include:
+      - Post-Closing statutory filings with registrar or governmental authority
+      - Updating registers of members, securities holders, or statutory registers
+      - Issuing share certificates; depository or dematerialisation entries
+      - Stamping or registration of transaction documents
+      - Filing amended constitutional documents
+      - Post-Closing regulatory notifications
+      - Post-Closing tax filings or certificates arising from the transaction
+      - Completion of registrations that could not be completed before Closing
+      - Perfection or registration of security interests
+      - Approvals expressly permitted to be obtained after Closing
+      - Corporate actions or document deliveries expressly deferred until after Closing
+      - Rectification of identified diligence issues required after Closing
+
+      ## What NOT to extract — these are NOT CP or CS:
+      Do not extract merely because an obligation has a deadline, occurs before or
+      after Closing, is important, or has breach consequences. The key test: is it
+      part of the transaction completion framework?
+
+      Exclude:
+      - Information rights, monthly/quarterly/annual reporting, financial statements
+      - Board information or inspection rights
+      - Reserved matter consent rights
+      - Affirmative or negative covenants governing future business conduct
+      - Ongoing regulatory compliance
+      - Confidentiality, non-compete, non-solicit, founder lock-ins
+      - Transfer restrictions applicable to future transfers
+      - ROFR/ROFO/tag/drag for future transfers (unless a pre-Closing condition)
+      - Anti-dilution rights, pre-emption for future issuances
+      - Liquidation preference, exit rights
+      - Indemnities, representations, warranties, warranty survival periods
+      - Limitation of liability provisions
+      - Fee or expense allocation, ordinary payment obligations
+      - Ordinary tax covenants, insurance covenants, key-person obligations
+      - MFN rights, co-investment rights, notice procedures
+      - Governance rights, employment obligations of an ongoing nature
+      - General obligations to comply with applicable law
       - Definitions, interpretation clauses, recitals
-      - Boilerplate: governing law, jurisdiction, arbitration, severability, counterparts, entire agreement
-      - Amendment/waiver mechanics (unless they impose a specific CP or CS)
-      - Warranty statements themselves (extract only if there is an actionable bring-down condition)
-      - The transaction description itself ("Seller agrees to sell" is not a CP or CS)
+      - Boilerplate: governing law, jurisdiction, arbitration, severability
+      - Amendment/waiver mechanics (extract the underlying CP, not the procedure)
+      - Transaction descriptions ("Seller agrees to sell" is not a CP)
+      - Generic waiver language ("Investor may waive any CP in writing")
+
+      ## Compound clauses
+      Where one clause contains multiple independently satisfiable CPs or CSs,
+      create separate items for each. Do not combine unrelated obligations.
+
+      ## Schedules and annexures
+      Review the ENTIRE document — all schedules, annexures, exhibits, closing
+      checklists, and completion mechanics. Do not stop after the first CP/CS clause.
+
+      ## Closing deliverables
+      Items under "Closing Deliverables" may be CPs if delivery is a condition to
+      Closing, or may be simultaneous exchange mechanics. Classify based on legal
+      effect, not heading.
+
+      ## Dates and deadlines
+      Capture timing as stated ("prior to Closing", "within 15 days following Closing").
+      Set next_due_date only where a concrete YYYY-MM-DD can be calculated from dates
+      in the document. If Closing has not occurred, return null.
+
+      ## Confidence scoring
+      - 0.95-1.00: expressly labelled CP/CS with clear timing
+      - 0.85-0.94: not labelled but clearly a pre-Closing condition or post-Closing completion item
+      - 0.70-0.84: strongly implied but wording less explicit
+      - Below 0.70: generally do not extract
 
       ## Output format
       Reply strictly as a JSON array. Each element:
       {
         "obligation_type": one of ["reporting","fees","co_investment","notice","transfer","excuse","confidentiality","key_person","mfn","other"],
-        "legal_category": one of ["condition_precedent","condition_subsequent"] — CP = must be satisfied before closing; CS = post-closing obligation where breach triggers consequences. ONLY these two values are allowed,
-        "title": short label (e.g. "Board approval for share transfer"),
-        "description": the obligation in full, paraphrased faithfully,
-        "source_clause": the section/clause/schedule reference (e.g. "Clause 5.2(a)") — REQUIRED; omit the item entirely if you cannot cite it,
+        "legal_category": one of ["condition_precedent","condition_subsequent"] — ONLY these two values,
+        "title": short action-oriented label (e.g. "Board approval for share transfer"),
+        "description": faithful paraphrase of what must be done, obtained, or satisfied,
+        "source_clause": exact clause/section/schedule reference — REQUIRED; omit item if you cannot cite it,
         "trigger_type": one of ["calendar_event","one_time","fund_event","deal_event","status_change","ongoing"],
-        "trigger_description": when/how it triggers (e.g. "Prior to first closing", "Within 30 days after Closing"),
-        "frequency_rrule": iCal RRULE for recurring calendar obligations (e.g. "FREQ=QUARTERLY;INTERVAL=1"), else null,
-        "next_due_date": next concrete deadline as YYYY-MM-DD if determinable, else null,
-        "owner_team": best-fit team, one of ["ir","finance","legal","deal_team","operations"], else null,
-        "confidence": 0.0-1.0 how certain you are this is a real condition precedent or subsequent
+        "trigger_description": when/how it triggers (e.g. "Prior to Closing", "Within 30 days after Closing"),
+        "frequency_rrule": iCal RRULE for genuinely recurring obligations, else null,
+        "next_due_date": YYYY-MM-DD if determinable from the document, else null,
+        "owner_team": one of ["ir","finance","legal","deal_team","operations"], else null,
+        "confidence": 0.0-1.0 (classification correctness, not clause clarity)
       }
 
-      Be thorough — extract every CP and CS from every clause and schedule.
+      Be exhaustive — extract every CP and CS from every clause and schedule.
       Do not invent obligations. Only include items you can cite to a specific clause.
-      If a clause is neither CP nor CS, skip it entirely.
+      If no qualifying CP or CS exists, return [].
     PROMPT
   end
 
