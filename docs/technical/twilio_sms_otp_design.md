@@ -99,15 +99,22 @@ CapHive runs a **separate deployment per country** — `.env.production.us` (`CU
 | Question | Answered by | Where set |
 |---|---|---|
 | Is SMS two-factor switched on here at all? | `SMS_OTP_ENABLED` | Per-deployment env file |
-| May we dial *this particular number*? | `CURRENT_SITE`, via `SmsDeliverable.allowed_countries` | Derived — nothing extra to set |
+| May we dial *this particular number*? | Twilio **Geo Permissions** | Twilio console, account-wide |
 
 **Enablement is per deployment.** Setting `SMS_OTP_ENABLED=true` in `.env.production.us` turns SMS on for the US deployment and nowhere else. That is the launch: US first, and the IN deployment simply never has the flag set. It doubles as the kill switch — one variable, one restart, feature gone.
 
-**Destination is checked separately, because the deployment does not constrain it.** A US deployment holds users whose stored number may be `+91`, `+44` or `+252`. SMS pumping is priced by *destination*, not by which server sent the message — the attacker's payout comes from terminating traffic on an expensive route — so a US-only deployment will happily dial a premium-rate international number if nothing stops it. The allowed destinations are therefore derived from `CURRENT_SITE`: the US deployment texts US numbers, the IN deployment texts IN numbers, and everything else is refused.
-
-Deriving rather than configuring means the two cannot drift apart, and there is no second variable to keep in step.
-
-This is deliberately the app-side half of a redundant pair. Twilio's **Geo Permissions** (console, account-wide) are the backstop that holds even if this code is wrong; both must be widened together before a new market goes live. The app-side half exists to refuse at **enrollment**, on a screen where the user can still choose another mode — rather than letting them enrol and discover at login that nothing arrives.
+> **AMENDED — the app-side destination allowlist has been removed.**
+>
+> As designed, `SmsDeliverable.allowed_countries` derived the permitted destinations from `CURRENT_SITE`: the US deployment texted only `+1` numbers, the IN deployment only `+91`. That rule refused real users. A US-deployment account whose stored number is Indian is ordinary rather than suspicious, and such a user saw no SMS option at all with nothing on screen explaining why — the failure was silent at exactly the moment it needed to be legible.
+>
+> `sms_available?` now asks only whether the number is a valid mobile. `allowed_countries` is gone; `SmsDeliverable.default_region` still derives the libphonenumber parsing region from `CURRENT_SITE`, which is all that variable governs now.
+>
+> **What this costs, stated plainly.** SMS pumping is priced by *destination*, not by which server sent the message — the attacker's payout comes from terminating traffic on an expensive route. The removed check was the app-side half of a deliberately redundant pair, and the half that refused at **enrollment**, on a screen where the user could still pick another mode. Twilio's Geo Permissions is now the *only* bound on where this application dials, which changes it from a backstop into a load-bearing control:
+>
+> * **Geo Permissions must be widened to match**, or a user enrols in SMS here and is then locked out — Twilio rejects the send, and SMS mode issues no backup codes.
+> * Every country left enabled in Geo Permissions is a country this application will dial. Narrow it to the destinations the tenant base actually uses; that setting is now doing the work two controls used to.
+>
+> `OtpSmsRateLimiter` (per destination number, per user, per IP) is unchanged, and remains the control that sees a pumping pattern spread across accounts.
 
 **Credentials** join the existing `WHATSAPP_*` keys in Rails credentials:
 
@@ -569,7 +576,7 @@ Because the code is TOTP, tests read the expected value straight off the user re
 - Both login entry points — password *and* magic link ([section 5](#5-component-changes) explains why the magic-link path is the easy one to miss).
 - The authenticator-mode SMS fallback button: present when the number is usable, absent when not, and subject to the same rate limits as an SMS-mode user.
 - Rate limiting: cap reached returns a refusal and no send is recorded.
-- Destination allowlist: a non-US number is refused at enrollment with the mode still selectable.
+- ~~Destination allowlist: a non-US number is refused at enrollment with the mode still selectable.~~ **Amended** — a valid non-US mobile is now offered SMS like any other; only an unusable number (invalid, or a landline) hides the mode. Covered by `features/login/two_factor_sms.feature`.
 - Synchronous send failures: `21610` (opted out) and `21211` (invalid number) each record a failed delivery, are not retried, and surface their own message rather than a generic one.
 - Normalisation: a table-driven scenario over real-world formats — leading zeros, embedded spaces, an already-`+`-prefixed number, a call code stored with and without `+`.
 
@@ -583,7 +590,7 @@ Pin `entity_type` in fixtures, as the existing 2FA features do.
 
 | # | Question | Decision | What it changed |
 |---|---|---|---|
-| 1 | Launch markets | **US deployment only** | `SMS_OTP_ENABLED` set in `.env.production.us` and nowhere else. A2P 10DLC is the only registration regime in play; no India DLT. Allowed destinations derive from `CURRENT_SITE`, backstopped by Twilio Geo Permissions. [§3](#3-twilio-account-and-sender-model) |
+| 1 | Launch markets | **US deployment only** | `SMS_OTP_ENABLED` set in `.env.production.us` and nowhere else. A2P 10DLC is the only registration regime in play; no India DLT. ~~Allowed destinations derive from `CURRENT_SITE`~~ — **amended**: the app-side destination allowlist was removed, and Twilio Geo Permissions is now the only bound on destinations. [§3](#3-twilio-account-and-sender-model) |
 | 2 | Any tenant compliance objection to SMS? | **No** | Makes a single global switch acceptable — no tenant needs excluding. [§14](#14-rollout) |
 | 3 | Who absorbs the cost? | **Single Twilio account managed by CapHive**, cost absorbed centrally | No `entity_id` on `otp_deliveries`; no per-tenant pass-through. Also means no tenant will notice abuse on their bill first, so the platform guards in [§9](#9-abuse-and-cost-control) are the only line of defence. [§3](#3-twilio-account-and-sender-model), [§4](#4-data-model-changes) |
 | 4 | SMS fallback for authenticator-mode users? | **Yes**, mirroring the existing WhatsApp button | In scope. Caps that user's effective security at SMS strength, and widens the abuse surface to every user with a usable number rather than only SMS-mode users. [§6.4](#64-where-sms-sits-among-the-modes) |

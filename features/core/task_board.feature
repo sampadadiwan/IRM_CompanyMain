@@ -33,17 +33,17 @@ Feature: Tasks Kanban Board
   @javascript
   Scenario: Filter the board by assignee
     When I go to the tasks board page
-    And I select "John" from the board "assigned_to_id" filter
+    And I select "John" from the task "assigned_to_id" filter
     Then I should see "Call the auditor" in the "Todo" board column
     And I should not see "Draft the LPA" in the "Todo" board column
 
   @javascript
   Scenario: Filter the board by stakeholder and contact
     When I go to the tasks board page
-    And I select "Blue Fort Capital" from the board "investor_id" filter
+    And I pick "Blue Fort Capital" in the stakeholder filter
     Then I should see "Chase signatures" in the "In Progress" board column
     And I should not see "Draft the LPA" in the "Todo" board column
-    When I select "Maya Kapoor (maya@bluefort.com)" from the board "touch_point_id" filter
+    When I select "Maya Kapoor (maya@bluefort.com)" from the task "touch_point_id" filter
     Then I should see "Chase signatures" in the "In Progress" board column
     And I should not see "Send the deck" in the "Todo" board column
 
@@ -58,7 +58,7 @@ Feature: Tasks Kanban Board
       | Chase the PI signoff            | todo   | pi          |
       | Chase the commitment paperwork  | todo   | commitment  |
     When I go to the tasks board page
-    And I select "Blue Fort Capital" from the board "investor_id" filter
+    And I pick "Blue Fort Capital" in the stakeholder filter
     Then I should see "Chase the PI signoff" in the "Todo" board column
     And I should see "Chase the commitment paperwork" in the "Todo" board column
     And I should not see "Draft the LPA" in the "Todo" board column
@@ -85,7 +85,7 @@ Feature: Tasks Kanban Board
       | Prepare the data room | deal          | todo        |
       | Chase Blue Fort KYC   | deal_investor | in_progress |
     When I go to the tasks board page for the deal
-    And I select "Blue Fort Capital" from the board "deal_investor_id" filter
+    And I select "Blue Fort Capital" from the task "deal_investor_id" filter
     Then I should see "Chase Blue Fort KYC" in the "In Progress" board column
     And I should not see "Prepare the data room" in the "Todo" board column
 
@@ -164,7 +164,7 @@ Feature: Tasks Kanban Board
   @javascript
   Scenario: Filter the board by tag
     When I go to the tasks board page
-    And I select "legal" from the board "q[tags_cont]" filter
+    And I select "legal" from the task "q[tags_cont]" filter
     Then I should see "Draft the LPA" in the "Todo" board column
     And I should not see "Call the auditor" in the "Todo" board column
 
@@ -175,11 +175,11 @@ Feature: Tasks Kanban Board
   Scenario: Filter the board by due date
     Given there are following board tasks due in each period
     When I go to the tasks board page
-    And I select "Overdue" from the board "due_filter" filter
+    And I select "Overdue" from the task "due_filter" filter
     Then I should see "Overdue task" in the "Todo" board column
     And I should not see "Task due this week" in the "Todo" board column
     And I should not see "Task due this month" in the "Todo" board column
-    When I select "Due This Month" from the board "due_filter" filter
+    When I select "Due This Month" from the task "due_filter" filter
     Then I should see "Task due this month" in the "Todo" board column
     And I should not see "Overdue task" in the "Todo" board column
     And I should not see "Task due next month" in the "Todo" board column

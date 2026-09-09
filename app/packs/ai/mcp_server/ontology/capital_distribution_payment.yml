@@ -1,0 +1,216 @@
+# Ontology for CapitalDistributionPayment as exposed over MCP.
+---
+entity: capital_distribution_payment
+label: Capital Distribution Payment
+model: CapitalDistributionPayment
+description: >-
+  One investor's share of one capital distribution — the per-folio payable behind a
+  fund-level distribution.
+
+relationships:
+  capital_distribution:
+    target: capital_distribution
+    cardinality: many_to_one
+    note: The fund-level distribution this payment belongs to.
+    resolve_with: list_capital_distributions
+  capital_commitment:
+    target: capital_commitment
+    cardinality: many_to_one
+    note: The folio being paid. Prefer the folio_ids parameter.
+    resolve_with: list_capital_commitments
+  fund:
+    target: fund
+    cardinality: many_to_one
+    note: Pass fund_ids rather than a Ransack condition on fund_id.
+    resolve_with: list_funds
+
+fields:
+  investor_name:
+    type: string
+    description: Denormalised investor name.
+    sortable: true
+  folio_id:
+    type: string
+    description: Folio being paid. Prefer the folio_ids parameter.
+    sortable: true
+  payment_date:
+    type: date
+    description: Date of the payment to the investor.
+    sortable: true
+  completed:
+    type: boolean
+    description: Whether this investor's payment has been completed.
+    sortable: true
+  percentage:
+    type: percent
+    scale: 0-100
+    description: This folio's share of the distribution.
+    sortable: true
+    aggregatable: false
+  units_quantity:
+    type: decimal
+    description: Units the distribution was computed against.
+    sortable: true
+    aggregatable: true
+  gross_payable:
+    type: money
+    stored_as: gross_payable_cents
+    currency: the fund's currency
+    description: Gross amount payable to this investor, before fees.
+    sortable: true
+    aggregatable: true
+  net_payable:
+    type: money
+    stored_as: net_payable_cents
+    currency: the fund's currency
+    description: >-
+      NET amount payable to this investor after fees. This is what the investor actually
+      receives, and the figure to sum for "distributed to investors".
+    sortable: true
+    aggregatable: true
+  income:
+    type: money
+    stored_as: income_cents
+    currency: the fund's currency
+    description: Income component of this investor's share.
+    sortable: true
+    aggregatable: true
+  income_with_fees:
+    type: money
+    stored_as: income_with_fees_cents
+    currency: the fund's currency
+    description: Income component including fees. A restatement of income, not additional money.
+    sortable: true
+    aggregatable: true
+  reinvestment:
+    type: money
+    stored_as: reinvestment_cents
+    currency: the fund's currency
+    description: Portion reinvested rather than paid out.
+    sortable: true
+    aggregatable: true
+  reinvestment_with_fees:
+    type: money
+    stored_as: reinvestment_with_fees_cents
+    currency: the fund's currency
+    description: Reinvested portion including fees. A restatement, not additional money.
+    sortable: true
+    aggregatable: true
+  cost_of_investment:
+    type: money
+    stored_as: cost_of_investment_cents
+    currency: the fund's currency
+    description: Cost basis attributed to this investor's share.
+    sortable: true
+    aggregatable: true
+  cost_of_investment_with_fees:
+    type: money
+    stored_as: cost_of_investment_with_fees_cents
+    currency: the fund's currency
+    description: Cost basis including fees. A restatement, not additional money.
+    sortable: true
+    aggregatable: true
+  gross_of_account_entries:
+    type: money
+    stored_as: gross_of_account_entries_cents
+    currency: the fund's currency
+    description: Gross payable derived from the folio's account entries.
+    sortable: true
+    aggregatable: true
+  net_of_account_entries:
+    type: money
+    stored_as: net_of_account_entries_cents
+    currency: the fund's currency
+    description: Net payable derived from the folio's account entries.
+    sortable: true
+    aggregatable: true
+  folio_amount:
+    type: money
+    stored_as: folio_amount_cents
+    currency: the folio's currency
+    description: The payable restated in the folio's currency. The same money as net_payable.
+    sortable: true
+    aggregatable: true
+  tracking_net_payable:
+    type: money
+    stored_as: tracking_net_payable_cents
+    currency: the fund's tracking currency
+    description: The payable restated in the fund's tracking currency. The same money again.
+    sortable: true
+    aggregatable: true
+  fund_id:
+    type: reference
+    target: fund
+    description: Owning fund. Prefer the fund_ids parameter.
+    sortable: false
+  capital_commitment_id:
+    type: reference
+    target: capital_commitment
+    description: The folio being paid. Prefer folio_ids when you have a folio string.
+    sortable: false
+  created_at:
+    type: datetime
+    description: When the payment row was created. Not the payment date.
+    sortable: true
+  updated_at:
+    type: datetime
+    description: When the payment row last changed.
+    sortable: true
+
+returned_only:
+  fund_name:
+    type: string
+    description: Name of the owning fund.
+  investor:
+    type: string
+    description: The investor name, returned under this key. Filter with investor_name.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the payment.
+
+unavailable:
+  id:
+    reason: Not declared in CapitalDistributionPayment.ransackable_attributes, so conditions on it are ignored.
+  net_payable_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: net_payable
+  gross_payable_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: gross_payable
+
+scopes:
+  query_class: FundAssistantDataManager::CapitalDistributionPaymentQuery
+  descriptions:
+    completed: Payments marked completed.
+    incomplete: Payments not yet completed.
+    notification_sent: Payments whose investor notification has been emailed.
+    notification_not_sent: Payments whose investor notification has not gone out.
+
+measures:
+  total_net_paid:
+    expression: sum of net_payable
+    description: Net cash distributed to the matching investors.
+  total_gross_paid:
+    expression: sum of gross_payable
+    description: Gross distributions before fees.
+
+caveats:
+  - >-
+    This entity carries many restatements of the SAME money — net_payable vs gross_payable vs
+    *_with_fees vs folio_amount vs tracking_net_payable. Pick one and say which; adding two
+    of them together double-counts.
+  - >-
+    Aggregated money sums on this entity are NOT currency-resolved and come back marked
+    currency_unresolved. Restrict to one fund before quoting a total.
+  - Money filters take MAJOR units, not cents.
+  - This table is very large in production. Always filter and always pass a limit.
+
+tools:
+  list_capital_distribution_payments:
+    kind: list
+    summary: Use it for investor-level questions about what each investor was paid.
+    params:
+      fund_ids:
+      folio_ids:
+      scope:
+    require_one_of: [fund_ids, folio_ids, scope, aggregate]

@@ -3,6 +3,8 @@ class FundUnit < ApplicationRecord
   include Trackable.new
   include FundUnitShared
 
+  include RansackerAmounts.new(fields: %w[amount price premium])
+
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_commitment
@@ -44,7 +46,7 @@ class FundUnit < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[issue_date premium price quantity reason unit_type].sort
+    %w[issue_date premium price amount quantity reason unit_type capital_commitment_id fund_id owner_type].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

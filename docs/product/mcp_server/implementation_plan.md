@@ -128,7 +128,7 @@ flowchart TB
     end
 
     subgraph CapHive["CapHive Application"]
-        MCP[MCP Server<br/>POST /mcp<br/>23 tools]
+        MCP[MCP Server<br/>POST /mcp<br/>22 tools]
         Assistants[Internal Assistants<br/>Chat in CapHive UI]
         DL[Shared Data Layer<br/>Data Managers + Pundit Policies + Entity Scoping]
         DB[(MySQL)]
@@ -401,7 +401,7 @@ All tools below reuse existing DataManager methods. No new query logic.
 
 | Role | Tools Available |
 |---|---|
-| **Fund Manager** | 23 tools (all) |
+| **Fund Manager** | 22 tools (all) |
 | **LP / Investor** | 10 tools (funds, ratios, calls, commitments, distributions, distribution payments, documents, commitment details) |
 
 ---
@@ -486,7 +486,7 @@ Each tool:
 ## 7. Current Status (as of 2026-05-21)
 
 ### Completed
-- All 23 tools implemented and working across 6 domains
+- All 22 tools implemented and working across 6 domains
 - Two-level entity governance: `enable_mcp` (CapHive admin) + `mcp_enabled` (entity admin)
 - Doorkeeper OAuth admin UI restricted to `super`/`support` roles
 - Staging testing with Claude.ai — multiple team members connected successfully

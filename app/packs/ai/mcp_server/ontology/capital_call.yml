@@ -1,0 +1,186 @@
+# Ontology for CapitalCall as exposed over MCP.
+#
+# This file is the single source of truth for what an external AI client is told about
+# capital calls: the tool description and the JSON input schema are GENERATED from it
+# (see McpOntology), and incoming Ransack queries are VALIDATED against it. Hand-written
+# prose in the tool class is what drifted away from the model in the first place — if you
+# add or rename a ransackable attribute on CapitalCall, change it here, not there.
+#
+# Field keys are the names an AI client uses in the `query` hash. `stored_as` records the
+# physical column only where the two differ, so nobody has to guess (money is the big one:
+# RansackerAmounts exposes `call_amount` as cents/100.0, so clients filter in MAJOR units).
+---
+entity: capital_call
+label: Capital Call
+model: CapitalCall
+description: >-
+  A demand issued by a fund against its investors' committed capital. Each approved call
+  generates one capital remittance per applicable commitment, which is where investor-level
+  amounts and payment status live.
+
+relationships:
+  fund:
+    target: fund
+    cardinality: many_to_one
+    resolve_with: list_funds
+    note: >-
+      Filter by fund with the `fund_ids` parameter, not a Ransack condition. Use list_funds
+      to resolve a fund name to an id first.
+  capital_remittances:
+    target: capital_remittance
+    cardinality: one_to_many
+    resolve_with: list_capital_remittances
+    note: Per-investor amounts, due dates and payment status for a call live here, not on the call.
+
+fields:
+  name:
+    type: string
+    label: Call name
+    description: Call name, unique within a fund (e.g. "Drawdown 3").
+    sortable: true
+  due_date:
+    type: date
+    description: Date by which investors must remit the called capital.
+    sortable: true
+  call_date:
+    type: date
+    description: Date the call was issued. Use this, not due_date, for "when was capital called".
+    sortable: true
+  approved:
+    type: boolean
+    description: >-
+      Whether the call has been approved. Unapproved calls have NOT been issued to investors
+      and should normally be excluded from "capital called to date" style answers.
+    sortable: true
+  call_amount:
+    type: money
+    stored_as: call_amount_cents
+    currency: the fund's own currency
+    description: Total capital demanded by this call, excluding other fees.
+    sortable: true
+    aggregatable: true
+  collected_amount:
+    type: money
+    stored_as: collected_amount_cents
+    currency: the fund's own currency
+    description: Capital actually received against this call so far.
+    sortable: true
+    aggregatable: true
+  percentage_called:
+    type: percent
+    scale: 0-100
+    description: >-
+      Percentage of commitment called, for calls whose call_basis is "Percentage of
+      Commitment". Always 0 for "Upload" and "Investable Capital Percentage" calls, so never
+      average it across mixed call bases.
+    sortable: true
+  capital_fee:
+    type: money
+    stored_as: capital_fee_cents
+    currency: the fund's own currency
+    description: Management/capital fee component of this call, over and above call_amount.
+    sortable: true
+    aggregatable: true
+  other_fee:
+    type: money
+    stored_as: other_fee_cents
+    currency: the fund's own currency
+    description: Other fees charged with this call, over and above call_amount.
+    sortable: true
+    aggregatable: true
+  fund_id:
+    type: reference
+    target: fund
+    description: Owning fund. Prefer the `fund_ids` parameter over a Ransack condition.
+    sortable: false
+
+# Returned in every result row but computed in Ruby after the SQL query, so they can be
+# read and reasoned over — never filtered, sorted or aggregated on.
+returned_only:
+  due_amount:
+    type: money
+    formula: call_amount + other_fee - collected_amount
+    description: Outstanding balance on the call. Note it includes other fees, which call_amount does not.
+  call_basis:
+    type: enum
+    values: ["Percentage of Commitment", "Upload", "Investable Capital Percentage"]
+    description: >-
+      How the call amount was derived. An entity may configure additional values beyond the
+      three standard ones, so treat this list as a floor, not a closed set.
+  close_percentages:
+    type: json
+    description: Per-close percentage breakdown for the call.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the call. Present it as a link; do not treat it as data.
+
+# Names an AI client is likely to reach for that do NOT work. Advertising these was the
+# original defect: Ransack silently ignores unknown conditions (ignore_unknown_conditions
+# defaults to true and this app never overrides it), so `status_eq: 'active'` returned every
+# capital call rather than an error, and the model reported the result as a filtered answer.
+unavailable:
+  status:
+    reason: CapitalCall has no status column. Approval state is the `approved` boolean.
+    use_instead: approved
+  verified:
+    reason: CapitalCall has no verified attribute.
+    use_instead: approved
+  id:
+    reason: Not declared in CapitalCall.ransackable_attributes, so conditions on it are ignored.
+  call_amount_cents:
+    reason: >-
+      The physical column, not a queryable attribute. RansackerAmounts already exposes
+      `call_amount` in major units — the old tool description wrongly suggested sorting by
+      `call_amount_cents`, which Ransack silently ignored.
+    use_instead: call_amount
+  collected_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: collected_amount
+  capital_fees:
+    reason: >-
+      Renamed. The ransacker was built against capital_calls.capital_fees_cents while the
+      column is capital_fee_cents (singular), so every condition raised StatementInvalid.
+    use_instead: capital_fee
+  other_fees:
+    reason: Renamed for the same reason as capital_fees.
+    use_instead: other_fee
+
+measures:
+  total_called:
+    expression: sum of call_amount
+    via: aggregate
+    description: Total capital called. Excludes other fees.
+  total_collected:
+    expression: sum of collected_amount
+    via: aggregate
+    description: Total capital received against these calls.
+  outstanding:
+    expression: sum of due_amount
+    via: rows
+    description: >-
+      Not available as an aggregate — due_amount is computed per row in Ruby. Fetch rows and
+      sum due_amount, or subtract total_collected from total_called if fees can be ignored.
+  percentage_raised:
+    expression: total_collected / total_called * 100
+    via: derived
+    description: Collection rate. Only meaningful within a single currency.
+
+caveats:
+  - >-
+    Amounts are in each fund's own currency and are returned as formatted strings
+    (e.g. "$1,000,000.00"). NEVER sum call_amount or collected_amount across funds with
+    different currencies — group by fund, or restrict to one currency, and say which.
+  - >-
+    Money filters take MAJOR units, not cents: call_amount_gt: 1000000 means one million
+    dollars/rupees, not ten thousand.
+  - >-
+    Results are capped at 500 rows when `limit` is omitted. A count returned from a capped
+    row list is not the true count — use aggregate: 'count' for counts.
+
+tools:
+  list_capital_calls:
+    kind: list
+    summary: >-
+      Use it for questions about how much capital a fund has demanded and when.
+    params:
+      fund_ids:

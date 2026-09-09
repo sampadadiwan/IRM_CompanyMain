@@ -1,5 +1,4 @@
 import BaseAgGrid from "controllers/base_ag_grid"
-import moment from 'moment'
 import * as bootstrap from "bootstrap"
 
 // Row-menu actions that open the offcanvas on a specific tab with that tab's

@@ -29,47 +29,43 @@ module SmsDeliverable
     ENV.fetch("SMS_OTP_ENABLED", "false").to_s.strip.casecmp("true").zero?
   end
 
-  # Destination countries we are permitted to text, as ISO 3166-1 alpha-2 codes.
+  # Region libphonenumber assumes when a number arrives with no country code of its own.
   #
   # Derived from CURRENT_SITE — the per-country deployment marker that already exists
   # (.env.production.us sets US, .env.production.in sets IN) — rather than configured
-  # separately. One source of truth means the two cannot drift apart.
-  #
-  # WHY A DESTINATION CHECK EXISTS AT ALL, given the deployment is already per-country:
-  #
-  # The deployment decides which market gets the feature. It does NOT constrain where a
-  # message goes. A US deployment can hold users whose stored number is +91, +44 or +252,
-  # and SMS pumping is priced by DESTINATION, not by which server sent it — an attacker's
-  # payout comes from terminating traffic on an expensive route, and the US deployment
-  # will happily dial one if nothing stops it. So the deployment answers "is this feature
-  # on?" and this answers "may we dial that number?".
-  #
-  # This is the app-side half of a deliberately redundant pair. Twilio's own Geo
-  # Permissions (set in their console, account-wide) are the backstop that holds even if
-  # this code is wrong. This half exists to refuse at ENROLLMENT, on a screen where the
-  # user can still pick another mode — rather than letting them enrol and then discover
-  # at login that nothing arrives.
-  #
-  # @return [Array<String>]
-  def self.allowed_countries
-    case ENV.fetch("CURRENT_SITE", "").strip.upcase
-    when "US" then %w[US]
-    when "IN" then %w[IN]
-    else
-      # LOCAL/unset — development and test. Permissive so a developer can exercise the
-      # flow with whatever number is in their seed data. Never reached in a deployed
-      # environment, where CURRENT_SITE is always set.
-      %w[US IN]
-    end
-  end
-
-  # Region libphonenumber assumes when a number arrives with no country code of its own.
-  # Taken from the allowlist rather than hardcoded to US for the same reason as above.
+  # separately, so a bare local number is read as Indian on the IN deployment and as
+  # American everywhere else. Only consulted when call_code is blank; every number that
+  # has one is fully qualified before it reaches Phonelib.
   #
   # @return [String]
   def self.default_region
-    allowed_countries.first || "US"
+    ENV.fetch("CURRENT_SITE", "").strip.upcase == "IN" ? "IN" : "US"
   end
+
+  # NO DESTINATION ALLOWLIST — any valid mobile number may be texted, whichever
+  # deployment holds the user.
+  #
+  # This used to be gated on CURRENT_SITE: the US deployment texted only +1 numbers, the
+  # IN deployment only +91. It was removed deliberately, because the rule refused real
+  # users — a US-deployment account whose stored number is Indian is ordinary, not
+  # suspicious, and that user was shown no SMS option at all with nothing on screen
+  # explaining why.
+  #
+  # WHAT THAT GIVES UP, so the next reader does not restore it by accident:
+  #
+  # SMS pumping is priced by DESTINATION, not by which server sent the message — an
+  # attacker's payout comes from terminating traffic on an expensive route. The app-side
+  # allowlist was the half of a redundant pair that refused at ENROLLMENT; the remaining
+  # half is Twilio's account-wide **Geo Permissions** (console), which is now the only
+  # thing making an expensive destination unreachable. Two consequences:
+  #
+  #   * Geo Permissions must be widened to match, or a user enrols in SMS here and then
+  #     cannot log in — Twilio rejects the send and SMS mode has no backup codes.
+  #   * Geo Permissions is now load-bearing rather than a backstop. Every country left
+  #     enabled there is a country this application will dial.
+  #
+  # OtpSmsRateLimiter (per destination number, per user, per IP) is unchanged and is the
+  # control that still sees a pumping pattern across accounts.
 
   # Can this user choose SMS as their two-factor mode?
   #
@@ -83,17 +79,17 @@ module SmsDeliverable
     return false unless parsed.valid?
     # Landlines cannot receive SMS. Catching this here means the user is told at mode
     # selection rather than after enrolling and then failing to log in.
-    return false unless mobile_phone?(parsed)
-
-    SmsDeliverable.allowed_countries.include?(parsed.country)
+    mobile_phone?(parsed)
   end
 
   # The number in E.164 ("+14155550134"), which is the only format Twilio accepts.
   #
   # Note what this is fixing: `phone_with_call_code` concatenates call_code and phone
   # with no separator and no leading "+", producing exactly the format Twilio rejects.
-  # Neither column has any format validation, so real data contains "(415) 555-0134",
-  # "415-555-0134", leading trunk zeros, and numbers that already carry a "+".
+  # User#phone_must_be_dialable only validates numbers as they are edited, so rows
+  # written before it existed — and rows written by import and sync paths — still hold
+  # "(415) 555-0134", "415-555-0134", leading trunk zeros, and numbers that already
+  # carry a "+".
   #
   # @return [String, nil] nil when the number cannot be dialled
   def normalized_sms_number

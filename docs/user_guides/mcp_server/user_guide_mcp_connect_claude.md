@@ -6,7 +6,7 @@ A step-by-step guide for CapHive admins and entity admins to enable MCP access a
 
 ## What is This?
 
-The CapHive MCP Server lets users query fund management data from CapHive using Claude.ai. Users authenticate via OAuth, and Claude can then call 23 read-only tools covering funds, capital activity, portfolios, cap tables, documents, and commitments.
+The CapHive MCP Server lets users query fund management data from CapHive using Claude.ai. Users authenticate via OAuth, and Claude can then call 22 read-only tools covering funds, capital activity, portfolios, cap tables, documents, and commitments.
 
 **MCP URL:** `https://app.caphive.com/mcp`
 

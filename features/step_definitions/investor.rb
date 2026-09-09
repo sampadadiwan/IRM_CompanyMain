@@ -1904,3 +1904,81 @@ Then('I should see the filtered investors with {string}') do |string|
     expect(page).not_to have_content(kyc.investor_name)
   end
 end
+
+Given('there is another entity {string}') do |args|
+  @entity_2 = FactoryBot.build(:entity)
+  key_values(@entity_2, args)
+  @entity_2.save!
+  puts "\n####Entity 2####\n"
+  puts @entity_2.to_json
+  puts "Entity Permissions: #{@entity_2.permissions}"
+end
+
+Given('There are account entries with parent as investors') do
+  expect(@entity.investors.count).to be > 0
+  idx = 1
+  @entity.investors.find_each do |investor|
+    AccountEntry.create!(
+      parent_type: "Investor",
+      parent_id: investor.id,
+      fund:               @fund,
+      entity:             @entity,
+      name:               "Entry #{idx}",
+      entry_type:         "EXPENSE",
+      reporting_date:     Time.zone.now,
+      amount_cents:       rand(1..100_000_000),
+      capital_commitment: nil
+    )
+    idx += 1
+  end
+end
+
+Given('There are Account Entries in another entity with parent as investors') do
+  expect(@entity.investors.count).to be > 0
+  idx = 1
+  @entity.investors.find_each do |investor|
+    AccountEntry.create!(
+      parent_type: "Investor",
+      parent_id: investor.id,
+      fund:               @fund,
+      entity:             @entity_2,
+      name:               "Entry #{idx}",
+      entry_type:         "EXPENSE",
+      reporting_date:     Time.zone.now,
+      amount_cents:       rand(1..100_000_000),
+      capital_commitment: nil
+    )
+    idx += 1
+  end
+end
+
+When('I update the Investor names') do
+  @og_names = {}
+  @entity.investors.find_each do |inv|
+    @og_names[inv.id] = inv.to_s[0..254]
+    inv.investor_name = "Updated #{inv.investor_name}"
+    inv.save validate: false
+    expect(inv.investor_name).not_to eq(@og_names[inv.id])
+  end
+end
+
+Then('The account entries must have updated parent name') do
+  puts "AE PARENT NAME                INVESTOR NAME"
+  @entity.investors.find_each do |investor|
+    AccountEntry.where(parent_type: "Investor", parent_id: investor.id, entity: @entity).find_each do |entry|
+      puts "#{entry.parent_name} ||| #{investor.to_s[0..254]}"
+      expect(entry.parent_name).to eq(investor.to_s[0..254])
+    end
+  end
+end
+
+Then('The account entries in another entity must not have updated parent name') do
+  puts "AE PARENT NAME                INVESTOR NAME"
+  @entity.investors.find_each do |investor|
+    AccountEntry.where(parent_type: "Investor", parent_id: investor.id, entity: @entity_2).find_each do |entry|
+      puts "#{entry.parent_name} ||| #{investor.to_s[0..254]}"
+      expect(entry.parent_name).not_to eq(investor.to_s[0..254])
+      expect(entry.parent_name).to eq(@og_names[entry.parent_id])
+    end
+  end
+end

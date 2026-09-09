@@ -278,8 +278,22 @@ Then('I should see the tasks list') do
   expect(page).to have_css('table#tasks')
 end
 
-# The board filters are plain auto-submit selects named by their param
-When('I select {string} from the board {string} filter') do |option, select_id|
+# The stakeholder filter is the one control in the bar that is NOT a select: its
+# options would be every investor in the tenant, so it is a typeahead sourced
+# from InvestorsController#search. Type enough to trip it (minLength: 2), then
+# pick from the jQuery UI menu.
+When('I pick {string} in the stakeholder filter') do |name|
+  fill_in 'stakeholder_filter', with: name[0, 4]
+  find('.ui-autocomplete li', text: name, wait: 10).click
+  # The pick sets the hidden investor_id and submits; wait for that to land.
+  expect(page).to have_current_path(/investor_id=\d/, wait: 10)
+  sleep 1
+end
+
+# The filter bar (tasks/_filter_bar) is otherwise plain auto-submit selects named
+# by their param, and the list and the board render the same one — hence "task",
+# not "board": the same step drives either view.
+When('I select {string} from the task {string} filter') do |option, select_id|
   select option, from: select_id
   # requestSubmit triggers a full GET reload; wait for it to land (the chosen
   # filter comes back as a query param — URL-encoded, so bracketed ransack

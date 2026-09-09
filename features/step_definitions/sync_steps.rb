@@ -243,6 +243,17 @@ Given(/^a user exists via a prior UPSERT for "([^"]+)"$/) do |email|
   expect(parsed["applied"]).to eq(true)
 end
 
+# Deliberately a number User#phone_must_be_dialable refuses: nine digits where +91 needs
+# ten. Sync must still apply it — see User#skip_phone_validation.
+And('the payload\'s phone number is {string} with call code {string}') do |phone, call_code|
+  @payload[:user]["phone"] = phone
+  @payload[:user]["call_code"] = call_code
+end
+
+Then('the user {string} should have the phone number {string}') do |email, phone|
+  expect(User.find_by(email:)&.phone).to eq(phone)
+end
+
 Given(/^I reuse the last UPSERT payload$/) do
   expect(@payload).to be_present
 end

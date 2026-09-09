@@ -294,9 +294,15 @@ class UsersController < ApplicationController
     respond_to do |format|
       if @user.update(user_params)
 
-        if current_user.has_cached_role?(:company_admin)
+        # Only touch roles when the roles field was actually submitted (it's only rendered for
+        # company admins) and only a company admin may change them at all. Any role not in
+        # User::UPDATABLE_ROLES (e.g. investor, support, investor_advisor, rm) is left untouched
+        # regardless of what was submitted here.
+        if current_user.has_cached_role?(:company_admin) && params[:user].key?(:role_name)
+          submitted_roles = Array(user_params[:role_name])
+
           User::UPDATABLE_ROLES.each do |role|
-            user_params[:role_name].present? && user_params[:role_name].include?(role) ? @user.add_role(role) : @user.remove_role(role)
+            submitted_roles.include?(role) ? @user.add_role(role) : @user.remove_role(role)
           end
         end
         format.html { redirect_to user_url(@user), notice: "User was successfully updated." }

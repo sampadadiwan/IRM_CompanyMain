@@ -3,7 +3,7 @@
 ```yaml
 series: "Fund Ops, Unstacked #5"
 format: LinkedIn Article + short feed teaser post
-feature: CapHive MCP Server (23 read-only tools, OAuth/PKCE, two-level governance) + entity-level LLM configuration (bring-your-own API key)
+feature: CapHive MCP Server (22 read-only tools, OAuth/PKCE, two-level governance) + entity-level LLM configuration (bring-your-own API key)
 persona: COO / Head of Fund Operations — specifically the technically fluent one who owns the "what's our AI strategy" question
 hook_rationale: >
   Inverts the category. Every vendor's AI story is "we added a chatbot to our
@@ -13,8 +13,11 @@ hook_rationale: >
   waiting for it in procurement.
 impact_used: >
   Hard numbers from the guide and code (docs/user_guides/mcp_server/,
-  app/packs/ai/mcp_server/): 23 read-only tools across 6 domains (verified —
-  23 *_tool.rb files); zero write operations exposed; OAuth Dynamic Client
+  app/packs/ai/mcp_server/): 22 read-only tools across 6 domains (verified —
+  22 tool classes registered in McpController#authorized_tools; note there are
+  23 *_tool.rb files, but application_mcp_tool.rb is the abstract base class,
+  not a tool — an earlier draft of this doc counted files and said 23);
+  zero write operations exposed; OAuth Dynamic Client
   Registration per RFC 7591 with PKCE, so no shared client secret is ever
   distributed or rotated; 30-day access tokens with automatic refresh, revocable
   by disconnecting; every tool call logged for audit; two-level governance
@@ -50,10 +53,10 @@ We shipped one of those too. It's genuinely useful, and it's not what this artic
 
 This is about the opposite move — the one that took longer and matters more.
 
-Instead of putting an AI inside our product, we made our product available *to the AI you already use.* Twenty-three read-only tools. Your own API key. Your own model choice. Your governance rules, enforced on our side.
+Instead of putting an AI inside our product, we made our product available *to the AI you already use.* Twenty-two read-only tools. Your own API key. Your own model choice. Your governance rules, enforced on our side.
 
 **[STAT BAND]**
-| 23 | 0 | 30 |
+| 22 | 0 | 30 |
 |---|---|---|
 | read-only tools exposed — funds, capital activity, portfolio, cap table, documents, commitments | write operations. No create, update, or delete path exists through the connection | day access-token lifetime, auto-refreshing, revocable by the user in one click |
 
@@ -90,7 +93,7 @@ Every one of these came up before we shipped. Each shaped the design.
 
 **"Can it change anything?"**
 
-No. Not "we've restricted it" — there is no write path. All 23 tools are read-only. The connection cannot create a capital call, edit a valuation, or delete a document, because no tool exists that does those things.
+No. Not "we've restricted it" — there is no write path. All 22 tools are read-only. The connection cannot create a capital call, edit a valuation, or delete a document, because no tool exists that does those things.
 
 **"Whose data does it see?"**
 
@@ -152,7 +155,7 @@ Three consequences, all commercial rather than technical:
 
 Before: a cross-fund question meant an export, a workbook, and an analyst's afternoon — or a screenshot pasted into a consumer AI tool with no governance at all.
 
-After: the question is asked in the client the team already uses, against **23 read-only tools**, scoped to the asker's own permissions, with **every call logged** and **zero write paths** exposed.
+After: the question is asked in the client the team already uses, against **22 read-only tools**, scoped to the asker's own permissions, with **every call logged** and **zero write paths** exposed.
 
 The measurable shift isn't time saved on any single query. It's this: **the number of times fund data leaves your controlled environment to answer a question goes to zero** — because the governed path is now easier than the clipboard.
 
@@ -211,7 +214,7 @@ We shipped the opposite. 👇
 
 Instead of putting an AI inside our product, we made our product callable from the AI client your team already uses.
 
-23 read-only tools. Your API key. Your model. Your governance rules, enforced on our side.
+22 read-only tools. Your API key. Your model. Your governance rules, enforced on our side.
 
 Here's why that framing matters more than the feature:
 
@@ -262,7 +265,7 @@ Part of Fund Ops, Unstacked. Previous: what happens when an agent refuses to ans
 
 1. **Hook** — Every vendor shipped a chat box. We shipped the inverse.
 2. **The real situation** — Your team already uses AI on fund data. It reaches the data through the clipboard.
-3. **The move** — 23 read-only tools, callable from the client they already use.
+3. **The move** — 22 read-only tools, callable from the client they already use.
 4. **No write path** — Read-only as architecture. No tool creates, edits, or deletes.
 5. **No service account** — Same user + entity scoping as the web app. One permission system.
 6. **No shared secret** — Dynamic registration + PKCE. Nothing to distribute or rotate.

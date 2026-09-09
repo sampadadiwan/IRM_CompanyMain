@@ -36,7 +36,7 @@
         <small class="form-text text-muted">Numeric dialing code, no "+" (e.g. 1 for US, 91 for India).</small>
       </div>
       <div class="form-group col-7">
-        <%= form.label :phone %>
+        <%= form.label :phone, "Mobile Phone" %>
         <%= form.number_field :phone, class: "form-control"  %>
         <small class="form-text text-muted">Mobile number without the country code. Used for WhatsApp and SMS sign-in codes.</small>
       </div>
@@ -68,7 +68,15 @@
       <% if user.id.present? %>
       <div class="form-group">
         <%= form.label :roles %>
-        <%= form.select :roles, ["company_admin"], {selected: user.roles.collect(&:name), include_hidden: false}, class: "form-control select2", multiple: true, name: "user[role_name][]" %>
+        <%# check no one can pass a support role %>
+        <%# also a user can have more roles such as investor which we do not allow to be changed here
+        those should remain unaffected %>
+        <%# include_hidden defaults to true here on purpose: for a multiple select, Rails uses that
+        hidden field to submit an empty user[role_name][] when every option is deselected. Without
+        it, deselecting all roles sends no role_name param at all, so UsersController#update's
+        params[:user].key?(:role_name) guard (there to avoid touching roles when the field isn't
+        rendered) sees nothing was submitted and leaves the old roles in place. %>
+        <%= form.select :roles, User::UPDATABLE_ROLES, {selected: user.roles.collect(&:name)}, class: "form-control select2", multiple: true, name: "user[role_name][]" %>
       </div>
       <% end %>
 

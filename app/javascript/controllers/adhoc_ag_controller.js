@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { formatLocaleDate } from "custom/locale_date_format"
 
 export default class extends Controller {
 
@@ -293,9 +294,8 @@ class DynamicAgGrid {
                 case 'dateColumn':
                     colDef.type = 'dateColumn';
                     colDef.filter = 'agDateColumnFilter';
-                    colDef.valueFormatter = (params) => {
-                        return params.value ? new Date(params.value).toLocaleDateString() : '';
-                    };
+                    colDef.valueFormatter = (params) =>
+                        params.value ? formatLocaleDate(params.value) : '';
                     break;
                 case 'booleanColumn':
                     colDef.cellRenderer = 'agBooleanCellRenderer';

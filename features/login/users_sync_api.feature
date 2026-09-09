@@ -23,6 +23,18 @@ Feature: Users Sync API (upsert/disable/digest)
     And the user's last_synced_ccf_hex should equal the payload CCF
     And an entity named "Acme Holdings" should exist
 
+  # The origin region is authoritative for its own users' contact details. Refusing a
+  # number our own form would reject answers 422 and never stamps last_synced_ccf_hex, so
+  # the sender retries that payload forever and the user's replication sticks for good.
+  Scenario: UPSERT accepts a phone number the form would reject
+    When I prepare an UPSERT payload for "jane@example.com" from origin "IN" with roles "employee" existing "false"
+    And the payload's phone number is "944902587" with call code "91"
+    And I POST the signed request to "/internal/sync/users"
+    Then the response status should be 200
+    And the JSON response should include "applied" = true
+    And the user "jane@example.com" should have the phone number "944902587"
+    And the user's last_synced_ccf_hex should equal the payload CCF
+
   Scenario: UPSERT is idempotent when same CCF is sent again
     Given a user exists via a prior UPSERT for "reid@example.com"
     And I reuse the last UPSERT payload

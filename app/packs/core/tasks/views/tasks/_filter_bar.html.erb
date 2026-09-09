@@ -1,0 +1,171 @@
+<%# The task filter bar, shared by the list (tasks/_index) and the kanban board
+    (tasks/_board). Every filter here is applied by TaskList regardless of which
+    view renders it, so one bar serves both — the list used to offer only
+    category and due date while the board had six selects.
+
+    Option data comes from TaskFiltersHelper (a helper, not the controller: this
+    partial also renders under SideLetters/SideLetterObligations/Events, which
+    reach the list directly). Which selects appear depends on what the current
+    scope has already fixed: a list pinned to one record (an obligation, a
+    document, a KPI report) gets no stakeholder select, because TaskList ignores
+    investor_id once owner_id is set; the contact select only appears once there
+    is a stakeholder to take contacts from.
+
+    `scope` (optional): the task scope the host page passed the list partial as
+    locals rather than as request params — a side letter's covenant tasks, an
+    event's tasks. Without it the bar on those pages would filter, and submit
+    to, the firm-wide list instead of the one on screen. `id` is dropped for the
+    same reason: on a host page it identifies that record, not a task. %>
+<%
+  scope = local_assigns[:scope].to_h.compact_blank.stringify_keys
+  filter_params = params.to_unsafe_h.except("id").merge(scope)
+  filters = task_filter_options(filter_params)
+  # Params the selects below own. They must not also ride along as hidden
+  # fields — the old value would be submitted alongside the new selection.
+  select_params = %w[due_filter assigned_to_id]
+  # A deal offers its own investors as a select (bounded by the deal); every
+  # other scope offers a typeahead (unbounded — see the helper).
+  stakeholder_select = filters.deal ? filters.stakeholders.present? : filters.stakeholder_search
+  select_params << (filters.deal ? "deal_investor_id" : "investor_id") if stakeholder_select
+  select_params << "touch_point_id" if filters.touch_point_owner
+  # The stakeholder select owns an Investor owner filter too: a hidden owner_id
+  # would override a new selection, since TaskList's investor_id union only
+  # applies when owner_id is blank.
+  select_params += %w[owner_id owner_type] if stakeholder_select && !filters.deal && filter_params["owner_type"] == "Investor"
+
+  # Everything else the current view is scoped by rides along hidden, so a
+  # filter submit narrows this list instead of silently widening it to the
+  # firm-wide one: the board flag, the owner/deal/side-letter scope, the
+  # embedded context, completed=all. `page` is dropped so a new filter starts at
+  # page one. Arrays re-encode as k[]; nested hashes (advanced ransack grouping)
+  # can't ride hidden fields without corruption, so they are dropped rather than
+  # stringified.
+  hidden_pairs = []
+  add_hidden = lambda do |name, value|
+    if value.is_a?(Array)
+      value.each { |v| hidden_pairs << ["#{name}[]", v] unless v.is_a?(Array) || v.is_a?(Hash) }
+    elsif !value.is_a?(Hash)
+      hidden_pairs << [name, value]
+    end
+  end
+  filter_params
+    .except("controller", "action", "q", "authenticity_token", "commit", "utf8", "page", *select_params)
+    .each { |k, v| add_hidden.call(k, v) }
+  # tags_cont / category_eq excluded — their own selects below submit them.
+  filter_query.except("tags_cont", "category_eq").each { |k, v| add_hidden.call("q[#{k}]", v) }
+%>
+<%# w-auto keeps the selects on one horizontal row — form-select is width:100%
+    by default, which made each one wrap to its own line. mw-100 + overflow-auto
+    then let that row scroll rather than burst its container: the bar renders
+    everywhere from a full-width page to the narrow "My Tasks" dashboard widget
+    card, and six selects do not fit the latter.
+
+    Each select submits the form, and the form navigates to the filtered list
+    (data-turbo-frame="_top"). That plain path is the guarantee: it is what works
+    with no JS beyond the inline handler, and it is what happens if the
+    task-filter controller below fails to register for any reason.
+
+    task-filter then enhances it: inside an embedded tab, where a full navigation
+    would throw the user off the record they are on, it cancels the submit and
+    refreshes just the frame the list was loaded into.
+    TaskFiltersHelper#task_filter_turbo_frame names that frame, or "_top" to opt
+    out of the enhancement altogether. %>
+<%= form_with url: tasks_path, method: :get, local: true,
+              data: { turbo_frame: "_top",
+                      controller: "task-filter",
+                      task_filter_frame_value: task_filter_turbo_frame,
+                      action: "submit->task-filter#submit" },
+              class: "d-flex flex-nowrap align-items-center gap-2 mw-100 overflow-auto" do %>
+  <%# id: nil — these names collide with real fields elsewhere on the page
+      (owner_id, the ransack conditions), and duplicate DOM ids break Capybara
+      lookups as much as they break the markup. %>
+  <% hidden_pairs.each do |name, value| %>
+    <%= hidden_field_tag name, value, id: nil %>
+  <% end %>
+
+  <%= select_tag :assigned_to_id,
+                 options_for_select(filters.assignees, filter_params["assigned_to_id"]),
+                 include_blank: "All Assignees",
+                 class: "form-select form-select-sm w-auto flex-shrink-0",
+                 onchange: "this.form.requestSubmit();" %>
+
+  <% if stakeholder_select %>
+    <% if filters.deal %>
+      <%# Deal scope: the options ARE the deal's investors, so the filter has to
+          select a DealInvestor. investor_id would map to the Investor union
+          below and contradict the deal scope — TaskList reads deal_investor_id
+          for exactly this reason. %>
+      <%= select_tag :deal_investor_id,
+                     options_for_select(filters.stakeholders, filters.selected_deal_investor&.id),
+                     include_blank: "All Investors",
+                     class: "form-select form-select-sm w-auto flex-shrink-0",
+                     onchange: "this.form.requestSubmit();" %>
+    <% else %>
+      <%# TaskList maps investor_id to the Investor itself PLUS any
+          PortfolioInvestment/CapitalCommitment belonging to it, so tasks logged
+          under a stakeholder's PI or Commitment show up here too.
+
+          A typeahead rather than a select: this scope is not pinned to a record,
+          so a select's options would be every investor in the tenant. The
+          visible input carries no name attribute, so it is never submitted —
+          only the hidden investor_id beside it is, which is what TaskList
+          reads. %>
+      <div class="flex-shrink-0"
+           data-controller="task-stakeholder-search"
+           data-task-stakeholder-search-url-value="<%= search_investors_path(format: :json) %>">
+        <%= hidden_field_tag :investor_id, filters.selected_investor&.id, id: nil,
+                             data: { task_stakeholder_search_target: "id" } %>
+        <input type="text"
+               id="stakeholder_filter"
+               class="form-control form-control-sm w-auto"
+               placeholder="All Stakeholders"
+               autocomplete="off"
+               value="<%= filters.selected_investor&.investor_name %>"
+               data-task-stakeholder-search-target="name"
+               data-action="change->task-stakeholder-search#clear">
+      </div>
+    <% end %>
+  <% end %>
+
+  <% if filters.touch_point_owner %>
+    <%# Touch points are contacts of a specific stakeholder, so the select only
+        appears once there is one — chosen above, or fixed by the scope (an LP's
+        or a deal investor's own tasks tab). %>
+    <%= select_tag :touch_point_id,
+                   options_for_select(filters.touch_point_owner.touch_point_options, filter_params["touch_point_id"]),
+                   include_blank: "All Contacts",
+                   class: "form-select form-select-sm w-auto flex-shrink-0",
+                   onchange: "this.form.requestSubmit();" %>
+  <% end %>
+
+  <% if filters.tags.present? %>
+    <%# tags is in Task.ransackable_attributes, so this rides the existing
+        ransack query instead of needing a new filter param %>
+    <%= select_tag "q[tags_cont]",
+                   options_for_select(filters.tags, filter_query["tags_cont"]),
+                   include_blank: "All Tags",
+                   class: "form-select form-select-sm w-auto flex-shrink-0",
+                   onchange: "this.form.requestSubmit();" %>
+  <% end %>
+
+  <% if filters.categories.present? %>
+    <%# category is in Task.ransackable_attributes, so this rides the existing
+        ransack query. Options are the categories actually in use, not the static
+        Task::CATEGORIES list — free-text "Other" values need to show up here too. %>
+    <%= select_tag "q[category_eq]",
+                   options_for_select(filters.categories, filter_query["category_eq"]),
+                   id: "category_filter",
+                   include_blank: "All Categories",
+                   class: "form-select form-select-sm w-auto flex-shrink-0",
+                   onchange: "this.form.requestSubmit();" %>
+  <% end %>
+
+  <%# due_filter is a plain top-level param (TaskList#call), not a ransack
+      predicate — the preset ranges (this_week/next_month/...) can't be expressed
+      as a single ransack comparison. %>
+  <%= select_tag :due_filter,
+                 options_for_select(Task::DUE_FILTERS, filter_params["due_filter"]),
+                 include_blank: "All Due Dates",
+                 class: "form-select form-select-sm w-auto flex-shrink-0",
+                 onchange: "this.form.requestSubmit();" %>
+<% end %>

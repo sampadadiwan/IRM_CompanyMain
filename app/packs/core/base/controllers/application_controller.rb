@@ -12,6 +12,11 @@ class ApplicationController < ActionController::Base
   include WithTurboFlash
   include UserGuideHelper
 
+  # tasks/_filter_bar (and the list partial around it) renders from several
+  # controllers outside the tasks pack — a side letter, an obligation, an event —
+  # so its helper is declared here rather than relying on include_all_helpers.
+  helper TaskFiltersHelper
+
   before_action :prepare_exception_notifier
   before_action :validate_page_limit
 

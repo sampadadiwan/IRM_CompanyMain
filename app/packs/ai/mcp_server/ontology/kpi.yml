@@ -1,0 +1,168 @@
+# Ontology for Kpi as exposed over MCP.
+---
+entity: kpi
+label: Portfolio KPI
+model: Kpi
+description: >-
+  One reported operating metric for a portfolio company in one reporting period — revenue,
+  headcount, burn and so on. Each KPI belongs to a KPI report, and it is the report that
+  carries the as-of date and the period, which is why those filters are spelled
+  kpi_report_*.
+
+relationships:
+  portfolio_company:
+    target: portfolio_company
+    cardinality: many_to_one
+    note: Pass portfolio_company_ids rather than a Ransack condition.
+    resolve_with: list_portfolio_companies
+  kpi_report:
+    target: kpi_report
+    cardinality: many_to_one
+    note: >-
+      Carries the as-of date, period and tags. Filter through it with kpi_report_as_of_gteq,
+      kpi_report_period_eq and kpi_report_tag_list_cont.
+
+fields:
+  name:
+    type: string
+    description: >-
+      Metric name, defined per entity (e.g. "Revenue", "ARR", "Headcount"). Match with
+      name_cont rather than assuming a fixed vocabulary.
+    sortable: true
+  value:
+    type: decimal
+    description: >-
+      Reported value. Units depend entirely on the metric — never sum or average across
+      different names.
+    sortable: true
+    aggregatable: true
+  percentage_change:
+    type: decimal
+    description: >-
+      Change versus the prior period, as a number. Null when there is no prior period to
+      compare against.
+    sortable: true
+    aggregatable: false
+  status:
+    type: string
+    description: Status recorded on the KPI row.
+    sortable: true
+  notes:
+    type: string
+    description: Free-text notes on the reported value.
+    sortable: false
+  portfolio_company_id:
+    type: reference
+    target: portfolio_company
+    description: The reporting company. Prefer the portfolio_company_ids parameter.
+    sortable: false
+  updated_at:
+    type: datetime
+    description: When the KPI row last changed. Not the reporting date.
+    sortable: true
+  kpi_report_as_of:
+    type: date
+    description: >-
+      As-of date of the owning KPI report. This is the date to filter on for "KPIs since X".
+      The tool applies kpi_report_as_of_gteq of 12 months ago unless you filter it yourself
+      or pass all_time.
+    sortable: true
+    groupable: false
+  kpi_report_period:
+    type: string
+    description: Reporting period of the owning report (monthly, quarterly, yearly).
+    sortable: true
+    groupable: false
+  kpi_report_tag_list:
+    type: string
+    description: Tags on the owning report.
+    sortable: false
+    groupable: false
+  all_time:
+    type: boolean
+    virtual: true
+    description: >-
+      Not a database attribute. Pass all_time_eq 'true' to switch off the default
+      "last 12 months" date filter and search the whole history. The tool reads it and then
+      discards it.
+    sortable: false
+    groupable: false
+
+returned_only:
+  portfolio_company:
+    type: string
+    description: Company name, joined for readability.
+  as_of:
+    type: date
+    description: >-
+      The report's as-of date, formatted. Filter with kpi_report_as_of, not as_of.
+  period:
+    type: string
+    description: The report's period. Filter with kpi_report_period.
+  tag_list:
+    type: string
+    description: The report's tags. Filter with kpi_report_tag_list.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the KPI.
+
+unavailable:
+  source:
+    reason: >-
+      No such ransackable attribute on Kpi. It was advertised by the old tool description, so
+      a condition on it was silently ignored.
+  category:
+    reason: >-
+      There is no category column on Kpi — it used to be declared ransackable, which made any
+      condition on it raise a SQL error. Categorisation lives on the KPI report's tags.
+    use_instead: kpi_report_tag_list
+  as_of:
+    reason: The as-of date lives on the report, not the KPI.
+    use_instead: kpi_report_as_of
+  period:
+    reason: The period lives on the report, not the KPI.
+    use_instead: kpi_report_period
+  id:
+    reason: Not declared in Kpi.ransackable_attributes, so conditions on it are ignored.
+
+scopes:
+  query_class: PortfolioAssistantDataManager::KpiQuery
+  compound: true
+  descriptions:
+    actuals: Reported actuals. Applied by default when neither actuals nor budgets is asked for.
+    budgets: Budgeted figures rather than actuals.
+    ics: Investment-committee figures.
+    monthly: Monthly reports only.
+    quarterly: Quarterly reports only.
+    yearly: Annual reports only.
+    ytd: Year-to-date figures.
+
+measures:
+  latest_value:
+    expression: value for one name, sorted by kpi_report_as_of desc, limit 1
+    description: The most recent reported value of one metric. Always pin a single name first.
+
+caveats:
+  - >-
+    Different metrics share the `value` column with different units. Aggregating without
+    filtering on a single `name` produces a meaningless number.
+  - >-
+    A 12-month window is applied by default. Pass all_time_eq 'true', or your own
+    kpi_report_as_of filter, for older data.
+  - >-
+    The tool defaults to 'actuals' and falls back to an unscoped search when a default-scoped
+    query finds nothing, so results may include periods you did not ask for. Pass an explicit
+    scope when the period matters.
+  - >-
+    Date and period filters go through the report: kpi_report_as_of, kpi_report_period. The
+    bare as_of and period keys are output-only.
+
+tools:
+  list_portfolio_kpis:
+    kind: list
+    summary: Use it for how a portfolio company is trading — revenue, growth, headcount, burn.
+    notes:
+      - Omit portfolio_company_ids to search across every portfolio company you can see.
+    params:
+      portfolio_company_ids:
+      scope:
