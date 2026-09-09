@@ -18,10 +18,18 @@ class ObligationFire < Trailblazer::Operation
     false
   end
 
+  # Creates a dated task from the fired obligation. Portfolio investment
+  # obligations reference the portfolio company; commitment obligations
+  # reference the side letter investor.
   def create_task(ctx, obligation:, due_date:, user: nil, **)
+    source_label = if obligation.sourceable_type == "PortfolioInvestment"
+                     obligation.sourceable&.portfolio_company&.investor_name || "Portfolio Investment"
+                   else
+                     obligation.side_letter&.investor&.investor_name || "Side Letter"
+                   end
     ctx[:task] = Task.create!(
-      details: "#{obligation.title} — #{obligation.side_letter.investor.investor_name} (#{obligation.source_clause.presence || 'side letter'})",
-      category: "Compliance",
+      details: "#{obligation.title} — #{source_label} (#{obligation.source_clause.presence || 'agreement'})",
+      category: task_category_for(obligation),
       owner: obligation,
       assigned_to_id: obligation.owner_user_id,
       entity_id: obligation.entity_id,
@@ -30,6 +38,15 @@ class ObligationFire < Trailblazer::Operation
       due_date: due_date
     )
     true
+  end
+
+  # @return [String] Task category based on legal classification
+  def task_category_for(obligation)
+    case obligation.legal_category
+    when "condition_precedent"  then "Condition Precedent"
+    when "condition_subsequent" then "Condition Subsequent"
+    else "Compliance"
+    end
   end
 
   def handle_errors(ctx, **)
