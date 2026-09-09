@@ -1,7 +1,9 @@
 <%# One matrix row. Actions depend on lifecycle state:
-    pending  -> approve / edit / reject
+    pending  -> approve / edit (inline via Turbo Stream) / reject
     armed    -> fire (with due date)
-    active   -> waive / record fulfillment %>
+    active   -> waive / record fulfillment
+    The row id matches dom_id(obligation) so turbo_stream.replace can
+    swap it for the inline edit form or refresh it after save. %>
 <tr id="<%= dom_id(obligation) %>">
   <%# Investor column: commitment obligations link to their side letter;
       portfolio investment obligations link to the obligation detail page %>
@@ -55,9 +57,13 @@
                       data: { bs_toggle: "tooltip" } do %>
           <i class="ti ti-check"></i> Approve
         <% end %>
-        <%= link_to edit_side_letter_obligation_path(obligation), class: "btn btn-outline-secondary",
+        <%# Edit inline via Turbo Stream — replaces this row with the inline edit form.
+            Uses a mini form (POST to inline_edit) so Turbo sends a fetch request
+            that the controller can respond to with turbo_stream format. %>
+        <%= link_to edit_side_letter_obligation_path(obligation, format: :turbo_stream),
+                    class: "btn btn-outline-secondary",
                     title: "Correct the extracted details (owner, dates, clause) before approving",
-                    data: { bs_toggle: "tooltip" } do %>
+                    data: { bs_toggle: "tooltip", turbo: true } do %>
           <i class="ti ti-edit"></i> Edit
         <% end %>
         <%# Reject via Turbo Stream — replaces this row in-place without page reload %>

@@ -476,7 +476,7 @@ class SideLetterObligationAgent < SupportAgentService
       entity_id: investment.entity_id,
       sourceable: investment,
       obligation_type: normalize_enum(row["obligation_type"], SideLetterObligation.obligation_types.keys, "other"),
-      legal_category: normalize_enum(row["legal_category"], SideLetterObligation.legal_categories.keys, "side_letter_obligation"),
+      legal_category: normalize_enum(row["legal_category"], SideLetterObligation.legal_categories.keys, "condition_precedent"),
       title: row["title"].to_s.strip.presence || "Untitled obligation",
       description: row["description"].to_s.strip,
       source_clause: row["source_clause"].to_s.strip.first(100),
@@ -536,13 +536,42 @@ class SideLetterObligationAgent < SupportAgentService
   # @param model [ActiveRecord::Base] the target record (commitment or investment)
   # @param support_agent [SupportAgent] the agent record
   # @return [Boolean] true if report saved successfully
+  # Wraps the base class report generation with step-UI broadcasts.
+  # Finalizes the report and auto-redirects to the obligation matrix tab
+  # after a short delay so the user sees completed steps before refresh.
+  #
+  # @param ctx [Hash] step context with :support_agent_report
+  # @param model [ActiveRecord::Base] the target record (commitment or investment)
+  # @param support_agent [SupportAgent] the agent record
+  # @return [Boolean] true if report saved successfully
   def generate_progress_reports(ctx, model:, support_agent:, **)
     report = ctx[:support_agent_report]
     mark_step_running(report, :generate_progress_reports) if report
     result = super
     mark_step_success(report, :generate_progress_reports, message: "Report saved") if report
     finalize_report(report, status: :ready) if report
+    # Only redirect when obligations were actually extracted; on failure the
+    # user should stay on the progress panel to see the error step.
+    broadcast_redirect_to_matrix(report, support_agent) if report && ctx[:extracted].present?
     result
+  end
+
+  # Broadcasts a Turbo Stream that auto-redirects to the obligation matrix
+  # tab after a 2-second delay, so the user sees the completed steps before
+  # the page refreshes with the extracted obligations.
+  #
+  # @param report [SupportAgentReport] the completed report
+  # @param support_agent [SupportAgent] the agent record for URL generation
+  # @return [void]
+  def broadcast_redirect_to_matrix(report, support_agent)
+    url = Rails.application.routes.url_helpers.support_agent_path(support_agent, tab: "obligations")
+    Turbo::StreamsChannel.broadcast_append_to(
+      "support_agent_report_#{report.id}",
+      target: "progress_panel_#{report.id}",
+      html: "<script>setTimeout(function() { Turbo.visit('#{url}') }, 2000)</script>"
+    )
+  rescue StandardError, ScriptError => e
+    Rails.logger.warn { "[SideLetterObligationAgent] Redirect broadcast failed: #{e.message}" }
   end
 
   # @param source_mode [Symbol] :capital_commitments or :portfolio_investments
@@ -582,14 +611,23 @@ class SideLetterObligationAgent < SupportAgentService
     PROMPT
   end
 
-  # @return [String] extraction prompt for investment agreements (SHA/SSA) on portfolio investments
+  # Returns the extraction prompt for investment agreements (SHA/SSA) on
+  # portfolio investments. Only extracts conditions precedent (CP) and
+  # conditions subsequent (CS) — general covenants and standard obligations
+  # are deliberately excluded so the output stays focused on trackable
+  # pre-/post-closing conditions.
+  #
+  # @return [String] LLM prompt scoped to CP/CS extraction only
   def portfolio_extraction_prompt
     <<~PROMPT
       You are a legal analyst reviewing an investment agreement (Shareholders Agreement,
-      Share Subscription Agreement, Share Purchase Agreement, or similar). Extract every
-      actionable obligation, condition precedent (CP), and condition subsequent (CS).
+      Share Subscription Agreement, Share Purchase Agreement, or similar).
 
-      ## What to extract — scan every clause for these categories:
+      Extract ONLY conditions precedent (CP) and conditions subsequent (CS).
+      Do NOT extract general covenants, standard obligations, or other clauses
+      that do not fit the CP or CS definition below.
+
+      ## What to extract — scan every clause for these two categories ONLY:
 
       **Conditions Precedent (CP)** — must be satisfied or waived BEFORE closing/transfer:
       - Board/shareholder approvals required before transfer
@@ -607,31 +645,22 @@ class SideLetterObligationAgent < SupportAgentService
       - Post-closing notifications to regulators or counterparties
       - Indemnification obligations with survival periods
 
-      **Standard Obligations (SLO)** — actionable covenants and undertakings:
-      - Payment mechanics (purchase price, escrow, adjustments)
-      - Pre-closing covenants (ordinary course, no-shop, lock-up, notification of breach)
-      - Closing deliverables (transfer forms, share certificates, board resolutions, power of attorney)
-      - Information rights, inspection rights, audit rights
-      - Reporting obligations (periodic financial statements, compliance certificates)
-      - Transfer restrictions, drag-along, tag-along ongoing rights
-      - Non-compete, non-solicitation covenants
-      - Confidentiality obligations
-      - Consent requirements (public announcements, further share issues)
-      - Fee allocation (stamp duty, transaction costs, withholding tax)
-      - Notice procedures with specific delivery requirements
-
       ## What NOT to extract:
+      - General covenants and standard obligations (payment mechanics, purchase price,
+        escrow, closing deliverables, information rights, reporting obligations,
+        transfer restrictions, non-compete, confidentiality, fee allocation, notice
+        procedures) — these are NOT conditions precedent or subsequent
       - Definitions, interpretation clauses, recitals
       - Boilerplate: governing law, jurisdiction, arbitration, severability, counterparts, entire agreement
-      - Amendment/waiver mechanics (unless they impose a specific obligation)
+      - Amendment/waiver mechanics (unless they impose a specific CP or CS)
       - Warranty statements themselves (extract only if there is an actionable bring-down condition)
-      - The transaction description itself ("Seller agrees to sell" is not a trackable obligation)
+      - The transaction description itself ("Seller agrees to sell" is not a CP or CS)
 
       ## Output format
       Reply strictly as a JSON array. Each element:
       {
         "obligation_type": one of ["reporting","fees","co_investment","notice","transfer","excuse","confidentiality","key_person","mfn","other"],
-        "legal_category": one of ["condition_precedent","condition_subsequent","side_letter_obligation"],
+        "legal_category": one of ["condition_precedent","condition_subsequent"] — CP = must be satisfied before closing; CS = post-closing obligation where breach triggers consequences. ONLY these two values are allowed,
         "title": short label (e.g. "Board approval for share transfer"),
         "description": the obligation in full, paraphrased faithfully,
         "source_clause": the section/clause/schedule reference (e.g. "Clause 5.2(a)") — REQUIRED; omit the item entirely if you cannot cite it,
@@ -640,11 +669,12 @@ class SideLetterObligationAgent < SupportAgentService
         "frequency_rrule": iCal RRULE for recurring calendar obligations (e.g. "FREQ=QUARTERLY;INTERVAL=1"), else null,
         "next_due_date": next concrete deadline as YYYY-MM-DD if determinable, else null,
         "owner_team": best-fit team, one of ["ir","finance","legal","deal_team","operations"], else null,
-        "confidence": 0.0-1.0 how certain you are this is a real, actionable obligation
+        "confidence": 0.0-1.0 how certain you are this is a real condition precedent or subsequent
       }
 
-      Be thorough — extract every actionable item from every clause and schedule.
+      Be thorough — extract every CP and CS from every clause and schedule.
       Do not invent obligations. Only include items you can cite to a specific clause.
+      If a clause is neither CP nor CS, skip it entirely.
     PROMPT
   end
 

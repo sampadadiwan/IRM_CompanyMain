@@ -29,17 +29,31 @@ class SideLetterObligationsController < ApplicationController
     @funds = Fund.where(entity_id: current_user.entity_id).order(:name)
   end
 
+  # Displays the obligation detail page. Turbo Stream requests (e.g. the
+  # Cancel button on the inline edit form) receive just the display row
+  # partial so the matrix row snaps back without a full page load.
   def show
-    # Layout breadcrumb card: Home • Side Letters • Investor • Obligation
-    @bread_crumbs = {
-      'Side Letters': side_letters_path,
-      "#{@obligation.investor.investor_name}": side_letter_path(@obligation.side_letter),
-      "#{@obligation.title}": side_letter_obligation_path(@obligation)
-    }
-    @fulfillments = @obligation.obligation_fulfillments.includes(:fulfilled_by, :document).order(fulfilled_at: :desc)
-    @tasks = @obligation.tasks.includes(:assigned_to)
-                        .order(Arel.sql("completed ASC, due_date IS NULL, due_date ASC"))
-    @reminders = @obligation.obligation_reminders.order(sent_at: :desc)
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          @obligation,
+          partial: "side_letter_obligations/side_letter_obligation",
+          locals: { obligation: @obligation }
+        )
+      end
+      format.html do
+        # Layout breadcrumb card: Home • Side Letters • Investor • Obligation
+        @bread_crumbs = {
+          'Side Letters': side_letters_path,
+          "#{@obligation.investor.investor_name}": side_letter_path(@obligation.side_letter),
+          "#{@obligation.title}": side_letter_obligation_path(@obligation)
+        }
+        @fulfillments = @obligation.obligation_fulfillments.includes(:fulfilled_by, :document).order(fulfilled_at: :desc)
+        @tasks = @obligation.tasks.includes(:assigned_to)
+                            .order(Arel.sql("completed ASC, due_date IS NULL, due_date ASC"))
+        @reminders = @obligation.obligation_reminders.order(sent_at: :desc)
+      end
+    end
   end
 
   def new
@@ -68,18 +82,60 @@ class SideLetterObligationsController < ApplicationController
     end
   end
 
+  # Renders the edit form. Turbo Frame requests from the obligation matrix
+  # receive the inline edit row partial (swapped in-place); standard requests
+  # fall back to the full-page edit layout.
+  # @note Only pending_review obligations may be edited (approved ones have live projections)
   def edit
-    # Approved obligations have live projections; counsel edits drafts only
-    redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited." unless @obligation.pending_review?
+    unless @obligation.pending_review?
+      return redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited."
+    end
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          @obligation,
+          partial: "side_letter_obligations/inline_edit_row",
+          locals: { obligation: @obligation }
+        )
+      end
+      format.html { render :edit }
+    end
   end
 
+  # Persists counsel edits. Turbo Frame requests receive the display row
+  # partial so the matrix row snaps back to read mode after save; validation
+  # failures re-render the inline form. Standard requests redirect as before.
+  # @note Only pending_review obligations may be edited
   def update
     return redirect_to side_letter_obligation_path(@obligation), alert: "Only pending obligations can be edited." unless @obligation.pending_review?
 
     if @obligation.update(obligation_params)
-      redirect_to (@obligation.side_letter.present? ? side_letter_path(@obligation.side_letter) : side_letter_obligations_path), notice: "Obligation updated."
+      respond_to do |format|
+        # Turbo Frame / Stream — replace the inline form with the refreshed display row
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            @obligation,
+            partial: "side_letter_obligations/side_letter_obligation",
+            locals: { obligation: @obligation }
+          )
+        end
+        format.html do
+          redirect_to (@obligation.side_letter.present? ? side_letter_path(@obligation.side_letter) : side_letter_obligations_path), notice: "Obligation updated."
+        end
+      end
     else
-      render :edit, status: :unprocessable_entity
+      # Validation failed — re-render the inline form with errors
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            @obligation,
+            partial: "side_letter_obligations/inline_edit_row",
+            locals: { obligation: @obligation }
+          ), status: :unprocessable_entity
+        end
+        format.html { render :edit, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -191,11 +247,15 @@ class SideLetterObligationsController < ApplicationController
     authorize @obligation
   end
 
+  # @return [ActionController::Parameters] permitted obligation attributes.
+  #   Includes legal_category so counsel can correct CP/CS/SLO classification
+  #   from the inline edit form before approving.
   def obligation_params
     params.require(:side_letter_obligation).permit(
       :obligation_type, :title, :description, :source_clause, :owner_user_id,
       :owner_team, :trigger_type, :trigger_description, :frequency_rrule,
-      :next_due_date, :reminder_days_before, :mfn_relevant, :mfn_review_status
+      :next_due_date, :reminder_days_before, :mfn_relevant, :mfn_review_status,
+      :legal_category
     )
   end
 
