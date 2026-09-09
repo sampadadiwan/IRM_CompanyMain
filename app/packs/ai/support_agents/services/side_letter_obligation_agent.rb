@@ -181,14 +181,21 @@ class SideLetterObligationAgent < SupportAgentService
     end
   end
 
+  # Initializes the extraction context for the given target record.
+  # Sets :source_mode so downstream steps know whether to follow the
+  # commitment (side letter) or portfolio investment (SHA/SSA) path.
+  # Broadcasts step progress when a report is attached (step-UI run).
+  #
   # @param ctx [Hash] step context — populated with :commitment or :portfolio_investment
   #   depending on the target record type, plus :source_mode for downstream branching
   # @param target [CapitalCommitment, PortfolioInvestment] the record to extract from
+  # @return [Boolean] always true so Trailblazer continues
   def initialize_agent(ctx, target:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :initialize_agent) if report
     super
     ctx[:model] = target
     ctx[:issues] = { extraction_issues: [] }
-    # Downstream steps branch on source_mode to handle commitments vs investments
     if target.is_a?(PortfolioInvestment)
       ctx[:portfolio_investment] = target
       ctx[:source_mode] = :portfolio_investments
@@ -196,18 +203,30 @@ class SideLetterObligationAgent < SupportAgentService
       ctx[:commitment] = target
       ctx[:source_mode] = :capital_commitments
     end
+    target_name = target.try(:name) || target.try(:investor_name) || "ID=#{target.id}"
+    mark_step_success(report, :initialize_agent, message: "Initialized for #{target_name}") if report
     true
   end
 
   # Locates the document to extract from on the current target record.
   # For commitments: matches by configured name label or side letter tag.
   # For portfolio investments: matches by configured document tag.
+  # Broadcasts step progress when a report is attached (step-UI run).
+  #
   # @param ctx [Hash] step context — sets :extraction_doc with the found document
+  # @return [Boolean] always true so Trailblazer continues
   def locate_side_letter(ctx, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :locate_side_letter) if report
     if ctx[:source_mode] == :portfolio_investments
       locate_investment_document(ctx)
     else
       locate_commitment_document(ctx)
+    end
+    if ctx[:extraction_doc]
+      mark_step_success(report, :locate_side_letter, message: "Found: #{ctx[:extraction_doc].name}") if report
+    else
+      mark_step_skipped(report, :locate_side_letter, message: "No matching document found") if report
     end
     true
   end
@@ -263,16 +282,25 @@ class SideLetterObligationAgent < SupportAgentService
     end
   end
 
+  # Sends the located document to the LLM for structured obligation extraction.
+  # Discards any items the LLM cannot cite to a specific clause (hallucination guard).
+  # Broadcasts step progress when a report is attached (step-UI run).
+  #
+  # @param ctx [Hash] step context with :extraction_doc, :source_mode, :llm
+  # @return [Boolean] always true so Trailblazer continues
   def extract_obligations(ctx, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :extract_obligations) if report
     ctx[:extracted] = []
     doc = ctx[:extraction_doc]
-    return true if doc.nil?
+    if doc.nil?
+      mark_step_skipped(report, :extract_obligations, message: "No document to extract from") if report
+      return true
+    end
 
     raw = ctx[:llm].ask(extraction_prompt(ctx[:source_mode]), with: [doc.file.url])
     rows = parse_response(raw)
 
-    # Source-clause citation is mandatory: a row the LLM cannot cite is not
-    # surfaced at all (spec'd guard against hallucinated obligations).
     cited, uncited = rows.partition { |r| r["source_clause"].to_s.strip.present? }
     if uncited.any?
       ctx[:issues][:extraction_issues] << {
@@ -283,6 +311,7 @@ class SideLetterObligationAgent < SupportAgentService
     end
 
     ctx[:extracted] = cited
+    mark_step_success(report, :extract_obligations, message: "Extracted #{cited.size} obligation(s)") if report
     true
   rescue StandardError => e
     Rails.logger.error("[SideLetterObligationAgent] Extraction failed for Document ID=#{doc&.id}: #{e.message}")
@@ -291,22 +320,32 @@ class SideLetterObligationAgent < SupportAgentService
       message: "Extraction failed: #{e.message}",
       severity: :blocking
     }
+    mark_step_failed(report, :extract_obligations, message: e.message) if report
     true
   end
 
   # Persists extracted obligations. For commitments: creates/finds a SideLetter
   # anchor and links obligations via side_letter_id. For portfolio investments:
   # links obligations directly via the sourceable polymorphic.
+  # Broadcasts step progress when a report is attached (step-UI run).
+  #
   # @param ctx [Hash] step context with :extraction_doc, :extracted, :source_mode
+  # @return [Boolean] always true so Trailblazer continues
   def upsert_obligations(ctx, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :upsert_obligations) if report
     doc = ctx[:extraction_doc]
-    return true if doc.nil? || ctx[:extracted].blank?
+    if doc.nil? || ctx[:extracted].blank?
+      mark_step_skipped(report, :upsert_obligations, message: "Nothing to save") if report
+      return true
+    end
 
     if ctx[:source_mode] == :portfolio_investments
       upsert_portfolio_obligations(ctx)
     else
       upsert_commitment_obligations(ctx)
     end
+    mark_step_success(report, :upsert_obligations, message: "Saved #{ctx[:extracted].size} obligation(s)") if report
     true
   end
 
@@ -488,6 +527,22 @@ class SideLetterObligationAgent < SupportAgentService
       message: "Extraction matched existing obligations — nothing new to review",
       severity: :success
     }
+  end
+
+  # Wraps the base class report generation with step-UI broadcasts.
+  # Finalizes the report so the progress panel shows completion.
+  #
+  # @param ctx [Hash] step context with :support_agent_report
+  # @param model [ActiveRecord::Base] the target record (commitment or investment)
+  # @param support_agent [SupportAgent] the agent record
+  # @return [Boolean] true if report saved successfully
+  def generate_progress_reports(ctx, model:, support_agent:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :generate_progress_reports) if report
+    result = super
+    mark_step_success(report, :generate_progress_reports, message: "Report saved") if report
+    finalize_report(report, status: :ready) if report
+    result
   end
 
   # @param source_mode [Symbol] :capital_commitments or :portfolio_investments
