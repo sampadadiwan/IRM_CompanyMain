@@ -117,6 +117,13 @@ class SideLetterObligation < ApplicationRecord
     approved? && !dated?
   end
 
+  # @return [Boolean] true when this event-triggered obligation has been fired
+  #   at least once (has tasks created via ObligationFire). Armed obligations
+  #   with existing tasks should show Waive instead of Fire.
+  def fired?
+    armed? && tasks.any?
+  end
+
   # Human label for the matrix "Owner" column: user takes precedence over team
   def owner_label
     owner_user&.first_name.presence || owner_team&.humanize

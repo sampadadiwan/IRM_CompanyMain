@@ -82,6 +82,14 @@
           <i class="ti ti-x"></i> Reject
         <% end %>
       </div>
+    <% elsif obligation.fired? %>
+      <%# Already fired (has tasks) — offer Waive instead of a second Fire.
+          Multi-fire support for repeat events is deferred. %>
+      <button type="button" class="btn btn-outline-secondary"
+              title="End this obligation: open tasks are removed, history is kept"
+              data-bs-toggle="modal" data-bs-target="#waive_obligation_modal_<%= obligation.id %>">
+        <i class="ti ti-hand-stop"></i> Waive
+      </button>
     <% elsif obligation.armed? %>
       <%# Popup confirms the consequences before firing (Request Updates pattern).
           The modal markup lives in _action_modals, rendered OUTSIDE the page's

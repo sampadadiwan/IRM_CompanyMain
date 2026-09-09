@@ -4,7 +4,10 @@
     buttons live in _side_letter_obligation.html.erb and the obligation show page.
     Locals: obligations (array/relation) %>
 <% obligations.each do |obligation| %>
-  <% if obligation.armed? %>
+  <% if obligation.fired? %>
+    <%# Armed + already has tasks — show Waive modal, not Fire %>
+    <%= render "side_letter_obligations/waive_modal", obligation: obligation %>
+  <% elsif obligation.armed? %>
     <%= render "side_letter_obligations/fire_modal", obligation: obligation %>
   <% elsif obligation.approved? && obligation.obligation_active? %>
     <%= render "side_letter_obligations/waive_modal", obligation: obligation %>

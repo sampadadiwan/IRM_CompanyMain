@@ -88,17 +88,32 @@ class SideLetterObligationsController < ApplicationController
     authorize @obligation
   end
 
+  # Creates a new obligation. CP/CS obligations attach to a portfolio investment
+  # via sourceable; SLO obligations attach to a side letter. Both go through
+  # the same pending_review gate before tasks and alerts go live.
   def create
-    side_letter = SideLetter.find(params[:side_letter_obligation][:side_letter_id])
-    @obligation = side_letter.side_letter_obligations.new(obligation_params)
-    @obligation.entity_id = side_letter.entity_id
+    op = params[:side_letter_obligation]
+
+    if op[:sourceable_type] == "PortfolioInvestment" && op[:sourceable_id].present?
+      # CP/CS path: attach to portfolio investment, no side letter
+      portfolio_investment = PortfolioInvestment.find(op[:sourceable_id])
+      @obligation = SideLetterObligation.new(obligation_params)
+      @obligation.sourceable = portfolio_investment
+      @obligation.entity_id = portfolio_investment.entity_id
+    else
+      # SLO path: attach to side letter (original behaviour)
+      side_letter = SideLetter.find(op[:side_letter_id])
+      @obligation = side_letter.side_letter_obligations.new(obligation_params)
+      @obligation.entity_id = side_letter.entity_id
+    end
+
     # Manual entry goes through the same review gate as AI extraction
     @obligation.extracted_by = "manual"
     @obligation.review_status = "pending_review"
     authorize @obligation
 
     if @obligation.save
-      redirect_to side_letter_path(side_letter), notice: "Obligation added — pending review."
+      redirect_to side_letter_obligations_path, notice: "Obligation added — pending review."
     else
       render :new, status: :unprocessable_entity
     end
@@ -295,12 +310,16 @@ class SideLetterObligationsController < ApplicationController
   # @return [ActionController::Parameters] permitted obligation attributes.
   #   Includes legal_category so counsel can correct CP/CS/SLO classification
   #   from the inline edit form before approving.
+  # @return [ActionController::Parameters] permitted obligation attributes.
+  #   Includes legal_category so counsel can correct CP/CS/SLO classification,
+  #   and sourceable fields so manual CP/CS obligations can attach to a
+  #   portfolio investment instead of a side letter.
   def obligation_params
     params.require(:side_letter_obligation).permit(
       :obligation_type, :title, :description, :source_clause, :owner_user_id,
       :owner_team, :trigger_type, :trigger_description, :frequency_rrule,
       :next_due_date, :reminder_days_before, :mfn_relevant, :mfn_review_status,
-      :legal_category
+      :legal_category, :sourceable_type, :sourceable_id
     )
   end
 
