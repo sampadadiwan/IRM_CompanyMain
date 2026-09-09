@@ -149,6 +149,11 @@ class UsersSyncController < ActionController::API
     attrs["primary_region"] = norm_region(attrs["primary_region"]) if attrs.key?("primary_region")
 
     user.assign_attributes(attrs)
+    # The origin region is authoritative for its own users' contact details. A number it
+    # holds that we would refuse at our own form must still replicate — otherwise upsert
+    # answers 422, never stamps last_synced_ccf_hex, and the sender retries that payload
+    # forever. See User#skip_phone_validation.
+    user.skip_phone_validation = true
     # Permissions need to set in a special way
     user.permissions = attrs["permissions"].map!(&:to_sym) if attrs["permissions"].is_a?(Array)
     user[:permissions] = attrs["permissions"] if attrs["permissions"].is_a?(Integer) # allow DB-level setting

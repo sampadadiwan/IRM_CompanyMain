@@ -57,7 +57,7 @@ module TwoFactorDispatch
       #   * the SMS_OTP_ENABLED kill switch was thrown (e.g. toll fraud detected) while
       #     users were already enrolled in sms mode;
       #   * their number stopped being textable — an admin edited users.phone to a
-      #     landline, or the deployment's allowed destinations narrowed.
+      #     landline or to a number that no longer parses.
       #
       # Recovery is an administrator reset, so say that rather than pretending.
       unless user.sms_otp_enabled?

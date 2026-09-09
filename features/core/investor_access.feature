@@ -178,3 +178,15 @@ Scenario: Edit from the show page returns to the show page
   And I click on "Save"
   Then I should be back on the contact page for "edit.flow@lp.com"
   And the contact "edit.flow@lp.com" should have cc "teamcc@lp.com"
+
+# investor_accesses.user_id is nullable and the belongs_to autosave discards a failed
+# save, so a phone number refused here would produce an access row pointing at nobody —
+# no exception, no error message, and a 500 on the index page afterwards.
+# See User#skip_phone_validation.
+Scenario: An access row with a phone number the form would reject still gets its portal user
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  And the user has role "company_admin"
+  And there is an existing investor "investor_name=PhoneCo;primary_email=phone@b.c" with "0" users
+  When an investor access is created for "newlp@example.com" with phone "944902587"
+  Then that investor access should have a portal user
+  And that portal user should have the phone number "944902587"

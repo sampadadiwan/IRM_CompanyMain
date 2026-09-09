@@ -137,3 +137,44 @@
     @user.reload
     expect(@user.has_cached_role?(role.to_sym)).to be false
   end
+
+  # ── Phone number validation (User#phone_must_be_dialable) ──────────────────
+
+  Given('there is an existing user with call_code {string} and phone {string}') do |call_code, phone|
+    @phone_user = FactoryBot.create(:user, entity: @user.entity, call_code:, phone:)
+  end
+
+  # Bypasses validation on the way in, which is the whole point: this is the shape of the
+  # rows that already exist and must stay editable.
+  Given('there is an existing user whose stored phone {string} cannot be dialled') do |phone|
+    @phone_user = FactoryBot.create(:user, entity: @user.entity, call_code: "91")
+    @phone_user.update_columns(phone:)
+    @phone_user.reload
+    expect(@phone_user.sms_available?).to be(false)
+  end
+
+  When("I change that user's phone to {string}") do |phone|
+    @phone_user.phone = phone
+    @phone_save_result = @phone_user.save
+  end
+
+  When("I change that user's last name to {string}") do |last_name|
+    @phone_user.last_name = last_name
+    @phone_save_result = @phone_user.save
+  end
+
+  Then('the user should not be saved') do
+    expect(@phone_save_result).to be(false)
+  end
+
+  Then('the user should be saved') do
+    expect(@phone_save_result).to be(true)
+  end
+
+  Then('the phone error should mention the country code {string}') do |call_code|
+    expect(@phone_user.errors[:phone].join).to include("+#{call_code}")
+  end
+
+  Then("that user's phone should still be {string}") do |phone|
+    expect(@phone_user.reload.phone).to eq(phone)
+  end

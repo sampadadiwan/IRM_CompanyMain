@@ -194,3 +194,25 @@ Then('the standalone edit form should have no {string} button') do |label|
   expect(page).to have_button('Save') # form is on screen
   expect(page).not_to have_content(label)
 end
+
+# ── Portal-user creation from an access row ──────────────────────────────────
+
+# "944902587" is nine digits where +91 needs ten: exactly what
+# User#phone_must_be_dialable refuses at the user form.
+When('an investor access is created for {string} with phone {string}') do |email, phone|
+  @phone_access = InvestorAccess.create!(investor: @investor,
+                                         entity_id: @investor.entity_id,
+                                         first_name: "New",
+                                         last_name: "LP",
+                                         email:,
+                                         phone:,
+                                         approved: true)
+end
+
+Then('that investor access should have a portal user') do
+  expect(@phone_access.reload.user).to be_present
+end
+
+Then('that portal user should have the phone number {string}') do |phone|
+  expect(@phone_access.reload.user.phone).to eq(phone)
+end
