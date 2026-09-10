@@ -291,7 +291,10 @@ gem 'htmltoword'
 gem 'i18n-tasks', group: :development
 gem 'ice_cube'
 gem 'json_schemer'
-gem 'mcp'
+# MCP (Model Context Protocol) server SDK — exposes fund data as tools for external AI clients.
+# Pinned to ~> 1.3 to prevent surprise upgrades; 1.3.0 introduced dns_rebinding_protection
+# which requires allowed_hosts configuration for non-localhost deployments.
+gem 'mcp', '~> 1.3'
 gem 'ruby_linear_regression'
 gem 'ruby_llm'
 gem 'wicked_pdf'
