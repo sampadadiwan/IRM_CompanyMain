@@ -68,6 +68,18 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :show_key_metrics %>
+      <%= form.check_box :show_key_metrics, class: "form-check-input"  %>
+      <span class="text-muted"> Show the Fund Raise Amount, Min Ticket Size and Last Date tiles on the opportunity page. </span>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :show_express_interest %>
+      <%= form.check_box :show_express_interest, class: "form-check-input"  %>
+      <span class="text-muted"> Show the Express Interest button and the Ready to Invest panel on the opportunity page. </span>
+    </div>
+
+    <div class="form-group">
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>

@@ -156,6 +156,6 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_opportunity_params
-    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :tag_list, :details, :shareable, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :tag_list, :details, :shareable, :show_key_metrics, :show_express_interest, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

@@ -193,8 +193,10 @@
 
             <div class="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-3 mb-5 pb-5">
 
-                <%= link_to  new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-dark btn-lg px-4 py-3 fw-medium d-flex align-items-center gap-2 shadow"}  do %>
-                    Express Interest <i data-lucide="arrow-right" class="width-4 height-4"></i>
+                <% if investment_opportunity.show_express_interest? %>
+                    <%= link_to  new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-dark btn-lg px-4 py-3 fw-medium d-flex align-items-center gap-2 shadow"}  do %>
+                        Express Interest <i data-lucide="arrow-right" class="width-4 height-4"></i>
+                    <% end %>
                 <% end %>
 
                 <a href="#deck" class="btn btn-white border px-4 py-3 fw-medium d-flex align-items-center gap-2 shadow-sm bg-white text-dark">

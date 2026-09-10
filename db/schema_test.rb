@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_10_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2473,6 +2473,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_100000) do
     t.text "logo_data"
     t.decimal "min_ticket_size_cents", precision: 15, scale: 2, default: "0.0"
     t.boolean "shareable", default: false
+    t.boolean "show_express_interest", default: true, null: false
+    t.boolean "show_key_metrics", default: true, null: false
     t.string "tag_list", limit: 120
     t.datetime "updated_at", null: false
     t.decimal "valuation_cents", precision: 15, scale: 2, default: "0.0"

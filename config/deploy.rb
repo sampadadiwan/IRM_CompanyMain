@@ -32,6 +32,10 @@ set :pty, true
 append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/system", '.bundle'
 
 set :bundle_binstubs, -> { shared_path.join('bin') }
+# Bundler dropped `bundle install --binstubs` (removed in favor of a separate
+# `bundle binstubs --all`); capistrano-bundler 2.2.0 supports the new form via
+# this setting instead of the (default) :install mode.
+set :bundle_binstubs_command, :binstubs
 set :bundle_jobs, 8
 
 # Default value for keep_releases is 5

@@ -90,10 +90,31 @@ Scenario Outline: Preview for an investment_opportunity
     And I add track record for the investment_opportunity
     When I go to investment_opportunity preview
     Then I can see all the investment_opportunity preview details
+    And I can see the investment_opportunity key metrics
+    And I can see the investment_opportunity express interest actions
 
   Examples:
     |entity                                 |investment_opportunity                  |msg	|
     |entity_type=Investment Fund;enable_inv_opportunities=true  |company_name=Test IO|opportunity was successfully created|
+
+
+Scenario Outline: Preview hides the key metrics and express interest when the flags are off
+    Given Im logged in as a user "" for an entity "<entity>"
+    Given the user has role "company_admin"
+    Given there is an investment_opportunity "<investment_opportunity>"
+    Given there is an existing investor "" with "1" users
+    Given the investors are added to the investment_opportunity
+    When I upload a document for the investment_opportunity
+    And I add widgets for the investment_opportunity
+    And I add track record for the investment_opportunity
+    When I go to investment_opportunity preview
+    Then I can see all the investment_opportunity preview details
+    And I cannot see the investment_opportunity key metrics
+    And I cannot see the investment_opportunity express interest actions
+
+  Examples:
+    |entity                                 |investment_opportunity                  |
+    |entity_type=Investment Fund;enable_inv_opportunities=true  |company_name=Hidden IO;show_key_metrics=false;show_express_interest=false|
 
 
 Scenario Outline: Create new interest for an investment_opportunity from RM and approve
