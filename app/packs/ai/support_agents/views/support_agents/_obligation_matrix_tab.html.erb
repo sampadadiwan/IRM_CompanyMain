@@ -11,6 +11,6 @@
   <% end %>
 </div>
 <%= render "side_letter_obligations/matrix", obligations: obligations %>
-<%# Modal markup kept after the grid (outside the table) — full anti-flicker
-    placement outside the agent FormCard isn't reachable from a tab partial %>
-<%= render "side_letter_obligations/action_modals", obligations: obligations %>
+<%# Action modals (Fire/Waive/Revert) are rendered in show.html.erb OUTSIDE the
+    FormCard — container-type: inline-size on .card breaks Bootstrap's fixed-position
+    modal placement, causing flicker. See show.html.erb after the FormCard block. %>

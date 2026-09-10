@@ -156,6 +156,13 @@
 
 <% end %>
 
+<%# Fire/Waive/Revert modals rendered OUTSIDE the FormCard — container-type: inline-size
+    on .card (minimalist_theme.scss) creates a new containing block that breaks
+    Bootstrap's fixed-position modal placement, causing flicker when modals are
+    nested inside the card. %>
+<% if @support_agent.agent_type.in?(%w[SideLetterObligationAgent CpCsExtractionAgent]) && @side_letter_obligations&.any? %>
+  <%= render "side_letter_obligations/action_modals", obligations: @side_letter_obligations %>
+<% end %>
 
 <%= render "support_agents/chat_panel", support_agent: @support_agent, chattable: @support_agent %>
 

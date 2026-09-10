@@ -40,11 +40,19 @@
             </colgroup>
             <tr>
               <td class="align-top">Investor</td>
-              <td><%= link_to @obligation.investor.investor_name, side_letter_path(@obligation.side_letter) %></td>
+              <%# Portfolio obligations have no side_letter — use source_investor and
+                  link to obligation matrix instead of the side letter page %>
+              <td>
+                <% if @obligation.side_letter.present? %>
+                  <%= link_to @obligation.source_investor&.investor_name, side_letter_path(@obligation.side_letter) %>
+                <% else %>
+                  <%= link_to @obligation.source_investor&.investor_name || "Unknown", side_letter_obligations_path %>
+                <% end %>
+              </td>
             </tr>
             <tr>
               <td class="align-top">Fund</td>
-              <td><%= @obligation.fund.name %></td>
+              <td><%= @obligation.source_fund&.name || content_tag(:span, "—", class: "text-muted") %></td>
             </tr>
             <tr>
               <td class="align-top">Type</td>
@@ -184,8 +192,10 @@
 
 
    <div class="mt-3">
-    <%= link_to side_letter_path(@obligation.side_letter), class: "btn btn-outline-secondary" do %>
-      <i class="ti ti-arrow-left"></i> Back to Side Letter
+    <% if @obligation.side_letter.present? %>
+      <%= link_to side_letter_path(@obligation.side_letter), class: "btn btn-outline-secondary" do %>
+        <i class="ti ti-arrow-left"></i> Back to Side Letter
+      <% end %>
     <% end %>
     <%= link_to side_letter_obligations_path, class: "btn btn-outline-secondary" do %>
       <i class="ti ti-table"></i> Obligation Matrix

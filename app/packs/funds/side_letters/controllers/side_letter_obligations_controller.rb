@@ -64,10 +64,17 @@ class SideLetterObligationsController < ApplicationController
         )
       end
       format.html do
-        # Layout breadcrumb card: Home • Side Letters • Investor • Obligation
+        # Layout breadcrumb: commitment obligations link through side letter;
+        # portfolio obligations link to the obligation matrix instead.
+        investor_name = @obligation.source_investor&.investor_name || "Obligation"
+        investor_link = if @obligation.side_letter.present?
+                          side_letter_path(@obligation.side_letter)
+                        else
+                          side_letter_obligations_path
+                        end
         @bread_crumbs = {
-          'Side Letters': side_letters_path,
-          "#{@obligation.investor.investor_name}": side_letter_path(@obligation.side_letter),
+          Obligations: side_letter_obligations_path,
+          "#{investor_name}": investor_link,
           "#{@obligation.title}": side_letter_obligation_path(@obligation)
         }
         @fulfillments = @obligation.obligation_fulfillments.includes(:fulfilled_by, :document).order(fulfilled_at: :desc)
