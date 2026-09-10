@@ -170,6 +170,14 @@ class ImportUtil < Trailblazer::Operation
           success = Audited.audit_class.as_user(import_upload.user) do
             process_row(headers, custom_field_headers, sanitized_row, import_upload, ctx)
           end
+          # If this is a ShareholderPosition import, allow the importer to inject a computed Fully Dilluted % into the sanitized row
+          if import_upload.import_type == "ShareholderPosition"
+            fd_index = headers.index("Fully Dilluted %") || headers.index("Fully Diluted %")
+            if fd_index && fd_index >= 0
+              computed = import_upload.instance_variable_get(:@last_row_computed_percent)
+              sanitized_row[fd_index] = computed if computed.present?
+            end
+          end
           # add row to results sheet
           sheet.add_row(sanitized_row)
           # To indicate progress

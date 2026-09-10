@@ -3803,6 +3803,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.bigint "entity_id", null: false
+    t.decimal "fully_diluted_percentage", precision: 10, scale: 4
     t.bigint "fund_id"
     t.bigint "import_upload_id"
     t.string "instrument"

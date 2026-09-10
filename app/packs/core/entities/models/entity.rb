@@ -97,6 +97,7 @@ class Entity < ApplicationRecord
   has_many :fund_units, dependent: :destroy
   has_many :fund_reports, dependent: :destroy
   has_many :fund_formulas, dependent: :destroy
+  has_many :shareholder_positions, dependent: :destroy
 
   has_many :investor_accesses, dependent: :destroy
   has_many :investor_kycs, dependent: :destroy

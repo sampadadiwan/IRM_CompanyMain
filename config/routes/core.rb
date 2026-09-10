@@ -190,6 +190,16 @@ resources :import_uploads do
   delete 'delete_data', on: :member
 end
 
+# Dedicated new/create/validate_upload stack for ShareholderPosition bulk uploads only - mirrors
+# how KPI reports have their own dedicated upload+validate flow (KpiReportsController), so the
+# Fully Dilluted % pre-Save check never touches the generic ImportUploadsController or its
+# shared new/edit/_xlsx_preview views used by every other bulk import type. Still persists via
+# the same ImportUpload model (import_type: "ShareholderPosition") - see
+# ShareholderPositionUploadsController.
+resources :shareholder_position_uploads, only: %i[new create] do
+  post 'validate_upload', on: :collection
+end
+
 resources :folders do
   get  'download',         on: :member
   post 'generate_report',  on: :member
@@ -234,6 +244,12 @@ end
 
 resources :notes do
   get 'search', on: :collection
+end
+
+resources :shareholder_positions, only: [:index] do
+  patch 'approve', on: :member
+  delete 'reject', on: :member
+  patch 'approve_all', on: :collection
 end
 
 resources :investors do

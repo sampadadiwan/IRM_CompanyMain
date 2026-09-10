@@ -84,6 +84,7 @@ class Investor < ApplicationRecord
 
   has_many :investor_kycs, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
+  has_many :shareholder_positions, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy

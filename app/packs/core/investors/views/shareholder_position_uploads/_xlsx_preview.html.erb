@@ -1,0 +1,24 @@
+<%#
+  Own copy of the generic header-check preview (app/packs/misc/import_uploads/views/import_uploads/_xlsx_preview.html.erb)
+  for the dedicated ShareholderPosition upload page - kept as a separate file so this page never
+  depends on (or risks changing) the shared generic partial used by every other bulk import type.
+%>
+<%= render FormCard.new(title: "Preview") do %>
+  <!-- Stimulus XLSX Preview Controller -->
+  <div id="xlsx-preview" class="table-responsive"
+      data-controller="xlsx-preview"
+      data-headers='<%= import_upload.headers.to_json %>'
+      data-xlsx-preview-tabs="true">
+
+    <div data-xlsx-preview-target="card" class="d-none">
+      <div class="fw-bold">
+        <span class="h3" data-xlsx-preview-target="filename"></span>
+      </div>
+      <div class="" data-controller="datatable">
+        <div data-xlsx-preview-target="status"></div>
+        <div data-xlsx-preview-target="table"></div>
+      </div>
+    </div>
+
+  </div>
+<% end %>

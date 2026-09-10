@@ -1,0 +1,55 @@
+<%
+  # Locals expected: import_upload_id, shareholder_positions
+  sps = local_assigns[:shareholder_positions] || @shareholder_positions || []
+  # Ensure ActiveRecord relation or array
+  sps = Array(sps)
+  total = sps.sum { |sp| sp.position_amount.to_f }
+%>
+
+<div class="card mt-2">
+  <div class="card-body">
+    <h5 class="card-title">Imported Shareholder Positions</h5>
+    <% if sps.empty? %>
+      <p>No shareholder positions imported.</p>
+    <% else %>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th>Shareholder</th>
+              <th>Fund</th>
+              <th>Position Amount</th>
+              <th>Fully Diluted %</th>
+              <th>As Of</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sps.each do |sp| %>
+              <tr>
+                <td><%= sp.investor&.investor_name || "-" %></td>
+                <td><%= sp.fund&.name || "-" %></td>
+                <td><%= number_with_precision(sp.position_amount.to_f, precision: 2, delimiter: ",") rescue sp.position_amount %></td>
+                <td>
+                  <% if total > 0 %>
+                    <%= number_with_precision(sp.position_amount.to_f / total * 100, precision: 4) %>%
+                  <% else %>
+                    -
+                  <% end %>
+                </td>
+                <td><%= sp.as_of %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="2">Total</th>
+              <th><%= number_with_precision(total, precision: 2, delimiter: ",") %></th>
+              <th>100%</th>
+              <th></th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    <% end %>
+  </div>
+</div>

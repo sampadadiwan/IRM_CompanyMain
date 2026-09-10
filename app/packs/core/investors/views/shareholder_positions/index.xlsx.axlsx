@@ -1,0 +1,17 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "Shareholder Positions") do |sheet|
+  headers = ["Id", "Portfolio Company", "ShareHolder", "Category", "Subgroup", "Instrument", "Round/As Of", "Fully Dilluted Quantity/%", "Quantity Actuals", "Status"]
+
+  # Create the header row
+  sheet.add_row(headers)
+
+  # Create entries for each item
+  @shareholder_positions.each do |sp|
+    round_or_date = sp.round_name.presence || sp.position_date
+
+    values = [sp.id, sp.portfolio_company&.investor_name, sp.investor_label.presence || sp.investor&.investor_name, sp.category, sp.subgroup, sp.instrument, round_or_date, sp.position_amount, sp.quantity_actual, sp.status]
+
+    sheet.add_row values
+  end
+end
