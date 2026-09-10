@@ -23,9 +23,10 @@ class User < ApplicationRecord
   # "Kpi" gates recipients for KpiReport's submission/failure notifiers (notify_fund_of_submission!,
   # reopen_after_failed_import! in app/packs/startups/kpis/models/kpi_report.rb, and the matching
   # controller path in kpi_reports_controller.rb#notify_fund_on_submission); "db_dump_notification"
-  # gates recipients in EntityDbDumpJob. Suggested (not enforced) on the user form's tag input —
+  # gates recipients in EntityDbDumpJob; "Tasks" gates recipients for the weekly task digest
+  # (WeeklyTaskDigestJob::RECIPIENT_TAG). Suggested (not enforced) on the user form's tag input —
   # other tags remain valid, e.g. per-entity Support Agent "notify_tag" config values.
-  NOTIFICATION_TAGS = %w[Kpi db_dump_notification].freeze
+  NOTIFICATION_TAGS = %w[Kpi Tasks db_dump_notification].freeze
 
   attr_accessor :role_name
   # This is set from session[:support_user_id] in the ApplicationController.

@@ -98,6 +98,13 @@ Sidekiq.configure_server do |config|
     # any stored enabled schedules whose next_run_at has already passed.
     Sidekiq::Cron::Job.create(name: 'SchedulerPollingJob', cron: 'every 10 minutes', class: 'SchedulerPollingJob')
     Sidekiq::Cron::Job.create(name: 'RecurringTaskGeneratorJob', cron: 'every day at 01:00', class: 'RecurringTaskGeneratorJob')
+    # Weekly task digest — Friday (docs/product/weekly_task_digest_prd.md). Server
+    # clocks are UTC regardless of region (see the sidekiq_restart_at comment in
+    # config/schedule.rb), so this expression is UTC: 11:30 UTC Friday is 5:00pm IST
+    # and 7:30am US Eastern. Override per region with WEEKLY_TASK_DIGEST_CRON rather
+    # than editing this line. The job itself sends nothing until an entity turns on
+    # entity_setting.weekly_task_digest_enabled.
+    Sidekiq::Cron::Job.create(name: 'WeeklyTaskDigestJob', cron: ENV.fetch('WEEKLY_TASK_DIGEST_CRON', '30 11 * * 5'), class: 'WeeklyTaskDigestJob')
     Sidekiq::Cron::Job.create(name: 'MultiSiteUserSyncAllJob', cron: 'every day at 01:00', class: 'MultiSiteUserSyncAllJob')
     Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: 'every day at 01:00', class: 'TrackingCurrencyJob')
     # Used to cleanup various models in the DB

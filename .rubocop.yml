@@ -124,6 +124,8 @@ Style/ReturnNilInPredicateMethodDefinition:
 
 Rails/OutputSafety:
   Exclude:
+    # Builds inline-styled HTML fragments for mailer views — html_safe is the whole job.
+    - "app/packs/core/base/helpers/email_style_helper.rb"
     - "app/packs/core/fields/json_field.rb"
     - "config/initializers/client_side_validations.rb"
     - "app/notifications/delivery_methods/user_alerts.rb"

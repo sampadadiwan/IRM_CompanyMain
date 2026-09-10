@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_062454) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1768,6 +1768,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_062454) do
     t.boolean "use_ai_kpi_reader", default: false, null: false
     t.string "valuation_math"
     t.string "value_bridge_cols"
+    t.boolean "weekly_task_digest_enabled", default: false, null: false
     t.string "whatsapp_endpoint"
     t.json "whatsapp_templates"
     t.text "whatsapp_token"
@@ -4121,6 +4122,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_062454) do
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.index ["document_folder_id"], name: "fk_rails_62c414fe83"
+    t.index ["entity_id", "completed", "due_date"], name: "index_tasks_on_entity_completed_due_date"
+    t.index ["entity_id", "completed_on"], name: "index_tasks_on_entity_completed_on"
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
