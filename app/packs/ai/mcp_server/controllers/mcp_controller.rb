@@ -21,8 +21,14 @@ class McpController < ActionController::API
       tools: authorized_tools,
       server_context: { user: @mcp_user, entity: @mcp_entity }
     )
+    # Disable gem-level DNS rebinding protection — nginx already validates Host headers
+    # upstream, and the default allowlist only permits loopback addresses, which blocks
+    # requests arriving via a production domain (e.g. app.caphive.com, dev.altconnects.com).
+    # @see https://github.com/modelcontextprotocol/ruby-sdk StreamableHTTPTransport docs
     transport = MCP::Server::Transports::StreamableHTTPTransport.new(
-      server, stateless: true
+      server,
+      stateless: true,
+      dns_rebinding_protection: false
     )
     status, headers, body = transport.handle_request(request)
     render json: body.first, status: status, headers: headers
