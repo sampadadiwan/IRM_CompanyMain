@@ -202,14 +202,6 @@ Then('the tax should reduce the income_with_fees_cents correctly') do
   end
 end
 
-When('I clone the capital distribution') do
-  visit(capital_distribution_path(@capital_distribution))
-  within "#capital_distribution_#{@capital_distribution.id}_actions" do
-    click_on("Actions")
-  end
-  click_on("Clone")
-end
-
 When('I create with fees from the capital distribution') do
   visit(capital_distribution_path(@capital_distribution))
   within "#capital_distribution_#{@capital_distribution.id}_actions" do
@@ -228,10 +220,6 @@ Then('the new distribution form should have a blank title with {string} fee rows
   expect(all('.nested-fields').count).to eq(count.to_i)
 end
 
-When('I save the cloned capital distribution') do
-  click_button 'Save'
-  expect(page).to have_content("Capital distribution was successfully created")
-end
 
 Then('a new Capital Distribution should exist as an independent clone with matching fee rows') do
   cloned = CapitalDistribution.order(:id).last
