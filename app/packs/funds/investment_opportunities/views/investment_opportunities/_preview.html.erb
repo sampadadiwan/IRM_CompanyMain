@@ -28,10 +28,12 @@
                 </div>
 
                  <!-- Track Record -->
-                 <div class="mb-5">
-                    <h3 class="fw-bold mb-4 preview-section-title">Track Record</h3>
-                    <%= render "/ci_track_records/preview_track_record", owner: investment_opportunity %>
-                </div>
+                 <% if investment_opportunity.ci_track_records.any? %>
+                     <div class="mb-5">
+                        <h3 class="fw-bold mb-4 preview-section-title">Track Record</h3>
+                        <%= render "/ci_track_records/preview_track_record", owner: investment_opportunity %>
+                    </div>
+                <% end %>
             </div>
 
             <!-- Right Column: Documents & Actions -->
