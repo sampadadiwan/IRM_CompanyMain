@@ -189,7 +189,7 @@ Agent config stored in `SupportAgent#json_fields`:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `investment_doc_tag` | Yes | Document tag to match (e.g. "SHA", "SSA"). Case-insensitive LIKE match against `documents.tag_list` |
+| `investment_doc_tag` | Yes | Comma-separated document tags to match (e.g. "SHA" or "SHA,SSA"). Each tag is matched case-insensitively via LIKE against `documents.tag_list`. All matching documents per PI are extracted. |
 | `default_reminder_days_before` | No (default: 7) | Lead time for pre-due-date reminder emails |
 | `overdue_escalation_days` | No (default: 3) | Days after due date before escalation email |
 | `notify_tag` | No | Employee tag for routing ownerless alerts. Falls back to company admins |

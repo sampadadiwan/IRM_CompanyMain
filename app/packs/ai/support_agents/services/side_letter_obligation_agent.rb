@@ -100,12 +100,12 @@ class SideLetterObligationAgent < SupportAgentService
   # @param agent_record [SupportAgent] agent config record
   # @return [ActiveRecord::Relation<PortfolioInvestment>] investments with matching tagged documents
   def portfolio_investment_targets(entity_id, agent_record)
-    tag = (agent_record&.json_fields || {})["investment_doc_tag"].to_s.strip.downcase
+    tags = split_investment_doc_tags(agent_record)
     scope = PortfolioInvestment.where(entity_id: entity_id)
-    return scope.none if tag.blank?
+    return scope.none if tags.empty?
 
     tagged_docs = Document.where(entity_id: entity_id, owner_type: "PortfolioInvestment", template: [nil, false])
-                          .where("LOWER(COALESCE(documents.tag_list, '')) LIKE :tag", tag: "%#{tag}%")
+    tagged_docs = tagged_docs.where(*investment_tag_conditions(tags))
     scope.where(id: tagged_docs.select(:owner_id))
   end
 
@@ -253,11 +253,17 @@ class SideLetterObligationAgent < SupportAgentService
     end
   end
 
+  # Locates all documents on the portfolio investment whose tag_list matches
+  # any of the comma-separated tags in +investment_doc_tag+ config. Stores all
+  # matches in +ctx[:extraction_docs]+ and the newest in +ctx[:extraction_doc]+
+  # for backward compatibility with the parent's single-doc extraction path.
+  #
   # @param ctx [Hash] step context with :portfolio_investment set
+  # @return [void]
   def locate_investment_document(ctx)
     investment = ctx[:portfolio_investment]
-    tag = (@support_agent.json_fields || {})["investment_doc_tag"].to_s.strip.downcase
-    if tag.blank?
+    tags = split_investment_doc_tags(@support_agent)
+    if tags.empty?
       ctx[:issues][:extraction_issues] << {
         type: :no_document,
         message: "No investment document tag configured — nothing to extract",
@@ -266,17 +272,20 @@ class SideLetterObligationAgent < SupportAgentService
       return
     end
 
-    # Newest document on this investment whose tag_list matches the configured tag
-    ctx[:extraction_doc] = investment
-                           .documents
-                           .where(template: [nil, false])
-                           .where("LOWER(COALESCE(documents.tag_list, '')) LIKE :tag", tag: "%#{tag}%")
-                           .order(:id).last
+    # All documents on this investment matching any configured tag (e.g. "SHA,SSA")
+    matching_docs = investment.documents
+                              .where(template: [nil, false])
+                              .where(*investment_tag_conditions(tags))
+                              .order(:id)
 
-    if ctx[:extraction_doc].nil?
+    ctx[:extraction_docs] = matching_docs.to_a
+    # Backward compat — parent's single-PI extract_obligations reads ctx[:extraction_doc]
+    ctx[:extraction_doc] = ctx[:extraction_docs].last
+
+    if ctx[:extraction_docs].blank?
       ctx[:issues][:extraction_issues] << {
         type: :no_document,
-        message: "No document tagged '#{tag}' on this investment — nothing to extract",
+        message: "No document tagged '#{tags.join(", ")}' on this investment — nothing to extract",
         severity: :info
       }
     end
@@ -490,6 +499,28 @@ class SideLetterObligationAgent < SupportAgentService
       extracted_by: "ai",
       review_status: "pending_review"
     }
+  end
+
+  # Splits the +investment_doc_tag+ config value into an array of lowercase
+  # tag strings. Supports comma-separated tags (e.g. "SHA, SSA" → ["sha", "ssa"]).
+  #
+  # @param agent_or_record [SupportAgent, #json_fields] agent record or config source
+  # @return [Array<String>] lowercase tag strings, empty if none configured
+  def split_investment_doc_tags(agent_or_record)
+    raw = (agent_or_record&.json_fields || {})["investment_doc_tag"].to_s.strip.downcase
+    raw.split(",").map(&:strip).compact_blank
+  end
+
+  # Builds a SQL condition array for matching any of the given tags against
+  # +documents.tag_list+. Uses LOWER + COALESCE + LIKE OR chains, identical
+  # to the SLO path's +TAG_PATTERNS+ approach.
+  #
+  # @param tags [Array<String>] lowercase tag strings to match
+  # @return [Array] ActiveRecord-compatible condition: [sql_string, **binds]
+  def investment_tag_conditions(tags)
+    conditions = tags.each_with_index.map { |_t, i| "LOWER(COALESCE(documents.tag_list, '')) LIKE :tag_#{i}" }
+    binds = tags.each_with_index.to_h { |t, i| [:"tag_#{i}", "%#{t}%"] }
+    [conditions.join(" OR "), **binds]
   end
 
   def default_reminder_days

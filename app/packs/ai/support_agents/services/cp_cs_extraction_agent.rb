@@ -115,11 +115,13 @@ class CpCsExtractionAgent < SideLetterObligationAgent
   end
 
   # Locates documents across all portfolio investments for this company.
-  # Each PI is checked for a matching tagged document. The step UI shows
-  # a running counter (e.g. "Found: SHA (2/5)") as each PI is processed.
+  # Each PI is checked for matching tagged documents (supports comma-separated
+  # tags, e.g. "SHA,SSA" — all matching documents per PI are collected).
+  # The step UI shows a running counter as each PI is processed.
   # Falls back to the parent's single-PI logic when no investor targets.
   #
-  # @param ctx [Hash] step context — populates ctx[:pi_docs] with per-PI results
+  # @param ctx [Hash] step context — populates ctx[:pi_docs] with per-PI results,
+  #   each entry containing +{ pi:, docs: [Document] }+
   # @return [Boolean] always true
   def locate_side_letter(ctx, **)
     pi_targets = ctx[:investor_pi_targets]
@@ -133,25 +135,29 @@ class CpCsExtractionAgent < SideLetterObligationAgent
       mark_step_running(report, :locate_side_letter) if report
       ctx[:portfolio_investment] = pi
       ctx[:extraction_doc] = nil
+      ctx[:extraction_docs] = nil
       locate_investment_document(ctx)
 
       pi_name = pi.try(:name) || "Investment #{pi.id}"
-      doc_name = ctx[:extraction_doc]&.name || "no document"
-      ctx[:pi_docs] << { pi: pi, doc: ctx[:extraction_doc] }
+      docs = ctx[:extraction_docs] || [ctx[:extraction_doc]].compact
+      doc_names = docs.any? ? docs.map(&:name).join(", ") : "no document"
+      ctx[:pi_docs] << { pi: pi, docs: docs }
 
       if report
         mark_step_success(report, :locate_side_letter,
-                          message: "#{doc_name} — #{pi_name} (#{idx + 1}/#{total})")
+                          message: "#{doc_names} — #{pi_name} (#{idx + 1}/#{total})")
       end
     end
     true
   end
 
-  # Extracts obligations from each located document via LLM. The step UI
-  # shows a counter as each investment is extracted (e.g. "Extracted 12 (3/5)").
-  # Accumulates all extracted rows in ctx[:all_extracted] for the upsert step.
+  # Extracts obligations from each located document via LLM. Supports multiple
+  # documents per PI (e.g. SHA + SSA), extracting from each separately. The step
+  # UI shows a counter as each investment is processed. Dedup across documents
+  # on the same PI is handled by +upsert_portfolio_row+ matching on source_clause.
   #
-  # @param ctx [Hash] step context with ctx[:pi_docs] from locate step
+  # @param ctx [Hash] step context with ctx[:pi_docs] from locate step,
+  #   each entry containing +{ pi:, docs: [Document] }+
   # @return [Boolean] always true
   def extract_obligations(ctx, **)
     pi_docs = ctx[:pi_docs]
@@ -163,12 +169,12 @@ class CpCsExtractionAgent < SideLetterObligationAgent
 
     pi_docs.each_with_index do |entry, idx|
       pi = entry[:pi]
-      doc = entry[:doc]
+      docs = entry[:docs] || []
       pi_name = pi.try(:name) || "Investment #{pi.id}"
 
       mark_step_running(report, :extract_obligations) if report
 
-      if doc.nil?
+      if docs.empty?
         ctx[:all_extracted] << { pi: pi, extracted: [] }
         if report
           mark_step_success(report, :extract_obligations,
@@ -177,15 +183,20 @@ class CpCsExtractionAgent < SideLetterObligationAgent
         next
       end
 
-      # Run LLM extraction for this document
-      raw = ctx[:llm].ask(extraction_prompt(:portfolio_investments), with: [doc.file.url])
-      rows = parse_response(raw)
-      cited, _uncited = rows.partition { |r| r["source_clause"].to_s.strip.present? }
-      ctx[:all_extracted] << { pi: pi, extracted: cited }
+      # Extract from each matching document on this PI (e.g. SHA doc + SSA doc)
+      pi_cited = []
+      docs.each do |doc|
+        raw = ctx[:llm].ask(extraction_prompt(:portfolio_investments), with: [doc.file.url])
+        rows = parse_response(raw)
+        cited, _uncited = rows.partition { |r| r["source_clause"].to_s.strip.present? }
+        pi_cited.concat(cited)
+      end
+
+      ctx[:all_extracted] << { pi: pi, extracted: pi_cited }
 
       if report
         mark_step_success(report, :extract_obligations,
-                          message: "Extracted #{cited.size} — #{pi_name} (#{idx + 1}/#{total})")
+                          message: "Extracted #{pi_cited.size} from #{docs.size} doc(s) — #{pi_name} (#{idx + 1}/#{total})")
       end
     end
     true
@@ -226,7 +237,6 @@ class CpCsExtractionAgent < SideLetterObligationAgent
 
       # Set up context for the parent's portfolio upsert method
       ctx[:portfolio_investment] = pi
-      ctx[:extraction_doc] = ctx[:pi_docs]&.dig(idx, :doc)
       ctx[:extracted] = extracted
       ctx[:issues] = { extraction_issues: [] }
       upsert_portfolio_obligations(ctx)
@@ -265,7 +275,7 @@ class CpCsExtractionAgent < SideLetterObligationAgent
     tag = fields["investment_doc_tag"].to_s.strip
     if tag.blank?
       issues << "'investment_doc_tag' is not set — the agent cannot identify which documents to extract from. " \
-                "Set it to the tag used on investment agreements (e.g. 'SHA')."
+                "Set it to the tag used on investment agreements (e.g. 'SHA' or 'SHA,SSA' for multiple)."
     end
 
     notify_tag = fields["notify_tag"].to_s.strip

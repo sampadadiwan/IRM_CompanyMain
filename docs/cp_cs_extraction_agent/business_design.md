@@ -56,7 +56,7 @@ An investment agreement is amended, and the updated document is uploaded with th
 
 ### Setup (one-time, per entity)
 1. Admin enables the CP/CS Extraction Agent in the Support Agents configuration
-2. Admin sets the **investment_doc_tag** (e.g. "SHA") — this tells the agent which documents to extract from
+2. Admin sets the **investment_doc_tag** (e.g. "SHA" or "SHA,SSA" for multiple document types) — this tells the agent which documents to extract from. When multiple tags are set, the agent extracts from all matching documents on each investment.
 3. Admin optionally sets the **notify_tag** to route alerts to specific team members
 
 ### Extraction Run
