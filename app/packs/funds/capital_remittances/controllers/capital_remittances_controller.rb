@@ -23,6 +23,17 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittances
   end
 
+  # Renders a fresh copy of the bulk-verify modal into the shared "remote_modal" turbo
+  # frame, so reopening it after a previous verify always reflects the current
+  # unverified/collected-amount state instead of whatever was baked into the page
+  # at the last full load.
+  def bulk_verify_modal
+    @capital_call = CapitalCall.find(params[:capital_call_id])
+    authorize @capital_call, :update?
+
+    render layout: false
+  end
+
   def allocate_units
     fund_unit, msg = DefaultUnitAllocationEngine.new.allocate_remittance(@capital_remittance, @capital_remittance.capital_call.name)
     if fund_unit&.persisted?

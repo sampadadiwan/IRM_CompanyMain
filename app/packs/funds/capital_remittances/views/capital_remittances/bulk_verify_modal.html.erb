@@ -1,0 +1,127 @@
+<% capital_call = @capital_call %>
+<% eligible_remittances = capital_call.capital_remittances.unverified.collected_amount_positive.includes(:investor, :fund).order(:folio_id) %>
+<% eligible_count = eligible_remittances.count %>
+<% total_unverified_count = capital_call.capital_remittances.unverified.count %>
+<% zero_collected_count = total_unverified_count - eligible_count %>
+
+<%= turbo_frame_tag "remote_modal" do %>
+  <div class="modal fade" id="bulkVerifyRemittancesModal" data-controller="modal" tabindex="-1" aria-labelledby="bulkVerifyRemittancesModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="bulkVerifyRemittancesModalLabel">Verify Pending Remittances</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <%# The form lives inside the "remote_modal" turbo frame, but its submission
+            (a redirect back to the capital call page) must escape that frame and do a
+            normal full-page visit — otherwise Turbo tries to resolve the redirect's
+            response against a #remote_modal frame that may not be in the initial DOM
+            (e.g. if the Remittances tab itself lazy-loads), and Turbo shows a
+            "this section couldn't load" error in place of the modal. %>
+        <%= form_with url: bulk_actions_capital_remittances_path(bulk_action: "Verify", capital_call_id: capital_call.id, verified: "false", collected_amount_positive: "true"), method: :post, data: { turbo_frame: "_top" } do |f| %>
+          <div class="modal-body">
+            <div class="mb-3">
+              <div class="text-muted small mb-2">
+                An <strong>eligible</strong> remittance is unverified with a collected amount greater than 0.
+                This capital call has <%= total_unverified_count %> unverified remittance<%= "s" unless total_unverified_count == 1 %>:
+              </div>
+              <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+                  <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                        style="width:36px;height:36px;background:#dcfce7;">
+                    <i class="ti ti-circle-check fs-5" style="color:#16a34a;"></i>
+                  </span>
+                  <div>
+                    <div class="fw-semibold text-dark lh-sm"><%= eligible_count %> Eligible Remittance<%= "s" unless eligible_count == 1 %></div>
+                    <div class="text-muted small mt-1">Has a collected amount greater than 0 — will be verified when you click below.</div>
+                  </div>
+                </div>
+
+                <% if zero_collected_count.positive? %>
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fef2f2;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#fee2e2;">
+                      <i class="ti ti-circle-minus fs-5" style="color:#dc2626;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm"><%= zero_collected_count %> Not Eligible Remittance<%= "s" unless zero_collected_count == 1 %></div>
+                      <div class="text-muted small mt-1">Nothing has been collected yet, so <%= zero_collected_count == 1 ? "it's" : "they're" %> excluded.</div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Select Remittances to Verify</label>
+              <small class="text-muted d-block mb-2">Leave blank to verify <strong>all <%= eligible_count %> eligible</strong> remittances above.</small>
+              <%= f.select :capital_remittance_ids,
+                           eligible_remittances.map { |r| ["#{r} — #{money_to_currency(r.collected_amount, params)}", r.id] },
+                           { include_hidden: false },
+                           multiple: true,
+                           class: "form-control select2",
+                           style: "width:100%",
+                           data: { placeholder: "All eligible remittances (leave blank for all)" } %>
+            </div>
+
+            <div class="text-muted small mb-2">The following will happen when you click <strong>Verify Remittances</strong>:</div>
+
+            <div class="d-flex flex-column gap-2 mb-3">
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#dbeafe;">
+                  <i class="ti ti-shield-check fs-5" style="color:#2563eb;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Only unverified remittances are affected</div>
+                  <div class="text-muted small mt-1">Any remittance for this call that is already verified is left untouched — nothing gets un-verified.</div>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#fef3c7;">
+                  <i class="ti ti-refresh fs-5" style="color:#d97706;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Status recalculated, fees unchanged</div>
+                  <div class="text-muted small mt-1">Each remittance's status updates to Paid, Overpaid, or Overdue based on the amount collected. Call fees are not recalculated — the fees set when the remittance was created or last updated are kept as-is.</div>
+                </div>
+              </div>
+
+              <% if capital_call.send_payment_notification_flag %>
+                <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
+                  <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                        style="width:36px;height:36px;background:#f3e8ff;">
+                    <i class="ti ti-bell-check fs-5" style="color:#9333ea;"></i>
+                  </span>
+                  <div>
+                    <div class="fw-semibold text-dark lh-sm">Payment notifications sent</div>
+                    <div class="text-muted small mt-1">Investors are notified for any associated remittance payments as part of verification.
+                    <%= render "shared/sandbox_notice", entity: @capital_call.entity, color_class: "text-danger" %>
+                    </div>
+                  </div>
+                </div>
+              <% else %>
+                <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f8f9fa;">
+                  <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                        style="width:36px;height:36px;background:#e9ecef;">
+                    <i class="ti ti-bell-off fs-5" style="color:#6c757d;"></i>
+                  </span>
+                  <div>
+                    <div class="fw-semibold text-dark lh-sm">Payment notifications not sent</div>
+                    <div class="text-muted small mt-1">This capital call has payment notifications turned off, so investors will not be notified as part of verification.</div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+            <%= submit_tag "Verify Remittances", class: "btn #{eligible_count.zero? ? 'btn-secondary' : 'btn-success'}", disabled: eligible_count.zero? %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
