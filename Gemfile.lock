@@ -1280,7 +1280,7 @@ DEPENDENCIES
   libreconv
   mail-logger
   marginalia
-  mcp
+  mcp (~> 1.3)
   memoized
   mini_magick
   money-rails (~> 1.12)
