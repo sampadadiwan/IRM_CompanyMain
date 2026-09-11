@@ -105,22 +105,8 @@
                   </span>
                 <% end %>
               <% end %>
-              <%# Run CP/CS Agent button — shown on portfolio investment document folders.
-                  Runs a company-level extraction for the portfolio company that owns these
-                  investments, processing all tagged documents across all PIs in the folder. %>
-              <% if @folder&.owner.is_a?(PortfolioInvestment) %>
-                <% if current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
-                  <button type="button" class="dropdown-item d-flex align-items-center"
-                          data-bs-toggle="modal" data-bs-target="#run-cp-cs-agent-from-docs-modal">
-                    <i class="ti ti-file-search"></i> Run CP/CS Agent
-                  </button>
-                <% else %>
-                  <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;"
-                        data-bs-toggle="tooltip" data-bs-title="CP/CS Extraction Agent is not enabled. Contact support to enable it.">
-                    <i class="ti ti-file-search"></i> Run CP/CS Agent <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
-                  </span>
-                <% end %>
-              <% end %>
+              <%# CP/CS Agent per-document run buttons are on each document row instead
+                  of here — avoids the staleness issue of running all documents at once. %>
               <div class="dropdown-divider"></div>
               <% if params[:q].present? %>
                 <%= render "documents/bulk_actions", folder_id: folder_id %>
@@ -272,15 +258,15 @@ if false && msg.present?
 
 <%# CP/CS Agent run modal and progress panel — rendered outside the main content
     so Bootstrap modal positioning is not affected by any parent container-type CSS.
-    Runs at company level (Investor target) so all tagged documents across all PIs
-    under this portfolio company are extracted in one batch run.
+    The modal uses target_type=PortfolioInvestment; the target_id is set dynamically
+    by the cp-cs-doc-run Stimulus controller when the per-document button is clicked.
     The progress_panel_new div is the Turbo Stream target for step-by-step progress. %>
 <% if @folder&.owner.is_a?(PortfolioInvestment) && current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
   <%= render "support_agents/agent_run_modal",
              modal_id:         "run-cp-cs-agent-from-docs-modal",
              agent_type:       "CpCsExtractionAgent",
-             target_type:      "Investor",
-             target_id:        @folder.owner.portfolio_company_id,
+             target_type:      "PortfolioInvestment",
+             target_id:        @folder.owner.id,
              description:      CpCsExtractionAgent::DESCRIPTION,
              long_description: CpCsExtractionAgent::SINGLE_LONG_DESCRIPTION %>
   <div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
