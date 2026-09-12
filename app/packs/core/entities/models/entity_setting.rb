@@ -120,7 +120,11 @@ class EntitySetting < ApplicationRecord
   def self.disable_all(reset: false)
     if Rails.env.development?
       EntitySetting.update_all(sandbox: true)
-      User.update_all(whatsapp_enabled: false, otp_secret: nil, otp_backup_codes: nil, two_factor_enabled: false)
+      # update_all skips TwoFactorAuthenticatable#clear_two_factor_method_when_disabled, so
+      # forget the method explicitly or a dev user re-enabling 2FA lands on a code screen
+      # with no secret.
+      User.update_all(whatsapp_enabled: false, two_factor_enabled: false,
+                      two_factor_mode: nil, otp_secret: nil, consumed_timestep: nil)
 
       root_emails = ["admin@altx.com", "admin@caphive.us"]
 

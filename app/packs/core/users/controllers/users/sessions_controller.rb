@@ -4,11 +4,12 @@ module Users
     # delivery mode cannot be wired into one entry point and not the other.
     include TwoFactorDispatch
 
-    # Shown when an sms-mode user cannot be sent a code. Deliberately does not say why:
-    # whether a number is textable is not something an unauthenticated caller should be
-    # able to probe. SMS mode has no backup codes, so an administrator is the only route.
-    SMS_UNDELIVERABLE_MESSAGE = "We can't send a verification code to your phone right now. " \
-                                "Please contact your administrator.".freeze
+    # Shown when a WhatsApp- or SMS-mode user cannot be sent a code. Deliberately does not
+    # say why: whether a number is textable or on WhatsApp is not something an
+    # unauthenticated caller should be able to probe. There are no backup codes, so an
+    # administrator is the only route.
+    UNDELIVERABLE_MESSAGE = "We can't send a verification code to your phone right now. " \
+                            "Please contact your administrator.".freeze
 
     def new
       # A session-expired Turbo Frame fetch auto-follows Devise's redirect here and
@@ -27,9 +28,9 @@ module Users
 
       two_factor_path = two_factor_challenge_path_for(resource)
 
-      if two_factor_path == :sms_undeliverable
+      if two_factor_path == :undeliverable
         sign_out(resource)
-        redirect_to new_session_path(User), alert: SMS_UNDELIVERABLE_MESSAGE
+        redirect_to new_session_path(User), alert: UNDELIVERABLE_MESSAGE
       elsif two_factor_path
         # The user is NOT signed in until they clear 2FA — only session[:otp_user_id]
         # carries them forward, which is what Users::TwoFactorController checks.

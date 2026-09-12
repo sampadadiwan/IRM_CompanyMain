@@ -135,7 +135,6 @@ Then("the user should have no two-factor method but two-factor still enabled") d
   expect(@user.two_factor_enabled).to be true
   expect(@user.two_factor_mode).to be_nil
   expect(@user.otp_secret).to be_nil
-  expect(@user.otp_backup_codes).to be_nil
   expect(@user.two_factor_reset_at).to be_present
   expect(@user.two_factor_reset_by_id).to eq(@user.id)
 end

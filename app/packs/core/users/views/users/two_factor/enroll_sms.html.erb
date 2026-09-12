@@ -11,7 +11,7 @@
 
     <div class="login-body">
       <%- flash.each do |name, msg| -%>
-        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert #{name.to_s == 'alert' ? 'alert-danger' : 'alert-info'} text-center" if msg.is_a?(String) %>
       <%- end -%>
 
       <div class="alert alert-info text-center mb-3">

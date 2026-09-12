@@ -35,7 +35,7 @@ Today a user picks between two modes at `select_mode`:
 | Mode | Delivery | Gate | Backup codes |
 |---|---|---|---|
 | `whatsapp` | WATI `code_verification` template | `users.whatsapp_enabled` | None |
-| `authenticator` | TOTP app, out of band | Always available | 8, generated at enrollment |
+| `authenticator` | TOTP app, out of band | Always available | None — removed, see [§11](#11-backup-codes--parked) |
 | `sms` | Twilio **Verify** ([§17](#17-appendix-switching-to-twilio-verify)) | A usable mobile number | None — [parked](#11-backup-codes--parked) |
 
 WhatsApp covers markets where it is ubiquitous (India, Brazil, much of SEA). It does not cover LPs and fund staff in the US, where WhatsApp penetration among institutional finance users is low and a WhatsApp business message from a fund administrator reads as suspicious. Those users currently have exactly one option — install an authenticator app — which is the option this codebase just had to write an onboarding guide for because it has real drop-off.
@@ -483,6 +483,11 @@ Support handling a "never got the code" report reads the `otp_deliveries` row to
 ---
 
 ## 11. Backup codes — parked
+
+> **Update:** backup codes have since been removed from authenticator mode as well, so no
+> mode issues them and the administrator reset is the single recovery route everywhere.
+> The "Unparking" note below no longer applies — the machinery it refers to is gone. The
+> rest of this section is kept as the record of the original decision.
 
 **SMS mode generates no backup codes.** Parked as too much scope for v1.
 

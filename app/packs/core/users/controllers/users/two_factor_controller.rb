@@ -7,6 +7,14 @@ module Users
     skip_before_action :set_current_entity
     skip_after_action :verify_authorized
     before_action :require_otp_session
+    # Enrollment is for a user with NO verified method. Once one exists the only way to a
+    # different method is TwoFactorReset (password re-proven for self-service, policy for
+    # admins); letting a mid-2FA user reach these pages would let them swap the method
+    # without either. See require_no_verified_method.
+    # except:, not only: — a new enrollment action added later is guarded by default; the
+    # four listed are the login-verification actions, which a verified user must reach.
+    before_action :require_no_verified_method,
+                  except: %i[new create send_sms send_whatsapp]
     skip_before_action :verify_authenticity_token, only: %i[send_whatsapp send_sms]
 
     # ── Login verification ──────────────────────────────────────────────────
@@ -20,21 +28,24 @@ module Users
     #
     # The ambiguous case is real: an authenticator-mode user who pressed "Text me a code"
     # is holding a Verify code, but the same field still accepts the TOTP code from their
-    # app and a backup code. session[:otp_code_channel] records what was last SENT, so
-    # the Verify check runs only when a Verify code actually exists.
+    # app. session[:otp_code_channel] records what was last SENT, so the Verify check
+    # runs only when a Verify code actually exists.
     #
     # Order matters and is deliberate. Verify first (network, costs one of the
     # verification's limited attempts, so it is gated on the session flag), then TOTP
-    # (local and free), then backup codes. Probing Verify speculatively after a failed
-    # TOTP entry would burn a user's real attempts on codes that were never Verify codes.
+    # (local and free). Probing Verify speculatively after a failed TOTP entry would burn
+    # a user's real attempts on codes that were never Verify codes.
+    #
+    # There are no backup codes in any mode. A user who has lost their device needs an
+    # administrator reset (TwoFactorReset) — the same route WhatsApp and SMS mode always
+    # had, now applied to authenticator mode too.
     def create
       @user = User.find(session[:otp_user_id])
 
-      if verify_code_pending? && TwilioSmsVerification.approved?(user: @user, code: params[:otp_code])
-        complete_login
-      elsif @user.validate_and_consume_otp!(params[:otp_code])
-        complete_login
-      elsif @user.otp_backup_codes.present? && consume_backup_code(params[:otp_code])
+      # Short-circuit order is the ordering described above: Verify only when a Verify
+      # code is outstanding, then the local TOTP check.
+      if (verify_code_pending? && TwilioSmsVerification.approved?(user: @user, code: submitted_code)) ||
+         @user.validate_and_consume_otp!(submitted_code)
         complete_login
       else
         increment_failed_attempts
@@ -49,6 +60,17 @@ module Users
     end
 
     # ── Mode selection ──────────────────────────────────────────────────────
+    #
+    # Choosing a mode WRITES NOTHING. two_factor_mode is set only by the verify_* action
+    # for that mode, once the user has proven they can produce a code with it.
+    #
+    # It used to be written here, and that produced a lockout with no self-service way
+    # out: a user picked Authenticator, went off to install an app, and came back after
+    # the session had expired. two_factor_mode already said "authenticator", so
+    # TwoFactorDispatch sent them straight to the code screen for an app entry they had
+    # never created, and there is no route from that screen back to enrollment. Keeping
+    # the mode nil until verification means an abandoned enrollment simply lands on this
+    # screen again at the next login.
 
     def select_mode
       @user = User.find(session[:otp_user_id])
@@ -80,10 +102,6 @@ module Users
         render :select_mode and return
       end
 
-      ActiveRecord::Base.connected_to(role: :writing) do
-        @user.update!(two_factor_mode: mode)
-      end
-
       case mode
       when "whatsapp" then redirect_to enroll_whatsapp_two_factor_path
       when "sms"      then redirect_to enroll_sms_two_factor_path
@@ -109,14 +127,19 @@ module Users
     def verify_enrollment
       @user = User.find(session[:otp_user_id])
 
-      if @user.validate_and_consume_otp!(params[:otp_code])
+      if @user.validate_and_consume_otp!(submitted_code)
         ActiveRecord::Base.connected_to(role: :writing) do
-          @user.update!(two_factor_enabled: true)
-          session[:otp_backup_codes] = @user.generate_backup_codes!
+          # The mode is committed HERE, not at selection — see select_mode_post. Only the
+          # mode: two_factor_enabled is already true (that is how an otp session exists at
+          # all), and writing it again would silently undo an administrator who switched
+          # 2FA off for this user while they were mid-enrollment.
+          @user.update!(two_factor_mode: "authenticator")
         end
         sign_in(@user)
         reset_otp_session
-        redirect_to backup_codes_two_factor_path, notice: "Two-factor authentication is now enabled."
+        # Same landing as the WhatsApp and SMS enrollments — there is no backup-codes
+        # screen to pass through any more.
+        redirect_to root_path, notice: "Two-factor authentication is now enabled."
       else
         flash.now[:alert] = "Invalid code. Please try again."
         # Must match the label/issuer used by #enroll — a different one renders a different
@@ -151,9 +174,9 @@ module Users
     def verify_whatsapp_enrollment
       @user = User.find(session[:otp_user_id])
 
-      if @user.validate_and_consume_otp!(params[:otp_code])
+      if @user.validate_and_consume_otp!(submitted_code)
         ActiveRecord::Base.connected_to(role: :writing) do
-          @user.update!(two_factor_enabled: true)
+          @user.update!(two_factor_mode: "whatsapp")
         end
         sign_in(@user)
         reset_otp_session
@@ -194,14 +217,14 @@ module Users
 
       # Verify, not validate_and_consume_otp! — in sms mode the code was minted by Twilio
       # and the user's otp_secret has nothing to do with it.
-      if TwilioSmsVerification.approved?(user: @user, code: params[:otp_code])
+      if TwilioSmsVerification.approved?(user: @user, code: submitted_code)
         ActiveRecord::Base.connected_to(role: :writing) do
-          @user.update!(two_factor_enabled: true)
+          @user.update!(two_factor_mode: "sms")
         end
         sign_in(@user)
         reset_otp_session
-        # No backup codes for SMS mode — parked, matching WhatsApp mode. A user who
-        # loses their number needs an administrator reset. See the design doc, §11.
+        # A user who loses their number needs an administrator reset — the same as every
+        # other mode.
         redirect_to root_path, notice: "Two-factor authentication via text message is now enabled."
       else
         flash.now[:alert] = "Invalid code. Please try again."
@@ -262,12 +285,6 @@ module Users
       @user.send_otp_via_whatsapp
       session[:otp_whatsapp_sent_at] = Time.current.to_s
       render json: { message: "Code sent! Check your WhatsApp messages." }
-    end
-
-    def backup_codes
-      @backup_codes = session[:otp_backup_codes] || []
-      # Clear from session after display
-      session.delete(:otp_backup_codes)
     end
 
     private
@@ -332,10 +349,34 @@ module Users
     end
 
     def require_otp_session
-      return if user_signed_in?
+      # Nothing here is for a signed-in user any more (the backup-codes page was the one
+      # action that ran after sign_in). Reached by the back button after enrollment, or a
+      # bookmarked /two_factor/new; the actions would 404 on a nil session[:otp_user_id].
+      if user_signed_in?
+        redirect_to root_path
+        return
+      end
+
       unless session[:otp_user_id].present?
         redirect_to new_session_path(User), alert: "Session expired. Please sign in again."
       end
+    end
+
+    # What the user typed, minus whitespace. Codes copied out of a WhatsApp or SMS
+    # message routinely arrive as "123 456" or with a trailing space, and both the TOTP
+    # check and Twilio Verify compare the exact string.
+    def submitted_code
+      params[:otp_code].to_s.gsub(/\s+/, "")
+    end
+
+    # A user who already has a verified method belongs on the code screen, not in
+    # enrollment. Reached by typing an enrollment URL mid-2FA; the honest answer is to
+    # put them back where the login flow sent them.
+    def require_no_verified_method
+      user = User.find(session[:otp_user_id])
+      return if user.two_factor_mode.blank?
+
+      redirect_to new_two_factor_path
     end
 
     def complete_login
@@ -344,21 +385,15 @@ module Users
       redirect_to after_sign_in_path_for(@user), notice: "Signed in successfully."
     end
 
-    def consume_backup_code(code)
-      @user.consume_backup_code!(code)
-    end
-
     def increment_failed_attempts
       session[:otp_failed_attempts] ||= 0
       session[:otp_failed_attempts] += 1
     end
 
+    # The key list lives with the dispatcher that starts a challenge, so both ends clear
+    # the same set.
     def reset_otp_session
-      session.delete(:otp_user_id)
-      session.delete(:otp_failed_attempts)
-      session.delete(:otp_whatsapp_sent_at)
-      session.delete(:otp_sms_sent_at)
-      session.delete(:otp_code_channel)
+      TwoFactorDispatch::CHALLENGE_SESSION_KEYS.each { |key| session.delete(key) }
     end
   end
 end

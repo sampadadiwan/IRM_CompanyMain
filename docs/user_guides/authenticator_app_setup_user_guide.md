@@ -13,10 +13,9 @@ If you have already used an authenticator app before, skip to [Add CapHive to Yo
 3. [Step 2: Install It on Your Phone](#step-2-install-it-on-your-phone)
 4. [Step 3: Add CapHive to Your App](#step-3-add-caphive-to-your-app)
 5. [Step 4: Confirm the Setup](#step-4-confirm-the-setup)
-6. [Step 5: Save Your Backup Codes](#step-5-save-your-backup-codes)
-7. [Signing In From Now On](#signing-in-from-now-on)
-8. [Troubleshooting](#troubleshooting)
-9. [Frequently Asked Questions](#frequently-asked-questions)
+6. [Signing In From Now On](#signing-in-from-now-on)
+7. [Troubleshooting](#troubleshooting)
+8. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -129,20 +128,6 @@ If the code is rejected, see [Troubleshooting](#troubleshooting) below — the c
 
 ---
 
-## Step 5: Save Your Backup Codes
-
-After a successful confirmation, CapHive shows you **8 backup codes**.
-
-These are your way back in if you lose your phone. **They are shown once and cannot be retrieved later.** Before leaving that page:
-
-- Save them in your password manager, or
-- Print them and keep them somewhere secure, or
-- Write them down and store them with your other important documents.
-
-Each backup code works **once**. Do not store them as a note on the same phone that holds your authenticator app — if you lose the phone, you lose both.
-
----
-
 ## Signing In From Now On
 
 1. Enter your email address and password as usual.
@@ -179,9 +164,6 @@ Check that you granted the app camera permission, clean your camera lens, and in
 **I scanned the code twice by mistake and now have two CapHive entries.**
 Harmless — both produce the same codes. Delete one if the clutter bothers you.
 
-**I never saved my backup codes.**
-Contact your CapHive administrator. They can reset your two-factor setup so you can enrol again and receive a fresh set.
-
 ---
 
 ## Frequently Asked Questions
@@ -193,10 +175,10 @@ No. All the apps listed here are free.
 No. Codes are generated on your phone, so they work with no signal at all.
 
 **I am getting a new phone. What do I do?**
-Set the new phone up *before* wiping the old one. Google Authenticator and Microsoft Authenticator can transfer accounts directly (look for **Transfer accounts** or **Export accounts** in the app menu); Authy restores from its cloud backup. If the old phone is already gone, use a backup code to sign in, then ask your administrator to reset your two-factor setup so you can enrol the new phone.
+Set the new phone up *before* wiping the old one. Google Authenticator and Microsoft Authenticator can transfer accounts directly (look for **Transfer accounts** or **Export accounts** in the app menu); Authy restores from its cloud backup. If the old phone is already gone, ask your administrator to reset your two-factor setup so you can enrol the new phone at your next sign-in.
 
-**I lost my phone and I have no backup codes.**
-Contact your CapHive administrator. For security, nobody can bypass two-factor authentication for you remotely without that reset.
+**I lost my phone.**
+Contact your CapHive administrator and ask them to reset your two-factor method. For security, nobody can bypass two-factor authentication for you remotely without that reset. There are no backup codes — the administrator reset is the only way back in.
 
 **Can I use one app for CapHive and my other accounts?**
 Yes, and you should. One app can hold dozens of accounts.
@@ -212,4 +194,4 @@ No. CapHive verifies the code you type against a shared secret; it never sees yo
 
 ---
 
-For the complete picture of two-factor authentication in CapHive — including WhatsApp mode, backup codes and turning two-factor on or off — see the [Two-Factor Authentication User Guide](two_factor_authentication_user_guide).
+For the complete picture of two-factor authentication in CapHive — including WhatsApp mode, text message mode and turning two-factor on or off — see the [Two-Factor Authentication User Guide](two_factor_authentication_user_guide).

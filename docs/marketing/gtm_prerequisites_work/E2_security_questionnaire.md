@@ -70,7 +70,7 @@
 |---|---|---|
 | E1 | Authentication method | Email and password, with optional multi-factor authentication. |
 | E2 | Password policy | Minimum 8 characters, maximum 128, bcrypt cost 12. Account lockout after 6 failed attempts with automatic unlock after 5 minutes. Password reset links expire after 6 hours. **No complexity, rotation, history or expiry requirements are enforced.** |
-| E3 | Is MFA available? | **Yes, for every user, with three second factors:** authenticator app (TOTP, RFC 6238), WhatsApp, or SMS. Eight single-use backup codes are issued and stored hashed. |
+| E3 | Is MFA available? | **Yes, for every user, with three second factors:** authenticator app (TOTP, RFC 6238), WhatsApp, or SMS. There are no backup codes; recovery is an audited administrator reset that emails the account holder. |
 | E4 | Is MFA enforced? | **No — it is available and opt-in per user.** There is no organisation-wide enforcement setting today. If mandatory MFA is a requirement for your firm, tell us; it is on the roadmap. |
 | E5 | SAML / SSO federation (Okta, Entra ID)? | **No.** We do not support federated SSO today. We are an OAuth 2.0 / OpenID Connect **provider** for API and AI-client access (authorization-code flow, PKCE required, HTTPS-only redirect URIs) — that is a different capability and we do not want it mistaken for SSO. Federated SSO is our most-requested security roadmap item. |
 | E6 | Session timeout | 60 minutes. |

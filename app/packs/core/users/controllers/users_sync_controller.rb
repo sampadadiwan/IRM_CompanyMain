@@ -10,7 +10,7 @@ class UsersSyncController < ActionController::API
     last_sign_in_ip current_sign_in_ip
     failed_attempts unlock_token remember_created_at
     reset_password_token reset_password_sent_at
-    encrypted_password password_digest otp_secret otp_backup_codes
+    encrypted_password password_digest otp_secret
     api_token api_tokens invitation_token
     last_synced_ccf_hex last_synced_at entity_id
   ].freeze

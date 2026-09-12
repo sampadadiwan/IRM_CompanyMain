@@ -100,13 +100,6 @@ Then("the user's two-factor setup should not be complete") do
   expect(page).to have_current_path(new_user_session_path, wait: 10)
 end
 
-# SMS mode issues no backup codes — parked, matching WhatsApp mode. Asserted rather than
-# assumed, because the authenticator path DOES issue them from the same controller.
-Then("the user should have no backup codes") do
-  @user.reload
-  expect(JSON.parse(@user.otp_backup_codes || "[]")).to be_empty
-end
-
 Then("I should be signed in") do
   expect(page).to have_no_current_path(new_two_factor_path, wait: 10)
   expect(page).to have_no_current_path(new_user_session_path)

@@ -68,7 +68,6 @@ Feature: Two-Factor Authentication by SMS
     When I enter the texted code to confirm enrollment
     Then I should see "Two-factor authentication via text message is now enabled"
     And the user should have 2FA enabled in sms mode
-    And the user should have no backup codes
 
   Scenario: Wrong code during SMS enrollment
     Given the user has the phone number "+1" "4155550134"
@@ -169,7 +168,7 @@ Feature: Two-Factor Authentication by SMS
 
   Scenario: A user whose number stops being textable is told, not stranded
     # Otherwise the verification screen says "Code texted to …" and offers a code box for
-    # a message that was never sent — and SMS mode has no backup codes.
+    # a message that was never sent — and there are no backup codes.
     Given the user has the phone number "+1" "4155550134"
     And the user has two-factor authentication enabled in sms mode
     And an administrator changes the number to "44" "7700900123"

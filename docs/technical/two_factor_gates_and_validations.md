@@ -20,9 +20,9 @@ Read top to bottom: an outer layer being off makes every layer below it irreleva
 | Deployment | `SMS_OTP_ENABLED` | `.env.<rails_env>.<variant>` | `false` | SMS only, every tenant on that deployment | SMS mode hidden everywhere; sends refused before any API call |
 | Twilio account | Verify service credentials | `config/credentials/<env>.<variant>.yml.enc` | — | SMS only, whole account | `no_verify_service_configured` logged, delivery recorded as failed |
 | Twilio account | **Geo Permissions** | Twilio console | — | SMS only, whole account | Twilio rejects the send. **The app cannot see this in advance** — the user enrols, then cannot log in |
-| User | `users.two_factor_enabled` | User form toggle | `false` | That user, all modes | No 2FA challenge at all; password alone signs them in |
-| User | `users.two_factor_mode` | Chosen by the user at enrollment | `nil` | That user | `nil` sends them to the mode-selection screen on next login |
-| User | `users.whatsapp_enabled` | User form checkbox | `false` | That user, WhatsApp only | WhatsApp row renders greyed out with "contact your administrator" |
+| User | `users.two_factor_enabled` | User form toggle | `false` | That user, all modes | No 2FA challenge at all; password alone signs them in. Switching it **off also clears the method and secret** (`TwoFactorAuthenticatable#clear_two_factor_method_when_disabled`), so switching it back on starts at mode selection |
+| User | `users.two_factor_mode` | Written when the user **verifies** an enrollment code (never at mode selection) | `nil` | That user | `nil` sends them to the mode-selection screen on next login — so an abandoned enrollment is not a lockout |
+| User | `users.whatsapp_enabled` | User form checkbox | `false` | That user, WhatsApp only | WhatsApp row renders greyed out with "contact your administrator"; a user already in WhatsApp mode is refused at login with "contact your administrator" (same as the SMS case) |
 | User | `users.phone` / `call_code` | User form | — | That user, WhatsApp + SMS | Both phone modes disappear; authenticator is preselected |
 
 **Two traps in this table.**
@@ -82,7 +82,8 @@ The mode-selection screen is not a security boundary — the POST behind it is u
 | Point | Re-checks | Why |
 |---|---|---|
 | `select_mode` view | all | Renders the options |
-| `select_mode_post` | `whatsapp_otp_enabled?`, `sms_otp_enabled?` | Attacker-controlled body; without it a user can set themselves to a mode they can never satisfy and lock their own account out |
+| `select_mode_post` | `whatsapp_otp_enabled?`, `sms_otp_enabled?` | Attacker-controlled body; without it a user can be sent into an enrollment they can never complete. Writes nothing — the mode is committed by the verify action |
+| every enrollment action | `two_factor_mode.blank?` | A user with a verified method is sent back to the code screen; switching methods goes through `TwoFactorReset`, which re-proves the password |
 | `enroll_sms` (GET) | `sms_otp_enabled?` + cooldown | A GET that spends money |
 | `send_sms` (POST) | `sms_otp_enabled?` + cooldown | Costs money per call |
 | `TwoFactorDispatch` at login | `sms_otp_enabled?` | The number or the kill switch may have changed since enrollment |
@@ -175,7 +176,7 @@ load-bearing rather than redundant:
 
 - Every country enabled there is a country this application will dial.
 - A country the app offers but Geo Permissions blocks produces the worst failure in the
-  system: the user enrols in SMS successfully, then cannot log in, and **SMS mode issues no
+  system: the user enrols in SMS successfully, then cannot log in, and **there are no
   backup codes** — recovery is an administrator reset.
 
 `OtpSmsRateLimiter` is unchanged and remains the control that sees a toll-fraud pattern
@@ -194,7 +195,7 @@ spread across accounts.
 | Long window | 50 per 30 days | destination number | **`otp_deliveries` table** | `OtpSmsRateLimiter` |
 | Resend endpoint | 3 per 60s | client IP | Rack::Attack | `config/initializers/rack_attack.rb` |
 | UI cooldown | `min_number_window` (60s) | session | cookie | `TwoFactorController#recently_sent_sms?` |
-| Failed code entries | 3, then re-login | session | cookie | `TwoFactorController#create` |
+| Failed code entries | 3, then re-login (counter reset by each password login) | session | cookie | `TwoFactorController#create`, `TwoFactorDispatch` |
 | Verify attempts | 5 per verification | Twilio | Twilio | Twilio Verify |
 
 The 30-day window is counted in the database rather than the cache on purpose: SolidCache
@@ -218,6 +219,8 @@ same handset be re-saved in a different format to reset its own limit.
 | Resend too soon | `send_sms` | "Please wait a moment before requesting another code." | Wait 60s |
 | Durable limit hit | inside the job | "A new code is on its way" — then nothing arrives | Wait for the window; check `otp_deliveries` |
 | SMS-mode user whose number went bad | login | Refused before the code box: "contact your administrator" | Admin reset of the 2FA method |
+| WhatsApp-mode user whose flag or number went away | login | Refused before the code box: "contact your administrator" | Admin re-ticks WhatsApp / restores the number, or resets the method |
+| Signed-in user on a `/two_factor/*` URL | back button, bookmark | Redirected into the app | — |
 | 3 wrong codes | login | "Too many failed attempts. Please sign in again." | Sign in again |
 
 The "durable limit hit" row is the one that reads as a bug in a support ticket. The endpoint
@@ -229,13 +232,20 @@ lesser evil versus making the endpoint an oracle for probing the thresholds — 
 
 ---
 
-## 8. Backup codes
+## 8. Recovery — there are no backup codes
 
-| Mode | Backup codes | Consequence |
+No mode issues backup codes. Authenticator mode used to mint 8 single-use codes at
+enrollment; that was removed so every mode recovers the same way, through an administrator
+reset. The `users.otp_backup_codes` column is still in the schema but listed in
+`User.ignored_columns` — deploys migrate before the app restarts, so the drop is a
+follow-up release (remove the ignore line in the same change). The authenticator code screen tells the user so ("Lost your device? Contact your
+administrator").
+
+| Mode | Lost device / number | Recovery |
 |---|---|---|
-| Authenticator | 8, generated at enrollment, shown once | User can self-recover a lost device |
-| WhatsApp | **None** | Lost number → administrator reset |
-| SMS | **None** | Lost number → administrator reset |
+| Authenticator | Lost phone or app entry | Administrator reset |
+| WhatsApp | Lost number | Administrator reset |
+| SMS | Lost number | Administrator reset |
 
 Who may reset a method (`UserPolicy#reset_two_factor?`): the user themselves (they re-prove
 their password inside `TwoFactorReset`), a company admin of the same entity, or support. Only
@@ -252,7 +262,7 @@ the `nil` branch in `TwoFactorDispatch` already routes to mode selection.
 | Concern | File |
 |---|---|
 | Phone parsing, eligibility, region | `app/packs/core/users/models/concerns/sms_deliverable.rb` |
-| Mode predicates, send helpers, backup codes | `app/packs/core/users/models/concerns/two_factor_authenticatable.rb` |
+| Mode predicates, send helpers | `app/packs/core/users/models/concerns/two_factor_authenticatable.rb` |
 | Field validations | `app/packs/core/users/models/user.rb` |
 | Login branch across all three modes | `app/packs/core/users/controllers/concerns/two_factor_dispatch.rb` |
 | Enrollment, verification, resend | `app/packs/core/users/controllers/users/two_factor_controller.rb` |

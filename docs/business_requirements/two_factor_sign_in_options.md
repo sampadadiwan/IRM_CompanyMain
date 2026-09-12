@@ -15,14 +15,14 @@ A user is offered every method they qualify for, and picks one.
 
 | Method | Availability | What the user needs | If they lose access |
 |---|---|---|---|
-| **Authenticator app**<br>Google Authenticator, Authy, 1Password | Always offered | A free app on their phone. No signal or SIM needed — works on a plane or abroad | **Self-service** — 8 one-time backup codes are issued at setup |
+| **Authenticator app**<br>Google Authenticator, Authy, 1Password | Always offered | A free app on their phone. No signal or SIM needed — works on a plane or abroad | Administrator reset. No backup codes |
 | **WhatsApp**<br>Code sent to their WhatsApp | Conditional | A phone number on file, and an administrator confirming that number is on WhatsApp | Administrator reset. No backup codes |
 | **Text message**<br>Standard SMS | Conditional | A valid **mobile** number on file, and the feature switched on for their region | Administrator reset. No backup codes |
 
-> **Worth saying to a client up front.** Only the authenticator app lets a user recover on
-> their own. WhatsApp and text message have no backup codes, so a user who changes phone
-> number and loses access to the old one needs an administrator to reset their method before
-> they can sign in again.
+> **Worth saying to a client up front.** There are no backup codes in any mode. A user who
+> loses their phone, or changes number and loses access to the old one, needs an
+> administrator to reset their method before they can sign in again. The administrator does
+> this from the user's page; the user then chooses a method afresh at their next sign-in.
 
 ---
 
@@ -91,5 +91,5 @@ Users rarely meet these limits; support occasionally will.
 | "WhatsApp is greyed out" | The administrator hasn't confirmed the number is on WhatsApp | Client administrator ticks the WhatsApp setting on the user |
 | "Only the authenticator app is offered" | No phone number on file | Client administrator adds one |
 | "It said a code was sent but nothing came" | A sending limit was reached, or the number can't receive texts | We can confirm from the delivery record |
-| "I've lost my phone" | — | Authenticator: use a backup code. WhatsApp or text: administrator resets the method, user chooses again |
+| "I've lost my phone" | — | Administrator resets the method from the user's page; the user chooses a method again at next sign-in |
 | "It won't let me save this number" | The number is incomplete or the country code was entered twice | Correct the number; the error names the country code being applied |

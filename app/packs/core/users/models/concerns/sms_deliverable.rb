@@ -60,7 +60,7 @@ module SmsDeliverable
   # thing making an expensive destination unreachable. Two consequences:
   #
   #   * Geo Permissions must be widened to match, or a user enrols in SMS here and then
-  #     cannot log in — Twilio rejects the send and SMS mode has no backup codes.
+  #     cannot log in — Twilio rejects the send and there are no backup codes.
   #   * Geo Permissions is now load-bearing rather than a backstop. Every country left
   #     enabled there is a country this application will dial.
   #

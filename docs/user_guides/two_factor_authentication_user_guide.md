@@ -12,10 +12,9 @@
 4. [WhatsApp Mode — Setup](#whatsapp-mode--setup)
 5. [Authenticator App Mode — Setup](#authenticator-app-mode--setup)
 6. [Logging In with 2FA](#logging-in-with-2fa)
-7. [Using Backup Codes](#using-backup-codes)
-8. [Changing Your Verification Method](#changing-your-verification-method)
-9. [Disabling 2FA](#disabling-2fa)
-10. [Frequently Asked Questions](#frequently-asked-questions)
+7. [Changing Your Verification Method](#changing-your-verification-method)
+8. [Disabling 2FA](#disabling-2fa)
+9. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -79,7 +78,7 @@ sequenceDiagram
     else Authenticator selected
         S->>U: Show QR code
         U->>S: Scan + enter code from app
-        S->>U: Authenticator mode active + backup codes shown
+        S->>U: Authenticator mode active
     end
 ```
 
@@ -94,7 +93,7 @@ sequenceDiagram
 
 No app to install. No QR code to scan. Each time you log in going forward, a code is sent to your WhatsApp automatically.
 
-> WhatsApp mode does not generate backup codes. If you lose access to your WhatsApp number, contact your administrator to reset your 2FA.
+> If you lose access to your WhatsApp number, contact your administrator to reset your 2FA method.
 
 ---
 
@@ -118,10 +117,6 @@ If you cannot scan, tap **Enter key manually** in your app and type the secret k
 
 Enter the 6-digit code currently shown in your app and click **Confirm & Enable 2FA**.
 
-### Step 4: Save Your Backup Codes
-
-You will be shown **8 backup codes**. Save these immediately — they are shown only once and cannot be recovered. Store them in a password manager, safe, or printed copy.
-
 ```mermaid
 sequenceDiagram
     participant U as You
@@ -131,8 +126,6 @@ sequenceDiagram
     U->>A: Install app + scan QR code
     A->>U: Show 6-digit code
     U->>S: Enter code
-    S->>U: Show 8 backup codes
-    U->>U: Save backup codes
     S->>U: Signed in
 ```
 
@@ -162,16 +155,6 @@ Codes refresh every 30 seconds — if one fails, wait for the next one and try a
 
 ---
 
-## Using Backup Codes
-
-Backup codes are available for **Authenticator App mode** only. You receive 8 codes when you complete setup. Each code can be used **once**.
-
-To use a backup code, enter it on the verification screen instead of a 6-digit code.
-
-> After using a backup code, visit your profile to regenerate a fresh set if needed. If you run out of backup codes and lose your authenticator app, contact your administrator.
-
----
-
 ## Changing Your Verification Method
 
 You can switch from WhatsApp to the Authenticator app (or the other way round) at any
@@ -195,7 +178,7 @@ the next time you sign in. Two-factor authentication itself stays switched on th
 
 ### Asking your administrator
 
-If you cannot sign in at all (lost phone, changed number, no backup codes), your
+If you cannot sign in at all (lost phone, changed number, lost authenticator app), your
 administrator can do the same reset from your user page. They will see the same popup,
 including a reminder to confirm the request really came from you. You receive an email
 telling you the reset happened and who did it — **if you did not ask for it, contact your
@@ -210,9 +193,12 @@ administrator immediately.** Your next sign-in then asks you to choose a new met
 3. Uncheck **Enable Two-Factor Authentication**
 4. Click **Save**
 
-2FA is immediately disabled. You will no longer be asked for a code at login.
+2FA is immediately disabled. You will no longer be asked for a code at login. Your chosen
+method is forgotten at the same time, so if you switch 2FA back on later you will choose a
+method again at your next login — delete the old CapHive entry from your authenticator app
+if you had one.
 
-> If you cannot log in because you have lost access to your code (no WhatsApp, no app, no backup codes), contact your administrator to disable 2FA for your account.
+> If you cannot log in because you have lost access to your code (no WhatsApp, no app, no phone), contact your administrator to reset your 2FA method.
 
 ---
 
@@ -226,7 +212,7 @@ Check that your WhatsApp number is registered correctly. Ask your administrator 
 
 **What if I lose my phone?**
 - WhatsApp or text message mode: contact your administrator and ask them to reset your 2FA method. You will pick a new method at your next sign-in.
-- Authenticator mode: use a backup code to log in, then click **Change 2FA Method** on your Profile page and set it up again on your new phone. No backup codes left? Ask your administrator to reset it.
+- Authenticator mode: if you can still open the app on the old phone, transfer the account to the new phone first (see the [Authenticator App Setup Guide](authenticator_app_setup_user_guide)). If the old phone is gone, contact your administrator and ask them to reset your 2FA method; you will set it up again at your next sign-in.
 
 **Does 2FA apply to magic link logins?**
 Yes — if 2FA is enabled, you must complete verification after clicking a magic link too.
