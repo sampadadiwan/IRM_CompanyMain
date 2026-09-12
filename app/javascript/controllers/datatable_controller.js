@@ -48,6 +48,10 @@ export default class extends Controller {
           controller.restrictFocusableElements(table[key]);
           table[key].on('draw.dt', () => setupAccessiblePagination(table[key]));
           table[key].on('draw.dt', () => controller.restrictFocusableElements(table[key]));
+          // Paging only keeps the current page's <tr> elements in the DOM — rows for other
+          // pages are detached until their page is drawn — so a one-time scan at connect()
+          // misses every dropdown on pages beyond the first. Re-run it on every draw.
+          table[key].on('draw.dt', () => controller.initFixedStrategyDropdowns());
           // Responsive's collapsed-column "child" row is only built (cloning cell markup,
           // buttons included) the first time it's expanded — well after the tooltip
           // controller's initial scan — so any data-bs-toggle="tooltip" buttons that landed
@@ -57,12 +61,7 @@ export default class extends Controller {
 
       });
 
-      // Use position:fixed strategy so dropdowns inside the table escape overflow clipping
-      this.element.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(toggle => {
-        new bootstrap.Dropdown(toggle, {
-          popperConfig: { strategy: 'fixed' }
-        });
-      });
+      this.initFixedStrategyDropdowns();
 
       // Ensure DataTable is destroyed, else it gets duplicated
       $(document).on('turbo:before-cache', function() {
@@ -77,6 +76,22 @@ export default class extends Controller {
       if (searchTerm.length > 0) {
         table.search(searchTerm.val()).draw();
       }
+  }
+
+  // Use position:fixed strategy so dropdowns inside the table escape overflow clipping
+  // from the .table-responsive wrapper (which forces overflow-y:auto once overflow-x:auto
+  // is set). Guard against re-initializing dropdowns on every DataTable draw: `new
+  // bootstrap.Dropdown()` only overwrites the stored instance reference, it doesn't
+  // dispose the previous instance's listeners, and DataTables reuses row nodes across
+  // draws (e.g. paging back to a previously visited page).
+  initFixedStrategyDropdowns() {
+    this.element.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(toggle => {
+      if (bootstrap.Dropdown.getInstance(toggle)) return;
+
+      new bootstrap.Dropdown(toggle, {
+        popperConfig: { strategy: 'fixed' }
+      });
+    });
   }
 
   responsive() {
