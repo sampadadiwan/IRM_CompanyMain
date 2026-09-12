@@ -9,7 +9,8 @@
       
       <small class="text-muted">
         Create <%= link_to "New Instrument",
-          new_investment_instrument_path("investment_instrument[portfolio_company_id]": params[:portfolio_company_id]) %>
+          new_investment_instrument_path("investment_instrument[portfolio_company_id]": params[:portfolio_company_id],
+              "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": params[:fund_id], "portfolio_investment[entity_id]": params[:entity_id])) %>
       </small>
   
 <% end %>
