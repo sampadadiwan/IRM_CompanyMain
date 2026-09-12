@@ -250,8 +250,18 @@ namespace :sidekiq do
 
       # The start above is synchronous, but sidekiq still has to get through rvm,
       # bundler and a full eager-load before it sets its proctitle and becomes
-      # visible to pgrep, so poll rather than asserting immediately. 120s is
-      # generous headroom over a cold boot on this box.
+      # visible to pgrep, so poll rather than asserting immediately.
+      #
+      # 300s, not the 120s this used to be: DR drill dr_drill_in_2026_09_12_1404
+      # measured a genuinely fresh app-server AMI taking until ~3.5min after
+      # nginx:switch_app to register, because the AMI's own @reboot/monit config
+      # auto-starts a stale sidekiq (pointed at whatever Redis host was baked in
+      # at snapshot time) before this task ever runs — the same @reboot-race
+      # class of bug already documented for prometheus_exporter and xirr_py in
+      # dr_verify.rake. That false start dies almost immediately (wrong Redis
+      # host), but it burns real wall-clock before THIS task's start_cmd above
+      # gets a clean shot, so 120s was not "generous" on a fresh box, it was
+      # the actual bottleneck. 300s gives real margin over the observed ~210s.
       #
       # Then check the cwd of every sidekiq on the box against the release we just
       # published: Ruby resolves the `current` symlink to a physical path at boot,
@@ -267,12 +277,12 @@ namespace :sidekiq do
       end
 
       release = capture(:readlink, '-f', current_path).strip
-      probe   = "for i in $(seq 60); do pgrep -f '^sidekiq ' >/dev/null && break; sleep 2; done; " \
+      probe   = "for i in $(seq 150); do pgrep -f '^sidekiq ' >/dev/null && break; sleep 2; done; " \
                 "for p in $(pgrep -f '^sidekiq ' || true); do echo \"$p $(readlink /proc/$p/cwd 2>/dev/null || echo UNKNOWN)\"; done"
 
       workers = capture(probe).lines.map(&:strip).reject(&:empty?).map { |line| line.split(' ', 2) }
 
-      raise "sidekiq did not come up within 120s of being started — check #{shared_path}/log/sidekiq.log" if workers.empty?
+      raise "sidekiq did not come up within 300s of being started — check #{shared_path}/log/sidekiq.log" if workers.empty?
 
       # readlink reports a removed directory as "/path/to/release (deleted)", so a
       # stale worker never compares equal to the live release path.
