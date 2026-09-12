@@ -249,7 +249,9 @@
       <%= render "/kpi_reports/grid_view_chart", kpi_reports:, investor_kpi_mappings:, chart_configs: [], investor: investor  %>
     </div>
 
-    <% if params[:compound].present? %>
+    <%# .present? does not handle string "false" properly - and returns true
+    # so we use standard boolean casting instead of relying on .present? %>
+    <% if ActiveModel::Type::Boolean.new.cast(params[:compound]) %>
       <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:  %>
     <% else %>
       <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:  %>
