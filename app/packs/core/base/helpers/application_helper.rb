@@ -285,7 +285,7 @@ module ApplicationHelper
   end
 
   def sortable_header(q, attr, label, **)
-    sort_link(q, attr, **) do
+    sort_link(q, attr, hide_indicator: true, **) do
       active_sort = q.sorts.find { |s| s.name == attr.to_s }
 
       icon_up = ''.html_safe
@@ -293,9 +293,9 @@ module ApplicationHelper
 
       case active_sort&.dir
       when 'asc'
-        icon_down = content_tag(:span, "▼", class: "arrow")
-      when 'desc'
         icon_up = content_tag(:span, "▲", class: "arrow")
+      when 'desc'
+        icon_down = content_tag(:span, "▼", class: "arrow")
       else
         icon_up = content_tag(:span, "▲", class: "arrow")
         icon_down = content_tag(:span, "▼", class: "arrow")

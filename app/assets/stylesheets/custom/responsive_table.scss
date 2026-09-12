@@ -28,6 +28,14 @@ table.dataTable>thead>tr>th:not(.sorting_disabled), table.dataTable>thead>tr>td:
     padding-right: 5px;
 }
 
+/* Numeric columns (RansackTableRow's "num-col" cells) use proportional-width digits by
+   default, so e.g. a zero-heavy value like ₹3,81,60,00,000.00 renders visibly wider than a
+   same-length value like ₹7,01,53,81,164.00, making the column look inconsistently sized
+   even though it's sorted correctly. Tabular figures give every digit equal width. */
+td.num-col {
+    font-variant-numeric: tabular-nums;
+}
+
 
 /* Make the header link a flex container */
 th .sort_link {

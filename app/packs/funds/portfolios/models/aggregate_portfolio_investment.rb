@@ -12,7 +12,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   include AggregatePortfolioInvestmentShared
 
   # Adds dynamic search capabilities for monetary fields
-  include RansackerAmounts.new(fields: %w[sold_amount bought_amount fmv avg_cost])
+  include RansackerAmounts.new(fields: %w[sold_amount bought_amount fmv avg_cost gain])
 
   # Associations
   belongs_to :entity, touch: true
@@ -162,7 +162,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   include RansackerAmounts.new(fields: %w[avg_cost bought_amount sold_amount fmv cost_of_remaining cost_of_sold net_bought_amount transfer_amount unrealized_gain])
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[avg_cost bought_amount bought_quantity cost_of_remaining cost_of_sold fmv net_bought_amount portfolio_company_name quantity sold_amount sold_quantity transfer_amount transfer_quantity unrealized_gain updated_at]
+    %w[avg_cost bought_amount bought_quantity cost_of_remaining cost_of_sold fmv gain net_bought_amount portfolio_company_name quantity sold_amount sold_quantity transfer_amount transfer_quantity unrealized_gain updated_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)
