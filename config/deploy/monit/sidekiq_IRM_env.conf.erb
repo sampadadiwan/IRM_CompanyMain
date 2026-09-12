@@ -22,7 +22,7 @@
   # allocations (doc generation, allocations, exports) and RSS never returns to
   # the OS. Two arenas is the standard Ruby-server setting (same default Heroku
   # applies) and typically cuts steady-state Sidekiq RSS substantially.
-  start program = "/bin/su - ubuntu -c 'cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 ~/.rvm/bin/rvm default do bundle exec sidekiq -e <%= fetch(:stage) %>     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 &'" with timeout 30 seconds
+  start program = "/bin/su - ubuntu -c 'cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 setsid ~/.rvm/bin/rvm default do bundle exec sidekiq -e <%= fetch(:stage) %>     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 &'" with timeout 30 seconds
   # Delegated to a script (uploaded by IRM:setup) rather than inlined. The old
   # inline pipeline sent a bare SIGTERM and gave up after 10 seconds, which is
   # LESS than Sidekiq's own 25s graceful-shutdown timeout — so monit declared the

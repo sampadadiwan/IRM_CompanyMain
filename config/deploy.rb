@@ -241,7 +241,20 @@ namespace :sidekiq do
       # config/schedule.rb. Keep the three in sync (MALLOC_ARENA_MAX especially).
       # < /dev/null detaches stdin so SSHKit's channel closes instead of hanging
       # on the backgrounded process.
-      start_cmd = "cd #{current_path} && MALLOC_ARENA_MAX=2 ~/.rvm/bin/rvm default do " \
+      #
+      # setsid: `&` alone only backgrounds sidekiq from this shell's point of
+      # view — it stays in the SAME process GROUP as the `bash -lc` this runs
+      # under. When the SSH exec channel closes right after `sleep 3`, the
+      # remote shell can be sent SIGHUP, and without its own session that
+      # propagates to the whole group, killing a sidekiq that has not finished
+      # forking/opening its log yet — before it has written a single byte.
+      # That race is exactly what DR drill dr_drill_in_2026_09_12_1717 hit:
+      # this task reported success (the execute below returned 0), yet
+      # /home/ubuntu/IRM/shared/log/sidekiq.log shows NO entry at all for that
+      # attempt — not even a crash trace — and the probe below then correctly
+      # timed out. setsid detaches into a brand-new session immune to signals
+      # sent to the launching shell's group.
+      start_cmd = "cd #{current_path} && MALLOC_ARENA_MAX=2 setsid ~/.rvm/bin/rvm default do " \
                   "bundle exec sidekiq -e #{fetch(:stage)} " \
                   ">> #{shared_path}/log/sidekiq.log 2>&1 < /dev/null & sleep 3"
       execute :bash, '-lc', "'#{start_cmd}'"

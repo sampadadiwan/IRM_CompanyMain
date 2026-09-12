@@ -92,5 +92,5 @@ end
 sidekiq_restart_at = env_variant == 'us' ? '11:50 am' : '1:50 am'
 
 every 1.day, at: sidekiq_restart_at, roles: [:app] do
-  command "(sudo /usr/bin/monit unmonitor sidekiq_IRM_#{environment}; pkill -9 -f '^sidekiq [0-9]'; sleep 2; cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 ~/.rvm/bin/rvm default do bundle exec sidekiq -e #{environment}     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 & sleep 2; sudo /usr/bin/monit monitor sidekiq_IRM_#{environment}) >> /home/ubuntu/sidekiq_restart.log 2>&1"
+  command "(sudo /usr/bin/monit unmonitor sidekiq_IRM_#{environment}; pkill -9 -f '^sidekiq [0-9]'; sleep 2; cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 setsid ~/.rvm/bin/rvm default do bundle exec sidekiq -e #{environment}     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 & sleep 2; sudo /usr/bin/monit monitor sidekiq_IRM_#{environment}) >> /home/ubuntu/sidekiq_restart.log 2>&1"
 end
