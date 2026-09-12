@@ -429,6 +429,8 @@ export default class BaseAgGrid extends Controller {
             enablePivot: enablePivot,
             chartDataType: 'series',
             aggFunc: aggFunc,
+            type: 'numericColumn',
+            cellClass: 'right-align-cell',
             valueFormatter: function (params) {
               if (params.value != null) {
                 // Format the number with two decimal places and comma separators

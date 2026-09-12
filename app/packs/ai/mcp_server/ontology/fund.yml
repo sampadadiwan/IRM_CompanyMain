@@ -178,12 +178,6 @@ measures:
     expression: committed_amount - call_amount
     description: >-
       Dry powder. Not available as an aggregate; compute it per fund from the returned rows.
-  dpi:
-    expression: distribution_amount / call_amount
-    description: >-
-      Distributions to paid-in. Prefer the stored ratio from list_fund_ratios (name_eq DPI,
-      latest_true) over computing it here — the stored one follows the fund's own
-      methodology.
 
 caveats:
   - >-

@@ -641,7 +641,7 @@ class FundAssistantDataManager
 
     results = bounded_limit(results, limit)
 
-    results.map do |r|
+    mapped = results.map do |r|
       {
         id: r.id,
         fund_id: r.fund_id,
@@ -658,6 +658,21 @@ class FundAssistantDataManager
         view_link: "/fund_ratios/#{r.id}"
       }
     end
+
+    return mapped if mapped.present?
+
+    # Fund ratios (TVPI, DPI, RVPI, IRR, ...) are only ever available through this tool. An
+    # empty array here is ambiguous to a model -- it can read as "the metric doesn't exist yet"
+    # and invite it to derive one from calls/distributions instead. Say so explicitly so the
+    # correct answer is "no computed ratio is available" rather than a self-computed multiple.
+    {
+      results: [],
+      message: "No stored fund ratios found for the given fund(s)/filters. Fund ratios " \
+               "(TVPI, DPI, RVPI, IRR and similar) are only retrievable through this " \
+               "list_fund_ratios tool -- do not compute them yourself from calls, " \
+               "distributions or other raw data. Tell the user no computed ratio is " \
+               "available for this fund/date/scenario instead."
+    }
   end
 
   # Lists account entries based on filters.

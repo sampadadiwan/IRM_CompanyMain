@@ -38,3 +38,10 @@ end
 Then('the fund ratio results should include {string}') do |name|
   expect(@fund_ratio_result.pluck(:name)).to include(name)
 end
+
+Then('I should be told no computed fund ratios were found') do
+  expect(@fund_ratio_result).to be_a(Hash)
+  expect(@fund_ratio_result[:results]).to eq([])
+  expect(@fund_ratio_result[:message]).to include("No stored fund ratios found")
+  expect(@fund_ratio_result[:message]).to include("do not compute them yourself")
+end
