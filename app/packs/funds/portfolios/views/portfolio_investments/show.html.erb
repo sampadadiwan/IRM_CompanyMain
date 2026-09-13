@@ -253,6 +253,14 @@
                     <% end %>
                   <% end %>
 
+                  <%# Run CP/CS Agent for this specific portfolio investment %>
+                  <% if current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
+                    <button type="button" class="btn btn-outline-info"
+                            data-bs-toggle="modal" data-bs-target="#run-cp-cs-agent-pi-modal">
+                      <i class="ti ti-file-search"></i> Run CP/CS Agent
+                    </button>
+                  <% end %>
+
                   <% if policy(@portfolio_investment).destroy? %>
                     <%= button_to @portfolio_investment, method: :delete,
                                 class: "btn btn-outline-danger w-100", form_class: "deleteButton",
@@ -274,3 +282,15 @@
 <div>
     <%= render "portfolio_investments/details", portfolio_investment: @portfolio_investment %>
 </div>
+
+<%# CP/CS Agent run modal and progress panel for this specific PI %>
+<% if current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
+  <%= render "support_agents/agent_run_modal",
+             modal_id:         "run-cp-cs-agent-pi-modal",
+             agent_type:       "CpCsExtractionAgent",
+             target_type:      "PortfolioInvestment",
+             target_id:        @portfolio_investment.id,
+             description:      CpCsExtractionAgent::DESCRIPTION,
+             long_description: CpCsExtractionAgent::SINGLE_LONG_DESCRIPTION %>
+  <div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
+<% end %>
