@@ -186,7 +186,10 @@ class CpCsExtractionAgent < SideLetterObligationAgent
       # Extract from each matching document on this PI (e.g. SHA doc + SSA doc)
       pi_cited = []
       docs.each do |doc|
-        raw = ctx[:llm].ask(extraction_prompt(:portfolio_investments), with: [doc.file.url])
+        raw = ctx[:llm].ask(
+          extraction_prompt(:portfolio_investments, estimated_closing_date: ctx[:estimated_closing_date]),
+          with: [doc.file.url]
+        )
         rows = parse_response(raw)
         cited, _uncited = rows.partition { |r| r["source_clause"].to_s.strip.present? }
         pi_cited.concat(cited)

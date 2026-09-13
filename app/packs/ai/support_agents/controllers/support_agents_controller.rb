@@ -270,6 +270,8 @@ class SupportAgentsController < ApplicationController
       @report.save!
     end
 
+    # Forward optional estimated_closing_date from the run modal — used by
+    # CP/CS agent to calculate obligation due dates relative to Closing.
     SupportAgentJob.perform_later(
       support_agent_id: @support_agent.id,
       target_id: params[:target_id],
@@ -278,7 +280,8 @@ class SupportAgentsController < ApplicationController
       with_steps: target.present?,
       execution_mode: target.present? ? :single_company_with_steps : :adhoc_batch,
       rta_pdf_document_id: rta_pdf_document_id,
-      bank_statement_document_id: bank_statement_document_id
+      bank_statement_document_id: bank_statement_document_id,
+      estimated_closing_date: params[:estimated_closing_date].presence
     )
 
     respond_to do |format|

@@ -307,7 +307,10 @@ class SideLetterObligationAgent < SupportAgentService
       return true
     end
 
-    raw = ctx[:llm].ask(extraction_prompt(ctx[:source_mode]), with: [doc.file.url])
+    raw = ctx[:llm].ask(
+      extraction_prompt(ctx[:source_mode], estimated_closing_date: ctx[:estimated_closing_date]),
+      with: [doc.file.url]
+    )
     rows = parse_response(raw)
 
     cited, uncited = rows.partition { |r| r["source_clause"].to_s.strip.present? }
@@ -607,9 +610,16 @@ class SideLetterObligationAgent < SupportAgentService
 
   # @param source_mode [Symbol] :capital_commitments or :portfolio_investments
   # @return [String] LLM prompt tailored to the document type being extracted
-  def extraction_prompt(source_mode = :capital_commitments)
+  # Returns the extraction prompt for the given source mode. When an estimated
+  # closing date is provided (individual PI runs), the prompt instructs the LLM
+  # to calculate concrete due dates relative to that date.
+  #
+  # @param source_mode [Symbol] :portfolio_investments or :capital_commitments
+  # @param estimated_closing_date [String, nil] YYYY-MM-DD closing date for due-date calculation
+  # @return [String] the full extraction prompt
+  def extraction_prompt(source_mode = :capital_commitments, estimated_closing_date: nil)
     if source_mode == :portfolio_investments
-      portfolio_extraction_prompt
+      portfolio_extraction_prompt(estimated_closing_date: estimated_closing_date)
     else
       commitment_extraction_prompt
     end
@@ -648,8 +658,13 @@ class SideLetterObligationAgent < SupportAgentService
   # are deliberately excluded so the output stays focused on trackable
   # pre-/post-closing conditions.
   #
+  # When +estimated_closing_date+ is provided, the "Dates and deadlines" section
+  # instructs the LLM to calculate concrete next_due_date values relative to that
+  # date (e.g. "30 days prior to Closing" → actual YYYY-MM-DD).
+  #
+  # @param estimated_closing_date [String, nil] YYYY-MM-DD closing date for due-date calculation
   # @return [String] LLM prompt scoped to CP/CS extraction only
-  def portfolio_extraction_prompt
+  def portfolio_extraction_prompt(estimated_closing_date: nil)
     <<~PROMPT
       You are a legal analyst reviewing transaction documents relating to an investment,
       acquisition, subscription, or transfer of securities — including Shareholders
@@ -760,8 +775,16 @@ class SideLetterObligationAgent < SupportAgentService
 
       ## Dates and deadlines
       Capture timing as stated ("prior to Closing", "within 15 days following Closing").
-      Set next_due_date only where a concrete YYYY-MM-DD can be calculated from dates
-      in the document. If Closing has not occurred, return null.
+      #{if estimated_closing_date.present?
+          "The estimated Closing date is #{estimated_closing_date}. Use this date to calculate " \
+          "concrete next_due_date values for all obligations with timing relative to Closing " \
+          "(e.g. \"30 days prior to Closing\" with closing date 2026-12-15 → next_due_date 2026-11-15). " \
+          "For obligations with no relationship to Closing, set next_due_date only if determinable from " \
+          "other dates in the document, else null."
+        else
+          "Set next_due_date only where a concrete YYYY-MM-DD can be calculated from dates " \
+          "in the document. If Closing has not occurred, return null."
+        end}
 
       ## Confidence scoring
       - 0.95-1.00: expressly labelled CP/CS with clear timing

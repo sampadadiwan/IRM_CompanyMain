@@ -9,7 +9,9 @@
       target_id: @investor.id, description: PortfolioCompanyAgent::DESCRIPTION
 
   Required params: modal_id, agent_type, target_id, description
-  Optional params: target_type, long_description, extra_params, btn_text, modal_title
+  Optional params: target_type, long_description, extra_params, btn_text, modal_title,
+                   show_closing_date (renders an Estimated Closing Date picker for agents
+                   that calculate due dates relative to Closing)
   --------------------------------------------------------------------------------
 <% end %>
 
@@ -42,6 +44,23 @@
 
         <div class="modal-body">
           <%= render "support_agents/agent_description_content", short_desc: description, long_desc: long_desc %>
+
+          <%# Optional Estimated Closing Date picker — used by agents (e.g. CP/CS) that
+              calculate obligation due dates relative to Closing. The value is submitted
+              as params[:estimated_closing_date] and injected into the LLM prompt. %>
+          <% if local_assigns[:show_closing_date] %>
+            <div class="mb-3 mt-3">
+              <label for="<%= modal_id %>_closing_date" class="form-label fw-bold">
+                <i class="ti ti-calendar me-1"></i>Estimated Closing Date
+              </label>
+              <input type="date" class="form-control" name="estimated_closing_date"
+                     id="<%= modal_id %>_closing_date">
+              <div class="form-text">
+                Used to calculate due dates for obligations relative to Closing (e.g. "30 days prior to Closing").
+                Leave blank to skip date calculation.
+              </div>
+            </div>
+          <% end %>
         </div>
 
         <div class="modal-footer">
