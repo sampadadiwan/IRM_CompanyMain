@@ -160,19 +160,8 @@
               </span>
             <% end %>
 
-            <%# Run CP/CS Extraction Agent — extracts obligations from this
-                company's portfolio investment documents (SHA/SSA/SPA) %>
-            <% if @investor.entity.support_agents.set?(:cp_cs_extraction_agent) %>
-              <button type="button" class="dropdown-item"
-                      data-bs-toggle="modal" data-bs-target="#run-cp-cs-extraction-agent-modal">
-                <i class="ti ti-file-search"></i> Run CP/CS Agent
-              </button>
-            <% else %>
-              <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="CP/CS Extraction Agent is disabled. Contact support to enable it">
-                <i class="ti ti-file-search"></i> Run CP/CS Agent
-                <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
-              </span>
-            <% end %>
+            <%# CP/CS Agent removed from company-level — runs per PI from
+                the PI show page or the documents navigation instead. %>
           <% end %>
 
           <% if @investor.category == "Portfolio Company" %>
@@ -236,17 +225,7 @@
                    long_description: PresentationAnalystAgent::SINGLE_LONG_DESCRIPTION %>
       <% end %>
 
-      <%# CP/CS Extraction Agent confirmation modal — runs extraction scoped to
-          this portfolio company's investments with matching document tags %>
-      <% if @investor.entity.support_agents.set?(:cp_cs_extraction_agent) %>
-        <%= render "support_agents/agent_run_modal",
-                   modal_id:         "run-cp-cs-extraction-agent-modal",
-                   agent_type:       "CpCsExtractionAgent",
-                   target_type:      "Investor",
-                   target_id:        @investor.id,
-                   description:      CpCsExtractionAgent::DESCRIPTION,
-                   long_description: CpCsExtractionAgent::SINGLE_LONG_DESCRIPTION %>
-      <% end %>
+      <%# CP/CS Agent modal removed — runs per PI from PI show page or docs page %>
     <% end %>
 
   </div>
