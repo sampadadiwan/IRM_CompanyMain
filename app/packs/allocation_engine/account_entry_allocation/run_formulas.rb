@@ -11,11 +11,20 @@ module AccountEntryAllocation
     include ApplicationHelper
     include WithScratchSqlite
 
+    # Check results that make persist_check_results store them and build the report.
+    FLAGGED_CHECK_RESULTS = %w[fail warn].freeze
+
     step :setup_start_time
+    # Before anything is deleted: a failed pre-run check must leave the period's entries intact.
+    step :run_pre_checks
     step :delete_existing_entries
     step :load_sqlite_db
     step :get_commitments
     step :run_formulas
+    step :run_post_checks
+    # On both tracks, so check results reach the report however the run ended.
+    step :persist_check_results
+    left :persist_check_results, id: :ensure_persist_check_results
     step :generate_fund_ratios
     step :generate_soa
     step :cleanup_sqlite
@@ -339,6 +348,57 @@ module AccountEntryAllocation
       true
     end
 
+    # Pre/post-run checks: FundFormulas with rule type PreRunCheck/PostRunCheck. Every check of the
+    # kind runs even after one fails; any failure then stops the run, any warning only gets
+    # recorded. See docs/business_requirements/allocation_run_checks.md.
+    def run_pre_checks(ctx, **)
+      ctx[:check_results] = []
+      return true unless ctx[:run_allocations]
+
+      run_checks(ctx, :pre)
+    end
+
+    def run_post_checks(ctx, **)
+      return true unless ctx[:run_allocations]
+
+      # run_formulas can return true with the run already failed: the background loader records
+      # a migration error on the status and carries on rather than raising. Checking a ledger the
+      # run never finished writing would only bury that error under check failures.
+      status = ctx[:allocation_run]&.reload&.status
+      if ctx[:allocation_run] && status != "Success"
+        Rails.logger.warn { "run_post_checks: skipped for allocation run #{ctx[:allocation_run_id]}, status is #{status.inspect}" }
+        return true
+      end
+
+      run_checks(ctx, :post)
+    end
+
+    # Stores the check results on the run's AllocationRunReport and queues the report build, but
+    # only when a check failed or warned -- building the report is heavy aggregate SQL over
+    # account_entries, not worth running for a clean run. Runs on the failure track too (see the
+    # `left` wiring above), so it must never raise: a failure here would skip cleanup_sqlite.
+    def persist_check_results(ctx, **)
+      results = ctx[:check_results] || []
+      flagged = results.select { |r| FLAGGED_CHECK_RESULTS.include?(r["result"]) }
+      return true if flagged.empty?
+
+      report = record_check_results(ctx, results)
+      report_link = report && ActionController::Base.helpers.link_to("View the allocation run report", allocation_run_report_path(report),
+                                                                     class: 'mb-1 badge bg-primary-subtle text-primary')
+
+      if ctx[:check_failure_message]
+        notify([ctx[:check_failure_message], report_link].compact.join("<br>"), :danger, ctx[:user_id])
+      else
+        warned = flagged.size
+        notify(["#{warned} allocation #{'check'.pluralize(warned)} warned for #{ctx[:fund].name}", report_link].compact.join("<br>"), :warning, ctx[:user_id])
+      end
+      true
+    rescue StandardError => e
+      Rails.logger.error { "persist_check_results: failed for allocation run #{ctx[:allocation_run_id]}: #{e.message}\n#{e.backtrace&.first(10)&.join("\n")}" }
+      notify(ctx[:check_failure_message], :danger, ctx[:user_id]) if ctx[:check_failure_message]
+      true
+    end
+
     def delete_existing_entries(ctx, **)
       # We need to delete the existing entries only if we are running allocations
       return true unless ctx[:run_allocations]
@@ -611,7 +671,18 @@ module AccountEntryAllocation
       AccountEntry.connection.execute(AccountEntry.sanitize_sql_for_assignment([sql, allocation_run_id]))
     end
 
+    # Pre/post-run checks write no entries, so they are kept out of the formula loop, the commitment
+    # cache dependency scan and the delete-before-run scope, all of which read this list.
     def get_formulas(ctx)
+      formulas_in_scope(ctx).without_run_checks
+    end
+
+    # The enabled checks of one kind, picked by the run's rule_for and tags exactly like formulas.
+    def get_run_checks(ctx, kind)
+      formulas_in_scope(ctx).where(rule_type: RunChecks::KINDS.fetch(kind))
+    end
+
+    def formulas_in_scope(ctx)
       fund     = ctx[:fund]
       rule_for = ctx[:rule_for]
       tag_list = ctx[:tag_list]
@@ -620,6 +691,56 @@ module AccountEntryAllocation
       formulas = formulas.where(rule_for: rule_for) if rule_for.present?
       formulas = formulas.with_tags(tag_list.split(",")) if tag_list.present?
       formulas
+    end
+
+    # @return [Boolean] false when any check failed, which sends the operation down the failure track
+    def run_checks(ctx, kind)
+      checks = get_run_checks(ctx, kind).to_a
+      return true if checks.empty?
+
+      label = kind == :pre ? "Pre-run" : "Post-run"
+      notify("Running #{checks.size} #{label.downcase} #{'check'.pluralize(checks.size)} for #{ctx[:fund].name}", :info, ctx[:user_id])
+
+      results = RunChecks.new(checks, kind:, fund: ctx[:fund], start_date: ctx[:start_date],
+                                      end_date: ctx[:end_date], allocation_run: ctx[:allocation_run]).call
+      ctx[:check_results].concat(results)
+
+      failed = results.select { |r| r["result"] == "fail" }
+      return true if failed.empty?
+
+      # Also the AllocationRun status, so it reads like every other failure: AllocationRunReport
+      # check 1.1 and AllocationGroupRunJob both treat any status but Success as a failed run.
+      message = "#{label} checks failed (#{failed.size}): " + failed.map { |r| "#{r['name']}: #{r['summary']}" }.join("; ")
+      message = message.truncate(2000)
+      Rails.logger.error { "run_checks: allocation run #{ctx[:allocation_run_id]} for fund #{ctx[:fund].id}: #{message}" }
+      ctx[:allocation_run]&.update_column(:status, message)
+      ctx[:error] = message
+      ctx[:check_failure_message] = message
+      false
+    end
+
+    # Merges this run's check results into its AllocationRunReport (creating it when the run has
+    # none yet) and queues the report build. run_checks is kept apart from the report's own
+    # findings: a rebuild recomputes findings from the ledger but cannot recompute check results,
+    # which describe the data at the moment the run happened.
+    # @return [AllocationRunReport, nil]
+    def record_check_results(ctx, results)
+      allocation_run = ctx[:allocation_run]
+      return nil unless allocation_run
+
+      report = AllocationRunReport.find_or_initialize_by(allocation_run:)
+      report.assign_attributes(
+        entity_id: allocation_run.entity_id,
+        fund_id: allocation_run.fund_id,
+        user_id: allocation_run.user_id,
+        status: "Pending",
+        message: nil,
+        checked_at: nil,
+        json_fields: (report.json_fields || {}).merge("run_checks" => results)
+      )
+      report.save!
+      AllocationRunReportJob.perform_later(report.id)
+      report
     end
 
     # Scans every in-scope formula's source (FundFormula#referenced_field_names) to

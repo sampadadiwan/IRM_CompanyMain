@@ -18,15 +18,16 @@
 # log/grafana_health_dashboard.html - per-region panel tables plus a strip of
 # dots for the last two weeks of runs, same spirit as
 # bin/check_db_backup_freshness's log/db_backup_dashboard.html. By default it
-# only opens in the browser when something needs attention (DASHBOARD_OPEN=problem);
-# set DASHBOARD_OPEN=always to open it on every run, or =never for notification only.
+# opens in the browser on every run (DASHBOARD_OPEN=always); set
+# DASHBOARD_OPEN=problem to only open it when something needs attention, or
+# =never for notification only.
 #
-# Silent while healthy — like the hourly DB backup watchdog, a popup every run
-# would train you to dismiss it unread. A run is a FAILURE only when a panel is
-# in its RED threshold band or returned no data at all (exporter unreachable);
-# YELLOW (early-warning) panels are logged but never pop a notification — no
-# Grafana alert rule pages on yellow either, so parity says this shouldn't. The
-# same reasoning is why DASHBOARD_OPEN defaults to problem-only, not always.
+# Notifications stay silent while healthy — like the hourly DB backup
+# watchdog, a desktop popup every run would train you to dismiss it unread.
+# A run is a FAILURE only when a panel is in its RED threshold band or
+# returned no data at all (exporter unreachable); YELLOW (early-warning)
+# panels are logged but never pop a notification — no Grafana alert rule
+# pages on yellow either, so parity says this shouldn't.
 #
 # Rails is never booted directly here - each region's check runs in its own
 # `bundle exec rake` subprocess (needed anyway: the task reads that region's
@@ -88,10 +89,11 @@ def which(cmd)
 end
 
 # Opens the dashboard in the browser. DASHBOARD_OPEN tunes this:
-#   problem (default) open only when something needs attention - this run is
-#           twice a day, every day, so opening a browser window on a clean run
-#           would contradict the "silent while healthy" design above
-#   always  open every run regardless, like check_db_backup_freshness's daily
+#   always  (default) open every run regardless, like
+#           check_db_backup_freshness's daily
+#   problem open only when something needs attention - this run is twice a
+#           day, every day, so this trades a browser window on every clean
+#           run for staying quiet unless something needs attention
 #   never   notification only
 #
 # Spawn + detach for the same reason as check_db_backup_freshness#open_dashboard:
@@ -99,7 +101,7 @@ end
 # browser process and blocks until the window closes - a plain system() here
 # would leave the cron job alive until you quit the browser.
 def open_dashboard(problem:)
-  mode = ENV.fetch('DASHBOARD_OPEN', 'problem')
+  mode = ENV.fetch('DASHBOARD_OPEN', 'always')
   return if mode == 'never' || (mode == 'problem' && !problem)
 
   browser = ENV['DASHBOARD_BROWSER'] || %w[google-chrome google-chrome-stable xdg-open].filter_map { |b| which(b) }.first
@@ -274,9 +276,9 @@ def cmd_cron
     # Notifies on FAILURE only - see bin/check_grafana_health for why.
     # Leaves a dashboard you can open any time (panel status + last two weeks
     # of runs per region): log/grafana_health_dashboard.html
-    # Opens it in Chrome automatically when something needs attention. Put
-    # DASHBOARD_OPEN=always in front of the command below to open it on every
-    # run, or =never for notification only.
+    # Opens it in Chrome automatically on every run. Put
+    # DASHBOARD_OPEN=problem in front of the command below to only open it
+    # when something needs attention, or =never for notification only.
     0 8 * * * #{invoke}
     0 18 * * * #{invoke}
 

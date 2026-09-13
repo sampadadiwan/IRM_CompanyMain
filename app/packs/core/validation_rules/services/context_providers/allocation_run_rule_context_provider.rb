@@ -36,86 +36,30 @@ class AllocationRunRuleContextProvider
     scope.order(created_at: :desc).first
   end
 
-  # Returns a comma-separated string of portfolio company names that have no valuation
-  # (owner_type: Investor) within [end_date - n_days, end_date].
-  # Only checks companies with an active position (net quantity > 0) as of end_date —
-  # companies with no investment yet or fully exited by end_date are excluded.
-  # Returns nil when the fund has no active portfolio investments (rule not applicable).
-  # Returns nil (empty result) when all companies have valuations — rule does not fire.
+  # Comma-separated names of held portfolio companies with no valuation in the window.
+  # nil when the fund has no active position (rule not applicable) or every company is valued.
+  # The rules themselves live in AllocationRunReadiness, shared with the fund-level pre-run checks.
   def missing_valuation_companies(record, end_date, n_days)
     return nil if record.fund_id.blank?
 
-    # Only include portfolio companies with a positive net quantity as of end_date,
-    # so fully-exited or not-yet-invested companies don't trigger the warning.
-    pc_ids = PortfolioInvestment.where(fund_id: record.fund_id)
-                                .where(investment_date: ..end_date)
-                                .group(:portfolio_company_id)
-                                .having("SUM(quantity) > 0")
-                                .pluck(:portfolio_company_id)
-    return nil if pc_ids.empty?
+    fund = Fund.find_by(id: record.fund_id)
+    return nil unless fund
 
-    since = end_date - n_days.days
-
-    # Collect IDs of portfolio companies with at least one valuation in the window
-    valued_ids = Valuation.unscoped
-                          .where(owner_type: "Investor", owner_id: pc_ids)
-                          .where(valuation_date: since..end_date)
-                          .distinct
-                          .pluck(:owner_id)
-                          .to_set
-
-    missing_ids = pc_ids.reject { |id| valued_ids.include?(id) }
-    return nil if missing_ids.empty?
-
-    # Resolve names in one query and return as a readable comma-separated string
-    Investor.where(id: missing_ids).pluck(:investor_name).join(", ")
+    missing = AllocationRunReadiness.new(fund:, entity_id: record.entity_id, end_date:, n_days:).missing_valuation_companies
+    missing.presence&.map(&:last)&.join(", ")
   end
 
-  # Returns a comma-separated string describing each missing FX rate and who needs it.
-  # Format: "USD → INR (USStock, feeder: Offshore Fund), INR → USD (tracking currency)"
-  #
-  # Three sources are checked:
-  #   instruments  — instrument.currency → fund.currency, labelled by instrument name
-  #   feeders      — feeder.currency → fund.currency, labelled "feeder: <name>"
-  #   tracking     — fund.currency → fund.tracking_currency, labelled "tracking currency"
-  #
-  # When multiple sources share the same (from, to) pair their labels are merged.
-  # Returns nil when no foreign currencies exist (nothing to check) or all rates are present.
+  # Each missing FX rate and who needs it, e.g.
+  # "USD → INR (USStock, feeder: Offshore Fund), INR → USD (tracking currency)".
+  # nil when the fund needs no foreign rate or every rate is present. See AllocationRunReadiness.
   def missing_fx_rates(record, entity, end_date, n_days)
     return nil if record.fund_id.blank?
 
     fund = Fund.find_by(id: record.fund_id)
     return nil unless fund
 
-    since = end_date - n_days.days
-
-    # Accumulate named sources per (from, to) pair
-    sources = Hash.new { |h, k| h[k] = [] }
-
-    fund.investment_instruments
-        .reject { |i| i.currency.blank? || i.currency == fund.currency }
-        .group_by(&:currency)
-        .each do |currency, instruments|
-      sources[[currency, fund.currency]].concat(instruments.map(&:name).uniq)
-    end
-
-    fund.feeder_funds
-        .reject { |f| f.currency.blank? || f.currency == fund.currency }
-        .group_by(&:currency)
-        .each do |currency, feeders|
-      sources[[currency, fund.currency]].concat(feeders.map { |f| "feeder: #{f.name}" }.uniq)
-    end
-
-    sources[[fund.currency, fund.tracking_currency]] << "tracking currency" if fund.has_tracking_currency?
-
-    return nil if sources.empty?
-
-    missing = sources.reject do |(from, to), _|
-      ExchangeRate.where(entity_id: entity.id, from:, to:)
-                  .exists?(as_of: since..end_date)
-    end
-
-    return nil if missing.empty?
+    missing = AllocationRunReadiness.new(fund:, entity_id: entity.id, end_date:, n_days:).missing_fx_rates
+    return nil if missing.blank?
 
     missing.map { |(from, to), labels| "#{from} → #{to} (#{labels.join(', ')})" }.join(", ")
   end

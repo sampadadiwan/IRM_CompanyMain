@@ -30,6 +30,12 @@ class AllocationRunReportBuild < Trailblazer::Operation
   # The entry_type ComputeCustomPercentage stamps on every percentage it generates.
   PERCENTAGE_ENTRY_TYPE = "Percentage".freeze
 
+  # Pre/post-run check kinds as RunChecks stores them, with the finding code and label each gets.
+  RUN_CHECK_KINDS = { "pre" => ["1.5", "Pre-run"], "post" => ["1.6", "Post-run"] }.freeze
+
+  # RunChecks' "warn" is the report's "warn"; every other result name is already a severity.
+  RUN_CHECK_SEVERITY = { "pass" => "pass", "warn" => "warn", "fail" => "fail", "skipped" => "skipped" }.freeze
+
   # What RunFormulas sets when it starts, and leaves behind if the worker dies mid-run.
   RUNNING_STATUS = "Pending".freeze
 
@@ -75,6 +81,7 @@ class AllocationRunReportBuild < Trailblazer::Operation
   step :check_silent_formulas     # 1.2
   step :check_missing_folios      # 1.3
   step :check_period_continuity   # 1.4
+  step :check_run_checks          # 1.5.n / 1.6.n
   step :check_fund_totals         # 2.1
   step :check_cumulative_totals   # 2.2
   step :check_percentages         # 2.3
@@ -92,6 +99,11 @@ class AllocationRunReportBuild < Trailblazer::Operation
     # ledger produces a page of failures that say nothing about the run, so every check below
     # 1.1 sits this one out and the reviewer is told to check again when it has finished.
     ctx[:ledger_complete] = ctx[:allocations_run] && ctx[:allocation_run].status != RUNNING_STATUS
+    # A run stopped by a failed pre-run check never deleted, loaded or computed anything, so it
+    # has no entries of its own either: 1.2 would list every formula as silent and 1.3 every folio
+    # as missed. The stored results are the only evidence; they are what check_run_checks shows.
+    ctx[:pre_checks_failed] = report.run_checks.any? { |r| r["kind"] == "pre" && r["result"] == "fail" }
+    ctx[:ledger_complete] &&= !ctx[:pre_checks_failed]
     # Whether this run is young enough for the columns each check reads to have existed.
     created_on = ctx[:allocation_run].created_at&.to_date || Date.current
     ctx[:entries_tagged] = created_on >= ENTRY_TAGGING_STARTED_ON
@@ -131,6 +143,28 @@ class AllocationRunReportBuild < Trailblazer::Operation
     end
   end
 
+  # 1.5.n / 1.6.n The fund's own pre-run and post-run checks (FundFormulas with rule type
+  # PreRunCheck / PostRunCheck). Unlike every other check here they cannot be recomputed from the
+  # ledger -- they describe the data at the moment the run happened -- so they are read back from
+  # what AccountEntryAllocation::RunFormulas stored on this report, one finding per check, rows
+  # and all. See docs/business_requirements/allocation_run_checks.md.
+  #
+  # The engine only stores results when a check failed or warned. For a kind with nothing stored,
+  # a single summary finding says what can still be concluded from the run's status.
+  def check_run_checks(ctx, report:, allocation_run:, fund:, **)
+    stored = report.run_checks
+
+    RUN_CHECK_KINDS.each do |kind, (code, label)|
+      results = stored.select { |r| r["kind"] == kind }
+      if results.any?
+        results.each_with_index { |result, index| add_run_check(ctx, "#{code}.#{index + 1}", result) }
+      else
+        summarise_unrecorded_run_checks(ctx, kind, code, label, allocation_run, fund)
+      end
+    end
+    true
+  end
+
   # 1.2 The formulas in scope are exactly the ones the engine would have picked up for this
   # run's rule_for and tags (RunFormulas#get_formulas). A formula that produced nothing is
   # usually a condition that never matched, which is legitimate — hence a warning.
@@ -138,7 +172,8 @@ class AllocationRunReportBuild < Trailblazer::Operation
     return skipped_no_allocations(ctx, "1.2", "Every enabled formula produced at least one entry") unless ctx[:ledger_complete]
     return skipped_untagged(ctx, "1.2", "Every enabled formula produced at least one entry") unless ctx[:entries_tagged]
 
-    formulas = FundFormula.enabled.where(fund_id: fund.id).order(sequence: :asc)
+    # Checks never write entries, so every one of them would otherwise be listed as silent.
+    formulas = FundFormula.enabled.without_run_checks.where(fund_id: fund.id).order(sequence: :asc)
     formulas = formulas.where(rule_for: allocation_run.rule_for) if allocation_run.rule_for.present?
     # Split exactly as RunFormulas#get_formulas does — no strip. with_tags matches with
     # LIKE '%tag%', so stripping would widen the match and pull in formulas the run never had
@@ -426,14 +461,18 @@ class AllocationRunReportBuild < Trailblazer::Operation
              else "Pass"
              end
 
+    # Merged into what is stored now, not what was loaded when this build started: the allocation
+    # engine can record run_checks on this row while the build is running, and a wholesale
+    # replace from the stale copy would erase them for good.
+    stored = report.class.where(id: report.id).pick(:json_fields) || {}
     report.update!(
       status: status,
       checked_at: Time.current,
       message: nil,
-      json_fields: {
+      json_fields: stored.merge(
         "findings" => findings.map(&:to_h),
         "duration_ms" => ((Time.current - ctx[:started_at]) * 1000).round
-      }
+      )
     )
     true
   end
@@ -526,12 +565,57 @@ class AllocationRunReportBuild < Trailblazer::Operation
   end
 
   def skipped_no_allocations(ctx, code, title)
-    reason = if ctx[:allocations_run]
+    reason = if ctx[:pre_checks_failed]
+               "This run was stopped by a failed pre-run check before it computed anything, so there are no entries to check."
+             elsif ctx[:allocations_run]
                "This run has not finished, so its entries are not complete enough to check."
              else
                "This run did not run allocation formulas, so it produced no entries to check."
              end
     skipped(ctx, code, title, reason)
+  end
+
+  # A stored check result is already laid out as columns + value rows + parallel filters (see
+  # AccountEntryAllocation::CheckFailed), so it becomes a Finding as-is rather than through #add.
+  def add_run_check(ctx, code, result)
+    ctx[:findings] << Finding.new(code:, title: result["name"], group: "run",
+                                  severity: RUN_CHECK_SEVERITY.fetch(result["result"], "fail"),
+                                  summary: result["summary"], columns: result["columns"],
+                                  rows: result["rows"], filters: result["filters"],
+                                  truncated: [result["truncated"].to_i, 0].max)
+  end
+
+  # Nothing stored for this kind. Because a failed check stops the run and a failed or warning
+  # check always gets stored, the run's status is enough to say whether every check passed:
+  #   - no check of this kind in scope             -> skipped
+  #   - run not run allocations / still running    -> skipped
+  #   - pre-run: the run got past its checks       -> pass (any status other than Pending/blank
+  #     means the steps after run_pre_checks ran, and a pre-run failure would have been stored)
+  #   - post-run: the run finished with Success    -> pass; otherwise the run stopped before its
+  #     post-run checks ran -> skipped
+  # Only check formulas created before the run count: one added since could not have run.
+  def summarise_unrecorded_run_checks(ctx, kind, code, label, allocation_run, fund)
+    title = "#{label} checks passed"
+    checks = FundFormula.enabled.where(fund_id: fund.id, rule_type: kind == "pre" ? FundFormula::PRE_RUN_CHECK : FundFormula::POST_RUN_CHECK)
+                        .where(created_at: ..allocation_run.created_at)
+    checks = checks.where(rule_for: allocation_run.rule_for) if allocation_run.rule_for.present?
+    # Split exactly as RunFormulas#formulas_in_scope does -- see check_silent_formulas.
+    checks = checks.with_tags(allocation_run.tag_list.split(",")) if allocation_run.tag_list.present?
+    count = checks.count
+
+    return skipped(ctx, code, title, "This fund had no #{label.downcase} checks in scope for this run.") if count.zero?
+    return skipped(ctx, code, title, "This run did not run allocation formulas, so it ran no checks.") unless ctx[:allocations_run]
+
+    status = allocation_run.status
+    return skipped(ctx, code, title, "This run has not finished, so its #{label.downcase} checks have no result yet.") if status.blank? || status == RUNNING_STATUS
+
+    checks_noun = "#{count} #{label.downcase} #{'check'.pluralize(count)}"
+    if kind == "pre" || status == "Success"
+      pass(ctx, code, title, "The run got past its #{checks_noun}, so none of them failed. " \
+                             "Individual results are only kept when a check fails or warns.")
+    else
+      skipped(ctx, code, title, "The run stopped before its #{checks_noun} ran.")
+    end
   end
 
   # Checks build their rows as hashes because that reads better at the call site; the column

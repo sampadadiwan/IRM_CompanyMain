@@ -60,7 +60,7 @@ namespace :allocation do
 
       report = AllocationRunReport.find_or_initialize_by(allocation_run: run)
       report.assign_attributes(entity_id: run.entity_id, fund_id: run.fund_id, user: user,
-                               status: "Pending", message: nil, checked_at: nil, json_fields: {})
+                               status: "Pending", message: nil, checked_at: nil, json_fields: report.json_fields_for_recheck)
       report.save!
 
       if inline

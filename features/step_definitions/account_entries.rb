@@ -89,6 +89,28 @@ Then("I get the error on AllocationRun creation") do
 	 expect(page).to have_text("This AllocationRun already exists for the specified period and is locked")  # Wait for the error message
 end
 
+# A second locked run on the same fund with an overlapping-but-different date range --
+# reproduces the fund-319 incident where AllocationRunsController#unlock only matched
+# on exact end_date, so a run like this one (different end_date, same overlap) stayed
+# locked and kept blocking new runs even after "unlocking" the visible run.
+Given("there is another locked AllocationRun on the same fund overlapping the same period with a later end date") do
+	@other_allocation_run = art_create_allocation_run(@fund, start_date: @allocation_run.start_date,
+	                                                          end_date: @allocation_run.end_date + 30.days,
+	                                                          locked: true)
+end
+
+When("I unlock the AllocationRun") do
+	visit allocate_form_fund_path(@fund.id)
+	first('tbody tr').find('.dtr-control').click
+	find(:css, "button[aria-label='Unlock']").click
+	sleep(1)
+end
+
+Then("both AllocationRuns should be unlocked") do
+	expect(@allocation_run.reload.locked).to(be_falsey)
+	expect(@other_allocation_run.reload.locked).to(be_falsey)
+end
+
 
 Given('I am at the capital commitment page') do
   @capital_commitment = CapitalCommitment.last

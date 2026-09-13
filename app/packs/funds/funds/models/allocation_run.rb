@@ -25,12 +25,12 @@ class AllocationRun < ApplicationRecord
   scope :locked, -> { where(locked: true) }
   scope :successful, -> { where(status: "Success") }
   scope :pending, -> { where(status: "Pending") }
-
+  scope :overlapping, ->(start_date, end_date) { where("start_date <= ? AND end_date >= ?", end_date, start_date) }
 
   def self.locked_and_overlapping(fund_id, start_date, end_date)
     where(fund_id:)
       .locked
-      .where("start_date <= ? AND end_date >= ?", end_date, start_date)
+      .overlapping(start_date, end_date)
       .first
   end
 
