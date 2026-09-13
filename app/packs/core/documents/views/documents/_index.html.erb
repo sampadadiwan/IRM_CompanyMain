@@ -258,16 +258,16 @@ if false && msg.present?
 
 <%# CP/CS Agent run modal and progress panel — rendered outside the main content
     so Bootstrap modal positioning is not affected by any parent container-type CSS.
-    Runs at company level (Investor target) so the agent processes all PIs under
-    this portfolio company that have tagged documents — the folder is shared across
-    PIs so a single-PI target would be arbitrary.
+    Runs per PI — each document row's onclick sets target_id to its owner PI before
+    opening this shared modal. The default target_id is a placeholder overwritten
+    by the per-row button.
     The progress_panel_new div is the Turbo Stream target for step-by-step progress. %>
-<% if @folder&.owner.is_a?(PortfolioInvestment) && current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
+<% if current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
   <%= render "support_agents/agent_run_modal",
              modal_id:         "run-cp-cs-agent-from-docs-modal",
              agent_type:       "CpCsExtractionAgent",
-             target_type:      "Investor",
-             target_id:        @folder.owner.portfolio_company_id,
+             target_type:      "PortfolioInvestment",
+             target_id:        0,
              description:      CpCsExtractionAgent::DESCRIPTION,
              long_description: CpCsExtractionAgent::SINGLE_LONG_DESCRIPTION %>
   <div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
