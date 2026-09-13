@@ -778,7 +778,7 @@ SCHEMA_capital_commitments="
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   form_type_id BIGINT,
-  percentage DECIMAL(11,8),
+  percentage DECIMAL(20,10),
   ppm_number BIGINT,
   folio_id VARCHAR(40),
   investor_signatory_id BIGINT,
