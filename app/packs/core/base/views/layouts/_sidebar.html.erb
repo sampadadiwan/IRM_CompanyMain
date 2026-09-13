@@ -19,11 +19,6 @@
             <span><i class="ti ti-help"></i></span>
             <span class="hide-menu"><%= t('sidebar.support_mapping') %></span></a>
         </li>
-        <li class="sidebar-item">
-          <a class="sidebar-link" href="/blazer">
-            <span><i class="ti ti-files"></i></span>
-            <span class="hide-menu"><%= t('sidebar.blazer_reports') %></span></a>
-        </li>
       <% end %>
       <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role)  %>
         <!-- Divider -->
