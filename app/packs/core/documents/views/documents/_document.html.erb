@@ -31,15 +31,14 @@
   <% unless lp_view %>
     <td class="action-col">
       <%= link_to  t_common(:show), document, class: "btn btn-outline-primary ti ti-eye" %>
-      <%# Per-document CP/CS Agent run — shown when the document belongs to a
-          PortfolioInvestment and the CP/CS agent is enabled for this entity.
-          Clicking sets the shared modal's target_id to this document's PI owner
-          before Bootstrap opens the modal. %>
-      <% if document.owner_type == "PortfolioInvestment" && current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
+      <%# Per-document CP/CS Agent run — shown when the folder belongs to a
+          PortfolioInvestment and the CP/CS agent is enabled. The folder owner
+          (a PI) is used as the target, since documents may have varying owner_types
+          depending on which page they were uploaded from. %>
+      <% if @folder&.owner.is_a?(PortfolioInvestment) && current_user.entity&.support_agents&.set?(:cp_cs_extraction_agent) %>
         <button type="button" class="btn btn-outline-secondary ti ti-file-search ms-1"
                 title="Run CP/CS Agent on this document"
-                data-bs-toggle="modal" data-bs-target="#run-cp-cs-agent-from-docs-modal"
-                onclick="var f=document.querySelector('#run-cp-cs-agent-from-docs-modal input[name=target_id]');if(f)f.value='<%= document.owner_id %>'">
+                data-bs-toggle="modal" data-bs-target="#run-cp-cs-agent-from-docs-modal">
         </button>
       <% end %>
     </td>
