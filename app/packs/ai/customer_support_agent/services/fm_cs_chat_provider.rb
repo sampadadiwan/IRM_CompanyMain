@@ -33,6 +33,8 @@ class FmCsChatProvider < BaseChatProvider
       - For "how to" questions, search user guides FIRST before querying the database
       - For data questions, use the query tool with proper entity scoping
       - Always reference specific feature names, menu paths, or data from your sources
+      - Only give menu paths, button names, tabs and links that appear in the guide search results (or FAQ entries) you retrieved. Never construct a plausible-sounding path such as "Funds → X → New Y". If the results don't show where something is, search again with different words (the screen's own labels, synonyms), and if still not found say so and offer to escalate
+      - When an FAQ entry answers the question, quote its steps and include its link
       - Format responses in Markdown — use headers, numbered steps, and bold for emphasis
       - If you find relevant guide content, cite the guide name in your response
 

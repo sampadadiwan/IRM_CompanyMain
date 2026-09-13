@@ -15,7 +15,10 @@ module WithGuideRendering
   # Matches the heading text guides use to introduce their FAQ section:
   # "Frequently Asked Questions", "Frequently Asked Questions (Support Team)",
   # "FAQ", "FAQs" — all present verbatim across docs/user_guides/**/*.md.
-  FAQ_HEADING = /\A(Frequently Asked Questions|FAQs?)\b/i
+  # Leading non-letters are skipped so numbered ("8. FAQ", "16. Frequently Asked
+  # Questions") and emoji ("❓ FAQ") headings are recognised too; a heading that only
+  # mentions FAQ later ("AI Governance & Compliance FAQ") is still not one.
+  FAQ_HEADING = /\A[^\p{L}]*(Frequently Asked Questions|FAQs?)\b/i
 
   # Root of the Markdown sources for the guide controllers. Every path resolved
   # by this concern is verified to sit underneath #guides_root, which defaults
@@ -58,8 +61,65 @@ module WithGuideRendering
                                                  space_after_headers: true)
     doc = Nokogiri::HTML::DocumentFragment.parse(markdown.render(File.read(path)))
     strip_redundant_hero_intro(doc)
+    faq = database_faq_for(path)
+    replace_faq_sections(doc, Nokogiri::HTML::DocumentFragment.parse(markdown.render(faq.markdown))) if faq&.any?
     wrap_faq_section(doc)
+    anchor_database_faq_entries(doc, faq.entries) if faq&.any?
     doc.to_html.html_safe
+  end
+
+  # Audience whose FAQ entries this controller shows. PublicGuidesController overrides it.
+  #
+  # @return [String] "signed_in" or "public"
+  def faq_audience
+    "signed_in"
+  end
+
+  # FAQs managed in FAQ Manager (FaqEntry) take over from a guide's Markdown FAQ once the guide
+  # has at least one published entry. Only guides under docs/user_guides have them.
+  #
+  # @param path [Pathname]
+  # @return [FaqSectionRenderer, nil]
+  def database_faq_for(path)
+    return nil unless path.to_s.start_with?("#{GUIDES_ROOT}/")
+
+    FaqSectionRenderer.new(path.relative_path_from(GUIDES_ROOT).to_s.delete_suffix(".md"), audience: faq_audience)
+  end
+
+  # Removes every Markdown FAQ section and inserts the database one before "Related Guides"
+  # (or at the end). The inserted heading is marked so its entries can be given anchors.
+  #
+  # @param doc [Nokogiri::HTML::DocumentFragment] mutated in place
+  # @param faq_doc [Nokogiri::HTML::DocumentFragment] the rendered database FAQ section
+  def replace_faq_sections(doc, faq_doc)
+    doc.css("h1, h2, h3, h4, h5, h6").select { |h| h.text.strip.match?(FAQ_HEADING) }.each do |heading|
+      level = heading.name[1..].to_i
+      node = heading.next_sibling
+      heading.remove
+      while node && !(node.element? && node.name.match?(/\Ah[1-6]\z/) && node.name[1..].to_i <= level)
+        following = node.next_sibling
+        node.remove
+        node = following
+      end
+    end
+    faq_doc.at_css("h2")["data-faq-source"] = "database"
+    related = doc.css("h1, h2").find { |h| h.text.strip.match?(/\A[^\p{L}]*Related Guides\b/i) }
+    related ? related.add_previous_sibling(faq_doc) : doc.add_child(faq_doc)
+  end
+
+  # Gives each database FAQ accordion item an id ("faq-<id>") so the chatbot can link to it.
+  #
+  # @param doc [Nokogiri::HTML::DocumentFragment]
+  # @param entries [Array<FaqEntry>] in the order they were rendered
+  def anchor_database_faq_entries(doc, entries)
+    heading = doc.at_css('h2[data-faq-source="database"]')
+    details = []
+    node = heading&.next_element
+    while node && node.name != "h2" && node.name != "h1"
+      details.concat(node.css("details").to_a) if node.name == "div"
+      node = node.next_element
+    end
+    details.zip(entries).each { |detail, entry| detail["id"] = "faq-#{entry.id}" if entry }
   end
 
   # Removes the guide's own "# Title" and the intro paragraph directly under it.
@@ -95,34 +155,41 @@ module WithGuideRendering
       next unless heading.text.strip.match?(FAQ_HEADING)
 
       level = heading.name[1..].to_i
-      qa_paragraphs = faq_paragraphs_after(heading, level)
-      next if qa_paragraphs.empty?
+      # One accordion per group: an FAQ split by sub-headings ("### Navigation",
+      # "### What happens when I…") keeps each group's entries under its own
+      # heading, instead of hoisting them all into one block under the first.
+      faq_paragraph_groups_after(heading, level).each do |qa_paragraphs|
+        faq_div = Nokogiri::XML::Node.new("div", doc)
+        faq_div["class"] = "faq"
+        qa_paragraphs.each { |p| faq_div.add_child(faq_entry(doc, p)) }
 
-      faq_div = Nokogiri::XML::Node.new("div", doc)
-      faq_div["class"] = "faq"
-      qa_paragraphs.each { |p| faq_div.add_child(faq_entry(doc, p)) }
-
-      qa_paragraphs.first.add_previous_sibling(faq_div)
-      qa_paragraphs.each(&:remove)
+        qa_paragraphs.first.add_previous_sibling(faq_div)
+        qa_paragraphs.each(&:remove)
+      end
     end
   end
 
   # Sibling <p> elements after `heading` that match the Q/A shape, stopping at
-  # the next heading of equal or shallower level (i.e. the end of this section).
+  # the next heading of equal or shallower level (i.e. the end of this section),
+  # split into groups at each deeper sub-heading in between.
   #
   # @param heading [Nokogiri::XML::Node]
   # @param level [Integer] heading's own level, e.g. 2 for <h2>
-  # @return [Array<Nokogiri::XML::Node>]
-  def faq_paragraphs_after(heading, level)
-    paragraphs = []
+  # @return [Array<Array<Nokogiri::XML::Node>>] non-empty groups, in document order
+  def faq_paragraph_groups_after(heading, level)
+    groups = [[]]
     node = heading.next_element
     while node
-      break if node.name.match?(/\Ah[1-6]\z/) && node.name[1..].to_i <= level
+      if node.name.match?(/\Ah[1-6]\z/)
+        break if node.name[1..].to_i <= level
 
-      paragraphs << node if node.name == "p" && faq_paragraph?(node)
+        groups << []
+      elsif node.name == "p" && faq_paragraph?(node)
+        groups.last << node
+      end
       node = node.next_element
     end
-    paragraphs
+    groups.reject(&:empty?)
   end
 
   # @param p [Nokogiri::XML::Node] a <p> element

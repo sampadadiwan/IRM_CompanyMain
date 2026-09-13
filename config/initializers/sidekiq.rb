@@ -98,6 +98,8 @@ Sidekiq.configure_server do |config|
     # any stored enabled schedules whose next_run_at has already passed.
     Sidekiq::Cron::Job.create(name: 'SchedulerPollingJob', cron: 'every 10 minutes', class: 'SchedulerPollingJob')
     Sidekiq::Cron::Job.create(name: 'RecurringTaskGeneratorJob', cron: 'every day at 01:00', class: 'RecurringTaskGeneratorJob')
+    # Flags published user-guide FAQs whose paths or links broke, or that are overdue for re-verification.
+    Sidekiq::Cron::Job.create(name: 'FaqVerificationJob', cron: 'every day at 02:30', class: 'FaqVerificationJob')
     # Weekly task digest — Friday (docs/product/weekly_task_digest_prd.md). Server
     # clocks are UTC regardless of region (see the sidekiq_restart_at comment in
     # config/schedule.rb), so this expression is UTC: 11:30 UTC Friday is 5:00pm IST

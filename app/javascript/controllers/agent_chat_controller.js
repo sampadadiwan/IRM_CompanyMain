@@ -443,7 +443,7 @@ newChat() {
         } else {
       div.classList.add("justify-content-start")
       div.innerHTML = `
-        <div style="max-width:80%;">
+        <div style="max-width:100%;">
           <div class="bg-light rounded-4 py-2 px-3" style="border-bottom-left-radius:4px!important">${this.formatMarkdown(content)}</div>
           ${messageId && this.feedbackEnabledValue ? this.feedbackRowHtml(messageId, feedbackRating) : ""}
         </div>

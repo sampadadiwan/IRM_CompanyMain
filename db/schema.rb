@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -247,6 +247,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
     t.text "content", null: false
     t.datetime "created_at", null: false
     t.boolean "guide_search_hit", default: false, null: false
+    t.boolean "guide_search_strong_hit", default: false, null: false
+    t.string "guide_search_terms"
     t.json "metadata"
     t.string "role", limit: 20, null: false
     t.json "tool_calls_summary"
@@ -1895,6 +1897,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
     t.index ["user_id"], name: "index_faq_threads_on_user_id"
   end
 
+  create_table "faq_entries", force: :cascade do |t|
+    t.text "answer", null: false
+    t.string "audience", limit: 20, default: "signed_in", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.string "faq_group", limit: 20, null: false
+    t.string "guide_key", limit: 150, null: false
+    t.string "keywords", limit: 500
+    t.datetime "last_verified_at"
+    t.boolean "needs_verification", default: false, null: false
+    t.integer "position"
+    t.datetime "published_at"
+    t.string "question", limit: 300, null: false
+    t.bigint "source_message_id"
+    t.string "status", limit: 20, default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "updated_by_id"
+    t.json "verification_errors"
+    t.index ["guide_key", "faq_group", "position"], name: "index_faq_entries_on_guide_key_and_faq_group_and_position"
+    t.index ["guide_key", "question"], name: "index_faq_entries_on_guide_key_and_question", unique: true
+    t.index ["needs_verification"], name: "index_faq_entries_on_needs_verification"
+    t.index ["status"], name: "index_faq_entries_on_status"
+  end
+
   create_table "favorites", force: :cascade do |t|
     t.boolean "blocked", default: false, null: false
     t.datetime "created_at", null: false
@@ -2307,6 +2333,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
     t.index ["custom_grid_view_id"], name: "index_grid_view_preferences_on_custom_grid_view_id"
     t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_grid_view_preferences_on_owner"
+  end
+
+  create_table "guide_search_synonyms", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.string "note"
+    t.string "terms", limit: 500, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "updated_by_id"
   end
 
   create_table "import_uploads", force: :cascade do |t|

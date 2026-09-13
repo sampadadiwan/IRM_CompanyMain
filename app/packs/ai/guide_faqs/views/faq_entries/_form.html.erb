@@ -1,0 +1,61 @@
+<%= render FormCard.new(title: "FAQ : #{faq_entry.new_record? ? 'New' : faq_entry.question.truncate(60)}") do %>
+  <%= form_with(model: faq_entry) do |form| %>
+    <% if faq_entry.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% faq_entry.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <%= form.hidden_field :source_message_id %>
+
+    <div class="row">
+      <div class="form-group col-md-6">
+        <%= form.label :guide_key, "Guide" %>
+        <%= form.select :guide_key, GuideCatalog.options, { include_blank: true }, class: "form-select", required: true %>
+      </div>
+      <div class="form-group col-md-4">
+        <%= form.label :faq_group, "Group" %>
+        <%= form.select :faq_group, FaqEntry::GROUPS.invert, {}, class: "form-select" %>
+      </div>
+      <div class="form-group col-md-2">
+        <%= form.label :position %>
+        <%= form.number_field :position, class: "form-control", min: 1 %>
+        <small class="form-text text-muted">Order within the group. Blank adds it at the end.</small>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :question %>
+      <%= form.text_field :question, class: "form-control", maxlength: 300, required: true %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :answer %>
+      <%= form.text_area :answer, class: "form-control", rows: 6, maxlength: 2000, required: true %>
+      <small class="form-text text-muted">
+        One paragraph of Markdown. Put on-screen labels in **bold**. Don't show raw addresses: link the label instead,
+        as in [**Funds → Funds**](/funds), or describe a page that needs an ID in words. Links must work before you can
+        publish. Link another guide as [Fund Units](fund_units_user_guide).
+      </small>
+    </div>
+
+    <div class="row">
+      <div class="form-group col-md-8">
+        <%= form.label :keywords, "Search keywords" %>
+        <%= form.text_field :keywords, class: "form-control", maxlength: 500 %>
+        <small class="form-text text-muted">Extra words customers use for this, searched but never shown.</small>
+      </div>
+      <div class="form-group col-md-4">
+        <%= form.label :audience %>
+        <%= form.select :audience, [["Signed-in users", "signed_in"], ["Public (login help guides only)", "public"]], {}, class: "form-select" %>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
+    </div>
+  <% end %>
+<% end %>

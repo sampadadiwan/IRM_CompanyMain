@@ -2,9 +2,7 @@
 
 How to configure parent-child KPI hierarchies and upload Excel files with sub-category breakdowns.
 
-**Branch:** `feature/kpi-multi-column-detection`
-**Supersedes:** PR #1560 (auto-creation approach)
-**Date:** 2026-07-31
+> **Where to find it:** Sidebar → [**Stakeholders → View Stakeholders**](/investors) → open the portfolio company → **Kpi Mapping** tab. Add mappings one at a time with **New Investor Kpi Mapping** or in bulk with **Upload** (import type *InvestorKpiMapping*). Needs the *Enable Kpis* permission on your user; bulk upload also needs *Enable Import Uploads*.
 
 ---
 
@@ -32,7 +30,7 @@ This explicit approach prevents unwanted mappings from formatting artifacts and 
 
 ### Prepare the Mapping CSV
 
-Create a CSV/Excel file with these columns:
+Create a CSV/Excel file with these columns (optional extra columns: **Id**, **Lower Threshold**, **Upper Threshold**, **Auto Fill**, **Compute Formula**, **Update Only**):
 
 | Stakeholder | Reported Kpi Name | Standard Kpi Name | Category | Data Type | Denomination | Parent Standard Kpi Name | Position | Show In Report |
 |---|---|---|---|---|---|---|---|---|
@@ -50,7 +48,7 @@ Create a CSV/Excel file with these columns:
 
 2. **`Reported Kpi Name` = what the portco's Excel says.** Use the exact name from the Excel file (e.g., "Enterprise", not "Net Sales - Enterprise"). This is what the parser matches against.
 
-3. **`Standard Kpi Name` = what the FM types.** For children, just type the child name (e.g., "Enterprise"). The system **auto-prefixes** it as "Parent - Child" (e.g., "Net Sales - Enterprise") to ensure uniqueness. You do NOT need to type the prefix manually.
+3. **`Standard Kpi Name` = what the FM types.** For children in the bulk import, just type the child name (e.g., "Enterprise"). The import **auto-prefixes** it as "Parent - Child" (e.g., "Net Sales - Enterprise") to ensure uniqueness. This prefixing happens only in the bulk import: the **New Investor Kpi Mapping** / **Edit** form stores the standard name exactly as typed, so type the full prefixed name there.
 
 4. **`Parent Standard Kpi Name`** = the standard name of the parent mapping. Leave blank for top-level KPIs.
 
@@ -58,7 +56,7 @@ Create a CSV/Excel file with these columns:
 
 ### Import the Mapping File
 
-**Path:** Import Uploads → New → Import Type: "InvestorKpiMapping" → Upload the CSV → Import
+**Path:** Portfolio company → **Kpi Mapping** tab → **Upload** (opens the import page with import type *InvestorKpiMapping* and a sample file pre-selected) → attach the file → save. You can also start from Company menu (house icon, top right) → **Imports**.
 
 ### What Happens on Import
 
@@ -78,11 +76,15 @@ System stores:
 
 ### Re-importing the Same CSV
 
-Re-importing is safe. The system searches for the prefixed name first ("Net Sales - Enterprise") and finds the existing record. No duplicates are created.
+No duplicates are created, but every row whose mapping already exists is reported as a failed row ("InvestorKpiMapping already exists with Standard Kpi Name …") unless its **Update Only** column is `Yes`. With **Update Only** = `Yes`, the row updates the existing mapping (by **Id**, or by Stakeholder + names). New rows in the same file are still created.
+
+The **Download** export on the **Kpi Mapping** tab heads its stakeholder column **Investor** (the import expects **Stakeholder**) and has no **Update Only** column, so rename that column and add **Update Only** before re-uploading an export.
+
+A mapping that already has KPI values reported under it cannot be deleted, and deleting a parent mapping also deletes its child mappings.
 
 ### Verify in the UI
 
-**Path:** Portfolio Company → KPI Mapping tab
+**Path:** Portfolio Company → **Kpi Mapping** tab
 
 You should see the parent-child hierarchy:
 
@@ -198,7 +200,7 @@ The parser detects the tag row (ACT/BUDGET/IC labels) and creates **separate Kpi
 
 ### Upload Steps
 
-1. Go to Sidebar → KPIs → "New Kpi Report" (or edit existing)
+1. Open the [KPI Reports list](/kpi_reports) (fund logins have no sidebar entry; company logins use Sidebar → **Stakeholders → KPIs**) and click **New Kpi Report** (or edit an existing one)
 2. Select the Portfolio Company
 3. Set As Of date, Period, and Tag
 4. Attach the Excel file
@@ -222,7 +224,7 @@ See the *KPI Management & Workbook Upload User Guide* for the full list of check
 
 ### Grid View
 
-**Path:** Portfolio Company → KPIs tab → Grid View
+**Path:** Portfolio Company → **Kpis** tab (or **Grid View** on the [KPI Reports list](/kpi_reports))
 
 Parent-child KPIs are displayed with:
 - Parent rows with expand/collapse toggle and a child count badge
@@ -257,7 +259,7 @@ A portco starts reporting a new region ("West") under "Net Sales".
    |---|---|---|---|
    | Acme Corp | West | West | Net Sales |
 
-2. Import the CSV (existing mappings won't be duplicated)
+2. Import the CSV (upload just the new row, or set **Update Only** = `Yes` on existing rows — otherwise each existing row is reported as an "already exists" error, though nothing is duplicated)
 3. Re-upload the Excel file with the new "West" row
 4. "West" appears as a new child under "Net Sales" in the grid view
 
@@ -265,7 +267,7 @@ A portco starts reporting a new region ("West") under "Net Sales".
 
 "Enterprise" appears under both "Net Sales" and "Operating Cost".
 
-1. Configure both in the mapping CSV — the system auto-prefixes:
+1. Configure both in the mapping CSV — the bulk import auto-prefixes:
    - "Enterprise" under "Net Sales" → `standard_kpi_name: "Net Sales - Enterprise"`
    - "Enterprise" under "Operating Cost" → `standard_kpi_name: "Operating Cost - Enterprise"`
 
@@ -286,7 +288,7 @@ A portco starts reporting a new region ("West") under "Net Sales".
 ### Scenario 3: Re-uploading After Adding New Mappings
 
 1. Upload Excel → only mapped KPIs are imported, others skipped
-2. Add new mappings via bulk import for the skipped KPIs
+2. Add new mappings for the skipped KPIs (bulk import of just the new rows, or **New Investor Kpi Mapping**)
 3. Re-upload the same Excel → new KPIs are imported, existing ones updated (not duplicated)
 
 ---
@@ -297,7 +299,7 @@ A portco starts reporting a new region ("West") under "Net Sales".
 |---|---|---|
 | "Target KPI 'X' not found in any sheet" | Mapping exists but Excel has no matching row, or the name doesn't match exactly | Check spelling in the mapping's `Reported Kpi Name` vs the Excel cell |
 | Child values appear under the wrong parent | Children not listed directly below their parent in the Excel | Reorder the Excel so children follow their parent |
-| Duplicate mappings created on re-import | Re-import before this fix was applied | Delete duplicates manually, re-import with the fixed code |
+| "InvestorKpiMapping already exists with Standard Kpi Name …" on re-import | The row's mapping already exists | Remove existing rows from the file, or set **Update Only** = `Yes` to update them |
 | "Parent KPI Mapping with standard name 'X' not found" during import | Parent row is listed after its children in the CSV | Move parent rows before their children |
 | Child shows "N/A" in grid view | No `investor_kpi_mapping_id` set on the KPI record (pre-existing data) | Re-upload the Excel to create properly scoped records |
 
@@ -305,25 +307,130 @@ A portco starts reporting a new region ("West") under "Net Sales".
 
 ## Technical Reference
 
-### Files Changed in This Feature
-
-| File | Change |
-|---|---|
-| `kpi_workbook_reader.rb` | Multi-column scan, `group_by` mappings, `resolve_mapping` with parent tracking, tag preservation, mapping-ID-scoped saves. No auto-creation. |
-| `import_investor_kpi_mapping.rb` | Auto-prefix `standard_kpi_name` as "Parent - Child". Prefixed name lookup on re-import to prevent duplicates. |
-| `kpis_helper.rb` | "Forecast" badge color (cyan/info). |
-| `kpi_xlsx_report_controller.js` | Client-side preview scans all cells in row (not just column A). |
-| `features/startup/kpi_workbook_reading.feature` | Cucumber scenarios updated for explicit mapping approach. |
-| `features/step_definitions/kpi_workbook_steps.rb` | Step definitions for pre-configured parent-child mappings. |
-
 ### Key Design Decisions
 
 1. **No auto-creation of mappings.** The parser only imports values for pre-configured `InvestorKpiMapping` records. This prevents formatting artifacts (indents, merged cells, blank rows) from creating unwanted mappings.
 
-2. **Auto-prefix `standard_kpi_name`.** The FM types "Enterprise" — the system stores "Net Sales - Enterprise". This ensures DB uniqueness without requiring the FM to type the full prefixed name.
+2. **Auto-prefix `standard_kpi_name` (bulk import only).** The FM types "Enterprise" in the import file — the system stores "Net Sales - Enterprise". This ensures uniqueness without requiring the FM to type the full prefixed name. The single-mapping form does not prefix.
 
 3. **Parent tracking via `@current_parent_mapping`.** Scans rows top-to-bottom. When a parent KPI row is encountered, it becomes the current parent. When a child with duplicate names is found, the current parent determines which mapping to use.
 
 4. **Multi-column scan.** All columns before the first date column are checked for KPI name matches. This handles both single-column layouts (everything in column A) and two-column layouts (parents in A, children in B).
 
 5. **Tag preservation.** Excel tag text (ACT, Forecast, IC Case) is stored as-is in `tag_list`. TAG_SYNONYMS is used only for detection, not normalization. This ensures the grid view filter matches what users typed in their Excel.
+
+---
+
+## Frequently Asked Questions
+
+### Navigation and getting there
+
+**Where do I find a portfolio company's KPI mappings?**
+Sidebar → [**Stakeholders → View Stakeholders**](/investors), open the stakeholder whose **Category** is *Portfolio Company*, then click the **Kpi Mapping** tab. It lists every mapping in position order with **Show** and **Edit** buttons, plus **New Investor Kpi Mapping**, **Download**, **Upload** and **Generate From Last Report**.
+
+**Where do I upload the mapping file?**
+On the portfolio company's **Kpi Mapping** tab click **Upload**, which opens the upload form with import type *InvestorKpiMapping* and the [sample file](/sample_uploads/investor_kpi_mappings.xlsx). You can also start from Company menu (house icon, top right) → [**Imports**](/import_uploads). See [Import the Mapping File](#import-the-mapping-file).
+
+**Where do I upload the KPI workbook once mappings exist?**
+Fund logins open the [KPI Reports list](/kpi_reports) (there is no fund sidebar entry) and click [**New Kpi Report**](/kpi_reports/new); company logins use Sidebar → **Stakeholders → KPIs**. See [Upload Steps](#upload-steps) and the KPI Management & Workbook Upload guide.
+
+**Where do I check the hierarchy and the imported values?**
+The **Kpi Mapping** tab shows the mappings; the stakeholder's **Kpis** tab (or **Grid View** on the [KPI Reports list](/kpi_reports)) shows parent rows with a child-count badge and indented child rows. See [Step 3: Review Results](#step-3-review-results).
+
+**I can't see the Kpi Mapping tab.**
+The **Kpis** and **Kpi Mapping** tabs only appear on stakeholders whose **Category** is *Portfolio Company*, and only for users with *Enable Kpis*. A company admin switches that on at Company menu → [**User**](/users) → edit the user.
+
+**What permissions do I need?**
+*Enable Kpis* to see mappings; to create, edit or delete them you must be a *company_admin* or an employee with update access to the record. **Upload** additionally needs *Enable Import Uploads*.
+
+### Creating, updating and managing mappings
+
+**How do I create parent and child mappings in bulk?**
+Prepare a sheet with **Stakeholder**, **Reported Kpi Name**, **Standard Kpi Name**, **Category**, **Data Type**, **Denomination**, **Parent Standard Kpi Name**, **Position**, **Show In Report** (optional: Lower/Upper Threshold, Auto Fill, Compute Formula, Update Only), list parents before children and upload it. See [Prepare the Mapping CSV](#prepare-the-mapping-csv).
+
+**How do I add a single mapping by hand?**
+On the **Kpi Mapping** tab click **New Investor Kpi Mapping**, fill **Reported kpi name**, **Standard kpi name**, category, data type and denomination, pick the parent in **Parent** for a child, and save. The form does not add the "Parent - " prefix, so type the full standard name (e.g. `Net Sales - Enterprise`) yourself.
+
+**How do I edit a mapping?**
+Click **Edit** on its row, change names, category, data type, denomination, **Parent**, **Position**, thresholds or the RAG rule, and save. Changing **Reported kpi name** changes which workbook label is matched from the next upload onward.
+
+**How do I update many existing mappings from a file?**
+Upload rows with **Update Only** = `Yes`. A row with an **Id** updates that mapping; without an **Id**, the mapping is found by **Stakeholder**, **Standard Kpi Name** and **Reported Kpi Name** (for a child, fill **Parent Standard Kpi Name** and the unprefixed child name is matched). Rows without **Update Only** = `Yes` are treated as new and fail if the mapping already exists.
+
+**How do I export mappings?**
+Click **Download** on the **Kpi Mapping** tab for an Excel file with **Id**, names, category, data type, parent and position. Its stakeholder column is headed **Investor**, so rename it to **Stakeholder** and add **Update Only** before re-uploading it.
+
+**How do I delete a mapping?**
+Open it with **Show** and click **Delete**. A mapping that already has KPI values reported under it cannot be deleted, and deleting a parent also deletes its child mappings.
+
+**Can mappings be created from an existing report instead?**
+Yes: **Generate From Last Report** on the **Kpi Mapping** tab creates a flat mapping (reported name = standard name, **Show In Report** on) for each KPI in the company's most recent KPI report. It does not create parent-child links; set **Parent** afterwards.
+
+### Why use parent-child mappings
+
+**Why should I set up parent-child mappings?**
+Portfolio companies report totals with segment breakdowns (Net Sales by Enterprise / Mid-Market / SMB). Mappings let CapHive import each segment as its own KPI, keep the same child name under different parents apart, and show them grouped under the parent in the grid.
+
+**What does it let me do that I cannot do otherwise?**
+Track sub-category trends over time, collapse or expand them under the parent in the KPI grid, get a Workbook check hint when children do not add up to the parent, and accept all three common Excel layouts without asking companies to rename rows.
+
+**What happens if I don't configure mappings before uploading?**
+Nothing from unmapped rows is imported: the parser never creates mappings from indentation or column layout. If a company has no mappings at all, uploads are refused until mappings exist.
+
+**Who typically sets up mappings?**
+Fund portfolio-monitoring or operations staff, once per portfolio company and whenever the company starts reporting a new line or segment.
+
+### What happens when I …
+
+**What happens when I import a child row?**
+The mapping is saved with **Reported Kpi Name** as typed (used for matching the workbook), **Standard Kpi Name** prefixed as `Parent - Child`, and linked to the parent found by its standard name. The parent's child count is refreshed. See [What Happens on Import](#what-happens-on-import).
+
+**What happens if I re-import a mapping file that contains existing mappings?**
+No duplicates are created, but each row that already exists is reported as an error ("InvestorKpiMapping already exists…") unless **Update Only** is `Yes`. New rows in the same file are still created. Review the row errors on the import upload page.
+
+**What happens if a parent row comes after its child in the file?**
+That child row fails with "Parent KPI Mapping with standard name 'X' not found". Rows are processed top to bottom, so move parents above children and re-upload the failed rows.
+
+**What happens when I upload a KPI workbook for a company with parent-child mappings?**
+The Workbook check matches labels in all columns before the first date column, tracks the current parent to resolve repeated child names, and stages one unapproved value per mapped KPI per period and tag. Values only reach dashboards once approved. See [How the Parser Matches](#how-the-parser-matches).
+
+**What happens if children don't add up to the parent?**
+When a parent and all of its (two or more) mapped children have values for a period and differ by more than 1%, the Workbook check shows a hint. It never blocks the upload.
+
+**What happens if a child name is mapped under two parents and the sheet doesn't show which one?**
+The row is skipped and a warning is shown in the Workbook check; the parser never guesses. Place the row directly under its parent row, or repeat the parent in the column to its left.
+
+**What happens when I add a new child mapping after an upload?**
+Existing values are unchanged. Re-upload the workbook: the new child's values are imported and existing ones are updated rather than duplicated. See [Scenario 3: Re-uploading After Adding New Mappings](#scenario-3-re-uploading-after-adding-new-mappings).
+
+### Troubleshooting and edge cases
+
+**"Target KPI 'X' not found in any sheet" after upload.**
+The mapping exists but no workbook row matched its **Reported Kpi Name** exactly. Fix the spelling on either side; this is a data gap, not a configuration error. See [Troubleshooting](#troubleshooting).
+
+**A row in the workbook was silently ignored.**
+It has no mapping (or its label differs from every **Reported Kpi Name**). Add the mapping on the **Kpi Mapping** tab and re-upload the workbook.
+
+**Child values appear under the wrong parent.**
+Children must be listed directly below their parent, or carry the parent name in the column to the left (Layout C). A label in the parent column that is not a mapped KPI resets the current parent. See [Supported Excel Layouts](#supported-excel-layouts).
+
+**I get an error for the same child appearing twice.**
+The same child under the same parent has two different values for one period. The Workbook check blocks the upload until you keep only one.
+
+**My grandchild row fails to find its parent on import.**
+**Parent Standard Kpi Name** must be the parent's stored standard name, which for a child is already prefixed (e.g. `Net Sales - Enterprise`), not just `Enterprise`.
+
+**Can I use tags such as Forecast or IC Case?**
+Yes. A tag row above the dates (ACT, BUDGET, IC, Forecast…) creates a separate KPI report per tag, and the tag text is kept as written. See [ACT/BUDGET/IC Tag Columns](#actbudgetic-tag-columns).
+
+**The child shows "N/A" in the grid view.**
+The KPI was saved before it was linked to a mapping (older data). Re-upload the workbook so the values are stored against the correct mapping.
+
+## Related Guides
+
+- [KPI Management & Workbook Upload](kpi_upload_user_guide) — the upload, Workbook check and approval flow that uses these mappings.
+- [KPI RAG Status](kpi_rag_status_user_guide) — red/amber/green rules configured on the same mapping.
+- [KPI Flexible Charts](kpi_flexible_charts_user_guide) — chart parent and child KPIs from the grid.
+- [Stakeholders (Investors)](investors_user_guide) — where portfolio companies and their Kpi Mapping tab live.
+- [Custom Fields](custom_fields_user_guide) — extra fields on KPI mappings, carried as extra upload columns.
+- [Agent Charts](agent_charts_user_guide) — AI charts that pick KPIs by their standard names.

@@ -1,0 +1,32 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0">Search synonyms</h1>
+  <div class="d-flex gap-2">
+    <%= link_to "Back to FAQ Manager", faq_entries_path, class: "btn btn-outline-secondary" %>
+    <%= link_to "New synonym", new_guide_search_synonym_path, class: "btn btn-outline-primary" %>
+  </div>
+</div>
+<p class="text-muted">
+  Words customers use that the guides spell differently. <code>drawdown, capital call</code> makes the terms
+  equivalent; <code>lp =&gt; investor, stakeholder</code> expands one term into others. Changes reach the chatbot
+  within a few minutes. Built-in synonyms such as stakeholder and investor always apply.
+</p>
+<div class="table-responsive">
+  <table class="table table-bordered">
+    <thead><tr><th>Rule</th><th>Enabled</th><th>Note</th><th>Updated</th><th></th></tr></thead>
+    <tbody>
+      <% @synonyms.each do |synonym| %>
+        <tr>
+          <td><code><%= synonym.terms %></code></td>
+          <td><%= synonym.enabled ? "Yes" : "No" %></td>
+          <td><%= synonym.note %></td>
+          <td><%= l(synonym.updated_at.to_date) %> <%= synonym.updated_by&.full_name %></td>
+          <td class="d-flex gap-2">
+            <%= link_to "Edit", edit_guide_search_synonym_path(synonym), class: "btn btn-sm btn-outline-primary" %>
+            <%= button_to "Delete", synonym, method: :delete, class: "btn btn-sm btn-outline-danger",
+                          data: { turbo_confirm: "Delete this synonym?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

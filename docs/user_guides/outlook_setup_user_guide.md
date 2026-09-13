@@ -5,6 +5,8 @@
 This guide explains how to install and use the **CapHive Outlook Add-in**, which lets you file
 investor emails into CapHive without leaving Outlook.
 
+> **Where to find it:** In Outlook on the web or the Windows/Mac desktop app, open an email and click **File to CapHive** (Home ribbon or message toolbar) to open the CapHive panel, once your administrator has installed the add-in or sent you its install link. Filed emails appear in CapHive under Sidebar → [**Stakeholders → View Stakeholders**](/investors) → open the stakeholder → **Misc → Emails**. You need a CapHive login and access to the stakeholder you file against.
+
 Once installed, you can file an email against the right investor in two clicks, and everyone on
 your team can see it.
 
@@ -169,7 +171,7 @@ investor.
 - Who filed it, and when
 - The investor it was filed against
 
-Filed emails appear in CapHive on the investor's record, under their communications.
+Filed emails appear in CapHive on the investor's stakeholder page, under **Misc → Emails**.
 
 ---
 
@@ -212,7 +214,7 @@ filing. If a particular sender is consistently matched to the wrong investor, as
 administrator to check that investor's email address in CapHive.
 
 **I filed it against the wrong record.** Click **Undo** straight away. If you have moved on,
-the filing can be removed from the investor's record in CapHive.
+open the investor's stakeholder page in CapHive, go to **Misc → Emails**, open the filed email and click **Delete**.
 
 ---
 
@@ -243,3 +245,119 @@ If you have trouble installing or using the add-in, contact **support@caphive.co
 - Which version of Outlook you use (web, Windows, or Mac)
 - A screenshot of the panel
 - The subject of the email you were trying to file
+
+---
+
+# 14. Frequently Asked Questions
+
+## Navigation and getting there
+
+**Where do I find the CapHive add-in in Outlook?**
+Open any email and click **File to CapHive**: on the **Home** ribbon in its own **CapHive** group in the desktop app, or in the toolbar above the message in Outlook on the web. If the window is narrow, look under the three dots (…). See [section 4](#4-finding-the-add-in).
+
+**How do I get the add-in installed?**
+Either your administrator installs it centrally, or they send you an install link that you add under **My add-ins → Add a custom add-in → Add from URL**. See [section 3](#3-installing-the-add-in).
+
+**Where do filed emails show up in CapHive?**
+On the stakeholder (investor) they were filed against: Sidebar → [**Stakeholders → View Stakeholders**](/investors), open the stakeholder, then **Misc → Emails** (company admins also see an **Emails** tab). **View in CapHive** in the panel opens the filed email in CapHive.
+
+**Where do the attachments of a filed email go?**
+They are saved as CapHive documents on the filed email, in the stakeholder's document folder under **Incoming Emails** and then a sub-folder named after the sender.
+
+**Is there a page listing every filed email for my organisation?**
+There is no menu link for it, but the [filed emails list](/incoming_emails) shows all of your organisation's filed emails. Day to day, use **Misc → Emails** on each stakeholder's page.
+
+## Installing, filing and managing filings
+
+**How do I install the add-in myself in Outlook on the web?**
+Click the **Settings** gear, search for **Add-ins** and open **Manage add-ins**, choose **My add-ins → Add a custom add-in → Add from URL**, paste your administrator's link and confirm. It then appears in the desktop app too.
+
+**How do I install it from the desktop app?**
+Open an email, click **Get Add-ins** on the **Home** ribbon (on Mac possibly **Tools → Get Add-ins**), choose **My add-ins → Add a custom add-in → Add from URL**, paste the link, confirm, and restart Outlook.
+
+**How does an administrator install it for everyone?**
+In the Microsoft 365 admin centre, go to **Settings → Integrated apps → Upload custom apps** and use the same link. Allow up to 24 hours for it to reach all users.
+
+**How do I sign the add-in in to CapHive?**
+Open the panel and click **Sign in to CapHive**. A separate window opens on the normal CapHive sign-in, including two-factor authentication; once done the panel shows **Signed in as** your name. See [section 5](#5-signing-in).
+
+**How do I file an email?**
+Open the email, click **File to CapHive**, check the record shown under **Filing against** and click **File to CapHive** in the panel. See [section 6](#6-filing-an-email).
+
+**How do I file against a different stakeholder than the one suggested?**
+Click **Change record**, type part of the name into **Search investors…** and pick the right stakeholder before filing. The list only includes stakeholders you can see in CapHive.
+
+**How do I file one email against two stakeholders?**
+File it against the first, then use **File again to a different record** and choose the second. It is only blocked from being filed twice against the same stakeholder. See [section 9](#9-filing-the-same-email-twice).
+
+**How do I undo a filing?**
+Click **Undo** straight after filing; the panel shows "Filing removed." and the **File to CapHive** button becomes available again. Later on, open the filed email in CapHive from the stakeholder's **Misc → Emails** list and click **Delete**.
+
+**What permission do I need to file emails?**
+A CapHive login in your organisation and permission to see the stakeholder you file against. Installing the add-in yourself also needs your Outlook or organisation settings to allow custom add-ins.
+
+**Can I file emails against a fund, deal or portfolio company record?**
+No. The add-in files against stakeholder (investor) records only, so use the stakeholder the correspondence belongs to.
+
+## Why use the Outlook add-in
+
+**Why should I file investor emails into CapHive?**
+Correspondence stops living in one person's inbox: the whole team sees it on the stakeholder's record, alongside commitments, KYC and documents. It survives staff changes and gives you a history when an investor asks what was agreed.
+
+**What does the add-in save me compared with doing it by hand?**
+You do not download attachments, find the stakeholder and upload them separately. The add-in suggests the stakeholder from the sender, files the message and attachments in one click, and warns you if the email is already filed.
+
+**Who typically uses the add-in?**
+Investor relations, fundraising and fund operations staff who correspond with LPs and their advisers from Microsoft 365 or Outlook.
+
+**What happens if we don't file emails?**
+Nothing breaks, but colleagues cannot see what was said to an investor, and the history leaves with whoever holds the mailbox. If only some teammates file their emails, the record is incomplete.
+
+## What happens when I…
+
+**What happens when I click File to CapHive in the panel?**
+CapHive saves the email, sender, recipients, date and attachments against that stakeholder, recording you as the filer and the time, and the panel shows "Filed to CapHive.". No one is notified and the investor is not contacted.
+
+**What happens if the email was already filed against that stakeholder?**
+Nothing new is saved. The panel says it is already filed, with who filed it and against which record, whether that was from Outlook or Gmail, and offers **File again to a different record**.
+
+**What happens when I click Undo?**
+The filing and its attachments are removed from CapHive and the panel shows "Filing removed.". Attachments of other emails filed from the same sender stay in place, and the email in Outlook is untouched.
+
+**What happens in Outlook when I file an email?**
+Nothing changes in your mailbox: the message is not moved or categorised. The add-in only reads the email you have open.
+
+**What happens when I sign in?**
+CapHive gives the add-in a sign-in token tied to your own CapHive user, valid for 30 days. When it expires or your CapHive access changes, the panel asks you to sign in again.
+
+**What happens when a central install is rolled out?**
+The **File to CapHive** button appears for each user within about 24 hours, in every copy of Outlook they use, with nothing to install on their computer. Each person still signs in to CapHive the first time they open the panel.
+
+## Troubleshooting and edge cases
+
+**Does the add-in work on my phone or tablet?**
+No. It works in Outlook on the web and the desktop app for Windows or Mac only.
+
+**Can I file an email I sent myself?**
+Yes. No stakeholder is suggested because the sender is you, so click **Change record**, search and file. See [section 7](#7-when-nothing-is-suggested).
+
+**Does filing notify the investor or my colleagues?**
+No. Filing only records the email in CapHive; colleagues see it under **Misc → Emails** on the stakeholder's page.
+
+**Add a custom add-in is missing from my Outlook. What now?**
+Your Outlook version or organisation settings do not allow installing add-ins yourself. Install it from Outlook on the web instead, or ask your administrator to install it centrally.
+
+**The search does not find a stakeholder I know exists.**
+Search matches stakeholder names, not email addresses, and only returns stakeholders you have access to. Try part of the name, and ask your CapHive administrator if you should have access to that stakeholder.
+
+For other problems, see [section 10](#10-troubleshooting).
+
+---
+
+# 15. Related Guides
+
+- [Gmail Add-on](gmail_addon_user_guide) — the same filing from Gmail; duplicates are detected across both.
+- [Stakeholders (Investors)](investors_user_guide) — the stakeholder records emails are filed against.
+- [LP CRM](lp_crm_user_guide) — notes and touch points that sit alongside filed correspondence.
+- [Document Management](document_management_user_guide) — where filed attachments live as documents.
+- [Two-Factor Authentication](two_factor_authentication_user_guide) — the sign-in step you complete when connecting the add-in.

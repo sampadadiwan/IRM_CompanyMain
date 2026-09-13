@@ -5,6 +5,8 @@
 This guide explains how to install and use the **CapHive Gmail Add-on**, which lets you file
 investor emails into CapHive without leaving Gmail.
 
+> **Where to find it:** In Gmail on a desktop browser, the orange CapHive hexagon in the right-hand side panel opens the **CapHive Filing** panel (after your administrator shares the add-on and you install it). Filed emails appear in CapHive under Sidebar → [**Stakeholders → View Stakeholders**](/investors) → open the stakeholder → **Misc → Emails** (company admins also get an **Emails** tab). You need a CapHive login and access to the stakeholder you file against.
+
 Once installed, you can file an email against the right investor in two clicks, and everyone on
 your team can see it.
 
@@ -166,7 +168,7 @@ investor.
 - Who filed it, and when
 - The investor it was filed against
 
-Filed emails appear in CapHive on the investor's record, under their communications.
+Filed emails appear in CapHive on the investor's stakeholder page, under **Misc → Emails**.
 
 ---
 
@@ -221,8 +223,8 @@ Sign in again. If it happens repeatedly within a day, tell your administrator.
 particular sender is consistently matched to the wrong investor, ask your administrator to check
 that investor's email address in CapHive.
 
-**I filed it against the wrong record.** Click **Undo** straight away. If you have moved on, the
-filing can be removed from the investor's record in CapHive.
+**I filed it against the wrong record.** Click **Undo** straight away. If you have moved on, open the
+investor's stakeholder page in CapHive, go to **Misc → Emails**, open the filed email and click **Delete**.
 
 **The panel shows an error.** Note the exact wording and send it to your administrator —
 error messages here identify the cause precisely, and a screenshot of the message is far more
@@ -258,3 +260,113 @@ If you have trouble installing or using the add-on, contact **support@caphive.co
 - Whether you use a personal Gmail account or a company Google account
 - A screenshot of the panel, including any error message
 - The subject of the email you were trying to file
+
+---
+
+# 15. Frequently Asked Questions
+
+## Navigation and getting there
+
+**Where do I find the CapHive add-on in Gmail?**
+Open Gmail in a desktop browser and look in the right-hand side panel, below Calendar, Keep, Tasks and Contacts, for the orange CapHive hexagon. Click it to open the **CapHive Filing** panel. See [section 4](#4-finding-the-add-on).
+
+**How do I get the add-on in the first place?**
+Ask your CapHive administrator to share it with your Google account; they send you a link. Open it, choose **Deploy → Test deployments**, click **Install**, then reload Gmail. See [section 3](#3-getting-access).
+
+**Where do filed emails show up in CapHive?**
+On the stakeholder (investor) they were filed against: Sidebar → [**Stakeholders → View Stakeholders**](/investors), open the stakeholder, then **Misc → Emails** (company admins also see an **Emails** tab). **View in CapHive** in the panel opens the single filed email in CapHive.
+
+**Where do the attachments of a filed email go?**
+They are saved as CapHive documents on the filed email, in the stakeholder's document folder under **Incoming Emails** and then a sub-folder named after the sender.
+
+**Is there a page listing every filed email for my organisation?**
+There is no menu link for it, but you can open the [filed emails list](/incoming_emails) directly to list your organisation's filed emails. Day to day, use **Misc → Emails** on each stakeholder's page.
+
+## Installing, filing and managing filings
+
+**How do I sign the add-on in to CapHive?**
+Open the panel and click **Sign in to CapHive**. A browser tab opens on the normal CapHive sign-in page; log in as usual, including two-factor authentication, close the tab and return to Gmail. See [section 5](#5-signing-in).
+
+**How do I file an email?**
+Open the email, click the CapHive icon, check the suggested stakeholder and click **File to CapHive**. See [section 6](#6-filing-an-email).
+
+**How do I file an email against a different stakeholder than the one suggested?**
+Type part of the name into **Search records**, click **Search**, choose the right record and click **File to selected record**. The search shows up to 25 matching stakeholders you can see.
+
+**How do I file one email against two stakeholders?**
+File it against the first, then search for the second and file again. The add-on only blocks a repeat filing against the same stakeholder, not a filing against a different one. See [section 9](#9-filing-the-same-email-twice).
+
+**How do I undo a filing?**
+Click **Undo** on the confirmation straight after filing; the panel shows "Filing removed.". Later on, open the filed email in CapHive from the stakeholder's **Misc → Emails** list and click **Delete**.
+
+**What permission do I need to file emails?**
+A CapHive login in your organisation and permission to see the stakeholder you file against; the search only lists stakeholders you can already open. Installing the add-on itself needs your administrator to share it with your Google account.
+
+**Can I file emails against a fund, deal or portfolio company record?**
+No. The add-on files against stakeholder (investor) records only, so use the stakeholder the correspondence belongs to.
+
+**How does an administrator roll the add-on out to more people?**
+For now, each person's Google account is added to the CapHive add-on project and sent the link, and each person installs it themselves. See [section 10](#10-for-administrators).
+
+## Why use the Gmail add-on
+
+**Why should I file investor emails into CapHive?**
+Correspondence stops living in one person's inbox: the whole team sees it on the stakeholder's record, alongside commitments, KYC and documents. It survives staff changes and gives you a history when an investor asks what was agreed.
+
+**What does the add-on save me compared with doing it by hand?**
+You do not download attachments, find the stakeholder and upload them separately. The add-on suggests the stakeholder from the sender, files the message and attachments in one click, and warns you if the email is already filed.
+
+**Who typically uses the add-on?**
+Investor relations, fundraising and fund operations staff who correspond with LPs and their advisers from Gmail or Google Workspace.
+
+**What happens if we don't file emails?**
+Nothing breaks, but colleagues cannot see what was said to an investor, and the history leaves with whoever holds the inbox. If only some teammates file their emails, the record is incomplete.
+
+## What happens when I…
+
+**What happens when I click File to CapHive?**
+CapHive saves the email, sender, recipients, date and attachments against that stakeholder, recording you as the filer and the time. It appears under the stakeholder's **Misc → Emails** for everyone who can see that stakeholder; no one is notified and the investor is not contacted.
+
+**What happens if the email was already filed against that stakeholder?**
+Nothing new is saved. The panel shows it as already filed, with who filed it and against which record, whether it was filed from Gmail or Outlook, and no **Undo** is offered.
+
+**What happens when I click Undo?**
+The filing and its attachments are removed from CapHive and the panel shows "Filing removed.". Attachments of other emails filed from the same sender stay in place, and the email in Gmail is untouched.
+
+**What happens in Gmail when I file an email?**
+Nothing changes in your mailbox: no label is added and the message is not moved. The add-on only reads the message you have open.
+
+**What happens when I sign in?**
+CapHive gives the add-on a sign-in token tied to your own CapHive user, valid for 30 days. When it expires or your CapHive access changes, the panel shows **Sign in to CapHive** again.
+
+**What happens if the sender matches more than one stakeholder?**
+The panel lists every match and you choose; it never picks between them for you. See [section 6](#6-filing-an-email).
+
+## Troubleshooting and edge cases
+
+**Does the add-on work in the Gmail mobile app?**
+No. It only appears in Gmail in a desktop browser.
+
+**Can I file an email I sent myself?**
+Yes. No stakeholder is suggested because the sender is you, so search for the stakeholder and click **File to selected record**. See [section 7](#7-when-nothing-is-suggested).
+
+**Does filing notify the investor or my colleagues?**
+No. Filing only records the email in CapHive; colleagues see it when they open **Misc → Emails** on the stakeholder's page.
+
+**I installed the add-on but my colleague cannot see it.**
+Add-ons install per Google account. Your colleague needs their own invitation from the administrator and must complete the install step themselves.
+
+**The search does not find a stakeholder I know exists.**
+Search matches stakeholder names, not email addresses, and only returns stakeholders you have access to. Try part of the name, and ask your CapHive administrator if you should have access to that stakeholder.
+
+For other problems, see [section 11](#11-troubleshooting).
+
+---
+
+# 16. Related Guides
+
+- [Outlook Setup](outlook_setup_user_guide) — the same filing from Outlook; duplicates are detected across both.
+- [Stakeholders (Investors)](investors_user_guide) — the stakeholder records emails are filed against.
+- [LP CRM](lp_crm_user_guide) — notes and touch points that sit alongside filed correspondence.
+- [Document Management](document_management_user_guide) — where filed attachments live as documents.
+- [Two-Factor Authentication](two_factor_authentication_user_guide) — the sign-in step you complete when connecting the add-on.

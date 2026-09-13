@@ -68,4 +68,9 @@ class PublicGuidesController < ApplicationController
   def force_html_format
     request.format = :html
   end
+
+  # Anonymous visitors see only FAQ entries marked public (FaqEntry#audience).
+  def faq_audience
+    "public"
+  end
 end

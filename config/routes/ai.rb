@@ -48,6 +48,22 @@ end
 
 resources :customer_support_escalations, only: %i[show update]
 
+# FAQ Manager — support-managed user-guide FAQs and chatbot guide search (docs/ai/guide_faq_search_prd.md)
+resources :faq_entries do
+  member do
+    patch :publish
+    patch :archive
+    patch :verify
+  end
+  collection do
+    post :import
+  end
+end
+resources :guide_search_synonyms, except: %i[show]
+resources :guide_search_misses, only: %i[index]
+# All FAQs from every user guide on one page, for anyone who can read the guides
+get 'faqs', to: 'faqs#index', as: :faqs
+
 resources :agent_charts do
   post 'regenerate', on: :member
 end
