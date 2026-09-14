@@ -204,7 +204,13 @@ class FormCustomField < ApplicationRecord
   before_create :set_default_values
   def set_default_values
     self.name = FormCustomField.to_name(name)
-    self.label ||= name.humanize
+    # The Label box says "leave blank to derive from name" but submits "", which ||= used to keep.
+    # Store what human_label was already showing for "" so the screens and upload template don't change.
+    if label.nil?
+      self.label = name.humanize
+    elsif label.blank?
+      self.label = name.humanize.titleize
+    end
   end
 
   def renderer
