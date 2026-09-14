@@ -101,14 +101,21 @@ end
 
 When("I unlock the AllocationRun") do
 	visit allocate_form_fund_path(@fund.id)
-	first('tbody tr').find('.dtr-control').click
-	find(:css, "button[aria-label='Unlock']").click
-	sleep(1)
+	# Two locked runs are listed now, so expand @allocation_run's own row and click the Unlock
+	# button of its own form -- a bare first-row / first-button lookup could unlock the other
+	# run instead, or match two buttons when the table is wide enough not to collapse its
+	# actions column.
+	row = find('tbody tr:not(.child)', text: I18n.l(@allocation_run.end_date, format: :abbr_month_day_year))
+	row.find('.dtr-control').click
+	find(:css, "form[action='#{unlock_allocation_run_path(@allocation_run)}'] button[aria-label='Unlock']").click
 end
 
 Then("both AllocationRuns should be unlocked") do
-	expect(@allocation_run.reload.locked).to(be_falsey)
-	expect(@other_allocation_run.reload.locked).to(be_falsey)
+	# The unlock PATCH is not awaited by the click, so poll rather than sleeping a fixed second.
+	eventually do
+		expect(@allocation_run.reload.locked).to(be_falsey)
+		expect(@other_allocation_run.reload.locked).to(be_falsey)
+	end
 end
 
 

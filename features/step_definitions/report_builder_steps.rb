@@ -618,8 +618,34 @@ When("I render the whenever crontab from config\\/schedule.rb") do
   @rendered_crontab = Whenever::JobList.new(string: File.read(Rails.root.join("config/schedule.rb"))).generate_cron_output
 end
 
-Then("the rendered crontab should invoke {string}") do |snippet|
-  expect(@rendered_crontab).to include(snippet)
+Then("the rendered crontab should not invoke {string}") do |snippet|
+  expect(@rendered_crontab).not_to include(snippet)
+end
+
+# Parsed rather than executed: the registrations sit inside Sidekiq.configure_server behind
+# `unless Rails.env.local?`, so they never run in the test process. Walking real call nodes
+# (not grepping the source) keeps the comments that still quote the old schedule.rb runner
+# line from matching.
+When("I read the sidekiq-cron registrations from config\\/initializers\\/sidekiq.rb") do
+  require "prism"
+  @sidekiq_cron_jobs = []
+  visit_node = lambda do |node|
+    if node.is_a?(Prism::CallNode) && node.name == :create && node.receiver&.slice == "Sidekiq::Cron::Job"
+      pairs = node.arguments.arguments.grep(Prism::KeywordHashNode).flat_map(&:elements)
+      @sidekiq_cron_jobs << pairs.to_h { |pair| [pair.key.unescaped, pair.value.try(:unescaped)] }
+    end
+    node.compact_child_nodes.each { |child| visit_node.call(child) }
+  end
+  visit_node.call(Prism.parse_file(Rails.root.join("config/initializers/sidekiq.rb").to_s).value)
+end
+
+Then("sidekiq-cron should run {string} on the cron {string}") do |job_class, cron|
+  job = @sidekiq_cron_jobs.find { |j| j["class"] == job_class }
+  expect(job).to be_present, "no Sidekiq::Cron::Job.create for #{job_class} in config/initializers/sidekiq.rb"
+  expect(job_class.safe_constantize).to be_present
+  # Normalised through Fugit (what sidekiq-cron parses with), so "every 1 hour" and
+  # "0 * * * *" are the same schedule.
+  expect(Fugit.parse_cronish(job["cron"]).to_cron_s).to eq(cron)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
