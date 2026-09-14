@@ -123,12 +123,81 @@ module CommitmentAccountEntry
   end
   alias period quarterly
 
-  def since_inception(name, entry_type, _start_date, end_date, sqlite: true)
+  # Raised when an incremental fund has earlier entries but no stored "Since Inception" total to
+  # carry forward — summing only what is in the trimmed scratch copy would silently understate it.
+  class MissingCarryForward < StandardError; end
+
+  # Opt-in per fund: json_fields["incremental_since_inception"] = true. Such funds are allocated
+  # on a trimmed scratch copy (RunFormulas#load_sqlite_db), so since_inception cannot re-sum all
+  # history. See docs/technical/incremental_allocation_history.md.
+  def self.incremental_since_inception?(fund)
+    fund&.json_fields.to_h["incremental_since_inception"].to_s == "true"
+  end
+
+  # carry_forward_name: the stored total to carry forward, when it is not "Since Inception <name>"
+  # — e.g. one formula totalling several names. Ignored unless the fund is incremental.
+  #
+  # Carry-forward only applies inside an allocation run (a scratch SQLite connection is active). Other
+  # callers — e.g. CapitalCommitmentTemplateDecorator's since_inception_<name> fields in statements —
+  # keep the full sum.
+  def since_inception(name, entry_type, start_date, end_date, sqlite: true, carry_forward_name: nil)
+    return since_inception_carried_forward(name, entry_type, start_date, end_date, carry_forward_name) if sqlite && Thread.current[:sqlite_scratch_connection] && CommitmentAccountEntry.incremental_since_inception?(fund)
+
     entries = sqlite ? account_entries_sqlite : account_entries
     entries = entries.not_cumulative.where(name:) if name.present?
     entries = entries.where(entry_type:) if entry_type.present?
 
     entries.not_cumulative.where(reporting_date: ..end_date).sum(:amount_cents)
+  end
+
+  # since_inception for incremental funds:
+  #   the previous run's stored "Since Inception <label>" total + the movement after its date.
+  # Same answer as the full sum, but it only reads rows the trimmed scratch copy keeps.
+  def since_inception_carried_forward(name, entry_type, start_date, end_date, carry_forward_name = nil)
+    label = name.presence || entry_type
+    # A names array has no "Since Inception <name>" total of its own, so it must say which stored
+    # total it carries forward. (GenerateAccountEntryMultiple expands its arrays before we get here.)
+    carry_forward_name ||= "Since Inception #{label}" if label.is_a?(String)
+    raise ArgumentError, "incremental since_inception over #{label.inspect} needs carry_forward_name:" if carry_forward_name.blank?
+
+    # The entries being totalled, from either database
+    movement = lambda do |entries|
+      entries = entries.not_cumulative
+      entries = entries.where(name:) if name.present?
+      entries = entries.where(entry_type:) if entry_type.present?
+      entries
+    end
+
+    # MySQL, for rows the scratch copy may not hold. Only rows before the window are read from
+    # here: the run deletes and regenerates the window itself, and those rows live in SQLite.
+    mysql_entries = AccountEntry.where(capital_commitment_id: id, deleted_at: nil)
+
+    # The previous run's total: the latest stored carry_forward_name entry before this window.
+    # The trim always keeps it (it is either inside the financial-year floor or the latest row
+    # for its key before that floor).
+    carry = account_entries_sqlite.not_cumulative.where(name: carry_forward_name, reporting_date: ...start_date)
+                                  .order(reporting_date: :desc, id: :desc).first
+
+    if carry.nil?
+      # Nothing to carry forward. That is only correct if the commitment has no earlier entries at
+      # all (a new commitment, or a regeneration from inception). Check MySQL — the copy is trimmed.
+      if movement.call(mysql_entries).exists?(reporting_date: ...start_date)
+        raise MissingCarryForward, "No '#{carry_forward_name}' entry before #{start_date} for commitment #{id}, " \
+                                   "but earlier '#{label}' entries exist. Run the previous period first."
+      end
+
+      return movement.call(account_entries_sqlite).where(reporting_date: start_date..end_date).sum(:amount_cents)
+    end
+
+    # Rows between the stored total and this window. Normally none: the previous run ended the day
+    # before start_date. When periods were skipped, sum the gap from MySQL, where it is complete.
+    gap = if carry.reporting_date < start_date - 1.day
+            movement.call(mysql_entries).where(reporting_date: (carry.reporting_date + 1.day)...start_date).sum(:amount_cents)
+          else
+            0
+          end
+
+    carry.amount_cents + gap + movement.call(account_entries_sqlite).where(reporting_date: start_date..end_date).sum(:amount_cents)
   end
 
   def year_to_date(name, entry_type, _start_date, end_date, sqlite: true)

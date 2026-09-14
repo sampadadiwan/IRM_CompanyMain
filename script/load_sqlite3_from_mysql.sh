@@ -1064,6 +1064,35 @@ for table in "${TABLES[@]}"; do
     fi
   fi
 
+  # Trimmed account_entries for incremental funds (set by RunFormulas#load_sqlite_db only when
+  # fund.json_fields["incremental_since_inception"] is on). Instead of all history, keep:
+  #   1. every row from AE_COPY_FROM to AE_COPY_TO (financial-year floor to the window end;
+  #      nothing reads beyond the window end),
+  #   2. every uploaded row (generated = 0), whatever its date — cheap, and nothing regenerates them,
+  #   3. the latest row(s) per key before AE_COPY_FROM — what as-of and carry-forward lookups
+  #      (get_account_entry_or_zero, "...order(:reporting_date).last", the stored
+  #      "Since Inception" totals) reach for when the key has not moved since.
+  if [[ "$table" == "account_entries" && -n "${AE_COPY_FROM:-}" && -n "${AE_COPY_TO:-}" ]]; then
+    # Dates are interpolated into SQL, so accept nothing but YYYY-MM-DD
+    if ! [[ "$AE_COPY_FROM" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ && "$AE_COPY_TO" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+      echo "AE_COPY_FROM/AE_COPY_TO must be YYYY-MM-DD, got '$AE_COPY_FROM' '$AE_COPY_TO'" >&2
+      exit 1
+    fi
+    echo "  Trimming account_entries to $AE_COPY_FROM..$AE_COPY_TO + uploaded + latest per key before $AE_COPY_FROM"
+    WHERE_CLAUSE="${WHERE_CLAUSE} AND (
+      \`generated\` = 0
+      OR reporting_date BETWEEN '${AE_COPY_FROM}' AND '${AE_COPY_TO}'
+      OR id IN (
+        SELECT id FROM (
+          SELECT id, reporting_date,
+                 MAX(reporting_date) OVER (PARTITION BY fund_id, capital_commitment_id, name, entry_type, parent_type, parent_id, cumulative) AS latest
+          FROM account_entries
+          ${WHERE_CLAUSE} AND reporting_date < '${AE_COPY_FROM}'
+        ) prior
+        WHERE reporting_date = latest
+      ))"
+  fi
+
   echo "  Step 1: Exporting $table → TSV"
   if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
     SQLITE_SOURCE="${SOURCE_SQLITE_DB:-$MYSQL_DB}"

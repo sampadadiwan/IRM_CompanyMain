@@ -7,7 +7,10 @@ Analysis of the 437 formulas on fund **321, Indium VI (Mauritius) Holdings Limit
 All numbers below are measured from the development database loaded with real data
 (MySQL on `127.0.0.1:33066`, schema `IRM_development`).
 
-Status: **proposal.** No code or formula has been changed yet.
+Status: **implemented and verified for fund 319 (True North Fund VI LLP, the master fund)** on
+the development database. Sections 1 to 11 are the original analysis of fund 321. Where the
+build departed from them, the section says so and points to **section 12**, which records what
+was actually built, how it was verified, and what is left.
 
 ---
 
@@ -29,6 +32,14 @@ than inventing one.
 | --- | --- |
 | Edit 28 formulas, or change the helper once? | **Change the helper once** |
 | Missing carry-forward value? | **Raise and fail the run** |
+| Gate the helper change per fund? | **Yes**, `fund.json_fields["incremental_since_inception"]` |
+| Refuse runs that do not start the day after the previous run? | **No.** The helper handles gaps instead (12.2) |
+| What does the scratch copy keep? | **Everything since the start of the financial year**, plus uploaded rows and the latest row per key before that (12.2). Replaces section 7's anchor dates |
+| Reuse the scratch SQLite file in development? | **No.** Removed; every run loads fresh |
+| Tracking formulas with inflated stored values? | **Fix the formula now, exempt from the diff, correct opening balances separately** |
+
+**Result on fund 319, August 2026:** identical output apart from the tracking formulas, run time
+195 s → 127 s, copy 349,410 → 121,985 rows, scratch file 1,164 MB → 507 MB. See 12.4.
 
 **Scope**
 
@@ -534,6 +545,10 @@ auto-generation path is inactive here but live on eight other funds.
 
 ### 4.6 Proposed helper shape
 
+> **Superseded by 12.2.** The built helper decides "first run" from MySQL, not the scratch copy
+> (on a trimmed copy an old commitment can look brand new), sums skipped days from MySQL instead
+> of relying on a contiguity check, and accepts `carry_forward_name:`.
+
 **Summary:** the helper gains a carry-forward lookup and a hard failure, gated by a flag.
 
 **Example** — sketch, not final code:
@@ -686,6 +701,12 @@ Writing `S(d)` for the open-ended sum to date `d`, and `T(n)` for the stored val
 ---
 
 ## 7. The retention rule
+
+> **Superseded by 12.2.** Fund 319 has 23 `year_to_date` and 23 `quarterly` formulas, which read a
+> *continuous* range from the start of the financial year and the quarter. Two anchor dates cannot
+> serve them, and the rule below also depends on the contiguity check that was dropped. The built
+> rule keeps everything since the financial-year start. The cap (7.1) and keeping uploaded rows
+> (7.4) carried over unchanged.
 
 ### Summary
 
@@ -1024,6 +1045,9 @@ not.
 
 ### 9.2 Gaps between runs
 
+> **Superseded by 12.2.** No contiguity check was built. The helper adds the movement *after the
+> stored total's date*, and sums any days between that date and the window from MySQL.
+
 - If a period is skipped entirely, the carry-forward is older than `@start_date - 1.day`, and
   the entries in between sit in neither the carry-forward nor the window.
 - The section 7 rule catches this before any formula runs: the previous successful
@@ -1043,10 +1067,9 @@ not.
 
 ### 9.4 Development reuse of the scratch file
 
-- `RunFormulas#load_sqlite_db` skips the load in development when the scratch file already
-  exists.
-- Once the copy depends on the window, a cached file from a different window is wrong.
-- The cache key must include the window and both anchors, or the shortcut must be dropped.
+- **Resolved: the shortcut was dropped.** Development now loads fresh on every run, names the
+  file with the process id, and deletes it afterwards, the same as production.
+- The reason: once the copy depends on the window, a cached file from a different window is wrong.
 
 ### 9.5 Periods before 2025-03-31
 
@@ -1081,28 +1104,235 @@ not.
 
 | # | Question | Decision |
 | --- | --- | --- |
-| 1 | Edit 28 formulas, or change the helper once? | **Change the helper once** |
-| 3 | Missing carry-forward value? | **Raise and fail the run** |
+| D1 | Edit 28 formulas, or change the helper once? | **Change the helper once** |
+| D2 | Missing carry-forward value? | **Raise and fail the run** (`CommitmentAccountEntry::MissingCarryForward`) |
+| D3 | Gate the helper change behind a per-fund flag? | **Yes**, `json_fields["incremental_since_inception"]` |
+| D4 | Retention rule? | **Everything since the financial-year start** + uploaded rows + latest row per key before it. Not section 7's anchor dates |
+| D5 | Refuse runs whose previous run does not end the day before? | **No.** Gaps are summed from MySQL by the helper |
+| D6 | Development reuse of the scratch file? | **Removed** |
+| D7 | Tracking formulas (compounding, section 6 and 12.1)? | **Confirmed unintended.** Bound the sum to the window, exempt from the diff, correct the stored opening balances separately |
+| D8 | Formula totalling several names (321's seq 303, 319's seq 168)? | **`since_inception([...], ..., carry_forward_name: fund_formula.name)`** |
+| D9 | Baseline window? | **Fund 319, 1–31 August 2026** (run 3305) |
 
 ### Still open
 
-1. **Gate the helper change behind a per-fund flag?** 43 funds call `since_inception` and
-   have not been analysed. Strongly recommended. See 4.5.
-2. **Seeding: run the old path once, or backfill directly?** Recommend running the old path
-   once. See 8.1.
-3. **Restatement handling:** detect, automate, or document? Detection composes with the
-   raise-and-fail decision. See 9.1.
-4. **Retention rule:** confirm the anchor-date rule in section 7. It replaces the earlier
-   continuous-floor proposal and is worth roughly 15 to 25 further percentage points.
-5. **The 5 tracking formulas:** confirm the compounding in section 6 is unintended, and that
-   they are exempt from the bit-identical diff.
-9. **The `|| 0` in the 45 already-incremental formulas.** Raise-and-fail does not reach
-   them. Accept the latest-per-key retention clause as the protection, or also change those
-   45 to raise? See 7.3.
-10. **Contiguity refusal.** Confirm that refusing a run whose previous successful run does
-    not end on `@start_date - 1.day` fits how operators actually work, given the ad-hoc
-    windows in 1.3.
-6. **`tracking_amount_cents` versus `amount_cents`** in those same 5. See section 6.
-7. **Baseline window** for the section 10 diff. Suggest `end_date = 2025-12-31` on fund 321.
-8. **`Portfolio FMV`:** confirm every re-run window contains at least one `Portfolio FMV`
-   entry. See section 5.
+1. **Seeding for the other funds:** run the old path once, or backfill directly? See 8.1. Fund 319
+   needed none for `since_inception` (its stored totals exist from 2025-03-31); its tracking
+   formulas are follow-up F1 in 12.5.
+2. **Restatement handling:** detect, automate, or document? See 9.1. With no contiguity check,
+   nothing detects a stale stored total after a back-dated edit.
+3. **The `|| 0` in the already-incremental formulas.** The FY-floor rule keeps the latest row per
+   key, which is what those lookups read, but a key with no row at all still reads zero silently.
+   See 7.3.
+4. **`tracking_amount_cents` versus `amount_cents`** in the tracking formulas. See section 6.
+5. **The other 42 funds** that call `since_inception` stay on the old path until each is checked
+   and flagged.
+
+---
+
+## 12. Fund 319: what was built and how it was verified
+
+### Summary
+
+Fund 319 is now allocated from a trimmed copy with a carry-forward `since_inception`, behind a
+per-fund flag. Re-running August 2026 on the new code produced the same entries as the old code,
+except the tracking formulas that were deliberately fixed, in two thirds of the time.
+
+### 12.1 How fund 319 differs from the fund 321 analysis
+
+**Summary:** same shape of problem, but three things the 321 analysis did not have to deal with.
+
+**Example** — the 310 formulas on fund 319:
+
+| Category | Formulas | Action |
+| --- | --- | --- |
+| `since_inception` callers | 23 | 22 fixed by the helper alone; **seq 168** rewritten (below) |
+| `year_to_date` / `quarterly` callers | 23 / 23 | No change, but they need a **continuous** range (see D4) |
+| Tracking formulas with open-ended `reporting_date: ..@end_date` sums | **6** (seq 230–235) | Bounded to the window |
+| Already incremental (`.order(:reporting_date).last`) | 26 (seq 24–79) | No change |
+| As-of lookups (`get_account_entry_or_zero`) | 40 formulas, 59 calls (17 pass a `parent:`) | No change |
+| Open-ended `payment_date` sums / exchange-rate lookups | 15 / 9 | No change |
+| Open-ended `total_amount`, `Portfolio FMV` guard | 0 / 0 | Not present on 319 |
+
+**The tracking formulas are compounding in production on 319** (on 321 they had never run).
+Commitment 13905, `Total Amount Invested tracking`, as stored:
+
+| Date | Stored | Increase |
+| --- | --- | --- |
+| 2025-12-31 | 0.00 | — |
+| 2026-03-31 | 53,115,011 | +53.1M |
+| 2026-05-12 | 106,272,452 | +53.2M |
+| 2026-05-27 | 159,442,146 | +53.2M (15-day window) |
+| 2026-05-31 | 212,611,840 | +53.2M (**4-day** window) |
+| 2026-06-30 | 264,928,610 | +52.3M |
+| 2026-07-31 | 317,247,504 | +52.3M |
+| 2026-08-31 | 370,034,419 | +52.8M |
+
+**In plain terms**
+
+- Each run re-adds the whole since-inception sum on top of the last stored total, so the stored
+  value tracks the *number of runs*, not the data. It is roughly 7× the true figure by August.
+- **Seq 168** (`Since Inception Apportioned Expenses`) adds three `since_inception` calls. No
+  `Since Inception Apportioned Expenses Management Fees` (etc.) entry exists, so the helper's
+  default name rule would raise on every run. The formula's own stored total covers all three.
+- **`year_to_date` and `quarterly`** sum from the financial-year start and the quarter start. Two
+  anchor dates cannot feed a range, which is why section 7's rule was replaced.
+
+### 12.2 The design as built
+
+**Summary:** one flag, one filter in the copy script, one helper change. Funds without the flag
+run exactly as before.
+
+**Example** — the three pieces:
+
+| Piece | Where | What it does |
+| --- | --- | --- |
+| Flag | `fund.json_fields["incremental_since_inception"] = true` | Opts a fund in. Checked by `CommitmentAccountEntry.incremental_since_inception?` |
+| Trimmed copy | `RunFormulas#load_sqlite_db` sets `AE_COPY_FROM` / `AE_COPY_TO`; `script/load_sqlite3_from_mysql.sh` filters `account_entries` | Keeps rows from `AE_COPY_FROM` to the window end, every `generated = 0` row, and the latest row(s) per `(fund, commitment, name, entry_type, parent, cumulative)` before `AE_COPY_FROM` |
+| Helper | `CommitmentAccountEntry#since_inception` → `since_inception_carried_forward` | Stored total + skipped days (MySQL) + window (SQLite) |
+
+`AE_COPY_FROM` is the earliest date any helper sums from:
+`min(financial-year start, quarter start, start_date)`. For August 2026 on fund 319 that is
+2026-04-01.
+
+The helper, for one commitment and one name:
+
+```mermaid
+graph TD
+    A["latest stored 'Since Inception &lt;name&gt;'<br/>before start_date (SQLite)"] -->|found| B{"dated start_date - 1?"}
+    A -->|not found| C{"any earlier &lt;name&gt; entries<br/>in MySQL?"}
+    C -->|no: new commitment,<br/>or regeneration from inception| D["window sum only"]
+    C -->|yes| E["raise MissingCarryForward"]
+    B -->|yes, the usual case| F["stored + window sum"]
+    B -->|no, days were skipped| G["stored + MySQL sum of the skipped days + window sum"]
+```
+
+**In plain terms**
+
+- **Why "first run" is decided in MySQL.** On a trimmed copy an old commitment whose history was
+  cut can look brand new. Asking MySQL costs one `EXISTS`, and only when no stored total exists.
+- **Why gaps are summed from MySQL.** Rows before the window never change during a run (the run
+  only deletes its own window), so MySQL is complete for them. The query only runs when days were
+  skipped, so the usual run makes no MySQL calls from the helper.
+- **Why not sum everything from MySQL.** Measured: 450 since-inception sums for fund 319 took
+  71 s, a third of the whole run.
+- **`carry_forward_name:`** names the stored total when one formula totals several names:
+
+  ```ruby
+  capital_commitment.since_inception(["Apportioned Expenses Management Fees",
+                                      "Apportioned Expenses Fund Administrative Costs",
+                                      "Apportioned Expenses Others"], nil, @start_date, @end_date,
+                                     carry_forward_name: fund_formula.name)
+  ```
+- **What the trim filter costs.** The export query with the window function takes about 8 s on
+  the full `account_entries` table for fund 319.
+- **The saving shrinks through the financial year.** Measured copy sizes for fund 319:
+
+  | Window | Rows copied (of 362,202) | Saved |
+  | --- | --- | --- |
+  | Jun 2026 | 108,707 | 70% |
+  | Aug 2026 | 134,777 | 63% |
+  | Mar 2026 (last month of the FY) | 274,085 | 24% |
+
+### 12.3 How it was verified
+
+**Summary:** snapshot the fund's entries, re-run the same window on old and new code, and diff.
+
+**Example** — `lib/tasks/allocation_snapshot.rake`:
+
+```bash
+bundle exec rake "allocation_snapshot:take[319,a_prod]"        # restore point, before any run
+bundle exec rake "allocation_snapshot:list[319]"
+bundle exec rake "allocation_snapshot:diff[319,b_old_code,c_new_code]" FROM=2026-08-01 TO=2026-08-31
+```
+
+| Snapshot | Taken | Purpose |
+| --- | --- | --- |
+| `a_prod` | Before anything ran | Restore point; the prod run 3305 output |
+| `b_old_code` | After re-running August on the old code (run 3317) | Baseline |
+| `c_new_code` | After re-running August with the flag on (run 3318) | Candidate |
+
+**In plain terms**
+
+- A snapshot is a `CREATE TABLE ... AS SELECT` of the fund's live rows, so it doubles as a backup:
+  a run hard-deletes its window before regenerating it.
+- The diff compares **generated** rows per key (formula, name, entry type, date, commitment,
+  folio, parent, cumulative, rule_for): the row count and the summed `amount_cents`,
+  `folio_amount_cents` and `tracking_amount_cents` must match. It all runs in MySQL.
+- `TOLERANCE` (default 0.0001 cents) absorbs float rounding. SQLite sums as floats, and the
+  carry-forward reaches the same total through different additions, so the 8th decimal can move.
+  Keys that differ only within it are counted and reported separately.
+- **Why B and not the prod output as the baseline.** A→B differed on 7,968 keys, and none of it
+  came from the code. `tracking_amount_cents` is filled in afterwards by the nightly
+  `TrackingCurrencyJob`, which never ran locally, so B's 31 August rows read zero where prod has
+  values (7,928 keys). The other 40 keys are tracking formulas that sum those unfilled amounts.
+  B and C both run without the job, so they are comparable.
+
+### 12.4 Results: August 2026
+
+**Summary:** it worked. Identical output except the intended change, and a much smaller copy.
+
+**Example**
+
+| | Old code (run 3317) | New code (run 3318) |
+| --- | --- | --- |
+| Status | Success | Success |
+| Whole run | 195 s | **127 s** |
+| SQLite load | 67 s | **25 s** |
+| `account_entries` rows copied | 349,410 | **121,985** |
+| Scratch file | 1,164 MB | **507 MB** |
+| Entries written | 12,792 | 12,792 |
+
+B→C diff for 1–31 August:
+
+| Outcome | Keys |
+| --- | --- |
+| Identical before 1 August | all |
+| Differ only by float rounding (≤ 0.0001 cents) | 59 |
+| Differ for real | **47, all tracking formulas** |
+
+| Name | Keys | Why |
+| --- | --- | --- |
+| Portfolio sold tracking (232) | 7 | Formula fixed |
+| Total Amount Invested tracking (234) | 8 | Formula fixed |
+| Exit Cost tracking (233) | 8 | Formula fixed |
+| Since Inception Other Income tracking (230) | 8 | Formula fixed |
+| Since Inception Total Expenses tracking (235) | 8 | Formula fixed |
+| Net Current Assets before profit distribution to GP tracking (236) | 8 | Adds up the formulas above |
+
+Unit checks on a trimmed copy, before the run:
+
+| Check | Result |
+| --- | --- |
+| Helper vs full-history MySQL sum, 22 single-name calls × 18 commitments | 350 exact, 46 within 0.0000003 cents |
+| Seq 168's three names, *before* the rewrite | 54 × `MissingCarryForward`, as intended |
+| Seq 168 with `carry_forward_name:` | 18 of 18 within 0.000013 cents |
+
+**In plain terms**
+
+- Every non-tracking entry the new code wrote matches the old code.
+- Seq 231 (`Since Inception Deal Income tracking`) is missing from the list only because its
+  bounded and unbounded sums happen to be equal: for commitment 13905 the stored 31 July value is
+  0.00 and both runs write 5,908,211.75, so every row it sums falls inside August.
+- How to read one difference, commitment 13905, `Total Amount Invested tracking` on 31 August:
+  stored 31 July total 317,247,504.40. Old code: 317,247,504.40 + the whole since-inception sum
+  (52,803,356.51) = 370,050,860.91. New code: 317,247,504.40 + August's movement (16,441.99)
+  = 317,263,946.39. The gap between the two is exactly the history the old formula re-added.
+- The fixed tracking formulas are still wrong in value: they add August's movement to July's
+  inflated stored total. That is F1 below.
+
+### 12.5 Follow-ups
+
+| # | Item | Why it matters |
+| --- | --- | --- |
+| F1 | **Done locally for fund 319.** Reseeded 31 July (42 entries), re-ran August (run 3319, snapshot `ae_snapshot_319_d_reseeded`), then dry-ran the same task for 31 August: all 42 stored values equal their recomputed since-inception totals to the cent (13905 `Total Amount Invested tracking` 52,803,356.50 both ways). Still to do in production. Correct the tracking formulas' stored opening balances. Tool: `rake "allocation:reseed_carry_forward[319,2026-07-31,230 231 232 233 234 235]"` (`DRY_RUN=true` previews) | Until then the fixed formulas carry forward inflated values. Dry run on 31 July: 42 entries, e.g. commitment 13905 `Total Amount Invested tracking` 317,247,504.40 → 52,786,914.51. The fund-level rollup row on that date is not touched; the engine rebuilds it when the period is re-run |
+| F2 | Tracking formulas read `tracking_amount_cents` before `TrackingCurrencyJob` fills it | In production, entries generated in the same run still read zero until the nightly job runs |
+| F3 | Harder windows: first run of a financial year, last month of one | The August window had a contiguous predecessor and a mid-year floor. **Deferred:** older windows have dozens of overlapping re-runs and from-inception regenerations (unlocking 28–31 Mar 2026 alone touched 58 runs), so verification stays on the most recent period |
+| F4 | Cucumber coverage for an incremental fund | No automated test covers the flag, the trim or the raise yet |
+| F5 | Apply to production | The flag and the formula edits exist only in the development database. Tool: `rake "allocation:enable_incremental[fund|entity,<id>]"` (dry run by default, `APPLY=true` writes; `allocation:disable_incremental` reverses), implemented in `AccountEntryAllocation::IncrementalMigration` |
+| F6 | Funds 320 and 321: seq 34 sums `total_amount` from `DistributionFee.minimum(:start_date)` (fallback `@start_date - 1.month`) | Tranche starts can predate the copy floor (distribution 1493: 2025-04-01), so the trimmed copy silently under-sums. Their validated windows did not exercise it. The migration blocks any `start_date:`, as-of date or range start other than `@start_date`, `@end_date`, `@end_date.beginning_of_quarter`, `@start_of_financial_year` |
+| F7 | Funds 324–328: seq 19/48 sum `reporting_date: ..@end_date` with no carry-forward | Blocked; needs a rewrite to `since_inception(nil, "<entry type>", ..., carry_forward_name: fund_formula.name)` before enabling |
+
+Local state left by the verification: fund 319 has the flag; formulas 168 and 230–235 are edited
+(backup table `ff_snapshot_319_before_incremental`); runs 3268, 3303, 3304 and 3305 are unlocked;
+snapshot tables `ae_snapshot_319_a_prod`, `_b_old_code` and `_c_new_code` exist.

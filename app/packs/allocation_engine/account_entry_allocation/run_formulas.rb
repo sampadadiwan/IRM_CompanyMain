@@ -60,10 +60,7 @@ module AccountEntryAllocation
       # The fund ids alone are not unique enough: two runs of the *same* fund (parallel
       # cucumber processes all seed fund id 1, and two users can kick off the same fund
       # in production) would otherwise share one scratch file and clobber each other.
-      # Development keeps the bare fund-id name so the "file already exists" shortcut
-      # below can still reuse a previously loaded DB across runs.
-      scratch_key = fund_ids.join("_")
-      scratch_key = "#{scratch_key}_#{Process.pid}" unless Rails.env.development?
+      scratch_key = "#{fund_ids.join('_')}_#{Process.pid}"
 
       # The scratch files run to several GB for a real fund, so they have to sit on real
       # disk. /tmp is a tmpfs on most dev machines: a tmpfs is backed by RAM+swap rather
@@ -98,11 +95,24 @@ module AccountEntryAllocation
       # exactly where the source database file is located.
       env["SOURCE_SQLITE_DB"] = Rails.root.join(db_config[:database]).to_s if adapter == "sqlite3"
 
+      # Incremental funds get a trimmed account_entries copy instead of all history: rows from
+      # AE_COPY_FROM to AE_COPY_TO, all uploaded rows, and the latest row per key before
+      # AE_COPY_FROM (see the script). AE_COPY_FROM is the earliest date a helper sums from:
+      # year_to_date starts at the financial year, quarterly at the quarter, the window at start_date.
+      # since_inception does not need older rows — it carries forward the stored total instead.
+      incremental = CommitmentAccountEntry.incremental_since_inception?(fund)
+      if incremental
+        end_date = ctx[:end_date]
+        env["AE_COPY_FROM"] = [fund.start_of_financial_year_date(end_date), end_date.beginning_of_quarter, ctx[:start_date]].min.to_s
+        env["AE_COPY_TO"] = end_date.to_s
+      end
+
       # Everything the script was told to do, so a failure can be reproduced from the log
       # by hand without guessing at the environment. The password is deliberately omitted.
       Rails.logger.info do
         "load_sqlite_db: running #{script_path} for fund #{fund.id} (#{fund.name}) " \
           "fund_ids=#{fund_ids.join(',')} entity_id=#{entity_id} adapter=#{adapter} " \
+          "account_entries=#{incremental ? "#{env['AE_COPY_FROM']}..#{env['AE_COPY_TO']} (trimmed)" : 'all'} " \
           "source=#{env.fetch('SOURCE_SQLITE_DB', "#{env['MYSQL_HOST']}:#{env['MYSQL_PORT']}/#{env['MYSQL_DB']}")} " \
           "target=#{ctx[:sqlite_path]}"
       end
@@ -118,29 +128,24 @@ module AccountEntryAllocation
 
       # Execute the external migration script and wait for it to finish.
       # The script handles the heavy lifting of bulk exporting/importing via TSV.
+      # Always a fresh load, development included: the copy depends on the run window, so a file
+      # left by an earlier run cannot be reused.
       started_at = Time.zone.now
-      status = nil
-      if Rails.env.development? && File.exist?(ctx[:sqlite_path])
-        Rails.logger.debug { "Skipping SQLite DB load in development as file already exists at #{ctx[:sqlite_path]}" }
-        success = true
-        script_output = ""
-      else
-        require "open3"
-        script_output, status = Open3.capture2e(env, "bash #{script_path}")
-        success = status.success?
-      end
+      require "open3"
+      script_output, status = Open3.capture2e(env, "bash #{script_path}")
+      success = status.success?
       duration = (Time.zone.now - started_at).round(1)
 
       # Log the script's whole output on every run, not just failures. It ends with a
       # per-table record count, which is the only way to tell a load that legitimately
       # found no rows from one that silently exported the wrong thing.
       Rails.logger.info do
-        "load_sqlite_db: #{script_path.basename} exited #{status&.exitstatus || 0} after #{duration}s\n" \
+        "load_sqlite_db: #{script_path.basename} exited #{status.exitstatus} after #{duration}s\n" \
           "----- script output -----\n#{script_output}----- end script output -----"
       end
 
       unless success
-        exit_code = status&.exitstatus || "unknown"
+        exit_code = status.exitstatus
         # Tail last 50 lines of output — the failure line is usually near the end.
         # The full output is in the log line above.
         tail_output = script_output.to_s.lines.last(50).join
@@ -246,7 +251,7 @@ module AccountEntryAllocation
       [sqlite_path].compact.each do |path|
         if File.exist?(path)
           Rails.logger.debug { "Cleaning up isolated temporary file: #{path}" }
-          File.delete(path) unless Rails.env.development?
+          File.delete(path)
         end
 
         # Also cleanup the sidecar files if they exist. `-journal` matters as much as the
@@ -257,7 +262,7 @@ module AccountEntryAllocation
           "#{path}-shm",
           "#{path}-journal"
         ].each do |extra_path|
-          File.delete(extra_path) if File.exist?(extra_path) && !Rails.env.development?
+          FileUtils.rm_f(extra_path)
         end
       end
 
