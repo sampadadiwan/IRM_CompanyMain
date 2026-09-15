@@ -280,10 +280,12 @@ sequenceDiagram
 ```
 
 **Why the first-boot service checks exist:** the `every :reboot` crontab
-entries (sidekiq, puma, prometheus_exporter, and the `xirr_py` container — see
+entries (prometheus_exporter and the `xirr_py` container — see
 `config/schedule.rb`) are installed by Capistrano **after** a fresh instance
 has already booted, so they do nothing until the next reboot. Puma and sidekiq
-are started by the deploy's own restart hooks regardless; `xirr_py` and
+are not cron-started at all: they are systemd units, started by the deploy's
+own restart hooks and enabled for boot (see
+[Process Supervision](technical/process_supervision.md)); `xirr_py` and
 `prometheus_exporter` are not. `aws:setup_infra` therefore runs
 `cap <stage> IRM:start_boot_services` immediately after deploying, which starts
 exactly those two services and is a no-op when they are already running.

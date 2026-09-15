@@ -124,7 +124,8 @@ S3 bucket access, backup freshness, SSM params, observability box, DNS and
 website hosts. Prints a ✅/⚠️/❌ scorecard and a ranked, cheapest-first repair
 plan naming the exact `dr:fix:*` command. Without `ASSESS_READ_ONLY=true` it
 auto-fixes only the trivial rung (restart dead sidekiq/containers on otherwise
-healthy hosts).
+healthy hosts). Sidekiq is restarted through `cap sidekiq:ensure_clean_restart`;
+see [Process Supervision](process_supervision.md).
 
 ### `rake "s3:check_backup_freshness[env_name]"` — RO
 Alerts when the xtrabackup buckets (primary **and** cross-region replica) are

@@ -149,6 +149,7 @@ Hook: after 'deploy:published'
                                  systemctl start, which waits for READY → verify exactly one
                                  worker, inside the unit's cgroup, running the new release)
 ```
+Why and how, including failure messages: [Process Supervision](process_supervision.md#deploy-flow).
 
 ### Phase 6 — Permissions & cleanup
 ```
@@ -380,19 +381,18 @@ bundle exec cap production_in nginx:switch_app
 - Socket: `/home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock`
 - Config template: `config/deploy/templates/puma.rb.erb`
 - 4 workers × 16 threads, `preload_app!`
-- systemd only (enabled for boot start, `Restart=always`); monit no longer supervises it
+- systemd only (enabled for boot start, `Restart=always`); monit no longer supervises it —
+  see [Process Supervision](process_supervision.md#puma)
 
 ### Sidekiq
-- Systemd unit: `sidekiq_IRM_{stage}` — template `config/deploy/services/sidekiq_IRM_env.service.erb`
-- systemd is the **only** launcher: no monit check, no `@reboot` cron entry. The unit is
-  enabled (boot start), `Type=notify` (start waits until Sidekiq is ready), has a watchdog,
-  and `Restart=always`.
-- Daily memory-shedding restart: `sudo systemctl restart sidekiq_IRM_{stage}` from `config/schedule.rb`
-- Manual control: `cap <stage> sidekiq:restart` / `sidekiq:stop`, or `sudo systemctl status|restart sidekiq_IRM_{stage}` on the box
-- Logs: `/home/ubuntu/IRM/shared/log/sidekiq.log`
-- Why: monit, two cron entries and Capistrano used to each find Sidekiq by regex, and a copy
-  that was still booting escaped the deploy's stop and check, leaving duplicate workers.
-  Alerts "Sidekiq Canary Stale" and "Sidekiq Duplicate Workers" cover that failure class.
+- Systemd unit `sidekiq_IRM_{stage}` — the **only** launcher (no monit, no `@reboot` cron).
+  `Type=notify`, watchdog, `KillMode=mixed`, `Restart=always`; enabled for boot start.
+- Deploy: `sidekiq:install_service` then `sidekiq:ensure_clean_restart` (stop → kill strays →
+  start and wait for READY → verify one worker is the unit's MainPID on the new release).
+- Daily restart: `systemctl restart` from `config/schedule.rb`. Logs: `shared/log/sidekiq.log`.
+- Alerts: Sidekiq Down, **Sidekiq Canary Stale**, **Sidekiq Duplicate Workers**.
+- Full design, unit settings, alerts, troubleshooting and rollout:
+  **[Process Supervision](process_supervision.md)**.
 
 ### Nginx
 - Reverse proxies to Puma Unix socket
@@ -400,12 +400,9 @@ bundle exec cap production_in nginx:switch_app
 - Config template: `config/deploy/templates/nginx_conf.erb`
 
 ### Monit (retired)
-- Not used. systemd supervises Puma and Sidekiq; monit running alongside them could launch
-  duplicate copies.
-- `monit:retire` (runs before `deploy:publishing` on every deploy, and after `IRM:setup`) stops and
-  disables monit on boxes whose AMI still ships it and removes its configs. It refuses to run if
-  the Puma systemd unit is missing, since monit might then be Puma's only supervisor.
-- New app-server AMIs (`appserver.ami.pkr.hcl`) no longer install it.
+- Not used; systemd alone supervises Puma and Sidekiq. `monit:retire` (before `deploy:publishing`
+  and after `IRM:setup`) disables it on boxes whose AMI still ships it and clears any Puma it
+  launched. New AMIs don't install it. Details: [Process Supervision](process_supervision.md#retiring-monit).
 
 ### Log rotation
 - Configured by `IRM:setup_logrotate`

@@ -1,6 +1,7 @@
 # Sidekiq for IRM (<%= fetch(:stage) %>). Installed to
 # /etc/systemd/system/sidekiq_IRM_<%= fetch(:stage) %>.service by
 # sidekiq:install_service (config/deploy.rb), which every deploy runs.
+# Design, deploy flow, alerts and troubleshooting: docs/technical/process_supervision.md
 #
 # WHY SYSTEMD AND NOT MONIT
 # -------------------------

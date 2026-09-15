@@ -1,7 +1,7 @@
 # Proves Sidekiq is PROCESSING jobs, not merely alive. sidekiq-cron enqueues it
 # every minute (config/initializers/sidekiq.rb) and each run records the time it
 # ran; the "Sidekiq Canary Stale" rule in observability/grafana_provision.yml
-# fires when that time falls behind.
+# fires when that time falls behind. See docs/technical/process_supervision.md.
 #
 # Why "Sidekiq Down" is not enough: it checks that some Sidekiq on each host is
 # pushing process metrics, and that metrics thread keeps running whether or not

@@ -101,7 +101,7 @@ healthy. This mirrors `dr:verify`, which already restarts a downed
 | Auto-fixed | How |
 |---|---|
 | Elasticsearch / Redis container on the DB primary | the baked `/usr/local/bin/start_data_containers.sh` |
-| sidekiq on an app server | `cap sidekiq:ensure_clean_restart`, filtered to that host |
+| sidekiq on an app server | `cap sidekiq:ensure_clean_restart`, filtered to that host (systemd restart + stray sweep + verification — see [Process Supervision](technical/process_supervision.md#deploy-flow)) |
 | `xirr_py` container on an app server | `cap IRM:start_boot_services`, filtered to that host |
 
 Nothing else. No Pulumi, no deploy, no restore, no MySQL, no nginx config.

@@ -18,11 +18,11 @@ every :reboot, roles: [:app] do
   # sources described in config/deploy/services/sidekiq_IRM_env.service.erb.
   bundle "prometheus_exporter -b 0.0.0.0"
   # puma is deliberately NOT started here — it's already managed by the
-  # puma_IRM_staging systemd unit (WantedBy=multi-user.target starts it on
+  # puma_IRM_<stage> systemd unit (WantedBy=multi-user.target starts it on
   # boot on its own). Starting it a second time here raced systemd for the
   # shared unix socket: whichever `current` release the box's FIRST boot
   # happened to be symlinked to won the socket permanently, and every later
-  # `systemctl restart puma_IRM_staging` from any subsequent deploy
+  # `systemctl restart puma_IRM_<stage>` from any subsequent deploy
   # crash-looped against the already-bound socket instead of replacing it —
   # so the app kept serving off a release that could be arbitrarily old
   # (found live during a DR drill: puma was still serving a release from a
@@ -41,7 +41,10 @@ every :saturday, at: '00:50 am', roles: [:app] do
   command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
 end
 every :saturday, at: '1:00 am', roles: [:app] do
-  # This time is in UTC 2am IST is 9pm UTC
+  # 01:00 UTC Saturday (server clocks are UTC): 6:30am IST; Friday 9pm EDT /
+  # 8pm EST in the US. Puma and sidekiq come back on their own — both systemd
+  # units are enabled — and the reboot stops sidekiq through its unit, so
+  # in-flight jobs drain before shutdown. See docs/technical/process_supervision.md.
   command 'sudo reboot'
 end
 
