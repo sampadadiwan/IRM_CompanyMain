@@ -12,7 +12,10 @@ set :env_variant, "in"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
 every :reboot, roles: [:app] do
-  bundle "sidekiq"
+  # sidekiq is deliberately NOT started here either — the sidekiq_IRM_<stage>
+  # systemd unit is enabled and starts it on boot. This line used to launch a
+  # second, unsupervised Sidekiq alongside monit's, one of the duplicate-worker
+  # sources described in config/deploy/services/sidekiq_IRM_env.service.erb.
   bundle "prometheus_exporter -b 0.0.0.0"
   # puma is deliberately NOT started here — it's already managed by the
   # puma_IRM_staging systemd unit (WantedBy=multi-user.target starts it on
@@ -104,8 +107,12 @@ end
 # Sidekiq process instead of forking a fresh Rails boot on every tick. See
 # WebsiteLeadPurgeJob and the ReportBuilderSchedulerJob registration there.
 
-# Force-restart Sidekiq daily at ~7:20am local time. Works around a build-up
-# (stuck/leaked workers) that a plain `monit restart` alone doesn't clear.
+# Restart Sidekiq daily at ~7:20am local time to shed accumulated memory.
+# Through systemd: the old `pkill -9` + relaunch here dropped in-flight jobs,
+# and its async `monit unmonitor`/`monitor` pair could leave monit starting a
+# second copy. `systemctl restart` drains jobs first and waits for the new
+# worker to be ready — bounded by `timeout`, because with Restart=always a
+# Sidekiq that crash-loops on boot would otherwise leave this job hanging.
 # Server clocks are UTC regardless of region:
 #   in -> IST is UTC+5:30 year-round -> 7:20am IST = 1:50am UTC
 #   us -> US Eastern has DST the server clock can't track; 11:50am UTC splits
@@ -113,5 +120,5 @@ end
 sidekiq_restart_at = env_variant == 'us' ? '11:50 am' : '1:50 am'
 
 every 1.day, at: sidekiq_restart_at, roles: [:app] do
-  command "(sudo /usr/bin/monit unmonitor sidekiq_IRM_#{environment}; pkill -9 -f '^sidekiq [0-9]'; sleep 2; cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 setsid ~/.rvm/bin/rvm default do bundle exec sidekiq -e #{environment}     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 & sleep 2; sudo /usr/bin/monit monitor sidekiq_IRM_#{environment}) >> /home/ubuntu/sidekiq_restart.log 2>&1"
+  command "(date; sudo /usr/bin/timeout 900 /usr/bin/systemctl restart sidekiq_IRM_#{environment} && echo restarted || echo 'restart failed or timed out') >> /home/ubuntu/sidekiq_restart.log 2>&1"
 end

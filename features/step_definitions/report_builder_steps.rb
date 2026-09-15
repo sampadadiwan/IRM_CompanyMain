@@ -622,6 +622,10 @@ Then("the rendered crontab should not invoke {string}") do |snippet|
   expect(@rendered_crontab).not_to include(snippet)
 end
 
+Then("the rendered crontab should invoke {string}") do |snippet|
+  expect(@rendered_crontab).to include(snippet)
+end
+
 # Parsed rather than executed: the registrations sit inside Sidekiq.configure_server behind
 # `unless Rails.env.local?`, so they never run in the test process. Walking real call nodes
 # (not grepping the source) keeps the comments that still quote the old schedule.rb runner

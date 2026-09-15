@@ -20,6 +20,9 @@
 #           while healthy - 24 "all good" popups a day would train you to
 #           dismiss them unread.
 #   `daily` is the 09:00 IST morning report (rake s3:backup_daily_report). It
+#           also checks documents-bucket replication (S3CheckJob): the newest
+#           uploaded file must be in the other-region replica. That lists the
+#           whole bucket, which is why it is daily and not hourly. It
 #           always notifies, so the absence of a notification is itself
 #           meaningful: it means cron did not run at all. It also leaves the
 #           full report on disk at REPORT_FILE, so the detail is still there
@@ -77,8 +80,11 @@ DASHBOARD_FILE = File.join(REPO_ROOT, 'log', 'db_backup_dashboard.html')
 MAX_EXPECTED_GAP_MINUTES = 90
 LOG_RETENTION_DAYS = 14
 
-# Bundler/rake chatter that carries no signal and would bury the report.
-NOISE_RE = /\A(warning: parser|Please see https|DEPRECATION WARNING|✅ Overloaded)/
+# Bundler/rake chatter that carries no signal and would bury the report. The
+# second alternative is Bundler 2.6 on Ruby 4 redefining Gem::Platform constants
+# (`.../rubygems_ext.rb:294: warning: already initialized constant ...` plus its
+# `previous definition of ... was here` twin) - 18 lines per rake boot.
+NOISE_RE = /\A(warning: parser|Please see https|DEPRECATION WARNING|✅ Overloaded)|: warning: (already initialized constant|previous definition of) /
 
 def run_check(env_name, task:)
   require 'fileutils'
@@ -194,6 +200,45 @@ def parse_history(line)
   }
 end
 
+# "REPLICATION|production.in|ok|enabled (rule)|123456|84.2|0.4|detail" -> a row.
+# Statuses that are healthy or merely in flight; anything else needs a look.
+REPLICATION_OK = %w[ok PENDING].freeze
+
+def parse_replication(line)
+  _tag, env_name, status, rule, objects, seconds, age, detail = line.split('|', 8)
+  {
+    'region' => env_name.sub('production.', '').upcase,
+    'status' => status,
+    'rule' => rule,
+    'objects' => objects.to_i,
+    'seconds' => seconds.to_f,
+    'age_h' => age.to_s.empty? ? nil : age.to_f,
+    'detail' => detail.to_s
+  }
+end
+
+def explain_replication_row(r)
+  case r['status']
+  when 'ok'
+    "Healthy — the newest file uploaded to the #{r['region']} documents bucket (#{r['age_h']}h ago) is in the " \
+    "other-region replica with the same size, and the replication rule is #{r['rule']}."
+  when 'PENDING'
+    "In flight — #{r['detail']}. Normal for a large upload; it only counts as stuck after 6h."
+  when 'EMPTY'
+    "NEEDS A LOOK — #{r['detail']}, so nothing could be verified."
+  when 'NO RULE'
+    "BROKEN — the replication rule is #{r['rule']}. Files already copied are safe, but nothing uploaded from " \
+    'now on will reach the other region.'
+  else
+    "BROKEN — #{r['detail']}. Documents in this region are not reliably being copied to the other region."
+  end
+end
+
+def format_replication(row)
+  line = "#{row['region']} documents: newest file #{row['age_h'] || '—'}h ago"
+  row['status'] == 'ok' ? "#{line}, replicated" : "#{line} — #{row['status']}"
+end
+
 def format_summary(row)
   line = "#{row['region']} #{row['bucket']}: full #{row['age_h']}h ago, #{row['size']}"
   row['status'] == 'ok' ? line : "#{line} — #{row['status']}"
@@ -263,9 +308,18 @@ def sparkline(values, width: 220, height: 30)
   %(<svg class="spark" width="#{width}" height="#{height}" viewBox="0 0 #{width} #{height}" preserveAspectRatio="none"><polyline points="#{points.join(' ')}" fill="none" stroke="#2563eb" stroke-width="1.5"/></svg>)
 end
 
-def write_dashboard(rows, histories, raw_report)
+def write_dashboard(rows, histories, replications, raw_report)
   require 'cgi'
   generated = Time.now.to_s
+
+  replication_html = replications.map do |r|
+    cls = REPLICATION_OK.include?(r['status']) ? 'ok' : 'bad'
+    "<tr><td>#{r['region']}</td><td>#{r['age_h'] || '—'}h ago</td>" \
+      "<td>#{CGI.escapeHTML(r['rule'])}</td>" \
+      "<td class=\"num\">#{r['objects']}</td><td class=\"num\">#{r['seconds']}s</td>" \
+      "<td><span class=\"pill #{cls}\">#{CGI.escapeHTML(r['status'])}</span></td></tr>\n" \
+      "<tr class=\"explain\"><td colspan=\"6\">#{CGI.escapeHTML(explain_replication_row(r))}</td></tr>"
+  end.join("\n")
 
   today_html = rows.map do |r|
     cls = r['status'] == 'ok' ? 'ok' : 'bad'
@@ -332,6 +386,16 @@ def write_dashboard(rows, histories, raw_report)
       #{today_html}
     </table>
 
+    <h2>Documents bucket replication</h2>
+    <p class="lede">Uploaded documents copy to a bucket in the other AWS region. Each row takes the
+    newest file in the bucket (older than 15 min) and checks it is really in the replica. Finding
+    that file means listing the whole bucket, hence the object count and scan time.</p>
+    <table>
+      <tr><th>Region</th><th>Newest file</th><th>Rule</th><th>Objects scanned</th>
+          <th>Scan time</th><th></th></tr>
+      #{replication_html}
+    </table>
+
     <h2>Full backup size — last #{span} nightly fulls</h2>
     <p class="lede">Read straight from the buckets, so this is real history, not something
     that builds up over time. Size is the one signal freshness misses: a backup can be
@@ -359,15 +423,18 @@ def write_report(sections)
   REPORT
 end
 
-def notify_daily(results, rows)
+def notify_daily(results, rows, replications)
   failed = results.reject { |_, passed| passed }.map(&:first)
   flagged = rows.reject { |r| r['status'] == 'ok' }
+  repl_broken = replications.reject { |r| REPLICATION_OK.include?(r['status']) }
 
-  body = rows.map { |r| format_summary(r) }
+  body = rows.map { |r| format_summary(r) } + replications.map { |r| format_replication(r) }
   body << "" << DASHBOARD_FILE
 
   if failed.any?
     notify('critical', "DB backup check FAILED (#{failed.join(', ')})", body.join("\n"))
+  elsif repl_broken.any?
+    notify('critical', "Document replication BROKEN (#{repl_broken.map { |r| r.fetch('region') }.join(', ')})", body.join("\n"))
   elsif flagged.any?
     # Freshness passed but the 24h picture is off (a chain gap, a missing full,
     # an unreadable bucket) - worth a look, not worth a page.
@@ -391,25 +458,30 @@ def cmd_daily(env_name)
   sections = []
   summaries = []
   history_lines = []
+  replication_lines = []
   results = env_names.map do |name|
     passed, out_file = run_check(name, task: 's3:backup_daily_report')
     lines = File.readlines(out_file).map(&:chomp).grep_v(NOISE_RE)
     summaries.concat(lines.grep(/\ASUMMARY\|/))
     history_lines.concat(lines.grep(/\AHISTORY\|/))
-    sections << lines.grep_v(/\A(SUMMARY|HISTORY)\|/).join("\n")
+    replication_lines.concat(lines.grep(/\AREPLICATION\|/))
+    sections << lines.grep_v(/\A(SUMMARY|HISTORY|REPLICATION)\|/).join("\n")
     [name, passed]
   end
 
   raw_report = sections.join("\n")
   rows = summaries.map { |line| parse_summary(line) }
+  replications = replication_lines.map { |line| parse_replication(line) }
+  repl_broken = !replications.all? { |r| REPLICATION_OK.include?(r['status']) }
   write_report(sections)
-  write_dashboard(rows, history_lines.map { |l| parse_history(l) }, raw_report)
-  notify_daily(results, rows)
+  write_dashboard(rows, history_lines.map { |l| parse_history(l) }, replications, raw_report)
+  notify_daily(results, rows, replications)
   # Anything not plainly healthy counts as a problem for DASHBOARD_OPEN=problem.
-  open_dashboard(problem: results.any? { |_, passed| !passed } || rows.any? { |r| r['status'] != 'ok' })
-  puts "#{Time.now}: #{results.map { |name, passed| "#{name}=#{passed ? 'PASS' : 'FAIL'}" }.join(', ')} (#{DASHBOARD_FILE})"
+  open_dashboard(problem: results.any? { |_, passed| !passed } || rows.any? { |r| r['status'] != 'ok' } || repl_broken)
+  repl_note = replications.map { |r| "#{r['region'].downcase}-docs=#{r['status']}" }.join(', ')
+  puts "#{Time.now}: #{results.map { |name, passed| "#{name}=#{passed ? 'PASS' : 'FAIL'}" }.join(', ')}, #{repl_note} (#{DASHBOARD_FILE})"
   prune_old_logs
-  exit(results.all? { |_, passed| passed } ? 0 : 1)
+  exit(results.all? { |_, passed| passed } && !repl_broken ? 0 : 1)
 end
 
 # --- reading it later ------------------------------------------------------

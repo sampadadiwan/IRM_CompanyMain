@@ -241,7 +241,6 @@ group :development do
 
   gem "capistrano-rails", require: false
   gem 'capistrano-rvm'
-  gem 'capistrano-sidekiq', github: 'seuros/capistrano-sidekiq', ref: "784b04c973e5c074dc78c30746077c9e6fd2bb9a"
   gem 'foreman'
 
   # gem 'capistrano-solid_queue', require: false

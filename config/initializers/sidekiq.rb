@@ -86,6 +86,15 @@ Sidekiq.configure_server do |config|
     cap.queues = %w[db_restore]
   end
 
+  # SidekiqCanaryJob's own thread. On a shared capsule the canary queues behind
+  # whatever is running, so five long imports/exports would read as "Sidekiq is
+  # not processing" and fire a false critical alert. Here it proves the process
+  # is fetching and executing jobs; a backlog is the queue-latency alert's job.
+  config.capsule("canary") do |cap|
+    cap.concurrency = 1
+    cap.queues = %w[canary]
+  end
+
   # Per-region LOCAL time anchors for the fixed-time cron strings below.
   # config/schedule.rb gets env_variant at DEPLOY time via Capistrano/whenever
   # (see maintenance_bake_at there); this file is a plain initializer loaded
@@ -169,6 +178,9 @@ Sidekiq.configure_server do |config|
     # 2026-06-08 and the gap went unnoticed for a month until a DR drill
     # restored a 30-day-old database. Staging monitors its own buckets.
     Sidekiq::Cron::Job.create(name: 'DbBackupFreshnessJob', cron: 'every 1 hour', class: 'DbBackupFreshnessJob')
+    # Records that a job actually ran; "Sidekiq Canary Stale" fires when it stops.
+    # See SidekiqCanaryJob for why process liveness alone missed stuck workers.
+    Sidekiq::Cron::Job.create(name: 'SidekiqCanaryJob', cron: '* * * * *', class: 'SidekiqCanaryJob')
 
     # Sunday 11:59pm LOCAL: in -> 18:29 UTC the same Sunday; us -> 04:29 UTC
     # Monday (the local instant is close enough to midnight that the +4:30h

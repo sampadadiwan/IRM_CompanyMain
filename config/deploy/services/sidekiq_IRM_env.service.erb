@@ -1,0 +1,91 @@
+# Sidekiq for IRM (<%= fetch(:stage) %>). Installed to
+# /etc/systemd/system/sidekiq_IRM_<%= fetch(:stage) %>.service by
+# sidekiq:install_service (config/deploy.rb), which every deploy runs.
+#
+# WHY SYSTEMD AND NOT MONIT
+# -------------------------
+# Sidekiq used to have four uncoordinated launchers: monit, an @reboot cron
+# entry, a daily pkill-and-relaunch cron entry, and Capistrano itself. monit and
+# the deploy's stop script each found "the" Sidekiq by regex on the command
+# line, and a Sidekiq that was still booting (title "…/bin/sidekiq -e <stage>"
+# rather than "sidekiq 8.1.7 IRM [0 of 7 busy]") matched monit's regex but not
+# the stop script's. So a second copy could survive the stop, pass the deploy's
+# "exactly one worker" check, and finish booting after Capistrano had declared
+# success — leaving two workers, one of them often unable to process jobs,
+# while "Sidekiq Down" stayed green because a process was still pushing metrics.
+#
+# systemd tracks the unit by cgroup, not by name, so there is one Sidekiq by
+# construction; `systemctl stop` returns only once the stop has drained; the
+# unit turns active only once the new worker has signalled READY; and the
+# watchdog restarts a process that has hung outright.
+
+[Unit]
+Description=Sidekiq for IRM (<%= fetch(:stage) %>)
+Wants=network-online.target
+After=network-online.target
+# Never give up restarting. Sidekiq depends on Redis/MySQL on other hosts, and
+# the default start limit would leave it permanently dead after an outage longer
+# than a few restart attempts.
+StartLimitIntervalSec=0
+
+[Service]
+# Sidekiq's own bin/sidekiq sends READY on its :startup event, STOPPING on
+# :shutdown, and pings the watchdog when NOTIFY_SOCKET/WATCHDOG_USEC are set, so
+# the unit only turns "active" once Rails has booted and Sidekiq is up.
+# (sidekiq:ensure_clean_restart polls for that rather than blocking on
+# `systemctl start`: with Restart=always and no start limit, a Sidekiq that
+# crashes during boot keeps the start job open forever.)
+Type=notify
+# ExecStart execs down to ruby, so ruby should BE the main PID and `main` would
+# do. `all` is a safety net so Sidekiq still starts if some step ever forks;
+# sidekiq:ensure_clean_restart then fails the deploy on the MainPID check, since
+# KillMode=mixed would signal the wrong process.
+NotifyAccess=all
+# Sidekiq pings every WatchdogSec/2 from a dedicated thread, so this only fires
+# when the whole VM is wedged, not when a job is merely slow. Generous so a long
+# GC pause or a GVL-holding native call can't kill in-flight jobs.
+WatchdogSec=120
+
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/IRM/current
+# RAILS_MASTER_KEY is appended here by IRM:set_rails_master_key. systemd services
+# don't get pam_env, so without this line the unit would not see it.
+EnvironmentFile=-/etc/environment
+Environment=RAILS_ENV=<%= fetch(:stage) %>
+# Caps glibc malloc arenas: with the default (8 * cores) the multi-threaded
+# Sidekiq process fragments heavily under large transient allocations (doc
+# generation, allocations, exports) and RSS never returns to the OS.
+Environment=MALLOC_ARENA_MAX=2
+
+# Login shell for the same environment every previous launcher had (cap's
+# `bash -lc`, monit's `su -`). Every step hands over its PID rather than forking:
+# `rvm use` changes this shell's environment in place (unlike `rvm default do`,
+# which runs the command in a subshell), `exec` replaces bash with the bundle
+# binstub, and Bundler loads sidekiq into that same ruby process. Ruby being the
+# main PID is what lets KillMode=mixed below signal Sidekiq and nothing else.
+# WATCHDOG_PID is unset so the watchdog still works if that ever stops holding.
+ExecStart=/bin/bash -lc 'unset WATCHDOG_PID; source /home/ubuntu/.rvm/scripts/rvm && rvm use default >/dev/null && cd /home/ubuntu/IRM/current && exec bundle exec sidekiq -e <%= fetch(:stage) %>'
+
+# mixed: SIGTERM to Sidekiq only. Sidekiq stops fetching, gives in-flight jobs
+# its 25s shutdown timeout, pushes unfinished ones back to Redis and exits; only
+# then is everything left in the cgroup SIGKILLed. With the default
+# control-group mode, SIGTERM would also hit every job's child process at once
+# (LibreOffice during doc generation, pandoc, …), failing jobs that would have
+# finished inside the grace period. If Sidekiq has not exited by TimeoutStopSec,
+# the whole cgroup is SIGKILLed, so no worker can outlive a stop.
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=60
+# A fresh app-server boot measured up to ~3.5 min before Sidekiq was up.
+TimeoutStartSec=600
+
+Restart=always
+RestartSec=10
+
+StandardOutput=append:/home/ubuntu/IRM/shared/log/sidekiq.log
+StandardError=append:/home/ubuntu/IRM/shared/log/sidekiq.log
+SyslogIdentifier=sidekiq
+
+[Install]
+WantedBy=multi-user.target

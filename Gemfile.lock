@@ -28,16 +28,6 @@ GIT
       net-protocol
 
 GIT
-  remote: https://github.com/seuros/capistrano-sidekiq.git
-  revision: 784b04c973e5c074dc78c30746077c9e6fd2bb9a
-  ref: 784b04c973e5c074dc78c30746077c9e6fd2bb9a
-  specs:
-    capistrano-sidekiq (2.0.0)
-      capistrano (>= 3.9.0)
-      capistrano-bundler
-      sidekiq (>= 6.0)
-
-GIT
   remote: https://github.com/thimmaiah/rupees.git
   revision: 04c2ed68bf2f642715968c25e1f40931401b7338
   specs:
@@ -1219,7 +1209,6 @@ DEPENDENCIES
   capistrano-bundler
   capistrano-rails
   capistrano-rvm
-  capistrano-sidekiq!
   capistrano3-puma
   capybara
   capybara-email

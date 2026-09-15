@@ -85,7 +85,35 @@ groups:
           severity: critical
         annotations:
           summary: "Sidekiq process down on at least one app server"
-          description: "No Sidekiq process metrics are being pushed — background jobs are not processing. Check monit and the sidekiq service."
+          description: "No Sidekiq process metrics are being pushed — background jobs are not processing. Check `sudo systemctl status sidekiq_IRM_<stage>` and shared/log/sidekiq.log."
+
+      # Fire when no job has actually RUN, even though a process may still be pushing
+      # metrics (SidekiqDown stays green for a wedged or stuck-shutting-down worker).
+      # SidekiqCanaryJob runs every minute on its own capsule. Mirrors "Sidekiq
+      # Canary Stale" in grafana_provision.yml, which is what alerts in production.
+      - alert: SidekiqCanaryStale
+        expr: |
+          (time() - max(ruby_sidekiq_canary_last_run_timestamp_seconds) > 600)
+          or absent(ruby_sidekiq_canary_last_run_timestamp_seconds)
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No Sidekiq job has run for over 10 minutes"
+          description: "SidekiqCanaryJob has stopped running although Sidekiq may look alive. Check systemctl status, sidekiq.log and the Sidekiq Busy page for stuck workers."
+
+      # Fire when one host runs more than one Sidekiq process. The systemd unit cannot
+      # start a second copy, so something else launched it. ruby_rss is pid-labelled,
+      # so counting series per host counts processes; 5m rides out a restart's overlap.
+      # Mirrors "Sidekiq Duplicate Workers" in grafana_provision.yml.
+      - alert: SidekiqDuplicateWorkers
+        expr: max(count by(hostname)(ruby_rss{type="sidekiq"})) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "More than one Sidekiq process on an app server"
+          description: "Something other than the systemd unit started a Sidekiq. Run `pgrep -af sidekiq` on the host and redeploy — the deploy kills strays."
 
       # Fire when Sidekiq's BRPOP fetch loop keeps failing to reach Redis. These errors
       # are suppressed from email (incident 2d7eca43) and counted here instead: Sidekiq

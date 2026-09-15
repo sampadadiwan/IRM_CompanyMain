@@ -65,30 +65,13 @@ set :puma_systemctl_user, :system
 set :skip_notification, ENV['SKIP_NOTIFICATION'] == 'true'
 set :puma_service_unit_name, -> { "puma_#{fetch(:application)}_#{fetch(:rails_env)}" }
 
-# Take sidekiq's deploy lifecycle away from capistrano-sidekiq's default hooks.
-#
-# Those hooks drive sidekiq entirely through monit — `after deploy:updated ->
-# monit stop`, `after deploy:published -> monit start` — and EVERY monit CLI
-# action is asynchronous: the command signals the daemon and returns immediately
-# (measured at 0.13s), and the daemon acts on its next poll, which monitrc sets
-# to 60 seconds. So the deploy ran on ahead of a stop that had not happened yet,
-# deploy:cleanup deleted the outgoing release (keep_releases is 1 outside
-# production), and the still-running worker was left holding a deleted directory.
-# Ruby resolves `current` to a physical path at boot, so Zeitwerk kept autoloading
-# out of that deleted release and every lazily-loaded constant began raising
-# "cannot load such file" — while monit, whose `matching 'sidekiq .* '` matched
-# the orphan, reported the service healthy and never started a replacement.
-#
-# sidekiq:ensure_clean_restart (below) replaces them with a synchronous stop and
-# an explicit assertion that the surviving worker belongs to the new release.
-# This flag also gates the gem's monit monitor/unmonitor hooks, so the unmonitor
-# is re-declared by hand; ensure_clean_restart re-monitors on the way back up.
-set :sidekiq_default_hooks, false
-
-
+# Sidekiq runs as a systemd unit (config/deploy/services/sidekiq_IRM_env.service.erb),
+# the only thing that starts or stops it. It used to be monit plus two cron
+# entries plus Capistrano, each finding "the" Sidekiq by regex — see the unit
+# template for how that left duplicate workers behind after deploys.
+set :sidekiq_service_unit_name, -> { "sidekiq_#{fetch(:application)}_#{fetch(:rails_env)}" }
 
 namespace :deploy do
-
   task :notify_before do
     on roles(:app) do
       within release_path do
@@ -154,21 +137,18 @@ namespace :deploy do
     end
   end
 
-  # Sidekiq's real deploy wiring. It used to hang off nginx:switch_app, which is
-  # NOT part of the normal deploy flow — nothing invokes it from a deploy:* stage;
-  # only the DR path and manual runs do (see docs/dr_review). So on an ordinary
-  # `cap <stage> deploy` the clean restart never fired at all, and sidekiq was
-  # left to the gem's async monit hooks that this replaces (see
-  # :sidekiq_default_hooks above). deploy:published is the first stage where the
-  # `current` symlink points at the new release, which is what the restart has to
-  # verify against; deploy:cleanup runs later, so the outgoing release still
-  # exists while the old worker is being shut down.
-  before 'deploy:updating', 'sidekiq:monit:unmonitor'
+  # Sidekiq's deploy wiring. It must hang off a deploy:* stage — nginx:switch_app
+  # is NOT part of the normal deploy flow (only the DR path and manual runs invoke
+  # it). deploy:published is the first stage where the `current` symlink points
+  # at the new release, which is what the restart has to verify against;
+  # deploy:cleanup runs later, so the outgoing release still exists while the old
+  # worker drains. The unit file is (re)installed first so a template change, or
+  # a box still on the old monit setup, is brought in line by a plain deploy.
+  after 'deploy:published', 'sidekiq:install_service'
   after 'deploy:published', 'sidekiq:ensure_clean_restart'
 
   before 'deploy:updated', 'IRM:set_rails_master_key'
   # before "deploy:updated", :ensure_rails_credentials
-  # before 'deploy:finished', 'sidekiq:restart' # This is handled by the capistrano-sidekiq gem
   after  'deploy:finished', :ensure_permissions
 end
 
@@ -205,113 +185,234 @@ namespace :puma do
 end
 
 namespace :sidekiq do
-  desc 'Stop sidekiq for real, start it on the new release, and prove exactly one worker is running there'
-  task :ensure_clean_restart do
-    on roles(:app) do
-      service     = "sidekiq_IRM_#{fetch(:stage)}"
-      stop_script = "#{shared_path}/bin/sidekiq_stop.sh"
+  # Matches a process that IS a Sidekiq at every stage of its life, and nothing
+  # that merely mentions it (`tail -f sidekiq.log`, `grep sidekiq`):
+  #   ^sidekiq       booted — "sidekiq 8.1.7 IRM [0 of 7 busy]"
+  #   bin/sidekiq    booting — Bundler's title "…/bin/sidekiq -e production"
+  #   exec sidekiq   launchers — "bash …/rvm default do bundle exec sidekiq -e …",
+  #                  "ruby …/bin/bundle exec sidekiq …", and the su/cron/cap shells
+  #                  the old monit/cron/Capistrano launchers left behind
+  # The old stop script and deploy check matched only the first form, so a copy
+  # that was still booting survived the stop and was not counted — that is how
+  # duplicate workers got past every deploy. The [s] brackets stop the pattern
+  # matching the shell running pgrep, whose command line contains it literally.
+  def sidekiq_process_pattern
+    '^[s]idekiq |bin/[s]idekiq( |$)|exec [s]idekiq( |$)'
+  end
 
-      # The script is installed by IRM:setup, which a normal deploy does NOT run.
-      # A stage that has not had IRM:setup since this change lands would otherwise
-      # fail here on a bare "No such file or directory"; say what to do instead.
-      unless test("[ -x #{stop_script} ]")
-        raise "#{stop_script} is missing — run `bundle exec cap #{fetch(:stage)}_#{fetch(:env_variant)} IRM:setup` " \
-              'once on this stage to install it along with the matching monit config'
+  def sidekiq_pids
+    capture("pgrep -f '#{sidekiq_process_pattern}' || true").split.grep(/\A\d+\z/)
+  end
+
+  # Kills every Sidekiq on the box. Only called while the unit is stopped, so
+  # anything found was started by something other than systemd: a box still on
+  # the old monit/cron launchers (first deploy after this change), or a launcher
+  # nobody knew about. Warned loudly, because each one is a duplicate worker that
+  # would otherwise have run unnoticed.
+  def kill_stray_sidekiqs(unit)
+    strays = sidekiq_pids
+    return if strays.empty?
+
+    listing = capture("ps -o pid=,lstart=,args= -p #{strays.join(',')} || true")
+    warn "sidekiq: #{strays.size} process(es) running outside #{unit} — stopping them:\n#{listing}"
+
+    # TERM gives in-flight jobs Sidekiq's 25s shutdown and requeues the rest.
+    # sudo because a stray is not guaranteed to be ubuntu's. `|| true`: some pids
+    # (e.g. a launcher shell) exit on their own once their child dies.
+    execute "sudo kill -TERM #{strays.join(' ')} 2>/dev/null || true"
+    40.times do
+      break if sidekiq_pids.empty?
+
+      sleep 1
+    end
+
+    remaining = sidekiq_pids
+    unless remaining.empty?
+      warn "sidekiq: still alive after 40s, SIGKILL to #{remaining.join(' ')}"
+      execute "sudo kill -KILL #{remaining.join(' ')} 2>/dev/null || true"
+      sleep 2
+    end
+
+    remaining = sidekiq_pids
+    raise "sidekiq: could not kill stray processes #{remaining.join(', ')}" unless remaining.empty?
+  end
+
+  # Proves the unit is the only Sidekiq on the box and runs the new release.
+  # Every Sidekiq process (launcher shells included) must sit in the unit's
+  # cgroup — /proc/<pid>/cgroup names "/<unit>.service" on cgroup v1 and v2 —
+  # and there must be exactly one ruby, whose cwd is the current release. Ruby
+  # resolves `current` to a physical path at boot, so a worker left on an older
+  # (often deleted) release reports that path instead.
+  def verify_single_sidekiq(unit)
+    release = capture(:readlink, '-f', current_path).strip
+    probe = "for p in $(pgrep -f '#{sidekiq_process_pattern}' || true); do " \
+            "echo \"$p $(grep -qs '/#{unit}.service' /proc/$p/cgroup && echo unit || echo stray) " \
+            "$(readlink /proc/$p/exe 2>/dev/null || echo UNKNOWN) $(readlink /proc/$p/cwd 2>/dev/null || echo UNKNOWN)\"; done"
+    # cwd is last and split with a limit: readlink reports a removed directory as
+    # "/path/to/release (deleted)", which never compares equal to the live release.
+    procs = capture(probe).lines.map(&:strip).grep(/\A\d+ /).map { |line| line.split(' ', 4) }
+
+    raise "sidekiq: #{unit} reported ready but no sidekiq process was found" if procs.empty?
+
+    strays = procs.reject { |(_pid, owner, _exe, _cwd)| owner == 'unit' }
+    unless strays.empty?
+      raise "sidekiq: processes running outside #{unit}: " \
+            "#{strays.map { |(pid, _o, exe, cwd)| "pid #{pid} exe=#{exe} cwd=#{cwd}" }.join(', ')}"
+    end
+
+    workers = procs.select { |(_pid, _owner, exe, _cwd)| File.basename(exe).start_with?('ruby') }
+    unless workers.size == 1
+      raise "sidekiq: expected 1 worker in #{unit}, found #{workers.size} " \
+            "(#{procs.map { |(pid, _o, exe, _cwd)| "pid #{pid} #{exe}" }.join(', ')})"
+    end
+
+    worker_pid, _owner, _exe, cwd = workers.first
+    raise "sidekiq: worker is running #{cwd}, not the current release #{release}" unless cwd == release
+
+    # KillMode=mixed sends the stop SIGTERM to the main PID alone. If that is not
+    # the worker (ExecStart's exec chain forked somewhere), every stop would
+    # SIGTERM a wrapper, skip Sidekiq's drain and SIGKILL in-flight jobs.
+    main_pid = capture(:systemctl, 'show', unit, '-p', 'MainPID', '--value', '--no-pager').strip
+    unless main_pid == worker_pid
+      raise "sidekiq: systemd's MainPID for #{unit} is #{main_pid}, not the worker #{worker_pid} — " \
+            'stops would not drain jobs; ExecStart must exec down to ruby without forking'
+    end
+
+    info "sidekiq: 1 worker (pid #{worker_pid}) is #{unit}'s main process, running #{release}"
+  end
+
+  # Waits for the unit to turn active (Sidekiq has booted and sent READY), and
+  # fails fast when it cannot. Polled instead of a blocking `systemctl start`:
+  # with Restart=always and no start limit, a Sidekiq that crashes during boot
+  # (bad credentials, unreachable Redis) keeps systemd's start job open across
+  # endless auto-restarts, so a blocking start would hang the deploy forever.
+  # NRestarts going up is that crash loop; the first read is the baseline.
+  def wait_for_sidekiq_ready(unit, timeout: 600)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+    baseline = nil
+    loop do
+      state = capture("systemctl is-active #{unit} || true").strip
+      return if state == 'active'
+
+      restarts = capture(:systemctl, 'show', unit, '-p', 'NRestarts', '--value', '--no-pager').strip.to_i
+      baseline ||= restarts
+      problem =
+        if state == 'failed' then 'failed to start'
+        elsif restarts > baseline then 'crashed while booting and systemd is restarting it'
+        elsif Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline then "was not ready after #{timeout}s"
+        end
+
+      if problem
+        error capture("sudo systemctl status #{unit} --no-pager --lines=0 || true")
+        error capture("tail -n 40 #{shared_path}/log/sidekiq.log || true")
+        raise "sidekiq: #{unit} #{problem} — see #{shared_path}/log/sidekiq.log. systemd keeps retrying; " \
+              "`sudo systemctl stop #{unit}` halts it"
       end
 
-      # Run the stop script directly instead of going through `monit stop`. Monit
-      # swallows the script's exit status and output, and this is precisely the
-      # step whose silent failure left orphaned workers running against release
-      # directories that deploy:cleanup had already deleted. Run here, a non-zero
-      # exit aborts the deploy instead of being discovered days later in a job.
-      execute stop_script
+      sleep 5
+    end
+  end
 
-      # Start sidekiq directly rather than via `monit start`. Every monit CLI
-      # action is ASYNCHRONOUS — the command signals the daemon and returns
-      # (measured at 0.13s) and the daemon acts on its next poll, `set daemon 60`
-      # in monitrc. Going through monit here would make a "clean restart" mean
-      # "a restart that will probably have happened within a minute", which is
-      # exactly the uncertainty that made this so hard to pin down: `monit status`
-      # reports "OK - restart pending" and the pid looks unchanged. Starting it
-      # ourselves makes the task deterministic and lets the verification below
-      # mean something. `monit monitor` afterwards hands supervision back — its
-      # `matching 'sidekiq .* '` adopts whatever process is running.
-      #
-      # This start line duplicates the one in the monit template and in
-      # config/schedule.rb. Keep the three in sync (MALLOC_ARENA_MAX especially).
-      # < /dev/null detaches stdin so SSHKit's channel closes instead of hanging
-      # on the backgrounded process.
-      #
-      # setsid: `&` alone only backgrounds sidekiq from this shell's point of
-      # view — it stays in the SAME process GROUP as the `bash -lc` this runs
-      # under. When the SSH exec channel closes right after `sleep 3`, the
-      # remote shell can be sent SIGHUP, and without its own session that
-      # propagates to the whole group, killing a sidekiq that has not finished
-      # forking/opening its log yet — before it has written a single byte.
-      # That race is exactly what DR drill dr_drill_in_2026_09_12_1717 hit:
-      # this task reported success (the execute below returned 0), yet
-      # /home/ubuntu/IRM/shared/log/sidekiq.log shows NO entry at all for that
-      # attempt — not even a crash trace — and the probe below then correctly
-      # timed out. setsid detaches into a brand-new session immune to signals
-      # sent to the launching shell's group.
-      start_cmd = "cd #{current_path} && MALLOC_ARENA_MAX=2 setsid ~/.rvm/bin/rvm default do " \
-                  "bundle exec sidekiq -e #{fetch(:stage)} " \
-                  ">> #{shared_path}/log/sidekiq.log 2>&1 < /dev/null & sleep 3"
-      execute :bash, '-lc', "'#{start_cmd}'"
+  desc 'Install or refresh the sidekiq systemd unit, and retire the old monit-managed setup'
+  task :install_service do
+    on roles(:app) do
+      unit      = fetch(:sidekiq_service_unit_name)
+      unit_path = "/etc/systemd/system/#{unit}.service"
+      tmp_path  = "/tmp/#{unit}.service"
 
-      execute :sudo, :monit, :monitor, service
+      rendered = ERB.new(File.read('./config/deploy/services/sidekiq_IRM_env.service.erb')).result(binding)
+      upload! StringIO.new(rendered), tmp_path
+      if test(:cmp, '-s', tmp_path, unit_path)
+        execute :rm, '-f', tmp_path
+      else
+        execute :sudo, :mv, tmp_path, unit_path
+        execute :sudo, :chown, 'root:root', unit_path
+        execute :sudo, :chmod, '644', unit_path
+        execute :sudo, :systemctl, 'daemon-reload'
+        info "sidekiq: installed #{unit_path}"
+      end
+      # Boot-time start. This replaces the @reboot cron entry that used to launch
+      # a second, unsupervised Sidekiq alongside monit's.
+      execute :sudo, :systemctl, :enable, '--quiet', unit
 
-      # The start above is synchronous, but sidekiq still has to get through rvm,
-      # bundler and a full eager-load before it sets its proctitle and becomes
-      # visible to pgrep, so poll rather than asserting immediately.
-      #
-      # 300s, not the 120s this used to be: DR drill dr_drill_in_2026_09_12_1404
-      # measured a genuinely fresh app-server AMI taking until ~3.5min after
-      # nginx:switch_app to register, because the AMI's own @reboot/monit config
-      # auto-starts a stale sidekiq (pointed at whatever Redis host was baked in
-      # at snapshot time) before this task ever runs — the same @reboot-race
-      # class of bug already documented for prometheus_exporter and xirr_py in
-      # dr_verify.rake. That false start dies almost immediately (wrong Redis
-      # host), but it burns real wall-clock before THIS task's start_cmd above
-      # gets a clean shot, so 120s was not "generous" on a fresh box, it was
-      # the actual bottleneck. 300s gives real margin over the observed ~210s.
-      #
-      # Then check the cwd of every sidekiq on the box against the release we just
-      # published: Ruby resolves the `current` symlink to a physical path at boot,
-      # so a worker left over from an earlier release reports that older (often
-      # deleted) path. This is the assertion the deploy never made before.
-      # --dry-run swaps in SSHKit's Printer backend, which echoes commands but
-      # returns "" from every capture. The checks below would then always conclude
-      # no worker exists and fail the dry run — there is nothing real to assert
-      # about a deploy that never ran, so stop here.
+      # Retire monit's Sidekiq check on boxes that still have it. Deleting the file
+      # is not enough on its own: `monit reload` is asynchronous, and until the
+      # daemon has actually dropped the service it can still decide Sidekiq is
+      # missing and start one of its own outside systemd — after this deploy's
+      # stray sweep has already run. So wait until monit no longer lists it.
+      monit_service = "sidekiq_IRM_#{fetch(:stage)}"
+      monit_conf    = "/etc/monit/conf.d/#{monit_service}.conf"
+      if test("[ -e #{monit_conf} ]")
+        execute :sudo, :rm, '-f', monit_conf
+        execute "sudo monit reload >/dev/null 2>&1 || true"
+        # --dry-run's Printer backend answers every `test` with true, so the wait
+        # below would spin its full two minutes and then fail.
+        next if fetch(:sshkit_backend) == SSHKit::Backend::Printer
+
+        60.times do
+          break unless test("sudo monit summary 2>/dev/null | grep -qw #{monit_service}")
+
+          sleep 2
+        end
+        still_supervised = test("sudo monit summary 2>/dev/null | grep -qw #{monit_service}")
+        raise "sidekiq: monit still supervises #{monit_service} 120s after its config was removed — check `sudo monit summary`" if still_supervised
+
+        info "sidekiq: removed #{monit_conf}; monit no longer manages sidekiq"
+      end
+      execute :rm, '-f', "#{shared_path}/bin/sidekiq_stop.sh"
+    end
+  end
+
+  desc 'Stop sidekiq via systemd (waits for in-flight jobs to drain)'
+  task :stop do
+    on roles(:app) do
+      unit = fetch(:sidekiq_service_unit_name)
+      if test("[ -f /etc/systemd/system/#{unit}.service ]")
+        execute :sudo, :systemctl, :stop, unit
+      else
+        # A box not yet deployed since the move to systemd (e.g. the other region
+        # during maintenance). Stop monit relaunching it, then stop it directly —
+        # aborting here would leave the old worker running mid-maintenance.
+        warn "sidekiq: #{unit}.service is not installed on this box; stopping the monit-era sidekiq directly"
+        execute "sudo monit unmonitor sidekiq_IRM_#{fetch(:stage)} >/dev/null 2>&1 || true"
+        kill_stray_sidekiqs(unit)
+      end
+    end
+  end
+
+  desc 'Restart sidekiq via systemd, clear out any sidekiq systemd does not own, and prove exactly one worker runs the current release'
+  task :ensure_clean_restart do
+    on roles(:app) do
+      unit = fetch(:sidekiq_service_unit_name)
+
+      installed = test("[ -f /etc/systemd/system/#{unit}.service ]")
+      raise "sidekiq: #{unit}.service is not installed — run `bundle exec cap #{fetch(:stage)}_#{fetch(:env_variant)} sidekiq:install_service`" unless installed
+
+      # stop + start rather than `restart`, so the stray sweep runs while no
+      # legitimate worker exists and anything it finds is by definition not ours.
+      # stop is synchronous: it returns once the unit's cgroup is empty (drained,
+      # or SIGKILLed at TimeoutStopSec). start is fired without blocking and
+      # awaited by wait_for_sidekiq_ready, which can fail instead of hanging.
+      execute :sudo, :systemctl, :stop, unit
+      kill_stray_sidekiqs(unit)
+
+      execute :sudo, :systemctl, :start, '--no-block', unit
+
+      # --dry-run swaps in SSHKit's Printer backend, which returns "" from every
+      # capture, so there is nothing real to wait for or verify.
       if fetch(:sshkit_backend) == SSHKit::Backend::Printer
-        info 'dry run: skipping sidekiq worker verification'
+        info 'dry run: skipping sidekiq readiness wait and worker verification'
         next
       end
 
-      release = capture(:readlink, '-f', current_path).strip
-      probe   = "for i in $(seq 150); do pgrep -f '^sidekiq ' >/dev/null && break; sleep 2; done; " \
-                "for p in $(pgrep -f '^sidekiq ' || true); do echo \"$p $(readlink /proc/$p/cwd 2>/dev/null || echo UNKNOWN)\"; done"
-
-      workers = capture(probe).lines.map(&:strip).reject(&:empty?).map { |line| line.split(' ', 2) }
-
-      raise "sidekiq did not come up within 300s of being started — check #{shared_path}/log/sidekiq.log" if workers.empty?
-
-      # readlink reports a removed directory as "/path/to/release (deleted)", so a
-      # stale worker never compares equal to the live release path.
-      stale = workers.reject { |(_pid, cwd)| cwd == release }
-      unless stale.empty?
-        raise "sidekiq workers are running outside the current release #{release}: " \
-              "#{stale.map { |(pid, cwd)| "pid #{pid} cwd=#{cwd}" }.join(', ')}"
-      end
-
-      if workers.size > 1
-        raise "expected 1 sidekiq worker, found #{workers.size} (pids #{workers.map(&:first).join(', ')}) — " \
-              'duplicates split the queue and only some of them can load the new code'
-      end
-
-      info "sidekiq: 1 worker (pid #{workers.first.first}) running on #{release}"
+      wait_for_sidekiq_ready(unit)
+      verify_single_sidekiq(unit)
     end
+  end
+
+  desc 'Alias for sidekiq:ensure_clean_restart'
+  task :restart do
+    invoke 'sidekiq:ensure_clean_restart'
   end
 end
 
@@ -328,14 +429,9 @@ namespace :nginx do
     end
   end
 
-  # Order matters: stop BEFORE unmonitor. `sidekiq:stop` is capistrano-sidekiq's
-  # monit task (`monit stop sidekiq_IRM_<stage>`), and it was previously declared
-  # after the unmonitor — asking monit to act on a service it had just been told
-  # to stop supervising. Capistrano runs before-hooks in declaration order, so the
-  # stop was reduced to a no-op and the old worker walked straight through the
-  # deploy. Unmonitor afterwards, so monit does not race us by restarting it.
+  # systemctl stop is synchronous and, unlike the old monit stop, nothing else
+  # will relaunch sidekiq behind it while the site is in maintenance.
   before 'nginx:switch_maintenance', 'sidekiq:stop'
-  before 'nginx:switch_maintenance', 'sidekiq:monit:unmonitor'
   # before 'nginx:switch_maintenance', 'puma:monit:unmonitor'
   before 'nginx:switch_maintenance', 'puma:stop'
 
@@ -349,7 +445,6 @@ namespace :nginx do
 
   after 'nginx:switch_app', 'sidekiq:ensure_clean_restart'
   after 'nginx:switch_app', 'puma:ensure_clean_restart'
-  before 'nginx:switch_app', 'sidekiq:monit:monitor'
   # before 'nginx:switch_app', 'puma:monit:monitor'
 
   desc 'Render and install ONLY the nginx config, then validate and reload'
@@ -648,17 +743,9 @@ namespace :IRM do
       execute :sudo, "systemctl daemon-reload"
       execute :sudo, "systemctl enable #{fetch(:puma_service_unit_name)}"
 
-      # For Sidekiq: the stop script MUST land before the monit config that
-      # references it, or monit's first stop attempt runs a missing file and
-      # silently leaves the old worker alive — the exact failure this replaces.
-      execute :mkdir, "-p", "#{shared_path}/bin"
-      upload! StringIO.new(File.read('./config/deploy/templates/sidekiq_stop.sh')),
-              "#{shared_path}/bin/sidekiq_stop.sh"
-      execute :chmod, "755", "#{shared_path}/bin/sidekiq_stop.sh"
-
-      # For Sidekiq Monit config
-      local_sidekiq_monit = "/tmp/sidekiq_IRM_#{fetch(:stage)}.conf"
-      generate_and_upload('./config/deploy/monit/sidekiq_IRM_env.conf.erb', local_sidekiq_monit, monit_config_path)
+      # Sidekiq's systemd unit is installed by sidekiq:install_service, hooked
+      # after this task below (and run by every deploy). Monit no longer
+      # manages Sidekiq.
 
       # for nginx config
       local_nginx_conf = "/tmp/IRM_#{fetch(:stage)}"
@@ -709,6 +796,11 @@ namespace :IRM do
     end
   end
 
+  # After setup, not inside it: setup restarts monit (configure_monit_sandbox),
+  # and install_service then removes any leftover monit Sidekiq check and waits
+  # for monit to drop it.
+  after 'IRM:setup', 'sidekiq:install_service'
+
   task :reboot do
     on roles(:app) do
       execute :sudo, :reboot
@@ -728,8 +820,9 @@ namespace :IRM do
   # Installs an RVM Ruby on the box (if it isn't already) and makes it the RVM
   # default, so every rvm-wrapped command picks it up: capistrano-rvm's own
   # command prefix (rvm_ruby_version defaults to "default" — see
-  # lib/capistrano/tasks/rvm.rake in the gem), and the sidekiq start command's
-  # literal `~/.rvm/bin/rvm default do` above. The AMI's baked-in Ruby comes
+  # lib/capistrano/tasks/rvm.rake in the gem), and the literal
+  # `~/.rvm/bin/rvm default do` in the sidekiq systemd unit's ExecStart
+  # (config/deploy/services/sidekiq_IRM_env.service.erb). The AMI's baked-in Ruby comes
   # from the same `rvm install` mechanism (see get.rvm.io line in
   # config/deploy/templates/packer/appserver.ami.pkr.hcl) — this task is what
   # to run afterwards on a box that needs a *different* Ruby than the AMI

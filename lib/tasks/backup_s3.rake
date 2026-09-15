@@ -52,7 +52,7 @@ namespace :s3 do
   # per region would quadruple a cron run that already takes ~15s per boot.
   #
   #   rake "s3:backup_daily_report[production.in]"
-  desc 'Print a 24h DB backup report (nightly full, chain gaps) + pass/fail verdict'
+  desc 'Print a 24h DB backup report (nightly full, chain gaps), documents replication + pass/fail verdict'
   task :backup_daily_report, [:env_name] => :environment do |_t, args|
     if args[:env_name]
       env_file = ".env.#{args[:env_name]}"
@@ -140,6 +140,31 @@ namespace :s3 do
 
     # Field order: env | bucket | full_age_h | full_bytes | full_size | incr | gap_min | status
     summaries.each { |s| puts "SUMMARY|#{label}|#{s.join('|')}" }
+
+    # Documents bucket replication (S3CheckJob). Daily only, never in the hourly
+    # :check_backup_freshness: finding the newest file lists the whole bucket.
+    # Rescued so a crash here reports UNREADABLE instead of also killing the DB
+    # backup verdict below, which the wrapper keys its PASS/FAIL on.
+    repl = begin
+      S3CheckJob.new.collect_report(env_name: args[:env_name])
+    rescue StandardError => e
+      { status: 'UNREADABLE', rule: 'unknown', objects_scanned: 0, scan_seconds: 0,
+        detail: "replication check crashed: #{e.class}: #{e.message}", failures: [e.message] }
+    end
+    newest = repl[:newest]
+    age_h = newest && ((Time.current - newest[:last_modified]) / 1.hour).round(1)
+    puts "\ndocuments replication — s3://#{repl[:source_bucket]} (#{repl[:source_region]}) → " \
+         "s3://#{repl[:replica_bucket]} (#{repl[:replica_region]})"
+    puts "  rule          #{repl[:rule]}"
+    puts "  scanned       #{repl[:objects_scanned]} objects in #{repl[:scan_seconds]}s"
+    puts "  newest file   #{newest[:key]}  (#{newest[:last_modified].utc.strftime('%Y-%m-%d %H:%M')} UTC, #{age_h}h ago, #{human_size.call(newest[:size])})" if newest
+    puts "  result        #{repl[:status]} — #{repl[:detail]}"
+    # Field order: env | status | rule | objects_scanned | scan_seconds | newest_age_h | detail.
+    # "|" is stripped from free text (entity names end up in object keys).
+    clean = ->(s) { s.to_s.tr('|', '/') }
+    puts "REPLICATION|#{label}|#{repl[:status]}|#{clean.call(repl[:rule])}|#{repl[:objects_scanned]}|#{repl[:scan_seconds]}|" \
+         "#{age_h}|#{clean.call(repl[:detail])}"
+
     puts "\n--- verdict ---"
     DbBackupFreshnessJob.perform_now(env_name: args[:env_name])
   end

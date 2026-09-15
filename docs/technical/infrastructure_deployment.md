@@ -141,7 +141,12 @@ Built-in Capistrano/Rails tasks (automatic):
 ```
 Hook: after 'deploy:updated'
 → puma:restart    (systemctl restart puma_IRM_{stage})
-→ sidekiq:restart (systemctl restart sidekiq_IRM_{stage})
+
+Hook: after 'deploy:published'
+→ sidekiq:install_service       (render/refresh the systemd unit, enable it, retire any monit check)
+→ sidekiq:ensure_clean_restart  (systemctl stop → kill any sidekiq outside the unit →
+                                 systemctl start, which waits for READY → verify exactly one
+                                 worker, inside the unit's cgroup, running the new release)
 ```
 
 ### Phase 6 — Permissions & cleanup
@@ -377,9 +382,16 @@ bundle exec cap production_in nginx:switch_app
 - Monit: `config/deploy/monit/puma_IRM_env.conf.erb`
 
 ### Sidekiq
-- Systemd unit: `sidekiq_IRM_{stage}`
-- Monit: `config/deploy/monit/sidekiq_IRM_env.conf.erb`
-- Monit paused before deploy, resumed after: `sidekiq:monit:unmonitor` / `sidekiq:monit:monitor`
+- Systemd unit: `sidekiq_IRM_{stage}` — template `config/deploy/services/sidekiq_IRM_env.service.erb`
+- systemd is the **only** launcher: no monit check, no `@reboot` cron entry. The unit is
+  enabled (boot start), `Type=notify` (start waits until Sidekiq is ready), has a watchdog,
+  and `Restart=always`.
+- Daily memory-shedding restart: `sudo systemctl restart sidekiq_IRM_{stage}` from `config/schedule.rb`
+- Manual control: `cap <stage> sidekiq:restart` / `sidekiq:stop`, or `sudo systemctl status|restart sidekiq_IRM_{stage}` on the box
+- Logs: `/home/ubuntu/IRM/shared/log/sidekiq.log`
+- Why: monit, two cron entries and Capistrano used to each find Sidekiq by regex, and a copy
+  that was still booting escaped the deploy's stop and check, leaving duplicate workers.
+  Alerts "Sidekiq Canary Stale" and "Sidekiq Duplicate Workers" cover that failure class.
 
 ### Nginx
 - Reverse proxies to Puma Unix socket
@@ -387,7 +399,7 @@ bundle exec cap production_in nginx:switch_app
 - Config template: `config/deploy/templates/nginx_conf.erb`
 
 ### Monit
-- Watches Puma and Sidekiq PIDs
+- Watches Puma (Sidekiq is systemd-only)
 - Config template: `config/deploy/templates/monitrc.erb`
 - Reload after setup: `sudo monit reload`
 
@@ -467,7 +479,7 @@ No automation — manual steps:
 | `config/deploy/templates/nginx_conf.erb` | Nginx config template |
 | `config/deploy/templates/monitrc.erb` | Monit master config template |
 | `config/deploy/monit/puma_IRM_env.conf.erb` | Monit Puma check |
-| `config/deploy/monit/sidekiq_IRM_env.conf.erb` | Monit Sidekiq check |
+| `config/deploy/services/sidekiq_IRM_env.service.erb` | Sidekiq systemd unit template |
 | `config/deploy/services/puma_IRM_env.service.erb` | Puma systemd unit template |
 | `config/deploy/logrotate.conf` | Log rotation config |
 | `lib/tasks/packer.rake` | Rake tasks for building AMIs |

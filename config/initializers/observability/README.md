@@ -178,6 +178,8 @@ this table only calls out the ones worth a note.
 | Web Memory Critical | avg ruby_rss (web/puma_worker) | >700 MB | 5m |
 | Web Worker Memory | ruby_rss per process (master/web/puma_master/puma_worker) | >450 MB | 5m |
 | Memory Sidekiq | ruby_rss per process (sidekiq) | >1000 MB | 5m — was firing repeatedly in July 2026, a real recurring leak |
+| Sidekiq Canary Stale | time() − ruby_sidekiq_canary_last_run_timestamp_seconds (SidekiqCanaryJob, every minute) | >600 s | 2m — catches a worker that is alive but not processing, which Sidekiq Down cannot |
+| Sidekiq Duplicate Workers | max(count by hostname of ruby_rss{type="sidekiq"}) | >1 | 5m — a second Sidekiq started outside the systemd unit |
 | P95 Response Time | approx: (P90+P99)/2 (no true P95 quantile exported) | >750ms | 5m |
 
 **Deleted (were noisy, not actionable, or duplicated a rule above):**
