@@ -62,7 +62,9 @@
     <% if show_legal_category %>
       <div class="col-md-2">
         <%= f.label :legal_category_eq, "Legal category", class: "form-label" %>
-        <%= f.select :legal_category_eq, legal_category_options, { include_blank: "All" }, class: "form-select" %>
+        <%# In cp_cs context, only show CP and CS options (SLO is excluded by scope) %>
+        <% category_opts = @obligation_context == "cp_cs" ? legal_category_options.reject { |_, v| v == 2 } : legal_category_options %>
+        <%= f.select :legal_category_eq, category_opts, { include_blank: "All" }, class: "form-select" %>
       </div>
     <% end %>
     <div class="col-md-2">
