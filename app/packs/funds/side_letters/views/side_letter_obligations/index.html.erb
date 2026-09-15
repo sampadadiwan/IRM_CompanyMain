@@ -5,7 +5,9 @@
     link), the page pre-filters by legal category and hides the now-redundant
     legal category filter and column. %>
 <%# Breadcrumbs come from the layout card (@bread_crumbs in the controller) %>
-<% show_legal_category = @obligation_context.blank? %>
+<%# Legal category column hidden only for side_letter context (all SLO) —
+    cp_cs context keeps it so users can filter/distinguish CP vs CS. %>
+<% show_legal_category = @obligation_context != "side_letter" %>
 <% title = case @obligation_context
            when "cp_cs"       then "CP/CS Obligation Matrix"
            when "side_letter"  then "Side Letter Obligation Matrix"
