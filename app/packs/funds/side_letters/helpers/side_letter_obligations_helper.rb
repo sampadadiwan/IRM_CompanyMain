@@ -56,9 +56,11 @@ module SideLetterObligationsHelper
     end
   end
 
-  # @return [Array<Array(String, String)>] Options for the legal_category filter dropdown.
+  # @return [Array<Array(String, Integer)>] Options for the legal_category filter dropdown.
+  #   Uses integer enum values (not string keys) because legal_category is stored
+  #   as an integer column — Ransack's _eq predicate compares against the DB value.
   def legal_category_options
-    SideLetterObligation.legal_categories.keys.map { |k| [k.humanize, k] }
+    SideLetterObligation.legal_categories.map { |k, v| [k.humanize, v] }
   end
 
   private
