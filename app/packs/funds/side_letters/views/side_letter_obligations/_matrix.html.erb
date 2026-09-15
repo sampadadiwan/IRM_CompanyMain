@@ -3,8 +3,11 @@
     Locals: obligations (relation/array); side_letter (optional — pre-scopes the
     Add Obligation button; without it the form asks which side letter). %>
 <% side_letter = local_assigns[:side_letter] %>
-<%# data-controller="tooltip" activates the title= tooltips on badges/buttons below %>
-<div data-controller="tooltip">
+<%# data-controller="tooltip" activates the title= tooltips on badges/buttons below.
+    data-controller="datatable" connects the Stimulus controller that initialises
+    jQuery DataTables on the .jqDataTable table inside — enables column sorting,
+    search, and pagination. %>
+<div data-controller="tooltip datatable">
 <%# Header bar mirrors the tasks grid: label left, actions right %>
 <div class="d-sm-flex align-items-center justify-content-between mb-3">
   <div class="d-flex align-items-center gap-2">
