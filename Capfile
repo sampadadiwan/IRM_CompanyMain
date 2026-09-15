@@ -32,7 +32,8 @@ require 'capistrano/bundler'
 require 'capistrano/puma'
 # Sidekiq runs as a systemd unit driven by the sidekiq:* tasks in config/deploy.rb,
 # not by capistrano-sidekiq (whose monit plugin was one of several competing
-# launchers — see config/deploy/services/sidekiq_IRM_env.service.erb).
+# launchers — see config/deploy/services/sidekiq_IRM_env.service.erb). Nothing
+# uses monit any more; monit:retire in config/deploy.rb switches it off.
 
 # require 'capistrano/solid_queue'
 # install_plugin Capistrano::SolidQueue::Systemd
@@ -42,7 +43,6 @@ install_plugin Capistrano::Puma::Systemd
 
 # install_plugin Capistrano::Puma::Workers # if you want to control the workers (in cluster mode)
 # install_plugin Capistrano::Puma::Jungle # if you need the jungle tasks
-# install_plugin Capistrano::Puma::Monit # if you need the monit tasks
 # install_plugin Capistrano::Puma::Nginx  # if you want to upload a nginx site template
 
 # Load custom tasks from `lib/capistrano/tasks` if you have any defined

@@ -7,7 +7,7 @@ IRM uses a multi-layered infrastructure deployment architecture:
 - **Infrastructure as Code**: Pulumi (Python) for AWS resource provisioning
 - **AMI Building**: Packer for creating custom EC2 AMIs with pre-installed dependencies
 - **Application Deployment**: Capistrano 3 for Rails app deployment
-- **Process Management**: Systemd + Monit, Puma, Sidekiq
+- **Process Management**: systemd (Puma, Sidekiq) — no monit
 - **Reverse Proxy**: Nginx
 - **Load Balancing**: AWS Application Load Balancer (ALB)
 - **CI/CD**: GitHub Actions for testing and linting
@@ -139,11 +139,12 @@ Built-in Capistrano/Rails tasks (automatic):
 
 ### Phase 5 — Service restart
 ```
-Hook: after 'deploy:updated'
-→ puma:restart    (systemctl restart puma_IRM_{stage})
+Hook: before 'deploy:publishing'
+→ monit:retire                  (stop + disable monit if the AMI still ships it, remove its configs)
 
 Hook: after 'deploy:published'
-→ sidekiq:install_service       (render/refresh the systemd unit, enable it, retire any monit check)
+→ puma:smart_restart            (capistrano3-puma: systemctl restart puma_IRM_{stage})
+→ sidekiq:install_service       (render/refresh the systemd unit, enable it)
 → sidekiq:ensure_clean_restart  (systemctl stop → kill any sidekiq outside the unit →
                                  systemctl start, which waits for READY → verify exactly one
                                  worker, inside the unit's cgroup, running the new release)
@@ -379,7 +380,7 @@ bundle exec cap production_in nginx:switch_app
 - Socket: `/home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock`
 - Config template: `config/deploy/templates/puma.rb.erb`
 - 4 workers × 16 threads, `preload_app!`
-- Monit: `config/deploy/monit/puma_IRM_env.conf.erb`
+- systemd only (enabled for boot start, `Restart=always`); monit no longer supervises it
 
 ### Sidekiq
 - Systemd unit: `sidekiq_IRM_{stage}` — template `config/deploy/services/sidekiq_IRM_env.service.erb`
@@ -398,10 +399,13 @@ bundle exec cap production_in nginx:switch_app
 - Static assets served directly with gzip + max-expires
 - Config template: `config/deploy/templates/nginx_conf.erb`
 
-### Monit
-- Watches Puma (Sidekiq is systemd-only)
-- Config template: `config/deploy/templates/monitrc.erb`
-- Reload after setup: `sudo monit reload`
+### Monit (retired)
+- Not used. systemd supervises Puma and Sidekiq; monit running alongside them could launch
+  duplicate copies.
+- `monit:retire` (runs before `deploy:publishing` on every deploy, and after `IRM:setup`) stops and
+  disables monit on boxes whose AMI still ships it and removes its configs. It refuses to run if
+  the Puma systemd unit is missing, since monit might then be Puma's only supervisor.
+- New app-server AMIs (`appserver.ami.pkr.hcl`) no longer install it.
 
 ### Log rotation
 - Configured by `IRM:setup_logrotate`
@@ -477,8 +481,6 @@ No automation — manual steps:
 | `config/deploy/staging_us.rb` | Staging US server list |
 | `config/deploy/templates/puma.rb.erb` | Puma config template |
 | `config/deploy/templates/nginx_conf.erb` | Nginx config template |
-| `config/deploy/templates/monitrc.erb` | Monit master config template |
-| `config/deploy/monit/puma_IRM_env.conf.erb` | Monit Puma check |
 | `config/deploy/services/sidekiq_IRM_env.service.erb` | Sidekiq systemd unit template |
 | `config/deploy/services/puma_IRM_env.service.erb` | Puma systemd unit template |
 | `config/deploy/logrotate.conf` | Log rotation config |

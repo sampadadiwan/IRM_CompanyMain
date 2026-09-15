@@ -218,7 +218,7 @@
     {
       "type": "timeseries",
       "title": "Sidekiq Process RSS by Host",
-      "description": "Resident memory of each Sidekiq process. Steady growth that never plateaus = leak; sawtooth = normal (monit/restart reclaims)",
+      "description": "Resident memory of each Sidekiq process. Steady growth that never plateaus = leak; sawtooth = normal (the daily systemd restart reclaims)",
       "datasource": { "type": "prometheus", "uid": "$datasource" },
       "targets": [
         {

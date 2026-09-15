@@ -405,7 +405,7 @@ namespace :dr do
       # --- bring the replacement into service ----------------------------
       puts "\n🚀 Setting up and deploying ONLY #{new_ip} (ref #{deploy_ref})..."
       # A box from a fresh AMI has never been set up: IRM:setup installs the
-      # nginx/monit/systemd units, IRM:install_ruby brings RVM's default up to
+      # nginx config and systemd units, IRM:install_ruby brings RVM's default up to
       # the repo's .ruby-version (the AMI bakes Ruby at Packer build time via
       # `rvm install` — see appserver.ami.pkr.hcl — so a rebuild from an AMI
       # older than the last Ruby bump would otherwise run deploy's bundler

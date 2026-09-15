@@ -158,13 +158,9 @@ build {
       "echo INSTALLING- LibreOffice",
       "sudo add-apt-repository ppa:libreoffice/ppa",
       "sudo apt install --yes libreoffice",
-      //  monit
-      "echo INSTALLING- Monit",
-      "sudo apt install --yes monit ",
-      "echo 'set httpd port 2812 and', 'use address localhost', 'allow localhost' | sudo tee /etc/monit/conf.d/httpd",
-      "sudo systemctl enable monit",
-      "sudo systemctl restart monit",
-      "sudo systemctl status monit",
+      // No monit: puma and sidekiq are supervised by their systemd units
+      // (installed by cap IRM:setup / deploy). monit running alongside them
+      // could launch duplicate copies — see monit:retire in config/deploy.rb.
       // log rotate
       "sudo apt install --yes logrotate",
       // nginx

@@ -142,10 +142,16 @@ namespace :deploy do
   # it). deploy:published is the first stage where the `current` symlink points
   # at the new release, which is what the restart has to verify against;
   # deploy:cleanup runs later, so the outgoing release still exists while the old
-  # worker drains. The unit file is (re)installed first so a template change, or
-  # a box still on the old monit setup, is brought in line by a plain deploy.
+  # worker drains. The unit file is (re)installed first so a template change is
+  # brought in line by a plain deploy.
   after 'deploy:published', 'sidekiq:install_service'
   after 'deploy:published', 'sidekiq:ensure_clean_restart'
+
+  # Before publishing, so monit is gone — and any puma it launched is off the
+  # socket — before capistrano3-puma's `after deploy:published ->
+  # puma:smart_restart` and the sidekiq restart above, which then start the
+  # systemd units onto the new release.
+  before 'deploy:publishing', 'monit:retire'
 
   before 'deploy:updated', 'IRM:set_rails_master_key'
   # before "deploy:updated", :ensure_rails_credentials
@@ -313,7 +319,7 @@ namespace :sidekiq do
     end
   end
 
-  desc 'Install or refresh the sidekiq systemd unit, and retire the old monit-managed setup'
+  desc 'Install or refresh the sidekiq systemd unit'
   task :install_service do
     on roles(:app) do
       unit      = fetch(:sidekiq_service_unit_name)
@@ -335,30 +341,8 @@ namespace :sidekiq do
       # a second, unsupervised Sidekiq alongside monit's.
       execute :sudo, :systemctl, :enable, '--quiet', unit
 
-      # Retire monit's Sidekiq check on boxes that still have it. Deleting the file
-      # is not enough on its own: `monit reload` is asynchronous, and until the
-      # daemon has actually dropped the service it can still decide Sidekiq is
-      # missing and start one of its own outside systemd — after this deploy's
-      # stray sweep has already run. So wait until monit no longer lists it.
-      monit_service = "sidekiq_IRM_#{fetch(:stage)}"
-      monit_conf    = "/etc/monit/conf.d/#{monit_service}.conf"
-      if test("[ -e #{monit_conf} ]")
-        execute :sudo, :rm, '-f', monit_conf
-        execute "sudo monit reload >/dev/null 2>&1 || true"
-        # --dry-run's Printer backend answers every `test` with true, so the wait
-        # below would spin its full two minutes and then fail.
-        next if fetch(:sshkit_backend) == SSHKit::Backend::Printer
-
-        60.times do
-          break unless test("sudo monit summary 2>/dev/null | grep -qw #{monit_service}")
-
-          sleep 2
-        end
-        still_supervised = test("sudo monit summary 2>/dev/null | grep -qw #{monit_service}")
-        raise "sidekiq: monit still supervises #{monit_service} 120s after its config was removed — check `sudo monit summary`" if still_supervised
-
-        info "sidekiq: removed #{monit_conf}; monit no longer manages sidekiq"
-      end
+      # Leftover from the monit era; monit itself is switched off by monit:retire,
+      # which runs before this in a deploy.
       execute :rm, '-f', "#{shared_path}/bin/sidekiq_stop.sh"
     end
   end
@@ -416,6 +400,93 @@ namespace :sidekiq do
   end
 end
 
+# monit used to supervise puma and sidekiq alongside systemd — two supervisors
+# each able to launch its own copy, which is how duplicate sidekiq workers
+# survived deploys (config/deploy/services/sidekiq_IRM_env.service.erb). systemd
+# now runs both, so monit has nothing left to do. AMIs baked before this change
+# still ship it enabled, which is why every deploy (and IRM:setup) runs this.
+namespace :monit do
+  # Kills every process holding puma's socket that is not in puma's systemd unit.
+  # monit launched puma with `sudo -iu ubuntu`, and pam_systemd moves a `sudo -i`
+  # (or `su -`) login into its own session scope — so a monit-started puma is NOT
+  # in monit.service's cgroup and survives monit being stopped. One exists on any
+  # box where monit relaunched puma after a maintenance window's puma:stop. It
+  # would keep the socket and serve the old release while the systemd puma
+  # crash-loops unable to bind, and puma:smart_restart (a plain `systemctl
+  # restart`) has no authority over it. Workers inherit the socket, so they are
+  # found and killed along with their master.
+  def kill_stray_pumas(unit)
+    socket = fetch(:puma_bind).sub('unix://', '')
+    probe  = "for p in $(sudo fuser #{socket} 2>/dev/null); do " \
+             "grep -qs '/#{unit}.service' /proc/${p%%[a-zA-Z]*}/cgroup || echo ${p%%[a-zA-Z]*}; done"
+    strays = -> { capture(probe).split.grep(/\A\d+\z/).uniq }
+
+    pids = strays.call
+    return if pids.empty?
+
+    listing = capture("ps -o pid=,lstart=,args= -p #{pids.join(',')} || true")
+    warn "monit: #{pids.size} puma process(es) outside #{unit} hold #{socket} — stopping them:\n#{listing}"
+    # TERM first so a stray master finishes in-flight requests; it exits well
+    # inside 30s unless wedged.
+    execute "sudo kill -TERM #{pids.join(' ')} 2>/dev/null || true"
+    30.times do
+      break if strays.call.empty?
+
+      sleep 1
+    end
+
+    remaining = strays.call
+    return if remaining.empty?
+
+    warn "monit: stray puma still alive after 30s, SIGKILL to #{remaining.join(' ')}"
+    execute "sudo kill -KILL #{remaining.join(' ')} 2>/dev/null || true"
+  end
+
+  desc 'Stop and disable monit and remove its configs; systemd supervises puma and sidekiq'
+  task :retire do
+    on roles(:app, :web) do
+      next unless test('systemctl --no-pager cat monit.service >/dev/null 2>&1')
+
+      # On a box where puma has no systemd unit, monit is the only thing keeping
+      # puma up, and stopping it would take the site down with nothing to bring
+      # it back. Refuse rather than guess.
+      puma_unit = fetch(:puma_service_unit_name)
+      unless test("[ -f /etc/systemd/system/#{puma_unit}.service ]")
+        raise "monit: #{puma_unit}.service is not installed, so monit may be puma's only supervisor here — " \
+              "run `bundle exec cap #{fetch(:stage)}_#{fetch(:env_variant)} IRM:setup` first"
+      end
+
+      # Boot-time start for puma no longer has monit as a fallback.
+      execute :sudo, :systemctl, :enable, '--quiet', puma_unit
+
+      if test('systemctl is-enabled --quiet monit') || test('systemctl is-active --quiet monit')
+        # --now stops synchronously, so monit cannot relaunch anything after the
+        # sweep below. It does NOT take monit's launches with it: those ran under
+        # `sudo -i`/`su -` and live in session scopes outside monit.service.
+        execute :sudo, :systemctl, :disable, '--now', '--quiet', 'monit'
+        info 'monit: stopped and disabled'
+      end
+
+      # A monit-launched puma survives the stop above; clear it so the systemd
+      # unit can own the socket. (A monit-launched sidekiq is cleared by
+      # sidekiq:ensure_clean_restart's stray sweep.)
+      kill_stray_pumas(puma_unit)
+
+      # Disabled rather than purged: apt-get would contend for the dpkg lock with
+      # unattended-upgrades, and a disabled unit stays down across package
+      # upgrades. The configs go so re-enabling monit by hand cannot resurrect
+      # the old checks.
+      execute :sudo, :rm, '-f', "/etc/monit/conf.d/puma_IRM_#{fetch(:stage)}.conf",
+              "/etc/monit/conf.d/sidekiq_IRM_#{fetch(:stage)}.conf"
+      if test('[ -d /etc/systemd/system/monit.service.d ]')
+        # The drop-in that un-sandboxed monit so it could su/sudo to ubuntu.
+        execute :sudo, :rm, '-rf', '/etc/systemd/system/monit.service.d'
+        execute :sudo, :systemctl, 'daemon-reload'
+      end
+    end
+  end
+end
+
 namespace :nginx do
   desc 'Switch nginx configuration to maintenance or IRM_production'
   task :switch_maintenance do
@@ -432,7 +503,6 @@ namespace :nginx do
   # systemctl stop is synchronous and, unlike the old monit stop, nothing else
   # will relaunch sidekiq behind it while the site is in maintenance.
   before 'nginx:switch_maintenance', 'sidekiq:stop'
-  # before 'nginx:switch_maintenance', 'puma:monit:unmonitor'
   before 'nginx:switch_maintenance', 'puma:stop'
 
   task :switch_app do
@@ -445,13 +515,12 @@ namespace :nginx do
 
   after 'nginx:switch_app', 'sidekiq:ensure_clean_restart'
   after 'nginx:switch_app', 'puma:ensure_clean_restart'
-  # before 'nginx:switch_app', 'puma:monit:monitor'
 
   desc 'Render and install ONLY the nginx config, then validate and reload'
   task :update do
     on roles(:app) do
-      # IRM:setup also re-uploads puma/monit/systemd configs and reloads
-      # monit. When the only change is nginx_conf.erb (e.g. adding the
+      # IRM:setup also re-uploads puma/systemd configs. When the only
+      # change is nginx_conf.erb (e.g. adding the
       # website vhosts), this task touches nothing else.
       nginx_config_path = "/etc/nginx/sites-available"
       site_name = "IRM_#{fetch(:stage)}"
@@ -660,50 +729,12 @@ namespace :IRM do
     end
   end
 
-  # Installs the systemd drop-in that undoes the sandbox Ubuntu's monit package
-  # applies to monit.service, then re-execs monit so it takes effect. The
-  # sandbox is a property of the monit PROCESS and is inherited by everything it
-  # spawns, so `monit reload` is NOT enough here — monit itself has to restart.
-  # Idempotent; called from IRM:setup and from IRM:fix_monit_sandbox.
-  def configure_monit_sandbox
-    override_dir = "/etc/systemd/system/monit.service.d"
-
-    execute :sudo, :mkdir, "-p", override_dir
-    upload! StringIO.new(File.read('./config/deploy/templates/monit_service_override.conf')),
-            "/tmp/monit_override.conf"
-    execute :sudo, :mv, "/tmp/monit_override.conf", "#{override_dir}/override.conf"
-    execute :sudo, :chown, "root:root", "#{override_dir}/override.conf"
-    execute :sudo, :chmod, "644", "#{override_dir}/override.conf"
-
-    execute :sudo, "systemctl daemon-reload"
-    execute :sudo, "systemctl restart monit"
-
-    # Prove the sandbox is actually gone rather than assuming the restart took —
-    # this is precisely the class of failure that was passing silently before.
-    # --no-pager: `:pty, true` (above) makes stdout look like a real terminal to
-    # systemctl, and CapabilityBoundingSet's value is long enough that it pages
-    # through `less` — which then hangs forever waiting for a keypress that a
-    # non-interactive deploy will never send (found live during a DR drill).
-    nnp = capture(:systemctl, "show", "monit", "-p", "NoNewPrivileges", "--value", "--no-pager").strip
-    caps = capture(:systemctl, "show", "monit", "-p", "CapabilityBoundingSet", "--value", "--no-pager").strip
-    info "monit sandbox now: NoNewPrivileges=#{nnp}, CapabilityBoundingSet=#{caps}"
-    raise "monit is still sandboxed (NoNewPrivileges=#{nnp}) — drop-in did not apply" if nnp == "yes"
-  end
-
-  desc 'Install the systemd drop-in that lets monit start/stop our services'
-  task :fix_monit_sandbox do
-    on roles(:app) do
-      configure_monit_sandbox
-    end
-  end
-
-  desc 'Generate and upload Monit, nginx configuration and systemd service files'
+  desc 'Generate and upload puma, nginx and systemd configuration'
   task :setup do
     on roles(:app) do
       # configure_logrotate
 
       # Define the paths
-      monit_config_path = "/etc/monit/conf.d"
       system_config_path = "/etc/systemd/system/"
       nginx_config_path = "/etc/nginx/sites-available"
       puma_config_path = "/home/ubuntu/IRM/shared"
@@ -724,11 +755,6 @@ namespace :IRM do
       local_puma_config = "/tmp/puma.rb"
       generate_and_upload('./config/deploy/templates/puma.rb.erb', local_puma_config, puma_config_path)
 
-
-      # For Puma Monit config
-      local_puma_monit = "/tmp/puma_IRM_#{fetch(:stage)}.conf"
-      generate_and_upload('./config/deploy/monit/puma_IRM_env.conf.erb', local_puma_monit, monit_config_path)
-
       # For Puma systemd service
       local_puma_service = "/tmp/puma_IRM_#{fetch(:stage)}.service"
       generate_and_upload('./config/deploy/services/puma_IRM_env.service.erb', local_puma_service, system_config_path)
@@ -744,28 +770,14 @@ namespace :IRM do
       execute :sudo, "systemctl enable #{fetch(:puma_service_unit_name)}"
 
       # Sidekiq's systemd unit is installed by sidekiq:install_service, hooked
-      # after this task below (and run by every deploy). Monit no longer
-      # manages Sidekiq.
+      # after this task below (and run by every deploy). Nothing uses monit any
+      # more; monit:retire, also hooked below, switches it off on boxes whose
+      # AMI still ships it.
 
       # for nginx config
       local_nginx_conf = "/tmp/IRM_#{fetch(:stage)}"
       generate_and_upload('./config/deploy/templates/nginx_conf.erb', local_nginx_conf, nginx_config_path)
       execute :sudo, "ln -s #{nginx_config_path}/IRM_#{fetch(:stage)} /etc/nginx/sites-enabled/IRM_#{fetch(:stage)} || true"
-
-      # for monitrc
-      local_monitrc = "/tmp/monitrc"
-      generate_and_upload('./config/deploy/templates/monitrc.erb', local_monitrc, "/etc/monit/monitrc")
-      execute :sudo, :chown, "root", "/etc/monit/monitrc"
-      execute :sudo, :chmod, "700", "/etc/monit/monitrc"
-
-      # Un-sandbox monit before restarting it. The AMI installs monit from apt
-      # (see templates/packer/appserver.ami.pkr.hcl), and the packaged unit is
-      # hardened to the point where monit cannot su/sudo to ubuntu or even see
-      # /home — so every `start program` fails and nothing it supervises can be
-      # started. Full explanation in the drop-in itself. This also restarts
-      # monit, which picks up the conf.d/monitrc changes above, so no separate
-      # `monit reload` is needed here.
-      configure_monit_sandbox
 
       # Remove the /etc/nginx/sites-enabled/default file
       execute :sudo, :rm, "-f", "/etc/nginx/sites-enabled/default"
@@ -796,9 +808,9 @@ namespace :IRM do
     end
   end
 
-  # After setup, not inside it: setup restarts monit (configure_monit_sandbox),
-  # and install_service then removes any leftover monit Sidekiq check and waits
-  # for monit to drop it.
+  # After setup, not inside it: monit:retire needs the puma unit that setup has
+  # just installed and enabled.
+  after 'IRM:setup', 'monit:retire'
   after 'IRM:setup', 'sidekiq:install_service'
 
   task :reboot do
