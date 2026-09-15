@@ -19,15 +19,9 @@
   </td>
   <td><%= obligation.obligation_type.humanize %></td>
   <td>
-    <%# Commitment obligations link to the show page (full detail view).
-        Portfolio obligations have no show page yet — open inline edit instead
-        (the controller guards against saving non-pending obligations). %>
-    <% if obligation.side_letter.present? %>
-      <%= link_to obligation.title, side_letter_obligation_path(obligation) %>
-    <% else %>
-      <%= link_to obligation.title, edit_side_letter_obligation_path(obligation, format: :turbo_stream),
-                  data: { turbo: true } %>
-    <% end %>
+    <%# All obligations link to the show page (full detail view with Tasks,
+        Fulfillment History, and Alerts tabs). %>
+    <%= link_to obligation.title, side_letter_obligation_path(obligation) %>
     <% if obligation.source_clause.present? %>
       <div class="text-muted"><%= obligation.source_clause %></div>
     <% end %>
