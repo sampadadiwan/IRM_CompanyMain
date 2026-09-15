@@ -14,7 +14,9 @@ class SideLetterObligationsController < ApplicationController
     #   "side_letter"  → only SLO obligations, hides legal category column
     #   nil (default)  → all obligations, shows legal category column
     @obligation_context = params[:context]
-    @bread_crumbs = { 'Obligation Matrix': side_letter_obligations_path }
+    # Breadcrumb preserves context so clicking it doesn't lose the CP/CS or
+    # side_letter scope the user arrived with.
+    @bread_crumbs = { 'Obligation Matrix': side_letter_obligations_path(context: @obligation_context) }
     # Eager-load tasks alongside obligations to avoid N+1 when rendering the
     # fired-task due date and count in the matrix's "Next Due" column.
     # Eager-load side_letter chain for commitment obligations; portfolio
