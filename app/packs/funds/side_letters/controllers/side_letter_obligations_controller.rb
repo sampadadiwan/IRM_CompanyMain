@@ -9,7 +9,10 @@ class SideLetterObligationsController < ApplicationController
 
   def index
     authorize SideLetterObligation
-    @bread_crumbs = { 'Side Letters': side_letters_path, 'Obligation Matrix': side_letter_obligations_path }
+    # Breadcrumb omits the old "Side Letters" parent — the matrix now shows both
+    # side letter obligations and CP/CS portfolio obligations, so linking to the
+    # side letters index is misleading for CP/CS users.
+    @bread_crumbs = { 'Obligation Matrix': side_letter_obligations_path }
     # Eager-load tasks alongside obligations to avoid N+1 when rendering the
     # fired-task due date and count in the matrix's "Next Due" column.
     # Eager-load side_letter chain for commitment obligations; portfolio
