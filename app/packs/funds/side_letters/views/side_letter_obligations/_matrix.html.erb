@@ -1,8 +1,13 @@
 <%# The LP Obligation Matrix table — shared between the standalone index page,
     the side letter show tab, and the agent's "Obligation Matrix" tab.
-    Locals: obligations (relation/array); side_letter (optional — pre-scopes the
-    Add Obligation button; without it the form asks which side letter). %>
+    Locals:
+      obligations          — relation or array of SideLetterObligation records
+      side_letter          — optional; pre-scopes the Add Obligation button
+      show_legal_category  — optional (default true); when false the Legal Category
+                             column is hidden (e.g. when the page is already scoped
+                             to a single legal category group via context param) %>
 <% side_letter = local_assigns[:side_letter] %>
+<% show_legal_category = local_assigns.fetch(:show_legal_category, true) %>
 <%# data-controller="tooltip" activates the title= tooltips on badges/buttons below.
     data-controller="datatable" connects the Stimulus controller that initialises
     jQuery DataTables on the .jqDataTable table inside — enables column sorting,
@@ -36,13 +41,17 @@
         <th>Owner</th>
         <th>Next Due</th>
         <th>Status</th>
-        <th>Legal Category</th>
+        <% if show_legal_category %>
+          <th>Legal Category</th>
+        <% end %>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody>
       <% obligations.each do |obligation| %>
-        <%= render "side_letter_obligations/side_letter_obligation", obligation: obligation %>
+        <%= render "side_letter_obligations/side_letter_obligation",
+                   obligation: obligation,
+                   show_legal_category: show_legal_category %>
       <% end %>
       <%# Empty-state row is intentionally omitted — a colspan row inside <tbody>
           causes a DataTables "unknown parameter" error because it expects one <td>

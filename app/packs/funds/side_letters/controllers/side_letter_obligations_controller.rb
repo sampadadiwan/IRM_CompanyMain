@@ -9,9 +9,11 @@ class SideLetterObligationsController < ApplicationController
 
   def index
     authorize SideLetterObligation
-    # Breadcrumb omits the old "Side Letters" parent — the matrix now shows both
-    # side letter obligations and CP/CS portfolio obligations, so linking to the
-    # side letters index is misleading for CP/CS users.
+    # Context param controls pre-filtering and column visibility:
+    #   "cp_cs"       → only CP/CS obligations, hides legal category column
+    #   "side_letter"  → only SLO obligations, hides legal category column
+    #   nil (default)  → all obligations, shows legal category column
+    @obligation_context = params[:context]
     @bread_crumbs = { 'Obligation Matrix': side_letter_obligations_path }
     # Eager-load tasks alongside obligations to avoid N+1 when rendering the
     # fired-task due date and count in the matrix's "Next Due" column.
@@ -42,6 +44,13 @@ class SideLetterObligationsController < ApplicationController
     if params[:stakeholder_id].present?
       pi_ids = PortfolioInvestment.where(portfolio_company_id: params[:stakeholder_id]).select(:id)
       scope = scope.where(sourceable_type: "PortfolioInvestment", sourceable_id: pi_ids)
+    end
+    # Context-based legal category scoping — pre-filters the matrix to the
+    # relevant obligation type when arriving from an agent tab.
+    if @obligation_context == "cp_cs"
+      scope = scope.where(legal_category: %i[condition_precedent condition_subsequent])
+    elsif @obligation_context == "side_letter"
+      scope = scope.where(legal_category: :side_letter_obligation)
     end
     @q = scope.ransack(params[:q])
     @side_letter_obligations = @q.result.order(Arel.sql("next_due_date IS NULL, next_due_date ASC"))

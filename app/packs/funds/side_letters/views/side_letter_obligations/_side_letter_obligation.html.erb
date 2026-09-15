@@ -3,7 +3,9 @@
     armed    -> fire (with due date)
     active   -> waive / record fulfillment
     The row id matches dom_id(obligation) so turbo_stream.replace can
-    swap it for the inline edit form or refresh it after save. %>
+    swap it for the inline edit form or refresh it after save.
+    Locals: obligation, show_legal_category (default true) %>
+<% show_legal_category = local_assigns.fetch(:show_legal_category, true) %>
 <tr id="<%= dom_id(obligation) %>">
   <%# Investor column: commitment obligations link to their side letter;
       portfolio investment obligations link to the obligation detail page %>
@@ -59,8 +61,11 @@
     <% end %>
   </td>
   <td><%= obligation_status_badge(obligation) %></td>
-    <%# Legal classification assigned by the LLM — counsel can correct via edit before approving %>
-  <td><%= legal_category_badge(obligation) %></td>
+  <%# Legal classification assigned by the LLM — counsel can correct via edit before approving.
+      Hidden when the matrix is already scoped to a single legal category group. %>
+  <% if show_legal_category %>
+    <td><%= legal_category_badge(obligation) %></td>
+  <% end %>
   <td>
     <% if obligation.pending_review? %>
       <div class="d-flex gap-1 flex-wrap">

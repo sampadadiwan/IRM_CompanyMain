@@ -1,21 +1,42 @@
-<%# The standalone LP Obligation Matrix page: all obligations across LPs for
-    the entity, filterable per spec (type, owner team, due range, review
-    status, MFN relevance, fund). %>
+<%# The standalone Obligation Matrix page: all obligations across LPs for the
+    entity, filterable per spec (type, owner team, due range, review status,
+    legal category, fund, stakeholder).
+    When @obligation_context is set (from the agent tab's "Open Full Matrix"
+    link), the page pre-filters by legal category and hides the now-redundant
+    legal category filter and column. %>
 <%# Breadcrumbs come from the layout card (@bread_crumbs in the controller) %>
-<%= render FormCard.new(title: "LP Obligation Matrix") do %>
+<% show_legal_category = @obligation_context.blank? %>
+<% title = case @obligation_context
+           when "cp_cs"       then "CP/CS Obligation Matrix"
+           when "side_letter"  then "Side Letter Obligation Matrix"
+           else                     "LP Obligation Matrix"
+           end %>
+<%= render FormCard.new(title: title) do %>
   <%# First-time orientation: this feature has a lifecycle users must understand %>
   <div class="alert alert-info d-flex align-items-start gap-2 mb-3">
     <i class="ti ti-info-circle fs-5 mt-1"></i>
     <div>
-      Every obligation your side letters create, across all LPs, in one place.
-      Extracted (or manually added) obligations wait as <strong>Pending review</strong> until counsel
-      approves them — only then do tasks and due-date alerts go live. <strong>Armed</strong> items are
-      event-driven and have no deadline until you <strong>Fire</strong> them.
+      <% if @obligation_context == "cp_cs" %>
+        Conditions precedent and subsequent extracted from investment documents, across all
+        portfolio investments. Pending items need counsel review before tasks and due-date
+        alerts go live. <strong>Armed</strong> items are event-driven — no deadline until you
+        <strong>Fire</strong> them.
+      <% else %>
+        Every obligation your side letters create, across all LPs, in one place.
+        Extracted (or manually added) obligations wait as <strong>Pending review</strong> until counsel
+        approves them — only then do tasks and due-date alerts go live. <strong>Armed</strong> items are
+        event-driven and have no deadline until you <strong>Fire</strong> them.
+      <% end %>
       <%= link_to "Read the guide", user_guide_path("agents/side_letter_obligation_agent_user_guide"), target: "_blank", rel: "noopener" %>.
     </div>
   </div>
-  <%= search_form_for @q, url: side_letter_obligations_path, method: :get,
+  <%= search_form_for @q, url: side_letter_obligations_path(context: @obligation_context), method: :get,
                       html: { class: "row g-2 align-items-end mb-3" } do |f| %>
+    <%# Preserve context param across filter submissions so the page stays
+        scoped to the right obligation type after applying filters. %>
+    <% if @obligation_context.present? %>
+      <%= hidden_field_tag :context, @obligation_context %>
+    <% end %>
     <div class="col-md-2">
       <%= label_tag :fund_id, "Fund", class: "form-label" %>
       <%= select_tag :fund_id, options_from_collection_for_select(@funds, :id, :name, params[:fund_id]),
@@ -34,10 +55,14 @@
       <%= f.select :review_status_eq, SideLetterObligation.review_statuses.keys.map { |k| [k.humanize, k] },
                    { include_blank: "All" }, class: "form-select" %>
     </div>
-    <div class="col-md-2">
-      <%= f.label :legal_category_eq, "Legal category", class: "form-label" %>
-      <%= f.select :legal_category_eq, legal_category_options, { include_blank: "All" }, class: "form-select" %>
-    </div>
+    <%# Legal category filter only shown when no context is set — with a context
+        the obligations are already pre-filtered to one legal category group. %>
+    <% if show_legal_category %>
+      <div class="col-md-2">
+        <%= f.label :legal_category_eq, "Legal category", class: "form-label" %>
+        <%= f.select :legal_category_eq, legal_category_options, { include_blank: "All" }, class: "form-select" %>
+      </div>
+    <% end %>
     <div class="col-md-2">
       <%= f.label :next_due_date_gteq, "Due from", class: "form-label" %>
       <%= f.date_field :next_due_date_gteq, class: "form-control" %>
@@ -55,11 +80,13 @@
     </div>
     <div class="col-md-2">
       <%= f.submit "Filter", class: "btn btn-primary" %>
-      <%= link_to "Clear", side_letter_obligations_path, class: "btn btn-outline-secondary" %>
+      <%= link_to "Clear", side_letter_obligations_path(context: @obligation_context), class: "btn btn-outline-secondary" %>
     </div>
   <% end %>
 
-  <%= render "side_letter_obligations/matrix", obligations: @side_letter_obligations %>
+  <%= render "side_letter_obligations/matrix",
+             obligations: @side_letter_obligations,
+             show_legal_category: show_legal_category %>
 <% end %>
 
 <%# Outside the FormCard — see _action_modals for why %>

@@ -1,12 +1,21 @@
-<%# SideLetterObligationAgent report tab: the living obligation matrix for the
-    entity (the enforcement run's counts live in Execution History).
-    Locals: support_agent, obligations %>
+<%# Obligation matrix tab rendered on the SideLetterObligationAgent and
+    CpCsExtractionAgent show pages. The "Open Full Matrix" link passes a
+    context param so the standalone page pre-filters and adapts columns:
+    cp_cs hides the legal category column (always CP/CS), side_letter
+    hides it too (always SLO). Locals: support_agent, obligations %>
+<% matrix_context = support_agent.agent_type == "CpCsExtractionAgent" ? "cp_cs" : "side_letter" %>
 <div class="d-flex justify-content-between align-items-center mb-2">
   <p class="text-muted mb-0">
-    Obligations extracted from side letters. Pending items need counsel review before
-    tasks and alerts go live.
+    <% if matrix_context == "cp_cs" %>
+      Conditions precedent and subsequent extracted from investment documents.
+      Pending items need counsel review before tasks and alerts go live.
+    <% else %>
+      Obligations extracted from side letters. Pending items need counsel review before
+      tasks and alerts go live.
+    <% end %>
   </p>
-  <%= link_to side_letter_obligations_path, class: "btn btn-outline-primary d-inline-flex align-items-center" do %>
+  <%= link_to side_letter_obligations_path(context: matrix_context),
+              class: "btn btn-outline-primary d-inline-flex align-items-center" do %>
     <i class="ti ti-table"></i> Open Full Matrix
   <% end %>
 </div>
