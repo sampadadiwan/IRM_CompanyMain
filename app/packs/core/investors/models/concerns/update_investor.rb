@@ -258,7 +258,7 @@ module UpdateInvestor
     # Investor#to_s (InvestorShared#to_s) is "investor_name : category" -- category is unaffected
     # by a name-only rename, and `self` already carries the new investor_name in memory, so
     # `to_s` here reflects the post-rename value.
-    resync_parent_name_for("Investor", id, to_s)
+    resync_parent_name_for("Investor", id, to_s, entity_id)
 
     # Indirect parents: AggregatePortfolioInvestment / PortfolioInvestment rows whose
     # portfolio_company_name we just rewrote above via update_all. Their #to_s also reads the
@@ -266,11 +266,11 @@ module UpdateInvestor
     # this into a single update_all -- reload each (a handful of rows per investor, not
     # account_entries-scale) and recompute its to_s to catch up account_entries.parent_name.
     aggregate_portfolio_investments.includes(:investment_instrument).find_each do |api|
-      resync_parent_name_for("AggregatePortfolioInvestment", api.id, api.to_s)
+      resync_parent_name_for("AggregatePortfolioInvestment", api.id, api.to_s, entity_id)
     end
 
     portfolio_investments.includes(:investment_instrument).find_each do |pi|
-      resync_parent_name_for("PortfolioInvestment", pi.id, pi.to_s)
+      resync_parent_name_for("PortfolioInvestment", pi.id, pi.to_s, entity_id)
     end
   end
 
@@ -283,8 +283,9 @@ module UpdateInvestor
   # engine writes an entry per (capital_commitment x portfolio_investment) per fund_formula per
   # run (AccountEntryAllocation::AllocatePortfolioInvestments), so a single portfolio_investment
   # reaches the same row counts as the direct-Investor case.
-  def resync_parent_name_for(parent_type, parent_id, parent_name)
-    AccountEntry.where(parent_type:, parent_id:)
+  # we scope the account_entries by entity_id to avoid large inefficient queries
+  def resync_parent_name_for(parent_type, parent_id, parent_name, entity_id)
+    AccountEntry.where(parent_type:, parent_id:, entity_id:)
                 .in_batches(of: RESYNC_BATCH_SIZE, cursor: :id)
                 .update_all(parent_name: parent_name[0..254])
   end

@@ -23,9 +23,10 @@ class User < ApplicationRecord
   # "Kpi" gates recipients for KpiReport's submission/failure notifiers (notify_fund_of_submission!,
   # reopen_after_failed_import! in app/packs/startups/kpis/models/kpi_report.rb, and the matching
   # controller path in kpi_reports_controller.rb#notify_fund_on_submission); "db_dump_notification"
-  # gates recipients in EntityDbDumpJob. Suggested (not enforced) on the user form's tag input —
+  # gates recipients in EntityDbDumpJob; "Tasks" gates recipients for the weekly task digest
+  # (WeeklyTaskDigestJob::RECIPIENT_TAG). Suggested (not enforced) on the user form's tag input —
   # other tags remain valid, e.g. per-entity Support Agent "notify_tag" config values.
-  NOTIFICATION_TAGS = %w[Kpi db_dump_notification].freeze
+  NOTIFICATION_TAGS = %w[Kpi Tasks db_dump_notification].freeze
 
   attr_accessor :role_name
   # This is set from session[:support_user_id] in the ApplicationController.
@@ -89,7 +90,11 @@ class User < ApplicationRecord
     "#{first_name[0].upcase}#{last_name[0].upcase}"
   end
 
-  UPDATABLE_ROLES = %w[company_admin approver signatory].freeze
+  # Keep this in sync with the role list offered in _form.html.erb's roles select — any name
+  # listed here that isn't also offered there (e.g. the old "signatory" entry) gets silently
+  # removed from every user a company admin saves, since UsersController#update treats "not
+  # present in the submitted role_name list" as "remove this role".
+  UPDATABLE_ROLES = %w[company_admin approver employee].freeze
   CALL_CODES = {
     "in" => "91",
     "us" => "1",
@@ -172,6 +177,40 @@ class User < ApplicationRecord
   validates :phone, length: { maximum: 100 }
   normalizes :phone, with: ->(phone) { phone.delete("^0-9") }
 
+  # Machine-driven writers set this to bypass phone_must_be_dialable.
+  #
+  # The validation is a data-entry guard for a human at a form, and only that. Two paths
+  # mirror a number from a source they do not control and must never refuse it:
+  #
+  #   * UsersSyncController — the origin region is authoritative. Refusing the payload
+  #     returns 422 and never stamps last_synced_ccf_hex, so the sender retries the same
+  #     payload forever and that user's replication is permanently stuck.
+  #   * InvestorAccess#update_user — builds the portal user from an access row (often
+  #     imported from a spreadsheet). investor_accesses.user_id is nullable and the
+  #     belongs_to autosave discards a failed save, so a refusal there silently produces
+  #     an access row with no user rather than an error anyone sees.
+  #
+  # Both accepted any number before this validation existed; the flag keeps them exactly
+  # as they were rather than making them the first casualties of a form-level rule.
+  attr_accessor :skip_phone_validation
+
+  # Only when the number is actually being touched.
+  #
+  # A bare `validates` would be the obvious thing and is the wrong thing: a fifth of the
+  # rows already hold numbers that cannot be parsed (too short, or carrying their own
+  # country code so that call_code gets prepended a second time), and validating them
+  # unconditionally would block every unrelated edit — a role change, a permission
+  # toggle — on a user whose phone column someone else got wrong years ago. Editing the
+  # number is the one moment where the person saving can both see the problem and fix it.
+  #
+  # Skipped when call_code is blank so the presence validation above owns that message
+  # rather than both firing at once.
+  validate :phone_must_be_dialable,
+           if: lambda {
+             !skip_phone_validation && phone.present? && call_code.present? &&
+               (phone_changed? || call_code_changed?)
+           }
+
   validates :curr_role, :dept, length: { maximum: 20 }
   validates :entity_type, length: { maximum: 25 }
   validates :call_code, length: { maximum: 3 }
@@ -211,6 +250,22 @@ class User < ApplicationRecord
 
   def phone_with_call_code
     "#{call_code}#{phone}"
+  end
+
+  # Dialable, not textable — landlines pass deliberately.
+  #
+  # `users.phone` is the contact number for the whole application, not just the SMS OTP
+  # path: it feeds WhatsApp, notifications and the investor_access copy. Rejecting a
+  # fixed line here would refuse legitimate data entry for users who will never use SMS
+  # two-factor. A landline still fails SmsDeliverable#sms_available? and is simply never
+  # offered the SMS mode.
+  #
+  # Uses the same parsed_phone as sms_available? so the form and the SMS gate cannot
+  # disagree about what a usable number is.
+  def phone_must_be_dialable
+    return if parsed_phone&.valid?
+
+    errors.add(:phone, "is not a valid phone number for country code +#{call_code}")
   end
 
   def name

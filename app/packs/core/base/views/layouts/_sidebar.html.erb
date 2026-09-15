@@ -19,11 +19,6 @@
             <span><i class="ti ti-help"></i></span>
             <span class="hide-menu"><%= t('sidebar.support_mapping') %></span></a>
         </li>
-        <li class="sidebar-item">
-          <a class="sidebar-link" href="/blazer">
-            <span><i class="ti ti-files"></i></span>
-            <span class="hide-menu"><%= t('sidebar.blazer_reports') %></span></a>
-        </li>
       <% end %>
       <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role)  %>
         <!-- Divider -->
@@ -251,12 +246,27 @@
             <span class="hide-menu"><%= t('top_menus.user_guides') %></span>
           </a>
         </li>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="<%= faqs_path %>" >
+            <span><i class="ti ti-help-circle"></i></span>
+            <span class="hide-menu">FAQs</span>
+          </a>
+        </li>
       <% end %>
       <% if current_user&.support? %>
         <li class="sidebar-item">
           <a class="sidebar-link" href="/cs_feedback_reviews">
             <span><i class="ti ti-message-report"></i></span>
             <span class="hide-menu">CS Reviews</span>
+          </a>
+        </li>
+      <% end %>
+      <%# Gated on the policy, not support?, so it disappears while support impersonates a customer. %>
+      <% if current_user && policy(FaqEntry).index? %>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="<%= faq_entries_path %>">
+            <span><i class="ti ti-help-hexagon"></i></span>
+            <span class="hide-menu">FAQ Manager</span>
           </a>
         </li>
       <% end %>

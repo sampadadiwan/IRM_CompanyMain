@@ -1,0 +1,43 @@
+<div class="table-responsive" data-controller="datatable">
+  <table id="shareholder_positions" class="table table-bordered dataTable <%= @use_pagy ? "" : "jqDataTable" %>">
+    <thead>
+      <tr>
+        <th class="text-col">
+          <%= sort_link @q, :portfolio_company_investor_name, "Portfolio Company" %>
+        </th>
+        <th class="text-col">Shareholder</th>
+        <th class="text-col">
+          <%= sort_link @q, :category, "Category" %>
+        </th>
+        <th class="text-col">
+          <%= sort_link @q, :subgroup, "Subgroup" %>
+        </th>
+        <th class="text-col">
+          <%= sort_link @q, :instrument, "Instrument" %>
+        </th>
+        <th class="text-col">Round / As Of</th>
+        <th class="num-col">Fully Dilluted Quantity/%</th>
+        <th class="num-col">Quantity Actuals</th>
+        <th class="text-col">
+          <%= sort_link @q, :status, "Status" %>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @shareholder_positions.each do |position| %>
+        <tr>
+          <td><%= position.portfolio_company&.investor_name %></td>
+          <td><%= position.investor_label.presence || position.investor&.investor_name %></td>
+          <td><%= position.category %></td>
+          <td><%= position.subgroup %></td>
+          <td><%= position.instrument %></td>
+          <td><%= position.round_name.presence || position.position_date&.strftime("%B %Y") %></td>
+          <td><%= number_with_precision(position.position_amount, precision: 2, delimiter: ",") if position.position_amount.present? %></td>
+          <td><%= number_with_precision(position.quantity_actual, precision: 2, delimiter: ",") if position.quantity_actual.present? %></td>
+          <td><%= position.status.to_s.titleize %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= raw pagy_bootstrap_nav(@pagy) if @use_pagy %>
+</div>

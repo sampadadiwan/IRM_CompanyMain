@@ -1,12 +1,28 @@
 # Monit configuration for Sidekiq :  IRM
   check process sidekiq_IRM_<%= fetch(:stage) %>
   matching 'sidekiq .* '
+  # mode manual: without this, monit's DEFAULT "active" mode auto-runs `start
+  # program` the moment its daemon sees no matching process — including on a
+  # box FIRST BOOTING from a weekly-baked AMI (aws_utils.rb#create_ami_from_snapshot
+  # snapshots a live running instance's disk as-is, monit state included, no
+  # quiescing). That baked disk still has the OLD release/.env from whichever
+  # box was snapshotted, so on a cross-region DR rebuild monit raced
+  # sidekiq:ensure_clean_restart below and started sidekiq against a
+  # foreign-region Redis host, crashing and burning through the deploy's
+  # boot-wait budget (dr_drill_in_2026_09_12_1404/1432: sidekiq did not come up
+  # within the allotted time — see config/deploy.rb). `mode manual` makes monit
+  # supervise-only until something explicitly calls `monit monitor
+  # sidekiq_IRM_<stage>` — which sidekiq:ensure_clean_restart already does,
+  # right after starting the correct release. That hands the first start to
+  # Capistrano alone, matching the intent already documented below (monit's
+  # own async restart hooks caused a real orphaned-worker incident).
+  mode manual
   # MALLOC_ARENA_MAX=2 caps glibc malloc arenas: with the default (8 * cores) the
   # multi-threaded Sidekiq process fragments heavily under large transient
   # allocations (doc generation, allocations, exports) and RSS never returns to
   # the OS. Two arenas is the standard Ruby-server setting (same default Heroku
   # applies) and typically cuts steady-state Sidekiq RSS substantially.
-  start program = "/bin/su - ubuntu -c 'cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 ~/.rvm/bin/rvm default do bundle exec sidekiq -e <%= fetch(:stage) %>     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 &'" with timeout 30 seconds
+  start program = "/bin/su - ubuntu -c 'cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 setsid ~/.rvm/bin/rvm default do bundle exec sidekiq -e <%= fetch(:stage) %>     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 &'" with timeout 30 seconds
   # Delegated to a script (uploaded by IRM:setup) rather than inlined. The old
   # inline pipeline sent a bare SIGTERM and gave up after 10 seconds, which is
   # LESS than Sidekiq's own 25s graceful-shutdown timeout — so monit declared the

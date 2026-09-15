@@ -4,7 +4,104 @@
     portfolio_company_id: portfolio_company_id
   })
   investments = result[:model]
+
+  # Fully Diluted Quantity/% re-uploads for an investor/round/instrument that already has an
+  # approved position are staged as `unapproved` (see ImportShareholderPosition#save_row) rather
+  # than applied immediately, since accepting one can shift every other investor's % stake in
+  # this round. Surface them here so they can be reviewed and explicitly accepted or denied.
+  pending_updates = ShareholderPosition.unapproved
+                                        .where(portfolio_company_id: portfolio_company_id)
+                                        .includes(:investor)
+                                        .select { |sp| GenerateCapTable.shareholder_position_matches_round?(sp, funding_rounds) }
 %>
+<% if pending_updates.any? %>
+  <%
+    pending_ids = pending_updates.map(&:id)
+    accept_all_msg = "This will overwrite the current Fully Diluted Quantity/% and Quantity Actuals for all #{pending_ids.length} pending investor(s) shown below for #{funding_round}. " \
+                     "This round's percentages may no longer total 100% and other investors' figures can be affected. Proceed?"
+    reject_all_msg = "This will reject and delete all #{pending_ids.length} pending update(s) shown below for #{funding_round}. This action cannot be undone. Proceed?"
+  %>
+  <div class="alert alert-warning" data-controller="confirm">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <strong>Pending Fully Diluted/Quantity Actuals updates for <%= funding_round %>.</strong>
+        Accepting a row below overwrites its current Fully Diluted Quantity/% and Quantity Actuals - this can cause this round's
+        percentages to no longer total 100% and can change other investors' figures too. Review each row before accepting.
+      </div>
+      <div class="d-flex gap-2 flex-shrink-0">
+        <% if policy(pending_updates.first).approve? %>
+          <%= button_to "Accept All", approve_all_shareholder_positions_path(ids: pending_ids), method: :patch, class: "btn btn-sm btn-success",
+              data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no", msg: accept_all_msg } %>
+        <% end %>
+        <% if policy(pending_updates.first).reject? %>
+          <%= button_to "Reject All", approve_all_shareholder_positions_path(ids: pending_ids, reject: true), method: :patch, class: "btn btn-sm btn-danger",
+              data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no", msg: reject_all_msg } %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <div class="table-responsive mb-3">
+    <table class="table table-bordered table-sm">
+      <thead>
+        <tr>
+          <th>Investor</th>
+          <th>Current Fully Diluted Quantity</th>
+          <th>New Fully Diluted Quantity</th>
+          <th>Current Fully Diluted %</th>
+          <th>New Fully Diluted %</th>
+          <th>Current Quantity Actuals</th>
+          <th>New Quantity Actuals</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pending_updates.each do |pending| %>
+          <%
+            investor_display = pending.investor_label.presence || pending.investor&.investor_name
+            current_approved = ShareholderPosition.find_matching_approved(
+              portfolio_company_id: pending.portfolio_company_id,
+              investor_label: pending.investor_label,
+              investor_id: pending.investor_id,
+              instrument: pending.instrument,
+              round_name: pending.round_name,
+              position_date: pending.position_date
+            )
+          %>
+          <tr data-controller="confirm">
+            <%
+              pending_percentage_display = pending.fully_diluted_percentage.present? ? "#{pending.fully_diluted_percentage}%" : "-"
+            %>
+            <td><%= investor_display %></td>
+            <td><%= current_approved&.position_amount || "-" %></td>
+            <td><%= pending.position_amount %></td>
+            <td><%= current_approved&.fully_diluted_percentage.present? ? "#{current_approved.fully_diluted_percentage}%" : "-" %></td>
+            <td><%= pending_percentage_display %></td>
+            <td><%= current_approved&.quantity_actual || "-" %></td>
+            <td><%= pending.quantity_actual %></td>
+            <td>
+              <% if pending.percentage_only_pending_update? %>
+                <span class="text-muted small">%-only change - use "Accept All"/"Reject All" above</span>
+              <% else %>
+                <% if policy(pending).individually_approvable? %>
+                  <%= button_to "Accept", approve_shareholder_position_path(pending), method: :patch, class: "btn btn-sm btn-success",
+                      data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no",
+                              msg: "This will overwrite the current Fully Diluted Quantity/%/Quantity Actuals for #{investor_display} with " \
+                                   "#{pending.position_amount} / #{pending_percentage_display} / #{pending.quantity_actual}. This round's percentages may no longer total " \
+                                   "100% and other investors' figures can be affected. Proceed?" } %>
+                <% end %>
+                <% if policy(pending).individually_rejectable? %>
+                  <%= button_to "Deny", reject_shareholder_position_path(pending), method: :delete, class: "btn btn-sm btn-danger",
+                      data: { action: "click->confirm#popup", turbo: false, method: :delete, notification: "no",
+                              msg: "Are you sure you want to reject and delete this pending update for #{investor_display}? This action cannot be undone." } %>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
 <div class="table-responsive" data-controller="datatable">
 
   <table id="funding_round_<%= funding_round.underscore.downcase %>" class="table table-bordered dataTable jqDataTable">
@@ -13,6 +110,9 @@
       <tr>
         <th>
           Investor
+        </th>
+        <th>
+          Instrument
         </th>
         <th>
           Quantity
@@ -33,6 +133,9 @@
             <tr>
                 <td>
                 <%= investment[:grouping_field] %>
+                </td>
+                <td>
+                <%= investment[:instrument] %>
                 </td>
                 <td>
                 <%= investment[:quantity] %>

@@ -37,7 +37,10 @@ class FundFormulaDependencyGraph
   attr_reader :formulas, :edges
 
   def initialize(formulas)
-    @formulas = formulas.to_a
+    # A pre/post-run check produces no field, and whatever @variables it mentions are never set
+    # by the engine (checks run outside the formula loop), so drawing them would only add
+    # spurious "no producer" broken references.
+    @formulas = formulas.to_a.reject(&:run_check?)
     @edges = build_edges
   end
 

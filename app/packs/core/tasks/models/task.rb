@@ -154,6 +154,14 @@ class Task < ApplicationRecord
     details.to_plain_text.presence || ActionText::Content.new(self[:details].to_s).to_plain_text
   end
 
+  # Plain-text of the task's "Response" field — the running note/comment a fund user
+  # keeps on a task. Used by the weekly digest row. Same legacy fallback as
+  # display_details above: rows created before ActionText keep their text in the raw
+  # `response` column, which has_rich_text hides, and that column holds HTML.
+  def display_response
+    response.to_plain_text.presence || ActionText::Content.new(self[:response].to_s).to_plain_text
+  end
+
   # Details as renderable HTML. Rows created before ActionText keep their markup
   # in the legacy `details` column, which has_rich_text hides — so those tasks
   # render blank anywhere `task.details` is used directly, while the kanban card
@@ -214,6 +222,71 @@ class Task < ApplicationRecord
 
     { completed: values[0].to_i, incomplete: values[1].to_i,
       delayed: values[2].to_i, due_this_week: values[3].to_i }
+  end
+
+  # The six numbers behind the weekly task digest, in one pass over the scope —
+  # same shape and the same portability constraints as stat_counts above.
+  #
+  # SUM over CASE rather than FILTER or engine-specific boolean syntax, so the identical
+  # SQL runs on MySQL (dev/prod) and SQLite (test). The CASE arms lead with
+  # `WHEN tasks.completed` so the incomplete branches never need a NOT.
+  #
+  # Deliberately returns MIN(due_date) rather than an age in days: DATEDIFF is MySQL and
+  # julianday is SQLite, and a digest that silently reports different numbers under test
+  # than in production is worse than no number. The subtraction happens in Ruby.
+  #
+  # delayed_window bounds the overdue set — see WeeklyTaskDigest::DELAYED_WINDOW. The
+  # `delayed` scope and #delayed? above stay unbounded on purpose; they drive the list
+  # row and board card badges, where "overdue" means overdue at all.
+  def self.digest_counts(scope, as_of: Time.zone.today, delayed_window: 90.days)
+    this_week = as_of.all_week
+    last_week = (as_of - 1.week).all_week
+    next_week = (as_of + 1.week).all_week
+    # Half-open on purpose: a task due today is neither delayed nor part of next week.
+    delayed_from = as_of - delayed_window
+    delayed_to = as_of - 1.day
+
+    completed_between = lambda do |range|
+      sanitize_sql_array(
+        ["SUM(CASE WHEN tasks.completed AND tasks.completed_on BETWEEN ? AND ? THEN 1 ELSE 0 END)",
+         range.first, range.last]
+      )
+    end
+    open_due_between = lambda do |from, to|
+      sanitize_sql_array(
+        ["SUM(CASE WHEN tasks.completed THEN 0 WHEN tasks.due_date BETWEEN ? AND ? THEN 1 ELSE 0 END)", from, to]
+      )
+    end
+
+    open_total = "SUM(CASE WHEN tasks.completed THEN 0 ELSE 1 END)"
+    oldest_delayed = sanitize_sql_array(
+      ["MIN(CASE WHEN tasks.completed THEN NULL WHEN tasks.due_date BETWEEN ? AND ? THEN tasks.due_date END)",
+       delayed_from, delayed_to]
+    )
+    open_assignees = "COUNT(DISTINCT CASE WHEN tasks.completed THEN NULL ELSE tasks.assigned_to_id END)"
+
+    values = scope.reorder(nil).pick(
+      Arel.sql(completed_between.call(this_week)),
+      Arel.sql(completed_between.call(last_week)),
+      Arel.sql(open_due_between.call(next_week.first, next_week.last)),
+      Arel.sql(open_due_between.call(delayed_from, delayed_to)),
+      Arel.sql(open_total),
+      Arel.sql(oldest_delayed),
+      Arel.sql(open_assignees)
+    )
+    # pick returns nil when the scope has no rows at all
+    values ||= []
+
+    {
+      completed_this_week: values[0].to_i,
+      completed_last_week: values[1].to_i,
+      due_next_week: values[2].to_i,
+      delayed: values[3].to_i,
+      open_total: values[4].to_i,
+      # MySQL hands back a Date, SQLite a "YYYY-MM-DD" string.
+      oldest_delayed_due_date: values[5].presence&.to_date,
+      open_assignees: values[6].to_i
+    }
   end
 
   def index_record?

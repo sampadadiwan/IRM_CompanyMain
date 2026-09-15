@@ -78,6 +78,7 @@ Feature: Side letter obligation lifecycle end-to-end
     # 9. The side letter page lists every covenant task in the standard tasks grid
     When I visit the side letter page for the commitment
     Then the covenant tasks grid should list every covenant task
+    And the covenant tasks filter bar should stay scoped to the side letter
 
     # 10. The obligation page's Tasks tab uses the same grid
     When I visit the obligation page for "Quarterly ESG report"

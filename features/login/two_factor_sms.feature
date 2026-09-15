@@ -18,6 +18,21 @@ Feature: Two-Factor Authentication by SMS
     Then I should be on the 2FA mode selection page
     And I should see the SMS mode option
 
+  # The destination allowlist that used to gate this was removed: a US-deployment account
+  # holding an Indian mobile is ordinary, and refusing it showed the user no SMS option
+  # with nothing on screen to explain why. Twilio Geo Permissions is now the only bound
+  # on where we dial. See SmsDeliverable.
+  Scenario: A foreign mobile number is offered SMS on the US deployment
+    Given this is the US deployment
+    And the user has the phone number "91" "9449025878"
+    And I am at the login page
+    When I fill and submit the login page
+    Then I should be on the 2FA mode selection page
+    And I should see the SMS mode option
+    When I select the SMS mode
+    Then I should be on the SMS 2FA enrollment page
+    And a text message should have been sent to "+919449025878"
+
   Scenario Outline: SMS is hidden when the number cannot be texted
     Given the user has the phone number "<call_code>" "<phone>"
     And I am at the login page
@@ -26,11 +41,12 @@ Feature: Two-Factor Authentication by SMS
     And I should not see the SMS mode option
 
     Examples: reasons a number is unusable
-      | call_code | phone      | why                                  |
-      |           |            | no number stored at all              |
-      | 1         | 12345      | not a valid number                   |
-      | 1         | 9449025878 | Indian number carrying a US call code|
-      | 44        | 7700900123 | outside the deployment's allowlist   |
+      | call_code | phone      | why                                   |
+      |           |            | no number stored at all               |
+      | 1         | 12345      | not a valid number                    |
+      | 1         | 9449025878 | Indian number carrying a US call code |
+      | 44        | 7700900123 | reserved range, not assignable        |
+      | 91        | 8028319623 | a landline cannot receive SMS         |
 
   Scenario: SMS is hidden when the deployment has the feature switched off
     Given the user has the phone number "+1" "4155550134"
@@ -52,7 +68,6 @@ Feature: Two-Factor Authentication by SMS
     When I enter the texted code to confirm enrollment
     Then I should see "Two-factor authentication via text message is now enabled"
     And the user should have 2FA enabled in sms mode
-    And the user should have no backup codes
 
   Scenario: Wrong code during SMS enrollment
     Given the user has the phone number "+1" "4155550134"
@@ -153,7 +168,7 @@ Feature: Two-Factor Authentication by SMS
 
   Scenario: A user whose number stops being textable is told, not stranded
     # Otherwise the verification screen says "Code texted to …" and offers a code box for
-    # a message that was never sent — and SMS mode has no backup codes.
+    # a message that was never sent — and there are no backup codes.
     Given the user has the phone number "+1" "4155550134"
     And the user has two-factor authentication enabled in sms mode
     And an administrator changes the number to "44" "7700900123"

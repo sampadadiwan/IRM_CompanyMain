@@ -1,0 +1,192 @@
+# Ontology for Document as exposed over MCP.
+---
+entity: document
+label: Document
+model: Document
+description: >-
+  A file filed against a portfolio company or one of its KPI reports — agreements, reports,
+  certificates. The extracted text is returned on each row, so documents can be read as well
+  as listed.
+
+relationships:
+  owner:
+    target: portfolio_company or kpi_report
+    cardinality: many_to_one
+    note: >-
+      Documents are polymorphic. This tool returns those owned by a portfolio company or by
+      one of its KPI reports; owner_type on the row says which.
+    resolve_with: list_portfolio_companies
+  folder:
+    target: document_folder
+    cardinality: many_to_one
+    note: The folder path is returned on each row but is not filterable.
+
+fields:
+  name:
+    type: string
+    description: File name. Use name_cont to search — exact names are rarely known.
+    sortable: true
+  owner_tag:
+    type: string
+    description: Tag identifying what the document is for (e.g. the document type).
+    sortable: true
+  owner_type:
+    type: string
+    description: >-
+      Model name of the owner — "Investor" for a company document, "KpiReport" for one filed
+      with a KPI report.
+    sortable: true
+  tag_list:
+    type: string
+    description: Comma-separated tags. Use tag_list_cont to match one tag.
+    sortable: false
+  esign_status:
+    type: string
+    description: >-
+      E-signature status. Known values include "completed", "failed", "requested",
+      "cancelled", "voided" and "expired"; null when the document was never sent for
+      signature. The scopes below are usually clearer than a raw comparison.
+    sortable: true
+  approved:
+    type: boolean
+    description: Whether the document has been approved.
+    sortable: true
+  template:
+    type: boolean
+    description: True for a template rather than a filed document.
+    sortable: true
+  locked:
+    type: boolean
+    description: Whether the document is locked against further changes.
+    sortable: true
+  download:
+    type: boolean
+    description: Whether the document may be downloaded by portal users.
+    sortable: true
+  orignal:
+    type: boolean
+    description: >-
+      Whether this is the original file. The attribute is spelled "orignal" in the schema —
+      that typo is the real name, not a mistake in this description.
+    sortable: false
+  as_of:
+    type: date
+    description: As-of date recorded on the document.
+    sortable: true
+  impressions_count:
+    type: integer
+    description: How many times the document has been viewed.
+    sortable: true
+    aggregatable: false
+  created_at:
+    type: datetime
+    description: When the document was filed. This is the usual "latest documents" sort.
+    sortable: true
+  capital_call_id:
+    type: reference
+    target: capital_call
+    description: Computed in SQL — the capital call a remittance document belongs to.
+    sortable: false
+    groupable: false
+  commitments_fund_id:
+    type: reference
+    target: fund
+    description: Computed in SQL — the fund behind a commitment document.
+    sortable: false
+    groupable: false
+
+returned_only:
+  folder:
+    type: string
+    description: Full folder path. Not filterable.
+  tags:
+    type: string
+    description: tag_list under a different key on the returned row.
+  belongs_to:
+    type: string
+    description: owner_type under a different key on the returned row.
+  details:
+    type: text
+    description: >-
+      The document's extracted text. This is what to read when answering from a document's
+      contents. It is NOT searchable server-side — a text_cont filter does not exist.
+  esign_on_page:
+    type: string
+    description: Which page the e-signature block is displayed on.
+  esign_order_forced:
+    type: boolean
+    description: Whether signatories must sign in a fixed order.
+  download_file_url:
+    type: string
+    description: Signed URL for the file itself.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the document.
+
+unavailable:
+  text:
+    reason: >-
+      The extracted text is returned as `details` but is not ransackable, so the text_cont
+      filter the old description advertised was silently ignored and every document came back.
+  public_visibility:
+    reason: >-
+      No such ransackable attribute. It was advertised by the old tool description, so a
+      condition on it was silently ignored.
+  id:
+    reason: Not declared in Document.ransackable_attributes, so conditions on it are ignored.
+  folder:
+    reason: The folder path is computed for display and cannot be filtered.
+
+scopes:
+  query_class: PortfolioAssistantDataManager::DocumentQuery
+  descriptions:
+    approved: Approved documents only.
+    not_approved: Documents awaiting approval.
+    template: Templates only.
+    not_template: Filed documents only, excluding templates.
+    sent_for_esign: Documents sent for e-signature.
+    not_sent_for_esign: Documents never sent for e-signature.
+    signed: Documents that have been signed.
+    esign_status_completed: E-signature completed.
+    esign_status_failed: E-signature failed.
+    esign_status_requested: E-signature requested but not yet completed.
+
+caveats:
+  - >-
+    Document text is returned, not searched. To find a document by its contents you must list
+    candidates by name, tag or folder and then read the text that comes back.
+  - >-
+    This table is very large in production and each row carries the full extracted text.
+    Always pass a limit, and filter by portfolio company first.
+
+tools:
+  list_documents:
+    kind: list
+    aggregatable: false
+    summary: Use it to find what has been filed for a company and to read its contents.
+    params:
+      portfolio_company_id:
+        required: true
+      scope:
+  get_document:
+    kind: detail
+    summary: >-
+      Use it when you have a document ID from list_documents, or a name to match on.
+    notes:
+      - Provide either document_id or name. A name is matched exactly first, then as a substring.
+    params:
+      document_id:
+      name:
+        type: string
+        description: Document name. Matched exactly first, then as a substring.
+    returns:
+      id: Document ID.
+      name: File name.
+      folder: Full folder path.
+      tags: Comma-separated tags.
+      owner_tag: Tag identifying what the document is for.
+      created_at: When the document was filed.
+      belongs_to: Model name of the owner.
+      owner_name: Name of the owning record.
+      file_url: Signed URL for the file itself.
+      view_link: Relative CapHive URL for the document.

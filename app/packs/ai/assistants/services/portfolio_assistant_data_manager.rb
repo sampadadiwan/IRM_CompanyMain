@@ -313,7 +313,7 @@ class PortfolioAssistantDataManager
     ransack_query[:s] ||= sort if sort.present?
 
     # Default kpi_report_as_of to 12 months ago if not provided, but allow user to override
-    ransack_query[:kpi_report_as_of_gteq] ||= 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of) || ransack_query[:all_time_eq] == 'true'
+    ransack_query[:kpi_report_as_of_gteq] ||= 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of) || ActiveRecord::Type::Boolean.new.cast(ransack_query[:all_time_eq])
 
     # unless ransack_has_attr?(ransack_query, :period) ||
     #   # Add monthly to the scope

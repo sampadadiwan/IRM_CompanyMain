@@ -18,23 +18,33 @@
 #     know which system issued the code the user is holding.
 #
 # Every guard still lives here rather than in the calling job so that a second caller
-# cannot bypass them: the country allowlist, the rate limits and the delivery record are
+# cannot bypass them: the eligibility check, the rate limits and the delivery record are
 # one unit. The job is only a queue entry point.
 #
 # Steps run in order and stop at the first failure (Trailblazer `step` semantics), which
 # is exactly the ordering we want — never spend money before checking whether we should.
 class TwilioSmsDelivery < Trailblazer::Operation
-  step :check_country
+  # Raised instead of building a real Twilio client under RAILS_ENV=test — see .client.
+  #
+  # Deliberately inherits from Exception rather than StandardError: start_verification
+  # rescues StandardError, so a StandardError here would be recorded as an ordinary
+  # transport failure and the scenario would read as a flaky network rather than as the
+  # missing @stub-twilio tag it is.
+  class TestEnvironmentSendBlocked < Exception; end # rubocop:disable Lint/InheritException
+
+  step :check_number_usable
   step :check_rate_limit
   step :start_verification
   step :record_success
 
-  # The number must be dialable and in a country we are permitted to send to.
+  # The number must still be dialable and textable.
   #
   # Checked again here even though the mode-selection screen already called
   # sms_available?: a number can be edited between enrollment and any later login, and
-  # the allowlist itself can be narrowed by configuration at any time.
-  def check_country(ctx, user:, **)
+  # SMS_OTP_ENABLED can be thrown at any time. There is no destination allowlist any
+  # more — Twilio Geo Permissions is the only thing bounding where we dial (see
+  # SmsDeliverable) — so this gate is about the number and the kill switch alone.
+  def check_number_usable(ctx, user:, **)
     number = user.normalized_sms_number
 
     if number.blank?
@@ -46,8 +56,8 @@ class TwilioSmsDelivery < Trailblazer::Operation
     # Full eligibility, not just number validity — this is the last gate before an API
     # call that costs money, so it must also honour the SMS_OTP_ENABLED kill switch.
     unless user.sms_otp_enabled?
-      record_failure(ctx, user:, error_code: OtpDelivery::ERROR_UNSUPPORTED_COUNTRY)
-      ctx[:error] = :unsupported_country
+      record_failure(ctx, user:, error_code: OtpDelivery::ERROR_NOT_ELIGIBLE)
+      ctx[:error] = :not_eligible
       return false
     end
 
@@ -150,7 +160,22 @@ class TwilioSmsDelivery < Trailblazer::Operation
       Rails.application.credentials[:TWILIO_AUTH_TOKEN]
     end
 
+    # Nothing in the test suite may reach the real Twilio API.
+    #
+    # The @stub-twilio hook replaces this whole method, so reaching the body of it under
+    # RAILS_ENV=test means a scenario triggered a send without the tag. Today that call
+    # would fail on the REPLACE_ME placeholders in config/credentials/test.yml.enc — but
+    # the day someone pastes working credentials in to debug something, the same untagged
+    # scenario sends a real message to a real handset. The two things that otherwise
+    # prevent it are conventions rather than guarantees: SMS_OTP_ENABLED is simply absent
+    # from .env.test, and WebMock is only switched on for @sync-http scenarios.
     def client
+      if Rails.env.test?
+        raise TestEnvironmentSendBlocked,
+              "TwilioSmsDelivery.client was called in the test environment. Tag the " \
+              "scenario @stub-twilio so the Twilio client is stubbed."
+      end
+
       Twilio::REST::Client.new(account_sid, auth_token)
     end
   end

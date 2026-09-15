@@ -1,0 +1,136 @@
+# Ontology for CapitalRemittancePayment as exposed over MCP.
+---
+entity: capital_remittance_payment
+label: Capital Remittance Payment
+model: CapitalRemittancePayment
+description: >-
+  An individual payment received against a capital remittance. One remittance can be settled
+  by several payments, so these are the bank-level records behind a remittance's
+  collected_amount.
+
+relationships:
+  capital_remittance:
+    target: capital_remittance
+    cardinality: many_to_one
+    note: The remittance this payment settles.
+    resolve_with: list_capital_remittances
+  capital_commitment:
+    target: capital_commitment
+    cardinality: many_to_one
+    note: >-
+      Reached through the remittance, not stored on the payment. Filter by folio with the
+      folio_ids parameter, which the tool translates into an association condition.
+    resolve_with: list_capital_commitments
+  fund:
+    target: fund
+    cardinality: many_to_one
+    note: Pass fund_ids rather than a Ransack condition on fund_id.
+    resolve_with: list_funds
+
+fields:
+  payment_date:
+    type: date
+    description: Date the payment was received.
+    sortable: true
+  reference_no:
+    type: string
+    description: Bank or wire reference for the payment.
+    sortable: true
+  amount:
+    type: money
+    stored_as: amount_cents
+    currency: the fund's currency
+    description: Payment amount in the fund's currency.
+    sortable: true
+    aggregatable: true
+  folio_amount:
+    type: money
+    stored_as: folio_amount_cents
+    currency: the folio's currency
+    description: >-
+      The same payment restated in the folio's currency. It is the SAME money as amount, not
+      additional money — never add the two together.
+    sortable: true
+    aggregatable: true
+  tracking_amount:
+    type: money
+    stored_as: tracking_amount_cents
+    currency: the fund's tracking currency
+    description: >-
+      The same payment restated in the fund's tracking currency, when it has one. Again the
+      same money, not additional money.
+    sortable: true
+    aggregatable: true
+  payment_notification_sent:
+    type: boolean
+    description: Whether the payment-received notification has been emailed to the investor.
+    sortable: true
+  fund_id:
+    type: reference
+    target: fund
+    description: Owning fund. Prefer the fund_ids parameter.
+    sortable: false
+  capital_remittance_id:
+    type: reference
+    target: capital_remittance
+    description: The remittance this payment settles.
+    sortable: false
+  created_at:
+    type: datetime
+    description: When the payment row was created. Not the payment date.
+    sortable: true
+  updated_at:
+    type: datetime
+    description: When the payment row last changed.
+    sortable: true
+
+returned_only:
+  fund_name:
+    type: string
+    description: Name of the owning fund.
+  investor:
+    type: string
+    description: Investor name, read through the commitment.
+  folio_id:
+    type: string
+    description: >-
+      Folio the payment belongs to, read through the commitment. Filter with the folio_ids
+      parameter, not a Ransack condition.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the payment.
+
+unavailable:
+  id:
+    reason: Not declared in CapitalRemittancePayment.ransackable_attributes, so conditions on it are ignored.
+  capital_commitment_id:
+    reason: >-
+      There is no capital_commitment_id column on this table — the commitment is reached
+      through capital_remittance. It used to be declared ransackable, which made any
+      condition on it raise a SQL error.
+    use_instead: folio_ids
+  amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: amount
+
+measures:
+  total_received:
+    expression: sum of amount
+    description: Cash actually received across the matching payments, in fund currency.
+
+caveats:
+  - >-
+    amount, folio_amount and tracking_amount are three views of ONE payment. Summing more
+    than one of them, or adding them together, multiplies the money.
+  - >-
+    Aggregated money sums on this entity are NOT currency-resolved and come back marked
+    currency_unresolved. Restrict to one fund before quoting a total.
+  - Money filters take MAJOR units, not cents.
+
+tools:
+  list_capital_remittance_payments:
+    kind: list
+    summary: Use it to reconcile cash actually received against what was called.
+    params:
+      fund_ids:
+      folio_ids:

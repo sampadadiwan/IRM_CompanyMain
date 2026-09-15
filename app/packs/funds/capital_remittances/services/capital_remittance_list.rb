@@ -23,6 +23,8 @@ class CapitalRemittanceList < BaseList
     # Custom filters for status and verified (comma-separated and boolean)
     @capital_remittances = @capital_remittances.where(status: @params[:status].split(",")) if @params[:status].present?
     @capital_remittances = @capital_remittances.where(verified: @params[:verified] == "true") if @params[:verified].present?
+    @capital_remittances = @capital_remittances.collected_amount_positive if enforce_collected_amount_positive?
+    @capital_remittances = @capital_remittances.where(id: @params[:capital_remittance_ids]) if @params[:capital_remittance_ids].present?
 
     Result.new(
       q: @q,
@@ -33,6 +35,21 @@ class CapitalRemittanceList < BaseList
   end
 
   private
+
+  # The capital-call bulk-verify modal always sends collected_amount_positive=true, but
+  # that's a client-supplied flag — a hand-crafted request to bulk_actions could omit it
+  # and re-enqueue verification of $0-collected remittances, the exact bug this filter
+  # exists to prevent. So enforce it server-side whenever the request shape matches that
+  # bulk-verify path (bulk_action=Verify, verified=false, scoped to a capital_call),
+  # regardless of what the client actually sent. The separate "Toggle Verify" bulk action
+  # (verified/unverified toggle over search results, no capital_call_id) is unaffected.
+  def enforce_collected_amount_positive?
+    return true if @params[:collected_amount_positive] == "true"
+
+    @params[:bulk_action].to_s.casecmp("verify").zero? &&
+      @params[:verified] == "false" &&
+      @params[:capital_call_id].present?
+  end
 
   def find_capital_call
     CapitalCall.find(@params[:capital_call_id]) if @params[:capital_call_id].present?

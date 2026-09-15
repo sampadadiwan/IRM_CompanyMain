@@ -6,7 +6,15 @@ class FundFormula < ApplicationRecord
   # Make all models searchable
   update_index('fund_formula') { self if index_record? }
 
-  TYPES = %w[AllocateMasterFundAccountEntry-Name AllocateMasterFundAccountEntryIndividual-Name AllocateMasterFundAccountEntry-EntryType AllocateMasterFundAccountEntryIndividual-EntryType AllocateAccountEntry-Name AllocateAccountEntryIndividual-Name AllocateAccountEntry-EntryType AllocateAccountEntryIndividual-EntryType AllocateAggregatePortfolios AllocatePortfolioInvestment AllocatePortfolioInvestment-Proforma AllocateMasterFundPortfolioInvestment AllocateMasterFundPortfolioInvestment-Proforma GenerateAccountEntry GenerateAccountEntryMultiple CumulateAccountEntry GenerateCustomField Percentage GeneratePortfolioNumbersForFund AllocateForPortfolioCompany AllocateForPortfolioCompany-Folio].sort.freeze
+  TYPES = %w[AllocateMasterFundAccountEntry-Name AllocateMasterFundAccountEntryIndividual-Name AllocateMasterFundAccountEntry-EntryType AllocateMasterFundAccountEntryIndividual-EntryType AllocateAccountEntry-Name AllocateAccountEntryIndividual-Name AllocateAccountEntry-EntryType AllocateAccountEntryIndividual-EntryType AllocateAggregatePortfolios AllocatePortfolioInvestment AllocatePortfolioInvestment-Proforma AllocateMasterFundPortfolioInvestment AllocateMasterFundPortfolioInvestment-Proforma GenerateAccountEntry GenerateAccountEntryMultiple CumulateAccountEntry GenerateCustomField Percentage GeneratePortfolioNumbersForFund AllocateForPortfolioCompany AllocateForPortfolioCompany-Folio PreRunCheck PostRunCheck].sort.freeze
+
+  # Rule types that assert something about the fund's data instead of computing entries.
+  # AccountEntryAllocation::RunFormulas runs them in their own steps -- pre-run checks before
+  # anything is deleted, post-run checks after every formula -- and never through RunFormula's
+  # dispatch. See docs/business_requirements/allocation_run_checks.md.
+  PRE_RUN_CHECK = "PreRunCheck".freeze
+  POST_RUN_CHECK = "PostRunCheck".freeze
+  RUN_CHECK_TYPES = [PRE_RUN_CHECK, POST_RUN_CHECK].freeze
 
   # Maps the period helper wrapping the names array of a GenerateAccountEntryMultiple
   # formula to the prefix used when naming the generated entries
@@ -46,6 +54,13 @@ class FundFormula < ApplicationRecord
   scope :accounting, -> { where(rule_for: "Accounting") }
   scope :reporting, -> { where(rule_for: "Reporting") }
   scope :without_ai_description, -> { where(ai_description: [nil, ""]) }
+  scope :run_checks, -> { where(rule_type: RUN_CHECK_TYPES) }
+  scope :pre_run_checks, -> { where(rule_type: PRE_RUN_CHECK) }
+  scope :post_run_checks, -> { where(rule_type: POST_RUN_CHECK) }
+  # The formulas that compute entries. The explicit nil branch matters: `where.not(rule_type: [...])`
+  # compiles to `rule_type NOT IN (...)`, which is never true for a NULL rule_type, so a legacy row
+  # without one would silently drop out of the run instead of behaving as it does today.
+  scope :without_run_checks, -> { where(rule_type: nil).or(where.not(rule_type: RUN_CHECK_TYPES)) }
 
   validates :rule_type, length: { maximum: 50 }
   # Prevents a typo'd or truncated rule_type (e.g. a copy-paste that dropped the
@@ -55,7 +70,9 @@ class FundFormula < ApplicationRecord
   validates :rule_type, inclusion: { in: TYPES }, allow_blank: true
   validates :entry_type, length: { maximum: 60 }
   validates :name, length: { maximum: 125 }
-  validates :formula, :entry_type, :name, :rule_type, presence: true
+  validates :formula, :name, :rule_type, presence: true
+  # A check creates no account entries, so it has no entry type to stamp on them.
+  validates :entry_type, presence: true, unless: :run_check?
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
   # remove non-breaking spaces
   normalizes :formula, with: ->(formula) { formula.strip.tr("\u00A0", ' ') }
@@ -82,6 +99,19 @@ class FundFormula < ApplicationRecord
   rescue Parser::SyntaxError => e
     errors.add(:formula, "has invalid Ruby syntax: #{e.message}")
   end
+
+  # Both options only make sense for a formula that writes entries: generate_ytd_qtly derives
+  # Quarterly/YTD/Since Inception entries from the ones written, and roll_up aggregates them.
+  # A check writes none, so either flag would promise output that can never appear.
+  validate :run_check_kosher?, if: :run_check?
+  def run_check_kosher?
+    errors.add(:generate_ytd_qtly, "cannot be enabled for #{rule_type} formulas") if generate_ytd_qtly
+    errors.add(:roll_up, "cannot be enabled for #{rule_type} formulas") if roll_up
+  end
+
+  def run_check? = RUN_CHECK_TYPES.include?(rule_type)
+  def pre_run_check? = rule_type == PRE_RUN_CHECK
+  def post_run_check? = rule_type == POST_RUN_CHECK
 
   # GenerateAccountEntryMultiple formulas embed the account entry names as an
   # array literal, so a parseable non-empty list is required. generate_ytd_qtly

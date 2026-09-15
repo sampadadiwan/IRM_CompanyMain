@@ -1,0 +1,114 @@
+# Ontology for Valuation as exposed over MCP.
+---
+entity: valuation
+label: Valuation
+model: Valuation
+description: >-
+  A per-share valuation struck for a portfolio company on a date. Valuations drive the FMV of
+  every holding in that company, so a stale valuation quietly makes every derived number stale.
+
+relationships:
+  portfolio_company:
+    target: portfolio_company
+    cardinality: many_to_one
+    note: Pass portfolio_company_id rather than a Ransack condition.
+    resolve_with: list_portfolio_companies
+  investment_instrument:
+    target: investment_instrument
+    cardinality: many_to_one
+    note: The instrument valued. A company can have several, each valued separately.
+
+fields:
+  valuation_date:
+    type: date
+    description: Date the valuation was struck. Sort descending for the current valuation.
+    sortable: true
+  per_share_value:
+    type: money
+    stored_as: per_share_value_cents
+    currency: the valuation's own currency
+    description: >-
+      Value per share. Returned as a plain number (cents divided by 100) rather than a
+      formatted amount, with the currency in a separate field.
+    sortable: true
+    aggregatable: false
+  synthetic:
+    type: boolean
+    description: >-
+      True for a system-derived valuation rather than one a human recorded. Synthetic
+      valuations are EXCLUDED by default — a synthetic_true filter alone returns nothing;
+      you also need scope 'with_synthetic'.
+    sortable: false
+  portfolio_company_name:
+    type: string
+    description: Company name, computed in SQL from the owner association.
+    sortable: true
+    groupable: false
+
+returned_only:
+  entity:
+    type: string
+    description: Name of the owning entity.
+  owner:
+    type: string
+    description: Portfolio company name under a different key. Filter with portfolio_company_name.
+  instrument:
+    type: string
+    description: Name of the valued instrument.
+  currency:
+    type: string
+    description: >-
+      Currency of per_share_value. Returned but NOT ransackable, despite what the old tool
+      description claimed — a currency_eq condition was silently ignored.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the valuation.
+
+unavailable:
+  currency:
+    reason: Returned on each row but not ransackable, so a condition on it is silently ignored.
+  per_share_value_cents:
+    reason: >-
+      The physical column, not a queryable attribute. The old tool description offered it as
+      an aggregate_field, which does not resolve.
+    use_instead: per_share_value
+  owner_type:
+    reason: Pinned to 'Investor' by the tool, so a client condition on it is overwritten.
+  owner_id:
+    reason: Set by the tool from portfolio_company_id.
+    use_instead: portfolio_company_id
+  id:
+    reason: Not declared in Valuation.ransackable_attributes, so conditions on it are ignored.
+
+scopes:
+  query_class: PortfolioAssistantDataManager::ValuationQuery
+  descriptions:
+    with_synthetic: >-
+      Include system-derived valuations, which a default scope on the model otherwise hides.
+
+measures:
+  latest_valuation:
+    expression: the row with the greatest valuation_date
+    description: >-
+      Pass sort 'valuation_date desc' with limit 1. There is no "current" flag on this entity.
+
+caveats:
+  - >-
+    Synthetic valuations are hidden by a model-level default scope. Filtering synthetic_true
+    without scope 'with_synthetic' returns an empty list, not the synthetic rows.
+  - >-
+    per_share_value is per share of one instrument. Averaging it across instruments or
+    companies produces a number with no meaning.
+  - >-
+    There is no "latest" flag — the current valuation is whichever has the greatest
+    valuation_date, so always sort and limit rather than assuming order.
+
+tools:
+  list_valuations:
+    kind: list
+    summary: >-
+      Use it for a company's valuation history, and to check how stale the current valuation is.
+    params:
+      portfolio_company_id:
+        required: true
+      scope:

@@ -16,7 +16,7 @@ Both methods use the same underlying TOTP secret. The user chooses their preferr
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Gem | `devise-two-factor` | Battle-tested TOTP, backup codes, Devise integration |
+| Gem | `devise-two-factor` | Battle-tested TOTP, Devise integration |
 | OTP algorithm | TOTP (RFC 6238) | Industry standard, supports authenticator apps natively |
 | WhatsApp delivery | Generate current TOTP code server-side | Same secret, same verification — no separate OTP system |
 | 2FA flag | New `two_factor_enabled` column | Independent of existing `whatsapp_enabled` notification flag |
@@ -32,7 +32,6 @@ Both methods use the same underlying TOTP secret. The user chooses their preferr
 |--------|------|---------|---------|
 | `two_factor_enabled` | `boolean` | `false` | Master switch — when false, existing login flow is unchanged |
 | `otp_secret` | `text` | `nil` | Encrypted TOTP shared secret (encrypted at rest via Rails `encrypts`) |
-| `otp_backup_codes` | `text` | `nil` | JSON array of bcrypt-hashed backup codes (8 codes) |
 | `consumed_timestep` | `integer` | `nil` | Anti-replay: last TOTP timestep consumed |
 
 No new table needed — all state lives on the `users` row.
@@ -110,8 +109,6 @@ User → GET /users/two_factor/new
       │                                         │
       │  ─── or ───                              │
       │  [Send code via WhatsApp]                │
-      │                                         │
-      │  Use a backup code instead?              │
       └─────────────────────────────────────────┘
 
 User submits code → POST /users/two_factor
@@ -123,11 +120,6 @@ User submits code → POST /users/two_factor
   │   └─ redirect to after_sign_in_path_for(user)
   │      (respects stored_location_for(:user) — sends user back to their
   │       original destination, e.g. /offers/123)
-  │
-  ├─ Backup code valid
-  │   ├─ Consume backup code (remove from list)
-  │   ├─ sign_in(user)
-  │   └─ redirect to after_sign_in_path_for(user)
   │
   └─ Code invalid
       ├─ Increment failed_attempts counter (session-based)
@@ -185,19 +177,39 @@ User submits code → POST /users/two_factor/verify_enrollment
   │
   ├─ Code valid
   │   ├─ user.update(two_factor_enabled: true)
-  │   ├─ Generate 8 backup codes → display once
   │   ├─ sign_in(user)
-  │   └─ redirect to after_sign_in_path_for(user)
+  │   └─ redirect to root_path
   │
   └─ Code invalid
       └─ Show error, allow retry
 ```
 
+## When the mode is written
+
+`two_factor_mode` is set by the **verify** action of each enrollment
+(`verify_enrollment`, `verify_whatsapp_enrollment`, `verify_sms_enrollment`), never by
+`select_mode_post`. Choosing a mode only redirects to that mode's enrollment page.
+
+This is deliberate. When the mode was written at selection, a user who chose Authenticator,
+left to install an app, and came back after the session had expired was routed by
+`TwoFactorDispatch` straight to the code screen — for an app entry they had never created —
+with no route back to enrollment and no self-service way out. With the mode written only on
+verification, an abandoned enrollment lands on mode selection again at the next login.
+
+Switching `two_factor_enabled` off clears the mode, secret and replay timestep
+(`TwoFactorAuthenticatable#clear_two_factor_method_when_disabled`), so switching it back on
+also starts at mode selection rather than at a code screen for a method the user may no
+longer have.
+
+The enrollment actions (`select_mode` through `verify_sms_enrollment`) also refuse a user
+who already has a verified method (`require_no_verified_method` → redirect to the code
+screen). The only route from one verified method to another is the reset flow below, which
+re-proves the password for self-service.
+
 ## Resetting the two-factor method
 
-Until this flow existed, `two_factor_mode` was written exactly once
-(`Users::TwoFactorController#select_mode_post`, reachable only while the mode was nil) and
-nothing cleared it. A user who picked WhatsApp could never move to an authenticator app,
+Until this flow existed, `two_factor_mode` was written exactly once (at enrollment, reachable
+only while the mode was nil) and nothing cleared it. A user who picked WhatsApp could never move to an authenticator app,
 and a lost phone meant a developer editing the row.
 
 **Design: reset to "none", choose again at next login.** A reset does NOT disable 2FA and
@@ -209,7 +221,6 @@ the login path needed no change.
 |---------------------------|----------------------------|--------------------------------------------------------------|
 | `two_factor_mode`         | `nil`                      | Next login → mode selection                                  |
 | `otp_secret`              | `nil`                      | Old authenticator entry / in-flight WhatsApp codes die       |
-| `otp_backup_codes`        | `nil`                      | Minted against the old secret                                |
 | `consumed_timestep`       | `nil`                      | Replay guard for the old secret — kept, it rejects the first code of the new one |
 | `two_factor_enabled`      | **unchanged**              | 2FA is never silently switched off                           |
 | `two_factor_reset_at`     | now                        | Mode-selection banner + email say when                       |
@@ -251,7 +262,7 @@ sequenceDiagram
     C->>O: call(user, actor, password, message)
     O->>O: ensure_resettable (enabled + mode present)
     O->>O: verify_password_if_self (step-up, self only)
-    O->>DB: mode=nil, otp_secret=nil, backup codes=nil, consumed_timestep=nil, reset_at/by stamped, audit_comment
+    O->>DB: mode=nil, otp_secret=nil, consumed_timestep=nil, reset_at/by stamped, audit_comment
     O->>M: deliver_later (who / when / previous mode / admin message)
     O-->>C: success
     alt self-service
@@ -281,28 +292,11 @@ module TwoFactorAuthenticatable
   included do
     devise :two_factor_authenticatable
     encrypts :otp_secret
-    # otp_secret_column, otp_backup_codes_column from devise-two-factor
   end
 
   def send_otp_via_whatsapp
     code = otp_code  # current TOTP code
     SendOtpToWhatsappJob.perform_later(id, code)
-  end
-
-  def generate_backup_codes!
-    codes = 8.times.map { SecureRandom.hex(4).upcase.insert(4, '-') }
-    hashed = codes.map { |c| BCrypt::Password.create(c) }
-    update!(otp_backup_codes: hashed.to_json)
-    codes  # return plaintext for one-time display
-  end
-
-  def consume_backup_code!(code)
-    codes = JSON.parse(otp_backup_codes || '[]')
-    remaining = codes.reject do |hashed|
-      BCrypt::Password.new(hashed) == code
-    end
-    update!(otp_backup_codes: remaining.to_json)
-    remaining.size != codes.size  # true if consumed
   end
 end
 ```
@@ -318,7 +312,6 @@ end
 | `enroll` | GET | `/users/two_factor/enroll` | Show QR code setup page |
 | `verify_enrollment` | POST | `/users/two_factor/verify_enrollment` | Confirm enrollment with test code |
 | `send_whatsapp` | POST | `/users/two_factor/send_whatsapp` | Send current code via WhatsApp |
-| `backup_codes` | GET | `/users/two_factor/backup_codes` | Show backup codes after enrollment |
 
 ### Job: `SendOtpToWhatsappJob`
 
@@ -346,7 +339,6 @@ end
 |------|------|
 | Code entry | `app/packs/core/users/views/users/two_factor/new.html.erb` |
 | Enrollment | `app/packs/core/users/views/users/two_factor/enroll.html.erb` |
-| Backup codes | `app/packs/core/users/views/users/two_factor/backup_codes.html.erb` |
 
 ### Routes
 
@@ -356,7 +348,6 @@ resource :two_factor, only: [:new, :create], controller: 'users/two_factor' do
   get  :enroll, on: :collection
   post :verify_enrollment, on: :collection
   post :send_whatsapp, on: :collection
-  get  :backup_codes, on: :collection
 end
 ```
 
@@ -391,9 +382,11 @@ end
 | Replay attack | `consumed_timestep` prevents reusing the same TOTP code (cleared whenever a new `otp_secret` is minted — codes for the retired secret can no longer verify) |
 | Session hijacking (2FA page) | `session[:otp_user_id]` is short-lived (5 min), cleared on success |
 | WhatsApp interception | TOTP code is valid for only 30 seconds |
-| Lost authenticator app | 8 backup codes (each single-use, stored bcrypt-hashed) |
+| Lost authenticator app | No backup codes. Administrator reset (`TwoFactorReset`), audited and emailed to the user |
 | OTP secret at rest | Encrypted via Rails `encrypts` |
 | Rate limiting (WhatsApp) | 1 send per 30 seconds per session |
+| Code entry | Whitespace stripped before checking — codes copied from a message arrive as "123 456" |
+| WhatsApp flag or number removed after enrollment | Login refused with "contact your administrator" (`TwoFactorDispatch` → `:undeliverable`), never a code box for a message that was not sent |
 
 ## WhatsApp Integration Details
 
@@ -432,9 +425,9 @@ This requires an OTP-specific template (`otp_verification`) to be configured in 
 
 | Layer | What to test |
 |-------|-------------|
-| Model | `otp_code` generation, `validate_and_consume_otp!`, backup code generation/consumption |
+| Model | `otp_code` generation, `validate_and_consume_otp!` |
 | Controller | 2FA interception on password login, magic link login, code verification, enrollment |
-| Integration | Full login flow with 2FA enabled, WhatsApp delivery, backup code recovery |
+| Integration | Full login flow with 2FA enabled, WhatsApp delivery, administrator reset |
 | Existing tests | Verify no regression — all pass with `two_factor_enabled: false` |
 
 ## Future Considerations
@@ -442,4 +435,3 @@ This requires an OTP-specific template (`otp_verification`) to be configured in 
 - **Remember device:** Allow trusted devices to skip 2FA for 30 days (store cookie with signed user + device fingerprint)
 - **SMS fallback:** Add SMS delivery alongside WhatsApp using same TOTP code
 - **Admin enforcement:** Allow entity admins to require 2FA for all users in their entity
-- **Recovery flow:** Self-service recovery via email if all backup codes are consumed

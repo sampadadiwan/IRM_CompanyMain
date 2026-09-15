@@ -525,6 +525,18 @@ Then('the covenant tasks grid should list every covenant task') do
   expect(page).to have_css("#tasks tbody tr", count: expected)
 end
 
+# The side letter page passes the task scope to the list partial as a local
+# (side_letter_id), not as a request param, so the shared filter bar has to be
+# handed it explicitly — otherwise choosing a filter here submits to the
+# firm-wide tasks list. A side letter spans many obligation owners, so it offers
+# no stakeholder select either.
+Then('the covenant tasks filter bar should stay scoped to the side letter') do
+  side_letter = SideLetter.find_by!(capital_commitment_id: @commitment.id)
+  first(".nav-link", text: "Covenant Tasks", minimum: 0)&.click
+  expect(page).to have_field("side_letter_id", type: :hidden, with: side_letter.id.to_s, visible: :all)
+  expect(page).to have_no_select("investor_id")
+end
+
 Then("the covenant tasks grid should list that obligation's tasks") do
   expected = @obligation.tasks.count
   expect(expected).to be >= 1

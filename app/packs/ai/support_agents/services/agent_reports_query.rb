@@ -83,17 +83,27 @@ class AgentReportsQuery
     agent_reports("Fund").where("json_fields LIKE '%\"scheme_results\":%'").order(updated_at: :desc).limit(50)
   end
 
-  # The Obligations tab for SideLetterObligationAgent shows the obligations
-  # themselves (the LP Obligation Matrix), not SupportAgentReports — the matrix
-  # IS the agent's living output. Optional owner_id narrows to one commitment.
+  # The Obligations tab for SideLetterObligationAgent and CpCsExtractionAgent
+  # shows the obligations themselves (the LP Obligation Matrix), not
+  # SupportAgentReports — the matrix IS the agent's living output.
+  # CpCsExtractionAgent scopes to portfolio investment obligations only.
+  # Optional owner_id narrows to one commitment or investment.
   # @return [ActiveRecord::Relation<SideLetterObligation>]
   def side_letter_obligations
-    return SideLetterObligation.none unless agent_type?("SideLetterObligationAgent")
+    return SideLetterObligation.none unless agent_type?("SideLetterObligationAgent") || agent_type?("CpCsExtractionAgent")
 
     scope = SideLetterObligation.where(entity_id: @support_agent.entity_id)
-                                .includes(:owner_user, side_letter: { capital_commitment: %i[investor fund] })
                                 .order(Arel.sql("next_due_date IS NULL, next_due_date ASC"))
-    scope = scope.joins(:side_letter).where(side_letters: { capital_commitment_id: @params[:owner_id] }) if @params[:owner_id].present?
+
+    if agent_type?("CpCsExtractionAgent")
+      scope = scope.where(sourceable_type: "PortfolioInvestment")
+                   .includes(:owner_user, :sourceable)
+      scope = scope.where(sourceable_id: @params[:owner_id]) if @params[:owner_id].present?
+    else
+      scope = scope.includes(:owner_user, side_letter: { capital_commitment: %i[investor fund] })
+      scope = scope.joins(:side_letter).where(side_letters: { capital_commitment_id: @params[:owner_id] }) if @params[:owner_id].present?
+    end
+
     scope
   end
 

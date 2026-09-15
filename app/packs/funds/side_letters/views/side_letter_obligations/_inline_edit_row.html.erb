@@ -1,0 +1,103 @@
+<%# Inline edit form rendered inside the obligation matrix table.
+    Replaces the display row via turbo_stream.replace when counsel clicks Edit.
+    The form submits via PATCH to the update action which responds with a
+    turbo_stream replacing this row back to the display partial on success,
+    or re-rendering this form with errors on validation failure.
+    Locals: obligation %>
+<tr id="<%= dom_id(obligation) %>">
+  <%# Investor column — read-only context, not editable %>
+  <td class="align-top">
+    <% if obligation.side_letter.present? %>
+      <%= obligation.source_investor&.investor_name %>
+    <% else %>
+      <%= obligation.source_investor&.investor_name || "Unknown" %>
+    <% end %>
+    <div class="text-muted"><%= obligation.source_fund&.name %></div>
+  </td>
+
+  <%# Remaining columns merged into one cell for compact inline form layout %>
+  <td colspan="7" class="align-top">
+    <%= form_with model: obligation, url: side_letter_obligation_path(obligation),
+                  method: :patch do |f| %>
+      <% if obligation.errors.any? %>
+        <div class="alert alert-danger py-1 mb-2">
+          <ul class="mb-0 small">
+            <% obligation.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="row g-2">
+        <%# Title — the main obligation name %>
+        <div class="col-md-4">
+          <%= f.label :title, class: "form-label small mb-0" %>
+          <%= f.text_field :title, class: "form-control form-control-sm", required: true %>
+        </div>
+        <%# Obligation type dropdown %>
+        <div class="col-md-2">
+          <%= f.label :obligation_type, "Type", class: "form-label small mb-0" %>
+          <%= f.select :obligation_type, obligation_type_options, {}, class: "form-select form-select-sm" %>
+        </div>
+        <%# Source clause reference from the legal document %>
+        <div class="col-md-3">
+          <%= f.label :source_clause, "Source clause", class: "form-label small mb-0" %>
+          <%= f.text_field :source_clause, class: "form-control form-control-sm" %>
+        </div>
+        <%# Legal classification — CP / CS / SLO, correctable by counsel before approval %>
+        <div class="col-md-3">
+          <%= f.label :legal_category, "Legal category", class: "form-label small mb-0" %>
+          <%= f.select :legal_category, legal_category_options, {}, class: "form-select form-select-sm" %>
+        </div>
+      </div>
+
+      <%# Description — full text of the obligation %>
+      <div class="row g-2 mt-1">
+        <div class="col-12">
+          <%= f.label :description, class: "form-label small mb-0" %>
+          <%= f.text_area :description, class: "form-control form-control-sm", rows: 2 %>
+        </div>
+      </div>
+
+      <div class="row g-2 mt-1">
+        <%# Trigger type — how the obligation fires %>
+        <div class="col-md-2">
+          <%= f.label :trigger_type, "Trigger", class: "form-label small mb-0" %>
+          <%= f.select :trigger_type, trigger_type_options, {}, class: "form-select form-select-sm" %>
+        </div>
+        <%# Trigger description — freeform details %>
+        <div class="col-md-3">
+          <%= f.label :trigger_description, "Trigger desc.", class: "form-label small mb-0" %>
+          <%= f.text_field :trigger_description, class: "form-control form-control-sm" %>
+        </div>
+        <%# Owner assignment — user who owns this obligation %>
+        <div class="col-md-3">
+          <%= f.label :owner_user_id, "Owner", class: "form-label small mb-0" %>
+          <%= f.select :owner_user_id,
+                       options_from_collection_for_select(current_user.entity.employees.order(:first_name), :id, :name, obligation.owner_user_id),
+                       { include_blank: "None" }, class: "form-select form-select-sm" %>
+        </div>
+        <%# Next due date %>
+        <div class="col-md-2">
+          <%= f.label :next_due_date, "Due date", class: "form-label small mb-0" %>
+          <%= f.date_field :next_due_date, class: "form-control form-control-sm" %>
+        </div>
+        <%# Reminder lead time in days before due date %>
+        <div class="col-md-2">
+          <%= f.label :reminder_days_before, "Lead (days)", class: "form-label small mb-0" %>
+          <%= f.number_field :reminder_days_before, class: "form-control form-control-sm", min: 0 %>
+        </div>
+      </div>
+
+      <%# Action buttons: save persists the edit, cancel restores the display row %>
+      <div class="d-flex gap-2 mt-2 mb-1">
+        <%= f.submit "Save", class: "btn btn-primary btn-sm" %>
+        <%# Cancel restores the display row via turbo_stream from the show action %>
+        <%= link_to "Cancel", side_letter_obligation_path(obligation, format: :turbo_stream),
+                    class: "btn btn-outline-secondary btn-sm",
+                    data: { turbo: true } %>
+      </div>
+    <% end %>
+  </td>
+</tr>

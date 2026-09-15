@@ -11,11 +11,20 @@ module AccountEntryAllocation
     include ApplicationHelper
     include WithScratchSqlite
 
+    # Check results that make persist_check_results store them and build the report.
+    FLAGGED_CHECK_RESULTS = %w[fail warn].freeze
+
     step :setup_start_time
+    # Before anything is deleted: a failed pre-run check must leave the period's entries intact.
+    step :run_pre_checks
     step :delete_existing_entries
     step :load_sqlite_db
     step :get_commitments
     step :run_formulas
+    step :run_post_checks
+    # On both tracks, so check results reach the report however the run ended.
+    step :persist_check_results
+    left :persist_check_results, id: :ensure_persist_check_results
     step :generate_fund_ratios
     step :generate_soa
     step :cleanup_sqlite
@@ -51,10 +60,7 @@ module AccountEntryAllocation
       # The fund ids alone are not unique enough: two runs of the *same* fund (parallel
       # cucumber processes all seed fund id 1, and two users can kick off the same fund
       # in production) would otherwise share one scratch file and clobber each other.
-      # Development keeps the bare fund-id name so the "file already exists" shortcut
-      # below can still reuse a previously loaded DB across runs.
-      scratch_key = fund_ids.join("_")
-      scratch_key = "#{scratch_key}_#{Process.pid}" unless Rails.env.development?
+      scratch_key = "#{fund_ids.join('_')}_#{Process.pid}"
 
       # The scratch files run to several GB for a real fund, so they have to sit on real
       # disk. /tmp is a tmpfs on most dev machines: a tmpfs is backed by RAM+swap rather
@@ -89,11 +95,24 @@ module AccountEntryAllocation
       # exactly where the source database file is located.
       env["SOURCE_SQLITE_DB"] = Rails.root.join(db_config[:database]).to_s if adapter == "sqlite3"
 
+      # Incremental funds get a trimmed account_entries copy instead of all history: rows from
+      # AE_COPY_FROM to AE_COPY_TO, all uploaded rows, and the latest row per key before
+      # AE_COPY_FROM (see the script). AE_COPY_FROM is the earliest date a helper sums from:
+      # year_to_date starts at the financial year, quarterly at the quarter, the window at start_date.
+      # since_inception does not need older rows — it carries forward the stored total instead.
+      incremental = CommitmentAccountEntry.incremental_since_inception?(fund)
+      if incremental
+        end_date = ctx[:end_date]
+        env["AE_COPY_FROM"] = [fund.start_of_financial_year_date(end_date), end_date.beginning_of_quarter, ctx[:start_date]].min.to_s
+        env["AE_COPY_TO"] = end_date.to_s
+      end
+
       # Everything the script was told to do, so a failure can be reproduced from the log
       # by hand without guessing at the environment. The password is deliberately omitted.
       Rails.logger.info do
         "load_sqlite_db: running #{script_path} for fund #{fund.id} (#{fund.name}) " \
           "fund_ids=#{fund_ids.join(',')} entity_id=#{entity_id} adapter=#{adapter} " \
+          "account_entries=#{incremental ? "#{env['AE_COPY_FROM']}..#{env['AE_COPY_TO']} (trimmed)" : 'all'} " \
           "source=#{env.fetch('SOURCE_SQLITE_DB', "#{env['MYSQL_HOST']}:#{env['MYSQL_PORT']}/#{env['MYSQL_DB']}")} " \
           "target=#{ctx[:sqlite_path]}"
       end
@@ -109,29 +128,24 @@ module AccountEntryAllocation
 
       # Execute the external migration script and wait for it to finish.
       # The script handles the heavy lifting of bulk exporting/importing via TSV.
+      # Always a fresh load, development included: the copy depends on the run window, so a file
+      # left by an earlier run cannot be reused.
       started_at = Time.zone.now
-      status = nil
-      if Rails.env.development? && File.exist?(ctx[:sqlite_path])
-        Rails.logger.debug { "Skipping SQLite DB load in development as file already exists at #{ctx[:sqlite_path]}" }
-        success = true
-        script_output = ""
-      else
-        require "open3"
-        script_output, status = Open3.capture2e(env, "bash #{script_path}")
-        success = status.success?
-      end
+      require "open3"
+      script_output, status = Open3.capture2e(env, "bash #{script_path}")
+      success = status.success?
       duration = (Time.zone.now - started_at).round(1)
 
       # Log the script's whole output on every run, not just failures. It ends with a
       # per-table record count, which is the only way to tell a load that legitimately
       # found no rows from one that silently exported the wrong thing.
       Rails.logger.info do
-        "load_sqlite_db: #{script_path.basename} exited #{status&.exitstatus || 0} after #{duration}s\n" \
+        "load_sqlite_db: #{script_path.basename} exited #{status.exitstatus} after #{duration}s\n" \
           "----- script output -----\n#{script_output}----- end script output -----"
       end
 
       unless success
-        exit_code = status&.exitstatus || "unknown"
+        exit_code = status.exitstatus
         # Tail last 50 lines of output — the failure line is usually near the end.
         # The full output is in the log line above.
         tail_output = script_output.to_s.lines.last(50).join
@@ -237,7 +251,7 @@ module AccountEntryAllocation
       [sqlite_path].compact.each do |path|
         if File.exist?(path)
           Rails.logger.debug { "Cleaning up isolated temporary file: #{path}" }
-          File.delete(path) unless Rails.env.development?
+          File.delete(path)
         end
 
         # Also cleanup the sidecar files if they exist. `-journal` matters as much as the
@@ -248,7 +262,7 @@ module AccountEntryAllocation
           "#{path}-shm",
           "#{path}-journal"
         ].each do |extra_path|
-          File.delete(extra_path) if File.exist?(extra_path) && !Rails.env.development?
+          FileUtils.rm_f(extra_path)
         end
       end
 
@@ -336,6 +350,57 @@ module AccountEntryAllocation
         ctx[:allocation_run].update_column(:status, "Success") if ctx[:allocation_run].reload.status == "Pending"
       end
 
+      true
+    end
+
+    # Pre/post-run checks: FundFormulas with rule type PreRunCheck/PostRunCheck. Every check of the
+    # kind runs even after one fails; any failure then stops the run, any warning only gets
+    # recorded. See docs/business_requirements/allocation_run_checks.md.
+    def run_pre_checks(ctx, **)
+      ctx[:check_results] = []
+      return true unless ctx[:run_allocations]
+
+      run_checks(ctx, :pre)
+    end
+
+    def run_post_checks(ctx, **)
+      return true unless ctx[:run_allocations]
+
+      # run_formulas can return true with the run already failed: the background loader records
+      # a migration error on the status and carries on rather than raising. Checking a ledger the
+      # run never finished writing would only bury that error under check failures.
+      status = ctx[:allocation_run]&.reload&.status
+      if ctx[:allocation_run] && status != "Success"
+        Rails.logger.warn { "run_post_checks: skipped for allocation run #{ctx[:allocation_run_id]}, status is #{status.inspect}" }
+        return true
+      end
+
+      run_checks(ctx, :post)
+    end
+
+    # Stores the check results on the run's AllocationRunReport and queues the report build, but
+    # only when a check failed or warned -- building the report is heavy aggregate SQL over
+    # account_entries, not worth running for a clean run. Runs on the failure track too (see the
+    # `left` wiring above), so it must never raise: a failure here would skip cleanup_sqlite.
+    def persist_check_results(ctx, **)
+      results = ctx[:check_results] || []
+      flagged = results.select { |r| FLAGGED_CHECK_RESULTS.include?(r["result"]) }
+      return true if flagged.empty?
+
+      report = record_check_results(ctx, results)
+      report_link = report && ActionController::Base.helpers.link_to("View the allocation run report", allocation_run_report_path(report),
+                                                                     class: 'mb-1 badge bg-primary-subtle text-primary')
+
+      if ctx[:check_failure_message]
+        notify([ctx[:check_failure_message], report_link].compact.join("<br>"), :danger, ctx[:user_id])
+      else
+        warned = flagged.size
+        notify(["#{warned} allocation #{'check'.pluralize(warned)} warned for #{ctx[:fund].name}", report_link].compact.join("<br>"), :warning, ctx[:user_id])
+      end
+      true
+    rescue StandardError => e
+      Rails.logger.error { "persist_check_results: failed for allocation run #{ctx[:allocation_run_id]}: #{e.message}\n#{e.backtrace&.first(10)&.join("\n")}" }
+      notify(ctx[:check_failure_message], :danger, ctx[:user_id]) if ctx[:check_failure_message]
       true
     end
 
@@ -611,7 +676,18 @@ module AccountEntryAllocation
       AccountEntry.connection.execute(AccountEntry.sanitize_sql_for_assignment([sql, allocation_run_id]))
     end
 
+    # Pre/post-run checks write no entries, so they are kept out of the formula loop, the commitment
+    # cache dependency scan and the delete-before-run scope, all of which read this list.
     def get_formulas(ctx)
+      formulas_in_scope(ctx).without_run_checks
+    end
+
+    # The enabled checks of one kind, picked by the run's rule_for and tags exactly like formulas.
+    def get_run_checks(ctx, kind)
+      formulas_in_scope(ctx).where(rule_type: RunChecks::KINDS.fetch(kind))
+    end
+
+    def formulas_in_scope(ctx)
       fund     = ctx[:fund]
       rule_for = ctx[:rule_for]
       tag_list = ctx[:tag_list]
@@ -620,6 +696,56 @@ module AccountEntryAllocation
       formulas = formulas.where(rule_for: rule_for) if rule_for.present?
       formulas = formulas.with_tags(tag_list.split(",")) if tag_list.present?
       formulas
+    end
+
+    # @return [Boolean] false when any check failed, which sends the operation down the failure track
+    def run_checks(ctx, kind)
+      checks = get_run_checks(ctx, kind).to_a
+      return true if checks.empty?
+
+      label = kind == :pre ? "Pre-run" : "Post-run"
+      notify("Running #{checks.size} #{label.downcase} #{'check'.pluralize(checks.size)} for #{ctx[:fund].name}", :info, ctx[:user_id])
+
+      results = RunChecks.new(checks, kind:, fund: ctx[:fund], start_date: ctx[:start_date],
+                                      end_date: ctx[:end_date], allocation_run: ctx[:allocation_run]).call
+      ctx[:check_results].concat(results)
+
+      failed = results.select { |r| r["result"] == "fail" }
+      return true if failed.empty?
+
+      # Also the AllocationRun status, so it reads like every other failure: AllocationRunReport
+      # check 1.1 and AllocationGroupRunJob both treat any status but Success as a failed run.
+      message = "#{label} checks failed (#{failed.size}): " + failed.map { |r| "#{r['name']}: #{r['summary']}" }.join("; ")
+      message = message.truncate(2000)
+      Rails.logger.error { "run_checks: allocation run #{ctx[:allocation_run_id]} for fund #{ctx[:fund].id}: #{message}" }
+      ctx[:allocation_run]&.update_column(:status, message)
+      ctx[:error] = message
+      ctx[:check_failure_message] = message
+      false
+    end
+
+    # Merges this run's check results into its AllocationRunReport (creating it when the run has
+    # none yet) and queues the report build. run_checks is kept apart from the report's own
+    # findings: a rebuild recomputes findings from the ledger but cannot recompute check results,
+    # which describe the data at the moment the run happened.
+    # @return [AllocationRunReport, nil]
+    def record_check_results(ctx, results)
+      allocation_run = ctx[:allocation_run]
+      return nil unless allocation_run
+
+      report = AllocationRunReport.find_or_initialize_by(allocation_run:)
+      report.assign_attributes(
+        entity_id: allocation_run.entity_id,
+        fund_id: allocation_run.fund_id,
+        user_id: allocation_run.user_id,
+        status: "Pending",
+        message: nil,
+        checked_at: nil,
+        json_fields: (report.json_fields || {}).merge("run_checks" => results)
+      )
+      report.save!
+      AllocationRunReportJob.perform_later(report.id)
+      report
     end
 
     # Scans every in-scope formula's source (FundFormula#referenced_field_names) to

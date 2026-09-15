@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent RtaReconciliationAgent DealManagementAgent SideLetterObligationAgent TemplateFixAgent RemittanceReconciliationAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent RtaReconciliationAgent DealManagementAgent SideLetterObligationAgent TemplateFixAgent RemittanceReconciliationAgent CpCsExtractionAgent].freeze
   CATEGORIES = %w[Ops Finance Portfolio Onboarding Other].freeze
 
   belongs_to :entity
@@ -129,6 +129,13 @@ class SupportAgent < ApplicationRecord
         "Are there any pending requests?",
         "Show the last reconciliation summary."
       ]
+    when "CpCsExtractionAgent"
+      [
+        "What obligations were extracted from this investment?",
+        "Show me all conditions precedent pending review",
+        "Which investments have overdue obligations?"
+      ]
+
     else
       []
     end

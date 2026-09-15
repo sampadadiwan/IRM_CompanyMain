@@ -1,68 +1,54 @@
 # frozen_string_literal: true
 
-# MCP tool to list fund units for a specific capital commitment.
-# Queries Pundit-scoped FundUnit directly, scoped to the given commitment_id.
+# MCP tool to list the fund units issued against one capital commitment.
+# Surface generated from the `fund_unit` ontology.
+#
+# Queries Pundit-scoped FundUnit directly. The commitment scoping is a Ransack condition on
+# capital_commitment_id, which only became effective once that attribute was added to
+# FundUnit.ransackable_attributes -- before that Ransack dropped it and the tool returned
+# every unit in the user's scope.
 class ListFundUnitsTool < ApplicationMcpTool
-  description "List fund units for a specific capital commitment. " \
-              "Construct a query hash using available attributes and predicates. " \
-              "Attributes: unit_type, quantity, price, amount, as_of_date. " \
-              "Predicates: _cont (contains), _eq (equals), _gt, _lt, _gteq (>=), _lteq (<=). " \
-              "Use list_capital_commitments first to find commitment IDs. " \
-              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'as_of_date desc', limit: 10."
-
-  input_schema(
-    properties: {
-      commitment_id: { type: "integer", description: "The ID of the capital commitment. Use list_capital_commitments to find IDs." },
-      query: { type: "object", description: "Ransack query hash, e.g. { unit_type_eq: 'Class A', as_of_date_gteq: '2025-01-01' }" },
-      sort: { type: "string", description: "Sort string, e.g. 'as_of_date desc'. ALWAYS provide for efficiency." },
-      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 10) to avoid fetching all records." },
-      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'amount', 'quantity'" },
-      group_by_field: { type: "string", description: "Field to group results by, e.g. 'unit_type'" }
-    },
-    required: ["commitment_id"]
-  )
+  ontology "list_fund_units"
 
   def self.call(server_context:, commitment_id:, query: {}, sort: nil,
                 limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil)
-    user = server_context[:user]
-
-    commitment = Pundit.policy_scope(user, CapitalCommitment).find_by(id: commitment_id)
-    unless commitment
-      return MCP::Tool::Response.new([{
-                                       type: "text", text: "Commitment not found or access denied"
-                                     }])
+    if (message = validation_error(query: query, sort: sort, aggregate: aggregate,
+                                   aggregate_field: aggregate_field, group_by_field: group_by_field,
+                                   commitment_id: commitment_id))
+      return error(message)
     end
 
-    q = (query || {}).with_indifferent_access
-    q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
-    q[:group_by] ||= group_by_field if group_by_field.present?
+    user = server_context[:user]
+    commitment = Pundit.policy_scope(user, CapitalCommitment).find_by(id: commitment_id)
+    return error("Commitment #{commitment_id} not found, or you do not have access to it.") unless commitment
+
+    q = ransack_query(query, aggregate_field: aggregate_field, group_by_field: group_by_field)
+    q[:s] ||= sort if sort.present?
     q[:capital_commitment_id_eq] = commitment.id
 
     results = Pundit.policy_scope(user, FundUnit).ransack(q).result
 
     if aggregate.present?
-      data = FundAssistantDataManager.new(user: user)
-                                     .send(:perform_aggregation, results, aggregate,
-                                           field: q[:aggregate_field], group_by: q[:group_by])
-      return MCP::Tool::Response.new([{ type: "text", text: data.to_json }])
+      return json FundAssistantDataManager.new(user: user)
+                                          .send(:perform_aggregation, results, aggregate,
+                                                field: q[:aggregate_field], group_by: q[:group_by])
     end
 
-    results = results.limit(limit) if limit.present?
+    results = results.limit(limit.presence || FundAssistantDataManager::DEFAULT_QUERY_LIMIT)
 
-    data = results.map do |u|
+    json(results.map do |unit|
       {
-        id: u.id,
-        unit_type: u.unit_type,
-        quantity: u.quantity,
-        price: u.price.format,
-        amount: u.amount.format,
-        as_of_date: u.as_of_date,
-        folio_id: u.capital_commitment.folio_id,
-        view_link: "/fund_units/#{u.id}"
+        id: unit.id,
+        unit_type: unit.unit_type,
+        quantity: unit.quantity,
+        price: unit.price.format,
+        premium: unit.premium.format,
+        amount: unit.amount.format,
+        issue_date: unit.issue_date,
+        owner_type: unit.owner_type,
+        folio_id: unit.capital_commitment.folio_id,
+        view_link: "/fund_units/#{unit.id}"
       }
-    end
-
-    MCP::Tool::Response.new([{ type: "text", text: data.to_json }])
+    end)
   end
 end

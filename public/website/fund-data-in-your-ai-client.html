@@ -113,12 +113,12 @@
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
 <title>Fund data in your AI client | CapHive</title>
-<meta name="description" content="Twenty-three read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.">
+<meta name="description" content="Twenty-two read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.">
 <meta name="theme-color" content="#FBFAF7">
 <link rel="canonical" href="https://caphive.com/fund-data-in-your-ai-client.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
 <meta property="og:title" content="Fund data in your AI client">
-<meta property="og:description" content="Twenty-three read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.">
+<meta property="og:description" content="Twenty-two read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://caphive.com/fund-data-in-your-ai-client.html">
 <meta property="og:image" content="https://caphive.com/og.png">
@@ -289,7 +289,7 @@
           </nav>
           <span class="chip-label">AI</span>
           <h1 style="margin-top:22px">We didn’t add a chatbot. We made <em>the fund callable.</em></h1>
-          <p class="lede">Twenty-three read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.</p>
+          <p class="lede">Twenty-two read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.</p>
           <div class="article-meta">
             <time datetime="2026-08-09">Aug 9, 2026</time>
             <span class="dot">·</span>
@@ -311,8 +311,8 @@
         <p>Every software vendor serving private funds shipped an AI feature in the last eighteen months. Almost all of them shipped the same one: a chat box in the bottom-right corner of their product.</p>
         <p>We shipped one of those too. It's genuinely useful, and it's not what this article is about.</p>
         <p>This is about the opposite move — the one that took longer and matters more.</p>
-        <p>Instead of putting an AI inside our product, we made our product available <em>to the AI you already use.</em> Twenty-three read-only tools. Your own API key. Your own model choice. Your governance rules, enforced on our side.</p>
-        <div class="stat-band" style="margin:34px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden"><div><strong>23</strong><span>read-only tools exposed</span></div><div><strong>0</strong><span>write operations</span></div><div><strong>30</strong><span>day access-token lifetime, auto-refreshing, revocable by…</span></div></div>
+        <p>Instead of putting an AI inside our product, we made our product available <em>to the AI you already use.</em> Twenty-two read-only tools. Your own API key. Your own model choice. Your governance rules, enforced on our side.</p>
+        <div class="stat-band" style="margin:34px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden"><div><strong>22</strong><span>read-only tools exposed</span></div><div><strong>0</strong><span>write operations</span></div><div><strong>30</strong><span>day access-token lifetime, auto-refreshing, revocable by…</span></div></div>
         <h3>The question your IC is already asking</h3>
         <p>"What's our AI strategy?"</p>
         <p>The honest answer at most GPs in the $500M–$10B band is some version of: <em>our administrator's platform added a chat box, and two people on the team pay for a consumer AI subscription out of their own pocket.</em></p>
@@ -329,7 +329,7 @@
         <h3>The three questions procurement will ask</h3>
         <p>Every one of these came up before we shipped. Each shaped the design.</p>
         <p><strong>"Can it change anything?"</strong></p>
-        <p>No. Not "we've restricted it" — there is no write path. All 23 tools are read-only. The connection cannot create a capital call, edit a valuation, or delete a document, because no tool exists that does those things.</p>
+        <p>No. Not "we've restricted it" — there is no write path. All 22 tools are read-only. The connection cannot create a capital call, edit a valuation, or delete a document, because no tool exists that does those things.</p>
         <p><strong>"Whose data does it see?"</strong></p>
         <p>Only what the authenticated user could already see in the product. Every query resolves through the same user and entity scoping the web interface uses. There's no service account, no elevated connector identity, no cross-tenant surface. If a user can't open a fund in the UI, the AI can't read it either.</p>
         <p><strong>"Who decides who gets it?"</strong></p>
@@ -354,7 +354,7 @@
         <div class="pull"><p>If your AI features run on your vendor's key, your AI cost, your model, and your data-processing terms are all decisions someone else makes for you.</p></div>
         <h2>📊 The impact</h2>
         <p>Before: a cross-fund question meant an export, a workbook, and an analyst's afternoon — or a screenshot pasted into a consumer AI tool with no governance at all.</p>
-        <p>After: the question is asked in the client the team already uses, against <strong>23 read-only tools</strong>, scoped to the asker's own permissions, with <strong>every call logged</strong> and <strong>zero write paths</strong> exposed.</p>
+        <p>After: the question is asked in the client the team already uses, against <strong>22 read-only tools</strong>, scoped to the asker's own permissions, with <strong>every call logged</strong> and <strong>zero write paths</strong> exposed.</p>
         <p>The measurable shift isn't time saved on any single query. It's this: <strong>the number of times fund data leaves your controlled environment to answer a question goes to zero</strong> — because the governed path is now easier than the clipboard.</p>
         <h2>What to take from this</h2><div class="callout"><ol><li><strong>Assume your team is already using AI on your data.</strong> The useful question isn't whether to allow it. It's whether the path they're using is one you can audit.</li><li><strong>"Read-only" should mean no write tool exists.</strong> Ask any vendor to describe the write path they've disabled. If they can describe one, it's a configuration, not an architecture.</li><li><strong>Scoping must reuse the product's own permissions.</strong> A connector with its own service account and its own permission model is a second access-control system to keep in sync — and it will drift.</li><li><strong>Prefer dynamic registration over shared secrets.</strong> Any credential a human has to copy between systems is a credential that ends up somewhere it shouldn't.</li><li><strong>Don't let an LLM compute your numbers.</strong> Retrieval, comparison, and drafting: yes. Arithmetic that reaches an LP: no. Keep the calculation in the system that can show its work.</li></ol></div>
         <h2>See it on your own structure</h2><p>If you want to see what your own funds look like from inside your AI client — same permissions your team already has, nothing new granted — DM me and I'll set up a walkthrough on your structure.</p><p>Worth doing even if you don't take it further: it makes the governance conversation concrete in a way a policy document never does.</p><div class="callout"><p>Question for the operators here: has your firm written down what your team is allowed to paste into an AI tool? Not what the policy should be — whether the policy exists. My sense is that most firms are one quarter behind their own staff on this.</p></div>
@@ -529,7 +529,7 @@
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   "headline": "Fund data in your AI client",
-  "description": "Twenty-three read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.",
+  "description": "Twenty-two read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.",
   "datePublished": "2026-08-09",
   "author": { "@type": "Organization", "name": "CapHive" },
   "publisher": { "@type": "Organization", "name": "CapHive" },

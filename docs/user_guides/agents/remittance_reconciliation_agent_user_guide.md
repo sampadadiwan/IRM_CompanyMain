@@ -1,6 +1,8 @@
 # Remittance Reconciliation Agent — User Guide
 
-The Remittance Reconciliation Agent reconciles an uploaded bank statement (xlsx) against **one Capital Call's** outstanding remittances. It reads every deposit narration on the statement, works out which investor it belongs to, checks whether the amount and the sending account line up with what's expected, and sorts each deposit into one of five outcomes — from an unambiguous match it can record automatically, down to a deposit it can't place at all. It never touches a call's units or verification status on its own; it only proposes and, optionally, records payments for you to review.
+The Remittance Reconciliation Agent reconciles an uploaded bank statement (xlsx) against **one Capital Call's** outstanding remittances. It reads every deposit narration on the statement, works out which investor it belongs to, checks whether the amount and the sending account line up with what's expected, and sorts each deposit into one of five outcomes — from an unambiguous match it can record automatically, down to a deposit it can't place at all. It never allocates units or marks a remittance verified; it only proposes and, optionally, records payments for you to review — and, like any payment, each one it records or undoes marks that remittance as not verified.
+
+> **Where to find it:** Sidebar → [**Funds → Funds**](/funds) → open the fund → **Calls** tab → open the call → **Actions → Run Reconciliation** to upload a bank statement; results appear on the call's **Reconciliation** tab, and settings live under Company menu (house icon, top right) → [**Agents**](/support_agents) → **Remittance Reconciliation**. Needs update permission on the fund and the `capital_remittance_reconciliation_agent` entity flag.
 
 ## Table of Contents
 
@@ -13,7 +15,7 @@ The Remittance Reconciliation Agent reconciles an uploaded bank statement (xlsx)
 7. [Understanding the Report](#7-understanding-the-report)
 8. [Reviewing and Confirming Deposits](#8-reviewing-and-confirming-deposits)
 9. [Where It Can Fail](#9-where-it-can-fail)
-10. [FAQ](#faq)
+10. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -99,18 +101,18 @@ The agent's **General** tab shows a yellow warning banner whenever setup would u
 
 ## 3. Enabling the Agent
 
-This agent is turned on or off using a feature toggle on the entity's Support Agents settings. An administrator enables it from **Admin → Edit Entity → Support Agents section**. It's provisioned under the **Finance** category.
+This agent is turned on or off by the `capital_remittance_reconciliation_agent` support-agent flag on your entity, which CapHive support sets. The agent record itself must also exist and be enabled — **Setup All Agents** on Company menu (house icon, top right) → **Agents** creates it under the **Finance** category.
 
-The upload option ("Run Reconciliation") only appears in a Capital Call's Actions dropdown once this toggle is enabled **and** you have update permission on the fund. If the flag is off, the menu item is still shown, but greyed out and locked, with a tooltip explaining why.
+The upload option ("Run Reconciliation") appears in a Capital Call's Actions dropdown only when you have update permission on the fund. If the flag is off, or the agent record is missing or disabled, the menu item is shown greyed out and locked with the tooltip "Remittance Reconciliation Agent is not enabled. Enable it under Support Agents, or contact support", and the call's **Reconciliation** tab is hidden.
 
 Confirming, reassigning, or bulk-confirming a proposed deposit uses the same permission as running the agent (update on the fund). **Undo** additionally requires destroy permission on the fund, since it deletes a payment record.
 
 ## 4. Accessing and Running the Agent
 
-There's no generic "Run Now" button for this agent on the Support Agents index — running it always requires uploading a statement for one specific call, so it has its own upload modal reachable only from that call.
+The **Run Now** button on the agent's page does nothing useful — running it always requires uploading a statement for one specific call, so it has its own upload modal reachable only from that call.
 
 1. Navigate to the **Capital Call's show page**.
-2. Open the **Actions** dropdown. If the feature is enabled for your entity and you have update rights on the fund, click **Run Reconciliation**.
+2. Open the **Actions** dropdown. If the feature and the agent are enabled for your entity and you have update rights on the fund, click **Run Reconciliation**.
 3. The modal asks for the **bank statement (xlsx)** — this is the only required upload.
 4. Submit the run.
 
@@ -126,7 +128,7 @@ Not supported. Reconciliation is inherently tied to a one-off statement upload f
 
 - **Reconciliation tab** on the Capital Call's own show page — shows the latest report's results as one table, one row per deposit on the statement, each tagged with its outcome and carrying its own Confirm / Reassign / Undo actions. A row of stat cards at the top (Matched, Likely match, Needs review, No match, Internal, Not from KYC account) doubles as a filter for the table below. If no reconciliation has ever been run for this call, the tab tells you to use Actions → Run Reconciliation instead of showing an empty table.
 - **Email** — if "Email report after run" is Yes and "Notify email" is filled in, a summary is sent after each run. The subject line itself tells you the outcome at a glance: `[RECON BLOCKED]` when the run couldn't complete (no statement, or an unreadable one), `[RECON REVIEW]` when there's at least one funding-source discrepancy or a deposit needing review, or `[RECON OK]` when everything matched cleanly.
-- **Payments** — every deposit an Exact match auto-applied (or that you confirmed manually) becomes a real `CapitalRemittancePayment`, visible from the remittance it was recorded against. **The agent never marks a remittance as verified** — a payment being recorded is not the same thing as a controller signing off that the call is settled; verification stays a separate, human step.
+- **Payments** — every deposit an Exact match auto-applied (or that you confirmed manually) becomes a real `CapitalRemittancePayment`, visible from the remittance it was recorded against. **The agent never marks a remittance as verified** — a payment being recorded is not the same thing as a controller signing off that the call is settled. In fact, every payment recorded (or undone) marks that remittance as **not verified**, so verification stays a separate, human step after reconciliation.
 - **Report history** — a new report is saved on every run and tied to the capital call; older runs aren't overwritten, though the Reconciliation tab always shows the latest one.
 
 ## 7. Understanding the Report
@@ -153,10 +155,10 @@ The Reconciliation tab is a worked queue, not just a report — most of the valu
 
 - **Confirm** — available on any deposit that resolved to exactly one remittance and hasn't already been recorded. Records a payment for the deposit's actual amount (not necessarily the due amount — a partial or overpayment is recorded as-is, and you'll see that spelled out in the confirmation prompt before you submit). If the deposit has a funding-source discrepancy, the confirmation prompt says so explicitly — the agent doesn't hide the warning just because you're the one confirming.
 - **Confirm all Matched** — a bulk action for every "Matched" deposit still waiting on confirmation, shown as a single button with a count when there's at least one. Only appears when "Auto-apply exact matches" is No (with it set to Yes, Matched deposits are already recorded by the time you see the report).
-- **Reassign** — available on any unrecorded, non-internal deposit (typically "No match," but also useful if the agent's proposed match is wrong). Type an investor name or folio number into the searchable field and submit; the same lookup the CSV payment importer uses.
+- **Reassign** — available on any unrecorded, non-internal deposit (typically "No match," but also useful if the agent's proposed match is wrong). Pick or type a value in the field (its suggestions list "folio – investor" pairs for this call) and submit. The submitted value is resolved only as a **Folio No** or **Virtual Bank Account** on this fund — an investor name alone won't resolve — and the call must already have a remittance for that folio.
 - **Undo** — available on any deposit with a recorded payment, provided you have destroy permission. Deletes the payment (subject to the same unit-allocation guard as deleting any payment manually — if units have already been allocated against it, Undo is blocked) and returns the deposit to the review queue.
 
-None of these actions ever mark the underlying remittance as verified — that stays a deliberate, separate step for a controller.
+None of these actions ever mark the underlying remittance as verified — each one that records or deletes a payment marks it as not verified, and verification stays a deliberate, separate step for a controller.
 
 ## 9. Where It Can Fail
 
@@ -171,28 +173,126 @@ None of these actions ever mark the underlying remittance as verified — that s
 - **A blank Notify email with "Email report after run" set to Yes.** The email step is simply skipped, with no error raised on that run — so a blank recipient field looks identical to everything working fine.
 - **"AI-assisted name matching" set to Yes has no effect yet.** This setting is reserved for a future phase and is currently read nowhere — don't expect it to change matching behavior today.
 
-## FAQ
+## Frequently Asked Questions
 
-**Q: I uploaded a statement but nothing happened / the run says it couldn't complete.**
-A: Check that the file actually attached before you submitted, and that it's a genuine, non-empty xlsx workbook. A workbook with no readable sheets stops the run before any scoring happens.
+### Navigation and getting there
 
-**Q: A deposit is "Matched" but wasn't recorded as a payment automatically. Why?**
-A: "Auto-apply exact matches" is set to No for this agent (the default for every fund). Use **Confirm** on the row, or **Confirm all Matched** to clear every pending one at once, or switch the setting to Yes on the agent's Edit page if you want future Matched deposits to record themselves.
+**Where do I run the Remittance Reconciliation Agent?**
+From the capital call itself: Sidebar → [**Funds → Funds**](/funds), open the fund, click the **Calls** tab, open the call, then **Actions → Run Reconciliation**. There is no useful **Run Now** on the Agents page, because every run needs a bank statement for one call. See [Accessing and Running the Agent](#4-accessing-and-running-the-agent).
 
-**Q: A deposit shows "Not from KYC account." What should I do?**
-A: This means the sender's account number doesn't match the investor's registered KYC bank account. It's not automatically wrong — it could be a joint account, a family member, or a corporate treasury paying on the investor's behalf — but it's never silently accepted. Verify the actual source with the investor (or your compliance process) before confirming the payment.
+**Where do I see the reconciliation results?**
+On the same capital call page, in the **Reconciliation** tab. It shows the latest run's deposits with stat cards (Matched, Likely match, Needs review, No match, Internal, Not from KYC account) that filter the table, and each row's **Confirm**, **Reassign** or **Undo** action. See [Where to Find the Output](#6-where-to-find-the-output).
 
-**Q: A deposit came in short / over the amount due. What happens if I confirm it?**
-A: A **partial** payment is recorded for exactly the amount that arrived; the remittance keeps the balance as still due. An **overpayment** is recorded for the full amount received, and the remittance's status reflects the surplus — the agent doesn't split it against another call, so if the extra belongs elsewhere, that's a manual follow-up.
+**Where do I configure the agent?**
+Company menu (house icon, top right) → [**Agents**](/support_agents) → **Remittance Reconciliation** card in the Finance category → **Edit** on the **General** tab. That page holds the tolerances, name threshold, auto-apply switch and email settings. See [Inputs](#2-inputs).
 
-**Q: Why does a deposit show "Recorded on another call"?**
-A: A payment with the exact same bank reference already exists on a different capital call for this fund. The agent treats this as already handled and won't record it again here — if you believe it truly belongs to this call, undo the payment on the other call first, then re-run or Reassign here.
+**Run Reconciliation shows a lock icon. Why?**
+The item is locked with the tooltip "Remittance Reconciliation Agent is not enabled. Enable it under Support Agents, or contact support" when the `capital_remittance_reconciliation_agent` entity flag is off, or the agent record is missing or disabled. Ask CapHive support to enable the flag, then run **Setup All Agents** on the [Support Agents](/support_agents) page.
 
-**Q: Confirming a deposit failed with a payment error.**
-A: The most common cause is a foreign-currency folio with no exchange rate on file for the payment's date — add the missing rate and try Confirm again. The specific reason is always shown under the row's tags.
+**I can't see Run Reconciliation or the Reconciliation tab at all. Why?**
+Both need update permission on the fund (the same right used to edit the call). Without it the agent items are hidden from the call's **Actions** menu and the **Reconciliation** tab is not shown; ask a fund admin for an access right with update permission.
 
-**Q: Why didn't I get an email after the run?**
-A: Either "Email report after run" is set to No, or "Notify email" is blank. Both need to be set together on the agent's Edit page.
+**Who can confirm, reassign and undo deposits?**
+**Confirm**, **Confirm all Matched** and **Reassign** need the same update permission on the fund as running the agent. **Undo** also needs destroy permission on the fund, because it deletes a payment. Editing the agent's settings needs the **company_admin** role.
 
-**Q: Can I run this for a whole fund at once, or on a schedule?**
-A: No. This agent is deliberately scoped to one capital call per run, tied to a manual statement upload — a fund with several open calls needs one run per call. There's no batch or scheduled mode.
+### Running and managing reconciliations
+
+**How do I run a reconciliation?**
+On the call page choose **Actions → Run Reconciliation**, read the **Run Remittance Reconciliation** summary, choose the file under **Bank Statement (xlsx)** and click **Run Reconciliation**. A progress panel then shows Initialize, Ingest Statement, Parse Narrations, Load Candidates, Score & Bucket, Apply Exact Matches, Email Report and Save Report.
+
+**What file does the agent accept?**
+One `.xlsx` workbook per run; the upload field only accepts xlsx. It can contain several sheets, one per bank account (for example ICICI and Axis in the same file). CSV, xls and PDF statements must be converted to xlsx first.
+
+**How do I confirm a proposed deposit?**
+On the **Reconciliation** tab click **Confirm** on the row; the confirmation prompt states the exact payment, including any partial, overpayment or source-of-funds warning, before it records anything. See [Reviewing and Confirming Deposits](#8-reviewing-and-confirming-deposits).
+
+**How do I confirm every Matched deposit at once?**
+Click **Confirm all Matched (N)** above the table. It appears only when Matched deposits are still unrecorded, which happens when **Auto-apply exact matches** is No.
+
+**How do I move a deposit to the right investor?**
+In the row's **Reassign** box pick or type the investor / folio ("Pick investor / folio" suggests every remittance on this call) and click **Reassign**. The value is resolved to a folio number or virtual bank account on this fund, and the call must already have a remittance for that folio.
+
+**How do I undo a payment the agent or I recorded?**
+Click **Undo** on the row and confirm "Undo this payment?". The payment is deleted and the deposit returns to its review section; Undo is refused if units have already been allocated against that payment.
+
+**How do I turn on automatic recording of exact matches?**
+On the agent's **Edit** page set **Auto-apply exact matches** to Yes and save. Only Matched deposits are ever recorded automatically; Likely match, Needs review and No match always wait for you.
+
+**How do I get the run summary by email?**
+On the agent's **Edit** page set **Email report after run** to Yes and enter an address in **Notify email**. Both are needed; with a blank address the email step is skipped silently.
+
+**Can I reconcile a whole fund or schedule the agent?**
+No. Each run covers one capital call and one uploaded statement, so a fund with three open calls needs three runs. Scheduled runs and **Run Now** on the Agents page deliberately process nothing. See [Scheduling](#5-scheduling).
+
+### Why use remittance reconciliation
+
+**Why should I use the Remittance Reconciliation Agent?**
+Matching bank deposits to capital call remittances by hand means reading every narration, guessing the investor and typing payments one by one. The agent parses the whole statement, proposes the investor and remittance for each deposit with its reasoning, and records the payments you approve in bulk, so collections are updated in minutes instead of hours.
+
+**What does it let me do that I could not do otherwise?**
+It checks every deposit's sending account against the investor's KYC bank account, flags third-party funding, spots partial payments and overpayments against the due amount, and prevents a bank reference from being recorded twice across the fund. Every match carries a written reason, giving an audit trail for each payment.
+
+**Who typically uses it?**
+Fund operations and finance teams who receive bank statements during a capital call's collection window, with a controller reviewing Needs review and Not from KYC account deposits before confirming.
+
+**What happens if I keep recording payments manually instead?**
+Nothing breaks, but you lose the source-of-funds check, the duplicate-reference protection across calls and the per-deposit reasoning, and payments are only as accurate as whoever keyed them in.
+
+### What happens when I...
+
+**What happens when I click Run Reconciliation?**
+The workbook is saved as a document named "Bank Statement" on the capital call, a background job runs the steps, and a new report appears on the **Reconciliation** tab. If **Auto-apply exact matches** is Yes, payments are created for Matched deposits; otherwise nothing is recorded. You get an in-app alert when it finishes, and the summary email goes only to **Notify email**.
+
+**What happens when I confirm a deposit?**
+A capital remittance payment is created for the amount that actually arrived, with the bank reference, so the remittance's collected amount rises and any shortfall stays due. Recording a payment marks that remittance as not verified, and investors are not notified at this point; payment notifications only go out after the remittance is verified, if the call has them switched on.
+
+**What happens when I click Undo?**
+The payment is deleted, the remittance's collected amount falls back, the remittance is marked not verified, and the deposit returns to its review section on the tab. The deleted payment cannot be restored, but you can **Confirm** or **Reassign** the deposit again.
+
+**What happens when I reassign a deposit?**
+The deposit is matched to the remittance for the folio you chose and a payment is recorded for it at once, exactly as **Confirm** would; the row shows a **Reassigned** badge. If the folio has no remittance on this call, nothing is recorded and you see an alert.
+
+**What happens if I run the same statement twice?**
+No duplicate payments are created: a bank reference already recorded on this call shows **Payment recorded** with **Undo**, and one recorded on another call of the fund shows **Recorded on another call**. A new report is saved each time and the tab shows the latest.
+
+**Does the agent ever mark remittances as verified or allocate units?**
+No. Verification and unit allocation stay separate, manual steps on the call. Every payment the agent records leaves the remittance unverified until someone verifies it.
+
+### Troubleshooting and edge cases
+
+**I uploaded a statement but nothing happened / the run says it couldn't complete.**
+Check that the file attached before you submitted and that it is a genuine, non-empty xlsx workbook. A missing or unreadable workbook stops the run before scoring, and the email subject, if enabled, starts with `[RECON BLOCKED]`.
+
+**A deposit is "Matched" but wasn't recorded as a payment automatically. Why?**
+**Auto-apply exact matches** is No for this agent, the default for every fund (an unset value also counts as No). Use **Confirm** on the row or **Confirm all Matched**, or switch the setting to Yes on the agent's **Edit** page for future runs.
+
+**A deposit shows "Not from KYC account." What should I do?**
+The sender's account number does not match the investor's registered KYC bank account. It may be a joint account, a family member or a corporate treasury paying on the investor's behalf, but it is never accepted silently; verify the source with the investor or your compliance process before confirming.
+
+**A deposit came in short / over the amount due. What happens if I confirm it?**
+A **partial** payment is recorded for exactly the amount that arrived and the remittance keeps the balance as due. An **overpayment** is recorded for the full amount received; the agent does not split it against another call, so if part belongs elsewhere, adjust it manually.
+
+**Why does a deposit show "Recorded on another call"?**
+A payment with the same bank reference already exists on a different capital call of this fund, and references must be unique within a fund. If it truly belongs to this call, undo the payment on the other call first, then **Reassign** or re-run here.
+
+**Confirming a deposit failed with a payment error.**
+The most common cause is a foreign-currency folio with no exchange rate on or before the payment date; the message names the currencies. Add the rate under Company menu (house icon, top right) → [**Exchange Rates**](/exchange_rates) and click **Confirm** again.
+
+**Why didn't I get an email after the run?**
+Either **Email report after run** is No or **Notify email** is blank; both must be set on the agent's **Edit** page. The email is also skipped if sending fails, which is recorded as a warning on the report.
+
+**A deposit with a perfect amount is only a "Likely match". Why?**
+The narration carried no sender account number, so identity came from the name alone, and a name-only match can never be Matched. This is common for Axis exports and IMPS or cheque entries; confirm it after a quick check.
+
+**Does "AI-assisted name matching" improve results?**
+Not yet. The setting is stored but not read by any step, so switching it to Yes has no effect.
+
+## Related Guides
+
+- [Capital Calls](../capital_calls_user_guide) — the call page, remittances and verification this agent works on.
+- [Support Agents](../support_agents_user_guide) — the Agents page, setup and the shared run and progress panels.
+- [Capital Commitments](../capital_commitments_user_guide) — folios and virtual bank accounts used for Reassign.
+- [Investor KYC](../investor_kyc_user_guide) — the KYC bank accounts behind the source-of-funds check.
+- [Fund Units](../fund_units_user_guide) — unit allocation, which blocks Undo once done.
+- [Tracking Currency](../tracking_currency_guide) — exchange rates needed for foreign-currency folios.
+- [RTA Reconciliation Agent](rta_reconciliation_agent_user_guide) — the fund-level reconciliation against RTA statements.

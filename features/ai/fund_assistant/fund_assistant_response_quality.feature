@@ -29,3 +29,11 @@ Feature: FundAssistant data manager response-quality fixes
     Given there is a fund ratio named "TVPI" marked latest for the entity
     When I call list_fund_ratios with scope "latest"
     Then the fund ratio results should include "TVPI"
+
+  # Regression test for: an empty array from list_fund_ratios read as ambiguous to the LLM --
+  # "this metric doesn't exist" -- and it would derive a multiple itself from calls and
+  # distributions instead. The tool now says explicitly that no stored ratio exists and that
+  # computing one is not the correct fallback.
+  Scenario: No matching fund ratios come back with an explicit message instead of an empty array
+    When I call list_fund_ratios with scope "latest"
+    Then I should be told no computed fund ratios were found

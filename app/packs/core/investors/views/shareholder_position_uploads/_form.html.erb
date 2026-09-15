@@ -1,0 +1,38 @@
+<%= form_with(model: import_upload, url: shareholder_position_uploads_path, validate: true) do |form| %>
+  <% if import_upload.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(import_upload.errors.count, "error") %> prohibited this import_upload from being saved:</h2>
+
+      <ul>
+        <% import_upload.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: "form-control" %>
+    <%= form.text_field :owner_id, class: "form-control", hidden: true %>
+    <%= form.text_field :owner_type, class: "form-control", hidden: true %>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true %>
+  </div>
+
+  <div class="field" class="form-group" id="document_upload">
+    <%= render "layouts/single_upload", form: form,
+                          field_label: "Import Data (.xlsx)",
+                          for_model: "import_upload", field_name: "import_file",
+                          model: import_upload, allowed_types: ['.xlsx'].freeze %>
+
+    <small class="text-muted">
+      <%= link_to '<i class="ti ti-download"></i> Sample upload format'.html_safe, ImportUpload::SAMPLES[params[:sample_upload]] if ImportUpload::SAMPLES[params[:sample_upload]] %>
+    </small>
+  </div>
+
+  <div class="form-group">
+    <%= form.button type: 'submit', class: "btn btn-outline-primary", data: { xlsx_submit_guard: true } do %>
+      <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+    <% end %>
+  </div>
+<% end %>

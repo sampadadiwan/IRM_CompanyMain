@@ -53,7 +53,7 @@ const POSTS = [
   { md: '06_mcp_ai_client.md', slug: 'fund-data-in-your-ai-client', chip: 'AI',
     tint: 'tint-black tint-deep', crumb: 'Fund data in your AI client', read: '8 min read',
     h1: 'We didn’t add a chatbot. We made <em>the fund callable.</em>',
-    desc: 'Twenty-three read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.',
+    desc: 'Twenty-two read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.',
     card: 'Every vendor shipped a chat box. The opposite move — making fund data callable from the AI client your team already uses, read-only, under your keys — is the harder and more useful one.' },
   { md: '07_lp_crm.md', slug: 'lp-relationship-crm', chip: 'Investor relations',
     tint: 'tint-orange tint-deep', crumb: 'The LP CRM', read: '9 min read',

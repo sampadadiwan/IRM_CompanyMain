@@ -32,6 +32,10 @@ set :pty, true
 append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/system", '.bundle'
 
 set :bundle_binstubs, -> { shared_path.join('bin') }
+# Bundler dropped `bundle install --binstubs` (removed in favor of a separate
+# `bundle binstubs --all`); capistrano-bundler 2.2.0 supports the new form via
+# this setting instead of the (default) :install mode.
+set :bundle_binstubs_command, :binstubs
 set :bundle_jobs, 8
 
 # Default value for keep_releases is 5
@@ -237,7 +241,20 @@ namespace :sidekiq do
       # config/schedule.rb. Keep the three in sync (MALLOC_ARENA_MAX especially).
       # < /dev/null detaches stdin so SSHKit's channel closes instead of hanging
       # on the backgrounded process.
-      start_cmd = "cd #{current_path} && MALLOC_ARENA_MAX=2 ~/.rvm/bin/rvm default do " \
+      #
+      # setsid: `&` alone only backgrounds sidekiq from this shell's point of
+      # view — it stays in the SAME process GROUP as the `bash -lc` this runs
+      # under. When the SSH exec channel closes right after `sleep 3`, the
+      # remote shell can be sent SIGHUP, and without its own session that
+      # propagates to the whole group, killing a sidekiq that has not finished
+      # forking/opening its log yet — before it has written a single byte.
+      # That race is exactly what DR drill dr_drill_in_2026_09_12_1717 hit:
+      # this task reported success (the execute below returned 0), yet
+      # /home/ubuntu/IRM/shared/log/sidekiq.log shows NO entry at all for that
+      # attempt — not even a crash trace — and the probe below then correctly
+      # timed out. setsid detaches into a brand-new session immune to signals
+      # sent to the launching shell's group.
+      start_cmd = "cd #{current_path} && MALLOC_ARENA_MAX=2 setsid ~/.rvm/bin/rvm default do " \
                   "bundle exec sidekiq -e #{fetch(:stage)} " \
                   ">> #{shared_path}/log/sidekiq.log 2>&1 < /dev/null & sleep 3"
       execute :bash, '-lc', "'#{start_cmd}'"
@@ -246,8 +263,18 @@ namespace :sidekiq do
 
       # The start above is synchronous, but sidekiq still has to get through rvm,
       # bundler and a full eager-load before it sets its proctitle and becomes
-      # visible to pgrep, so poll rather than asserting immediately. 120s is
-      # generous headroom over a cold boot on this box.
+      # visible to pgrep, so poll rather than asserting immediately.
+      #
+      # 300s, not the 120s this used to be: DR drill dr_drill_in_2026_09_12_1404
+      # measured a genuinely fresh app-server AMI taking until ~3.5min after
+      # nginx:switch_app to register, because the AMI's own @reboot/monit config
+      # auto-starts a stale sidekiq (pointed at whatever Redis host was baked in
+      # at snapshot time) before this task ever runs — the same @reboot-race
+      # class of bug already documented for prometheus_exporter and xirr_py in
+      # dr_verify.rake. That false start dies almost immediately (wrong Redis
+      # host), but it burns real wall-clock before THIS task's start_cmd above
+      # gets a clean shot, so 120s was not "generous" on a fresh box, it was
+      # the actual bottleneck. 300s gives real margin over the observed ~210s.
       #
       # Then check the cwd of every sidekiq on the box against the release we just
       # published: Ruby resolves the `current` symlink to a physical path at boot,
@@ -263,12 +290,12 @@ namespace :sidekiq do
       end
 
       release = capture(:readlink, '-f', current_path).strip
-      probe   = "for i in $(seq 60); do pgrep -f '^sidekiq ' >/dev/null && break; sleep 2; done; " \
+      probe   = "for i in $(seq 150); do pgrep -f '^sidekiq ' >/dev/null && break; sleep 2; done; " \
                 "for p in $(pgrep -f '^sidekiq ' || true); do echo \"$p $(readlink /proc/$p/cwd 2>/dev/null || echo UNKNOWN)\"; done"
 
       workers = capture(probe).lines.map(&:strip).reject(&:empty?).map { |line| line.split(' ', 2) }
 
-      raise "sidekiq did not come up within 120s of being started — check #{shared_path}/log/sidekiq.log" if workers.empty?
+      raise "sidekiq did not come up within 300s of being started — check #{shared_path}/log/sidekiq.log" if workers.empty?
 
       # readlink reports a removed directory as "/path/to/release (deleted)", so a
       # stale worker never compares equal to the live release path.

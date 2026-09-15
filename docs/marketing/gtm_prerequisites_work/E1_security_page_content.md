@@ -83,7 +83,7 @@ This is the strongest section and should be led with. It is also the question a 
 >
 > **Authentication.** Passwords are bcrypt-hashed (cost 12), minimum 8 characters. Accounts lock after 6 failed attempts. Sessions expire after 60 minutes. Password reset links expire after 6 hours.
 >
-> **Multi-factor authentication** is available to every user, with three second factors: an authenticator app (TOTP, RFC 6238), WhatsApp, or SMS. Eight single-use backup codes are issued, stored hashed.
+> **Multi-factor authentication** is available to every user, with three second factors: an authenticator app (TOTP, RFC 6238), WhatsApp, or SMS. There are no backup codes; recovery is an audited administrator reset that emails the account holder.
 >
 > **API access** uses OAuth 2.0 with OpenID Connect, authorization-code flow with PKCE required and HTTPS-only redirect URIs.
 

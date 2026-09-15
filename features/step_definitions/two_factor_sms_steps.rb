@@ -2,13 +2,24 @@
 #
 # The Twilio HTTP call is stubbed by features/support/twilio_stub.rb (@stub-twilio), which
 # records what would have been sent in @twilio. Everything below that — the country
-# allowlist, the rate limiters, the OtpDelivery bookkeeping — runs for real, because those
-# are the parts that stand between the send endpoint and a runaway bill.
+# eligibility check, the rate limiters, the OtpDelivery bookkeeping — runs for real,
+# because those are the parts that stand between the send endpoint and a runaway bill.
 
 # ── Setup ────────────────────────────────────────────────────────────────────
 
+# update_columns, not update!, because several scenarios deliberately store a number that
+# cannot be dialled — which User#phone_must_be_dialable now refuses on any edit. Those
+# rows are exactly the pre-existing and import-written data the validation lets through,
+# so the setup has to write them the same way.
 Given("the user has the phone number {string} {string}") do |call_code, phone|
-  @user.update!(call_code: call_code.presence, phone: phone.presence)
+  @user.update_columns(call_code: call_code.presence, phone: phone.presence&.delete("^0-9"))
+  @user.reload
+end
+
+# The @stub-twilio hook sets CURRENT_SITE=LOCAL and its After hook restores whatever was
+# there before, so a scenario can narrow it to a real deployment without leaking.
+Given("this is the US deployment") do
+  ENV["CURRENT_SITE"] = "US"
 end
 
 Given("SMS two-factor is switched off for this deployment") do
@@ -87,13 +98,6 @@ Then("the user's two-factor setup should not be complete") do
   expect(page).to have_current_path(verify_sms_enrollment_two_factor_path, wait: 5)
   visit root_path
   expect(page).to have_current_path(new_user_session_path, wait: 10)
-end
-
-# SMS mode issues no backup codes — parked, matching WhatsApp mode. Asserted rather than
-# assumed, because the authenticator path DOES issue them from the same controller.
-Then("the user should have no backup codes") do
-  @user.reload
-  expect(JSON.parse(@user.otp_backup_codes || "[]")).to be_empty
 end
 
 Then("I should be signed in") do
@@ -193,8 +197,11 @@ end
 
 # ── Regression steps ─────────────────────────────────────────────────────────
 
+# Same reason as above: the point of the scenario is a stored number that has stopped
+# being textable, which no longer arrives through a validated write.
 Given("an administrator changes the number to {string} {string}") do |call_code, phone|
-  @user.update!(call_code: call_code, phone: phone)
+  @user.update_columns(call_code: call_code, phone: phone.delete("^0-9"))
+  @user.reload
 end
 
 When("I reload the enrollment page") do

@@ -5,22 +5,75 @@
     funding_rounds = h_data[:funding_rounds]
     latest_round = funding_rounds.last
 
+    # "Quantity actual" reflects real (non fully-diluted) share/unit quantities, which only
+    # exist when they come from Investments or from an optional "Quantity Actuals" column in a
+    # shareholder position upload. When neither source ever provided a value, every row is 0,
+    # so auto-hide the column rather than showing a column of all zeros.
+    has_quantity_actual_data = funding_rounds.any? { |round| (h_data.dig(:round_data, round, :total_equity) || 0).to_f != 0 }
+
+    # "Quantity- fully diluted" is only a real share/unit count when it comes from Investments
+    # or a shareholder position upload whose amount was interpreted as a raw quantity. When a
+    # round's only source is an uploaded Fully Dilluted % (no quantity), the "quantity" value is
+    # just the percentage number relabeled, so auto-hide the column rather than showing percent
+    # values under a quantity heading.
+    has_quantity_diluted_data = funding_rounds.any? { |round| h_data.dig(:round_data, round, :fully_diluted_is_quantity) }
+
     # Check metadata for showing quantity columns individually (default to true - show columns)
-    show_quantity_actual = params[:show_quantity_actual] != "false"
-    show_quantity_diluted = params[:show_quantity_diluted] != "false"
+    show_quantity_actual = params[:show_quantity_actual] != "false" && has_quantity_actual_data
+    show_quantity_diluted = params[:show_quantity_diluted] != "false" && has_quantity_diluted_data
 
     # Check metadata for custom category ordering
     # Format: "Self,Employee,Other,Lead Investor" or "Founders,Employees,Others,Demo Fund"
     # If not provided, defaults to sorting by total_fully_diluted descending
     category_order = params[:category_order].presence
 
+    # Quantity Actual / Quantity- fully diluted only ever show the single latest_round cell for
+    # each investor. When that investor has no entry of their own for latest_round (their only
+    # value was carried forward from an earlier round purely to keep round totals/percentages
+    # correct - see GenerateHorizontalCapTable#carry_forward_position_holdings), show an empty
+    # "-" here instead of that carried number, since it wasn't actually uploaded/recorded for
+    # this round and showing it next to real per-round data is misleading.
+    latest_round_quantity_cell = lambda do |category, investor_name, field|
+      entry = h_data.dig(:table_data, category, investor_name, latest_round)
+      if entry.nil? || entry[:carried_forward]
+        "-"
+      else
+        number_with_precision(entry.fetch(field, 0) || 0, precision: 2, delimiter: ',')
+      end
+    end
+
+    # Same reasoning applies to each investor's own "% stake fully diluted" cell for a given
+    # round: when that cell is carried forward (the investor has no direct record for this
+    # specific round), showing a computed percentage there is just as misleading as showing a
+    # carried quantity would be - it implies data was recorded for this round when it wasn't.
+    # Category/subgroup rollups and the Total row still sum the underlying carried percentage
+    # so those totals stay correct - only the individual investor's own cell is blanked out.
+    round_percentage_cell = lambda do |category, investor_name, round|
+      entry = h_data.dig(:table_data, category, investor_name, round)
+      if entry.nil? || entry[:carried_forward]
+        "-"
+      else
+        entry.fetch(:fully_diluted_percentage, "-") || "-"
+      end
+    end
+
+    # Instrument reflects that specific investor's own ShareholderPosition record for the
+    # latest round - if there's no real record there (nil, or a synthesized carried-forward
+    # cell), there's nothing to show, so it falls back to "-". No fallback to older rounds.
+    instrument_cell = lambda do |category, investor_name|
+      entry = h_data.dig(:table_data, category, investor_name, latest_round)
+      return "-" if entry.nil? || entry[:carried_forward]
+
+      entry[:instrument].presence || "-"
+    end
 %>
 <%= render ToggleCard.new(title: "Cap Table", css_class: "show_horizontal_cap_table", state: "show") do %>
   <div class="table-responsive" data-controller="row-toggle">
     <table class="table table-bordered table-grey numberTable dataTable">
       <thead>
         <tr>
-          <th rowspan="2">Particulars</th>
+          <th rowspan="2" class="text-center" style="text-align: center !important;">Particulars</th>
+          <th rowspan="2" class="text-center">Instrument</th>
           <th colspan="<%= funding_rounds.size %>" class="text-center">% stake fully diluted</th>
           <th class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>Quantity actual (as on the latest round)</th>
           <th class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>Quantity- fully diluted (as on the latest round)</th>
@@ -72,8 +125,13 @@
                       end
                     end.map { |s| s[:category] }
                   else
-                    # Default: Sort categories by total fully diluted quantity in descending order
-                    sorted_categories = category_summaries.sort_by { |s| -s[:total_fully_diluted] }.map { |s| s[:category] }
+                    # Default: Founders, Self, Others, Employees (falling back to sorting
+                    # by total fully diluted quantity descending for any other category)
+                    default_order = %w[Founder Self Other Employee]
+                    sorted_categories = category_summaries.sort_by do |s|
+                      index = default_order.index(s[:category])
+                      index ? [0, index] : [1, -s[:total_fully_diluted]]
+                    end.map { |s| s[:category] }
                   end
                 %>
         <% sorted_categories.each do |category| %>
@@ -106,41 +164,107 @@
                         end
                     %>
           <tr class="bg-light parent cursor-pointer" data-action="click->row-toggle#toggle" data-row-toggle-target="control" aria-expanded="false">
-            <td>
+            <td class="text-right" style="text-align: right !important;">
               <strong><%= category_name %></strong>
               <span class="expand ml-2">></span>
             </td>
+            <td class="text-center text-muted">-</td>
             <% funding_rounds.each do |round| %>
               <td class="text-center font-weight-bold">
                 <%= number_to_percentage(category_totals[:funding_rounds][round], precision: 1) %>
               </td>
             <% end %>
-            <td class="text-right font-weight-bold" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
+            <td class="text-center font-weight-bold" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
               <%= number_with_precision(category_totals[:latest_quantity], precision: 2, delimiter: ',') %>
             </td>
-            <td class="text-right font-weight-bold" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
+            <td class="text-center font-weight-bold" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
               <%= number_with_precision(category_totals[:latest_fully_diluted], precision: 2, delimiter: ',') %>
             </td>
           </tr>
-          <% sorted_investors.each do |investor| %>
+          <%
+                        # Split investors into those with a subgroup (nested under a subgroup header row)
+                        # and those without (rendered directly under the category, as before).
+                        investors_by_subgroup = sorted_investors.group_by { |investor| investor.subgroup.presence }
+                        ungrouped_investors = investors_by_subgroup.delete(nil) || []
+                        sorted_subgroup_names = investors_by_subgroup.keys.sort
+                    %>
+          <% sorted_subgroup_names.each do |subgroup_name| %>
+            <%
+                          subgroup_investors = investors_by_subgroup[subgroup_name]
+                          subgroup_totals = { funding_rounds: {}, latest_quantity: 0, latest_fully_diluted: 0 }
+                          funding_rounds.each { |round| subgroup_totals[:funding_rounds][round] = 0.0 }
+
+                          subgroup_investors.each do |investor|
+                            funding_rounds.each do |round|
+                              val = h_data.dig(:table_data, category, investor.investor_name, round)&.fetch(:fully_diluted_percentage, "0.0%") || "0.0%"
+                              subgroup_totals[:funding_rounds][round] += val.to_f
+                            end
+                            subgroup_totals[:latest_quantity] += h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:quantity, 0) || 0
+                            subgroup_totals[:latest_fully_diluted] += h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0
+                          end
+                      %>
+            <tr class="child bg-light parent-sub cursor-pointer" data-action="click->row-toggle#toggleSub" data-row-toggle-target="control" aria-expanded="false">
+              <td class="text-right" style="text-align: right !important;">
+                <strong><%= subgroup_name %></strong>
+                <span class="expand ml-2">></span>
+              </td>
+              <td class="text-center text-muted">-</td>
+              <% funding_rounds.each do |round| %>
+                <td class="text-center font-weight-bold">
+                  <%= number_to_percentage(subgroup_totals[:funding_rounds][round], precision: 1) %>
+                </td>
+              <% end %>
+              <td class="text-center font-weight-bold" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
+                <%= number_with_precision(subgroup_totals[:latest_quantity], precision: 2, delimiter: ',') %>
+              </td>
+              <td class="text-center font-weight-bold" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
+                <%= number_with_precision(subgroup_totals[:latest_fully_diluted], precision: 2, delimiter: ',') %>
+              </td>
+            </tr>
+            <% subgroup_investors.each do |investor| %>
+              <tr class="subchild">
+                <td class="text-right" style="text-align: right !important;">
+                  <%= investor.display_name.presence || investor.investor_name %>
+                </td>
+                <td class="text-center">
+                  <%= instrument_cell.call(category, investor.investor_name) %>
+                </td>
+                <% funding_rounds.each do |round| %>
+                  <td class="text-center">
+                    <%= round_percentage_cell.call(category, investor.investor_name, round) %>
+                  </td>
+                <% end %>
+                <td class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
+                  <%= latest_round_quantity_cell.call(category, investor.investor_name, :quantity) %>
+                </td>
+                <td class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
+                  <%= latest_round_quantity_cell.call(category, investor.investor_name, :fully_diluted) %>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+          <% ungrouped_investors.each do |investor| %>
             <tr class="child">
-              <td style="padding-left: 3rem !important;">
+              <td class="text-right" style="text-align: right !important;">
                 <% if category == "Self" %>
                   <%= @portfolio_company.entity.name %>
                 <% else %>
-                  <%= investor.investor_name %>
+                  <%= investor.display_name.presence || investor.investor_name %>
                 <% end %>
+              </td>
+              <td class="text-center">
+                <%= instrument_cell.call(category, investor.investor_name) %>
               </td>
               <% funding_rounds.each do |round| %>
                 <td class="text-center">
-                  <%= h_data.dig(:table_data, category, investor.investor_name, round)&.fetch(:fully_diluted_percentage, "-") || "-" %>
+                  <%= round_percentage_cell.call(category, investor.investor_name, round) %>
                 </td>
               <% end %>
-              <td class="text-right" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
-                <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:quantity, 0) || 0, precision: 2, delimiter: ',') %>
+              <td class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
+                <%= latest_round_quantity_cell.call(category, investor.investor_name, :quantity) %>
               </td>
-              <td class="text-right" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
-                <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0, precision: 2, delimiter: ',') %>
+              <td class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
+                <%= latest_round_quantity_cell.call(category, investor.investor_name, :fully_diluted) %>
               </td>
             </tr>
           <% end %>
@@ -148,14 +272,15 @@
       </tbody>
       <tfoot>
         <tr class="font-weight-bold">
-          <td>Total</td>
+          <td class="text-right" style="text-align: right !important;">Total</td>
+          <td class="text-center">-</td>
           <% funding_rounds.each do |round| %>
             <td class="text-center">100.0%</td>
           <% end %>
-          <td class="text-right" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
+          <td class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
             <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_equity) || 0, precision: 2, delimiter: ',') %>
           </td>
-          <td class="text-right" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
+          <td class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
             <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_fully_diluted) || 0, precision: 2, delimiter: ',') %>
           </td>
         </tr>

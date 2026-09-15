@@ -1,0 +1,179 @@
+# Ontology for AccountEntry as exposed over MCP.
+---
+entity: account_entry
+label: Account Entry
+model: AccountEntry
+description: >-
+  A single line in a fund's or folio's ledger. This is the largest table in the system by a
+  wide margin, so the tool only ever returns aggregates — never individual rows.
+
+relationships:
+  fund:
+    target: fund
+    cardinality: many_to_one
+    note: Pass fund_ids rather than a Ransack condition on fund_id.
+    resolve_with: list_funds
+  capital_commitment:
+    target: capital_commitment
+    cardinality: many_to_one
+    note: The folio the entry belongs to. Pass folio_ids rather than a Ransack condition.
+    resolve_with: list_capital_commitments
+
+fields:
+  name:
+    type: string
+    description: >-
+      Line name, e.g. "Management Fee" or "Interest Income". Entities configure their own
+      names, so match with name_cont rather than assuming a fixed vocabulary.
+    sortable: true
+  entry_type:
+    type: string
+    description: >-
+      The entry's classification (income, expense, distribution and so on). Entity-defined,
+      up to 60 characters. Group by this to see a ledger broken down by type.
+    sortable: true
+  period:
+    type: string
+    description: Reporting period label the entry falls in.
+    sortable: true
+  reporting_date:
+    type: date
+    description: The date the entry is reported as of. Use this for date-range questions.
+    sortable: true
+  amount:
+    type: money
+    stored_as: amount_cents
+    currency: the fund's currency
+    description: The entry amount. Signed — expenses and distributions can be negative.
+    sortable: true
+    aggregatable: true
+  cumulative:
+    type: boolean
+    description: >-
+      True on running-total entries. Summing cumulative and non-cumulative entries together
+      double-counts — pick one with the 'cumulative' or 'not_cumulative' scope.
+    sortable: false
+  generated:
+    type: boolean
+    description: True when the entry was produced by the allocation engine rather than imported.
+    sortable: false
+  folio_id:
+    type: string
+    description: Folio the entry belongs to. Prefer the folio_ids parameter.
+    sortable: true
+    groupable: false
+  fund_id:
+    type: reference
+    target: fund
+    description: >-
+      Owning fund. Prefer the fund_ids parameter. This was not ransackable until recently,
+      which meant a fund filter was silently dropped and totals spanned every fund.
+    sortable: false
+  capital_commitment_id:
+    type: reference
+    target: capital_commitment
+    description: Folio the entry belongs to, by ID.
+    sortable: false
+    groupable: false
+  parent_type:
+    type: string
+    description: >-
+      Model name of what the entry was generated from (a capital call, a portfolio
+      investment, and so on).
+    sortable: true
+  parent_name:
+    type: string
+    description: Display name of the parent record.
+    sortable: true
+    groupable: false
+  parent_id:
+    type: reference
+    target: parent record
+    description: ID of the parent record, meaningful only together with parent_type.
+    sortable: false
+    groupable: false
+  allocation_run_id:
+    type: reference
+    target: allocation_run
+    description: The allocation run that produced this entry, when it was generated.
+    sortable: false
+    groupable: false
+  fund_formula_id:
+    type: reference
+    target: fund_formula
+    description: The formula that produced this entry, when it was generated.
+    sortable: false
+    groupable: false
+  import_upload_id:
+    type: reference
+    target: import_upload
+    description: The upload this entry was imported from, when it was imported.
+    sortable: false
+    groupable: false
+
+unavailable:
+  rule_for:
+    reason: >-
+      No such attribute on AccountEntry. It was advertised by the old tool description, so a
+      condition on it was silently ignored and the aggregate covered every entry.
+  id:
+    reason: Not declared in AccountEntry.ransackable_attributes, so conditions on it are ignored.
+  amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: amount
+  notes:
+    reason: >-
+      A real column but not ransackable, and deliberately not returned — it is one of the
+      wide columns that make this table expensive to read.
+
+scopes:
+  query_class: FundAssistantDataManager::AccountEntryQuery
+  descriptions:
+    cumulative: Only running-total entries.
+    not_cumulative: Only period entries, excluding running totals.
+    generated: Only entries produced by the allocation engine.
+    fund_entries: Only fund-level entries, excluding folio-level ones.
+    reporting: Only entries flagged for reporting.
+    accounting: Only entries flagged for accounting.
+    for_folios: Only entries whose parent is a folio.
+    for_portfolio_investments: Only entries whose parent is a portfolio investment.
+    for_portfolio_companies: Only entries whose parent is a portfolio company.
+
+measures:
+  total_amount:
+    expression: sum of amount
+    description: >-
+      Net total of the matching entries. Amounts are signed, so this nets income against
+      expenses rather than adding their magnitudes.
+  by_entry_type:
+    expression: sum of amount grouped by entry_type
+    description: The standard ledger breakdown. Pass aggregate group_by with group_by_field entry_type.
+
+caveats:
+  - >-
+    A group_by returns every group, with no row cap. entry_type, period, parent_type,
+    cumulative and generated are bounded and safe to group on. `name` and `reporting_date`
+    are not — an entity can have hundreds of ledger line names and years of dates — so filter
+    to a fund, folio or date range before grouping on either.
+  - >-
+    Individual entries are never returned — `aggregate` is mandatory. If you need line-level
+    detail, aggregate by a narrower group_by instead of asking for rows.
+  - >-
+    Cumulative and non-cumulative entries live in the same table. Summing across both
+    double-counts; choose the 'cumulative' or 'not_cumulative' scope.
+  - >-
+    Amounts are in each fund's currency. Sums are currency-resolved on this entity (they are
+    grouped by the fund's currency), so a multi-currency total comes back split by currency.
+  - Money filters take MAJOR units, not cents.
+
+tools:
+  list_account_entries:
+    kind: list
+    aggregate_required: true
+    summary: >-
+      Use it for ledger totals and breakdowns — fees charged, income booked, expenses by
+      type over a period.
+    params:
+      fund_ids:
+      folio_ids:
+      scope:

@@ -43,7 +43,7 @@
         <%= form.text_field :entry_type, class: "form-control", disabled: true, id: "other_name"  %>
       </div>
 
-      <input type="hidden" id="name_list" value="<%= account_entry.fund.fund_formulas.pluck(:name).join(';') %>">
+      <input type="hidden" id="name_list" value="<%= account_entry.fund.fund_formulas.without_run_checks.pluck(:name).join(';') %>">
 
       <div class="form-group" data-controller="account-entry-search">
         <%= form.label :name %>

@@ -81,7 +81,7 @@ class TaskList < BaseList
     # Ace Ltd's PI has owner_type=PortfolioInvestment, not owner_type=Investor,
     # so a plain owner_id/owner_type match (the old normalize_owner_filters!
     # behavior) silently dropped it. Drives the (non-deal) kanban board's
-    # stakeholder filter — see TasksController#prepare_board_filters.
+    # stakeholder filter — see TaskFiltersHelper#task_filter_options.
     #
     # Guarded by owner_id.blank? so an explicit owner_id/owner_type pair (e.g.
     # a direct Investor tab link) always wins over investor_id, matching the

@@ -170,6 +170,14 @@ class ImportUtil < Trailblazer::Operation
           success = Audited.audit_class.as_user(import_upload.user) do
             process_row(headers, custom_field_headers, sanitized_row, import_upload, ctx)
           end
+          # If this is a ShareholderPosition import, allow the importer to inject a computed Fully Dilluted % into the sanitized row
+          if import_upload.import_type == "ShareholderPosition"
+            fd_index = headers.index("Fully Dilluted %") || headers.index("Fully Diluted %")
+            if fd_index && fd_index >= 0
+              computed = import_upload.instance_variable_get(:@last_row_computed_percent)
+              sanitized_row[fd_index] = computed if computed.present?
+            end
+          end
           # add row to results sheet
           sheet.add_row(sanitized_row)
           # To indicate progress
@@ -229,8 +237,8 @@ class ImportUtil < Trailblazer::Operation
     if form_type.nil? && FormType::MULTIPLE_FORM_TYPES_ALLOWED.include?(model.class.name)
       raise "Form Type must be specified for #{model.class.name} when setting up custom fields"
     elsif form_type.present?
-      # Create a map of label to form custom field for faster lookup
-      fcf_label_map = form_type.form_custom_fields.index_by { |f| f.label.downcase }
+      # Create a map of column header to form custom field for faster lookup
+      fcf_label_map = custom_field_header_map(form_type)
     end
 
     custom_field_headers.delete("Update Only")
@@ -245,12 +253,13 @@ class ImportUtil < Trailblazer::Operation
         Rails.logger.debug { "### setup_custom_fields: processing #{cfh}" }
         next if cfh.blank? # && user_data[cfh].present?
 
-        json_fields_key = if form_type.present? && fcf_label_map[cfh.downcase].present?
+        fcf = fcf_label_map[custom_field_header_key(cfh)] if form_type.present?
+        json_fields_key = if fcf.present?
                             # Get the json fields key from the form custom field name based on the label
-                            fcf_label_map[cfh.downcase].name
-                          elsif form_type.present? && fcf_label_map[cfh.downcase].blank?
+                            fcf.name
+                          elsif form_type.present?
                             # In the tests we may not have created the custom fields yet, so allow that, but in the real world we should raise an error
-                            Rails.env.test? ? FormCustomField.to_name(cfh) : raise("Custom field #{cfh} not found in form type #{form_type.name}")
+                            Rails.env.test? ? FormCustomField.to_name(cfh) : raise("Custom field #{cfh} not found in form type #{form_type.name} (tag #{form_type.tag})")
                           else
                             # Create the json fields key from the header
                             FormCustomField.to_name(cfh)
@@ -261,6 +270,30 @@ class ImportUtil < Trailblazer::Operation
     end
   end
   # rubocop:enable Metrics/CyclomaticComplexity
+
+  # Maps a normalised column header to its form custom field, keyed on both the label and the name.
+  # Keyed on human_label, not label: a Label left blank in the UI is stored as "" (or nil), yet the
+  # screens and the upload template (generate_upload_xlsx) show name.humanize.titleize - keying on the
+  # raw label collapsed every such field onto one "" key and no column could match.
+  # Keys go through the same titleize as get_headers, which turns "-" and "_" into spaces, so a label
+  # like "Pre-Money Valuation" or "udr_1" still matches its own column.
+  # The name is also accepted as it is shown as "Import Column Name" on the form type page.
+  # When keys collide, an explicit label beats a label derived from the name, which beats the name -
+  # so a column that matched an explicitly labelled field before still resolves to that same field.
+  def custom_field_header_map(form_type)
+    fields = form_type.form_custom_fields.to_a
+    explicit, derived = fields.partition { |fcf| fcf.label.present? }
+    by_name = fields.index_by { |fcf| custom_field_header_key(fcf.name) }
+    by_derived_label = derived.index_by { |fcf| custom_field_header_key(fcf.human_label) }
+    by_explicit_label = explicit.index_by { |fcf| custom_field_header_key(fcf.label) }
+    by_name.merge(by_derived_label).merge(by_explicit_label)
+  end
+
+  # Squeezed again after titleize: get_headers squeezes first, so "Photo - Joint Holder" arrives as
+  # "Photo   Joint Holder" once titleize has turned the "-" into a space.
+  def custom_field_header_key(header)
+    sanitize_cell(sanitize_cell(header)&.downcase&.titleize).to_s.downcase
+  end
 
   def setup_exchange_rate(model, user_data)
     as_of = parse_date_cell(user_data, "As Of")

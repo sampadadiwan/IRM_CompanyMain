@@ -1,0 +1,56 @@
+<header class="page-hero hero-tinted tint-cream" style="padding-bottom:64px">
+  <div class="wrap-wide">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <%= link_to "Home", root_path %><span>/</span><%= link_to t('top_menus.user_guides'), user_guides_path %><span>/</span>FAQs
+      </nav>
+      <span class="chip-label">FAQs</span>
+      <h1>Answers to <em>common questions.</em></h1>
+      <p class="lede"><%= number_with_delimiter(@faq_count) %> questions from <%= @guides.size %> guides — search to find an answer.</p>
+    </div>
+  </div>
+</header>
+
+<div data-controller="faq-index">
+  <%# Search bar and FAQ list share one centred column, as wide as a guide section (.ai-md, 860px). %>
+  <div class="wrap">
+    <div style="max-width:860px;margin:0 auto">
+      <div class="guide-search" style="margin-left:auto;margin-right:auto">
+        <div class="guide-search-box">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M11.5 11.5L15 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <input type="text" class="guide-search-input" placeholder="Search FAQs, e.g. record a payment"
+                 data-action="input->faq-index#filter" data-faq-index-target="input">
+          <button type="button" class="guide-search-clear is-hidden"
+                  data-action="click->faq-index#clear" data-faq-index-target="clearButton" aria-label="Clear search">&times;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-sm" style="padding-top:40px">
+    <div class="wrap">
+     <div style="max-width:860px;margin:0 auto">
+      <div data-faq-index-target="noResults" class="guide-empty is-hidden">
+        No FAQs match your search.
+      </div>
+
+      <% @guides.each do |guide| %>
+        <section class="guide-group ai-md" data-faq-index-target="section">
+          <h2 style="display:flex;justify-content:space-between;align-items:baseline;gap:16px">
+            <span><%= guide.title %></span>
+            <%= link_to "Open guide", guide.url, class: "fs-6", style: "font-weight:500" %>
+          </h2>
+          <div class="faq">
+            <% guide.items.each do |item| %>
+              <details data-faq-index-target="item">
+                <summary><%= item.question %></summary>
+                <div><%= sanitize item.answer_html %></div>
+              </details>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+     </div>
+    </div>
+  </div>
+</div>

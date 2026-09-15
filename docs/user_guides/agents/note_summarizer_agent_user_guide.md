@@ -2,6 +2,8 @@
 
 The Note Summarizer Agent generates an AI-powered summary of an investor's notes over the past month or quarter. It runs across every investor in your entity, can optionally auto-tag untagged notes first, and writes the summary back as a regular Note on the investor record so it shows up right alongside everything else in that investor's notes feed.
 
+> **Where to find it:** Company menu (house icon, top right) → [**Agents**](/support_agents) → **Note Summarizer** card → **Run Now** on the **General** tab; for one stakeholder, open the stakeholder page → **View Notes** → **Summarise Notes**. Needs the Company Admin role, the `note_summarization_agent` entity flag and an LLM key.
+
 ## Table of Contents
 
 1. [What This Agent Does](#1-what-this-agent-does)
@@ -13,6 +15,7 @@ The Note Summarizer Agent generates an AI-powered summary of an investor's notes
 7. [Understanding the Report](#7-understanding-the-report)
 8. [Where It Can Fail](#8-where-it-can-fail)
 9. [FAQ](#faq)
+10. [Related Guides](#related-guides)
 
 ---
 
@@ -48,25 +51,23 @@ The agent's **General** tab shows a yellow warning banner for two setup traps:
 
 ## 3. Enabling the Agent
 
-A Company Admin turns this agent on at **Admin → Edit Entity → Support Agents section**. While it's off, the **Run Now** button and the "Summarize Notes" trigger on an investor's page are disabled.
+A CapHive administrator turns this agent on with the `note_summarization_agent` support-agent flag on your entity. While it's off, the **Run Now** button and the **Summarise Notes** button on a stakeholder's notes list are disabled.
 
-This agent requires an AI provider key, configured at **AI → Support Agents → LLM Keys** — both the auto-tagging step and the summary step call the AI (unless skipped because there are no qualifying notes).
+This agent requires an AI provider key, configured at Company menu (house icon, top right) → **Agents** → [**LLM Keys**](/support_agents/llm_keys) — both the auto-tagging step and the summary step call the AI (unless skipped because there are no qualifying notes).
 
-Only **Company Admin** users can run **Setup All Agents** and edit this agent's configuration fields. The "Summarize Notes" trigger on an investor's page follows that record's normal edit permissions.
+Only **Company Admin** users can run **Setup All Agents**, edit this agent's configuration fields and run it. The **Summarise Notes** button is shown to everyone who can see the notes, but the run itself is rejected for non-admins.
 
 ## 4. Accessing and Running the Agent
 
-**From the agent's own page:** **AI → Support Agents → Note Summarizer → Run Now**. Without targeting a specific investor, this processes every investor in your entity, one after another, with no per-investor progress view; you'll get a single summary notification once it's done.
+**From the agent's own page:** Company menu (house icon, top right) → **Agents** → **Note Summarizer** → **Run Now**. Without targeting a specific investor, this processes every investor in your entity, one after another, with a batch progress panel that counts investors as they are processed; you'll get a single summary notification once it's done.
 
-**From an Investor's page:** **Misc → Summarize Notes**. Runs the agent for just that investor, with a live progress panel showing each step (Auto-Tag Notes → Collect Notes → Generate Summary → Save Note → Save Report).
-
-**Batch run:** Selecting multiple investors and running the agent on that selection queues one job covering all of them, with a single summary notification — no per-investor progress view in that mode.
+**From an Investor's page:** click **View Notes** to open that record's notes list, then **Summarise Notes** → **Run Summariser**. Runs the agent for just that investor, with a live progress panel showing each step (Auto-Tag Notes → Collect Notes → Generate Summary → Save Note → Save Report).
 
 **Running on one investor vs. everything:** Unlike the agents that only deal with portfolio companies, this one runs against **every** investor type in your entity — LPs, portfolio companies, prospects, everything — not just portfolio companies. During a batch run, if one investor's run hits a problem, it's recorded in the batch's error list without stopping the rest.
 
 ## 5. Scheduling
 
-This is the one agent that **does** come with a default schedule already turned on from **Setup All Agents**: monthly, on the 1st, at 06:00 in the Asia/Kolkata time zone, with notifications on for failures and partial successes (but not for full successes). You can change the frequency, time, time zone, and notification preferences from the agent's **Schedule** tab. Scheduled runs process every investor in your entity in one pass and skip the usual summary notification (since there's no one actively waiting on the result) — instead, whatever failure or partial-success notifications you've configured on the schedule are sent.
+This agent comes with a default schedule already turned on from **Setup All Agents**: monthly, on the 1st, at 06:00 in the Asia/Kolkata time zone, with notifications on for failures and partial successes (but not for full successes). You can change the frequency, time, time zone, and notification preferences from the agent's **Schedule** tab. Scheduled runs process every investor in your entity in one pass and skip the usual summary notification (since there's no one actively waiting on the result) — instead, whatever failure or partial-success notifications you've configured on the schedule are sent.
 
 ## 6. Where to Find the Output
 
@@ -102,20 +103,104 @@ A report with no summary text and an informational "No notes found in period" no
 
 ## FAQ
 
-**Q: I ran the agent today but it didn't summarize this month's/quarter's notes. Why?**
-A: The agent always summarizes the most recently **completed** period, never the one currently in progress. Wait until the period ends, or check the report's period start/end dates to confirm exactly which window was used.
+**Where do I find the Note Summarizer Agent in CapHive?**
+Click the house icon at the top right (tooltip "Company menu") to open the **Company menu**, then choose [**Agents**](/support_agents) and click the **Note Summarizer** card (it sits under the **Ops** category). There is no left-sidebar entry for agents. If the **Agents** menu item is greyed out with a lock icon, no agents are enabled for your entity yet; contact CapHive support.
 
-**Q: An investor shows "skipped" with no summary. Is that an error?**
-A: No — that's the expected, zero-cost outcome when an investor has no qualifying notes in the period. No AI call is made, and no Note is written for that period.
+**How do I enable the Note Summarizer Agent for my entity?**
+Two things are needed. First, a CapHive administrator turns on the `note_summarization_agent` flag under the entity's **Support Agents** flags in the Admin panel. Second, a Company Admin opens [**Agents**](/support_agents) and clicks **Setup All Agents → Run Setup**, which creates the agent, its fields, and its default monthly schedule. The **General** tab then shows an **Enabled** badge and an active **Run Now** button. See [Enabling the Agent](#3-enabling-the-agent).
 
-**Q: I added a manual note with "summary" somewhere in its tags, and now it's missing from collection. What happened?**
-A: Any note tagged as a summary is automatically excluded from collection — this exists to stop the agent from re-summarizing its own prior output, but it also catches manually tagged notes that happen to use the same tag.
+**How do I configure the agent (period, tag filter, auto-tagging, tags, AI model)?**
+Open the agent card, and on the **General** tab click **Edit**. Set **Summary period** (Month or Quarter), **Tag filter**, **Auto-tag untagged notes** (Yes/No), **Available tags** and the **AI Model** override, then save. Only a Company Admin can edit. See [Inputs](#2-inputs).
 
-**Q: The auto-tagged note has the wrong tag, or didn't get tagged at all. Why?**
-A: Auto-tagging is a single best-effort AI pass across all untagged notes in the period. If the AI's response can't be parsed, or it references a note that wasn't actually in that batch, that particular tag assignment is dropped silently rather than retried — the rest of the period's notes are still tagged normally.
+**How do I run the agent for every stakeholder (investor) at once?**
+On the agent's **General** tab click **Run Now** and confirm. This queues one background job that walks every Investor record in your entity, and a batch progress panel on the same tab counts investors as they are processed. See [Accessing and Running the Agent](#4-accessing-and-running-the-agent).
 
-**Q: Does editing the summary in the UI re-run the agent?**
-A: No. Double-clicking the summary text lets you overwrite the saved text directly on the report (and flags it as manually edited) — it doesn't call the AI again or regenerate anything.
+**How do I run the agent for a single stakeholder (investor)?**
+Open the stakeholder page ([**Stakeholders → View Stakeholders**](/investors) → open the record) and click **View Notes**, which opens that record's notes list. Click **Summarise Notes**, read the description in the modal, then click **Run Summariser**. A live progress panel shows Auto-Tag Notes → Collect Notes → Generate Summary → Save Note → Save Report. The same **Summarise Notes** button appears on any notes list opened for one owner, such as a portfolio company's notes.
 
-**Q: Why does the default schedule run at 06:00 Asia/Kolkata specifically?**
-A: That's simply the default that comes pre-configured from Setup All Agents — frequency, time, and time zone are all editable on the agent's Schedule tab if you need a different cadence for your fund.
+**Who is allowed to run the agent?**
+Only users with the **Company Admin** role: the run action is authorised by the same policy as editing the agent. The **Summarise Notes** button on a notes list is shown to everyone who can see the notes, but the run itself is rejected for non-admins. Editing a saved summary text on the **Note Summaries** tab instead needs update permission on that stakeholder record.
+
+**How do I schedule the agent or change its default schedule?**
+Open the agent and click the **Schedule** tab. Tick **Enable scheduled runs for this agent**, choose **Frequency** (Daily, Weekly, Monthly, Bimonthly, Quarterly, Half-yearly), **Run On**, **Run At** and **Timezone**, optionally set **Retry on Failure**, tick the **Notify When** boxes and pick **Notification Recipients**, then click **Save Schedule**. Setup creates it as monthly on the 1st at 06:00 Asia/Kolkata. See [Scheduling](#5-scheduling).
+
+**How do I stop the agent without deleting it?**
+Untick **Enable scheduled runs for this agent** on the **Schedule** tab and save; manual runs still work. To block manual runs too, ask your administrator to switch off the entity flag, which greys out **Run Now** and **Summarise Notes**.
+
+**How do I delete the agent, and what does that remove?**
+On the **General** tab click **Delete** (Company Admin only). It only succeeds for an agent that has never run, because its reports and execution logs block the delete; pause the schedule instead. Summary Notes already written to stakeholders are never deleted.
+
+**Where do I see the summaries and run history?**
+Three places: the **Note Summaries** tab on the agent page (one row per stakeholder, expandable to the full text), the **Execution History** tab (each run with status and duration), and the stakeholder's own notes list (**View Notes** on the stakeholder page), where the summary appears as a normal note tagged `summary,quarter` or `summary,month`. See [Where to Find the Output](#6-where-to-find-the-output).
+
+**Can I show summaries on a dashboard?**
+Yes. A **Note Summaries** widget exists for both the Stakeholder (Investor) dashboard and the Portfolio Company dashboard. Add it from [**Company menu → Dashboard Widgets**](/dashboard_widgets); it embeds the agent's note summaries for the record being viewed and shows a notice if the agent is not configured.
+
+**Why should I use the Note Summarizer Agent?**
+Relationship notes pile up across calls, meetings and emails, and nobody re-reads them before the next touchpoint. The agent turns a period's notes into a short Key Themes / Action Items / Relationship Status brief per stakeholder, so the whole team sees the state of every relationship without reading the raw feed, and untagged notes get a consistent tag vocabulary for filtering.
+
+**What does the agent let me do that I could not do otherwise?**
+It gives every stakeholder (LPs, portfolio companies, prospects) a comparable monthly or quarterly relationship status, flags action items that were mentioned in notes but never tracked, and back-fills tags on notes that were saved without any. Because the output is a regular Note, it flows into the same notes list, search and dashboard widgets as everything else.
+
+**Who typically uses it?**
+Investor-relations and fund-management teams that log stakeholder interactions as Notes and want a periodic digest, and Company Admins who set the tag vocabulary. Investors never see it; nothing is sent outside the entity.
+
+**What happens if I do not set it up?**
+Nothing breaks: notes stay as they are, untagged notes stay untagged, and the **Note Summaries** widget shows "No Note Summarizer agent configured". You simply have no periodic summary and no relationship status view.
+
+**What happens when I click Run Now on the agent page?**
+A job is queued and, for each Investor in the entity, the agent may tag untagged notes in the period (if **Auto-tag untagged notes** is Yes), calls the AI on the collected notes, writes or overwrites one summary Note dated the last day of the period, and saves one SupportAgentReport per stakeholder. When the batch finishes you get an in-app toast with counts of processed and failed stakeholders; no email is sent, no task is created and no investor is contacted.
+
+**What happens when I click Run Summariser for one stakeholder?**
+The same five steps run for just that record with a live progress panel. The report for that stakeholder is created or replaced (marked as triggered manually by you) and appears on the **Note Summaries** tab, and the summary Note appears in that stakeholder's notes list. If a step raises an error, the report is marked failed and you get an in-app error toast so it can be re-run.
+
+**What happens when the scheduled run fires?**
+Every stakeholder is processed in one pass with no toast. The run is written to **Execution History**, and the **Notification Recipients** on the **Schedule** tab receive an in-app notification and email according to the **Notify When** boxes (by default failures and partial successes, not successes). CapHive's internal support team is also alerted on failure or partial success.
+
+**What data does the agent change?**
+Two kinds of records: Notes (it sets `tags` on untagged notes when auto-tagging is on, and creates or overwrites the summary Note) and SupportAgentReports. It does not touch stakeholder fields, commitments, tasks or documents, and it never emails anyone.
+
+**What happens if I run the agent twice for the same period?**
+The summary Note for that period is overwritten rather than duplicated (matched by the period's last day plus the `summary` tag), and the stakeholder's report is replaced, so the **Note Summaries** tab always shows the latest run. Tags already written by auto-tagging are left as they are.
+
+**Can I undo a run?**
+Partly. The summary Note can be deleted from the stakeholder's notes list like any other note, and a manually edited summary can be re-edited. Tags written to previously untagged notes are permanent until you edit those notes by hand, and reports are not deletable from the UI; set **Auto-tag untagged notes** to No before running if you do not want notes changed.
+
+**What happens if no AI key is configured?**
+The summary step fails with a blocking issue and the stakeholder's report shows **blocked**; the notes are still collected and the run does not crash. Add a key under [**Agents → LLM Keys**](/support_agents/llm_keys) or set the agent's **AI Model** to a provider that has a key, then re-run. See [Enabling the Agent](#3-enabling-the-agent).
+
+**I ran the agent today but it didn't summarize this month's/quarter's notes. Why?**
+The agent always summarizes the most recently **completed** period, never the one currently in progress. Wait until the period ends, or check the report's period start/end dates to confirm exactly which window was used.
+
+**An investor shows "skipped" with no summary. Is that an error?**
+No, that is the expected, zero-cost outcome when a stakeholder has no qualifying notes in the period. No AI call is made, and no Note is written for that period.
+
+**I added a manual note with "summary" somewhere in its tags, and now it's missing from collection. What happened?**
+Any note tagged as a summary is automatically excluded from collection. This exists to stop the agent from re-summarizing its own prior output, but it also catches manually tagged notes that happen to use the same tag.
+
+**The auto-tagged note has the wrong tag, or didn't get tagged at all. Why?**
+Auto-tagging is a single best-effort AI pass across all untagged notes in the period. If the AI's response can't be parsed, or it references a note that wasn't actually in that batch, that particular tag assignment is dropped silently rather than retried; the rest of the period's notes are still tagged normally.
+
+**Does editing the summary in the UI re-run the agent?**
+No. Double-clicking the summary text on the **Note Summaries** tab overwrites the saved text on the report and flags it as manually edited; it does not call the AI again, and it does not change the summary Note already written to the stakeholder's notes list.
+
+**Why does the default schedule run at 06:00 Asia/Kolkata specifically?**
+That is simply the default that comes pre-configured from **Setup All Agents**. Frequency, time and time zone are all editable on the agent's **Schedule** tab if you need a different cadence.
+
+**The Run Now or Summarise Notes button is greyed out. What should I do?**
+The `note_summarization_agent` entity flag is off, so both buttons render disabled with a lock or tooltip. Ask your CapHive administrator to enable the flag for your entity; no agent settings need to change afterwards.
+
+**I set a tag filter and now summaries cover nothing. Why?**
+If **Auto-tag untagged notes** is No, notes saved without tags can never match the filter, so the collected set may be empty. The **General** tab shows a yellow warning banner for exactly this case; either switch auto-tagging on or clear **Tag filter**. See [Setup checklist and warnings](#setup-checklist-and-warnings).
+
+**Which stakeholders does a full run cover?**
+Every Investor record in your entity, whatever its type: LPs, portfolio companies and prospects alike. There is no per-type filter; use the single-stakeholder **Summarise Notes** button when you only want one.
+
+## Related Guides
+
+- [Support Agents](../support_agents_user_guide) — shared setup, LLM keys, scheduling and report concepts for every agent.
+- [LLM Configuration](../llm_configuration_guide) — where API keys and default models come from.
+- [LP CRM](../lp_crm_user_guide) — the Notes feature whose entries this agent tags and summarises.
+- [Investors (Stakeholders)](../investors_user_guide) — the stakeholder page where **View Notes** and the summary appear.
+- [Dashboard Widgets](../dashboard_widgets_user_guide) — adding the Note Summaries widget to a dashboard.
+- [Portfolio Company Agent](portfolio_company_agent_user_guide) — the other per-record agent commonly run from a stakeholder page.

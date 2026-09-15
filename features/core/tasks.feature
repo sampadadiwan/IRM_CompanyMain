@@ -38,3 +38,21 @@ Feature: Tasks
     Given I am at the tasks page
     When I create a new task and assign it to "me" with details "Complete the audit report"
     Then an email should be sent to "me" with subject "Complete the audit report, Status: Open"
+
+  # A rejected save used to leave respond_to with no registered format at all —
+  # format.turbo_stream sat inside `if @task.save` — so the request raised
+  # ActionController::UnknownFormat and returned 406. The checkbox sprang back
+  # with nothing said, which reads as "the checkbox is broken". Reachable in
+  # production from data the user cannot see: WithFolder's
+  # `validates_associated :documents` means one invalid document attached to a
+  # task blocks every completion toggle on it.
+  @javascript
+  Scenario: Completing a task that no longer validates says why
+    Given there are following board tasks for the entity:
+      | details       | status |
+      | Draft the LPA | todo   |
+    And the task "Draft the LPA" no longer passes validation
+    When I go to the tasks page
+    And I toggle the completed checkbox for the task "Draft the LPA"
+    Then I should see "Tags is too long" in the alert area
+    And the task "Draft the LPA" should not be completed

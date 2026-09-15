@@ -5,23 +5,24 @@
   <p>
     You reset your two-factor authentication method on
     <%= l(@user.two_factor_reset_at || Time.current, format: :long) %>.
-    Your previous method (<strong><%= @previous_mode.titleize %></strong>) and any backup codes
-    you had saved will no longer work.
+    Your previous method (<strong><%= @previous_mode.titleize %></strong>) will no longer work.
   </p>
 <% else %>
   <p>
     Your two-factor authentication method was reset by your administrator
     <% if @actor %>(<%= @actor.full_name %>)<% end %> on
     <%= l(@user.two_factor_reset_at || Time.current, format: :long) %>.
-    Your previous method (<strong><%= @previous_mode.titleize %></strong>) and any backup codes
-    you had saved will no longer work.
+    Your previous method (<strong><%= @previous_mode.titleize %></strong>) will no longer work.
   </p>
 <% end %>
 
+<%# One list (TwoFactorAuthenticatable#available_two_factor_modes) feeds this email, the
+    reset modal and the mode-selection screen, so none can promise a method another refuses. %>
 <p>
   Two-factor authentication is <strong>still switched on</strong> for your account.
-  The next time you sign in you will be asked to choose a new method — Authenticator app,
-  WhatsApp or Text message — and confirm it before you can continue.
+  The next time you sign in you will be asked to choose a new method —
+  <%= @user.available_two_factor_mode_labels.to_sentence(last_word_connector: " or ", two_words_connector: " or ") %> —
+  and confirm it before you can continue.
 </p>
 
 <% if @message.present? %>

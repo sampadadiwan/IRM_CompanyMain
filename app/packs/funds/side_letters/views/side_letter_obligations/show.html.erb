@@ -152,6 +152,12 @@
                             class: "btn btn-outline-danger", form: { data: { turbo: false } } do %>
                 <i class="ti ti-x"></i> Reject
               <% end %>
+            <% elsif @obligation.fired? %>
+              <%# Armed + already has tasks — show Waive instead of Fire %>
+              <button type="button" class="btn btn-outline-secondary"
+                      data-bs-toggle="modal" data-bs-target="#waive_obligation_modal_<%= @obligation.id %>">
+                <i class="ti ti-hand-stop"></i> Waive
+              </button>
             <% elsif @obligation.armed? %>
               <button type="button" class="btn btn-outline-primary"
                       data-bs-toggle="modal" data-bs-target="#fire_obligation_modal_<%= @obligation.id %>">

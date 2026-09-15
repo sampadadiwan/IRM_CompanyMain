@@ -54,6 +54,35 @@ module Rack
     AUTH_PATHS = ['/users/sign_in', '/users/reset_password', '/users/confirmation',
                   '/users/password', '/users/magic_link'].freeze
 
+    # The second-factor screens sit between a correct password and a session: the user is
+    # still anonymous to logged_in? but is exactly the "re-establishing a session" case the
+    # 404 rules below exempt AUTH_PATHS for. Without this a user on a hot shared office/VPN
+    # IP gets past sign-in (exempt) and is then 403'd on the code screen.
+    #
+    # An explicit list, exact-matched, for two reasons: the two resend endpoints
+    # (/two_factor/send_sms, /two_factor/send_whatsapp) are deliberately NOT here — they
+    # are not needed to establish a session and a blocked scanner must not keep reaching
+    # a CSRF-exempt, paid send (send_sms also keeps its own throttle below); and a prefix
+    # match would have exempted anything starting with the string.
+    #
+    # Deliberately NOT merged into AUTH_PATHS: the login throttles key on the email param,
+    # which these requests do not carry.
+    TWO_FACTOR_PAGE_PATHS = [
+      '/two_factor',                            # POST: verify the login code
+      '/two_factor/new',                        # GET:  login code screen
+      '/two_factor/select_mode',                # GET + POST
+      '/two_factor/enroll',                     # GET
+      '/two_factor/verify_enrollment',          # POST
+      '/two_factor/enroll_whatsapp',            # GET
+      '/two_factor/verify_whatsapp_enrollment', # POST
+      '/two_factor/enroll_sms',                 # GET
+      '/two_factor/verify_sms_enrollment'       # POST
+    ].freeze
+
+    def self.auth_path?(req)
+      AUTH_PATHS.include?(req.path) || TWO_FACTOR_PAGE_PATHS.include?(req.path)
+    end
+
     # Loopback must never be throttled or blocked: puma sits behind nginx on a
     # unix socket, so requests WITHOUT X-Forwarded-For (ALB health checks,
     # monit, dr:verify's localhost curls) all resolve to req.ip == 127.0.0.1.
@@ -200,7 +229,7 @@ module Rack
       # stale tabs spraying 404s), gating the auth endpoints here would lock
       # them out of ever re-authenticating — the login endpoints have their
       # own brute-force throttles above, so let them through.
-      next nil if AUTH_PATHS.include?(req.path)
+      next nil if auth_path?(req)
 
       ip = client_ip(req)
 
@@ -237,7 +266,7 @@ module Rack
       # anonymous user must always be able to reach sign-in to become an
       # authenticated (exempt) one. Login abuse is handled by the dedicated
       # login throttles.
-      next false if AUTH_PATHS.include?(req.path)
+      next false if auth_path?(req)
 
       ip = client_ip(req)
 

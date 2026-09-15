@@ -20,10 +20,9 @@
                 when "sms"           then "codes texted to #{user.masked_phone_with_call_code}"
                 else "your current method"
                 end
-  # Modes the user could pick next time — reuse the same eligibility checks select_mode uses.
-  next_modes = ["Authenticator app"]
-  next_modes << "WhatsApp" if user.whatsapp_otp_enabled?
-  next_modes << "Text message" if user.sms_otp_enabled?
+  # Modes the user could pick next time — the same list the mode-selection screen and the
+  # reset email use (TwoFactorAuthenticatable#available_two_factor_modes).
+  next_modes = user.available_two_factor_mode_labels
   subject = self_reset ? "you" : user.full_name
 %>
 <div class="modal fade" id="resetTwoFactorModal" tabindex="-1" aria-labelledby="resetTwoFactorModalLabel" aria-hidden="true">

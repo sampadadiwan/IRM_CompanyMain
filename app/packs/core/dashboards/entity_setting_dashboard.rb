@@ -55,6 +55,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     openrouter_api_key: Field::String,
     default_llm_model: Field::String,
     month_offset_for_fy: Field::Number,
+    weekly_task_digest_enabled: Field::BooleanEmoji,
     db_dumps_enable: Field::BooleanEmoji,
     db_dumps_retention_period: Field::Number,
     db_dumps_email_enabled: Field::BooleanEmoji,
@@ -135,6 +136,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     openrouter_api_key
     default_llm_model
     month_offset_for_fy
+    weekly_task_digest_enabled
     db_dumps_enable
     db_dumps_retention_period
     db_dumps_email_enabled
@@ -191,6 +193,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     openrouter_api_key
     default_llm_model
     month_offset_for_fy
+    weekly_task_digest_enabled
     db_dumps_enable
     db_dumps_retention_period
     db_dumps_email_enabled

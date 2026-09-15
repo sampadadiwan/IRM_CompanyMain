@@ -15,8 +15,14 @@ class OtpDelivery < ApplicationRecord
   # Why we declined to send, for the cases Twilio never saw. Kept in the same column
   # as Twilio's numeric codes so a single field answers "why did this not go out?".
   ERROR_RATE_LIMITED        = "rate_limited".freeze
-  ERROR_UNSUPPORTED_COUNTRY = "unsupported_country".freeze
   ERROR_INVALID_NUMBER      = "invalid_number".freeze
+  # SMS is switched off for the deployment, or the stored number is not textable
+  # (a landline, most often). Replaces ERROR_UNSUPPORTED_COUNTRY, which named a
+  # destination allowlist that no longer exists — see SmsDeliverable.
+  ERROR_NOT_ELIGIBLE        = "not_eligible".freeze
+  # Retained only so historical rows written before the allowlist was removed still
+  # read back meaningfully. Nothing writes it any more.
+  ERROR_UNSUPPORTED_COUNTRY = "unsupported_country".freeze
 
   # Twilio Verify errors that mean this attempt will never succeed on retry. Retrying
   # them wastes a queue slot and an API call — so these must not be re-raised for

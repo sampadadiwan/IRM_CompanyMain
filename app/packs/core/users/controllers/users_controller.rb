@@ -172,16 +172,27 @@ class UsersController < ApplicationController
       end
     end
 
+    # Security (Finding 7 follow-up): the link itself never carries a destination — see
+    # User#send_magic_link — so anything in params[:redirect_to] was appended by whoever
+    # is holding the URL. Accept it only as a same-origin path; an external host would
+    # otherwise 500 on Rails' open-redirect guard after a successful code, and a
+    # protocol-relative "//evil" must not slip through as a "path".
+    return_to = local_path_or_nil(params[:redirect_to])
+
     ActiveRecord::Base.connected_to(role: :writing) do
       # Shared with the password-login path in Users::SessionsController — see
       # TwoFactorDispatch for why this branch is not written out twice. No sign_out
       # here: on the magic-link path the user was never signed in to begin with.
       two_factor_path = two_factor_challenge_path_for(@user)
-      if two_factor_path == :sms_undeliverable
+      if two_factor_path == :undeliverable
         redirect_to new_session_path(User),
-                    alert: Users::SessionsController::SMS_UNDELIVERABLE_MESSAGE
+                    alert: Users::SessionsController::UNDELIVERABLE_MESSAGE
         return
       elsif two_factor_path
+        # The link's own redirect_to only survives this request. Park it where
+        # after_sign_in_path_for (used by TwoFactorController#complete_login) will find
+        # it, so a 2FA user lands on the linked page rather than the dashboard.
+        session[:user_return_to] = return_to if return_to
         redirect_to two_factor_path
         return
       end
@@ -192,7 +203,7 @@ class UsersController < ApplicationController
       session[:support_user_id] = support_user_id if support_user_id.present?
     end
 
-    redirect_to(params[:redirect_to].presence || session[:user_return_to].presence || root_path,
+    redirect_to(return_to || session[:user_return_to].presence || root_path,
                 notice: "Signed in successfully")
   end
 
@@ -294,9 +305,15 @@ class UsersController < ApplicationController
     respond_to do |format|
       if @user.update(user_params)
 
-        if current_user.has_cached_role?(:company_admin)
+        # Only touch roles when the roles field was actually submitted (it's only rendered for
+        # company admins) and only a company admin may change them at all. Any role not in
+        # User::UPDATABLE_ROLES (e.g. investor, support, investor_advisor, rm) is left untouched
+        # regardless of what was submitted here.
+        if current_user.has_cached_role?(:company_admin) && params[:user].key?(:role_name)
+          submitted_roles = Array(user_params[:role_name])
+
           User::UPDATABLE_ROLES.each do |role|
-            user_params[:role_name].present? && user_params[:role_name].include?(role) ? @user.add_role(role) : @user.remove_role(role)
+            submitted_roles.include?(role) ? @user.add_role(role) : @user.remove_role(role)
           end
         end
         format.html { redirect_to user_url(@user), notice: "User was successfully updated." }
@@ -352,6 +369,19 @@ class UsersController < ApplicationController
   # Policy checks use live DB queries; manual cache invalidation is not needed.
 
   private
+
+  # A caller-supplied destination is honoured only when it is a path on this host: it
+  # must start with a single "/" (so "//evil.example" and "/\\evil.example", which
+  # browsers read as protocol-relative URLs, are refused) and carry no scheme.
+  #
+  # @return [String, nil]
+  def local_path_or_nil(value)
+    value = value.to_s.strip
+    return nil if value.blank?
+    return nil unless value.start_with?("/") && !value.start_with?("//", "/\\")
+
+    value
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_user

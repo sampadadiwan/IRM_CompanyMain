@@ -42,20 +42,47 @@ every :saturday, at: '1:00 am', roles: [:app] do
   command 'sudo reboot'
 end
 
-every 1.week, at: '02:00 am', roles: [:primary] do
+# Weekly maintenance window, anchored to 3:00 AM LOCAL time in each region —
+# NOT a shared UTC time. Server clocks are UTC everywhere regardless of
+# region (see sidekiq_restart_at above), so "3am" has to be computed per
+# env_variant the same way:
+#   in -> IST is UTC+5:30 year-round -> 3:00am IST = 9:30pm UTC the day before
+#   us -> US Eastern has DST the server clock can't track; 7:30am UTC splits
+#         the difference between EDT (3:30am) and EST (2:30am) year-round
+# The bake/purge/cleanup jobs below keep the same 1h/2h gaps after the bake
+# as before (see the retention-sweep comment), just anchored here instead of
+# a flat 2am UTC that happened to land at 7:30am IST — mid-morning in India.
+maintenance_bake_at, maintenance_purge_at, maintenance_cleanup_at =
+  if env_variant == 'us'
+    ['7:30 am', '8:30 am', '9:30 am']
+  else
+    ['9:30 pm', '10:30 pm', '11:30 pm']
+  end
+
+every 1.week, at: maintenance_bake_at, roles: [:primary] do
   # Ensure AMIs are created and backed up
   rake '"aws:create_and_copy_ami[AppServer]"'
   rake '"aws:create_and_copy_ami[DB-Redis-ES]"'
   rake '"aws:create_and_copy_ami[Observability]"'
 end
 
+# Binary log retention on the primary, 1h after the bake starts. Renders
+# identically on every stage (staging + production, both regions) since this
+# file is shared — the task itself no-ops outside Rails.env.production?, same
+# as website_leads:purge below no-ops when there's nothing due. See
+# lib/tasks/db_log_cleanup.rake.
+every 1.week, at: maintenance_purge_at, roles: [:primary] do
+  rake "db:purge_binlogs"
+end
+
 # Retention sweep AFTER the bake above has finished (the bake's cross-region
-# copy waiter can run ~40 min, so 4am leaves headroom). cleanup_amis inside
-# create_and_copy_ami deregisters old AMIs but never deleted their backing
-# snapshots — this task deletes those AND mops up the years of orphaned
-# snapshots already accumulated. EXECUTE=1 because aws:ebs_* tasks are
-# dry-run by default; regions come from the box's own AWS_REGION/AWS_BACKUP_REGION.
-every 1.week, at: '04:00 am', roles: [:primary] do
+# copy waiter can run ~40 min, so a 2h gap leaves headroom). cleanup_amis
+# inside create_and_copy_ami deregisters old AMIs but never deleted their
+# backing snapshots — this task deletes those AND mops up the years of
+# orphaned snapshots already accumulated. EXECUTE=1 because aws:ebs_* tasks
+# are dry-run by default; regions come from the box's own
+# AWS_REGION/AWS_BACKUP_REGION.
+every 1.week, at: maintenance_cleanup_at, roles: [:primary] do
   # Log what an unattended EXECUTE=1 deletion sweep actually did (or failed to
   # do — act() prints-and-continues on AWS errors) — with MAILTO off, no
   # :output would mean silent, invisible deletions.
@@ -71,17 +98,11 @@ every 1.year, at: 'December 15 03:00am', roles: [:primary] do
   rake "partitions:ensure_account_entries"
 end
 
-# Runs every hour; ReportBuilderSchedulerJob itself decides which ReportSchedules are due
-every 1.hour, roles: [:primary] do
-  runner "ReportBuilderSchedulerJob.perform_later"
-end
-
-# Enforces the WebsiteLead retention windows published in the website's privacy
-# policy: visitor IP and user-agent are nulled after 90 days, whole leads deleted
-# after 24 months. Idempotent, so a missed night costs nothing but a day.
-every 1.day, at: '2:30 am', roles: [:primary] do
-  rake "website_leads:purge"
-end
+# ReportBuilderSchedulerJob and website_leads:purge used to run from here
+# (hourly `runner`, daily `rake`) — both moved into sidekiq-cron
+# (config/initializers/sidekiq.rb) so they run inside the already-running
+# Sidekiq process instead of forking a fresh Rails boot on every tick. See
+# WebsiteLeadPurgeJob and the ReportBuilderSchedulerJob registration there.
 
 # Force-restart Sidekiq daily at ~7:20am local time. Works around a build-up
 # (stuck/leaked workers) that a plain `monit restart` alone doesn't clear.
@@ -92,5 +113,5 @@ end
 sidekiq_restart_at = env_variant == 'us' ? '11:50 am' : '1:50 am'
 
 every 1.day, at: sidekiq_restart_at, roles: [:app] do
-  command "(sudo /usr/bin/monit unmonitor sidekiq_IRM_#{environment}; pkill -9 -f '^sidekiq [0-9]'; sleep 2; cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 ~/.rvm/bin/rvm default do bundle exec sidekiq -e #{environment}     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 & sleep 2; sudo /usr/bin/monit monitor sidekiq_IRM_#{environment}) >> /home/ubuntu/sidekiq_restart.log 2>&1"
+  command "(sudo /usr/bin/monit unmonitor sidekiq_IRM_#{environment}; pkill -9 -f '^sidekiq [0-9]'; sleep 2; cd /home/ubuntu/IRM/current && MALLOC_ARENA_MAX=2 setsid ~/.rvm/bin/rvm default do bundle exec sidekiq -e #{environment}     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 & sleep 2; sudo /usr/bin/monit monitor sidekiq_IRM_#{environment}) >> /home/ubuntu/sidekiq_restart.log 2>&1"
 end

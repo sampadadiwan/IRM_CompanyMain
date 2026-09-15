@@ -1,7 +1,7 @@
 # Support for @stub-twilio scenarios, which exercise the SMS two-factor flow.
 #
 # Deliberately stubs at the HTTP boundary only, NOT at the job like @stub-whatsapp does.
-# Stubbing SendOtpToSmsJob would skip everything worth testing — the country allowlist,
+# Stubbing SendOtpToSmsJob would skip everything worth testing — the eligibility check,
 # the rate limiters and the OtpDelivery bookkeeping all live inside TwilioSmsDelivery,
 # and those are precisely the parts that stand between the send endpoint and a runaway
 # bill. So the real operation runs and only the Twilio API calls are faked.
@@ -117,7 +117,8 @@ Before('@stub-twilio') do
 
   @twilio_original_env = ENV.to_h.slice("SMS_OTP_ENABLED", "CURRENT_SITE")
   ENV["SMS_OTP_ENABLED"] = "true"
-  # LOCAL allows both US and IN destinations, so scenarios can use either.
+  # LOCAL only sets the default parsing region (US). There is no destination allowlist
+  # any more, so scenarios may use a number from any country.
   ENV["CURRENT_SITE"] = "LOCAL"
 
   # A well-formed Verify service SID. Not read from credentials — the test environment

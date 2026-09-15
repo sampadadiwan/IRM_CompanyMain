@@ -10,7 +10,8 @@
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <%= form_with url: fire_side_letter_obligation_path(obligation), method: :post, data: { turbo: false } do |f| %>
+      <%# Fire form — full navigation to avoid Bootstrap modal backdrop flicker %>
+<%= form_with url: fire_side_letter_obligation_path(obligation), method: :post, data: { turbo: false } do |f| %>
         <div class="modal-body">
           <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
             <div class="fw-bold text-dark small">Immediate Actions</div>

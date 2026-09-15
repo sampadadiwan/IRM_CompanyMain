@@ -1,0 +1,58 @@
+<%= render FormCard.new(title: "FAQ : #{@faq_entry.guide_title}") do %>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <%= link_to "Edit", edit_faq_entry_path(@faq_entry), class: "btn btn-outline-primary" %>
+    <% unless @faq_entry.published? %>
+      <%= button_to "Publish", publish_faq_entry_path(@faq_entry), method: :patch, class: "btn btn-outline-success" %>
+    <% end %>
+    <% if @faq_entry.published? %>
+      <%= button_to "Mark verified", verify_faq_entry_path(@faq_entry), method: :patch, class: "btn btn-outline-secondary" %>
+      <%= button_to "Archive", archive_faq_entry_path(@faq_entry), method: :patch, class: "btn btn-outline-warning",
+                    data: { turbo_confirm: "Archive this FAQ? It will disappear from the guide page and the chatbot." } %>
+      <%= link_to "View on guide page", @faq_entry.url, class: "btn btn-outline-secondary", target: "_blank", rel: "noopener" %>
+    <% end %>
+    <% if policy(@faq_entry).destroy? %>
+      <%= button_to "Delete draft", @faq_entry, method: :delete, class: "btn btn-outline-danger",
+                    data: { turbo_confirm: "Delete this draft FAQ?" } %>
+    <% end %>
+    <%= link_to "Back to FAQ Manager", faq_entries_path, class: "btn btn-link" %>
+  </div>
+
+  <% if @faq_entry.needs_verification %>
+    <div class="alert alert-warning">
+      <strong>Needs verification:</strong> <%= Array(@faq_entry.verification_errors).to_sentence %>
+    </div>
+  <% end %>
+
+  <table class="table table-bordered">
+    <tr><td class="w-25">Guide</td><td><%= @faq_entry.guide_title %> (<%= @faq_entry.guide_key %>)</td></tr>
+    <tr><td>Group</td><td><%= @faq_entry.group_label %></td></tr>
+    <tr><td>Status</td><td><%= @faq_entry.status.humanize %></td></tr>
+    <tr><td>Audience</td><td><%= @faq_entry.audience == "public" ? "Public" : "Signed-in users" %></td></tr>
+    <tr><td>Search keywords</td><td><%= @faq_entry.keywords %></td></tr>
+    <tr><td>Published</td><td><%= l(@faq_entry.published_at) if @faq_entry.published_at %></td></tr>
+    <tr><td>Last verified</td><td><%= l(@faq_entry.last_verified_at) if @faq_entry.last_verified_at %></td></tr>
+    <tr><td>Last updated by</td><td><%= @faq_entry.updated_by&.full_name %></td></tr>
+  </table>
+
+  <h2 class="h5 mt-4">Preview</h2>
+  <div class="faq">
+    <details open>
+      <summary><%= @faq_entry.question %></summary>
+      <div><%= FaqSectionRenderer.answer_html(@faq_entry.answer) %></div>
+    </details>
+  </div>
+
+  <h2 class="h5 mt-4">History</h2>
+  <table class="table table-bordered">
+    <thead><tr><th>When</th><th>Who</th><th>Changes</th></tr></thead>
+    <tbody>
+      <% @faq_entry.audits.reorder(created_at: :desc).limit(20).each do |audit| %>
+        <tr>
+          <td><%= l(audit.created_at) %></td>
+          <td><%= audit.user&.full_name %></td>
+          <td><%= audit.audited_changes.keys.map(&:humanize).to_sentence %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

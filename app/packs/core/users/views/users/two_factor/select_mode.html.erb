@@ -8,7 +8,7 @@
 
     <div class="login-body">
       <%- flash.each do |name, msg| -%>
-        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert #{name.to_s == 'alert' ? 'alert-danger' : 'alert-info'} text-center" if msg.is_a?(String) %>
       <%- end -%>
 
       <%# Shown only to a user who is here BECAUSE their method was reset (TwoFactorReset),
@@ -19,7 +19,7 @@
           <i class="fas fa-exclamation-triangle me-1"></i>
           Your two-factor method was reset on <strong><%= l(@user.two_factor_reset_at, format: :long) %></strong>
           <%= @user.two_factor_reset_by_id == @user.id ? "by you" : "by your administrator" %>.
-          Your previous method and any saved backup codes no longer work — please choose a new method to continue.
+          Your previous method no longer works — please choose a new method to continue.
         </div>
       <% end %>
 
@@ -56,10 +56,12 @@
             </label>
           <% end %>
 
-          <%# SMS is offered only when the entity has it switched on AND we hold a number
+          <%# SMS is offered only when the deployment has it switched on AND we hold a number
               we can actually text. There is no per-user opt-in column — a valid mobile
-              number is itself the entitlement. See SmsDeliverable. %>
-          <% if @user.sms_otp_enabled? %>
+              number is itself the entitlement. See SmsDeliverable. The list is the one the
+              reset modal and email also read (available_two_factor_modes); WhatsApp above
+              is rendered from its parts because a greyed-out row is deliberate. %>
+          <% if @user.available_two_factor_modes.include?("sms") %>
             <label class="mfa-option">
               <%= radio_button_tag :two_factor_mode, "sms", false,
                     data: { two_factor_mode_target: "radio", action: "change->two-factor-mode#toggle" } %>

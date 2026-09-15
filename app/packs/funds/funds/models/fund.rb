@@ -66,6 +66,7 @@ class Fund < ApplicationRecord
   has_many :investor_accesses, through: :committed_investors
 
   has_many :fund_formulas, dependent: :destroy
+  has_many :shareholder_positions, dependent: :destroy
 
   has_many :fund_account_entries, ->(_ae) { where(account_entries: { capital_commitment_id: nil }) }, class_name: "AccountEntry", dependent: :destroy
 

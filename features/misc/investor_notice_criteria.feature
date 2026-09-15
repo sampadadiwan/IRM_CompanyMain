@@ -80,7 +80,9 @@ Feature: Investor notices can be further narrowed by a criteria expression
     And the investor notice "Add your phone number" has criteria "[user.phone] == \"\""
     When the investor notice job runs for "Add your phone number"
     And investor "Category Match LP" has no phone number
-    And investor "Category Mismatch LP" has phone number "+1 555 0100"
+    # A dialable number for the default +91 call code: the criteria only tests presence,
+    # but the write now goes through User#phone_must_be_dialable.
+    And investor "Category Mismatch LP" has phone number "9000000100"
     And I login as investor "Category Match LP"
     And I visit the investor dashboard
     Then I should see the investor notice "Add your phone number"

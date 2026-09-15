@@ -2,6 +2,8 @@
 
 CapHive doubles as a lightweight CRM for the people side of fundraising: one place that holds every prospective and existing LP, the individuals who work there, what was said to each of them, and what happens next.
 
+> **Where to find it:** Sidebar → [**Stakeholders → View Stakeholders**](/investors) → open the LP: people are on the **Users** tab (**New Users**), interactions under **View Notes** / **Add Note**, follow-ups on the **Tasks** tab (**New Task**). All notes are at [**Stakeholders → Notes**](/notes), and the CRM fields are configured under Company menu → [**Customize Forms**](/form_types). Needs the *Investors* feature on your user; a shared view of everyone's notes needs the company admin role.
+
 The goal is blunt — **no relationship should live only in one person's inbox or head**. When a colleague goes on leave, changes role, or leaves the firm, the next person should be able to open the LP page and pick the conversation up cold.
 
 Nothing here is a separate product or a separate login. It is the Stakeholder pages you already use, with contact detail, an interaction log, and follow-ups attached.
@@ -27,16 +29,17 @@ Nothing here is a separate product or a separate login. It is the Stakeholder pa
 15. [Worked Example: A Fundraise Conversation End to End](#14-worked-example-a-fundraise-conversation-end-to-end)
 16. [What This CRM Deliberately Does Not Do](#15-what-this-crm-deliberately-does-not-do)
 17. [Frequently Asked Questions](#16-frequently-asked-questions)
+18. [Related Guides](#related-guides)
 
 ---
 
 ## 🚀 Key Takeaways
 
 * **One record per LP firm, many people under it.** The firm holds the relationship; the individuals hold the contact detail.
-* **A contact is not a login.** You can record someone's full details, role and background with **Approved** set to **No** — they get no portal access and no email from CapHive.
+* **A contact is not a login.** You can record someone's full details, role and background with **Approved** unticked (it is ticked by default on the form) — they get no portal access and no email from CapHive.
 * **Every note and task can name the person it was with** (the "touch point"), so each individual has their own history, not just the firm. This works inside deals too, and a person's page gathers both.
-* **The LP page shows the whole relationship** — people, notes, follow-ups, reminders, documents, commitments — in one set of tabs.
-* **A stale relationship is visible.** The stakeholder list can be filtered by "no interaction in the last N days", and a dashboard widget surfaces LPs who have gone quiet.
+* **The LP page shows the whole relationship** — people, follow-ups, KYC, commitments and access in one set of tabs, with notes one click away under **View Notes** / **Add Note**.
+* **A stale relationship is visible.** The stakeholder list can be filtered to LPs with no interaction in the last N days (for example the [LPs with no interaction in 90 days](/investors?not_interacted=90)), and the **Investors No Interaction** dashboard widget surfaces LPs who have gone quiet.
 * **Your own vocabulary.** Engagement stages, roles and any other CRM field are configured by your firm — nothing is hard-coded.
 
 ---
@@ -48,8 +51,8 @@ Five layers, each one nested inside the one above it:
 | Layer | What it is | Where you find it |
 |---|---|---|
 | **LP firm** | The organisation you are raising from — Acme Capital | Stakeholders list |
-| **People** | The individuals at that firm — CFO, Head of Ops, the decision maker | Stakeholder page → **Users / Access** tab |
-| **Interactions** | Dated notes of every call, meeting and email exchange | Stakeholder page → **Notes** tab |
+| **People** | The individuals at that firm — CFO, Head of Ops, the decision maker | Stakeholder page → **Users** tab (Stakeholder Users / Investor Access) |
+| **Interactions** | Dated notes of every call, meeting and email exchange | Stakeholder page → **View Notes** / **Add Note** buttons |
 | **Follow-ups** | What happens next, who owns it, by when | Stakeholder page → **Tasks** tab |
 | **Pipeline view** | All LPs at once, filtered by stage, owner, or silence | Stakeholders list |
 
@@ -122,19 +125,20 @@ Each LP firm is a **Stakeholder** record. For fundraising you will mostly use th
 
 ### Last interaction
 
-The LP record quietly tracks **when it was last touched**. Every note logged against the firm updates this date. You never set it by hand — it is the number behind "who haven't we spoken to in 90 days?".
+The LP record quietly tracks **when it was last touched**. Every note logged against the firm updates this date to the moment the note was created (not its **On** date). You never set it by hand — it is the number behind "who haven't we spoken to in 90 days?".
 
 ### The tabs on an LP page
 
 Opening a Stakeholder gives you the whole relationship without leaving the page:
 
-- **Users / Access** — the people at this LP
-- **Notes** — the interaction log
-- **Tasks** — open and completed follow-ups
-- **Reminders** — scheduled nudges
+- **Users** — the people at this LP
 - **KYC / Commitments / Units / Investments** — the money side, once they invest
+- **Tasks** — open and completed follow-ups
 - **Access Rights** — what has been shared with them in the portal
 - **Emails** — inbound email matched to this LP (administrators)
+- **Workflow** — any workflow attached to the LP
+
+The interaction log is not a tab: use the **View Notes** and **Add Note** buttons at the top of the LP page.
 
 ---
 
@@ -142,7 +146,7 @@ Opening a Stakeholder gives you the whole relationship without leaving the page:
 
 This is the heart of the CRM. A firm does not take a meeting — a person does.
 
-Go to the LP → **Users / Access** tab → **Add**. For each individual you can record:
+Go to the LP → **Users** tab → **New Users**. For each individual you can record:
 
 - First name, last name, email
 - Country code and phone; whether WhatsApp is enabled
@@ -152,29 +156,31 @@ Go to the LP → **Users / Access** tab → **Add**. For each individual you can
 
 ### The single most important setting: Approved
 
-**Approved = No** means *this is a contact record only*:
+The **Approved** box is **ticked by default** on the **New Users** form, so untick it for a contact-only record.
 
-- They do **not** get a welcome email.
+**Approved unticked** means *this is a contact record only*:
+
+- They do **not** receive any CapHive notification emails.
 - They **cannot** log in or see anything.
 - They still appear everywhere in the CRM — in the people list, in the touch-point dropdowns on notes and tasks, in filters and exports.
 
 That is exactly what you want for a prospect you have met twice and who has no business seeing your portal yet.
 
-**Approved = Yes** turns the same record into a portal login: the person receives a welcome email and can then see whatever has been shared with their firm. The Approve button carries an on-hover reminder of this, because approving is visible to the outside world and contact-only records are not.
+**Approved** turns the same record into a portal login: the person can see whatever has been shared with their firm and starts receiving CapHive notification emails. No welcome email is sent at approval; they sign in using the login page's email-link option or **Reset Password**. The Approve button carries an on-hover reminder ("Approve grants platform access and enables notifications for the user"), because approving is visible to the outside world and contact-only records are not.
 
-> ⚠️ **Do not bulk-approve your contact list.** Approving sends real emails to real prospects. Approve individually, and only when you intend that person to have portal access.
+> ⚠️ **Do not bulk-approve your contact list.** Approved contacts receive real notification emails (capital calls, document shares, KYC requests) and can see anything shared with their firm. Approve individually, and only when you intend that person to have portal access.
 
 ```mermaid
 flowchart LR
-    A["Add person<br/>Approved = No"] --> B["Contact record only<br/>No email · No login"]
+    A["Add person<br/>Approved unticked"] --> B["Contact record only<br/>No email · No login"]
     B --> C["Log notes and tasks<br/>against this person"]
-    B -->|"LP commits — click Approve"| D["Portal user<br/>Welcome email sent"]
+    B -->|"LP commits — click Approve"| D["Portal user<br/>Receives notifications"]
     D --> E["Full history retained"]
 ```
 
 ### Editing a contact
 
-Open the contact and click **Edit**, or use **Edit** from the row menu in the people list. Both routes save the same information; editing from the list keeps you in the list, editing from the contact page returns you to the contact page.
+Open the contact and click **Edit**, or use **Actions → Edit** on the row in the people list (contact pages open only for company admins). Both routes save the same information; editing from the list keeps you in the list, editing from the contact page returns you to the contact page.
 
 ### Advisors
 
@@ -186,7 +192,7 @@ If a person is an investor advisor acting on the LP's behalf, their contact page
 
 Coming back from a conference with forty business cards is the normal case, so contacts can be imported from a spreadsheet.
 
-Use **Import** on the people list and upload a sheet with these columns:
+Use **Upload** on the LP's **Users** tab (or on **All Stakeholder Access**) and upload a sheet with these columns:
 
 `Stakeholder`, `First Name`, `Last Name`, `Email`, `Email Enabled`, `Cc`, `Country Code`, `Phone`, `WhatsApp Enabled`, `Approved`
 
@@ -195,7 +201,7 @@ Use **Import** on the people list and upload a sheet with these columns:
 Points to watch:
 
 - **`Stakeholder` must match an existing LP name exactly.** Create the LP records first.
-- **Set `Approved` to `No`** unless you genuinely intend to send those people a welcome email.
+- **Leave `Approved` blank or `No`** (only `Yes` approves) unless you genuinely intend to give those people portal access and notification emails.
 - A column heading that matches none of your configured fields will be created as a new field — so check your spelling before uploading a large sheet.
 - If someone's email address already belongs to a user at a different firm, that row cannot be imported; the error report will name it.
 
@@ -205,7 +211,7 @@ Points to watch:
 
 A note is one dated entry in the LP's history. Notes are the habit the entire CRM depends on: an LP page with no notes is an LP nobody can hand over.
 
-Add one from the LP page → **Notes** tab → **New Note**, or from a contact's page.
+Add one from the LP page → **Add Note** (or **View Notes** → **New Note**), or from a contact's **Notes** tab.
 
 | Field | What to put in it |
 |---|---|
@@ -220,7 +226,7 @@ Add one from the LP page → **Notes** tab → **New Note**, or from a contact's
 
 Without it you know "someone at Acme asked about fees". With it you know **Sam in finance** asked about fees, you can open Sam's page and see every previous exchange with Sam, and the person covering for you can do the same.
 
-The dropdown offers only people recorded under that LP — so if a name is missing, add them as a contact first (Approved = No, thirty seconds).
+The dropdown offers only people recorded under that LP — so if a name is missing, add them as a contact first (Approved unticked, thirty seconds).
 
 ### Notes logged inside a deal
 
@@ -230,9 +236,9 @@ That matters because deal conversations are usually the important ones. Without 
 
 ### What happens automatically
 
-- The LP's **last interaction date** moves to today, which is what keeps them out of the "gone quiet" list. (Notes logged under a deal update that deal investor's own last-interaction date, not the LP's.)
-- The note appears in the LP's Notes tab, in that person's Notes tab, and in the global Notes list.
-- If you set a reminder, it is scheduled and appears in the LP's **Reminders** tab.
+- The LP's **last interaction date** moves to the note's creation time (today), which is what keeps them out of the "gone quiet" list. (Notes logged under a deal update that deal investor's own last-interaction date, using the **On** date, not the LP's.)
+- The note appears in the LP's **View Notes** list, in that person's Notes tab, and in the global Notes list.
+- If you set a reminder, it is saved with the note and emailed on the reminder date.
 - The **With** column in any notes or tasks list is a link — click a name to open that person's page.
 
 ---
@@ -273,7 +279,7 @@ Repeatable sequences (an onboarding checklist, a diligence pack chase) can be bu
 
 ## 8. The Contact Page: One Person's Whole History
 
-Click any contact's name to open their page. It shows their details and CRM fields at the top, then tabs beneath:
+Click any contact's name to open their page (company admins only — other users see the row but cannot open the page). It shows their details and CRM fields at the top, then tabs beneath:
 
 - **Notes** — every note logged *with this person*, wherever it was written
 - **Tasks** — every follow-up naming them, including completed ones
@@ -315,7 +321,7 @@ Filter by **Category** (Prospective vs. committed investors) and by your filtera
 
 ### "Who have we gone quiet on?"
 
-Filter by **no interaction in the last N days**. A relationship with no note for 90 days is either dead or being neglected, and both are worth knowing. A dashboard widget can be pinned to show LPs with no interaction in the last 30 days so the question is asked without anyone having to remember to ask it.
+There is no filter control for this on the list; open the [stakeholder list of LPs with no interaction in the last 90 days](/investors?not_interacted=90), and change the `not_interacted` number in the address for a different period. A relationship with no note for 90 days is either dead or being neglected, and both are worth knowing. The **Investors No Interaction** dashboard widget can be pinned to show LPs with no interaction in the last 30 days so the question is asked without anyone having to remember to ask it.
 
 ### Search
 
@@ -341,11 +347,11 @@ The **Gmail add-on** and **Outlook integration** let you work from your mail cli
 
 ## 11. Summarising Notes Automatically
 
-If your firm has the **Note Summarisation Agent** enabled, a **Summarise Notes** button appears on any LP's Notes tab. It reads the notes for a chosen period (monthly or quarterly), tags any that were left untagged, and writes a summary of the relationship over that window.
+If your firm has the **Note Summarisation Agent** enabled, a **Summarise Notes** button appears on any LP's notes list (opened with **View Notes**). It reads the notes for a chosen period (monthly or quarterly), tags any that were left untagged, and writes a summary of the relationship over that window.
 
 Use it for quarterly IR reviews, for handovers, and for the "what has actually happened with this LP since January?" question that is otherwise a twenty-minute read.
 
-If the button is greyed out, the agent is not enabled for your firm — contact support.
+If the button is greyed out or missing, the agent is not enabled for your firm — contact support.
 
 ---
 
@@ -371,7 +377,7 @@ This matters more than it sounds. The whole point of the CRM is that a relations
 When an LP commits, nothing needs to be re-entered:
 
 1. Change the LP's **Category** from Prospective to your investor category, and set **Engagement Status** to Committed.
-2. **Approve** the contacts who need portal access — they receive their welcome email then, and only then.
+2. **Approve** the contacts who need portal access — only then can they log in and receive CapHive notification emails (no welcome email is sent; they sign in with the login page's email-link option).
 3. Grant **Access Rights** to the relevant funds and documents.
 4. The entire history — every note, every follow-up, every person and their intro — carries over untouched.
 
@@ -382,7 +388,7 @@ Contacts who should not have a login (a junior analyst, a departed colleague, a 
 ## 14. Worked Example: A Fundraise Conversation End to End
 
 **March — first contact.**
-Meera meets Priya Nair, CFO of Acme Capital, at a conference. She creates the Stakeholder *Acme Capital*, category **Prospective**, Engagement Status **Contacted**, Relationship Owner **Meera**. She adds Priya as a contact with **Approved = No**, Designation *CFO*, POC Role *Decision Maker*, and an Intro line: *"Met at LP Summit, introduced by Ravi at Northgate. Focused on European mid-market; sceptical about long lock-ups."*
+Meera meets Priya Nair, CFO of Acme Capital, at a conference. She creates the Stakeholder *Acme Capital*, category **Prospective**, Engagement Status **Contacted**, Relationship Owner **Meera**. She adds Priya as a contact with **Approved** unticked, Designation *CFO*, POC Role *Decision Maker*, and an Intro line: *"Met at LP Summit, introduced by Ravi at Northgate. Focused on European mid-market; sceptical about long lock-ups."*
 
 She logs a note dated the day of the meeting, touch point **Priya**, and creates a task: *Send Fund III deck*, assigned to herself, due in three days.
 
@@ -415,11 +421,99 @@ Being honest about the boundaries saves disappointment:
 
 ## 16. Frequently Asked Questions
 
+### Navigation and getting there
+
+**Where do I find the LP CRM in CapHive?**
+There is no separate CRM menu. Sidebar → [**Stakeholders → View Stakeholders**](/investors) is the pipeline list, and clicking an LP opens its record. The **Stakeholders** block also has [**Notes**](/notes), the log of every note you can see, and **IR Dashboard** for the no-interaction widget.
+
+**Where are an LP's people, notes and follow-ups on its page?**
+People are on the **Users** tab and follow-ups on the **Tasks** tab. There is no Notes tab: use the **View Notes** button (it lists the LP's notes) or **Add Note** at the top of the LP page. See [The LP Record](#3-the-lp-record).
+
+**How do I open a contact's own page?**
+On the LP's **Users** tab, click the person's name (or **Actions → View**) to open the contact page, which has **Notes**, **Tasks** and, for advisors, **Fund Access** tabs. Contact pages open only for company admins; other users can see the row but not the page. See [The Contact Page](#8-the-contact-page-one-persons-whole-history).
+
+**Where do I configure the CRM fields (Designation, POC Role, Engagement Status)?**
+Company menu (the **house icon** at the top right, tooltip "Company menu") → [**Customize Forms**](/form_types). Contact fields live on the **InvestorAccess** form type and LP fields on the **Investor** form type. See [One-Time Setup](#2-one-time-setup-your-crm-fields).
+
+**Where do I see all contacts across every LP?**
+Sidebar → [**Stakeholders → All Stakeholder Access**](/investor_accesses) lists every person with their LP, and [**Pending Access**](/investor_accesses?approved=false) shows only the unapproved, contact-only records. Both pages are for company admins.
+
+### Creating, updating and managing CRM records
+
+**How do I add an LP to the pipeline?**
+Sidebar → [**Stakeholders → New Stakeholder**](/investors/new), enter the name, **Category** (use **Prospective** while courting) and **Primary Email**, fill your CRM fields such as **Engagement Status**, and **Save**. See the [Investors guide](investors_user_guide).
+
+**How do I add a person at an LP as a contact only?**
+Open the LP → **Users** tab → **New Users**, fill in name, email and your CRM fields, and **untick Approved** before you click **Save**. The **Approved** box is ticked by default on this form, so leaving it ticked gives the person portal access straight away. See [The People at Each LP](#4-the-people-at-each-lp).
+
+**How do I edit a contact?**
+On the LP's **Users** tab click **Actions → Edit** on the row, or open the contact page and click **Edit**. Name, email and phone are fixed after creation; Cc, Notification Topics, Approved and all CRM fields can be changed.
+
+**How do I remove a contact?**
+**Actions → Delete** on the contact's row in the **Users** tab. Notes and tasks that named the person stay in the LP's history, but the person's own page is gone, so prefer leaving them unapproved.
+
+**How do I log a note?**
+Click **Add Note** on the LP page, or **New Note** on a notes list or a contact's **Notes** tab. Pick the **Touch Point**, set **On** to the real conversation date, write **Details**, add **Tags** and **Save**. See [Logging Interactions](#6-logging-interactions).
+
+**How do I edit or delete a note?**
+Open the note from **View Notes**, the contact's **Notes** tab or **Stakeholders → Notes**, then use **Edit** or **Delete**. Company admins can change any note; other users can change notes they wrote or notes on records they are allowed to edit.
+
+**How do I create a follow-up task?**
+LP page → **Tasks** tab → **New Task** (or the contact's **Tasks** tab, which pre-links the person). Fill **Details**, **With** (touch point), **Assigned To**, **Due Date** and **Category**, add reminders or recurrence if needed, and **Save**. See [Follow-Ups and Tasks](#7-follow-ups-and-tasks).
+
+**How do I import contacts in bulk?**
+Click **Upload** on the LP's **Users** tab or on **All Stakeholder Access**; it opens the import form with import type InvestorAccess. Add one column per CRM field label next to the standard columns. See [Adding Contacts in Bulk](#5-adding-contacts-in-bulk).
+
+**How do I move a prospect to investor?**
+Edit the LP and change **Category** from **Prospective** to your investor category and **Engagement Status** to **Committed**; approve the contacts who need portal access; then grant Access Rights to the fund. See [From Prospect to Investor](#13-from-prospect-to-investor).
+
+**Which permissions do I need?**
+The *Investors* feature on your user shows the Stakeholders menu. Adding or editing contacts needs permission to update the LP (company admin, *Investor Update*, or employee access to that LP). A shared view of every note and task needs the company admin role.
+
+### Why use the LP CRM
+
+**Why keep relationships in CapHive rather than a separate CRM or inbox?**
+The LP record is the same record that later holds commitments, KYC, calls and documents, so nothing is re-entered when a prospect commits. Notes and tasks survive leave, role changes and departures, and anyone with access can pick a conversation up cold.
+
+**What does the CRM let me do that a spreadsheet does not?**
+Tie each interaction to a named person, see one person's history across the LP record and live deals, spot LPs nobody has spoken to in N days, assign dated follow-ups that email the owner, and match inbound email to the LP automatically.
+
+**What happens if we do not set Touch Points on notes?**
+The note still counts for the LP, but it never appears on any contact's page, so you lose "who said what". A contact page is only as complete as the touch points your team sets.
+
+**Who typically uses the CRM?**
+IR and fundraising teams log notes and tasks; the relationship owner reviews contact pages before calls; a partner uses the pipeline filters and the no-interaction widget in weekly meetings; an administrator sets up the CRM fields once.
+
+### What happens when I …
+
+**What happens when I save a contact with Approved unticked?**
+An Investor Access record is saved and, if the email is new to CapHive, a user account is created behind it with no email sent. The person appears on the **Users** tab and in touch-point dropdowns, but cannot log in and receives no notifications of any kind.
+
+**What happens when I approve a contact?**
+The person can log in and see whatever has been shared with their LP, and from then on receives CapHive notification emails (capital calls, document shares, KYC requests and so on) subject to **Email Enabled** and their Notification Topics. No welcome email is sent at the moment of approval; they sign in with the login page's email-link option. Un-approving reverses it silently.
+
+**What happens when I save a note?**
+It appears in **View Notes** for the LP, on the touch point's **Notes** tab and under **Stakeholders → Notes**. For a note on the LP record, the LP's last-interaction date is set to the note's creation time; a note under a deal instead moves that deal investor's date, using the **On** date. Nobody is emailed unless you add a reminder.
+
+**What happens when I add a reminder to a note?**
+A reminder is saved with the note. On the morning of the reminder date a daily job emails and notifies each address in **Reminder Emails** that belongs to a CapHive user, then marks it sent; addresses that are not CapHive users get nothing.
+
+**What happens when I save a task?**
+The assignee and the task's creator each get an in-app notification and email, and the task shows on the LP's **Tasks** tab, the touch point's **Tasks** tab and the assignee's **My Tasks**. Completing a task on the LP record does not move the LP's last-interaction date (a deal-investor task does).
+
+**What happens when I delete a note?**
+The note and its reminder are removed. The LP's last-interaction date is deliberately not rewound, so deleting a recent note does not put the LP back into the "gone quiet" list.
+
+**What happens when I change Engagement Status?**
+The new value simply replaces the old one and is immediately filterable on the stakeholder list. No history of previous stages is kept and nobody is notified.
+
+### Troubleshooting and edge cases
+
 **Can I record someone without giving them access to anything?**
-Yes — that is the normal case. Leave **Approved** set to **No**. No email is sent and they cannot log in, but they are fully usable everywhere in the CRM.
+Yes, that is the normal case. Untick **Approved** when you add them (it is ticked by default on the form). No email is sent and they cannot log in, but they are fully usable everywhere in the CRM.
 
 **Will adding a contact email a prospect?**
-Not while they are unapproved. The welcome email is sent when you click **Approve**, which is why bulk-approving a contact list is dangerous.
+No. Saving a contact never sends an email, approved or not. Once approved, though, the person starts receiving CapHive notifications and can see anything shared with their LP, which is why bulk-approving a contact list is dangerous.
 
 **Someone is missing from the Touch Point dropdown.**
 The dropdown lists only people recorded under that LP. Add them as a contact first — it takes seconds, and they do not need to be approved.
@@ -433,11 +527,14 @@ Yes, as long as you set the Touch Point. Their page gathers everything recorded 
 **Why is an LP in the "gone quiet" list when we spoke last week?**
 Most likely the conversation was logged under a deal, which updates the deal investor's date rather than the LP's. Add a note on the LP record when the relationship itself has moved on.
 
+**I backdated a note but the LP's last interaction still shows today.**
+For notes on the LP record, the last-interaction date comes from when the note was created, not its **On** date. Backdating is still worth doing for the history, but it will not age the LP in the no-interaction filter.
+
 **We use different pipeline stages.**
-Edit the Engagement Status choices to your own vocabulary — nothing is hard-coded.
+Edit the Engagement Status choices to your own vocabulary under Company menu → [**Customize Forms**](/form_types) — nothing is hard-coded.
 
 **How do I find LPs nobody has spoken to in months?**
-Filter the Stakeholders list by "no interaction in the last N days", or pin the no-interaction dashboard widget. The clock is driven by notes, so it is only as honest as your logging.
+Open the [stakeholder list of LPs with no interaction in the last 90 days](/investors?not_interacted=90) (change the `not_interacted` number in the address for other periods), or add the **Investors No Interaction** widget to the IR dashboard via Company menu → [**Dashboard Widgets**](/dashboard_widgets). The clock is driven by notes, so it is only as honest as your logging.
 
 **Can I import my existing contact spreadsheet?**
 Yes, including your CRM fields — add a column per field label. Create the LP records first, since the `Stakeholder` column must match an existing name exactly.
@@ -449,7 +546,13 @@ Add them as a contact under the new firm. Leave the old record in place — it i
 Never. They are internal only.
 
 **My colleague cannot see the notes I wrote.**
-Visibility follows role. Company administrators see every note and task for the firm; employees see only the notes they authored and the tasks assigned to them. If your IR team needs a genuinely shared relationship view, their roles need to reflect that — see [Who Can See What](#12-who-can-see-what).
+Visibility follows role. Company administrators see every note and task for the firm; employees see only the notes they authored and the tasks assigned to them (plus deal tasks). If your IR team needs a shared view, their roles need to reflect that — see [Who Can See What](#12-who-can-see-what).
+
+**Clicking a contact's name does nothing or says I am not authorised.**
+Contact pages are restricted to company admins. Other users can still add and edit contacts from the LP's **Users** tab and log notes and tasks against them.
+
+**The Summarise Notes button is greyed out.**
+The Note Summarisation Agent is not enabled for your firm; hovering the button says so. Contact support to enable it. See the [Note Summarizer Agent guide](agents/note_summarizer_agent_user_guide).
 
 **Two people at the same LP contradict each other. Where do I record that?**
 Log two notes, one against each touch point. The disagreement itself is relationship intelligence and belongs in the record.
@@ -458,8 +561,11 @@ Log two notes, one against each touch point. The disagreement itself is relation
 
 ## Related Guides
 
-- **Investor Access & Permissions Guide** — approval, access rights, notification topics
-- **Tasks User Guide** — recurrence, templates, reminders, imports
-- **Custom Fields User Guide** — creating and editing your own fields
-- **Investors User Guide** — the stakeholder record in full
-- **Gmail Add-on / Outlook Setup Guides** — working from your mail client
+- [Investor Access & Permissions](investor_access_tutorial) — approval, access rights, notification topics.
+- [Tasks](tasks_user_guide) — recurrence, templates, reminders, imports.
+- [Custom Fields](custom_fields_user_guide) — creating and editing your own fields.
+- [Investors (Stakeholders)](investors_user_guide) — the stakeholder record in full.
+- [Gmail Add-on](gmail_addon_user_guide) and [Outlook Setup](outlook_setup_user_guide) — working from your mail client.
+- [Deals Management](deals_management_user_guide) — notes and tasks logged under a deal's investors.
+- [Dashboard Widgets](dashboard_widgets_user_guide) — pinning the Investors No Interaction widget.
+- [Note Summarizer Agent](agents/note_summarizer_agent_user_guide) — the **Summarise Notes** button.

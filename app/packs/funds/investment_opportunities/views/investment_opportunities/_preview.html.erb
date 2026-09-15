@@ -8,9 +8,11 @@
     <div class="">
         <div class="row">
             <!-- Key Metrics -->
-            <div class="">
-                <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity, show_tags: false %>
-            </div>
+            <% if investment_opportunity.show_key_metrics? %>
+                <div class="">
+                    <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity, show_tags: false %>
+                </div>
+            <% end %>
 
             <!-- Left Column: Main Info -->
             <div class="col-lg-8">
@@ -26,10 +28,12 @@
                 </div>
 
                  <!-- Track Record -->
-                 <div class="mb-5">
-                    <h3 class="fw-bold mb-4 preview-section-title">Track Record</h3>
-                    <%= render "/ci_track_records/preview_track_record", owner: investment_opportunity %>
-                </div>
+                 <% if investment_opportunity.ci_track_records.any? %>
+                     <div class="mb-5">
+                        <h3 class="fw-bold mb-4 preview-section-title">Track Record</h3>
+                        <%= render "/ci_track_records/preview_track_record", owner: investment_opportunity %>
+                    </div>
+                <% end %>
             </div>
 
             <!-- Right Column: Documents & Actions -->
@@ -50,20 +54,22 @@
                     </div>
 
                      <!-- Sticky CTA for Mobile/Desktop -->
-                    <div class="card border-0 shadow-sm rounded-4 bg-primary text-white overflow-hidden position-relative">
-                        <div class="card-body p-4 text-center position-relative" style="z-index: 2;">
-                            <h4 class="text-white fw-bold mb-2">Ready to Invest?</h4>
-                            <p class="text-white-50 mb-4 small">Express your interest to get started with the allocation process.</p>
-                            <%= link_to new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-light w-100 fw-bold py-3 rounded-pill text-primary shadow-sm"} do %>
-                                Express Interest <i class="ti ti-arrow-right ms-2"></i>
-                            <% end %>
+                    <% if investment_opportunity.show_express_interest? %>
+                        <div class="card border-0 shadow-sm rounded-4 bg-primary text-white overflow-hidden position-relative">
+                            <div class="card-body p-4 text-center position-relative" style="z-index: 2;">
+                                <h4 class="text-white fw-bold mb-2">Ready to Invest?</h4>
+                                <p class="text-white-50 mb-4 small">Express your interest to get started with the allocation process.</p>
+                                <%= link_to new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-light w-100 fw-bold py-3 rounded-pill text-primary shadow-sm"} do %>
+                                    Express Interest <i class="ti ti-arrow-right ms-2"></i>
+                                <% end %>
+                            </div>
+                            <!-- Abstract Background Shapes -->
+                            <div class="position-absolute top-0 start-0 w-100 h-100" style="opacity: 0.1; z-index: 1;">
+                                <div class="position-absolute top-0 end-0 bg-white rounded-circle" style="width: 150px; height: 150px; transform: translate(30%, -30%);"></div>
+                                <div class="position-absolute bottom-0 start-0 bg-white rounded-circle" style="width: 100px; height: 100px; transform: translate(-30%, 30%);"></div>
+                            </div>
                         </div>
-                        <!-- Abstract Background Shapes -->
-                        <div class="position-absolute top-0 start-0 w-100 h-100" style="opacity: 0.1; z-index: 1;">
-                            <div class="position-absolute top-0 end-0 bg-white rounded-circle" style="width: 150px; height: 150px; transform: translate(30%, -30%);"></div>
-                            <div class="position-absolute bottom-0 start-0 bg-white rounded-circle" style="width: 100px; height: 100px; transform: translate(-30%, 30%);"></div>
-                        </div>
-                    </div>
+                    <% end %>
 
                 </div>
             </div>

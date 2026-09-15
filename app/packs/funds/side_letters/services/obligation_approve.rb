@@ -39,9 +39,12 @@ class ObligationApprove < Trailblazer::Operation
     result.success?
   end
 
-  # Once nothing is left pending on the side letter, mark it counsel_reviewed
+  # Refreshes the parent side letter's extraction status after approval.
+  # Once nothing is left pending on the side letter, this marks it counsel_reviewed.
+  # @note Portfolio investment obligations have no side_letter — skip the refresh
+  #   for those; their extraction status is tracked per-agent-run, not per-document.
   def refresh_side_letter(_ctx, obligation:, **)
-    obligation.side_letter.refresh_extraction_status!
+    obligation.side_letter&.refresh_extraction_status!
     true
   end
 

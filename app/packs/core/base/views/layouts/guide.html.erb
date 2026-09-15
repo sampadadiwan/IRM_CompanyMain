@@ -9,6 +9,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<%= csrf_meta_tags %>
 <link rel="shortcut icon" type="image/png" href="/favicon.png">
 <title><%= [@title, "CapHive"].compact.join(" — ") %></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,10 +17,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/website/assets/css/caphive.css">
 <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+<%= render "/layouts/locale_date_meta" %>
 <%= javascript_importmap_tags %>
 </head>
 
-<body class="guide-shell">
+<%# data-turbo="false": guide pages link into the app (FAQ answers use real links), and the app
+    uses a different layout. A Turbo Drive visit would swap the body but keep this page's head,
+    leaving app pages without the app layout's CSRF token and scripts — the chat then fails with
+    InvalidAuthenticityToken until a manual refresh. A full page load avoids that. %>
+<body class="guide-shell" data-turbo="false">
 <header class="nav" id="nav">
   <a class="brand" href="<%= user_signed_in? ? root_path : "https://caphive.com/" %>" aria-label="CapHive home">
     <img class="logo" src="/website/assets/img/caphive-logo-original.png" alt="CapHive" width="89" height="34">

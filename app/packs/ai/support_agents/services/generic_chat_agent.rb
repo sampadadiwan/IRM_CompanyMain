@@ -104,7 +104,10 @@ class GenericChatAgent < SupportAgentService
       model: @support_agent.chat_model
     )
     chat.with_instructions(instructions)
-    chat.with_tools(*provider.tools) if provider.tools.any?
+    # Build the tools once and keep them: `provider.tools` returns new instances on every call,
+    # and persist_conversation reads what SearchUserGuidesTool recorded during this turn.
+    ctx[:tools] = provider.tools
+    chat.with_tools(*ctx[:tools]) if ctx[:tools].any?
 
     load_conversation_history(ctx[:chat_session], chat)
     ctx[:chat] = chat
@@ -146,7 +149,9 @@ class GenericChatAgent < SupportAgentService
     ai_response = "#{ctx[:escalation_notice]}\n\n#{ai_response}" if ctx[:escalation_notice].present?
 
     # Save assistant response
-    assistant_message = session.agent_chat_messages.create!(role: "assistant", content: ai_response, channel: channel)
+    guide_search = Array(ctx[:tools]).find { |tool| tool.is_a?(SearchUserGuidesTool) && tool.searched? }
+    assistant_message = session.agent_chat_messages.create!(role: "assistant", content: ai_response, channel: channel,
+                                                            **(guide_search&.message_attributes || {}))
 
     # Enqueue LLM-as-judge for CS agent responses (only if judge is enabled)
     ResponseJudgeJob.perform_later(assistant_message.id) if @support_agent.agent_type == "CustomerSupportAgent" && @support_agent.entity&.entity_setting&.cs_judge_enabled?

@@ -1,0 +1,6 @@
+<%# Publishes the active locale's strftime patterns (WithLocale resolves the
+    locale from Accept-Language) so JS-rendered dates — ag-Grid cells via
+    custom/locale_date_format.js — match the Rails-rendered dates on the page.
+    Render this from every layout that loads the JS bundle. %>
+<meta name="app-date-format" content="<%= I18n.t('date.formats.default') %>">
+<meta name="app-time-format" content="<%= I18n.t('time.formats.default') %>">

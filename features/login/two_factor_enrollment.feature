@@ -22,8 +22,45 @@ Feature: Two-Factor Authentication Enrollment
     Then I should be on the 2FA enrollment page
     And I should see a QR code for setup
     When I enter a valid TOTP code and confirm
-    Then I should see backup codes
+    Then I should see "Two-factor authentication is now enabled"
     And the user should have 2FA enabled in authenticator mode
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # The mode is committed only when the confirming code verifies. A user who picks
+  # Authenticator, leaves to install an app, and comes back later must land on mode
+  # selection again — not on a code screen for an app entry they never created.
+  Scenario Outline: Abandoning Authenticator setup before confirming does not lock the user out
+    Given there is a user "<user>" for an entity "<entity>"
+    And the user has two-factor authentication enabled but not configured
+    And I am at the login page
+    When I fill and submit the login page
+    Then I should be on the 2FA mode selection page
+    When I select the Authenticator mode
+    Then I should be on the 2FA enrollment page
+    And the user should still have no two-factor method
+    When I am at the login page
+    And I fill and submit the login page
+    Then I should be on the 2FA mode selection page
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # Switching two-factor off forgets the method. Otherwise a user who disabled it, deleted
+  # the app entry, and switched it back on later was sent to a code screen for a method
+  # they no longer had.
+  Scenario Outline: Switching two-factor off and on again starts from mode selection
+    Given there is a user "<user>" for an entity "<entity>"
+    And the user has two-factor authentication enabled and configured
+    When two-factor authentication is switched off for the user
+    Then the user should have two-factor off with no method and no secret
+    When two-factor authentication is switched on again for the user
+    And I am at the login page
+    And I fill and submit the login page
+    Then I should be on the 2FA mode selection page
 
     Examples:
       | user | entity              |

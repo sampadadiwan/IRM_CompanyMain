@@ -55,7 +55,8 @@ end
 def arc_check!(user: @user)
   @report = AllocationRunReport.find_or_initialize_by(allocation_run: @allocation_run)
   @report.assign_attributes(entity_id: @allocation_run.entity_id, fund_id: @allocation_run.fund_id,
-                            user: user, status: "Pending", message: nil, checked_at: nil, json_fields: {})
+                            user: user, status: "Pending", message: nil, checked_at: nil,
+                            json_fields: @report.json_fields_for_recheck)
   @report.save!
   AllocationRunReportJob.perform_now(@report.id)
   @report.reload

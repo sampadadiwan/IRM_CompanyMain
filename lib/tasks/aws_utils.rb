@@ -1258,6 +1258,13 @@ module AwsUtils
     # (and fatal on fresh Packer AMIs, whose virgin MySQL has no IRM_<env> yet).
     # recovery:migrate replays real migrations AFTER the restore instead.
     run_cmd("branch=#{branch_name} LB=true SKIP_NOTIFICATION=true SKIP_MIGRATE=true bundle exec cap #{stack}_#{env_variant} IRM:setup")
+    # The AMI bakes its Ruby via `rvm install` at Packer build time
+    # (appserver.ami.pkr.hcl); a box rebuilt from an AMI older than the repo's
+    # .ruby-version would otherwise run capistrano-bundler's install below
+    # under the WRONG Ruby. IRM:install_ruby (config/deploy.rb) is idempotent —
+    # a no-op once the target is already the RVM default — so this is safe on
+    # every DR run, not just the ones that actually need it.
+    run_cmd("branch=#{branch_name} LB=true SKIP_NOTIFICATION=true bundle exec cap #{stack}_#{env_variant} IRM:install_ruby")
     run_cmd("branch=#{branch_name} LB=true SKIP_NOTIFICATION=true SKIP_MIGRATE=true bundle exec cap #{stack}_#{env_variant} deploy")
     # Fresh boxes booted BEFORE whenever installed the @reboot crontab, so
     # start the services those entries would have started (xirr_py,

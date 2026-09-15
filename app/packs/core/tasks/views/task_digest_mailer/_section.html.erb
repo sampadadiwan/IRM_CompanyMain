@@ -1,0 +1,58 @@
+<%#
+  One digest section: a heading with its count and a "View all" link, then up to
+  WeeklyTaskDigest::ROW_LIMIT rows, then a "+N more" row when the section was capped.
+
+  Three columns, not five. The task's owner and assignee sit on a metadata line under
+  the title instead of in columns of their own — at email width, five columns wrapped
+  every title across three lines. The task's note (its Response field) goes on a third
+  line when there is one, so a delayed row carries the latest word on it, not just the
+  fact that it slipped.
+
+  An empty section renders a muted one-liner rather than disappearing. A missing
+  section reads as a broken email; "Nothing due next week." reads as a clean week.
+
+  locals: title, tasks, total, more_count, url, digest, mode, empty_text
+          mode: :delayed | :due | :completed  — decides the last two columns
+%>
+<% neutral = EmailStyleHelper::SA_NEUTRAL %>
+<%= sa_light_section(title: title, count: total, link_text: "View all", link_url: url,
+                     top_margin: local_assigns.fetch(:top_margin, true)) %>
+
+<% if tasks.empty? %>
+  <p style="margin:10px 0 0;padding-top:10px;border-top:1px solid <%= neutral[:hairline] %>;font-size:12px;color:<%= neutral[:faint] %>">
+    <%= empty_text %>
+  </p>
+<% else %>
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">
+    <%# "Done", not "Completed", to match the section heading and the board's Done column %>
+    <% date_heading = mode == :completed ? "Done" : "Due" %>
+    <% if mode == :delayed %>
+      <%= sa_light_th("Task", [date_heading, { width: "104" }], ["Late", { align: :right, width: "78" }]) %>
+    <% else %>
+      <%= sa_light_th("Task", [date_heading, { align: :right, width: "104" }]) %>
+    <% end %>
+    <tbody>
+      <% tasks.each do |task| %>
+        <tr>
+          <%= sa_light_td(render("task_cell", task: task, digest: digest, neutral: neutral), top: true) %>
+          <% date_value = mode == :completed ? task.completed_on : task.due_date %>
+          <%= sa_light_td(date_value ? l(date_value) : "—",
+                          align: mode == :delayed ? :left : :right,
+                          color: neutral[:muted], nowrap: true, top: true) %>
+          <% if mode == :delayed %>
+            <%= sa_light_td(sa_soft_badge(label: pluralize(digest_days_late(task, digest), "day"), tone: :danger),
+                            align: :right, nowrap: true, top: true) %>
+          <% end %>
+        </tr>
+      <% end %>
+      <% if more_count.positive? %>
+        <tr>
+          <td colspan="<%= mode == :delayed ? 3 : 2 %>" style="padding:11px 10px 0 0;font-size:11.5px">
+            <%= link_to "#{pluralize(more_count, 'more task')} not shown".html_safe, url,
+                        style: "color:#{neutral[:faint]};text-decoration:none" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

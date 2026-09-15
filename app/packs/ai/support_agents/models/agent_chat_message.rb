@@ -14,7 +14,18 @@ class AgentChatMessage < ApplicationRecord
   validates :channel, presence: true, inclusion: { in: CHANNELS }
 
   scope :assistant_messages, -> { where(role: "assistant") }
-  scope :guide_misses, -> { where(role: "assistant", guide_search_hit: false) }
+  # Assistant replies where guide search ran and found nothing, or nothing that matched
+  # two-thirds of the search terms (GuideSearch::STRONG_MATCH_RATIO). Replies that never searched
+  # the guides (guide_search_terms is nil) are not misses.
+  scope :guide_misses, lambda {
+    where(role: "assistant").where.not(guide_search_terms: nil)
+                            .where("agent_chat_messages.guide_search_hit = ? OR agent_chat_messages.guide_search_strong_hit = ?", false, false)
+  }
+
+  # @return [AgentChatMessage, nil] the user message this assistant reply answered
+  def preceding_user_message
+    agent_chat_session.agent_chat_messages.where(role: "user").where(created_at: ..created_at).order(created_at: :desc, id: :desc).first
+  end
 
   # @return [Boolean]
   def assistant?

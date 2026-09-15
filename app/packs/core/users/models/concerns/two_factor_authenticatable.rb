@@ -1,7 +1,70 @@
-require 'bcrypt'
-
 module TwoFactorAuthenticatable
   extend ActiveSupport::Concern
+
+  # Human labels for the three modes, in the order the mode-selection screen shows them.
+  # Keyed by the two_factor_mode value.
+  MODE_LABELS = {
+    "whatsapp" => "WhatsApp",
+    "sms" => "Text message",
+    "authenticator" => "Authenticator app"
+  }.freeze
+
+  included do
+    # otp_backup_codes is no longer used (backup codes were removed) but is NOT dropped in
+    # this release. Deploys migrate before the app restarts, so dropping the column in the
+    # same release as the code that stops reading it would make every old-code 2FA login
+    # fail between the two steps. Step 1 (this release): ignore it. Step 2 (a later
+    # release): a migration removing the column, then delete this line.
+    self.ignored_columns += %w[otp_backup_codes]
+
+    before_save :clear_two_factor_method_when_disabled
+  end
+
+  # Which modes this user could enrol in right now, as two_factor_mode values. The single
+  # source for the mode-selection screen, the reset modal and the reset email, so none of
+  # them can promise a method another refuses.
+  #
+  # @return [Array<String>]
+  def available_two_factor_modes
+    modes = []
+    modes << "whatsapp" if whatsapp_otp_enabled?
+    modes << "sms" if sms_otp_enabled?
+    modes << "authenticator"
+    modes
+  end
+
+  # Same list as labels for copy ("WhatsApp, Text message or Authenticator app").
+  #
+  # @return [Array<String>]
+  def available_two_factor_mode_labels
+    available_two_factor_modes.map { |mode| MODE_LABELS.fetch(mode) }
+  end
+
+  # Forgets the enrolled method without saving: mode, secret and the anti-replay
+  # timestep for that secret. Called by the disable callback below and by
+  # TwoFactorReset#clear_method, so there is one list of "what makes up a method".
+  def forget_two_factor_method
+    self.two_factor_mode = nil
+    self.otp_secret = nil
+    self.consumed_timestep = nil
+  end
+
+  # Switching two-factor OFF forgets the method with it.
+  #
+  # Without this the mode, secret and replay timestep survived the toggle. A user who
+  # disabled 2FA, deleted the authenticator entry (or changed phones), and later switched
+  # it back on was routed by TwoFactorDispatch straight to the code screen for a method
+  # they no longer had — and while it was off the "Change 2FA Method" button was hidden,
+  # so nothing let them fix it in advance. The profile toggle already promises "you can
+  # choose ... on your next login", which is exactly what this makes true.
+  #
+  # Audited: two_factor_mode is in User's audit_fields, so the clear shows up alongside
+  # the two_factor_enabled change.
+  def clear_two_factor_method_when_disabled
+    return unless two_factor_enabled_changed? && !two_factor_enabled?
+
+    forget_two_factor_method
+  end
 
   # Shows call code + masked phone, e.g. "+91 xxxxxxx805"
   def masked_phone_with_call_code
@@ -97,27 +160,6 @@ module TwoFactorAuthenticatable
   def send_otp_via_whatsapp
     code = current_otp # current TOTP code from devise-two-factor
     ::SendOtpToWhatsappJob.perform_later(id, code)
-  end
-
-  def generate_backup_codes!
-    codes = 8.times.map { SecureRandom.hex(4).upcase.insert(4, '-') }
-    hashed = codes.map { |c| ::BCrypt::Password.create(c) }
-    update!(otp_backup_codes: hashed.to_json)
-    codes # return plaintext for one-time display
-  end
-
-  def consume_backup_code!(code)
-    codes = JSON.parse(otp_backup_codes || '[]')
-    remaining = codes.reject do |hashed|
-      ::BCrypt::Password.new(hashed) == code
-    end
-    update!(otp_backup_codes: remaining.to_json)
-    remaining.size != codes.size # true if consumed
-  end
-
-  def backup_codes_remaining
-    codes = JSON.parse(otp_backup_codes || '[]')
-    codes.size
   end
 
   # We handle 2FA verification in our own TwoFactorController,

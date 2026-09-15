@@ -405,12 +405,18 @@ namespace :dr do
       # --- bring the replacement into service ----------------------------
       puts "\n🚀 Setting up and deploying ONLY #{new_ip} (ref #{deploy_ref})..."
       # A box from a fresh AMI has never been set up: IRM:setup installs the
-      # nginx/monit/systemd units, then deploy puts the app on it, then
-      # start_boot_services starts what the @reboot crontab would have (it was
-      # installed after this box's first boot, so it has not fired).
+      # nginx/monit/systemd units, IRM:install_ruby brings RVM's default up to
+      # the repo's .ruby-version (the AMI bakes Ruby at Packer build time via
+      # `rvm install` — see appserver.ami.pkr.hcl — so a rebuild from an AMI
+      # older than the last Ruby bump would otherwise run deploy's bundler
+      # install under the wrong Ruby; idempotent no-op once already current),
+      # then deploy puts the app on it, then start_boot_services starts what
+      # the @reboot crontab would have (it was installed after this box's
+      # first boot, so it has not fired).
       # SKIP_MIGRATE: this repair must not touch the schema — the DB is healthy.
       [
         "IRM:setup",
+        "IRM:install_ruby",
         "deploy",
         "IRM:start_boot_services"
       ].each do |task|

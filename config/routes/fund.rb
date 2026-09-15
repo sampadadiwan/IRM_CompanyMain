@@ -134,6 +134,7 @@ resources :capital_remittances do
   patch 'generate_docs', on: :member
   patch 'send_notification', on: :member
   post 'bulk_actions', on: :collection
+  get 'bulk_verify_modal', on: :collection
   get "preview", on: :member
   post 'allocate_units', on: :member
   put :restore_deleted, on: :member

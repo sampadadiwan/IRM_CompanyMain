@@ -2,6 +2,8 @@
 
 Users are the login accounts — staff and investors — who access CapHive and act within it. Every user belongs to an entity, and their **role** decides what they can do. This guide covers creating users, the role system, advisor dual-access, and impersonation for support.
 
+> **Where to find it:** Company menu (the **house icon** at the top right, tooltip "Company menu") → [**User / Company Employees**](/users) → **New User** creates a staff login; **Edit** on a user sets **Roles**, feature toggles and extended permissions. Needs the company admin role; your own account is under your avatar → **My Profile**.
+
 It's written for administrators.
 
 ---
@@ -24,6 +26,7 @@ It's written for administrators.
 14. [WhatsApp Notifications](#whatsapp-notifications)
 15. [Worked Example](#worked-example)
 16. [Frequently Asked Questions](#frequently-asked-questions)
+17. [Related Guides](#related-guides)
 
 ---
 
@@ -58,14 +61,14 @@ graph TD
 
 | Role | Who has it | What it allows |
 |------|------------|----------------|
-| **Employee** | Staff of Company, Fund, or Holding entities | Full back-office access for their entity. |
+| **Employee** | Staff of Company, Investment Fund or Angel Fund entities | Full back-office access for their entity. |
 | **Investor** | Users of Investor, Investment Advisor, Family Office entities | Investor portal access. |
 | **Investor Advisor** | Users of Investor Advisor entities | Switch between advisor and investor views. |
-| **Relationship Manager (RM)** | Investor users flagged as RM | A relationship-manager view of their assigned investors. |
+| **Relationship Manager (RM)** | Investor users with access on a stakeholder whose category is RM | A relationship-manager view of their assigned investors. |
 | **Company Admin** | Designated admins within a company | Administrative operations. |
 | **Approver** | Users in approval workflows | Approve/activate approvals. |
-| **Signatory** | Users who sign documents | E-signing. |
-| **Support** | CapHive support staff | Can impersonate any user. |
+| **Signatory** | Users who sign documents | E-signing (not assignable from the user **Edit** page). |
+| **Support** | CapHive support staff | Can log in as a client user through an enabled support mapping. |
 | **Super** | CapHive super admins | Full system access. |
 
 ---
@@ -77,17 +80,18 @@ When you create a user, a role is assigned automatically based on the entity typ
 ```mermaid
 flowchart TD
     A[User created] --> B{Entity type}
-    B -->|Company / Fund / Holding| C[Employee]
+    B -->|Company / Investment Fund / Angel Fund| C[Employee]
     B -->|Investor Advisor| D[Investor Advisor<br/>advisor entity set]
     B -->|Investor / Investment Advisor / Family Office| E[Investor]
-    E -->|flagged as RM| F[also Relationship Manager]
+    B -->|Holding / Group Company| G[No role<br/>admin adds employee]
+    E -->|access on an RM-category stakeholder| F[also Relationship Manager]
 ```
 
 ---
 
 ## Creating a User
 
-Go to **[Entity] → Users → New**.
+Go to Company menu → [**User / Company Employees**](/users) → **New User**. The user is always created in your own entity; there is no entity field.
 
 **Required:**
 
@@ -95,18 +99,17 @@ Go to **[Entity] → Users → New**.
 |-------|-------|
 | **First / Last Name** | For display and emails. |
 | **Email** | The login identifier. |
-| **Entity** | The entity the user belongs to. |
+| **Password / Password Confirmation** | The user's initial password. |
 
 **Optional:**
 
 | Field | Notes |
 |-------|-------|
-| **Phone / Call Code** | For WhatsApp notifications. |
+| **Mobile Phone / Country Code** | For WhatsApp notifications. |
 | **Department** | Team or division label. |
-| **Tags** | Searchable labels. |
-| **Signature** | An image used in e-signed documents. |
+| **Tags** | Labels that help group users for sending notifications. |
 
-On creation, the system assigns the right role, activates the account, links any pending investor-access invitations sent to that email, and emails an invitation (or confirms immediately if a password is being set).
+On creation, the system assigns the right role, activates the account, and links any Stakeholder User (Investor Access) records already added for that email. No invitation email is sent — share the password, or ask the user to use **Log in with an email link instead** or **Reset Password** on the login page.
 
 ---
 
@@ -114,11 +117,13 @@ On creation, the system assigns the right role, activates the account, links any
 
 Employees are staff of a Company, Fund, or Holding entity, with back-office access to all the entity's investors, funds, calls, commitments, distributions, documents, tasks, reports, and approvals.
 
-Within the employee role, extra capabilities can be granted:
+Within the employee role, a company admin can add or remove these roles in the **Roles** box on an existing user's **Edit** page (these three are the only roles editable there):
 
 - **Company Admin** — administrative operations (managing settings, creating users).
 - **Approver** — can act in approval workflows.
-- **Signatory** — can sign documents electronically.
+- **Employee** — the base back-office role.
+
+The **Signatory** role cannot be assigned from this page.
 
 ---
 
@@ -150,7 +155,7 @@ The advisor's home entity is fixed when their account is created, and the set of
 
 ## The Relationship Manager (RM) Role
 
-A user becomes an RM when their investor access is flagged as RM. RM users can:
+A user is given the RM role when their account is created, if they already have a Stakeholder User (Investor Access) record on a stakeholder whose **Category** is **RM**. RM users can:
 
 - See the investors assigned to them.
 - Receive notifications routed through their RM assignments.
@@ -162,7 +167,7 @@ A user becomes an RM when their investor access is flagged as RM. RM users can:
 
 | Role | Access |
 |------|--------|
-| **Support** | Can impersonate any user to help troubleshoot (see below). |
+| **Support** | Can log in as a client user to help troubleshoot, when an enabled support mapping allows it (see below). |
 | **Super** | Full system access, across all entities. |
 
 ---
@@ -175,10 +180,10 @@ Beyond the entity-wide feature toggles, each user has their own feature access, 
 
 ## Joining and Password Setup
 
-- **New users** receive a confirmation/invitation email and confirm before logging in.
-- **Password reset** also confirms the account, so a user who resets their password can log straight in.
-- **Admin-created users** are prompted to set their own password on first login.
-- All these emails are sent in the background.
+- **New users** receive no confirmation or invitation email, and there is no account-confirmation step; they can log in as soon as they are created.
+- **Staff users created on New User** log in with the password the admin set, or use **Reset Password** / **Log in with an email link instead** on the login page.
+- **System-created users** (for example, created behind a Stakeholder User record) are prompted to set their own password on their first login.
+- Password-reset and email-link emails are sent in the background.
 
 ---
 
@@ -188,17 +193,17 @@ Support staff can log in **as** a user without knowing their password, to see ex
 
 ```mermaid
 flowchart LR
-    S[Support user] -->|impersonate| T[Target user's view]
-    T -->|all actions attributed to| T
+    S[Support user] -->|Click To Login| T[Target user's view]
+    T -->|audit trail records| S
 ```
 
-> **Audit:** every action taken during an impersonated session is recorded against the impersonated user, with the support staff member identified as the one who started the session. Impersonation is restricted to the **Support** role.
+> **Audit:** actions taken during a logged-in-as session are recorded in the audit trail against the real support user, not the user being viewed. Only CapHive **Support** and **Super** users can do this, from **Click To Login** on the user in the Admin panel, and only when the client has an enabled support mapping whose login-as whitelist includes that support user's email. There is no "view as" feature for fund users.
 
 ---
 
 ## Active and Inactive Users
 
-A user's **active** flag controls whether they can log in. It's turned off when an entity is disabled (all its staff are deactivated at once) or when an admin deactivates someone. To reactivate, turn the flag back on and save — but note that if the entity itself is still disabled, the user remains blocked.
+A user's **active** flag controls whether they can log in. It's turned off when an entity is deactivated (all its staff are deactivated at once) or when CapHive support sets a user inactive in the Admin panel. Company admins have no active switch on the user form, and users cannot be deleted from CapHive screens. To reactivate, support turns the flag back on — but note that if the entity itself is still disabled, the user remains blocked.
 
 ---
 
@@ -212,33 +217,131 @@ A user receives WhatsApp notifications when WhatsApp is enabled on their account
 
 Onboarding a new analyst to a fund, and giving them approval rights:
 
-1. **[Fund] → Users → New.** Enter the analyst's name and email, entity = the fund. They're created as an **Employee** and emailed an invitation.
-2. The analyst confirms via email and sets a password.
-3. To let them act in approval workflows, add the **Approver** capability to their account.
-4. Later, the analyst needs to manage the deal pipeline — grant them **Deals** access, which also enables kanban boards for them.
-5. When they leave, set their account to **inactive** — their history is preserved, but they can no longer log in.
+1. **Company menu → User / Company Employees → New User.** Enter the analyst's name, email and an initial password. They're created in the fund's entity as an **Employee**; no invitation email is sent.
+2. Share the password, or ask the analyst to use **Reset Password** on the login page to choose their own.
+3. To let them act in approval workflows, open the user → **Edit** and add `approver` in **Roles**.
+4. Later, the analyst needs to manage the deal pipeline — switch on **Enable Deals** for them, which also enables kanban boards.
+5. When they leave, ask CapHive support to set their account to **inactive** — their history is preserved, but they can no longer log in.
 
 ---
 
 ## Frequently Asked Questions
 
+### Navigation and getting there
+
+**Where do I manage my entity's users?**
+Click the **house icon** at the top right (tooltip "Company menu") to open the Company menu, then [**User / Company Employees**](/users). The list shows every login account in your entity with **Show** and **Edit** buttons; company admins also see **New User**.
+
+**Where do I see or edit my own account?**
+Click your avatar in the top bar → **My Profile / Account Settings**, then **Edit**. Any user can edit their own name, phone, department, WhatsApp and two-factor settings; roles and feature toggles are only shown to company admins.
+
+**Where are a user's roles and permissions set?**
+Company menu → [**User / Company Employees**](/users) → **Edit** on the user. Company admins see a **Roles** box (on existing users only), the feature toggles and, for users who are not company admins, the extended permission toggles such as *Investor Kyc Approve*.
+
+**Where do I add investor logins and advisors?**
+Investor logins are added as Stakeholder Users on the stakeholder's **Users** tab (see the [Investor Access guide](investor_access_tutorial)). Advisors are managed from Company menu → [**Advisors / External Company Advisors**](/investor_advisors) (see the [Investor Advisor guide](investor_advisor_user_guide)).
+
+**Where do I switch between my company view and my investments?**
+If your account holds both the employee and investor roles, a persona dropdown in the top bar offers **My Company** and **My Investments**. Investor advisors get their own persona dropdown listing the investors they act for.
+
+### Creating, updating and managing users
+
+**How do I create a staff user?**
+Company menu → [**User / Company Employees**](/users) → **New User**. Enter **First Name**, **Last Name**, **Email**, optionally country code, **Mobile Phone** and **Department**, set a **Password** and **Password Confirmation**, and click **Save**. The user is always created in your own entity. See [Creating a User](#creating-a-user).
+
+**How do I make someone a company admin or approver?**
+Open the user → **Edit**, and in **Roles** add `company_admin`, `approver` or `employee` (or remove them), then **Save**. The Roles box appears only on existing users and only to company admins; other roles such as investor, investor advisor, RM, support and super cannot be changed here.
+
+**How do I limit which modules a user can use?**
+On the user's **Edit** page, switch off the feature toggles (for example **Enable Funds**, **Enable Deals**, **Enable Kycs**). Only features enabled for the entity are listed. See [Per-User Feature Access](#per-user-feature-access).
+
+**How do I give an employee rights over stakeholders and KYCs without making them admin?**
+On the user's **Edit** page turn on the extended permissions they need: **Investor Create/Read/Update/Destroy** and **Investor Kyc Create/Read/Update/Delete/Approve** (and **Investor Kyc Onboarding**). These toggles are hidden for company admins, who already have every right.
+
+**How do I edit a user?**
+Company menu → **User / Company Employees** → **Edit** on the row, change the fields and **Save**. Company admins can edit anyone in their entity; everyone else can edit only their own account.
+
+**How do I deactivate or delete a user?**
+Users cannot be deleted from CapHive screens, to preserve their history. Company admins have no deactivate switch on the user form; ask CapHive support to set the user inactive in the Admin panel. Deactivating the whole entity also deactivates every user in it. See [Active and Inactive Users](#active-and-inactive-users).
+
+**How do I reset a user's two-factor authentication?**
+Open the user's page and click **Reset 2FA Method** next to the two-factor row (users see **Change 2FA Method** on their own page). It is available to the user, a company admin of the same entity, or support, once a method has been chosen. See the [Two-Factor Authentication guide](two_factor_authentication_user_guide).
+
+**Which permission do I need to manage users?**
+Creating users and changing roles, features or extended permissions needs the company admin role. Investor advisors cannot open the user list at all.
+
+### Why roles and permissions matter
+
+**Why use roles and feature toggles instead of giving everyone admin?**
+Company admins can see every stakeholder, KYC and access list and change entity settings. Employees with narrower toggles and extended permissions see only the funds and stakeholders they need, which limits mistakes and keeps sensitive investor data on a need-to-know basis.
+
+**What does the approver role let someone do?**
+Approvers can approve pending approvals, approve or unapprove documents marked for approval, approve KPI reports and approve shareholder positions. Without the role those buttons do not appear, even for staff who can edit the record.
+
+**What happens if I don't set extended permissions for an employee?**
+They can open stakeholder and KYC screens they have been given access to, but cannot create, edit, delete, verify or approve those records, and buttons such as **New Stakeholder**, **Edit** and **Verify** are missing for them.
+
+**Who typically manages users?**
+A company admin at the fund or company (often operations or compliance) creates staff accounts and sets their roles. CapHive support handles deactivation, impersonation and entity-level feature switches.
+
+### What happens when I …
+
+**What happens when I create a user?**
+The account is created in your entity, marked active, given a role from the entity type (employee for companies and funds, investor for investor entities, investor advisor for advisor entities) and all features switched on. Any Stakeholder User records already added for that email are linked to the new account. No invitation email is sent, so share the password or ask them to use **Log in with an email link instead** on the login page.
+
+**What happens when I change a user's roles?**
+The selected roles among `company_admin`, `approver` and `employee` are added and any unselected ones removed as soon as you save. The change applies on the user's next page load; nobody is notified.
+
+**What happens when I turn off a feature for a user?**
+The matching sidebar menu and screens disappear for that user only; the entity's data is untouched and other users are unaffected. Turning **Enable Deals** on also turns on kanban boards for the user.
+
+**What happens when I change a user's email or phone?**
+The login email changes immediately, and the copies of the email and phone held on that person's Stakeholder User (Investor Access) records are updated to match, so investor notifications follow the new address.
+
+**What happens when a user is deactivated?**
+They can no longer sign in; their records, notes, tasks and audit history are kept. If the entity is later re-activated, the user stays inactive until support switches them back on.
+
+**What happens when support logs in as a user?**
+The support user sees exactly what that user sees. It is only possible when the client has an enabled support mapping that whitelists that support user, and the audit trail records the real support user behind every action. See [Impersonation (Support)](#impersonation-support).
+
+### Troubleshooting and edge cases
+
 **Can a user belong to multiple entities?**
-Not directly — a user has one home entity. Investor advisors get a second (advisor) entity for dual access. For genuine multi-entity staff, create a separate account per entity.
+Not directly — a user has one home entity. Investor advisors can act for several investors through their advisor persona. For genuine multi-entity staff, create a separate account per entity.
 
 **How do I give an employee admin access?**
-Add the **Company Admin** role to their user record.
+Open the user → **Edit** and add `company_admin` in the **Roles** box, then **Save**. You must be a company admin yourself.
 
-**Why isn't my user receiving confirmation emails?**
-Check the entity's "From Email" in Settings — if it's blank, mail goes from the default address and may be spam-filtered.
+**Why isn't my new user receiving an invitation email?**
+CapHive does not send one when a user is created. Give them the password you set, or ask them to open the login page and use **Log in with an email link instead** or **Reset Password**; those emails come from the CapHive notification address, so check spam if they do not arrive.
 
 **What happens when I change a user's password?**
-The account is confirmed automatically, so they can log in without the separate email-confirmation step.
+The new password works at their next login. Accounts created automatically through Stakeholder User records are asked to set their own password the first time they log in.
 
 **Can one account be both an investor and a fund employee?**
-No — create two separate accounts, one per entity and role.
+Usually no: an investor login must belong to the stakeholder's own investor entity, so a fund employee cannot be added as a Stakeholder User of another firm. Create a separate account for the person's investor role; accounts that do hold both roles get a **My Company / My Investments** switch in the top bar.
 
 **How do I deactivate a user without deleting them?**
-Set the account to inactive. Their data and history stay; they just can't log in.
+Ask CapHive support to set the account inactive. Their data and history stay; they just can't log in.
 
 **What's the difference between Company Admin and Employee?**
-Every company admin is also an employee. Company Admin adds administrative powers (managing settings, creating users) on top of normal operational access.
+Every company admin is also an employee. Company Admin adds administrative powers (creating users, changing roles and permissions, editing the entity profile, seeing all notes and access lists) on top of normal operational access.
+
+**I cannot see the Roles box or the permission toggles on the Edit page.**
+They are shown only to company admins. The **Roles** box also appears only when editing an existing user, not on **New User**, and the feature toggles are hidden when editing an investor login.
+
+**A user has a feature toggled on but still cannot see the menu.**
+The feature must also be enabled for the entity, which only CapHive support can switch on; the user toggle cannot grant a feature the entity does not have. See the [Entities guide](entities_user_guide).
+
+**Why does a new user have no role?**
+Roles are assigned automatically only for Company, Investment Fund, Angel Fund, Investor Advisor, Investor, Investment Advisor and Family Office entities. Users of other entity types (for example Holding or Group Company) are created without a role, so a company admin must add `employee` from **Edit**.
+
+## Related Guides
+
+- [Entities](entities_user_guide) — the entity every user belongs to and its feature switches.
+- [Investor Access & Permissions](investor_access_tutorial) — how investor logins are created and approved.
+- [Investor Advisor](investor_advisor_user_guide) — the dual-access advisor role and persona switching.
+- [Investors (Stakeholders)](investors_user_guide) — what the Investor Create/Read/Update/Destroy permissions control.
+- [Investor KYC](investor_kyc_user_guide) — what the KYC extended permissions control.
+- [Two-Factor Authentication](two_factor_authentication_user_guide) — enabling and resetting 2FA for a user.
+- [Approvals](approvals_user_guide) — what the approver role unlocks.

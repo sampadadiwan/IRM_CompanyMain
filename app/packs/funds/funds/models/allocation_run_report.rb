@@ -38,6 +38,24 @@ class AllocationRunReport < ApplicationRecord
   # True once the job has written a result, whatever that result is.
   def finished? = !pending?
 
+  # Keys of json_fields that belong to the allocation run itself rather than to a check of it.
+  # A re-check recomputes findings from the ledger, but these were recorded while the run was
+  # happening and cannot be recomputed, so resetting a report for a re-check keeps them.
+  # "run_checks" is written by AccountEntryAllocation::RunFormulas (pre/post-run checks).
+  RUN_RECORDED_KEYS = %w[run_checks].freeze
+
+  # json_fields cleared for a fresh check, keeping what the run itself recorded.
+  # @return [Hash]
+  def json_fields_for_recheck
+    (json_fields || {}).slice(*RUN_RECORDED_KEYS)
+  end
+
+  # The pre/post-run check results the allocation run stored, as plain hashes.
+  # @return [Array<Hash>]
+  def run_checks
+    json_fields&.dig("run_checks") || []
+  end
+
   # The findings, newest write wins, as plain hashes straight out of json_fields.
   # @return [Array<Hash>] one entry per check, in check-number order
   def findings

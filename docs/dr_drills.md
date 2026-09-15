@@ -49,3 +49,6 @@
 | 2026-08-29 18:27 | production | in | ap-south-2 | FAILED | 14.5 | dr_drill_production_in_2026_08_29_1827 |
 | 2026-08-29 18:52 | production | in | ap-south-2 | FAILED | 0.3 | dr_drill_production_in_2026_08_29_1852 |
 | 2026-08-29 18:52 | production | in | ap-south-2 | PASSED | 10.4 | dr_drill_production_in_2026_08_29_1852 |
+| 2026-09-12 16:41 | staging | in | ap-south-2 | FAILED | 13.6 | dr_drill_in_2026_09_12_1641 |
+| 2026-09-12 17:17 | staging | in | ap-south-2 | FAILED | 13.6 | dr_drill_in_2026_09_12_1717 |
+| 2026-09-12 18:32 | staging | in | ap-south-2 | FAILED | 5.0 | dr_drill_in_2026_09_12_1832 |

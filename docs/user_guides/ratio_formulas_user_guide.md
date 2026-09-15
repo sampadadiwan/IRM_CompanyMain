@@ -2,6 +2,8 @@
 
 **Ratio formulas** let you tailor how a fund's performance ratios are calculated. Out of the box, the system computes XIRR, MOIC, DPI, TVPI and the rest from standard ingredients (capital called, distributions, fair market value, cash, and net current assets). Ratio formulas let you fold in *additional* amounts you've recorded against the fund — so a ratio reflects your fund's specific economics rather than a one-size-fits-all formula.
 
+> **Where to find it:** Sidebar → [**Funds → Funds**](/funds) → open the fund → **Actions → Account Entries → Ratio Formulas**; the same link is in the **Actions** dropdown on the fund's **Ratios** tab. Create one with **New Ratio Formula**. Needs create rights on the fund (fund **Access** tab or company admin) and the account-entries feature enabled for your company.
+
 This guide is for fund managers and finance teams who need a ratio to account for something the standard calculation doesn't capture — for example a fee rebate, a side-pocket investment, or an expense that should reduce the return.
 
 ---
@@ -64,7 +66,7 @@ Click **New Ratio Formula** and fill in:
 | Field | What it controls |
 |-------|------------------|
 | **Level** | Which calculation the rule affects: **Fund** (fund-wide ratios), **Folio** (an individual investor's ratios), or **Portfolio Company** (a single company's ratios). |
-| **Ratios** | One or more ratios this rule applies to (e.g. XIRR, DPI, MOIC, TVPI). |
+| **Ratio** | The one ratio this rule applies to (XIRR, DPI, TVPI, MOIC, RVPI, PIC or Gross Portfolio IRR). To adjust another ratio, create a second rule. |
 | **Action** | How the amount is used — see [Choosing the Right Action](#choosing-the-right-action). |
 | **Account Entry Names** | The named line items to pull amounts from. You can choose several. |
 | **Period** | **All** — total every matching entry up to the end date. **As-on** — use only the latest entry on or before the end date for *each* selected account entry name (best for valuations, where you want the most recent figure per line item, not a sum). |
@@ -144,8 +146,8 @@ Key points:
 A few principles govern how formulas behave:
 
 - **Additive, not replacing.** Formulas are applied *on top of* the standard components (FMV, cash in hand, net current assets, estimated carry). Defining a formula doesn't switch those off.
-- **Sensible fallback.** If a fund has no rules for "Cash In Hand" or "Net Current Assets", the system uses its built-in defaults. As soon as you define a rule for a specific ratio, your rules take over for that ratio.
-- **No double-counting.** Only **non-cumulative** account entries are picked up, so a running-total entry won't be added twice.
+- **Standard components stay in.** Cash in hand and net current assets always come from the latest "Cash In Hand" and "Net Current Assets" account entries on or before the end date, whether or not you define rules; a rule for a ratio adds to those components rather than taking over from them.
+- **No double-counting.** By default only **non-cumulative** account entries are picked up, so a running-total entry won't be added twice; a rule picks up cumulative entries instead only when its **Cumulative** box is ticked.
 - **Currency-aware.** Amounts are automatically converted to the right currency (tracking or base) using the exchange rate on the entry's reporting date.
 
 ---
@@ -159,7 +161,7 @@ You want Fund XIRR to reflect legal and non-deal costs stored as account entries
 | Setting | Value |
 |---------|-------|
 | Level | Fund |
-| Ratios | XIRR |
+| Ratio | XIRR |
 | Action | **reduce_cashflow** (treat as an outflow) |
 | Account Entry Names | "Non Deal Expenses", "Legal Fees" |
 | Period | All (include every expense event) |
@@ -173,7 +175,7 @@ The fund holds a side investment in a mutual fund that should count toward resid
 | Setting | Value |
 |---------|-------|
 | Level | Fund |
-| Ratios | TVPI, MOIC |
+| Ratio | TVPI (create an identical second rule with Ratio MOIC) |
 | Action | **add_numerator** (increase the value side) |
 | Account Entry Names | "Mutual Fund Investment" |
 | Period | As-on (use only the latest valuation) |
@@ -187,7 +189,7 @@ Some investors received a temporary distribution that should affect their indivi
 | Setting | Value |
 |---------|-------|
 | Level | Folio |
-| Ratios | XIRR |
+| Ratio | XIRR |
 | Action | **add_cashflow** (a return to the investor) |
 | Account Entry Names | "Temp income distribution" |
 | Period | All |
@@ -215,17 +217,79 @@ So if Fund A includes expenses in its XIRR but Fund B doesn't, the combined enti
 
 ## Frequently Asked Questions
 
+**Where do I find Ratio Formulas in CapHive?**
+Sidebar → [**Funds → Funds**](/funds), open the fund, click **Actions** (top right), open the **Account Entries** sub-menu and click **Ratio Formulas**. The same page is linked as **Ratio Formulas** in the **Actions** dropdown of the fund's **Ratios** tab. The **Account Entries** sub-menu only appears when account entries are enabled for your company. See [Finding Ratio Formulas](#finding-ratio-formulas).
+
+**How do I create a ratio formula?**
+On the fund's Ratio Formulas page click **New Ratio Formula**, choose the **Level**, **Action**, one **Ratio** (the form takes a single ratio per rule; create a second rule for another ratio), the **Account Entry Names**, the **Period** and an optional **Label**, then press **Save**. See [Building a Rule](#building-a-rule).
+
+**How do I edit or delete a ratio formula?**
+Each row on the Ratio Formulas page has **View**, **Edit** and **Delete** buttons; the rule's own page has **Edit** and **Delete** too. Delete asks for confirmation. Both need update rights on the fund.
+
+**Can I import or export ratio formulas in bulk?**
+Yes. The page has **Download** (Excel of the fund's rules) and **Import** (an Import Upload of type RatioFormula with a sample file on the next screen, columns Level, Action, Period, Ratio, Label, Account Entry Names, Entry Type, Parent Type, Cumulative, Skip Portfolio Fmv, plus an optional Update Only column). Imports are listed under Company menu → [**Imports**](/import_uploads). Import needs create rights on the fund.
+
+**Can I copy ratio formulas from another fund?**
+Not automatically: the fund's **Copy Formulas** action copies allocation formulas only. Use **Download** on the source fund and **Import** on the destination fund to move ratio formulas.
+
+**What permission do I need?**
+Any employee who can see the fund can view its ratio formulas; creating and importing need create rights on the fund, editing and deleting need update rights. Access rights are granted on the fund's **Access** tab, and company admins have all of them.
+
+**Why should I use ratio formulas instead of adjusting the numbers by hand?**
+Because the adjustment is applied by the platform every time ratios are generated, at fund, folio or company level, in the right currency, and is documented as a rule anyone can inspect. Hand-adjusted figures in a spreadsheet drift from the statements, LP portal and dashboards, which all read the stored ratios. See [When You'd Use One](#when-youd-use-one).
+
+**What can I do with ratio formulas?**
+Make XIRR net of expenses, count side investments toward TVPI and MOIC, add rebates to DPI, adjust one folio's return, exclude the computed FMV in favour of your own entries, and publish alternative versions of a ratio side by side using labels. See [Worked Examples](#worked-examples).
+
+**Who typically sets these up?**
+Fund finance or fund administration teams, usually once when a fund is onboarded and again when a new kind of account entry (a rebate, a sidecar) starts appearing; fund managers and IR consume the resulting ratios.
+
+**What happens if I don't set any up?**
+Every ratio is computed from the standard components only (calls, distributions, FMV, cash in hand, net current assets, estimated carry). Nothing breaks, but any fund-specific economics recorded as account entries are ignored.
+
+**What happens when I save a ratio formula?**
+Only the rule record is written: names are trimmed, the label is normalised, and the rule waits until the next **Compute Ratios** run on the fund. No ratio is recalculated, no account entry is touched and no one is notified. See [Do formulas affect previously generated ratios?](#frequently-asked-questions) below.
+
+**What happens when ratios are next generated with a formula in place?**
+For each ratio and level the run gathers the matching non-cumulative account entries up to the end date and applies the action; unlabelled rules change the standard ratio, and every distinct label produces an additional ratio row named after the label (with its own tracking-currency variant). The rows appear on the fund's **Ratios** tab like any other. See [Grouping Rules with Labels](#grouping-rules-with-labels).
+
+**What happens when I delete a ratio formula?**
+The rule is soft-deleted immediately and drops out of the next generation; ratios already computed with it keep their values until you regenerate, and a labelled ratio's old rows stay on the Ratios tab until you delete them there. No notification is sent.
+
+**What happens when I import a spreadsheet of formulas?**
+Each row creates a rule on the fund (or updates an existing one when **Update Only** is yes); rows with an unknown level, action, period or ratio are rejected and listed in the results file on the import. Nothing is recomputed until you generate ratios.
+
+**What happens if I get the account entry name wrong?**
+Nothing fails: the rule simply finds no entries and the ratio is unchanged, with no warning. The **Account Entry Names** picker lists only names that already exist on the fund's account entries, so choose from it rather than typing.
+
 **Do I have to define formulas for the standard components?**
 No. FMV, cash in hand, net current assets, and estimated carry are included automatically. Use formulas only to add something extra or to override a specific ratio.
 
 **Will a formula change every ratio?**
-Only the ratios you list, at the level you choose. A Folio-level rule, for instance, affects only per-investor ratios — not the fund total.
+Only the ratio you pick, at the level you choose. A Folio-level rule, for instance, affects only per-investor ratios, not the fund total; a Portfolio Company rule affects only the per-company IRR and MOIC.
 
 **When should I use "As-on" versus "All"?**
 Use **As-on** for things that have a current value (like a valuation), where you want only the latest figure. Use **All** for things that accumulate (like a series of expenses or distributions), where you want the total.
 
 **Why isn't my entry being picked up?**
-Check that it isn't marked cumulative (only non-cumulative entries are used), that its name exactly matches one in the rule, and that its reporting date falls on or before the ratio's end date.
+Check that it isn't marked cumulative (only non-cumulative entries are used unless the rule's **Cumulative** box is ticked), that its name exactly matches one in the rule, that its reporting date falls on or before the ratio's end date, and that it sits on the right owner for the rule's level (fund, folio or portfolio company).
 
 **Do formulas affect previously generated ratios?**
-No — they apply the next time you generate ratios. Regenerate to see the effect.
+No. They apply the next time you generate ratios; run **Compute Ratios** on the fund's **Ratios** tab to see the effect.
+
+**Do formulas apply to cross-fund and cross-portfolio runs?**
+Yes. Each fund's own rules are applied to its figures before they are converted and combined, so different funds can carry different adjustments. See [Using Formulas Across Multiple Funds](#using-formulas-across-multiple-funds).
+
+**Can I undo a change to a formula?**
+There is no version history on the rule itself; re-edit it and regenerate the ratios. Deleted rules are soft-deleted, so support can restore one if needed.
+
+**I can't see the Account Entries sub-menu or the New Ratio Formula button.**
+The sub-menu requires the account-entries feature to be enabled for your company; the button requires create rights on the fund. Ask your company admin or CapHive support.
+
+## Related Guides
+
+- [Fund Ratios](fund_ratios_user_guide) — the ratios these rules adjust and how to generate them.
+- [Carry & Performance Metrics](carry_computations_user_guide) — the standard components, including Estimated Carry, that formulas add to.
+- [Fund Ratio Run Templates](fund_ratio_run_templates_user_guide) — cross-fund runs, where each fund's rules are applied before combining.
+- [Formula Dependencies](formula_dependencies_user_guide) — checking the allocation formulas that produce the account entries a rule reads.
+- [Tracking Currency](tracking_currency_guide) — how amounts picked up by a rule are converted.

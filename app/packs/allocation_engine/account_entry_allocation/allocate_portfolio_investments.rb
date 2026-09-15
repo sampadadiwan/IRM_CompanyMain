@@ -5,6 +5,47 @@ module AccountEntryAllocation
   class AllocatePortfolioInvestments < AllocationBaseOperation
     step :allocate_portfolios_investment
 
+    # The rule types this operation runs, with the options RunFormula passes for each.
+    RULE_TYPE_OPTIONS = {
+      "AllocatePortfolioInvestment" => { proforma: false, master_fund_investments: false },
+      "AllocatePortfolioInvestment-Proforma" => { proforma: true, master_fund_investments: false },
+      "AllocateMasterFundPortfolioInvestment" => { proforma: false, master_fund_investments: true },
+      "AllocateMasterFundPortfolioInvestment-Proforma" => { proforma: true, master_fund_investments: true }
+    }.freeze
+
+    # The portfolio investments a formula allocates, as a relation. Shared with the post-run check
+    # CheckHelpers#portfolio_allocations_tie, which must compare against exactly the investments the
+    # formula was meant to allocate -- not every investment the fund holds.
+    def self.portfolio_investments_for(fund, fund_formula, start_date:, end_date:, proforma: false, master_fund_investments: false)
+      target_fund = if master_fund_investments
+                      raise "Error in #{fund_formula.name}:#{fund_formula.id} Master fund for #{fund} is not set" if fund.master_fund.nil?
+
+                      fund.master_fund
+                    else
+                      fund
+                    end
+
+      portfolio_investments = if proforma
+                                # We only want to allocate proforma portfolio investments
+                                target_fund.portfolio_investments.proforma
+                              else
+                                # We only want to allocate non-proforma portfolio investments (which are the actual investments and the default scope)
+                                target_fund.portfolio_investments
+                              end
+
+      meta = fund_formula.meta_data_hash
+      portfolio_investments = if meta.present? && meta["between_start_and_end_dates"] == "true"
+                                # For some formulas, we only want to consider portfolio investments between the start and end dates. This is for performance reasons
+                                portfolio_investments.where(investment_date: start_date..end_date)
+                              else
+                                # By default, we consider all portfolio investments up to the end date
+                                portfolio_investments.where(investment_date: ..end_date)
+                              end
+
+      portfolio_investments = portfolio_investments.joins(:portfolio_company).where(meta["where"]) if meta.present? && meta["where"].present?
+      portfolio_investments
+    end
+
     def allocate_portfolios_investment(ctx, **)
       fund = ctx[:fund]
       commitment_cache = ctx[:commitment_cache]
@@ -16,34 +57,12 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "allocate_portfolios_investment(#{fund_formula.name})" }
 
-      target_fund = if ctx[:master_fund_investments]
-                      raise "Error in #{fund_formula.name}:#{fund_formula.id} Master fund for #{fund} is not set" if fund.master_fund.nil?
-
-                      fund.master_fund
-                    else
-                      fund
-                    end
-
-      portfolio_investments = if ctx[:proforma]
-                                # We only want to allocate proforma portfolio investments
-                                target_fund.portfolio_investments.proforma
-                              else
-                                # We only want to allocate non-proforma portfolio investments (which are the actual investments and the default scope)
-                                target_fund.portfolio_investments
-                              end
-
-      portfolio_investments = if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["between_start_and_end_dates"] == "true"
-                                # For some formulas, we only want to consider portfolio investments between the start and end dates. This is for performance reasons
-                                portfolio_investments.where(investment_date: start_date..end_date)
-                              else
-                                # By default, we consider all portfolio investments up to the end date
-                                portfolio_investments.where(investment_date: ..end_date)
-                              end
+      portfolio_investments = self.class.portfolio_investments_for(fund, fund_formula, start_date:, end_date:,
+                                                                                       proforma: ctx[:proforma],
+                                                                                       master_fund_investments: ctx[:master_fund_investments])
 
       # in some cases we want to use the investment date as the reporting date
       use_investment_date = fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["reporting_date"]&.strip == "investment_date"
-
-      portfolio_investments = portfolio_investments.joins(:portfolio_company).where(fund_formula.meta_data_hash["where"]) if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["where"].present?
 
       # Pre-load portfolio investments to avoid repeated queries in the loop
       portfolio_investments_array = portfolio_investments.includes(:fund, :investment_instrument, :portfolio_company).to_a

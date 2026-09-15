@@ -695,7 +695,7 @@ The Doorkeeper OAuth admin UI (`/oauth/applications`) is separately restricted t
 - PKCE enforced (`force_pkce` in Doorkeeper) — prevents authorization code interception
 - `WWW-Authenticate: Bearer` header on 401 responses — triggers MCP client OAuth discovery
 - `stateless: true` transport — no server-side sessions, safe for multi-worker Puma
-- Tool filtering based on user role via `accessible_by?(user)` hook on `ApplicationMcpTool`. Currently returns `true` for all 23 tools (no per-role restriction yet). To add per-role filtering, override `accessible_by?` in individual tool classes. `McpController#authorized_tools` calls this at discovery time so restricted tools won't appear in `tools/list`. Planned for a future phase.
+- Tool filtering based on user role via `accessible_by?(user)` hook on `ApplicationMcpTool`. Currently returns `true` for all 22 tools (no per-role restriction yet). To add per-role filtering, override `accessible_by?` in individual tool classes. `McpController#authorized_tools` calls this at discovery time so restricted tools won't appear in `tools/list`. Planned for a future phase.
 
 ---
 
@@ -985,6 +985,6 @@ end
 | 5 | Medium | `Doorkeeper::Application.all` queried in `_form_fields.html.erb` view — should be preloaded in controller | Small table; optimize when OAuth app count grows. |
 | 6 | Low | Boilerplate duplication across 17 tools (query normalization, response building) — `ApplicationMcpTool` could provide helpers | Explicit code is fine; refactor when adding more tools. |
 | 7 | Low | `show.html.erb` MCP settings rows use inconsistent indentation | Cosmetic; fix in next touch. |
-| 8 | High | MCP tool descriptions lack usage hints for external AI clients — no default limit guidance, no "search by name" hints, no workflow chain guidance (e.g., "list first to get ID, then call detail tool"). Confirmed during staging testing: Claude.ai fetched all portfolio companies without filters when description didn't guide it. RubyLLM tool descriptions (used by embedded assistants) are significantly richer. | Next improvement — draft improved descriptions for all 23 tools. |
+| 8 | High | MCP tool descriptions lack usage hints for external AI clients — no default limit guidance, no "search by name" hints, no workflow chain guidance (e.g., "list first to get ID, then call detail tool"). Confirmed during staging testing: Claude.ai fetched all portfolio companies without filters when description didn't guide it. RubyLLM tool descriptions (used by embedded assistants) are significantly richer. | Next improvement — draft improved descriptions for all 22 tools. |
 | 9 | Medium | `ListPortfolioCompaniesTool` — `scope` parameter check uses `Investor.respond_to?(scope)` instead of `relation.respond_to?(scope)`, so custom scopes are silently ignored. | Low impact — filtering works via Ransack `query`; fix in follow-up. |
 | 10 | Low | No default `limit` on list tools — when AI client omits `limit`, all records are returned. Should default to 25-50 for safety. | Implement alongside tool description improvements. |

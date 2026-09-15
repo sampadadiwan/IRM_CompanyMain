@@ -11,6 +11,9 @@ few.
 
 Every check answers one of three questions.
 
+Fund-specific checks that run *during* an allocation run, and can stop it, are described in
+[Allocation Run Checks](allocation_run_checks.md). Their failures appear here as findings 1.5 and 1.6.
+
 ## How you use it
 
 On the allocation screen, every past run has a check button among its actions. Pressing it runs
@@ -62,6 +65,14 @@ can be done in one go — ask and we will run it.
 | 1.2 | Every enabled formula for the fund produced at least one entry | Warn, listing the silent formulas |
 | 1.3 | Every folio with a commitment dated on or before the period end received entries | Warn, listing the missing folios |
 | 1.4 | The period starts the day after the previous locked run ended (no gap, no overlap) | Warn |
+| 1.5.n | Each of the fund's own pre-run checks passed (see [Allocation Run Checks](allocation_run_checks.md)) | Fail or Warn, as the check reported, listing its rows |
+| 1.6.n | Each of the fund's own post-run checks passed | Fail or Warn, as the check reported, listing its rows |
+
+Checks 1.5.n and 1.6.n are the only ones not worked out from the ledger when you press Check. They
+are recorded by the allocation run itself, because they describe the data at the moment the run
+happened, and checking the run again keeps them. When a run recorded nothing (every check passed,
+or the fund has none), a single 1.5 and 1.6 say so. When a pre-run check failed, the run computed
+nothing, so 1.2, 1.3 and section 2 are skipped.
 
 ## 2. Do the numbers add up? — built
 

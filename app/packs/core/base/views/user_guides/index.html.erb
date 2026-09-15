@@ -6,7 +6,8 @@
       </nav>
       <span class="chip-label"><%= t('top_menus.user_guides') %></span>
       <h1>Everything you need to <em>run CapHive.</em></h1>
-      <p class="lede"><%= @guides.count %> guides, grouped by area — search to jump straight to one.</p>
+      <p class="lede"><%= @guides.count %> guides, grouped by area — search to jump straight to one.
+        Looking for a quick answer? <%= link_to "Browse all FAQs", faqs_path %>.</p>
     </div>
   </div>
 </header>

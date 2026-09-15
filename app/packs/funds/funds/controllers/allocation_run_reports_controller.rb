@@ -38,7 +38,7 @@ class AllocationRunReportsController < ApplicationController
       status: "Pending",
       message: nil,
       checked_at: nil,
-      json_fields: {}
+      json_fields: @report.json_fields_for_recheck
     )
 
     case save_report(allocation_run)

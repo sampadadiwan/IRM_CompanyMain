@@ -14,7 +14,7 @@
 
     <div class="login-body">
       <%- flash.each do |name, msg| -%>
-        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert #{name.to_s == 'alert' ? 'alert-danger' : 'alert-info'} text-center" if msg.is_a?(String) %>
       <%- end -%>
 
       <% if @user.whatsapp_mode? %>
@@ -74,11 +74,14 @@
         <% if @user.sms_mode? %>
           Codes can take a few seconds to arrive. If one is rejected, request another rather than retyping it.
         <% elsif @user.authenticator_mode? %>
+          <%# No backup codes exist in any mode, so a lost device has exactly one way back in.
+              Say so here rather than leaving the user to hunt for a code box that accepts
+              something else. %>
           Having trouble?
           <%= link_to "Troubleshoot authenticator codes",
                       public_guide_path("authenticator_app_setup_user_guide") + "#troubleshooting",
-                      target: "_blank", rel: "noopener" %>
-          or contact your administrator.
+                      target: "_blank", rel: "noopener" %>.
+          Lost your device? Contact your administrator to reset your two-factor method.
         <% else %>
           Having trouble?
           <%= link_to "Read the two-factor guide",

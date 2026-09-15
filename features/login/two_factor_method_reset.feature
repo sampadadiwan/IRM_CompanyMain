@@ -6,7 +6,7 @@ Feature: Resetting the two-factor method
 
   Scenario Outline: User changes their own two-factor method after re-entering their password
     Given there is a user "<user>" for an entity "<entity>"
-    And the user has two-factor authentication enabled and configured with backup codes
+    And the user has two-factor authentication enabled and configured
     And I am at the login page
     When I fill and submit the login page
     Then I should be on the 2FA verification page
@@ -29,7 +29,7 @@ Feature: Resetting the two-factor method
     When I select the Authenticator mode
     Then I should be on the 2FA enrollment page
     When I enter a valid TOTP code and confirm
-    Then I should see backup codes
+    Then I should see "Two-factor authentication is now enabled"
     And the user should have 2FA enabled in authenticator mode
 
     Examples:

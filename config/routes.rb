@@ -102,7 +102,6 @@ Rails.application.routes.draw do
     # durable per-number/per-user limits in TwilioSmsDelivery, and a per-IP Rack::Attack
     # throttle — see docs/technical/twilio_sms_otp_design.md section 9.
     post :send_sms
-    get  :backup_codes
   end
 
   post "/internal/sync/users",         to: "users_sync#upsert"

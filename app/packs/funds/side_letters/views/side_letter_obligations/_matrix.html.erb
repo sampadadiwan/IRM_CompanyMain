@@ -32,6 +32,7 @@
         <th>Owner</th>
         <th>Next Due</th>
         <th>Status</th>
+        <th>Legal Category</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -41,7 +42,7 @@
       <% end %>
       <% if obligations.none? %>
         <tr>
-          <td colspan="7" class="text-center text-muted py-4">No obligations found.</td>
+          <td colspan="8" class="text-center text-muted py-4">No obligations found.</td>
         </tr>
       <% end %>
     </tbody>

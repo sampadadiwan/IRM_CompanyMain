@@ -363,7 +363,9 @@ Given('the last investor has a user {string}') do |args|
   investor = cr.investor
   user = FactoryBot.create(:user, entity: investor.investor_entity, whatsapp_enabled: true)
   user1 = FactoryBot.create(:user, entity: investor.investor_entity)
-  FactoryBot.create(:user, entity: investor.investor_entity, phone: "321")
+  # A dialable number, not "321" — User#phone_must_be_dialable rejects the latter on
+  # create. The digits are arbitrary; only that there is a third user matters here.
+  FactoryBot.create(:user, entity: investor.investor_entity, phone: "9000000321")
 
   key_values(user, args)
   user.save!

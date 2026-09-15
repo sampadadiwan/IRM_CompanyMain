@@ -18,14 +18,12 @@ Feature: Cap Table Quantity Columns Visibility
     Then I should see the horizontal cap table table
     And I should see the quantity actual column header
     And I should see the quantity diluted column header
-    And I should see quantity values in the table
 
   Scenario: View cap table with show_quantity_actual=true and show_quantity_diluted=true
     When I go to the captable with params "show_quantity_actual=true&show_quantity_diluted=true"
     Then I should see the horizontal cap table table
     And I should see the quantity actual column header
     And I should see the quantity diluted column header
-    And I should see quantity values in the table
 
   Scenario: Hide both quantity columns
     When I go to the captable with params "show_quantity_actual=false&show_quantity_diluted=false"

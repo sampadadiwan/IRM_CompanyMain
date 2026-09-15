@@ -25,7 +25,7 @@
         <%= form.label :portfolio_company_id, "Portfolio Company" %>
         <%= form.select :portfolio_company_id,
             portfolio_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true},
-            class: "form-control", "data-action": "change->select#change", "data-target": "instrument_form_group", "data-url": "#{investment_instruments_path(fund_id: portfolio_investment.fund_id)}", "data-param": "portfolio_company_id" %>
+            class: "form-control", "data-action": "change->select#change", "data-target": "instrument_form_group", "data-url": "#{investment_instruments_path(fund_id: portfolio_investment.fund_id, entity_id: portfolio_investment.entity_id)}", "data-param": "portfolio_company_id" %>
 
         <small class="text-muted">
           Create <%= link_to "New Portfolio Company",
@@ -40,9 +40,13 @@
         <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control", "data-action": "change->select#change", "data-target": "base_amount_help_text", "data-url": "#{base_amount_form_portfolio_investments_path(params: params.to_unsafe_h)}", "data-param": "investment_instrument_id" %>
 
         <small class="text-muted">
-          Create <%= link_to "New Instrument",
-            new_investment_instrument_path("investment_instrument[portfolio_company_id]": "X",
-                "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": portfolio_investment.fund_id, "portfolio_investment[entity_id]": portfolio_investment.entity_id)) %>
+          <% if portfolio_investment.portfolio_company %>
+            Create <%= link_to "New Instrument",
+              new_investment_instrument_path("investment_instrument[portfolio_company_id]": portfolio_investment.portfolio_company_id,
+                  "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": portfolio_investment.fund_id, "portfolio_investment[entity_id]": portfolio_investment.entity_id)) %>
+          <% else %>
+            Select a Portfolio Company above to create a new instrument.
+          <% end %>
         </small>
       </div>
     </div>

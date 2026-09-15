@@ -237,3 +237,15 @@ Scenario Outline: Edit Email button hidden when stakeholder has users
     |     |entity_type=Company  |category=LP;primary_email=old@example.com | locked@test.com |
 
 
+Scenario: Check Account Entry parent name
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given there is another entity "name=Another Entity;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And there is a feeder fund "SAAS Fund Feeder" of the fund
+  And Given I upload an investors file for the fund
+  Given There are account entries with parent as investors
+  Given There are Account Entries in another entity with parent as investors
+  When I update the Investor names
+  Then The account entries must have updated parent name
+  And The account entries in another entity must not have updated parent name

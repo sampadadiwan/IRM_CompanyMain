@@ -9,12 +9,16 @@ Feature: ReportBuilderSchedulerJob — automated report delivery
     And a report builder report exists for the entity
 
   # ── Cron wiring ──────────────────────────────────────────────────────────
-  # No DB needed: parses config/schedule.rb the same way `whenever` does at
-  # deploy time, without touching the real system crontab.
+  # No DB needed. ReportBuilderSchedulerJob used to be an hourly `runner` line in
+  # config/schedule.rb; it now runs from sidekiq-cron inside the Sidekiq process.
+  # The crontab half guards against it being wired in both places (a double
+  # hourly run), rendered the same way `whenever` does at deploy time.
 
-  Scenario: config/schedule.rb wires ReportBuilderSchedulerJob into the hourly cron
+  Scenario: sidekiq-cron wires ReportBuilderSchedulerJob into the hourly cron
+    When I read the sidekiq-cron registrations from config/initializers/sidekiq.rb
+    Then sidekiq-cron should run "ReportBuilderSchedulerJob" on the cron "0 * * * *"
     When I render the whenever crontab from config/schedule.rb
-    Then the rendered crontab should invoke "ReportBuilderSchedulerJob.perform_later"
+    Then the rendered crontab should not invoke "ReportBuilderSchedulerJob"
 
   # ── next_run_at calculation (shared with AgentSchedule via Schedulable) ───
 
