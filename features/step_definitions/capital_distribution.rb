@@ -207,7 +207,17 @@ When('I create with fees from the capital distribution') do
   within "#capital_distribution_#{@capital_distribution.id}_actions" do
     click_on("Actions")
   end
-  click_on("Create With Fees")
+  click_on("Replicate Distribution")
+end
+
+Then('the distribution actions menu should offer {string} but not {string}') do |present_label, absent_label|
+  click_on("Actions")
+  expect(page).to have_link(present_label)
+  expect(page).not_to have_link(absent_label)
+end
+
+When('I visit the capital distributions list for the fund') do
+  visit(capital_distributions_path(fund_id: @fund.id))
 end
 
 Then('the new distribution form should show the source title as a copy with {string} fee rows') do |count|

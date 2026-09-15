@@ -14,9 +14,42 @@
   <% end %>
 
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :portfolio_company_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :back_to, class: "form-control", hidden: true, value: request.referer, name: "back_to" %>
 
+  <%
+    # A portfolio_company_id already passed in (from the portfolio company's own instruments
+    # tab, or an existing record being edited) locks the field to that company; only the
+    # generic /investment_instruments/new page (no company in context) lets it be picked.
+    portfolio_company_locked = investment_instrument.portfolio_company_id.present?
+    portfolio_company_options = current_user.entity.investors.portfolio_companies.includes(:investor_entity)
+                                            .sort_by { |investor| investor.investor_name }
+                                            .map { |investor| [investor.investor_name, investor.id] }
+
+    # Ensure the current portfolio company remains visible even if it is not in the default scoped options.
+    if portfolio_company_locked && portfolio_company_options.none? { |(_label, value)| value.to_s == investment_instrument.portfolio_company_id.to_s }
+      portfolio_company_options.unshift([investment_instrument.portfolio_company&.investor_name || investment_instrument.portfolio_company_id.to_s, investment_instrument.portfolio_company_id])
+    end
+
+    # Opened from a portfolio company's own tab, request.referer (that tab) is still the right
+    # place to land back on. Opened from the generic list with no company pre-selected, there's
+    # no single company page to return to - go back to the list itself instead.
+    # format: :html forces the extension-based route (/investment_instruments.html) so the
+    # redirect-following Turbo request can't be format-negotiated into index.turbo_stream.erb -
+    # that template does `turbo_stream.update params[:target]`, meant for the AJAX instrument
+    # picker on the portfolio investment form, and silently no-ops (updates nothing) without a
+    # target param, which looked like "save didn't redirect".
+    back_to_url = portfolio_company_locked ? request.referer : investment_instruments_path(format: :html)
+  %>
+  <%= form.text_field :back_to, class: "form-control", hidden: true, value: back_to_url, name: "back_to" %>
+
+  <div class="form-group">
+    <%= form.label :portfolio_company_id, "For" %>
+    <%= form.select :portfolio_company_id,
+          portfolio_company_options,
+          { selected: investment_instrument.portfolio_company_id, include_blank: !portfolio_company_locked },
+          class: "form-control",
+          disabled: portfolio_company_locked %>
+    <%= form.hidden_field :portfolio_company_id if portfolio_company_locked %>
+  </div>
 
   <div class="form-group">
     <%= form.label :name %>

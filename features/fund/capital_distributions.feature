@@ -249,5 +249,18 @@ Scenario: Create With Fees copies only the fee rows into a blank new distributio
   When I create with fees from the capital distribution
   Then the new distribution form should have a blank title with "1" fee rows pre-filled
 
+Scenario: Distribution actions menu offers Replicate Distribution and no separate full Clone
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Replicate Distribution Fund;currency=INR" for the entity
+  Given there is an existing investor "name=Investor 1"
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a AccountEntry for distribution "name=Portfolio Cashflows;reporting_date=2024-12-02;entry_type=Income;amount_cents=100000"
+  When I create a Capital Distribution "title=Source Distribution;income_cents=10000000;cost_of_investment_cents=5000000;reinvestment_cents=0;distribution_date=2024-12-15"
+  Then it should create Capital Distribution
+  Then the distribution actions menu should offer "Replicate Distribution" but not "Clone"
+  When I visit the capital distributions list for the fund
+  Then the distribution actions menu should offer "Replicate Distribution" but not "Clone"
+
 
 
