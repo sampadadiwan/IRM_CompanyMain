@@ -21,9 +21,10 @@
   <% end %>
 </div>
 <div class="table-responsive">
-  <%# Same table classes as the tasks grid (tasks/_index.html.erb) so both grids
-      render with the identical dataTable header/border styling %>
-  <table id="obligation-matrix" class="table table-bordered dataTable">
+  <%# jqDataTable enables the Stimulus datatable_controller to initialise jQuery
+      DataTables on this table — adds client-side sorting, search, and pagination.
+      The "Next Due" column uses data-sort attributes for correct date ordering. %>
+  <table id="obligation-matrix" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
         <th>Investor</th>
