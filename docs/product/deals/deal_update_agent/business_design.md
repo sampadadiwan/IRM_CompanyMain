@@ -41,6 +41,8 @@ The team member sends an email to the address. The email body should mention:
 |-----------|-------------------|
 | "Had a great call with Sequoia Capital. They want to see the data room." | Meeting Note on Sequoia Capital |
 | "Need to send term sheet to Accel by Friday" | Task assigned to sender, due Friday, on Accel |
+| "Ask Neil to send term sheet to Accel by Friday" | Task assigned to Neil (if Neil has deal access), due Friday, on Accel |
+| "@Priya to follow up with Tiger Global on the data room" | Task assigned to Priya, on Tiger Global |
 | "Caught up with Tiger Global, positive signals on the 10M commitment" | Meeting Note on Tiger Global |
 
 ### 3. The Agent Processes Automatically
@@ -60,13 +62,18 @@ The sender receives a confirmation email showing exactly what was created:
 - Due date (for tasks)
 - A preview of the filed content
 
-### 5. When the Agent Is Unsure → Warehouse
+### 5. When the Agent Is Unsure → Warehouse + Reply
 
-If the agent can't confidently match the stakeholder or determine the intent, the email goes to the **Warehouse** — a holding area on the deal page. A team member can:
-- **File it** — pick the correct stakeholder and create the note/task manually
+If the agent can't confidently match the stakeholder or determine the intent, the email goes to the **Warehouse** — a holding area on the deal page. The sender receives a reply email explaining why it couldn't be auto-filed:
+- **Conflicting stakeholder** — the subject line mentions one investor but the email body mentions a different one (e.g., subject says "Update on Sequoia" but body talks about "Met with Accel today"). The agent can't determine which investor the update is about. Sender is advised to send separate emails — one per investor.
+- **Unknown intent** — the agent couldn't determine if it was a meeting note or a task
+- **Unmatched stakeholder** — the investor name didn't match anyone on the deal
+
+A team member can then review the warehouse tab and:
+- **File it** — pick the correct stakeholder, choose note or task, and for tasks: set the due date and assign to a team member before filing
 - **Discard it** — mark it as irrelevant
 
-Team members check the warehouse tab on the deal page to review pending items.
+After resolving the last warehouse item, the page redirects back to the deal.
 
 ---
 
@@ -90,8 +97,9 @@ Team members check the warehouse tab on the deal page to review pending items.
 
 ### Tasks
 - Attached to the matched investor on the deal board
-- Assigned to the sender
+- Assigned to the person mentioned in the email (e.g., "Neil to follow up" or "@Priya"), or to the sender if no one is mentioned
 - Due date extracted from the email (e.g., "by Friday" → next Friday)
+- Email attachments (PDFs, decks) are automatically filed to the deal's document store alongside the task
 - Traceable to the source email via the agent's audit log (the link lives on the agent email record, not on the task itself)
 
 ---
@@ -101,9 +109,15 @@ Team members check the warehouse tab on the deal page to review pending items.
 The Warehouse tab appears on the deal page when there are pending items. Each item shows:
 - When it was received
 - Who sent it
-- The detected intent (Meeting Note / Task / Unknown)
+- The detected intent badge: **Meeting Note** (blue), **Task** (blue), **Conflicting** (yellow — subject and body named different investors), or **Unknown** (grey)
 - A preview of the content
 - Actions: File (pick stakeholder) or Discard
+
+When filing as a **Task**, additional fields appear inline:
+- **Due date** — calendar picker (read-only text input, consistent with app-wide date format), pre-filled from the AI parse if available
+- **Assignee** — dropdown of team members with direct deal access only (not all company admins)
+
+After the last item is resolved (filed or discarded), the page redirects to the deal instead of staying on the empty warehouse list.
 
 ---
 
@@ -118,23 +132,23 @@ The Warehouse tab appears on the deal page when there are pending items. Each it
 | AI parsing of email intent and stakeholder | Yes |
 | Stakeholder matching against deal investors | Yes |
 | Auto-creation of Meeting Notes and Tasks | Yes |
-| Confirmation email only (warehouse does NOT notify sender) | Yes |
+| Confirmation email (success) and warehouse reply email (explains why it wasn't auto-filed) | Yes |
 | Warehouse UI for manual filing | Yes |
 | Sender verification (email + SPF/DKIM/DMARC) | Yes |
 | Access-based auth (user must have deal access to send) | Yes |
 | Message-ID deduplication | Yes |
 | Automated test suite (14 scenarios) | Yes |
 
-### Phase 2 — Building
+### Phase 2 — Done
 
-| Feature | Description |
-|---------|-------------|
-| Signature/reply chain stripping | Strip quoted replies, signatures, disclaimers, and "Sent from my iPhone" before parsing — cleaner notes |
-| Auto-reply detection | Ignore out-of-office and auto-generated replies so they don't create garbage items |
-| Attachments | Email attachments (PDFs, decks) are filed to the deal's document store alongside the note/task |
-| Address edit/rotation | Inline edit exists; address rotation (replacing a compromised address) not yet built |
-| @name assignee parsing | Assign tasks to other deal team members via @name mentions (opportunistic) |
-| WhatsApp channel | Send deal updates via WhatsApp forward (pending Product spec) |
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Auto-reply detection | Out-of-office, bounce notifications, and auto-generated replies are silently dropped before processing — prevents garbage notes from mail loops | Done |
+| Signature/reply chain stripping | Quoted replies, signatures, disclaimers, and "Sent from my iPhone" are stripped before AI parsing — cleaner notes, fewer wasted AI tokens | Done |
+| Attachments (Tasks) | Email attachments (PDFs, decks) are filed to the deal's document store alongside created Tasks. Notes attachment support deferred until usage justifies it | Done |
+| Assignee parsing | Tasks can be assigned to other deal team members by mentioning their name naturally — "Neil to follow up", "Ask Priya to send", or "@Khushali". Falls back to sender if no match | Done |
+| Address rotation | Generate a new random address, invalidating the old one — a safety net for compromised addresses | Deferred — inline edit (already live) covers the "change address" use case; auth layer blocks unauthorized senders |
+| WhatsApp channel | Send deal updates via WhatsApp message (pending Product spec) | Blocked |
 
 ### Phase 3 — Planned
 

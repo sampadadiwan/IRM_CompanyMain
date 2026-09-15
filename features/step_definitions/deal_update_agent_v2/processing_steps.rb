@@ -116,3 +116,80 @@ Then("a v2 WarehouseItem should exist for the deal with intent {string}") do |in
   expect(@warehouse_item.parsed_intent).to eq(intent)
   expect(@warehouse_item).to be_pending
 end
+
+# Asserts the cleaned body text that was passed to the LLM parser
+# after EmailBodyCleaner stripped signatures and quoted replies.
+#
+# @param expected_body [String] the expected cleaned body text
+Then("the v2 LLM should have received body {string}") do |expected_body|
+  expect(DealEmailParser).to have_received(:call).with(
+    hash_including(email_body: expected_body.strip)
+  )
+end
+
+# Asserts that a Task has the expected number of attached Documents
+# with a specific filename.
+#
+# @param count [Integer] expected document count
+# @param filename [String] expected document name
+Then("the v2 Task should have {int} attached document named {string}") do |count, filename|
+  expect(@created_task.documents.count).to eq(count),
+                                           "Expected #{count} document(s) but found #{@created_task.documents.count}"
+  expect(@created_task.documents.first.name).to eq(filename)
+end
+
+# Asserts that a Task has exactly N attached Documents (any name).
+#
+# @param count [Integer] expected document count
+Then("the v2 Task should have {int} attached documents") do |count|
+  expect(@created_task.documents.count).to eq(count),
+                                           "Expected #{count} document(s) but found #{@created_task.documents.count}"
+end
+
+# Asserts no Documents were created during processing.
+Then("no v2 Document should be created") do
+  expect(Document.count).to eq(0),
+                            "Expected no Documents but found #{Document.count}"
+end
+
+# Stub the LLM to return a task parse result with an assignee.
+#
+# @param stakeholder [String] stakeholder name
+# @param due_date [String] ISO 8601 due date
+# @param assignee [String] assignee name extracted by LLM
+Given("the v2 LLM will parse the email as a task for {string} due {string} assigned to {string}") do |stakeholder, due_date, assignee|
+  @llm_parse_result = {
+    "intent" => "task",
+    "stakeholder_string" => stakeholder,
+    "body" => "Send term sheet to #{stakeholder}",
+    "due_date" => due_date,
+    "due_date_source_text" => "by next Friday",
+    "assignee_string" => assignee
+  }
+end
+
+# Asserts the Task is assigned to a specific named user.
+#
+# @param user_key [String] the user key from @users hash
+Then("a v2 Task should exist on {string} assigned to {string}") do |investor_name, user_key|
+  investor = Investor.find_by!(investor_name: investor_name)
+  deal_investor = DealInvestor.find_by!(deal: @deal, investor: investor)
+
+  @created_task = Task.find_by(owner: deal_investor)
+  expect(@created_task).not_to be_nil,
+                               "Expected a Task on #{investor_name} but none found"
+  expect(@created_task.assigned_to).to eq(@users[user_key]),
+                                       "Expected task assigned to #{user_key} but got user ##{@created_task.assigned_to_id}"
+end
+
+# Asserts the Task is assigned to the sender (primary user).
+Then("a v2 Task should exist on {string} assigned to the sender") do |investor_name|
+  investor = Investor.find_by!(investor_name: investor_name)
+  deal_investor = DealInvestor.find_by!(deal: @deal, investor: investor)
+
+  @created_task = Task.find_by(owner: deal_investor)
+  expect(@created_task).not_to be_nil,
+                               "Expected a Task on #{investor_name} but none found"
+  expect(@created_task.assigned_to).to eq(@user),
+                                       "Expected task assigned to sender but got user ##{@created_task.assigned_to_id}"
+end

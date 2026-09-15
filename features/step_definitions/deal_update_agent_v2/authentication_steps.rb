@@ -101,3 +101,46 @@ Then("no v2 email should be sent") do
   expect(ActionMailer::Base.deliveries).to be_empty,
                                            "Expected no emails but found #{ActionMailer::Base.deliveries.count}: #{ActionMailer::Base.deliveries.map(&:subject)}"
 end
+
+# Webhook invocation with a file attachment.
+# Uses Rack::Test::UploadedFile to simulate SendGrid's multipart attachment field.
+#
+# @param filename [String] file name from public/sample_uploads/
+When("a v2 SendGrid webhook arrives with attachment {string}:") do |filename, table|
+  row = table.rows_hash
+
+  to_address = case row["to"]
+               when "the deal ingest address"
+                 @ingest_address.full_address
+               else
+                 row["to"]
+               end
+
+  from_address = case row["from"]
+                 when "the user's email"
+                   @user.email
+                 when "the second user's email"
+                   @users.values.last.email
+                 else
+                   row["from"]
+                 end
+
+  headers = row["headers"] || ""
+  headers += "\nMessage-ID: <#{SecureRandom.uuid}@mail.test>"
+
+  file_path = Rails.public_path.join("sample_uploads", filename)
+  attachment = Rack::Test::UploadedFile.new(file_path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+  @webhook_params = ActionController::Parameters.new(
+    to: to_address,
+    from: from_address,
+    subject: "Test email",
+    text: row["text"],
+    html: nil,
+    headers: headers,
+    envelope: { "from" => from_address, "to" => [to_address] }.to_json,
+    attachment1: attachment
+  )
+
+  @auth_result = DealIngestAuthenticator.call(@webhook_params)
+end

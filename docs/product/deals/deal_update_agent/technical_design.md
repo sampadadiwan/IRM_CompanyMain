@@ -5,9 +5,12 @@
 The Deal Update Agent is an email ingestion pipeline that processes inbound emails via SendGrid webhook, parses them with an LLM, matches stakeholders using fuzzy string matching, and creates Notes or Tasks on the deal board.
 
 ```
-Email → SendGrid → Webhook POST → Auth → Sidekiq Job → LLM Parse → Match → Create Note/Task → Reply Email
-                                    ↓ (fail)                           ↓ (no match)
-                                  Drop silently                     Warehouse → Manual filing UI
+Email → SendGrid → Webhook POST → Auto-reply check → Auth → Extract attachments
+                                    ↓ (auto-reply)     ↓ (fail)
+                                  Drop silently      Drop silently
+        → Sidekiq Job → Strip signatures → LLM Parse → Match → Resolve assignee → Create Note/Task (+attachments) → Reply Email
+                                                        ↓ (no match)
+                                                      Warehouse → Manual filing UI
 ```
 
 ---
@@ -36,12 +39,14 @@ Audit log of every authenticated inbound email.
 | `deal_id` | bigint, not null | FK → deals |
 | `sender_user_id` | bigint, not null | FK → users |
 | `message_id` | string, not null | RFC-822 Message-ID for deduplication, unique index |
+| `subject` | string, nullable | Email subject line — stored for subject/body stakeholder conflict detection |
 | `raw_payload` | text | Email body (HTML or plain text) |
 | `received_at` | datetime, not null | |
 | `status` | string(20), default "pending" | `pending` → `filed` / `warehoused` / `dropped` |
 | `parse_json` | json | LLM structured output |
 | `confidence` | decimal(5,2) | Match confidence score (0.00–1.00) |
 | `match_tier` | string(2) | `A` (auto), `M` (manual), future: `B`/`C` |
+| `attachment_data` | json, nullable | Array of Shrine file references for email attachments (P2-3). Uploaded to cache storage during auth, attached to Task by processor. |
 
 #### `warehouse_items`
 Parking lot for emails that couldn't be auto-filed.
@@ -83,16 +88,18 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 ### Services
 | File | Purpose |
 |------|---------|
-| `app/packs/startups/deals/services/deal_ingest_authenticator.rb` | 5-step auth: address→deal, From→user, deal access check (AccessRight or role), SPF/DKIM/DMARC, dedupe |
-| `app/packs/ai/deal_update_agent/services/deal_email_parser.rb` | LLM parsing — structured JSON output (intent, stakeholder, body, due date) |
+| `app/packs/startups/deals/services/deal_ingest_authenticator.rb` | 6-step auth: auto-reply detection (Step 0), address→deal, From→user, deal access check (AccessRight or role), SPF/DKIM/DMARC, dedupe. Also extracts attachments to Shrine cache. |
+| `app/packs/startups/deals/services/email_body_cleaner.rb` | Strips email signatures and quoted reply chains using `email_reply_parser` gem (by GitHub). Called before LLM parsing. |
+| `app/packs/ai/deal_update_agent/services/deal_email_parser.rb` | LLM parsing — structured JSON output (intent, stakeholder, body, due date, assignee) |
 | `app/packs/startups/deals/services/deal_stakeholder_matcher.rb` | Tier A matching — Dice coefficient fuzzy, entity suffix stripping |
-| `app/packs/startups/deals/services/deal_ingest_processor.rb` | Orchestrator — parse → match → create/warehouse → reply |
+| `app/packs/startups/deals/services/assignee_matcher.rb` | Matches assignee name against deal team members (full name → first name → last name). Best-effort — no match = sender. |
+| `app/packs/startups/deals/services/deal_ingest_processor.rb` | Orchestrator — body cleanup → parse → match → resolve assignee → create/warehouse (+ attachments on Task) → reply |
 
 ### Controllers
 | File | Purpose |
 |------|---------|
 | `app/packs/misc/incoming_emails/controllers/incoming_emails_controller.rb` | SendGrid webhook — routes by `DealIngestAddress` lookup on local part |
-| `app/packs/startups/deals/controllers/warehouse_items_controller.rb` | Warehouse UI — index (pending items), resolve (file/discard) |
+| `app/packs/startups/deals/controllers/warehouse_items_controller.rb` | Warehouse UI — index (pending items), resolve (file with editable task fields / discard), redirects to deal page when warehouse is empty |
 | `app/packs/startups/deals/controllers/deals_controller.rb` | Deal show — lazy ingest address generation via `ensure_deal_ingest_address` |
 
 ### Jobs
@@ -103,7 +110,7 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 ### Mailers
 | File | Purpose |
 |------|---------|
-| `app/packs/startups/deals/mailers/deal_ingest_mailer.rb` | Confirmation reply email only (warehouse notification removed) |
+| `app/packs/startups/deals/mailers/deal_ingest_mailer.rb` | Reply emails: `confirmation` (success) and `warehoused` (explains why not auto-filed) |
 
 ### Policies
 | File | Purpose |
@@ -116,7 +123,9 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 | `app/packs/startups/deals/views/deals/_deal_ingest_address.html.erb` | Address display with copy button and tooltip |
 | `app/packs/startups/deals/views/deals/_list_view_header.html.erb` | Deal header — renders ingest address partial |
 | `app/packs/startups/deals/views/warehouse_items/index.html.erb` | Warehouse items table with Turbo Frame |
-| `app/packs/startups/deals/views/warehouse_items/_resolve_form.html.erb` | File/discard controls for each item |
+| `app/packs/startups/deals/views/warehouse_items/_resolve_form.html.erb` | File/discard controls — task filing includes due date and assignee fields |
+| `app/packs/startups/deals/views/deal_ingest_mailer/warehoused.html.erb` | Warehouse reply email template — reason-specific messaging |
+| `app/javascript/controllers/warehouse_resolve_controller.js` | Stimulus controller — toggles task fields on intent change |
 
 ### JavaScript
 | File | Purpose |
@@ -142,8 +151,9 @@ The agent-to-item link lives on `agent_ingested_emails` via a polymorphic `filed
 The SendGrid webhook POST hits `IncomingEmailsController#sendgrid`. The controller extracts the local part from the `to` address and checks for a matching `DealIngestAddress` record. If found, it delegates to `DealIngestAuthenticator` and returns `200 OK`. This address-based routing allows the deal update pipeline to share the same email domain as regular incoming emails.
 
 ### Step 2: Authentication (`DealIngestAuthenticator`)
-5-step authentication pipeline — each failure drops silently (never reply, FR-4):
+6-step authentication pipeline — each failure drops silently (never reply, FR-4):
 
+0. **Auto-reply detection** (P2-1) — check `Auto-Submitted` (RFC 3834), `Precedence: bulk/junk/list`, `X-Auto-Response-Suppress` headers. OOO, bounces, auto-generated replies → **drop silently** (no DB queries needed)
 1. Look up the `to` address in `deal_ingest_addresses` → get `deal_id`
 2. Not found → **drop silently**
 3. Look up user by `From` email in the deal's entity (`User.find_by(email:, entity_id:)`)
@@ -153,20 +163,30 @@ The SendGrid webhook POST hits `IncomingEmailsController#sendgrid`. The controll
 7. Check SPF/DKIM/DMARC from SendGrid payload headers
 8. Fail → **drop silently**
 9. Dedupe on RFC-822 `Message-ID` (unique index on `agent_ingested_emails.message_id`)
-10. Create `AgentIngestedEmail` record (status: `pending`), enqueue `ProcessDealIngestJob`
+10. Extract attachments from SendGrid payload (P2-3) — upload to Shrine cache, store metadata as JSON on `attachment_data`
+11. Create `AgentIngestedEmail` record (status: `pending`, with `attachment_data`), enqueue `ProcessDealIngestJob`
+
+### Step 2.5: Body Cleanup (`EmailBodyCleaner`) — P2-2
+Before LLM parsing, the processor strips email signatures and quoted reply chains via the `email_reply_parser` gem (by GitHub). The raw payload is preserved on `AgentIngestedEmail` for audit; only the cleaned body reaches the LLM.
 
 ### Step 3: LLM Parsing (`DealEmailParser`)
-Sends the email body to the LLM with a structured prompt. Returns:
+Sends the cleaned email body (and subject line) to the LLM with a structured prompt. Returns:
 ```json
 {
   "intent": "meeting_note | task | unknown",
   "stakeholder_string": "Sequoia Capital",
+  "subject_stakeholder_string": "Accel",
   "body": "cleaned note text",
   "due_date": "2026-09-01",
-  "due_date_source_text": "in two weeks"
+  "due_date_source_text": "in two weeks",
+  "assignee_string": "Neil"
 }
 ```
-If intent is `unknown` → **warehouse** immediately.
+- `subject_stakeholder_string`: investor name extracted from the email subject line (null if none mentioned). Used for subject/body conflict detection.
+- `assignee_string` (P2-5): extracted from natural language ("Neil to follow up", "Ask Priya to send", "@Khushali"). Set to null for meeting notes or when no assignee is mentioned.
+- If intent is `unknown` → **warehouse** immediately.
+
+**Subject/body stakeholder conflict detection:** After LLM parsing, a deterministic code-level check in `validate_result` compares `subject_stakeholder_string` and `stakeholder_string`. If both are present and differ (case-insensitive), intent is forced to `unknown` regardless of what the LLM returned. This ensures conflicting emails are always warehoused — LLM prompt rules are unreliable for enforcement, so the code-level check acts as a safety net.
 
 ### Step 4: Stakeholder Matching (`DealStakeholderMatcher`)
 Tier A only (MVP): match against the deal's `DealInvestors`.
@@ -180,14 +200,28 @@ Tier A only (MVP): match against the deal's `DealInvestors`.
 - Single fuzzy match ≥ 0.85 (Dice coefficient) → auto-file
 - Multiple matches above threshold or no match → **warehouse**
 
+### Step 4.5: Assignee Resolution (`AssigneeMatcher`) — P2-5
+For tasks, the processor attempts to match `assignee_string` against users with deal access:
+1. Exact match on full name (case-insensitive)
+2. Exact match on first name
+3. Exact match on last name
+4. Multiple matches at any step → ambiguous → fall back to sender
+
+Best-effort: no match = task assigned to sender. No error, no warehouse, no notification.
+
 ### Step 5: Create Note/Task
 Wrapped in `ActiveRecord::Base.transaction` with `Chewy.strategy(:atomic)`:
 - Create `Note` or `Task` on the matched `DealInvestor` (clean creation — no agent columns on the record)
+- Tasks: `assigned_to` set to matched assignee (P2-5) or sender as fallback
+- Tasks: email attachments (P2-3) attached as Documents via `WithFolder` — Shrine promotes files from cache to permanent S3 storage
 - Mark email as `filed` with confidence score, match tier `"A"`, and `filed_as:` pointing to the created item
 
 ### Step 6: Reply Email
-- **Success** → confirmation email with what was created
-- **Warehouse** → no notification (sender is NOT notified; users check warehouse tab themselves)
+- **Success** → confirmation email with what was created (item type, deal, stakeholder, due date, body preview)
+- **Warehouse** → warehouse reply email explaining why the email couldn't be auto-filed. Three reasons, checked in priority order:
+  1. `conflicting_stakeholder` — subject and body named different investors (tells sender to send separate emails)
+  2. `unknown_intent` — couldn't determine meeting note vs task
+  3. `unmatched_stakeholder` — investor name didn't match anyone on the deal
 
 ---
 
@@ -269,15 +303,19 @@ The controller routes by address lookup (one indexed DB query per inbound email)
 
 ### Cucumber Features (`features/deal/deal_update_agent_v2.feature`)
 
-14 scenarios tagged `@deal_update_agent`, organized into five groups:
+25 scenarios tagged `@deal_update_agent_v2`, organized into eight groups:
 
 | Group | Scenarios | What's Tested |
 |-------|-----------|---------------|
-| **Happy path** | 2 | Meeting note creation, task creation with due date |
+| **Happy path** | 3 | Meeting note creation, task creation with due date, second user same address |
 | **Security drops** | 5 | Unknown address, unknown sender, no deal access, SPF/DKIM fail, duplicate Message-ID |
+| **Auto-reply detection (P2-1)** | 3 | OOO auto-reply, bounce notification, bulk precedence — all silently dropped |
 | **Warehouse** | 2 | Unknown stakeholder → warehouse, unknown intent → warehouse |
 | **Resolution** | 2 | Manual file from warehouse, discard from warehouse |
-| **Address management** | 3 | Auto-generation on deal creation, lazy generation on page visit, custom address editing |
+| **Address management** | 2 | Default address = deal ID, same address for all users |
+| **Signature stripping (P2-2)** | 2 | Email signature stripped, quoted reply chain stripped |
+| **Attachments (P2-3)** | 3 | Task with attachment creates Document, task without attachment has zero documents, meeting note ignores attachment |
+| **Assignee parsing (P2-5)** | 3 | @name assigns to team member, natural language assigns, unmatched falls back to sender |
 
 ### Test Setup
 
@@ -289,88 +327,115 @@ The controller routes by address lookup (one indexed DB query per inbound email)
 ### Running
 
 ```bash
-bundle exec cucumber features/deal/deal_update_agent_v2.feature          # all 14 scenarios
+bundle exec cucumber features/deal/deal_update_agent_v2.feature          # all 25 scenarios
 bundle exec cucumber features/deal/deal_update_agent_v2.feature:16       # single scenario by line
 bundle exec cucumber --tags @deal_update_agent                           # by tag
 ```
 
 ---
 
-## Phase 2 — Building
+## Phase 2 — Done
 
-### Tier B Matching — Disambiguation (FR-17, §6.2)
-- When 2+ deal-attached stakeholders score ≥ 0.75 (or single 0.75–0.90), reply with a numbered list
-- User replies with "1", "2", "0" (none) from their email client
-- New status on `AgentIngestedEmail`: `pending_disambiguation`
-- Track reply chain via `In-Reply-To` header matching against pending emails
-- No reply within 48h → warehouse, sender notified once
-- New mailer template: `DealIngestMailer#disambiguation`
+### P2-1: Auto-Reply Detection
 
-### Tier C Matching — Global Search (FR-17-20, §6.3)
-- If no match among deal-attached DealInvestors, search Investor table scoped by sender's org_id
-- Higher threshold (≥ 0.95) — global table has thousands of records vs 5–40 on a deal
-- Single global match → reply asking user to confirm attach + file (never auto-attach)
-- New status on `AgentIngestedEmail`: `pending_attach_confirm`
-- On "YES" reply: create DealInvestor association + file the note/task as one atomic action
-- New mailer template: `DealIngestMailer#attach_confirm`
-- New `match_tier: "C"` for audit trail
-- Confirmation shows stakeholder name, known domains, and how many other deals they appear on
+Added as Step 0 in `DealIngestAuthenticator`, before any database queries. Checks three RFC-standard headers:
 
-### Signature/Reply Chain Stripping (FR-11)
-- New `EmailBodySanitizer` service (or method in DealEmailParser) runs before the LLM call
-- Strips: quoted reply chains (`On Mon, ... wrote:`), signature blocks (`--`), legal disclaimers, "Sent from my iPhone/Android", tracking pixels
-- Raw original preserved on `agent_ingested_emails.raw_payload` for reference
+- `Auto-Submitted: auto-replied` / `auto-generated` (RFC 3834)
+- `Precedence: bulk` / `junk` / `list`
+- `X-Auto-Response-Suppress` (any value)
 
-### Auto-Reply Detection (FR-23)
-- New check in `DealIngestAuthenticator` after dedupe step
-- Inspect `Auto-Submitted:` and `Precedence:` headers
-- Auto-generated emails → drop silently (prevents mail loops with OOO responders)
+Auto-replies (OOO, bounce notifications, mailing list digests) are silently dropped — no `AgentIngestedEmail` record created, no job enqueued. Prevents garbage notes from mail loops.
 
-### Rate Limiting (FR-6)
-- Max 30 emails/hour per address
-- Counter in Redis (per address key, 1-hour TTL window)
-- Check in `DealIngestAuthenticator` after address lookup
-- Excess emails queued (not dropped), processed when window resets
-- Sender notified once per rate-limit event
-- New mailer template: `DealIngestMailer#rate_limited`
+### P2-2: Signature/Reply Chain Stripping
 
-### Leak Alert (FR-3)
-- When authentication fails (sender has no deal access), alert the deal's admin users
-- New mailer template: `DealIngestMailer#leak_alert`
-- Sent to deal admins (not the sender) — "Someone tried to use the deal update address from an unauthorized email"
-- Email is still dropped per existing FR-4 rules
+New service: `EmailBodyCleaner` — a slim wrapper around the `email_reply_parser` gem (by GitHub).
 
-### Undo — 30-day (FR-31-32)
-- Confirmation email includes a signed "Undo" link (MessageVerifier token with 30-day expiry)
-- New controller action: `DealIngestUndoController#undo`
-- Undo returns the item to warehouse rather than deleting
-- New field on `AgentIngestedEmail`: `undone_at` (datetime)
-- Compound undo: if the email also attached a stakeholder via Tier C, undo reverses both — unless the stakeholder has since acquired other activity on the deal (then undo item only, explain in response)
+- Strips: quoted reply chains (`On Mon, X wrote:`, `>` lines), email signatures (`--`, `Sent from my iPhone`, corporate disclaimers), forwarded headers
+- Called in `DealIngestProcessor.parse_email` before passing body to `DealEmailParser`
+- Raw original always preserved on `agent_ingested_emails.raw_payload`
 
-### Agent-Created Badge (FR-30)
-- New field on `AgentIngestedEmail`: `agent_reviewed_at` (datetime, null until human views/edits)
-- Board partials show "AI" badge when `filed_as` exists and `agent_reviewed_at.nil?`
-- Badge cleared when a user views the note/task detail page (set via controller callback)
+### P2-3: Attachments (Tasks Only)
 
-### Attachments (FR-33)
-- Extract attachments from SendGrid webhook payload
-- Upload to deal's document store via existing Shrine + S3 infrastructure
-- Link documents to the created Note/Task
-- Respect existing file type/size limits
-- Rejected attachments noted in confirmation reply ("1 attachment skipped — exceeds 10MB limit")
-- Attachment metadata stored on `AgentIngestedEmail` for audit
+SendGrid posts attachments as multipart form fields (`attachment1`, `attachment2`, etc.). Processing flow:
 
-### 72h Warehouse Digest (FR-27)
-- New sidekiq-cron job (daily): `WarehouseDigestJob`
-- Query `warehouse_items.pending.where("created_at < ?", 72.hours.ago)`, group by deal + sender
-- New mailer: `DealIngestMailer#warehouse_digest` — "You have 3 items waiting for Deal X"
-- Badge/counter on deal page next to the warehouse tab
+1. **Extract in authenticator** — `DealIngestAuthenticator.extract_attachments` uploads each attachment to Shrine `:cache` storage synchronously during the webhook request (before async job). Stored as JSON array on `agent_ingested_emails.attachment_data`.
+2. **Attach in processor** — `DealIngestProcessor.attach_documents!` creates `Document` records via the `WithFolder` concern on Task. Shrine auto-promotes from cache to permanent S3 storage.
 
-### VCF Contact Card (FR-7)
-- New controller action on `DealsController`: `download_vcf`
-- Generates a `.vcf` file with display name "[Deal Name] — Deal Board" and the deal's ingest address
-- Download button on deal page next to the copy button
-- Makes the address autocomplete on phones — key adoption driver
+Migration: `add_attachment_data_to_agent_ingested_emails` — adds nullable JSON column `attachment_data`.
+
+Notes attachment support deferred — will assess once Task attachments prove useful in production.
+
+### P2-4: Address Rotation — Deferred
+
+Deferred to a future phase. The inline edit from Phase 1 Rework (R8) already lets company_admins change the address. The auth layer blocks unauthorized senders, so a compromised address can be changed manually without needing a dedicated "rotation" flow.
+
+### P2-5: Assignee Parsing
+
+Two-part implementation:
+
+**LLM extraction** — `DealEmailParser` prompt updated to extract `assignee_string` from natural language patterns:
+- `@name` mentions (`@Priya`, `@Neil`)
+- Natural language patterns (`"Neil to follow up"`, `"Ask Priya to send"`, `"Name should/will..."`)
+- Only applies to `intent: "task"` — null for meeting notes
+
+**Matching** — New service `AssigneeMatcher`:
+- Matches extracted name against users with deal access (AccessRight + company_admin role)
+- Three-step strategy: full name → first name → last name (all case-insensitive)
+- Multiple matches at any step = ambiguous = nil (falls back to sender)
+- Conservative by design — wrong assignment is worse than no assignment
+
+Integration: `DealIngestProcessor.create_task!` calls `resolve_assignee(parsed) || @user`.
+
+### Warehouse Reply Email
+
+Added `warehoused` action to `DealIngestMailer`. When an email is warehoused, the sender receives a reply explaining why. Three reasons, determined by `DealIngestProcessor#warehouse_reason`:
+- `conflicting_stakeholder` — subject and body named different investors. Reply names both strings and advises sending separate emails.
+- `unknown_intent` — "We couldn't determine whether this was a meeting note or a task"
+- `unmatched_stakeholder` — "We couldn't match 'XYZ' to any investor on this deal"
+
+The email includes a body preview and directs the user to the warehouse tab. Triggered from `DealIngestProcessor#warehouse!` via `send_warehoused_reply!`. Only sent to authenticated senders (passed all 6 auth steps) — no information leakage.
+
+### Warehouse UX Improvements
+
+Two UX fixes based on user feedback:
+
+1. **Redirect after resolve** — `WarehouseItemsController#resolve` now redirects to the deal page (`deal_path`) when no pending warehouse items remain, instead of staying on the empty warehouse list. If items remain, stays on the warehouse.
+
+2. **Editable task fields** — When filing a warehouse item as a task, the resolve form shows inline:
+   - **Due date** — app-wide locale date picker (readonly text input + calendar icon via `LocaleDateFormBuilder`), pre-filled from LLM parse result
+   - **Assignee** — dropdown of users with direct deal access only (via `AccessRight`, not all company admins)
+   - Fields toggled by `warehouse_resolve_controller.js` (Stimulus) — uses `hidden` attribute + `style.display` dual toggle to avoid Bootstrap `d-flex` conflicts
+   - All four form inputs (stakeholder, intent, date, assignee) use uniform 160px width
+   - Controller accepts `due_date` and `assigned_to_id` params, falling back to LLM values / current user
+
+3. **Conflicting badge** — Warehouse index shows a yellow "Conflicting" badge when `subject_stakeholder_string` and `stakeholder_string` are both present and differ (case-insensitive). Replaces the normal intent badge for conflict cases.
+
+4. **Narrowed assignee dropdown** — Both `WarehouseItemsController#deal_team_members` and `AssigneeMatcher#deal_team_members` query only `AccessRight.where(owner: @deal).pluck(:user_id)` — no longer includes all company admins. This ensures only users with direct deal access appear in the dropdown and are eligible for assignment.
+
+### P2-6: WhatsApp Channel — Blocked
+
+Blocked on Product's functional spec. Scope questions listed in `docs/product/deals/deal_update_agent/whatsapp_channel_brief.md`.
+
+### New/Modified Files (Phase 2)
+
+| File | Change |
+|------|--------|
+| `app/packs/startups/deals/services/deal_ingest_authenticator.rb` | Added Step 0 auto-reply detection + attachment extraction + subject storage on ingested email |
+| `app/packs/startups/deals/services/email_body_cleaner.rb` | **New** — signature/reply stripping via `email_reply_parser` gem |
+| `app/packs/startups/deals/services/deal_ingest_processor.rb` | Body cleanup before LLM, assignee resolution, document attachment, three-way `warehouse_reason` logic, passes subject to parser |
+| `app/packs/ai/deal_update_agent/services/deal_email_parser.rb` | `assignee_string` + `subject_stakeholder_string` in prompt schema, subject section in prompt, deterministic conflict check in `validate_result` |
+| `app/packs/startups/deals/services/assignee_matcher.rb` | **New** — name matching against deal team members (AccessRight only, no company admins) |
+| `app/packs/startups/deals/services/deal_stakeholder_matcher.rb` | No change |
+| `db/migrate/20260902063108_add_attachment_data_to_agent_ingested_emails.rb` | **New** — JSON column for attachment metadata |
+| `db/migrate/20260907072631_add_subject_to_agent_ingested_emails.rb` | **New** — nullable string column for email subject (conflict detection) |
+| `Gemfile` | Added `gem 'email_reply_parser'` |
+| `app/packs/startups/deals/mailers/deal_ingest_mailer.rb` | Added `warehoused` action with three-reason messaging + `subject_stakeholder_string` param |
+| `app/packs/startups/deals/views/deal_ingest_mailer/warehoused.html.erb` | **New** — warehouse reply email template with conflicting/unknown/unmatched blocks |
+| `app/packs/startups/deals/controllers/warehouse_items_controller.rb` | Redirect logic, `resolve_task_assignee`, `resolve_task_due_date`, `deal_team_members` narrowed to AccessRight only |
+| `app/packs/startups/deals/views/warehouse_items/index.html.erb` | Conflicting badge (yellow) when subject/body stakeholders differ |
+| `app/packs/startups/deals/views/warehouse_items/_resolve_form.html.erb` | Uniform 160px inputs, inline-block task row, locale date picker with readonly, two-row layout |
+| `app/javascript/controllers/warehouse_resolve_controller.js` | **New** — toggles task fields on intent change (hidden attr + style.display dual toggle) |
+| `features/deal/deal_update_agent_v2.feature` | 11 new scenarios (auto-reply, signature, attachments, assignee) |
 
 ---
 
@@ -404,7 +469,6 @@ bundle exec cucumber --tags @deal_update_agent                           # by ta
 - Parser returns `items[]` array instead of single item
 
 ### Additional Parsing Enhancements
-- @name assignee parsing (FR-13) — assign to another deal team member
 - Sender timezone date resolution (FR-12) — resolve relative dates in sender's TZ
 - mailto: button on deal page (FR-7) — "Email this deal" producing mailto link
 - Address reset from admin UI (FR-8)
@@ -426,7 +490,7 @@ bundle exec cucumber --tags @deal_update_agent                           # by ta
 
 ### Known Limitations (to validate with real clients)
 
-- **Malformed due dates in warehouse filing:** If the LLM stored an unparseable date string in `parse_json["due_date"]` (e.g. "TBD", "next Friday" unresolved), the warehouse resolution path creates the Task with `due_date: nil` silently. The user is not warned that the date was dropped. Acceptable for MVP since the LLM parser resolves relative dates at ingestion time, but should be revisited once real client usage reveals whether malformed dates occur in practice. Options: flash warning, inline date picker in the resolve form, or re-parse the date at filing time.
+- **Malformed due dates in warehouse filing:** If the LLM stored an unparseable date string in `parse_json["due_date"]` (e.g. "TBD", "next Friday" unresolved), the date picker in the resolve form will be empty. The user can enter a correct date manually before filing. The `safe_parse_date` helper returns nil for unparseable values, so the Task is created without a due date if left empty.
 
 ### AI Queries via MCP
 - Surface the deal update agent as an MCP tool

@@ -20,23 +20,27 @@ class DealEmailParser
   UNKNOWN_RESULT = {
     "intent" => "unknown",
     "stakeholder_string" => nil,
+    "subject_stakeholder_string" => nil,
     "body" => nil,
     "due_date" => nil,
-    "due_date_source_text" => nil
+    "due_date_source_text" => nil,
+    "assignee_string" => nil
   }.freeze
 
   # Parse an email body into structured deal update data.
   #
   # @param email_body [String] the raw email body (HTML or plain text)
+  # @param subject [String, nil] the email subject line for conflict detection
   # @param entity [Entity] the entity for LLM API key resolution
   # @param received_at [DateTime] when the email was received (for relative date resolution)
-  # @return [Hash] parsed result with intent, stakeholder_string, body, due_date, due_date_source_text
-  def self.call(email_body:, entity:, received_at: Time.current)
-    new(email_body:, entity:, received_at:).parse
+  # @return [Hash] parsed result with intent, stakeholder_string, subject_stakeholder_string, body, due_date
+  def self.call(email_body:, entity:, received_at: Time.current, subject: nil)
+    new(email_body:, entity:, received_at:, subject:).parse
   end
 
-  def initialize(email_body:, entity:, received_at:)
+  def initialize(email_body:, entity:, received_at:, subject: nil)
     @email_body = email_body
+    @subject = subject
     @entity = entity
     @received_at = received_at
   end
@@ -82,26 +86,42 @@ class DealEmailParser
 
       {
         "intent": "meeting_note" or "task" or "unknown",
-        "stakeholder_string": "name of the investor/stakeholder mentioned" or null,
+        "stakeholder_string": "name of the investor/stakeholder mentioned in the body" or null,
+        "subject_stakeholder_string": "name of the investor/stakeholder mentioned in the subject" or null,
         "body": "cleaned text for the note or task description",
         "due_date": "YYYY-MM-DD" or null,
-        "due_date_source_text": "original date phrase from email" or null
+        "due_date_source_text": "original date phrase from email" or null,
+        "assignee_string": "name of the person assigned to this task" or null
       }
 
       Rules:
       - intent is "meeting_note" if the email describes a meeting, call, conversation, update, or observation about a stakeholder
       - intent is "task" if the email describes something that needs to be done, a follow-up, a to-do, or an action item
       - intent is "unknown" if you cannot determine the intent
-      - stakeholder_string is the investor/company name mentioned — extract it exactly as written
+      - stakeholder_string is the investor/company name mentioned in the EMAIL BODY — extract it exactly as written
+      - subject_stakeholder_string is the investor/company name mentioned in the SUBJECT LINE — extract it exactly as written, or null if the subject has no stakeholder name (e.g. "Quick update", "Follow up", "Meeting notes" have no stakeholder)
+      - CONFLICT RULE: If subject_stakeholder_string is not null AND it refers to a DIFFERENT entity than stakeholder_string, set intent to "unknown". The agent cannot confidently determine which stakeholder the sender meant.
       - If no stakeholder is mentioned, set stakeholder_string to null
       - body is the cleaned, relevant text — remove email signatures, greetings, and boilerplate
       - due_date: resolve relative dates ("next Friday", "in two weeks") relative to today's date (#{@received_at.strftime('%Y-%m-%d')})
       - due_date_source_text: the original phrase the user wrote (e.g. "by next Friday")
+      - assignee_string: if the email mentions someone by name who should do the task (e.g. "Neil to follow up", "Ask Priya to send", "assign to @Khushali", "@Neil to handle"), extract their name. Look for patterns like "@Name", "Name to do X", "ask Name to", "assign to Name", "Name should", "Name will". Extract just the first name or full name — no titles, no email addresses. If no assignee is mentioned or the sender is doing it themselves, set to null.
+      - assignee_string only applies when intent is "task" — set to null for meeting_note
       - If no due date is mentioned, set both due_date and due_date_source_text to null
-
+      #{subject_section}
       Email:
       #{text}
     PROMPT
+  end
+
+  # Build the subject line section for the prompt.
+  # Only included when a subject is available.
+  #
+  # @return [String]
+  def subject_section
+    return "" if @subject.blank?
+
+    "Subject line: #{@subject}"
   end
 
   # Call the LLM and return the raw response text.
@@ -138,6 +158,9 @@ class DealEmailParser
 
   # Validate and normalize the parsed result.
   # Ensures all expected keys exist and intent is valid.
+  # Overrides intent to "unknown" when subject and body name
+  # different stakeholders — deterministic safety net since
+  # LLMs don't reliably follow the conflict rule in the prompt.
   #
   # @param parsed [Hash] raw parsed JSON
   # @return [Hash] validated result
@@ -145,12 +168,24 @@ class DealEmailParser
     intent = parsed["intent"]
     intent = "unknown" unless %w[meeting_note task].include?(intent)
 
+    stakeholder = parsed["stakeholder_string"]&.strip.presence
+    subject_stakeholder = parsed["subject_stakeholder_string"]&.strip.presence
+
+    # Code-level conflict check: if subject and body name different
+    # stakeholders, warehouse it — can't confidently pick one.
+    if subject_stakeholder && stakeholder &&
+       subject_stakeholder.downcase != stakeholder.downcase
+      intent = "unknown"
+    end
+
     {
       "intent" => intent,
-      "stakeholder_string" => parsed["stakeholder_string"]&.strip.presence,
+      "stakeholder_string" => stakeholder,
+      "subject_stakeholder_string" => subject_stakeholder,
       "body" => parsed["body"]&.strip.presence,
       "due_date" => parsed["due_date"]&.strip.presence,
-      "due_date_source_text" => parsed["due_date_source_text"]&.strip.presence
+      "due_date_source_text" => parsed["due_date_source_text"]&.strip.presence,
+      "assignee_string" => parsed["assignee_string"]&.strip.presence
     }
   end
 end
