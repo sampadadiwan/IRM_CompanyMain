@@ -44,11 +44,10 @@
       <% obligations.each do |obligation| %>
         <%= render "side_letter_obligations/side_letter_obligation", obligation: obligation %>
       <% end %>
-      <% if obligations.none? %>
-        <tr>
-          <td colspan="8" class="text-center text-muted py-4">No obligations found.</td>
-        </tr>
-      <% end %>
+      <%# Empty-state row is intentionally omitted — a colspan row inside <tbody>
+          causes a DataTables "unknown parameter" error because it expects one <td>
+          per column. DataTables renders its own "No data available" message when
+          the tbody is empty. %>
     </tbody>
   </table>
 </div>
