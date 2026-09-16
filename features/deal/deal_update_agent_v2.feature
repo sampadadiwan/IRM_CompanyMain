@@ -107,7 +107,7 @@ Background:
 
   # --- Warehouse Scenarios ---
 
-  Scenario: Unknown stakeholder is warehoused without notification email
+  Scenario: Unknown stakeholder is warehoused with notification email
     Given the v2 LLM will parse the email as a meeting note for "Goldman Sachs"
     When a v2 SendGrid webhook arrives with:
       | from    | the user's email            |
@@ -117,9 +117,9 @@ Background:
     And the v2 job is performed
     Then a v2 WarehouseItem should exist for the deal with intent "meeting_note"
     And the v2 AgentIngestedEmail status should be "warehoused"
-    And no v2 email should be sent
+    And a v2 warehoused email should be sent with reason "unmatched_stakeholder"
 
-  Scenario: Unknown intent is warehoused
+  Scenario: Unknown intent is warehoused with notification email
     Given the v2 LLM will parse the email with intent "unknown"
     When a v2 SendGrid webhook arrives with:
       | from    | the user's email            |
@@ -129,7 +129,7 @@ Background:
     And the v2 job is performed
     Then a v2 WarehouseItem should exist for the deal with intent "unknown"
     And the v2 AgentIngestedEmail status should be "warehoused"
-    And no v2 email should be sent
+    And a v2 warehoused email should be sent with reason "unknown_intent"
 
   # --- Warehouse Resolution ---
 
