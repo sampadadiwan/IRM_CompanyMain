@@ -13,7 +13,7 @@ The CP/CS Extraction Agent is a thin subclass of `SideLetterObligationAgent` tha
 1. **Target resolution** — operates on `PortfolioInvestment` records (not `CapitalCommitment`)
 2. **Document matching** — uses `investment_doc_tag` config field (not `side_letter_doc_label`)
 3. **Sourceable link** — obligations link to `PortfolioInvestment` via `sourceable` polymorphic (not `side_letter_id`)
-4. **Company-level expansion** — accepts an `Investor` target and expands to all its portfolio investments
+4. **Estimated closing date** — optionally accepts a closing date from a modal date picker, injected into the LLM prompt for concrete `next_due_date` calculation
 
 ```
 CpCsExtractionAgent < SideLetterObligationAgent < SupportAgentService
@@ -64,64 +64,33 @@ end
 
 ## Trailblazer Step Pipeline
 
-The agent uses 5 steps inherited from `SideLetterObligationAgent`. For **single PI runs**, the parent steps are called via `super`. For **company-level (Investor) runs**, each step is overridden to loop through all portfolio investments with counter messages:
+The agent uses 5 steps inherited from `SideLetterObligationAgent`. For **single PI runs**, the parent steps are called via `super`:
 
 ```
 initialize_agent → locate_side_letter → extract_obligations → upsert_obligations → generate_progress_reports
 ```
 
-### Step Override Logic
-
-Each override checks `ctx[:investor_pi_targets]`:
-- **Present** → company-level run: loop through all PIs with counter messages
-- **Absent** → single PI run: `return super` to delegate to parent
-
 ### Step Details
 
 #### 1. initialize_agent
 
-**Single PI:** Delegates to parent. Sets `ctx[:portfolio_investment]`, `ctx[:source_mode] = :portfolio_investments`.
-
-**Company-level (Investor target):**
-- Does NOT call `super` (parent expects PI or Commitment, not Investor)
-- Manually initializes `@support_agent` and `ctx[:llm]`
-- Calls `targets(investor)` to resolve portfolio investments with matching documents
-- Stores in `ctx[:investor_pi_targets]` and `ctx[:investor_target]`
-- Step message: "Acme Corp: 5 investment(s)"
+Delegates to parent. Sets `ctx[:portfolio_investment]`, `ctx[:source_mode] = :portfolio_investments`.
 
 #### 2. locate_side_letter
 
-**Single PI:** Delegates to parent. Calls `locate_investment_document(ctx)`.
-
-**Company-level:** Loops through `ctx[:investor_pi_targets]`:
-- For each PI: sets `ctx[:portfolio_investment]`, calls `locate_investment_document(ctx)`
-- Accumulates results in `ctx[:pi_docs]` as `[{ pi:, doc: }]`
-- Step message: "SHA Agreement — Inv1 (2/5)"
+Delegates to parent. Calls `locate_investment_document(ctx)`.
 
 #### 3. extract_obligations
 
-**Single PI:** Delegates to parent. Calls LLM with `extraction_prompt(:portfolio_investments)`.
-
-**Company-level:** Loops through `ctx[:pi_docs]`:
-- Skips entries with `doc: nil`
-- For each doc: calls `ctx[:llm].ask(extraction_prompt(:portfolio_investments), with: [doc.file.url])`
-- Applies citation guard: `rows.partition { |r| r["source_clause"].present? }`
-- Accumulates in `ctx[:all_extracted]` as `[{ pi:, extracted: }]`
-- Step message: "Extracted 12 — Inv1 (2/5)"
+Delegates to parent. Calls LLM with `extraction_prompt(:portfolio_investments)`.
 
 #### 4. upsert_obligations
 
-**Single PI:** Delegates to parent. Calls `upsert_portfolio_obligations(ctx)`.
-
-**Company-level:** Loops through `ctx[:all_extracted]`:
-- For each entry: sets context and calls `upsert_portfolio_obligations(ctx)`
-- Dedup per PI: matches on `(sourceable, source_clause, obligation_type)`
-- Sets `ctx[:extracted]` with total count for redirect logic
-- Step message: "Saved 12 — Inv1 (2/5)"
+Delegates to parent. Calls `upsert_portfolio_obligations(ctx)`.
 
 #### 5. generate_progress_reports
 
-Restores `ctx[:model]` to the Investor (from `ctx[:investor_target]`), then calls `super` which:
+Calls `super` which:
 - Calls `SupportAgentService#generate_progress_reports` (saves report)
 - Finalizes the report status to `:ready`
 - Broadcasts `Turbo.visit` redirect to `support_agent_path(support_agent, tab: "obligations")`
@@ -134,12 +103,6 @@ Restores `ctx[:model]` to the Investor (from `ctx[:investor_target]`), then call
 def targets(entity_id)
   # Single PI passthrough
   return [entity_id] if entity_id.is_a?(PortfolioInvestment)
-
-  # Portfolio company → scoped to that company's investments
-  if entity_id.is_a?(Investor)
-    investments = portfolio_investment_targets(entity_id.entity_id, agent_record)
-    return investments.where(portfolio_company_id: entity_id.id)
-  end
 
   # Entity ID (batch) → all investments with matching documents
   portfolio_investment_targets(entity_id, agent_record)
@@ -157,6 +120,79 @@ AND pi.id IN (
   AND LOWER(COALESCE(tag_list, '')) LIKE '%sha%'
 )
 ```
+
+---
+
+## Estimated Closing Date Flow
+
+An optional estimated closing date can be provided via a modal date picker on the entry point pages. The date flows through the full stack to the LLM prompt:
+
+```
+Modal (date picker) → params[:estimated_closing_date]
+  → SupportAgentsController#run → SupportAgentJob.perform_later(estimated_closing_date: ...)
+    → SupportAgentJob#perform(estimated_closing_date: nil)
+      → agent.call(estimated_closing_date: ctx[:estimated_closing_date])
+        → extraction_prompt(estimated_closing_date: ...) / portfolio_extraction_prompt(estimated_closing_date: ...)
+```
+
+### Files Involved
+
+| File | Role |
+|------|------|
+| `app/packs/ai/support_agents/views/support_agents/_agent_run_modal.html.erb` | Optional `show_closing_date` local renders date picker |
+| `app/packs/ai/support_agents/controllers/support_agents_controller.rb` | Forwards `estimated_closing_date` param |
+| `app/packs/ai/support_agents/jobs/support_agent_job.rb` | Accepts and passes through `estimated_closing_date` |
+| `app/packs/ai/support_agents/services/side_letter_obligation_agent.rb` | `extraction_prompt` and `portfolio_extraction_prompt` accept `estimated_closing_date:` keyword |
+| `app/packs/ai/support_agents/services/cp_cs_extraction_agent.rb` | Passes `ctx[:estimated_closing_date]` to prompt methods |
+
+### Prompt Injection
+
+The closing date is conditionally injected into the LLM extraction prompt:
+
+```ruby
+if estimated_closing_date.present?
+  "The estimated Closing date is #{estimated_closing_date}. Use this date to calculate concrete next_due_date values..."
+else
+  "Set next_due_date only where a concrete YYYY-MM-DD can be calculated from dates in the document..."
+end
+```
+
+When present, the LLM uses the closing date as an anchor to calculate concrete `next_due_date` values (e.g., "within 30 days of Closing" becomes a real date). When absent, the LLM only sets `next_due_date` where a concrete date is explicitly stated in the document.
+
+---
+
+## Context-Aware Obligation Matrix
+
+The obligation matrix supports three contexts via `@obligation_context = params[:context]`:
+
+### Pre-filtering
+
+| Context | Filter |
+|---------|--------|
+| `cp_cs` | `where(legal_category: [:condition_precedent, :condition_subsequent])` |
+| `side_letter` | `where(legal_category: :side_letter_obligation)` |
+| `nil` | No pre-filter (all obligations) |
+
+### UI Behavior
+
+| Aspect | `cp_cs` | `side_letter` | `nil` |
+|--------|---------|---------------|-------|
+| **Title** | CP/CS Obligation Matrix | Side Letter Obligation Matrix | LP Obligation Matrix |
+| **Legal category column** | Visible (to distinguish CP vs CS) | Hidden | Visible |
+| **Filter dropdown** | Excludes SLO from legal category options | — | All options |
+
+### Context Preservation
+
+Context is preserved across filter submissions and navigation via:
+- Hidden field `<input type="hidden" name="context" value="<%= @obligation_context %>">` in filter forms
+- `context` param appended to breadcrumb links
+
+### Files Involved
+
+- `app/packs/funds/side_letters/controllers/side_letter_obligations_controller.rb` — reads `params[:context]`, applies pre-filter
+- `app/packs/funds/side_letters/views/side_letter_obligations/index.html.erb` — title and layout
+- `app/packs/funds/side_letters/views/side_letter_obligations/_matrix.html.erb` — column visibility, filter options
+- `app/packs/ai/support_agents/views/support_agents/_obligation_matrix_tab.html.erb` — embedded matrix tab
 
 ---
 
@@ -200,16 +236,36 @@ Agent config stored in `SupportAgent#json_fields`:
 
 ## Entry Points and Job Routing
 
-### From portfolio company page (Investor target)
+### From portfolio investment show page (per-PI run)
 
 ```
-investors/show.html.erb
+portfolio_investments/show.html.erb
+  → Actions dropdown → "Run CP/CS Agent"
+  → _agent_run_modal.html.erb (with optional estimated_closing_date date picker)
   → form POST to run_support_agents_path
   → SupportAgentsController#run
-    → SupportAgentJob.perform_later(target_type: "Investor", target_id: @investor.id, with_steps: true)
-      → targets = [Investor.find(target_id)]
-      → CpCsExtractionAgent.call(target: investor, ...)
-        → initialize_agent handles Investor expansion internally
+    → SupportAgentJob.perform_later(
+        target_type: "PortfolioInvestment", target_id: @pi.id,
+        estimated_closing_date: params[:estimated_closing_date],
+        with_steps: true
+      )
+      → CpCsExtractionAgent.call(target: portfolio_investment, ...)
+```
+
+### From documents page (per-document run)
+
+```
+documents/_index.html.erb / _document.html.erb
+  → Per-document "Run CP/CS Agent" button
+  → _agent_run_modal.html.erb (with optional estimated_closing_date date picker)
+  → form POST to run_support_agents_path
+  → SupportAgentsController#run
+    → SupportAgentJob.perform_later(
+        target_type: "PortfolioInvestment", target_id: @pi.id,
+        estimated_closing_date: params[:estimated_closing_date],
+        with_steps: true
+      )
+      → CpCsExtractionAgent.call(target: portfolio_investment, ...)
 ```
 
 ### From agent show page (batch)
@@ -229,6 +285,8 @@ AgentScheduleJob → SupportAgentJob(execution_mode: :scheduled)
     → ObligationEnforcement.call(support_agent: ...)
       → scans all approved obligations, sends consolidated alerts
 ```
+
+> **Removed:** The "Run CP/CS Agent" button was removed from `investors/show.html.erb` (portfolio company page). All runs are now per-portfolio-investment or per-document.
 
 ---
 
@@ -258,6 +316,46 @@ end
 ```
 
 Fires only when `ctx[:extracted].present?` — no redirect on empty extraction or failure.
+
+---
+
+## Obligation Title Links
+
+In `_side_letter_obligation.html.erb`, all obligation titles link to `side_letter_obligation_path(obligation)` — the show page with Tasks/Fulfillment/Alerts tabs. This applies to both SLO and portfolio-sourced obligations (previously portfolio obligations linked to inline edit).
+
+---
+
+## jQuery DataTables Sorting
+
+The obligation matrix table uses client-side sorting via jQuery DataTables:
+
+- `jqDataTable` CSS class on the `<table>` element
+- `data-controller="datatable"` Stimulus controller on the parent `<div>`
+- `data-sort` timestamp attributes on Next Due column cells for correct chronological ordering
+- Empty-state colspan row removed from table markup (causes DataTables "unknown parameter" error when DataTables attempts to parse it as a data row)
+
+---
+
+## Legal Category Filter Fix
+
+`legal_category_options` helper returns integer enum values instead of string keys:
+
+```ruby
+def legal_category_options
+  SideLetterObligation.legal_categories.map { |k, v| [k.humanize, v] }
+end
+```
+
+This fixes an issue where MySQL silently cast non-numeric string keys to `0` in integer column comparisons, causing the filter to always match `condition_precedent` (enum value 0) regardless of the selected option.
+
+---
+
+## Edit Form Changes
+
+`_form.html.erb` conditionally adjusts fields based on the `is_cp_cs` flag:
+
+- **MFN checkbox:** Hidden when `is_cp_cs` is true (MFN clause is a side-letter-only concept)
+- **Legal category dropdown:** Filtered to CP/CS values only (excludes `side_letter_obligation`, enum value 2) when `is_cp_cs` is true
 
 ---
 
@@ -295,7 +393,7 @@ Task categories: CP obligations → "Condition Precedent", CS → "Condition Sub
 
 `SideLetterObligationPolicy` gates on `entity.support_agents.set?(:side_letter_obligation_agent)`. Both the SLO and CP/CS agent flags must be enabled for full access:
 
-- `:cp_cs_extraction_agent` — enables the "Run CP/CS Agent" button on the investor page
+- `:cp_cs_extraction_agent` — enables the "Run CP/CS Agent" button on the portfolio investment and documents pages
 - `:side_letter_obligation_agent` — enables the obligation matrix UI and show page
 
 Both are set via `entity.support_agents.set!(:agent_symbol)`.
@@ -307,16 +405,23 @@ Both are set via `entity.support_agents.set!(:agent_symbol)`.
 | File | Purpose |
 |------|---------|
 | `app/packs/ai/support_agents/services/cp_cs_extraction_agent.rb` | Agent class — target resolution, step overrides |
-| `app/packs/ai/support_agents/services/side_letter_obligation_agent.rb` | Parent — extraction pipeline, prompts, dedup, enforcement |
+| `app/packs/ai/support_agents/services/side_letter_obligation_agent.rb` | Parent — extraction pipeline, prompts, dedup, enforcement; `estimated_closing_date` prompt injection |
 | `app/packs/funds/side_letters/models/side_letter_obligation.rb` | Obligation model — `source_investor`, `source_fund`, lifecycle |
 | `app/packs/funds/side_letters/services/obligation_approve.rb` | Approval gate → `ObligationProjection` |
 | `app/packs/funds/side_letters/services/obligation_projection.rb` | Task creation (recurring / one-time / armed) |
 | `app/packs/funds/side_letters/services/obligation_fire.rb` | Creates dated task from armed obligation |
 | `app/packs/funds/side_letters/services/obligation_enforcement.rb` | Daily due-date scan and consolidated alerts |
-| `app/packs/funds/side_letters/controllers/side_letter_obligations_controller.rb` | Matrix UI, show, lifecycle actions |
-| `app/packs/core/investors/views/investors/show.html.erb` | Portfolio company page — "Run CP/CS Agent" button + modal |
+| `app/packs/funds/side_letters/controllers/side_letter_obligations_controller.rb` | Matrix UI (context-aware filtering), show, lifecycle actions |
+| `app/packs/funds/side_letters/views/side_letter_obligations/_side_letter_obligation.html.erb` | Obligation row partial — title links to show page |
+| `app/packs/funds/portfolios/views/portfolio_investments/show.html.erb` | Portfolio investment page — "Run CP/CS Agent" button with estimated closing date modal |
+| `app/packs/core/documents/views/documents/_index.html.erb` | Documents page — "Run CP/CS Agent" button |
+| `app/packs/core/documents/views/documents/_document.html.erb` | Per-document "Run CP/CS Agent" button |
+| `app/packs/ai/support_agents/views/support_agents/_agent_run_modal.html.erb` | Agent run modal — optional `show_closing_date` date picker |
 | `app/packs/ai/support_agents/views/support_agents/_obligation_matrix_tab.html.erb` | Agent show page obligations tab |
 | `app/packs/ai/support_agents/views/support_agents/show.html.erb` | Agent show page (action modals rendered outside FormCard) |
+| `app/packs/ai/support_agents/controllers/support_agents_controller.rb` | Forwards `estimated_closing_date` param to job |
+| `app/packs/ai/support_agents/jobs/support_agent_job.rb` | Accepts and passes through `estimated_closing_date` |
+| ~~`app/packs/core/investors/views/investors/show.html.erb`~~ | CP/CS Agent button **removed** (per-PI runs only now) |
 
 ---
 

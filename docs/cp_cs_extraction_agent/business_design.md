@@ -41,10 +41,13 @@ The SHA requires quarterly compliance certificates delivered within 30 days of e
 ### UC-4: Regulatory Clearance Notice (Event-Triggered CP)
 The agreement requires the investor to be notified within 10 business days of obtaining regulatory clearance. Since the trigger is an event (not a date), the obligation sits **armed** in the matrix — visible, but with no task or deadline. When the event occurs, a user **fires** the obligation with a specific due date, creating a dated task. The obligation stays armed and can be re-fired if the event recurs.
 
-### UC-5: Company-Level Extraction
-A fund manager navigates to a portfolio company page (e.g. "Acme Corp") and clicks "Run CP/CS Agent" from the Misc dropdown. The agent finds all portfolio investments under Acme Corp that have tagged documents (e.g. documents tagged "SHA"), extracts obligations from each, and shows step-by-step progress on the investor page. After completion, the page auto-redirects to the CP/CS agent's obligation matrix tab where all extracted obligations appear, grouped by investment.
+### UC-5: Per-Investment Extraction
+A fund manager navigates to a portfolio investment show page (e.g. "Acme Corp — Series A") and clicks "Run CP/CS Agent" from the Actions dropdown. A confirmation modal appears with an optional **Estimated Closing Date** date picker. On confirm, the agent extracts obligations from that specific investment's tagged documents and shows step-by-step progress. After completion, the page auto-redirects to the CP/CS agent's obligation matrix tab where extracted obligations appear.
 
-### UC-6: Re-Extraction After Amendment
+### UC-6: Per-Document Extraction
+On the documents page for a portfolio investment, each document has a "Run CP/CS Agent" button. Clicking it runs the extraction against that specific document only. The same confirmation modal with estimated closing date appears. This is useful when a new document is uploaded or a single agreement needs re-extraction without processing all documents on the investment.
+
+### UC-7: Re-Extraction After Amendment
 An investment agreement is amended, and the updated document is uploaded with the same tag. The agent re-runs and compares the new extraction to existing obligations:
 - **Pending** obligations are updated in place (no duplicates)
 - **Approved** obligations that changed create a new **delta** obligation for counsel to review beside the original
@@ -60,11 +63,13 @@ An investment agreement is amended, and the updated document is uploaded with th
 3. Admin optionally sets the **notify_tag** to route alerts to specific team members
 
 ### Extraction Run
-1. User navigates to a portfolio company page → Misc → "Run CP/CS Agent"
-2. A confirmation modal explains what the agent will do
+1. User navigates to a portfolio investment show page → Actions → "Run CP/CS Agent" (icon: `ti-robot`), or clicks the per-document "Run CP/CS Agent" button on the documents page
+2. A confirmation modal appears with an optional **Estimated Closing Date** date picker:
+   - If provided, the LLM uses this date to calculate concrete due dates for obligations with timing relative to "Closing" (e.g. "30 days prior to Closing" becomes a specific YYYY-MM-DD date)
+   - If left blank, the LLM only sets due dates where concrete dates exist in the document text; relative-to-closing obligations are extracted without a calculated due date
 3. On confirm, a step-by-step progress UI appears:
-   - **Initialize** — resolves portfolio investments under the company
-   - **Locate Document** — finds tagged documents on each investment (counter: "SHA — Inv1 (1/3)")
+   - **Initialize** — resolves the target portfolio investment (or specific document)
+   - **Locate Document** — finds tagged documents on the investment (counter: "SHA — Inv1 (1/3)")
    - **Extract Obligations** — LLM reads each document (counter: "Extracted 5 — Inv1 (1/3)")
    - **Save For Review** — stores obligations as pending (counter: "Saved 5 — Inv1 (1/3)")
    - **Generate Report** — finalizes the run report
@@ -95,17 +100,26 @@ The daily scheduled run scans all approved obligations:
 
 ## Obligation Matrix
 
-All CP/CS obligations appear in the entity-wide **Obligation Matrix** alongside SLO obligations. The matrix supports:
+The obligation matrix is **context-aware** — its title, default filters, and visible columns adapt based on how it is opened:
+
+| Context | URL | Title | Default Filter | Legal Category Column |
+|---------|-----|-------|----------------|-----------------------|
+| From CP/CS agent tab → "Open Full Matrix" | `?context=cp_cs` | **CP/CS Obligation Matrix** | Pre-filtered to CP and CS obligations | Visible (for filtering CP vs CS) |
+| From Side Letter agent tab → "Open Full Matrix" | `?context=side_letter` | **Side Letter Obligation Matrix** | Pre-filtered to SLO obligations | Hidden |
+| Direct URL (no context param) | (none) | **LP Obligation Matrix** | Shows all obligations (CP, CS, SLO) | Visible |
+
+**Note:** The legal category dropdown in CP/CS context excludes SLO as an option; the Side Letter context excludes CP and CS.
+
+The matrix supports:
 - **Fund filter** — narrows to obligations from investments in a specific fund
 - **Stakeholder filter** — narrows to obligations from a specific portfolio company
 - **Status filter** — pending review, approved, active, fulfilled, waived
-- **Inline edit** — counsel can edit obligation details directly in the matrix row
 - **Inline approve/reject** — one-click review from the matrix
 - **Fire** — for armed obligations, set a due date and create a task
 - **Waive** — end an obligation, removing open tasks but preserving history
 
 ### Obligation Detail Page
-Clicking an obligation opens a detail page with:
+Clicking an obligation title in the matrix links to the obligation detail (show) page. The detail page includes:
 - Key attributes: investor, fund, type, source clause, trigger, next due, owner, reminder lead, recurrence, extraction confidence
 - The obligation text as written in the agreement
 - Action buttons (approve, reject, fire, waive, revert) based on current state
@@ -113,15 +127,20 @@ Clicking an obligation opens a detail page with:
 - **Fulfillment History tab** — audit trail of completed tasks and manual fulfillments
 - **Alerts Sent tab** — log of all reminder and overdue emails sent
 
+### Edit Form
+The full-page edit form (`/side_letter_obligations/:id/edit`) adapts based on the obligation's legal category:
+- **CP/CS obligations:** the MFN relevant checkbox is hidden (MFN only applies to side letters), and the legal category dropdown shows only CP and CS options (excludes SLO)
+- **SLO obligations:** full edit form with MFN checkbox and all legal category options
+
 ---
 
 ## Entry Points
 
 | Where | Action | What Happens |
 |-------|--------|--------------|
-| Portfolio company page → Misc dropdown | "Run CP/CS Agent" | Extracts from all that company's investments |
+| Portfolio investment show page → Actions dropdown | "Run CP/CS Agent" (icon: `ti-robot`) | Extracts from that specific investment's documents; shows estimated closing date modal |
+| Documents page → per-document button | "Run CP/CS Agent" (icon: `ti-robot`) | Extracts from that specific document only; shows estimated closing date modal |
 | CP/CS agent show page | "Run Agent" batch | Extracts from all entity-wide portfolio investments |
-| CP/CS agent show page → single PI | Adhoc single run | Extracts from one specific investment |
 | Scheduled (daily cron) | Enforcement run | Scans all approved obligations and sends due-date alerts |
 
 ---
@@ -136,7 +155,11 @@ Clicking an obligation opens a detail page with:
 
 4. **Idempotent extraction** — Re-running the agent against the same documents does not duplicate obligations. Pending obligations are updated in place; approved obligations generate a delta for review if content changed.
 
-5. **Company-level runs** — Running from a portfolio company page processes all its investments in one go, with step counters showing progress across investments. The step UI stays on the investor page (not redirected to each PI).
+5. **Per-investment and per-document runs** — Extraction can be triggered at the portfolio investment level (all tagged documents on that investment) or at the individual document level (single document). Both entry points show the estimated closing date modal for due-date calculation.
+
+6. **Estimated closing date for due-date calculation** — When running extraction, the user can optionally provide an estimated closing date. The LLM uses this to convert relative-to-closing timing (e.g. "30 days prior to Closing") into concrete YYYY-MM-DD due dates. Without it, only obligations with explicit dates in the document text receive calculated due dates.
+
+7. **Context-aware obligation matrix** — The matrix adapts its title, default filters, and column visibility based on the `?context` URL parameter. This lets each agent (CP/CS vs Side Letter) present a focused view while sharing the same underlying infrastructure.
 
 ---
 
@@ -145,6 +168,5 @@ Clicking an obligation opens a detail page with:
 | Item | Reason |
 |------|--------|
 | **Expandable obligation rows** in the matrix showing inline tasks | Final product enhancement; not needed for demo |
-| **Agent-calculated due dates** from estimated closing date | Requires closing date integration; not for demo |
 | **Automatic event detection** (fire armed obligations programmatically) | Complex; manual Fire is sufficient for now |
 | **MFN cross-comparison dashboard** | Same as SLO; deferred |
