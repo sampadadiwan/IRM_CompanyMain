@@ -69,7 +69,7 @@ set :puma_service_unit_name, -> { "puma_#{fetch(:application)}_#{fetch(:rails_en
 # the only thing that starts or stops it. It used to be monit plus two cron
 # entries plus Capistrano, each finding "the" Sidekiq by regex — see the unit
 # template for how that left duplicate workers behind after deploys.
-# Full write-up: docs/technical/process_supervision.md
+# Full write-up: docs/operations/process_supervision.md
 set :sidekiq_service_unit_name, -> { "sidekiq_#{fetch(:application)}_#{fetch(:rails_env)}" }
 
 namespace :deploy do

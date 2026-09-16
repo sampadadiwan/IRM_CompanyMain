@@ -9,7 +9,7 @@
 #
 # 2. It guards on derived eligibility rather than a stored flag — there is no per-user
 #    opt-in column for SMS, because a valid mobile number is itself the entitlement.
-#    See docs/technical/twilio_sms_otp_design.md.
+#    See docs/modules/two_factor_auth/twilio_sms_otp_design.md.
 class SendOtpToSmsJob < ApplicationJob
   # An OTP blocks a login, which makes it latency-critical in a way almost nothing else
   # in this system is. SendOtpToWhatsappJob sits on :default alongside bulk document and

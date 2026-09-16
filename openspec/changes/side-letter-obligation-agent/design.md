@@ -10,7 +10,7 @@ Side letters are plain `Document` rows today (commitment folder or fund Data Roo
 
 What does **not** exist: any structured obligation record, and any due-date-driven task alerting (`TaskNotifier` fires on create/update only; the `Reminder` path is unexposed on tasks and its notifier is mis-wired to `InvestorKycMailer`).
 
-Product reference: `docs/features/us_gtm/side_letter_obligations.md`.
+Product reference: `docs/gtm/us_gtm/side_letter_obligations.md`.
 
 ## Goals / Non-Goals
 

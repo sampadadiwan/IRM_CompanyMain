@@ -9,7 +9,7 @@ require "securerandom"
 # Deliberately raises rather than falling back to LibreOffice on any failure -- silently
 # falling back would reintroduce the exact footnote-placement defect this path exists to
 # avoid, on a template chosen specifically because that defect matters for it. See
-# docs/technical/m365_graph_pdf_conversion.md for the full design and setup steps.
+# docs/modules/documents/m365_graph_pdf_conversion.md for the full design and setup steps.
 #
 # A single step wraps the whole upload/convert/download/cleanup sequence rather than
 # splitting each call into its own Trailblazer step: there's no branching to express here
@@ -20,7 +20,7 @@ class M365PdfConversion < Trailblazer::Operation
   GRAPH_BASE = "https://graph.microsoft.com/v1.0".freeze
   TOKEN_CACHE_KEY = "m365_graph_token".freeze
   # Conversion of a large (~140 page) docx is untested against real Graph API latency (see
-  # "Open questions" in docs/technical/m365_graph_pdf_conversion.md) -- generous but bounded
+  # "Open questions" in docs/modules/documents/m365_graph_pdf_conversion.md) -- generous but bounded
   # rather than unbounded, so a stalled request fails the job instead of hanging a worker
   # indefinitely. Revisit once real timing data exists.
   REQUEST_TIMEOUT = 120
@@ -108,7 +108,7 @@ class M365PdfConversion < Trailblazer::Operation
   end
 
   def credential!(key)
-    Rails.application.credentials[key].presence || raise("Missing Rails credential #{key} -- see docs/technical/m365_graph_pdf_conversion.md")
+    Rails.application.credentials[key].presence || raise("Missing Rails credential #{key} -- see docs/modules/documents/m365_graph_pdf_conversion.md")
   end
 
   def token_connection

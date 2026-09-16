@@ -129,7 +129,7 @@ module CommitmentAccountEntry
 
   # Opt-in per fund: json_fields["incremental_since_inception"] = true. Such funds are allocated
   # on a trimmed scratch copy (RunFormulas#load_sqlite_db), so since_inception cannot re-sum all
-  # history. See docs/technical/incremental_allocation_history.md.
+  # history. See docs/modules/allocation/incremental_allocation_history.md.
   def self.incremental_since_inception?(fund)
     fund&.json_fields.to_h["incremental_since_inception"].to_s == "true"
   end

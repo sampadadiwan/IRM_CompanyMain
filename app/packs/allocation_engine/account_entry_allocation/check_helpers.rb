@@ -19,7 +19,7 @@ module AccountEntryAllocation
   #   - Messages are built here, outside the formula text, so words the eval blocklist refuses
   #     ("updated", "created") can appear in them.
   #
-  # See docs/business_requirements/allocation_run_checks.md.
+  # See docs/modules/allocation/allocation_run_checks.md.
   module CheckHelpers
     SEVERITIES = %i[fail warning].freeze
     ROW_LIMIT = AllocationRunReport::MAX_ROWS_PER_FINDING

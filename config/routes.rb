@@ -100,7 +100,7 @@ Rails.application.routes.draw do
     post :verify_sms_enrollment # sms mode: verify test code
     # Costs real money per call. Rate limited in three places: a session cooldown here,
     # durable per-number/per-user limits in TwilioSmsDelivery, and a per-IP Rack::Attack
-    # throttle — see docs/technical/twilio_sms_otp_design.md section 9.
+    # throttle — see docs/modules/two_factor_auth/twilio_sms_otp_design.md section 9.
     post :send_sms
   end
 
@@ -171,11 +171,13 @@ Rails.application.routes.draw do
   resources :website_leads, only: %i[index show create]
   match 'website_leads', to: 'website_leads#options', via: :options
 
-  # /features is retired: docs/features/ is now the "Strategy" section of the
-  # internal docs viewer, so the two no longer serve the same files under two
-  # different policies with two copies of the traversal guard. Kept as 302
-  # redirects — not 301 — so existing links and bookmarks keep working without
-  # being cached permanently in browsers.
+  # /features is retired. The documents still linked through it — the US GTM
+  # strategy (us_gtm.md) and its feature specs (us_gtm/) — now live in docs/gtm/,
+  # the internal docs viewer's section, so ids are forwarded there. The rest of
+  # the old docs/features/ specs (now under docs/modules/) are not browsable;
+  # those ids land on the viewer's "not found" redirect. Kept as 302 redirects —
+  # not 301 — so existing links and bookmarks keep working without being cached
+  # permanently in browsers.
   # Unnamed on purpose: nothing in the app links here any more, so a
   # features_path helper would only invite new callers to the retired URL.
   get 'features', to: redirect(status: 302) { '/internal_docs' }
@@ -190,7 +192,7 @@ Rails.application.routes.draw do
         # separators. Dropping empty segments also stops a leading slash from
         # turning this into a protocol-relative "//host" redirect.
         segments = params[:id].to_s.split("/").reject(&:empty?).map { |s| ERB::Util.url_encode(s) }
-        "/internal_docs/features/#{segments.join('/')}"
+        "/internal_docs/gtm/#{segments.join('/')}"
       },
       format: false
 

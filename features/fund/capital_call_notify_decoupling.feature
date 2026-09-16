@@ -1,7 +1,7 @@
 Feature: Capital call notification decoupled from approval
   Approving a capital call and notifying investors about it are separate actions. Notifications
   are only ever sent for an approved call, sending is safe to repeat, and sandbox mode is called
-  out before anything goes out. See docs/technical/capital_call_notify_decoupling.md.
+  out before anything goes out. See docs/modules/funds/capital_call_notify_decoupling.md.
 
 @import
 Scenario: Approving a capital call does not, by itself, send any notification

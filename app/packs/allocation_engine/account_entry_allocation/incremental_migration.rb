@@ -1,6 +1,6 @@
 module AccountEntryAllocation
   # Moves a fund onto incremental since_inception allocation — or back — in one step.
-  # See docs/technical/incremental_allocation_history.md section 12, and lib/tasks/incremental_allocation.rake.
+  # See docs/modules/allocation/incremental_allocation_history.md section 12, and lib/tasks/incremental_allocation.rake.
   #
   # enable:
   #   1. plan: find the formula edits the fund needs, and anything that blocks it (a history read no

@@ -279,7 +279,7 @@
           <% end %>
 
           <%# update_existing_kpis has no effect on the import (KpiWorkbookReader never reads it — see
-              docs/technical/kpi_portco_upload_validation_review.md) — every uploaded value is staged as
+              docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md) — every uploaded value is staged as
               an unapproved Kpi for review regardless, so there is nothing for this checkbox to control. %>
           <%= form.hidden_field :update_existing_kpis, value: true %>
 

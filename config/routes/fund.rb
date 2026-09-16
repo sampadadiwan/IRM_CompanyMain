@@ -91,7 +91,7 @@ resources :fund_ratio_run_templates do
   get  'runs',           on: :member
 end
 
-# Allocation run templates and groups — see docs/technical/allocation_run_templates.md
+# Allocation run templates and groups — see docs/modules/allocation/allocation_run_templates.md
 resources :allocation_run_templates do
   # JSON: statement documents available on a fund, for the template form's fund switch
   get 'statement_documents', on: :collection
@@ -237,6 +237,6 @@ resources :allocation_runs do
   patch 'unlock_all', on: :collection
 end
 
-# Allocation run checker — see docs/business_requirements/allocation_run_checker.md.
+# Allocation run checker — see docs/modules/allocation/allocation_run_checker_requirements.md.
 # create takes an allocation_run_id and queues the checks; show renders the report.
 resources :allocation_run_reports, only: %i[show create]

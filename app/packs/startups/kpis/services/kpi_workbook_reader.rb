@@ -5,7 +5,7 @@
 # relevant KPI rows and columns, and extracts KPI values for specified target KPIs. The extracted data
 # is returned as a structured result set.
 #
-# It has two entry points that share ONE code path (docs/technical/kpi_portco_upload_validation_review.md):
+# It has two entry points that share ONE code path (docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md):
 #
 # - `extract_kpis` — the import: writes Kpi rows (as `unapproved`) and returns the KpiReports touched.
 # - `validate`     — a dry run: parses exactly as the import would, writes nothing, and returns a
@@ -1007,7 +1007,7 @@ class KpiWorkbookReader
 
     # RAG vs the configured comparator (Budget by default, prior period, or none for a flat
     # threshold) for the same period — independent of the denomination/jump history checks below.
-    # See docs/technical/kpi_rag_rules_redesign.md and its "Addendum: prior-period comparator".
+    # See docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md and its "Addendum: prior-period comparator".
     if mapping.rag_configured? && same_tag?(tag, 'Actual')
       comparator_value = nil
       skip_rag = false

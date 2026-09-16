@@ -1,5 +1,5 @@
 # Covering index for the Account Entries Period Report
-# (docs/technical/account_entry_report_performance.md).
+# (docs/modules/reports/account_entry_report_performance.md).
 #
 # The report's two aggregate passes filter on
 #   deleted_at IS NULL AND fund_id = ? AND cumulative = 0 AND reporting_date BETWEEN ? AND ?

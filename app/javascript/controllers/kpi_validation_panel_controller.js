@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus";
 // Attached to #kpi_validation_panel (kpi_reports/_validation_panel.html.erb), which the server
 // re-renders after every workbook check. On each (re)connect it applies the submit guard from the
 // server's error count — the browser never decides validity itself
-// (docs/technical/kpi_portco_upload_validation_review.md §2.3 / §2.10).
+// (docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md §2.3 / §2.10).
 export default class extends Controller {
   static values = {
     errors: Number,          // number of blocking errors in the current verdict

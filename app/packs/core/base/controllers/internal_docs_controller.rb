@@ -8,8 +8,8 @@
 #
 # Design note: this deliberately mirrors UserGuidesController and reuses its
 # WithGuideRendering concern rather than copying the traversal guard. A drifted
-# copy of that guard on the tree holding security reviews and incident RCAs is
-# precisely the bug to avoid. See docs/technical/internal_docs_viewer.md.
+# copy of that guard on the tree holding security reviews and DR procedures is
+# precisely the bug to avoid. See docs/engineering/internal_docs_viewer.md.
 class InternalDocsController < ApplicationController
   include WithGuideRendering
 
@@ -21,19 +21,18 @@ class InternalDocsController < ApplicationController
   DOCS_ROOT = Rails.root.join("docs").freeze
 
   # Only these trees are browsable, and this is both the navigation structure
-  # and a security boundary. Everything else under docs/ — technical/,
-  # security/, ai/, dr_review/, incidents/, troubleshooting/ and the rest — is
+  # and a security boundary. Everything else under docs/ — modules/,
+  # engineering/, operations/, security/, archive/ and the rest — is
   # unreachable even to a staff user. Adding a directory here is a deliberate
   # act, not a convenience.
   #
-  # "Strategy" carries docs/features/: the parent strategy document
-  # docs/features/us_gtm.md (ICP, personas, pricing framework, sales playbook)
-  # lives there and every doc under docs/marketing/ links to it by relative
-  # path, so excluding it would leave the marketing set full of dead links to
-  # its most important reference.
+  # docs/gtm/ holds the whole commercial set in one tree: the parent strategy
+  # document us_gtm.md (ICP, personas, pricing framework, sales playbook), the
+  # US feature specs it indexes, and the marketing docs that link to it. Keeping
+  # them together is what lets the whitelist stay a single directory without
+  # leaving dead relative links.
   SECTIONS = {
-    "Marketing" => %w[marketing],
-    "Strategy"  => %w[features]
+    "Go-To-Market" => %w[gtm]
   }.freeze
 
   # Flattened whitelist of first path segments, for the per-request check.
@@ -43,7 +42,7 @@ class InternalDocsController < ApplicationController
     authorize :internal_doc, :index?
     skip_policy_scope
 
-    # { "Marketing" => { nil => [...], "Linkedin Posts" => [...] }, "Strategy" => {...} }
+    # { "Go-To-Market" => { nil => [...], "Linkedin Posts" => [...], "Outbound" => [...] } }
     @sections = SECTIONS.each_with_object({}) do |(label, dirs), acc|
       docs = dirs.flat_map { |dir| docs_in(dir) }
       next if docs.empty?
@@ -61,8 +60,8 @@ class InternalDocsController < ApplicationController
     authorize :internal_doc, :show?
 
     # Clean the id ONCE, up front, and use the cleaned form for everything after.
-    # "marketing/../technical/x" has a first segment of "marketing" but resolves
-    # into technical/, so any code reading a path segment off the raw string —
+    # "gtm/../engineering/x" has a first segment of "gtm" but resolves
+    # into engineering/, so any code reading a path segment off the raw string —
     # the whitelist check and the breadcrumb label alike — would be reading a
     # segment the file never came from.
     doc_id = Pathname.new(params[:id].to_s.sub(/\.md$/i, "")).cleanpath.to_s
@@ -127,8 +126,8 @@ class InternalDocsController < ApplicationController
   # @return [Array<Hash>]
   def docs_in(dir)
     Dir.glob(DOCS_ROOT.join(dir, "**", "*.md")).sort.map do |path|
-      relative = Pathname.new(path).relative_path_from(DOCS_ROOT).to_s # "marketing/linkedin_posts/foo.md"
-      id       = relative.sub(/\.md$/, "")                            # "marketing/linkedin_posts/foo"
+      relative = Pathname.new(path).relative_path_from(DOCS_ROOT).to_s # "gtm/linkedin_posts/foo.md"
+      id       = relative.sub(/\.md$/, "")                            # "gtm/linkedin_posts/foo"
       parts    = id.split("/")
       # Group by the subdirectory below the section root; nil for files sitting
       # directly in it, which sort first in the index.
@@ -146,7 +145,7 @@ class InternalDocsController < ApplicationController
   # blank lines, headings and YAML front-matter fences.
   #
   # Streamed line by line rather than File.read: the index globs every document
-  # in both sections and only ever needs the first prose line of each, so
+  # in the whitelisted sections and only ever needs the first prose line of each, so
   # slurping them whole would read megabytes per page view to throw nearly all
   # of it away. The lazy chain stops at the first line that qualifies.
   #

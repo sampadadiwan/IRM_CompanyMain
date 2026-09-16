@@ -1,0 +1,1031 @@
+<title>Rake Control Room</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    /* light = blueprint / schematic paper */
+    --bg:#eaeff6;
+    --surface:#ffffff;
+    --surface-2:#e2e8f2;
+    --border:#c5d0e0;
+    --grid: rgba(22,35,58,.05);
+    --ink:#141d30;
+    --muted:#4b5b74;
+    --faint:#8493a9;
+    --accent:#1f6f93;
+    --accent-ink:#155670;
+    --accent-soft:#dcedf4;
+    --safe:#187a63; --safe-soft:#dbf1e9; --safe-glow:none;
+    --writes:#5b4fa0; --writes-soft:#e8e4f8; --writes-glow:none;
+    --gated:#8f6317; --gated-soft:#f5ecd6; --gated-glow:none;
+    --destructive:#a23c31; --destructive-soft:#f7e3df; --destructive-glow:none;
+    --shadow: 0 1px 2px rgba(20,29,48,.05), 0 10px 26px -16px rgba(20,29,48,.18);
+    color-scheme: light;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; color:var(--ink); font-family:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif;
+    font-size:15px; line-height:1.55;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/28px 100%,
+      var(--bg);
+  }
+  code,.mono{ font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace; }
+  h1,h2,h3{ font-family:"Archivo",sans-serif; margin:0; text-wrap:balance; }
+  strong{ font-weight:600; color:var(--ink); }
+  code{ background:var(--surface-2); border:1px solid var(--border); border-radius:5px; padding:.06em .38em; font-size:.87em; color:var(--ink); }
+  a{ color:var(--accent); }
+  ::selection{ background:var(--accent-soft); }
+  button{ font-family:inherit; cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+  .vis-hidden{ position:absolute; width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0); }
+
+  .shell{ display:grid; grid-template-columns: 268px 1fr; min-height:100vh; }
+  @media (max-width: 900px){ .shell{ grid-template-columns: 1fr; } }
+
+  /* ---------- sidebar ---------- */
+  .sidebar{
+    background:var(--surface); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; gap:20px; padding:20px 16px 16px;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
+  }
+  @media (max-width: 900px){ .sidebar{ position:static; height:auto; border-right:none; border-bottom:1px solid var(--border); } }
+
+  .brand .mark{
+    display:inline-block; font-family:"IBM Plex Mono"; font-weight:500; font-size:11.5px; letter-spacing:.05em;
+    color:var(--accent); background:var(--accent-soft); border-radius:5px; padding:2px 6px; margin-bottom:8px;
+  }
+  .brand h1{ font-size:19px; font-weight:800; text-transform:uppercase; letter-spacing:.015em; line-height:1.15; }
+  .brand .sub{ color:var(--muted); font-size:12.5px; margin-top:6px; line-height:1.5; }
+  .brand .stat{ color:var(--faint); font-size:11px; margin-top:10px; font-family:"IBM Plex Mono"; }
+
+  .searchwrap{ position:relative; }
+  .searchwrap input{
+    width:100%; font:inherit; font-size:13.5px; padding:8px 32px 8px 30px;
+    border:1px solid var(--border); border-radius:7px; background:var(--surface-2); color:var(--ink);
+  }
+  .searchwrap input::placeholder{ color:var(--faint); }
+  .searchwrap svg{ position:absolute; left:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--faint); pointer-events:none; }
+  .searchwrap kbd{
+    position:absolute; right:7px; top:50%; transform:translateY(-50%); font-family:"IBM Plex Mono"; font-size:10.5px;
+    color:var(--faint); border:1px solid var(--border); border-radius:4px; padding:1px 5px; background:var(--surface);
+  }
+  .searchwrap.active kbd{ display:none; }
+
+  .panel-label{ font-family:"IBM Plex Mono"; font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--faint); margin-bottom:7px; }
+
+  .ledlist{ display:flex; flex-direction:column; gap:1px; }
+  .ledrow{
+    display:flex; align-items:center; gap:8px; width:100%; background:none; border:1px solid transparent;
+    border-radius:7px; padding:6px 8px; color:var(--muted); font-size:12.5px; text-align:left;
+  }
+  .ledrow:hover{ background:var(--surface-2); }
+  .ledrow.on{ background:var(--surface-2); border-color:var(--border); color:var(--ink); font-weight:500; }
+  .led{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .ledrow .cnt{ margin-left:auto; font-family:"IBM Plex Mono"; font-size:11px; color:var(--faint); }
+
+  .navlist{ display:flex; flex-direction:column; gap:1px; }
+  @media (max-width: 900px){ .navlist{ flex-direction:row; overflow-x:auto; gap:4px; padding-bottom:4px; } }
+  .navitem{
+    display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; text-align:left;
+    background:none; border:none; border-left:2px solid transparent; padding:7px 9px; border-radius:6px;
+    color:var(--muted); font-size:13px;
+  }
+  @media (max-width: 900px){ .navitem{ flex:none; border-left:none; border-bottom:2px solid transparent; white-space:nowrap; } }
+  .navitem:hover{ color:var(--ink); background:var(--surface-2); }
+  .navitem .n{ font-family:"IBM Plex Mono"; font-size:10.5px; color:var(--faint); }
+  .navitem.active{ background:var(--accent-soft); color:var(--accent-ink); border-left-color:var(--accent); font-weight:600; }
+  .navitem.active .n{ color:var(--accent); }
+
+  .care{ position:relative; padding-top:14px; margin-top:auto; }
+  .care::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:4px; border-radius:2px;
+    background:repeating-linear-gradient(135deg, var(--destructive) 0 6px, var(--destructive-soft) 6px 12px);
+  }
+  .care .jump{
+    display:block; width:100%; text-align:left; font-family:"IBM Plex Mono"; font-size:11px;
+    background:none; border:none; padding:4px 6px; border-radius:5px; color:var(--muted);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .care .jump:hover{ background:var(--destructive-soft); color:var(--destructive); }
+
+  /* ---------- main ---------- */
+  main{ padding:30px 40px 110px; max-width:980px; }
+  @media (max-width: 900px){ main{ padding:22px 18px 90px; } }
+
+  .catheader h2{ font-size:25px; font-weight:800; text-transform:uppercase; letter-spacing:.01em; }
+  .catintro{ color:var(--muted); max-width:70ch; margin-top:9px; font-size:14.5px; }
+  .catintro strong{ color:var(--ink); }
+
+  .readout{ display:flex; flex-wrap:wrap; gap:14px; margin:14px 0 6px; }
+  .readout span{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); font-family:"IBM Plex Mono"; }
+  .readout .led{ width:8px; height:8px; }
+
+  .filejump{ display:flex; flex-wrap:wrap; gap:6px; margin:18px 0 26px; }
+  .filejump button{
+    font-family:"IBM Plex Mono"; font-size:11px; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:20px; padding:4px 10px; color:var(--muted);
+  }
+  .filejump button:hover{ color:var(--accent); border-color:var(--accent); }
+
+  .fileblock{ margin-bottom:28px; scroll-margin-top:20px; }
+  .filehead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; padding-bottom:9px; margin-bottom:11px; border-bottom:1px solid var(--border); }
+  .filehead .path{ font-family:"IBM Plex Mono"; font-size:13px; font-weight:500; color:var(--ink); }
+  .filehead .ns{ font-family:"IBM Plex Mono"; font-size:11px; color:var(--accent); background:var(--accent-soft); border-radius:5px; padding:2px 6px; }
+  .filehead .cnt{ font-size:11.5px; color:var(--faint); margin-left:auto; font-family:"IBM Plex Mono"; }
+  .filenote{ color:var(--muted); font-size:13.5px; max-width:76ch; margin:0 0 13px; }
+
+  .tasklist{ display:flex; flex-direction:column; gap:6px; }
+  details.task{
+    background:var(--surface); border:1px solid var(--border); border-left:3px solid transparent;
+    border-radius:8px; box-shadow:var(--shadow); overflow:hidden; scroll-margin-top:20px;
+  }
+  details.task.risk-gated{ border-left-color:var(--gated); }
+  details.task.risk-destructive{ border-left-color:var(--destructive); }
+  details.task[open]{ border-color:var(--accent); }
+  details.task.risk-gated[open], details.task.risk-destructive[open]{ border-left-width:3px; }
+  details.task.flash{ animation:flash 1.6s ease; }
+  @keyframes flash{ 0%{ box-shadow:0 0 0 3px var(--accent); } 100%{ box-shadow:var(--shadow); } }
+
+  summary.taskrow{ list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px; padding:10px 12px; user-select:none; }
+  summary.taskrow::-webkit-details-marker{ display:none; }
+  .taskname{ font-family:"IBM Plex Mono"; font-size:12.5px; font-weight:500; color:var(--ink); white-space:nowrap; }
+  .taskname .args{ color:var(--faint); font-weight:400; }
+  .taskglance{ color:var(--muted); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+  .chev{ flex:none; width:13px; height:13px; color:var(--faint); transition:transform .15s ease; }
+  details[open] .chev{ transform:rotate(90deg); }
+  .flagchip{ flex:none; font-size:10px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; padding:2px 6px; border-radius:20px; }
+
+  .taskbody{ padding:0 14px 16px 33px; }
+  .taskbody p{ margin:0 0 10px; color:var(--ink); max-width:70ch; font-size:13.8px; }
+  .taskbody .meta{ display:flex; flex-wrap:wrap; gap:8px 22px; margin:10px 0 12px; font-size:12px; color:var(--muted); }
+  .taskbody .meta b{ color:var(--ink); font-weight:600; }
+  .cmdrow{ display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--border); border-radius:7px; padding:8px 8px 8px 12px; }
+  .cmdrow code{ background:none; border:none; padding:0; flex:1; overflow-x:auto; white-space:pre; font-size:12px; }
+  .copybtn{ flex:none; display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:5px 9px; color:var(--muted); }
+  .copybtn:hover{ color:var(--ink); border-color:var(--accent); }
+  .copybtn svg{ width:12px; height:12px; }
+  .copybtn.done{ color:var(--safe); border-color:var(--safe); }
+
+  .searchmode .catheader, .searchmode .readout, .searchmode .filejump{ display:none; }
+  .resultmeta{ color:var(--muted); font-size:13px; margin-bottom:18px; }
+  .resultcat{ font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--faint); font-family:"IBM Plex Mono"; margin:24px 0 9px; }
+  .resultcat:first-child{ margin-top:0; }
+
+  .empty{ color:var(--faint); padding:50px 0; text-align:center; font-size:14px; }
+
+  footer{ padding:22px 40px 60px; color:var(--faint); font-size:12px; grid-column:2; }
+  @media (max-width: 900px){ footer{ padding:18px; grid-column:1; } }
+  footer code{ font-size:11px; }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+
+<div class="shell">
+  <nav class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="mark">rake -T</span>
+      <h1>Rake Control Room</h1>
+      <p class="sub">Every scheduled &amp; on-demand task in the CapHive app, indexed and made safe to run.</p>
+      <p class="stat" id="stat"></p>
+    </div>
+
+    <div class="searchwrap" id="searchwrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="search" type="text" placeholder="Search all tasks…" autocomplete="off">
+      <kbd>/</kbd>
+    </div>
+
+    <div>
+      <div class="panel-label">Risk panel</div>
+      <div class="ledlist" id="legend"></div>
+    </div>
+
+    <div>
+      <div class="panel-label">Categories</div>
+      <div class="navlist" id="tabs"></div>
+    </div>
+
+    <div class="care" id="care">
+      <div class="panel-label" style="color:var(--destructive)">Handle with care</div>
+    </div>
+  </nav>
+
+  <main id="main">
+    <div id="content"></div>
+  </main>
+
+  <footer>
+    Run a bracket-argument task with quotes in zsh — <code>bundle exec rake "aws:cost_audit[production.in]"</code>.
+    Capistrano tasks (marked <code>cap</code>) are deploy/recovery-only and never run via <code>rake</code> directly —
+    <code>bundle exec cap production_in website:deploy</code>. Source: <code>lib/tasks/*.rake</code> and <code>lib/capistrano/tasks/*.rake</code>.
+  </footer>
+</div>
+
+<script>
+/* ---------- risk taxonomy ---------- */
+const RISK = {
+  safe:        { label:"Safe",        hint:"Read-only or no side effects" },
+  writes:      { label:"Writes",      hint:"Mutates, but reversible, non-prod, or idempotent" },
+  gated:       { label:"Gated",       hint:"Destructive capability, but off by default — needs EXECUTE/CONFIRM" },
+  destructive: { label:"Destructive", hint:"Irreversible, runs live, or touches real prod data/users with no safety net" },
+};
+
+/* ---------- data ---------- */
+const DATA = [
+{ id:"db-backup", name:"Database Backup & Restore", intro:"The xtrabackup-based MySQL backup chain: creating it, verifying it's fresh, and restoring from it — plus the schema/test-DB housekeeping that rides alongside <code>db:*</code>.",
+  files:[
+    { path:"lib/tasks/backup_db.rake", ns:"db",
+      note:"The DR restore path. SSHes from the app server into the DB box and runs the backup script baked into the DB AMI. Must run **on an app server** — DB boxes only accept SSH from there.",
+      tasks:[
+        { name:"db:restore_primary_remote", args:"bucket, bucket_region", risk:"destructive",
+          desc:"Restores the **real primary** via the baked backup script. The optional args override the source S3 bucket/region — for example restoring from the DR-region replica bucket during a true region loss. Re-arms the backup cron on the primary as a side effect.",
+          flags:"Overwrites the primary's MySQL datadir.", dep:"xtrabackup:generate_backup_script (fallback only)" },
+        { name:"db:restore_replica_remote", args:"bucket, bucket_region", risk:"destructive",
+          desc:"Restores the replica via the baked script, disarms the backup cron on it afterward (a replica must never write to the backup chain — one writer per chain), then calls <code>AwsUtils.reset_replication('2')</code> to re-point replication.",
+          flags:"Overwrites the replica's MySQL datadir.", dep:"xtrabackup:generate_backup_script (fallback only)" },
+        { name:"db:restore_all_remote", args:"bucket, bucket_region", risk:"destructive",
+          desc:"Restores **primary and replica in parallel** — two threads, each restore independent, only the final <code>reset_replication</code> waits on both — then re-points replication. Safe only because traffic is already off (nginx maintenance mode).",
+          flags:"Two simultaneous datadir overwrites.", dep:"same as above" },
+        { name:"db:reset_replication", args:"server_id", risk:"destructive",
+          desc:"Points the replica at the primary and restarts the replication stream from the primary's current binlog position. <code>server_id</code> defaults to '2'.",
+          flags:"Changes live replication topology." },
+        { name:"db:restore_primary_db", args:null, risk:"destructive",
+          desc:"Legacy. Restores the primary via <code>DbRestoreService</code> — the backup *verifier* service, not the DR path. Kept for pre-baked-AMI-era instances; prefer <code>db:restore_primary_remote</code>.",
+          flags:"Destructive; superseded." },
+        { name:"db:restore_replica_db", args:null, risk:"destructive",
+          desc:"Legacy replica equivalent of the above. Prefer <code>db:restore_replica_remote</code>.",
+          flags:"Destructive; superseded." },
+      ]},
+    { path:"lib/tasks/backup_db_xtra.rake", ns:"xtrabackup",
+      note:"Generates the DB-host backup/restore shell script from a template, seeds its runtime config into SSM, and enforces S3 retention on the resulting backup chain.",
+      tasks:[
+        { name:"xtrabackup:generate_backup_script", args:null, risk:"writes",
+          desc:"Reads <code>lib/tasks/db_backup_xtra.sh</code>, substitutes bucket/region/credential/database-name placeholders from Rails credentials, and writes the result to <code>tmp/db_backup_xtra_&lt;env&gt;.sh</code>. Database name comes from **config**, not a live connection — during DR this can run against a virgin MySQL with no database yet.",
+          flags:"Generated file (mode 0755) contains secrets — treat as sensitive." },
+        { name:"xtrabackup:setup_env", args:null, risk:"safe",
+          desc:"Exports AWS access key / secret / region into <code>ENV</code> from Rails credentials, for the other tasks in this file to use." },
+        { name:"xtrabackup:seed_ssm_params", args:"env_name, region", risk:"writes",
+          desc:"Seeds <code>/irm/&lt;rails_env&gt;/db_backup/*</code> SSM SecureString parameters (mysql user/pass, bucket, region, database name) that the baked backup script reads at boot. SSM is regional — must run once per region that can host a DB instance, **including the DR region**, so a recovered box finds its config without manual seeding mid-DR. Idempotent (<code>--overwrite</code>).",
+          flags:"Writes secrets into AWS SSM in the target account/region.", dep:"aws:environment" },
+        { name:"xtrabackup:cleanup_old_backups", args:"env_name", risk:"gated",
+          desc:"Deletes xtrabackup S3 objects older than the retention window, **including all versions** — the buckets are versioned, so a plain delete only adds delete markers and keeps billing the noncurrent version. Always keeps every full inside the window plus the newest full at-or-before the cutoff (the 'straddle' full), and never drops below the minimum keep count. Cross-checks the bucket's S3 lifecycle rule and warns if it expires backups sooner than this task's own retention.",
+          flags:"Dry run by default — set <code>CONFIRM=1</code> to delete. ENV: <code>DB_BACKUP_RETENTION_DAYS</code> (180), <code>DB_BACKUP_MIN_KEEP_FULLS</code> (60), <code>VERBOSE</code>, <code>SKIP_REPLICA</code>.", dep:"aws:environment" },
+      ]},
+    { path:"lib/tasks/backup_s3.rake", ns:"s3",
+      note:"Backup-freshness verification and reporting — the same checks the hourly/daily Sidekiq cron jobs run, exposed for manual/DR use.",
+      tasks:[
+        { name:"s3:check_latest_file", args:"env_name", risk:"safe",
+          desc:"Runs <code>S3CheckJob</code> to confirm the latest file in the source bucket made it to the destination bucket. Pass <code>env_name</code> to run from a laptop against a specific deployed env instead of local credentials.", dep:"aws:environment (if env_name given)" },
+        { name:"s3:check_backup_freshness", args:"env_name", risk:"safe",
+          desc:"Runs <code>DbBackupFreshnessJob</code> — the manual/DR-verification entry point for the hourly backup-freshness cron. Alerts if the primary/replica xtrabackup buckets are stale. Pass <code>env_name</code> to check a specific deployment directly.",
+          flags:"Exits non-zero on stale backups." },
+        { name:"s3:backup_daily_report", args:"env_name", risk:"safe",
+          desc:"The morning-report counterpart to the freshness check: prints what happened in the last 24h per bucket (did the nightly full land, any chain gaps), plus delimited lines the calling script parses, then a pass/fail verdict." },
+      ]},
+    { path:"lib/tasks/load_test_schema.rake", ns:"db:test",
+      tasks:[
+        { name:"db:test:load_schema", args:null, risk:"writes",
+          desc:"Overrides Rails' built-in <code>load_schema</code> to load <code>db/schema_test.rb</code> (a SQLite-portable schema) instead of <code>db/schema.rb</code>, falling back to the normal loader if the file doesn't exist.",
+          flags:"Test environment only." },
+        { name:"db:test:dump_test_schema", args:null, risk:"writes",
+          desc:"In the test env, dumps the current schema to <code>db/schema_test.rb</code>; otherwise delegates to the normal schema dump." },
+        { name:"db:test:migrate", args:null, risk:"writes",
+          desc:"Runs <code>db:migrate</code>, then in the test env also dumps the SQLite-portable schema to keep it in sync.", dep:"db:migrate, db:dump_test_schema" },
+      ]},
+    { path:"lib/tasks/clean_schema.rake", ns:"db",
+      tasks:[
+        { name:"db:clean_schema", args:null, risk:"writes",
+          desc:"Post-migration cleanup of <code>db/schema.rb</code>/<code>db/schema_test.rb</code>: strips MySQL-only syntax so <code>schema_test.rb</code> stays loadable by the SQLite test DB. Also rewrites composite-PK partitioned tables (e.g. <code>account_entries</code>, whose real MySQL PK is <code>[id, reporting_date]</code>) back to a plain autoincrementing <code>id</code> in the test schema, since SQLite can't autoincrement inside a composite primary key.",
+          flags:"Rewrites both schema files in place." },
+      ]},
+    { path:"lib/tasks/partitions.rake", ns:"partitions",
+      tasks:[
+        { name:"partitions:ensure_account_entries", args:null, risk:"writes",
+          desc:"Ensures next calendar year's MySQL partition exists on the (very large) <code>account_entries</code> table, and emails a PASSED / FAILED / SKIPPED status on **every** outcome. Meant to run on a schedule well ahead of year-end so the partition is never missing when rows for the new year start arriving.",
+          flags:"Sends a real email every run, not just on failure. DDL on a large table." },
+      ]},
+  ]},
+
+{ id:"dr", name:"Disaster Recovery", intro:"The DR toolchain answers three questions at three different times — see <code>docs/operations/dr/dr_component_recovery.md</code> for the full picture: <strong>aws:dr_readiness</strong> asks <em>before</em> a disaster whether recovery is even possible; <strong>dr:assess</strong> asks <em>during</em> an incident which component is broken and what the cheapest fix is; <strong>dr:verify</strong>/<strong>dr:verify_data_tier</strong> ask <em>after</em> a recovery whether the stack is actually serving. <code>dr:fix:*</code> executes one rung of the repair ladder <code>dr:assess</code> names.",
+  files:[
+    { path:"lib/tasks/dr_assess.rake", ns:"dr",
+      tasks:[
+        { name:"dr:assess", args:"env_name", risk:"gated",
+          desc:"Walks every component of a live environment (<code>production.in</code>, <code>production.us</code>, or <code>staging.in</code>) and recommends the smallest repair. Not purely read-only: it auto-fixes 'trivial rung' issues in place — a dead ES/Redis container or a stopped Sidekiq process on an otherwise healthy host gets restarted. Set <code>ASSESS_READ_ONLY=true</code> to suppress even that.",
+          flags:"Auto-restarts services unless ASSESS_READ_ONLY=true. Exits non-zero if any component is DOWN." },
+      ]},
+    { path:"lib/tasks/dr_verify.rake", ns:"dr",
+      tasks:[
+        { name:"dr:verify", args:null, risk:"writes",
+          desc:"Post-recovery smoke test proving a recovered (or freshly deployed) app server and its DB box are actually **serving** — nginx, puma, sidekiq, MySQL, Redis, ES, S3, backup-cron arming, replication. Runs on an app server; <code>aws:setup_infra</code> calls it as its final step, so a full DR run only 'succeeds' once this verifies. Starts <code>prometheus_exporter</code> if it's down rather than only reporting it, since a downed exporter otherwise jams the rest of the scorecard's output with connection errors.",
+          flags:"Prints a scorecard; exits non-zero on any failure. Starts a downed exporter as a side effect." },
+      ]},
+    { path:"lib/tasks/dr_verify_data_tier.rake", ns:"dr",
+      tasks:[
+        { name:"dr:verify_data_tier", args:null, risk:"safe",
+          desc:"Verifies Redis, Sidekiq and Elasticsearch **from inside the app process**, using the app's own connection URLs. Exists because <code>dr:verify</code>'s redis check only exercises <code>Rails.cache</code> (backed by MySQL-based solid_cache), so it can pass green while Sidekiq/ActionCable point at a dead Redis after a repair moves Redis to a new address. Must run on an app server." },
+      ]},
+    { path:"lib/tasks/dr_fix.rake", ns:"dr:fix",
+      note:"Repairs exactly ONE component and touches nothing else. Pulumi steps are print-only (a human runs the printed command); Capistrano steps are host-filtered so a healthy neighbor server is never restarted.",
+      tasks:[
+        { name:"dr:fix:app_server", args:"env_name, host", risk:"destructive",
+          desc:"Repairs ONE app server: restarts its services in place, or rebuilds the box from AMI — isolated to that instance's exact Pulumi resource and its ALB target-group attachment. A preview containing any other resource change aborts.", dep:"dr:assess (run first)" },
+        { name:"dr:fix:prometheus_config", args:"env_name", risk:"writes",
+          desc:"Regenerates the Prometheus scrape config from live instance IPs and pushes it to the observability box." },
+        { name:"dr:fix:observability", args:"env_name", risk:"destructive",
+          desc:"Repairs the observability box: restarts Grafana/Prometheus in place, or rebuilds it from AMI." },
+        { name:"dr:fix:nat", args:"env_name", risk:"destructive",
+          desc:"Diagnoses and repairs the NAT gateway that private-subnet DB boxes depend on for outbound internet." },
+      ]},
+    { path:"lib/tasks/dr_fix_db.rake", ns:"dr:fix",
+      note:"Database-tier repair — the most consequential set of tasks in the DR toolchain, because the choice between 'promote the replica' and 'rebuild from S3' decides how much data is lost. Every task here also compares the locally checked-out git revision against what's actually deployed on the target host and refuses to proceed on a mismatch, to avoid shipping unreleased work mid-incident.",
+      tasks:[
+        { name:"dr:fix:db_replica", args:"env_name", risk:"destructive",
+          desc:"Repairs the DB replica: restart it, reset replication, or rebuild the box and restore it from the backup chain — while the primary stays untouched." },
+        { name:"dr:fix:promote_replica", args:"env_name", risk:"destructive",
+          desc:"Promotes the healthy replica to primary when the primary is gone. RPO ≈ 0 — the preferred path whenever the replica is usable. This redirects every app server's DB connection.",
+          flags:"Requires CONFIRM_OUTAGE=true." },
+        { name:"dr:fix:db_primary", args:"env_name", risk:"destructive",
+          desc:"Rebuilds the DB primary from AMI and restores it (and the replica) from the S3 backup chain — used only when the replica is also unusable. RPO ≈ 1h, whatever's newest in the backup chain.",
+          flags:"Requires CONFIRM_DATA_LOSS=true — deletes the target box's MySQL data directory and discards anything written since the last incremental." },
+      ]},
+    { path:"lib/capistrano/tasks/dr_partial.rake", ns:"partial", note:"Thin Capistrano wrappers over the db:restore_* rake tasks, so a single-box restore is a one-line cap invocation from a laptop instead of SSHing to an app server mid-incident. Adds no recovery logic of its own.",
+      capistrano:true,
+      tasks:[
+        { name:"partial:restore_primary", args:null, risk:"destructive",
+          desc:"Restores ONLY the DB primary from the backup chain (replica untouched). Accepts <code>BUCKET</code>/<code>BUCKET_REGION</code> to override the source bucket.",
+          flags:"Deletes the existing MySQL data directory on the target box.", dep:"wraps db:restore_primary_remote" },
+        { name:"partial:restore_replica", args:null, risk:"destructive",
+          desc:"Restores ONLY the DB replica from the backup chain, then re-points replication at the primary.", dep:"wraps db:restore_replica_remote" },
+        { name:"partial:verify_data_tier", args:null, risk:"safe",
+          desc:"Runs <code>dr:verify_data_tier</code> on the target box via cap.", dep:"wraps dr:verify_data_tier" },
+        { name:"partial:reset_replication", args:null, risk:"destructive",
+          desc:"Re-points the replica at the primary and restarts the replication stream — no restore involved.", dep:"wraps db:reset_replication" },
+      ]},
+  ]},
+
+{ id:"aws", name:"AWS Infrastructure & Cost", intro:"Provisioning, hardening, and cost hygiene across the two AWS accounts — staging (<code>174852986003</code>) and production (<code>825199636520</code>). Almost every mutating task here defaults to a **dry run** and needs an explicit <code>EXECUTE=1</code> or task-specific confirm flag before it touches anything.",
+  files:[
+    { path:"lib/tasks/aws.rake", ns:"aws", note:"The largest file — the core DR/infra entry points.",
+      tasks:[
+        { name:"aws:grow_disk", args:null, risk:"writes",
+          desc:"Runs growpart/resize2fs on the local box's root volume to pick up an EBS size increase. Meant to run **on the instance itself**." },
+        { name:"aws:setup_infra", args:"stack, web_server_name, db_server_name, region, env_variant, env_name, branch", risk:"destructive",
+          desc:"The full DR entry point: Pulumi config, <code>pulumi up</code>, rewriting credentials/env/deploy IPs, <code>cap deploy</code>, and a DB restore, ending with <code>dr:verify</code>. Non-interactive when a <code>branch</code> is given — auto-commits rewritten config to that branch, pushes, and runs the entire recovery unattended. Omitting <code>branch</code> falls back to a legacy interactive flow.",
+          flags:"The single most impactful task in the repo — a full-region rebuild.", dep:"aws:setup_pulumi_config, ends with dr:verify" },
+        { name:"aws:setup_pulumi_config", args:"stack, web_server_name, db_server_name, region, env_variant, env_name", risk:"writes",
+          desc:"Refreshes Pulumi stack config — AMIs, region, domain, key name — without deploying." },
+        { name:"aws:dr_readiness", args:"stack, env_variant, region, env_name", risk:"safe",
+          desc:"Read-only DR-readiness scorecard: backups, AMIs, SSM config, stack config, key pair, hosted zone, drill recency. Answers 'could we recover right now?'" },
+        { name:"aws:dr_drill", args:"env_variant, region, env_name, stack", risk:"gated",
+          desc:"Runs an unattended DR drill and reports RTO. Staging by default; refuses to run against production unless <code>CONFIRM_PRODUCTION=true</code> is also set. <code>TEARDOWN=true</code> tears the drilled stack back down afterward.", dep:"aws:setup_infra" },
+        { name:"aws:dns_cutover", args:"stack, region, env_variant, record_name", risk:"destructive",
+          desc:"Manual only. Points the app DNS A-record (Route53 alias) at a recovered stack's ALB. Prints the current record and the proposed change, then requires the operator to type <code>yes</code> at a terminal prompt.",
+          flags:"Repoints live production DNS. No non-interactive override exists." },
+        { name:"aws:mailchimp_dns", args:"env_name, mode, domain", risk:"gated",
+          desc:"Adds Mailchimp DKIM (k2/k3 CNAMEs) and DMARC TXT records to the caphive.com Route53 zone. Run once per AWS account.",
+          flags:"mode=plan (default) is read-only; mode=apply UPSERTs the records." },
+        { name:"aws:dr_verify_edge", args:"stack, region", risk:"safe",
+          desc:"Curls the recovered stack's ALB directly, bypassing DNS — meant to run before <code>aws:dns_cutover</code> to confirm the target is healthy before flipping DNS at it." },
+        { name:"aws:get_latest_ami", args:"name_tag, region, env_name", risk:"safe",
+          desc:"Looks up the most recent AMI matching a name tag in a region.", dep:"aws:environment" },
+        { name:"aws:copy_ami", args:"ami_id, destination_region, env_name", risk:"writes",
+          desc:"Copies an AMI to a different region.", dep:"aws:environment" },
+        { name:"aws:create_and_copy_ami", args:"instance_name, destination_region, env_name", risk:"writes",
+          desc:"Creates an AMI from a named instance and copies it to another region — the core of the weekly AMI bake.", dep:"aws:environment" },
+        { name:"aws:create_all_amis", args:"env_name", risk:"writes",
+          desc:"Creates and copies AMIs for every weekly-baked instance type. <code>INSTANCES=comma,separated</code> overrides the default set.", dep:"aws:environment" },
+        { name:"aws:delete_old_amis", args:"name_tag, region, env_name", risk:"destructive",
+          desc:"Deletes old AMIs matching a name pattern, keeping the newest per the standard retention count.", dep:"aws:environment" },
+        { name:"aws:create_ami", args:"instance_name, env_name", risk:"writes",
+          desc:"Creates an AMI from a named EC2 instance.", dep:"aws:environment" },
+        { name:"aws:environment", args:"env_name", risk:"safe",
+          desc:"Internal helper, not user-facing: loads <code>.env.&lt;env_name&gt;</code> and the matching encrypted credentials file into <code>Aws.config</code>/<code>ENV</code>. Nearly every other aws:*/xtrabackup:* task re-invokes this to target a specific account/region from a laptop." },
+        { name:"aws:provision_s3_buckets", args:"env_name", risk:"writes",
+          desc:"Provisions and cross-region-replicates the S3 bucket pair (primary + DR-region replica) for an environment, including lifecycle rules. The lifecycle helper **never overwrites** an existing rule on a bucket — a deliberate 'don't clobber' design, meaning a bucket provisioned under an old retention default keeps that default until manually fixed.", dep:"aws:environment" },
+        { name:"aws:generate_prometheus_yml", args:"env_name", risk:"writes",
+          desc:"Generates prometheus.yml with live EC2 instance IPs for the observability box's scrape config.", dep:"aws:environment" },
+        { name:"aws:cleanup_unused_security_groups", args:"env_name", risk:"gated",
+          desc:"Finds — and can delete — unused security groups.", dep:"aws:environment" },
+        { name:"aws:cleanup_unused_vpcs_and_subnets", args:"env_name", risk:"gated",
+          desc:"Finds — and can delete — unused VPCs/subnets.", dep:"aws:environment" },
+        { name:"aws:manage_ssh", args:"action, env_name, force", risk:"gated",
+          desc:"Manages SSH (port 22) exposure across security groups. <code>action</code> is <code>list</code> (find groups open to 0.0.0.0/0:22), <code>suspend</code> (move SSH to port 22222), or <code>resume</code>. Prompts y/N unless <code>force=true</code>.",
+          flags:"Can lock out SSH access if misused; force=true skips the confirmation prompt.", dep:"aws:environment" },
+      ]},
+    { path:"lib/tasks/aws_ebs.rake", ns:"aws", note:"EBS encryption rollout plus AMI/snapshot retention hygiene, added after a 2026-09-01 audit found production.in fully encrypted but staging and production.us running entirely unencrypted volumes/snapshots/AMIs. Every mutating call routes through a shared dry-run helper so dry-run mode genuinely cannot mutate anything.",
+      tasks:[
+        { name:"aws:ebs_status", args:"env_name", risk:"safe",
+          desc:"Read-only per-region EBS encryption status audit. ENV: REGIONS." },
+        { name:"aws:ebs_default_encryption", args:"env_name", risk:"gated",
+          desc:"Enables encryption-by-default per region/account — affects only newly created volumes and snapshot/AMI copies, zero impact on anything already running.",
+          flags:"Dry run by default. ENV: EXECUTE, REGIONS, KMS_KEY_ID." },
+        { name:"aws:ebs_cleanup", args:"env_name", risk:"gated",
+          desc:"Expires old AMIs (and their backing snapshots) and deletes orphaned snapshots not referenced by any registered AMI or tagged Retain=true.",
+          flags:"Dry run by default. ENV: EXECUTE, KEEP, DAYS, REGIONS." },
+        { name:"aws:ebs_purge_superseded", args:"env_name", risk:"gated",
+          desc:"Deletes unencrypted AMIs/snapshots once a newer encrypted equivalent exists.",
+          flags:"Dry run by default. ENV: EXECUTE, REGIONS." },
+        { name:"aws:ebs_encrypt_plan", args:"env_name", risk:"safe",
+          desc:"Read-only: lists which instances the encryption rollout would need to restart. ENV: REGIONS." },
+        { name:"aws:ebs_encrypt_instance", args:"instance_name, env_name", risk:"gated",
+          desc:"Encrypts an instance's EBS volumes via stop → snapshot → encrypted copy → new volume → swap → start. Refuses to touch a production-named env unless <code>ALLOW_STOP=1</code> is also set.",
+          flags:"Stops the running instance. ENV: EXECUTE, ALLOW_STOP, KMS_KEY_ID, INSTANCE_ID." },
+        { name:"aws:ebs_delete_replaced", args:"env_name", risk:"gated",
+          desc:"Deletes the old unencrypted volumes left detached (tagged DeleteAfterVerify=true) by ebs_encrypt_instance — only after confirming the source instance is running again with every attached volume encrypted.",
+          flags:"Dry run by default. ENV: EXECUTE, REGIONS, ALLOW_STOPPED." },
+      ]},
+    { path:"lib/tasks/aws_tls_policy.rake", ns:"aws",
+      tasks:[
+        { name:"aws:tls_policy", args:"env_name", risk:"gated",
+          desc:"Pins the ALB HTTPS listener TLS policy to TLS 1.2/1.3, replacing AWS's default policy (which negotiates down to TLS 1.0). The underlying listener change is in-place and non-disruptive to existing connections, and reversible by re-running with <code>POLICY=&lt;old value&gt;</code>.",
+          flags:"Dry run by default. ENV: EXECUTE, REGIONS, POLICY." },
+      ]},
+    { path:"lib/tasks/aws_cost_audit.rake", ns:"aws",
+      tasks:[
+        { name:"aws:cost_audit", args:"env_name", risk:"safe",
+          desc:"Strictly read-only cost and optimization audit — only Describe/Get/List calls, no remediation is ever executed, only printed. Produces Cost Explorer totals and month-over-month deltas, spend by region, active EC2 reservation inventory (flagging unused or soon-expiring), a findings list with estimated $/month and remediation commands, and — unless <code>NO_LLM=1</code> — an LLM-generated prioritized plan. Writes a self-contained HTML report to <code>docs/operations/costs/</code> in addition to stdout.",
+          flags:"ENV: MONTHS, REGIONS, NO_LLM, LLM_MODEL, OUTPUT. Cost Explorer calls cost ~$0.01 each, ~4/run.", dep:"aws:environment" },
+      ]},
+    { path:"lib/tasks/aws_cost_cleanup.rake", ns:"aws",
+      tasks:[
+        { name:"aws:cost_cleanup", args:"env_name", risk:"gated",
+          desc:"Staging-only remediation of aws:cost_audit findings: deletes non-AMI-backed snapshots older than <code>SNAPSHOT_DAYS</code> (180d default), releases unassociated Elastic IPs, adds a conservative S3 lifecycle to buckets lacking one, and can optionally delete near-zero-traffic NAT gateways or terminate specific stopped instances by id (each gets an AMI backup first). Refuses to run unless env_name starts with 'staging', the STS account matches the whitelisted staging account, and Rails.env is not production — three separate guards, checked before any AWS call.",
+          flags:"Dry run by default. ENV: EXECUTE, DELETE_NAT, TERMINATE_IDS, SNAPSHOT_DAYS." },
+      ]},
+    { path:"lib/tasks/aws_cost_cleanup_prod.rake", ns:"aws",
+      tasks:[
+        { name:"aws:cost_cleanup_prod", args:"env_name", risk:"gated",
+          desc:"Production-scoped, safe-actions-only cost cleanup: old non-AMI-backed snapshots, CloudTrail/VPC-flow-log bucket lifecycle (180d expiry), MPU-abort-only lifecycle elsewhere (never touches document version expiry, and skips *-backup-xtra buckets — those belong to the xtrabackup retention task), and CloudWatch log retention set to 90d where currently 'Never'. Deliberately excludes NAT gateways, stopped DB-check instances, instance termination, and EIPs. Same triple-guard pattern as aws:cost_cleanup, scoped to production.",
+          flags:"Dry run by default. ENV: EXECUTE, SNAPSHOT_DAYS." },
+      ]},
+    { path:"lib/tasks/aws_cleanup.rake", ns:"aws", note:"Older, simpler cleanup tasks predating aws_cost_cleanup*.rake — no account/env guard rails, so use with more care. Several of these default to acting, requiring DRY_RUN=true to preview instead of the newer 'default to safe' pattern.",
+      tasks:[
+        { name:"aws:cleanup_snapshots", args:"env_name", risk:"destructive",
+          desc:"Deletes EBS snapshots older than <code>RETENTION_DAYS</code> (default 30).",
+          flags:"DRY_RUN=true to preview only — destructive by default, and no account guard.", dep:"aws:environment" },
+        { name:"aws:cleanup_elastic_ips", args:"env_name", risk:"destructive",
+          desc:"Releases unassociated Elastic IPs.",
+          flags:"DRY_RUN=true to preview only.", dep:"aws:environment" },
+        { name:"aws:cleanup_unattached_volumes", args:"env_name", risk:"destructive",
+          desc:"Deletes unattached EBS volumes.",
+          flags:"DRY_RUN=true to preview only.", dep:"aws:environment" },
+        { name:"aws:cleanup_stopped_instances", args:"env_name", risk:"destructive",
+          desc:"**Terminates** stopped EC2 instances.",
+          flags:"DRY_RUN=true to preview only — otherwise irreversible.", dep:"aws:environment" },
+        { name:"aws:list_nat_gateways", args:"env_name", risk:"safe",
+          desc:"Lists NAT gateways and flags redundancy.", dep:"aws:environment" },
+        { name:"aws:setup_s3_glacier", args:"env_name", risk:"writes",
+          desc:"Sets up S3 Glacier lifecycle rules for backup buckets.", dep:"aws:environment" },
+        { name:"aws:run_all_cleanup", args:"env_name", risk:"destructive",
+          desc:"Runs all of the 'safe' cleanups above (snapshots, EIPs, unattached volumes, NAT advice) in sequence.", dep:"the tasks above; inherits their DRY_RUN behavior" },
+      ]},
+    { path:"lib/tasks/nat_gateway.rake", ns:"aws:nat",
+      tasks:[
+        { name:"aws:nat:status", args:"env_name", risk:"safe",
+          desc:"Shows current NAT Gateway and private-route-table status.", dep:"aws:environment" },
+        { name:"aws:nat:delete", args:"env_name", risk:"destructive",
+          desc:"Deletes the NAT Gateway and releases its EIP. Instances routed through it lose outbound internet — including OS package updates — until a new one is created.", dep:"aws:environment" },
+        { name:"aws:nat:create", args:"env_name", risk:"writes",
+          desc:"Creates a new NAT Gateway in the public subnet and repoints the private route table at it.", dep:"aws:environment" },
+      ]},
+    { path:"lib/tasks/nginx.rake", ns:"nginx",
+      tasks:[
+        { name:"nginx:switch", args:"nginx_profile", risk:"gated",
+          desc:"Switches the live nginx config between <code>maintenance</code> and <code>IRM_&lt;Rails.env&gt;</code> by re-symlinking sites-enabled, then reloads nginx. Meant to run **on the app server itself**.",
+          flags:"Puts the site into or out of maintenance mode." },
+      ]},
+    { path:"lib/tasks/pulumi_state.rake", ns:"aws",
+      tasks:[
+        { name:"aws:provision_pulumi_state_bucket", args:"env_name", risk:"writes",
+          desc:"Provisions the Pulumi state S3 bucket pair (primary + cross-region-replicated DR bucket) for one account×geography. Scope is production (both geographies) plus staging.in, used to rehearse DR — a drill against a personal Pulumi Cloud login wouldn't rehearse the real procedure. Idempotent, safe to re-run to repair drift." },
+      ]},
+    { path:"lib/tasks/packer.rake", ns:"packer", note:"Builds the AMI templates (appserver, db_redis_es, observability) that back the fleet.",
+      tasks:[
+        { name:"packer:check_env", args:"env, env_variant", risk:"safe", desc:"Validates syntax of all Packer templates for a given env/variant." },
+        { name:"packer:check", args:null, risk:"safe", desc:"Same as check_env, defaulting to dev/us." },
+        { name:"packer:init_env", args:"env, env_variant", risk:"writes", desc:"Runs packer init for a given env/variant — downloads Packer plugins." },
+        { name:"packer:init", args:null, risk:"writes", desc:"Same as init_env, defaulting to dev/us." },
+        { name:"packer:build_env", args:"env, env_variant, template_type", risk:"writes",
+          desc:"Bakes an AMI (app, db, obs, or all) for a given env/variant. <code>PACKER_AWS_REGION</code> can override the target region — e.g. baking directly into the DR region.",
+          flags:"Creates AWS resources (instances, AMIs) — billable, can take a long time." },
+        { name:"packer:build", args:null, risk:"writes", desc:"Same as build_env, defaulting to dev/us/all." },
+        { name:"packer:teardown_build_network", args:"region", risk:"gated",
+          desc:"Deletes the transient packer-build-&lt;region&gt; VPC/network used during bakes." },
+      ]},
+  ]},
+
+{ id:"monitoring", name:"Monitoring & Observability", intro:"Grafana provisioning and health checks, plus the infra/cost reports that summarize what the dashboards show.",
+  files:[
+    { path:"lib/tasks/grafana_provision.rake", ns:"grafana",
+      tasks:[
+        { name:"grafana:provision", args:null, risk:"writes", desc:"Applies **all** Grafana provisioning: contact points, alert rules, dashboard patches.", dep:"contact_points, alert_rules, dashboards" },
+        { name:"grafana:provision:contact_points", args:null, risk:"writes", desc:"Applies contact points and the notification policy only." },
+        { name:"grafana:provision:alert_rules", args:null, risk:"gated", desc:"Applies alert rules only. Idempotent **by deletion** — deletes and recreates every rule in the managed folder each run." },
+        { name:"grafana:provision:dashboards", args:null, risk:"writes", desc:"Patches existing dashboards — fixes queries, adds panels/variables — and saves the resulting JSON to <code>config/grafana/dashboards/</code>." },
+        { name:"grafana:provision:save", args:null, risk:"safe", desc:"Saves the *current live* dashboard JSON to <code>config/grafana/dashboards/</code> without patching — for taking a backup before making changes." },
+        { name:"grafana:provision:overview_dashboard", args:null, risk:"writes", desc:"Creates/updates the 'CapHive Overview' dashboard — P99 latency, Puma thread saturation, Sidekiq queue depth/age, cache miss rate, InnoDB deadlocks, aborted connections, iowait, network throughput, and more, for every monitored system." },
+        { name:"grafana:provision:viewer_users", args:null, risk:"writes",
+          desc:"Creates/updates read-only viewer users defined in <code>grafana_provision.yml</code>.",
+          flags:"Requires GRAFANA_VIEWER_PASSWORD." },
+      ]},
+    { path:"lib/tasks/grafana_health.rake", ns:"grafana",
+      tasks:[
+        { name:"grafana:health_check", args:"env_name", risk:"safe", desc:"Queries the live 'CapHive Overview' dashboard's panels and reports any red/yellow threshold breaches." },
+      ]},
+    { path:"lib/capistrano/tasks/grafana_annotations.rake", ns:"grafana", capistrano:true,
+      tasks:[
+        { name:"grafana:annotate", args:null, risk:"safe",
+          desc:"Posts a deploy annotation to Grafana — a vertical marker on every dashboard at deploy time — using the exact SHA Capistrano deployed. Silently skipped if <code>GRAFANA_PASS</code> isn't set, and non-fatal if Grafana is unreachable; never blocks a deploy over a missing annotation.",
+          dep:"Runs automatically as part of every Capistrano deploy" },
+      ]},
+    { path:"lib/tasks/infra_report.rake", ns:"infra",
+      tasks:[
+        { name:"infra:report", args:null, risk:"safe",
+          desc:"Generates an HTML resource-usage report covering CPU, RAM, disk, inode usage, 5xx/4xx rates, response times, Sidekiq queue depth/age, Puma worker RSS, DB RAM/connection-pool saturation, slow queries, replication lag, InnoDB buffer-pool miss rate, deadlocks, and aborted connections — each metric with an explanatory blurb.",
+          flags:"Read-only against Grafana. ENV: GRAFANA_URL, GRAFANA_PASS, WINDOW (default 7d)." },
+      ]},
+    { path:"lib/tasks/deploy_notifications.rake", ns:"deploy",
+      tasks:[
+        { name:"deploy:notify_before", args:null, risk:"gated",
+          desc:"Enqueues a worker to warn signed-in users the system is about to go down for a deploy. No-ops with a warning log if the worker class isn't defined.",
+          flags:"Sends real user-facing notifications.", dep:"Run as part of the deploy pipeline" },
+        { name:"deploy:notify_after", args:null, risk:"gated",
+          desc:"Enqueues the same worker one minute later to tell users the system is back.",
+          flags:"Sends real user-facing notifications.", dep:"Run as part of the deploy pipeline" },
+      ]},
+  ]},
+
+{ id:"seed", name:"Demo & Seed Data", intro:"Idempotent, entity-scoped seed tasks that populate a demo/staging tenant with realistic data for a feature demo, QA pass, or sales walkthrough. Most take an <code>entity_id</code> argument and are safe to re-run — found-or-created by name/key. A couple of files generate large volumes of fabricated records via Faker; treat those as strictly non-production tools.",
+  files:[
+    { path:"lib/tasks/demo_data.rake", ns:"irm", note:"Bulk fake-data generator using Faker/FactoryBot. Not entity-scoped — creates its own entities (Urban Company, Demo Company, Wakefit, Ambit, Citi, IAN, Atrium Angels, and more).",
+      tasks:[
+        { name:"irm:generateFakeEntities", args:null, risk:"writes", desc:"Creates fake Company/Investment Advisor/Investment Fund entities, each with a couple of users." },
+        { name:"irm:generateFakeBlankEntities", args:null, risk:"writes", desc:"Creates fake entities with no further data." },
+        { name:"irm:generateFakeDocuments", args:null, risk:"writes", desc:"Generates fake Document rows." },
+        { name:"irm:generateFakeInvestors", args:null, risk:"writes", desc:"Generates fake Investor rows." },
+        { name:"irm:generateFakeInvestments", args:null, risk:"writes", desc:"Generates fake investments." },
+        { name:"irm:generateFakeFundInvestments", args:null, risk:"writes", desc:"Generates fake fund-level investments." },
+        { name:"irm:generateFakeHoldings", args:null, risk:"writes", desc:"Generates fake holdings." },
+        { name:"irm:generateFakeNotes", args:null, risk:"writes", desc:"Generates fake Note rows." },
+        { name:"irm:generateFakeValuations", args:null, risk:"writes", desc:"Generates fake valuations." },
+        { name:"irm:generateFakeDeals", args:null, risk:"writes", desc:"Generates fake Deal rows." },
+        { name:"irm:generateFakeSales", args:null, risk:"writes", desc:"Generates fake sales." },
+        { name:"irm:generateFakeOffers", args:null, risk:"writes", desc:"Generates fake offers." },
+        { name:"irm:generateFakeLoadTestUsers", args:null, risk:"writes", desc:"Generates fake users specifically for load testing — bulk-writes a large batch of user rows." },
+        { name:"irm:generateFakePortfolios", args:null, risk:"writes", desc:"Generates fake portfolios." },
+        { name:"irm:generateFakeFunds", args:null, risk:"writes", desc:"Generates fake funds." },
+        { name:"irm:generateAll", args:null, risk:"writes",
+          desc:"Runs generateFakeEntities → Investors → Documents → Notes → Sales → Offers → Funds → Portfolios in sequence — the full fake-tenant bootstrap.",
+          dep:"the seven tasks it chains" },
+        { name:"irm:seed_demo_deals", args:"entity_id", risk:"writes", desc:"Seeds two fully-populated demo deals for DealManagementAgent testing." },
+      ]},
+    { path:"lib/tasks/deal_demo_activity.rake", ns:"deal",
+      tasks:[
+        { name:"deal:demo_activity", args:"deal_id, task_count, note_count", risk:"writes",
+          desc:"Generates fake Task/Note records for an existing deal and its DealInvestors, spread across the deal's kanban columns with a mix of overdue/upcoming/undated dates, so the board and notes timeline can be exercised without hand-creating records. Every generated row is tagged <code>demo-seed</code> for easy identification and cleanup.",
+          flags:"Refuses to run outside Rails.env.development? — a hard-coded dev-only guard." },
+      ]},
+    { path:"lib/tasks/workflow_seeds.rake", ns:"workflow_seeds",
+      tasks:[
+        { name:"workflow_seeds:seed", args:"entity_id", risk:"writes",
+          desc:"Seeds meaningful WorkflowTemplates for Folder, InvestorKyc, CapitalCall, and Approval workflowable types on an entity. Idempotent by template name+entity; skips any that already exist." },
+        { name:"workflow_seeds:teardown", args:"entity_id", risk:"gated",
+          desc:"Removes all seeded workflow templates for an entity, archiving any active instances first." },
+      ]},
+    { path:"lib/tasks/investor_workflow_seeds.rake", ns:"investor_workflow_seeds",
+      tasks:[
+        { name:"investor_workflow_seeds:seed", args:"entity_id", risk:"writes",
+          desc:"Seeds two scenarios: 'Investor Onboarding' (auto-assigned + auto-launched on new non-portfolio-company investors) and 'Portfolio Company KPI Report Review' (auto-assigned, launched only on KPI import). Also creates a demo Portfolio Company investor and a demo KpiReport with sample KPIs, then directly triggers the launch — exercising the same production code path the KPI import job uses. Idempotent." },
+        { name:"investor_workflow_seeds:teardown", args:"entity_id", risk:"gated",
+          desc:"Removes everything seed created for an entity — the demo investor/report/KPI rows first (cascading to their workflow instances), then archives remaining active instances and destroys each template. Reports rather than raises if a template can't be destroyed because a workflow instance still references it." },
+      ]},
+    { path:"lib/tasks/workflow_demo.rake", ns:"workflow_demo",
+      tasks:[
+        { name:"workflow_demo:setup", args:"entity_id, launch", risk:"writes",
+          desc:"Seeds a sample 'Two-Stage LP Review' workflow template plus a 'Q3 2026 LP Data Room' folder with 4 sample documents. Pass <code>launch</code> as the second arg to also launch the workflow, which notifies step-1 actors. Idempotent — tears down and recreates the demo template/folder by name every run.",
+          flags:"launch sends real notifications to step actors." },
+        { name:"workflow_demo:teardown", args:"entity_id", risk:"gated", desc:"Tears down the demo workflow template and folder. Idempotent." },
+      ]},
+    { path:"lib/tasks/lp_crm_custom_fields.rake", ns:"lp_crm",
+      tasks:[
+        { name:"lp_crm:seed_custom_fields", args:"entity_id", risk:"writes",
+          desc:"Seeds the LP CRM custom fields for an entity — InvestorAccess contact/touch-point fields (designation, POC role, intro, LinkedIn, primary-contact flag) and Investor-level fields (engagement status, relationship owner). The whole CRM is custom-field driven, so this is the only 'setup' a tenant needs. Idempotent — only creates fields that don't already exist by normalized name; never clobbers tenant edits to existing fields." },
+      ]},
+    { path:"lib/tasks/validation_rules.rake", ns:"rules",
+      tasks:[
+        { name:"rules:seed_defaults", args:"entity_id", risk:"writes",
+          desc:"Seeds/updates default ValidationRules. With no arg, upserts all global defaults across every entity; with an entity id, that entity customizes via overrides. Idempotent — creates missing rules and updates condition/params/description/message on existing ones, but never touches the enabled flag or any override. Safe to re-run on every deploy." },
+        { name:"rules:enable_for_entity", args:"entity_id", risk:"writes", desc:"Creates/updates ValidationRuleOverrides so all global default rules are enabled for one entity.", dep:"rules:seed_defaults" },
+        { name:"rules:disable_for_entity", args:"entity_id", risk:"writes", desc:"Same, but disables all global default rules for one entity." },
+        { name:"rules:seed_entity_overrides", args:"entity_id", risk:"writes", desc:"Seeds example ValidationRuleOverrides for a specific entity (defaults to entity 157). Idempotent." },
+      ]},
+    { path:"lib/tasks/fund_ratio_run_templates.rake", ns:"fund_ratios",
+      tasks:[
+        { name:"fund_ratios:seed_templates", args:"entity_id", risk:"writes",
+          desc:"Seeds a standard set of FundRatioRunTemplates into an entity, modelled on entity 157's ('Demo Fund') templates. Fund/portfolio-company names are resolved at runtime against the target entity; anything not found is skipped with a warning rather than raising. <code>ANCHOR=Fund A</code> overrides the reference fund. Fully idempotent." },
+      ]},
+    { path:"lib/tasks/dashboard_widgets.rake", ns:"irm:dashboard_widgets",
+      tasks:[
+        { name:"irm:dashboard_widgets:setup_lp", args:"entity_id", risk:"writes", desc:"Configures the default LP Landing Page widget set — Funds, LP Menus, LP Header, Metric Cards, Action Items, Latest Documents, Performance Chart, TVPI/DPI/MOIC and IRR ratio charts, Investment Opportunities — position-ordered, skipping any widget already present." },
+        { name:"irm:dashboard_widgets:setup_fm", args:"entity_id", risk:"writes", desc:"Same, for the fund-manager-facing Landing Page widget set." },
+        { name:"irm:dashboard_widgets:setup_all", args:"entity_id", risk:"writes", desc:"Runs both setup_lp and setup_fm." },
+      ]},
+    { path:"lib/tasks/support_agents.rake", ns:"support_agents",
+      tasks:[
+        { name:"support_agents:setup", args:"entity_id", risk:"writes", desc:"Idempotently sets up all SupportAgent form types, custom fields, and agent records for an entity. Safe to re-run after adding new fields/agents." },
+        { name:"support_agents:clone", args:"target_entity_id, source_entity_id", risk:"writes", desc:"Clones all SupportAgents from a fully-configured source entity (default: 157) to a target entity — mirrors enabled agent bitflags and copies configuration. Run setup on the source first." },
+      ]},
+    { path:"lib/tasks/portfolio_scoring_seed.rake", ns:"portfolio_scoring",
+      tasks:[
+        { name:"portfolio_scoring:seed", args:"entity_id", risk:"writes", desc:"Fabricates SupportAgentReport rows in the exact shape the real Portfolio Scoring Agent writes, so the dashboard can be demoed without running the real agent or spending on LLM calls. Defaults to entity 157." },
+        { name:"portfolio_scoring:clear", args:"entity_id", risk:"gated", desc:"Removes only the seeded scoring reports for an entity, leaving real agent output untouched." },
+      ]},
+    { path:"lib/tasks/presentation_analyst_seed.rake", ns:"presentation_analyst",
+      tasks:[
+        { name:"presentation_analyst:seed", args:"entity_id", risk:"writes", desc:"Same pattern as portfolio_scoring:seed, but for the Presentation Analyst Agent — fabricates demo reports for its dashboard. Defaults to entity 157." },
+        { name:"presentation_analyst:clear", args:"entity_id", risk:"gated", desc:"Removes only the seeded rows for an entity." },
+      ]},
+    { path:"lib/tasks/report_builder_demo_seed.rake", ns:"report_builder_demo",
+      tasks:[
+        { name:"report_builder_demo:seed", args:"entity_id", risk:"writes",
+          desc:"Loads 5 complex Report Builder reports into an entity to demo the feature: multi-join zero-fill, every aggregate type, pivot tables, computed formula columns, Ransack filters on root and joined scopes, and both SQL-level and computed sorting. Idempotent — re-running **replaces** each report's columns/template, so you can tweak this file and re-seed without piling up duplicates. Reports are marked shared so any entity user can see them." },
+      ]},
+    { path:"lib/tasks/portfolio_report_seed.rake", ns:"portfolio_report",
+      tasks:[
+        { name:"portfolio_report:generate_brand_template", args:null, risk:"writes", desc:"Generates a brand-template PPTX (Emerald theme) to <code>tmp/brand_template_emerald.pptx</code>." },
+        { name:"portfolio_report:generate_word_template", args:null, risk:"writes", desc:"Generates a placeholder Word template (.docx) to <code>tmp/word_placeholder_template.docx</code>." },
+        { name:"portfolio_report:generate_ppt_template", args:null, risk:"writes", desc:"Generates a placeholder PPT template into <code>public/sample_uploads/portfolio_report_templates/</code>." },
+        { name:"portfolio_report:seed", args:"entity_id", risk:"writes",
+          desc:"Seeds a full portfolio company ('Report Gen Test Co') with everything needed to test Portfolio Report Generation v2: InvestorKpiMappings, 6 months of monthly KpiReport/Kpi actuals, a PortfolioReport with 4 sections, a PortfolioReportTemplate with a hand-built style-reference .docx (named styles, brand colors), 3 context notes, and 2 fake PortfolioReportExtract rows. Idempotent." },
+      ]},
+    { path:"lib/tasks/agent_charts.rake", ns:"agent_charts",
+      tasks:[
+        { name:"agent_charts:seed", args:null, risk:"writes",
+          desc:"Seeds standard AgentChart definitions for an entity given via <code>ENTITY_ID=157</code> — an env var, not a bracket arg. Idempotent — skips any chart whose title already exists for the entity." },
+      ]},
+    { path:"lib/tasks/rta_demo.rake", ns:"rta",
+      tasks:[
+        { name:"rta:demo", args:"fund_id", risk:"writes",
+          desc:"Ensures a fund's FundUnitSettings all have ISINs, generates an all-success and an all-issue-types RTA statement PDF from the fund's live data, and runs the RTA Reconciliation Agent against both — a one-command way to exercise the full reconciliation pipeline.",
+          flags:"Generates real files and runs a real agent pass." },
+      ]},
+    { path:"lib/tasks/remittance_reconciliation.rake", ns:"remittance_reconciliation",
+      tasks:[
+        { name:"remittance_reconciliation:statement", args:"capital_call_id, bank, coverage, run", risk:"writes",
+          desc:"Generates a bank-statement .xlsx (ICICI or Axis export format) for an **existing** capital call, crafted from the call's own remittances so the Remittance Reconciliation Agent would hit every outcome type — exact, partial, probable, discrepancy, overpayment, no match, internal, ignored withdrawal — if run against it. <code>coverage</code> is full (default, also pays every other outstanding remittance) or sample (one row per outcome). Add <code>run</code> to also execute the agent against the generated statement.",
+          flags:"Creates nothing in the DB — the statement is a standalone file. run executes a real agent pass." },
+      ]},
+    { path:"lib/tasks/faq_threads_setup.rake", ns:"faq_threads",
+      tasks:[
+        { name:"faq_threads:setup", args:null, risk:"writes", desc:"Uploads docs from <code>public/docs/</code> and creates an OpenAI Assistant named 'CapHive Support Bot'.", flags:"Calls the OpenAI API; creates a billable Assistant + vector store." },
+        { name:"faq_threads:delete_assistant", args:null, risk:"destructive", desc:"Deletes an OpenAI Assistant given a <code>FAQ_ASSISTANT_ID</code> env var." },
+        { name:"faq_threads:recreate_assistant", args:null, risk:"writes", desc:"Recreates an OpenAI Assistant using an existing <code>VECTOR_STORE_ID</code> env var." },
+        { name:"faq_threads:get_assistant", args:null, risk:"safe", desc:"Retrieves OpenAI Assistant details, including its vector store IDs." },
+      ]},
+  ]},
+
+{ id:"bizops", name:"Business Operations", intro:"Tasks that run production business logic on demand: allocation-run auditing, the weekly engineering/marketing email digest, and LLM model-registry sync.",
+  files:[
+    { path:"lib/tasks/allocation_run_checker.rake", ns:"allocation",
+      note:"Backfills allocation-run-checker reports for runs that finished before anyone pressed 'Check', or before the checker existed. Nothing about the checks is captured at run time — every one is **recomputed from the ledger, formulas, and commitments as they currently stand**, which is what makes a backfill possible and also what limits how far back it's meaningful to go: checks needing fields added 2025-03-29 or 2024-07-28 say so and skip rather than reporting a false failure on older runs. Shared ENV across all three tasks: ONLY_UNCHECKED=true (skip runs that already have a report — default is to re-check and overwrite every existing report), NOW=true (run in-process instead of queueing a background job), DRY_RUN=true (list what would be checked and stop). Reports are attributed to the entity's first company admin, as if they'd clicked Check themselves.",
+      tasks:[
+        { name:"allocation:check", args:"run_id", risk:"writes", desc:"Generates the checker report for one AllocationRun.", flags:"Reads the very-large account_entries table." },
+        { name:"allocation:check_fund", args:"fund_id", risk:"writes", desc:"Generates reports for every run on a fund. FROM=2025-04-01 TO=2025-12-31 bounds the period.", flags:"Reads account_entries at scale." },
+        { name:"allocation:check_entity", args:"entity_id", risk:"writes", desc:"Generates reports for every run across every fund in an entity.", flags:"The largest-scope variant." },
+      ]},
+    { path:"lib/tasks/weekly_email.rake", ns:"irm",
+      tasks:[
+        { name:"irm:weekly_email_internal", args:null, risk:"gated",
+          desc:"Generates an internal engineering-update email from recent git commits — all commit types, full detail.",
+          flags:"DAYS=7 lookback, PRODUCT=CapHive, SEND=true to actually deliver via SES to support@caphive.com, TO=foo@bar.com to override recipient, CREDS_ENV=staging.in for a different SMTP credentials environment." },
+        { name:"irm:weekly_email", args:null, risk:"gated",
+          desc:"Generates a weekly **marketing** email draft from recent git commits, aimed at an external audience rather than engineers.",
+          flags:"Same ENV vars as above — SEND=true sends a real marketing email via SES." },
+      ]},
+    { path:"lib/tasks/ruby_llm_models.rake", ns:"irm:ruby_llm",
+      tasks:[
+        { name:"irm:ruby_llm:refresh_models", args:null, risk:"writes",
+          desc:"Refreshes RubyLLM's model registry — new/updated model ids, context windows, pricing — from the OpenAI/Gemini/Anthropic provider APIs, saves it to <code>models.json</code>, and syncs the app's Model table so in-app model pickers see the same data.",
+          flags:"Calls live provider APIs; overwrites models.json and the Model table." },
+      ]},
+  ]},
+
+{ id:"addins", name:"Email / Office Add-ins", intro:"Build and deploy tooling for the Gmail and Outlook add-ins (Apps Script / Office manifest based). These boot **without** the Rails environment on purpose — no database, run from a developer machine against a remote host.",
+  files:[
+    { path:"lib/tasks/gmail_addin.rake", ns:"gmail",
+      tasks:[
+        { name:"gmail:build", args:"env", risk:"safe", desc:"Generates the Gmail add-on source for an environment locally — no push." },
+        { name:"gmail:setup", args:"env", risk:"writes", desc:"Builds, creates the Apps Script project if it doesn't exist, and pushes the add-on. A setup-pushed deployment installs only for the script owner.", dep:"gmail:build (implicitly)" },
+        { name:"gmail:release", args:"env", risk:"gated",
+          desc:"Full release: build, push, and cut a **versioned deployment** — what any real user actually installs. Refuses to release to a production* env unless <code>CONFIRM=&lt;env&gt;</code> is also set.",
+          dep:"gmail:setup (implicitly)" },
+        { name:"gmail:deployments", args:"env", risk:"safe", desc:"Lists the Apps Script deployments for an environment." },
+        { name:"gmail:open", args:"env", risk:"safe", desc:"Prints the Apps Script project URL for an environment." },
+      ]},
+    { path:"lib/tasks/outlook_addin.rake", ns:"outlook",
+      tasks:[
+        { name:"outlook:manifests", args:null, risk:"writes",
+          desc:"Regenerates the per-tenant Outlook add-in manifests (<code>public/manifests/&lt;tenant&gt;_outlook_addin.xml</code>) from <code>config/outlook_addins.yml</code> via ERB. Raises if two tenants share an add-in ID — they'd be unable to install side by side, and the second would silently overwrite the first." },
+      ]},
+  ]},
+
+{ id:"website", name:"Marketing Website", intro:"The static caphive.com marketing site, built from <code>website_src/</code> into the committed <code>public/website/</code> output — served directly by nginx off disk, puma never sees this traffic.",
+  files:[
+    { path:"lib/tasks/website.rake", ns:"website",
+      tasks:[
+        { name:"website:build", args:null, risk:"writes",
+          desc:"Renders every page in <code>website_src/pages/</code> (YAML front matter + body) through the shared layout, stamping asset URLs with a content hash, and writes the result into <code>public/website/</code>. Assets (css/js/img) aren't templated and stay as-is. The output is committed — a deploy never rebuilds it, but hand-editing files under public/website/ directly gets silently overwritten by the next build." },
+      ]},
+    { path:"lib/tasks/website_leads.rake", ns:"website_leads",
+      tasks:[
+        { name:"website_leads:purge", args:null, risk:"destructive",
+          desc:"Retention enforcement for WebsiteLead, run daily from the scheduler — makes the published privacy-policy retention windows literally true rather than aspirational. Two phases: nulls request_ip/user_agent on leads past the shorter abuse-data window (batched, since the capture endpoint is public and a spam flood is this table's one growth path), then permanently <code>delete_all</code>s whole records past the full retention window — no callbacks, no associations.",
+          flags:"Permanently deletes lead PII past retention." },
+      ]},
+    { path:"lib/capistrano/tasks/website.rake", ns:"website", capistrano:true,
+      note:"Deploys the static site without a full app deploy — no bundle, no assets:precompile, no migration, no puma/sidekiq restart. This patches the currently deployed release in place; since public/website is git-tracked, the next full cap deploy re-checks it out from the deploy branch, so an uncommitted website change silently reverts on the next regular deploy.",
+      tasks:[
+        { name:"website:build", args:null, risk:"safe", desc:"Wraps rake website:build, run locally." },
+        { name:"website:upload", args:null, risk:"gated",
+          desc:"Uploads public/website/ to the live release's current_path on every web app server — deliberately current_path, not release_path, since the latter has no meaning outside a running deploy.",
+          flags:"Modifies files on live production servers." },
+        { name:"website:verify", args:null, risk:"safe", desc:"Curls the website vhost on each server and reports the status code." },
+        { name:"website:deploy", args:null, risk:"gated",
+          desc:"Build + upload + verify in sequence — the normal way to ship a website-only change. Warns loudly if the local working tree is dirty.",
+          dep:"website:build, website:upload, website:verify" },
+      ]},
+  ]},
+
+{ id:"testing", name:"Testing & CI", intro:"Cucumber feature-test runners, auto-generated by cucumber-rails. The file header explicitly warns against hand-editing it — regenerate on a cucumber-rails upgrade instead, and put custom code elsewhere.",
+  files:[
+    { path:"lib/tasks/cucumber.rake", ns:"cucumber",
+      tasks:[
+        { name:"cucumber:ok", args:null, risk:"safe", desc:"Runs features that should pass.", dep:"test:prepare" },
+        { name:"cucumber:wip", args:null, risk:"safe", desc:"Runs features tagged as work-in-progress.", dep:"test:prepare" },
+        { name:"cucumber:rerun", args:null, risk:"safe", desc:"Records failing features and re-runs only those, if any.", dep:"test:prepare" },
+        { name:"cucumber:all", args:null, risk:"safe", desc:"Runs ok and wip.", dep:"cucumber:ok, cucumber:wip" },
+        { name:"cucumber", args:null, risk:"safe", desc:"Top-level alias for cucumber:ok — also the default task when this file is loaded standalone.", dep:"cucumber:ok" },
+        { name:"cucumber:statsetup", args:null, risk:"safe", desc:"Registers Cucumber feature directories with rails/code_statistics so `rails stats` includes them.", dep:":environment" },
+        { name:"cucumber:stats", args:null, risk:"safe", desc:"Alias for statsetup." },
+      ]},
+  ]},
+];
+
+/* ---------- render ---------- */
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function md(s){ if(!s) return ""; return s.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>"); }
+function plain(s){ if(!s) return ""; return s.replace(/<[^>]+>/g,"").replace(/\*\*/g,""); }
+
+function buildCmd(file, t){
+  if(file.capistrano) return "bundle exec cap production_in " + t.name;
+  const full = t.args ? t.name + "[" + t.args + "]" : t.name;
+  return full.includes("[") ? 'bin/rails "' + full + '"' : "bin/rails " + full;
+}
+
+let idCounter = 0;
+DATA.forEach(cat=>{
+  cat.files.forEach(f=>{
+    f.tasks.forEach(t=>{ t._id = "t" + (idCounter++); t._cat = cat.id; t._file = f.path; });
+  });
+});
+
+const allTasks = DATA.flatMap(c=>c.files.flatMap(f=>f.tasks.map(t=>({...t, catId:c.id, catName:c.name, file:f}))));
+
+/* sidebar stat readout */
+$("#stat").textContent = allTasks.length + " tasks · " + DATA.reduce((n,c)=>n+c.files.length,0) + " files · 2 runners (rake, cap)";
+
+/* legend */
+const legendEl = $("#legend");
+const activeRisks = new Set();
+Object.entries(RISK).forEach(([key,r])=>{
+  const count = allTasks.filter(t=>t.risk===key).length;
+  const b = document.createElement("button");
+  b.className = "ledrow";
+  b.innerHTML = '<span class="led" style="background:var(--'+key+');box-shadow:var(--'+key+'-glow)"></span>'+r.label+'<span class="cnt">'+count+'</span>';
+  b.title = r.hint;
+  b.dataset.risk = key;
+  b.addEventListener("click", ()=>{
+    if(activeRisks.has(key)) activeRisks.delete(key); else activeRisks.add(key);
+    b.classList.toggle("on");
+    render();
+  });
+  legendEl.appendChild(b);
+});
+
+/* tabs / category nav */
+let activeCat = DATA[0].id;
+const tabsEl = $("#tabs");
+DATA.forEach(cat=>{
+  const b = document.createElement("button");
+  b.className = "navitem";
+  b.dataset.cat = cat.id;
+  const count = cat.files.reduce((n,f)=>n+f.tasks.length,0);
+  b.innerHTML = "<span>"+esc(cat.name)+'</span><span class="n">'+count+"</span>";
+  b.addEventListener("click", ()=>{ activeCat = cat.id; location.hash = cat.id; searchInput.value=""; searchwrap.classList.remove("active"); syncTabs(); render(); saveState(); });
+  tabsEl.appendChild(b);
+});
+function syncTabs(){ $$(".navitem").forEach(b=>b.classList.toggle("active", b.dataset.cat===activeCat)); }
+
+/* care panel: handle-with-care shortlist */
+const CARE_LIST = [
+  "aws:setup_infra","dr:fix:db_primary","dr:fix:promote_replica","db:restore_all_remote",
+  "aws:cleanup_stopped_instances","aws:dns_cutover","website_leads:purge","faq_threads:delete_assistant"
+];
+const careEl = $("#care");
+CARE_LIST.forEach(name=>{
+  const t = allTasks.find(t=>t.name===name);
+  if(!t) return;
+  const b = document.createElement("button");
+  b.className = "jump";
+  b.textContent = name;
+  b.addEventListener("click", ()=>{
+    activeCat = t.catId; searchInput.value=""; searchwrap.classList.remove("active"); syncTabs(); render();
+    requestAnimationFrame(()=>{
+      const el = document.getElementById(t._id);
+      if(!el) return;
+      el.open = true;
+      el.scrollIntoView({behavior:"smooth", block:"center"});
+      el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+    });
+  });
+  careEl.appendChild(b);
+});
+
+/* search */
+const searchInput = $("#search");
+const searchwrap = $("#searchwrap");
+searchInput.addEventListener("input", ()=>{ searchwrap.classList.toggle("active", !!searchInput.value); render(); });
+document.addEventListener("keydown", e=>{
+  if(e.key==="/" && document.activeElement.tagName!=="INPUT"){ e.preventDefault(); searchInput.focus(); }
+  if(e.key==="Escape" && document.activeElement===searchInput){ searchInput.value=""; searchwrap.classList.remove("active"); searchInput.blur(); render(); }
+});
+
+/* copy */
+async function copyText(text, btn){
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }catch(e2){}
+  }
+  const orig = btn.dataset.label;
+  btn.classList.add("done");
+  btn.querySelector(".lbl").textContent = "Copied";
+  setTimeout(()=>{ btn.classList.remove("done"); btn.querySelector(".lbl").textContent = orig; }, 1200);
+}
+
+/* rendering task/file blocks */
+function taskMatchesRisk(t){ return activeRisks.size===0 || activeRisks.has(t.risk); }
+function taskMatchesQuery(t, q){
+  if(!q) return true;
+  const hay = (t.name+" "+t.file+" "+plain(t.desc)+" "+(t.flags?plain(t.flags):"")).toLowerCase();
+  return hay.includes(q);
+}
+
+function renderTask(t, file){
+  const risk = RISK[t.risk];
+  const el = document.createElement("details");
+  el.className = "task risk-" + t.risk;
+  el.id = t._id;
+  const cmd = buildCmd(file, t);
+  el.innerHTML = `
+    <summary class="taskrow">
+      <span class="led" style="background:var(--${t.risk});box-shadow:var(--${t.risk}-glow)"></span>
+      <span class="taskname">${esc(t.name)}${t.args? '<span class="args">['+esc(t.args)+']</span>':""}</span>
+      <span class="taskglance">${md(t.desc)}</span>
+      <span class="flagchip" style="color:var(--${t.risk});background:var(--${t.risk}-soft)">${risk.label}</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
+    </summary>
+    <div class="taskbody">
+      <p>${md(t.desc)}</p>
+      <div class="meta">
+        ${t.flags? '<span>'+md(t.flags)+'</span>' : ""}
+        ${t.dep? '<span><b>Depends on</b> '+esc(t.dep)+'</span>' : ""}
+        ${file.capistrano? '<span><b>Runner</b> Capistrano — not a plain rake task</span>' : ""}
+      </div>
+      <div class="cmdrow">
+        <code>${esc(cmd)}</code>
+        <button class="copybtn" data-label="Copy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <span class="lbl">Copy</span>
+        </button>
+      </div>
+    </div>`;
+  el.querySelector(".copybtn").addEventListener("click", (e)=>{ e.preventDefault(); copyText(cmd, e.currentTarget); });
+  return el;
+}
+
+function renderFile(file, cat, filteredTasks){
+  const wrap = document.createElement("div");
+  wrap.className = "fileblock";
+  wrap.id = "f-" + cat.id + "-" + file.path.replace(/[^a-z0-9]+/gi,"-");
+  wrap.innerHTML = `
+    <div class="filehead">
+      <span class="path">${esc(file.path)}</span>
+      <span class="ns">${esc(file.ns)}${file.capistrano? " · cap":""}</span>
+      <span class="cnt">${filteredTasks.length} task${filteredTasks.length===1?"":"s"}</span>
+    </div>
+    ${file.note? '<p class="filenote">'+md(file.note)+"</p>" : ""}
+    <div class="tasklist"></div>`;
+  const list = wrap.querySelector(".tasklist");
+  filteredTasks.forEach(t=> list.appendChild(renderTask(t, file)));
+  return wrap;
+}
+
+function render(){
+  const content = $("#content");
+  content.innerHTML = "";
+  const q = searchInput.value.trim().toLowerCase();
+  document.body.classList.toggle("searchmode", !!q);
+
+  if(q){
+    let totalMatches = 0;
+    const catsShown = [];
+    DATA.forEach(cat=>{
+      const files = cat.files.map(f=>({file:f, tasks:f.tasks.filter(t=>taskMatchesRisk(t)&&taskMatchesQuery(t,q))})).filter(x=>x.tasks.length);
+      if(!files.length) return;
+      catsShown.push(cat);
+      const catBlock = document.createElement("div");
+      const label = document.createElement("div");
+      label.className = "resultcat";
+      label.textContent = cat.name;
+      catBlock.appendChild(label);
+      files.forEach(({file,tasks})=>{ totalMatches += tasks.length; catBlock.appendChild(renderFile(file, cat, tasks)); });
+      content.appendChild(catBlock);
+    });
+    const meta = document.createElement("div");
+    meta.className = "resultmeta";
+    meta.textContent = totalMatches + " match" + (totalMatches===1?"":"es") + " across " + catsShown.length + " categor" + (catsShown.length===1?"y":"ies");
+    content.insertBefore(meta, content.firstChild);
+    if(!totalMatches){ content.innerHTML = '<div class="empty">No tasks match "'+esc(searchInput.value)+'"' + (activeRisks.size? " with the selected risk filter":"") + ".</div>"; }
+    return;
+  }
+
+  const cat = DATA.find(c=>c.id===activeCat) || DATA[0];
+
+  const header = document.createElement("div");
+  header.className = "catheader";
+  header.innerHTML = "<h2>"+esc(cat.name)+"</h2><p class=\"catintro\">"+md(cat.intro)+"</p>";
+  content.appendChild(header);
+
+  const readout = document.createElement("div");
+  readout.className = "readout";
+  Object.entries(RISK).forEach(([key,r])=>{
+    const n = cat.files.reduce((s,f)=>s+f.tasks.filter(t=>t.risk===key).length,0);
+    if(!n) return;
+    const span = document.createElement("span");
+    span.innerHTML = '<span class="led" style="background:var(--'+key+');box-shadow:var(--'+key+'-glow)"></span>'+n+" "+r.label.toLowerCase();
+    readout.appendChild(span);
+  });
+  content.appendChild(readout);
+
+  const jump = document.createElement("div");
+  jump.className = "filejump";
+  cat.files.forEach(f=>{
+    const b = document.createElement("button");
+    b.textContent = f.path.split("/").pop();
+    b.addEventListener("click", ()=>{
+      const id = "f-" + cat.id + "-" + f.path.replace(/[^a-z0-9]+/gi,"-");
+      document.getElementById(id)?.scrollIntoView({behavior:"smooth", block:"start"});
+    });
+    jump.appendChild(b);
+  });
+  content.appendChild(jump);
+
+  let any = false;
+  cat.files.forEach(f=>{
+    const tasks = f.tasks.filter(t=>taskMatchesRisk(t));
+    if(!tasks.length) return;
+    any = true;
+    content.appendChild(renderFile(f, cat, tasks));
+  });
+  if(!any){ content.innerHTML += '<div class="empty">No tasks in this tab match the selected risk filter.</div>'; }
+}
+
+/* state persistence (per-viewer convenience only) */
+function saveState(){ try{ localStorage.setItem("rakeconsole.cat", activeCat); }catch(e){} }
+function loadState(){
+  try{
+    const fromHash = location.hash.replace("#","");
+    if(fromHash && DATA.some(c=>c.id===fromHash)) return fromHash;
+    const stored = localStorage.getItem("rakeconsole.cat");
+    if(stored && DATA.some(c=>c.id===stored)) return stored;
+  }catch(e){}
+  return DATA[0].id;
+}
+
+activeCat = loadState();
+syncTabs();
+render();
+</script>

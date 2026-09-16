@@ -22,7 +22,7 @@
 # are excluded, so opening your own sent mail matches nothing rather than matching an
 # investor record that happens to be registered against your own address.
 #
-# @see docs/technical/mail_addin_review.md
+# @see docs/modules/mail_addins/mail_addin_review.md
 class InvestorEmailMatcher
   # Domains where a shared suffix carries no signal about who the counterparty is.
   GENERIC_DOMAINS = %w[

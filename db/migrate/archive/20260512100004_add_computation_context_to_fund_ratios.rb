@@ -2,7 +2,7 @@
 # single polymorphic parent: computation_context_type + computation_context_id.
 #
 # Both columns were mutually exclusive (a FundRatio belongs to at most one parent), so the
-# backfill is unambiguous. See docs/features/fund_ratio_run.md — "polymorphic computation_context".
+# backfill is unambiguous. See docs/modules/funds/fund_ratios/fund_ratio_run.md — "polymorphic computation_context".
 class AddComputationContextToFundRatios < ActiveRecord::Migration[7.2]
   def up
     # Step 1: add the two polymorphic columns. Guards prevent errors on re-run

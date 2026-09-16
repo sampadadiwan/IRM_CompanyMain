@@ -3,7 +3,7 @@
 # (and, when there's a comparator, the comparator's value) into 'red' / 'amber' / 'green' / nil.
 # Called from both Kpi#recompute_rag_status! (the live, persisted path) and
 # KpiWorkbookReader#plausibility_checks (the upload-time warning). See
-# docs/technical/kpi_rag_rules_redesign.md.
+# docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md.
 #
 # This operation doesn't know or care *how* comparator_value was resolved — the caller may have
 # matched it by tag (Budget/PriorYear, same as_of) or, when mapping.rag_comparator_prior_period?

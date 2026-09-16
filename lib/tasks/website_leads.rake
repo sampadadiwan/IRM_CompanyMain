@@ -8,7 +8,7 @@
 #
 # @see WebsiteLeadPurgeJob
 # @see WebsiteLeadRetention
-# @see docs/technical/website_lead_capture.md
+# @see docs/modules/website/website_lead_capture.md
 namespace :website_leads do
   desc "Strip expired abuse-control data and delete leads past the retention window"
   task purge: :environment do

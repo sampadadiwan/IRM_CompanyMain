@@ -11,7 +11,7 @@ class InvestorKpiMapping < ApplicationRecord
   # collides with the free-text tag namespace (a fund could in principle tag a report literally
   # "PriorPeriod"), which is why the dropdown in the mapping form offers it as a distinct fixed
   # option rather than sourcing it from KpiReport.tag_list values like the real tags are. See
-  # "Addendum: prior-period comparator" in docs/technical/kpi_rag_rules_redesign.md.
+  # "Addendum: prior-period comparator" in docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md.
   PRIOR_PERIOD_COMPARATOR = "PriorPeriod".freeze
 
   belongs_to :entity
@@ -52,7 +52,7 @@ class InvestorKpiMapping < ApplicationRecord
     errors.add(:compute_formula, "You cannot do CRUD operations in a formula") if compute_formula.downcase.match?(SAFE_EVAL_REGEX)
   end
 
-  # RAG rules — see docs/technical/kpi_rag_rules_redesign.md. rag_comparator_tag blank means
+  # RAG rules — see docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md. rag_comparator_tag blank means
   # "judge the raw value directly" (e.g. a margin %); present means "compare as a ratio against
   # the same-named KPI in a report carrying that tag" (e.g. "Budget", "PriorYear").
   validate :rag_rules_kosher?

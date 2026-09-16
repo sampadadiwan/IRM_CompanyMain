@@ -1,6 +1,6 @@
 #  dr:fix:db_* — database-tier component recovery
 # =============================================================================
-# Phase 5 of component recovery (see docs/DR_COMPONENT_RECOVERY.md).
+# Phase 5 of component recovery (see docs/operations/dr/dr_component_recovery.md).
 # Continues the dr:fix namespace opened in lib/tasks/dr_fix.rake.
 #
 # Always run rake "dr:assess[<env>]" first — it says WHICH of these applies.

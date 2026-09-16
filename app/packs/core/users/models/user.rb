@@ -8,7 +8,7 @@ class User < ApplicationRecord
   include TwoFactorAuthenticatable
   # Phone-number normalisation and SMS eligibility for the SMS two-factor mode.
   # Kept separate from TwoFactorAuthenticatable because it is about the number, not
-  # about codes. See docs/technical/twilio_sms_otp_design.md.
+  # about codes. See docs/modules/two_factor_auth/twilio_sms_otp_design.md.
   include SmsDeliverable
 
   include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions two_factor_mode])

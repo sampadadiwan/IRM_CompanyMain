@@ -14,26 +14,30 @@ Feature: Internal docs viewer access control
 
   # ── Staff can read ────────────────────────────────────────────────────────
 
-  Scenario: A support user sees both sections on the index
+  Scenario: A support user sees the go-to-market section on the index
     Given the user has the role "support"
     When the user requests "/internal_docs"
     Then the docs response should be successful
-    And the docs response body should contain "Marketing"
-    And the docs response body should contain "Strategy"
+    And the docs response body should contain "Go-To-Market"
 
   Scenario: A support user can read a marketing document
     Given the user has the role "support"
-    When the user requests "/internal_docs/marketing/us_gtm_zero_budget_notes"
+    When the user requests "/internal_docs/gtm/us_gtm_zero_budget_notes"
     Then the docs response should be successful
 
   Scenario: A super user can read a marketing document
     Given the user has the super role granted directly in the database
-    When the user requests "/internal_docs/marketing/us_gtm_zero_budget_notes"
+    When the user requests "/internal_docs/gtm/us_gtm_zero_budget_notes"
     Then the docs response should be successful
 
   Scenario: A support user can read the parent strategy document the marketing docs link to
     Given the user has the role "support"
-    When the user requests "/internal_docs/features/us_gtm"
+    When the user requests "/internal_docs/gtm/us_gtm"
+    Then the docs response should be successful
+
+  Scenario: A support user can read a US feature spec indexed by the strategy document
+    Given the user has the role "support"
+    When the user requests "/internal_docs/gtm/us_gtm/side_letter_obligations"
     Then the docs response should be successful
 
   # ── Customers cannot ──────────────────────────────────────────────────────
@@ -69,24 +73,25 @@ Feature: Internal docs viewer access control
 
     Examples:
       | path                                                         |
-      | /internal_docs/technical/internal_docs_viewer                |
+      | /internal_docs/engineering/internal_docs_viewer              |
       | /internal_docs/security/cybersecurity_risk_management_policy |
-      | /internal_docs/dr_drills                                     |
+      | /internal_docs/modules/custom_fields/validation_rule_engine  |
+      | /internal_docs/operations/dr/dr_drills                       |
       | /internal_docs/user_guides/ai_features_user_guide            |
 
   Scenario: A traversal out of a whitelisted section into a protected one is rejected
     Given the user has the role "support"
-    When the user requests "/internal_docs/marketing/../technical/internal_docs_viewer"
+    When the user requests "/internal_docs/gtm/../engineering/internal_docs_viewer"
     Then the docs response should redirect to "/internal_docs"
 
   Scenario: A traversal out of the docs root entirely is rejected
     Given the user has the role "support"
-    When the user requests "/internal_docs/marketing/../../config/database"
+    When the user requests "/internal_docs/gtm/../../config/database"
     Then the docs response should redirect to "/internal_docs"
 
   Scenario: A missing document inside a whitelisted section is a redirect, not an error
     Given the user has the role "support"
-    When the user requests "/internal_docs/marketing/no_such_document"
+    When the user requests "/internal_docs/gtm/no_such_document"
     Then the docs response should redirect to "/internal_docs"
 
   # ── Regressions from sharing WithGuideRendering and retiring /features ─────
@@ -115,19 +120,19 @@ Feature: Internal docs viewer access control
   Scenario: A retired feature document URL redirects to its internal docs equivalent
     Given the user has the role "support"
     When the user requests "/features/us_gtm"
-    Then the docs response should redirect to "/internal_docs/features/us_gtm"
+    Then the docs response should redirect to "/internal_docs/gtm/us_gtm"
 
   # The redirect block's return value is fed to URI.parse inside the router, where
   # a raw space would raise URI::InvalidURIError as a 500 that no rescue_from sees.
   Scenario: A retired feature URL containing a space redirects instead of erroring
     Given the user has the role "support"
     When the user requests "/features/no%20such%20doc"
-    Then the docs response should redirect to "/internal_docs/features/no%20such%20doc"
+    Then the docs response should redirect to "/internal_docs/gtm/no%20such%20doc"
 
   # A "." segment survives the whitelist (it cleans away) but used to leave the
   # breadcrumb reading its section label off the raw id, producing a blank crumb.
   Scenario: A dot segment in the id still resolves and labels its section
     Given the user has the role "support"
-    When the user requests "/internal_docs/./marketing/us_gtm_zero_budget_notes"
+    When the user requests "/internal_docs/./gtm/us_gtm_zero_budget_notes"
     Then the docs response should be successful
-    And the docs response body should contain "Marketing"
+    And the docs response body should contain "Go-To-Market"

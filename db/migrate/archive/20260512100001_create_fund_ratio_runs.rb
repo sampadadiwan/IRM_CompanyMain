@@ -2,7 +2,7 @@
 # invocation. FundRatio rows reference this via fund_ratio_run_id so you can always
 # trace which funds, companies, tags, and sectors fed a given set of results.
 #
-# Full design rationale: docs/features/fund_ratio_run.md
+# Full design rationale: docs/modules/funds/fund_ratios/fund_ratio_run.md
 class CreateFundRatioRuns < ActiveRecord::Migration[7.2]
   def up
     create_table :fund_ratio_runs do |t|
@@ -28,7 +28,7 @@ class CreateFundRatioRuns < ActiveRecord::Migration[7.2]
 
     # Multi-valued indexes (MySQL 8.0.17+): each element of the JSON array gets its
     # own index entry, enabling efficient "? MEMBER OF (column)" queries without a
-    # join table. See docs/features/fund_ratio_run.md — "JSON Array Indexing".
+    # join table. See docs/modules/funds/fund_ratios/fund_ratio_run.md — "JSON Array Indexing".
     execute "ALTER TABLE fund_ratio_runs ADD INDEX idx_frr_fund_ids ((CAST(fund_ids AS UNSIGNED ARRAY)))"
     execute "ALTER TABLE fund_ratio_runs ADD INDEX idx_frr_portfolio_company_ids ((CAST(portfolio_company_ids AS UNSIGNED ARRAY)))"
   end

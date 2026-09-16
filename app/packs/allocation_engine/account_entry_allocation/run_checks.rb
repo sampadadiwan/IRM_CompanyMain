@@ -12,7 +12,7 @@ module AccountEntryAllocation
   #   "columns", "rows", "filters", "truncated"  the rows behind a CheckFailed/CheckWarning
   #   "duration_ms"
   #
-  # See docs/business_requirements/allocation_run_checks.md.
+  # See docs/modules/allocation/allocation_run_checks.md.
   class RunChecks
     SUMMARY_LIMIT = 500
     KINDS = { pre: FundFormula::PRE_RUN_CHECK, post: FundFormula::POST_RUN_CHECK }.freeze

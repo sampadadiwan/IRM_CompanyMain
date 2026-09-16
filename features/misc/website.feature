@@ -3,7 +3,7 @@
 # features/support/website.rb set WEBSITE_HOSTS=caphive.test,www.caphive.test
 # for that scenario; the untagged control scenario proves the middleware is a
 # no-op when the variable is unset (as it is by default in the test env).
-# Design: docs/technical/website_serving.md
+# Design: docs/modules/website/website_serving.md
 @allow-rescue
 Feature: Static company website on the apex domain
   Visitors on the bare domain get the static website; www redirects to the

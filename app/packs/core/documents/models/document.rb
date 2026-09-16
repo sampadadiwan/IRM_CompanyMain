@@ -66,7 +66,7 @@ class Document < ApplicationRecord
   # Which engine converts documents generated from this template to PDF. Read from the
   # source template at generation time (see DocumentGeneratorBase#convert_to_accessible_pdf) --
   # "libreoffice" is the existing soffice path and covers every template unless explicitly
-  # opted into "m365". See docs/technical/m365_graph_pdf_conversion.md.
+  # opted into "m365". See docs/modules/documents/m365_graph_pdf_conversion.md.
   PDF_CONVERSION_ENGINES = %w[libreoffice m365 google_docs].freeze
   # counter_culture :entity
   # counter_culture :folder

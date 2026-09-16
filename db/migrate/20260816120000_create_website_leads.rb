@@ -1,6 +1,6 @@
 # Demo requests submitted from the public website (caphive.com / caphive.us).
 #
-# See docs/technical/website_lead_capture.md.
+# See docs/modules/website/website_lead_capture.md.
 #
 # Deliberately NOT tenant-scoped. Every other table in this app hangs off an
 # entity_id; this one cannot, because the row is created by an anonymous visitor

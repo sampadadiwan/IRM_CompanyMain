@@ -11,7 +11,7 @@ class RewriteCustomFieldsSendInFundFormulas < ActiveRecord::Migration[8.1]
   # saved before the token was denylisted, so FundFormula#formula_kosher? never rejected them.
   #
   # CustomFieldsProxy supports hash-style lookup (`custom_fields[key]`, string or symbol, see
-  # docs/technical/custom_fields_proxy.md), which is the documented pattern for dynamic keys
+  # docs/modules/custom_fields/custom_fields_proxy.md), which is the documented pattern for dynamic keys
   # and is not on the denylist. This migration rewrites the receiver/argument pair in place:
   #
   #   custom_fields.send(ARG)      -> custom_fields[ARG]

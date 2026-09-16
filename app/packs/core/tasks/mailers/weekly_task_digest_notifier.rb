@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Noticed event for the weekly task digest — one per recipient, raised by
-# WeeklyTaskDigestJob. See docs/product/weekly_task_digest_prd.md.
+# WeeklyTaskDigestJob. See docs/modules/tasks/weekly_task_digest_prd.md.
 #
 # Going through a notifier rather than calling TaskDigestMailer directly is what buys
 # the digest everything the rest of the app's outgoing mail already has: a

@@ -1,4 +1,4 @@
-# Side Letter Obligation tracking (docs/features/us_gtm/side_letter_obligations.md):
+# Side Letter Obligation tracking (docs/gtm/us_gtm/side_letter_obligations.md):
 # side letters become structured records anchored on the capital commitment, each
 # obligation ("covenant") extracted from them is a reviewable SideLetterObligation,
 # and fulfillments/reminders form the audit trail the compliance binder needs.

@@ -17,7 +17,7 @@
 #
 # No client secret and no session cookie ever reaches the pane's JavaScript.
 #
-# @see docs/technical/mail_addin_review.md
+# @see docs/modules/mail_addins/mail_addin_review.md
 class OutlookAddinController < ApplicationController
   # Origins Office frames the task pane from. Outlook on the web hosts the pane at
   # outlook.office.com (or the -sdf ring for Targeted Release, or outlook.live.com for

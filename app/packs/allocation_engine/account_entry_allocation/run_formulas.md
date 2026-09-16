@@ -55,7 +55,7 @@ graph TD
   loaded or computed.
 - Check formulas are never part of `get_formulas`, so they never reach `RunFormula`, the commitment
   cache scan or the delete scope.
-- See `docs/business_requirements/allocation_run_checks.md` for check formulas and their helpers
+- See `docs/modules/allocation/allocation_run_checks.md` for check formulas and their helpers
   (`check_helpers.rb`).
 
 ### 1. Delete Existing Entries (`delete_existing_entries`)

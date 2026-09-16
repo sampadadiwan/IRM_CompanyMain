@@ -10,7 +10,7 @@
 # that reason. A blanket skip would silently open the admin screens to the
 # internet, which is the one mistake this file must not make.
 #
-# See docs/technical/website_lead_capture.md.
+# See docs/modules/website/website_lead_capture.md.
 class WebsiteLeadsController < ApplicationController
   # Nothing on the public path reads or writes tenant data, so the three app-wide
   # filters from WithAuthentication are opted out of for those actions only:

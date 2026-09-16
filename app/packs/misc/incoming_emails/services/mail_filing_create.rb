@@ -9,7 +9,7 @@
 # a double click, a slow network retry, or a second colleague filing the same thread is
 # harmless. The clients previously had no dedup at all.
 #
-# @see docs/technical/mail_addin_review.md
+# @see docs/modules/mail_addins/mail_addin_review.md
 class MailFilingCreate < Trailblazer::Operation
   step :authorize_owner
   step :find_existing

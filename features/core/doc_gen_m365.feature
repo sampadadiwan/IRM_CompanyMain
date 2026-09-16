@@ -3,7 +3,7 @@
 # LibreOffice path. Exercises the real Microsoft Graph API, so it needs live
 # M365_TENANT_ID/M365_CLIENT_ID/M365_CLIENT_SECRET/M365_DRIVE_ID credentials and is
 # tagged @m365_live so it stays out of routine runs, same as features/m365_pdf_conversion.feature.
-# See docs/technical/m365_graph_pdf_conversion.md.
+# See docs/modules/documents/m365_graph_pdf_conversion.md.
 @doc_gen @m365 @m365_live
 Feature: Investor document generation via the M365 Graph PDF conversion engine
 

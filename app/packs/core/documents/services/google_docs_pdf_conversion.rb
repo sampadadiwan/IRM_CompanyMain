@@ -9,7 +9,7 @@ require "securerandom"
 # somewhere to write -- personal Drive storage isn't available to service accounts),
 # converts it to a Google Doc on upload, exports that as PDF, and deletes the temp file
 # whether the conversion succeeded or not. Mirrors M365PdfConversion's shape; see
-# docs/technical/google_docs_pdf_conversion.md for the full design and setup steps.
+# docs/modules/documents/google_docs_pdf_conversion.md for the full design and setup steps.
 #
 # Deliberately raises rather than falling back to LibreOffice on any failure -- silently
 # falling back would reintroduce the exact footnote-placement defect this path exists to
@@ -139,7 +139,7 @@ class GoogleDocsPdfConversion < Trailblazer::Operation
   end
 
   def credential!(key)
-    Rails.application.credentials[key].presence || raise("Missing Rails credential #{key} -- see docs/technical/google_docs_pdf_conversion.md")
+    Rails.application.credentials[key].presence || raise("Missing Rails credential #{key} -- see docs/modules/documents/google_docs_pdf_conversion.md")
   end
 
   def token_connection

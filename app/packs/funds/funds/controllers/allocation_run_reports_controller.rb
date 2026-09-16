@@ -1,5 +1,5 @@
 # The allocation run checker: runs the deterministic checks over one finished AllocationRun and
-# shows the resulting report. See docs/business_requirements/allocation_run_checker.md.
+# shows the resulting report. See docs/modules/allocation/allocation_run_checker_requirements.md.
 #
 # There is one report per run — checking a run that has already been checked re-runs the checks
 # and overwrites the previous result, so the badge on the allocation screen is never stale.

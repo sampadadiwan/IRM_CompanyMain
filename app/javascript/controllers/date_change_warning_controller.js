@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Confirm-gate for a date field whose edit cascades to child records (call_date -> every
 // capital_remittance's remittance_date, distribution_date -> every capital_distribution_payment's
-// payment_date - see docs/technical/call_and_distribution_date_cascade_plan.md). The form submits
+// payment_date - see docs/modules/funds/call_and_distribution_date_cascade_plan.md). The form submits
 // normally unless the date field actually changed; if it did, submission is intercepted and an
 // "Immediate Actions" warning modal is shown. Only the modal's own Confirm button lets the
 // submit through.

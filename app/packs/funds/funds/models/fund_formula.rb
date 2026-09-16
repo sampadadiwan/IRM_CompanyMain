@@ -11,7 +11,7 @@ class FundFormula < ApplicationRecord
   # Rule types that assert something about the fund's data instead of computing entries.
   # AccountEntryAllocation::RunFormulas runs them in their own steps -- pre-run checks before
   # anything is deleted, post-run checks after every formula -- and never through RunFormula's
-  # dispatch. See docs/business_requirements/allocation_run_checks.md.
+  # dispatch. See docs/modules/allocation/allocation_run_checks.md.
   PRE_RUN_CHECK = "PreRunCheck".freeze
   POST_RUN_CHECK = "PostRunCheck".freeze
   RUN_CHECK_TYPES = [PRE_RUN_CHECK, POST_RUN_CHECK].freeze

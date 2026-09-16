@@ -3,7 +3,7 @@
 # The point of this feature is the QUERY BUDGET against account_entries, not just the
 # numbers on the page, so most steps either count queries around a page load or read the
 # aggregates straight off AccountEntryReport. See
-# docs/technical/account_entry_report_performance.md.
+# docs/modules/reports/account_entry_report_performance.md.
 #
 # features/support/env.rb excludes `account_entries` from DatabaseCleaner's truncation for
 # suite-wide speed, so rows survive between scenarios and would be picked up by a later

@@ -4,7 +4,7 @@
 
 # Builds a well-formed SES bounce/complaint payload (the "Message" field of the SNS
 # envelope) tagged with the given tracking_id, matching the shape ProcessSesNotificationJob
-# expects (see docs/features/email_bounce_complaint_detection_prd.md §8.4).
+# expects (see docs/modules/notifications/email_bounce_complaint_detection_prd.md §8.4).
 def build_ses_message(notification_type, tracking_id:, recipient_email:, bounce_type: nil, bounce_subtype: nil, complaint_feedback_type: nil, diagnostic_code: "550 5.1.1 user unknown")
   payload = {
     "notificationType" => notification_type,

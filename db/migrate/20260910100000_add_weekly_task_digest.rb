@@ -1,4 +1,4 @@
-# Weekly Task Digest (docs/product/weekly_task_digest_prd.md).
+# Weekly Task Digest (docs/modules/tasks/weekly_task_digest_prd.md).
 #
 # Two parts:
 #

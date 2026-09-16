@@ -16,7 +16,7 @@ require 'shellwords'
 #   - SupportAgentReport.json_fields for all output — no new DB tables
 #   - process_batch for batch/scheduled runs, wtf? for adhoc/single runs
 #
-# PRD: docs/ai/investor_presentation_analyst_prd.md
+# PRD: docs/modules/ai/investor_presentation_analyst_prd.md
 # PRD §11 — Architecture, §12 — New Components, §13 — Data Storage
 class PresentationAnalystAgent < SupportAgentService
   DESCRIPTION = "Reads investor presentations across periods, flags what changed, " \
@@ -45,7 +45,7 @@ class PresentationAnalystAgent < SupportAgentService
     (default Actual), comparison_strategy (all_periods | sliding_window),
     llm_model (default gemini-3-flash-preview).
 
-    PRD: docs/ai/investor_presentation_analyst_prd.md
+    PRD: docs/modules/ai/investor_presentation_analyst_prd.md
   DESC
 
   # Used when launching for a single portfolio company investor (not a full entity batch).

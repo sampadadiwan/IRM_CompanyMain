@@ -1,4 +1,4 @@
-# LP CRM MVP (docs/features/lp_relationship_crm_alt_mvp_prd.md):
+# LP CRM MVP (docs/modules/investors/lp_relationship_crm_alt_mvp_prd.md):
 # InvestorAccess doubles as the "touch point" (contact) record for prospective LPs.
 # All descriptive contact data (designation, POC role, intro, LinkedIn, primary flag)
 # is tenant-configured via the existing WithCustomField machinery rather than

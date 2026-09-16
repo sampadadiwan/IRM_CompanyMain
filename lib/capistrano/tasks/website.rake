@@ -4,7 +4,7 @@
 #
 # nginx serves the site straight off disk from
 # /home/ubuntu/IRM/current/public/website (see config/deploy/templates/
-# nginx_conf.erb and docs/technical/website_serving.md) — puma never sees that
+# nginx_conf.erb and docs/modules/website/website_serving.md) — puma never sees that
 # traffic. So a copy change, a new page or a CSS tweak needs nothing more than
 # those files landing on the box: no bundle, no assets:precompile, no migrate,
 # no puma/sidekiq restart, no new release directory.

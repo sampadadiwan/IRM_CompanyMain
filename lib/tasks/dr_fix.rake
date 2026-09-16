@@ -1,6 +1,6 @@
 #  dr:fix:* — repair ONE component, touch nothing else
 # =============================================================================
-# Phase 3 of component recovery (see docs/DR_COMPONENT_RECOVERY.md).
+# Phase 3 of component recovery (see docs/operations/dr/dr_component_recovery.md).
 #
 # Always run rake "dr:assess[<env>]" first: it names the broken component and
 # the cheapest rung that fixes it. These tasks execute one rung.
@@ -32,7 +32,7 @@ include AwsUtils # pulumi_stack_output / commit_dr_changes / run_cmd
 # named after the instance; replacing the instance alone with
 # --target-dependents=false leaves the attachment pointing at the OLD instance
 # id, so the new box never joins the target group and the ALB quietly serves on
-# one server. Documented as finding #1 in DR_COMPONENT_RECOVERY.md.
+# one server. Documented as finding #1 in dr_component_recovery.md.
 def dr_fix_app_server_urns(resources, ip)
   # `delete: true` marks a pending-deletion leftover from an interrupted update.
   # Staging carries one, and matching it would aim the repair at a resource on
@@ -316,7 +316,7 @@ namespace :dr do
         puts "✅ #{healthy_other} is healthy and will keep serving — this is a rolling repair."
       else
         puts "⚠️  NO other app server is reachable. Rebuilding this one means a FULL OUTAGE,"
-        puts "    and if BOTH boxes are gone this is a region-level event — see docs/DR_GUIDE.md."
+        puts "    and if BOTH boxes are gone this is a region-level event — see docs/operations/dr/dr_guide.md."
         unless ENV["CONFIRM_OUTAGE"] == "true"
           abort "\n❌ Refusing to proceed without CONFIRM_OUTAGE=true (set it deliberately)."
         end
@@ -333,7 +333,7 @@ namespace :dr do
         # Not fatal, but the operator must know: without it the replacement box
         # will not join the target group and the ALB will serve on one server.
         puts "⚠️  No target-group attachment found for #{urns[:instance_id]} — after the rebuild the new"
-        puts "    instance may NOT join the ALB target group. See finding #1 in DR_COMPONENT_RECOVERY.md."
+        puts "    instance may NOT join the ALB target group. See finding #1 in dr_component_recovery.md."
       end
 
       target_urns = [urns[:instance_urn], urns[:attachment_urn]]
@@ -444,7 +444,7 @@ namespace :dr do
       puts "\n📋 Follow-ups this repair does NOT do:"
       puts "   • Prometheus still targets the OLD address. Regenerate and copy the config:"
       puts "       rake \"aws:generate_prometheus_yml[#{env_name}]\"   (writes LOCALLY only — copy it to the"
-      puts "       observability box and reload Prometheus; see finding #4 in DR_COMPONENT_RECOVERY.md)"
+      puts "       observability box and reload Prometheus; see finding #4 in dr_component_recovery.md)"
       puts "   • Re-assess the whole stack: rake \"dr:assess[#{env_name}]\""
       abort "" unless verified
     end
@@ -560,7 +560,7 @@ namespace :dr do
 
       # Only the instance: unlike an app server there is NO target-group
       # attachment to carry along, because nothing in alb.py ever registers this
-      # instance with target_group_obs (finding #2 in DR_COMPONENT_RECOVERY.md).
+      # instance with target_group_obs (finding #2 in dr_component_recovery.md).
       puts "⚠️  Grafana routing note: the Pulumi code never attaches this instance to its ALB target"
       puts "    group, so if Grafana is reachable today it was registered outside Pulumi — a rebuild"
       puts "    will lose that. Re-register it by hand afterwards if you rely on it."

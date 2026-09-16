@@ -6,7 +6,7 @@
 #
 # Exists to catch a broken app secret, a lapsed/removed M365 license, or a Graph API
 # regression before it silently blocks document generation for M365-routed templates --
-# see docs/technical/m365_graph_pdf_conversion.md.
+# see docs/modules/documents/m365_graph_pdf_conversion.md.
 @m365 @m365_live
 Feature: M365 Graph PDF conversion stays healthy
 

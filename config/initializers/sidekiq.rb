@@ -151,7 +151,7 @@ Sidekiq.configure_server do |config|
     Sidekiq::Cron::Job.create(name: 'ReportBuilderSchedulerJob', cron: 'every 1 hour', class: 'ReportBuilderSchedulerJob')
 
     Sidekiq::Cron::Job.create(name: 'RecurringTaskGeneratorJob', cron: recurring_task_cron, class: 'RecurringTaskGeneratorJob')
-    # Weekly task digest — Friday (docs/product/weekly_task_digest_prd.md). Server
+    # Weekly task digest — Friday (docs/modules/tasks/weekly_task_digest_prd.md). Server
     # clocks are UTC regardless of region (see the sidekiq_restart_at comment in
     # config/schedule.rb), so this expression is UTC: 11:30 UTC Friday is 5:00pm IST
     # and 7:30am US Eastern. Override per region with WEEKLY_TASK_DIGEST_CRON rather

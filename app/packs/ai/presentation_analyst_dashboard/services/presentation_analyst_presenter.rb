@@ -494,7 +494,7 @@ class PresentationAnalystPresenter
 
   # --- Cross-reference against PortfolioScoringAgent ----------------------
 
-  # The two scores answer different questions — see docs/ai/investor_presentation_analyst_prd.md
+  # The two scores answer different questions — see docs/modules/ai/investor_presentation_analyst_prd.md
   # §6 — and are designed to be read together. A company that scores well on
   # fundamentals but poorly on accountability is a red flag hidden by looking
   # at either dashboard alone: strong numbers today sitting on top of a

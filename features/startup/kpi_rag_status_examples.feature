@@ -3,7 +3,7 @@ Feature: KPI RAG status — real-world rule patterns
   actually use, the live-computation behavior added in Phase 3 of the redesign, and the
   PriorPeriod comparator added afterwards (judging a KPI against its own most recent earlier
   report, already in the DB, instead of a separately tagged upload). Reference:
-  docs/technical/kpi_rag_rules_redesign.md.
+  docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md.
 
   RAG status is computed automatically the moment a KPI's own value (or its comparator's value)
   is saved — there is no explicit "compute" step in any scenario below.

@@ -1,5 +1,5 @@
 # Incremental since_inception allocation: move funds onto it, back off it, and correct stored totals.
-# See docs/technical/incremental_allocation_history.md section 12 and AccountEntryAllocation::IncrementalMigration.
+# See docs/modules/allocation/incremental_allocation_history.md section 12 and AccountEntryAllocation::IncrementalMigration.
 #
 #   # One fund, or every fund in an entity. Dry run by default: prints the formula edits, blockers,
 #   # and the corrected starting values, and changes nothing. APPLY=true does it.

@@ -11,7 +11,7 @@
 #   OUTPUT=tmp/aws_cost_report.md bundle exec rake aws:cost_audit  # extra markdown copy
 #
 # Output: markdown to stdout, plus an HTML report written to
-# docs/costs/aws_cost_audit_<env>_<date>.html (light-styled, self-contained).
+# docs/operations/costs/aws_cost_audit_<env>_<date>.html (light-styled, self-contained).
 #
 # Produces four things:
 #   1. Cost evaluation  — Cost Explorer: monthly totals, MoM deltas, top services,
@@ -488,7 +488,7 @@ module AwsCostAudit
   end
 
   # Markdown -> standalone HTML document (light styling, no external assets),
-  # written to docs/costs/. Redcarpet is already a Gemfile dependency; the
+  # written to docs/operations/costs/. Redcarpet is already a Gemfile dependency; the
   # `tables` extension is required for the findings/reservations tables.
   def render_html(markdown, account, env_label)
     require "redcarpet"
@@ -621,9 +621,9 @@ namespace :aws do
 
     puts report
 
-    # HTML report — always written to docs/costs/, one file per env per day.
+    # HTML report — always written to docs/operations/costs/, one file per env per day.
     env_label = args[:env_name] || Rails.env.to_s
-    html_dir  = Rails.root.join("docs/costs")
+    html_dir  = Rails.root.join("docs/operations/costs")
     FileUtils.mkdir_p(html_dir)
     html_path = html_dir.join("aws_cost_audit_#{env_label}_#{Time.zone.today.iso8601}.html")
     File.write(html_path, AwsCostAudit.render_html(report, ident.account, env_label))

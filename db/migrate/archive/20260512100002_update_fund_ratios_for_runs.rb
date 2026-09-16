@@ -6,7 +6,7 @@
 # Historical rows (created before this migration) keep their fund_id and have
 # fund_ratio_run_id = NULL. They continue to work as before.
 #
-# See docs/features/fund_ratio_run.md
+# See docs/modules/funds/fund_ratios/fund_ratio_run.md
 class UpdateFundRatiosForRuns < ActiveRecord::Migration[7.2]
   def up
     # MySQL requires dropping the FK constraint before changing column nullability.

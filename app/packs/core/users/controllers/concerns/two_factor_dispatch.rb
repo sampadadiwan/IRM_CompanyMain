@@ -12,7 +12,7 @@
 # produces a user who can log in one way and not the other, and nothing fails loudly.
 # With a third mode (SMS) it was going to happen again, so the branch lives here once.
 #
-# See docs/technical/twilio_sms_otp_design.md section 5.
+# See docs/modules/two_factor_auth/twilio_sms_otp_design.md section 5.
 module TwoFactorDispatch
   extend ActiveSupport::Concern
 

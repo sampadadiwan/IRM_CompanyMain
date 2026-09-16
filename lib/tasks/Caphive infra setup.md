@@ -1,6 +1,6 @@
 # Infra Setup & Disaster Recovery Runbook
 
-> **In an actual DR event, start with `docs/DR_GUIDE.md`** — the operator guide
+> **In an actual DR event, start with `docs/operations/dr/dr_guide.md`** — the operator guide
 > (scenario decision table, the one command, what happens, verification
 > checklists, aftermath). This file is the fuller setup/reference runbook.
 
@@ -252,13 +252,13 @@ sequenceDiagram
 ## DR drill (quarterly)
 
 Prove the whole chain end-to-end against staging in the DR region — same code
-path as a real DR, with measured RTO appended to `docs/dr_drills.md`:
+path as a real DR, with measured RTO appended to `docs/operations/dr/dr_drills.md`:
 
 ```bash
 TEARDOWN=true rake "aws:dr_drill[in]"    # and [us]; drop TEARDOWN to inspect the infra
 ```
 
-## Known gaps (tracked in docs/dr_review/)
+## Known gaps (tracked in docs/operations/dr/review/)
 
 - Pulumi state migration to S3 pending execution (script ready — Point 12).
 - SES sandbox exit in a brand-new region is an AWS support request (not codifiable).

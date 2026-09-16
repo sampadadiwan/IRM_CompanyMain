@@ -1,5 +1,5 @@
 # Steps for features/core/lp_crm.feature — the LP CRM MVP
-# (docs/features/lp_relationship_crm_alt_mvp_prd.md).
+# (docs/modules/investors/lp_relationship_crm_alt_mvp_prd.md).
 #
 # Relies on shared steps for login ("Im logged in..."), investor setup
 # ("there is an existing investor"), and the investor access form

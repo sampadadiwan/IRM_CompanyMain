@@ -1,6 +1,6 @@
 # A demo request submitted from the public website.
 #
-# See docs/technical/website_lead_capture.md. Written only by WebsiteLeadCreate,
+# See docs/modules/website/website_lead_capture.md. Written only by WebsiteLeadCreate,
 # which is reached from the one unauthenticated write endpoint in this app
 # (WebsiteLeadsController#create). Read only by CapHive staff — the record has no
 # entity_id, so WebsiteLeadPolicy gates on role instead of tenancy.

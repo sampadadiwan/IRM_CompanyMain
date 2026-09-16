@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Builds a KPI workbook template for a portco's KPI report — the file we would most like them to
-# send back (docs/technical/kpi_portco_upload_validation_review.md §3.4 P):
+# send back (docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md §3.4 P):
 #
 #   Row 1  KPI | Unit | <previous period> | <previous period> | <requested period>
 #   Rows   one per non-computed InvestorKpiMapping, in the fund's configured order

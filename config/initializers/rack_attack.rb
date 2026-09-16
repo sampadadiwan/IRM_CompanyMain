@@ -177,7 +177,7 @@ module Rack
     # Tighter than logins/ip (10 per 30s) because a legitimate user presses resend once
     # or twice, never ten times.
     #
-    # @see docs/technical/twilio_sms_otp_design.md section 9
+    # @see docs/modules/two_factor_auth/twilio_sms_otp_design.md section 9
     # start_with? rather than ==: `post :send_sms` inside `resource :two_factor` generates
     # /two_factor/send_sms(.:format), so /two_factor/send_sms.json reaches the same action.
     # An exact match would compute no throttle key at all for that request.
@@ -205,7 +205,7 @@ module Rack
     # page and must not share a throttle bucket with anonymous submissions. Only
     # POSTs are counted, so the staff index (a GET on the same path) is untouched.
     #
-    # @see docs/technical/website_lead_capture.md
+    # @see docs/modules/website/website_lead_capture.md
     throttle('website_leads/ip', limit: 5, period: 1.hour) do |req|
       client_ip(req) if req.post? && req.path == '/website_leads'
     end

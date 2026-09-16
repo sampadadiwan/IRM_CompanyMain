@@ -1,6 +1,6 @@
 # Checks a code the user typed against Twilio Verify.
 #
-# See docs/technical/twilio_sms_otp_design.md section 17.
+# See docs/modules/two_factor_auth/twilio_sms_otp_design.md section 17.
 #
 # This has no equivalent under the Messages API, where the code WAS the rolling TOTP
 # value and `validate_and_consume_otp!` could answer locally. Under Verify the code is

@@ -1,5 +1,5 @@
 class FundRatioMultiFundCalcs < FundRatioCalcs
-  # See docs/features/fund_ratio_run.md for full parameter documentation.
+  # See docs/modules/funds/fund_ratios/fund_ratio_run.md for full parameter documentation.
   #
   # portfolio_companies, portfolio_companies_tags, and portfolio_companies_sectors are
   # all optional. All three filter types are unioned: each contributes independently

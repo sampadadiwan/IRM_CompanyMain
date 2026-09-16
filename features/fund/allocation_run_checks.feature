@@ -5,7 +5,7 @@ Feature: Allocation run pre-run and post-run checks
   computes anything; post-run checks run after every formula. Every check of a kind runs, then any
   failure stops the run. Failed and warning check results are stored on the run's allocation run
   report, which shows each check as its own finding (1.5.n pre-run, 1.6.n post-run).
-  See docs/business_requirements/allocation_run_checks.md.
+  See docs/modules/allocation/allocation_run_checks.md.
 
   Background:
     Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"

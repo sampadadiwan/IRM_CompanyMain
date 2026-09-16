@@ -4,7 +4,7 @@ Feature: Weekly task digest email
   tasks that are delayed.
 
   The digest is scoped through TaskPolicy, so each recipient sees exactly the tasks
-  they can already open in the app. See docs/product/weekly_task_digest_prd.md.
+  they can already open in the app. See docs/modules/tasks/weekly_task_digest_prd.md.
 
   Background:
     Given there is a user "" for an entity "entity_type=Investment Fund"

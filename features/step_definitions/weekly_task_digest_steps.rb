@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Steps for features/core/weekly_task_digest.feature.
-# See docs/product/weekly_task_digest_prd.md.
+# See docs/modules/tasks/weekly_task_digest_prd.md.
 
 Given('the entity has the weekly task digest {word}') do |state|
   @entity.entity_setting.update!(weekly_task_digest_enabled: state == "enabled")

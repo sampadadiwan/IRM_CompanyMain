@@ -8,7 +8,7 @@ class ApplicationRecord < ActiveRecord::Base
   # IMPORTANT: this is a GUARD-RAIL, not a complete RCE defence. A denylist can always be
   # evaded by a determined attacker (string building, encoding). It exists to stop the obvious
   # shell / filesystem / CRUD payloads. The real fix is a sandboxed evaluator — see
-  # docs/technical/security_review_2026_07.md (finding C1).
+  # docs/security/security_review_2026_07.md (finding C1).
   #
   # Matching is performed against the DOWNCASED source, so every token below is lowercase.
   # Word boundaries (\b) guard short/common tokens so legitimate finance terms don't false-trip

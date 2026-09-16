@@ -1,6 +1,6 @@
 # Host-gated static serving of the company website (public/website/) on the
 # apex domain. See lib/middleware/website.rb for the full rationale and
-# docs/technical/website_serving.md for the design.
+# docs/modules/website/website_serving.md for the design.
 require_relative "../../lib/middleware/website"
 
 # Position 0: ahead of ActionDispatch::Static (so website content is only

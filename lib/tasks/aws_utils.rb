@@ -615,12 +615,12 @@ module AwsUtils
     def fileno = @targets.first.fileno
   end
 
-  # Runs the block with stdout/stderr duplicated into docs/dr_runs/<name>.log.
+  # Runs the block with stdout/stderr duplicated into docs/operations/dr/runs/<name>.log.
   # The transcript is the blow-by-blow record behind the evidence report:
   # write_dr_report indexes independently verifiable claims, this is what
   # actually happened, line by line.
   def with_dr_transcript(name)
-    path = Rails.root.join("docs", "dr_runs", "#{name}.log")
+    path = Rails.root.join("docs", "operations", "dr", "runs", "#{name}.log")
     FileUtils.mkdir_p(File.dirname(path))
     file = File.open(path, "w")
     file.sync = true # survive a hard failure mid-run
@@ -975,7 +975,7 @@ module AwsUtils
         </div></section>
 
         <section><h2>Source record</h2>
-        <p class="lede">Every command issued during this recovery and its complete output — including the raw verification scorecard reproduced above — was captured automatically to <code>docs/dr_runs/#{h branch}.log</code>. This document states what is claimed and how to check it; the transcript records what happened, line by line.</p></section>
+        <p class="lede">Every command issued during this recovery and its complete output — including the raw verification scorecard reproduced above — was captured automatically to <code>docs/operations/dr/runs/#{h branch}.log</code>. This document states what is claimed and how to check it; the transcript records what happened, line by line.</p></section>
 
         <footer><span>Disaster Recovery Record · #{h stack} (#{h env_variant}) &rarr; #{h region}</span><span>Generated #{finished.utc.iso8601}</span></footer>
       </div>
@@ -986,7 +986,7 @@ module AwsUtils
     finished = Time.now
     rebuild_secs = (finished - started_at).round
     passed = result.to_s.match?(/PASSED|COMPLETE/)
-    dir = Rails.root.join("docs", "dr_runs")
+    dir = Rails.root.join("docs", "operations", "dr", "runs")
     FileUtils.mkdir_p(dir)
     path = dir.join("#{branch}.md")
     transcript = dir.join("#{branch}.log")
@@ -1112,7 +1112,7 @@ module AwsUtils
 
       Every command and its complete output — including the raw verification
       scorecard reproduced above — was captured automatically to
-      **`docs/dr_runs/#{branch}.log`**. The report says what is claimed and how
+      **`docs/operations/dr/runs/#{branch}.log`**. The report says what is claimed and how
       to check it; the transcript says what happened, line by line.
 
       Re-run verification against a still-running stack at any time:

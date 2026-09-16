@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # One FAQ question and answer on a user guide, managed by CapHive support in FAQ Manager
-# (docs/ai/guide_faq_search_prd.md). Production is the master copy.
+# (docs/modules/ai/customer_support_agent/guide_faq_search_prd.md). Production is the master copy.
 #
 # Published entries render on the guide page (FaqSectionRenderer, via WithGuideRendering)
 # and are indexed in Elasticsearch for the Customer Support Agent (FaqEntryIndex,

@@ -2,7 +2,7 @@
 # filter state, the AccountEntryReport itself, and cached AI insights - for either the
 # fund-level report (capital_commitment nil) or a single folio's report.
 #
-# See docs/technical/account_entry_report_performance.md. account_entries is very large,
+# See docs/modules/reports/account_entry_report_performance.md. account_entries is very large,
 # so this class is responsible for keeping the request bounded: it clamps the requested
 # date range and it scopes every dropdown query to that range.
 class AccountEntryReportPage
@@ -74,7 +74,7 @@ class AccountEntryReportPage
   # this report with none of the three chosen has to show the filter form, full stop, no
   # matter what other params the URL carries. account_entries is large enough that a
   # fund-wide, unfiltered scan is expensive (see
-  # docs/technical/account_entry_report_performance.md) — the controller uses this to
+  # docs/modules/reports/account_entry_report_performance.md) — the controller uses this to
   # decide whether to actually run the report or just show the filter form.
   def filter_selected?
     @entry_names.present? || @entry_types.present? || @commitment_ids.present?

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Preview and manual-trigger helpers for the weekly task digest.
-# See docs/product/weekly_task_digest_prd.md.
+# See docs/modules/tasks/weekly_task_digest_prd.md.
 #
 # Three tasks, in increasing order of consequence:
 #   preview  — renders to a file. Sends nothing, writes nothing to the database.

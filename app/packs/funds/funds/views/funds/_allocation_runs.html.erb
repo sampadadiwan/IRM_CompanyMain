@@ -15,7 +15,7 @@
         <%= form_with url: fund_report_account_entry_reports_path, method: :get, local: true, class: "d-inline-flex align-items-end gap-2" do |f| %>
           <%= f.hidden_field :fund_id, value: fund.id, id: nil %>
           <%# The fund's whole ledger is too large to load without a filter (see
-              docs/technical/account_entry_report_performance.md) — the report action
+              docs/modules/reports/account_entry_report_performance.md) — the report action
               itself now always requires a folio, entry name, entry type or
               allocation_run_id before it queries account_entries, so this quick link just
               lands on the report's own filter form. %>

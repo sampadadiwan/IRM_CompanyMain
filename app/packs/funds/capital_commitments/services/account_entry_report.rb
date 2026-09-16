@@ -2,7 +2,7 @@
 # capital_commitment is nil, folio-level when present). Returns raw cents/counts
 # only - currency formatting and chart rendering stay in the views/helpers.
 #
-# PERFORMANCE CONTRACT (see docs/technical/account_entry_report_performance.md):
+# PERFORMANCE CONTRACT (see docs/modules/reports/account_entry_report_performance.md):
 # account_entries is a very large partitioned table, so this class issues exactly
 # TWO aggregate passes over it for the whole page - one grouped by (name,
 # reporting_date) and one grouped by capital_commitment_id - and derives every KPI,

@@ -1,7 +1,7 @@
 # Renames fund_ratio_runs.scenario → fund_ratio_runs.name and populates it with the
 # canonical fingerprint that encodes the computation inputs (fund IDs, portfolio company
 # IDs, tags, sectors). The fingerprint is the primary lookup key used by the dashboard
-# filter for exact-match queries. See docs/features/fund_ratio_run.md — "fingerprint name".
+# filter for exact-match queries. See docs/modules/funds/fund_ratios/fund_ratio_run.md — "fingerprint name".
 class RenameScenarioToNameOnFundRatioRuns < ActiveRecord::Migration[7.2]
   def up
     rename_column :fund_ratio_runs, :scenario, :name

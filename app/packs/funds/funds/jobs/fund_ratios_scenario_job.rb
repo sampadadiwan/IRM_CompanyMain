@@ -3,7 +3,7 @@
 # used (which funds, companies, tags, sectors), so results are fully auditable.
 # FundRatio rows reference the run via the polymorphic computation_context association.
 #
-# Design rationale: docs/features/fund_ratio_run.md
+# Design rationale: docs/modules/funds/fund_ratios/fund_ratio_run.md
 class FundRatiosScenarioJob < ApplicationJob
   include Rails.application.routes.url_helpers
   include ApplicationHelper

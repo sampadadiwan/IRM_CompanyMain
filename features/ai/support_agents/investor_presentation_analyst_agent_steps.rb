@@ -11,7 +11,7 @@
 #   - Assertions are structural: "has N records", "has > 0 questions", "score present"
 #     rather than asserting on exact LLM-generated values which are non-deterministic
 #
-# PRD: docs/ai/investor_presentation_analyst_prd.md
+# PRD: docs/modules/ai/investor_presentation_analyst_prd.md
 
 # ─── Dummy Presentation Text ──────────────────────────────────────────────────
 # Realistic investor update text written to Tempfiles and attached to KPI reports.

@@ -5,7 +5,7 @@ class ReplaceRagRulesWithStructuredColumns < ActiveRecord::Migration[8.1]
     add_column :investor_kpi_mappings, :rag_red_threshold, :decimal, precision: 20, scale: 4
     add_column :investor_kpi_mappings, :rag_green_threshold, :decimal, precision: 20, scale: 4
 
-    # Best-effort backfill from the old free-form JSON (see docs/technical/kpi_rag_rules_redesign.md).
+    # Best-effort backfill from the old free-form JSON (see docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md).
     # The old format never recorded which tag a mapping was meant to compare against — it was either
     # hardcoded to 'Budget' (KpiWorkbookReader) or passed as a runtime argument that wasn't persisted
     # anywhere (Kpi#set_rag_status_from_ratio) — so 'Budget' is the only sensible default, and

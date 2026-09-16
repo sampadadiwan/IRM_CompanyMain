@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # FAQ Manager: CapHive support creates, edits, publishes and archives user-guide FAQs, and
-# exports or imports them as a spreadsheet. See docs/ai/guide_faq_search_prd.md.
+# exports or imports them as a spreadsheet. See docs/modules/ai/customer_support_agent/guide_faq_search_prd.md.
 class FaqEntriesController < ApplicationController
   before_action :set_faq_entry, only: %i[show edit update destroy publish archive verify]
 

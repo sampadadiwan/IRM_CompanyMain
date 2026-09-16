@@ -65,7 +65,7 @@ end
 # Latest Match Only / Attachment Mandatory only make sense once attachment_names has a value —
 # see the conditional-visibility controller wired up in custom_notifications/_form.html.erb.
 # Asserting on the checkboxes themselves doesn't work: they're `.ios-toggle-input`
-# (see docs/technical/wizard_form_patterns.md §5), which is deliberately
+# (see docs/engineering/wizard_form_patterns.md §5), which is deliberately
 # CSS-invisible (1px, opacity: 0) so the sibling `.ios-toggle-slider` can render the
 # pill/knob — Capybara never considers that element "visible", toggled or not. The
 # real, ancestor-level `hidden` toggle is on the wrapping conditional div instead.

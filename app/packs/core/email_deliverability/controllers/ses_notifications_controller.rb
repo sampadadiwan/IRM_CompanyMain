@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Receives AWS SNS POSTs for SES Bounce/Complaint events (see docs/features/
+# Receives AWS SNS POSTs for SES Bounce/Complaint events (see docs/modules/notifications/
 # email_bounce_complaint_detection_prd.md). Unauthenticated by necessity — AWS
 # cannot authenticate as an app user — so the SNS message signature is the only
 # protection here and verification is mandatory, not optional. Mirrors

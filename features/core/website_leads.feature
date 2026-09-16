@@ -8,7 +8,7 @@ Feature: Capturing demo requests from the public website
   # cross-origin from a static site we control. The coverage below is therefore weighted
   # towards the ways it can be abused or misconfigured, not just the happy path.
   #
-  # See docs/technical/website_lead_capture.md.
+  # See docs/modules/website/website_lead_capture.md.
 
   Background:
     Given the website hosts are "caphive.com,www.caphive.com"

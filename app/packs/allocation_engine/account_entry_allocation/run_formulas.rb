@@ -355,7 +355,7 @@ module AccountEntryAllocation
 
     # Pre/post-run checks: FundFormulas with rule type PreRunCheck/PostRunCheck. Every check of the
     # kind runs even after one fails; any failure then stops the run, any warning only gets
-    # recorded. See docs/business_requirements/allocation_run_checks.md.
+    # recorded. See docs/modules/allocation/allocation_run_checks.md.
     def run_pre_checks(ctx, **)
       ctx[:check_results] = []
       return true unless ctx[:run_allocations]

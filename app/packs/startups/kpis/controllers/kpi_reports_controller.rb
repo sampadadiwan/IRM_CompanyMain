@@ -189,7 +189,7 @@ class KpiReportsController < ApplicationController
 
   # POST /kpi_reports/:id/validate_upload
   #
-  # Dry-run validation of a KPI workbook (docs/technical/kpi_portco_upload_validation_review.md §3.1 C).
+  # Dry-run validation of a KPI workbook (docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md §3.1 C).
   # The browser holds NO rules — Uppy uploads to the Shrine cache, JS posts the cached-file JSON here,
   # KpiWorkbookReader#validate parses it exactly as the import would (writing nothing), and the
   # verdict is rendered into the validation panel. The same reader gates final submission, so what

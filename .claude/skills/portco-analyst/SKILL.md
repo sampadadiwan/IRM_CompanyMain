@@ -260,7 +260,7 @@ Charts are manual-trigger only via the "Regenerate" button on AgentCharts UI. Se
 
 **Status:** Implemented (2026-07-29). Branch: `feature/portco-standalone-dashboard`.
 
-**Design docs:** `docs/portfolio_company_agent/business_design.md` + `docs/portfolio_company_agent/technical_design.md`
+**Design docs:** `docs/modules/ai/portfolio_company_agent/business_design.md` + `docs/modules/ai/portfolio_company_agent/technical_design.md`
 
 ### Current Layout (v3)
 

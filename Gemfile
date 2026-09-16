@@ -155,7 +155,7 @@ gem 'rack-attack'
 gem 'httparty'
 gem 'rubyzip', "2.4.1"
 
-# SMS delivery for two-factor one-time codes. See docs/technical/twilio_sms_otp_design.md.
+# SMS delivery for two-factor one-time codes. See docs/modules/two_factor_auth/twilio_sms_otp_design.md.
 gem 'twilio-ruby'
 # Phone number parsing/validation (wraps Google's libphonenumber metadata). Twilio requires
 # E.164 and users.phone/call_code carry no format validation, so numbers must be normalised

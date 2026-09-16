@@ -56,7 +56,7 @@ namespace :portfolio_report do
       rails "portfolio_report:seed[157]"    # seed for entity 157 (quote required in zsh)
 
     After running, use the printed portco id and draft template id in the
-    manual testing steps in docs/features/portfolio_report_generation_v2_prd.md.
+    manual testing steps in docs/modules/portfolio/portfolio_report_generation_v2_prd.md.
   DESC
 
   task :seed, [:entity_id] => :environment do |_, args|

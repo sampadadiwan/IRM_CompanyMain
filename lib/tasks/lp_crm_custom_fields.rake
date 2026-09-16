@@ -1,4 +1,4 @@
-# LP CRM MVP (docs/features/lp_relationship_crm_alt_mvp_prd.md)
+# LP CRM MVP (docs/modules/investors/lp_relationship_crm_alt_mvp_prd.md)
 #
 # Seeds the CRM custom fields for one entity:
 #   - "InvestorAccess" form type: contact/touch-point fields (designation, POC role,
