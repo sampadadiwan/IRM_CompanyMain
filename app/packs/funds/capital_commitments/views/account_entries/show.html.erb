@@ -27,6 +27,13 @@
                 <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Folio</label>
                 <div class="fs-4 fw-medium"><%= @account_entry.folio_id %></div>
               </div>
+
+              <% if @account_entry.investor_kyc %>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Investing Entity</label>
+                  <div class="fs-4"><%= link_to @account_entry.investor_kyc.full_name, investor_kyc_path(id: @account_entry.investor_kyc), class: "text-decoration-none fw-bold text-primary" %></div>
+                </div>
+              <% end %>
             <% end %>
 
             <div class="col-md-6">

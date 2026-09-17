@@ -2,6 +2,8 @@
 Given('the entity has custom fields {string} for {string}') do |args, class_name|
   puts "Creating custom fields for #{class_name} #{args.split('#')}"
   ft = @entity.form_types.where(name: class_name, tag: "Default").first_or_initialize
+  ft.save!
+  @form_type = ft
   args.split("#").each do |arg|
     cf = ft.form_custom_fields.build()
     key_values(cf, arg)

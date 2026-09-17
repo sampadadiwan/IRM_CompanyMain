@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>AI is ready — but are you? | CapHive</title>
+<meta name="description" content="The constraint on AI in private markets is no longer model capability. It is whether a fund's data, permissions and processes are in a state an agent can act on.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/ai-is-ready.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="AI is ready — but are you?">
+<meta property="og:description" content="The models are good enough. The constraint has moved to organisational readiness — one record, agreed definitions, real permissions, a defined approval step.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/ai-is-ready.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="resources">
+
+<!-- ============================================================
+     DRAFT FOR REVIEW. This piece deliberately contains no statistics,
+     survey results or benchmark figures, because none have been supplied.
+     Every claim is either an argument from mechanism or a description of a
+     workflow. If you want numbers in here, add them from a source you can
+     cite — do not let anyone paraphrase them in.
+     ============================================================ -->
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-black">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>AI is ready
+          </nav>
+          <span class="chip-label">AI</span>
+          <h1 style="margin-top:22px">AI is ready — <em>but are you?</em></h1>
+          <p class="lede">
+            The models are good enough. The constraint is no longer capability — it is
+            whether your fund's data, permissions and processes are in a state an agent
+            can act on.
+          </p>
+          <div class="article-meta">
+            <time datetime="2026-03-31">Mar 31, 2026</time>
+            <span class="dot">·</span>
+            <span>6 min read</span>
+            <span class="dot">·</span>
+            <span>AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <p>
+          The argument about AI in private markets has quietly changed sides. For a while the
+          question was whether a model could be trusted anywhere near a capital account.
+          That question has largely answered itself. Reading a subscription pack, pulling out
+          the commitment and the fee terms, and flagging the clause that disagrees with the
+          side letter is no longer a demonstration. It is a Tuesday.
+        </p>
+        <p>
+          What has not changed is the state of the average fund's data. That is now the
+          binding constraint, and it is not a constraint anyone can buy their way past. An
+          agent is a fast worker with no institutional memory and no ability to walk down the
+          corridor and ask. It acts on what it can read, and it can be trusted only as far as
+          somebody can check its work. Both of those are properties of your organisation,
+          not of the model.
+        </p>
+
+        <h2 id="what-ready-means">What "ready" actually means</h2>
+        <p>
+          Readiness is a specific and unglamorous condition. It has four parts, and none of
+          them involve artificial intelligence.
+        </p>
+
+        <h3>1. One record rather than several</h3>
+        <p>
+          Most funds have a commitment schedule in more than one place: the accounting
+          system, a spreadsheet the finance team actually uses, a version in the data room,
+          and whatever the investor relations deck last quoted. Humans reconcile these
+          silently, out of experience. An agent has no basis on which to prefer one. Until
+          there is an authoritative record — and everyone knows which one it is — you are not
+          automating a process, you are automating an argument.
+        </p>
+
+        <h3>2. Fields that mean the same thing everywhere</h3>
+        <p>
+          Ask three people in a fund whether "commitment" includes the GP's own commitment,
+          whether "drawn" is net of recallable distributions, and which date a valuation
+          belongs to. You will often get three defensible answers. A person notices the
+          ambiguity and asks. An agent resolves it silently, and the output looks exactly as
+          confident either way. Written definitions are not bureaucracy here; they are the
+          interface.
+        </p>
+
+        <h3>3. Permissions that already express who may do what</h3>
+        <p>
+          Every fund has permissions in practice. The analyst does not issue the drawdown
+          notice; the associate does not release a distribution. But those rules usually live
+          in habit and seniority rather than in a system. An agent cannot inherit a habit. If
+          the only way to give software access is to give it everything, then the honest
+          description of your first pilot is that you handed a superuser key to a process
+          nobody can supervise. Roles have to exist as
+          <a href="security.html">settings, not conventions</a>, before an agent can be given
+          one.
+        </p>
+
+        <h3>4. A process with a defined approval step</h3>
+        <p>
+          The difference between an agent that proposes and an agent that executes is the
+          whole question. Proposing is safe, reversible and immediately useful. Executing
+          requires that somebody has decided, in advance and in writing, which class of
+          action goes out without a human and which does not. Most funds have never had to
+          make that decision explicitly, because the approval was always implicit in the fact
+          that a person had to do the typing.
+        </p>
+
+        <div class="pull">
+          <p>An agent does not resolve a disagreement between your systems. It performs the disagreement faster, and with more confidence than anyone in the room.</p>
+        </div>
+
+        <h2 id="why-pilots-stall">Why pilots stall</h2>
+        <p>
+          Pilots rarely fail because the model was disappointing. They stall for reasons that
+          are visible in hindsight and boring in advance.
+        </p>
+        <ul>
+          <li>The agent was pointed at four spreadsheets that disagree, and it inherited the disagreement. Nobody could say the output was wrong, and nobody could say it was right.</li>
+          <li>Checking the answer required redoing the work. A pilot that has to be verified by hand has added a task rather than removed one.</li>
+          <li>The output could not be traced to a source. "Where did this number come from?" had no answer, so the number could not be used in anything that leaves the building.</li>
+          <li>The workflow chosen was the most impressive one rather than the most tractable one — usually something touching investors or money, which then needed an approval process that did not exist.</li>
+          <li>The pilot had no owner whose job improved if it worked, so it survived on goodwill until the quarter got busy.</li>
+        </ul>
+        <p>
+          Notice that every one of those is an organisational fact. Swapping in a better model
+          changes none of them.
+          <!-- TODO: a real figure here would strengthen this claim — add one you can cite -->
+        </p>
+
+        <h2 id="the-objection">The honest objection</h2>
+        <p>
+          There is a fair response to all of this, and it deserves to be stated properly
+          rather than knocked down: if you wait for clean data, you will never start. Fund
+          data is never finished. There is always a legacy vehicle on different terms, a
+          side letter nobody has structured, a portfolio company that reports in prose.
+          Treating readiness as a precondition is how firms spend three years on a data
+          project and arrive with nothing an investor can see.
+        </p>
+        <p>
+          So do not sequence it that way. Readiness is not a gate you pass; it is a property
+          you build one workflow at a time. Pick a single workflow that already satisfies four
+          tests:
+        </p>
+        <ol>
+          <li>The data it needs already lives in one place, or can be made to.</li>
+          <li>The output is checkable in under a minute by someone who would know if it were wrong.</li>
+          <li>A mistake is recoverable — nothing irreversible, no money moved, no investor contacted without review.</li>
+          <li>It happens often enough that a difference is visible within a quarter.</li>
+        </ol>
+        <p>
+          Chasing missing onboarding documents qualifies. Drafting the first version of
+          quarterly commentary from structured portfolio figures qualifies. Proposing matches
+          between incoming wires and expected amounts, for a human to confirm, qualifies.
+          Autonomously issuing a capital call does not, and should not, for a long time.
+          <a href="ai-agents.html">Agents built for this domain</a> are designed around that
+          distinction rather than against it.
+        </p>
+
+        <div class="callout">
+          <p>
+            <strong>The unglamorous half of an AI programme is plumbing.</strong> Bank and
+            custodian feeds, e-sign, the ERP, the documents sitting in folders named by year —
+            getting those into one place is most of the work, and it is work that pays off
+            whether or not you ever deploy an agent. That is the argument for treating
+            <a href="integrations.html">data and integrations</a> as the first phase of an AI
+            project rather than an afterthought to it.
+          </p>
+        </div>
+
+        <h2 id="checklist">A readiness checklist</h2>
+        <p>
+          Answer these about your own firm, honestly, without checking with anyone.
+        </p>
+        <ol>
+          <li>Can you name the one system that holds the authoritative commitment and capital account record — and would your colleagues name the same one?</li>
+          <li>If two systems disagree on a NAV, is there a written rule about which one wins?</li>
+          <li>Are the definitions of commitment, drawn, distributed and unfunded written down anywhere other than in a colleague's head?</li>
+          <li>Do roles exist as configuration, so that "who may approve a distribution" is a setting rather than an understanding?</li>
+          <li>Is there a single audit log that records who changed what, and when — covering software as well as people?</li>
+          <li>Are your unstructured documents indexed and retrievable alongside the structured record, or filed by year in a shared drive?</li>
+          <li>For the first workflow you would automate, is there a named person whose job is to approve the output?</li>
+        </ol>
+        <p>
+          Count the noes. That is not a verdict on your firm; it is your project plan, in
+          priority order. Most managers find the first three are the expensive ones and the
+          last four are mostly decisions nobody has got around to making.
+        </p>
+
+        <h2 id="the-argument">The argument, briefly</h2>
+        <p>
+          Model capability is now roughly evenly distributed. Everyone can buy access to
+          something competent, which means capability has stopped being a source of
+          advantage — the same way electricity stopped being one. What is not evenly
+          distributed is the state of a firm's own records, permissions and processes. That is
+          where the difference will sit for the next several years.
+        </p>
+        <p>
+          The pleasant part of this conclusion is that the preparation is not speculative. One
+          record, agreed definitions, real roles, a defined approval step and an audit trail
+          are worth having if AI never improves again. They are also, as it happens, exactly
+          what an agent needs. You are not betting on a technology. You are tidying your own
+          house, which is defensible in front of any investor.
+          </p>
+          </div>
+
+          <!-- TODO: attribute this to a real author — replace the initials, name and role,
+               or delete the byline entirely if pieces are published under the firm's name. -->
+          <div class="byline">
+            <span class="avatar">CH</span>
+            <span>
+              <strong><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></strong>
+              <span>Written by the <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> team</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PREV / NEXT ================= -->
+  <section class="section-sm">
+    <div class="wrap-narrow">
+      <div class="post-nav">
+        <a href="operational-alpha.html">
+          <span class="dir">← Previous</span>
+          <strong>Operational alpha: the game changer AIFs can't ignore</strong>
+        </a>
+        <a class="next" href="portfolio-real-time-insight.html">
+          <span class="dir">Next →</span>
+          <strong>Portfolio management: shift from reporting to real-time insight</strong>
+        </a>
+      </div>
+    </div>
+  </section>
+</article>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Where this leads</span>
+      <h2>Readiness, <em>in practice.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="ai-agents.html">
+        <div>
+          <span class="kick">01 · AI Agents</span>
+          <h3>AI Agents</h3>
+          <p>Agents that propose, cite their source and stop at a human approval step.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="integrations.html">
+        <div>
+          <span class="kick">Foundation</span>
+          <h3>Data &amp; integrations</h3>
+          <p>ERPs, e-sign and APIs — the plumbing that makes one record possible.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="blog.html">
+        <div>
+          <span class="kick">Insights</span>
+          <h3>More writing</h3>
+          <p>Operations, AI and private markets — the rest of what we have published.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "AI is ready — but are you?",
+  "datePublished": "2026-03-31",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/ai-is-ready.html"
+}
+</script>
+</body>
+</html>

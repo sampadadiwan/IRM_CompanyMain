@@ -2,6 +2,7 @@ require "hexapdf"
 require "open3"
 require "json"
 require "fileutils"
+require "tmpdir"
 
 module DocumentGeneratorBase
   IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .gif].freeze
@@ -10,20 +11,39 @@ module DocumentGeneratorBase
   # Portfolio report gen needs this to combine all portfolio reports into one
   attr_reader :generated_document
 
-  def convert(template, context, file_name, to_pdf: true, template_name: nil)
+  # soffice --headless locks a single shared user profile (~/.config/libreoffice by
+  # default); concurrent conversions racing for that lock silently fail for the
+  # loser (non-zero exit, no output, no error message). Sidekiq/Puma run multiple
+  # jobs/requests as threads within one OS process, so a profile keyed per-process
+  # would still leave those threads sharing (and contending for) one profile --
+  # this is keyed per-thread instead, giving every concurrently-running job/request
+  # its own profile regardless of whether it shares a process with another.
+  # Memoized so repeat conversions on the same thread reuse it rather than paying
+  # LibreOffice's first-run profile initialization cost on every call.
+  def self.libreoffice_profile_dir
+    Thread.current[:libreoffice_profile_dir] ||= begin
+      dir = Dir.mktmpdir("libreoffice-profile-")
+      at_exit { FileUtils.rm_rf(dir) }
+      dir
+    end
+  end
+
+  def convert(template, context, file_name, to_pdf: true, template_name: nil, doc_template: nil)
     # Mail Merge
     file_path = File.expand_path("#{file_name}.docx")
     Rails.logger.debug { "#{self.class} Generating document at #{file_path}" }
     template.render_to_file(file_path, context)
 
-    # Run DOCX post-processors atomically: take a backup so we can restore the original
-    # if either step fails mid-write, preventing a half-processed file from being used.
+    # Run DOCX post-processor atomically: take a backup so we can restore the original
+    # if it fails mid-write, preventing a half-processed file from being used.
+    #
+    # DocxNumberingFixer deliberately NOT run here — it's for TemplateFixAgent's own
+    # documented pattern (a hidden vanish-flagged counter-setter paragraph confusing
+    # LibreOffice's list numbering) and must never run silently on every generated
+    # document. Only the reported/fixed template should ever go through it.
     backup_path = "#{file_path}.bak"
     FileUtils.cp(file_path, backup_path)
     begin
-      # Fix ghost list-numbering so sub-item counters match their section headings.
-      DocxNumberingFixer.fix!(file_path)
-
       # Bake resolved style properties (fonts, sizes, indentation) directly into
       # paragraphs/runs so LibreOffice doesn't mis-read the style inheritance
       # chain and produce wrong fonts or indentation in the PDF.
@@ -38,7 +58,7 @@ module DocumentGeneratorBase
 
     if to_pdf
       # Convert to PDF with accessibility tags
-      convert_to_accessible_pdf(file_name, template_name)
+      convert_to_accessible_pdf(file_name, template_name, doc_template: doc_template)
     end
   end
 
@@ -320,10 +340,61 @@ module DocumentGeneratorBase
     @generated_document = generated_document
   end
 
-  def convert_to_accessible_pdf(file_name, template_name = nil)
+  # doc_template: the source Document (template: true) this file was generated from, if
+  # known. Its pdf_conversion_engine picks the conversion path below -- every existing
+  # caller that doesn't pass it (or a template that hasn't opted in) gets the unchanged
+  # LibreOffice path. See docs/technical/m365_graph_pdf_conversion.md.
+  def convert_to_accessible_pdf(file_name, template_name = nil, doc_template: nil)
     docx_path = "#{file_name}.docx"
-    pdf_dir   = File.dirname(File.expand_path(docx_path))
     pdf_path  = "#{file_name}.pdf"
+
+    engine = doc_template.blank? ? "libreoffice" : doc_template.pdf_conversion_engine
+    # doc_template comes from a new parameter every generator's #generate method had to be
+    # taught to thread through -- easy for a future (or missed) generator to silently omit,
+    # which would fall back to LibreOffice for a template the DB says is flagged for a
+    # different engine with no error. Logged so that mismatch is at least visible:
+    # "libreoffice" with no template attached, on a template known to be flagged otherwise,
+    # is a real bug to grep the logs for.
+    Rails.logger.info { "[DocumentGeneratorBase] PDF engine=#{engine} doc_template=#{doc_template&.id || 'absent'} file=#{file_name}" }
+    case engine
+    when "m365"
+      convert_via_m365(docx_path, pdf_path)
+    when "google_docs"
+      convert_via_google_docs(docx_path, pdf_path)
+    else
+      convert_via_libreoffice(docx_path, pdf_path)
+    end
+
+    # Post-process the generated PDF to add required metadata
+    pdf = HexaPDF::Document.open(pdf_path)
+
+    # Ensure language is set (required for PDF/UA)
+    pdf.catalog[:Lang] ||= "en-US"
+
+    # Only the LibreOffice path actually requests tagged/PDF-UA export (see the
+    # UseTaggedPDF/PDFUACompliance filter options below) -- neither Graph's PDF export nor
+    # Drive's PDF export requests or is known to produce a real tag structure tree, so
+    # claiming MarkInfo: { Marked: true } for a non-LibreOffice-converted PDF would be a
+    # false accessibility compliance claim rather than a statement of fact.
+    pdf.catalog[:MarkInfo] ||= { Marked: true } if engine == "libreoffice"
+
+    # Use set_pdf_metadata for consistent metadata across all PDFs
+    set_pdf_metadata(pdf, nil, template_name, file_name)
+
+    # Write to a temp file first to avoid overwriting the source file (pdf_path)
+    # while it is still being read by HexaPDF (lazy loading).
+    temp_output_path = "#{pdf_path}.tmp"
+    begin
+      pdf.write(temp_output_path, optimize: true)
+    rescue StandardError => e
+      Rails.logger.warn("PDF validation error for #{pdf_path}: #{e.message}")
+      pdf.write(temp_output_path, optimize: true, validate: false)
+    end
+    FileUtils.mv(temp_output_path, pdf_path)
+  end
+
+  def convert_via_libreoffice(docx_path, pdf_path)
+    pdf_dir = File.dirname(File.expand_path(docx_path))
 
     pdf_options = {
       "UseTaggedPDF" => {
@@ -353,6 +424,7 @@ module DocumentGeneratorBase
     cmd = [
       "soffice",
       "--headless",
+      "-env:UserInstallation=file://#{DocumentGeneratorBase.libreoffice_profile_dir}",
       "--convert-to", filter,
       "--outdir", pdf_dir,
       docx_path
@@ -362,28 +434,41 @@ module DocumentGeneratorBase
 
     raise "LibreOffice PDF conversion failed\nSTDOUT: #{stdout}\nSTDERR: #{stderr}" unless status.success?
 
-    # Post-process the generated PDF to add required metadata
-    pdf = HexaPDF::Document.open(pdf_path)
+    pdf_path
+  end
 
-    # Ensure language is set (required for PDF/UA)
-    pdf.catalog[:Lang] ||= "en-US"
+  # No fallback to LibreOffice on failure: this path exists specifically for templates
+  # where LibreOffice's rendering is known to be wrong, so silently reverting to it on
+  # error would produce a document that looks fine but has the exact defect this was
+  # meant to avoid. The job should fail and alert instead. See
+  # docs/technical/m365_graph_pdf_conversion.md.
+  def convert_via_m365(docx_path, pdf_path)
+    result = M365PdfConversion.call(docx_path: docx_path, pdf_path: pdf_path)
+    unless result.success?
+      original = result[:exception]
+      # Re-raise preserving the original exception's class and backtrace where available
+      # (e.g. a real Faraday::TimeoutError) rather than an opaque RuntimeError, since this
+      # message is the only diagnostic signal on a path with no LibreOffice fallback.
+      raise original, "M365 PDF conversion failed: #{result[:errors]}", original.backtrace if original
 
-    # Ensure MarkInfo is set (indicates tagged PDF)
-    pdf.catalog[:MarkInfo] ||= { Marked: true }
-
-    # Use set_pdf_metadata for consistent metadata across all PDFs
-    set_pdf_metadata(pdf, nil, template_name, file_name)
-
-    # Write to a temp file first to avoid overwriting the source file (pdf_path)
-    # while it is still being read by HexaPDF (lazy loading).
-    temp_output_path = "#{pdf_path}.tmp"
-    begin
-      pdf.write(temp_output_path, optimize: true)
-    rescue StandardError => e
-      Rails.logger.warn("PDF validation error for #{pdf_path}: #{e.message}")
-      pdf.write(temp_output_path, optimize: true, validate: false)
+      raise "M365 PDF conversion failed: #{result[:errors]}"
     end
-    FileUtils.mv(temp_output_path, pdf_path)
+
+    pdf_path
+  end
+
+  # No fallback to LibreOffice on failure, same reasoning as convert_via_m365 above. See
+  # docs/technical/google_docs_pdf_conversion.md.
+  def convert_via_google_docs(docx_path, pdf_path)
+    result = GoogleDocsPdfConversion.call(docx_path: docx_path, pdf_path: pdf_path)
+    unless result.success?
+      original = result[:exception]
+      raise original, "Google Docs PDF conversion failed: #{result[:errors]}", original.backtrace if original
+
+      raise "Google Docs PDF conversion failed: #{result[:errors]}"
+    end
+
+    pdf_path
   end
 
   # --------------------------

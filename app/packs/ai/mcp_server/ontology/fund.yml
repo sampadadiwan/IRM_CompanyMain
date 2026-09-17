@@ -1,0 +1,232 @@
+# Ontology for Fund as exposed over MCP. See McpOntology for how this file becomes the
+# tool description, the JSON input schema and the argument validator.
+---
+entity: fund
+label: Fund
+model: Fund
+description: >-
+  A pooled investment vehicle. Committed, called, collected and distributed totals are
+  maintained on the fund itself, so fund-level questions should be answered from here
+  rather than by summing commitments, remittances or distributions.
+
+relationships:
+  master_fund:
+    target: fund
+    cardinality: many_to_one
+    note: >-
+      A feeder fund points at a master fund via master_fund_id. Feeder and master both
+      appear in list_funds, so totalling every row can double-count the same capital.
+    resolve_with: list_funds
+  capital_commitments:
+    target: capital_commitment
+    cardinality: one_to_many
+    note: One folio per investor per fund.
+    resolve_with: list_capital_commitments
+  capital_calls:
+    target: capital_call
+    cardinality: one_to_many
+    note: Capital demanded from investors.
+    resolve_with: list_capital_calls
+  capital_distributions:
+    target: capital_distribution
+    cardinality: one_to_many
+    note: Capital returned to investors.
+    resolve_with: list_capital_distributions
+  fund_ratios:
+    target: fund_ratio
+    cardinality: one_to_many
+    note: Performance metrics (TVPI, DPI, IRR, RVPI) computed per fund and end date.
+    resolve_with: list_fund_ratios
+
+fields:
+  name:
+    type: string
+    description: Fund name. Unique per entity among non-snapshot funds.
+    sortable: true
+  currency:
+    type: string
+    description: >-
+      The fund's reporting currency. Every money field on the fund and on its calls,
+      distributions and account entries is denominated in it.
+    sortable: true
+  tracking_currency:
+    type: string
+    description: >-
+      Optional second currency the fund is also tracked in. Only some funds have one;
+      the tracking totals are exposed by get_fund_details, not by list_funds.
+    sortable: true
+  category:
+    type: string
+    description: Free-text fund category configured by the entity.
+    sortable: true
+  tag_list:
+    type: string
+    description: Comma-separated tags. Use tag_list_cont to match one tag.
+    sortable: false
+  unit_types:
+    type: string
+    description: Comma-separated unit/class names the fund issues (e.g. "Class A,Class B").
+    sortable: false
+  first_close_date:
+    type: date
+    description: Date of the fund's first close.
+    sortable: true
+  last_close_date:
+    type: date
+    description: Date of the fund's most recent close.
+    sortable: true
+  start_date:
+    type: date
+    description: Fund start date, used as the origin for period calculations.
+    sortable: true
+  committed_amount:
+    type: money
+    stored_as: committed_amount_cents
+    currency: the fund's own currency
+    description: Total capital investors have committed across all closes.
+    sortable: true
+    aggregatable: true
+  call_amount:
+    type: money
+    stored_as: call_amount_cents
+    currency: the fund's own currency
+    description: Total capital called from investors to date.
+    sortable: true
+    aggregatable: true
+  collected_amount:
+    type: money
+    stored_as: collected_amount_cents
+    currency: the fund's own currency
+    description: Total capital actually received from investors to date.
+    sortable: true
+    aggregatable: true
+  distribution_amount:
+    type: money
+    stored_as: distribution_amount_cents
+    currency: the fund's own currency
+    description: Total capital distributed back to investors to date.
+    sortable: true
+    aggregatable: true
+  capital_commitments_count:
+    type: integer
+    description: Number of commitments (folios) in the fund.
+    sortable: true
+    aggregatable: false
+  master_fund_id:
+    type: reference
+    target: fund
+    description: Set on a feeder fund, pointing at its master. Null on a master fund.
+    sortable: false
+  snapshot:
+    type: boolean
+    description: >-
+      True for a point-in-time copy of a fund rather than the live fund. Snapshots share
+      the live fund's name.
+    sortable: false
+  snapshot_date:
+    type: date
+    description: The as-of date a snapshot fund was taken. Null on live funds.
+    sortable: true
+
+returned_only:
+  view_link:
+    type: string
+    description: Relative CapHive URL for the fund. Present it as a link; do not treat it as data.
+
+unavailable:
+  id:
+    reason: Not declared in Fund.ransackable_attributes, so conditions on it are ignored.
+  committed_amount_cents:
+    reason: >-
+      The physical column, not a queryable attribute. The ransacker exposes
+      committed_amount in major units.
+    use_instead: committed_amount
+  collected_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: collected_amount
+  call_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: call_amount
+  distribution_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: distribution_amount
+  entity_id:
+    reason: >-
+      Not ransackable. Cross-entity access is already enforced by the authorisation scope —
+      you only ever see your own entity's funds.
+
+scopes:
+  query_class: FundAssistantDataManager::FundQuery
+  descriptions:
+    feeder_funds: Funds that feed into a master fund (master_fund_id is set).
+    master_funds: Funds that are not feeders (master_fund_id is null).
+
+measures:
+  total_committed:
+    expression: sum of committed_amount
+    description: Total investor commitments. Only meaningful within one currency.
+  total_called:
+    expression: sum of call_amount
+    description: Total capital called to date.
+  total_collected:
+    expression: sum of collected_amount
+    description: Total capital received to date.
+  total_distributed:
+    expression: sum of distribution_amount
+    description: Total capital returned to investors to date.
+  uncalled_commitment:
+    expression: committed_amount - call_amount
+    description: >-
+      Dry powder. Not available as an aggregate; compute it per fund from the returned rows.
+
+caveats:
+  - >-
+    Each fund has its own currency. NEVER sum money across funds without grouping by
+    currency (aggregate: 'sum' does this for you on Fund and reports per-currency totals).
+  - >-
+    Money filters take MAJOR units, not cents: committed_amount_gt: 1000000 means one
+    million, not ten thousand.
+  - >-
+    Feeder and master funds both appear here. Totalling every row double-counts capital that
+    flows through a feeder into its master — filter with scope 'master_funds' or
+    'feeder_funds' when the question is about totals.
+  - >-
+    Snapshot funds (snapshot: true) are historical copies sharing a live fund's name. Add
+    snapshot_false to a query when totalling, unless the question is about a snapshot.
+  - >-
+    Fund-level totals are maintained on the fund. Do not recompute them from commitments,
+    remittances or distributions — you will get a different number and a slower answer.
+
+tools:
+  list_funds:
+    kind: list
+    summary: >-
+      START HERE. Most other tools need a fund_id, and this is how you resolve a fund name
+      to one.
+    params:
+      scope:
+  get_fund_details:
+    kind: detail
+    summary: >-
+      Use it after list_funds when you need the fund's tags, description, signatories or
+      tracking-currency totals, which the list view does not carry.
+    params:
+      fund_id:
+        required: true
+    returns:
+      id: Fund ID.
+      name: Fund name.
+      entity: Name of the owning entity (the fund manager's organisation).
+      currency: Reporting currency.
+      unit_types: Comma-separated unit/class names the fund issues.
+      tags: Comma-separated tags.
+      details: Free-text description of the fund.
+      first_close_date: Date of first close.
+      last_close_date: Date of most recent close.
+      signatory_emails: E-sign signatory addresses configured on the fund.
+      master_fund: Name of the master fund. Present only when this fund is a feeder.
+      tracking_currency: >-
+        Present only when the fund has a tracking currency. An object with the currency and
+        the committed / call_amount / collected / distributed totals restated in it. These
+        are a restatement of the same capital, NOT additional capital.
+      view_link: Relative CapHive URL for the fund.

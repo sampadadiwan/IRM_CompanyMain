@@ -1,0 +1,90 @@
+<%#
+  Run modal for one group: explains what will happen, asks for the period, and leads to the
+  pre-flight page (nothing runs from here). Locals: group, active_run
+%>
+<%
+  default_start = (Time.zone.today - 3.months).beginning_of_quarter
+  default_end = default_start.end_of_quarter
+  can_resume = group.allocation_group_runs.finished.exists?
+%>
+<div class="modal fade" id="runGroupModal-<%= group.id %>" tabindex="-1" aria-labelledby="runGroupModalLabel-<%= group.id %>" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="runGroupModalLabel-<%= group.id %>">
+          <i class="ti ti-player-play me-1"></i> Run <strong><%= group.name %></strong>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_with url: preflight_allocation_run_template_group_path(group), method: :get, data: { turbo: false } do |f| %>
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">What will happen</div>
+            <div class="text-muted">When you click <strong>Check templates</strong>, nothing runs yet — you first see the result of the checks below and confirm.</div>
+          </div>
+          <div class="action-summary__list">
+            <div class="action-summary__item action-summary__item--green">
+              <span class="action-summary__icon"><i class="ti ti-shield-check"></i></span>
+              <div>
+                <div class="action-summary__title">Every template is checked before anything starts</div>
+                <div class="action-summary__desc">Your right to run each fund, a locked period, blocking validation rules, a missing statement document and unknown formula tags. If any template would be refused, <strong>nothing runs</strong> and you are shown why.</div>
+              </div>
+            </div>
+            <div class="action-summary__item action-summary__item--blue">
+              <span class="action-summary__icon"><i class="ti ti-list-numbers"></i></span>
+              <div>
+                <div class="action-summary__title">Templates run one after another, in this order</div>
+                <div class="action-summary__desc">
+                  <%= group.ordered_items.map { |i| "#{i.position}. #{i.allocation_run_template.name}" }.join(" → ") %>.
+                  Each produces a new allocation run on its fund for the same period.
+                </div>
+              </div>
+            </div>
+            <div class="action-summary__item action-summary__item--amber">
+              <span class="action-summary__icon"><i class="ti ti-player-stop"></i></span>
+              <div>
+                <div class="action-summary__title">Stops at the first failure</div>
+                <div class="action-summary__desc">A template that does not finish with status Success stops the group. Later templates are skipped and reported as such. Fix the cause and run again for the same period.</div>
+              </div>
+            </div>
+            <div class="action-summary__item action-summary__item--purple">
+              <span class="action-summary__icon"><i class="ti ti-bell"></i></span>
+              <div>
+                <div class="action-summary__title">You are told when it finishes</div>
+                <div class="action-summary__desc">An in-app alert and an email with per-template results. Locking each allocation run stays a manual step, exactly as today.</div>
+              </div>
+            </div>
+          </div>
+          <hr class="my-3">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold" for="start_date_<%= group.id %>">Start date</label>
+              <small class="text-muted d-block mb-2">Applied to every template in the group.</small>
+              <%= date_field_tag :start_date, default_start, id: "start_date_#{group.id}", required: true %>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold" for="end_date_<%= group.id %>">End date</label>
+              <small class="text-muted d-block mb-2">Entries are dated on this day.</small>
+              <%= date_field_tag :end_date, default_end, id: "end_date_#{group.id}", required: true %>
+            </div>
+          </div>
+          <% if can_resume %>
+            <div class="form-check">
+              <%= hidden_field_tag :resume, "0", id: nil %>
+              <%= check_box_tag :resume, "1", true, class: "form-check-input", id: "resume_#{group.id}" %>
+              <label class="form-check-label" for="resume_<%= group.id %>">
+                Resume from the failed template
+                <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" title="If an earlier run of this group for the same period partly succeeded, the templates that succeeded then are not run again — only the failed one and those after it. Untick to run every template afresh."></i>
+              </label>
+              <div class="text-muted">Only applies when a previous run for exactly the same period exists.</div>
+            </div>
+          <% end %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Check templates", class: "btn btn-outline-success" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

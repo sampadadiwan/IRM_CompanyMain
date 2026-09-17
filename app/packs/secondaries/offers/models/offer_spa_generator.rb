@@ -57,7 +57,7 @@ class OfferSpaGenerator
     add_image(context, :offer_signature, offer.signature)
 
     file_name = generated_file_name(offer)
-    convert(template, context, file_name, template_name: template_document.name)
+    convert(template, context, file_name, template_name: template_document.name, doc_template: template_document)
 
     additional_footers = []
     additional_headers = []

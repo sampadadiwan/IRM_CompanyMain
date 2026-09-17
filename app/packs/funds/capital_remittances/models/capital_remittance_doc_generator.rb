@@ -28,7 +28,7 @@ class CapitalRemittanceDocGenerator
         raise msg
       else
         create_working_dir(capital_remittance)
-        generate(capital_remittance, tempfile.path, options)
+        generate(capital_remittance, tempfile.path, options, fund_doc_template)
         upload(fund_doc_template, capital_remittance, nil, nil, nil, final_file_name(@fund_doc_template_name, capital_remittance), user_id: user_id, as_of: capital_remittance.remittance_date)
         notify(fund_doc_template, capital_remittance, user_id) if user_id
       end
@@ -44,7 +44,7 @@ class CapitalRemittanceDocGenerator
   end
 
   # Generate the full document using Sablon and save it to file
-  def generate(capital_remittance, template_path, options)
+  def generate(capital_remittance, template_path, options, fund_doc_template)
     template = Sablon.template(File.expand_path(template_path))
 
     # Get the fund state as of a specific date
@@ -57,7 +57,7 @@ class CapitalRemittanceDocGenerator
     context.merge!(remittance_context(capital_remittance, fund_as_of, fund_as_of_commitments_lp, fund_as_of_commitments_gp))
     context.merge!(distribution_context(capital_remittance, fund_as_of, fund_as_of_commitments_lp, fund_as_of_commitments_gp))
 
-    convert(template, context, generated_file_name(capital_remittance))
+    convert(template, context, generated_file_name(capital_remittance), template_name: @fund_doc_template_name, doc_template: fund_doc_template)
   end
 
   # Core data required for template substitution

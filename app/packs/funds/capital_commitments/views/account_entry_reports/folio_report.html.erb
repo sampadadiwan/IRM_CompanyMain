@@ -1,39 +1,17 @@
 <div>
-  <div class="card shadow mb-4">
-    <div class="card-header py-3 d-flex align-items-center justify-content-between">
-      <h5 class="m-0"><%= @capital_commitment.investor_name.titleize %> &mdash; Folio <%= @capital_commitment.folio_id %></h5>
-      <%= link_to "&larr; View Fund Report".html_safe,
-            fund_report_account_entry_reports_path(fund_id: @fund.id, start_date: @start_date, end_date: @end_date),
-            class: "btn btn-sm btn-outline-secondary" %>
-    </div>
-    <div class="card-body">
-      <%= form_with url: folio_report_account_entry_reports_path, method: :get, local: true, class: "row g-2 align-items-end account-entry-report-filter" do |f| %>
-        <%= f.hidden_field :fund_id, value: @fund.id %>
-        <div class="col-auto">
-          <%= f.label :start_date, class: "form-label" %>
-          <%= f.date_field :start_date, value: @start_date, class: "form-control" %>
-        </div>
-        <div class="col-auto">
-          <%= f.label :end_date, class: "form-label" %>
-          <%= f.date_field :end_date, value: @end_date, class: "form-control" %>
-        </div>
-        <div class="col-auto" style="min-width: 220px;">
-          <%= f.label :capital_commitment_id, "Investor / Folio", class: "form-label" %>
-          <%= f.select :capital_commitment_id, @fund.capital_commitments.map { |cc| [cc.to_s, cc.id] },
-                { selected: @commitment_ids, include_blank: false },
-                { class: "form-control select2", multiple: true, name: "capital_commitment_id[]" } %>
-        </div>
-        <div class="col-auto" style="min-width: 260px;">
-          <%= f.label :entry_names, "Entry Names", class: "form-label" %>
-          <%= f.select :entry_names, @available_entry_names, { selected: @entry_names, include_blank: false },
-                { class: "form-control select2", multiple: true, name: "entry_names[]" } %>
-        </div>
-        <div class="col-auto">
-          <%= f.submit "View Report", class: "btn btn-primary" %>
-        </div>
-      <% end %>
-    </div>
-  </div>
+  <%= render "account_entry_reports/filter_form",
+        url: folio_report_account_entry_reports_path,
+        fund: @fund,
+        heading: "#{@capital_commitment.investor_name.titleize} \u2014 Folio #{@capital_commitment.folio_id}",
+        header_link: link_to("\u2190 View Fund Report",
+                             fund_report_account_entry_reports_path(fund_id: @fund.id, start_date: @start_date, end_date: @end_date, allocation_run_id: @allocation_run_id),
+                             class: "btn btn-sm btn-outline-secondary"),
+        start_date: @start_date, end_date: @end_date,
+        commitment_options: @commitment_options, commitment_ids: @commitment_ids,
+        available_entry_names: @available_entry_names, entry_names: @entry_names,
+        available_entry_types: @available_entry_types, entry_types: @entry_types,
+        range_clamped: @range_clamped, requested_start_date: @requested_start_date,
+        allocation_run_id: @allocation_run_id %>
 
   <%= render "account_entry_reports/summary_kpis", report: @report, fund: @fund %>
   <%= render "account_entry_reports/commentary", insight: @insights["summary_kpis"], fund: @fund, capital_commitment: @capital_commitment, section_key: "summary_kpis", start_date: @start_date, end_date: @end_date %>

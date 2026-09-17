@@ -99,6 +99,7 @@ Examples:
     |true         | PAN=ABCD9876;send_kyc_form_to_user=true | subject=KYC Updated 2;email_method=notify_kyc_updated | 
 
 
+@import
 Scenario Outline: Capital call with custom notification
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund" 
   Given the user has role "company_admin"
@@ -112,12 +113,14 @@ Scenario Outline: Capital call with custom notification
   When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
   Given there is a custom notification "<custom_notification_new>" in place for the Call 
   Then when the capital call is approved
+  And the capital call notifications are sent
   And notification should be sent "true" to the remittance investors for "<custom_notification_new>"
 
   Examples:
     | custom_notification_new|
     | subject=Remittance is due for fund;email_method=notify_capital_remittance |
 
+@import
 Scenario: Capital call notification placeholder substitution
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -131,9 +134,32 @@ Scenario: Capital call notification placeholder substitution
   When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
   Given there is a custom notification with placeholders in place for the Call with email_method "notify_capital_remittance"
   Then when the capital call is approved
+  And the capital call notifications are sent
   Then the capital remittance notification placeholders are resolved correctly
 
 
+@import
+Scenario: Capital call notification without a custom notification shows the due date as Mon dd, yyyy
+  # No custom notification is set up for this call, so notify_capital_remittance.html.erb
+  # falls back to its hardcoded <% else %> branch (l @capital_remittance.capital_call.due_date)
+  # instead of the custom_notifications/mail partial exercised above — a distinct code path.
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload an investors file for the fund
+  Given the investors have approved investor access
+  Given the fund has capital call template
+  Given the investors are added to the fund
+  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
+  Then I should see the capital call details
+  Then when the capital call is approved
+  And the capital call notifications are sent
+  Then the remittance investors should receive an email with the due date shown as Mon dd, yyyy
+
+
+@import
 Scenario Outline: Capital call notification falls back to the fund-level default
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -147,6 +173,7 @@ Scenario Outline: Capital call notification falls back to the fund-level default
   When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
   Given there is a custom notification "<fund_default>" in place for the Fund for Calls
   Then when the capital call is approved
+  And the capital call notifications are sent
   And notification should be sent "true" to the remittance investors for "<fund_default>"
   Then the remittance investors should receive an email with subject including "<subject>"
 
@@ -155,6 +182,7 @@ Scenario Outline: Capital call notification falls back to the fund-level default
     | subject=Fund default remittance notice;email_method=notify_capital_remittance   | Fund default remittance notice |
 
 
+@import
 Scenario Outline: Capital call specific notification overrides the fund-level default
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -169,6 +197,7 @@ Scenario Outline: Capital call specific notification overrides the fund-level de
   Given there is a custom notification "<fund_default>" in place for the Fund for Calls
   Given there is a custom notification "<call_specific>" in place for the Call
   Then when the capital call is approved
+  And the capital call notifications are sent
   Then the remittance investors should receive an email with subject including "<subject>"
 
   Examples:
@@ -201,6 +230,7 @@ Scenario: Attachment checkboxes are hidden until attachment_names has a value
   Then the attachment checkboxes should be hidden
 
 
+@import
 Scenario: Capital call notifications tab offers only a call-specific notification option
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -221,6 +251,7 @@ Scenario: Capital call notifications tab offers only a call-specific notificatio
   And the custom notification form title should include "Call Notification"
 
 
+@import
 Scenario Outline: Creating a call-specific notification warns when the fund already has a default for that email
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -316,6 +347,53 @@ Scenario Outline: Creating a distribution-specific notification warns when the f
   Examples:
   	|user	    |entity                                         |fund                 |fund_default                                                              |
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund       |subject=Fund default distribution notice;email_method=send_notification  |
+
+
+@notification
+Scenario: Preview button on a custom notification shows the rendered email for the first available record
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "name=SAAS Fund" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  Given there is an adhoc custom notification for the fund with subject "Q4 Update"
+  Given I visit the custom notification show page
+  Then I see a Preview button on the custom notification page
+  When I click the Preview button on the custom notification page
+  Then I see the notification preview with subject "Q4 Update"
+
+
+@notification
+Scenario: Preview button is hidden when there is no record yet to preview against
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  Given there is an adhoc custom notification for the fund with subject "No Commitments Yet"
+  Given I visit the custom notification show page
+  Then I do not see a Preview button on the custom notification page
+
+
+@notification
+Scenario: Preview button is hidden for a Send Document notification, which has no preview route wired up yet
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  Given there is a Custom Notification for the entity
+  Given I visit the custom notification show page
+  Then I do not see a Preview button on the custom notification page
+
+
+@notification
+Scenario: Preview button resolves a KYC notification to the investor's own InvestorKyc record
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "name=Investor 1" with "1" users
+  Given there is a custom notification "subject=KYC New 1;email_method=notify_kyc_required" in place for the KYC
+  Given a InvestorKyc is created with details "PAN=ABCD9870;send_kyc_form_to_user=true" by "false"
+  Given I visit the custom notification show page
+  Then I see a Preview button on the custom notification page
+  When I click the Preview button on the custom notification page
+  Then I see the notification preview with subject "KYC New 1"
 
 
 @notification

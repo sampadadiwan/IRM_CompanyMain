@@ -357,8 +357,13 @@ def aggregate_deal_tasks(ctx, deal: nil, **)
     deal.id, di_ids
   ).includes(:assigned_to, :rich_text_details).to_a
 
+  # Fixed 7-day lookahead — period_end is Time.current (today), so the old
+  # upcoming filter only caught tasks due exactly today. Now: upcoming = today..+7d,
+  # pending = no due date or due beyond 7 days.
+  upcoming_horizon = Time.zone.today + 7.days
   overdue   = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date < Date.today }
-  upcoming  = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date >= Date.today && t.due_date <= @period_end.to_date }
+  upcoming  = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date >= Date.today && t.due_date <= upcoming_horizon }
+  pending   = all_tasks.select { |t| !t.completed && (t.due_date.blank? || t.due_date > upcoming_horizon) }
   completed = all_tasks.select { |t| t.completed && t.updated_at >= @period_start }
 
   max_tasks = [@support_agent.json_fields["max_tasks_in_email"].to_i, 5].max
@@ -368,18 +373,21 @@ def aggregate_deal_tasks(ctx, deal: nil, **)
   ctx[:tasks_summary] = {
     overdue_count: overdue.size,
     upcoming_count: upcoming.size,
+    pending_count: pending.size,
     completed_count: completed.size,
     highlighted_overdue: format_deal_task(highlighted_overdue),
     overdue_tasks: overdue.sort_by(&:due_date).first(max_tasks).map { |t| format_deal_task(t) },
     pending_due_soon: pending_due_soon.map { |t| format_deal_task(t) },
+    pending_tasks: pending.sort_by { |t| t.due_date || Date.new(9999) }.first(max_tasks).map { |t| format_deal_task(t) },
     completed_tasks: completed.sort_by(&:updated_at).reverse.first(max_tasks).map { |t| format_deal_task(t) },
     all_overdue_ids: overdue.map(&:id),
     all_upcoming_ids: upcoming.map(&:id),
+    all_pending_ids: pending.map(&:id),
     all_completed_ids: completed.map(&:id)
   }
 
   mark_step_success(report, :aggregate_deal_tasks,
-    message: "#{overdue.size} overdue, #{upcoming.size} upcoming, #{completed.size} completed") if report
+    message: "#{overdue.size} overdue, #{upcoming.size} upcoming, #{pending.size} pending, #{completed.size} completed") if report
   true
 end
 
@@ -661,6 +669,7 @@ The report already stores existing agent data. Weekly summary adds these keys:
   "tasks_summary": {
     "overdue_count": 1,
     "upcoming_count": 3,
+    "pending_count": 2,
     "completed_count": 7,
     "highlighted_overdue": {
       "id": 501,
@@ -690,6 +699,16 @@ The report already stores existing agent data. Weekly summary adds these keys:
         "status": "Pending"
       }
     ],
+    "pending_tasks": [
+      {
+        "id": 504,
+        "title": "Board Presentation Prep",
+        "company_name": "Quantum Health",
+        "responsible": "the responsible team member",
+        "due_date": "2025-06-15",
+        "status": "Pending"
+      }
+    ],
     "completed_tasks": [
       {
         "id": 503,
@@ -702,6 +721,7 @@ The report already stores existing agent data. Weekly summary adds these keys:
     ],
     "all_overdue_ids": [501],
     "all_upcoming_ids": [502],
+    "all_pending_ids": [504],
     "all_completed_ids": [503]
   },
 
@@ -980,4 +1000,4 @@ params[:support_agent_id] || params["support_agent_id"]
 
 ### Collapsible Task Tables in Dashboard
 
-The dashboard shows overdue/pending/completed task count cards. Each card's "View details" link toggles a collapsible table inline (via Bootstrap `data-bs-toggle="collapse"`) rather than redirecting to the deal page. All tables start collapsed.
+The dashboard shows overdue/upcoming/pending/completed task count cards. Each card's "View details" link toggles a collapsible table inline (via Bootstrap `data-bs-toggle="collapse"`) rather than redirecting to the deal page. All tables start collapsed. Upcoming = due within 7 days; Pending = no due date or due beyond 7 days.

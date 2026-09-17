@@ -1,3 +1,11 @@
+# Ruby 4.0 removed CGI from the standard library; the interpreter's own cgi.rb stub
+# (higher priority on $LOAD_PATH than any gem, even after `gem "cgi"` in the Gemfile)
+# now only defines CGI.escape/unescape via cgi/escape, so a plain `require "cgi"` here
+# still resolves to that stub and CGI.parse stays undefined. Rack/Rails already loads
+# cgi/escape elsewhere (CGI.escape/unescape/escapeHTML work fine app-wide), so pulling
+# in just cgi/core -- the piece nothing else loads -- from the "cgi" gem is what's needed.
+require 'cgi/core'
+
 class Report < ApplicationRecord
   include WithGridViewPreferences
 
@@ -20,6 +28,40 @@ class Report < ApplicationRecord
   # The report builder's root model, resolved from the template JSON.
   def root_class
     ReportBuilderConfig.new(template).root_class
+  end
+
+  # WithGridViewPreferences#model_columns_hash normally resolves columns via
+  # `model.constantize` — for a report-builder report `model` is "ReportBuilder"
+  # (derived from the url "/report_builder"), which isn't a real AR class, so
+  # the default lookup always raises and GridViewPreference#custom_data_type
+  # silently falls back to "String" for every column. That breaks anything
+  # downstream that branches on data_type (XLSX date/boolean formatting,
+  # numeric alignment). Override it here — for report-builder reports only —
+  # to resolve columns from the configured root/joined models instead.
+  def model_columns_hash
+    return super unless report_builder?
+
+    config = ReportBuilderConfig.new(template)
+    return {} unless config.valid?
+
+    # Start with the root model's own columns, keyed by bare column name
+    # (e.g. "name" => column) exactly like the default columns_hash.
+    hash = config.root_class.columns_hash.dup
+
+    # Then add every joined model's columns under their dotted relation path
+    # (e.g. "capital_commitments.amount" => column) so a GridViewPreference
+    # key for a joined column resolves too.
+    config.joins.each do |join_cfg| # rubocop:disable Rails/FindEach -- config.joins is a plain Array, not an AR::Relation
+      relation_path = join_cfg[:relation].to_s
+      klass = resolve_report_builder_join_class(config.root_class, relation_path)
+      next unless klass
+
+      klass.columns_hash.each do |col_name, column|
+        hash["#{relation_path}.#{col_name}"] = column
+      end
+    end
+
+    hash
   end
 
   def validate_notification_recipients
@@ -259,5 +301,23 @@ class Report < ApplicationRecord
           .pluck(:email)
           .uniq
           .join(",")
+  end
+
+  private
+
+  # Walks real AR reflections from root_class along a dotted relation path
+  # (e.g. "fund.fund_manager") — mirrors ReportBuilderController#resolve_join_klass —
+  # so model_columns_hash above only ever touches actually-joined models.
+  def resolve_report_builder_join_class(root_class, relation_path)
+    klass = root_class
+    relation_path.to_s.split(".").each do |part|
+      reflection = klass.reflect_on_association(part.to_sym)
+      return nil unless reflection
+
+      klass = reflection.klass
+    end
+    klass
+  rescue StandardError
+    nil
   end
 end

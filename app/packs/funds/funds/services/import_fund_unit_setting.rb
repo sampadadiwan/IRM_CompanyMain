@@ -13,7 +13,7 @@ class ImportFundUnitSetting < ImportUtil
     update_only = row_data["Update Only"]
 
     fund = import_upload.entity.funds.where(name: row_data["Fund"]).first
-    raise "Fund not found" unless fund
+    raise "Fund not found: #{row_data['Fund']}" unless fund
 
     fund_unit_setting = FundUnitSetting.where(fund_id: fund.id,
                                               entity_id: import_upload.entity_id, name:).first
@@ -24,7 +24,7 @@ class ImportFundUnitSetting < ImportUtil
         saved = save_fus(fund_unit_setting, fund, row_data, custom_field_headers, import_upload)
       else
         # Update only, but we dont have a pre-existing fund_unit_setting
-        raise "Skipping: FundUnitSetting not found for update"
+        raise "Skipping: no fund unit setting found to update for #{fund.name}"
       end
     elsif fund_unit_setting.nil?
       fund_unit_setting = FundUnitSetting.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)

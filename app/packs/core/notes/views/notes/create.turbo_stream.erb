@@ -1,0 +1,20 @@
+<%# Inline note creation: drop the new row at the top of the list and put the
+    form frame back to blank, rather than navigating away from the page that
+    opened it. Mirrors tasks/create.turbo_stream.erb.
+
+    The row is only prepended when the note belongs to the list on screen — one
+    created outside that list's scope (a different stakeholder, or no contact
+    when the list is filtered to one) would otherwise look like it belongs until
+    a reload silently dropped it. The flash says where it went instead. %>
+<% if @note_in_list_scope %>
+  <%= turbo_stream.prepend("notes_table_body", partial: "notes/note", locals: { note: @note }) %>
+<% end %>
+<%= turbo_stream.replace("new_note", partial: "notes/blank") %>
+<% notice = if @note_in_list_scope
+              "Note was successfully created."
+            elsif @note.owner.present?
+              "Note created for #{@note.owner}. It is not shown here — this list is filtered."
+            else
+              "Note created. It is not shown here — this list is filtered."
+            end %>
+<%= turbo_stream.update("user_alert", partial: "layouts/alerts", locals: { notice: notice }) %>

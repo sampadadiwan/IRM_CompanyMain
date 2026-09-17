@@ -10,6 +10,9 @@
 class AccountEntryList < BaseList
   Result = Struct.new(:q, :account_entries, :fund, :data_frame, :adhoc_json, :template, :time_series, :pivot, :row_limit_exceeded, :error, :redirect_url, keyword_init: true)
 
+  REPORTING_DATE_LOWER_BOUND_PREDICATES = %w[gt gteq].freeze
+  REPORTING_DATE_UPPER_BOUND_PREDICATES = %w[lt lteq].freeze
+
   # @param current_user [User] The user performing the action.
   # @param params [Hash] The parameters for filtering and search.
   # @param request_referer [String] Optional referer URL for redirects on error.
@@ -29,7 +32,7 @@ class AccountEntryList < BaseList
     @q = AccountEntry.ransack(@params[:q])
 
     @account_entries = apply_policy_scope(@q.result, &)
-    @account_entries = @account_entries.includes(:capital_commitment, :fund)
+    @account_entries = @account_entries.includes(:fund, :investor, capital_commitment: :investor_kyc)
 
     sort_by_id_then_existing
     filter_index
@@ -41,12 +44,41 @@ class AccountEntryList < BaseList
 
   private
 
+  # Force a reporting_date lower bound for perf, unless the user already gave one.
+  #
+  # Ransack accepts params[:q] in two shapes: a simple hash ("reporting_date_gt" => ...)
+  # or an "advanced search" condition tree from the search builder UI.
   def ensure_default_filters
     @params[:q] ||= {}
-    # Force reporting_date filter for perf if user didn't constrain reporting_date
-    return if ransack_has_attr?(@params[:q], 'reporting_date')
 
-    @params[:q][:reporting_date_gt] = I18n.l(Time.zone.today.beginning_of_year)
+    reporting_date_conditions = AccountEntry.ransack(@params[:q]).conditions.select do |condition|
+      condition.attributes.map(&:name).include?('reporting_date')
+    end
+
+    # A gt/gteq ("greater than") condition already bounds the query on the left —
+    # nothing to do. An eq ("equals") condition pins to a single date, which bounds
+    # it too. An lt/lteq ("less than") condition alone does NOT bound the left side,
+    # so it doesn't count as already-constrained.
+    already_has_lower_bound = reporting_date_conditions.any? { |c| REPORTING_DATE_LOWER_BOUND_PREDICATES.include?(c.predicate_name) || c.predicate_name == 'eq' }
+    return if already_has_lower_bound
+
+    # No lower bound: default one in. If the user gave an upper bound, anchor to the
+    # start of *that* year (e.g. "before 2026-06-15" -> default "on/after 2026-01-01").
+    # Otherwise just use the start of the current year.
+    upper_bound = reporting_date_conditions.find { |c| REPORTING_DATE_UPPER_BOUND_PREDICATES.include?(c.predicate_name) }
+    year = reporting_date_condition_year(upper_bound) || Time.zone.today.year
+    # ISO: ransack parses this back with Date._parse, which is locale-blind and reads
+    # slashed dates as dd/mm/yyyy. Jan 1 is symmetric so it never misparsed, but the
+    # localized form was still wrong in kind -- see the reporting_date link in RunFormulas.
+    @params[:q][:reporting_date_gt] = Date.new(year, 1, 1).to_fs(:db)
+  end
+
+  def reporting_date_condition_year(condition)
+    return nil unless condition
+
+    Date.parse(condition.values.first&.value.to_s).year
+  rescue ArgumentError, TypeError
+    nil
   end
 
   def build_result_attributes
@@ -94,41 +126,6 @@ class AccountEntryList < BaseList
       page: @params[:page],
       per_page: @params[:per_page] || 20
     ).call
-  end
-
-  def simple_predicate_match?(query_hash, attrs)
-    query_hash.any? { |k, _| attrs.any? { |a| k.to_s == a || k.to_s.start_with?("#{a}_") } }
-  end
-
-  def advanced_condition_match?(query_hash, attrs)
-    queue = [query_hash]
-    while (node = queue.shift)
-      [node['c'], node[:c], node['g'], node[:g]].compact.each do |children|
-        children_list = children.is_a?(Hash) ? children.values : Array(children)
-
-        children_list.each do |item|
-          item_hash = item.is_a?(Hash) ? item : nil
-          next unless item_hash
-
-          queue << item_hash if item_hash.key?('c') || item_hash.key?(:c) || item_hash.key?('g') || item_hash.key?(:g)
-
-          return true if check_attributes_match(item_hash, attrs)
-        end
-      end
-    end
-    false
-  end
-
-  def check_attributes_match(item, attrs)
-    a_field = item['a'] || item[:a]
-    a_list = case a_field
-             when Hash then a_field.values
-             when Array then a_field
-             else []
-             end
-
-    names = a_list.filter_map { |h| h.is_a?(Hash) ? (h['name'] || h[:name] || h['value'] || h[:value]) : h }.map(&:to_s)
-    names.any? { |n| attrs.any? { |a| n == a || n.start_with?("#{a}_") || n.end_with?("_#{a}") } }
   end
 
   def filter_index
@@ -224,17 +221,5 @@ class AccountEntryList < BaseList
       # Ransack gave us no order at all → default to id
       @account_entries = @account_entries.reorder(nil).order("account_entries.id ASC")
     end
-  end
-
-  # Checks whether Ransack params include any of the given attribute names.
-  def ransack_has_attr?(q_param, attrs)
-    return false if q_param.blank?
-
-    query_hash = q_param.respond_to?(:to_unsafe_h) ? q_param.to_unsafe_h : q_param
-    attrs = Array(attrs).map!(&:to_s)
-
-    return true if simple_predicate_match?(query_hash, attrs)
-
-    advanced_condition_match?(query_hash, attrs)
   end
 end

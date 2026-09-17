@@ -346,7 +346,8 @@ async toggleSessions() {
     if (res.success && res.sessions.length > 0) {
       list.innerHTML = res.sessions.map(s => {
         const date = new Date(s.updated_at)
-        const dateStr = date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+        // undefined locale = the visitor's own browser/OS locale, not a hardcoded region.
+        const dateStr = date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
         const isActive = s.id === this.sessionIdValue
         const statusBadge = s.status === "escalated" ? '<span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem">Escalated</span>' : ""
 
@@ -442,7 +443,7 @@ newChat() {
         } else {
       div.classList.add("justify-content-start")
       div.innerHTML = `
-        <div style="max-width:80%;">
+        <div style="max-width:100%;">
           <div class="bg-light rounded-4 py-2 px-3" style="border-bottom-left-radius:4px!important">${this.formatMarkdown(content)}</div>
           ${messageId && this.feedbackEnabledValue ? this.feedbackRowHtml(messageId, feedbackRating) : ""}
         </div>

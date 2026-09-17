@@ -2,80 +2,13 @@
 <% if params[:q].present? || capital_call.present? %>
   <div class="btn-group">
     <% if capital_call.present? %>
-      <% unverified_count = capital_call.capital_remittances.unverified.count %>
-      <button type="button" class="btn btn-outline-primary" id="capital_remittances_bulk_verify_btn"
-              data-bs-toggle="modal" data-bs-target="#bulkVerifyRemittancesModal">
-        <i class="ti ti-checks"></i> Verify Pending Remittances
-      </button>
-
-      <div class="modal fade" id="bulkVerifyRemittancesModal" tabindex="-1" aria-labelledby="bulkVerifyRemittancesModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="bulkVerifyRemittancesModalLabel">Verify Pending Remittances</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <%= form_with url: bulk_actions_capital_remittances_path(bulk_action: "Verify", capital_call_id: capital_call.id, verified: "false"), method: :post do %>
-              <div class="modal-body">
-                <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
-                  <div class="fw-bold text-dark small"><%= unverified_count %> Unverified Remittance<%= "s" unless unverified_count == 1 %> Found</div>
-                  <div class="text-muted small">The following will happen when you click <strong>Verify Remittances</strong>:</div>
-                </div>
-
-                <div class="d-flex flex-column gap-2 mb-3">
-                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                          style="width:36px;height:36px;background:#dbeafe;">
-                      <i class="ti ti-shield-check fs-5" style="color:#2563eb;"></i>
-                    </span>
-                    <div>
-                      <div class="fw-semibold text-dark lh-sm">Only unverified remittances are affected</div>
-                      <div class="text-muted small mt-1">Any remittance for this call that is already verified is left untouched — nothing gets un-verified.</div>
-                    </div>
-                  </div>
-
-                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                          style="width:36px;height:36px;background:#fef3c7;">
-                      <i class="ti ti-refresh fs-5" style="color:#d97706;"></i>
-                    </span>
-                    <div>
-                      <div class="fw-semibold text-dark lh-sm">Status recalculated, fees unchanged</div>
-                      <div class="text-muted small mt-1">Each remittance's status updates to Paid, Overpaid, or Overdue based on the amount collected. Call fees are not recalculated — the fees set when the remittance was created or last updated are kept as-is.</div>
-                    </div>
-                  </div>
-
-                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                          style="width:36px;height:36px;background:#f3e8ff;">
-                      <i class="ti ti-bell-check fs-5" style="color:#9333ea;"></i>
-                    </span>
-                    <div>
-                      <div class="fw-semibold text-dark lh-sm">Payment notifications sent</div>
-                      <div class="text-muted small mt-1">Investors are notified for any associated remittance payments as part of verification.</div>
-                    </div>
-                  </div>
-
-                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
-                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                          style="width:36px;height:36px;background:#dcfce7;">
-                      <i class="ti ti-clock fs-5" style="color:#16a34a;"></i>
-                    </span>
-                    <div>
-                      <div class="fw-semibold text-dark lh-sm">Runs in the background</div>
-                      <div class="text-muted small mt-1">Processing happens asynchronously — refresh this tab after a few minutes to see updated statuses.</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
-                <%= submit_tag "Verify Remittances", class: "btn btn-outline-success" %>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      </div>
+      <% if capital_call.approved?%>
+        <%= link_to bulk_verify_modal_capital_remittances_path(capital_call_id: capital_call.id),
+                    id: "capital_remittances_bulk_verify_btn", class: "btn btn-outline-primary",
+                    data: { turbo_frame: "remote_modal" } do %>
+          <i class="ti ti-checks"></i> Verify Pending Remittances
+        <% end %>
+      <% end %>
     <% else %>
       <div class="dropdown">
         <button class="btn btn-outline-primary dropdown-toggle" type="button" id="doc_actions"
@@ -87,9 +20,30 @@
           <%= button_to "Toggle Verify",
               bulk_actions_capital_remittances_path("bulk_action": "Verify", params: params.to_unsafe_h),
               class: "dropdown-item",
-              data: {msg:, action: "click->confirm#popup", method: :post}  %>
+              data: {msg:, action: "click->confirm#popup", method: :post} %>
+          <%# Self-service reset of the Call Notice "Notification Sent" flag (user guide, Question 3).
+              Two idempotent actions rather than a toggle so a mixed selection can't silently flip
+              never-notified investors to "sent" and hide them from the next Send Notification. %>
+          <% unsent_msg = "This will mark every remittance in the search results (including results on other pages) as NOT having received the Call Notice, so the next call-level Send Notification includes them again. Use this after a correction or a bounced email. Proceed?" %>
+          <%= button_to "Mark Notification Unsent",
+              bulk_actions_capital_remittances_path("bulk_action": "Mark Notification Unsent", params: params.to_unsafe_h),
+              class: "dropdown-item",
+              data: {msg: unsent_msg, action: "click->confirm#popup", method: :post}  %>
+          <% sent_msg = "This will mark every remittance in the search results (including results on other pages) as having already received the Call Notice, so the call-level Send Notification skips them. Use this for investors notified outside the system. Proceed?" %>
+          <%= button_to "Mark Notification Sent",
+              bulk_actions_capital_remittances_path("bulk_action": "Mark Notification Sent", params: params.to_unsafe_h),
+              class: "dropdown-item",
+              data: {msg: sent_msg, action: "click->confirm#popup", method: :post}  %>
         </div>
       </div>
     <% end %>
   </div>
+
+  <%# Placed outside .btn-group — inside it, this empty frame was a sibling after the
+      trigger link, so Bootstrap's :last-child button-group CSS squared off the link's
+      right corner. Fetched fresh from the server on every click of the trigger above
+      (see #bulk_verify_modal), so the modal always reflects the current
+      unverified/eligible state instead of whatever was baked into the page at the last
+      full load. %>
+  <%= turbo_frame_tag "remote_modal" if capital_call.present? %>
 <% end %>

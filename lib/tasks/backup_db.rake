@@ -41,7 +41,31 @@ namespace :db do
     puts "#{prefix}→ Restoring via baked script on #{host} (this can take a while)"
 
     exit_code = nil
-    Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15) do |ssh|
+    # verify_host_key: :never — DR boxes get torn down and recreated with a
+    # fresh SSH host key but frequently land back on the same private IP
+    # (small subnet, low-order IP reuse); a strict host-key check rejects that
+    # as a fingerprint mismatch even though it's a legitimate new box. Matches
+    # config/deploy/staging_in.rb's ssh_options, which disables it for the
+    # same reason.
+    Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) do |ssh|
+      # Clear staging left behind by a PREVIOUS failed restore, before anything
+      # else touches the box.
+      #
+      # Each attempt stages the backup in /tmp/xb_<pid> — tens of GB on
+      # production — and an aborted run never reaches the script's own
+      # cleanup(). Two failures in a row therefore fill the disk to 0 bytes, at
+      # which point the next attempt cannot even SCP this 24KB script onto the
+      # box: DR becomes unrecoverable without someone SSHing in by hand, which
+      # is the worst possible time to need manual intervention. Found on both
+      # staging and production DB boxes during the 2026-08-29 drills.
+      #
+      # Runs over the already-open SSH session and needs no disk space itself.
+      stale = ssh.exec!("sudo du -shc /tmp/xb_* 2>/dev/null | tail -1 | awk '{print $1}'").to_s.strip
+      unless stale.empty?
+        puts "#{prefix}🧹 Clearing #{stale} of staging left by a previous failed restore (/tmp/xb_*)"
+        ssh.exec!("sudo rm -rf /tmp/xb_*")
+      end
+
       # Instances from pre-bake AMIs (no rebake since the backup tooling was
       # added to the Packer template) don't have the baked script — bridge by
       # generating the env-specific script here and uploading it. Same script,
@@ -60,7 +84,7 @@ namespace :db do
           end
         end
         script = "/home/ubuntu/db_backup_xtra.sh"
-        Net::SCP.start(host, "ubuntu", keys: [key_path], timeout: 15) do |scp|
+        Net::SCP.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) do |scp|
           scp.upload!(local_script.to_s, script)
         end
         # Contains credentials — owner-only, executable
@@ -127,7 +151,8 @@ namespace :db do
   # independent, so running them in parallel cuts the longest DR phase from
   # primary+replica to max(primary, replica). The ONLY ordering constraint is
   # reset_replication at the end: it reads the PRIMARY's live binlog position
-  # (SHOW BINARY LOG STATUS), so it must wait for BOTH restores to finish.
+  # (SHOW BINARY LOG STATUS on 8.4+, SHOW MASTER STATUS on 8.0 — the fleet runs
+  # both), so it must wait for BOTH restores to finish.
   # Safe because traffic is off (nginx maintenance mode) between restore and
   # replication setup — nothing writes to the primary in that window.
   desc "DR: restore primary AND replica in parallel, then re-point replication"

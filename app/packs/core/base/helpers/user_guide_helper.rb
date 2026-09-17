@@ -66,6 +66,9 @@ module UserGuideHelper
     'carry_computations' => 'carry_computations_user_guide.md',
     'fund_ratios' => 'fund_ratios_user_guide.md',
     'fund_ratio_run_templates' => 'fund_ratio_run_templates_user_guide.md',
+    'allocation_run_templates' => 'allocation_run_templates_user_guide.md',
+    'allocation_run_template_groups' => 'allocation_run_templates_user_guide.md',
+    'allocation_group_runs' => 'allocation_run_templates_user_guide.md',
     'fund_units' => 'fund_units_user_guide.md',
     'fund_unit_settings' => 'fund_units_user_guide.md',
     'ratio_formulas' => 'ratio_formulas_user_guide.md',
@@ -112,6 +115,9 @@ module UserGuideHelper
     'validation_rule_overrides' => 'validation_rule_engine_user_guide.md',
     'validation_rules' => 'validation_rule_engine_user_guide.md',
 
+    # Audit Trail
+    'audits' => 'audit_trail_user_guide.md',
+
     # Settings & Utilities
     'exchange_rates' => 'tracking_currency_guide.md',
     'db_dumps' => 'db_dumps_user_guide.md',
@@ -135,6 +141,11 @@ module UserGuideHelper
     'CashFlowAssistantAgent' => 'agents/cash_flow_assistant_agent_user_guide.md',
     'PortfolioReportAgent' => 'agents/portfolio_report_agent_user_guide.md',
     'CustomerSupportAgent' => 'customer_support_agent_user_guide.md',
+    'SideLetterObligationAgent' => 'agents/side_letter_obligation_agent_user_guide.md',
+    # Side letter obligation pages share the agent's guide (extraction, review
+    # gate, tasks, alerts are all explained there)
+    'side_letters' => 'agents/side_letter_obligation_agent_user_guide.md',
+    'side_letter_obligations' => 'agents/side_letter_obligation_agent_user_guide.md',
     # No dedicated guide yet — fall back to the general overview guide.
     'FundStatsAgent' => 'support_agents_user_guide.md',
     'LpAssistantAgent' => 'support_agents_user_guide.md',

@@ -1,0 +1,81 @@
+<%# Kanban board view of tasks (params[:board] branch of tasks/index).
+    The filter bar (assignee, stakeholder, touch point, tag, category, due date)
+    is tasks/_filter_bar, shared with the list view; drag & drop is handled by
+    task_board_controller.js hitting PATCH update_status. %>
+<%# The frame events are listened for here rather than on the frame itself: they
+    bubble, this element is never replaced, and turbo:frame-load alone would only
+    fire for the first card opened (subsequent ones re-render the same frame). %>
+<div data-controller="task-board"
+     data-action="turbo:frame-render->task-board#scrollToForm turbo:frame-load->task-board#scrollToForm">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <%# Name what the board is scoped to (a deal, a deal investor, a stakeholder,
+        a person) — otherwise every board reads as the same "Tasks Board" and
+        there is no way to tell a scoped board from the firm-wide one. The name
+        links back to that record: the board is normally opened from there, and
+        this is the way back. Plain text when it has no show route. %>
+    <h1 class="h3 mb-0 text-gray-800 flex-shrink-0">
+      <% if @board_scope_label.present? %>
+        <% if @board_scope_path.present? %>
+          <%= link_to @board_scope_label, @board_scope_path %>
+        <% else %>
+          <%= @board_scope_label %>
+        <% end %>
+      <% else %>
+        Tasks Board
+      <% end %>
+    </h1>
+
+    <%# flex-nowrap + overflow-auto: the row scrolls horizontally instead of
+        wrapping to a second line when the heading + selects don't fit. %>
+    <div class="d-flex flex-nowrap align-items-center gap-2 overflow-auto">
+      <%= render "/tasks/filter_bar" %>
+
+      <%# Carries the full filter scope back — including an owner filter that
+          arrived as owner_id/owner_type from the list's Board link %>
+      <%= link_to tasks_path(assigned_to_id: params[:assigned_to_id],
+                             investor_id: params[:investor_id],
+                             owner_id: params[:owner_id],
+                             owner_type: params[:owner_type],
+                             deal_id: params[:deal_id],
+                             deal_investor_id: params[:deal_investor_id],
+                             touch_point_id: params[:touch_point_id],
+                             due_filter: params[:due_filter],
+                             q: filter_query),
+                  class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center flex-shrink-0",
+                  data: { turbo_frame: "_top" } do %>
+        <i class="ti ti-list"></i> List
+      <% end %>
+    </div>
+  </div>
+
+  <%# The board has no pagination, so it is capped (TasksController::BOARD_CARD_LIMIT).
+      Say so when the cap bites — a silently truncated board reads as the full
+      set of work, which is exactly the wrong impression on a busy deal. %>
+  <% if @board_card_limit_reached %>
+    <div class="alert alert-warning" role="alert">
+      <i class="ti ti-alert-triangle"></i>
+      Showing the first <%= TasksController::BOARD_CARD_LIMIT %> tasks (soonest due first) — there are more than this board displays.
+      Use the filters above, or the List view, to see the rest.
+    </div>
+  <% end %>
+
+  <%# Inline edit target: clicking a card loads its form here (the same
+      "new_task" frame the list views use), and the board scrolls to it. Empty
+      until a card is clicked, and emptied again by update.turbo_stream.
+      The scroll is wired on the board root below, not here — this element is
+      replaced wholesale after a save. %>
+  <%= turbo_frame_tag "new_task" %>
+
+  <div class="row task-board">
+    <% grouped = tasks.group_by(&:status) %>
+    <% Task.statuses.keys.each do |status| %>
+      <% column_tasks = grouped.fetch(status, []) %>
+      <%# Done answers "what did we just finish" over a rolling window, so it
+          reads newest-first — the opposite of the due-date order the active
+          columns arrive in. Sorted here rather than in SQL because one query
+          feeds all three columns, and it is already capped and loaded. %>
+      <% column_tasks = column_tasks.sort_by { |t| [-(t.completed_on&.to_time&.to_i || 0), -t.id] } if status == "done" %>
+      <%= render "/tasks/board_column", status: status, tasks: column_tasks %>
+    <% end %>
+  </div>
+</div>

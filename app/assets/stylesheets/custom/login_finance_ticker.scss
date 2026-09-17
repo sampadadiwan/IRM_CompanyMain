@@ -1,0 +1,136 @@
+/* Running finance banner on the devise / login pages.
+   Markup lives in devise/shared/_finance_ticker.html.erb. */
+
+// One full loop. The track holds two copies of the tile list and travels exactly
+// -50%, so the seam is invisible and the speed stays constant.
+$finance-ticker-duration: 55s;
+
+// Horizontal space between tiles. Applied as margin-right on the tile (not as a
+// flex gap) so that -50% of the track is exactly one copy including its trailing
+// space - a flex gap leaves half a gap unaccounted for and the loop visibly jumps.
+$finance-tile-gap: 14px;
+
+.finance-ticker {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+
+  // Fade the tiles out at both edges rather than clipping them dead.
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%);
+
+  &__row {
+    overflow: hidden;
+  }
+
+  &__track {
+    display: flex;
+    align-items: stretch;
+    width: max-content;
+    animation: finance-ticker-scroll $finance-ticker-duration linear infinite;
+    // Keeps the animation on the compositor instead of repainting every frame.
+    will-change: transform;
+  }
+
+  // Row 2 runs the other way (and slightly slower) so the panel does not read as
+  // one big block sliding sideways.
+  &__row--2 &__track {
+    animation-direction: reverse;
+    animation-duration: $finance-ticker-duration * 1.25;
+  }
+
+  // Let people stop it if they want to actually read a tile.
+  &:hover &__track {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes finance-ticker-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+.finance-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  margin-right: $finance-tile-gap;
+  padding: 11px 18px;
+  border-radius: 14px;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 8px 18px -14px rgba(15, 23, 42, 0.5);
+
+  [data-bs-theme="dark"] & {
+    background: rgba(30, 41, 59, 0.72);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: #4299e1;
+  }
+
+  &__label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #334155;
+    letter-spacing: 0.01em;
+
+    [data-bs-theme="dark"] & {
+      color: #e2e8f0;
+    }
+  }
+
+  // Cycle the icon accent so a long run of tiles keeps some colour variation.
+  &:nth-child(4n + 2) &__icon { color: #38a169; }
+  &:nth-child(4n + 3) &__icon { color: #ed8936; }
+  &:nth-child(4n + 4) &__icon { color: #805ad5; }
+}
+
+// Bar variant: pinned to the bottom of the viewport on screens where the brand
+// panel (and its ticker) is hidden.
+.finance-ticker--bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 12px 0;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+
+  [data-bs-theme="dark"] & {
+    background: rgba(15, 23, 42, 0.88);
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .finance-tile {
+    box-shadow: none;
+    background: transparent;
+    border-color: transparent;
+    padding: 4px 14px;
+  }
+}
+
+// Keep the login card clear of the fixed bottom bar below the xl breakpoint.
+@media (max-width: 1199.98px) {
+  .authentication-login {
+    padding-bottom: 96px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finance-ticker__track {
+    animation: none;
+  }
+}

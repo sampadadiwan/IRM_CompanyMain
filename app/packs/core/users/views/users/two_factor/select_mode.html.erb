@@ -1,5 +1,5 @@
 <%# Two-factor mode selection: WhatsApp (simple) or Authenticator (secure) %>
-<div id="two_factor_select_mode_page">
+<div id="two_factor_select_mode_page" data-controller="two-factor-mode">
   <div class="login-container">
     <div class="login-header">
       <h2 class="h3 mb-2 fw-normal">Set Up Two-Factor Authentication</h2>
@@ -8,44 +8,88 @@
 
     <div class="login-body">
       <%- flash.each do |name, msg| -%>
-        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert #{name.to_s == 'alert' ? 'alert-danger' : 'alert-info'} text-center" if msg.is_a?(String) %>
       <%- end -%>
+
+      <%# Shown only to a user who is here BECAUSE their method was reset (TwoFactorReset),
+          so they know why they are being asked to choose again and that the old method is
+          gone. First-time enrollers never see it — two_factor_reset_at is nil for them. %>
+      <% if @user.two_factor_reset_at.present? %>
+        <div class="alert alert-warning" id="two_factor_reset_banner">
+          <i class="fas fa-exclamation-triangle me-1"></i>
+          Your two-factor method was reset on <strong><%= l(@user.two_factor_reset_at, format: :long) %></strong>
+          <%= @user.two_factor_reset_by_id == @user.id ? "by you" : "by your administrator" %>.
+          Your previous method no longer works — please choose a new method to continue.
+        </div>
+      <% end %>
 
       <%= form_tag select_mode_two_factor_path, method: :post, data: { turbo: false } do %>
         <div class="d-flex flex-column gap-3 mb-4">
 
-          <label class="d-flex align-items-start gap-3 p-3 border rounded <%= @user.whatsapp_enabled? ? 'cursor-pointer' : 'opacity-50 bg-light' %>">
-            <%= radio_button_tag :two_factor_mode, "whatsapp", false,
-                  class: "mt-1 flex-shrink-0",
-                  disabled: !@user.whatsapp_enabled? %>
-            <div>
-              <div class="fw-semibold">
-                <i class="fab fa-whatsapp text-success"></i> WhatsApp
-              </div>
-              <% if @user.whatsapp_enabled? %>
-                <div class="text-muted">
-                  A code is sent to <strong><%= @user.masked_phone_with_call_code %></strong> each time you log in. Simpler — no app to install.
+          <%# Both phone-based modes are suppressed entirely when we hold no phone number
+              for the user: there is nowhere to send a code, so neither is a choice they
+              could make. Only the authenticator option survives, and it is preselected
+              below. The "contact your administrator" variant below is for the different
+              case where we DO have a number but WhatsApp has not been switched on. %>
+          <% if @user.phone.present? %>
+            <label class="mfa-option <%= 'mfa-option--disabled' unless @user.whatsapp_enabled? %>">
+              <%= radio_button_tag :two_factor_mode, "whatsapp", false,
+                    disabled: !@user.whatsapp_enabled?,
+                    data: { two_factor_mode_target: "radio", action: "change->two-factor-mode#toggle" } %>
+              <div class="mfa-option__body">
+                <div class="mfa-option__title">
+                  <i class="fab fa-whatsapp text-success"></i> WhatsApp
+                  <span class="mfa-option__badge">Easiest</span>
                 </div>
-              <% else %>
-                <div class="text-muted">
-                  A code is sent to your WhatsApp each time you log in.
-                  <span class="text-warning fw-semibold">WhatsApp is not enabled for your account — contact your administrator.</span>
-                </div>
-              <% end %>
-            </div>
-          </label>
-
-          <label class="d-flex align-items-start gap-3 p-3 border rounded cursor-pointer">
-            <%= radio_button_tag :two_factor_mode, "authenticator", !@user.whatsapp_enabled?, class: "mt-1 flex-shrink-0" %>
-            <div>
-              <div class="fw-semibold">
-                <i class="fas fa-shield-alt text-primary"></i> Authenticator App
-              </div>
-              <div class="text-muted">
-                Use Google Authenticator, Authy, or any TOTP app. More secure — works offline.
                 <% if @user.whatsapp_enabled? %>
-                  You can still opt to receive codes via WhatsApp at login.
+                  <div class="mfa-option__desc">
+                    A code is sent to <strong><%= @user.masked_phone_with_call_code %></strong> each time you log in.
+                    Nothing to install — but you'll need mobile signal.
+                  </div>
+                <% else %>
+                  <div class="mfa-option__desc">
+                    A code is sent to your WhatsApp each time you log in.
+                    <span class="mfa-option__warning">Not enabled for your account — contact your administrator.</span>
+                  </div>
                 <% end %>
+              </div>
+            </label>
+          <% end %>
+
+          <%# SMS is offered only when the deployment has it switched on AND we hold a number
+              we can actually text. There is no per-user opt-in column — a valid mobile
+              number is itself the entitlement. See SmsDeliverable. The list is the one the
+              reset modal and email also read (available_two_factor_modes); WhatsApp above
+              is rendered from its parts because a greyed-out row is deliberate. %>
+          <% if @user.available_two_factor_modes.include?("sms") %>
+            <label class="mfa-option">
+              <%= radio_button_tag :two_factor_mode, "sms", false,
+                    data: { two_factor_mode_target: "radio", action: "change->two-factor-mode#toggle" } %>
+              <div class="mfa-option__body">
+                <div class="mfa-option__title">
+                  <i class="fas fa-comment-dots text-info"></i> Text message (SMS)
+                </div>
+                <div class="mfa-option__desc">
+                  A code is texted to <strong><%= @user.masked_phone_with_call_code %></strong> each time you log in.
+                  Nothing to install — but you'll need mobile signal, and codes can take a few seconds to arrive.
+                </div>
+              </div>
+            </label>
+          <% end %>
+
+          <label class="mfa-option">
+            <%# Preselected whenever WhatsApp is not a live choice — whether because it is
+                switched off or because there is no number to send to. %>
+            <%= radio_button_tag :two_factor_mode, "authenticator", !@user.whatsapp_otp_enabled?,
+                  data: { two_factor_mode_target: "radio", action: "change->two-factor-mode#toggle" } %>
+            <div class="mfa-option__body">
+              <div class="mfa-option__title">
+                <i class="fas fa-shield-alt text-primary"></i> Authenticator App
+                <span class="mfa-option__badge">Most secure</span>
+              </div>
+              <div class="mfa-option__desc">
+                A free app on your phone shows a 6-digit code that changes every 30 seconds.
+                Works with no signal at all — on a plane, abroad, or underground.
               </div>
             </div>
           </label>
@@ -57,6 +101,44 @@
           <i class="fas fa-arrow-right"></i>
         </button>
       <% end %>
+
+      <%# ── Help section ─────────────────────────────────────────────────
+          Deliberately after the Continue button and visually separated: someone who
+          already knows what an authenticator app is should reach the button without
+          reading past a wall of onboarding material.
+
+          The authenticator block inside is hidden unless that mode is selected — it
+          is the tallest thing on the page and means nothing to a WhatsApp user. It
+          ships hidden and Stimulus reveals it, so the pre-JS state is already right
+          for the WhatsApp-enabled case (where nothing is preselected). %>
+      <section class="mfa-help-section" aria-labelledby="mfa-help-heading">
+        <h3 class="mfa-help-section__heading" id="mfa-help-heading">
+          <i class="fas fa-question-circle"></i> New to this?
+        </h3>
+
+        <%# The always-present line sits directly under the heading rather than below the
+            toggled block. When a mode other than Authenticator is selected the block is
+            hidden, and with the old order that left the heading stranded above a single
+            centred orphan line. %>
+        <p class="mfa-help-section__intro">
+          Not sure which to pick?
+          <%= link_to "Compare the options",
+                      public_guide_path("two_factor_authentication_user_guide"),
+                      target: "_blank", rel: "noopener" %>
+          <br>
+          You can change your method later from your profile page.
+        </p>
+
+        <div class="mfa-help-section__detail"
+             data-two-factor-mode-target="authenticatorHelp"
+             <%= "hidden" if @user.whatsapp_otp_enabled? %>>
+          <%= render "users/two_factor/guide_link" %>
+
+          <div class="mt-3">
+            <%= render "users/two_factor/authenticator_apps" %>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </div>

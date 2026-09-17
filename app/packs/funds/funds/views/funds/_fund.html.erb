@@ -19,6 +19,15 @@
       <% end %>
     <% end %>
   </td>
+  <td class="amount-col text-end">
+    <%= money_to_currency(fund.committed_amount, params) %>
+  </td>
+  <td class="amount-col text-end">
+    <%= money_to_currency(fund.collected_amount, params) %>
+  </td>
+  <td class="amount-col text-end">
+    <%= money_to_currency(fund.distribution_amount.abs, params) %>
+  </td>
   <% if params[:snapshot].present? %>
     <td class="date-col">
       <%= l fund.snapshot_date if fund.snapshot_date %>
@@ -28,6 +37,16 @@
     <%= link_to  t_common(:show) , fund , {class: "btn btn-outline-primary ti ti-eye" , aria: {
               label: "Show details for #{fund.name}"
             }} %>
+    <% if policy(fund).dashboard? %>
+      <%= link_to "Dashboard", dashboard_fund_path(fund), class: "btn btn-outline-secondary ti ti-layout-dashboard", aria: {
+                label: "View dashboard for #{fund.name}"
+              } %>
+    <% end %>
+    <% if policy(fund).report? %>
+      <%= link_to "Sign In Report", report_fund_path(fund, report: "dashboard/sign_in_count"), class: "btn btn-outline-info ti ti-login", aria: {
+                label: "View sign in report for #{fund.name}"
+              } %>
+    <% end %>
     <%= link_to "New Commitment", new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[investor_id]": params[:investor_id]), class: "btn btn-outline-success ti ti-plus" if params[:new_commitment].present? %>
     <% if params[:debug].present? %>
       <%= link_to "Analytics" , fund_path(id: fund.id, charts: true) , {class: "btn btn-outline-success" }%>

@@ -62,6 +62,22 @@ class CustomNotification < ApplicationRecord
 
   FUND_FALLBACK_OWNER_TYPES = %w[CapitalCall CapitalDistribution].freeze
 
+  # email_method values whose mailer attaches the owner's own generated/approved documents
+  # unconditionally (attach_all_files in CapitalRemittanceMailer / CapitalDistributionPaymentsMailer)
+  # - e.g. the call notice itself - regardless of what attachment_names says. Does NOT cover
+  # notify_capital_remittance_payment (CapitalRemittancePaymentMailer), which has no attach_all_files
+  # and so genuinely sends nothing unless attachment_names matches something.
+  AUTO_ATTACHED_EMAIL_METHODS = {
+    "CapitalCall" => %w[notify_capital_remittance reminder_capital_remittance],
+    "CapitalDistribution" => %w[send_notification]
+  }.freeze
+
+  # email_methods (for this owner_type/for_type) where leaving attachment_names blank still sends
+  # an attachment, so the "How to fill this in" hint can't claim blank means no attachments.
+  def auto_attach_email_methods
+    AUTO_ATTACHED_EMAIL_METHODS[owner_type] || AUTO_ATTACHED_EMAIL_METHODS[for_type] || []
+  end
+
   # { email_method => subject } of the fund-level default(s) this owner would otherwise fall back
   # to, so the form can warn that saving here overrides the fund's default for that email.
   def fund_default_notifications
@@ -92,9 +108,8 @@ class CustomNotification < ApplicationRecord
       [CapitalDistributionPaymentsMailer]
     elsif owner_type == "Fund"
       # FundInvestorKycMailer backs the "adhoc_kyc_notification" email_method (one email
-      # per unique InvestorKyc, deduped across commitments that share one) — kept second
-      # so mailer_class_for's fallback (mailer_classes.first) still resolves the
-      # inherited-only "adhoc_notification" to CapitalCommitmentMailer.
+      # per unique InvestorKyc, deduped across commitments that share one); CapitalCommitmentMailer
+      # backs "adhoc_fund_notification" (its own explicit method, mirroring adhoc_kyc_notification).
       [CapitalCommitmentMailer, FundInvestorKycMailer]
     elsif owner_type == "Deal"
       [DealMailer]
@@ -119,12 +134,11 @@ class CustomNotification < ApplicationRecord
                      elsif owner_type == "CapitalDistribution" || for_type == "CapitalDistribution"
                        mailer_classes.first.instance_methods(false).map(&:to_s)
                      elsif owner_type == "Fund"
-                       # flat_map across both Fund mailers so FundInvestorKycMailer's own
-                       # adhoc_kyc_notification method is discovered automatically.
-                       # "adhoc_notification" is still appended manually because it's
-                       # inherited-only on CapitalCommitmentMailer (never redefined there),
-                       # so it never shows up via instance_methods(false).
-                       mailer_classes.flat_map { |klass| klass.instance_methods(false).map(&:to_s) } + ["adhoc_notification"]
+                       # flat_map across both Fund mailers so CapitalCommitmentMailer's own
+                       # adhoc_fund_notification and FundInvestorKycMailer's own
+                       # adhoc_kyc_notification methods are both discovered automatically
+                       # via instance_methods(false).
+                       mailer_classes.flat_map { |klass| klass.instance_methods(false).map(&:to_s) }
                      elsif owner_type == "Deal"
                        %w[adhoc_notification deal_activity_move]
                      elsif owner
@@ -143,6 +157,39 @@ class CustomNotification < ApplicationRecord
   # rather than redefined on the subclass, so they don't show up in instance_methods(false).
   def mailer_class_for(method_name)
     mailer_classes.find { |klass| klass.instance_methods(false).map(&:to_s).include?(method_name.to_s) } || mailer_classes.first
+  end
+
+  # Best-guess "first available record" this notification could actually render against,
+  # for the Preview button on custom_notifications#show. Mirrors mailer_classes' branching
+  # order/coverage. Returns [record, route_helper_symbol, extra_route_params] — record is
+  # nil when for_type/owner_type has no preview route wired up yet (Send Document,
+  # InvestmentOpportunity, Deal, SecondarySale) or there's simply nothing to preview against.
+  def first_preview_target
+    if for_type == "InvestorKyc"
+      [owner.try(:investor_kycs)&.first, :preview_investor_kyc_path, {}]
+    elsif for_type == "Send Document" || for_type == "InvestmentOpportunity"
+      # No preview route wired up yet for these — checked ahead of the owner_type
+      # branches below (mirroring mailer_classes' order) so a Fund/Entity-owned
+      # notification of one of these for_types doesn't fall through and wrongly
+      # resolve a CapitalCommitment/CapitalRemittance target instead.
+      [nil, nil, {}]
+    elsif owner_type == "CapitalCall" || for_type == "CapitalCall"
+      if mailer_class_for(email_method) == CapitalRemittancePaymentMailer
+        [owner.capital_remittances.first&.capital_remittance_payments&.first, :preview_capital_remittance_payment_path, {}]
+      else
+        [owner.capital_remittances.first, :preview_capital_remittance_path, {}]
+      end
+    elsif owner_type == "CapitalDistribution" || for_type == "CapitalDistribution"
+      [owner.capital_distribution_payments.first, :preview_capital_distribution_payment_path, {}]
+    elsif owner_type == "Fund" && email_method == "adhoc_kyc_notification"
+      [owner.investor_kycs.distinct.first, :preview_investor_kyc_path, { fund_id: owner.id }]
+    elsif owner_type == "Fund"
+      [owner.capital_commitments.first, :preview_capital_commitment_path, {}]
+    elsif owner_type == "Approval"
+      [owner.approval_responses.first, :preview_approval_response_path, {}]
+    else
+      [nil, nil, {}]
+    end
   end
 
   def placeholders_for(method_name)

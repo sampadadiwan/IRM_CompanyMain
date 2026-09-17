@@ -23,6 +23,17 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittances
   end
 
+  # Renders a fresh copy of the bulk-verify modal into the shared "remote_modal" turbo
+  # frame, so reopening it after a previous verify always reflects the current
+  # unverified/collected-amount state instead of whatever was baked into the page
+  # at the last full load.
+  def bulk_verify_modal
+    @capital_call = CapitalCall.find(params[:capital_call_id])
+    authorize @capital_call, :update?
+
+    render layout: false
+  end
+
   def allocate_units
     fund_unit, msg = DefaultUnitAllocationEngine.new.allocate_remittance(@capital_remittance, @capital_remittance.capital_call.name)
     if fund_unit&.persisted?
@@ -41,8 +52,9 @@ class CapitalRemittancesController < ApplicationController
   end
 
   def send_notification
-    if @capital_remittance.capital_commitment.skip_doc_gen?
-      redirect_to capital_remittance_path(@capital_remittance), alert: "Notification cannot be sent as skip_doc_gen is set to Yes in the Commitment"
+    reasons = @capital_remittance.notification_blocked_reasons
+    if reasons.any?
+      redirect_to capital_remittance_path(@capital_remittance), alert: "Notification cannot be sent: #{reasons.join(', ')}."
     else
       reminder = @capital_remittance.notification_sent
       @capital_remittance.send_notification(reminder:)
@@ -158,6 +170,6 @@ class CapitalRemittancesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_remittance_params
-    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :call_amount, :notes, :remittance_date, :verified, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :call_amount, :notes, :remittance_date, :verified, :notification_sent, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

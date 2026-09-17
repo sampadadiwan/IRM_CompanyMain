@@ -19,11 +19,6 @@
             <span><i class="ti ti-help"></i></span>
             <span class="hide-menu"><%= t('sidebar.support_mapping') %></span></a>
         </li>
-        <li class="sidebar-item">
-          <a class="sidebar-link" href="/blazer">
-            <span><i class="ti ti-files"></i></span>
-            <span class="hide-menu"><%= t('sidebar.blazer_reports') %></span></a>
-        </li>
       <% end %>
       <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role)  %>
         <!-- Divider -->
@@ -103,6 +98,16 @@
                 </a>
               </li>
               <li class="sidebar-item">
+                <a class="sidebar-link" href="/allocation_run_templates"
+                   data-bs-toggle="tooltip" data-bs-placement="right"
+                   data-bs-title="Define a close once — funds in run order — and run it for any period with one action">
+                  <div class="round-16 d-flex align-items-center justify-content-center">
+                    <i class="ti ti-chevron-right fs-2"></i>
+                  </div>
+                  <span class="hide-menu">Allocation Run Templates</span>
+                </a>
+              </li>
+              <li class="sidebar-item">
                 <a class="sidebar-link" href="/fund_ratio_runs"
                    data-bs-toggle="tooltip" data-bs-placement="right"
                    data-bs-title="History of all ratio run executions">
@@ -152,7 +157,9 @@
               </li>
               <% Task::CATEGORIES.each do |category| %>
                 <li class="sidebar-item">
-                  <a class="sidebar-link" href="/tasks?q[category_eq]=<%= category %>">
+                  <%# tasks_path rather than a hand-built query string: category names
+                      can contain spaces ("Portfolio Company"), which must be encoded %>
+                  <a class="sidebar-link" href="<%= tasks_path(q: { category_eq: category }) %>">
                     <div class="round-16 d-flex align-items-center justify-content-center">
                       <i class="ti ti-circle fs-2"></i>
                     </div>
@@ -239,6 +246,12 @@
             <span class="hide-menu"><%= t('top_menus.user_guides') %></span>
           </a>
         </li>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="<%= faqs_path %>" >
+            <span><i class="ti ti-help-circle"></i></span>
+            <span class="hide-menu">FAQs</span>
+          </a>
+        </li>
       <% end %>
       <% if current_user&.support? %>
         <li class="sidebar-item">
@@ -247,10 +260,36 @@
             <span class="hide-menu">CS Reviews</span>
           </a>
         </li>
+      <% end %>
+      <%# Gated on the policy, not support?, so it disappears while support impersonates a customer. %>
+      <% if current_user && policy(FaqEntry).index? %>
         <li class="sidebar-item">
-          <a class="sidebar-link" href="/features">
-            <span><i class="ti ti-flag"></i></span>
-            <span class="hide-menu"><%= t('top_menus.features') %></span>
+          <a class="sidebar-link" href="<%= faq_entries_path %>">
+            <span><i class="ti ti-help-hexagon"></i></span>
+            <span class="hide-menu">FAQ Manager</span>
+          </a>
+        </li>
+      <% end %>
+      <%# Gated on the policy rather than support?, which is also true while a support
+          user is impersonating a customer: a visible link that 403s is a bad experience
+          and advertises the URL to customers. %>
+      <% if current_user && policy(:internal_doc).index? %>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="/internal_docs">
+            <span><i class="ti ti-lock"></i></span>
+            <span class="hide-menu"><%= t('top_menus.internal_docs') %></span>
+          </a>
+        </li>
+      <% end %>
+      <%# Inbound demo requests from the public website. Gated on WebsiteLeadPolicy
+          for the same reason as the link above: these records have no entity, so
+          role is the only boundary, and impersonation must not carry the sales
+          pipeline into a customer's session. %>
+      <% if current_user && policy(WebsiteLead).index? %>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="<%= website_leads_path %>">
+            <span><i class="ti ti-inbox"></i></span>
+            <span class="hide-menu"><%= t('top_menus.website_leads') %></span>
           </a>
         </li>
       <% end %>

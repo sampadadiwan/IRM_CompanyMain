@@ -1,6 +1,7 @@
 class ReportBuilderXlsxExporter
   HEADER_COLOR  = "2D5BA3".freeze
   ALT_ROW_COLOR = "F0F4F8".freeze
+  TOTALABLE_AGGREGATES = %w[sum count avg].freeze
 
   def initialize(report:, rows:, columns: nil)
     @report  = report
@@ -93,12 +94,25 @@ class ReportBuilderXlsxExporter
       sheet.add_row(column_headers, style: columns.map { |gvp| header_style(wb, gvp) })
 
       totals = columns.map do |gvp|
-        agg = config.aggregate_for(gvp.key.split(";").first.strip)
+        agg = aggregate_type_for(gvp)
         %w[sum count].include?(agg) ? rows.sum { |r| r[gvp.key].to_f } : nil
       end
 
       sheet.add_row(totals)
     end
+  end
+
+  # Aggregate type for a column, whether it's a regular GVP-configured
+  # aggregate (looked up in config.aggregates) or a dynamic pivot column —
+  # pivot columns aren't in config.aggregates at all, their aggregate type
+  # lives on the join's own pivot config instead (join[:pivot][:aggregate]).
+  # Without this, pivot columns never got a total even when they held the
+  # exact same kind of summed/counted values a regular aggregate column does.
+  def aggregate_type_for(gvp)
+    return config.aggregate_for(gvp.key.split(";").first.strip) unless gvp.is_a?(ReportBuilderDynamicColumn) && gvp.pivot?
+
+    pivot_join = config.joins.find { |j| gvp.key.start_with?("#{j[:relation]}.") && j[:pivot].present? }
+    pivot_join && (pivot_join[:pivot][:aggregate].presence || "sum")
   end
 
   # ── Column headers ────────────────────────────────────────────────────────
@@ -124,9 +138,22 @@ class ReportBuilderXlsxExporter
 
   def data_style(wb, gvp, row_idx)
     opts = { alignment: { horizontal: numeric_col?(gvp) ? :right : :left } }
-    opts[:format_code] = "#,##0.00" if numeric_col?(gvp)
+    opts[:format_code] = number_format_code(gvp) if numeric_col?(gvp)
     opts[:bg_color]    = ALT_ROW_COLOR if row_idx.odd?
     wb.styles.add_style(opts)
+  end
+
+  # A plain "#,##0.00" cell format, prefixed with the report's currency symbol
+  # (Excel number-format syntax, e.g. `"$"#,##0.00`) for monetized columns when
+  # a currency is configured. Unlike the HTML view, this keeps the cell a real
+  # number (not a string) — SUM formulas, sorting, and the Totals sheet still
+  # work. No currency configured (today's default) => identical to before.
+  def number_format_code(gvp)
+    symbol = config.currency_symbol
+    clean_key = gvp.key.split(";").first.strip.split("__pivot__").first
+    return "#,##0.00" unless symbol.present? && config.monetized?(clean_key)
+
+    "\"#{symbol}\"#,##0.00"
   end
 
   def bold_style(wb)
@@ -155,10 +182,7 @@ class ReportBuilderXlsxExporter
   end
 
   def any_numeric_aggregates?
-    columns.any? do |gvp|
-      agg = config.aggregate_for(gvp.key.split(";").first.strip)
-      %w[sum count avg].include?(agg)
-    end
+    columns.any? { |gvp| TOTALABLE_AGGREGATES.include?(aggregate_type_for(gvp)) }
   end
 
   def filter_summary

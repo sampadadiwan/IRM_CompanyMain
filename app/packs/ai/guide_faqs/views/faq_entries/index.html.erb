@@ -1,0 +1,85 @@
+<% content_for :title, "FAQ Manager" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0">FAQ Manager</h1>
+  <div class="d-flex gap-2">
+    <%= link_to "Chatbot misses", guide_search_misses_path, class: "btn btn-outline-secondary" %>
+    <%= link_to "Search synonyms", guide_search_synonyms_path, class: "btn btn-outline-secondary" %>
+    <%= link_to "Download spreadsheet", faq_entries_path(format: :xlsx, q: params[:q]&.to_unsafe_h), class: "btn btn-outline-secondary" %>
+    <%= link_to "New FAQ", new_faq_entry_path, class: "btn btn-outline-primary" %>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <%= search_form_for @q, url: faq_entries_path, class: "row g-2 align-items-end" do |f| %>
+      <div class="col-md-3">
+        <%= f.label :guide_key_eq, "Guide", class: "form-label" %>
+        <%= f.select :guide_key_eq, GuideCatalog.options, { include_blank: "All guides" }, class: "form-select" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :faq_group_eq, "Group", class: "form-label" %>
+        <%= f.select :faq_group_eq, FaqEntry::GROUPS.invert, { include_blank: "All" }, class: "form-select" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :status_eq, "Status", class: "form-label" %>
+        <%= f.select :status_eq, FaqEntry::STATUSES.map { |s| [s.humanize, s] }, { include_blank: "All" }, class: "form-select" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :needs_verification_eq, "Needs verification", class: "form-label" %>
+        <%= f.select :needs_verification_eq, [["Yes", true], ["No", false]], { include_blank: "Any" }, class: "form-select" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :question_or_answer_or_keywords_cont, "Text", class: "form-label" %>
+        <%= f.search_field :question_or_answer_or_keywords_cont, class: "form-control" %>
+      </div>
+      <div class="col-md-1">
+        <%= f.submit "Filter", class: "btn btn-outline-primary w-100" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Question</th>
+        <th>Guide</th>
+        <th>Group</th>
+        <th>Status</th>
+        <th>Last verified</th>
+        <th>Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @faq_entries.each do |entry| %>
+        <tr>
+          <td>
+            <%= link_to entry.question, entry %>
+            <% if entry.needs_verification %><span class="badge bg-warning text-dark ms-1">Needs verification</span><% end %>
+          </td>
+          <td><%= entry.guide_title %></td>
+          <td><%= entry.group_label %></td>
+          <td><%= entry.status.humanize %></td>
+          <td><%= l(entry.last_verified_at.to_date) if entry.last_verified_at %></td>
+          <td><%= l(entry.updated_at.to_date) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<%= raw pagy_bootstrap_nav(@pagy) if @pagy.pages > 1 %>
+
+<div class="card mt-4">
+  <div class="card-body">
+    <h2 class="h5">Upload spreadsheet</h2>
+    <p class="text-muted mb-2">
+      Use a downloaded spreadsheet as the template. Rows are matched on ID, or on Guide and Question when ID is blank.
+      New questions are created, changed rows are updated, and nothing is deleted: set Status to "archived" to retire an FAQ.
+    </p>
+    <%= form_with url: import_faq_entries_path, multipart: true, class: "d-flex gap-2" do |f| %>
+      <%= f.file_field :file, accept: ".xlsx", class: "form-control", required: true %>
+      <%= f.submit "Upload", class: "btn btn-outline-primary" %>
+    <% end %>
+  </div>
+</div>

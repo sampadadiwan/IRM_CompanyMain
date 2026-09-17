@@ -21,7 +21,10 @@
                     <div class="col-2">Severity</div>
                 </div>
 
-                <% issue_keys = %w[kpi_issues document_issues valuation_issues] %>
+                <%# field_issues is emitted by the KYC onboarding agent — without it here,
+                    blocking field problems never render and the table can look all-green
+                    while the report status is "failed" %>
+                <% issue_keys = %w[kpi_issues document_issues valuation_issues field_issues] %>
                 <% json_data.each do |category, issues| %>
                   <% next unless issue_keys.include?(category.to_s) %>
                   <% next unless issues.is_a?(Array) %>

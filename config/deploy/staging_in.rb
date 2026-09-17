@@ -10,12 +10,18 @@
 # Both lines deliberately carry the SAME IP while live staging is a single
 # box: Capistrano merges duplicate hosts, so LB=true degrades gracefully.
 # A DR rewrite (replace_ip_addresses) fills the two fresh IPs in file order.
-server "13.233.55.8", user: "ubuntu", roles: %w[app web] if ENV["LB"]
-server "13.233.55.8", user: "ubuntu", roles: %w[primary app web db]
+server "52.66.163.132", user: "ubuntu", roles: %w[app web] if ENV["LB"]
+server "52.66.163.132", user: "ubuntu", roles: %w[primary app web db]
 
 set :rails_env, "staging"
 set :stage, :staging
 set :env_variant, "in"
+
+# Enables the static-website server blocks in nginx_conf.erb: apex serves
+# public/website, www 301s to the apex. Pairs with WEBSITE_HOSTS in
+# .env.staging.in. Lets the website rollout be rehearsed end-to-end on
+# staging before the production DNS cutover.
+set :website_domain, "altconnects.com"
 
 set :ssh_options, keys: "~/.ssh/altxdev.pem", compression: false, keepalive: true
 

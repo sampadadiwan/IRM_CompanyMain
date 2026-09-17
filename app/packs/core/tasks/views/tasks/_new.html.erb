@@ -1,8 +1,18 @@
+<%# Same two-way rendering as edit.html.erb: the "new_task" frame only exists for
+    frame requests (a list/tab's New Task link). Standalone /tasks/new renders the
+    bare form, so create.turbo_stream's replace('new_task', blank) can't wipe the
+    page — TasksController#create redirects to the new task instead. %>
 <div>
+  <% col_md = (params[:task].present? && params[:task][:owner_type] == "DealInvestor") ? "col-md-10" : "col-md-6" %>
+  <% if turbo_frame_request? %>
     <%= turbo_frame_tag "new_task" do %>
-        <% col_md = (params[:task].present? && params[:task][:owner_type] == "DealInvestor") ? "col-md-10" : "col-md-6" %>
-        <%= render NewCard.new(col_md: col_md) do %>
-            <%= render "form", task: task %>
-        <% end %>
+      <%= render NewCard.new(col_md: col_md) do %>
+        <%= render "form", task: task %>
+      <% end %>
     <% end %>
+  <% else %>
+    <%= render NewCard.new(col_md: col_md) do %>
+      <%= render "form", task: task %>
+    <% end %>
+  <% end %>
 </div>

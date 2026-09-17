@@ -6,6 +6,7 @@
   kra_data = kra_enabled ? @investor_kyc.kra_data : nil
   show_onboarding_agent = @investor_kyc.entity.support_agents.set?(:kyc_onboarding_agent) && @investor_kyc.support_agent_report.present?
   investor_facing = params[:signed_id].present? || current_user&.curr_role_investor?
+  kyc_locked = @investor_kyc.submission_completed? || @investor_kyc.submission_verified?
 %>
 
 <!-- Show the KYC Onboarding Agent details if set -->
@@ -35,8 +36,8 @@
     <% end %>
 
   <div>
-
-    <% if policy(@investor_kyc).update? %>
+    <%# show edit button only if the user can actually edit it %>
+    <% if policy(@investor_kyc).update? && !(investor_facing && kyc_locked) %>
       <%= link_to edit_investor_kyc_path(@investor_kyc), id: "investor_kyc_edit_btn", class: "btn btn-outline-primary", data: { workflow_gate_label: "Edit" } do %>
         <i class="ti ti-edit"></i> <%= t_common(:edit) %>
       <% end %>

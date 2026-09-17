@@ -61,3 +61,50 @@ Feature: ReportBuilderConfig — template parsing and validation
     When I check if the config is valid
     Then the config should not be valid
     And the config should have 0 joins
+
+  # monetized? walks real AR associations from the root model — it doesn't
+  # require the relation to be declared in config.joins (there's no injection
+  # surface here; it only drives display formatting, not SQL).
+  Scenario: monetized? is true for a Money attribute reached via a real association
+    Given a report builder config with root model "Investor"
+    Then column "capital_commitments.folio_committed_amount" should be monetized
+
+  Scenario: monetized? is false for a plain, non-Money column
+    Given a report builder config with root model "Investor"
+    Then column "capital_commitments.fund_close" should not be monetized
+
+  Scenario: monetized? is false when the relation doesn't exist on the root model
+    Given a report builder config with root model "Investor"
+    Then column "not_a_real_relation.amount" should not be monetized
+
+  Scenario: currency_symbol returns the configured currency's symbol
+    Given a report builder config with template:
+      """
+      {
+        "root_model": "Investor",
+        "joins": [],
+        "aggregates": {},
+        "root_filters": {},
+        "sort": {},
+        "currency": "USD"
+      }
+      """
+    Then the currency symbol should be "$"
+
+  Scenario: currency_symbol is nil when no currency is configured
+    Given a report builder config with root model "Investor"
+    Then the currency symbol should be nil
+
+  Scenario: currency_symbol is nil for an invalid currency code
+    Given a report builder config with template:
+      """
+      {
+        "root_model": "Investor",
+        "joins": [],
+        "aggregates": {},
+        "root_filters": {},
+        "sort": {},
+        "currency": "NOT_A_REAL_CURRENCY"
+      }
+      """
+    Then the currency symbol should be nil

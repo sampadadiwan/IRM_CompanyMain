@@ -1,0 +1,542 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# bin/check_db_backup_freshness - watches the IN and US production xtrabackup
+# buckets from a machine OUTSIDE either AWS account. This is independent of
+# (redundant with) the hourly DbBackupFreshnessJob cron each region's own
+# server runs on itself (config/initializers/sidekiq.rb) - a check from here
+# catches the case where the alerting path on the server itself is broken.
+#
+#   bin/check_db_backup_freshness run           hourly watchdog, notifies on FAILURE only
+#   bin/check_db_backup_freshness daily [env]   09:00 morning report, always notifies
+#   bin/check_db_backup_freshness report        reprint it + the dashboard path
+#
+# `daily` opens the dashboard in Chrome when it finishes. Set DASHBOARD_OPEN=problem
+# to open only when something needs attention, or =never for notification only.
+#   bin/check_db_backup_freshness cron          print the crontab lines to install
+#
+# Two modes, deliberately different about silence:
+#   `run`   is the hourly watchdog (rake s3:check_backup_freshness). Silent
+#           while healthy - 24 "all good" popups a day would train you to
+#           dismiss them unread.
+#   `daily` is the 09:00 IST morning report (rake s3:backup_daily_report). It
+#           also checks documents-bucket replication (S3CheckJob): the newest
+#           uploaded file must be in the other-region replica. That lists the
+#           whole bucket, which is why it is daily and not hourly. It
+#           always notifies, so the absence of a notification is itself
+#           meaningful: it means cron did not run at all. It also leaves the
+#           full report on disk at REPORT_FILE, so the detail is still there
+#           at 3pm when the popup is long gone.
+#
+# Why 09:00 IST specifically: 09:00 IST is 03:30 UTC, and BOTH regions' DB
+# servers take their nightly FULL at 23:00 UTC (one shared cron baked into the
+# AMI - see /etc/cron.d/irm-db-backup in
+# config/deploy/templates/packer/db_redis_es.ami.pkr.hcl). So the 09:00 run
+# lands ~4.5h after the night's full and reports on THAT backup, for both
+# regions, at a time someone is actually at the desk to read it.
+#
+# Why not rely on the job's own ExceptionNotifier e-mail path: this machine's
+# config/environments/development.rb sets action_mailer.delivery_method =
+# :letter_opener, so anything "sent" locally just writes an HTML file and
+# never reaches an inbox. notify-send is the channel that actually surfaces
+# this to whoever is logged into the desktop session.
+#
+# Rails is never booted directly here - each region's check runs in its own
+# `bundle exec rake` subprocess (needed anyway: the job builds its S3 client
+# from that environment's own encrypted credentials, resolved once at rake's
+# `:environment` boot per subprocess).
+
+require 'English'
+
+# Plain Ruby, deliberately: this never boots Rails (each region's check runs
+# in its own `bundle exec rake` subprocess instead), so Time.zone.now isn't
+# available - Time.now is the only option here.
+# rubocop:disable Rails/TimeZone
+
+REPO_ROOT = File.expand_path('..', __dir__)
+ENV_NAMES = %w[production.in production.us].freeze
+
+# One slot, both regions, in this machine's LOCAL time (IST) - cron always
+# fires on local time. 09:00 IST = 03:30 UTC ~= 4.5h after the 23:00 UTC
+# nightly full on both servers. See the header for the full reasoning.
+DAILY_SCHEDULE = '0 9 * * *'
+
+LOG_DIR = File.join(REPO_ROOT, 'log', 'db_backup_freshness_cron')
+# Deliberately NOT inside LOG_DIR: that directory is created lazily below, but
+# the crontab line's own `>> ... 2>&1` redirect happens in the shell before
+# this script ever runs - if it pointed inside LOG_DIR, the very first cron
+# tick would fail with "No such file or directory" before the script got a
+# chance to create it. log/ itself always exists (Rails app skeleton).
+CRON_LOG = File.join(REPO_ROOT, 'log', 'db_backup_freshness_cron.log')
+# Overwritten each morning, and the point of the whole `daily` mode: the popup
+# is transient, these are what you can still read at 3pm.
+REPORT_FILE = File.join(REPO_ROOT, 'log', 'db_backup_daily_report.txt')
+# The page you actually open. Deliberately a local file, not something hosted:
+# cron regenerates it here every morning.
+DASHBOARD_FILE = File.join(REPO_ROOT, 'log', 'db_backup_dashboard.html')
+# Mirrors DbBackupFreshnessJob::MAX_EXPECTED_GAP_MINUTES. Duplicated rather than
+# required, because this script never boots Rails; it is only used to explain
+# the numbers in prose, never to decide anything.
+MAX_EXPECTED_GAP_MINUTES = 90
+LOG_RETENTION_DAYS = 14
+
+# Bundler/rake chatter that carries no signal and would bury the report. The
+# second alternative is Bundler 2.6 on Ruby 4 redefining Gem::Platform constants
+# (`.../rubygems_ext.rb:294: warning: already initialized constant ...` plus its
+# `previous definition of ... was here` twin) - 18 lines per rake boot.
+NOISE_RE = /\A(warning: parser|Please see https|DEPRECATION WARNING|✅ Overloaded)|: warning: (already initialized constant|previous definition of) /
+
+def run_check(env_name, task:)
+  require 'fileutils'
+  FileUtils.mkdir_p(LOG_DIR)
+  out_file = File.join(LOG_DIR, "#{env_name}_#{Time.now.strftime('%Y%m%d_%H%M%S')}.log")
+  system("bundle exec rake \"#{task}[#{env_name}]\" > #{out_file} 2>&1")
+  # Both tasks end by running the job, so both print this line when healthy.
+  passed = $CHILD_STATUS.success? && File.read(out_file).include?('DB backup freshness check passed')
+  [passed, out_file]
+end
+
+# cron does not set DISPLAY/DBUS_SESSION_BUS_ADDRESS the way a logged-in
+# desktop session does - notify-send is silently a no-op without them.
+# :0 and the default per-user bus are correct for a single-session desktop;
+# override in the environment if this machine runs multiple sessions.
+def ensure_desktop_env
+  ENV['DISPLAY'] ||= ':0'
+  ENV['DBUS_SESSION_BUS_ADDRESS'] ||= "unix:path=/run/user/#{Process.uid}/bus"
+end
+
+def notify(urgency, title, body)
+  ensure_desktop_env
+  system('notify-send', '-u', urgency, title, body)
+end
+
+def which(cmd)
+  ENV.fetch('PATH', '').split(File::PATH_SEPARATOR)
+     .map { |dir| File.join(dir, cmd) }
+     .find { |path| File.executable?(path) && !File.directory?(path) }
+end
+
+# Opens the dashboard in the browser. DASHBOARD_OPEN tunes this:
+#   always  (default) open every morning - what you asked cron to do
+#   problem open only when something needs attention; a clean morning stays
+#           a notification and never steals focus
+#   never   notification only
+#
+# The non-obvious hazard, and why this spawns detached: when Chrome is ALREADY
+# running, `google-chrome <url>` hands the URL to the running instance and
+# returns immediately - but when it is not running, that command BECOMES the
+# browser process and does not return until the window is closed. A plain
+# system() here would leave the 09:00 cron job alive all day holding its log
+# open. Spawn + detach makes the launch fire-and-forget either way.
+def open_dashboard(problem:)
+  mode = ENV.fetch('DASHBOARD_OPEN', 'always')
+  return if mode == 'never' || (mode == 'problem' && !problem)
+
+  browser = ENV['DASHBOARD_BROWSER'] || %w[google-chrome google-chrome-stable xdg-open].filter_map { |b| which(b) }.first
+  unless browser
+    warn 'No browser found (looked for google-chrome, google-chrome-stable, xdg-open)'
+    return
+  end
+
+  ensure_desktop_env
+  pid = Process.spawn(browser, "file://#{DASHBOARD_FILE}", out: File::NULL, err: File::NULL)
+  Process.detach(pid)
+end
+
+def notify_failure(env_name, out_file)
+  lines = File.readlines(out_file).grep(/✗/).first(3).map(&:strip)
+  summary = lines.empty? ? "see #{out_file}" : lines.join("\n")
+  notify('critical', "DB backup check FAILED (#{env_name})", summary)
+end
+
+def prune_old_logs
+  Dir.glob(File.join(LOG_DIR, '*.log')).each do |f|
+    File.delete(f) if Time.now - File.mtime(f) > LOG_RETENTION_DAYS * 24 * 60 * 60
+  end
+end
+
+# --- hourly watchdog -------------------------------------------------------
+
+def cmd_run
+  Dir.chdir(REPO_ROOT)
+  results = ENV_NAMES.map do |env_name|
+    passed, out_file = run_check(env_name, task: 's3:check_backup_freshness')
+    notify_failure(env_name, out_file) unless passed
+    [env_name, passed]
+  end
+  puts "#{Time.now}: #{results.map { |name, passed| "#{name}=#{passed ? 'PASS' : 'FAIL'}" }.join(', ')}"
+  prune_old_logs
+  exit(results.all? { |_, passed| passed } ? 0 : 1)
+end
+
+# --- 09:00 morning report --------------------------------------------------
+
+# Turns one "SUMMARY|production.in|primary|9.0h ago|1.3 GB|ok" line from the
+# rake task into a notification row. The task emits these precisely so this
+# does not have to re-parse the human-readable report, which is free to change
+# layout whenever it reads better.
+def parse_summary(line)
+  _tag, env_name, label, age, bytes, size, incr, gap, status = line.split('|')
+  {
+    'env' => env_name,
+    'region' => env_name.sub('production.', '').upcase,
+    'bucket' => label.start_with?('replica') ? 'replica' : 'primary',
+    'age_h' => age.to_s.empty? ? nil : age.to_f,
+    'bytes' => bytes.to_s.empty? ? nil : bytes.to_i,
+    'size' => size,
+    'incr' => incr.to_i,
+    'gap' => gap.to_s.empty? ? nil : gap.to_i,
+    'status' => status
+  }
+end
+
+# "HISTORY|production.in|primary|2026-08-01:1234,..." -> sorted [date, bytes].
+def parse_history(line)
+  _tag, env_name, label, points = line.split('|')
+  {
+    'region' => env_name.sub('production.', '').upcase,
+    'bucket' => label.start_with?('replica') ? 'replica' : 'primary',
+    'points' => points.to_s.split(',').map { |pt| pt.split(':') }.map { |d, b| [d, b.to_i] }.sort_by(&:first)
+  }
+end
+
+# "REPLICATION|production.in|ok|enabled (rule)|123456|84.2|0.4|detail" -> a row.
+# Statuses that are healthy or merely in flight; anything else needs a look.
+REPLICATION_OK = %w[ok PENDING].freeze
+
+def parse_replication(line)
+  _tag, env_name, status, rule, objects, seconds, age, detail = line.split('|', 8)
+  {
+    'region' => env_name.sub('production.', '').upcase,
+    'status' => status,
+    'rule' => rule,
+    'objects' => objects.to_i,
+    'seconds' => seconds.to_f,
+    'age_h' => age.to_s.empty? ? nil : age.to_f,
+    'detail' => detail.to_s
+  }
+end
+
+def explain_replication_row(r)
+  case r['status']
+  when 'ok'
+    "Healthy — the newest file uploaded to the #{r['region']} documents bucket (#{r['age_h']}h ago) is in the " \
+    "other-region replica with the same size, and the replication rule is #{r['rule']}."
+  when 'PENDING'
+    "In flight — #{r['detail']}. Normal for a large upload; it only counts as stuck after 6h."
+  when 'EMPTY'
+    "NEEDS A LOOK — #{r['detail']}, so nothing could be verified."
+  when 'NO RULE'
+    "BROKEN — the replication rule is #{r['rule']}. Files already copied are safe, but nothing uploaded from " \
+    'now on will reach the other region.'
+  else
+    "BROKEN — #{r['detail']}. Documents in this region are not reliably being copied to the other region."
+  end
+end
+
+def format_replication(row)
+  line = "#{row['region']} documents: newest file #{row['age_h'] || '—'}h ago"
+  row['status'] == 'ok' ? "#{line}, replicated" : "#{line} — #{row['status']}"
+end
+
+def format_summary(row)
+  line = "#{row['region']} #{row['bucket']}: full #{row['age_h']}h ago, #{row['size']}"
+  row['status'] == 'ok' ? line : "#{line} — #{row['status']}"
+end
+
+# One plain-English sentence per row, built from that row's own numbers. The
+# table answers "what are the numbers"; this answers "so is my data safe",
+# which is the only question actually being asked at 09:00.
+def explain_status_row(r)
+  region = r['region'] == 'IN' ? 'Indian' : 'US'
+
+  case r['status']
+  when 'ok'
+    gap_note = if r['gap'] && r['gap'] <= MAX_EXPECTED_GAP_MINUTES
+                 "the #{r['gap']}-min largest gap is the normal nightly pause between the " \
+                   "23:00 UTC full and the first incremental at midnight"
+               else
+                 'the backup chain is unbroken'
+               end
+    if r['bucket'] == 'primary'
+      "Healthy — the #{region} database server wrote a complete #{r['size']} backup #{r['age_h']}h ago " \
+        "and #{r['incr']} half-hourly incrementals since; #{gap_note}. This region can be restored."
+    else
+      "Healthy — that same #{r['size']} backup has copied to the off-site #{region} DR bucket " \
+        "(#{r['age_h']}h ago), so losing the whole primary region would still leave you a usable copy."
+    end
+  when 'NO FULL'
+    'BROKEN — no full backup exists here at all. Incrementals are only deltas and cannot be ' \
+    'restored on their own, so right now this bucket restores nothing. Investigate today.'
+  when 'UNREADABLE'
+    'BROKEN — this bucket could not even be listed (credentials or permissions). A real restore ' \
+    'would hit exactly the same wall, so treat it as no backup until it reads.'
+  else
+    "NEEDS A LOOK — backups stopped for #{r['gap']} minutes, longer than the #{MAX_EXPECTED_GAP_MINUTES}-min " \
+    'tolerance. A scheduled run was missed: check the backup cron on the database server.'
+  end
+end
+
+def explain_trend_row(points)
+  return 'No full backups on record for this bucket.' if points.empty?
+  return 'Only one full backup on record — the trend line appears once there are two.' if points.size < 2
+
+  first_bytes = points.first[1]
+  change = first_bytes.zero? ? 0 : (((points.last[1] - first_bytes) / first_bytes.to_f) * 100).round
+  direction = if change.abs < 1 then 'has held steady'
+              elsif change.positive? then "has grown #{change}%"
+              else "has SHRUNK #{change.abs}%"
+              end
+  verdict = change < -10 ? ' A drop this size usually means the backup ran but captured less than it should — worth investigating.' : ''
+  "Each point is one night's full backup. Over #{points.size} nights (from #{points.first[0]}) " \
+    "the size #{direction}.#{verdict}"
+end
+
+# Tiny inline SVG - no JS and no CDN, so the page renders offline from a
+# file:// URL, which is the only way it will ever be opened.
+def sparkline(values, width: 220, height: 30)
+  vals = values.compact
+  return '<span class="muted">not enough history yet</span>' if vals.size < 2
+
+  min, max = vals.minmax
+  span = (max - min).to_f
+  points = vals.each_with_index.map do |v, i|
+    x = (i.to_f / (vals.size - 1)) * width
+    y = span.zero? ? height / 2.0 : height - (((v - min) / span) * (height - 4)) - 2
+    "#{x.round(1)},#{y.round(1)}"
+  end
+  %(<svg class="spark" width="#{width}" height="#{height}" viewBox="0 0 #{width} #{height}" preserveAspectRatio="none"><polyline points="#{points.join(' ')}" fill="none" stroke="#2563eb" stroke-width="1.5"/></svg>)
+end
+
+def write_dashboard(rows, histories, replications, raw_report)
+  require 'cgi'
+  generated = Time.now.to_s
+
+  replication_html = replications.map do |r|
+    cls = REPLICATION_OK.include?(r['status']) ? 'ok' : 'bad'
+    "<tr><td>#{r['region']}</td><td>#{r['age_h'] || '—'}h ago</td>" \
+      "<td>#{CGI.escapeHTML(r['rule'])}</td>" \
+      "<td class=\"num\">#{r['objects']}</td><td class=\"num\">#{r['seconds']}s</td>" \
+      "<td><span class=\"pill #{cls}\">#{CGI.escapeHTML(r['status'])}</span></td></tr>\n" \
+      "<tr class=\"explain\"><td colspan=\"6\">#{CGI.escapeHTML(explain_replication_row(r))}</td></tr>"
+  end.join("\n")
+
+  today_html = rows.map do |r|
+    cls = r['status'] == 'ok' ? 'ok' : 'bad'
+    gap = r['gap'] ? "#{r['gap']} min" : '—'
+    "<tr><td>#{r['region']}</td><td>#{r['bucket']}</td>" \
+      "<td>#{r['age_h'] || '—'}h ago</td><td class=\"num\">#{r['size']}</td>" \
+      "<td class=\"num\">#{r['incr']}</td><td class=\"num\">#{gap}</td>" \
+      "<td><span class=\"pill #{cls}\">#{r['status']}</span></td></tr>\n" \
+      "<tr class=\"explain\"><td colspan=\"7\">#{explain_status_row(r)}</td></tr>"
+  end.join("\n")
+
+  span = histories.map { |h| h['points'].size }.max.to_i
+  trend_html = histories.map do |h|
+    points = h['points']
+    sizes = points.map(&:last)
+    range = if sizes.empty?
+              '—'
+            else
+              "#{human_mb(sizes.min)} – #{human_mb(sizes.max)}"
+            end
+    "<tr><td>#{h['region']} #{h['bucket']}</td><td>#{sparkline(sizes)}</td>" \
+      "<td class=\"num\">#{sizes.empty? ? '—' : human_mb(sizes.last)}</td>" \
+      "<td class=\"num\">#{range}</td></tr>\n" \
+      "<tr class=\"explain\"><td colspan=\"4\">#{explain_trend_row(points)}</td></tr>"
+  end.join("\n")
+
+  File.write(DASHBOARD_FILE, <<~HTML)
+    <!doctype html>
+    <html lang="en"><head><meta charset="utf-8">
+    <title>DB backups — CapHive</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 900px;
+             color: #1f2937; background: #fff; }
+      h1 { font-size: 1.4rem; margin-bottom: .25rem; }
+      h2 { font-size: 1.05rem; margin-top: 2rem; }
+      /* Prominent on purpose: an unopened page looks identical whether it was
+         written this morning or three weeks ago, so staleness must be loud. */
+      .gen { color: #6b7280; margin-top: 0; }
+      .lede { color: #4b5563; margin: .3rem 0 0; }
+      table { border-collapse: collapse; width: 100%; margin-top: .5rem; }
+      th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid #e5e7eb; }
+      th { font-weight: 600; color: #374151; }
+      td.num { text-align: right; font-variant-numeric: tabular-nums; }
+      .pill { padding: .1rem .5rem; border-radius: 999px; font-size: .85em; }
+      .pill.ok { background: #dcfce7; color: #166534; }
+      .pill.bad { background: #fee2e2; color: #991b1b; }
+      .muted { color: #9ca3af; }
+      tr.explain td { border-bottom: 1px solid #e5e7eb; color: #4b5563;
+                      padding-top: 0; padding-bottom: .7rem; }
+      tr.explain td::before { content: "↳ "; color: #9ca3af; }
+      details { margin-top: 2rem; }
+      pre { background: #f9fafb; padding: 1rem; overflow-x: auto; font-size: .85em; }
+    </style></head><body>
+    <h1>DB backups — IN + US production</h1>
+    <p class="gen">Generated <strong>#{generated}</strong><br>
+    Regenerate: <code>bin/check_db_backup_freshness daily</code></p>
+
+    <h2>Last night's backup</h2>
+    <p class="lede">Both regions take their full backup at 23:00 UTC. Each row is one bucket;
+    the line under it says whether that copy is actually usable.</p>
+    <table>
+      <tr><th>Region</th><th>Bucket</th><th>Last FULL</th><th>Size</th>
+          <th>Incr (24h)</th><th>Largest gap</th><th></th></tr>
+      #{today_html}
+    </table>
+
+    <h2>Documents bucket replication</h2>
+    <p class="lede">Uploaded documents copy to a bucket in the other AWS region. Each row takes the
+    newest file in the bucket (older than 15 min) and checks it is really in the replica. Finding
+    that file means listing the whole bucket, hence the object count and scan time.</p>
+    <table>
+      <tr><th>Region</th><th>Newest file</th><th>Rule</th><th>Objects scanned</th>
+          <th>Scan time</th><th></th></tr>
+      #{replication_html}
+    </table>
+
+    <h2>Full backup size — last #{span} nightly fulls</h2>
+    <p class="lede">Read straight from the buckets, so this is real history, not something
+    that builds up over time. Size is the one signal freshness misses: a backup can be
+    perfectly on time and still be short.</p>
+    <table>
+      <tr><th>Bucket</th><th>Trend</th><th>Latest</th><th>Range</th></tr>
+      #{trend_html}
+    </table>
+
+    <details><summary>Raw report</summary><pre>#{CGI.escapeHTML(raw_report)}</pre></details>
+    </body></html>
+  HTML
+end
+
+def human_mb(bytes)
+  bytes >= 1024**3 ? "#{(bytes / (1024.0**3)).round(2)} GB" : "#{(bytes / (1024.0**2)).round(1)} MB"
+end
+
+def write_report(sections)
+  File.write(REPORT_FILE, <<~REPORT)
+    DB backup morning report — generated #{Time.now}
+    Regenerate any time with: bin/check_db_backup_freshness daily
+
+    #{sections.join("\n")}
+  REPORT
+end
+
+def notify_daily(results, rows, replications)
+  failed = results.reject { |_, passed| passed }.map(&:first)
+  flagged = rows.reject { |r| r['status'] == 'ok' }
+  repl_broken = replications.reject { |r| REPLICATION_OK.include?(r['status']) }
+
+  body = rows.map { |r| format_summary(r) } + replications.map { |r| format_replication(r) }
+  body << "" << DASHBOARD_FILE
+
+  if failed.any?
+    notify('critical', "DB backup check FAILED (#{failed.join(', ')})", body.join("\n"))
+  elsif repl_broken.any?
+    notify('critical', "Document replication BROKEN (#{repl_broken.map { |r| r.fetch('region') }.join(', ')})", body.join("\n"))
+  elsif flagged.any?
+    # Freshness passed but the 24h picture is off (a chain gap, a missing full,
+    # an unreadable bucket) - worth a look, not worth a page.
+    notify('critical', 'DB backups: passed, but check the report', body.join("\n"))
+  else
+    notify('normal', 'DB backups OK (IN + US)', body.join("\n"))
+  end
+end
+
+# `daily [env_name]`. The crontab installs a bare `daily` (both regions in one
+# 09:00 notification); the optional argument is for running one region by hand.
+def cmd_daily(env_name)
+  Dir.chdir(REPO_ROOT)
+  env_names = env_name ? [env_name] : ENV_NAMES
+  unknown = env_names - ENV_NAMES
+  unless unknown.empty?
+    warn "Unknown environment(s): #{unknown.join(', ')} - expected one of #{ENV_NAMES.join(', ')}"
+    exit 1
+  end
+
+  sections = []
+  summaries = []
+  history_lines = []
+  replication_lines = []
+  results = env_names.map do |name|
+    passed, out_file = run_check(name, task: 's3:backup_daily_report')
+    lines = File.readlines(out_file).map(&:chomp).grep_v(NOISE_RE)
+    summaries.concat(lines.grep(/\ASUMMARY\|/))
+    history_lines.concat(lines.grep(/\AHISTORY\|/))
+    replication_lines.concat(lines.grep(/\AREPLICATION\|/))
+    sections << lines.grep_v(/\A(SUMMARY|HISTORY|REPLICATION)\|/).join("\n")
+    [name, passed]
+  end
+
+  raw_report = sections.join("\n")
+  rows = summaries.map { |line| parse_summary(line) }
+  replications = replication_lines.map { |line| parse_replication(line) }
+  repl_broken = !replications.all? { |r| REPLICATION_OK.include?(r['status']) }
+  write_report(sections)
+  write_dashboard(rows, history_lines.map { |l| parse_history(l) }, replications, raw_report)
+  notify_daily(results, rows, replications)
+  # Anything not plainly healthy counts as a problem for DASHBOARD_OPEN=problem.
+  open_dashboard(problem: results.any? { |_, passed| !passed } || rows.any? { |r| r['status'] != 'ok' } || repl_broken)
+  repl_note = replications.map { |r| "#{r['region'].downcase}-docs=#{r['status']}" }.join(', ')
+  puts "#{Time.now}: #{results.map { |name, passed| "#{name}=#{passed ? 'PASS' : 'FAIL'}" }.join(', ')}, #{repl_note} (#{DASHBOARD_FILE})"
+  prune_old_logs
+  exit(results.all? { |_, passed| passed } && !repl_broken ? 0 : 1)
+end
+
+# --- reading it later ------------------------------------------------------
+
+def cmd_report
+  unless File.exist?(REPORT_FILE)
+    warn "No report yet - run: bin/check_db_backup_freshness daily"
+    exit 1
+  end
+  puts File.read(REPORT_FILE)
+  puts "Dashboard (open in a browser): file://#{DASHBOARD_FILE}"
+end
+
+def cmd_cron
+  # Matches this repo's existing crontab convention (see `crontab -l`):
+  # `cd <repo> && /bin/bash -lc '...'` - the login shell (`-l`) sources the
+  # shell profile, which is what puts mise's ruby/bundle shims on PATH; cron's
+  # own PATH otherwise has neither them nor notify-send's usual location.
+  invoke = ->(args) { "cd #{REPO_ROOT} && /bin/bash -lc 'bundle exec ruby bin/check_db_backup_freshness #{args} >> #{CRON_LOG} 2>&1'" }
+
+  puts <<~CRON
+    # Hourly DB backup freshness watchdog (IN + US prod).
+    # Notifies on FAILURE only - see bin/check_db_backup_freshness for why.
+    0 * * * * #{invoke.call('run')}
+
+    # 09:00 IST morning report (IN + US in one notification). 09:00 IST is
+    # 03:30 UTC, ~4.5h after the 23:00 UTC nightly full that BOTH regions take,
+    # so this reports on last night's full while you're at the desk. Always
+    # notifies, pass or fail, so a silent morning means cron itself didn't run.
+    # Leaves a dashboard you can open all day (last 30 days of full-backup
+    # sizes and chain gaps): log/db_backup_dashboard.html
+    # Opens that dashboard in Chrome when it finishes. To stop it opening on a
+    # clean morning, put DASHBOARD_OPEN=problem in front of the command below
+    # (or =never for notification only).
+    #{DAILY_SCHEDULE} #{invoke.call('daily')}
+
+    # Desktop notifications only fire while you're logged into a graphical
+    # session on this machine - see the DISPLAY/DBUS comment in #notify above
+    # if this machine runs more than one session. Note also that cron does not
+    # fire at all while the machine is suspended.
+    #
+    # Verify it works before trusting it:
+    #   bin/check_db_backup_freshness daily
+    #   bin/check_db_backup_freshness report
+    #   tail -f #{CRON_LOG}
+  CRON
+end
+
+case ARGV[0]
+when 'run' then cmd_run
+when 'daily' then cmd_daily(ARGV[1])
+when 'report' then cmd_report
+when 'cron' then cmd_cron
+else
+  warn "Usage: #{$PROGRAM_NAME} [run|daily [env]|report|cron]"
+  exit 1
+end
+# rubocop:enable Rails/TimeZone

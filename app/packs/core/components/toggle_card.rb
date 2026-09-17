@@ -1,7 +1,7 @@
 class ToggleCard < ViewComponent::Base
   renders_one :header
 
-  def initialize(title:, css_class: "", controller: nil, state: "show", allow_toggle: true)
+  def initialize(title:, css_class: "", controller: nil, state: "show", allow_toggle: true, data: {})
     super()
     @title = title
     # Any additional css classes to be attached to the card
@@ -12,5 +12,7 @@ class ToggleCard < ViewComponent::Base
     @state = state
     # Whether the card can be toggled or not
     @allow_toggle = allow_toggle
+    # Extra data-* attributes (e.g. Stimulus values) for the controller's own element
+    @data = data
   end
 end

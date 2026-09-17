@@ -146,6 +146,11 @@ When('I mark the activity {string} as completed for investor {string} in the gri
     visit(deal_path(@deal, grid_view: true))
   end
 
+  # That setup write is itself a step move, so it stamps last_interaction_date.
+  # Clear it, so a scenario asserting the date afterwards is proving the completion
+  # below did it rather than the scaffolding above.
+  @deal_investor.update_column(:last_interaction_date, nil)
+
   # --- START OF COPIED CODE FROM deal_investor.rb ---
 
   # 1. Wait for ag-grid to be completely mounted
@@ -303,6 +308,13 @@ Given('the current activity for investor {string} is {string}') do |investor_nam
 
   activity = @deal_investor.deal_activities.find_by(title: step_title)
   @deal_investor.update!(deal_activity_id: activity.template_id)
+end
+
+# Completing a step is an interaction in its own right, alongside a note's "On" date
+# and a task's completed_on. It reaches DealInvestor as a change to deal_activity_id:
+# PerformActivityAction moves the investor to the next step and saves it.
+Then("completing the step should have set the investor's last interaction date to today") do
+  expect(@deal_investor.reload.last_interaction_date).to eq(Time.zone.today)
 end
 
 Then('the current activity for investor {string} should still be {string}') do |investor_name, step_title|

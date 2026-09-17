@@ -27,7 +27,7 @@
             <dt>Report</dt>
             <dd><%= @report.name %></dd>
             <dt>Generated</dt>
-            <dd><%= I18n.l(Time.current, format: :abbr_date_time) + " " + Time.current.strftime("%Z") %></dd>
+            <dd><%= I18n.l(Time.current, format: :email, locale: :en) + " " + Time.current.strftime("%Z") %></dd>
             <% if @report.template&.dig("root_model").present? %>
               <dt>Data source</dt>
               <dd><%= @report.template["root_model"].humanize %></dd>

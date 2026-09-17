@@ -10,12 +10,16 @@ en:
       long: "%B %d, %Y"
       short: "%b %d"
       month_year: "%b %Y"
-      abbr_month_day_year: "%d %b %Y"
+      abbr_month_day_year: "%b %d, %Y"
       day_month_year: "%d %B %Y"
       month_year_full: "%B %Y"
       chart_month_year: "%m/%y"
       chart_abbr_month_year: "%b %y"
       chart_year: "%Y"
+      # Outgoing emails always use this format, and only this locale's copy — every caller
+      # forces locale: :en alongside format: :email (see EmailDateLocalization), since
+      # rails-i18n's own :ja translations override %b with kanji month names otherwise.
+      email: "%b %d, %Y"
   investor_kyc:
     tax_id: "PAN / Tax ID"
     bank_routing_number: "IFSC Code"
@@ -61,6 +65,7 @@ en:
     actions: Actions
     all: All
     all_docs: All Docs
+    approve: Approve
     cancel: Cancel
     close: Close
     confirm: Confirm
@@ -74,11 +79,13 @@ en:
     next: Next
     ok: OK
     proceed: Proceed
+    reject: Reject
     save: Save
     show: Show
     step: Step
     upload: Upload
     refetch: Re-fetch
+    unapprove: Unapprove
     view: View
   deal:
     create: Deal was created
@@ -341,12 +348,16 @@ en:
       long: "%B %d, %Y"
       short: "%b %d"
       month_year: "%b %Y"
-      abbr_month_day_year: "%d %b %Y"
+      abbr_month_day_year: "%b %d, %Y"
       day_month_year: "%d %B %Y"
       month_year_full: "%B %Y"
       time_only: "%H:%M"
       abbr_date_time: "%d %b %Y %H:%M"
       long_date_time: "%B %d, %Y at %I:%M %p"
+      # Outgoing emails always use this format, and only this locale's copy — every caller
+      # forces locale: :en alongside format: :email (see EmailDateLocalization), since
+      # rails-i18n's own :ja translations override %b with kanji month names otherwise.
+      email: "%b %d, %Y %H:%M"
   top_menus:
     access_rights: Access Rights
     account_settings: Account Settings
@@ -385,8 +396,10 @@ en:
     todo_daily_tasks: To-do and Daily Tasks
     user_guides: User Guides
     release_notes: Release Notes
-    features: Features
-    feature_docs: Feature documentation for support
+    internal_docs: Internal Docs
+    internal_docs_subtitle: Marketing and strategy documentation
+    website_leads: Website Leads
+    website_leads_subtitle: Demo requests from caphive.com
     learn_how_to_use: Learn how to use CapHive
     user: User
     user_profile: User Profile

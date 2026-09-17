@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>AI Agents — Private Markets Agents for Funds &amp; Portfolios | CapHive</title>
+<meta name="description" content="Sixteen AI agents for private markets — onboarding and KYC, capital events, portfolio analysis, deals and data quality — each grounded in your own ledger, permissioned and logged.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/ai-agents.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="AI Agents — CapHive">
+<meta property="og:description" content="AI agents purpose-built for private markets — onboarding, fund queries, reporting, analysis and compliance, grounded in your own data.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/ai-agents.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="ai-agents">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-black">
+  <div class="wrap">
+    <div class="hero-panel">
+      <div class="hero-split">
+        <div>
+        <span class="chip-label">AI Agents</span>
+        <h1>AI agents, <em>purpose-built</em> for private markets.</h1>
+        <p class="lede">
+          <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>'s AI agents work inside the platform to streamline and supercharge ongoing tasks — from
+          onboarding and portfolio analysis to compliance checklists and querying structured and
+          unstructured data.
+        </p>
+        <!-- the artefact this module produces: the exchange itself. Tab switching is
+             handled by the shared [data-tabs] behaviour in assets/js/caphive.js —
+             with JavaScript off, the first panel stays visible. -->
+      <div class="hero-cta" style="margin-top:40px">
+        <a class="btn btn-primary" href="contact.html">
+          Setup a Demo
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-outline" href="#agents">See all sixteen agents</a>
+      </div>
+        </div>
+        <div data-tabs>
+          <div class="agent-tabs" aria-label="Choose an agent">
+            <button class="tab active" type="button" data-tab="kyc" aria-selected="true">KYC Onboarding</button>
+            <button class="tab" type="button" data-tab="cash" aria-selected="false">Cash Flow Assistant</button>
+            <button class="tab" type="button" data-tab="dq" aria-selected="false">Data Quality</button>
+            <button class="tab" type="button" data-tab="deal" aria-selected="false">Deal Management</button>
+            <button class="tab" type="button" data-tab="report" aria-selected="false">Portfolio Report</button>
+          </div>
+
+          <div class="panel active" data-panel="kyc">
+            <div class="chat">
+              <div class="chat-head">KYC Onboarding Agent<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">Is Meridian Family Office's KYC ready to rely on?</div>
+                <div class="msg ai">
+                  Reviewed. The record is complete, internally consistent and nothing has expired — so it is cleared before your team relies on it for capital calls, distributions or AML clearance.
+                  <span class="chip">Onboarding · KYC review</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" data-panel="cash">
+            <div class="chat">
+              <div class="chat-head">Cash Flow Assistant Agent<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">What is Fund III's cash position and runway?</div>
+                <div class="msg ai">
+                  Calculated, along with the recommended capital call, and the consolidated report has gone to fund managers. These are rules-based calculations — no AI involved in the numbers.
+                  <span class="chip">Finance · Cash position &amp; runway</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" data-panel="dq">
+            <div class="chat">
+              <div class="chat-head">Data Quality Agent<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">Anything wrong in our fund data this morning?</div>
+                <div class="msg ai">
+                  Last night's pass covered every fund. It found commitments that have collected more than was committed, valuations that have gone stale and FX rates that have not refreshed — health score and fix-it list already emailed.
+                  <span class="chip">Data · Nightly integrity checks</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" data-panel="deal">
+            <div class="chat">
+              <div class="chat-head">Deal Management Agent<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">How healthy is the Series C deal?</div>
+                <div class="msg ai">
+                  Scoped to that one deal: stagnant investors, overdue activity steps, missing data-room documents, extracted terms and per-investor note summaries — finishing with a pipeline digest email.
+                  <span class="chip">Deals · Single-deal health</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" data-panel="report">
+            <div class="chat">
+              <div class="chat-head">Portfolio Report Agent<span class="chat-sub">connected to your fund data</span></div>
+              <div class="chat-body">
+                <div class="msg user">Draft the market section of this company's evaluation.</div>
+                <div class="msg ai">
+                  Generated from the uploaded pitch materials, one section at a time. There is no batch run here — each section is generated or refined on demand.
+                  <span class="chip">Portfolio · AI portfolio report</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= THE AGENTS =================
+     This section is generated from the agent-*.html pages themselves, so the
+     directory cannot drift from them. Re-run scratchpad/gen_agent_index.py after
+     adding, renaming or recategorising an agent page. -->
+<section class="section" id="agents">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">The agents</span>
+      <h2>16 agents, <em>each with one job.</em></h2>
+      <p>These are not one assistant with sixteen names. Each has its own scope, its own
+      permissions and its own record of what it did — and each says plainly whether it uses
+      a model or is just checking your records. Open one for the summary, or read its full guide.</p>
+    </div>
+
+    <div class="agent-group ag-white reveal">
+      <div class="section-head">
+        <span class="chip-label">Onboarding</span>
+        <h3 style="font-size:clamp(22px,2.4vw,30px);margin-top:16px">Getting an investor from first document to a record you can rely on.</h3>
+      </div>
+      <div class="agent-grid">
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Onboarding &middot; Agent</span>
+            <h3>E-Sign Monitor</h3>
+            <p class="one">The E-Sign Monitor keeps watch over every document sent out for e-signature within your entity.</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">Each time it runs it flags signature requests that have been unsigned too long, and documents that expired, were cancelled, voided or failed, then emails a status report to your team.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — The whole entity, in one pass</li>
+            <li><b>Uses AI</b> — No &mdash; rule checks only</li>
+            <li><b>Output</b> — A saved report, always &quot;ready&quot;, plus one combined email</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-esign-monitor.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Onboarding &middot; Agent</span>
+            <h3>KYC Doc Extractor Agent</h3>
+            <p class="one">The KYC Doc Extractor Agent is the document reader behind <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>'s document-first KYC experience: an investor uploads their&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">identity and address documents, the agent reads them with AI and pre-fills the matching KYC form fields. The investor reviews and confirms the details rather than typing everything in by hand.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — One investor's KYC record, at upload time</li>
+            <li><b>Uses AI</b> — Yes &mdash; one request per uploaded document</li>
+            <li><b>Output</b> — Pre-filled KYC fields and an on-screen summary; no stored report</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-kyc-doc-extractor.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Onboarding &middot; Agent</span>
+            <h3>KYC Onboarding Agent</h3>
+            <p class="one">The KYC Onboarding Agent reviews a completed investor KYC record and checks that it is complete, internally consistent and not&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">expired &mdash; before your team relies on it for capital calls, distributions or AML clearance. Operations and compliance teams use it as the final quality check on investor onboarding.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — One investor's KYC record, or every completed record in the entity</li>
+            <li><b>Uses AI</b> — Yes &mdash; for two of the document checks</li>
+            <li><b>Output</b> — A report on the record, marked Ready or Blocked, plus AML screening and expiry email</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-kyc-onboarding.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Onboarding &middot; Agent</span>
+            <h3>Side Letter Obligations Agent</h3>
+            <p class="one">Side letters create commitments your team must honour &mdash; quarterly reports for one investor, fee arrangements for another&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">co-investment rights for a third. This agent reads the side letter attached to each commitment, pulls out every obligation with the exact clause it came from, and lines them all up for your legal team to review.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — One commitment, or every commitment in a fund</li>
+            <li><b>Uses AI</b> — Yes &mdash; for reading obligations out of the document</li>
+            <li><b>Output</b> — Obligations in the Obligation Matrix, then tracked tasks and alerts once approved</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-side-letter-obligation.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div class="agent-group ag-grey reveal">
+      <div class="section-head">
+        <span class="chip-label">Finance</span>
+        <h3 style="font-size:clamp(22px,2.4vw,30px);margin-top:16px">Gating capital events and keeping the cash picture current.</h3>
+      </div>
+      <div class="agent-grid">
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Finance &middot; Agent</span>
+            <h3>Call Notice Agent</h3>
+            <p class="one">The Call Notice Agent checks that a capital call is actually ready before its notices reach investors.</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">It works on one call at a time, walks a fixed checklist &mdash; KYC, document generation, document approval and notification setup &mdash; and shows live progress on the capital call's own page.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — One capital call, one check at a time</li>
+            <li><b>Uses AI</b> — No &mdash; every check is a yes/no comparison against your existing records</li>
+            <li><b>Output</b> — A readiness panel on the capital call, plus a saved report marked Ready or Blocked</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-call-notice.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Finance &middot; Agent</span>
+            <h3>Cash Flow Assistant Agent</h3>
+            <p class="one">The Cash Flow Assistant Agent is a rules-based reporting tool that checks how up to date your fund data is, calculates each fund's&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">cash position, runway and recommended capital call, and emails a consolidated report to fund managers. A secondary chat feature lets users ask questions about the latest results in plain language.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — Every fund listed in its setup, entity-wide</li>
+            <li><b>Uses AI</b> — No &mdash; the reporting pipeline is rules-based and never calls an AI model</li>
+            <li><b>Output</b> — A per-fund report, a report file in each fund's Reports folder, and one consolidated email</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-cash-flow-assistant.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Finance &middot; Agent</span>
+            <h3>Distribution Readiness Agent</h3>
+            <p class="one">The Distribution Readiness Agent is a rule-based, step-by-step agent that checks every prerequisite is in place &mdash; investor&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">KYC, computed payment amounts, generated and approved notices, and bank details &mdash; before a capital distribution payment goes out. Fund operations teams run it on a distribution immediately before wiring funds.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — One capital distribution, or every distribution in the entity in batch mode</li>
+            <li><b>Uses AI</b> — No &mdash; entirely rule-based, and it works with no AI key configured</li>
+            <li><b>Output</b> — A live step panel on the distribution, plus a report marked Ready or Blocked</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-distribution-readiness.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Finance &middot; Agent</span>
+            <h3>RTA Reconciliation Agent</h3>
+            <p class="one">The RTA Reconciliation Agent reconciles an uploaded registrar and transfer agent unit statement PDF against your fund's own unit&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">records in <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>. It checks for mismatches at scheme (ISIN) and folio level, flags folios in the statement with no matching record, and flags unit classes <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> holds that the statement never mentions.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — One fund per statement upload</li>
+            <li><b>Uses AI</b> — Yes &mdash; AI reads the statement PDF, so an AI provider key is required</li>
+            <li><b>Output</b> — A reconciliation report with a health score, plus an optional email summary</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-rta-reconciliation.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div class="agent-group ag-white reveal">
+      <div class="section-head">
+        <span class="chip-label">Portfolio</span>
+        <h3 style="font-size:clamp(22px,2.4vw,30px);margin-top:16px">Reading company material and turning it into comparable numbers.</h3>
+      </div>
+      <div class="agent-grid">
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Portfolio &middot; Agent</span>
+            <h3>Investor Presentation Analyst</h3>
+            <p class="one">The Investor Presentation Analyst reads a portfolio company&rsquo;s investor presentations across reporting periods, extracts&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">structured intelligence from each one, and compares periods to surface commitment misses and dropped risks. It produces a pre-board briefing plus a Management Accountability Score, all scoped to one portfolio company at a time.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — One portfolio company at a time</li>
+            <li><b>Uses AI</b> — Yes &mdash; every meaningful step except the score</li>
+            <li><b>Output</b> — 8&ndash;12 grounded pre-board questions and a 0&ndash;100 accountability score</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-presentation-analyst.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Portfolio &middot; Agent</span>
+            <h3>Portfolio Company Agent</h3>
+            <p class="one">The Portfolio Company Agent keeps an eye on the data health of every portfolio company in your fund &mdash; whether KPI reports&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">have come in on time, whether required documents are on file, and whether a recent valuation has been recorded. It does not use AI to make judgment calls; it checks your data against the rules you have configured.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — Every portfolio company at once, or a single company</li>
+            <li><b>Uses AI</b> — No &mdash; every check is rule-based</li>
+            <li><b>Output</b> — A per-company report, plus a portfolio compliance dashboard</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-portfolio-company.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Portfolio &middot; Agent</span>
+            <h3>Portfolio Report Agent</h3>
+            <p class="one">The Portfolio Report Agent is the AI engine behind AI Portfolio Reports &mdash; investment-grade evaluation documents generated per&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">portfolio company from uploaded pitch materials. It does not behave like a typical support agent: it has no report history of its own, no Schedule tab and no fund- or entity-level batch run, and instead generates or refines one report section at a time, on demand.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — One section of one report</li>
+            <li><b>Uses AI</b> — Yes &mdash; your entity&rsquo;s configured model, plus OpenAI for refinement</li>
+            <li><b>Output</b> — A collated report from reviewed sections, exportable to PDF or Word</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-portfolio-report.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Portfolio &middot; Agent</span>
+            <h3>Portfolio Scoring Agent</h3>
+            <p class="one">The Portfolio Scoring Agent scores each portfolio company using a sector-specific scoring guide and AI.</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">It gathers the company&rsquo;s documents, KPI data, valuations and investment history, sends all of that to your configured AI model together with the matching scoring guide, and stores a structured 0&ndash;100 investment score on the company.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — Every portfolio company with a sector set, or a single company</li>
+            <li><b>Uses AI</b> — Yes &mdash; this agent&rsquo;s own model setting, or your entity default</li>
+            <li><b>Output</b> — A new scoring report per run: score, grade, dimensions, data coverage</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-portfolio-scoring.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div class="agent-group ag-grey reveal">
+      <div class="section-head">
+        <span class="chip-label">Deals</span>
+        <h3 style="font-size:clamp(22px,2.4vw,30px);margin-top:16px">Watching open deals and reporting the state of a raise.</h3>
+      </div>
+      <div class="agent-grid">
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Deals &middot; Agent</span>
+            <h3>Deal Management Agent</h3>
+            <p class="one">The Deal Management Agent monitors the health of a single open deal: stagnant investors, overdue activity steps, missing data-room&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">documents, extracted deal terms, per-investor note summaries and AI scores. It runs scoped to one deal at a time — on demand from the deal page or on a weekly schedule — and finishes with a pipeline digest email.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — One open deal at a time</li>
+            <li><b>Uses AI</b> — Yes — for term extraction, note summaries and scoring</li>
+            <li><b>Output</b> — Deal report, per-investor reports, pipeline digest email</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-deal-management.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Deals &middot; Agent</span>
+            <h3>Deals Report Agent</h3>
+            <p class="one">The Deals Report Agent looks across a fund's open deals and produces a fundraising status report for each one — committed against&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">target amounts, fill rate, activity-step distribution, top investors and staleness. It then emails a consolidated summary to whoever you have configured to receive it.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — Every open deal in the organisation, unless narrowed</li>
+            <li><b>Uses AI</b> — No</li>
+            <li><b>Output</b> — Per-deal report, an HTML report document, one summary email</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-deals-report.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div class="agent-group ag-white reveal">
+      <div class="section-head">
+        <span class="chip-label">Data</span>
+        <h3 style="font-size:clamp(22px,2.4vw,30px);margin-top:16px">Catching bad data and summarising what people wrote down.</h3>
+      </div>
+      <div class="agent-grid">
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Data &middot; Agent</span>
+            <h3>Data Quality Agent</h3>
+            <p class="one">The Data Quality Agent runs nightly integrity checks across every fund's financial data — commitments that have collected more than&hellip;</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">was committed, valuations that have gone stale, and FX rates that have not been refreshed. It then emails a health score and a fix-it list to the people you have configured to receive it.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — Every fund in the entity, once a day</li>
+            <li><b>Uses AI</b> — No</li>
+            <li><b>Output</b> — A health score and fix-it list per fund, by email and in the app</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-data-quality.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+        <details class="agent-card">
+          <summary>
+            <span class="kick">Data &middot; Agent</span>
+            <h3>Note Summarizer Agent</h3>
+            <p class="one">The Note Summarizer Agent generates an AI-written summary of an investor's notes over the past month or quarter.</p>
+          </summary>
+          <div class="agent-body">
+            <p class="ask">It runs across every investor in your entity, can auto-tag untagged notes first, and writes the summary back as a regular note on the investor record so it sits alongside everything else in that investor's notes feed.</p>
+            <ul class="check-list">
+            <li><b>Runs against</b> — Every investor in the entity, or one investor on demand</li>
+            <li><b>Uses AI</b> — Yes — for auto-tagging and for the summary itself</li>
+            <li><b>Output</b> — A summary note on the investor record, plus a report per investor</li>
+            </ul>
+            <a class="btn btn-primary btn-sm agent-read" href="agent-note-summarizer.html">Read the full guide <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW THE AGENTS WORK ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">How the agents work</span>
+      <h2>Inside your ledger, <em>not beside it.</em></h2>
+      <p>An agent here is not a general chatbot with your documents attached. It reads and writes against the same records your team uses, under the same permissions, with the same audit trail.</p>
+    </div>
+    <div class="steps-num reveal" data-delay="1">
+      <div class="step-n">
+        <h3>Grounded in your own data</h3>
+        <p>Every answer comes from your funds, investors, portfolio companies and deal documents — not from general knowledge about private markets.</p>
+      </div>
+      <div class="step-n">
+        <h3>Proposed, permissioned, logged</h3>
+        <p>An agent proposes an action, inherits the permissions of the person who asked, and writes what it did to the audit log.</p>
+      </div>
+      <div class="step-n">
+        <h3>A human approves the consequential</h3>
+        <p>Anything that moves money or goes to an LP waits for a named person to approve it. The agent prepares; it does not release.</p>
+      </div>
+      <div class="step-n">
+        <h3>Answers cite the record</h3>
+        <p>Each reply carries the underlying record — the capital event, the statement, the company update or the document clause it came from.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GOVERNANCE ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Governance &amp; data handling</span>
+      <h2>Controls before <em>capability.</em></h2>
+      <p>An agent with access to fund data is a control question, not only a product question. These are the constraints it runs under.</p>
+    </div>
+    <div class="f-grid">
+      <div class="f-card reveal">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+        <h3>Role-based permissions</h3>
+        <p>An agent sees exactly what the person invoking it is entitled to see — no fund, investor or deal outside that scope.</p>
+      </div>
+      <!-- TODO: verify / replace with real detail before launch — confirm the model-training and vendor position with your DPA before publishing this card -->
+      <div class="f-card reveal" data-delay="1">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 11V8a6 6 0 0112 0v3M5 11h14v9H5v-9z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>No training on your data</h3>
+        <p>Your fund, investor and portfolio data is not used to train models. It is used to answer your questions and nothing else.</p>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Full audit log</h3>
+        <p>Every prompt, retrieval and action an agent takes is recorded against a user, a timestamp and a record.</p>
+      </div>
+      <div class="f-card reveal" data-delay="3">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Human-in-the-loop approvals</h3>
+        <p>Capital movement, investor communication and anything filed externally require an explicit human approval step.</p>
+      </div>
+      <!-- TODO: verify / replace with real detail before launch — confirm which hosting regions are actually offered -->
+      <div class="f-card reveal" data-delay="4">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c2.5 2.4 2.5 15.6 0 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Data residency options</h3>
+        <p>Hosting region can be selected so fund data stays in the jurisdiction your structure and LPs require.</p>
+      </div>
+      <a class="f-card reveal" data-delay="5" href="security.html">
+        <span class="kick">Security &amp; Trust</span>
+        <h3>The full control set</h3>
+        <p>Encryption, access control, hosting, retention and the certifications behind the platform.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap-narrow">
+    <div class="section-head reveal">
+      <span class="chip-label">Questions</span>
+      <h2>What teams ask <em>first.</em></h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>Where do the agents get their data?</summary>
+        <div>
+          <p>From your <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> tenant. Fund books, capital events, investor records, portfolio company updates and the documents held in deal rooms and investor files.</p>
+          <p>Where you have connected banks, custodians or other systems through our integrations, the agents read the records those feeds create — not the external systems directly.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Can an agent send an LP notice on its own?</summary>
+        <div>
+          <p>No. An agent can draft the notice, compute each investor's figures and assemble the distribution list. Release requires a named person to approve it.</p>
+          <p>The same rule applies to anything that moves money or is filed with a regulator.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What happens when it is unsure?</summary>
+        <div>
+          <p>It says so, and shows what it could not resolve — a missing document, an unaudited number, a figure that two records disagree on.</p>
+          <p>An agent that cannot ground an answer in a record returns the gap rather than a guess.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Is our data used to train models?</summary>
+        <div>
+          <!-- TODO: verify / replace with real detail before launch — align this answer with the model-vendor terms in your DPA -->
+          <p>No. Your data is used to answer your questions. It is not used to train models, and it is not pooled with other clients' data.</p>
+          <p>Our data processing terms set this out in writing. See <a href="security.html">Security &amp; Trust</a> for the wider control set.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Which structured and unstructured sources can it query?</summary>
+        <div>
+          <p>Structured: fund and investor ledgers, capital accounts, capital events, fee and waterfall computations, portfolio metrics and deal records.</p>
+          <p>Unstructured: subscription packs, side letters, KYC files, company update decks and reports, and the documents held in a deal room — read within the permissions of the person asking.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Keep going</span>
+      <h2>Where the agents <em>do the work.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="funds.html">
+        <div>
+          <span class="kick">01 · Funds</span>
+          <h3>Funds</h3>
+          <p>Investor onboarding, drawdowns and distributions, waterfalls and shadow books on one ledger.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="portfolios.html">
+        <div>
+          <span class="kick">02 · Portfolios</span>
+          <h3>Portfolios</h3>
+          <p>Company data collection, performance against plan, and LP- and GP-ready reporting.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="integrations.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Data &amp; Integrations</h3>
+          <p>ERPs, e-sign and APIs — the feeds the agents read from.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+</body>
+</html>

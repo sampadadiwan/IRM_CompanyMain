@@ -1,4 +1,8 @@
 class AssistantsController < ApplicationController
+  # Record classes a chat is allowed to be "owned by". Anything the LLM/browser-supplied
+  # owner_type resolves to outside this list is rejected before it ever reaches constantize.
+  ALLOWED_CHAT_OWNER_TYPES = %w[Investor Fund CapitalCommitment].freeze
+
   def show
     authorize :assistant, :show?
 
@@ -125,10 +129,23 @@ class AssistantsController < ApplicationController
 
   private
 
+  # Resolves owner_type/owner_id to a record the *current user* is actually authorized to
+  # see. A bare `owner_type.constantize.find_by(id: owner_id)` would let any authenticated
+  # user open a chat against an arbitrary id -- including a record belonging to a different
+  # entity/tenant -- since nothing checked it was theirs. That record's #to_s is written
+  # into the chat name below and rendered back to the requesting user, so an unscoped lookup
+  # here is a direct cross-tenant information leak, not just a theoretical gap.
+  def find_chat_owner(owner_type, owner_id)
+    return nil if owner_type.blank? || owner_id.blank?
+    return nil unless ALLOWED_CHAT_OWNER_TYPES.include?(owner_type)
+
+    Pundit.policy_scope(current_user, owner_type.constantize).find_by(id: owner_id)
+  end
+
   def find_or_create_chat
     return Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id, assistant_type: assistant_class) if params[:new].blank? && params[:chat_id].present?
 
-    owner = params[:owner_type].constantize.find_by(id: params[:owner_id]) if params[:owner_type].present? && params[:owner_id].present?
+    owner = find_chat_owner(params[:owner_type], params[:owner_id])
 
     if %w[PortfolioCompanyAssistant CapitalCommitmentAssistant SpecificFundAssistant].include?(assistant_class)
       owner ||= current_user

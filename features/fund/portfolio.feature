@@ -93,6 +93,7 @@ Scenario Outline: Delete valuation to recompute PI numbers
     |entity                             |fund                |
     |entity_type=Investment Fund;       |name=Test fund      |
 
+@import
 Scenario Outline: Generate Fund Reports
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -186,6 +187,7 @@ Scenario Outline: WTD AVG
     |quantity=-600       |3       |
 
 
+@import
 Scenario Outline: Compute Gains
   Given there is a user "" for an entity "entity_type=Investment Fund;currency=INR"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
@@ -205,6 +207,7 @@ Scenario Outline: Compute Gains
 
 
 
+@import
 Scenario Outline: Stock Adjustment
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -226,6 +229,7 @@ Scenario Outline: Stock Adjustment
     |adjustment=3.0;category=Unlisted;sub_category=Equity          |
 
 
+@import
 Scenario Outline: Stock Conversion
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -250,6 +254,7 @@ Scenario Outline: Stock Conversion
     |from_quantity=1000;to_quantity=2000;notes=Test  | name=Stock;investment_domicile=Domestic      | name=CCPS;investment_domicile=Domestic     |
     |from_quantity=2000;to_quantity=50000;notes=Test  | name=Stock;investment_domicile=Domestic;currency=INR| name=Debt;investment_domicile=Domestic ;currency=USD    |
 
+@import
 Scenario Outline: Aggregate Portfolio Investment As Of report
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -265,6 +270,7 @@ Scenario Outline: Aggregate Portfolio Investment As Of report
   Given I generate a portfolio as of report for "04/03/2024"
   Then the portfolio as of report should be generated for the date "04/03/2024" with expected data
 
+@import
 Scenario Outline: Portfolio Scenario and scenario investment creation
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -298,6 +304,7 @@ Scenario Outline: Portfolio Scenario and scenario investment creation
   Given I click on "Save"
   Then I should see the errors on the same page
 
+@import
 Scenario Outline: Portfolio Scenario run and finalize
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -340,6 +347,7 @@ Scenario Outline: Portfolio Scenario run and finalize
   Then I should see the "Finalization enqueued for"
   And The Portfolio Scenario Should be finalized
 
+@import
 Scenario Outline: Portfolio Scenario run and finalize with tracking currency
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

@@ -6,6 +6,14 @@ Given('there is an unapproved KPI {string} for the company') do |args|
   @kpi.save!
 end
 
+Given('there is an approved KPI {string} for the company') do |args|
+  @kpi_report ||= FactoryBot.create(:kpi_report, entity: @entity, portfolio_company: @portfolio_company, user: @user, as_of: Date.today.beginning_of_month)
+  @kpi = Kpi.new(kpi_report: @kpi_report, entity: @entity, portfolio_company: @portfolio_company, status: :approved, approved_by_user_id: @user.id, approved_at: Time.zone.now)
+  key_values(@kpi, args)
+  @kpi.investor_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: @kpi.name, entity: @entity, investor: @portfolio_company)
+  @kpi.save!
+end
+
 Given('the following unapproved KPIs exist for the company:') do |table|
   table.hashes.each do |row|
     as_of = Date.today.beginning_of_month
@@ -143,3 +151,29 @@ And('all KPIs for {string} should have {string} status in the database') do |com
   pc = Investor.find_by(investor_name: company_name)
   expect(Kpi.where(portfolio_company_id: pc.id).pluck(:status).uniq).to eq([status])
 end
+
+# Named "I am on the KPI show page for" rather than "I visit the KPI show page for" to avoid
+# colliding with the generic "I visit the {word} show page for {string}" step in
+# workflow_instance_steps.rb, which would otherwise ambiguously match "KPI" as its {word}.
+When('I am on the KPI show page for {string}') do |kpi_name|
+  kpi = Kpi.find_by(name: kpi_name, portfolio_company_id: @portfolio_company.id)
+  visit kpi_path(kpi)
+end
+
+# Generic click-then-confirm helper — the "confirm" Stimulus controller intercepts the button_to
+# click, shows #confirmModal, and only submits the underlying form once "Proceed" is clicked.
+# Shared by every button_to on this codebase's show pages that wires up data-controller="confirm"
+# (Approve/Reject/Unapprove on the KPI show page, Recompute RAG Status on the mapping show page).
+When('I click {string} and confirm') do |button_label|
+  click_on button_label
+  if page.has_css?("#confirmModal", wait: 5)
+    within("#confirmModal") do
+      click_on I18n.t("common.proceed")
+    end
+  end
+  sleep 1
+end
+
+# "I should [not] see an {string} button" already defined in kyc_doc_extractor_agent_steps.rb —
+# reused as-is rather than duplicated here (it also matches on have_link, which button_to's
+# rendered <button> still satisfies).

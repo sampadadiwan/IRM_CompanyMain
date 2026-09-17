@@ -26,6 +26,11 @@ class ImportKpi < ImportUtil
       portfolio_company = import_upload.owner
     end
 
+    # Every lookup below is scoped to the portfolio company, so it must be resolved
+    # by now - a sheet with no Portfolio Company column uploaded against an owner
+    # that is neither a KpiReport nor an Investor would otherwise fail on nil
+    raise "Portfolio Company must be specified - add a 'Portfolio Company' column or upload against a portfolio company" if portfolio_company.blank?
+
     entity_id = import_upload.entity_id
     kpi_report = setup_kpi_report(entity_id, portfolio_company, user_data, import_upload)
     # The mapping lookup is scoped to this portfolio company (it used to be global, so a company
@@ -34,7 +39,7 @@ class ImportKpi < ImportUtil
     # would create rows that can never be approved. Raising here fails just this row and surfaces
     # the missing mapping in the import results, telling the user to upload mappings first.
     investor_kpi_mapping = InvestorKpiMapping.find_by(investor_id: portfolio_company.id, reported_kpi_name: name)
-    raise "InvestorKpiMapping not found for #{name} in #{portfolio_company&.name}" if investor_kpi_mapping.blank?
+    raise "No KPI mapping found for '#{name}' in #{portfolio_company.name}. Upload the KPI mappings for this portfolio company first" if investor_kpi_mapping.blank?
 
     name = investor_kpi_mapping.standard_kpi_name || name
 
@@ -80,9 +85,10 @@ class ImportKpi < ImportUtil
   end
 
   def get_data(user_data)
-    name = user_data['Name'].strip
+    # Name drives the mapping lookup, so a blank cell must name the column
+    name = cell(user_data, 'Name', required: true).strip
     value = user_data['Value']
-    as_of = Date.local_parse(user_data['As Of'].to_s)
+    as_of = parse_date_cell(user_data, 'As Of', required: true)
     notes = user_data['Notes']
     period = user_data['Period']
 

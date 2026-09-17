@@ -20,6 +20,10 @@ class Document < ApplicationRecord
   has_many :permissions, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :e_signatures, dependent: :destroy
+  # Allocation run templates that use this document as their statement document. Nullified on
+  # delete: the template then fails its pre-run check instead of silently producing nothing.
+  has_many :allocation_run_templates, foreign_key: :statement_document_id, dependent: :nullify,
+                                      inverse_of: :statement_document
   has_one :esign_log, dependent: :destroy
   has_many :viewed_bies, as: :owner, dependent: :destroy
   has_many :doc_shares, dependent: :destroy
@@ -58,6 +62,12 @@ class Document < ApplicationRecord
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id entity_id orignal send_email].freeze
+
+  # Which engine converts documents generated from this template to PDF. Read from the
+  # source template at generation time (see DocumentGeneratorBase#convert_to_accessible_pdf) --
+  # "libreoffice" is the existing soffice path and covers every template unless explicitly
+  # opted into "m365". See docs/technical/m365_graph_pdf_conversion.md.
+  PDF_CONVERSION_ENGINES = %w[libreoffice m365 google_docs].freeze
   # counter_culture :entity
   # counter_culture :folder
   # counter_culture :doc_shares # Uncomment if doc_shares_count column is added to documents table
@@ -66,9 +76,40 @@ class Document < ApplicationRecord
 
   validates :name, presence: true
   validates :file, presence: true, on: :create
-  normalizes :name, with: ->(name) { name.strip }
+  # squish, not strip: a template whose own name carries a trailing space (e.g. "SOA ") makes
+  # every document generated from it inherit a DOUBLED space, because DocumentGeneratorBase#upload
+  # interpolates "#{doc_template.name} #{start_date} to ...". strip only cleaned the ends, so that
+  # internal run survived — and HTML collapses it, making the name look correct everywhere in the
+  # UI while exact/LIKE matching (CustomNotification#attachment_names) silently missed it.
+  # Applies on assignment and save, so existing rows are untouched until they're next saved.
+  normalizes :name, with: ->(name) { name.squish }
+  # Doc-gen jobs look a template up by (entity, owner, owner_tag, name) — see
+  # CommitmentDocuments#templates — and then key their "delete the previously generated
+  # document" step on template.name. A second live template with the same four values is
+  # therefore never a "new version": the job renders from both, and the second render deletes
+  # the first (investors saw a call notice link go "access denied" seconds after it appeared).
+  # Reject it at upload; the user should edit/replace the file on the existing template or
+  # delete the old one first. Only tagged templates are checked — an untagged template
+  # (owner_tag nil, e.g. TemplateFixAgent's "(AI Fix - draft)" copies) is never picked up by
+  # the jobs' owner_tag-filtered scans, so duplicates there are harmless. `conditions` limits
+  # the check to live rows: Trackable soft-deletes via paranoia, and a deleted template must
+  # not block re-uploading its name. Checked only when the identifying attributes are being
+  # set (create, rename, re-tag, re-own): duplicates that pre-date this validation exist in
+  # production, and CommitmentDocuments#templates already tolerates them by collapsing to the
+  # newest — they must stay editable (file replace, approval, e-sign settings) rather than
+  # failing every save until someone notices and deletes one.
+  validates :name, uniqueness: { scope: %i[entity_id owner_type owner_id owner_tag],
+                                 conditions: -> { where(deleted_at: nil) },
+                                 message: "already exists as a template with this tag here. Edit that template " \
+                                          "(replace its file) or delete it before uploading another with the same name" },
+                   if: :template_identity_changing?
   validates :owner_tag, length: { maximum: 40 }
   validates :tag_list, length: { maximum: 120 }
+  # The DB default only applies when the column is left unset; an explicit nil (e.g. from an
+  # attributes hash written before this column existed) would otherwise fail the inclusion
+  # validation below instead of quietly falling back to the safe default.
+  normalizes :pdf_conversion_engine, with: ->(value) { value.presence || "libreoffice" }
+  validates :pdf_conversion_engine, inclusion: { in: PDF_CONVERSION_ENGINES }
 
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
@@ -141,6 +182,26 @@ class Document < ApplicationRecord
   # Sequence of callbacks is important here
   def after_create_commit_callbacks
     DocumentPostCreateJob.perform_later(id)
+    trigger_side_letter_extraction
+  end
+
+  # SideLetterObligationAgent auto-extraction: when a side letter PDF lands on a
+  # commitment and the agent has auto_extract_on_upload = Yes, enqueue an
+  # extraction run for just that commitment. Guards are ordered cheapest-first —
+  # this fires on every document create, so non-commitment uploads must exit on
+  # the first string compare.
+  def trigger_side_letter_extraction
+    return unless owner_type == "CapitalCommitment" && !template
+
+    agent = SupportAgent.enabled.where(entity_id: entity_id, agent_type: "SideLetterObligationAgent").last
+    return if agent.nil?
+    # Feature is dark for the tenant — don't extract obligations nobody can see.
+    return unless agent.entity_flag_enabled?
+    return unless (agent.json_fields || {})["auto_extract_on_upload"].to_s.casecmp("yes").zero?
+    # Matches the configured name label, or a "Side Letter"/"SideLetter" tag in any casing.
+    return unless SideLetterObligationAgent.side_letter_document?(self, SideLetterObligationAgent.doc_label(agent))
+
+    SupportAgentJob.perform_later(support_agent_id: agent.id, target_type: "CapitalCommitment", target_id: owner_id)
   end
 
   def post_create_actions
@@ -204,6 +265,14 @@ class Document < ApplicationRecord
     self.entity_id = folder.entity_id
   end
 
+  # Guard for the template-name uniqueness validation above: a tagged template whose
+  # identifying attributes (name, tag, owner, entity) are new or changing on this save.
+  def template_identity_changing?
+    return false unless template? && owner_tag.present?
+
+    new_record? || name_changed? || owner_tag_changed? || owner_id_changed? || owner_type_changed? || entity_id_changed?
+  end
+
   def send_notification_for_owner
     notification_users.each do |user|
       DocumentNotifier.with(record: self, entity_id:).deliver_later(user)
@@ -242,6 +311,14 @@ class Document < ApplicationRecord
             .where("access_rights.access_to=?", current_user.email)
 
     end
+  end
+
+  def m365_pdf_conversion?
+    pdf_conversion_engine == "m365"
+  end
+
+  def google_docs_pdf_conversion?
+    pdf_conversion_engine == "google_docs"
   end
 
   def video?
@@ -320,7 +397,7 @@ class Document < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved created_at download esign_status impressions_count locked name orignal owner_tag owner_type tag_list capital_call_id commitments_fund_id as_of].sort
+    %w[approved created_at download esign_status impressions_count locked name orignal owner_tag owner_type tag_list capital_call_id commitments_fund_id as_of template].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

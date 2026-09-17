@@ -7,7 +7,19 @@
   title = run_allocations ? "Allocate Account Entries For : #{@fund.name}" : "Generate Investor Statements For : #{@fund.name}"
 %>
 
+<%
+  # A running allocation run group that is using this fund, or has yet to reach it, blocks a manual run.
+  group_busy = AllocationGroupRun.fund_busy?(@fund.id)
+%>
 <%= render NewCard.new do %>
+
+  <% if group_busy %>
+    <div class="alert alert-warning">
+      <i class="ti ti-loader me-1"></i>
+      An <strong>allocation run group</strong> is currently running on this fund. A manual run is refused until it finishes —
+      <%= link_to "see its progress", allocation_run_templates_path(tab: "runs") %>.
+    </div>
+  <% end %>
 
   <div data-controller="rule-validation"
        data-rule-validation-target-model-value="AllocationRun"
@@ -82,14 +94,25 @@
 
         <div class="form-group">
           <%= form.label :template_name, "Investor Statement Template" %>
-          <%= form.select :template_name, @fund.capital_commitments.first.templates(["SOA Template", "Investor Statement Template"]).map{|d| [d.name, d.id]}, {}, class: "form-control", name: "template_id"  %>
+          <%
+            # This block renders unconditionally regardless of the generate_soa checkbox
+            # (conditional-visibility only hides it with CSS/JS), so a fund with zero
+            # capital commitments — a brand new fund, or a Cucumber fixture that only sets
+            # up an allocation run — must not crash the whole page just to show this select.
+            statement_document_options = @fund.capital_commitments.first&.templates(["SOA Template", "Investor Statement Template"])&.map { |d| [d.name, d.id] } || []
+          %>
+          <%= form.select :template_name, statement_document_options, {}, class: "form-control", name: "template_id"  %>
           <small class="text-muted">Select the template to be used for Investor Statement generation. </small>
         </div>
       </div>
     </div>
 
     <div class="form-group">
-      <%= form.submit "Submit", {class: "btn btn-outline-primary"}%>
+      <%= form.submit "Submit", {class: "btn btn-outline-primary", disabled: group_busy}%>
+      <%= link_to allocation_run_templates_path, class: "btn btn-outline-secondary ms-2", data: { bs_toggle: "tooltip" },
+                  title: "Save these settings once and run several funds in order with one action" do %>
+        <i class="ti ti-template"></i> Allocation Run Templates
+      <% end %>
     </div>
   <% end %>
 
@@ -99,120 +122,4 @@
 
 <% end %>
 
-<div class="associated_entity" data-controller="datatable">
-
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Previous Runs</h1>
-    <div>
-      <% if policy(@fund).period_report? %>
-        <%= form_with url: fund_report_account_entry_reports_path, method: :get, local: true, class: "d-inline-flex align-items-end gap-2" do |f| %>
-          <%= f.hidden_field :fund_id, value: @fund.id, id: nil %>
-          <%= f.date_field :start_date, value: start_date, class: "form-control form-control-sm", title: "Report start date" %>
-          <%= f.date_field :end_date, value: end_date, class: "form-control form-control-sm", title: "Report end date" %>
-          <%= f.submit "View Account Entries Report", class: "btn btn-sm btn-outline-success" %>
-        <% end %>
-      <% end %>
-      <% if policy(AllocationRun).unlock_all? && @fund.present? %>
-        <%= button_to "Unlock All", unlock_all_allocation_runs_path(fund_id: @fund.id), class: "btn btn-sm btn-outline-warning", method: :patch, form_class: "deleteButton", data: { action: "click->confirm#popup", method: :patch, msg: "Are you sure you want to unlock all AllocationRuns?" } %>
-      <% end %>
-    </div>
-  </div>
-
-  <table class="table table-bordered dataTable jqDataTable">
-    <thead>
-      <tr>
-          <th>
-            Start Date
-          </th>
-          <th>
-            End Date
-          </th>
-          <th>
-            Run Allocations
-          </th>
-          <th>
-            Generate Fund Ratios
-          </th>
-          <th>
-            Generate SOA
-          </th>
-          <th>
-            Template
-          </th>
-          <th>
-            On
-          </th>
-          <th>
-            By
-          </th>
-          <th>
-            For
-          </th>
-          <th>
-            Status
-          </th>
-          <th>
-            Locked
-          </th>
-          <th>
-
-          </th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <% @fund.allocation_runs.includes(:user).order(created_at: :desc).each do |runs|  %>
-        <tr>
-          <td>
-            <%= l runs.start_date %>
-          </td>
-          <td>
-            <%= l runs.end_date %>
-          </td>
-          <td>
-            <%= display_boolean runs.run_allocations %>
-          </td>
-          <td>
-            <%= display_boolean runs.fund_ratios %>
-          </td>
-          <td>
-            <%= display_boolean runs.generate_soa %>
-          </td>
-          <td>
-            <%= runs.template_name %>
-          </td>
-          <td>
-            <%= l runs.created_at %>
-          </td>
-          <td>
-            <%= runs.user.full_name %>
-          </td>
-          <td>
-            <%= runs.rule_for.presence || "Both" %> <br>
-            <%= runs.tag_list %>
-          </td>
-          <td>
-            <%= runs.status %>
-          </td>
-          <td>
-            <%= display_boolean runs.locked %>
-          </td>
-          <td>
-            <% if runs.locked %>
-              <%= form_with model: false, url: unlock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
-                <%= button_tag "Unlock", class: "btn btn-sm btn-outline-warning", data: { confirm: "Are you sure you want to unlock this AllocationRun?" } %>
-              <% end %>
-            <% else %>
-              <%= link_to "Rerun", allocate_form_fund_path(runs.attributes), class: "btn btn-sm btn-outline-primary" %>
-              <%= form_with model: false, url: lock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
-                <%= button_tag "Lock", class: "btn btn-sm btn-outline-danger", data: { confirm: "Are you sure you want to lock this AllocationRun?" } %>
-              <% end %>
-            <% end %>
-            <%= link_to "Account Entries", account_entries_path(filter: true, fund_id: @fund.id, q: ransack_query_params_multiple([["allocation_run_id", :eq, runs.id], ["reporting_date", :eq, l(runs.end_date)]])), class: "btn btn-sm btn-outline-info" if runs.created_at > Date.local_parse("29/03/2025") %>
-            <%= link_to "View Report", fund_report_account_entry_reports_path(fund_id: @fund.id, start_date: runs.start_date, end_date: runs.end_date), class: "btn btn-sm btn-outline-success" if policy(@fund).period_report? %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<%= render "allocation_runs", fund: @fund, start_date:, end_date: %>

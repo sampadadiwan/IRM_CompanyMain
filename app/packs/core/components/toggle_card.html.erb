@@ -1,4 +1,4 @@
-<div class="card shadow mb-4" data-controller="<%= @controller %>">
+<div class="card shadow mb-4" data-controller="<%= @controller %>"<% @data.each do |key, value| %> data-<%= key %>="<%= value %>"<% end %>>
   <div class="card-header py-3 d-flex align-items-center justify-content-between">
     <h1 class="toggle-card-title m-0 font-weight-bold text-primary cursor-pointer" data-bs-toggle="collapse" href=".<%= @css_class %>"><%= @title %></h1>
 

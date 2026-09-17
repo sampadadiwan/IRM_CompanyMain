@@ -1,3 +1,15 @@
+# A phone number Phonelib accepts for the given call code, so factory-built users pass
+# User#phone_must_be_dialable whichever deployment CURRENT_SITE names.
+#
+#   "1"  -> 415-555-xxxx, a real San Francisco range (fixed_or_mobile, so SMS-eligible)
+#   else -> 9xxxxxxxxx, an Indian mobile range
+#
+# Keep both branches SMS-eligible: scenarios that assert the SMS option appears rely on
+# the factory's number being textable, not merely valid.
+def FactoryBot.dialable_phone_for(call_code)
+  call_code.to_s == "1" ? "415555#{rand(1000..9999)}" : "9#{rand(100_000_000..999_999_999)}"
+end
+
 FactoryBot.define do
   factory :task_template do
     for_class { %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution IndividualKyc NonIndividualKyc].sample }
@@ -224,7 +236,11 @@ FactoryBot.define do
     last_name { Faker::Name.last_name }
     email { Faker::Internet.email }
     cc { Faker::Internet.email }
-    phone { rand(10**10) }
+    # Same requirement as the :user factory: this number flows into
+    # InvestorAccess#update_user, which builds the portal User from it. That path opts out
+    # of validation now, so a bad number is no longer a save failure — but it still left
+    # the generated user's SMS eligibility varying between runs for no reason.
+    phone { FactoryBot.dialable_phone_for(User.geo_default_call_code) }
     approved { true }
   end
 
@@ -351,6 +367,31 @@ FactoryBot.define do
     fund_ids    { [] }
     portfolio_company_ids { [] }
     sectors     { [] }
+  end
+
+  factory :allocation_run_template do
+    entity          { nil }
+    user            { nil }
+    fund            { nil }
+    sequence(:name) { |n| "Allocation Template #{n}" }
+    run_allocations { true }
+    generate_soa    { false }
+    fund_ratios     { false }
+  end
+
+  factory :allocation_run_template_group do
+    entity          { nil }
+    user            { nil }
+    sequence(:name) { |n| "Allocation Group #{n}" }
+  end
+
+  factory :allocation_group_run do
+    entity     { nil }
+    user       { nil }
+    group_name { "Group" }
+    start_date { Date.new(2024, 1, 1) }
+    end_date   { Date.new(2024, 3, 31) }
+    status     { "queued" }
   end
 
   factory :fund_ratio do
@@ -795,7 +836,13 @@ FactoryBot.define do
     last_name  { Faker::Name.last_name }
     email { entity ? "#{first_name.downcase}.#{rand(1000)}@#{entity.name.parameterize}.com" : Faker::Internet.email }
     password { "password" }
-    phone { rand(10**10) }
+    # Must be dialable under whatever call code the user will get, since
+    # User#phone_must_be_dialable rejects the rest. call_code defaults to
+    # User.geo_default_call_code, which is "1" when CURRENT_SITE=US and "91" otherwise —
+    # so the number has to follow it. An Indian-shaped number under +1 is invalid ~61% of
+    # the time, and the old rand(10**10) was invalid under +91 ~36% of the time; either
+    # way the failure lands on a random subset of runs, which is the worst kind to debug.
+    phone { FactoryBot.dialable_phone_for(User.geo_default_call_code) }
     accept_terms { true }
     permissions { User.permissions.keys }
 
@@ -865,5 +912,49 @@ FactoryBot.define do
     action { "add_cashflow" }
     account_entry_names { ["Custom Entry"] }
     period { "all" }
+  end
+
+  factory :side_letter do
+    capital_commitment { CapitalCommitment.all.sample }
+    entity { capital_commitment.entity }
+    # The executed side letter PDF must be a document owned by the commitment
+    document do
+      create(:document, entity: capital_commitment.entity, owner: capital_commitment,
+                        name: "Side Letter", folder: capital_commitment.document_folder || Folder.first)
+    end
+    executed_at { Date.today - rand(12).months }
+    extraction_status { "pending" }
+  end
+
+  factory :side_letter_obligation do
+    side_letter
+    entity { side_letter.entity }
+    obligation_type { "reporting" }
+    title { "Quarterly ESG report" }
+    description { Faker::Company.catch_phrase }
+    source_clause { "Section 4.3(b)" }
+    trigger_type { "calendar_event" }
+    frequency_rrule { "FREQ=QUARTERLY;INTERVAL=1" }
+    next_due_date { Date.today + 30 }
+    review_status { "pending_review" }
+    reminder_days_before { 7 }
+    extracted_by { "manual" }
+    owner_team { "ir" }
+  end
+
+  factory :obligation_fulfillment do
+    side_letter_obligation
+    entity { side_letter_obligation.entity }
+    fulfilled_at { Date.today }
+    fulfillment_method { "Report sent via portal and email" }
+    period_covered { "Q3 2026" }
+  end
+
+  factory :obligation_reminder do
+    side_letter_obligation
+    entity { side_letter_obligation.entity }
+    kind { "upcoming" }
+    due_date { Date.today + 7 }
+    sent_at { Time.current }
   end
 end

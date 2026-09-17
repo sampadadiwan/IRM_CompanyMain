@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GENERATED FILE — do not edit by hand.
+  Source: lib/templates/outlook_manifest.xml.erb + config/outlook_addins.yml
+  Regenerate with: rake outlook:manifests
+-->
 <OfficeApp
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -6,13 +11,13 @@
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
   xsi:type="MailApp">
   <Id>61f73634-8c8d-4c31-9a74-27960166699a</Id>
-  <Version>1.0.0.0</Version>
+  <Version>2.0.0.0</Version>
   <ProviderName>CapHive</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="CapHive Filing" />
-  <Description DefaultValue="File emails to CapHive investor records." />
-  <IconUrl DefaultValue="https://app.caphive.com/favicon.ico" />
-  <HighResolutionIconUrl DefaultValue="https://app.caphive.com/favicon.ico" />
+  <Description DefaultValue="File emails to investor records." />
+  <IconUrl DefaultValue="https://app.caphive.com/manifests/icons/caphive-64.png" />
+  <HighResolutionIconUrl DefaultValue="https://app.caphive.com/manifests/icons/caphive-128.png" />
   <SupportUrl DefaultValue="https://caphive.com/support" />
   <AppDomains>
     <AppDomain>https://app.caphive.com</AppDomain>
@@ -29,11 +34,15 @@
     <Form xsi:type="ItemRead">
       <DesktopSettings>
         <SourceLocation DefaultValue="https://app.caphive.com/outlook_addin/taskpane" />
-        <RequestedHeight>250</RequestedHeight>
+        <RequestedHeight>400</RequestedHeight>
       </DesktopSettings>
     </Form>
   </FormSettings>
-  <Permissions>ReadWriteItem</Permissions>
+  <!--
+    ReadItem, not ReadWriteItem: the add-in only reads the selected message. Requesting
+    write access it does not use is a standard AppSource rejection reason.
+  -->
+  <Permissions>ReadItem</Permissions>
   <Rule xsi:type="RuleCollection" Mode="Or">
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
   </Rule>
@@ -47,7 +56,11 @@
     <Hosts>
       <Host xsi:type="MailHost">
         <DesktopFormFactor>
-          <FunctionFile resid="functionFile" />
+          <!--
+            No <FunctionFile> element: every control here uses ShowTaskpane, and none uses
+            ExecuteFunction. The previous manifest declared a FunctionFile pointing at the
+            task pane URL, which is not what a function file is.
+          -->
           <ExtensionPoint xsi:type="MessageReadCommandSurface">
             <OfficeTab id="TabDefault">
               <Group id="caphiveGroup">
@@ -75,12 +88,12 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="icon16" DefaultValue="https://app.caphive.com/favicon.ico" />
-        <bt:Image id="icon32" DefaultValue="https://app.caphive.com/favicon.ico" />
-        <bt:Image id="icon80" DefaultValue="https://app.caphive.com/favicon.ico" />
+        <!-- PNG, not .ico: Outlook will not render an .ico in the ribbon. -->
+        <bt:Image id="icon16" DefaultValue="https://app.caphive.com/manifests/icons/caphive-16.png" />
+        <bt:Image id="icon32" DefaultValue="https://app.caphive.com/manifests/icons/caphive-32.png" />
+        <bt:Image id="icon80" DefaultValue="https://app.caphive.com/manifests/icons/caphive-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="functionFile" DefaultValue="https://app.caphive.com/outlook_addin/taskpane" />
         <bt:Url id="taskpaneUrl" DefaultValue="https://app.caphive.com/outlook_addin/taskpane" />
       </bt:Urls>
       <bt:ShortStrings>
@@ -88,7 +101,7 @@
         <bt:String id="buttonLabel" DefaultValue="File to CapHive" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="buttonTooltip" DefaultValue="File this email to an investor record in CapHive" />
+        <bt:String id="buttonTooltip" DefaultValue="File this email to a record in CapHive" />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

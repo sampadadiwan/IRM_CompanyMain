@@ -1,0 +1,16 @@
+<%# SideLetterObligationAgent report tab: the living obligation matrix for the
+    entity (the enforcement run's counts live in Execution History).
+    Locals: support_agent, obligations %>
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <p class="text-muted mb-0">
+    Obligations extracted from side letters. Pending items need counsel review before
+    tasks and alerts go live.
+  </p>
+  <%= link_to side_letter_obligations_path, class: "btn btn-outline-primary d-inline-flex align-items-center" do %>
+    <i class="ti ti-table"></i> Open Full Matrix
+  <% end %>
+</div>
+<%= render "side_letter_obligations/matrix", obligations: obligations %>
+<%# Modal markup kept after the grid (outside the table) — full anti-flicker
+    placement outside the agent FormCard isn't reachable from a tab partial %>
+<%= render "side_letter_obligations/action_modals", obligations: obligations %>

@@ -43,6 +43,22 @@ class Investor < ApplicationRecord
   # The users linked to the InvestorAccess
   has_many :users, through: :investor_accesses
   has_many :approved_users, through: :approved_investor_accesses, source: :user
+
+  # LP CRM MVP: options for the "Touch Point" dropdown on note/task forms —
+  # every person recorded under this LP, approved (portal users) and unapproved
+  # (CRM-only contacts) alike, as [display name, investor_access_id] pairs.
+  # Notes/tasks link touch points via the InvestorAccess record so each
+  # contact's history stays scoped to this stakeholder (see Note#touch_point).
+  def touch_point_options
+    investor_accesses.order(:first_name).map { |ia| ["#{ia.full_name} (#{ia.email})", ia.id] }
+  end
+
+  # The LP whose contacts may be used as touch points on notes/tasks owned by
+  # this record — itself. DealInvestor answers with its parent LP's id, so both
+  # owner types share one validation rule (see WithTouchPoint).
+  def touch_point_investor_id
+    id
+  end
   has_many :rm_mappings, dependent: :destroy
   has_many :rm_mappings_as_rm, class_name: "RmMapping", foreign_key: :rm_id, dependent: :destroy
   has_many :mapped_investors_as_rm, through: :rm_mappings_as_rm, source: :investor
@@ -68,6 +84,7 @@ class Investor < ApplicationRecord
 
   has_many :investor_kycs, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
+  has_many :shareholder_positions, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy
@@ -102,6 +119,16 @@ class Investor < ApplicationRecord
   validates_format_of :primary_email, with: URI::MailTo::EMAIL_REGEXP, multiline: true
 
   validates_uniqueness_of :primary_email, scope: :entity_id, message: "has already been used for a different stakeholder. Please enter a unique primary email ID."
+
+  # Keeps the indexed domain column in step with primary_email. The mail add-ins match
+  # senders by domain, and doing that as `primary_email LIKE '%@domain'` cannot use an
+  # index — it scans every investor on each request. This column makes it an equality
+  # lookup against idx_investors_on_email_domain_entity.
+  # @see InvestorEmailMatcher
+  before_save :sync_primary_email_domain, if: :will_save_change_to_primary_email?
+  def sync_primary_email_domain
+    self.primary_email_domain = primary_email.to_s.split("@").last.presence&.downcase
+  end
 
   # The investor_entity_id duplicate is a side effect of the name/email match (see #update_name),
   # so it's redundant noise once either of those is already flagged.
@@ -345,6 +372,16 @@ class Investor < ApplicationRecord
     else
       users
     end
+  end
+
+  # The one definition of "someone at this investor will actually receive Capital Call emails"
+  # for the given fund. Shared by the send-time grey-out (CapitalRemittance#notification_blocked_reasons),
+  # the payment-confirmation gate, and the proactive checks at commitment-create and call-approve
+  # time, so the four places can never drift apart. Note the semantics: a CC address on the
+  # commitment does not count — only a named, approved contact does (see
+  # docs/user_guides/capital_call_actions_and_notifications_matrix.md, Question 6).
+  def capital_call_subscribers?(fund)
+    notification_users(fund, with_tag: 'CapitalCall').any?
   end
 
   # add_to_user_access_rights_cache / remove_from_user_access_rights_cache removed:

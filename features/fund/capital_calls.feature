@@ -23,7 +23,7 @@ Examples:
     |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=USD  |name=Merger;unit_types=Series A,Series B| percentage_called=20;generate_remittances_verified=true |
 
 
-@doc_gen @notification
+@doc_gen @notification @import
 Scenario Outline: Create new capital call
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -48,11 +48,13 @@ Scenario Outline: Create new capital call
   And the generated call notices have as_of set to the remittance date
   Given the generated call notices are approved
   Then when the capital call is approved
+  And the capital call notifications are sent
   And the investors must receive email with subject "<subject>" with the document "Sample.pdf" attached
   And the remittances must be marked with notification sent
   And the capital call collected amount should be "0"
   When I mark the remittances as paid
   Then I should see the remittances
+  Then I should see the remittance payments with investing entity names
   And the capital call collected amount should be "0"
   When I mark the remittances as verified
   Then I should see the remittances
@@ -66,6 +68,7 @@ Scenario Outline: Create new capital call
     |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B;currency=INR    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 40000 | This is a capital call for Fund 2 |
 
 
+@import
 Scenario Outline: Capital Call recompute fees
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -91,6 +94,29 @@ Scenario Outline: Capital Call recompute fees
   |entity                                         |fund                |msg	| call | collected_amount | subject |
   |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;currency=INR      |Fund was successfully created| percentage_called=20;call_basis=Percentage of Commitment | 3520000 | This is a capital call for Fund 1 |
   |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B;currency=INR    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 40000 | This is a capital call for Fund 2 |
+
+
+Scenario Outline: Editing the call date cascades to all capital remittances, including verified ones
+  Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  Given there is a capital call "<call>"
+  Then the corresponding remittances should be created
+  Then when the capital call is approved
+  When I mark the remittances as paid
+  When I mark the remittances as verified
+  When I change the capital call's call date to "2026-09-01"
+  Then I should see the call date change warning naming all the remittances
+  When I confirm the call date change
+  Then every capital remittance's remittance date should be "2026-09-01"
+
+  Examples:
+  	|entity                                 |fund                 | call |
+  	|entity_type=Investment Fund;enable_funds=true;currency=INR  |name=Test  | percentage_called=20 |
 
 
 Scenario Outline: Create a capital call
@@ -153,6 +179,7 @@ Scenario Outline: Generate fund units from capital call
   Given the investors are added to the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
+  Given the capital calls are approved
   Given the remittances are paid and verified
   Given the remittances has some units already allocated
   Given the units are generated
@@ -174,6 +201,7 @@ Scenario Outline: Generate fund units from capital call with phased remittance p
   Given there are capital commitments of "<commitment>" from each investor
   Given there is a capital call "<call>"
   Then the corresponding remittances should be created
+  Given the capital calls are approved
 
   # Phase 1: Pay 50%
   Given remittances are paid "<paid_percentage1>" and verified
@@ -219,6 +247,7 @@ Scenario Outline: Delete Remittance with payment units alocated
   Given there are capital commitments of "<commitment>" from each investor
   Given there is a capital call "<call>"
   Then the corresponding remittances should be created
+  Given the capital calls are approved
   Given remittances are paid "<paid_percentage1>" and verified
   Given the units are generated
   Then there should be correct units generated for the latest payment
@@ -252,6 +281,24 @@ Scenario Outline: Approved capital call cannot be approved again
   Given there is a fund "name=TestFund" for the entity
   Given the fund has "1" capital call
   Given the capital calls are approved
+  Then user "false" have "approve" access to the capital calls
+
+  Examples:
+    | entity                                               |
+    | entity_type=Investment Fund;enable_funds=true        |
+
+
+# State machine: unapprove? requires record.approved, the inverse of approve? — the two
+# buttons are mutually exclusive by construction, never shown at the same time.
+Scenario Outline: Unapproved capital call cannot be unapproved, but an approved one can be
+  Given there is a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given the user has role "approver"
+  Given there is a fund "name=TestFund" for the entity
+  Given the fund has "1" capital call
+  Then user "false" have "unapprove" access to the capital calls
+  Given the capital calls are approved
+  Then user "true" have "unapprove" access to the capital calls
   Then user "false" have "approve" access to the capital calls
 
   Examples:

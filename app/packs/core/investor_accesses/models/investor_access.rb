@@ -1,5 +1,11 @@
 class InvestorAccess < ApplicationRecord
   include Trackable.new
+  # LP CRM MVP: an InvestorAccess with approved=false doubles as a CRM contact
+  # ("touch point") for a prospective LP — no portal access, no email sent.
+  # Contact details beyond name/email/phone (designation, POC role, intro, primary
+  # flag, ...) are tenant-configured custom fields stored in json_fields, so we
+  # reuse the standard WithCustomField machinery instead of adding columns.
+  include WithCustomField
 
   attr_accessor :call_code
 
@@ -129,6 +135,11 @@ class InvestorAccess < ApplicationRecord
                    phone:, whatsapp_enabled: true, system_created: true,
                    entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
       u.call_code = call_code if call_code.present?
+      # The number comes from an access row, often imported from a spreadsheet, and this
+      # save's result is discarded below. Without the opt-out an unparseable number makes
+      # User#phone_must_be_dialable refuse, the belongs_to autosave writes user_id = NULL,
+      # and the access row is saved pointing at nobody. See User#skip_phone_validation.
+      u.skip_phone_validation = true
 
       # Save the user
       u.save

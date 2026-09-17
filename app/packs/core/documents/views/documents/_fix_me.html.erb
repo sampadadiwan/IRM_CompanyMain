@@ -1,0 +1,212 @@
+<%# AI "Fix Me" button + modal + result panel for a template document. %>
+<%# Locals: document %>
+<%
+  template_fix_agent = SupportAgent.find_by(entity_id: document.entity_id, agent_type: "TemplateFixAgent")
+  template_fix_report = template_fix_agent && SupportAgentReport.find_by(owner: document, support_agent: template_fix_agent, latest: true)
+  grouped_models = LlmModels::PROVIDERS.filter_map do |_key, provider|
+    next unless document.entity&.entity_setting&.send(provider[:key_field]).present?
+
+    [provider[:label], provider[:models]]
+  end
+%>
+
+<button type="button" class="btn btn-outline-primary ti ti-wand" data-bs-toggle="modal" data-bs-target="#fixMeModal">
+  Fix Me
+</button>
+
+<% if template_fix_agent %>
+  <%= render "support_agents/progress_panel", report: template_fix_report, support_agent: template_fix_agent, target: document, collapsed: !template_fix_report&.running? %>
+
+  <% if template_fix_report&.ready? || template_fix_report&.blocked? %>
+    <div class="card mb-3 border">
+      <div class="card-header bg-light">
+        <strong>Fix Me result</strong>
+      </div>
+      <div class="card-body">
+        <% if template_fix_report.json_fields["fix_summary"].present? %>
+          <div class="prose" style="font-size: 0.9rem; line-height: 1.6;">
+            <%= markdown_to_html(template_fix_report.json_fields["fix_summary"]) %>
+          </div>
+        <% end %>
+
+        <% if template_fix_report.json_fields["changes"].present? %>
+          <p class="fw-bold mb-1">Changes made:</p>
+          <ul>
+            <% template_fix_report.json_fields["changes"].each do |change| %>
+              <li><%= change %></li>
+            <% end %>
+          </ul>
+        <% end %>
+
+        <% content_check = template_fix_report.json_fields["content_check"] %>
+        <% if content_check.present? %>
+          <% para = content_check["paragraph_count"] || {}
+             words = content_check["word_count"] || {}
+             passed = content_check["passed"]
+             word_match = content_check["word_for_word_match"] %>
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body py-2 px-3">
+              <p class="fw-bold mb-2">
+                Content check —
+                <span class="badge <%= passed ? 'bg-success' : 'bg-danger' %>">
+                  <%= passed ? "PASS" : "FAIL" %>
+                </span>
+              </p>
+              <div class="row small">
+                <div class="col-md-4">
+                  Paragraph count:
+                  <strong><%= para["original"] %> → <%= para["fixed"] %></strong>
+                  <%= para["original"] == para["fixed"] ? content_tag(:i, "", class: "ti ti-check text-success ms-1") : content_tag(:i, "", class: "ti ti-x text-danger ms-1") %>
+                </div>
+                <div class="col-md-4">
+                  Word count:
+                  <strong><%= words["original"] %> → <%= words["fixed"] %></strong>
+                  <%= words["original"] == words["fixed"] ? content_tag(:i, "", class: "ti ti-check text-success ms-1") : content_tag(:i, "", class: "ti ti-x text-danger ms-1") %>
+                </div>
+                <div class="col-md-4">
+                  Word-for-word match:
+                  <strong><%= word_match ? "Yes" : "No" %></strong>
+                  <%= word_match ? content_tag(:i, "", class: "ti ti-check text-success ms-1") : content_tag(:i, "", class: "ti ti-x text-danger ms-1") %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <% result_doc = Document.find_by(id: template_fix_report.json_fields["result_document_id"]) %>
+        <% if result_doc %>
+          <%= link_to result_doc.file.url(response_content_disposition: "inline; filename=#{result_doc.name_with_extension}"),
+                      class: "btn btn-success", target: "_blank" do %>
+            <i class="ti ti-download"></i> Download fixed draft (<%= template_fix_report.json_fields["page_count"] %> pages)
+          <% end %>
+          <p class="text-muted mt-2 mb-0">
+            This is a new draft — <%= document.name %> itself has not been changed. Review it, then
+            replace the template yourself if it looks right.
+          </p>
+        <% elsif template_fix_report.json_fields["render_error"].present? %>
+          <p class="text-danger mb-0">
+            Could not produce a valid draft: <%= template_fix_report.json_fields["render_error"] %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<%#
+  "Fix Me" confirmation — same layout as the KYC "Request Updates" popup
+  (investor_kycs/_request_updates_modal) and users/_reset_two_factor_modal: an
+  "Immediate Actions" callout, tinted action-summary cards that spell out every
+  consequence, then the input the action needs, then Cancel / Confirm.
+%>
+<div class="modal fade" id="fixMeModal" tabindex="-1" aria-labelledby="fixMeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="fixMeModalLabel">
+          <i class="ti ti-wand me-1"></i> Fix Me
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_with url: run_fix_document_path(document), method: :post, local: true, data: { turbo: false } do %>
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">Immediate Actions</div>
+            <div class="text-muted">The following will happen when you click <strong>Run Fix Me</strong>:</div>
+          </div>
+
+          <div class="action-summary__list">
+            <div class="action-summary__item action-summary__item--blue">
+              <span class="action-summary__icon"><i class="ti ti-search"></i></span>
+              <div>
+                <div class="action-summary__title">The template is read and diagnosed</div>
+                <div class="action-summary__desc">
+                  An AI searches the document's underlying structure for the problem you describe
+                  below and works out the root cause before making any changes.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--green">
+              <span class="action-summary__icon"><i class="ti ti-shield-check"></i></span>
+              <div>
+                <div class="action-summary__title">"<%= document.name %>" itself is never modified</div>
+                <div class="action-summary__desc">
+                  Every run produces a new, separately named document. Nothing about the original
+                  template changes, and nothing goes live until you replace it yourself.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--amber">
+              <span class="action-summary__icon"><i class="ti ti-alert-triangle"></i></span>
+              <div>
+                <div class="action-summary__title">Legal wording is never deleted</div>
+                <div class="action-summary__desc">
+                  If something looks like it should be removed rather than restructured, it's
+                  flagged in the summary instead — that decision is left to you.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--purple">
+              <span class="action-summary__icon"><i class="ti ti-bell"></i></span>
+              <div>
+                <div class="action-summary__title">You'll be notified when it's ready</div>
+                <div class="action-summary__desc">
+                  This runs in the background and can take anywhere from under a minute to several
+                  minutes for a large document.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--red">
+              <span class="action-summary__icon"><i class="ti ti-alert-triangle"></i></span>
+              <div>
+                <div class="action-summary__title">Always review before relying on it</div>
+                <div class="action-summary__desc">
+                  This is AI-generated. <b>CapHive is not liable for any unintended changes it
+                  introduces</b> — validate the draft against the original before using it.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="mb-3">
+            <%= label_tag :issue_description, "What's wrong?", class: "form-label fw-semibold" %>
+            <small class="text-muted d-block mb-2">
+              Describe the problem in your own words — e.g. wrong or duplicate clause numbering, a
+              blank-page gap, or a section that always shows regardless of investor type.
+            </small>
+            <%= text_area_tag :issue_description, nil, class: "form-control", rows: 4, required: true,
+                  placeholder: "e.g. Clause numbers after 5.2 duplicate, and there's a big blank gap after clause 5.2.9." %>
+          </div>
+
+          <% if grouped_models.any? %>
+            <div class="mb-1">
+              <%= label_tag :llm_model, "Model", class: "form-label fw-semibold" %>
+              <small class="text-muted d-block mb-2">Which AI model to use. Defaults to the firm's configured model.</small>
+              <%= select_tag :llm_model, grouped_options_for_select(grouped_models, template_fix_agent&.effective_model), class: "form-select" %>
+            </div>
+          <% else %>
+            <div class="action-summary__item action-summary__item--red mb-0">
+              <span class="action-summary__icon"><i class="ti ti-alert-circle"></i></span>
+              <div>
+                <div class="action-summary__title">No LLM provider is configured for this entity</div>
+                <div class="action-summary__desc">
+                  <%= link_to "Configure API keys", llm_keys_support_agents_path %> before Fix Me can run.
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+          <button type="submit" class="btn btn-outline-success" <%= "disabled" if grouped_models.empty? %>>Run Fix Me</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

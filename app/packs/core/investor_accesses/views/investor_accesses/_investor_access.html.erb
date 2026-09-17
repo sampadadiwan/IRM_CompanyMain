@@ -6,7 +6,16 @@
     </td>
   <% end %>
   <td class="text-col">
-    <%= investor_access.user.name if investor_access.user %>
+    <%# User name links to this access's show page — same target and policy gate as
+        the "View" action in the dropdown below; plain text when not permitted %>
+    <% if investor_access.user %>
+      <% if policy(investor_access).show? %>
+        <%= link_to investor_access.user.name,
+                    investor_access_path(investor_access, investor_id: investor_id) %>
+      <% else %>
+        <%= investor_access.user.name %>
+      <% end %>
+    <% end %>
   </td>
   <td class="text-col">
     <%= investor_access.is_investor_advisor ? "Advisor" : "Employee" %>
@@ -58,12 +67,18 @@
       label = investor_access.approved ? "UnApprove" : "Approve"
       icon_class = investor_access.approved ? "ti ti-user-x" : "ti ti-user-check"
       btn_class = investor_access.approved ? "btn btn-outline-warning" : "btn btn-outline-success"
+      # LP CRM: unapproved rows double as contact-only records, so make the
+      # consequence of approving explicit before anyone bulk-approves contacts.
+      help_text = investor_access.approved ? "Un-approve removes platform access and stops notifications for the user" : "Approve grants platform access and enables notifications for the user"
     %>
     <% if policy(investor_access).approve? %>
-      <%= button_to approve_investor_access_path(investor_access, investor_id: investor_id),
-                    method: :patch, class: btn_class, form_class: "deleteButton" do %>
-        <i class="<%= icon_class %>"></i><%= label %>
-      <% end %>
+      <%# Bootstrap tooltip on hover — same data-bs-toggle pattern used elsewhere %>
+      <span data-bs-toggle="tooltip" title="<%= help_text %>">
+        <%= button_to approve_investor_access_path(investor_access, investor_id: investor_id),
+                      method: :patch, class: btn_class, form_class: "deleteButton" do %>
+          <i class="<%= icon_class %>"></i><%= label %>
+        <% end %>
+      </span>
     <% end %>
     <div class="btn-group">
       <div class="dropdown">

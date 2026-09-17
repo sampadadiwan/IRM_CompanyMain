@@ -94,27 +94,35 @@
             <div class="card-body">
               <div class="row g-3">
                 <div class="col-6">
-                  <div class="p-3 rounded bg-light-info text-center h-100">
-                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Committed</small>
-                    <div class="fw-bold"><%= money_to_currency fund.tracking_committed_amount, params %></div>
+                  <div class="p-3 rounded bg-light-info h-100">
+                    <div class="fc2-kv">
+                      <span class="fc2-lbl">Committed</span>
+                      <span class="fc2-val"><%= money_to_currency fund.tracking_committed_amount, params %></span>
+                    </div>
                   </div>
                 </div>
                 <div class="col-6">
-                  <div class="p-3 rounded bg-light-info text-center h-100">
-                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Call Amount</small>
-                    <div class="fw-bold"><%= money_to_currency fund.tracking_call_amount, params %></div>
+                  <div class="p-3 rounded bg-light-info h-100">
+                    <div class="fc2-kv">
+                      <span class="fc2-lbl">Call Amount</span>
+                      <span class="fc2-val"><%= money_to_currency fund.tracking_call_amount, params %></span>
+                    </div>
                   </div>
                 </div>
                 <div class="col-6">
-                  <div class="p-3 rounded bg-light-info text-center h-100">
-                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Collected</small>
-                    <div class="fw-bold"><%= money_to_currency fund.tracking_collected_amount, params %></div>
+                  <div class="p-3 rounded bg-light-info h-100">
+                    <div class="fc2-kv">
+                      <span class="fc2-lbl">Collected</span>
+                      <span class="fc2-val"><%= money_to_currency fund.tracking_collected_amount, params %></span>
+                    </div>
                   </div>
                 </div>
                 <div class="col-6">
-                  <div class="p-3 rounded bg-light-info text-center h-100">
-                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Distributed</small>
-                    <div class="fw-bold"><%= money_to_currency fund.tracking_distribution_amount, params %></div>
+                  <div class="p-3 rounded bg-light-info h-100">
+                    <div class="fc2-kv">
+                      <span class="fc2-lbl">Distributed</span>
+                      <span class="fc2-val"><%= money_to_currency fund.tracking_distribution_amount, params %></span>
+                    </div>
                   </div>
                 </div>
               </div>

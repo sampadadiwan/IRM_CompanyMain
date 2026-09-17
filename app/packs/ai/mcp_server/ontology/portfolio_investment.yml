@@ -1,0 +1,241 @@
+# Ontology for PortfolioInvestment as exposed over MCP.
+---
+entity: portfolio_investment
+label: Portfolio Investment
+model: PortfolioInvestment
+description: >-
+  One transaction a fund made in a portfolio company — a buy, a sell or a conversion. A
+  company's position is the net of its transactions, so almost every question here needs a
+  scope ('buys', 'sells') or an aggregate rather than raw rows.
+
+relationships:
+  portfolio_company:
+    target: portfolio_company
+    cardinality: many_to_one
+    note: Pass portfolio_company_id rather than a Ransack condition.
+    resolve_with: list_portfolio_companies
+  fund:
+    target: fund
+    cardinality: many_to_one
+    note: The investing fund.
+    resolve_with: list_funds
+  investment_instrument:
+    target: investment_instrument
+    cardinality: many_to_one
+    note: >-
+      The instrument bought or sold. It carries its own currency, which is what money on this
+      entity is denominated in — not the fund's currency.
+
+fields:
+  investment_date:
+    type: date
+    description: Date of the transaction.
+    sortable: true
+  portfolio_company_name:
+    type: string
+    description: Denormalised company name.
+    sortable: true
+  sector:
+    type: string
+    description: Sector recorded on the investment.
+    sortable: true
+  quantity:
+    type: decimal
+    description: Units or shares transacted.
+    sortable: true
+    aggregatable: true
+  sold_quantity:
+    type: decimal
+    description: Quantity sold out of a buy. Meaningful on buys only.
+    sortable: true
+    aggregatable: true
+  net_quantity:
+    type: decimal
+    description: Quantity still held from a buy, after sales and transfers.
+    sortable: true
+    aggregatable: true
+  amount:
+    type: money
+    stored_as: amount_cents
+    currency: the investment instrument's currency
+    description: Transaction amount.
+    sortable: true
+    aggregatable: true
+  fmv:
+    type: money
+    stored_as: fmv_cents
+    currency: the investment instrument's currency
+    description: Fair market value of the position, from the latest valuation.
+    sortable: true
+    aggregatable: true
+  gain:
+    type: money
+    stored_as: gain_cents
+    currency: the investment instrument's currency
+    description: Realised gain. Meaningful on sells; unrealised gain is a separate returned field.
+    sortable: true
+    aggregatable: true
+  cost_of_sold:
+    type: money
+    stored_as: cost_of_sold_cents
+    currency: the investment instrument's currency
+    description: Cost basis of the quantity sold. Meaningful on sells.
+    sortable: true
+    aggregatable: true
+  notes:
+    type: text
+    description: Free-text notes on the transaction.
+    sortable: false
+  folio_id:
+    type: string
+    description: Folio the investment is attributed to, where one applies.
+    sortable: true
+  fund_id:
+    type: reference
+    target: fund
+    description: The investing fund.
+    sortable: false
+  portfolio_company_id:
+    type: reference
+    target: portfolio_company
+    description: The company invested in. Prefer the portfolio_company_id parameter.
+    sortable: false
+  snapshot:
+    type: boolean
+    description: True for a point-in-time copy rather than the live transaction.
+    sortable: false
+  snapshot_date:
+    type: date
+    description: As-of date of a snapshot row. Null on live rows.
+    sortable: true
+  created_at:
+    type: datetime
+    description: When the row was created. Not the investment date.
+    sortable: true
+  updated_at:
+    type: datetime
+    description: When the row last changed.
+    sortable: true
+
+returned_only:
+  unrealized_gain:
+    type: money
+    description: Unrealised gain. Returned on everything except sells; not filterable.
+  ex_expenses_amount:
+    type: money
+    description: Transaction amount excluding expenses.
+  net_amount:
+    type: money
+    description: Net transaction amount.
+  cost_per_share:
+    type: money
+    description: Cost per share. Returned on buys only.
+  cost_of_remaining:
+    type: money
+    description: Cost basis of the quantity still held. Buys only.
+  transfer_quantity:
+    type: decimal
+    description: Quantity transferred out. Buys only.
+  transfer_amount:
+    type: money
+    description: Value transferred out. Buys only.
+  sale_price_per_share:
+    type: money
+    description: Sale price per share. Sells only.
+  cost_of_sold_per_share:
+    type: money
+    description: Cost basis per share sold. Sells only.
+  valuation:
+    type: string
+    description: The valuation the FMV was struck from.
+  instrument_currency:
+    type: string
+    description: >-
+      Currency of the instrument, and therefore of every money field on the row. Not
+      filterable — filter the instrument instead.
+  startup:
+    type: boolean
+    description: >-
+      Whether the company is flagged as a startup. Returned but not ransackable, despite what
+      the old tool description claimed.
+  proforma:
+    type: boolean
+    description: >-
+      Whether the row is a proforma projection rather than an actual transaction. Returned but
+      not ransackable — use the 'proforma' / 'non_proforma' scopes instead.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the investment.
+
+unavailable:
+  amount_cents:
+    reason: >-
+      The physical column, not a queryable attribute. The old tool description advertised it
+      as both a filter and a sort key, so both were silently ignored.
+    use_instead: amount
+  fmv_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: fmv
+  gain_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: gain
+  startup:
+    reason: Returned on each row but not ransackable, so a condition on it is silently ignored.
+  proforma:
+    reason: Returned on each row but not ransackable.
+    use_instead: the proforma / non_proforma scopes
+  id:
+    reason: Not declared in PortfolioInvestment.ransackable_attributes, so conditions on it are ignored.
+
+scopes:
+  query_class: PortfolioAssistantDataManager::PortfolioInvestmentQuery
+  descriptions:
+    buys: Purchase transactions only.
+    sells: Sale transactions only.
+    conversions: Instrument conversions only.
+    distributed: Investments already distributed to investors.
+    not_distributed: Investments not yet distributed.
+    proforma: Proforma projections only.
+    non_proforma: Actual transactions only, excluding proforma projections.
+
+measures:
+  total_invested:
+    expression: sum of amount with scope 'buys'
+    description: >-
+      Capital deployed. Without the 'buys' scope this nets sells against buys and understates
+      the figure.
+  current_fmv:
+    expression: sum of fmv
+    description: Current fair market value of the holdings.
+  realised_gain:
+    expression: sum of gain with scope 'sells'
+    description: Gain actually realised on exits.
+
+caveats:
+  - >-
+    Money here is in the INSTRUMENT's currency, not the fund's. Sums are currency-resolved on
+    this entity (grouped by the instrument's currency), so a multi-currency total comes back
+    split rather than as one misleading number.
+  - >-
+    Buys, sells and conversions share this table. Summing `amount` across all of them is
+    almost never what a question means — apply a scope first.
+  - >-
+    Proforma rows are projections, not transactions, and are included unless you use the
+    'non_proforma' scope.
+  - Money filters take MAJOR units, not cents.
+
+tools:
+  list_portfolio_investments:
+    kind: list
+    summary: >-
+      Use it for what a fund put into a company, what it sold, and what the position is worth
+      now.
+    notes:
+      - >-
+        Scoped to one company by default. To answer across the whole portfolio — "FMV by
+        sector", "invested by fund" — pass `aggregate` instead of a company, which returns
+        totals rather than rows.
+    params:
+      portfolio_company_id:
+      scope:
+    require_one_of: [portfolio_company_id, scope, query, aggregate]

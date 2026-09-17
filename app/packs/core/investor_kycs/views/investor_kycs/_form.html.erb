@@ -189,10 +189,6 @@
                   type: "button",
                   class: "btn btn-outline-secondary btn-lg",
                   data: { action: "click->interim-save#interim" } %>
-                <%= form.button "Submit KYC",
-                  type: "button",
-                  class: "btn btn-primary btn-lg",
-                  data: { action: "click->interim-save#final" } %>
               <% end %>
             </div>
 
@@ -283,10 +279,12 @@
 
           <div class="form-group">
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
-            <%= form.button "Save Draft",
-              type: "button",
-              class: "btn btn-outline-secondary btn-lg",
-              data: { action: "click->interim-save#interim" } if show_investor_btns %>
+            <% if show_investor_btns %>
+                <%= form.button "Save Draft",
+                  type: "button",
+                  class: "btn btn-outline-secondary btn-lg",
+                  data: { action: "click->interim-save#interim" } %>
+            <% end %>
           </div>
         </div>
       </div>
@@ -341,7 +339,7 @@
 
           <div class="form-group">
             <%= form.label :completed_by_investor, "I confirm the all details provided are complete to the best of my knowledge."%>
-            <%= form.check_box :completed_by_investor, class: "form-check-input"  %>
+            <%= form.check_box :completed_by_investor, class: "form-check-input" %>
           </div>
 
 

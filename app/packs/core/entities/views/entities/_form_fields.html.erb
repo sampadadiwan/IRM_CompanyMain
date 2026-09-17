@@ -121,6 +121,21 @@
 
     </div>
     <hr class="my-4">
+    <%# Weekly task digest — only meaningful for funds, which is what the job itself
+        gates on (Entity.funds). Hiding it elsewhere stops an admin turning on a
+        setting that will never fire. See docs/product/weekly_task_digest_prd.md. %>
+    <% if entity.entity_type == "Investment Fund" %>
+      <h5>Weekly Task Digest</h5>
+      <small class="text-muted d-block mb-3">Email a Friday summary of tasks completed this week, due next week and delayed. Sent only to employees tagged &ldquo;Tasks&rdquo;.</small>
+
+      <div class="form-group">
+        <%= entity_setting_subform.label :weekly_task_digest_enabled, "Send weekly task digest" %>
+        <%= entity_setting_subform.check_box :weekly_task_digest_enabled, class: "form-check-input" %>
+        <small class="text-muted d-block">Each recipient sees only the tasks they can already open in the app.</small>
+      </div>
+    <% end %>
+
+    <hr class="my-4">
     <h5>CS Agent — Response Quality Judge</h5>
     <small class="text-muted d-block mb-3">Automatically score every Customer Support Agent response using an LLM judge (Completeness, Grounding, Actionability).</small>
 

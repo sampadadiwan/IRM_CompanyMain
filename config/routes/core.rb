@@ -35,6 +35,15 @@ scope path: 'report_builder', controller: :report_builder do
   get    'models',                   action: :models,            as: :report_builder_models
   get    'associations',             action: :associations,      as: :report_builder_associations
   post   '',                         action: :create,            as: :report_builder_create
+  # Guided wizard — a friendlier, step-by-step on-ramp that sits in front of
+  # the existing builder (below). It creates/mutates the same Report via the
+  # same actions as the advanced builder, so there is exactly one place that
+  # understands the report_builder template format.
+  get    'wizard',                   action: :wizard_new,        as: :wizard_report_builder
+  post   'wizard',                   action: :wizard_create,     as: :wizard_report_builder_create
+  get    ':id/wizard/:step',         action: :wizard_step,       as: :wizard_report_builder_step
+  post   ':id/wizard_filter',        action: :wizard_add_filter,    as: :wizard_report_builder_add_filter
+  delete ':id/wizard_filter',        action: :wizard_remove_filter, as: :wizard_report_builder_remove_filter
   get    ':id/edit',                 action: :edit,              as: :edit_report_builder
   get    ':id/preview',              action: :preview,           as: :preview_report_builder
   get    ':id/view',                 action: :view,              as: :view_report_builder
@@ -42,6 +51,7 @@ scope path: 'report_builder', controller: :report_builder do
   patch  ':id/template',             action: :update_template,   as: :update_report_builder_template
   post   ':id/columns',              action: :add_column,        as: :add_report_builder_column
   delete ':id/columns/:gvp_id',      action: :remove_column,     as: :remove_report_builder_column
+  patch  ':id/columns/:gvp_id',      action: :update_column_label, as: :update_report_builder_column_label
   post   ':id/join',                 action: :add_join,          as: :add_report_builder_join
   delete ':id/join',                 action: :remove_join,       as: :remove_report_builder_join
   patch  ':id/aggregate',            action: :update_aggregate,  as: :update_report_builder_aggregate
@@ -80,6 +90,8 @@ resources :tasks do
   get 'search', on: :collection
   get 'deal_tasks', on: :collection
   patch 'completed', on: :member
+  # Kanban board drag & drop target (tasks/_board.html.erb)
+  patch 'update_status', on: :member
   delete 'destroy_series', on: :member
 end
 
@@ -178,6 +190,16 @@ resources :import_uploads do
   delete 'delete_data', on: :member
 end
 
+# Dedicated new/create/validate_upload stack for ShareholderPosition bulk uploads only - mirrors
+# how KPI reports have their own dedicated upload+validate flow (KpiReportsController), so the
+# Fully Dilluted % pre-Save check never touches the generic ImportUploadsController or its
+# shared new/edit/_xlsx_preview views used by every other bulk import type. Still persists via
+# the same ImportUpload model (import_type: "ShareholderPosition") - see
+# ShareholderPositionUploadsController.
+resources :shareholder_position_uploads, only: %i[new create] do
+  post 'validate_upload', on: :collection
+end
+
 resources :folders do
   get  'download',         on: :member
   post 'generate_report',  on: :member
@@ -224,6 +246,12 @@ resources :notes do
   get 'search', on: :collection
 end
 
+resources :shareholder_positions, only: [:index] do
+  patch 'approve', on: :member
+  delete 'reject', on: :member
+  patch 'approve_all', on: :collection
+end
+
 resources :investors do
   get 'analytics', on: :collection
   get 'portfolio_analytics', on: :member
@@ -253,6 +281,7 @@ resources :investor_notices
 resources :fees
 
 resources :documents do
+  post 'run_fix', on: :member
   patch 'send_for_esign', on: :member
   patch 'force_send_for_esign', on: :member
   patch 'cancel_esign', on: :member
@@ -299,6 +328,8 @@ resources :entities do
   get 'merge', on: :collection
   post 'merge', on: :collection
   post 'db_dump', on: :member
+  # Support-only off-boarding: revokes employee logins and investor access for the entity
+  patch 'deactivate', on: :member
 end
 
 resources :viewed_bies do

@@ -96,13 +96,24 @@ class ImportOffer < ImportUtil
     data = Roo::Spreadsheet.open(file_path) # open spreadsheet
     headers = data.row(1) # get header row
 
+    updated = 0
+    skipped = []
+
     data.each_with_index do |row, idx|
       # skip header row
       next if idx.zero?
 
       user_data = [headers, row].transpose.to_h
 
-      first_name, last_name = user_data["Seller name"].split
+      # to_s so a blank Seller name reports the row instead of raising
+      # "undefined method 'split' for nil"
+      seller_name = user_data["Seller name"].to_s.strip
+      if seller_name.blank?
+        skipped << "row #{idx + 1}: Seller name is blank"
+        next
+      end
+
+      first_name, last_name = seller_name.split
       u = User.joins(:offers).where('offers.entity_id': secondary_sale.entity_id,
                                     'users.first_name': first_name,
                                     'users.last_name': last_name).first
@@ -113,10 +124,16 @@ class ImportOffer < ImportUtil
           bank_account_number: user_data["Bank Account Number"],
           ifsc_code: user_data["Ifsc Code"]
         )
-
+        updated += 1
       else
-        Rails.logger.debug { "No user found for row #{idx} #{user_data} #{first_name} #{last_name}" }
+        # This used to be a debug log, so a whole file of unmatched names looked
+        # like a clean run. Collect the misses and report them to the caller.
+        skipped << "row #{idx + 1}: no seller found named '#{seller_name}'"
       end
     end
+
+    Rails.logger.error { "adhoc_update skipped #{skipped.count} row(s): #{skipped.join('; ')}" } if skipped.any?
+
+    { updated:, skipped: }
   end
 end

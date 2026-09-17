@@ -12,7 +12,9 @@ class GenerateDealActivitiesJob < ApplicationJob
         Rails.logger.info "Generating deal activities for DealInvestor with id: #{id}"
         @deal_investor = DealInvestor.find(id)
         @deal_investor.create_activities
-        @deal_investor.set_deal_investor_activity(user_id)
+        # Inline: this is already a background job, and the broadcast below tells open screens to
+        # refresh — the first step's tasks have to exist by then, not one queue hop later.
+        @deal_investor.set_deal_investor_activity(user_id, synchronous: true)
         @deal_investor.deal.broadcast_message("Deal steps were created, please refresh your page.")
         @deal_investor.deal.kanban_board.presence&.broadcast_board_event
       end

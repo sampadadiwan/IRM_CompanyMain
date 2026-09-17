@@ -13,7 +13,10 @@ class HalfYearlyValuationJob
   def generate_report(fund_id, start_date, end_date)
     Rails.logger.debug { "Generating Half-yearly valuation Report for #{fund_id}, #{start_date}, #{end_date} " }
 
-    @fund = Fund.includes(:account_entries).find(fund_id)
+    # No includes(:account_entries) here: eager-loading pulled the fund's ENTIRE ledger into
+    # memory, and table_data's filtered .where issues its own query anyway (association
+    # .where never reads the preloaded cache) — so the preload was pure memory waste
+    @fund = Fund.find(fund_id)
     @end_date = end_date
     @fund_report = FundReport.find_or_initialize_by(name: REPORT_NAME, name_of_scheme: @fund.name, fund: @fund, entity_id: @fund.entity_id, start_date:, end_date:)
 
@@ -27,7 +30,9 @@ class HalfYearlyValuationJob
   end
 
   def generate_excel_report(fund_id, _start_date, end_date, workbook, single: false)
-    fund = Fund.includes(:account_entries).find(fund_id)
+    # No includes(:account_entries) — see generate_report; the per-scheme queries in
+    # get_row_data never used the preload (and it only covered this fund, not entity.funds)
+    fund = Fund.find(fund_id)
     @end_date = end_date
     sheet1 = workbook[CrisilReportJob::REPORT_TO_SHEET[REPORT_NAME]]
 

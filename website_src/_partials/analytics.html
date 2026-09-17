@@ -1,0 +1,49 @@
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>

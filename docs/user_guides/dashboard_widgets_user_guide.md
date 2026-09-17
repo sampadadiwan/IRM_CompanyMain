@@ -2,6 +2,8 @@
 
 Dashboards in CapHive are built from **widgets** — individual blocks of information or functionality. As an administrator you can enable, resize, reorder, and fine-tune widgets to create tailored dashboards for different users and entities, and even maintain several named versions of the same dashboard.
 
+> **Where to find it:** Company menu (house icon, top right) → [**Dashboard Widgets**](/dashboard_widgets). Create one with **New Dashboard Widget** on that page. Any employee of your company can create and edit widgets; the menu item is hidden only for investor logins.
+
 This guide is a reference for configuring dashboards and their widgets.
 
 ---
@@ -25,6 +27,8 @@ This guide is a reference for configuring dashboards and their widgets.
 
 Each dashboard is simply a collection of widgets you arrange on a grid. Every dashboard type (Fund, Investor, Portfolio Company, and so on) can have several **named configurations** — distinct sets of widgets you switch between, such as an operational view, a compliance view, and a presentation view. The configuration called **Default** is shown when no other is chosen.
 
+Widgets are configured on Company menu (house icon, top right) → **Dashboard Widgets**. Until you configure any, each dashboard shows its full built-in widget set (landing pages show the first four built-ins). Once at least one enabled widget exists for a dashboard type and name, that dashboard shows **only** your configured widgets.
+
 ```mermaid
 flowchart LR
     A[Dashboard type<br/>e.g. Fund] --> B[Named configuration<br/>e.g. Default / Compliance]
@@ -36,7 +40,7 @@ flowchart LR
 
 ## Widget Settings: Size, Position, Enabled
 
-Every widget has three core settings:
+Each widget record has a **Dashboard name** (the dashboard type), a **Widget Type**, an **Instance Name** (see [Named Dashboards](#named-dashboards)), a required **Tags** display label, and an optional **Tag List** filter (the widget appears only if the dashboard's owner or the viewing user has a matching tag). It also has three core layout settings:
 
 - **Size** — the width on the grid:
   - **XS** 25% (4 per row) · **Small** 33% (3 per row) · **Medium** 50% (2 per row) · **Large** 66% · **XL** 100% (full row).
@@ -47,7 +51,7 @@ Every widget has three core settings:
 
 ## Widget Options (Metadata)
 
-Most widgets accept **options** that customise their behaviour, entered in a simple settings format. The rules:
+Most widgets accept **options** that customise their behaviour. On the widget form, picking a **Widget Type** loads one input per option under **Widget Configuration**; the generated settings string is shown read-only under **Advanced: Raw Metadata**, and is also the **Metadata** column in Download/Upload files. The format rules:
 
 - Each option is a name followed by a colon and a value.
 - Text values go in single quotes (`'My Title'`).
@@ -61,7 +65,7 @@ Most widgets accept **options** that customise their behaviour, entered in a sim
 {title: 'Performance Summary', months: 12, ratio_names: ['XIRR', 'TVPI'], chart: true}
 ```
 
-> If an option's syntax is invalid, the widget falls back to its defaults. Each widget's edit form shows a sample to copy.
+> Options entered through the form fields are always valid. A hand-edited or uploaded settings string with a syntax error does not fall back to defaults — the dashboard, the widget's page and its edit form raise an error. Fix it by re-uploading the row with corrected **Metadata**.
 
 ---
 
@@ -114,7 +118,7 @@ Most widgets accept **options** that customise their behaviour, entered in a sim
 
 ### Portfolio Company Dashboard
 
-**KPIs (Grid View)** — view and chart company KPIs.
+**Kpis** — a grid view to view and chart company KPIs.
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -124,7 +128,7 @@ Most widgets accept **options** that customise their behaviour, entered in a sim
 | `tag_list` | Text | Filter by tags (e.g. 'Actual, Budget'). |
 | `flexible_chart` | Yes/No | Enable interactive charting. |
 
-**Cap Table** — capitalisation table with ownership breakdowns.
+**Captable** — capitalisation table with ownership breakdowns.
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -142,14 +146,16 @@ Most widgets accept **options** that customise their behaviour, entered in a sim
 
 ### Aggregated Portfolio Dashboard
 
-- **Aggregate Portfolio Investments** — a multi-company table, e.g. `{show_grouped: true, group_by_column: 'portfolio_company_name'}`.
+- **Aggre. Portfolio Investments** — a multi-company table, e.g. `{show_grouped: true, group_by_column: 'portfolio_company_name'}`.
 - **Company Charts** — sector and company breakdowns, e.g. `{plot: 'fmv,bought_amount', table_limit: 10}`.
 
 ### Landing Pages
 
-- **Fund Manager** — Stats, Managed Funds, Investment Opportunities.
-- **Investor (LP)** — My Funds, Offers, Interests, Account Entries Chart.
-- **Operations** — My Tasks, Upcoming Events, Investors With No Interaction.
+- **FM Landing Page** (home dashboard for fund-entity employees) — FM Menus, FM Stats, Funds, Investment Opportunities.
+- **LP Landing Page** (home dashboard for investor logins) — Funds, Offers, Interests, Deals, Investment Opportunities, Entities.
+- **Ops Landing Page** — no built-in widgets today.
+
+My Tasks, Upcoming Events, Investors No Interaction and Notes belong to the **Ops Dashboard** (Sidebar → **Stakeholders → IR Dashboard**), not a landing page.
 
 ---
 
@@ -160,11 +166,11 @@ A **named dashboard** is a distinct set of widgets saved under a label for a das
 | Setting | Meaning |
 |---------|---------|
 | **Dashboard Name** | The dashboard type (e.g. Fund Dashboard). |
-| **Name** | The configuration label (e.g. Default, Compliance, Budget View). |
+| **Instance Name** | The configuration label (e.g. Default, Compliance, Budget View), max 20 characters. |
 
 Widgets sharing the same dashboard type + name + entity form one named dashboard. Those named **Default** are the fallback when no specific name is requested. The same widget can appear in several named dashboards with different options — for example a Fund Ratios widget set to "Actual" in Default and "Budget" in a Budget View.
 
-**To create one:** in **Dashboard Widgets**, create the widgets you want and give them all the same **Name** (e.g. "Compliance").
+**To create one:** in **Dashboard Widgets**, create the widgets you want and give them all the same **Instance Name** (e.g. "Compliance").
 
 ---
 
@@ -173,7 +179,7 @@ Widgets sharing the same dashboard type + name + entity form one named dashboard
 When an entity has **two or more** named dashboards for a type, a selector dropdown appears at the right of the dashboard navigation bar:
 
 - It lists the available names (alphabetically, or in a user's preferred order).
-- Choosing one loads it instantly without a full page reload.
+- Choosing one reloads the page with that dashboard.
 - The chosen name appears in the page address so the view can be bookmarked and shared.
 - With only one named dashboard, no dropdown is shown.
 
@@ -199,9 +205,9 @@ You can set, per user, the **order** named dashboards appear in the selector and
 
 ## Special Widgets
 
-- **Flexible KPI Charts** — the KPIs widget supports interactive charting: pick KPIs from the grid, choose a chart type for each, and save the layout. See the [Flexible KPI Charts guide](kpi_flexible_charts_user_guide).
-- **Embedded Documents** — render an Excel file as an interactive, searchable grid on the dashboard, e.g. `{name: 'Financial Model', xlsx_as_grid: true}`.
-- **Agent Charts** — use AI to generate custom visualisations from a data question, e.g. `{title: 'AI Insights'}`. See the [Agent Charts guide](agent_charts_user_guide).
+- **Flexible KPI Charts** — the **Kpis** widget supports interactive charting: pick KPIs from the grid, choose a chart type for each, and save the layout. See the [Flexible KPI Charts guide](kpi_flexible_charts_user_guide).
+- **Embed Document** — render an Excel file as an interactive, searchable grid on the dashboard, e.g. `{name: 'Financial Model', xlsx_as_grid: true}`.
+- **Agent Chart** (Portfolio Company Dashboard) — shows an AI-generated custom visualisation built from a data question, e.g. `{title: 'AI Insights', height: 420}`. See the [Agent Charts guide](agent_charts_user_guide).
 
 ---
 
@@ -209,8 +215,8 @@ You can set, per user, the **order** named dashboards appear in the selector and
 
 Giving a fund both an operational and a board-presentation dashboard:
 
-1. In **Dashboard Widgets**, build your everyday widgets with **Name** = `Default` — Fund Ratios, Fund Cashflows, Portfolio Stats.
-2. Add a second set with **Name** = `Board View` — a condensed Fund Ratios (`{ratio_names: ['XIRR','TVPI','DPI'], condensed: true, chart: true}`), a large FMV % chart, and Portfolio Stats.
+1. In **Dashboard Widgets**, build your everyday widgets with **Instance Name** = `Default` — Fund Ratios, Fund Cashflows, Fund Portfolio Stats.
+2. Add a second set with **Instance Name** = `Board View` — a condensed Fund Ratios (`{ratio_names: ['XIRR','TVPI','DPI'], condensed: true, chart: true}`), a Large Fund Cashflows chart, and Fund Portfolio Stats.
 3. Because the fund now has two named dashboards, the **selector dropdown** appears automatically.
 4. For the managing partner, set a **preference** so `Board View` is first — it becomes their default, while everyone else still lands on `Default`.
 5. Share the board dashboard by copying its address (which includes the name) into the meeting invite.
@@ -219,29 +225,135 @@ Giving a fund both an operational and a board-presentation dashboard:
 
 ## Frequently Asked Questions
 
+### Navigation and getting there
+
+**Where do I find Dashboard Widgets in CapHive?**
+Company menu (house icon, top right) → [**Dashboard Widgets**](/dashboard_widgets). The page lists every widget configured for your company with its Dashboard Name, Name, Widget Name, Tags, Size, Position and Enabled flag, plus **New Dashboard Widget**, **Filter**, **Download** and **Upload** buttons.
+
+**Where do I see the dashboards these widgets build?**
+**Fund Dashboard**: open the fund → **Actions → Dashboard**. **Investor Dashboard** and **Portfolio Company Dashboard**: open the stakeholder → **Misc → Dashboard**. **Ops Dashboard**: Sidebar → [**Stakeholders → IR Dashboard**](/dashboard_widgets/dashboard). **Portfolio Dashboard**: the fund page's **Portfolio** tab.
+
+**Where is the Aggregated Portfolio Dashboard?**
+Sidebar → [**Stakeholders → View Stakeholders**](/investors) → [**Actions → Portfolio Dashboard**](/investors?multi_portfolio_dashboard=true), which shows the dashboard across your Portfolio Company stakeholders. Its widgets come from the *Aggregated Portfolio Dashboard* entries on the [**Dashboard Widgets**](/dashboard_widgets) page.
+
+**Where do the landing-page widgets appear?**
+Both render on the home dashboard (Sidebar → [**Dashboard**](/entities/dashboard)): *FM Landing Page* widgets for employees of a fund entity, and *LP Landing Page* widgets for investor logins. The *Ops Landing Page* type has no built-in widgets today.
+
+**Where do I set which named dashboard a user sees first?**
+Company menu → [**User**](/users) → open the user → **Edit**, then the **Dashboard Preferences** section. A user can also edit their own from Profile menu (avatar) → **My Profile** → **Edit**. The section only appears once the user already has preferences stored. See [Per-User Dashboard Preferences](#per-user-dashboard-preferences).
+
+**Who can manage dashboard widgets?**
+Any user of your company (the policy checks only that the widget belongs to your entity; Group Company users can also manage their child entities' widgets). The Company menu link is hidden for investor logins. **Upload** additionally needs the *Enable Import Uploads* permission on your user.
+
+### Creating, updating and managing dashboard widgets
+
+**How do I add a widget to a dashboard?**
+On the [**Dashboard Widgets**](/dashboard_widgets) page click [**New Dashboard Widget**](/dashboard_widgets/new), choose the **Dashboard name**, the **Widget Type**, fill **Tags** (required; it is the widget's display label), set **Size** and **Position**, fill the option fields under **Widget Configuration** and click **Save**. See [Widget Settings: Size, Position, Enabled](#widget-settings-size-position-enabled).
+
+**How do I set a widget's options?**
+After you pick a **Widget Type**, the form loads one input per option under **Widget Configuration** (text, number, yes/no or a drop-down), built from that widget's sample. The generated settings string is shown read-only under **Advanced: Raw Metadata**. See [Widget Options (Metadata)](#widget-options-metadata).
+
+**How do I edit a widget?**
+On the [**Dashboard Widgets**](/dashboard_widgets) page click **Edit** on the row, or open the widget and click **Edit**. Change size, position, options, **Enabled**, **Show Title**, **Show Tags** or **Show Menu** and click **Save**.
+
+**How do I hide a widget without deleting it?**
+Edit the widget and untick **Enabled**. Disabled widgets are skipped on the dashboard and do not count towards the named dashboards in the selector; tick it again to bring the widget back with its settings intact.
+
+**How do I delete a widget?**
+Open the widget, click **Delete** and confirm. There is no Delete button on the list rows.
+
+**How do I create a named dashboard such as "Board View"?**
+Create (or copy) the widgets you want and give each the same **Instance Name** (the form's label for the *Name* setting, max 20 characters), e.g. `Board View`. Widgets left at the default name belong to **Default**. See [Named Dashboards](#named-dashboards).
+
+**How do I bulk create or copy widgets?**
+Click **Download** on the [**Dashboard Widgets**](/dashboard_widgets) page to get an Excel file of the current list, edit it, then click **Upload** (import type *DashboardWidget*, with a [sample file](/sample_uploads/dashboard_widgets.xlsx)). Rows whose **Id** matches a widget of your company update it; any other row creates a new widget.
+
+**How do I set a user's dashboard order and default?**
+In **Dashboard Preferences** on the user form, enter comma-separated names for each dashboard type, e.g. `Board View,Default`. The first name becomes that user's default view. See [Per-User Dashboard Preferences](#per-user-dashboard-preferences).
+
+### Why use dashboard widgets
+
+**Why should I configure dashboard widgets?**
+Without configuration every user sees the full built-in widget set for a dashboard. Widgets let you choose which blocks appear, in what order, at what width and with what options (ratios, periods, charts, currencies), so each audience sees the numbers that matter to them.
+
+**What can I do with dashboard widgets that I cannot do otherwise?**
+Keep several named versions of the same dashboard (operations, compliance, board presentation) and switch between them with the selector, give individual users a different default, show a widget only for owners or users with matching tags, embed an Excel file as a grid, and add AI-generated Agent Charts.
+
+**What happens if I never set up any widgets?**
+Nothing breaks: each dashboard shows its complete built-in widget set in its default order (landing pages show only the first four). You just cannot trim, reorder or tune it, and there is no dashboard selector.
+
+**Who typically uses this feature?**
+Company admins and fund operations staff who design what fund managers, IR teams and board members see. Individual users mainly interact with the dashboard selector and their own dashboard preferences.
+
+### What happens when I …
+
+**What happens when I save my first widget for a dashboard?**
+The dashboard stops showing the built-in widget set and shows only your enabled, configured widgets for that dashboard name. If you create just one widget, that is the only block users will see, so add every widget you want before sharing.
+
+**What happens when I save or edit a widget?**
+The widget record is saved for your company and the change shows the next time anyone loads that dashboard. Position is managed as a list within the same dashboard, so other widgets' positions can shift to make room. No one is notified and no approval is needed.
+
+**What happens when I disable a widget?**
+It disappears from the dashboard and from the dashboard's quick-jump menu for everyone. If it was the only enabled widget for that dashboard name, the dashboard falls back to the full built-in widget set.
+
+**What happens when I delete a widget?**
+The record is permanently removed (there is no restore). If you need it again, re-create it or re-upload it from a previously downloaded Excel file. Disabling is the safer choice when you may want it back.
+
+**What happens when I upload a widgets file?**
+The import runs in the background and creates or updates one widget per row for your company, stamping each with the import upload. An unmatched **Id** (for example from another company's export) creates a new widget rather than failing. Review the result on the import upload page.
+
+**What happens when I pick a name in the dashboard selector?**
+The page reloads with `name=` added to the address, showing only the widgets with that **Instance Name**. The address can be bookmarked or shared, and a name in the address always overrides the user's preference.
+
+**What happens when I change a user's dashboard preferences?**
+Only that user is affected: the selector lists their names first in the saved order, and the first name loads by default whenever the address has no `name=`. Names that no longer have enabled widgets are simply left out of the selector.
+
+**What happens if a widget's options are wrong?**
+Options entered through the form's fields are always valid. A hand-edited or imported settings string with a Ruby syntax error is not silently ignored: the dashboard, the widget's page and its edit form all raise an error when they read it. Fix it by re-uploading the row (same **Id**) with corrected **Metadata**.
+
+### Troubleshooting and edge cases
+
 **Why isn't my widget showing?**
-Check that **Enabled** is on, the **Dashboard Name** matches the page you're viewing, and the options syntax is valid (no missing commas or unquoted text).
+Check that **Enabled** is on, the **Dashboard name** and **Instance Name** match the dashboard you are viewing, and the **Tag List** (if set) matches a tag on the dashboard's owner or on your user. Widgets whose type does not belong to that dashboard are skipped.
 
 **How do I change the order of widgets?**
-Use the **Position** field — widgets sort ascending (1, 2, 3…).
+Use the **Position** field; widgets sort ascending (1, 2, 3…). Other widgets on the same dashboard may be renumbered automatically when you move one.
 
 **Can I show the same widget twice with different settings?**
-Yes — add it twice and give each a different set of options (e.g. one Fund Ratios for Actual, one for Budget).
+Yes. Add it twice with different options and a different **Tags** label (for example one Fund Ratios for Actual and one for Budget); the label is what distinguishes them on the dashboard's menu.
 
-**What if I enter invalid options?**
-The widget falls back to its defaults. Copy the sample shown in the edit form.
+**What does Tag List do, and how is it different from Tags?**
+**Tags** is the required display label for the widget. **Tag List** is an optional filter: when set, the widget only appears if the dashboard's owner (e.g. the fund or stakeholder) or the viewing user has at least one matching tag.
 
 **I created a named dashboard but the dropdown isn't appearing.**
-The dropdown needs **two or more** named dashboards for the same entity and type. Check the widgets have different **Name** values and are enabled.
+The dropdown needs **two or more** distinct names among the enabled widgets of that dashboard type for your company. Check that the widgets really have different **Instance Name** values and are enabled.
 
 **How do I control which named dashboard a user sees first?**
 Set a preferred sequence on their user record; the first name is their default. See [Per-User Dashboard Preferences](#per-user-dashboard-preferences).
 
 **A user has a preference but still lands on Default.**
-Confirm the name in their sequence exactly matches the widgets' **Name** (case-sensitive) and that those widgets are enabled for the right entity.
+Confirm the name in their sequence exactly matches the widgets' **Instance Name** and that those widgets are enabled for the right company. If the address already contains `name=`, that name wins over the preference.
+
+**The Dashboard Preferences section is missing on the user form.**
+It is only rendered for users who already have dashboard preferences stored. For a user with none yet, ask your system administrator to seed them.
 
 **Can I share a link to a specific named dashboard?**
-Yes — the page address includes the dashboard name when one is active; copy and share it.
+Yes. The page address includes `name=` when you pick one from the selector; copy and share it. The recipient still needs access to the underlying fund or stakeholder.
 
 **The dropdown shows names in the wrong order.**
-Names sort alphabetically by default; set a preferred sequence on the user to override.
+Names sort alphabetically by default; set a preferred sequence on the user to override. Names not in the sequence are listed after it, alphabetically.
+
+**A widget appears in the list but not on the quick-jump menu at the top of the dashboard.**
+The menu only lists widgets with **Show Menu** ticked. Edit the widget and tick **Show Menu**; the widget itself renders either way.
+
+**Why doesn't my widget show a heading?**
+Tick **Show Title** (shows the widget type) and/or **Show Tags** (shows the Tags label) on the widget. Both are off by default.
+
+## Related Guides
+
+- [Agent Charts](agent_charts_user_guide) — AI-generated charts you can place on a dashboard with the Agent Chart widget.
+- [KPI Flexible Charts](kpi_flexible_charts_user_guide) — interactive charting inside the Kpis widget.
+- [Fund Ratios](fund_ratios_user_guide) — the ratios the Fund Ratios widget displays.
+- [Portfolio Investments](portfolio_investments_user_guide) — data behind the Portfolio and Aggregated Portfolio dashboards.
+- [Stakeholders (Investors)](investors_user_guide) — the stakeholder pages that host the Investor and Portfolio Company dashboards.
+- [User Role Management](user_role_management_user_guide) — user records where dashboard preferences are stored.

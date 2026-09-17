@@ -17,6 +17,11 @@ class DealInvestorsController < ApplicationController
     @deal_investors = @deal_investors.includes(:deal, :rich_text_notes, investor: :investor_entity, deal_activities: :rich_text_details)
     @deal_investors = @deal_investors.not_declined if [nil, "", "false", false].include?(params[:all])
     @deal_investors = @deal_investors.where(entity_id: params[:entity_id]) if params[:entity_id].present?
+    # Default ordering is by last_interaction_date desc — the date a user asserted on a
+    # note or on completing a task — unless the query specifies an order or a sort param.
+    # MySQL and SQLite both rank NULL lowest, so never-interacted rows fall to the bottom
+    # and updated_at breaks ties among them.
+    @deal_investors = @deal_investors.order(last_interaction_date: :desc, updated_at: :desc, created_at: :desc) if @deal_investors.arel.orders.blank? && !ransack_has_attr?(params[:q], 's')
 
     if params[:turbo] && params[:boards] && params[:board_id].present?
       @kanban_cards = KanbanCard.where(data_source_type: "DealInvestor", data_source_id: @deal_investors.pluck(:id))
@@ -142,7 +147,19 @@ class DealInvestorsController < ApplicationController
           turbo_stream.replace(frame, partial: "deal_investors/offcanvas_form", locals: { deal_investor: @deal_investor, belongs_to_entity: current_user.entity_id == @deal_investor.entity_id, update_allowed: DealInvestorPolicy.new(current_user, @deal_investor).update?, turbo_tag: frame, doc_owner_tag: @kanban_column&.name })
         ]
       end
-      format.html
+      format.html do
+        # Lets the deals grid row menu open the offcanvas straight into the form,
+        # the same way #show serves the read-only panel.
+        if params[:turbo_frame] == "deal_investor_frame"
+          render partial: "deal_investors/offcanvas_form", locals: {
+            deal_investor: @deal_investor,
+            belongs_to_entity: current_user.entity_id == @deal_investor.entity_id,
+            update_allowed: DealInvestorPolicy.new(current_user, @deal_investor).update?,
+            turbo_tag: "deal_investor_frame",
+            doc_owner_tag: @kanban_column&.name
+          }
+        end
+      end
     end
   end
 

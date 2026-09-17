@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Pricing — Scoped to the Funds You Run | CapHive</title>
+<meta name="description" content="CapHive pricing is quoted per engagement — scoped to your fund count, structures, investor count and modules. Migration and a parallel run are always included.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/pricing.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Pricing — CapHive">
+<meta property="og:description" content="Priced on the funds you run, not per seat. Every engagement is quoted after we see your structures, and includes migration and a parallel run.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/pricing.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="pricing">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero center hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <span class="chip-label">Pricing</span>
+      <h1>Priced on the funds you run, <em>not per seat.</em></h1>
+      <p class="lede">
+        Every engagement is quoted after we look at what you actually operate — how many funds and
+        vehicles, the structures behind them, how many investors you serve, and which modules you
+        switch on. Migration and a parallel run against your last close are included in all of them.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="contact.html">
+          Get a quote
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-outline" href="#drivers">What drives the price</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PLANS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="chip-label">Tiers</span>
+      <h2>Three shapes of <em>engagement.</em></h2>
+      <p>Most firms recognise themselves in one of these. The tier sets the scope of the platform; the quote follows from your structures.</p>
+    </div>
+
+    <!-- TODO: insert real pricing or keep this quote-based page -->
+    <div class="plan-grid">
+      <div class="plan reveal">
+        <span class="plan-name">01 · Starting out</span>
+        <h3>Emerging</h3>
+        <p>For a first fund or two, with a small team running everything. Core Funds and Portfolios, set up so the back office does not become somebody's second job.</p>
+        <div class="case-out" style="margin-top:0">Talk to us</div>
+        <ul class="plan-body check-list">
+          <li>Investor onboarding, KYC and e-signed subscription packs</li>
+          <li>Drawdowns, distributions and capital accounts</li>
+          <li>Fund accounting, statements and standard waterfalls</li>
+          <li>Portfolio tracking and LP reporting</li>
+          <li>Investor portal with notices and documents</li>
+          <li>Implementation, migration and a parallel run</li>
+        </ul>
+        <a class="btn btn-outline" href="contact.html">Talk to us</a>
+      </div>
+
+      <div class="plan feature reveal" data-delay="1">
+        <span class="plan-name">02 · Most common</span>
+        <h3>Growth</h3>
+        <p>For firms running multiple funds and vehicles side by side. The full platform, including deals and secondaries, with AI agents working inside the same ledger as your team.</p>
+        <div class="case-out" style="margin-top:0">Talk to us</div>
+        <ul class="plan-body check-list on-dark">
+          <li>Everything in Emerging, across every fund and vehicle</li>
+          <li>Deals, SPVs and co-investments on one rail</li>
+          <li>Fund and direct secondaries with multi-party coordination</li>
+          <li>AI agents for onboarding, reporting and compliance checklists</li>
+          <li>Multi-entity and multi-currency ledgers in a single close</li>
+        </ul>
+        <a class="btn btn-primary" href="contact.html">
+          Talk to us
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+
+      <div class="plan reveal" data-delay="2">
+        <span class="plan-name">03 · Multi-entity</span>
+        <h3>Institutional</h3>
+        <p>For multi-entity, multi-currency groups, administrators serving many clients, and firms with large LP bases and an internal security review to satisfy.</p>
+        <div class="case-out" style="margin-top:0">Talk to us</div>
+        <ul class="plan-body check-list">
+          <li>Everything in Growth, across unlimited entities and clients</li>
+          <li>SSO / OAuth, custom roles and audit log exports</li>
+          <li>Bespoke waterfalls, side letters and fee arrangements</li>
+          <li>Custom integrations and API access</li>
+          <li>Multi-jurisdiction reporting</li>
+          <li>Dedicated support and a named implementation lead</li>
+        </ul>
+        <a class="btn btn-outline" href="contact.html">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHAT WE DON'T CHARGE FOR ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">The commercial model</span>
+      <h2>Seven things you <em>will not be charged for.</em></h2>
+      <p>Most fund software is priced to grow whether or not you get more value from it — a percentage of assets here, a per-seat licence there, a three-year term to sign before you have seen it work. We took those out.</p>
+    </div>
+    <div class="f-grid">
+      <div class="f-card reveal">
+        <span class="kick">01</span>
+        <h3>No AUM-based pricing</h3>
+        <p>Your fee does not rise because a portfolio company was revalued or a new fund closed. Charging on assets means billing you for your own success — and it turns every good quarter into a bigger invoice. The work the platform does for a $400M fund is the work it does for a $4B one, so the price follows the operating scope, not the balance sheet.</p>
+      </div>
+      <div class="f-card reveal" data-delay="1">
+        <span class="kick">02</span>
+        <h3>Switch features on, switch them off</h3>
+        <p>Every module is a toggle — documents, deals, KYC, KPIs, approvals, reporting, AI chat — set at the firm level and again per user. You pay for what you have switched on. If a module is not earning its place, turn it off and stop paying for it. No bundle you have to buy whole to get the one thing you came for.</p>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <span class="kick">03</span>
+        <h3>No seat-based pricing</h3>
+        <p>Add the analyst. Add the whole deal team, the auditor and every LP who wants portal access. A fund does not become more complex because another person opens a tab, and pricing that counts logins quietly teaches your team to share credentials — which is the last habit you want in a system holding capital accounts.</p>
+      </div>
+      <div class="f-card reveal" data-delay="3">
+        <span class="kick">04</span>
+        <h3>Bring your own AI keys</h3>
+        <p>Add your own OpenAI, Anthropic, Google Gemini or OpenRouter key in your settings and the platform runs on it — your provider account, your contract, your data processing terms. Your prompts and fund data travel on a key your firm controls and can revoke in a click, inference is billed to you by the provider with no margin from us, and if your security committee has already cleared a model vendor, you keep that approval instead of restarting it. Choose the model per agent, and change it whenever a better one lands.</p>
+      </div>
+      <div class="f-card reveal" data-delay="4">
+        <span class="kick">05</span>
+        <h3>Try it before you commit to it</h3>
+        <p>Switch a module on for a close and see whether it holds. If it does, keep it. If it does not, switch it off and the cost goes with it. You should not have to buy a capability for a year to find out whether it survives contact with your actual structures.</p>
+      </div>
+      <div class="f-card reveal" data-delay="6">
+        <span class="kick">06</span>
+        <h3>Configuration, not custom builds</h3>
+        <p>Custom fields, form types, roles and permissions, approval workflows, task and report templates, notifications — all configured in the application, by your team, without an engineer and without a change request. The bespoke work most vendors quote as a build phase is a settings screen here, so it costs you time rather than budget.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ALWAYS INCLUDED ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Always included</span>
+      <h2>Getting live is <em>part of the price.</em></h2>
+      <p>Migration is our work, not yours.(we may change extra for setup depending on complexity) </p>
+    </div>
+    <div class="f-grid">
+      <div class="f-card reveal">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Implementation &amp; migration</h3>
+        <p>We map your fund structures, fee terms and waterfall mechanics, then load historic commitments, capital events and investor records from the spreadsheets and documents you already have.</p>
+      </div>
+      <div class="f-card reveal" data-delay="1">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 4v16M5 9l7-5 7 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>A parallel run</h3>
+        <p>One close computed both ways, side by side, until the platform agrees with your last audited numbers to the last decimal. You sign off before you rely on it.</p>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <h3>Named support</h3>
+        <!-- TODO: add the real response-time commitments / SLA here once they are agreed -->
+        <p>You get people who know your structures, on the same channel your team already uses — not a ticket queue that starts from scratch each quarter.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHAT DRIVES THE PRICE ================= -->
+<section class="section" id="drivers" style="padding-top:0;scroll-margin-top:100px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">How we scope it</span>
+      <h2>What actually moves <em>the number.</em></h2>
+      <p>Six things decide the quote. None of them is how many people log in — a fund does not become more complex because your analyst opens a second tab.</p>
+    </div>
+    <div class="f-grid two">
+      <div class="f-card reveal">
+        <span class="kick">Driver 01</span>
+        <h3>Funds and vehicles</h3>
+        <p>Each fund, feeder, blocker and SPV is its own set of books, with its own terms and its own close.</p>
+      </div>
+      <div class="f-card reveal" data-delay="1">
+        <span class="kick">Driver 02</span>
+        <h3>Structures and waterfall mechanics</h3>
+        <p>European or American waterfalls, multi-tier hurdles, catch-up, carry accrual and side letters that vary by investor.</p>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <span class="kick">Driver 03</span>
+        <h3>Investor count</h3>
+        <p>How many investors are onboarded, served in the portal and reported to — not billed per head, but it shapes the scope.</p>
+      </div>
+      <div class="f-card reveal" data-delay="3">
+        <span class="kick">Driver 04</span>
+        <h3>Modules</h3>
+        <p>Funds, Portfolios, Deals &amp; Secondaries and AI agents. You can start with one and add the rest later.</p>
+      </div>
+      <div class="f-card reveal" data-delay="4">
+        <span class="kick">Driver 05</span>
+        <h3>Integrations</h3>
+        <p>Banks, custodians, ERPs and e-sign providers, plus anything bespoke you want connected over the API.</p>
+      </div>
+      <div class="f-card reveal" data-delay="5">
+        <span class="kick">Driver 06</span>
+        <h3>Jurisdictions and currencies</h3>
+        <p>Reporting standards and multi-currency closes across the geographies you operate in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Pricing questions</span>
+      <h2>The things firms <em>ask first.</em></h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>How is pricing calculated?</summary>
+        <div>
+          <p>It is quoted per engagement. We look at the number of funds and vehicles, the structures and waterfall mechanics behind them, how many investors you serve, which modules you switch on, the integrations you need and the jurisdictions you report in. You get one annual platform figure with the scope written down beside it.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Is there a per-investor charge?</summary>
+        <div>
+          <p>No. Investors are not a line item, and neither are seats — adding an analyst or an LP does not change your invoice. Investor count does inform the scope of an engagement, so it is one of the things we discuss when quoting.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What does implementation cost?</summary>
+        <div>
+          <p>Implementation, migration and the parallel run are part of the engagement, not a separate build fee. If your history sits in unusual systems, or you want a bespoke integration written, that is scoped and quoted with the rest of the work rather than billed as a surprise.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Can we start with one module?</summary>
+        <div>
+          <p>Yes. Most firms start where the pain is — usually Funds, sometimes Portfolios — and add the others as they need them. Because the modules share one ledger, adding Deals &amp; Secondaries or AI agents later is a configuration change, not a second migration.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What contract length do you work on?</summary>
+        <div>
+          <!-- TODO: have legal paper the one-month notice term and the exit-export
+               commitment in the standard agreement before this page goes live. -->
+          <p>There is no annual lock-in. Engagements run on a rolling basis and you can leave on one month's written notice, with your full data export in hand when you go. If you would rather commit for a year against a fixed price, we will do that too — but it is your choice, not a condition of using the platform.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Do you charge on AUM or per seat?</summary>
+        <div>
+          <p>Neither. Your fee does not move because assets were revalued, a fund closed or another five people needed logins. The quote follows the operating scope — funds and vehicles, structures, investor count, the modules you switch on, integrations and jurisdictions — and it holds until that scope changes.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Can we use our own AI provider account?</summary>
+        <div>
+          <p>Yes. Enter your own key for OpenAI, Anthropic, Google Gemini or OpenRouter in your entity settings, and the agents run on your account under your contract and your data processing terms. Only the providers you have configured appear as options, you pick which model each agent uses, inference is billed to you directly by the provider rather than marked up by us, and the key stays revocable by your firm at any point.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What happens to our data if we leave?</summary>
+        <div>
+          <p>It is your data. On exit we provide a full export — investor records, commitments, capital events, capital accounts, portfolio data and documents — in machine-readable formats, along with the reports needed to hand over to another system or administrator. Retention and deletion follow the terms in your agreement.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BAND ================= -->
+<section class="section-sm">
+  <div class="band-dark reveal">
+    <span class="chip-label">Next step</span>
+    <h2 style="margin:20px 0 16px">Send us your structures. <em>We'll send a number.</em></h2>
+    <p>A short call, a look at the funds and vehicles you run, and a written scope with the price against it. No seat maths, no per-investor meter.</p>
+    <div class="hero-cta" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:32px">
+      <a class="btn btn-primary" href="contact.html">
+        Get a quote
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="faq.html">Read the full FAQ</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+</body>
+</html>

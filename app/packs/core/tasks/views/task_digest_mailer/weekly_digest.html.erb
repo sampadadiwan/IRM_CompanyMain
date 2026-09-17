@@ -1,0 +1,58 @@
+<%#
+  Weekly task digest. Layout, in order: banner (colour-coded by the delayed count),
+  the four-number stat band with its derived context line, then Delayed, Due next
+  week and Completed this week.
+
+  Delayed leads on purpose — it is the only section that needs action today. Completed
+  is the reward and sits at the bottom.
+
+  Every date goes through a bare l(...) so EmailDateLocalization renders "Sep 11, 2026"
+  regardless of the locale the triggering job happened to be running under (CLAUDE.md).
+%>
+<% week = @digest.week_range %>
+
+<%= sa_light_banner(
+      title: "Weekly Tasks",
+      label: @digest.headline,
+      subtitle: "Week of #{l(week.first)} &ndash; #{l(week.last)} &middot; #{h @entity.name}".html_safe,
+      tone: @digest.tone
+    ) %>
+
+<%= sa_stat_tiles(digest_stat_tiles(@digest)) %>
+<% if (note = digest_context_note(@digest)) %>
+  <%= sa_note(note) %>
+<% end %>
+
+<%= render "section",
+           digest: @digest,
+           mode: :delayed,
+           title: "Delayed",
+           tasks: @digest.delayed,
+           total: @digest.counts[:delayed],
+           more_count: @digest.more_delayed,
+           url: digest_delayed_url(@digest),
+           empty_text: "Nothing overdue. Every open task is still within its due date." %>
+
+<%= render "section",
+           digest: @digest,
+           mode: :due,
+           title: "Due next week",
+           tasks: @digest.due_next_week,
+           total: @digest.counts[:due_next_week],
+           more_count: @digest.more_due_next_week,
+           url: digest_due_next_week_url(@digest),
+           empty_text: "Nothing due next week." %>
+
+<%= render "section",
+           digest: @digest,
+           mode: :completed,
+           title: "Done this week",
+           tasks: @digest.completed,
+           total: @digest.counts[:completed_this_week],
+           more_count: @digest.more_completed,
+           url: digest_completed_url(@digest),
+           empty_text: "No tasks closed this week yet." %>
+
+<%= sa_light_cta(label: "Open task board", url: digest_board_url(@entity)) %>
+
+<%= sa_light_footer("You receive this every Friday because you are tagged &ldquo;Tasks&rdquo; on #{h @entity.name}. Ask an administrator to remove the tag to stop.".html_safe) %>

@@ -1,0 +1,47 @@
+<%# Warehoused reply — the email couldn't be auto-filed by the Deal Update Agent.
+    Three reasons: conflicting_stakeholder, unknown_intent, unmatched_stakeholder.
+    @see DealIngestMailer#warehoused for the mailer action %>
+<h2>Your update needs manual review</h2>
+
+<p>
+  We received your email for <strong><%= @deal.name %></strong>, but couldn't file it automatically.
+</p>
+
+<% if @reason == "conflicting_stakeholder" %>
+  <p>
+    <strong>Reason:</strong> Your subject line mentions
+    <strong>"<%= @subject_stakeholder_string %>"</strong>
+    but the email body refers to
+    <strong>"<%= @stakeholder_string %>"</strong>.
+    The agent couldn't determine which investor you meant.
+    Try sending separate emails — one per investor.
+  </p>
+<% elsif @reason == "unknown_intent" %>
+  <p>
+    <strong>Reason:</strong> We couldn't determine whether this was a meeting note or a task.
+    Try rephrasing your email to clearly describe a meeting/call (for a note) or an action item (for a task).
+  </p>
+<% else %>
+  <p>
+    <strong>Reason:</strong> We couldn't match
+    <strong>"<%= @stakeholder_string %>"</strong>
+    to any investor on this deal.
+    Check the spelling or use the investor's full name as it appears on the deal board.
+  </p>
+<% end %>
+
+<% if @body_preview.present? %>
+  <p style="color: #666; border-left: 3px solid #ddd; padding-left: 12px; margin: 16px 0;">
+    <%= @body_preview %>
+  </p>
+<% end %>
+
+<p>
+  Your email has been saved to the <strong>Warehouse</strong> tab on the deal page,
+  where a team member can review and file it manually.
+</p>
+
+<p style="font-size: 13px; color: #888;">
+  This message was sent by the Deal Update Agent.
+  No action is required — a team member will review the warehoused item.
+</p>

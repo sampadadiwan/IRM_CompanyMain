@@ -36,6 +36,7 @@ Feature: Investor KYC Send Workflow
     Given there is a KYC for the investor with submission_status "link_sent"
     When I open the KYC edit page as the investor via a valid signed link
     Then I should see a "Save Draft" button
+    Given I fill the kyc form
     And I should see a "Submit KYC" button
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -58,6 +59,7 @@ Feature: Investor KYC Send Workflow
     Given there is a KYC for the investor with submission_status "link_sent"
     And the email queue is cleared
     When I open the KYC edit page as the investor via a valid signed link
+    Given I fill the kyc form
     And I click "Submit KYC" and confirm the dialog
     Then the investor kyc submission_status should be "completed"
     And the submitted_at timestamp is set on the investor kyc

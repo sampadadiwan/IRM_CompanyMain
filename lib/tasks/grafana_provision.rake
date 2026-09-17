@@ -52,8 +52,9 @@ class GrafanaProvisioner
 
   # Map Grafana dashboard UID → filename used in dash_dir (matches pre-existing naming convention)
   DASH_FILENAMES = {
-    'rYdddlPWk' => 'node.dashboard.json',
-    'L-0CZ_WVk' => 'rails.dashboard.json',
+    'rYdddlPWk'      => 'node.dashboard.json',
+    'L-0CZ_WVk'      => 'rails.dashboard.json',
+    'caphive-sidekiq' => 'sidekiq.dashboard.json',
   }.freeze
 
   # graphana.caphive.com and graphana.caphive.us are two SEPARATE Grafana instances (IN and US
@@ -891,8 +892,15 @@ class GrafanaProvisioner
       noDataState:  (rule[:no_data_state] || 'OK').to_s.camelize,
       execErrState: 'Error',
       for:          (rule[:for] || '5m').to_s,
-      annotations:  { summary: rule[:summary].to_s },
-      labels:       (rule[:labels] || {}).transform_keys(&:to_s),
+      # Region tag: grafana_provision.yml is shared by BOTH Grafana instances (IN + US),
+      # so region can't be hardcoded in the YAML — inject it here from the target host.
+      # The summary prefix makes email/WhatsApp notification text say which region fired;
+      # the region label lets GrafanaAlertsController pick the right Grafana link and
+      # shows up in the label table of Grafana's default email template.
+      annotations:  { summary: "[#{region.upcase}] #{rule[:summary]}" },
+      # region merged LAST so a stray region: key in the shared YAML can never override
+      # the per-instance value — that would mislabel alerts on both instances at once.
+      labels:       (rule[:labels] || {}).transform_keys(&:to_s).merge('region' => region),
       isPaused:     false,
     }
   end

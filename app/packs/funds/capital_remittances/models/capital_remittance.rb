@@ -17,7 +17,7 @@ class CapitalRemittance < ApplicationRecord
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
   STANDARD_COLUMNS = {
-    "Stakeholder; text-col" => "investor_name; text-col",
+    "Investing Entity; text-col" => "investing_entity_name; text-col",
     "Folio No; text-col" => "folio_id; text-col",
     "Status; text-col" => "status; text-col",
     "Verified; text-col" => "verified; text-col",
@@ -78,6 +78,12 @@ class CapitalRemittance < ApplicationRecord
   validates :folio_id, length: { maximum: 40 }
   validates :investor_name, length: { maximum: 255 }
 
+  # persisted? (not new_record?) is deliberate: this must NOT block CapitalRemittance being
+  # created already-verified by CapitalCommitmentRemittanceJob/CapitalCallJob when a call has
+  # generate_remittances_verified set (a bulk/import path for backfilling already-settled
+  # calls) — only the interactive Verify action, which always updates an existing record.
+  validate :verified_requires_approval, if: -> { persisted? && verified? && verified_changed? }
+
   include CapitalRemittanceCounters
 
   def set_call_amount(recompute_call_amount: false)
@@ -115,6 +121,41 @@ class CapitalRemittance < ApplicationRecord
     # Adjust for exchange rates on the day of the payment
   end
 
+  # Reasons "Send Call Notification" would not actually reach an investor right now.
+  # Empty means it's safe to send. Used to grey out the action in the UI (with an
+  # explanatory tooltip) and to guard the controller so a direct request can't silently
+  # no-op the way send_notification's own internal checks would otherwise allow.
+  def notification_blocked_reasons
+    reasons = []
+    reasons << "the call is not approved" unless capital_call.approved?
+    reasons << "the call is set up to not send notifications" unless capital_call.send_call_notice_flag
+    reasons << "the commitment has 'Skip Doc Gen' set to Yes" if capital_commitment.skip_doc_gen?
+    # Mirrors CapitalRemittanceRuleContextProvider#notice_not_approved, promoted from a
+    # client-side-only blocker rule to a real server-side gate.
+    reasons << "the generated call notice for this remittance is pending approval" if Document.exists?(
+      owner_type: "CapitalRemittance", owner_id: id, owner_tag: "Generated", approved: false
+    )
+    reasons << "no investor contacts are subscribed to Capital Call notifications" unless investor.capital_call_subscribers?(fund)
+    reasons
+  end
+
+  # Reasons the payment-received notification would not actually reach the investor.
+  # That notification has no manual send control of its own — it's fired automatically,
+  # once per payment, by CapitalRemittanceVerify's payment_received_notification step
+  # (see CapitalRemittancePayment#notify_capital_remittance_payment for the conditions
+  # mirrored here). Surfaced in the Verify confirm message instead of a separate button.
+  # `verified` itself is deliberately not checked — becoming verified is the point of the
+  # action this message is shown for.
+  def payment_notification_blocked_reasons
+    reasons = []
+    reasons << "the call is not approved" unless capital_call.approved?
+    reasons << "the call is set up to not send payment notifications" unless capital_call.send_payment_notification_flag
+    reasons << "there are no recorded payments with a positive amount" if capital_remittance_payments.where("amount_cents > 0").none?
+    reasons << "a payment notification has already been sent for every recorded payment" if capital_remittance_payments.any? && capital_remittance_payments.where(payment_notification_sent: false).none?
+    reasons << "no investor contacts are subscribed to Capital Call notifications" unless investor.capital_call_subscribers?(fund)
+    reasons
+  end
+
   def send_notification(reminder: false)
     if capital_call.send_call_notice_flag && capital_call.approved && !capital_commitment.skip_doc_gen? # skip sending notification if skip_doc_gen is set to yes
       investor.notification_users(fund, with_tag: 'CapitalCall').each do |user|
@@ -124,12 +165,6 @@ class CapitalRemittance < ApplicationRecord
 
       update_column(:notification_sent, true)
       # rubocop:enable Rails/SkipsModelValidations
-    end
-  end
-
-  def payment_received_notification
-    investor.notification_users(fund, with_tag: 'CapitalCall').each do |user|
-      CapitalRemittanceNotifier.with(record: self, entity_id:, email_method: :payment_received).deliver_later(user)
     end
   end
 
@@ -194,8 +229,22 @@ class CapitalRemittance < ApplicationRecord
     call_amount + other_fee
   end
 
+  def verified_requires_approval
+    return if capital_call.approved?
+
+    errors.add(:verified, "cannot be set while the call is not approved")
+  end
+
   def due_amount
     call_amount + other_fee - collected_amount
+  end
+
+  # Whether the interactive Verify action should be disabled because nothing has been
+  # collected yet while money is actually owed. A remittance with a legitimately zero
+  # call_amount (e.g. call_basis_account_entry uploads) still has due_amount <= 0 and is
+  # NOT blocked here — see #set_status, which already treats that as "Paid".
+  def no_payment_received?
+    due_amount.positive? && collected_amount_cents.zero?
   end
 
   def folio_due_amount
@@ -212,7 +261,10 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[call_amount collected_amount capital_fee other_fee folio_id investor_name payment_date remittance_date status verified arrear_amount fund_id capital_call_id capital_commitment_id].sort
+    # notification_sent is whitelisted so the remittance search page can be filtered down to
+    # exactly the investors to change before running the bulk "Mark Notification Sent / Unsent"
+    # actions — see CapitalRemittanceSetNotificationSent.
+    %w[call_amount collected_amount capital_fee other_fee folio_id investor_name payment_date remittance_date status verified notification_sent arrear_amount fund_id capital_call_id capital_commitment_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

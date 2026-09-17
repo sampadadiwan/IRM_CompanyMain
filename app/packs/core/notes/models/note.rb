@@ -10,6 +10,13 @@ class Note < ApplicationRecord
   belongs_to :entity
   belongs_to :user
   belongs_to :owner, polymorphic: true, optional: true
+
+  # LP CRM: the person at the LP this note was with — the contact's InvestorAccess
+  # record, plus the guard that keeps it a contact of the note's own stakeholder.
+  # Works for both Investor-owned notes and notes logged under a DealInvestor
+  # (whose contacts are its parent LP's contacts). See WithTouchPoint.
+  include WithTouchPoint
+
   delegate :full_name, to: :user, prefix: :user
 
   has_one :reminder, as: :owner, dependent: :destroy
@@ -32,11 +39,21 @@ class Note < ApplicationRecord
   end
 
   after_save :update_investor
-  def update_investor
-    return unless owner.respond_to?(:last_interaction_date=)
 
-    owner.last_interaction_date = created_at
-    owner.save
+  # A DealInvestor's last_interaction_date is "the latest date a user actually put
+  # on a note", so only `on` counts and it never moves backwards — an undated note
+  # leaves it alone. Investor keeps its long-standing created_at behaviour, which
+  # Investor.not_interacted reads.
+  #
+  # Deleting a note deliberately does not recompute: removing a record should not
+  # silently rewind an investor's history.
+  def update_investor
+    if owner.is_a?(DealInvestor)
+      owner.register_interaction(self[:on])
+    elsif owner.respond_to?(:last_interaction_date=)
+      owner.last_interaction_date = created_at
+      owner.save
+    end
   end
 
   def self.ransackable_attributes(_auth_object = nil)

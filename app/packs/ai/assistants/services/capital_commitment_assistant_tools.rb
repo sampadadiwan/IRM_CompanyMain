@@ -25,6 +25,11 @@ class CapitalCommitmentAssistantTools < BaseAssistantTools
 
     description "List capital remittances for the current commitment. " \
                 "Attributes for query: status, verified, payment_date, remittance_date, call_amount, collected_amount. " \
+                "Due date lives on the associated capital call, not on the remittance itself -- use the nested Ransack " \
+                "attribute `capital_call_due_date` in `query` or `sort` (e.g. query: { capital_call_due_date_gteq: '2024-01-01' }, " \
+                "sort: 'capital_call_due_date desc') for any 'due date' / 'coming due' / 'overdue by date' request. " \
+                "NOTE: `capital_call_due_date` only works in `query`/`sort`, NOT as `group_by_field` -- grouping is a plain " \
+                "column GROUP BY and doesn't support nested associations. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'payment_date desc', limit: 10. (Maps to Ransack `s`)"
     param :scope, type: :string, desc: "Filter by scope: 'paid', 'pending', 'verified', 'unverified'", required: false
     param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false

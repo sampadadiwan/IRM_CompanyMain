@@ -1,0 +1,75 @@
+<%# Waive confirmation popup (modeled on investor_kycs/_request_updates_modal):
+    spells out the teardown before it happens. Locals: obligation %>
+<div class="modal fade" id="waive_obligation_modal_<%= obligation.id %>" tabindex="-1"
+     aria-labelledby="waiveObligationModalLabel_<%= obligation.id %>" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="waiveObligationModalLabel_<%= obligation.id %>">
+          Waive Obligation — <%= obligation.title %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_with url: waive_side_letter_obligation_path(obligation), method: :patch, data: { turbo: false } do |f| %>
+        <div class="modal-body">
+          <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
+            <div class="fw-bold text-dark small">Immediate Actions</div>
+            <div class="text-muted small">The following will happen when you click <strong>Waive Obligation</strong>:</div>
+          </div>
+
+          <div class="d-flex flex-column gap-2 mb-3">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#fef3c7;">
+                <i class="ti ti-trash fs-5" style="color:#d97706;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Open tasks are removed</div>
+                <div class="text-muted small mt-1">
+                  All incomplete tasks for this obligation are deleted and its recurrence
+                  schedule stops — no further occurrences will be generated.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fee2e2;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#fecaca;">
+                <i class="ti ti-bell-off fs-5" style="color:#dc2626;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Alerts stop</div>
+                <div class="text-muted small mt-1">
+                  No further upcoming, due, or overdue reminders will be sent for this obligation.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#dcfce7;">
+                <i class="ti ti-file-check fs-5" style="color:#16a34a;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">History is preserved</div>
+                <div class="text-muted small mt-1">
+                  Completed tasks and their fulfillment records stay intact for the audit
+                  trail; the obligation is marked <span class="badge bg-secondary">Waived</span>, not deleted.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-muted small">
+            Waiving is a legal decision — typically counsel confirming the LP has released
+            or amended <%= obligation.source_clause.presence || "this clause" %>.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Waive Obligation", class: "btn btn-outline-success" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,9 @@
+<%# Rendered internal document. Reuses the user-guides body partial so the
+    typography, Mermaid rendering and in-page anchor handling are identical —
+    the marketing docs use ```mermaid fences heavily, and that partial's
+    data-controller="mermaid" is what turns them into diagrams. %>
+<div class="card">
+  <div class="card-body p-4">
+    <%= render "user_guides/guide_body", html_content: @html_content %>
+  </div>
+</div>

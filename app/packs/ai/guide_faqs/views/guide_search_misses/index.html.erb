@@ -1,0 +1,44 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0">Chatbot misses</h1>
+  <%= link_to "Back to FAQ Manager", faq_entries_path, class: "btn btn-outline-secondary" %>
+</div>
+<p class="text-muted">
+  Questions from the last <%= GuideSearchMissesController::DAYS %> days where the chatbot's guide search found nothing,
+  or nothing matching at least two-thirds of the search words. Turn the common ones into FAQs.
+</p>
+
+<% if @term_counts.any? %>
+  <div class="card mb-3">
+    <div class="card-body">
+      <h2 class="h6">Most frequent search words</h2>
+      <% @term_counts.each do |terms, count| %>
+        <span class="badge bg-light text-dark border me-1 mb-1"><%= terms %> · <%= count %></span>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="table-responsive">
+  <table class="table table-bordered">
+    <thead><tr><th>When</th><th>Company</th><th>Customer question</th><th>Search words</th><th>Result</th><th></th></tr></thead>
+    <tbody>
+      <% @misses.each do |message| %>
+        <% question = @questions[message] %>
+        <tr>
+          <td><%= l(message.created_at) %></td>
+          <td><%= message.agent_chat_session&.support_agent&.entity&.name %></td>
+          <td><%= question.to_s.truncate(200) %></td>
+          <td><code><%= message.guide_search_terms %></code></td>
+          <td><%= message.guide_search_hit ? "Weak match" : "No match" %></td>
+          <td>
+            <%= link_to "Create FAQ", new_faq_entry_path(question: question.to_s.squish.truncate(300, omission: ""), source_message_id: message.id),
+                        class: "btn btn-sm btn-outline-primary" %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @misses.empty? %>
+        <tr><td colspan="6" class="text-muted">No misses in this period.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

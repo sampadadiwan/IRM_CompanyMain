@@ -69,6 +69,17 @@ Feature: 404-scanner blocking never locks out valid users
     And "admin" signs in with valid credentials
     And "admin" can still browse the app normally
 
+  # The second-factor screens sit between a correct password and a session: the user is
+  # still anonymous, but is re-establishing a session exactly as on /users/sign_in.
+  Scenario: A valid user can reach the two-factor screens while a scanner has their shared IP blocked
+    Given a visitor "scanner" browsing from IP "198.51.100.30"
+    When "scanner" requests 12 different missing pages
+    Then "scanner" is blocked with "403" when visiting "/entities/dashboard"
+    Given a visitor "colleague" browsing from IP "198.51.100.30"
+    Then "colleague" is not blocked when visiting "/two_factor/new"
+    And "colleague" is not blocked when visiting "/two_factor/select_mode"
+    And "colleague" is not blocked when visiting "/two_factor/enroll"
+
   Scenario: 404 strikes expire after a quiet minute and never accumulate into a block
     Given a visitor "shopper" browsing from IP "203.0.113.71"
     When "shopper" requests 4 different missing pages

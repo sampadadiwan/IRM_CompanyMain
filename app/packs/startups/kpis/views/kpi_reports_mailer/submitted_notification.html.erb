@@ -2,6 +2,11 @@
 
 <p><strong><%= @portfolio_company.investor_name %></strong> has submitted their KPI report for the period ending <strong><%= l @kpi_report.as_of %></strong>.</p>
 
+<% summary = @kpi_report.validation_result&.dig('summary') || {} %>
+<% if summary['cells_ok'].present? %>
+  <p>Staged for your review: <strong><%= summary['cells_ok'] %></strong> values across <%= summary['kpis_found'].to_a.size %> KPIs<% if Array(@kpi_report.validation_result['warnings']).any? %>, with <%= Array(@kpi_report.validation_result['warnings']).size %> warning(s) to look at<% end %>.</p>
+<% end %>
+
 <p>You can review the report by clicking the link below:</p>
 
 <p><%= link_to 'Review KPI Report', kpi_report_url(@kpi_report, host: @entity.sub_domain + '.' + ENV.fetch('DOMAIN', 'localhost')), class: "btn btn-outline-primary" %></p>

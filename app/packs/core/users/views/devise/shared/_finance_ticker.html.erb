@@ -1,0 +1,53 @@
+<%#
+  Running finance banner used on the devise / login pages.
+
+  Locals (all optional):
+    rows    - how many marquee rows to render. Row 2 scrolls the opposite way. Default 2.
+    variant - extra modifier class on the wrapper, e.g. "finance-ticker--bar". Default none.
+
+  Purely decorative, so the whole block is aria-hidden and carries no links.
+%>
+<%
+  rows    = local_assigns.fetch(:rows, 2)
+  variant = local_assigns.fetch(:variant, nil)
+
+  # Icons are tabler-icons classes. That font is already bundled by
+  # /modernize/css/styles.css, which the devise layout loads - no extra asset needed.
+  tiles = [
+    { icon: "ti-chart-line",     label: "Fund Performance" },
+    { icon: "ti-report-money",   label: "Capital Calls" },
+    { icon: "ti-coins",          label: "Distributions" },
+    { icon: "ti-chart-pie",      label: "NAV & Allocation" },
+    { icon: "ti-percentage",     label: "IRR & MOIC" },
+    { icon: "ti-building-bank",  label: "Bank Reconciliation" },
+    { icon: "ti-file-invoice",   label: "LP Statements" },
+    { icon: "ti-scale",          label: "Waterfall" },
+    { icon: "ti-briefcase",      label: "Portfolio" },
+    { icon: "ti-users-group",    label: "Investor CRM" },
+    { icon: "ti-shield-check",   label: "Compliance" },
+    { icon: "ti-world",          label: "Multi-Currency" },
+    { icon: "ti-certificate",    label: "Subscriptions" },
+    { icon: "ti-trending-up",    label: "Valuations" },
+    { icon: "ti-businessplan",   label: "Commitments" },
+    { icon: "ti-calendar-dollar", label: "Fee Schedules" }
+  ]
+%>
+<div class="finance-ticker <%= variant %>" aria-hidden="true">
+  <% 1.upto(rows) do |row| %>
+    <%# Offset each row into the list so the rows never line up as a mirror image. %>
+    <% row_tiles = tiles.rotate((row - 1) * (tiles.length / rows)) %>
+    <div class="finance-ticker__row finance-ticker__row--<%= row %>">
+      <div class="finance-ticker__track">
+        <%# The list is rendered twice - the duplicate is what makes the -50% scroll seamless. %>
+        <% 2.times do %>
+          <% row_tiles.each do |tile| %>
+            <div class="finance-tile">
+              <span class="finance-tile__icon"><i class="ti <%= tile[:icon] %>"></i></span>
+              <span class="finance-tile__label"><%= tile[:label] %></span>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

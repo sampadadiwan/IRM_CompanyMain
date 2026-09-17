@@ -12,7 +12,34 @@
     <%= display_boolean capital_distribution.approved %>
   </td>
   <td class="action-col">
-    <%= link_to  t_common(:show) , capital_distribution_path(capital_distribution) , {class: "btn btn-outline-primary ti ti-eye" }%>
-    <%= link_to  t_common(:edit) , edit_capital_distribution_path(capital_distribution) , {class: "btn btn-outline-success ti ti-edit" } if policy(capital_distribution).update? %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="ti ti-settings"></i> <%= t_common(:actions) %>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end">
+          <%= link_to capital_distribution_path(capital_distribution), class: "dropdown-item" do %>
+            <i class="ti ti-eye"></i> <%= t_common(:show) %>
+          <% end %>
+
+          <% if policy(capital_distribution).update? %>
+            <%= link_to edit_capital_distribution_path(capital_distribution), class: "dropdown-item" do %>
+              <i class="ti ti-edit"></i> <%= t_common(:edit) %>
+            <% end %>
+          <% end %>
+
+          <% if policy(capital_distribution).clone? %>
+            <div class="dropdown-divider"></div>
+
+
+            <%= link_to new_capital_distribution_path("capital_distribution[fund_id]": capital_distribution.fund_id, clone_from_id: capital_distribution.id, clone_mode: "fees"),
+                  class: "dropdown-item", data: { turbo: false, bs_toggle: "tooltip", bs_container: "body", bs_title: "Start a blank new distribution with just this one's fee rows copied in" } do %>
+              <i class="ti ti-copy"></i>Replicate Distribution
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
   </td>
 </tr>

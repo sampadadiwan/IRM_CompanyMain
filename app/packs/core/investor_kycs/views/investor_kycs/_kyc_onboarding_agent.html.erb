@@ -7,7 +7,8 @@
 <% cards = [
   {
     icon: "ti ti-notes",
-    value: report.json_fields["field_issues"]&.size,
+    # blocking, non-expiry issues only — see SupportAgentReport#missing_field_count
+    value: report.missing_field_count,
     type: :numeric,
     subtitle: "Missing Fields"
   },

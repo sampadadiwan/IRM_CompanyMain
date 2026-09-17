@@ -95,7 +95,10 @@ class InvestorKyc < ApplicationRecord
   scope :not_completed, -> { where(completed_by_investor: false) }
   scope :unverified, -> { where(verified: false) }
   scope :pending_investor, -> { where(submission_status: %w[link_sent draft_saved]) }
-  scope :expired, -> { where(expiry_date: ..Time.zone.today) }
+  # Exclusive end (...) — a KYC is valid THROUGH its expiry date, matching both
+  # #expired? (expiry_date < today) and :not_expired (expiry_date >= today).
+  # The old inclusive form counted a KYC expiring today as already expired.
+  scope :expired, -> { where(expiry_date: ...Time.zone.today) }
   scope :not_expired, -> { where('expiry_date IS NULL OR expiry_date >= ?', Time.zone.today) }
 
   scope :for_investor, lambda { |user|

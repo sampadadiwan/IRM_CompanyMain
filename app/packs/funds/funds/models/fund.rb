@@ -36,6 +36,9 @@ class Fund < ApplicationRecord
 
   has_many :account_entries, dependent: :destroy
   has_many :allocation_runs, dependent: :destroy
+  # Saved allocation run parameters for this fund. Restricted: a fund with templates has
+  # a close that depends on it, so the templates must be removed deliberately first.
+  has_many :allocation_run_templates, dependent: :restrict_with_error
   has_many :fund_reports, dependent: :destroy
 
   has_many :portfolio_scenarios, dependent: :destroy
@@ -63,6 +66,7 @@ class Fund < ApplicationRecord
   has_many :investor_accesses, through: :committed_investors
 
   has_many :fund_formulas, dependent: :destroy
+  has_many :shareholder_positions, dependent: :destroy
 
   has_many :fund_account_entries, ->(_ae) { where(account_entries: { capital_commitment_id: nil }) }, class_name: "AccountEntry", dependent: :destroy
 

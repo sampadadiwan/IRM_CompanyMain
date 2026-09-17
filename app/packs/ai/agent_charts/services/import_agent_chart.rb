@@ -21,7 +21,7 @@ class ImportAgentChart < ImportUtil
 
     if agent_chart.present?
       Rails.logger.debug { "AgentChart #{title} already exists for entity #{import_upload.entity_id}" }
-      raise "AgentChart #{title} already exists."
+      raise "Agent Chart '#{title}' already exists"
     else
       # Create a new agent_chart
       Rails.logger.debug user_data

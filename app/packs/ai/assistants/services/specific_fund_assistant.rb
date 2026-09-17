@@ -107,7 +107,11 @@ class SpecificFundAssistant < BaseAssistant
   end
 
   def default_report_queries
-    STRATEGIC_QUERIES
+    # OPERATIONAL_QUERIES used to be defined but never referenced here -- the monthly
+    # report only ever sent STRATEGIC_QUERIES, silently dropping the operational half
+    # (overdue remittances, verification reconciliation, notification-lag audit, dry
+    # powder, collection-lag trend, top-LP status).
+    STRATEGIC_QUERIES + OPERATIONAL_QUERIES
   end
 
   # Overriding run to handle specific chart logic that was present in the original

@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Call Notice Agent &mdash; Capital Call Readiness Checks | CapHive</title>
+<meta name="description" content="A rule-based readiness gate for capital calls: it checks investor KYC, generated call notices, document approvals and notification setup before notices go out, and stops at the first blocker.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/agent-call-notice.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Call Notice Agent | CapHive">
+<meta property="og:description" content="Checks KYC, documents, approvals and notification setup before a capital call's notices are sent.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/agent-call-notice.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="ai-agents">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Call Notice Agent
+      </nav>
+      <span class="chip-label">Finance &middot; Agent</span>
+      <h1 style="margin-top:22px">Confirm a capital call is ready <em>before the notices go out.</em></h1>
+      <p class="lede">
+        The Call Notice Agent checks that a capital call is actually ready before its notices reach investors. It works on one call at a time, walks a fixed checklist &mdash; KYC, document generation, document approval and notification setup &mdash; and shows live progress on the capital call's own page.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>One capital call, one check at a time</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>No &mdash; every check is a yes/no comparison against your existing records</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A readiness panel on the capital call, plus a saved report marked Ready or Blocked</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ARTICLE BODY ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>
+            The agent always runs against one specific capital call &mdash; the one you are about to
+            send notices for. Its checklist is fixed: every step runs in the same order, and there is
+            nothing to configure or skip. It is the capital-call counterpart to the
+            <a href="agent-distribution-readiness.html">Distribution Readiness Agent</a>, which applies
+            the same kind of gate to a distribution before payments are released.
+          </p>
+          <p>Each step gates the next.</p>
+          <ol>
+            <li><strong>Gets started.</strong> Sets up trackers to collect findings on KYC, documents and notifications.</li>
+            <li><strong>Checks investor KYC.</strong> For every investor on the call, confirms their KYC record exists and has been verified. If any investor is missing KYC or is not verified yet, the checklist stops here &mdash; none of the later checks run.</li>
+            <li><strong>Checks that call documents have been generated.</strong> First confirms the fund has at least one Call Notice template uploaded; if not, the checklist stops immediately with a fund-level blocker. Otherwise, for each investor &mdash; except those whose commitment is explicitly set to skip document generation &mdash; it confirms the call notice documents have actually been generated. Missing documents stop the checklist here.</li>
+            <li><strong>Checks that call documents have been approved.</strong> For each investor still in scope, confirms all of their generated call notice documents have been approved. Unapproved documents stop the checklist here.</li>
+            <li><strong>Checks notification setup.</strong> Confirms an active email notification is configured for this capital call. A missing or disabled notification stops the checklist here.</li>
+            <li><strong>Confirms ready to send.</strong> A final confirmation step that only runs if every prior check passed. It changes no data &mdash; it confirms the call has cleared every gate.</li>
+            <li><strong>Saves the report.</strong> Records whether the call passed every check or was stopped partway through.</li>
+          </ol>
+          <p>
+            <strong>No AI or LLM calls.</strong> Every check here is a straightforward yes/no comparison
+            against your existing records.
+          </p>
+
+          <div class="callout">
+            <p>
+              The checklist stops at the first failed step. If KYC fails, the agent tells you nothing yet
+              about whether your documents or notifications are also ready &mdash; those checks simply have
+              not run, and stay marked &ldquo;pending&rdquo; in the panel. Fix the first blocker, re-run, and
+              you may discover a new blocker further down the list. Plan for a few rounds of
+              fix-and-recheck rather than expecting one pass to surface every issue.
+            </p>
+          </div>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <h3>Configuration fields</h3>
+          <p>
+            None. This agent has no settings form at all &mdash; there is nothing to toggle, reorder or
+            adjust, and the checklist above is fixed for every entity. Setting the agent up simply makes
+            it available; it does not add any configurable options.
+          </p>
+          <h3>What feeds the run</h3>
+          <ul>
+            <li><strong>A single capital call</strong>, specified each time you trigger a check.</li>
+            <li><strong>The investors on the call</strong>, pulled along with their KYC status and documents as each step needs them.</li>
+            <li><strong>Templates.</strong> The fund needs at least one Call Notice template document uploaded for the documents-generated check to pass.</li>
+            <li><strong>Notification setup.</strong> An active, enabled email notification configured on the capital call.</li>
+            <li><strong>No AI provider key</strong> is required.</li>
+          </ul>
+          <h3>Setup warnings</h3>
+          <p>
+            Although the checklist itself has no settings, the agent still depends on fund-level setup.
+            The agent's General tab, under AI &rarr; Support Agents, shows a yellow warning banner listing
+            every fund that has no Call Notice template uploaded; upload one under Fund &rarr; Documents
+            before preparing a call for that fund. This matters most for batch or scheduled runs, which do
+            not walk through the step-by-step checks the way a run from the capital call's own page does, so
+            a missing template would otherwise only surface at the moment you try to send.
+          </p>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <ul>
+            <li><strong>Where it is switched on.</strong> A Company Admin ticks the &ldquo;Call Notice&rdquo; box under Admin &rarr; Edit Entity &rarr; Support Agents, and saves.</li>
+            <li><strong>AI key needed?</strong> No.</li>
+            <li><strong>Who can manage it.</strong> Only Company Admin users can set up or run support agents. The readiness panel itself is visible to anyone with access to the capital call's page.</li>
+          </ul>
+          <p>
+            If the agent is not enabled for your entity, the checklist is simply not available. Check with
+            your administrator if the panel does not appear or &ldquo;Run Now&rdquo; stays disabled.
+          </p>
+
+          <h2 id="running-it">Running it</h2>
+          <p>
+            Unlike the E-Sign Monitor or Data Quality agents, this one has no entity-wide &ldquo;Run
+            Now&rdquo; button on its own page. It is tied to a specific capital call and runs as part of
+            preparing that call to be sent.
+          </p>
+          <ol>
+            <li>Open the capital call record you intend to send.</li>
+            <li>The capital call's details page shows the readiness panel at the top, displaying the most recent check for that call, if one has been run.</li>
+            <li>Trigger a fresh check from that panel. It starts a new readiness check and shows live progress as each step completes.</li>
+            <li>The panel shows six step indicators &mdash; KYC, Docs Generated, Docs Approved, Notification, Ready to Send, Save Report &mdash; updating in real time, along with a progress bar.</li>
+          </ol>
+          <p>
+            This agent only ever checks one capital call at a time. There is no way to run it against every
+            call in a fund at once.
+          </p>
+
+          <h2 id="output">Where the output goes</h2>
+          <ul>
+            <li><strong>The capital call details page</strong> &mdash; the readiness panel itself, showing the latest check inline.</li>
+            <li><strong>The agent's General tab</strong> &mdash; a &ldquo;View Report&rdquo; link under AI &rarr; Support Agents &rarr; Call Notice, showing whichever capital call was checked most recently across the whole entity.</li>
+            <li><strong>The Execution History tab</strong> &mdash; every past check across every capital call, with status and duration.</li>
+          </ul>
+          <p>
+            There is no email for this agent. It is purely a readiness gate shown in the app, and it sends
+            nothing to investors or to your team on its own.
+          </p>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <p>
+            Each failed check records the specific investors or records affected, with a plain-language
+            reason for each one. The details are organised by category &mdash; KYC issues, document issues
+            or notification issues &mdash; so you can see exactly what needs fixing.
+          </p>
+          <ul>
+            <li><strong>Ready</strong> &mdash; every check passed; the capital call is cleared to send notices.</li>
+            <li><strong>Blocked</strong> &mdash; at least one check failed. The report notes exactly which step the checklist stopped at, so you can go straight to the blocker without reading the whole panel.</li>
+          </ul>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <ul>
+            <li><strong>An investor has no KYC record at all.</strong> The KYC check fails with &ldquo;No KYC record linked to this commitment&rdquo; and the checklist stops there; document and notification checks never run, even if they would have passed. Create or link the missing KYC record from Investor KYCs, filtered by fund, then re-run.</li>
+            <li><strong>The KYC exists but is not verified.</strong> The check fails naming the investor and noting &ldquo;KYC not verified&rdquo;, with the same stop-here behaviour. Mark the KYC as verified from the Investor KYCs screen, then re-run.</li>
+            <li><strong>The fund has no Call Notice template uploaded.</strong> The documents-generated check fails immediately at fund level: &ldquo;No call templates found for Fund&rdquo;, directing you to Fund &rarr; Documents to upload a Call Template. This blocks every capital call in that fund, not only the one you are checking &mdash; and uploading one template unblocks the step for all of them.</li>
+            <li><strong>A commitment is set to skip document generation.</strong> That investor is quietly left out of both the documents-generated and documents-approved checks. They neither pass nor fail; they are simply not evaluated. If an investor you expected to see flagged is missing from the failed list, check whether that flag is turned on for their commitment.</li>
+            <li><strong>Call notice documents have not been generated yet.</strong> The check fails, listing each affected investor with &ldquo;No call notice documents generated&rdquo; and pointing you at &ldquo;Generate Docs&rdquo; on the capital call page. The checklist stops there, so approvals and notification checks never run.</li>
+            <li><strong>Documents are generated but not approved.</strong> The documents-approved check fails, listing each affected investor with a count of pending documents. The checklist stops there and the notification check never runs.</li>
+            <li><strong>No notification template is configured.</strong> The notification check fails: &ldquo;No email notification template configured.&rdquo; Go to the Notification tab on the capital call and create or enable the notification used for sending call remittance notices.</li>
+            <li><strong>A capital call with no investors linked yet.</strong> The KYC, documents-generated and documents-approved checks all pass automatically, because there is nothing to evaluate; only the notification check can still block.</li>
+            <li><strong>Re-running after fixing one blocker.</strong> Each re-run reuses and overwrites the same report rather than keeping every historical attempt, though Execution History still logs each run. The panel will progress further and may reveal a brand-new blocker you could not have seen before, so read the whole panel each time.</li>
+            <li><strong>A mid-check error</strong> &mdash; for example a missing or broken link between the call and its fund &mdash; is not handled as a normal checklist failure. It can appear as &ldquo;Failed&rdquo; rather than &ldquo;Blocked&rdquo; in Execution History, which signals a data integrity problem worth investigating directly rather than an unmet checklist item.</li>
+          </ul>
+
+          <div class="pull">
+            <p>A &ldquo;ready&rdquo; result on a call with no investors does not actually mean it is ready to send.</p>
+            <cite>Call Notice Agent user guide</cite>
+          </div>
+
+          <h2 id="faq">Questions we get asked</h2>
+          <div class="faq">
+            <details>
+              <summary>Some steps still show &ldquo;pending&rdquo; even though the run finished. Why?</summary>
+              <div>
+                <p>The checklist stops at the very first failed step. Whichever check failed halts the process &mdash; everything after it never runs and stays marked &ldquo;pending&rdquo;. Fix the reported blocker and re-run to see how much further the checklist gets.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Can we configure which checks run, or skip the notification check for calls that do not email investors?</summary>
+              <div>
+                <p>No. This agent has no settings at all &mdash; the steps are fixed and always run in the same order for every capital call.</p>
+              </div>
+            </details>
+            <details>
+              <summary>One investor's commitment has &ldquo;skip document generation&rdquo; enabled. Will the agent still flag them for missing documents?</summary>
+              <div>
+                <p>No. Investors on a commitment with that flag turned on are excluded from the documents-generated and documents-approved checks entirely. They are not flagged as failing; they are left out of those checks.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Does fixing a blocker automatically re-run the agent?</summary>
+              <div>
+                <p>No. After fixing a KYC, document, approval or notification issue, trigger the check again from the capital call page. There is no automatic re-check when you save a fix.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Our fund has several capital calls. Does fixing the &ldquo;no Call Template&rdquo; blocker for one fix it for all of them?</summary>
+              <div>
+                <p>Conceptually yes &mdash; the template check looks at the fund's documents, not at anything specific to one call. Once a Call Notice template exists on the fund, every capital call in that fund can pass this step on its next check. You still need to re-run the check on each individual call to refresh its report.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>bench.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-distribution-readiness.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Distribution Readiness Agent</h3>
+          <p>Checks KYC, payable amounts, notices, approvals and bank details before a distribution is paid.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-cash-flow-assistant.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Cash Flow Assistant Agent</h3>
+          <p>Calculates each fund's cash position, runway and recommended capital call, then emails a consolidated report.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-rta-reconciliation.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>RTA Reconciliation Agent</h3>
+          <p>Reconciles an uploaded RTA unit statement against your fund's own unit and folio records.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+</body>
+</html>

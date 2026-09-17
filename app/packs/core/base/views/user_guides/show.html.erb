@@ -1,37 +1,27 @@
-<div class="card">
-  <div class="card-body p-4">
-    <div class="ai-md" data-controller="mermaid" id="guide-content">
-      <%= @html_content %>
+<article>
+  <header class="page-hero article-hero hero-tinted <%= @hero_tint %>">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <%= link_to "Home", root_path %><span>/</span><%= link_to t('top_menus.user_guides'), user_guides_path %><span>/</span>
+            <% if @group_label %><%= @group_label %><span>/</span><% end %><%= @title %>
+          </nav>
+          <span class="chip-label"><%= @group_label || "User Guide" %></span>
+          <h1 style="margin-top:22px"><%= @title %></h1>
+          <p class="lede"><%= @lede %></p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <%= render "user_guides/guide_body", html_content: @html_content %>
+        </div>
+      </div>
     </div>
   </div>
-</div>
-
-<script>
-(function() {
-  function scrollToHash(hash) {
-    if (!hash || hash === '#') return;
-    var el = document.getElementById(hash.replace(/^#/, ''));
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  // Intercept same-page anchor clicks inside the rendered guide so Turbo never
-  // sees them — the browser would do this natively but Turbo can swallow it.
-  var content = document.getElementById('guide-content');
-  if (content) {
-    content.addEventListener('click', function(e) {
-      var a = e.target.closest('a[href^="#"]');
-      if (!a) return;
-      e.preventDefault();
-      var href = a.getAttribute('href');
-      history.pushState(null, '', href);
-      scrollToHash(href);
-    });
-  }
-
-  // Scroll to hash when Turbo finishes a page visit (e.g. navigating here
-  // via a link that already includes a fragment).
-  document.addEventListener('turbo:load', function() {
-    scrollToHash(window.location.hash);
-  });
-})();
-</script>
+</article>

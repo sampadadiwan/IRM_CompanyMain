@@ -63,6 +63,38 @@ class DealsReportAgent < SupportAgentService
     Entity.where(id: entity_id)
   end
 
+  # Content sections gated by literal-string "true"/"false" flags (not Yes/No).
+  CONTENT_FLAGS = %w[include_greeting include_updates include_tasks_due include_tasks_overdue include_stale_items].freeze
+
+  # Setup health check — without recipients the report email (this agent's main
+  # output) never sends, and content flags silently turn off on any value
+  # other than the literal string "true".
+  def self.config_issues(support_agent)
+    fields = support_agent.json_fields || {}
+    issues = []
+
+    if fields["report_recipients"].to_s.strip.blank?
+      issues << "'report_recipients' is blank — the deals report email (this agent's main output) will never be sent."
+    end
+
+    if fields.key?("stale_days") && fields["stale_days"].to_s.strip.blank?
+      issues << "'stale_days' is blank — a blank value means 0 days, so every deal is flagged stale. Set a number of days or remove the field."
+    end
+
+    # These flags compare against the literal string "true" — "Yes"/"True"/null
+    # silently disable the section. Absent keys default to on and are fine.
+    CONTENT_FLAGS.each do |key|
+      next unless fields.key?(key)
+
+      value = fields[key]
+      next if %w[true false].include?(value.to_s)
+
+      issues << "'#{key}' is '#{value}' but only the exact value 'true' enables this section — it is currently OFF. Use 'true' or 'false'."
+    end
+
+    issues
+  end
+
   private
 
   # ─── Step 1: Initialize ─────────────────────────────────────────────────────

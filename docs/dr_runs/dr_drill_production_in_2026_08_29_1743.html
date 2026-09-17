@@ -1,0 +1,646 @@
+<title>Production Recovery Record</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap">
+<style>
+  :root {
+    --paper:      #F6F7F9;
+    --surface:    #FFFFFF;
+    --surface-2:  #EFF2F5;
+    --ink:        #111820;
+    --ink-soft:   #566274;
+    --ink-faint:  #8894A3;
+    --rule:       #DCE1E7;
+    --rule-firm:  #C3CBD4;
+    --verified:   #16694A;
+    --verified-bg:#E4F0EA;
+    --caution:    #8A5C0D;
+    --caution-bg: #F7EEDC;
+    --accent:     #0F4C5C;
+    --accent-soft:#E2EDF0;
+    --shadow:     0 1px 2px rgba(17,24,32,.05), 0 8px 24px -12px rgba(17,24,32,.15);
+
+    --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+    --sans:  "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:  "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0C1116;
+      --surface:    #131A21;
+      --surface-2:  #1A222B;
+      --ink:        #E4EBF2;
+      --ink-soft:   #98A5B3;
+      --ink-faint:  #6B7885;
+      --rule:       #232D37;
+      --rule-firm:  #33404C;
+      --verified:   #46BC8B;
+      --verified-bg:#12291F;
+      --caution:    #DCA646;
+      --caution-bg: #2A2113;
+      --accent:     #58B3C7;
+      --accent-soft:#122730;
+      --shadow:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #0C1116;
+    --surface:    #131A21;
+    --surface-2:  #1A222B;
+    --ink:        #E4EBF2;
+    --ink-soft:   #98A5B3;
+    --ink-faint:  #6B7885;
+    --rule:       #232D37;
+    --rule-firm:  #33404C;
+    --verified:   #46BC8B;
+    --verified-bg:#12291F;
+    --caution:    #DCA646;
+    --caution-bg: #2A2113;
+    --accent:     #58B3C7;
+    --accent-soft:#122730;
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .sheet {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 48px 28px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 52px;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--rule-firm);
+    padding: 22px 0 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+  }
+  .masthead h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.1;
+    letter-spacing: -.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .subject {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--ink-soft);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .subject .arrow { color: var(--ink-faint); }
+  .subject strong { color: var(--ink); font-weight: 600; }
+
+  .verdict {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    align-self: flex-start;
+    background: var(--verified-bg);
+    color: var(--verified);
+    border: 1px solid color-mix(in srgb, var(--verified) 35%, transparent);
+    border-radius: 2px;
+    padding: 7px 14px 7px 11px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .verdict .tick {
+    width: 16px; height: 16px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: var(--verified);
+    color: var(--verified-bg);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  /* ---------- metrics ---------- */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .metric {
+    background: var(--surface);
+    padding: 18px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .metric dt {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .metric dd {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .metric .qualifier {
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- sections ---------- */
+  section { display: flex; flex-direction: column; gap: 18px; }
+  h2 {
+    font-family: var(--serif);
+    font-size: 21px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -.01em;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  h2::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+  .lede {
+    max-width: 66ch;
+    color: var(--ink-soft);
+    margin: 0;
+    font-size: 14.5px;
+  }
+
+  /* ---------- tables ---------- */
+  .scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--rule-firm);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .key { color: var(--ink-soft); width: 190px; }
+  .val { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  code {
+    font-family: var(--mono);
+    font-size: .93em;
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 1px 5px;
+    word-break: break-word;
+  }
+
+  /* ---------- status marks ---------- */
+  .mark {
+    display: inline-grid;
+    place-items: center;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .mark.pass { background: var(--verified-bg); color: var(--verified); border: 1px solid color-mix(in srgb, var(--verified) 40%, transparent); }
+  .mark.warn { background: var(--caution-bg); color: var(--caution); border: 1px solid color-mix(in srgb, var(--caution) 40%, transparent); }
+  td.markcell { width: 40px; text-align: center; padding-top: 11px; }
+
+  /* ---------- timeline ---------- */
+  .phase-name { font-weight: 500; }
+  .bar {
+    display: block;
+    height: 6px;
+    border-radius: 1px;
+    background: var(--accent);
+    min-width: 2px;
+    margin-top: 7px;
+    opacity: .85;
+  }
+  .bar.dominant { background: var(--verified); }
+  .barcell { width: 34%; min-width: 150px; }
+  .seq {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- host block ---------- */
+  .host {
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .host-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 16px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--rule-firm);
+  }
+  .host-head .name { font-family: var(--mono); font-weight: 600; font-size: 13.5px; }
+  .host-head .tally { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .host .scroll { border: none; border-radius: 0; }
+  .hosts { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); }
+
+  /* ---------- scope callout ---------- */
+  .scope {
+    border: 1px solid var(--rule-firm);
+    border-radius: 3px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .scope-row { display: grid; grid-template-columns: 132px 1fr; gap: 0; border-bottom: 1px solid var(--rule); }
+  .scope-row:last-child { border-bottom: none; }
+  .scope-label {
+    padding: 15px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    background: var(--surface-2);
+    border-right: 1px solid var(--rule);
+  }
+  .scope-label.in  { color: var(--verified); }
+  .scope-label.out { color: var(--caution); }
+  .scope-body { padding: 15px 18px; font-size: 14px; }
+  .scope-note {
+    margin: 0;
+    padding: 14px 18px;
+    background: var(--accent-soft);
+    border-top: 1px solid var(--rule);
+    font-size: 14px;
+  }
+
+  /* ---------- footer ---------- */
+  footer {
+    border-top: 1px solid var(--rule-firm);
+    padding-top: 18px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    justify-content: space-between;
+  }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (max-width: 620px) {
+    .sheet { padding: 32px 16px 64px; gap: 40px; }
+    .key { width: auto; }
+    .scope-row { grid-template-columns: 1fr; }
+    .scope-label { border-right: none; border-bottom: 1px solid var(--rule); }
+  }
+</style>
+
+<div class="sheet">
+
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>Disaster Recovery Record</span>
+      <span>Ref · dr_drill_production_in_2026_08_29_1743</span>
+      <span>29 August 2026</span>
+    </div>
+    <h1>Production recovery rebuilt and verified in 10 minutes 10 seconds</h1>
+    <div class="subject">
+      <strong>production</strong> <span>(in)</span>
+      <span class="arrow">→</span>
+      <strong>ap-south-2</strong> <span>disaster-recovery region</span>
+    </div>
+    <span class="verdict"><span class="tick">✓</span> Recovery succeeded</span>
+  </header>
+
+  <dl class="metrics">
+    <div class="metric">
+      <dt>Rebuild time</dt>
+      <dd>10:10</dd>
+      <span class="qualifier">command start to verified</span>
+    </div>
+    <div class="metric">
+      <dt>Database restore</dt>
+      <dd>6:04</dd>
+      <span class="qualifier">primary + replica, in parallel</span>
+    </div>
+    <div class="metric">
+      <dt>Checks passed</dt>
+      <dd>38<span style="color:var(--ink-faint);font-weight:400">/40</span></dd>
+      <span class="qualifier">2 warnings, 0 failures</span>
+    </div>
+    <div class="metric">
+      <dt>Data currency</dt>
+      <dd>0.3h</dd>
+      <span class="qualifier">age of newest restored record</span>
+    </div>
+  </dl>
+
+  <section>
+    <h2>Run particulars</h2>
+    <div class="scroll">
+      <table>
+        <tbody>
+          <tr><td class="key">Environment</td><td class="val">production (in)</td></tr>
+          <tr><td class="key">Recovered into</td><td class="val">ap-south-2 — disaster-recovery region</td></tr>
+          <tr><td class="key">Started</td><td class="val">2026-08-29 12:13:42 UTC</td></tr>
+          <tr><td class="key">Finished</td><td class="val">2026-08-29 12:23:52 UTC</td></tr>
+          <tr><td class="key">Rebuild time</td><td class="val">10:10 (10.2 minutes)</td></tr>
+          <tr><td class="key">Application servers</td><td class="val">2 — 98.130.44.183, 18.61.81.84</td></tr>
+          <tr><td class="key">Database</td><td class="val">primary 10.0.3.210, replica 10.0.4.107</td></tr>
+          <tr><td class="key">Code deployed</td><td class="val">dr_drill_production_in_2026_08_29_1743</td></tr>
+          <tr><td class="key">Executed by</td><td class="val">thimmaiah@thimmaiah-laptop</td></tr>
+          <tr><td class="key">Exercise type</td><td>Scheduled drill against production — not a response to a real incident. It exercised the identical code path a real recovery uses.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Recovery sequence</h2>
+    <p class="lede">Every phase in the order it executed, with wall-clock times. Bars are drawn to
+      scale against the 10:10 total — the database restore accounts for roughly
+      three-fifths of the recovery.</p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th></th><th>#</th><th>Phase</th><th>Start</th><th>End</th><th>Duration</th><th class="barcell">Share of run</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="markcell"><span class="mark pass">✓</span></td>
+            <td class="seq">1</td><td class="phase-name">Refresh infrastructure configuration</td>
+            <td class="num">12:13:42</td><td class="num">12:13:52</td><td class="num">0:10</td>
+            <td class="barcell"><span class="bar" style="width:1.6%"></span></td>
+          </tr>
+          <tr>
+            <td class="markcell"><span class="mark pass">✓</span></td>
+            <td class="seq">2</td><td class="phase-name">Provision infrastructure</td>
+            <td class="num">12:13:52</td><td class="num">12:14:17</td><td class="num">0:25</td>
+            <td class="barcell"><span class="bar" style="width:4.1%"></span></td>
+          </tr>
+          <tr>
+            <td class="markcell"><span class="mark pass">✓</span></td>
+            <td class="seq">3</td><td class="phase-name">Rewrite configuration with new host addresses</td>
+            <td class="num">12:14:17</td><td class="num">12:14:19</td><td class="num">0:02</td>
+            <td class="barcell"><span class="bar" style="width:0.4%"></span></td>
+          </tr>
+          <tr>
+            <td class="markcell"><span class="mark pass">✓</span></td>
+            <td class="seq">4</td><td class="phase-name">Commit and publish the recovery branch</td>
+            <td class="num">12:14:19</td><td class="num">12:14:23</td><td class="num">0:04</td>
+            <td class="barcell"><span class="bar" style="width:0.7%"></span></td>
+          </tr>
+          <tr>
+            <td class="markcell"><span class="mark pass">✓</span></td>
+            <td class="seq">5</td><td class="phase-name">Deploy the application to both servers</td>
+            <td class="num">12:14:23</td><td class="num">12:15:42</td><td class="num">1:19</td>
+            <td class="barcell"><span class="bar" style="width:13%"></span></td>
+          </tr>
+          <tr>
+            <td class="markcell"><span class="mark pass">✓</span></td>
+            <td class="seq">6</td><td class="phase-name">Take traffic offline</td>
+            <td class="num">12:15:42</td><td class="num">12:15:50</td><td class="num">0:08</td>
+            <td class="barcell"><span class="bar" style="width:1.3%"></span></td>
+          </tr>
+          <tr>
+            <td class="markcell"><span class="mark pass">✓</span></td>
+            <td class="seq">7</td><td class="phase-name">Restore the database from backups</td>
+            <td class="num">12:15:50</td><td class="num">12:21:54</td><td class="num">6:04</td>
+            <td class="barcell"><span class="bar dominant" style="width:59.7%"></span></td>
+          </tr>
+          <tr>
+            <td class="markcell"><span class="mark pass">✓</span></td>
+            <td class="seq">8</td><td class="phase-name">Restore traffic and verify the stack</td>
+            <td class="num">12:21:54</td><td class="num">12:23:52</td><td class="num">1:58</td>
+            <td class="barcell"><span class="bar" style="width:19.3%"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Verification scorecard</h2>
+    <p class="lede">The recovery is not reported as successful until every one of these checks passes
+      on <em>every</em> application server. Each exercises the real serving path — an HTTP request
+      through nginx to Puma to Rails to the dependency itself — rather than a mock or a status file.
+      Reproduced verbatim from the run transcript.</p>
+
+    <div class="hosts">
+      <div class="host">
+        <div class="host-head">
+          <span class="name">ip-10-0-1-46</span>
+          <span class="tally">19 passed · 1 warning · 0 failed</span>
+        </div>
+        <div class="scroll">
+          <table>
+            <tbody>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Metrics exporter running</td><td class="val">2 processes</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Nginx active</td><td class="val">active</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Puma running</td><td class="val">5 processes</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Serving chain → MySQL</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Serving chain → Redis</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Serving chain → Elasticsearch</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Disk capacity</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Valuation service</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Background workers registered</td><td class="val">1 process</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Migrations current</td><td class="val">—</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Restored data freshness</td><td class="val">0.3h old</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Document storage reachable</td><td class="val">docs.caphive.com.production</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Primary database active</td><td class="val">10.0.3.210</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Search engine running</td><td class="val">elasticsearch</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Cache running</td><td class="val">redis-stack-server</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Backups armed on primary</td><td class="val">marker present</td></tr>
+              <tr><td class="markcell"><span class="mark warn">!</span></td><td>Backup schedule installed</td><td class="val">absent — see finding</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Replica database active</td><td class="val">10.0.4.107</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Replica backups disarmed</td><td class="val">—</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Live replication round-trip</td><td class="val">Ok</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="host">
+        <div class="host-head">
+          <span class="name">ip-10-0-2-43</span>
+          <span class="tally">19 passed · 1 warning · 0 failed</span>
+        </div>
+        <div class="scroll">
+          <table>
+            <tbody>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Metrics exporter running</td><td class="val">2 processes</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Nginx active</td><td class="val">active</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Puma running</td><td class="val">5 processes</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Serving chain → MySQL</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Serving chain → Redis</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Serving chain → Elasticsearch</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Disk capacity</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Valuation service</td><td class="val">HTTP 200</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Background workers registered</td><td class="val">2 processes</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Migrations current</td><td class="val">—</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Restored data freshness</td><td class="val">0.0h old</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Document storage reachable</td><td class="val">docs.caphive.com.production</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Primary database active</td><td class="val">10.0.3.210</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Search engine running</td><td class="val">elasticsearch</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Cache running</td><td class="val">redis-stack-server</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Backups armed on primary</td><td class="val">marker present</td></tr>
+              <tr><td class="markcell"><span class="mark warn">!</span></td><td>Backup schedule installed</td><td class="val">absent — see finding</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Replica database active</td><td class="val">10.0.4.107</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Replica backups disarmed</td><td class="val">—</td></tr>
+              <tr><td class="markcell"><span class="mark pass">✓</span></td><td>Live replication round-trip</td><td class="val">Ok</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open finding</h2>
+    <div class="scope">
+      <div class="scope-row">
+        <div class="scope-label out">Warning</div>
+        <div class="scope-body">
+          <strong>Backup schedule not installed on the recovered primary.</strong>
+          Backups were armed — the enabling marker was created — but the scheduled job file
+          <code>/etc/cron.d/irm-db-backup</code> was absent, which is expected on a machine image
+          predating the baked backup tooling. In a real recovery the backup chain would not resume
+          on its own until that file is installed. Recorded here rather than omitted: this is the
+          single item that did not pass cleanly.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Independently verifiable evidence</h2>
+    <p class="lede">Each row names a record held <em>outside</em> the application repository, together
+      with the command that checks it. Nothing in this document has to be taken on trust.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Claim</th><th>Evidence</th><th>How to verify independently</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Infrastructure provisioned in the recovery region</td>
+            <td class="val">Pulumi update #26 — succeeded, 12:14:03Z → 12:14:15Z</td>
+            <td><code>pulumi stack history --stack production-ap-south-2</code><br>Server-side record held by Pulumi, not by us.</td>
+          </tr>
+          <tr>
+            <td>Database instances genuinely launched</td>
+            <td class="val">i-0eb90e37036dd6c66 (10.0.4.107)<br>i-049a8776fa29ddf48 (10.0.3.210)<br>both launched 2026-08-29T11:22:49Z</td>
+            <td>CloudTrail <code>RunInstances</code> events in ap-south-2<br><code>aws ec2 describe-instances --region ap-south-2</code></td>
+          </tr>
+          <tr>
+            <td>Which code was recovered onto</td>
+            <td class="val">commit c176f874b01bf489988bcfd3bd0bce463ae42a25</td>
+            <td><code>git log -1 c176f874b</code><br>Push timestamp recorded by GitHub.</td>
+          </tr>
+          <tr>
+            <td>Data came from real production backups</td>
+            <td class="val">docs.caphive.com.production-backup-xtra<br>full + incremental chain</td>
+            <td><code>aws s3 ls s3://docs.caphive.com.production-backup-xtra/</code><br>Compare object timestamps against the run window.</td>
+          </tr>
+          <tr>
+            <td>The recovered stack actually served traffic</td>
+            <td class="val">verification passed on every application server at 12:23:52Z</td>
+            <td>Re-run <code>cap production_in recovery:verify</code><br>Per-check scorecard preserved in the run transcript.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the measured time covers</h2>
+    <p class="lede">The headline figure is <strong>rebuild time</strong>, not end-to-end recovery time
+      objective. It is measured from the start of the recovery command to the stack passing verification.</p>
+    <div class="scope">
+      <div class="scope-row">
+        <div class="scope-label in">Included</div>
+        <div class="scope-body">Infrastructure provisioning · configuration rewrite · application deploy to
+          every server · database restore from backups, primary and replica in parallel · replication
+          re-pointing · migration replay · the full verification scorecard above.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-label out">Excluded</div>
+        <div class="scope-body">Incident detection · the human decision to declare a disaster · DNS cutover
+          and its propagation delay. Cutover is deliberately a manual step and is never performed by the
+          recovery sequence.</div>
+      </div>
+      <p class="scope-note">A true incident-to-service-restored figure is the time above <strong>plus</strong>
+        those three components. Stated explicitly so the number is not read as more than it is.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Source record</h2>
+    <p class="lede">Every command issued during this recovery and its complete output — including the raw
+      verification scorecard reproduced above — was captured automatically to
+      <code>docs/dr_runs/dr_drill_production_in_2026_08_29_1743.log</code>. This document states what is
+      claimed and how to check it; the transcript records what happened, line by line.</p>
+  </section>
+
+  <footer>
+    <span>Disaster Recovery Record · production (in) → ap-south-2</span>
+    <span>Generated 2026-08-29T12:23:52Z</span>
+  </footer>
+
+</div>

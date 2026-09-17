@@ -69,7 +69,11 @@
               <% if params[:view_unapproved] == 'true' %>
                 <%= link_to "Hide Staged", kpi_reports_path(params.to_unsafe_h.merge(view_unapproved: false)), class: "dropdown-item text-warning ti ti-eye-off" %>
               <% else %>
-                <%= link_to "View Including Staged", kpi_reports_path(params.to_unsafe_h.merge(view_unapproved: true)), class: "dropdown-item text-warning ti ti-eye" %>
+                <%# Drop :period — staged KPIs can land under a different period type than whatever
+                  the grid happens to be filtered to (e.g. a freshly-imported Quarter/Year report
+                  while the grid is filtered to Month), so carrying the filter over here would hide
+                  the very staged rows this link is meant to surface. %>
+                <%= link_to "View Including Staged", kpi_reports_path(params.to_unsafe_h.except("period").merge(view_unapproved: true)), class: "dropdown-item text-warning ti ti-eye" %>
               <% end %>
               <% if investor && params[:view_unapproved] == 'true' && Kpi.unapproved.where(portfolio_company_id: investor.id).exists? %>
                 <%
@@ -245,7 +249,9 @@
       <%= render "/kpi_reports/grid_view_chart", kpi_reports:, investor_kpi_mappings:, chart_configs: [], investor: investor  %>
     </div>
 
-    <% if params[:compound].present? %>
+    <%# .present? does not handle string "false" properly - and returns true
+    # so we use standard boolean casting instead of relying on .present? %>
+    <% if ActiveModel::Type::Boolean.new.cast(params[:compound]) %>
       <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:  %>
     <% else %>
       <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:  %>

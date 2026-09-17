@@ -11,6 +11,7 @@
 app/.tmp
 app/.gitnexus
 graphify-out/
+vendor/*
 
 # Ignore the default SQLite database.
 /db/*.sqlite3
@@ -22,6 +23,10 @@ graphify-out/
 DS_Store
 mcp.json
 .env.secrets
+
+# IMAP app password for bin/incident-watch (see docs/technical/incident_rca_system.md).
+# The preferred location is ~/.config/incident_watch.env, outside the repo entirely.
+config/incident_watch.env
 
 /.aider.tags.cache.v3
 .aider*
@@ -105,6 +110,14 @@ logs
 npm-debug.log*
 yarn-error.log*
 dev-debug.log
+
+# DR run transcripts (docs/dr_runs/*.log) stay ignored by the *.log rule
+# above, deliberately. They are raw console capture of a production recovery:
+# multi-megabyte, and whatever any command happened to print. One of them was
+# found to contain the database password in plaintext, and a secret committed
+# to a repository is permanent in a way a local file is not. The reports and
+# the auditor HTML page ARE committed; the transcript behind them is retained
+# by the operator and produced on request.
 # Dependency directories
 # Environment variables
 .env
@@ -133,3 +146,12 @@ opencode.json
 .vscode/mcp.json
 .vscode/mcp.json
 
+
+# Apps Script deployment config (per-deployment script id)
+.clasp.json
+addons/**/.clasp.json
+# Per-environment script ids, written by `rake gmail:setup[<env>]`. Gitignored because the
+# projects belong to whichever Google account created them, so they differ per developer.
+addons/**/.clasp.*.json
+# Generated Apps Script projects — rebuild with `rake gmail:build[<env>]`.
+addons/gmail/build/

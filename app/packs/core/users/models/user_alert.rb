@@ -2,7 +2,12 @@ class UserAlert < ApplicationRecord
   belongs_to :user
   belongs_to :entity
 
-  after_save_commit :broadcast_ua, on: %i[create update]
+  # The method is named `broadcast`, not `broadcast_ua` — this callback previously referenced
+  # a method that doesn't exist, raising NoMethodError on any UserAlert.create!/save that
+  # actually persists (e.g. ImportCapitalCommitment#warn_about_unsubscribed_investors). Most
+  # other call sites never hit this: UserAlert.new(...).broadcast is called directly on an
+  # unsaved record and never triggers an after_save_commit callback at all.
+  after_save_commit :broadcast, on: %i[create update]
   validates :level, length: { maximum: 8 }
 
   def broadcast

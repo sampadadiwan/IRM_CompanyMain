@@ -1,0 +1,171 @@
+<%# Tier cards — one per grade bucket plus Not Scored. Each card links to the
+    dashboard with a ?status= tier slug that filters the table below. These are
+    full-page navigations rather than Turbo Frame swaps so the active-card
+    highlight, the distribution chart and the table all stay in sync; only search
+    and pagination use the table's frame.
+
+    Labels read "Tier (grades)" — e.g. "Watch List (C+ / C)". The tier name is
+    what the FM scans; the grade letters let the card reconcile against the badge
+    on each company's own score card. Both come from the presenter's band table,
+    so a view can never hand-type a label that drifts from its slug. %>
+
+<%# Toolbar. Sector and tag scope the whole portfolio — every number below is
+    computed against the subset they select — so they sit here rather than in the
+    table header, where they would read as row filters. The count/value toggle is
+    a URL param rather than JS state so it survives every click and stays shareable. %>
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <div class="d-flex align-items-center gap-2 flex-wrap"
+       data-controller="scoring-scope-filter">
+    <div class="btn-group btn-group-sm" role="group" aria-label="Weight tiers by">
+      <%= link_to scoring_dashboard_path_with(basis: nil),
+            class: "btn #{basis == :count ? 'btn-primary' : 'btn-outline-secondary'}",
+            data: { turbo: false } do %>
+        <i class="ti ti-building"></i> By count
+      <% end %>
+      <%= link_to scoring_dashboard_path_with(basis: "value"),
+            class: "btn #{basis == :value ? 'btn-primary' : 'btn-outline-secondary'}",
+            data: { turbo: false } do %>
+        <i class="ti ti-coin"></i> By value
+      <% end %>
+    </div>
+
+    <%# Selecting an option navigates straight to that scope — the value of each
+        option is the URL to go to, so no form submission is needed. %>
+    <select class="form-select form-select-sm" style="width: 190px;"
+            aria-label="Filter by sector"
+            data-action="change->scoring-scope-filter#navigate">
+      <option value="<%= scoring_dashboard_path_with(sector: nil) %>">All sectors</option>
+      <% sectors_for_select.each do |sector, count| %>
+        <option value="<%= scoring_dashboard_path_with(sector: sector) %>"
+                <%= "selected" if @sector_filter == sector %>>
+          <%= sector %> (<%= count %>)
+        </option>
+      <% end %>
+    </select>
+
+    <select class="form-select form-select-sm" style="width: 190px;"
+            aria-label="Filter by tag"
+            data-action="change->scoring-scope-filter#navigate">
+      <option value="<%= scoring_dashboard_path_with(tag: nil) %>">All tags</option>
+      <% tags_for_select.each do |tag, count| %>
+        <option value="<%= scoring_dashboard_path_with(tag: tag) %>"
+                <%= "selected" if @tag_filter == tag %>>
+          <%= tag %> (<%= count %>)
+        </option>
+      <% end %>
+    </select>
+
+    <% if scoring_scope_narrowed? %>
+      <%= link_to scoring_dashboard_path_with(sector: nil, tag: nil),
+            class: "btn btn-sm btn-outline-secondary", data: { turbo: false } do %>
+        <i class="ti ti-x"></i> Clear scope
+      <% end %>
+    <% end %>
+  </div>
+
+  <small class="text-muted">
+    <% if presenter.last_run_at %>
+      Last run <%= l(presenter.last_run_at, format: :abbr_date_time) %>
+      &nbsp;·&nbsp;
+    <% end %>
+    <%= presenter.scored_reports.size %> of <%= presenter.total_companies %> companies scored
+  </small>
+</div>
+
+<%# When the portfolio is narrowed, say so plainly — otherwise the cards read as
+    whole-portfolio figures and a filtered dashboard silently misinforms. %>
+<% if scoring_scope_narrowed? %>
+  <div class="alert alert-info py-2 d-flex align-items-center gap-2">
+    <i class="ti ti-filter"></i>
+    <div>
+      Showing <strong><%= presenter.total_companies %></strong>
+      <%= "company".pluralize(presenter.total_companies) %> in
+      <strong><%= scoring_scope_description %></strong>.
+      Every figure below covers this subset only.
+    </div>
+  </div>
+<% end %>
+
+<div class="row g-3 mb-4">
+  <% PortfolioScoringPresenter::TIERS.each do |tier| %>
+    <div class="col-md">
+      <%# Clicking the active card clears the filter — a card you can select but
+          not deselect is a dead end. %>
+      <% tier_active = status_filter == tier[:slug] %>
+      <%= link_to scoring_dashboard_path_with(status: tier_active ? nil : tier[:slug]),
+            class: "card border-0 shadow-sm h-100 text-decoration-none scoring-tier-card sd-tier--#{tier[:slug]} #{'scoring-tier-card--active' if tier_active}",
+            data: { turbo: false },
+            "data-bs-toggle": "tooltip",
+            title: tier_active ? "Showing this bucket — click to clear the filter" : "Filter the table to #{presenter.label_for(tier[:slug])}" do %>
+        <div class="card-body py-2 px-3">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <small class="text-muted">
+              <%= tier[:label] %>
+              <span class="text-body-tertiary">(<%= tier[:grades] %>)</span>
+            </small>
+            <%# Tier-specific icon: an identical icon on every card carries no
+                information, and this also stops tier being colour-only. %>
+            <span class="sd-tier-icon <%= "is-clearable" if tier_active %>">
+              <i class="ti <%= tier_active ? 'ti-x' : tier[:icon] %>"></i>
+            </span>
+          </div>
+          <h4 class="mb-0 sd-tier-num"><%= presenter.formatted_amount_for_tier(tier[:slug]) %></h4>
+          <small class="text-muted">
+            Score <%= tier[:min] %>–<%= tier[:max] %>
+            <% if basis == :value %>
+              &nbsp;·&nbsp; <%= presenter.counts_by_tier[tier[:slug]] %>
+              <%= "company".pluralize(presenter.counts_by_tier[tier[:slug]]) %>
+            <% end %>
+          </small>
+          <div class="progress mt-2" style="height: 4px;">
+            <div class="progress-bar bg-<%= tier[:color] %>"
+                 style="width: <%= presenter.share_for_tier(tier[:slug]) %>%"></div>
+          </div>
+          <small class="text-muted"><%= presenter.share_for_tier(tier[:slug]) %>% of portfolio</small>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Not Scored — the fifth card. Rolls up the three ways a company ends up with
+      no usable score. Two of them (no sector, no skill file) are configuration
+      the FM can fix, which is why the breakdown is shown rather than a bare count. %>
+  <% not_scored = PortfolioScoringPresenter::NOT_SCORED %>
+  <% breakdown = presenter.not_scored_breakdown %>
+  <div class="col-md">
+    <% not_scored_active = status_filter == not_scored[:slug] %>
+    <%= link_to scoring_dashboard_path_with(status: not_scored_active ? nil : not_scored[:slug]),
+          class: "card border-0 shadow-sm h-100 text-decoration-none scoring-tier-card sd-tier--#{not_scored[:slug]} #{'scoring-tier-card--active' if not_scored_active}",
+          data: { turbo: false },
+          "data-bs-toggle": "tooltip",
+          title: not_scored_active ? "Showing this bucket — click to clear the filter" : "Show companies with no usable score" do %>
+      <div class="card-body py-2 px-3">
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <small class="text-muted"><%= not_scored[:label] %></small>
+          <span class="sd-tier-icon <%= "is-clearable" if not_scored_active %>">
+            <i class="ti <%= not_scored_active ? 'ti-x' : not_scored[:icon] %>"></i>
+          </span>
+        </div>
+        <h4 class="mb-0 sd-tier-num"><%= presenter.not_scored_count %></h4>
+        <small class="text-muted">
+          <% if presenter.not_scored_count.zero? %>
+            Every company scored
+          <% else %>
+            <%= [
+                  ("#{breakdown[:failed]} failed" if breakdown[:failed].positive?),
+                  ("#{breakdown[:no_sector]} no sector" if breakdown[:no_sector].positive?),
+                  ("#{breakdown[:never_run]} never run" if breakdown[:never_run].positive?)
+                ].compact.join(" · ") %>
+          <% end %>
+        </small>
+        <div class="progress mt-2" style="height: 4px;">
+          <div class="progress-bar bg-secondary"
+               style="width: <%= presenter.total_companies.positive? ? (presenter.not_scored_count * 100.0 / presenter.total_companies).round(1) : 0 %>%"></div>
+        </div>
+        <small class="text-muted">
+          <%= presenter.total_companies.positive? ? (presenter.not_scored_count * 100.0 / presenter.total_companies).round(1) : 0 %>% of portfolio
+        </small>
+      </div>
+    <% end %>
+  </div>
+</div>

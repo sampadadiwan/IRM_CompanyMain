@@ -14,16 +14,25 @@ class ImportCapitalDistributionPayment < ImportUtil
     Rails.logger.debug { "Processing capital_distribution_payment #{user_data}" }
 
     # Get the Fund
-    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
-    raise "Fund not found" unless fund
+    fund_name = user_data["Fund"]
+    fund = import_upload.entity.funds.where(name: fund_name).first
+    raise "Fund not found: #{fund_name}" unless fund
 
-    capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"].strip).first
-    raise "Capital Distribution not found" unless capital_distribution
+    # cell(required: true) rather than a bare strip - a blank cell used to raise
+    # "undefined method 'strip' for nil" instead of naming the column
+    distribution_title = cell(user_data, "Capital Distribution", required: true).strip
+    capital_distribution = fund.capital_distributions.where(title: distribution_title).first
+    raise "Capital Distribution not found in fund #{fund.name}: #{distribution_title}" unless capital_distribution
 
     # Find the capital commitment purely via the folio ID - the investor is derived from the commitment
-    folio_id = user_data["Folio No"]&.to_s
+    folio_id = cell(user_data, "Folio No", required: true).to_s
     capital_commitment = fund.capital_commitments.where(folio_id:).first
-    investor = capital_commitment&.investor
+    raise "Capital Commitment not found for fund #{fund.name}, folio #{folio_id}" unless capital_commitment
+
+    # A commitment with no investor cannot be paid out - without this the row fell
+    # through every guard below and the results sheet showed a bare "Error"
+    investor = capital_commitment.investor
+    raise "Investor not found for folio #{folio_id} in fund #{fund.name}" unless investor
 
     if fund && capital_distribution && capital_commitment && investor
 
@@ -47,9 +56,13 @@ class ImportCapitalDistributionPayment < ImportUtil
       result.success?
 
     else
-      raise "Fund not found" unless fund
-      raise "Capital Distribution not found" unless capital_distribution
-      raise "Capital Commitment not found" unless capital_commitment
+      # Unreachable - every input is guarded above - but kept as a backstop so a
+      # future edit cannot silently return nil and produce an unexplained "Error"
+      raise "Fund not found: #{fund_name}" unless fund
+      raise "Capital Distribution not found: #{distribution_title}" unless capital_distribution
+      raise "Capital Commitment not found for folio #{folio_id}" unless capital_commitment
+
+      raise "Investor not found for folio #{folio_id}"
     end
   end
 

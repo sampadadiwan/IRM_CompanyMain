@@ -1,0 +1,80 @@
+<%# Presentation Analyst Dashboard — buckets portfolio companies into
+    Management Accountability tiers from PresentationAnalystAgent output.
+    Companion to the Portfolio Scoring Dashboard; same row structure so every
+    agent dashboard in the app reads alike, plus one panel with no scoring
+    equivalent: Cross-Period Flags, a portfolio-wide tally of the five
+    comparison lenses.
+
+    A portfolio-wide Pre-Board Briefing (aggregating analyst_questions across
+    companies) was tried and cut: without a board-meeting date to filter on,
+    it sorted by which company was analyzed most recently rather than by
+    anything resembling urgency, so a handful of recently re-run companies
+    crowded out everyone else behind a "+N more". Each company's own
+    briefing questions are still visible per-row — see the "Questions" column
+    below and its expanded support_agents/presentation_report_detail panel. %>
+<%= render FormCard.new(title: "Presentation Analyst Dashboard") do %>
+  <div class="presentation-dashboard" data-controller="scoring-tooltips">
+    <%# Live batch progress while a run is in flight %>
+    <%= turbo_stream_from "batch_progress_#{@support_agent.id}" %>
+
+    <%# Configuration health — PresentationAnalystAgent has no override today
+        (the base class no-op always returns []), so this renders nothing yet.
+        Kept for parity with the other agent dashboards so a future config
+        check (e.g. a blank presentation_doc_names) surfaces here for free. %>
+    <%= render "support_agents/config_issues_banner",
+               config_issues: PresentationAnalystAgent.config_issues(@support_agent) %>
+
+    <%# Row 0: the headline figure and companies needing a board conversation %>
+    <%= render "headline", presenter: @presenter, status_filter: @status_filter %>
+
+    <%# Row 0b: cross-reference callout — invisible on either dashboard alone.
+        A company can score well on fundamentals while quietly failing on
+        accountability, and that combination only shows up by reading both
+        agents' output together. %>
+    <%= render "cross_reference_banner", presenter: @presenter %>
+
+    <%# Row 1: portfolio scope toolbar + tier cards %>
+    <%= render "stats", presenter: @presenter,
+                        status_filter: @status_filter, search_value: @search_value,
+                        sectors_for_select: @sectors_for_select,
+                        tags_for_select: @tags_for_select %>
+
+    <%# Row 2: grade distribution + score movement %>
+    <div class="row g-4 mb-4">
+      <div class="col-md-7">
+        <%= render "distribution", presenter: @presenter %>
+      </div>
+      <div class="col-md-5">
+        <%= render "movement", presenter: @presenter, support_agent: @support_agent,
+                               status_filter: @status_filter %>
+      </div>
+    </div>
+
+    <%# Row 2b: portfolio-wide tally of the five cross-period comparison lenses %>
+    <%= render "cross_period_flags", presenter: @presenter %>
+
+    <%# Row 3: filtered company table %>
+    <div class="mb-4">
+      <%= render "table", presenter: @presenter,
+                          support_agent: @support_agent,
+                          reports: @paginated_reports,
+                          pagy: @pagy,
+                          status_filter: @status_filter,
+                          search_value: @search_value %>
+    </div>
+
+    <%# Footer: recommended next steps %>
+    <%= render "footer", presenter: @presenter, support_agent: @support_agent %>
+  </div>
+<% end %>
+
+<%# Run-analysis modal sits outside the FormCard so Bootstrap's backdrop is not
+    nested inside the card's own stimulus-controlled wrapper. %>
+<% if policy(@support_agent).run? %>
+  <%= render "run_modal", support_agent: @support_agent,
+                          presenter: @presenter,
+                          portfolio_companies: @portfolio_companies,
+                          total_portfolio_companies: @total_portfolio_companies,
+                          sectors_for_select: @sectors_for_select,
+                          tags_for_select: @tags_for_select %>
+<% end %>

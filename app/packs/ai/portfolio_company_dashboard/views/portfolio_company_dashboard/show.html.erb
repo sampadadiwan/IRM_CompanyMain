@@ -1,0 +1,64 @@
+<%# Portfolio Company Agent Dashboard — standalone compliance monitoring page. %>
+<%= render FormCard.new(title: "Portfolio Company Dashboard") do %>
+  <div class="portfolio-dashboard" data-controller="portfolio-dashboard-filter">
+    <%= turbo_stream_from "batch_progress_#{@support_agent.id}" %>
+
+    <%# Last-run scope indicator — shows when stats are filtered to a subset
+         of companies from the last run, with a toggle to show all or return
+         to the scoped view. %>
+    <% last_run_ids = @support_agent.json_fields["last_run_target_ids"] %>
+    <% if last_run_ids.present? %>
+      <div class="alert alert-light border py-2 px-3 mb-3 d-flex align-items-center justify-content-between">
+        <% if @showing_all %>
+          <small><i class="ti ti-eye me-1"></i> Showing all companies</small>
+          <%= link_to portfolio_company_dashboard_path,
+                class: "btn btn-outline-primary btn-sm",
+                data: { turbo: false } do %>
+            <i class="ti ti-filter me-1"></i> Show last run (<%= last_run_ids.size %>)
+          <% end %>
+        <% else %>
+          <small><i class="ti ti-filter me-1"></i> Showing last run &mdash; <%= last_run_ids.size %> companies</small>
+          <%= link_to portfolio_company_dashboard_path(show_all: "1"),
+                class: "btn btn-outline-secondary btn-sm",
+                data: { turbo: false } do %>
+            <i class="ti ti-eye me-1"></i> Show all
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Row 1: Stat Cards %>
+    <%= render "stats", presenter: @presenter, support_agent: @support_agent %>
+
+    <%# Row 2: Bar Chart + Actions %>
+    <div class="row g-4 mb-4">
+      <div class="col-md-6">
+        <%= render "chart", presenter: @presenter %>
+      </div>
+      <div class="col-md-6">
+        <%= render "actions", support_agent: @support_agent, presenter: @presenter,
+           portfolio_companies: @portfolio_companies,
+           tags_for_select: @tags_for_select,
+           sectors_for_select: @sectors_for_select %>
+
+      </div>
+    </div>
+
+    <%# Row 3: Company Table %>
+    <div class="mb-4">
+      <%= render "table",
+              portfolio_reports: @paginated_reports,
+              presenter: @presenter,
+              support_agent: @support_agent,
+              pagy: @pagy,
+              status_filter: @status_filter,
+              search_value: @search_value %>
+    </div>
+
+    <%# Footer: Recommended Next Steps %>
+    <%= render "footer",
+              presenter: @presenter,
+              support_agent: @support_agent,
+              portfolio_reports: @paginated_reports %>
+  </div>
+<% end %>

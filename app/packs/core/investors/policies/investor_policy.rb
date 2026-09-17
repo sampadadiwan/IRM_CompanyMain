@@ -119,6 +119,16 @@ class InvestorPolicy < ApplicationPolicy
     specific_permissions?(:investor_destroy)
   end
 
+  # Permission to file an email against this investor from the Outlook/Gmail add-ins.
+  #
+  # Deliberately gated on show? rather than update?. Filing correspondence records what
+  # was said to an investor; it does not change the investor. Gating it on :investor_update
+  # locked out the read-only IR and compliance staff who do most of the filing.
+  # @see MailFilingCreate
+  def file_mail?
+    show?
+  end
+
   # Permission to bulk upload investors.
   # Checks 'enable_investors' flag and standard CRUD permissions (Company Admin or Employee with create perm).
   def upload?

@@ -1,0 +1,81 @@
+<%# Fire confirmation popup (modeled on investor_kycs/_request_updates_modal):
+    explains exactly what firing does before it happens. Locals: obligation %>
+<div class="modal fade" id="fire_obligation_modal_<%= obligation.id %>" tabindex="-1"
+     aria-labelledby="fireObligationModalLabel_<%= obligation.id %>" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="fireObligationModalLabel_<%= obligation.id %>">
+          Fire Obligation — <%= obligation.title %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%# Fire form — full navigation to avoid Bootstrap modal backdrop flicker %>
+<%= form_with url: fire_side_letter_obligation_path(obligation), method: :post, data: { turbo: false } do |f| %>
+        <div class="modal-body">
+          <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
+            <div class="fw-bold text-dark small">Immediate Actions</div>
+            <div class="text-muted small">The following will happen when you click <strong>Fire Obligation</strong>:</div>
+          </div>
+
+          <div class="d-flex flex-column gap-2 mb-3">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#dbeafe;">
+                <i class="ti ti-checklist fs-5" style="color:#2563eb;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">A compliance task is created</div>
+                <div class="text-muted small mt-1">
+                  Due on the date you pick below<%= ", assigned to #{obligation.owner_user.name}" if obligation.owner_user %>.
+                  It appears on the task board and in this obligation's Tasks tab.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#fef3c7;">
+                <i class="ti ti-bell fs-5" style="color:#d97706;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Due-date alerts take over</div>
+                <div class="text-muted small mt-1">
+                  The daily enforcement run reminds the owner ahead of the deadline, on the day,
+                  and escalates if it goes overdue.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#dcfce7;">
+                <i class="ti ti-file-check fs-5" style="color:#16a34a;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Completion is recorded as fulfillment</div>
+                <div class="text-muted small mt-1">
+                  Marking the task done writes an audit-trail fulfillment against
+                  <%= obligation.source_clause.presence || "this obligation" %>.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+          <div class="mb-1">
+            <%= f.label :due_date, "Deadline", class: "form-label fw-semibold" %>
+            <small class="text-muted d-block mb-2">
+              When must this be completed? E.g. a key person notice due within 5 business days of the event.
+            </small>
+            <%= f.date_field :due_date, class: "form-control", required: true %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Fire Obligation", class: "btn btn-outline-success" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

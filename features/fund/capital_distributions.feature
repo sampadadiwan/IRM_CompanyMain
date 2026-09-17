@@ -46,6 +46,28 @@ Scenario Outline: Create new capital distrbution
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
     |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
 
+
+Scenario Outline: Editing the distribution date cascades to all capital distribution payments, including completed ones
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital distribution "cost_of_investment_cents=10000000;"
+  Then I should see the capital distrbution details
+  And when the capital distrbution payments are marked as paid
+  When I change the capital distribution's distribution date to "2026-09-15"
+  Then I should see the distribution date change warning naming all the payments
+  When I confirm the distribution date change
+  Then every capital distribution payment's payment date should be "2026-09-15"
+
+  Examples:
+  	|user	    |entity                                 |fund                 |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |
+
 @doc_gen @notification
 Scenario Outline: Capital Distribution Payment Doc Gen
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -74,6 +96,36 @@ Scenario Outline: Capital Distribution Payment Doc Gen
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+
+@doc_gen
+Scenario Outline: Bulk distribution document generation doesn't re-query the distribution's payments per document
+  # Regression guard for a memory/N+1 fix: CapitalDistributionPaymentDocGenerator used to
+  # re-query and re-materialize every payment in the distribution once per document being
+  # generated (O(N^2) row loads across a bulk run). With 5 payments in one distribution, the
+  # fix caches that per-distribution query for the whole run instead of once per payment, so
+  # the query count stays flat instead of growing with the number of payments. The count is
+  # scoped to queries filtered by capital_distribution_id (excludes the per-payment folio_id
+  # uniqueness check, which legitimately runs once per payment and isn't part of this fix) —
+  # expect exactly 3: the model-existence check, the bulk payments load, and one distribution-
+  # wide payments fetch shared across all 5 documents generated in this run.
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there are "5" existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  When I create a new capital distribution "cost_of_investment_cents=10050000;"
+  Then I should see the capital distrbution details
+  Then when the capital distrbution is approved
+  Then I should see the capital distrbution payments generated correctly
+  Given the fund has a template "Distribution Template" of type "Distribution Template"
+  Given I start counting SQL queries against "capital_distribution_payments" filtered by "capital_distribution_id" excluding "folio_id"
+  When I generate distribution payment documents directly for the capital distribution
+  Then the number of SELECT queries against "capital_distribution_payments" filtered by "capital_distribution_id" excluding "folio_id" should be at most "3"
+
+  Examples:
+  	|user	    |entity                                 |fund                 |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |
 
 @doc_gen @notification
 Scenario Outline: Capital Distribution Payment custom notification
@@ -183,3 +235,32 @@ Scenario Outline: Capital Distribution with Tax fee type
   Then it should create Capital Distribution
   And the tax should reduce the income_with_fees_cents correctly
   And the distribution payments should have the "Tax" fee details
+
+
+Scenario: Create With Fees copies only the fee rows into a blank new distribution
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Create With Fees Fund;currency=INR" for the entity
+  Given there is an existing investor "name=Investor 1"
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a AccountEntry for distribution "name=Portfolio Cashflows;reporting_date=2024-12-02;entry_type=Income;amount_cents=100000"
+  When I create a Capital Distribution "title=Fee Source Distribution;income_cents=10000000;cost_of_investment_cents=5000000;reinvestment_cents=0;distribution_date=2024-12-15"
+  Then it should create Capital Distribution
+  When I create with fees from the capital distribution
+  Then the new distribution form should have a blank title with "1" fee rows pre-filled
+
+Scenario: Distribution actions menu offers Replicate Distribution and no separate full Clone
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Replicate Distribution Fund;currency=INR" for the entity
+  Given there is an existing investor "name=Investor 1"
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a AccountEntry for distribution "name=Portfolio Cashflows;reporting_date=2024-12-02;entry_type=Income;amount_cents=100000"
+  When I create a Capital Distribution "title=Source Distribution;income_cents=10000000;cost_of_investment_cents=5000000;reinvestment_cents=0;distribution_date=2024-12-15"
+  Then it should create Capital Distribution
+  Then the distribution actions menu should offer "Replicate Distribution" but not "Clone"
+  When I visit the capital distributions list for the fund
+  Then the distribution actions menu should offer "Replicate Distribution" but not "Clone"
+
+
+

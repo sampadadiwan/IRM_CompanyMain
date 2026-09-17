@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Security &amp; Trust — Controls, Hosting &amp; Data Ownership | CapHive</title>
+<meta name="description" content="How CapHive protects fund and investor data — encryption, access control, audit logging, hosting, backup and recovery, and what your fund controls at every step.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/security.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Security &amp; Trust — CapHive">
+<meta property="og:description" content="Controls, hosting, data ownership and audit trails for the platform private capital funds run on.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/security.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="security">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="resources.html">Resources</a><span>/</span>Security &amp; Trust
+      </nav>
+      <span class="chip-label">Security &amp; Trust</span>
+      <h1>Built for data <em>you cannot afford to lose.</em></h1>
+      <p class="lede">
+        <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> holds capital accounts, investor identity documents and unpublished valuations.
+        This page sets out how that data is protected, who can reach it, and what your fund controls.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="contact.html">
+          Request our security documentation
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-outline" href="#controls">See the controls</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRUST ================= -->
+<!-- The same strip the product pages carry, lifted to the top of this page: it now
+     states the certifications that the diligence section used to spell out in prose. -->
+<section class="section-sm" aria-label="Security and compliance" style="padding-bottom:0">
+  <div class="wrap">
+    <div class="trust-row reveal">
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SOC 2 Type II</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>AES-256 at rest · TLS 1.3 in transit</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>ISO 27001:2022</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SSO / OAuth &amp; full audit logs</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTROL DOMAINS ================= -->
+<section class="section" id="controls" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Controls</span>
+      <h2>Six domains, <em>described plainly.</em></h2>
+      <p>Security on a fund platform is not one feature. It is a set of controls that have to hold together — encryption, identity, logging, infrastructure, recovery and the way software gets built.</p>
+    </div>
+    <div class="f-grid">
+      <div class="f-card reveal">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 11V8a5 5 0 0110 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.8"/></svg></div>
+        <h3>Encryption</h3>
+        <p>Data is encrypted in transit between you and the platform, and encrypted at rest in storage and backups. Encryption keys are managed separately from the data they protect.</p>
+      </div>
+      <div class="f-card reveal" data-delay="1">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Access control and identity</h3>
+        <p>Role-based access control decides what each user can see and do, down to the fund and the record type. Multi-factor authentication is supported, and access is reviewed when roles change.</p>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 4h14v16H5z" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Audit logging</h3>
+        <p>Actions that change a record are logged with the user, the time and the before-and-after value — in the interface and through the API. When an auditor asks how a number was produced, the answer is a query rather than a reconstruction.</p>
+      </div>
+      <div class="f-card reveal" data-delay="3">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M7 7.5h.01M7 16.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>Infrastructure and hosting</h3>
+        <p>The platform runs on managed cloud infrastructure, with environments separated and administrative access restricted to a small, named group. Production access requires an approved reason.</p>
+      </div>
+      <div class="f-card reveal" data-delay="4">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 018-8c3 0 5.6 1.7 7 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 12a8 8 0 01-8 8c-3 0-5.6-1.7-7-4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19 4v4.5h-4.5M5 20v-4.5h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Backup and recovery</h3>
+        <p>Data is backed up on a schedule, backups are encrypted, and restores are tested rather than assumed. Recovery objectives are documented and shared with clients who ask.</p>
+      </div>
+      <div class="f-card reveal" data-delay="5">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 6l-5 6 5 6M15 6l5 6-5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Secure development and vulnerabilities</h3>
+        <p>Changes are peer reviewed before release, dependencies are monitored for known vulnerabilities, and reported issues are triaged by severity with a target time to fix.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DILIGENCE PACK ================= -->
+<!-- Replaces the old certification table. The certifications are stated by the trust
+     strip under the hero rather than in prose here, so this section is just the list
+     of what we send. SOC 2 is named without a status or a date — the earlier "audit in
+     progress, targeting December 2026" wording is gone, and the FAQ below matches.
+     Hosting regions, testing cadences and any further certifications go in the
+     diligence pack once CapHive has confirmed them in writing, not on a public page. -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="split reveal">
+      <div class="split-text">
+        <span class="tile-kicker">Diligence</span>
+        <h2>Ask, and we <em>send the documents.</em></h2>
+        <p>We answer questionnaires directly and send the underlying material — some of it under NDA.</p>
+        <ul class="check-list">
+          <li>Our ISO 27001:2022 certificate</li>
+          <li>Our SOC 2 Type II certificate</li>
+          <li>Encryption design — cipher suites, protocol versions and key management</li>
+          <li>Hosting provider, regions and the residency options open to your fund</li>
+          <li>Backup, retention and recovery objectives, with restore-test evidence</li>
+          <li>Data processing terms, alongside our <a href="privacy.html">Privacy Policy</a></li>
+        </ul>
+        <div class="hero-cta" style="margin-top:28px">
+          <a class="btn btn-primary" href="contact.html">
+            Request the diligence pack
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="frame" aria-hidden="true">
+        <div class="frame-bar"><i></i><i></i><i></i></div>
+        <div class="frame-body">
+          <div class="frame-top">
+            <div class="frame-fund">Audit trail<small>MERIDIAN GROWTH FUND III · Q2 2026</small></div>
+          </div>
+          <div style="margin-top:22px">
+            <div class="deal"><span>Capital call #7 approved</span><span class="amt">14:02 IST</span><span class="pill done">Logged</span></div>
+            <div class="deal"><span>NAV computation published</span><span class="amt">18:40 IST</span><span class="pill done">Logged</span></div>
+            <div class="deal"><span>Investor bank detail changed</span><span class="amt">2 approvals</span><span class="pill done">Logged</span></div>
+            <div class="deal"><span>Statement line 114 → source file</span><span class="amt">traced</span><span class="pill done">Linked</span></div>
+            <div class="deal"><span>Export requested by client admin</span><span class="amt">09:11 IST</span><span class="pill sign">Recorded</span></div>
+          </div>
+          <div class="frame-stats" style="border-top:1px solid rgba(255,255,255,.08);padding-top:18px;margin-top:20px">
+            <div class="frame-stat"><div class="v">Every change</div><div class="k">USER · TIME · BEFORE / AFTER</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= YOUR DATA, YOUR CONTROL ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="split rev reveal">
+      <div class="split-text">
+        <span class="tile-kicker">Your data, your control</span>
+        <h2>We hold it. <em>You own it.</em></h2>
+        <p>The commercial relationship should never be the reason your data is hard to reach. Ownership, export and deletion are treated as ordinary platform functions.</p>
+        <ul class="check-list">
+          <li><span>Your fund, investor and portfolio data remains yours, including the records <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> derives from it</span></li>
+          <li>Export on demand — structured data and the original documents, in formats you can load elsewhere</li>
+          <li>Retention and deletion on your instruction, subject to the records the law requires us to keep</li>
+          <li>Tenant isolation, so one client's data is not queryable from another client's context</li>
+          <li>Permissions granular enough to give an administrator, an analyst and an LP three different views of the same fund</li>
+          <li>AI agent access scoped to the same permissions as the user who invoked it, with every agent action written to the audit trail</li>
+        </ul>
+        <div class="hero-cta" style="margin-top:28px">
+          <a class="btn btn-outline" href="ai-agents.html">How agent access is scoped</a>
+        </div>
+      </div>
+      <div class="frame" aria-hidden="true">
+        <div class="frame-bar"><i></i><i></i><i></i></div>
+        <div class="frame-body">
+          <div class="frame-top">
+            <div class="frame-fund">Roles &amp; permissions<small>4 ROLES · 1 AGENT SCOPE</small></div>
+          </div>
+          <div style="margin-top:22px">
+            <div class="pos"><span>Fund administrator</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">Full fund</span></div>
+            <div class="pos"><span>Finance analyst</span><div class="pos-bar"><i style="width:72%"></i></div><span class="pos-val">No investor PII</span></div>
+            <div class="pos"><span>Deal team</span><div class="pos-bar"><i style="width:48%"></i></div><span class="pos-val">Portfolio only</span></div>
+            <div class="pos"><span>Investor (LP)</span><div class="pos-bar"><i style="width:18%"></i></div><span class="pos-val">Own account</span></div>
+            <div class="pos"><span>AI agent — reporting</span><div class="pos-bar"><i style="width:48%"></i></div><span class="pos-val">Inherits caller</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Questions</span>
+      <h2>What diligence teams <em>ask us.</em></h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>What is your position on SOC 2 and ISO 27001?</summary>
+        <div>
+          <p>Our information security management system is certified against ISO/IEC 27001:2022, and we hold a SOC 2 Type II position alongside it. Ask us and we will walk your team through the control set, answer your questionnaire against it, and share the underlying material — the ISO certificate and scope statement, and our SOC 2 documentation under NDA.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Where is our data hosted?</summary>
+        <div>
+          <p>On managed cloud infrastructure, in a region agreed with you at implementation. Indian and US funds frequently have different residency requirements, and the platform is designed to keep those separate rather than assume one default. We will confirm the provider and region in writing during diligence.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Who at <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> can see our data?</summary>
+        <div>
+          <p>A small number of engineering and support staff, and only where access is needed to operate the platform or resolve a request you have raised. Production access is restricted, requires an approved reason, and is logged.</p>
+          <p>Client-side visibility is entirely under your control through roles and permissions. We do not need a general-purpose account inside your fund to support you.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Do you support SSO and multi-factor authentication?</summary>
+        <div>
+          <p>Central identity management and multi-factor authentication are part of how we expect institutional teams to use the platform, alongside role-based access. Ask us for the current position on your identity provider and we will answer specifically.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What is your incident response process?</summary>
+        <div>
+          <p>Detect and contain, assess what data and which clients are affected, notify the clients concerned, remediate, then review what allowed it to happen. Affected clients hear from us directly rather than reading a status page.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Can we run a penetration test?</summary>
+        <div>
+          <p>Client-initiated testing is something we are willing to discuss, scoped in writing and run against a non-production environment so live fund data is never in range. We will agree the scope, the window and the reporting route before anything starts.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= REPORT A VULNERABILITY ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Disclosure</span>
+      <h2>Report a <em>vulnerability.</em></h2>
+      <p>If you have found a security issue in <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>, tell us before you tell anyone else. We will acknowledge the report, keep you updated while we investigate, and credit you if you want the credit.</p>
+    </div>
+    <div class="contact-ways reveal" data-delay="1">
+      <div class="way">
+        <div>
+          <h3>Security disclosure</h3>
+          <p>Send a description of the issue, the steps to reproduce it and anything you think we should not touch while investigating. Please do not test against live client data.</p>
+          <p><a href="mailto:support@caphive.com">support@caphive.com</a></p>
+        </div>
+      </div>
+      <div class="way">
+        <div>
+          <h3>Diligence, reviews and suspected incidents</h3>
+          <p>For questionnaires, data processing terms or a walkthrough with the people who built the controls — or if you believe an account has been compromised and need sessions and credentials revoked — come straight to us.</p>
+          <p><a href="contact.html">Contact <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span></a> or write to <a href="mailto:hello@caphive.com">hello@CapHive.com</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Keep going</span>
+      <h2>The rest of the <em>paperwork.</em></h2>
+      <p>Our policies set out how personal data is handled and what the contract covers. Read them alongside this page.</p>
+      <div class="tag-row" style="margin-top:22px">
+        <a class="tag" href="privacy.html">Privacy Policy</a>
+        <a class="tag" href="terms.html">Terms of Service</a>
+        <a class="tag" href="cookies.html">Cookie Policy</a>
+        <a class="tag" href="integrations.html">Data &amp; Integrations</a>
+        <a class="tag" href="ai-agents.html">AI Agents</a>
+        <a class="tag" href="faq.html">FAQ</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+</body>
+</html>

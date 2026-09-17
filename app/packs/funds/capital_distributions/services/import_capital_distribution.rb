@@ -12,9 +12,9 @@ class ImportCapitalDistribution < ImportUtil
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
 
     if fund
-      title = user_data["Title"]
+      title = cell(user_data, "Title", required: true)
       if CapitalDistribution.exists?(entity_id: import_upload.entity_id, fund:, title:)
-        raise "Capital Distribution Already Present"
+        raise "Capital Distribution '#{title}' already exists in fund #{fund.name}"
       else
 
         generate_payments = user_data["Generate Payments"]&.downcase == "yes"
@@ -41,7 +41,7 @@ class ImportCapitalDistribution < ImportUtil
         capital_distribution.save!
       end
     else
-      raise "Fund not found"
+      raise "Fund not found: #{user_data['Fund']}"
     end
   end
 end

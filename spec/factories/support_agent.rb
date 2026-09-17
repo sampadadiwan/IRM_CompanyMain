@@ -4,7 +4,7 @@ FactoryBot.define do
     name { 'Test Agent' }
     agent_type { 'PortfolioCompanyAgent' }
     enabled { true }
-    llm_model { 'gemini-3-flash-preview' }
+    llm_model { 'gemini-3.7-flash' }
     category { "Ops" }
   end
 end

@@ -1,0 +1,17 @@
+<%# Fire / Waive / Revert confirmation modals for a set of obligations.
+    ALWAYS render this OUTSIDE the page's main card/show div — nesting Bootstrap
+    modals inside a card/table stacking context makes them flicker. The trigger
+    buttons live in _side_letter_obligation.html.erb and the obligation show page.
+    Locals: obligations (array/relation) %>
+<% obligations.each do |obligation| %>
+  <% if obligation.fired? %>
+    <%# Armed + already has tasks — show Waive modal, not Fire %>
+    <%= render "side_letter_obligations/waive_modal", obligation: obligation %>
+  <% elsif obligation.armed? %>
+    <%= render "side_letter_obligations/fire_modal", obligation: obligation %>
+  <% elsif obligation.approved? && obligation.obligation_active? %>
+    <%= render "side_letter_obligations/waive_modal", obligation: obligation %>
+  <% elsif obligation.approved? && obligation.status.to_s.in?(ObligationRevert::REVERTIBLE_STATUSES) %>
+    <%= render "side_letter_obligations/revert_modal", obligation: obligation %>
+  <% end %>
+<% end %>

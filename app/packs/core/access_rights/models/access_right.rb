@@ -1,6 +1,8 @@
 class AccessRight < ApplicationRecord
   include Trackable.new
 
+  # Generates/revokes DealIngestAddress when deal access changes (FR-5).
+
   # To allow tag_list for creating new access rights
   attr_accessor :tag_list
 

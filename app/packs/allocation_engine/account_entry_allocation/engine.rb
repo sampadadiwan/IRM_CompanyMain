@@ -75,10 +75,23 @@ module AccountEntryAllocation
       # Start tracing just your Fund query:
       # SqlTracer.start(pattern: /FROM `investor_kycs`/)
       # Now call the RunFormulas operation (which in turn calls sub-operations).
-      AccountEntryAllocation::RunFormulas.wtf?(ctx)
+      result = AccountEntryAllocation::RunFormulas.wtf?(ctx)
       # SqlTracer.stop
 
+      # The operation's result used to be discarded, so a failed run was indistinguishable
+      # from a successful one here: the job finished normally and the AllocationRun was left
+      # at whatever status the failing step happened to set -- nil, if it set none.
+      # Backstop it, without overwriting a more specific message a deeper step already wrote.
+      if result.failure?
+        # Read through the result, not the local ctx hash: Trailblazer wraps the hash we
+        # passed in, so anything a step writes to its ctx never lands back on that hash.
+        error = result[:error].presence || "Allocation run failed - see the log for the failing step"
+        Rails.logger.error { "Engine: allocation run #{allocation_run_id} for fund #{fund&.id} failed: #{error}" }
+        allocation_run.update_column(:status, error.to_s.truncate(2000)) if allocation_run && allocation_run.reload.status.blank?
+      end
+
       # Return the final context or the result object for further inspection.
+      result
     end
 
     def create_variables(cached_commitment_fields)

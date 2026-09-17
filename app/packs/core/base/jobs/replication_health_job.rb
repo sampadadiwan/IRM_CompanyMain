@@ -2,10 +2,12 @@
 class ReplicationHealthJob < ApplicationJob
   def perform
     Chewy.strategy(:sidekiq) do
-      # Update the user
+      # Update the user. Reassign (merge into a new hash) rather than mutate
+      # json_fields in place — an in-place `user.json_fields["k"] = v` does
+      # not reliably mark the JSON column dirty, so `save!` silently writes
+      # nothing (confirmed live: reload showed the write never persisted).
       time = Time.zone.now.to_s
-      user.json_fields ||= {}
-      user.json_fields["replication_health"] = time
+      user.json_fields = (user.json_fields || {}).merge("replication_health" => time)
       user.save!
 
       # Wait for 10 seconds
@@ -16,13 +18,17 @@ class ReplicationHealthJob < ApplicationJob
         # This is a temp hack, to read from the replica. Once replication is stable, replace with user
         # Its there cause we read and write from the primary today. See UserReplica however reads from replica (see base class ReplicaRecord)
         user_replica = UserReplica.find(user.id)
-        if user_replica.json_fields["replication_health"] == time
+        # json_fields can genuinely be nil here if the replica hasn't caught
+        # up to the write above yet within the sleep(5) window (e.g. right
+        # after a DR restore, replaying a backlog) — that's a real "Lagging"
+        # case, not an error, so don't blow up on it.
+        if (user_replica.json_fields || {})["replication_health"] == time
           Rails.logger.debug("✅ Replication is Ok")
-          user.json_fields["replication_health_status"] = "Ok"
+          user.json_fields = user.json_fields.merge("replication_health_status" => "Ok")
         else
           msg = "Lagging"
           Rails.logger.debug { "️⚠️ Replication is #{msg}" }
-          user.json_fields["replication_health_status"] = msg.to_s
+          user.json_fields = user.json_fields.merge("replication_health_status" => msg.to_s)
           ExceptionNotifier.notify_exception(StandardError.new("Replication is #{msg}"))
         end
       end

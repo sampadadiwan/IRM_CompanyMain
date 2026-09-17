@@ -37,9 +37,10 @@ class ImportUpload < ApplicationRecord
               "DASHBOARD_WIDGET_SAMPLE" => "/sample_uploads/dashboard_widgets.xlsx",
               "DEAL_INVESTORS_SAMPLE" => "/sample_uploads/deal_investors.xlsx",
               "RATIO_FORMULA_SAMPLE" => "/sample_uploads/ratio_formulas.xlsx",
-              "DEAL_ACTIVITY_TEMPLATES_SAMPLE" => "/sample_uploads/deal_activity_templates.xlsx" }.freeze
+              "DEAL_ACTIVITY_TEMPLATES_SAMPLE" => "/sample_uploads/deal_activity_templates.xlsx",
+              "SHAREHOLDER_POSITION_SAMPLE" => "/sample_uploads/shareholder_positions.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument Investment InvestorKpiMapping FormCustomField DashboardWidget AgentChart Task DealInvestor RatioFormula DealActivityTemplate].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument Investment InvestorKpiMapping FormCustomField DashboardWidget AgentChart Task DealInvestor RatioFormula DealActivityTemplate ShareholderPosition].sort.freeze
 
   DOC_TYPES = %w[Documents FundDocs KycDocs OfferDocs].freeze
 

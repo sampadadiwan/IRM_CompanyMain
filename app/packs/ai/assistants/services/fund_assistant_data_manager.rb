@@ -35,6 +35,18 @@ class FundAssistantDataManager
     end
   end
 
+  # Query object for filtering FundRatios.
+  class FundRatioQuery
+    include HasScope
+
+    has_scope :latest, type: :boolean
+    has_scope :default, type: :boolean
+
+    def perform(collection:, params:)
+      apply_scopes(collection, params)
+    end
+  end
+
   # Query object for filtering CapitalCommitments.
   class CapitalCommitmentQuery
     include HasScope
@@ -97,6 +109,45 @@ class FundAssistantDataManager
     end
   end
 
+  # Server-side ceiling applied whenever a caller (the LLM) doesn't supply an explicit
+  # `limit`. Prompt instructions alone ("ALWAYS pass limit") are not a reliable guardrail --
+  # this backstops it in code so an unfiltered/unlimited-looking request can't pull an
+  # unbounded result set into the LLM's context (or blow the AI_TIMEOUT on a large fund).
+  # Mirrors PortfolioAssistantDataManager::DEFAULT_QUERY_LIMIT.
+  DEFAULT_QUERY_LIMIT = 500
+
+  # Models whose money (`_cents`) fields are denominated in one unambiguous currency, and
+  # where to find it, for perform_aggregation's 'sum'/'group_by' branches. Without this, a
+  # plain `results.sum('amount_cents')` adds cents across whatever currencies happen to be
+  # in the relation -- e.g. USD cents plus EUR cents into one meaningless number -- the same
+  # bug class fixed for the FMV snapshot in PortfolioAssistantDataManager
+  # #get_portfolio_company_snapshot, but here it's the backend for every "total"/"sum"
+  # question these assistants answer.
+  #
+  # Fund and Investment carry their own `currency` column. CapitalCall/CapitalDistribution/
+  # AccountEntry have no currency of their own -- they're always in their fund's currency,
+  # so grouping by the joined `funds.currency` is safe. PortfolioInvestment is priced in its
+  # investment instrument's currency (the instrument being bought/sold, not necessarily the
+  # fund's currency), matching the join pattern already used for the FMV snapshot fix.
+  #
+  # CapitalCommitment, CapitalRemittance, CapitalRemittancePayment, CapitalDistributionPayment,
+  # and FundUnit are deliberately NOT listed here: they have a fund-currency-vs-folio-currency
+  # duality (an LP's folio can be denominated in a different currency than the fund itself,
+  # via CapitalCommitment#folio_currency) where the correct source depends on which specific
+  # field is being summed, not just which model it's on. Resolving that needs product
+  # confirmation of the field-to-currency mapping before it can be fixed safely, so money
+  # sums/group_bys on those 5 models still fall back to the old flat (currency-mixing-prone)
+  # behavior -- perform_aggregation marks those results `currency_unresolved: true` rather
+  # than silently presenting them as trustworthy.
+  CURRENCY_GROUPING = {
+    'Fund' => { column: 'currency' },
+    'Investment' => { column: 'currency' },
+    'CapitalCall' => { join: :fund, column: 'funds.currency' },
+    'CapitalDistribution' => { join: :fund, column: 'funds.currency' },
+    'AccountEntry' => { join: :fund, column: 'funds.currency' },
+    'PortfolioInvestment' => { join: :investment_instrument, column: 'investment_instruments.currency' }
+  }.freeze
+
   # Initializes the data manager.
   #
   # @param user [User] The user context for data retrieval.
@@ -107,6 +158,24 @@ class FundAssistantDataManager
   def data_manager
     self
   end
+
+  # Applies the caller's limit if given, otherwise falls back to DEFAULT_QUERY_LIMIT.
+  def bounded_limit(relation, limit)
+    relation.limit(limit.presence || DEFAULT_QUERY_LIMIT)
+  end
+  private :bounded_limit
+
+  # Returns an error hash when `scope` was supplied but isn't declared on `query_class` (a
+  # HasScope-including *Query class). Before this, an unrecognized/hallucinated scope name
+  # was silently dropped -- the LLM's tool call looked successful but quietly returned an
+  # *unfiltered* result, with no signal that the requested scope didn't exist. Returns nil
+  # when scope is blank or recognized, so callers can `return error if error`.
+  def unrecognized_scope_error(query_class, scope)
+    return nil if scope.blank? || query_class.scopes_configuration.key?(scope.to_sym)
+
+    { error: "Unknown scope '#{scope}'. Valid scopes: #{query_class.scopes_configuration.keys.join(', ')}" }
+  end
+  private :unrecognized_scope_error
 
   # Lists funds based on filters.
   #
@@ -124,6 +193,9 @@ class FundAssistantDataManager
     relation = Pundit.policy_scope(@user, Fund)
 
     # Use HasScope to apply filters safely
+    scope_error = unrecognized_scope_error(FundQuery, scope)
+    return scope_error if scope_error
+
     scope_params = scope.present? ? { scope.to_sym => true } : {}
     relation = FundQuery.new.perform(collection: relation, params: scope_params)
 
@@ -131,7 +203,7 @@ class FundAssistantDataManager
 
     return perform_aggregation(results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |f|
       {
@@ -205,13 +277,23 @@ class FundAssistantDataManager
     ransack_query[:fund_id_in] = Array(fund_ids) if fund_ids.present?
 
     relation = Pundit.policy_scope(@user, CapitalCall)
-    relation = relation.send(scope) if scope.present? && relation.respond_to?(scope)
+
+    # `scope` is intentionally not applied via `relation.send(scope)` here: CapitalCall
+    # defines no named scopes, and AR relations always respond_to? real methods like
+    # destroy_all/delete_all/update_all, so that pattern would let an LLM-supplied scope
+    # string execute one of those against every capital call this user can see. No tool
+    # currently forwards a `scope` param to this method; if one is added later, wire it
+    # through a HasScope-based allowlist (see InvestorQuery/ValuationQuery in
+    # PortfolioAssistantDataManager for the pattern) instead of resurrecting `send`. Any
+    # scope value is unrecognized here (there are none to recognize), so tell the LLM
+    # rather than silently ignoring it -- see unrecognized_scope_error's comment.
+    return { error: "list_capital_calls does not support a `scope` filter (CapitalCall has no named scopes). Use `query` (Ransack) instead." } if scope.present?
 
     results = relation.ransack(ransack_query).result
 
     return perform_aggregation(results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |c|
       {
@@ -251,6 +333,9 @@ class FundAssistantDataManager
     relation = Pundit.policy_scope(@user, CapitalCommitment).includes(:fund)
 
     # Use HasScope to apply filters safely
+    scope_error = unrecognized_scope_error(CapitalCommitmentQuery, scope)
+    return scope_error if scope_error
+
     scope_params = scope.present? ? { scope.to_sym => true } : {}
     relation = CapitalCommitmentQuery.new.perform(collection: relation, params: scope_params)
 
@@ -261,7 +346,7 @@ class FundAssistantDataManager
 
     return perform_aggregation(results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |c|
       {
@@ -301,6 +386,9 @@ class FundAssistantDataManager
     relation = Pundit.policy_scope(@user, CapitalRemittance).includes(:fund, :capital_call, :capital_commitment)
 
     # Use HasScope to apply filters safely
+    scope_error = unrecognized_scope_error(CapitalRemittanceQuery, scope)
+    return scope_error if scope_error
+
     scope_params = scope.present? ? { scope.to_sym => true } : {}
     relation = CapitalRemittanceQuery.new.perform(collection: relation, params: scope_params)
 
@@ -308,7 +396,7 @@ class FundAssistantDataManager
 
     return perform_aggregation(results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |r|
       {
@@ -347,13 +435,17 @@ class FundAssistantDataManager
     ransack_query[:fund_id_in] = Array(fund_ids) if fund_ids.present?
 
     relation = Pundit.policy_scope(@user, CapitalDistribution).includes(:fund)
-    relation = relation.send(scope) if scope.present? && relation.respond_to?(scope)
+
+    # See list_capital_calls above: CapitalDistribution has no named scopes, and a raw
+    # `relation.send(scope)` would let an LLM-supplied scope string reach destroy_all/
+    # delete_all/update_all instead. Not currently wired to any tool.
+    return { error: "list_capital_distributions does not support a `scope` filter (CapitalDistribution has no named scopes). Use `query` (Ransack) instead." } if scope.present?
 
     results = relation.ransack(ransack_query).result
 
     return perform_aggregation(results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |d|
       {
@@ -390,13 +482,17 @@ class FundAssistantDataManager
     ransack_query[:capital_commitment_folio_id_in] = Array(folio_ids) if folio_ids.present?
 
     relation = Pundit.policy_scope(@user, CapitalRemittancePayment).includes(:fund, :capital_commitment)
-    relation = relation.send(scope) if scope.present? && relation.respond_to?(scope)
+
+    # See list_capital_calls above: CapitalRemittancePayment has no named scopes, and a raw
+    # `relation.send(scope)` would let an LLM-supplied scope string reach destroy_all/
+    # delete_all/update_all instead. Not currently wired to any tool.
+    return { error: "list_capital_remittance_payments does not support a `scope` filter (CapitalRemittancePayment has no named scopes). Use `query` (Ransack) instead." } if scope.present?
 
     results = relation.ransack(ransack_query).result
 
     return perform_aggregation(results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |p|
       {
@@ -432,6 +528,9 @@ class FundAssistantDataManager
     relation = Pundit.policy_scope(@user, CapitalDistributionPayment).includes(:fund, :capital_commitment)
 
     # Use HasScope to apply filters safely
+    scope_error = unrecognized_scope_error(CapitalDistributionPaymentQuery, scope)
+    return scope_error if scope_error
+
     scope_params = scope.present? ? { scope.to_sym => true } : {}
     relation = CapitalDistributionPaymentQuery.new.perform(collection: relation, params: scope_params)
 
@@ -439,7 +538,7 @@ class FundAssistantDataManager
 
     return perform_aggregation(results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |p|
       {
@@ -474,6 +573,9 @@ class FundAssistantDataManager
     relation = relation.where(fund_id: fund_ids) if fund_ids.present?
 
     # Use HasScope to apply filters safely
+    scope_error = unrecognized_scope_error(PortfolioInvestmentQuery, scope)
+    return scope_error if scope_error
+
     scope_params = scope.present? ? { scope.to_sym => true } : {}
     relation = PortfolioInvestmentQuery.new.perform(collection: relation, params: scope_params)
 
@@ -481,7 +583,7 @@ class FundAssistantDataManager
 
     return perform_aggregation(results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |i|
       {
@@ -523,15 +625,23 @@ class FundAssistantDataManager
       ransack_query[:owner_type_eq] = 'Fund'
       ransack_query[:owner_id_eq] = fund_ids if fund_ids.present?
     end
-    relation = relation.send(scope) if scope.present? && relation.respond_to?(scope)
+
+    # Route scope through a declared allowlist (HasScope), never a raw `send` -- see
+    # list_capital_calls above for why. FundRatio does have real scopes ('latest',
+    # 'default'), so those are what get allowlisted rather than dropping scope entirely.
+    scope_error = unrecognized_scope_error(FundRatioQuery, scope)
+    return scope_error if scope_error
+
+    scope_params = scope.present? ? { scope.to_sym => true } : {}
+    relation = FundRatioQuery.new.perform(collection: relation, params: scope_params)
 
     results = relation.ransack(ransack_query).result
 
     return perform_aggregation(results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
-    results.map do |r|
+    mapped = results.map do |r|
       {
         id: r.id,
         fund_id: r.fund_id,
@@ -548,6 +658,21 @@ class FundAssistantDataManager
         view_link: "/fund_ratios/#{r.id}"
       }
     end
+
+    return mapped if mapped.present?
+
+    # Fund ratios (TVPI, DPI, RVPI, IRR, ...) are only ever available through this tool. An
+    # empty array here is ambiguous to a model -- it can read as "the metric doesn't exist yet"
+    # and invite it to derive one from calls/distributions instead. Say so explicitly so the
+    # correct answer is "no computed ratio is available" rather than a self-computed multiple.
+    {
+      results: [],
+      message: "No stored fund ratios found for the given fund(s)/filters. Fund ratios " \
+               "(TVPI, DPI, RVPI, IRR and similar) are only retrievable through this " \
+               "list_fund_ratios tool -- do not compute them yourself from calls, " \
+               "distributions or other raw data. Tell the user no computed ratio is " \
+               "available for this fund/date/scenario instead."
+    }
   end
 
   # Lists account entries based on filters.
@@ -573,6 +698,9 @@ class FundAssistantDataManager
     relation = Pundit.policy_scope(@user, AccountEntry).includes(:fund)
 
     # Use HasScope to apply filters safely
+    scope_error = unrecognized_scope_error(AccountEntryQuery, scope)
+    return scope_error if scope_error
+
     scope_params = scope.present? ? { scope.to_sym => true } : {}
     relation = AccountEntryQuery.new.perform(collection: relation, params: scope_params)
 
@@ -582,6 +710,43 @@ class FundAssistantDataManager
   end
 
   private
+
+  # Rejects an aggregate/group_by field that is not a real column on the model.
+  #
+  # This is a SQL injection guard, not a typo guard. `relation.sum(field)` and
+  # `relation.group(field)` interpolate their argument as RAW SQL -- unlike `order`,
+  # ActiveRecord does not check either against the model's columns. Both values originate
+  # from an LLM (the MCP tools' `query` hash, and the embedded assistants' tool arguments),
+  # so an unvalidated field is directly executable:
+  #
+  #   sum("(SELECT max(id) FROM users)")                  -> executes the subquery
+  #   group("(SELECT email FROM users LIMIT 1)")          -> returns that email as the
+  #                                                          GROUP KEY, i.e. an arbitrary
+  #                                                          read that bypasses Pundit
+  #
+  # Checking at the sink covers every caller -- MCP tools, embedded assistants and anything
+  # added later -- rather than relying on each one to validate first.
+  #
+  # @return [Hash, nil] an error hash when a field is not a column, nil when both are safe
+  def aggregation_column_error(model, aggregate, field, group_by)
+    columns = model.column_names
+    column = lambda do |name|
+      name = name.to_s
+      name == 'id' || columns.include?(name) || columns.include?("#{name}_cents")
+    end
+
+    # Written as a skip for the one branch that demonstrably ignores `field` ('count'),
+    # rather than an allowlist of the two that read it today: a branch added later (avg,
+    # min, max) then inherits the check instead of silently bypassing it back into raw SQL.
+    return { error: "Unknown aggregate field '#{field}' for #{model.name}." } if aggregate.to_s != 'count' && field.present? && !column.call(field)
+    return nil if group_by.blank? || column.call(group_by)
+    # investor_category is the one joined-table dimension, and ONLY the group_by branch
+    # maps it (to investors.category) -- as a sum field it would still reach invalid SQL.
+    return nil if group_by.to_s == 'investor_category'
+
+    { error: "Unknown group_by field '#{group_by}' for #{model.name}." }
+  end
+  private :aggregation_column_error
 
   # Performs aggregation on a relation using database queries.
   # This method ensures that aggregations (count, sum, group_by) are performed
@@ -595,6 +760,9 @@ class FundAssistantDataManager
   def perform_aggregation(results, aggregate, field: nil, group_by: nil)
     Rails.logger.debug { "[FundAssistantDataManager] perform_aggregation: aggregate=#{aggregate}, field=#{field}, group_by=#{group_by}" }
 
+    column_error = aggregation_column_error(results.model, aggregate, field, group_by)
+    return column_error if column_error
+
     case aggregate
     when 'count'
       # Direct database count query: SELECT COUNT(*) FROM ...
@@ -603,12 +771,10 @@ class FundAssistantDataManager
       return { error: "Field is required for sum aggregation" } if field.blank?
 
       sum_field = field.to_s
-      # If it's a Money column, we aggregate the _cents column directly in the DB
-      sum_field = "#{sum_field}_cents" if results.model.column_names.include?("#{sum_field}_cents")
+      money = results.model.column_names.include?("#{sum_field}_cents")
+      sum_field = "#{sum_field}_cents" if money
 
-      # Execute database sum query: SELECT SUM(field) FROM ...
-      total = results.sum(sum_field)
-      { total: total }
+      money ? currency_aware_sum(results, sum_field) : { total: results.sum(sum_field) }
     when 'group_by'
       return { error: "Group by field is required" } if group_by.blank?
       return { error: "Field is required for group_by aggregation (e.g., sum or count of field)" } if field.blank?
@@ -628,20 +794,78 @@ class FundAssistantDataManager
         formatted_data = grouped_data.map do |key, value|
           { group: key, count: value }
         end
+        { groups: formatted_data }
       else
-        # Grouped sum query: SELECT group_field, SUM(sum_field) ... GROUP BY group_field
-        sum_field = "#{sum_field}_cents" if results.model.column_names.include?("#{sum_field}_cents")
-        grouped_data = base_relation.sum(sum_field)
+        money = results.model.column_names.include?("#{sum_field}_cents")
+        sum_field = "#{sum_field}_cents" if money
 
-        formatted_data = grouped_data.map do |key, value|
-          { group: key, total: value }
-        end
+        money ? currency_aware_group_by_sum(base_relation, results.model, sum_field) : { groups: flat_grouped_sum(base_relation, sum_field) }
       end
-
-      { groups: formatted_data }
     else
       { error: "Unsupported aggregation type: #{aggregate}" }
     end
   end
+
+  # Formats a plain (non-money, or currency-unresolved) grouped sum: SELECT group_field,
+  # SUM(sum_field) ... GROUP BY group_field.
+  def flat_grouped_sum(base_relation, sum_field)
+    base_relation.sum(sum_field).map { |key, value| { group: key, total: value } }
+  end
+  private :flat_grouped_sum
+
+  # Sums a money field with currency grouped in, for models listed in CURRENCY_GROUPING.
+  # Returns a single { total:, currency: } when only one currency is present (the common
+  # case -- most requests are already scoped to one fund/instrument), or a
+  # { totals_by_currency: [...] } breakdown when more than one currency is present, instead
+  # of silently adding cents across currencies into one misleading number. Models not in
+  # CURRENCY_GROUPING keep the old flat (currency-mixing-prone) behavior, flagged with
+  # `currency_unresolved: true` so the caller knows this particular total hasn't been
+  # verified single-currency -- see CURRENCY_GROUPING's comment for which models these are
+  # and why.
+  def currency_aware_sum(results, sum_field)
+    config = CURRENCY_GROUPING[results.model.name]
+    return { total: results.sum(sum_field), currency_unresolved: true } unless config
+
+    scoped = results.unscope(:order)
+    scoped = scoped.joins(config[:join]) if config[:join]
+    by_currency = scoped.group(config[:column]).sum(sum_field)
+
+    if by_currency.empty?
+      # No rows matched at all -- match the old flat behavior's shape ({ total: 0 }, no
+      # currency key) rather than a `currency: nil` a naive consumer could interpolate into
+      # something like "$0 null".
+      { total: 0 }
+    elsif by_currency.size == 1
+      { total: by_currency.values.first, currency: by_currency.keys.first }
+    else
+      { totals_by_currency: by_currency.map { |currency, total| { currency: currency, total: total } },
+        warning: "Multiple currencies present; returned as a per-currency breakdown instead of one total." }
+    end
+  end
+  private :currency_aware_sum
+
+  # Same idea as currency_aware_sum, but for the 'group_by' branch: compounds the caller's
+  # GROUP BY with currency. When every group turns out to share one currency, the output
+  # shape is unchanged from before (`{ group:, total: }`) so existing consumers aren't
+  # broken by this fix; only when a group actually spans multiple currencies does each row
+  # gain a `currency` key, since blending currencies within a single group's total would be
+  # exactly the bug this fix exists to prevent.
+  def currency_aware_group_by_sum(base_relation, model, sum_field)
+    config = CURRENCY_GROUPING[model.name]
+    return { groups: flat_grouped_sum(base_relation, sum_field), currency_unresolved: true } unless config
+
+    scoped = config[:join] ? base_relation.joins(config[:join]) : base_relation
+    grouped_data = scoped.group(config[:column]).sum(sum_field)
+    currencies_seen = grouped_data.keys.map { |(_group, currency)| currency }.uniq
+
+    formatted_data = grouped_data.map do |(key, currency), value|
+      currencies_seen.size > 1 ? { group: key, currency: currency, total: value } : { group: key, total: value }
+    end
+
+    result = { groups: formatted_data }
+    result[:warning] = "Multiple currencies present within these groups; each group is broken out by currency." if currencies_seen.size > 1
+    result
+  end
+  private :currency_aware_group_by_sum
 end
 # rubocop:enable Metrics/CyclomaticComplexity

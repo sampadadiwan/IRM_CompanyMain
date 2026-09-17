@@ -96,6 +96,31 @@ class KycOnboardingAgent < SupportAgentService
     InvestorKyc.completed.where(entity_id: entity_id).includes(:documents, :investor, :entity)
   end
 
+  # Human descriptions of the steps each json_fields toggle gates.
+  CHECK_TOGGLES = {
+    "validate_fields"    => "the KYC field completeness check",
+    "validate_documents" => "the document presence/validity checks",
+    "check_expiry"       => "the KYC expiry check",
+    "send_reminder"      => "expiry reminder emails",
+    "trigger_aml"        => "automatic AML screening"
+  }.freeze
+
+  # Setup health check — unset toggles silently skip validations, letting a
+  # KYC report come back clean with nothing actually checked.
+  def self.config_issues(support_agent)
+    fields = support_agent.json_fields || {}
+    issues = missing_toggle_issues(support_agent, CHECK_TOGGLES)
+
+    # A blank value now falls back to the 60/30/15 defaults (see
+    # expiry_warning_thresholds) — still worth surfacing so the admin knows
+    # their empty setting isn't doing what a literal reading suggests.
+    if toggle_on?(support_agent, "check_expiry") && fields.key?("expiry_warning_days") && fields["expiry_warning_days"].to_s.strip.blank?
+      issues << "'expiry_warning_days' is blank — default thresholds (60,30,15 days) will be used. Set explicit day thresholds like '60,30,15' or remove the field."
+    end
+
+    issues
+  end
+
   private
 
   # Initializes the agent with the investor_kyc under review.
@@ -347,8 +372,7 @@ class KycOnboardingAgent < SupportAgentService
     # not the OS system timezone. Date.today can be off by a day near midnight
     # when the server timezone differs from the configured app timezone.
     days_remaining = (expiry_date - Time.zone.today).to_i
-    warning_thresholds = @support_agent.json_fields["expiry_warning_days"]
-                                       &.split(",")&.map(&:to_i) || [60, 30, 15]
+    warning_thresholds = expiry_warning_thresholds
 
     if investor_kyc.expired?
       ctx[:issues][:field_issues] << {
@@ -357,12 +381,17 @@ class KycOnboardingAgent < SupportAgentService
         severity: :blocking
       }
       Rails.logger.warn { "[KycOnboardingAgent] KYC expired for InvestorKyc ID=#{investor_kyc.id}" }
-      mark_step_success(report, :check_expiry_status, message: "Expired on #{expiry_date}") if report
+      # "Check complete" prefix — the STEP succeeded (it ran and found the problem);
+      # without it the green step badge next to "Expired" confuses step-UI readers.
+      mark_step_success(report, :check_expiry_status, message: "Check complete — expired on #{expiry_date}") if report
     elsif warning_thresholds.any? { |d| days_remaining <= d }
       ctx[:issues][:field_issues] << {
         type: :kyc_expiring_soon,
         message: "KYC expires in #{days_remaining} day(s) on #{expiry_date}",
-        severity: :warning
+        severity: :warning,
+        # days_remaining lets send_reminders compute the reminder milestone band
+        # without re-deriving dates from the message string
+        days_remaining: days_remaining
       }
       Rails.logger.info { "[KycOnboardingAgent] KYC expiring soon for InvestorKyc ID=#{investor_kyc.id}: #{days_remaining} days remaining" }
       mark_step_success(report, :check_expiry_status, message: "Expires in #{days_remaining} days") if report
@@ -378,6 +407,13 @@ class KycOnboardingAgent < SupportAgentService
   end
 
   # Sends expiry alert emails when blocking or warning expiry issues are found.
+  #
+  # Reminder cadence: ONE email per milestone band, not one per run. The bands
+  # are the configured thresholds (default 60/30/15 days) plus "expired" — so a
+  # KYC gets at most 4 reminders across its expiry lifecycle instead of one per
+  # scheduled run (which spammed every active employee daily). The last-sent
+  # band is persisted on the SupportAgentReport (which generate_progress_reports
+  # merges rather than replaces, so the marker survives subsequent runs).
   #
   # Configurable via json_fields:
   #   send_reminder — "true"/"false" (default true)
@@ -400,16 +436,81 @@ class KycOnboardingAgent < SupportAgentService
       return true
     end
 
+    # Guard: no active employees means no recipients — skip gracefully instead of
+    # queuing a mail job that raises "No to email address" and retries forever.
+    # Mirrors the same guard in trigger_aml_if_complete.
+    if investor_kyc.entity&.employees&.active&.none?
+      Rails.logger.warn { "[KycOnboardingAgent] No active employees to notify — skipping expiry reminder for InvestorKyc ID=#{investor_kyc.id}" }
+      mark_step_skipped(report, :send_reminders, message: "No active employees to notify") if report
+      return true
+    end
+
+    # Milestone dedup — send once per band ("60"/"30"/"15"/"expired"), and never
+    # twice on the same calendar day (covers same-day band transitions).
+    # generate_progress_reports runs before this step, so the report exists; the
+    # find_by is a safety net for step-order changes.
+    band = expiry_reminder_band(expiry_issues.first)
+    report ||= SupportAgentReport.find_by(owner: investor_kyc, support_agent: support_agent)
+    last_reminder = report&.json_fields&.dig("last_expiry_reminder") || {}
+    if last_reminder["band"] == band || last_reminder["sent_on"] == Time.zone.today.iso8601
+      Rails.logger.debug { "[KycOnboardingAgent] Expiry reminder already sent for band #{band} — skipping for InvestorKyc ID=#{investor_kyc.id}" }
+      mark_step_skipped(report, :send_reminders, message: "Reminder already sent (milestone #{band})") if report
+      return true
+    end
+
     KycExpiryMailer.with(
       investor_kyc_id: investor_kyc.id,
       issues: expiry_issues,
       entity_id: support_agent.entity_id
     ).expiry_alert.deliver_later
 
-    mark_step_success(report, :send_reminders, message: "Reminder queued") if report
+    # Persist the sent marker so the next run (possibly months later) knows
+    # which milestone was last notified.
+    if report
+      report.json_fields["last_expiry_reminder"] = { "band" => band, "sent_on" => Time.zone.today.iso8601 }
+      # MySQL doesn't auto-detect JSON mutation — must mark changed explicitly
+      report.json_fields_will_change!
+      begin
+        # save! so a validation failure can't silently drop the dedup marker —
+        # a dropped marker quietly reopens the one-email-per-run spam this
+        # cadence exists to prevent. Rescued so a persistence hiccup doesn't
+        # fail the pipeline after the reminder is already queued.
+        report.save!
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error { "[KycOnboardingAgent] Failed to persist expiry reminder marker for report #{report.id}: #{e.message}" }
+      end
+    end
 
-    Rails.logger.info { "[KycOnboardingAgent] Expiry alert queued for InvestorKyc ID=#{investor_kyc.id}" }
+    mark_step_success(report, :send_reminders, message: "Reminder queued (milestone #{band})") if report
+
+    Rails.logger.info { "[KycOnboardingAgent] Expiry alert queued for InvestorKyc ID=#{investor_kyc.id} (band #{band})" }
     true
+  end
+
+  # Parses the configured warning thresholds robustly. A present-but-blank
+  # "expiry_warning_days" used to split to [] (truthy!), silently disabling all
+  # warnings; non-numeric entries used to become 0 via to_i. Both now fall
+  # back to the 60/30/15 defaults (blank) or are filtered out (garbage).
+  #
+  # @return [Array<Integer>] day thresholds, e.g. [60, 30, 15]
+  def expiry_warning_thresholds
+    raw = @support_agent.json_fields["expiry_warning_days"].to_s
+    configured = raw.split(",").map(&:strip).grep(/\A\d+\z/).map(&:to_i)
+    configured.presence || [60, 30, 15]
+  end
+
+  # Maps an expiry issue to its reminder milestone band: "expired" for lapsed
+  # KYCs, otherwise the smallest crossed threshold (e.g. 40 days remaining with
+  # thresholds 60/30/15 → band "60"; 10 days → band "15"). Used to send one
+  # reminder per band instead of one per run.
+  #
+  # @param issue [Hash] an expiry issue from ctx[:issues][:field_issues]
+  # @return [String] band label, e.g. "expired", "60", "15"
+  def expiry_reminder_band(issue)
+    return "expired" if issue[:type] == :kyc_expired
+
+    days = issue[:days_remaining].to_i
+    expiry_warning_thresholds.sort.find { |d| days <= d }.to_s
   end
 
   # Triggers AML workflow if KYC process is complete with no blocking issues.

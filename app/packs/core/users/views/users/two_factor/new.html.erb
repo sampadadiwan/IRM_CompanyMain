@@ -5,6 +5,8 @@
       <h2 class="h3 mb-2 fw-normal">Two-Factor Authentication</h2>
       <% if @user.whatsapp_mode? %>
         <p class="text-muted">Enter the 6-digit code sent to your WhatsApp</p>
+      <% elsif @user.sms_mode? %>
+        <p class="text-muted">Enter the 6-digit code we texted you</p>
       <% else %>
         <p class="text-muted">Enter the 6-digit code from your authenticator app</p>
       <% end %>
@@ -12,13 +14,18 @@
 
     <div class="login-body">
       <%- flash.each do |name, msg| -%>
-        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert #{name.to_s == 'alert' ? 'alert-danger' : 'alert-info'} text-center" if msg.is_a?(String) %>
       <%- end -%>
 
       <% if @user.whatsapp_mode? %>
         <div class="alert alert-success text-center mb-3">
           <i class="fab fa-whatsapp"></i>
           Code sent to <strong><%= @user.masked_phone_with_call_code %></strong>
+        </div>
+      <% elsif @user.sms_mode? %>
+        <div class="alert alert-info text-center mb-3">
+          <i class="fas fa-comment-dots"></i>
+          Code texted to <strong><%= @user.masked_phone_with_call_code %></strong>
         </div>
       <% end %>
 
@@ -40,15 +47,6 @@
         </button>
       <% end %>
 
-      <%# Authenticator-mode users with WhatsApp enabled can request a code via WhatsApp %>
-      <% if @user.authenticator_mode? && @user.whatsapp_enabled? %>
-        <div class="divider w-100"><span>OR</span></div>
-
-        <button type="button" id="send-whatsapp-btn" class="btn btn-secondary w-100" data-action="click->two-factor#sendWhatsapp">
-          <i class="fab fa-whatsapp"></i> Send code via WhatsApp
-        </button>
-      <% end %>
-
       <%# WhatsApp-mode users can request a resend %>
       <% if @user.whatsapp_mode? %>
         <div class="text-center mt-3">
@@ -58,12 +56,39 @@
         </div>
       <% end %>
 
+      <%# SMS-mode resend. More prominent wording than the WhatsApp equivalent because
+          it does more work here: a text can arrive after the code has already rolled,
+          and resending is how the user gets a live one. %>
+      <% if @user.sms_mode? %>
+        <div class="text-center mt-3">
+          <button type="button" id="send-sms-btn" class="btn btn-link" data-action="click->two-factor#sendSms">
+            Didn't get it? Send another code
+          </button>
+        </div>
+      <% end %>
+
       <div id="whatsapp-status" class="text-center mt-2" style="display: none;"></div>
+      <div id="sms-status" class="text-center mt-2" style="display: none;"></div>
 
       <div class="login-footer text-center mt-3">
-        <small class="text-muted">
-          Having trouble? Contact your administrator.
-        </small>
+        <% if @user.sms_mode? %>
+          Codes can take a few seconds to arrive. If one is rejected, request another rather than retyping it.
+        <% elsif @user.authenticator_mode? %>
+          <%# No backup codes exist in any mode, so a lost device has exactly one way back in.
+              Say so here rather than leaving the user to hunt for a code box that accepts
+              something else. %>
+          Having trouble?
+          <%= link_to "Troubleshoot authenticator codes",
+                      public_guide_path("authenticator_app_setup_user_guide") + "#troubleshooting",
+                      target: "_blank", rel: "noopener" %>.
+          Lost your device? Contact your administrator to reset your two-factor method.
+        <% else %>
+          Having trouble?
+          <%= link_to "Read the two-factor guide",
+                      public_guide_path("two_factor_authentication_user_guide"),
+                      target: "_blank", rel: "noopener" %>
+          or contact your administrator.
+        <% end %>
       </div>
     </div>
   </div>

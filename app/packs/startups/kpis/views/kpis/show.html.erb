@@ -44,6 +44,24 @@
     </td>
   </tr>
 
+  <%# rag_status is only ever set by Kpi#recompute_rag_status! when investor_kpi_mapping is
+      present and rag_configured? (see app/packs/startups/kpis/models/kpi.rb), and the
+      investor_kpi_mappings FK has no ON DELETE, so a mapping can't be destroyed while a KPI
+      still references it — investor_kpi_mapping is guaranteed present whenever rag_status is. %>
+  <% if @kpi.rag_status.present? %>
+  <tr>
+    <td>
+      RAG Status
+    </td>
+    <td>
+      <span class="badge <%= rag_status_badge_class(@kpi.rag_status) %>"><%= @kpi.rag_status.titleize %></span>
+      <div class="form-text text-muted">
+        <%= @kpi.investor_kpi_mapping.rag_rule_summary %>
+      </div>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       Status
@@ -133,6 +151,10 @@
   <%= button_to t_common(:reject), reject_kpi_path(@kpi), method: :patch, class: "btn btn-outline-warning",
       data: { action: "click->confirm#popup", turbo: false, method: :delete, notification: "no",
               msg: "Are you sure you want to reject and delete the unapproved value for #{@kpi.name}? This action cannot be undone." } if policy(@kpi).reject? %>
+
+  <%= button_to t_common(:unapprove), unapprove_kpi_path(@kpi), method: :patch, class: "btn btn-outline-secondary",
+      data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no",
+              msg: "This will revert #{@kpi.name} back to unapproved and clear its RAG status. Any KPI comparing itself against this figure will also be re-evaluated. Proceed?" } if policy(@kpi).unapprove? %>
 
   <%= button_to t_common(:delete), @kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@kpi).destroy? %>
 

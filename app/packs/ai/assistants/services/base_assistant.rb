@@ -21,6 +21,13 @@ class BaseAssistant
 
   AI_TIMEOUT = ENV.fetch('AI_ASSISTANT_TIMEOUT', '180').to_i.seconds
 
+  # Some models (esp. via certain providers) can leak a "Thought: ..." internal-monologue
+  # line ahead of the real answer. clean_response! only strips this specific leading marker --
+  # a substring search for the bare word "thought" anywhere in the text (the old behavior)
+  # would also truncate legitimate answers that happen to contain it, e.g. a KPI named
+  # "Thought Leadership Score" or a sentence like "we thought the runway would extend to Q3".
+  LEAKED_THOUGHT_PREFIX = /\A\s*(?:\*\*)?Thought:(?:\*\*)?.*?\n+/mi
+
   def initialize(user:, chat: nil)
     @user = user
     @chat = chat
@@ -211,10 +218,10 @@ class BaseAssistant
   def clean_response!(response)
     content = response.content
 
-    if content.is_a?(String) && content.include?("thought")
-      response.content = content.split("thought").last.to_s.strip
-    elsif content.respond_to?(:text) && content.text.to_s.include?("thought")
-      content.text = content.text.to_s.split("thought").last.to_s.strip
+    if content.is_a?(String)
+      response.content = content.sub(LEAKED_THOUGHT_PREFIX, "").strip
+    elsif content.respond_to?(:text)
+      content.text = content.text.to_s.sub(LEAKED_THOUGHT_PREFIX, "").strip
     end
   end
 

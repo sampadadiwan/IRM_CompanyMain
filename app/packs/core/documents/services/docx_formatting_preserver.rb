@@ -31,13 +31,13 @@ class DocxFormattingPreserver
   # default on most Linux distros (via fonts-liberation / liberation-fonts).
   FONT_MAP = {
     "Times New Roman" => "Liberation Serif",
-    "Arial"           => "Liberation Sans",
-    "Courier New"     => "Liberation Mono",
-    "Calibri"         => "Carlito",
-    "Cambria"         => "Caladea",
-    "Cambria Math"    => "Caladea"
+    "Arial" => "Liberation Sans",
+    "Courier New" => "Liberation Mono",
+    "Calibri" => "Carlito",
+    "Cambria" => "Caladea",
+    "Cambria Math" => "Caladea"
   }.freeze
-  W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main".freeze
 
   # Paragraph-level property tag names we want to ensure are explicit
   PARA_TAGS = %w[ind tabs spacing jc].freeze
@@ -55,9 +55,6 @@ class DocxFormattingPreserver
 
   def apply!
     tmp_path = "#{@docx_path}.fmt_fix.tmp"
-    # DEBUG: save a copy of the pre-fix DOCX for inspection
-    debug_path = "/tmp/docx_debug_input.docx"
-    FileUtils.cp(@docx_path, debug_path) rescue nil
 
     Zip::File.open(@docx_path) do |zip|
       styles_xml = read_entry(zip, "word/styles.xml")
@@ -70,9 +67,9 @@ class DocxFormattingPreserver
         return @docx_path
       end
 
-      styles_doc = Nokogiri::XML(styles_xml) { |c| c.strict }
-      body_doc   = Nokogiri::XML(doc_xml)    { |c| c.strict }
-      num_doc    = num_xml ? Nokogiri::XML(num_xml) { |c| c.strict } : nil
+      styles_doc = Nokogiri::XML(styles_xml, &:strict)
+      body_doc   = Nokogiri::XML(doc_xml, &:strict)
+      num_doc    = num_xml ? Nokogiri::XML(num_xml, &:strict) : nil
 
       @style_cache     = build_style_cache(styles_doc)
       @level_tab_cache = num_doc ? build_level_tab_cache(num_doc) : {}
@@ -94,6 +91,7 @@ class DocxFormattingPreserver
       Zip::OutputStream.open(tmp_path) do |out|
         zip.each do |entry|
           next if entry.directory?
+
           out.put_next_entry(
             entry.name, nil, nil,
             Zip::Entry::DEFLATED,
@@ -140,8 +138,10 @@ class DocxFormattingPreserver
         ilvl  = wattr(lvl, "ilvl")
         pPr   = lvl.at_xpath("w:pPr", ns)
         next unless pPr
-        tabs  = pPr.at_xpath("w:tabs", ns)
+
+        tabs = pPr.at_xpath("w:tabs", ns)
         next unless tabs
+
         positions = tabs.xpath("w:tab", ns).filter_map do |tab|
           wattr(tab, "pos")&.to_i if wattr(tab, "val") == "num"
         end
@@ -191,11 +191,14 @@ class DocxFormattingPreserver
     body_doc.xpath("//w:body//w:p", ns).each do |para|
       pPr = para.at_xpath("w:pPr", ns)
       next unless pPr
-      numPr  = pPr.at_xpath("w:numPr", ns)
+
+      numPr = pPr.at_xpath("w:numPr", ns)
       next unless numPr
+
       nid_el  = numPr.at_xpath("w:numId",  ns)
       ilvl_el = numPr.at_xpath("w:ilvl",   ns)
       next unless nid_el && ilvl_el
+
       nid   = wattr(nid_el,  "val")
       ilvl  = wattr(ilvl_el, "val")
       next if nid == "0"
@@ -205,9 +208,17 @@ class DocxFormattingPreserver
 
       ind = pPr.at_xpath("w:ind", ns)
       next unless ind
+
       left    = wattr(ind, "left")
       hanging = wattr(ind, "hanging")
       next unless left
+
+      # If paragraph ind specifies left but omits hanging, resolve hanging from the abstractNum level
+      if hanging.nil? || hanging.empty?
+        lvl_el = num_doc.at_xpath("//w:abstractNum[@w:abstractNumId='#{abstract_id}']/w:lvl[@w:ilvl='#{ilvl}']", ns)
+        lvl_ind = lvl_el&.at_xpath("w:pPr/w:ind", ns)
+        hanging = wattr(lvl_ind, "hanging") if lvl_ind
+      end
 
       key = "#{abstract_id}_#{ilvl}"
       tally[key]["#{left}|#{hanging}"] += 1
@@ -218,15 +229,24 @@ class DocxFormattingPreserver
     tally.each do |key, counts|
       best = counts.max_by { |_, c| c }&.first
       next unless best
+
       left_s, hanging_s = best.split("|")
-      dominant[key] = { left: left_s.to_i, hanging: hanging_s.to_i }
+      hang_val = (hanging_s && !hanging_s.empty?) ? hanging_s.to_i : 0
+      if hang_val.zero?
+        ab_id, ilvl_val = key.split("_")
+        lvl_el = num_doc.at_xpath("//w:abstractNum[@w:abstractNumId='#{ab_id}']/w:lvl[@w:ilvl='#{ilvl_val}']", ns)
+        lvl_ind = lvl_el&.at_xpath("w:pPr/w:ind", ns)
+        orig_hang = wattr(lvl_ind, "hanging")&.to_i
+        hang_val = orig_hang if orig_hang&.positive?
+      end
+      dominant[key] = { left: left_s.to_i, hanging: hang_val }
       # Log minority values that are being discarded so unexpected overwrites are visible in logs
       discarded = counts.keys.reject { |k| k == best }
-      if discarded.any?
-        Rails.logger.debug do
-          "[DocxFormattingPreserver] abstractNum #{key}: dominant ind=#{best} " \
-            "(#{counts[best]} para(s)); discarding minority: #{discarded.join(', ')}"
-        end
+      next unless discarded.any?
+
+      Rails.logger.debug do
+        "[DocxFormattingPreserver] abstractNum #{key}: dominant ind=#{best} " \
+          "(#{counts[best]} para(s)); discarding minority: #{discarded.join(', ')}"
       end
     end
 
@@ -308,20 +328,24 @@ class DocxFormattingPreserver
         ilvl = wattr(lvl, "ilvl")
         ind  = lvl.at_xpath("w:pPr/w:ind", ns)
         next unless ind
+
         left = wattr(ind, "left")&.to_i
-        hang = wattr(ind, "hanging")&.to_i || 0
+        hang = wattr(ind, "hanging").to_i
         abstract_lvl_ind["#{abid}_#{ilvl}"] = { left: left, hanging: hang } if left
       end
     end
 
     body_doc.xpath("//w:body//w:p", ns).each do |para|
-      pPr    = para.at_xpath("w:pPr", ns)
+      pPr = para.at_xpath("w:pPr", ns)
       next unless pPr
-      numPr  = pPr.at_xpath("w:numPr", ns)
+
+      numPr = pPr.at_xpath("w:numPr", ns)
       next unless numPr
+
       nid_el  = numPr.at_xpath("w:numId",  ns)
       ilvl_el = numPr.at_xpath("w:ilvl",   ns)
       next unless nid_el && ilvl_el
+
       nid  = wattr(nid_el,  "val")
       ilvl = wattr(ilvl_el, "val")
       next if nid == "0"
@@ -331,16 +355,46 @@ class DocxFormattingPreserver
 
       ind = pPr.at_xpath("w:ind", ns)
       if ind
-        # Has direct ind — strip firstLine only; keep existing left/hanging.
-        # Cover both the standard namespaced form (w:firstLine) and the rare
-        # unqualified form that some editors emit without a namespace prefix.
+        # Has direct ind — strip firstLine. Cover both the standard namespaced
+        # form (w:firstLine) and the rare unqualified form that some editors
+        # emit without a namespace prefix.
         ind.attribute_with_ns("firstLine", W_NS)&.remove
         ind.attribute_with_ns("firstLine", nil)&.remove
+
+        # Also correct left/hanging, but ONLY when the paragraph's OWN ind
+        # already specifies BOTH attributes and they're an outlier against the
+        # dominant indentation every other paragraph at this list level uses.
+        # Confirmed live: one paragraph ("2.24.1.") had its own explicit
+        # left=1440 hanging=589 — too small for its own number label — while
+        # every sibling at the same numId/ilvl correctly used hanging=720.
+        # The label overshot into the body text's tab stop, producing a large
+        # visible gap; correcting a COMPLETE-but-wrong pair like this is safe.
+        #
+        # A paragraph with only ONE of the two attributes (e.g. <w:ind
+        # w:hanging="731"/>, no w:left) is a DIFFERENT, deliberate pattern —
+        # it's relying on inheriting the missing attribute from the abstractNum
+        # level or style chain, not an authoring mistake. An earlier version of
+        # this fix force-completed such partial inds with the tally's dominant
+        # values regardless, which silently broke a paragraph that was already
+        # rendering correctly (confirmed live: introduced a new visible gap at
+        # clause 2.10.1 that did not exist in the original template). Leave
+        # partial inds alone — only firstLine gets stripped for them, same as
+        # every direct-ind paragraph.
+        own_left = wattr(ind, "left")
+        own_hanging = wattr(ind, "hanging")
+        if own_left && own_hanging
+          dom = dominant["#{abstract_id}_#{ilvl}"] || abstract_lvl_ind["#{abstract_id}_#{ilvl}"]
+          if dom && (own_left.to_i != dom[:left] || own_hanging.to_i != dom[:hanging])
+            ind["w:left"] = dom[:left].to_s
+            ind["w:hanging"] = dom[:hanging].to_s
+          end
+        end
       else
         # No direct ind — add one to block style-chain firstLine inheritance.
         # Prefer dominant values; fall back to the abstractNum level's own ind.
         dom = dominant["#{abstract_id}_#{ilvl}"] || abstract_lvl_ind["#{abstract_id}_#{ilvl}"]
         next unless dom
+
         frag = Nokogiri::XML::DocumentFragment.parse(
           "<w:ind xmlns:w=\"#{W_NS}\" w:left=\"#{dom[:left]}\" w:hanging=\"#{dom[:hanging]}\"/>"
         )
@@ -369,6 +423,7 @@ class DocxFormattingPreserver
       stype  = wattr(style, "type")
       sid    = wattr(style, "styleId")
       next unless sid
+
       based  = style.at_xpath("w:basedOn", ns)
       rPr    = style.at_xpath("w:rPr", ns)
 
@@ -376,13 +431,13 @@ class DocxFormattingPreserver
         pPr = style.at_xpath("w:pPr", ns)
         raw_para[sid] = {
           based_on: based ? wattr(based, "val") : "__defaults__",
-          pPr:      pPr,
-          rPr:      rPr
+          pPr: pPr,
+          rPr: rPr
         }
       elsif stype == "character"
         raw_char[sid] = {
           based_on: based ? wattr(based, "val") : nil,
-          rPr:      rPr
+          rPr: rPr
         }
       end
     end
@@ -408,7 +463,7 @@ class DocxFormattingPreserver
       return resolved[sid]
     end
 
-    resolved[sid] = :resolving  # cycle guard
+    resolved[sid] = :resolving # cycle guard
     parent = info[:based_on] ? resolve_para_style!(info[:based_on], raw, resolved) : { pPr: {}, rPr: {} }
     parent = { pPr: {}, rPr: {} } if parent == :resolving
 
@@ -422,6 +477,7 @@ class DocxFormattingPreserver
 
   def resolve_char_style!(sid, raw, resolved)
     return resolved[sid] if resolved.key?(sid)
+
     info = raw[sid]
     unless info
       resolved[sid] = { rPr: {} }
@@ -438,6 +494,7 @@ class DocxFormattingPreserver
   # Extract only the tags we care about from an XML properties element
   def extract_props(xml_el, tags)
     return {} unless xml_el
+
     ns = { "w" => W_NS }
     tags.each_with_object({}) do |tag, h|
       node = xml_el.at_xpath("w:#{tag}", ns)
@@ -476,15 +533,26 @@ class DocxFormattingPreserver
           i.attribute_with_ns("firstLine", nil)&.remove
         end
 
-        # Strip any leading w:tab from the first content run of list paragraphs.
-        # LibreOffice's list mechanism auto-inserts a tab after the number label
-        # (landing on the num tab stop). A second w:tab in the content run then
-        # jumps to the *next* tab stop, pushing text further right than wrap lines.
-        # This was originally put in the template to position text after the label
-        # in Word, but is redundant (and harmful) in LibreOffice.
-        first_run = para.at_xpath("w:r", ns)
-        if first_run
-          first_content = first_run.xpath("w:*", ns).find { |c| c.name != "rPr" }
+        # Strip any leading w:tab from EVERY run of a list paragraph, not just the
+        # first. LibreOffice's list mechanism auto-inserts a tab after the number
+        # label (landing on the num tab stop); a leading w:tab on the first run's
+        # content duplicates that and jumps to the *next* tab stop, pushing text
+        # further right than wrap lines — that's the original, narrower fix.
+        # But the same artifact also shows up mid-paragraph: when two originally
+        # separate numbered clauses get merged into one paragraph (or a clause is
+        # re-typed with its old leading tab left in place), the leftover tab lands
+        # as the leading content of a LATER run instead of the first — e.g.
+        # "<w:r><w:t>...first sentence. </w:t></w:r><w:r><w:tab/><w:t>Second
+        # sentence...</w:t></w:r>" — producing a large unwanted gap mid-sentence.
+        # Confirmed live on clause 5.2.6 of MessedUpDocTemplate.docx (see
+        # docs/notes/template_fix_agent_handover_note.md #Issue 3): the stray tab
+        # sat on the paragraph's SECOND run, which the single-first-run check
+        # above never looked at. A run-leading tab is never legitimate in a list
+        # paragraph — the number's own tab stop already positions the first line,
+        # and Word/LibreOffice never place a tab as a run's first child except as
+        # this duplication artifact — so it's safe to strip unconditionally.
+        para.xpath("w:r", ns).each do |run|
+          first_content = run.xpath("w:*", ns).find { |c| c.name != "rPr" }
           first_content.remove if first_content&.name == "tab"
         end
       end
@@ -547,7 +615,7 @@ class DocxFormattingPreserver
     ilvl_el = numPr&.at_xpath("w:ilvl", ns)
     nid     = nid_el  ? wattr(nid_el,  "val") : nil
     ilvl    = ilvl_el ? wattr(ilvl_el, "val") : nil
-    level_tab_positions = (nid && ilvl) ? (@level_tab_cache["#{nid}_#{ilvl}"] || []) : []
+    level_tab_positions = nid && ilvl ? (@level_tab_cache["#{nid}_#{ilvl}"] || []) : []
 
     # Positions that must be cleared: all list-level num tabs that differ from left_pos
     clear_positions = level_tab_positions.reject { |p| p == left_pos }
@@ -572,12 +640,12 @@ class DocxFormattingPreserver
       already_cleared = tabs_el.xpath("w:tab", ns).any? do |tab|
         wattr(tab, "val") == "clear" && wattr(tab, "pos")&.to_i == cpos
       end
-      unless already_cleared
-        frag = Nokogiri::XML::DocumentFragment.parse(
-          "<w:tab xmlns:w=\"#{W_NS}\" w:val=\"clear\" w:pos=\"#{cpos}\"/>"
-        )
-        tabs_el.add_child(frag.first_element_child)
-      end
+      next if already_cleared
+
+      frag = Nokogiri::XML::DocumentFragment.parse(
+        "<w:tab xmlns:w=\"#{W_NS}\" w:val=\"clear\" w:pos=\"#{cpos}\"/>"
+      )
+      tabs_el.add_child(frag.first_element_child)
     end
 
     # Add exactly one num tab at left_pos
@@ -595,7 +663,8 @@ class DocxFormattingPreserver
   def bake_props!(target_el, defaults, tags)
     ns = { "w" => W_NS }
     tags.each do |tag|
-      next if target_el.at_xpath("w:#{tag}", ns)  # already explicit
+      next if target_el.at_xpath("w:#{tag}", ns) # already explicit
+
       node = defaults[tag]
       next unless node
 
@@ -637,6 +706,7 @@ class DocxFormattingPreserver
     Zip::OutputStream.open(tmp_path) do |out|
       zip.each do |entry|
         next if entry.directory?
+
         out.put_next_entry(entry.name, nil, nil, Zip::Entry::DEFLATED, Zlib::DEFAULT_COMPRESSION)
         out.write(entry.get_input_stream.read)
       end

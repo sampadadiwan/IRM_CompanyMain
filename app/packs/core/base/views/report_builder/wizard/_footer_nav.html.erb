@@ -1,0 +1,27 @@
+<div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
+  <% if local_assigns[:back_step] %>
+    <%# data-turbo-frame="_top" — this partial sometimes renders inside a
+        turbo-frame (e.g. the joins step, whose own "Continue" target depends
+        on join state), and links inside a frame default to targeting that
+        frame. These three are page-level navigation and must always replace
+        the whole page, frame or no frame. %>
+    <%= link_to wizard_report_builder_step_path(@report, step: back_step), class: "btn btn-outline-wizard-accent d-flex align-items-center gap-1", data: { turbo_frame: "_top" } do %>
+      <i class="ti ti-arrow-left"></i> Back
+    <% end %>
+  <% else %>
+    <span></span>
+  <% end %>
+
+  <div class="d-flex gap-2 align-items-center">
+    <% if local_assigns[:skip_ok] && local_assigns[:next_step] %>
+      <%= link_to wizard_report_builder_step_path(@report, step: next_step), class: "btn btn-link text-muted", data: { turbo_frame: "_top" } do %>
+        Skip this step
+      <% end %>
+    <% end %>
+    <% if local_assigns[:next_step] %>
+      <%= link_to wizard_report_builder_step_path(@report, step: next_step), class: "btn btn-wizard-accent d-flex align-items-center gap-1 px-4 shadow-sm", data: { turbo_frame: "_top" } do %>
+        <%= local_assigns[:next_label] || "Continue" %> <i class="ti ti-arrow-right"></i>
+      <% end %>
+    <% end %>
+  </div>
+</div>

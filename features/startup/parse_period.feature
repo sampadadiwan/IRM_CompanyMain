@@ -59,6 +59,7 @@ Feature: KPI Period Parsing
       | CY1999          | true     |
       |  Q1 FY21           | true     |  # leading space
       | Q1   FY21          | true     |  # multiple internal spaces
+      | Q1 FY 21           | true     |  # space on both sides of FY
       | Q1FY21             | true     |  # no space
       | Q1 2021            | true     |
       | Q1   2021          | true     |
@@ -115,6 +116,9 @@ Feature: KPI Period Parsing
       | Q4 FY21            | 2021-03-31    | Quarter  |
       | JFM 2023           | 2023-03-31    | Quarter  |
       | Jan-Mar 2023       | 2023-03-31    | Quarter  |
+      | Q1 FY 21           | 2020-06-30    | Quarter  |  # space on both sides of FY
+      | Q3 FY 25           | 2024-12-31    | Quarter  |  # space on both sides of FY
+      | Q1  FY  21         | 2020-06-30    | Quarter  |  # multiple spaces around FY
 
     Examples: Month formats
       | Input Period     | Expected Date | Type   |
@@ -138,6 +142,7 @@ Feature: KPI Period Parsing
       | FY2020-21      | 2021-03-31    | Year  |
       | FY21           | 2021-03-31    | Year  |
       | FY 20-21       | 2021-03-31    | Year  |
+      | FY 20 - 21     | 2021-03-31    | Year  |  # spaces around the dash too
       | 2020           | 2020-12-31    | Year  |
       | CY2020         | 2020-12-31    | Year  |
       | CY20           | 2020-12-31    | Year  |
@@ -157,3 +162,27 @@ Feature: KPI Period Parsing
     | H1 2023        | 2023-06-30    | half year  |
     | H1 FY2023      | 2022-09-30    | half year  |
     | H1 FY23        | 2022-09-30    | half year  |
+    | H1 FY 2023     | 2022-09-30    | half year  |  # space on both sides of FY
+
+  # Fiscal-year labels depend on the entity's fiscal-year start (month_offset_for_fy + 1). The importer
+  # now passes it through (KpiWorkbookReader → KpiDateUtils.parse_period); previously April was hard-coded.
+  Scenario Outline: Parsing fiscal labels under different fiscal-year start months
+    When I parse the period string "<Input Period>" with fiscal start month <Start Month>
+    Then the resulting date should be "<Expected Date>"
+
+    Examples:
+      | Input Period | Start Month | Expected Date |
+      | FY26         | 4           | 2026-03-31    |
+      | FY26         | 1           | 2026-12-31    |
+      | FY26         | 7           | 2026-06-30    |
+      | FY2025-26    | 4           | 2026-03-31    |
+      | Q1FY26       | 4           | 2025-06-30    |
+      | Q1FY26       | 1           | 2026-03-31    |
+      | Q4FY26       | 1           | 2026-12-31    |
+      | Q1FY26       | 7           | 2025-09-30    |
+      | H1FY26       | 4           | 2025-09-30    |
+      | H2FY26       | 4           | 2026-03-31    |
+      | H1FY26       | 1           | 2026-06-30    |
+      | H1 2026      | 4           | 2026-06-30    |
+      | CY2025       | 4           | 2025-12-31    |
+      | Jan 26       | 7           | 2026-01-31    |

@@ -11,6 +11,7 @@ class CapitalRemittancePayment < ApplicationRecord
   has_one :capital_call, through: :capital_remittance
   has_one :investor, through: :capital_remittance
   has_one :capital_commitment, through: :capital_remittance
+  has_one :investor_kyc, through: :capital_commitment
   belongs_to :entity
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
@@ -53,7 +54,7 @@ class CapitalRemittancePayment < ApplicationRecord
     # 1. if the capital call has the send_payment_notification_flag set to true and
     # 2. if the capital remittance is verified
     # 3. if the payment notification has not been sent
-    if  capital_call.send_payment_notification_flag &&
+    if  capital_call.approved && capital_call.send_payment_notification_flag &&
         capital_remittance.verified && amount_cents.positive? &&
         !payment_notification_sent
       # Send email notification to all approved users of the investor
@@ -87,7 +88,7 @@ class CapitalRemittancePayment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[created_at updated_at payment_date capital_remittance_id payment_notification_sent reference_no amount folio_amount tracking_amount fund_id capital_commitment_id].sort
+    %w[created_at updated_at payment_date capital_remittance_id payment_notification_sent reference_no amount folio_amount tracking_amount fund_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

@@ -16,7 +16,7 @@ class UserSyncEnvelopeBuilder
     failed_attempts unlock_token remember_created_at
     reset_password_token reset_password_sent_at
     encrypted_password password_digest
-    otp_secret otp_backup_codes api_token api_tokens invitation_token
+    otp_secret api_token api_tokens invitation_token
   ].freeze
 
   EXCLUDED_ENTITY_ATTRS = %w[

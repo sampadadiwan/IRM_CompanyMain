@@ -15,9 +15,13 @@
       <%= form.text_area :details, class: "form-control"  %>
     </div>
 
-    <div class="form-group col-md-2">
-      <%= form.label :link %>
-      <%= form.text_field :link, class: "form-control"  %>
-    </div>
+    <%# link can carry [user.xxx] variables (InvestorNoticeLinkInterpolator) —
+        support only, same gate as InvestorNotice#criteria. %>
+    <% if current_user.support? %>
+      <div class="form-group col-md-2">
+        <%= form.label :link %>
+        <%= form.text_field :link, class: "form-control", placeholder: "[user.entity.sub_domain]" %>
+      </div>
+    <% end %>
 
 </div>

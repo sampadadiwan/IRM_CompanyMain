@@ -10,7 +10,7 @@ export default class extends Controller {
     "formulaInput", "formulaPreview", "formulaSubmit",
     "viewTarget",
     "scheduleFrequency", "scheduleRecipients",
-    "groupRowsBy"
+    "groupRowsBy", "currency"
   ]
 
   static values = {
@@ -102,6 +102,15 @@ export default class extends Controller {
     const groupRowsBy = this.groupRowsByTarget.value
     this._patch(this.templateUrlValue, { template: { group_rows_by: groupRowsBy } })
       .then(() => this._toast("Grouping saved"))
+  }
+
+  // Display-only — no conversion happens. Only affects how monetized columns
+  // are labeled/formatted in the view, preview, and XLSX export (see
+  // ReportBuilderConfig#currency_symbol / #monetized?).
+  currencyChanged() {
+    const currency = this.currencyTarget.value
+    this._patch(this.templateUrlValue, { template: { currency: currency } })
+      .then(() => this._toast("Currency saved"))
   }
 
   switchMode(e) {

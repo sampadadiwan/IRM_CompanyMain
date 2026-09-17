@@ -1,0 +1,193 @@
+// Styles for the Outlook task pane and its sign-in dialog.
+//
+// Deliberately a standalone stylesheet rather than a file under custom/, which
+// application.scss glob-imports: the pane renders in a ~320px Outlook frame and has no
+// use for the full application bundle.
+
+.mail-addin {
+  // CapHive brand palette, taken from the website's :root
+  // (public/website/assets/css/caphive.css) so the pane matches the product it files into.
+  // The previous values were a generic blue/slate set that belonged to no brand.
+  --ma-primary: #FF4D00;        // --orange
+  --ma-primary-hover: #E04300;  // --orange-2
+  --ma-bg: #FBFAF7;             // --bg, the warm paper the site sits on
+  --ma-card: #FFFFFF;           // --tile
+  --ma-text: #101010;           // --fg
+  --ma-muted: #6F6A62;          // --mut
+  --ma-border: #E8E5DE;         // --line
+  --ma-cream: #F3F0E9;          // --cream, for secondary button hover
+  --ma-success: #067A5B;
+  --ma-error: #B3261E;
+  --ma-warning: #8A5A00;
+
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  // Geist is the site's face; it is not loaded in the pane (no external font fetch inside
+  // an Outlook frame), so this degrades to the host's own UI font.
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--ma-bg);
+  color: var(--ma-text);
+}
+
+.mail-addin__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--ma-card);
+  border-bottom: 1px solid var(--ma-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  img { height: 22px; width: auto; }
+}
+
+.mail-addin__container { padding: 16px; }
+
+.mail-addin__card {
+  background: var(--ma-card);
+  border-radius: 12px;
+  border: 1px solid var(--ma-border);
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mail-addin__section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ma-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+// Kept at the surrounding body size rather than shrunk — small type in a narrow pane is
+// the first thing users complain about.
+.mail-addin__value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ma-text);
+  word-break: break-word;
+}
+
+.mail-addin__subject {
+  font-size: 14px;
+  color: var(--ma-text);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.mail-addin__muted { color: var(--ma-muted); font-size: 14px; margin: 0; }
+
+.mail-addin__reason {
+  font-size: 12px;
+  color: var(--ma-muted);
+  margin-top: 4px;
+}
+
+.mail-addin__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--ma-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s, transform 0.2s;
+  margin-bottom: 12px;
+
+  &:hover:not(:disabled) { background: var(--ma-primary-hover); transform: translateY(-1px); }
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled { background: #C9C4BA; cursor: not-allowed; transform: none; }
+}
+
+.mail-addin__btn--secondary {
+  background: var(--ma-card);
+  color: var(--ma-text);
+  border: 1px solid var(--ma-border);
+
+  &:hover:not(:disabled) { background: var(--ma-cream); }
+}
+
+// Inline text action, e.g. "Change" / "Undo".
+.mail-addin__link {
+  border: none;
+  background: none;
+  color: var(--ma-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 12px;
+}
+
+.mail-addin__select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--ma-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: var(--ma-card);
+  margin-top: 8px;
+  outline: none;
+
+  &:focus { border-color: var(--ma-primary); }
+}
+
+.mail-addin__spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 77, 0, 0.2);
+  border-radius: 50%;
+  border-top-color: var(--ma-primary);
+  animation: mail-addin-spin 1s ease-in-out infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes mail-addin-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mail-addin__alert {
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.mail-addin__alert--success { background: #EAF5F0; color: #04553F; border: 1px solid #B9DCCD; }
+.mail-addin__alert--error   { background: #FCEDEC; color: #8C1D18; border: 1px solid #F2C4C0; }
+.mail-addin__alert--warning { background: #FDF3E2; color: #6B4600; border: 1px solid #F0DDB4; }
+// Info carries the brand tint, since it is what "already filed in CapHive" uses.
+.mail-addin__alert--info    { background: #FCEDE4; color: #A33100; border: 1px solid #F5DACA; }
+
+.mail-addin__loading { text-align: center; padding: 40px 20px; }
+
+.mail-addin__attachments {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ma-muted);
+}
+
+.mail-addin__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ma-text);
+  margin-top: 8px;
+}
+
+.mail-addin--dialog { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.mail-addin__dialog-body { text-align: center; padding: 32px; }

@@ -141,6 +141,11 @@ class FundsController < ApplicationController
 
   # PATCH/PUT /funds/1 or /funds/1.json
   def update
+    # SECURITY: the edit form disables the tracking_currency select for non-support users, but
+    # that's UI-only - fund_params still permits it, so a direct PATCH could otherwise bypass
+    # the lock. Re-check server-side (see FundPolicy#update_tracking_currency?).
+    authorize(@fund, :update_tracking_currency?) if tracking_currency_change_requested?
+
     respond_to do |format|
       if @fund.update(fund_params)
         format.html { redirect_to fund_url(@fund), notice: "Fund was successfully updated." }
@@ -211,11 +216,19 @@ class FundsController < ApplicationController
 
   # DELETE /funds/1 or /funds/1.json
   def destroy
-    @fund.destroy
-
-    respond_to do |format|
-      format.html { redirect_to funds_url, notice: "Fund was successfully destroyed." }
-      format.json { head :no_content }
+    # allocation_run_templates is dependent: :restrict_with_error, so destroy can return
+    # false without raising (e.g. the fund still has a saved allocation run template).
+    # The old code ignored the return value and always reported success.
+    if @fund.destroy
+      respond_to do |format|
+        format.html { redirect_to funds_url, notice: "Fund was successfully destroyed." }
+        format.json { head :no_content }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to fund_path(@fund), alert: @fund.errors.full_messages.join(", ") }
+        format.json { render json: @fund.errors, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -247,6 +260,14 @@ class FundsController < ApplicationController
           redirect_back_or_to(root_path) and return
         end
       end
+      # Decision 10(c) of the allocation run groups design: a fund that a running group is
+      # using, or has yet to reach, must not be touched by a manual run — overlapping runs
+      # produce entries in an undefined order.
+      if AllocationGroupRun.fund_busy?(@fund.id)
+        flash[:alert] = "An allocation run group is currently running on this fund. Wait for it to finish before starting a manual run."
+        redirect_back_or_to(root_path) and return
+      end
+
       template_name = template_id ? Document.find(template_id).name : nil
 
       # Build a temporary (unsaved) record so blocker rules can be evaluated.
@@ -335,6 +356,11 @@ class FundsController < ApplicationController
     @fund = Fund.with_snapshots.find(params[:id])
     authorize(@fund)
     @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund) }
+  end
+
+  def tracking_currency_change_requested?
+    fund_params.key?(:tracking_currency) &&
+      fund_params[:tracking_currency].presence != @fund.tracking_currency
   end
 
   # Only allow a list of trusted parameters through.

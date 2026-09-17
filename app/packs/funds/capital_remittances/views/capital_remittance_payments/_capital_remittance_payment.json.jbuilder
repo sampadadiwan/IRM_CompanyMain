@@ -8,8 +8,9 @@ json.fund_name capital_remittance_payment.fund.name
 json.amount capital_remittance_payment.amount.to_f
 json.folio_amount capital_remittance_payment.folio_amount.to_f
 
-# Stakeholder / Folio details
+# Investing Entity / Folio details
 json.investor_name capital_remittance_payment.investor&.investor_name
+json.investing_entity capital_remittance_payment.investor_kyc&.full_name
 json.folio_id capital_remittance_payment.capital_commitment&.folio_id
 json.folio_currency capital_remittance_payment.capital_commitment&.folio_currency.to_s
 

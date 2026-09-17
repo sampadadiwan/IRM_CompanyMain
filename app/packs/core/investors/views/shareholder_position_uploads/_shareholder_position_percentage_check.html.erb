@@ -1,0 +1,18 @@
+<%#
+  Fully Dilluted % totals + duplicate row checks for ShareholderPosition uploads - dedicated to
+  this page (own route/controller), same pattern as the KPI upload's own validation panel.
+  Server-side rules: ImportShareholderPosition#percentage_total_errors and #duplicate_row_errors,
+  reached via ShareholderPositionUploadsController#validate_upload
+  (ValidateShareholderPositionPercentages) the moment a file is chosen, before Save is ever
+  clicked - see shareholder_position_percentage_check_controller.js.
+
+  locals: import_upload
+%>
+<%= render FormCard.new(title: "Upload Checks") do %>
+  <div data-controller="shareholder-position-percentage-check"
+       data-shareholder-position-percentage-check-url-value="<%= validate_upload_shareholder_position_uploads_path %>">
+    <div data-shareholder-position-percentage-check-target="status">
+      <div class="alert alert-secondary">Choose a file above to check that Fully Dilluted % totals 100% for each Portfolio Company/Stakeholder + As Of round, and that no ShareHolder/Portfolio Company/As Of/Instrument/Category/Subgroup combination is duplicated.</div>
+    </div>
+  </div>
+<% end %>

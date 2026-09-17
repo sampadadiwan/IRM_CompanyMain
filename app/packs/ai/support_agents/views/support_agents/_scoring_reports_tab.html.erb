@@ -1,3 +1,13 @@
+<%# Cross-link to the portfolio-level view. This tab is the full run history
+    (every report, newest first); the dashboard buckets the latest score per
+    company into grade tiers. %>
+<div class="d-flex justify-content-end mb-2">
+  <%= link_to portfolio_scoring_dashboard_path,
+        class: "btn btn-sm btn-outline-primary", data: { turbo: false } do %>
+    <i class="ti ti-award"></i> View Scoring Dashboard
+  <% end %>
+</div>
+
 <% if scoring_reports.empty? %>
   <div class="alert alert-secondary">
     <i class="ti ti-info-circle"></i> No scoring reports yet. Run the agent on a portfolio company to generate a score.
@@ -61,6 +71,11 @@
                 <span class="badge bg-success">Completed</span>
               <% elsif report.status.to_s == "failed" %>
                 <span class="badge bg-danger">Failed</span>
+                <%# Show the failure reason inline — previously only visible after
+                    expanding the row, which hid misconfiguration from end users %>
+                <% if report.json_fields["error"].present? %>
+                  <div class="text-danger mt-1"><%= report.json_fields["error"] %></div>
+                <% end %>
               <% else %>
                 <span class="badge bg-secondary"><%= report.status.to_s.titleize %></span>
               <% end %>

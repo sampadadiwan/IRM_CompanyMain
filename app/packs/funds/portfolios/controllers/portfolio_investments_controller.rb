@@ -63,6 +63,31 @@ class PortfolioInvestmentsController < ApplicationController
     authorize @portfolio_investment
   end
 
+  # POST /portfolio_investments/check_duplicate_sell
+  # Called by the duplicate-PI confirmation modal (portfolio_investment_duplicate_check_controller.js)
+  # right before a new sell PI is submitted, so the user can be warned instead of
+  # silently saving a second sell with the same date/quantity/amount as an existing one.
+  def check_duplicate_sell
+    # Building a real (unsaved) PortfolioInvestment — rather than hand-computing cents —
+    # lets the monetize-generated ex_expenses_base_amount= setter apply the correct
+    # currency subunit conversion, same as the real create/update path does.
+    candidate = PortfolioInvestment.new(
+      entity_id: current_user.entity_id,
+      portfolio_company_id: params[:portfolio_company_id],
+      investment_instrument_id: params[:investment_instrument_id],
+      fund_id: params[:fund_id],
+      investment_date: params[:investment_date],
+      quantity: params[:quantity],
+      ex_expenses_base_amount: params[:ex_expenses_base_amount]
+    )
+    authorize candidate
+
+    # distinct + pluck dedups in SQL rather than loading matching rows into Ruby
+    used_ref_ids = PortfolioInvestment.matching_sells(candidate).distinct.pluck(:ref_id)
+
+    render json: { duplicate: used_ref_ids.any?, used_ref_ids: used_ref_ids }
+  end
+
   # GET /portfolio_investments/1/edit
   def edit
     setup_custom_fields(@portfolio_investment)
@@ -124,6 +149,6 @@ class PortfolioInvestmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def portfolio_investment_params
-    params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date, :ex_expenses_base_amount, :quantity, :notes, :form_type_id, :investment_instrument_id, :capital_commitment_id, :capital_distribution_id, :folio_id, :proforma, excused_folio_ids: [], documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date, :ex_expenses_base_amount, :quantity, :notes, :form_type_id, :investment_instrument_id, :capital_commitment_id, :capital_distribution_id, :folio_id, :proforma, :ref_id, excused_folio_ids: [], documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

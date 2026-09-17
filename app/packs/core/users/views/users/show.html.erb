@@ -38,20 +38,10 @@
         </tr>
         <tr>
           <td>
-            Phone
+            Mobile Phone
           </td>
           <td>
             <%= "(#{@user.call_code})#{@user.phone}"%>
-          </td>
-        </tr>
-
-        <tr>
-          <td>
-            Signature
-          </td>
-          <td>
-            <%= image_tag @user.signature_url,
-              style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @user.signature.present? %>
           </td>
         </tr>
 
@@ -110,16 +100,39 @@
           </td>
         </tr>
 
-        <% if @user == current_user %>
+        <%# Visible to the user themselves and to admins of their entity (UserPolicy#view_two_factor?),
+            so an administrator can see which method someone is on before resetting it. %>
+        <% if policy(@user).view_two_factor? %>
           <tr>
             <td>
               Two-Factor Authentication
-              <%= user_guide_icon_for('two_factor', tooltip: 'Two-Factor Authentication Guide') %>
+              <%# 2FA's guide is served via the public/login-less route (PublicGuidesController),
+                  not user_guide_icon_for, because that helper hides the icon for investor role —
+                  this guide applies to every role and is on the public allowlist for exactly
+                  that reason. %>
+              <%= link_to public_guide_path("two_factor_authentication_user_guide"), target: "_blank",
+                          'data-bs-toggle': 'tooltip', title: 'Two-Factor Authentication Guide',
+                          class: 'btn btn-info p-0 rounded-circle d-inline-flex align-items-center justify-content-center',
+                          style: 'width: 35px; height: 35px;', rel: 'noopener' do %>
+                <i class="ti ti-info-circle fs-5" style="margin: 0 !important;"></i>
+              <% end %>
             </td>
             <td>
               <%= display_boolean @user.two_factor_enabled %>
               <% if @user.two_factor_enabled && @user.two_factor_mode.present? %>
-                <span class="badge bg-secondary ms-1"><%= @user.two_factor_mode.titleize %></span>
+                <span class="badge bg-secondary ms-1" id="two_factor_mode_badge"><%= @user.two_factor_mode.titleize %></span>
+              <% elsif @user.two_factor_enabled %>
+                <span class="badge bg-warning text-dark ms-1" id="two_factor_mode_badge">Method not chosen yet</span>
+              <% end %>
+              <%# Only the trigger lives here; the modal itself is rendered after the table
+                  (Bootstrap modals must sit outside cards/tables). %>
+              <% if policy(@user).reset_two_factor? %>
+                <button type="button" class="btn btn-sm btn-outline-warning ms-2"
+                        id="reset_two_factor_button"
+                        data-bs-toggle="modal" data-bs-target="#resetTwoFactorModal">
+                  <i class="ti ti-shield-x"></i>
+                  <%= @user == current_user ? "Change 2FA Method" : "Reset 2FA Method" %>
+                </button>
               <% end %>
             </td>
           </tr>
@@ -212,8 +225,17 @@
 
       <div>
         <%= link_to  t_common(:edit) , edit_user_path(@user), {class: "btn btn-outline-primary ti ti-pencil" } if policy(@user).update? %>
-      </div>
 
+        <%= link_to root_path, class: "btn btn-outline-secondary ti ti-arrow-left" do %>
+          Back to Dashboard
+        <% end %>
+      </div>
 
     </div>
   </div>
+
+  <%# Reset-2FA confirmation popup (trigger button is in the Two-Factor row above). Rendered
+      outside the card so the modal is not trapped in the card's stacking context. %>
+  <% if policy(@user).reset_two_factor? %>
+    <%= render "users/reset_two_factor_modal", user: @user, self_reset: (@user == current_user) %>
+  <% end %>

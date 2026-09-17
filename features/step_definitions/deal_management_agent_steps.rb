@@ -93,7 +93,7 @@ Given('there is a DealManagementAgent configured for the entity') do
     agent_type: "DealManagementAgent",
     name:       "Deal Management",
     enabled:    true,
-    llm_model:  "gemini-3-flash-preview",
+    llm_model:  "gemini-3.7-flash",
     json_fields: {
       "check_progress"         => "Yes",
       "stagnant_days"          => "7",

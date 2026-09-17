@@ -27,6 +27,20 @@
     expect(page).to have_content("Capital commitment was successfully")
   end
 
+  # The commitment importer raises one persisted UserAlert (not a per-row note) for investors
+  # with nobody subscribed to Capital Call notifications — see
+  # ImportCapitalCommitment#warn_about_unsubscribed_investors. The name list is capped at 5, so
+  # only the first few names (sorted) are asserted; the count in the message covers the rest.
+  Then('the import should have raised a warning alert naming every imported investor without Capital Call subscribers') do
+    alert = UserAlert.where(user_id: @user.id, level: "warning").order(:id).last
+    expect(alert).not_to be_nil, "expected a warning UserAlert for the importing user, found none"
+    expect(alert.message).to include("no investor contacts are subscribed to Capital Call notifications")
+
+    names = ImportUpload.last.imported_data.includes(:investor).map { |cc| cc.investor.investor_name }.uniq.sort
+    expect(alert.message).to include("#{names.size} investor(s)")
+    names.first(ImportCapitalCommitment::MAX_NAMES_IN_ALERT).each { |name| expect(alert.message).to include(name) }
+  end
+
   Then('I should see the capital commitment details') do
     # find(".show_details_link").click
 
@@ -194,7 +208,13 @@ Then('when the capital commitment docs are generated') do
     click_on("Generate All Documents")
     #sleep((1)
     click_on("Proceed")
-    expect(page).to have_content("Documentation generation started")
+    # With :inline job adapter the job runs synchronously and the completion flash
+    # ("N documents generated successfully") replaces the async "started" flash
+    # before this assertion could catch it. Accept either message.
+    expect(page).to have_content(
+      /Documentation generation started|documents? generated/i,
+      wait: 20
+    )
     sleep(8)
     # expect(page).to have_content("generated successfully")
   end
@@ -202,7 +222,14 @@ end
 
 Then('the generated doc must be attached to the capital commitments') do
   CapitalCommitment.all.each do |cc|
-    cc.documents.where(name: "#{@commitment_template.name} - #{cc}", owner_tag: "Generated").count.should == 1
+    # Same doc-gen race as "the ... is successfully generated for all intended
+    # commitments" above: retry rather than relying solely on the fixed sleep in the
+    # preceding "Generate All Documents" step. The unit-fund example generates docs
+    # for multiple commitments back to back, so give it more room than the plain-fund
+    # case needs before giving up.
+    eventually(timeout: 30) do
+      expect(cc.documents.where(name: "#{@commitment_template.name} - #{cc}", owner_tag: "Generated").count).to eq(1)
+    end
     visit(capital_commitment_path(cc))
     expect(page).to have_content(@commitment_template.name)
     expect(page).to have_content("Generated")
@@ -471,7 +498,10 @@ Given('we Generate Investor Statements from commitments index page') do
   click_on("Submit")
   # Use have_selector with visible: :all because Bootstrap's fade transition can briefly make the notice
   # element non-visible to Selenium; we just need to confirm the flash was set (redirect succeeded).
-  expect(page).to have_selector("#notice", text: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", visible: :all, wait: 15)
+  # The wait is long because cucumber runs ActiveJob with the :inline adapter, so the allocation and
+  # document generation happen synchronously inside this request before the redirect sets the flash.
+  # 15s was enough on an idle box but timed out under the CPU contention of a parallel run.
+  expect(page).to have_selector("#notice", text: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", visible: :all, wait: 45)
 end
 
 Then('the {string} is successfully generated for all intended commitments') do |template_name|
@@ -480,27 +510,38 @@ Then('the {string} is successfully generated for all intended commitments') do |
     doc_name = "#{template_name} #{@start_date.strftime("%d %B,%Y")} to #{@end_date.strftime("%d %B,%Y")} - #{cc.to_s}"
     puts "Checking document #{doc_name} for commitment #{cc.id}"
     cc.reload
-    cc.documents.reload
-    if cc.skip_doc_gen?
-      puts "Commitment #{cc.id} is marked to SKIP"
-      puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
-      @errors[:skip_doc_gen] += 1
-      expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).to eq(0)
-    else
-      if cc.investor_kyc.nil?
+
+    should_skip =
+      if cc.skip_doc_gen?
+        puts "Commitment #{cc.id} is marked to SKIP"
+        @errors[:skip_doc_gen] += 1
+        true
+      elsif cc.investor_kyc.nil?
         puts "Commitment #{cc.id} has no KYC, should be skipped for statement generation"
-        puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
         @errors[:no_kyc] += 1
-        expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).to eq(0)
+        true
       elsif !cc.investor_kyc.verified
         puts "Commitment #{cc.id} has unverified KYC, should be skipped for statement generation"
-        puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
         @errors[:unverified_kyc] += 1
-        expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).to eq(0)
+        true
       else
         puts "Commitment #{cc.id} should have the statement generated"
-        puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
-        expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).not_to eq(0)
+        false
+      end
+
+    # Same underlying gap fixed elsewhere in this file (see "the unapproved Investor
+    # Statement is replaced" / "the original document is replaced"): under
+    # parallel-worker load this process's read can briefly land on a DB snapshot from
+    # before the bulk-generation request's write commits, so retry the query (a fresh
+    # reload each attempt) rather than reading once.
+    eventually(timeout: 20) do
+      cc.documents.reload
+      generated_count = cc.documents.where(owner_tag: "Generated", name: doc_name).count
+      puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
+      if should_skip
+        expect(generated_count).to eq(0)
+      else
+        expect(generated_count).not_to eq(0)
       end
     end
   end

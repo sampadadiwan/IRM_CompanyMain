@@ -1,0 +1,1749 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>CapHive — Reimagine Private Capital Markets</title>
+<meta name="description" content="CapHive is a full-stack intelligent technology platform for powering private capital markets — funds, portfolios, deals & secondaries, with AI agents purpose-built for private markets.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="CapHive — Reimagine Private Capital Markets">
+<meta property="og:description" content="Full-stack intelligent platform for private capital markets — funds, portfolios, deals & secondaries, with AI agents built in.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+<style>
+  :root{
+    --bg:      #FBFAF7;
+    --fg:      #101010;
+    --mut:     #6F6A62;
+    --line:    #E8E5DE;
+    --tile:    #FFFFFF;
+    --cream:   #F3F0E9;
+    --orange:  #FF4D00;
+    --orange-2:#E04300;
+    --dark:    #101010;   /* dashboard + chat shell */
+    --dark-2:  #1A1917;
+    --r-card:  24px;
+    --font:    "Geist", sans-serif;
+    --serif:   "Instrument Serif", serif;
+    --mono:    "Geist Mono", monospace;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:var(--font); background:var(--bg); color:var(--fg);
+    line-height:1.55; font-size:16px; -webkit-font-smoothing:antialiased;
+    /* No overflow-x here: this block loads after caphive.css, and re-declaring
+       `hidden` would beat the shared `clip`. `hidden` makes <body> its own
+       scroll container, which silently kills position:sticky inside it — that
+       is what stopped the scrollytelling stage from pinning beside the
+       Portfolios and Deals steps. The shared sheet already clips the page. */
+  }
+  ::selection{ background:var(--orange); color:#fff; }
+  a{ color:inherit; text-decoration:none; }
+  ul{ list-style:none; }
+  :focus-visible{ outline:2px solid var(--orange); outline-offset:3px; border-radius:6px; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 24px; }
+
+  h1,h2,h3{ letter-spacing:-0.035em; line-height:1.02; font-weight:700; }
+  h1 em, h2 em{ font-family:var(--serif); font-style:italic; font-weight:400; color:var(--orange); letter-spacing:-0.01em; }
+
+  .chip-label{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:11px; font-weight:500;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--mut);
+    border:1px solid var(--line); background:var(--tile);
+    padding:7px 14px; border-radius:999px;
+  }
+  .chip-label::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--orange); }
+
+  .section{ padding:130px 0; }
+  .section-head{ max-width:960px; margin-bottom:64px; }
+  .section-head h2{ font-size:clamp(34px,5vw,58px); margin:20px 0 16px; }
+  .section-head p{ color:var(--mut); font-size:18px; max-width:700px; }
+
+  /* ---------- buttons ---------- */
+  .btn{
+    position:relative; display:inline-flex; align-items:center; gap:10px;
+    font-weight:600; font-size:15px; padding:15px 28px; border-radius:999px;
+    border:1px solid transparent; cursor:pointer; white-space:nowrap;
+    transition:transform .3s cubic-bezier(.2,.8,.3,1), background .25s, border-color .25s, color .25s, box-shadow .25s;
+  }
+  .btn svg{ transition:transform .25s; }
+  .btn:hover svg{ transform:translateX(3px); }
+  .btn-primary{ background:var(--orange); color:#fff; }
+  .btn-primary:hover{ background:var(--orange-2); box-shadow:0 12px 32px -12px rgba(255,77,0,.5); }
+  .btn-outline{ border-color:var(--line); background:var(--tile); color:var(--fg); }
+  .btn-outline:hover{ border-color:var(--fg); }
+  .btn-dark{ background:var(--fg); color:#fff; }
+  .btn-dark:hover{ background:#000; }
+  .btn-white{ background:#fff; color:var(--orange-2); }
+  .btn-white:hover{ box-shadow:0 16px 36px -12px rgba(0,0,0,.3); }
+
+  /* ---------- floating pill nav ---------- */
+  .nav{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%);
+    width:min(1232px, calc(100% - 48px)); z-index:60;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px 10px 20px; border-radius:999px;
+    background:rgba(255,255,255,.94); border:1px solid var(--line);
+    backdrop-filter:blur(18px) saturate(120%); -webkit-backdrop-filter:blur(18px) saturate(120%);
+    transition:box-shadow .3s;
+  }
+  .nav.scrolled{ box-shadow:0 12px 40px -18px rgba(16,16,16,.18); }
+  /* Mirrors the .brand rules in caphive.css — the homepage re-declares them
+     because its style block loads after the shared sheet. */
+  .brand{ display:flex; align-items:center; }
+  .brand .logo{ display:block; height:34px; width:auto; }
+  .nav-links{ display:flex; gap:6px; }
+  .nav-link{
+    font-size:14.5px; font-weight:500; color:var(--mut);
+    padding:8px 14px; border-radius:999px; transition:color .25s, background .25s;
+  }
+  .nav-link:hover{ color:var(--fg); background:var(--cream); }
+  .nav-cta{ display:flex; align-items:center; gap:8px; }
+  .login{ font:inherit; font-size:14.5px; font-weight:500; color:var(--mut); padding:8px 14px; border-radius:999px; background:none; border:0; cursor:pointer; }
+  .login:hover{ color:var(--fg); background:var(--cream); }
+  .btn-nav{ padding:10px 20px; font-size:14px; }
+  .nav-toggle{ display:none; background:none; border:0; cursor:pointer; padding:10px; }
+  .nav-toggle span{ display:block; width:22px; height:2px; background:var(--fg); margin:5px 0; border-radius:2px; }
+
+  .mobile-menu{
+    position:fixed; inset:0; z-index:55; background:#fff;
+    display:flex; flex-direction:column; justify-content:center; align-items:center; gap:26px;
+    opacity:0; pointer-events:none; transition:opacity .3s;
+  }
+  .mobile-menu.open{ opacity:1; pointer-events:auto; }
+  .mobile-menu a{ font-size:28px; font-weight:700; letter-spacing:-0.03em; }
+  .mobile-menu a:hover{ color:var(--orange); }
+
+  /* ---------- hero ---------- */
+  .hero{ padding:190px 0 0; text-align:center; position:relative; }
+  .hero::before{
+    content:""; position:absolute; top:-200px; left:50%; transform:translateX(-50%);
+    /* min(): same reason as .page-hero::before in caphive.css — a fixed 900px
+       glow overflows a phone viewport and makes the browser zoom the page out. */
+    width:min(900px, 100%); height:600px; pointer-events:none;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(255,77,0,.07), transparent 70%);
+  }
+  .hero .chip-label{ margin-bottom:28px; }
+  .hero h1{
+    font-size:clamp(52px,8.2vw,108px); font-weight:800; letter-spacing:-0.045em;
+    line-height:.98; max-width:1000px; margin:0 auto;
+  }
+  /* The a and the i of "Reimagine" are the only colour in the headline: read in
+     order they spell AI, which is the platform's whole premise. <i> and not <em>
+     deliberately — <em> would pull in the italic serif from the shared
+     h1 em rule in caphive.css and undo the effect. */
+  .hero h1 .ai{ color:var(--orange); font-style:normal; }
+  .hero h1 .w{ display:inline-block; opacity:0; transform:translateY(22px); filter:blur(10px); animation:wIn .8s cubic-bezier(.2,.8,.3,1) forwards; }
+  .hero h1 .w:nth-child(1){ animation-delay:.08s }
+  .hero h1 .w:nth-child(2){ animation-delay:.18s }
+  .hero h1 .w:nth-child(3){ animation-delay:.28s }
+  .hero h1 .w:nth-child(4){ animation-delay:.38s }
+  @keyframes wIn{ to{ opacity:1; transform:none; filter:blur(0); } }
+  .hero p.lede{
+    color:var(--mut); font-size:clamp(16px,1.9vw,19px); max-width:680px;
+    margin:28px auto 36px; opacity:0; animation:fadeUp .8s cubic-bezier(.2,.8,.3,1) .55s forwards;
+  }
+  .hero-cta{
+    display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+    opacity:0; animation:fadeUp .8s cubic-bezier(.2,.8,.3,1) .7s forwards;
+  }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+
+  /* ---------- dashboard ---------- */
+  .shot{
+    max-width:1020px; margin:72px auto 0; padding:0 24px;
+    perspective:1600px;
+  }
+  .frame{
+    background:var(--dark); border-radius:20px; overflow:hidden; position:relative;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 60px 120px -50px rgba(16,16,16,.45), 0 30px 60px -40px rgba(255,77,0,.12);
+    transform:rotateX(10deg) translateY(30px); opacity:0;
+    animation:frameIn 1.1s cubic-bezier(.2,.8,.3,1) .85s forwards;
+    color:#fff;
+  }
+  @keyframes frameIn{ to{ transform:none; opacity:1; } }
+  .frame-bar{
+    display:flex; align-items:center; gap:7px; padding:13px 18px;
+    border-bottom:1px solid rgba(255,255,255,.07);
+  }
+  .frame-bar i{ width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.15); }
+  .frame-bar i:first-child{ background:var(--orange); }
+  .frame-url{
+    margin:0 auto; font-family:var(--mono); font-size:11px; color:rgba(255,255,255,.45);
+    background:rgba(255,255,255,.06); border-radius:999px; padding:4px 16px; letter-spacing:.04em;
+  }
+  .frame-body{ padding:26px 28px 60px; text-align:left; }
+  .frame-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  .frame-fund{ font-weight:600; font-size:15px; }
+  .frame-fund small{ display:block; font-family:var(--mono); font-weight:400; font-size:10.5px; color:rgba(255,255,255,.45); letter-spacing:.1em; margin-top:4px; }
+  .frame-live{
+    display:inline-flex; align-items:center; gap:6px; font-family:var(--mono);
+    font-size:10px; letter-spacing:.16em; color:var(--orange);
+    border:1px solid rgba(255,77,0,.4); padding:4px 10px; border-radius:999px;
+  }
+  .frame-live::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--orange); animation:pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse{ 50%{ opacity:.2 } }
+  .frame-cols{ display:grid; grid-template-columns:1fr 1.2fr; gap:36px; margin-top:22px; align-items:end; }
+  .frame-nav .lab{ font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.45); }
+  .frame-nav .val{ font-family:var(--mono); font-weight:600; font-size:clamp(22px,2.6vw,30px); margin-top:6px; font-variant-numeric:tabular-nums; }
+  .frame-stats{ display:flex; gap:26px; margin-top:18px; }
+  .frame-stat .v{ font-weight:700; font-size:17px; color:var(--orange); }
+  .frame-stat .k{ font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:rgba(255,255,255,.45); margin-top:2px; }
+  .wf{
+    position:relative; display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
+    height:130px; border-bottom:1px solid rgba(255,255,255,.1);
+  }
+  .wf-col{ position:relative; }
+  .wf-bar{
+    position:absolute; left:3px; right:3px; border-radius:5px 5px 3px 3px;
+    background:linear-gradient(180deg,#FF7A3D,var(--orange));
+    transform:scaleY(0); transform-origin:bottom;
+    animation:grow 1s cubic-bezier(.2,.8,.3,1) forwards;
+  }
+  .wf-col:nth-child(1) .wf-bar{ animation-delay:1.5s }
+  .wf-col:nth-child(2) .wf-bar{ animation-delay:1.75s }
+  .wf-col:nth-child(3) .wf-bar{ animation-delay:2s }
+  .wf-col:nth-child(4) .wf-bar{ animation-delay:2.25s }
+  .wf-col:nth-child(5) .wf-bar{ animation-delay:2.55s }
+  .wf-col.total .wf-bar{ background:linear-gradient(180deg,#fff,#FFD9C4); }
+  @keyframes grow{ to{ transform:scaleY(1); } }
+  .wf-labs{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:8px; }
+  .wf-labs span{ font-family:var(--mono); font-size:9.5px; color:rgba(255,255,255,.4); text-align:center; letter-spacing:.05em; }
+  .frame-toast{
+    position:absolute; left:18px; bottom:16px; display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(8px); border-radius:999px; padding:9px 18px;
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.02em; color:rgba(255,255,255,.85);
+    opacity:0; transform:translateY(14px);
+    transition:opacity .45s, transform .45s cubic-bezier(.2,.8,.3,1);
+    pointer-events:none; white-space:nowrap; max-width:calc(100% - 36px); overflow:hidden;
+  }
+  .frame-toast.show{ opacity:1; transform:none; }
+  .frame-toast .ti{ color:var(--orange); font-weight:600; }
+
+  /* ---------- ops ticker ---------- */
+  .ticker{ border-block:1px solid var(--line); padding:14px 0; overflow:hidden; margin-top:96px; background:var(--tile); }
+  .ticker-track{ display:flex; gap:56px; width:max-content; animation:scroll 44s linear infinite; }
+  .ticker:hover .ticker-track{ animation-play-state:paused; }
+  .tick{
+    display:inline-flex; align-items:center; gap:9px; white-space:nowrap;
+    font-family:var(--mono); font-size:12px; letter-spacing:.02em; color:var(--mut);
+  }
+  .tick .st{ color:var(--orange); }
+  .tick b{ color:var(--fg); font-weight:500; }
+  @keyframes scroll{ to{ transform:translateX(-50%); } }
+
+  /* ---------- clients ---------- */
+  .clients{ padding:64px 0; overflow:hidden; }
+  .clients-label{
+    text-align:center; font-family:var(--mono); font-size:11px;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--mut); margin-bottom:34px;
+  }
+  .marquee{ -webkit-mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent); mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent); }
+  .marquee-track{ display:flex; gap:72px; width:max-content; animation:scroll 38s linear infinite; }
+  .marquee:hover .marquee-track{ animation-play-state:paused; }
+  .client{ font-weight:600; font-size:20px; color:#C4BEB3; white-space:nowrap; letter-spacing:-0.01em; transition:color .3s; }
+  .client:hover{ color:var(--fg); }
+
+  /* ---------- product story (scrollytelling) ---------- */
+  .tile-kicker{ font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--mut); margin-bottom:18px; display:block; }
+  .tag-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .tag{
+    font-size:13px; font-weight:500; padding:7px 14px; border-radius:999px;
+    border:1px solid var(--line); background:var(--tile); color:var(--fg);
+    transition:border-color .25s;
+  }
+  .tag:hover{ border-color:var(--fg); }
+  .tag-group{ margin-bottom:14px; }
+  .tag-group h4{
+    font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.14em;
+    text-transform:uppercase; margin-bottom:9px; color:var(--mut);
+  }
+  .story{ display:grid; grid-template-columns:1fr 1.05fr; gap:64px; align-items:start; }
+  .story-steps{ position:relative; display:flex; flex-direction:column; padding-left:32px; }
+  .story-steps::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:2px;
+    background:var(--line); border-radius:99px;
+  }
+  .story-fill{
+    position:absolute; left:0; top:0; bottom:0; width:2px; z-index:1;
+    background:linear-gradient(180deg,#FF7A3D,var(--orange)); border-radius:99px;
+    transform:scaleY(0); transform-origin:top;
+  }
+  .step{
+    min-height:68vh; display:flex; flex-direction:column; justify-content:center;
+    opacity:.22; transition:opacity .45s cubic-bezier(.2,.8,.3,1);
+  }
+  .step.active{ opacity:1; }
+  .step.active .tile-kicker{ color:var(--orange); }
+  .step h3{ font-size:clamp(26px,3vw,38px); margin-bottom:10px; }
+  .step > p{ color:var(--mut); font-size:16.5px; max-width:520px; margin-bottom:12px; }
+  .step .step-detail{ font-size:15px; line-height:1.65; margin-bottom:26px; }
+  .step-stats{ display:flex; gap:40px; margin-top:28px; padding-top:22px; border-top:1px solid var(--line); max-width:460px; }
+  .step-stats strong{ display:block; font-size:22px; font-weight:800; letter-spacing:-0.02em; }
+  .step-stats strong em{ font-family:var(--serif); font-style:italic; font-weight:400; color:var(--orange); }
+  .step-stats span{ display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--mut); margin-top:5px; }
+  .story-stage{ position:sticky; top:110px; }
+  .stage{
+    background:var(--dark); border-radius:20px; overflow:hidden; color:#fff;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 40px 90px -50px rgba(16,16,16,.5);
+  }
+  .stage-views{ position:relative; min-height:440px; }
+  .view{
+    position:absolute; inset:0; padding:26px 28px; opacity:0; transform:translateY(14px);
+    transition:opacity .45s cubic-bezier(.2,.8,.3,1), transform .45s cubic-bezier(.2,.8,.3,1);
+    pointer-events:none;
+  }
+  .view.active{ opacity:1; transform:none; pointer-events:auto; }
+  .stage .wf-bar{ animation:none; transform:scaleY(1); }
+  .stage .wf{ height:110px; margin-top:24px; }
+  .view-h{ display:flex; gap:26px; margin-bottom:18px; }
+  .pos{
+    display:grid; grid-template-columns:1.1fr 1.6fr auto; gap:14px; align-items:center;
+    padding:13px 0; border-bottom:1px solid rgba(255,255,255,.07); font-size:13.5px;
+  }
+  .pos:last-child{ border-bottom:0; }
+  .pos-bar{ height:6px; background:rgba(255,255,255,.09); border-radius:99px; overflow:hidden; }
+  .pos-bar i{ display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#FF7A3D,var(--orange)); }
+  .pos-val{ font-family:var(--mono); font-size:12px; color:var(--orange); }
+  .deal{
+    display:flex; align-items:center; gap:12px; padding:14px 0;
+    border-bottom:1px solid rgba(255,255,255,.07); font-size:13.5px;
+  }
+  .deal:last-child{ border-bottom:0; }
+  .deal .amt{ font-family:var(--mono); font-size:12px; color:rgba(255,255,255,.6); margin-left:auto; }
+  .pill{ font-family:var(--mono); font-size:10px; letter-spacing:.08em; padding:3px 10px; border-radius:999px; border:1px solid; flex:none; }
+  .pill.done{ color:#7BE0A3; border-color:rgba(123,224,163,.35); }
+  .pill.sign{ color:#fff; border-color:rgba(255,255,255,.3); }
+  .pill.dil{ color:var(--orange); border-color:rgba(255,77,0,.4); }
+
+  /* ---------- AI agents ---------- */
+  .agents .section-head{ text-align:center; margin-inline:auto; }
+  .agents .section-head p{ margin-inline:auto; }
+  .agent-tabs{
+    display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:28px;
+  }
+  .agent-tab{
+    font-family:var(--font); font-size:14px; font-weight:500; color:var(--mut);
+    background:var(--tile); border:1px solid var(--line); border-radius:999px;
+    padding:10px 18px; cursor:pointer; transition:all .25s;
+  }
+  .agent-tab:hover{ border-color:var(--fg); color:var(--fg); }
+  .agent-tab.active{ background:var(--fg); border-color:var(--fg); color:#fff; }
+  .chat{
+    max-width:760px; margin:0 auto; background:var(--dark); color:#fff;
+    border-radius:var(--r-card); overflow:hidden; display:flex; flex-direction:column; min-height:400px;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 40px 90px -50px rgba(16,16,16,.5);
+  }
+  .chat-head{
+    display:flex; align-items:center; gap:9px; padding:15px 22px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.5);
+  }
+  .chat-head::before{
+    content:""; width:9px; height:10.4px; background:var(--orange);
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+  }
+  .chat-head .wordmark{ text-transform:none; letter-spacing:0; }
+  .chat-sub{ margin-left:auto; text-transform:none; letter-spacing:.02em; color:rgba(255,255,255,.35); }
+  .chat-body{ padding:26px; display:flex; flex-direction:column; gap:14px; flex:1; text-align:left; }
+  .msg{ max-width:85%; padding:13px 18px; border-radius:18px; font-size:14.5px; line-height:1.55; }
+  .msg.user{ align-self:flex-end; background:var(--orange); color:#fff; border-bottom-right-radius:6px; }
+  .msg.ai{ align-self:flex-start; background:var(--dark-2); border:1px solid rgba(255,255,255,.08); color:rgba(255,255,255,.9); border-bottom-left-radius:6px; }
+  .msg.typing-cursor::after{ content:"▍"; margin-left:1px; color:var(--orange); animation:blink 1s steps(1) infinite; }
+  @keyframes blink{ 50%{ opacity:0 } }
+  .typing-dots{ display:inline-flex; gap:5px; padding:5px 2px; }
+  .typing-dots i{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.4); animation:bounce 1.2s ease-in-out infinite; }
+  .typing-dots i:nth-child(2){ animation-delay:.15s }
+  .typing-dots i:nth-child(3){ animation-delay:.3s }
+  @keyframes bounce{ 30%{ transform:translateY(-5px); } }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; margin-top:10px;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; color:var(--orange);
+    border:1px solid rgba(255,77,0,.4); padding:4px 12px; border-radius:999px;
+    opacity:0; animation:fadeUp .5s .1s forwards;
+  }
+
+  /* ---------- metrics ---------- */
+  .metrics-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .metric{
+    background:var(--tile); border:1px solid var(--line); border-radius:var(--r-card);
+    padding:52px 24px; text-align:center;
+    transition:transform .3s cubic-bezier(.2,.8,.3,1), box-shadow .3s;
+  }
+  .metric:hover{ transform:translateY(-4px); box-shadow:0 24px 48px -28px rgba(16,16,16,.18); }
+  .metric .num{
+    font-weight:800; letter-spacing:-0.02em; font-size:clamp(34px,3.4vw,52px); line-height:1;
+    display:flex; align-items:baseline; justify-content:center; gap:10px;
+  }
+  .metric .num .cur{ font-size:.34em; font-weight:600; letter-spacing:.05em; color:var(--mut); }
+  .metric .num .unit{ font-size:.5em; font-weight:800; }
+  .metric .num .suffix{ color:var(--orange); font-size:.6em; }
+  .metric .label{ margin-top:18px; font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--mut); line-height:1.6; }
+  .odo-digit + .odo-digit{ margin-left:.035em; }
+  .odo{ display:inline-flex; font-variant-numeric:tabular-nums; }
+  .odo-digit{ height:1em; overflow:hidden; display:inline-block; }
+  .odo-reel{ display:flex; flex-direction:column; transform:translateY(0); transition:transform 1.7s cubic-bezier(.16,1,.3,1); }
+  .odo-reel span{ height:1em; line-height:1; display:block; text-align:center; }
+
+  /* ---------- case studies: horizontal snap ---------- */
+  .cases .section-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:24px; max-width:none; flex-wrap:wrap; }
+  .cases .section-head > div{ max-width:640px; }
+  .case-marquee{
+    overflow:hidden; padding:4px 0 24px;
+    -webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+    mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  }
+  .case-track{ display:flex; gap:16px; width:max-content; animation:scroll 55s linear infinite; }
+  .case-marquee:hover .case-track{ animation-play-state:paused; }
+  .case-marquee::-webkit-scrollbar{ display:none; }
+  .case{
+    flex:0 0 340px; scroll-snap-align:start;
+    border:1px solid var(--line); border-radius:var(--r-card); padding:30px 28px 26px;
+    background:var(--tile); display:flex; flex-direction:column; gap:56px; justify-content:space-between;
+    transition:background .3s, color .3s, border-color .3s, transform .3s;
+  }
+  .case:hover{ background:var(--fg); border-color:var(--fg); color:#fff; transform:translateY(-4px); }
+  .case-tag{ font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--orange); }
+  .case h3{ font-size:22px; margin-top:12px; line-height:1.25; letter-spacing:-0.02em; }
+  .case-foot{ display:flex; justify-content:flex-end; }
+  .case-arrow{
+    width:42px; height:42px; border-radius:50%; border:1px solid var(--line);
+    display:grid; place-items:center; transition:all .3s;
+  }
+  .case:hover .case-arrow{ background:var(--orange); border-color:var(--orange); color:#fff; transform:rotate(-45deg); }
+  .case-out{ margin-top:18px; font-size:19px; font-weight:800; letter-spacing:-0.02em; color:var(--orange); }
+  .case-out small{
+    display:block; font-family:var(--mono); font-size:10px; font-weight:400;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--mut); margin-top:4px;
+  }
+  .case:hover .case-out small{ color:rgba(255,255,255,.55); }
+
+  /* ---------- trust strip ---------- */
+  .trust{ padding-top:16px; }
+  .trust-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .trust-item{
+    display:flex; align-items:center; gap:12px; padding:18px 20px;
+    border:1px solid var(--line); background:var(--tile); border-radius:16px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--mut);
+  }
+  .trust-item svg{ flex:none; }
+
+  /* ---------- testimonials marquee ---------- */
+  .testis{ overflow:hidden; }
+  .testis .section-head{ text-align:center; margin-inline:auto; }
+  .t-marquee{ -webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); }
+  .t-track{ display:flex; gap:16px; width:max-content; animation:scroll 52s linear infinite; }
+  .t-marquee:hover .t-track{ animation-play-state:paused; }
+  .quote{
+    width:380px; flex:none; background:var(--tile); border:1px solid var(--line);
+    border-radius:var(--r-card); padding:28px;
+  }
+  .quote p{ font-size:15.5px; color:var(--fg); }
+  .quote p::before{ content:"“ "; color:var(--orange); font-family:var(--serif); font-size:22px; }
+  .quote-who{ display:flex; align-items:center; gap:12px; margin-top:22px; }
+  .avatar{
+    width:40px; height:40px; border-radius:50%; flex:none; display:grid; place-items:center;
+    background:var(--cream); color:var(--orange-2); font-weight:700; font-size:14px;
+  }
+  .quote-who strong{ display:block; font-size:14.5px; }
+  .quote-who span{ font-size:12.5px; color:var(--mut); }
+
+  /* ---------- insights: editorial index ---------- */
+  .article{
+    display:grid; grid-template-columns:150px 1fr 44px; gap:28px; align-items:center;
+    padding:26px 4px; border-top:1px solid var(--line); transition:padding .3s;
+  }
+  .articles .article:last-child{ border-bottom:1px solid var(--line); }
+  .article time{ font-family:var(--mono); font-size:12px; color:var(--mut); letter-spacing:.04em; }
+  .article h3{ font-size:clamp(18px,2.2vw,24px); font-weight:600; letter-spacing:-0.02em; line-height:1.3; transition:color .25s; }
+  .article:hover h3{ color:var(--orange); }
+  .article .go{
+    width:42px; height:42px; border-radius:50%; border:1px solid var(--line);
+    display:grid; place-items:center; transition:all .3s; justify-self:end;
+  }
+  .article:hover .go{ background:var(--orange); border-color:var(--orange); color:#fff; transform:rotate(-45deg); }
+
+  /* ---------- CTA ---------- */
+  .cta{ padding:0 24px 130px; }
+  .cta-card{
+    max-width:1132px; margin:0 auto; border-radius:32px; position:relative; overflow:hidden;
+    background:var(--orange); color:#fff; padding:110px 60px; text-align:center; isolation:isolate;
+  }
+  .cta-card::before{
+    content:""; position:absolute; top:-40%; left:50%; transform:translateX(-50%);
+    width:120%; height:100%; z-index:-1;
+    background:radial-gradient(50% 60% at 50% 0%, rgba(255,255,255,.22), transparent 70%);
+  }
+  .cta-card h2{ font-size:clamp(32px,4.4vw,56px); font-weight:800; letter-spacing:-0.04em; margin-bottom:16px; }
+  .cta-card h2 em{ color:#fff; }
+  .cta-card p{ font-size:17px; opacity:.9; }
+  .cta-stats{
+    display:flex; align-items:center; gap:10px; margin-top:30px;
+    font-family:var(--mono); font-size:12.5px; letter-spacing:.04em; color:rgba(255,255,255,.92);
+    transition:opacity .3s;
+  }
+  .cta-stats::before{ content:""; width:7px; height:7px; border-radius:50%; background:#fff; animation:pulse 1.6s ease-in-out infinite; flex:none; }
+  .cta-stats.fade{ opacity:0; }
+  .cta-mail{ display:inline-block; margin-top:16px; font-size:14px; opacity:.85; border-bottom:1px solid rgba(255,255,255,.5); transition:opacity .25s, border-color .25s; }
+  .cta-mail:hover{ opacity:1; border-color:#fff; }
+  /* The .cta-form rules that used to sit here went with the homepage's copy of
+     the demo form. The CTA is now the centred card every other page uses.
+     .hero-cta above is the HERO's button row and starts at opacity:0 behind a
+     one-shot entrance animation — reused inside .cta-card it has to be reset,
+     or the buttons depend on an animation that fired before the section was
+     ever scrolled to. */
+  .cta-card .hero-cta{ opacity:1; animation:none; }
+
+  /* ---------- footer ---------- */
+  /* overflow-x only, with bottom padding to match: .foot-mark's translateY(12%)
+     pushes the giant "CapHive" wordmark below its own compressed line-height
+     box, so clipping the y-axis (or omitting the bottom padding) crops it.
+     Keep in step with the footer rule in assets/css/caphive.css. */
+  footer{ border-top:1px solid var(--line); padding:80px 0 clamp(60px,10vw,140px); overflow-x:hidden; }
+  .foot-grid{ display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr 1fr; gap:40px; padding-bottom:64px; }
+  .foot-brand p{ color:var(--mut); font-size:14.5px; max-width:300px; margin-top:16px; }
+  .foot-brand .addr{ margin-top:20px; font-size:13.5px; line-height:1.7; color:var(--mut); }
+  .foot-brand a.mailto{ color:var(--orange-2); font-weight:500; }
+  .foot-brand a.mailto:hover{ text-decoration:underline; }
+  .foot-col h4{ font-family:var(--mono); font-size:11px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--mut); margin-bottom:18px; }
+  .foot-col li{ margin-bottom:11px; }
+  .foot-col a{ font-size:15px; color:var(--fg); opacity:.8; transition:opacity .25s, color .25s; }
+  .foot-col a:hover{ opacity:1; color:var(--orange); }
+  .foot-base{
+    display:flex; justify-content:space-between; align-items:center; gap:20px;
+    padding:26px 0; border-top:1px solid var(--line); flex-wrap:wrap;
+  }
+  .foot-base p, .foot-base a{ font-size:13px; color:var(--mut); }
+  .foot-base .legal{ display:flex; gap:24px; }
+  .foot-base .legal a:hover{ color:var(--fg); }
+  /* Homepage copy of the shared rule — it loads after caphive.css, so it has to
+     carry the Lobster wordmark treatment too or the footer mark falls back to
+     Geist here only. Keep in step with .foot-mark in assets/css/caphive.css. */
+  .foot-mark{
+    text-align:center; font-family:var(--brand); font-weight:400;
+    letter-spacing:0; line-height:.92;
+    font-size:clamp(90px,18.5vw,250px); color:#EDEAE2; user-select:none;
+    transform:translateY(12%); transition:color .5s;
+  }
+  .foot-mark:hover{ color:var(--orange); }
+
+  /* ---------- reveal ---------- */
+  .reveal{ opacity:0; transform:translateY(28px); filter:blur(6px); transition:opacity .8s cubic-bezier(.2,.8,.3,1), transform .8s cubic-bezier(.2,.8,.3,1), filter .8s; }
+  .reveal.in{ opacity:1; transform:none; filter:blur(0); }
+  .reveal[data-delay="1"]{ transition-delay:.08s } .reveal[data-delay="2"]{ transition-delay:.16s }
+  .reveal[data-delay="3"]{ transition-delay:.24s } .reveal[data-delay="4"]{ transition-delay:.32s }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:1000px){
+    .story{ grid-template-columns:1fr; gap:0; }
+    .story-stage{ position:relative; top:0; margin-bottom:48px; }
+    .story-steps{ padding-left:0; }
+    .story-steps::before, .story-fill{ display:none; }
+    .step{ min-height:0; padding:30px 0; opacity:1; }
+    .metrics-grid{ grid-template-columns:1fr 1fr; }
+    .trust-row{ grid-template-columns:1fr 1fr; }
+    .foot-grid{ grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:760px){
+    .nav-links, .login{ display:none; }
+    .nav-toggle{ display:block; }
+    .nav .btn-nav{ display:none; }
+    .hero{ padding-top:150px; }
+    .frame-cols{ grid-template-columns:1fr; gap:28px; }
+    .article{ grid-template-columns:1fr 44px; }
+    .article time{ grid-column:1 / -1; }
+    .metrics-grid{ grid-template-columns:1fr; }
+    .trust-row{ grid-template-columns:1fr; }
+    .cta-card{ padding:56px 24px; }
+    .foot-grid{ grid-template-columns:1fr; gap:36px; }
+    .section{ padding:96px 0; }
+  }
+
+  /* ---------- reduced motion ---------- */
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .hero h1 .w, .hero p.lede, .hero-cta, .frame, .reveal{ opacity:1 !important; transform:none !important; filter:none !important; animation:none !important; transition:none !important; }
+    .marquee-track, .ticker-track, .t-track, .case-track{ animation:none; }
+    .case-marquee{ overflow-x:auto; -webkit-mask:none; mask:none; }
+    .wf-bar{ animation:none; transform:scaleY(1); }
+    .frame-toast{ opacity:1; transform:none; }
+    *{ transition-duration:.01ms !important; animation-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap">
+    <h1>
+      <span class="w">Reim<i class="ai">a</i>g<i class="ai">i</i>ne</span>
+      <span class="w">Private</span>
+      <span class="w">Capital</span>
+      <span class="w">Markets</span>
+    </h1>
+    <p class="lede">
+      <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> is a full-stack intelligent technology platform powering private capital markets —
+      funds, portfolios, deals &amp; secondaries — with AI agents purpose-built for private markets.
+    </p>
+    <div class="hero-cta">
+      <!-- Straight to the one demo form on contact.html, anchored to the form
+           itself. It used to scroll to #contact on this page, which was where
+           the homepage's own shortened copy of the form lived. -->
+      <a class="btn btn-primary" href="contact.html#demo-request">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-outline" href="products.html">Explore the platform</a>
+    </div>
+  </div>
+
+  <!-- live product frame (illustrative data) -->
+  <div class="shot" aria-hidden="true">
+    <div class="frame">
+      <div class="frame-bar"><i></i><i></i><i></i></div>
+      <div class="frame-body">
+        <div class="frame-top">
+          <div class="frame-fund">Meridian Growth Fund III<small>VINTAGE 2024 · USD</small></div>
+        </div>
+        <div class="frame-cols">
+          <div class="frame-nav">
+            <div class="lab">Net Asset Value</div>
+            <div class="val" id="demoNav">US$ 412,386,905</div>
+            <div class="frame-stats">
+              <div class="frame-stat"><div class="v">24.6%</div><div class="k">NET IRR</div></div>
+              <div class="frame-stat"><div class="v">0.87x</div><div class="k">DPI</div></div>
+              <div class="frame-stat"><div class="v">1.94x</div><div class="k">TVPI</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="wf">
+              <div class="wf-col"><span class="wf-bar" style="bottom:0;height:64.9%"></span></div>
+              <div class="wf-col"><span class="wf-bar" style="bottom:64.9%;height:16.2%"></span></div>
+              <div class="wf-col"><span class="wf-bar" style="bottom:81.1%;height:8.1%"></span></div>
+              <div class="wf-col"><span class="wf-bar" style="bottom:89.2%;height:10.8%"></span></div>
+              <div class="wf-col total"><span class="wf-bar" style="bottom:0;height:100%"></span></div>
+            </div>
+            <div class="wf-labs"><span>RoC</span><span>Pref</span><span>Catch-up</span><span>Carry</span><span>Total</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="frame-toast" id="demoToast"><span class="ti">✓</span><span class="tt">Drawdown notice sent — 42 LPs</span></div>
+    </div>
+  </div>
+
+  <!-- ops ticker -->
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track" id="tickerTrack">
+      <span class="tick"><span class="st">✓</span><b>NAV computed</b> — Fund III</span>
+      <span class="tick"><span class="st">↑</span><b>Capital call reconciled</b> — US$ 4.2m</span>
+      <span class="tick"><span class="st">⟳</span><b>LP report generated</b> — Q2 2026</span>
+      <span class="tick"><span class="st">✓</span><b>Drawdown notice sent</b> — 42 LPs</span>
+      <span class="tick"><span class="st">✓</span><b>Distribution waterfall executed</b> — Fund II</span>
+      <span class="tick"><span class="st">↑</span><b>Secondary transfer settled</b> — US$ 12.8m</span>
+      <span class="tick"><span class="st">✓</span><b>KYC verified</b> — 7 new investors</span>
+      <span class="tick"><span class="st">✓</span><b>Multi Currency ratios computed</b> — USD</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CLIENTS ================= -->
+<section class="clients">
+  <p class="clients-label">Trusted by leading funds</p>
+  <div class="marquee" aria-label="Client logos">
+    <div class="marquee-track" id="marqueeTrack">
+      <span class="client">Advantage</span><span class="client">Ambit Arcadia</span><span class="client">Artha</span>
+      <span class="client">Fireside</span><span class="client">PeerCapital</span><span class="client">Pravega</span>
+      <span class="client">Rhapsody</span><span class="client">Sauce.vc</span>
+      <span class="client">Silicon Road Ventures</span><span class="client">True North</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRODUCTS (BENTO) ================= -->
+<section class="section" id="products">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Products</span>
+      <h2>One platform. Every workflow in <em>private markets.</em></h2>
+      <p>Capital flows in from LPs, through funds, into portfolios — and out through exits and secondaries. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs the full lifecycle end to end.</p>
+      <div class="tag-row" style="margin-top:22px">
+        <a class="tag" href="products.html">Platform overview →</a>
+        <a class="tag" href="who-we-serve.html">Who we serve</a>
+        <a class="tag" href="integrations.html">Data &amp; integrations</a>
+      </div>
+    </div>
+    <div class="story">
+      <div class="story-steps">
+        <div class="story-fill" id="storyFill" aria-hidden="true"></div>
+        <div class="step active" data-view="0">
+          <span class="tile-kicker">01 · Funds</span>
+          <h3>Funds</h3>
+          <p>Run the entire fund operations on one intelligent system of record.</p>
+          <p class="step-detail">Onboard investors with digital KYC and e-sign subscription packs, issue drawdown notices and distributions in clicks, and let the accounting engine truly automate computations, waterfalls and shadow books across multi-vehicle structures with no manual overlays.</p>
+          <div class="tag-group">
+            <h4>Investors</h4>
+            <div class="tag-row"><span class="tag">Onboarding</span><span class="tag">Engagement</span><span class="tag">Notifications</span></div>
+          </div>
+          <div class="tag-group">
+            <h4>Capital Management</h4>
+            <div class="tag-row"><span class="tag">Drawdowns</span><span class="tag">Distributions</span></div>
+          </div>
+          <div class="tag-group">
+            <h4>Fund Accounting</h4>
+            <div class="tag-row"><span class="tag">Computations &amp; statements</span><span class="tag">Waterfalls</span><span class="tag">Shadow books</span></div>
+          </div>
+          <div class="step-stats">
+            <div><strong>US$ 10<em>bn</em>+</strong><span>AUM administered</span></div>
+            <div><strong>4,000+</strong><span>investors managed</span></div>
+          </div>
+          <div class="tag-row" style="margin-top:26px">
+            <a class="tag" href="funds.html">Explore Funds →</a>
+          </div>
+        </div>
+        <div class="step" data-view="1">
+          <span class="tile-kicker">02 · Portfolios</span>
+          <h3>Portfolios</h3>
+          <p>Transform siloed portfolio records into an integrated portfolio intelligence system.</p>
+          <p class="step-detail">Collect company updates and documents, track performance against plan, and turn raw numbers into LP- and GP-ready reports — NAV bridges, IRR trends and variance flags included, without a single spreadsheet handoff.</p>
+          <div class="tag-row"><span class="tag">Portfolio management</span><span class="tag">Portfolio reporting</span><span class="tag">LP / GP reports</span></div>
+          <div class="step-stats">
+            <div><strong>Daily</strong><span>NAV &amp; position visibility</span></div>
+            <div><strong>Hours<em>,</em> not weeks</strong><span>close to LP report</span></div>
+          </div>
+          <div class="tag-row" style="margin-top:26px">
+            <a class="tag" href="portfolios.html">Explore Portfolios →</a>
+          </div>
+        </div>
+        <div class="step" data-view="2">
+          <span class="tile-kicker">03 · Deals &amp; Secondaries</span>
+          <h3>Deals &amp; Secondaries</h3>
+          <p>Source, analyse and execute multi-party transactions on one rail.</p>
+          <p class="step-detail">Move deals from pipeline to close with documents, diligence and approvals in one place — then execute co-investments, SPVs and fund or direct secondaries with every buyer, seller and signature coordinated on-platform.</p>
+          <div class="tag-row">
+            <span class="tag">Deal pipes &amp; documents</span><span class="tag">Co-investments / SPVs</span>
+            <span class="tag">Secondaries — funds &amp; direct</span><span class="tag">Deal management &amp; analysis</span>
+          </div>
+          <div class="step-stats">
+            <div><strong>US$ 500<em>m</em>+</strong><span>raised &amp; secondaries executed</span></div>
+            <div><strong>1,000+</strong><span>sellers &amp; investors</span></div>
+          </div>
+          <div class="tag-row" style="margin-top:26px">
+            <a class="tag" href="deals-secondaries.html">Explore Deals &amp; Secondaries →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="story-stage" aria-hidden="true">
+        <div class="stage">
+          <div class="frame-bar"><i></i><i></i><i></i></div>
+          <div class="stage-views">
+            <div class="view active">
+              <div class="frame-top">
+                <div class="frame-fund">Meridian Growth Fund III<small>VINTAGE 2024 · USD</small></div>
+              </div>
+              <div class="frame-nav" style="margin-top:18px">
+                <div class="lab">Net Asset Value</div>
+                <div class="val">US$ 412,386,905</div>
+              </div>
+              <div class="wf">
+                <div class="wf-col"><span class="wf-bar" style="bottom:0;height:64.9%"></span></div>
+                <div class="wf-col"><span class="wf-bar" style="bottom:64.9%;height:16.2%"></span></div>
+                <div class="wf-col"><span class="wf-bar" style="bottom:81.1%;height:8.1%"></span></div>
+                <div class="wf-col"><span class="wf-bar" style="bottom:89.2%;height:10.8%"></span></div>
+                <div class="wf-col total"><span class="wf-bar" style="bottom:0;height:100%"></span></div>
+              </div>
+              <div class="wf-labs"><span>RoC</span><span>Pref</span><span>Catch-up</span><span>Carry</span><span>Total</span></div>
+            </div>
+
+            <div class="view">
+              <div class="frame-top">
+                <div class="frame-fund">Portfolio · Fund III<small>24 COMPANIES · Q2 2026</small></div>
+              </div>
+              <div class="view-h" style="margin-top:18px">
+                <div class="frame-stat"><div class="v">1.94x</div><div class="k">TVPI</div></div>
+                <div class="frame-stat"><div class="v">24.6%</div><div class="k">NET IRR</div></div>
+                <div class="frame-stat"><div class="v">21 / 24</div><div class="k">ON PLAN</div></div>
+              </div>
+              <div class="pos"><span>Fintech · Series B</span><div class="pos-bar"><i style="width:86%"></i></div><span class="pos-val">2.4x</span></div>
+              <div class="pos"><span>SaaS · Series C</span><div class="pos-bar"><i style="width:74%"></i></div><span class="pos-val">1.9x</span></div>
+              <div class="pos"><span>Healthtech · Series A</span><div class="pos-bar"><i style="width:62%"></i></div><span class="pos-val">1.6x</span></div>
+              <div class="pos"><span>Climate · Series B</span><div class="pos-bar"><i style="width:47%"></i></div><span class="pos-val">1.2x</span></div>
+            </div>
+
+            <div class="view">
+              <div class="frame-top">
+                <div class="frame-fund">Deals &amp; Secondaries<small>PIPELINE · LIVE TRANSACTIONS</small></div>
+              </div>
+              <div style="margin-top:18px">
+                <div class="deal"><span>Secondary — direct</span><span class="amt">US$ 12.8m</span><span class="pill done">Settled</span></div>
+                <div class="deal"><span>Co-investment SPV</span><span class="amt">US$ 6.4m</span><span class="pill sign">Signed</span></div>
+                <div class="deal"><span>Fund secondary — LP stake</span><span class="amt">US$ 21.5m</span><span class="pill dil">Diligence</span></div>
+                <div class="deal"><span>Growth round — Series C</span><span class="amt">US$ 9.0m</span><span class="pill dil">Diligence</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AI AGENTS ================= -->
+<section class="section agents" id="about" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">AI Agents</span>
+      <h2>AI agents, <em>purpose-built</em> for private markets.</h2>
+      <p><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>'s AI agents seamlessly integrate to streamline and supercharge ongoing tasks — from onboarding and portfolio analysis to compliance checklists and querying structured and unstructured data. Watch them work.</p>
+    </div>
+    <div class="agent-tabs reveal" data-delay="1" role="tablist" aria-label="AI agents">
+      <button class="agent-tab active" type="button">Intelligent Onboarding</button>
+      <button class="agent-tab" type="button">Fund Assistant</button>
+      <button class="agent-tab" type="button">Portfolio Reporting</button>
+      <button class="agent-tab" type="button">Portfolio Analyst</button>
+      <button class="agent-tab" type="button">Compliance</button>
+    </div>
+    <div class="chat reveal" data-delay="2">
+      <div class="chat-head"><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Assistant<span class="chat-sub">connected to your fund data</span></div>
+      <div class="chat-body" id="chatBody" aria-live="polite"></div>
+    </div>
+    <div class="reveal" data-delay="3" style="display:flex;justify-content:center;margin-top:36px">
+      <a class="btn btn-outline" href="ai-agents.html">
+        How the agents work
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= METRICS ================= -->
+<section class="metrics">
+  <div class="wrap">
+    <div class="metrics-grid">
+      <div class="metric reveal">
+        <div class="num"><span class="cur">US$</span><span class="odo" data-value="10">10</span><span class="unit">bn</span><span class="suffix">+</span></div>
+        <div class="label">AUM managed on the platform</div>
+      </div>
+      <div class="metric reveal" data-delay="1">
+        <div class="num"><span class="cur">US$</span><span class="odo" data-value="500">500</span><span class="unit">m</span><span class="suffix">+</span></div>
+        <div class="label">Capital raised &amp; secondaries</div>
+      </div>
+      <div class="metric reveal" data-delay="2">
+        <div class="num"><span class="odo" data-value="4000">4,000</span><span class="suffix">+</span></div>
+        <div class="label">Investors managed</div>
+      </div>
+      <div class="metric reveal" data-delay="3">
+        <div class="num"><span class="odo" data-value="1000">1,000</span><span class="suffix">+</span></div>
+        <div class="label">Sellers &amp; investors in transactions</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRUST ================= -->
+<!-- TODO: verify every claim below against your actual certifications & security posture before launch -->
+<section class="trust" aria-label="Security and compliance">
+  <div class="wrap">
+    <div class="trust-row">
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SOC 2 Type II</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>AES-256 at rest · TLS 1.3 in transit</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>ISO 27001:2022</div>
+      <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="#FF4D00" stroke-width="1.7" stroke-linejoin="round"/></svg>SSO / OAuth &amp; full audit logs</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CASE STUDIES ================= -->
+<section class="section cases">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div>
+        <span class="chip-label">Case Studies</span>
+        <h2>Built on real <em>fund operations.</em></h2>
+      </div>
+      <a class="btn btn-outline" href="case-studies.html">
+        All case studies
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
+  <!-- TODO: outcome figures below are illustrative — replace with your real case-study numbers -->
+  <div class="case-marquee">
+    <div class="case-track" id="caseTrack">
+      <a class="case" href="case-studies.html">
+        <div><span class="case-tag">Funds</span><h3>Investor onboarding</h3>
+        <div class="case-out">3 weeks → 2 days<small>onboarding time</small></div></div>
+        <div class="case-foot"><span class="case-arrow"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+      </a>
+      <a class="case" href="case-studies.html">
+        <div><span class="case-tag">Portfolios</span><h3>Portfolio reports</h3>
+        <div class="case-out">Hours, not weeks<small>quarterly reporting cycle</small></div></div>
+        <div class="case-foot"><span class="case-arrow"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+      </a>
+      <a class="case" href="case-studies.html">
+        <div><span class="case-tag">Funds</span><h3>Capital drawdowns</h3>
+        <div class="case-out">42 LPs, one click<small>drawdown notices</small></div></div>
+        <div class="case-foot"><span class="case-arrow"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+      </a>
+      <a class="case" href="case-studies.html">
+        <div><span class="case-tag">Fund Accounting</span><h3>Multi-currency computations &amp; reporting</h3>
+        <div class="case-out">EUR + USD, one close<small>dual-ledger books</small></div></div>
+        <div class="case-foot"><span class="case-arrow"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+      </a>
+      <a class="case" href="case-studies.html">
+        <div><span class="case-tag">Fund Accounting</span><h3>Investor statements</h3>
+        <div class="case-out">100% automated<small>statement generation</small></div></div>
+        <div class="case-foot"><span class="case-arrow"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+      </a>
+      <a class="case" href="case-studies.html">
+        <div><span class="case-tag">Secondaries</span><h3>Supercharging multi-party transactions</h3>
+        <div class="case-out">US$ 12.8m settled<small>40+ sellers, one flow</small></div></div>
+        <div class="case-foot"><span class="case-arrow"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TESTIMONIALS ================= -->
+<!-- Hidden until real client quotes are ready: the names below are design placeholders from the old site. Remove the `hidden` attribute to show the section. -->
+<section class="section testis" style="padding-top:0" hidden>
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Testimonials</span>
+      <h2>What teams say about <em><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>.</em></h2>
+    </div>
+  </div>
+  <!-- TODO: placeholder quotes/names carried over from the current site — swap in real client testimonials -->
+  <div class="t-marquee">
+    <div class="t-track" id="tTrack">
+      <figure class="quote">
+        <p>It's incredible — it's really wonderful. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> has completely surpassed our expectations.</p>
+        <figcaption class="quote-who">
+          <span class="avatar">TW</span>
+          <span><strong>Theresa Webb</strong><span>Web Developer</span></span>
+        </figcaption>
+      </figure>
+      <figure class="quote">
+        <p>It's incredible — it's really wonderful. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> has completely surpassed our expectations.</p>
+        <figcaption class="quote-who">
+          <span class="avatar">AM</span>
+          <span><strong>Arlene McCoy</strong><span>UX Designer</span></span>
+        </figcaption>
+      </figure>
+      <figure class="quote">
+        <p>It's incredible — it's really wonderful. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> has completely surpassed our expectations.</p>
+        <figcaption class="quote-who">
+          <span class="avatar">EH</span>
+          <span><strong>Esther Howard</strong><span>Product Designer</span></span>
+        </figcaption>
+      </figure>
+      <figure class="quote">
+        <p>It's incredible — it's really wonderful. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> has completely surpassed our expectations.</p>
+        <figcaption class="quote-who">
+          <span class="avatar">BS</span>
+          <span><strong>Brooklyn Simmon</strong><span>CEO, Bribbble LLC</span></span>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ================= INSIGHTS ================= -->
+<section class="section" id="insights" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Resources</span>
+      <h2>Insights from <em>the hive.</em></h2>
+      <p>Writing on fund operations, AI and private markets.</p>
+      <div class="tag-row" style="margin-top:22px">
+        <a class="tag" href="blog.html">All insights →</a>
+        <a class="tag" href="faq.html">FAQ</a>
+        <a class="tag" href="security.html">Security &amp; Trust</a>
+        <a class="tag" href="pricing.html">Pricing</a>
+      </div>
+    </div>
+    <!-- Curated order: strongest institutional pieces first -->
+    <!-- TODO: article pages are not built yet — each link below is href="#".
+         Point them at blog/<slug>.html once the blog exists. -->
+    <div class="articles reveal" data-delay="1">
+      <a class="article" href="operational-alpha.html">
+        <time datetime="2026-03-31">Mar 31, 2026</time>
+        <h3>Operational alpha: the game changer AIFs can't ignore</h3>
+        <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="article" href="ai-is-ready.html">
+        <time datetime="2026-03-31">Mar 31, 2026</time>
+        <h3>AI is ready — but are you?</h3>
+        <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="article" href="portfolio-real-time-insight.html">
+        <time datetime="2026-03-31">Mar 31, 2026</time>
+        <h3>Portfolio management: shift from reporting to real-time insight</h3>
+        <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="article" href="ai-agent-infrastructure.html">
+        <time datetime="2026-06-29">Jun 29, 2026</time>
+        <h3>The infrastructure to get your AI agents to deliver</h3>
+        <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="article" href="ai-and-fifa-2026.html">
+        <time datetime="2026-06-30">Jun 30, 2026</time>
+        <h3>Yes, AI is transforming FIFA 2026 as well!</h3>
+        <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="article" href="tech-powered-portfolio-management-vc.html">
+        <time datetime="2023-08-20">Aug 20, 2023</time>
+        <h3>The imperative for tech-powered portfolio management for VC</h3>
+        <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<!-- There is exactly ONE demo form on the site, on contact.html. The homepage used
+     to carry a shortened copy of it (name / firm / email only) with its own handler
+     in _partials/index_scripts.html; both are gone. Two forms meant two field sets,
+     two handlers and two things to keep in step — and the short one collected less
+     about the prospect than the reply needs. This CTA now sends the visitor to the
+     real form, anchored so it is the first thing they land on.
+     See docs/technical/website_lead_capture.md. -->
+<section class="cta" id="contact">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <!-- #demo-request is the form's own id on contact.html. -->
+      <a class="btn btn-white" href="contact.html#demo-request">
+        Book my demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="contact.html">All ways to reach us</a>
+    </div>
+    <!-- Cycled by the CTA_STATS rotator in _partials/index_scripts.html. -->
+    <div class="cta-stats" id="ctaStat" style="justify-content:center">US$ 10bn+ AUM managed — and counting</div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script>
+(function(){
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePointer = window.matchMedia('(pointer: fine)').matches;
+
+  /* ---- nav shadow on scroll ---- */
+  var nav = document.getElementById('nav');
+  function onScroll(){ nav.classList.toggle('scrolled', window.scrollY > 24); }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  /* ---- mobile menu ---- */
+  var toggle = document.getElementById('navToggle');
+  var menu = document.getElementById('mobileMenu');
+  toggle.addEventListener('click', function(){
+    var open = menu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open);
+  });
+  menu.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){ menu.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); });
+  });
+
+  /* ---- duplicate marquee / ticker / testimonial tracks ---- */
+  ['marqueeTrack','tickerTrack','tTrack','caseTrack'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.innerHTML += el.innerHTML;
+  });
+
+  /* ---- scroll reveal (blur-fade) ---- */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold:0.12, rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  /* ---- odometer metrics ---- */
+  function buildOdo(el){
+    var str = Number(el.dataset.value).toLocaleString('en-US');
+    el.textContent = '';
+    str.split('').forEach(function(ch){
+      if(ch >= '0' && ch <= '9'){
+        var d = document.createElement('span'); d.className = 'odo-digit';
+        var reel = document.createElement('span'); reel.className = 'odo-reel';
+        reel.dataset.digit = ch;
+        for(var k = 0; k < 10; k++){
+          var s = document.createElement('span'); s.textContent = k; reel.appendChild(s);
+        }
+        d.appendChild(reel); el.appendChild(d);
+      } else {
+        var sep = document.createElement('span'); sep.textContent = ch; el.appendChild(sep);
+      }
+    });
+  }
+  var odos = [].slice.call(document.querySelectorAll('.odo'));
+  odos.forEach(buildOdo);
+  var oio = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      oio.unobserve(e.target);
+      var reels = e.target.querySelectorAll('.odo-reel');
+      reels.forEach(function(r, i){
+        r.style.transitionDelay = (i * 110) + 'ms';
+        requestAnimationFrame(function(){
+          r.style.transform = 'translateY(-' + r.dataset.digit + 'em)';
+        });
+      });
+    });
+  }, {threshold:0.6});
+  odos.forEach(function(el){ oio.observe(el); });
+
+  /* ---- dashboard: NAV ticking ---- */
+  var navVal = 412386905;
+  var demoNav = document.getElementById('demoNav');
+  if(demoNav && !reduced){
+    setInterval(function(){
+      navVal += 1200 + Math.floor(Math.random() * 8600);
+      demoNav.textContent = 'US$ ' + navVal.toLocaleString('en-US');
+    }, 2600);
+  }
+
+  /* ---- dashboard: activity toasts ---- */
+  var toastEl = document.getElementById('demoToast');
+  var toastMsgs = [
+    'Drawdown notice sent — 42 LPs',
+    'Q2 LP report generated — Fund III',
+    'Secondary transfer settled — US$ 12.8m',
+    'Distribution waterfall executed — Fund II'
+  ];
+  if(toastEl){
+    var toastText = toastEl.querySelector('.tt');
+    if(reduced){
+      toastEl.classList.add('show');
+    } else {
+      var ti = 0;
+      var showToast = function(){
+        toastText.textContent = toastMsgs[ti % toastMsgs.length]; ti++;
+        toastEl.classList.add('show');
+        setTimeout(function(){ toastEl.classList.remove('show'); }, 3400);
+      };
+      setTimeout(function(){ showToast(); setInterval(showToast, 4800); }, 2600);
+    }
+  }
+
+  /* ---- magnetic primary buttons ---- */
+  if(finePointer && !reduced){
+    [].slice.call(document.querySelectorAll('.btn-primary, .btn-white, .btn-dark')).forEach(function(b){
+      b.addEventListener('mousemove', function(e){
+        var r = b.getBoundingClientRect();
+        var mx = (e.clientX - r.left - r.width/2) * 0.22;
+        var my = (e.clientY - r.top - r.height/2) * 0.35;
+        b.style.transform = 'translate(' + mx + 'px,' + my + 'px)';
+      });
+      b.addEventListener('mouseleave', function(){ b.style.transform = ''; });
+    });
+  }
+
+  /* ---- product story: one scroll driver syncs steps, rail and dashboard ---- */
+  var steps = [].slice.call(document.querySelectorAll('.step'));
+  var views = [].slice.call(document.querySelectorAll('.view'));
+  var storyFill = document.getElementById('storyFill');
+  var storySteps = document.querySelector('.story-steps');
+  var storyIdx = -1;
+  function setStory(i){
+    if(i === storyIdx) return;
+    storyIdx = i;
+    steps.forEach(function(s, j){ s.classList.toggle('active', j === i); });
+    views.forEach(function(v, j){ v.classList.toggle('active', j === i); });
+  }
+  function updateStory(){
+    var mid = window.innerHeight * 0.5;
+    /* active step = the one whose center is closest to the viewport center */
+    var best = 0, bestDist = Infinity;
+    steps.forEach(function(s, j){
+      var r = s.getBoundingClientRect();
+      var d = Math.abs(r.top + r.height / 2 - mid);
+      if(d < bestDist){ bestDist = d; best = j; }
+    });
+    setStory(best);
+    if(storyFill && storySteps){
+      var wr = storySteps.getBoundingClientRect();
+      var p = Math.max(0, Math.min(1, (mid - wr.top) / wr.height));
+      storyFill.style.transform = 'scaleY(' + p + ')';
+    }
+  }
+  if(steps.length && views.length){
+    window.addEventListener('scroll', updateStory, {passive:true});
+    window.addEventListener('resize', updateStory);
+    updateStory();
+  }
+
+  /* The homepage renders THIS file instead of the shared assets/js/caphive.js,
+     so anything the homepage needs from the shared bundle has to exist here too. */
+  var CFG = window.CAPHIVE || {};
+
+  /* There is no demo form on the homepage any more — the CTA links to the single
+     form on contact.html, which assets/js/caphive.js handles. The duplicate
+     handler that used to live here is gone with it: two copies of the submit
+     logic was one copy too many to keep in step.
+     See docs/technical/website_lead_capture.md. */
+
+  /* ---- booking link ----
+     Mirrors the booking block in assets/js/caphive.js, and it has to exist here
+     for the same reason the form handler does: the homepage renders this file
+     INSTEAD of caphive.js.
+
+     Without this the header CTA carries data-booking-cta (it comes from the
+     shared _partials/nav.html.erb, which every page uses) but nothing would ever
+     rewrite it — so the booking link would go live on all 63 other pages and
+     silently keep pointing at the contact form on the busiest one. */
+  (function(){
+    var url = CFG.bookingUrl || '';
+    document.querySelectorAll('[data-booking]').forEach(function(el){
+      if(!url){ el.hidden = true; el.style.display = 'none'; return; }
+      el.hidden = false;
+      el.style.removeProperty('display');
+      if(el.tagName === 'A') el.href = url;
+    });
+    if(url){
+      document.querySelectorAll('[data-booking-cta]').forEach(function(el){ el.href = url; });
+    }
+  }());
+
+  /* ---- CTA rotating proof line ---- */
+  var CTA_STATS = [
+    'US$ 10bn+ AUM managed — and counting',
+    '4,000+ investors managed',
+    'US$ 500m+ raised & secondaries executed',
+    '1,000+ sellers & investors transacted'
+  ];
+  var ctaStat = document.getElementById('ctaStat');
+  if(ctaStat && !reduced){
+    var csi = 0;
+    setInterval(function(){
+      csi = (csi + 1) % CTA_STATS.length;
+      ctaStat.classList.add('fade');
+      setTimeout(function(){ ctaStat.textContent = CTA_STATS[csi]; ctaStat.classList.remove('fade'); }, 300);
+    }, 3400);
+  }
+
+  /* ---- AI agent chat demo ---- */
+  var SCRIPTS = [
+    { q: "Onboard Meridian Family Office to Fund III.",
+      a: "Started. KYC documents requested and the subscription pack is out for e-sign — 2 of 9 checks already cleared. I'll flag you when wire details are verified.",
+      chip: "Onboarding · Fund III checklist" },
+    { q: "What's Fund II's DPI after the March distribution?",
+      a: "DPI is 0.87x, up from 0.74x. The March distribution returned US$ 18.4m across 61 LPs — pref is fully paid, carry accrual starts next quarter.",
+      chip: "Fund II · Distribution ledger" },
+    { q: "Draft the Q2 LP report for Fund III.",
+      a: "Done — 24 portfolio updates pulled in, NAV bridge and TVPI trend included. Two companies reported unaudited numbers; both are flagged for review.",
+      chip: "Fund III · Q2 report draft" },
+    { q: "Which positions missed plan this quarter?",
+      a: "3 of 24. The widest variance is a Series B position at −12% ARR against plan. The full variance table is ready to open.",
+      chip: "Portfolio · Variance analysis" },
+    { q: "Are we ready for the quarterly fund filings?",
+      a: "11 of 12 checks complete. The fund size and NAV is missing for Fund III. The filing pack is otherwise assembled.",
+      chip: "Compliance · Quarterly report" }
+  ];
+  var chatBody = document.getElementById('chatBody');
+  var agentTabs = [].slice.call(document.querySelectorAll('.agent-tab'));
+  var chatGen = 0, chatStarted = false;
+
+  function setActive(i){
+    agentTabs.forEach(function(t, j){ t.classList.toggle('active', i === j); });
+  }
+  function wait(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+  async function typeInto(el, text, speed, g){
+    for(var i = 0; i < text.length; i++){
+      if(g !== chatGen) return false;
+      el.textContent += text.charAt(i);
+      await wait(speed);
+    }
+    return true;
+  }
+  async function playScript(i){
+    chatGen++; var g = chatGen;
+    setActive(i);
+    chatBody.innerHTML = '';
+    var s = SCRIPTS[i];
+    var u = document.createElement('div'); u.className = 'msg user typing-cursor';
+    chatBody.appendChild(u);
+    if(!await typeInto(u, s.q, 26, g)) return;
+    u.classList.remove('typing-cursor');
+    var t = document.createElement('div'); t.className = 'msg ai';
+    t.innerHTML = '<span class="typing-dots"><i></i><i></i><i></i></span>';
+    chatBody.appendChild(t);
+    await wait(950); if(g !== chatGen) return;
+    t.innerHTML = ''; t.classList.add('typing-cursor');
+    if(!await typeInto(t, s.a, 13, g)) return;
+    t.classList.remove('typing-cursor');
+    var c = document.createElement('span'); c.className = 'chip'; c.textContent = s.chip;
+    t.appendChild(document.createElement('br'));
+    t.appendChild(c);
+    await wait(4000); if(g !== chatGen) return;
+    playScript((i + 1) % SCRIPTS.length);
+  }
+  function renderStatic(i){
+    chatGen++;
+    setActive(i);
+    chatBody.innerHTML = '';
+    var s = SCRIPTS[i];
+    var u = document.createElement('div'); u.className = 'msg user'; u.textContent = s.q;
+    var t = document.createElement('div'); t.className = 'msg ai'; t.textContent = s.a;
+    var c = document.createElement('span'); c.className = 'chip'; c.textContent = s.chip;
+    t.appendChild(document.createElement('br'));
+    t.appendChild(c);
+    chatBody.appendChild(u); chatBody.appendChild(t);
+  }
+  agentTabs.forEach(function(t, i){
+    t.addEventListener('click', function(){
+      if(reduced){ renderStatic(i); } else { playScript(i); }
+    });
+  });
+  if(reduced){
+    renderStatic(0);
+  } else {
+    var chatIO = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting && !chatStarted){
+          chatStarted = true; playScript(0); chatIO.disconnect();
+        }
+      });
+    }, {threshold:0.35});
+    chatIO.observe(document.querySelector('.chat'));
+  }
+})();
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "CapHive",
+  "url": "https://caphive.com",
+  "email": "hello@caphive.com",
+  "description": "Full-stack intelligent technology platform for powering private capital markets — funds, portfolios, deals & secondaries.",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel",
+    "addressLocality": "Mumbai",
+    "postalCode": "400013",
+    "addressCountry": "IN"
+  }
+}
+</script>
+</body>
+</html>

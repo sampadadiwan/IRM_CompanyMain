@@ -39,7 +39,7 @@
 
   <div class="form-group">
     <%= form.label :rag_status %>
-    <%= form.select :rag_status, %w[green yellow red], { include_blank: true }, class: "form-control" %>
+    <%= form.select :rag_status, %w[green amber red], { include_blank: true }, class: "form-control" %>
   </div>
 
   <%= custom_form_fields(kpi, form) %>

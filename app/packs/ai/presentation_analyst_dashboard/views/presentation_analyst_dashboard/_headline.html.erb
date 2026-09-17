@@ -1,0 +1,180 @@
+<%# Headline strip — the single figure the FM checks before a board week. Three
+    parts: the portfolio accountability score with its movement, a stacked
+    share-of-portfolio bar, and how many companies need a board conversation. %>
+<%
+  selection       = presenter.reports_for_filter(status_filter)
+  filtered        = status_filter.present?
+  portfolio_score = presenter.headline_score
+
+  unanalyzed_view = status_filter == PresentationAnalystPresenter::NOT_ANALYZED[:slug]
+  selection_size  = unanalyzed_view ? presenter.not_analyzed_count : selection.size
+
+  headline        = filtered ? presenter.average_score_of(selection) : portfolio_score
+  headline_tier   = presenter.tier_for(headline)
+  delta           = filtered ? presenter.average_delta_of(selection) : presenter.headline_delta
+  compared_count  = filtered ? selection.count { |r| presenter.delta_for(r) } : presenter.comparable_count
+
+  followup_count  = filtered ? selection_size : presenter.companies_needing_followup_count
+%>
+<div class="card sd-hero mb-3 <%= headline_tier ? "sd-tier--#{headline_tier}" : "sd-tier--not_analyzed" %>">
+  <div class="card-body">
+    <div class="row g-4 align-items-center">
+
+      <%# ── Portfolio accountability score ──────────────────────────────── %>
+      <div class="col-md-5">
+        <div class="d-flex align-items-center gap-3">
+          <div class="sd-hero-score">
+            <b><%= unanalyzed_view ? selection_size : (headline || "—") %></b>
+            <small>
+              <% if unanalyzed_view %>
+                companies
+              <% elsif filtered %>
+                avg of <%= selection_size %>
+              <% else %>
+                avg of <%= presenter.scored_reports.size %> analyzed
+              <% end %>
+            </small>
+          </div>
+
+          <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="sd-hero-title"
+                    data-bs-toggle="tooltip"
+                    title="<%= filtered ?
+                              "Mean score of the #{selection.size} selected #{'company'.pluralize(selection.size)}." :
+                              "Mean of every company's 0-100 Management Accountability Score, across the #{presenter.scored_reports.size} analyzed. The #{presenter.not_analyzed_count} not-analyzed #{'company'.pluralize(presenter.not_analyzed_count)} are excluded." %>">
+                <%= filtered ? presenter.filter_label(status_filter) : "Portfolio Accountability" %>
+              </span>
+              <% if filtered %>
+                <%= link_to presentation_dashboard_path_with(status: nil),
+                      class: "sd-clear text-decoration-none", data: { turbo: false },
+                      "data-bs-toggle": "tooltip",
+                      title: "Clear the filter and show the whole portfolio" do %>
+                  <i class="ti ti-x"></i> Clear filter
+                <% end %>
+              <% end %>
+              <% if headline && !unanalyzed_view %>
+                <span class="badge sd-solid"
+                      data-bs-toggle="tooltip"
+                      title="Grade band for the portfolio score. Bands come from the 0-100 score, not from any report's grade text.">
+                  <i class="ti <%= presenter.tier_meta(headline_tier.to_s)[:icon] %>"></i>
+                  <%= presenter.band_for(headline) %>
+                </span>
+              <% end %>
+            </div>
+
+            <div class="mt-1">
+              <% if unanalyzed_view %>
+                <% b = presenter.not_analyzed_breakdown %>
+                <small class="text-muted">
+                  <%= [("#{b[:blocked]} found nothing to analyze" if b[:blocked].positive?),
+                       ("#{b[:never_run]} never run" if b[:never_run].positive?)].compact.join(" · ") %>
+                </small>
+              <% elsif delta.nil? %>
+                <small class="text-muted"
+                       data-bs-toggle="tooltip"
+                       title="Movement needs a second analysis run to compare against.">
+                  <i class="ti ti-minus"></i> No prior run to compare
+                </small>
+              <% else %>
+                <% delta_color = delta.positive? ? "success" : (delta.negative? ? "danger" : "secondary") %>
+                <span class="badge bg-<%= delta_color %>-subtle text-<%= delta_color %>"
+                      data-bs-toggle="tooltip"
+                      title="Average score change per company, across the <%= compared_count %> <%= filtered ? 'selected companies' : 'companies' %> that have a previous run.">
+                  <i class="ti ti-<%= delta.positive? ? 'arrow-up' : (delta.negative? ? 'arrow-down' : 'minus') %>"></i>
+                  <%= delta.positive? ? "+" : "" %><%= delta %> avg
+                </span>
+                <small class="text-muted ms-1">since last run</small>
+              <% end %>
+            </div>
+
+            <% if !filtered && presenter.not_analyzed_count.positive? %>
+              <small class="text-muted d-block mt-1">
+                Excludes
+                <%= link_to presentation_dashboard_path_with(status: "not_analyzed"),
+                      class: "text-decoration-underline", data: { turbo: false } do %><%= presenter.not_analyzed_count %> not analyzed<% end %>
+                of <%= presenter.total_companies %> companies
+              </small>
+            <% end %>
+
+            <% if filtered && portfolio_score && !unanalyzed_view %>
+              <small class="text-muted d-block mt-1">
+                Whole portfolio: <strong><%= portfolio_score %></strong>
+                across <%= presenter.total_companies %> companies
+              </small>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# ── Stacked share bar ───────────────────────────────────────────── %>
+      <div class="col-md-4">
+        <div class="d-flex justify-content-between align-items-baseline mb-1">
+          <small class="text-muted fw-semibold">
+            Share of portfolio
+            <i class="ti ti-info-circle" data-bs-toggle="tooltip" title="Every portfolio company, by accountability tier."></i>
+          </small>
+          <small class="text-muted">
+            <%= presenter.total_companies %> <%= "company".pluralize(presenter.total_companies) %>
+          </small>
+        </div>
+
+        <div class="progress sd-share">
+          <% PresentationAnalystPresenter::TIERS.each do |tier| %>
+            <% share = presenter.share_for_tier(tier[:slug]) %>
+            <% next if share.zero? %>
+            <div class="progress-bar sd-tier--<%= tier[:slug] %> <%= "is-dimmed" if filtered && status_filter != tier[:slug] %>"
+                 style="width: <%= share %>%;"
+                 data-bs-toggle="tooltip"
+                 title="<%= presenter.label_for(tier[:slug]) %> — <%= presenter.counts_by_tier[tier[:slug]] %> companies, <%= share %>%">
+              <% if share >= 10 %><%= share.round %>%<% end %>
+            </div>
+          <% end %>
+          <% not_analyzed_share = presenter.share_for_not_analyzed %>
+          <% if not_analyzed_share.positive? %>
+            <div class="progress-bar sd-tier--not_analyzed <%= "is-dimmed" if filtered && status_filter != "not_analyzed" %>"
+                 style="width: <%= not_analyzed_share %>%;"
+                 data-bs-toggle="tooltip"
+                 title="Not Analyzed — <%= presenter.not_analyzed_count %> companies, <%= not_analyzed_share %>% of portfolio">
+            </div>
+          <% end %>
+        </div>
+
+        <div class="d-flex flex-wrap gap-3 mt-2">
+          <% PresentationAnalystPresenter::TIERS.each do |tier| %>
+            <small class="text-muted d-flex align-items-center gap-2 sd-tier--<%= tier[:slug] %>">
+              <span class="sd-legend-dot"></span>
+              <%= tier[:label] %>
+            </small>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Companies needing a board conversation ──────────────────────── %>
+      <div class="col-md-3">
+        <div class="border-start ps-3 h-100">
+          <small class="text-muted d-block">
+            <%= filtered ? "Selected" : "Needs board follow-up" %>
+            <i class="ti ti-info-circle" data-bs-toggle="tooltip"
+               title="Companies on the Watch or At Risk accountability tier — the ones worth a direct question at the next board meeting."></i>
+          </small>
+          <div class="sd-hero-figure"><%= followup_count %></div>
+          <%= link_to presentation_dashboard_path_with(status: "watch"),
+                class: "text-decoration-none", data: { turbo: false } do %>
+            <span class="badge bg-warning-subtle text-warning">
+              <i class="ti ti-eye"></i> <%= presenter.counts_by_tier["watch"] %> watch
+            </span>
+          <% end %>
+          <%= link_to presentation_dashboard_path_with(status: "at_risk"),
+                class: "text-decoration-none", data: { turbo: false } do %>
+            <span class="badge bg-danger-subtle text-danger">
+              <i class="ti ti-alert-triangle"></i> <%= presenter.counts_by_tier["at_risk"] %> at risk
+            </span>
+          <% end %>
+          <small class="text-muted d-block mt-1"><%= followup_count %> of <%= presenter.total_companies %> companies</small>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

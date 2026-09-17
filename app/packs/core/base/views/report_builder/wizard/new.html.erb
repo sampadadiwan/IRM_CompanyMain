@@ -1,0 +1,90 @@
+<% content_for :title, "Guided Report Wizard" %>
+
+<div class="wizard-shell container-fluid mw-100 px-3 px-lg-5 py-4" data-controller="tooltip">
+  <div class="text-center mb-5">
+    <div class="wizard-hero-icon mx-auto mb-3 d-flex align-items-center justify-content-center">
+      <i class="ti ti-wand"></i>
+    </div>
+    <h3 class="fw-bolder mb-2">Let's build your report together</h3>
+    <p class="text-muted mb-0" style="max-width: 640px; margin: 0 auto">
+      Answer a few simple questions and we'll set everything up for you — columns, related data,
+      totals, filters. You can fine-tune anything afterwards, and nothing here is permanent.
+    </p>
+  </div>
+
+  <%= form_tag wizard_report_builder_create_path, method: :post, class: "wizard-new-form" do %>
+
+    <div class="wizard-panel-card mb-4 mx-auto" style="max-width: 640px">
+      <div class="wizard-panel-card-header d-flex align-items-center gap-2">
+        <span class="wizard-card-icon"><i class="ti ti-tag"></i></span>
+        <h6 class="mb-0 fw-bold">Name your report</h6>
+      </div>
+      <div class="p-4">
+        <label class="form-label fw-bold d-flex align-items-center gap-1">
+          What should we call this report?
+          <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top"
+             title="Just a name to find it again later — you can rename it any time."></i>
+        </label>
+        <input type="text" name="name" class="form-control form-control-lg"
+               placeholder="e.g. Investor Commitment Summary" required autofocus>
+      </div>
+    </div>
+
+    <div class="wizard-panel-card mb-4 mx-auto" style="max-width: 640px">
+      <div class="wizard-panel-card-header d-flex align-items-center gap-2">
+        <span class="wizard-card-icon"><i class="ti ti-database"></i></span>
+        <h6 class="mb-0 fw-bold">Choose a starting point</h6>
+      </div>
+      <div class="p-4">
+        <label class="form-label fw-bold d-flex align-items-center gap-1" for="wizard_root_model_select">
+          What do you want to report on?
+          <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top"
+             title="This is the main list of records your report starts from — like the rows in a spreadsheet before you add anything else. Pick whichever one is closest to what you're trying to answer."></i>
+        </label>
+
+        <select name="root_model" id="wizard_root_model_select" class="form-select form-select-lg" required
+                onchange="
+                  var opt = this.options[this.selectedIndex];
+                  var box = document.getElementById('wizard_root_model_hint');
+                  var icon = document.getElementById('wizard_root_model_hint_icon');
+                  var example = opt.dataset.example;
+                  icon.className = 'ti ' + (opt.dataset.icon || 'ti-table') + ' me-1';
+                  if (example) {
+                    box.querySelector('span').textContent = example;
+                    box.classList.remove('d-none');
+                  } else {
+                    box.classList.add('d-none');
+                  }
+                ">
+          <option value="" disabled selected>— Select —</option>
+          <% @root_models.sort_by(&:first).each do |pack, models| %>
+            <optgroup label="<%= pack %>">
+              <% models.sort_by(&:name).each do |m| %>
+                <option value="<%= m.name %>"
+                        data-icon="<%= wizard_icon_for(m.name) %>"
+                        data-example="<%= wizard_example_for(m.name) %>">
+                  <%= wizard_model_label(m.name) %>
+                </option>
+              <% end %>
+            </optgroup>
+          <% end %>
+        </select>
+
+        <div id="wizard_root_model_hint" class="wizard-help-example mt-3 small d-none">
+          <i id="wizard_root_model_hint_icon" class="ti ti-table me-1"></i><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center mt-4 pt-2">
+      <button type="submit" class="btn btn-wizard-accent btn-lg d-flex align-items-center gap-2 px-5 shadow-sm">
+        Start Building <i class="ti ti-arrow-right"></i>
+      </button>
+    </div>
+    <div class="text-center mt-3">
+      <%= link_to new_report_builder_path, class: "text-muted small" do %>
+        Prefer the advanced builder instead? <span class="fw-bold">Switch here</span>
+      <% end %>
+    </div>
+  <% end %>
+</div>

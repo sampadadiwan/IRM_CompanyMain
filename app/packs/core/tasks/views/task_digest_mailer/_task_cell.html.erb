@@ -1,0 +1,11 @@
+<%#
+  The first column of a digest row: the task title as a link, then the owner and
+  assignee, then the task's note if it has one. Three lines of decreasing weight so
+  the eye lands on the title first.
+  locals: task, digest, neutral
+%>
+<a href="<%= digest_task_url(task, digest.entity) %>" style="color:<%= EmailStyleHelper::SA_LIGHT[:info][:text] %>;text-decoration:none;font-weight:500;font-size:12.5px;line-height:1.45"><%= digest_task_label(task) %></a>
+<div style="font-size:11px;color:<%= neutral[:faint] %>;margin-top:4px;line-height:1.45"><%= digest_task_meta(task) %></div>
+<% if (note = digest_task_note(task)) %>
+  <div style="font-size:11px;color:<%= neutral[:muted] %>;margin-top:5px;line-height:1.5;padding-left:9px;border-left:2px solid <%= neutral[:rule] %>"><%= note %></div>
+<% end %>

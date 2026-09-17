@@ -577,6 +577,38 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   expect(page).to have_content("successfully")
 end
 
+Given('I fill the kyc form') do
+  @temp_kyc = FactoryBot.build(:investor_kyc, entity: @entity)
+  class_name = @investor_kyc.type_from_kyc_type.underscore
+
+  page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+    within '#custom_file_upload_pan_tax_id' do
+      click_on 'Choose file'
+    end
+  end
+  sleep(2)
+
+  fill_in("#{class_name}_full_name", with: @temp_kyc.full_name)
+  fill_in("#{class_name}_PAN", with: @temp_kyc.PAN)
+  fill_in("#{class_name}_birth_date", with: @temp_kyc.birth_date)
+  click_on("Next")
+
+  page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+    within '#custom_file_upload_address_proof' do
+      click_on 'Choose file'
+    end
+  end
+  sleep(2)
+
+  fill_in("#{class_name}_address", with: @temp_kyc.address)
+  fill_in("#{class_name}_corr_address", with: @temp_kyc.corr_address)
+  fill_in("#{class_name}_bank_name", with: @temp_kyc.bank_name)
+  fill_in("#{class_name}_bank_branch", with: @temp_kyc.bank_branch)
+  fill_in("#{class_name}_bank_account_number", with: @temp_kyc.bank_account_number)
+  fill_in("#{class_name}_ifsc_code", with: @temp_kyc.ifsc_code)
+  click_on("Next")
+end
+
 Then('I should see the kyc documents {string}') do |docs|
   @investor_kyc = InvestorKyc.last
   document_names = @investor_kyc.documents.pluck(:name)
@@ -643,9 +675,11 @@ Then('I can send KYC reminder to approved users') do
   investor.entity.save!
   visit(investor_kycs_path)
   # sleep(2)
+  # The index toolbar button opens the sendKycRemindersModal (a Bootstrap confirmation
+  # modal); its footer submit is "Send Reminders" - it replaced the old confirm#popup
+  # "Proceed" button when the modal was introduced.
   click_on("Send KYC Reminders")
-  # sleep(1)
-  click_on("Proceed")
+  click_on("Send Reminders")
   # sleep(2)
   expect(page).to have_content("KYC Reminder sent successfully")
 end
@@ -803,7 +837,12 @@ Then('we Generate Investor Statement for the first capital commitment with diffe
 end
 
 Then('the unapproved Investor Statement is replaced') do
-  expect(@capital_commitment.documents.generated.last.created_at).to be > @og_soa_created_at
+  # Same underlying gap as the doc-list check above: under parallel-worker load
+  # the read can briefly see a pre-replacement snapshot. Retry the query itself
+  # (no page visit needed here -- .last issues a fresh query each call).
+  eventually(timeout: 20) do
+    expect(@capital_commitment.documents.generated.last.created_at).to be > @og_soa_created_at
+  end
 end
 
 Given('the generated Investor Statement is approved') do
@@ -881,9 +920,13 @@ Given('the template {string} has a corrupted merge field') do |template_name|
 end
 
 Then('the original document is replaced') do
-  @generated_doc = Document.where(owner_tag: "Generated").last
-  @generated_doc.should_not
-  @generated_doc.created_at.should > @original_doc.created_at
+  # Same underlying gap as the doc-list check above: under parallel-worker load
+  # the read can briefly see a pre-replacement snapshot. Retry the query itself.
+  eventually(timeout: 20) do
+    @generated_doc = Document.where(owner_tag: "Generated").last
+    @generated_doc.should_not
+    @generated_doc.created_at.should > @original_doc.created_at
+  end
 end
 
 Then('the last generated document is approved') do
@@ -934,11 +977,43 @@ Then('we get the email with approved document exists error') do
 end
 
 Then('the {string} is successfully generated') do |name|
-  expect(page).to have_content("Documentation generation started, please check back in a few mins")
-  # sleep(2)
-  visit(current_url)
-  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  expect(page).to have_content("Generated")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N document(s) generated successfully") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message, singular or plural.
+  expect(page).to have_content(
+    /Documentation generation started|documents? generated/i,
+    wait: 20
+  )
+  # current_url is racy here: the completion banner is delivered live over
+  # ActionCable and can land on this (pre-redirect) form page before the
+  # controller's redirect actually navigates the browser, so current_url can
+  # still be the generate-form URL rather than the commitment page. Visit the
+  # commitment's own page directly instead of trusting current_url.
+  #
+  # The Documents tab is rendered server-side on load (capital_commitment.documents
+  # in _manager_details.html.erb), not lazy-loaded via a turbo_frame — so waiting
+  # on the already-loaded DOM (have_content wait:) cannot help if the document
+  # isn't in this response. Under parallel-worker load the read can briefly land
+  # on a DB snapshot from before the write commits, so retry the whole visit
+  # (forcing a fresh read each time) rather than just waiting on one page load.
+  # wait: 1 keeps each attempt cheap -- eventually's own retries (fresh visits)
+  # are what actually help here, not Capybara's default 15s intra-page poll.
+  begin
+    eventually(timeout: 40) do
+      visit(capital_commitment_path(@capital_commitment))
+      page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+      expect(page).to have_content("Generated", wait: 1)
+    end
+  rescue RSpec::Expectations::ExpectationNotMetError => e
+    # Diagnostic-only: after 40s of genuine retries the doc still isn't showing.
+    # Dump what actually happened server-side instead of guessing blind next time.
+    @capital_commitment.reload
+    puts "DEBUG [doc gen]: capital_commitment##{@capital_commitment.id} documents.count = #{@capital_commitment.documents.count}"
+    puts "DEBUG [doc gen]: recent UserAlerts for entity##{@capital_commitment.entity_id} = " \
+         "#{UserAlert.where(entity_id: @capital_commitment.entity_id).order(created_at: :desc).limit(5).pluck(:level, :message, :created_at).inspect}"
+    puts "DEBUG [doc gen]: last mail delivered = #{ActionMailer::Base.deliveries.last&.subject.inspect}"
+    raise e
+  end
   generated_doc = Document.where(owner_tag: "Generated").last
   generated_doc.name.should
   if name.include?("Investor Statement")
@@ -1079,10 +1154,13 @@ Then('the docusign esign completed document is present') do
   allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
   click_on("Get eSignatures' updates")
   # Turbo submits the form asynchronously so click_on returns before the server
-  # finishes the request.  The ActionCable "eSign status updated" alert is only
-  # broadcast after EsignUpdateJob commits the "signed" statuses, so waiting for
-  # it guarantees the DB is ready before we reload the page below.
-  expect(page).to have_content("eSign status updated", wait: 20)
+  # finishes the request.  DocumentEsignUpdateJob runs inline inside that request
+  # (and EsignUpdateJob via the :inline adapter), so the "signed" statuses are
+  # committed before the redirect response is sent.  Waiting for the redirect's
+  # flash notice therefore guarantees the DB is ready before we reload below.
+  # (The ActionCable "eSign status updated" toast is broadcast to the pre-redirect
+  # page and is wiped by the navigation, so it is not a reliable wait target.)
+  expect(page).to have_content("Fetching Updates for eSignatures", wait: 20)
   visit(document_path(@doc))
   click_on("Signatures")
   expected_status = "Signed"
@@ -1824,5 +1902,83 @@ Then('I should see the filtered investors with {string}') do |string|
   expect(page).to have_content(@investor_kyc.kyc_type.titleize)
   InvestorKyc.where.not(full_name: string).find_each do |kyc|
     expect(page).not_to have_content(kyc.investor_name)
+  end
+end
+
+Given('there is another entity {string}') do |args|
+  @entity_2 = FactoryBot.build(:entity)
+  key_values(@entity_2, args)
+  @entity_2.save!
+  puts "\n####Entity 2####\n"
+  puts @entity_2.to_json
+  puts "Entity Permissions: #{@entity_2.permissions}"
+end
+
+Given('There are account entries with parent as investors') do
+  expect(@entity.investors.count).to be > 0
+  idx = 1
+  @entity.investors.find_each do |investor|
+    AccountEntry.create!(
+      parent_type: "Investor",
+      parent_id: investor.id,
+      fund:               @fund,
+      entity:             @entity,
+      name:               "Entry #{idx}",
+      entry_type:         "EXPENSE",
+      reporting_date:     Time.zone.now,
+      amount_cents:       rand(1..100_000_000),
+      capital_commitment: nil
+    )
+    idx += 1
+  end
+end
+
+Given('There are Account Entries in another entity with parent as investors') do
+  expect(@entity.investors.count).to be > 0
+  idx = 1
+  @entity.investors.find_each do |investor|
+    AccountEntry.create!(
+      parent_type: "Investor",
+      parent_id: investor.id,
+      fund:               @fund,
+      entity:             @entity_2,
+      name:               "Entry #{idx}",
+      entry_type:         "EXPENSE",
+      reporting_date:     Time.zone.now,
+      amount_cents:       rand(1..100_000_000),
+      capital_commitment: nil
+    )
+    idx += 1
+  end
+end
+
+When('I update the Investor names') do
+  @og_names = {}
+  @entity.investors.find_each do |inv|
+    @og_names[inv.id] = inv.to_s[0..254]
+    inv.investor_name = "Updated #{inv.investor_name}"
+    inv.save validate: false
+    expect(inv.investor_name).not_to eq(@og_names[inv.id])
+  end
+end
+
+Then('The account entries must have updated parent name') do
+  puts "AE PARENT NAME                INVESTOR NAME"
+  @entity.investors.find_each do |investor|
+    AccountEntry.where(parent_type: "Investor", parent_id: investor.id, entity: @entity).find_each do |entry|
+      puts "#{entry.parent_name} ||| #{investor.to_s[0..254]}"
+      expect(entry.parent_name).to eq(investor.to_s[0..254])
+    end
+  end
+end
+
+Then('The account entries in another entity must not have updated parent name') do
+  puts "AE PARENT NAME                INVESTOR NAME"
+  @entity.investors.find_each do |investor|
+    AccountEntry.where(parent_type: "Investor", parent_id: investor.id, entity: @entity_2).find_each do |entry|
+      puts "#{entry.parent_name} ||| #{investor.to_s[0..254]}"
+      expect(entry.parent_name).not_to eq(investor.to_s[0..254])
+      expect(entry.parent_name).to eq(@og_names[entry.parent_id])
+    end
   end
 end

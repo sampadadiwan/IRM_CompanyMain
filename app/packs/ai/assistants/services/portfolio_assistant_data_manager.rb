@@ -6,11 +6,49 @@
 class PortfolioAssistantDataManager
   include WithFilterParams
 
+  # Query object for filtering Investors/portfolio companies. HasScope only ever invokes
+  # scopes declared here, so an LLM-supplied `scope` string can never reach an arbitrary
+  # method (e.g. `destroy_all`) the way a raw `relation.send(scope)` could.
+  class InvestorQuery
+    include HasScope
+
+    has_scope :portfolio_companies, type: :boolean
+    has_scope :not_portfolio_companies, type: :boolean
+    has_scope :advisors, type: :boolean
+    has_scope :rms, type: :boolean
+    has_scope :without_investor_accesses, type: :boolean
+
+    def perform(collection:, params:)
+      apply_scopes(collection, params)
+    end
+  end
+
   # Query object for filtering Valuations.
   class ValuationQuery
     include HasScope
 
-    # Add scopes if needed
+    has_scope :with_synthetic, type: :boolean
+
+    def perform(collection:, params:)
+      apply_scopes(collection, params)
+    end
+  end
+
+  # Query object for filtering Documents.
+  class DocumentQuery
+    include HasScope
+
+    has_scope :approved, type: :boolean
+    has_scope :not_approved, type: :boolean
+    has_scope :template, type: :boolean
+    has_scope :not_template, type: :boolean
+    has_scope :sent_for_esign, type: :boolean
+    has_scope :not_sent_for_esign, type: :boolean
+    has_scope :signed, type: :boolean
+    has_scope :esign_status_completed, type: :boolean
+    has_scope :esign_status_failed, type: :boolean
+    has_scope :esign_status_requested, type: :boolean
+
     def perform(collection:, params:)
       apply_scopes(collection, params)
     end
@@ -53,9 +91,49 @@ class PortfolioAssistantDataManager
     end
   end
 
+  # Server-side ceiling applied whenever a caller (the LLM) doesn't supply an explicit
+  # `limit`. Prompt instructions alone ("ALWAYS pass limit") are not a reliable guardrail --
+  # this backstops it in code so an unfiltered/unlimited-looking request can't pull an
+  # unbounded result set into the LLM's context.
+  DEFAULT_QUERY_LIMIT = 500
+
   def initialize(user:)
     @user = user
   end
+
+  # Applies the caller's limit if given, otherwise falls back to DEFAULT_QUERY_LIMIT.
+  def bounded_limit(relation, limit)
+    relation.limit(limit.presence || DEFAULT_QUERY_LIMIT)
+  end
+  private :bounded_limit
+
+  # Returns an error hash when `scope` was supplied but isn't declared on `query_class` (a
+  # HasScope-including *Query class). Before this, an unrecognized/hallucinated scope name
+  # was silently dropped -- the LLM's tool call looked successful but quietly returned an
+  # *unfiltered* result, with no signal that the requested scope didn't exist. Returns nil
+  # when scope is blank or recognized, so callers can `return error if error`. Not used by
+  # list_portfolio_kpis, which has its own deliberate compound-scope fallback behavior.
+  def unrecognized_scope_error(query_class, scope)
+    return nil if scope.blank? || query_class.scopes_configuration.key?(scope.to_sym)
+
+    { error: "Unknown scope '#{scope}'. Valid scopes: #{query_class.scopes_configuration.keys.join(', ')}" }
+  end
+  private :unrecognized_scope_error
+
+  # Resolves a single portfolio_company_id (when given) to a 1-element id array, or --
+  # when nil -- to every portfolio company id the user is allowed to see. Centralizes the
+  # "optional company scope" fallback shared by list_valuations/list_portfolio_investments/
+  # list_documents so a chart/report request that spans the whole portfolio doesn't need a
+  # company pre-resolved first.
+  def resolve_owner_ids(portfolio_company_id)
+    scope = Pundit.policy_scope(@user, Investor).portfolio_companies
+    if portfolio_company_id.present?
+      scope.where(id: portfolio_company_id).pluck(:id)
+    else
+      scope.pluck(:id)
+    end
+  end
+  private :resolve_owner_ids
 
   # Lists portfolio companies (Investors with category 'Portfolio Company').
   def list_portfolio_companies(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
@@ -64,12 +142,21 @@ class PortfolioAssistantDataManager
     ransack_query[:s] ||= sort if sort.present?
 
     relation = Pundit.policy_scope(@user, Investor).portfolio_companies
-    relation = relation.send(scope) if scope.present? && Investor.respond_to?(scope)
+
+    # Route scope through a declared allowlist (HasScope), never a raw `send` -- Investor
+    # (like every AR model) responds_to? real methods such as destroy_all/delete_all/
+    # update_all, so `relation.send(scope) if relation.respond_to?(scope)` would let an
+    # LLM-supplied scope string execute one of those against every row this user can see.
+    scope_error = unrecognized_scope_error(InvestorQuery, scope)
+    return scope_error if scope_error
+
+    scope_params = scope.present? ? { scope.to_sym => true } : {}
+    relation = InvestorQuery.new.perform(collection: relation, params: scope_params)
     results = relation.ransack(ransack_query).result
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |c|
       {
@@ -102,22 +189,32 @@ class PortfolioAssistantDataManager
     }
   end
 
-  # Lists valuations for a portfolio company.
-  def list_valuations(portfolio_company_id:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+  # Lists valuations for a portfolio company. When portfolio_company_id is omitted, lists
+  # across every portfolio company the user can see instead -- this is what lets
+  # plot_chart_from_query(resource: "valuations") work without pre-resolving a single
+  # company; previously portfolio_company_id was a mandatory keyword here, which raised
+  # ArgumentError whenever that tool's generic fetch path called this without one.
+  def list_valuations(portfolio_company_id: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
     Rails.logger.debug { "[PortfolioAssistantDataManager] list_valuations called with portfolio_company_id: #{portfolio_company_id.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
-    company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
-    return [] unless company
+    owner_ids = resolve_owner_ids(portfolio_company_id)
+    return [] if owner_ids.empty?
 
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
 
-    relation = Pundit.policy_scope(@user, Valuation).includes(:portfolio_company, :entity, :investment_instrument).where(owner: company)
-    relation = relation.send(scope) if scope.present? && Valuation.respond_to?(scope)
+    relation = Pundit.policy_scope(@user, Valuation).includes(:portfolio_company, :entity, :investment_instrument).where(owner_type: 'Investor', owner_id: owner_ids)
+
+    # See list_portfolio_companies above for why this must be a declared allowlist, not a raw send.
+    scope_error = unrecognized_scope_error(ValuationQuery, scope)
+    return scope_error if scope_error
+
+    scope_params = scope.present? ? { scope.to_sym => true } : {}
+    relation = ValuationQuery.new.perform(collection: relation, params: scope_params)
     results = relation.ransack(ransack_query).result
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |v|
       {
@@ -134,24 +231,34 @@ class PortfolioAssistantDataManager
     end
   end
 
-  # Lists portfolio investments for a portfolio company.
-  def list_portfolio_investments(portfolio_company_id:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+  # Lists portfolio investments for a portfolio company. As with list_valuations,
+  # portfolio_company_id is optional and falls back to every portfolio company the user
+  # can see -- required for plot_chart_from_query(resource: "portfolio_investments"),
+  # which the system prompt explicitly directs the model to use for cross-portfolio charts.
+  def list_portfolio_investments(portfolio_company_id: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
     Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_investments called with portfolio_company_id: #{portfolio_company_id.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
-    company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
-    return [] unless company
+    owner_ids = resolve_owner_ids(portfolio_company_id)
+    return [] if owner_ids.empty?
 
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
 
-    relation = Pundit.policy_scope(@user, PortfolioInvestment).includes(:fund, :portfolio_company, :investment_instrument).where(portfolio_company_id: company.id)
+    relation = Pundit.policy_scope(@user, PortfolioInvestment).includes(:fund, :portfolio_company, :investment_instrument).where(portfolio_company_id: owner_ids)
 
-    relation = relation.send(scope) if scope.present? && PortfolioInvestment.respond_to?(scope)
+    # See list_portfolio_companies above for why this must be a declared allowlist, not a raw
+    # send. PortfolioInvestmentQuery already existed above but was unused here -- this call
+    # site was the vulnerable one.
+    scope_error = unrecognized_scope_error(PortfolioInvestmentQuery, scope)
+    return scope_error if scope_error
+
+    scope_params = scope.present? ? { scope.to_sym => true } : {}
+    relation = PortfolioInvestmentQuery.new.perform(collection: relation, params: scope_params)
 
     results = relation.ransack(ransack_query).result
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |i|
       {
@@ -206,7 +313,7 @@ class PortfolioAssistantDataManager
     ransack_query[:s] ||= sort if sort.present?
 
     # Default kpi_report_as_of to 12 months ago if not provided, but allow user to override
-    ransack_query[:kpi_report_as_of_gteq] ||= 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of) || ransack_query[:all_time_eq] == 'true'
+    ransack_query[:kpi_report_as_of_gteq] ||= 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of) || ActiveRecord::Type::Boolean.new.cast(ransack_query[:all_time_eq])
 
     # unless ransack_has_attr?(ransack_query, :period) ||
     #   # Add monthly to the scope
@@ -253,7 +360,7 @@ class PortfolioAssistantDataManager
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     Rails.logger.debug { "[KpiQuery Debug] SQL after ransack: #{results.to_sql}" }
     results.map do |k|
@@ -265,7 +372,8 @@ class PortfolioAssistantDataManager
         period: k.kpi_report&.period,
         value: k.value,
         # display_value: k.display_value,
-        percentage_change: "#{k.percentage_change}%",
+        # Guard against a bare "%" cell when there's no prior period to compare against.
+        percentage_change: (k.percentage_change.nil? ? nil : "#{k.percentage_change}%"),
         # notes: k.notes,
         # source: k.source,
         tag_list: k.kpi_report&.tag_list,
@@ -295,7 +403,7 @@ class PortfolioAssistantDataManager
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |r|
       {
@@ -316,23 +424,34 @@ class PortfolioAssistantDataManager
     end
   end
 
-  # Lists documents associated with the portfolio company.
-  def list_documents(portfolio_company_id:, scope: nil, query: {}, sort: nil, limit: nil)
+  # Lists documents associated with the portfolio company. portfolio_company_id is
+  # optional, same fallback as list_valuations -- lets plot_chart_from_query(resource:
+  # "documents") work across the whole portfolio instead of raising ArgumentError.
+  def list_documents(portfolio_company_id: nil, scope: nil, query: {}, sort: nil, limit: nil)
     Rails.logger.debug { "[PortfolioAssistantDataManager] list_documents called with portfolio_company_id: #{portfolio_company_id.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}" }
-    company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
-    return [] unless company
+    owner_ids = resolve_owner_ids(portfolio_company_id)
+    return [] if owner_ids.empty?
 
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
 
     # Documents are often associated through WithFolder or specific polymorphic associations
-    # Assuming documents can be found via the company's entity or specific document relation
-    relation = Pundit.policy_scope(@user, Document).where(owner: company).or(
-      Pundit.policy_scope(@user, Document).where(owner: company.portfolio_kpi_reports)
-    )
-    relation = relation.send(scope) if scope.present? && Document.respond_to?(scope)
+    # Assuming documents can be found via the company's entity or specific document relation.
+    # kpi_report_ids stays a SQL subquery (not a loaded array of records) so this scales the
+    # same way for one company as for the whole portfolio.
+    kpi_report_ids = KpiReport.where(portfolio_company_id: owner_ids).select(:id)
+    # .includes(:folder) avoids an N+1 -- the map below calls `d.folder&.full_path` per row.
+    relation = Pundit.policy_scope(@user, Document).where(owner_type: 'Investor', owner_id: owner_ids).or(
+      Pundit.policy_scope(@user, Document).where(owner_type: 'KpiReport', owner_id: kpi_report_ids)
+    ).includes(:folder)
+    # See list_portfolio_companies above for why this must be a declared allowlist, not a raw send.
+    scope_error = unrecognized_scope_error(DocumentQuery, scope)
+    return scope_error if scope_error
+
+    scope_params = scope.present? ? { scope.to_sym => true } : {}
+    relation = DocumentQuery.new.perform(collection: relation, params: scope_params)
     documents = relation.ransack(ransack_query).result
-    documents = documents.limit(limit) if limit.present?
+    documents = bounded_limit(documents, limit)
 
     documents.map do |d|
       {
@@ -449,7 +568,7 @@ class PortfolioAssistantDataManager
     ransack_query[:s] ||= sort if sort.present?
 
     investments = Investment.where(portfolio_company_id: companies.pluck(:id)).ransack(ransack_query).result
-    investments = investments.limit(limit) if limit.present?
+    investments = bounded_limit(investments, limit)
 
     investments.map do |i|
       {
@@ -478,11 +597,23 @@ class PortfolioAssistantDataManager
     tvpi = list_fund_ratios(portfolio_company_id: portfolio_company_id, query: { name_eq: 'TVPI', latest_eq: true }, limit: 1).first
     rvpi = list_fund_ratios(portfolio_company_id: portfolio_company_id, query: { name_eq: 'RVPI', latest_eq: true }, limit: 1).first
 
+    # Group by currency before summing -- a flat `sum(:fmv_cents)` across all of a company's
+    # investments silently mixes currencies (adding USD cents to EUR cents) whenever a cap
+    # table has instruments in more than one currency, then mislabels the wrong total with
+    # whichever currency the *first* investment happened to have. Multi-currency cap tables
+    # are reported as a "+"-joined breakdown instead of one misleading number.
+    fmv_by_currency = company.portfolio_investments.joins(:investment_instrument).group('investment_instruments.currency').sum(:fmv_cents)
+    current_fmv = if fmv_by_currency.size <= 1
+                    Money.new(fmv_by_currency.values.first || 0, fmv_by_currency.keys.first || 'USD').format
+                  else
+                    fmv_by_currency.map { |currency, cents| Money.new(cents, currency).format }.join(' + ')
+                  end
+
     {
       id: company.id,
       name: company.investor_name,
       total_invested: company.amount_invested.format,
-      current_fmv: Money.new(company.portfolio_investments.sum(:fmv_cents), company.portfolio_investments.first&.instrument_currency || 'USD').format,
+      current_fmv: current_fmv,
       latest_valuation: latest_valuation&.slice(:valuation_date, :per_share_value, :currency),
       multiples: {
         tvpi: tvpi&.dig(:display_value) || tvpi&.dig(:value),

@@ -10,9 +10,19 @@ class AuditsController < ApplicationController
     @audits = @audits.where(user_id: params[:user_id]) if params[:user_id].present?
     @audits = @audits.where(created_at: ..Date.local_parse(params[:created_at_before])) if params[:created_at_before].present?
     @audits = @audits.where(created_at: Date.local_parse(params[:created_at_after])..) if params[:created_at_after].present?
-    # Paginate if no xlsx
+
+    # Scoped to exactly one record: bounded to that record's own history (same
+    # assumption the AuditTrail component already makes for its embedded,
+    # unpaginated view), so it's safe to load in full and offer the Field
+    # History pivot. Any broader/unscoped query stays paginated — never load
+    # an unbounded slice of this table in one go.
+    @single_record_scope = params[:auditable_type].present? && params[:auditable_id].present?
+
     if params[:format] == 'xlsx' && (params[:created_at_before].blank? || params[:created_at_after].blank?)
       @audits = @audits.limit(1000)
+    elsif @single_record_scope
+      @audits = @audits.to_a
+      @field_history = AuditFieldHistory.new(@audits)
     else
       @pagy, @audits = pagy(@audits)
     end

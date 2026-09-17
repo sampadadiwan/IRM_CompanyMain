@@ -1,0 +1,22 @@
+<%# Confirmation reply — a Note or Task was successfully created by the Deal Update Agent. %>
+<h2>Your update has been filed</h2>
+
+<p>
+  We've created a <strong><%= @intent == "meeting_note" ? "Meeting Note" : "Task" %></strong>
+  on <strong><%= @deal.name %></strong> for <strong><%= @stakeholder %></strong>.
+</p>
+
+<% if @due_date.present? %>
+  <p><strong>Due date:</strong> <%= @due_date %></p>
+<% end %>
+
+<% if @body_preview.present? %>
+  <p style="color: #666; border-left: 3px solid #ddd; padding-left: 12px; margin: 16px 0;">
+    <%= @body_preview %>
+  </p>
+<% end %>
+
+<p style="font-size: 13px; color: #888;">
+  This was created automatically from your email by the Deal Update Agent.
+  If something looks wrong, you can edit it directly on the deal board.
+</p>

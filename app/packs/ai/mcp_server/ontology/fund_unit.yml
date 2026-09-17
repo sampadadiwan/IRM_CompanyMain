@@ -1,0 +1,126 @@
+# Ontology for FundUnit as exposed over MCP.
+---
+entity: fund_unit
+label: Fund Unit
+model: FundUnit
+description: >-
+  Units issued against a capital commitment — the unitised representation of an investor's
+  holding in a fund. Units are issued from capital remittances and cancelled by
+  distributions, so one commitment accumulates many rows.
+
+relationships:
+  capital_commitment:
+    target: capital_commitment
+    cardinality: many_to_one
+    note: The commitment the units were issued against. Required — this tool is always scoped to one.
+    resolve_with: list_capital_commitments
+  fund:
+    target: fund
+    cardinality: many_to_one
+    note: The issuing fund.
+    resolve_with: list_funds
+
+fields:
+  unit_type:
+    type: string
+    description: Unit class (e.g. "Class A").
+    sortable: true
+  issue_date:
+    type: date
+    description: Date the units were issued. This is the date field on fund units.
+    sortable: true
+  quantity:
+    type: decimal
+    description: Number of units. Negative on cancellations and transfers out.
+    sortable: true
+    aggregatable: true
+  price:
+    type: money
+    stored_as: price_cents
+    currency: the fund's currency
+    description: Issue price per unit.
+    sortable: true
+    aggregatable: false
+  premium:
+    type: money
+    stored_as: premium_cents
+    currency: the fund's currency
+    description: Premium per unit over the issue price.
+    sortable: true
+    aggregatable: false
+  amount:
+    type: money
+    stored_as: amount_cents
+    currency: the fund's currency
+    description: quantity x (price + premium), maintained on save.
+    sortable: true
+    aggregatable: true
+  reason:
+    type: text
+    description: Free-text reason recorded for the issue or cancellation.
+    sortable: false
+  owner_type:
+    type: string
+    description: >-
+      What caused the units to move — "CapitalRemittance" for an issue, "CapitalDistribution"
+      for a cancellation.
+    sortable: true
+  capital_commitment_id:
+    type: reference
+    target: capital_commitment
+    description: >-
+      The commitment. Set by the tool from commitment_id; it was not ransackable until
+      recently, so the scoping was silently dropped and every unit the user could see came back.
+    sortable: false
+  fund_id:
+    type: reference
+    target: fund
+    description: The issuing fund.
+    sortable: false
+
+returned_only:
+  folio_id:
+    type: string
+    description: Folio of the owning commitment, joined for readability.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the unit.
+
+unavailable:
+  as_of_date:
+    reason: >-
+      No such column on FundUnit. It was advertised by the old tool description and read on
+      every returned row, which raised NoMethodError.
+    use_instead: issue_date
+  id:
+    reason: Not declared in FundUnit.ransackable_attributes, so conditions on it are ignored.
+  amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: amount
+
+measures:
+  net_units:
+    expression: sum of quantity
+    description: >-
+      Net units held. Issues are positive and cancellations negative, so this is the current
+      holding rather than the gross issued.
+  net_amount:
+    expression: sum of amount
+    description: Net value of units at issue prices. Not a current valuation.
+
+caveats:
+  - >-
+    Quantities are signed. "Units issued" and "units held" are different questions — the sum
+    gives you held, and filtering owner_type_eq 'CapitalRemittance' gives you issued.
+  - >-
+    Aggregated money sums on this entity are NOT currency-resolved and come back marked
+    currency_unresolved.
+  - Money filters take MAJOR units, not cents.
+
+tools:
+  list_fund_units:
+    kind: list
+    summary: Use it to see how one investor's holding in a fund was built up.
+    params:
+      commitment_id:
+        required: true

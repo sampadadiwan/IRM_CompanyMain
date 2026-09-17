@@ -48,6 +48,19 @@ export default class extends Controller {
       this.initTooltips(this.element)
     }
     document.addEventListener("turbo:render", this.onTurboRender)
+
+    // Cocoon (nested fields, e.g. "Add Fees") fires this via jQuery's `.trigger()`
+    // (vendor/javascript/cocoon.min.js: `insertionNode.trigger("cocoon:after-insert", [$(node), e])`),
+    // not a native dispatchEvent — a vanilla `document.addEventListener` never sees it, so this
+    // has to be a jQuery handler. The extra arg is a jQuery collection built from an HTML string
+    // (`$(node)`), and jQuery's HTML-string parsing can put a stray text node at index 0 when the
+    // rendered template has leading whitespace — `$insertedNode[0]` is then not reliably an
+    // Element, so don't try to scope the rescan to just it. Just re-run the full scan instead;
+    // `getOrCreateInstance` is idempotent, so re-touching already-initialized tooltips is harmless.
+    this.onCocoonInsert = () => {
+      this.initTooltips(this.element)
+    }
+    $(document).on("cocoon:after-insert", this.onCocoonInsert)
   }
 
   disconnect() {
@@ -56,6 +69,7 @@ export default class extends Controller {
     document.removeEventListener("shown.bs.dropdown", this.onDropdownShown)
     document.removeEventListener("turbo:render", this.onTurboRender)
     document.removeEventListener("turbo:frame-load", this.onFrameLoad)
+    $(document).off("cocoon:after-insert", this.onCocoonInsert)
     this.element.removeEventListener("tooltip:reinit", this.onReinit)
 
     // Dispose any tooltips we created
@@ -71,8 +85,14 @@ export default class extends Controller {
   }
 
   initTooltips(root) {
+    // data-bs-title is included on its own (not just alongside data-bs-toggle="tooltip")
+    // because a trigger's data-bs-toggle slot is sometimes already claimed by another
+    // Bootstrap component (e.g. data-bs-toggle="modal") — Bootstrap only reads that
+    // attribute for its own auto data-api, our getOrCreateInstance call below works on
+    // any element regardless of what data-bs-toggle says, so data-bs-title alone is
+    // enough to opt an element into a tooltip without disturbing its other behavior.
     const elements = Array.from(
-      root.querySelectorAll("[data-bs-toggle='tooltip'], [data-toggle='tooltip']")
+      root.querySelectorAll("[data-bs-toggle='tooltip'], [data-toggle='tooltip'], [data-bs-title]")
     )
     // console.log(`TooltipController#initTooltips found ${elements.length} elements in`, root)
 

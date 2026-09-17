@@ -2,6 +2,8 @@
 
 A **capital commitment** is an investor's legal promise to contribute up to a set amount of capital to a fund over its life. It is the foundation record for everything that follows — capital calls, distributions, fund units, fees, and performance metrics all hang off the commitment.
 
+> **Where to find it:** Sidebar → [**Funds → Funds**](/funds) → open the fund → **Commitments** tab (the default tab). Create one with **New Commitment** on that tab, or bulk-load them with **Upload**. Needs the **Funds** module plus update access on the fund (company admins have it automatically).
+
 This guide explains how to set up and manage commitments: how an investor's account (folio) works, how to handle investors who commit in a foreign currency, the four ways a commitment can be adjusted, how returns (TVPI, DPI, RVPI, XIRR) are measured, and how commitments connect to the rest of the fund.
 
 ---
@@ -72,7 +74,7 @@ A commitment can be adjusted at any point after it's created — for example whe
 
 ## Creating a Commitment
 
-Go to **Fund → Capital Commitments → New**.
+Open the fund, go to its **Commitments** tab and click **New Commitment**.
 
 | Field | Notes |
 |-------|-------|
@@ -83,7 +85,7 @@ Go to **Fund → Capital Commitments → New**.
 | **Commitment Date** | The date the legal commitment was made. |
 | **Unit Type** | Must be one of the unit classes configured on the fund. |
 | **Folio Committed Amount** | The amount promised, in the folio (investor) currency. |
-| **Folio Currency** | Leave blank to use the fund's own currency. |
+| **Folio Currency** | Defaults to the fund's own currency. The list only offers currencies that have an exchange rate to the fund currency. |
 
 When you save, the system automatically:
 
@@ -92,7 +94,7 @@ When you save, the system automatically:
 - Recalculates each investor's **percentage ownership** of the fund.
 - Creates a document folder for the commitment.
 
-> **Important:** to change a committed amount later, always edit the **folio committed amount** or add an adjustment. The fund-currency equivalent is derived for you — don't try to set it directly, or the figures will fall out of step.
+> **Important:** to change a committed amount later, add an adjustment — the **folio committed amount** box is locked once it is above zero. The fund-currency equivalent is derived for you — don't try to set it directly, or the figures will fall out of step. Likewise, changing the folio currency after saving does not re-convert the fund-currency amount.
 
 ---
 
@@ -127,7 +129,7 @@ The system keeps both:
 - The **folio committed amount** — the original figure in the investor's currency, which never changes on its own.
 - The **committed amount** — the equivalent in the fund's currency.
 
-When exchange rates move significantly, use an **Exchange Rate adjustment** (below) to restate the fund-currency value without touching the investor's original figure. The commitment search includes a **Foreign Currency Commitment** filter so you can find these folios quickly.
+When exchange rates move significantly, use an **Exchange Rate adjustment** (below) to restate the fund-currency value without touching the investor's original figure. The system creates these automatically when a new rate is added only if your company has the exchange-rate commitment adjustment option switched on. The commitment search includes a **Foreign Currency Commitment** filter so you can find these folios quickly.
 
 ---
 
@@ -253,14 +255,14 @@ flowchart TD
 ## Onboarding, E-Signing and Skipping Notices
 
 - **Onboarding completed** — a simple Yes/No flag indicating that KYC, documents, and account setup for this investor are all done. Use it to spot folios that still need attention in the search view.
-- **Investor signatory (e-sign)** — you can list the email addresses that should sign documents (such as subscription agreements) for this commitment. These override the investor's default access emails for signing.
-- **Skip call notices** — turn this on to exclude a folio from automatic capital-call notices, which is useful when a co-investor arrangement is billed directly outside the system.
+- **Investor Signatory Emails (e-sign)** — the comma-separated emails of the people who sign documents generated for this commitment (such as subscription agreements) wherever the template has an **Investor Signatories** row. It is pre-filled from the investor KYC's field when the commitment is created and is not updated when the KYC changes later. Signers are copied at generation, so regenerate documents after changing it. See [Who Signs](esigning_user_guide#who-signs-signatory-emails-and-labels).
+- **Skipping notices** — there is no toggle for this; set the commitment custom field `skip_doc_gen` to Yes to exclude a folio from call notice generation, call and distribution emails and reminders, which is useful when a co-investor arrangement is billed directly outside the system.
 
 ---
 
 ## Importing Commitments
 
-Commitments can be bulk-loaded from a spreadsheet during onboarding. Imported commitments skip the usual "new investor" automations so a large load doesn't trigger a flood of notifications. The import file must include the standard set of columns (investor, folio ID, fund close, commitment date, unit type, folio committed amount, and folio currency).
+Commitments can be bulk-loaded from a spreadsheet during onboarding. Imports do not skip the usual automations: after the file is processed, percentages are recalculated, remittances are created for existing calls and access to the fund is granted. No investor email is sent. The import file must include the standard set of columns (investor, folio ID, fund close, commitment date, unit type, folio committed amount, and folio currency).
 
 ---
 
@@ -299,11 +301,129 @@ So for every dollar paid in, $1.50 of total value exists — $0.30 already retur
 
 ## Frequently Asked Questions
 
+### Navigation and getting there
+
+**Where do I find capital commitments in CapHive?**
+Sidebar → [**Funds → Funds**](/funds), open the fund, and the **Commitments** tab is the first (default) tab on the fund page. Click a row to open the commitment. The [commitments across all your funds](/capital_commitments) are also in one list. See [What a Commitment Represents](#what-a-commitment-represents).
+
+**Can I see all commitments of one stakeholder (investor)?**
+Yes. Sidebar → [**Stakeholders → View Stakeholders**](/investors), open the stakeholder and click the **Commitments** tab; it lists that stakeholder's folios across every fund. There is no New Commitment button there, so create commitments from the fund's Commitments tab.
+
+**What is on a commitment's page?**
+The commitment page shows a stats strip and the commitment details, then **Edit**, **Delete**, **AI Assistant** (locked unless the Folio Assistant is enabled) and the **Actions** dropdown. Below are the tabs **Documents**, **Remittances**, **Distributions**, **Units** (when units are enabled), **Account Entries** (when account entries are enabled), **Adjustments**, **Ratios**, **Tasks**, **All KYCs** and **Workflow** (company admins, when workflow templates are enabled).
+
+**What is in the commitment's Actions dropdown?**
+**LP Account Statement**, **Folio Account Entries** (only if your company has a report of that name), **Add Investor Advisor**, **Generate All Documents** and **Generate [template name]** (only when the KYC is verified and e-signing is not complete), **Generate Investor Statement** (verified KYC only) and **Preview Adhoc Fund Notification** entries for each ad-hoc fund notification.
+
+**Where does an investor see their commitments?**
+An investor logs in and uses [**Funds → Commitments**](/capital_commitments?my_commitments=true) in their sidebar, or opens the fund from **Funds** and looks at its sections. They only see their own folios in funds they have been given access to, and the investor view of a commitment has no Edit, Delete or Actions.
+
+### Creating, updating and managing commitments
+
+**How do I create a new commitment?**
+On the fund's **Commitments** tab click [**New Commitment**](/capital_commitments/new); if your company has several commitment forms it is a **New Commitment:** dropdown where you pick the form. Choose the stakeholder, commitment date, investor KYC, folio ID, fund close, unit type, folio currency and **Folio Committed Amount**, then **Save**. See [Creating a Commitment](#creating-a-commitment).
+
+**How do I edit a commitment?**
+Open the commitment and click **Edit** (needs update access on the fund). The stakeholder cannot be changed once set, and **Folio Committed Amount** is locked once it is above zero; the form links to **Commitment Adjustment** for amount changes. Folio ID, fund close, unit type, KYC, signatory emails, notes, custom fields and **Onboarding Completed** can be edited.
+
+**How do I change who signs a commitment agreement (investor signatory emails)?**
+Open the commitment, click **Edit**, change **Investor Signatory Emails** (comma-separated, one signer per address) and save. Documents already generated keep their old signers, so generate the agreement again: delete an approved copy first, and if it was sent a company administrator clicks **Cancel eSignatures** before you delete it. See [eSigning](esigning_user_guide#changing-signers-on-documents-already-generated-or-sent).
+
+**How do I change the committed amount?**
+Open the commitment, click the **Adjustments** tab and then [**New Adjustment**](/commitment_adjustments/new). Enter the amount in the folio currency (negative to reduce), pick the **Adjustment Type** (Top Up, Arrear, Exchange Rate or Transfer), the **As Of** date and a reason, then save. See [Adjusting a Commitment](#adjusting-a-commitment).
+
+**How do I delete a commitment?**
+Open the commitment and click **Delete** (needs destroy access on the fund), then confirm. You are returned to the fund page. Deleting takes the folio's remittances, distribution payments, units, account entries, ratios and adjustments with it, so check the **Remittances** and **Distributions** tabs first.
+
+**Can I edit or delete an adjustment?**
+Adjustments cannot be edited. To correct one, open it from the commitment's **Adjustments** tab, click **Delete** (destroy access needed) and add a new one. Arrear adjustments created from a remittance's **Create Arrears Adjustment** cannot be deleted from here.
+
+**How do I bulk upload or download commitments?**
+On the fund's **Commitments** tab click **Upload** (an import of type CapitalCommitment) and use the sample file. Set **Update Only** to Yes on rows that should update an existing folio instead of creating one. **Download** offers **Export All** (Excel) and **Export Visible** (the rows on screen). See [Importing Commitments](#importing-commitments).
+
+**How do I generate commitment agreements or investor statements?**
+For one folio open the commitment and choose **Actions → Generate All Documents** or **Generate [template name]** (fund documents tagged **Commitment Template**), or **Actions → Generate Investor Statement** to pick an investor statement template, start and end date and **For** (Commitment or Investing Entity). For every folio use the **Generate** dropdown on the fund's **Commitments** tab.
+
+**How do I add a contribution (commitment agreement) template for capital commitments?**
+A contribution agreement, subscription agreement and commitment agreement template are the same thing: a fund template tagged **Commitment Template**. Open the fund → **Actions → Misc → New Template**, name it, set **Document For** to **Commitment Template**, upload the Word file and save. It then appears as **Generate [template name]** on each commitment. See [Document Templates](document_templates_user_guide).
+
+**How do I add an investor statement template?**
+Open the fund → **Actions → Misc → New Template**, set **Document For** to **Investor Statement Template**, upload the Word file and save. It is then listed under **Template name** in a commitment's **Actions → Generate Investor Statement**. See [Document Templates](document_templates_user_guide) for the merge fields a statement can use.
+
+**How do I set up a folio that commits in a foreign currency?**
+First add an exchange rate from that currency to the fund currency (Company menu → [**Exchange Rates**](/exchange_rates)); the **Folio Currency** list on the commitment form only offers currencies that have a rate to the fund currency. Then create the commitment with that folio currency and the amount in it. See [Investors Who Commit in a Foreign Currency](#investors-who-commit-in-a-foreign-currency).
+
+**How do I skip call and distribution notices for one folio?**
+Set the commitment custom field `skip_doc_gen` to Yes (edit the commitment; add the field first via Company menu → [**Customize Forms**](/form_types), if it is not on your form). That folio is then left out of call notice generation, call and distribution emails and reminders.
+
+**How do I transfer part of a folio to another folio?**
+Open the source commitment, click the **Units** tab and then **Transfer**. Enter the destination folio, transfer ratio, date and price. The transfer moves units, remittances, distributions and optionally account entries, and records a pair of **Transfer** adjustments. See the [Fund Unit Transfers](fund_unit_transfers_user_guide) guide.
+
+**What permission do I need to work on commitments?**
+The **Funds** module must be enabled for your login, plus an access right on the fund: **update** shows **New Commitment**, **Upload**, **Generate**, **Edit** and **Actions**, **create** is needed to save a new commitment or adjustment, and **destroy** to delete. Company admins have all of these automatically. A company admin grants access on the fund page's **Access** tab.
+
+### Why use capital commitments
+
+**Why is the commitment so important?**
+It is the record everything else hangs off: capital calls create one remittance per commitment, distributions one payment per commitment, units are issued against it, and fees, account entries and ratios are allocated to it. Without a commitment an investor cannot be called, paid, allocated or reported on in that fund.
+
+**What does a commitment let me do?**
+Track each folio's committed, called, collected and distributed amounts in fund, folio and tracking currency; see its percentage of the fund; record top-ups, FX restatements, transfers and arrears with a full before/after trail; generate agreements and investor statements; measure DPI, RVPI, TVPI and XIRR; and give the investor portal access to the fund.
+
+**What happens if I don't set up commitments, or set them up wrongly?**
+Calls and distributions generate nothing for the missing investor, and percentages are wrong for everyone else because they are computed from the fund total. A wrong unit type blocks unit allocation, a wrong fund close excludes the folio from close-specific calls, and a wrong folio currency means every call and payment is converted incorrectly.
+
+**Who typically works on commitments?**
+Fund operations or investor-relations staff create and maintain commitments and adjustments during onboarding and closings; finance uses them for calls, distributions and statements. Investors and their advisors only view their own commitments in the portal.
+
+### What happens when I …
+
+**What happens when I save a new commitment?**
+The commitment appears on the fund's **Commitments** tab and the stakeholder's **Commitments** tab. The folio amount is converted into the fund currency at the rate on the commitment date and locked as the original amount, every folio's percentage in the fund is recalculated, the fund's committed total rises, and the investor is given access to the fund. No email is sent; the success message adds a warning if nobody at the investor is subscribed to Capital Call notifications.
+
+**What happens to capital calls that already exist when I add a commitment?**
+A background job creates a remittance for this folio on every existing call that applies to its fund close, except calls with the "Upload" basis. They are created Pending, or Paid and verified if the call was set to generate verified remittances. The investor is not emailed; send notices from the call when ready.
+
+**What happens when I edit a commitment?**
+Changes save immediately and no one is notified. If you change the folio ID, the new ID is copied to the folio's remittances, distribution payments and account entries and their document folders are renamed. If the committed amount changed, all percentages in the fund are recalculated. Existing remittances and payments are not recalculated.
+
+**What happens when I add an adjustment?**
+The amount is converted to the fund currency at the rate on the **As Of** date and the before and after values are stored. Top Up, Exchange Rate and Transfer adjustments change the committed amount (and the folio committed amount by the folio-currency figure) and trigger a percentage recalculation; Arrear adjustments only add to the arrear total. The adjustment appears on the **Adjustments** tab; no one is notified.
+
+**What happens when I delete an adjustment?**
+The adjustment is soft-deleted and the commitment's committed or arrear totals are recomputed without it, with percentages refreshed. Remittances and payments already generated from the old amount are not changed. No one is notified.
+
+**What happens when I delete a commitment?**
+The commitment is soft-deleted together with its remittances, remittance payments, distribution payments, fund units, account entries, ratios and adjustments, the fund's totals drop and every remaining folio's percentage is recalculated. No one is notified, and the investor's access to the fund is not removed. It can be restored from the [deleted commitments](/capital_commitments/show_deleted) list (destroy access needed).
+
+**What happens when I click Generate All Documents?**
+A background job builds a document from each **Commitment Template** (a commitment-level template overrides a fund template of the same name) using KYC and fund data, deletes earlier unsigned generated copies with that template name, and stores the new document on the commitment's **Documents** tab. It needs a verified KYC; signed documents are never deleted. Investors are not notified; e-signing is a separate step.
+
+**What happens when I upload commitments?**
+Each row creates a commitment (or updates one when **Update Only** is Yes; a duplicate folio without it is rejected). After the whole file is processed, percentages are recalculated per fund, remittances are created for existing calls, access to the fund is granted, and you get one alert naming investors with nobody subscribed to Capital Call notifications. No investor email is sent.
+
+**What happens when a new exchange rate is added for a foreign-currency folio?**
+Only if your company has the exchange-rate commitment adjustment option switched on: a background job creates an **Exchange Rate** adjustment on each matching folio for the change in fund-currency value of its uncalled amount. Otherwise nothing changes until you add an adjustment yourself.
+
+**What happens if the folio's KYC is not verified?**
+The commitment saves, but **Generate All Documents**, **Generate [template name]** and **Generate Investor Statement** do not appear in Actions, and call and distribution notices for this folio are skipped with "KYC not verified". Verify the KYC (Sidebar → **Stakeholders → View Stakeholders**, open the stakeholder, **KYC** tab) and then generate.
+
+### Troubleshooting and edge cases
+
+**I can't see the New Commitment button - why?**
+The button, **Upload** and **Generate** only show when you have update access on the fund; ask your company admin to grant it on the fund's **Access** tab. On the stakeholder's Commitments tab and on the [all-funds commitments list](/capital_commitments) there is no fund context, so no New Commitment button is shown.
+
+**Saving fails with "is not allowed. Allowed values" on unit type - why?**
+The unit type must be one of the unit classes set on the fund (matching ignores case). Pick one from the list, or edit the fund to add the class first.
+
 **Can I change the folio currency after creating a commitment?**
-No. The folio currency is locked once the original amounts are set. To correct it, delete the commitment and recreate it — note that linked remittances and distributions will also need recreating.
+The form still shows the field, but the fund-currency committed amount was converted once when the commitment was created and is not re-converted, so changing the currency leaves the figures out of step. To correct it, delete the commitment and create it again, then regenerate any linked remittances and distributions.
 
 **The committed amount is wrong. How do I fix it?**
-Add a **Top Up** or **Exchange Rate** adjustment for the difference. Don't try to overwrite the fund-currency amount directly — that causes inconsistencies.
+Add a **Top Up** adjustment for the difference (a negative amount reduces it). The **Folio Committed Amount** box is only editable while the commitment amount is still zero. Don't try to overwrite the fund-currency amount directly; that causes inconsistencies.
+
+**My foreign currency is not in the Folio Currency list - why?**
+The list only contains currencies that have an exchange rate to the fund's currency. Add the rate under Company menu → [**Exchange Rates**](/exchange_rates), then reopen the form.
 
 **Why doesn't ownership add up to exactly 100%?**
 Rounding to two decimals across many investors can leave a tiny remainder. It's expected and doesn't affect any calculations.
@@ -312,10 +432,39 @@ Rounding to two decimals across many investors can leave a tiny remainder. It's 
 The folio committed amount is always in the investor's currency; the committed amount is the equivalent in the fund's currency. For same-currency commitments they're identical.
 
 **Can one investor commit to the same fund more than once?**
-Yes — each commitment just needs its own folio ID. Multiple folios are common when an investor uses different entities or joins at different closes.
+Yes - each commitment just needs its own folio ID, unique within the fund. Multiple folios are common when an investor uses different entities or joins at different closes.
 
 **How are account entries (allocated line items) created?**
-By running a **fund formula** through an allocation run, which spreads fund-level values down to each commitment. See the [Carry & Allocation guide](carry_computations_user_guide).
+By running fund formulas through an allocation run (fund page **Actions → Account Entries → Allocate Account Entries**), which spreads fund-level values down to each commitment, or by uploading account entries. See the [Carry & Allocation guide](carry_computations_user_guide).
 
 **Can I skip the capital-call notice for one investor?**
-Yes — turn on **Skip call notices** for that commitment, and call notices will exclude that folio.
+Yes - set the commitment's `skip_doc_gen` custom field to Yes. Call notices, call emails, reminders and distribution emails then skip that folio. There is no separate "skip notices" toggle; it is this custom field.
+
+**If I rename a folio ID, do old documents still match?**
+Yes. The new ID is copied to the folio's remittances, distribution payments and account entries, and the document folders of the commitment, its remittances and its payments are renamed to match.
+
+**Why does e-sign use the commitment's Investor Signatory Emails and not the KYC's?**
+Commitment documents take their **Investor Signatories** signers from the commitment's own **Investor Signatory Emails**. It is copied from the KYC (investing entity) only when the commitment is created, so a later change on the KYC does not reach this commitment. Update the field on the commitment, then generate the document again. See [eSigning](esigning_user_guide#who-signs-signatory-emails-and-labels).
+
+**Generate All Documents is missing from Actions - why?**
+It only appears when the commitment has an investor KYC that is verified and e-signing on the commitment is not already complete. Link and verify the KYC, or if documents are already signed, work from the **Documents** tab.
+
+**Why is my commitment agreement template not listed under Generate?**
+Only fund documents whose **Document For** is **Commitment Template** are listed. A Word file uploaded with **New Document** on the fund's **Documents** tab has no tag, so edit it and set **Document For**, or add it again with **Actions → Misc → New Template**. See [Document Templates](document_templates_user_guide).
+
+**Can I undo a deleted commitment?**
+Yes. There is no menu link; open the [deleted commitments](/capital_commitments/show_deleted) list, find the folio and click **Restore**. Restoring is recursive, so the deleted remittances, payments and units come back with it.
+
+---
+
+## Related Guides
+
+- [Capital Calls](capital_calls_user_guide) - each call creates one remittance per commitment.
+- [Capital Distributions](capital_distributions_user_guide) - each distribution creates one payment per commitment.
+- [Fund Units](fund_units_user_guide) - units issued and redeemed against a commitment's unit type.
+- [Fund Unit Transfers](fund_unit_transfers_user_guide) - moving units and history from one folio to another.
+- [Investor KYC](investor_kyc_user_guide) - a verified KYC is needed for agreements, statements and notices.
+- [Tracking Currency](tracking_currency_guide) - the reporting-currency copies of committed, collected and distributed amounts.
+- [Fund Commitment Notifications](fund_commitment_notifications_user_guide) - ad-hoc emails sent to every commitment's contacts.
+- [E-Signing](esigning_user_guide) - sending generated commitment agreements for signature.
+- [Document Templates](document_templates_user_guide) - adding the commitment (contribution / subscription) agreement and investor statement templates.

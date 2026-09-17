@@ -6,27 +6,48 @@
       <%= investor_notice.title %></h3>
   </div>
   <div class="card-body lead row">
-    <div class="col-lg-5 mb-4 notice_image_div">
-      <% img = investor_notice.link.present?  ? investor_notice.link : investor_notice.entity.logo&.url(expires_in: 60*60*24*7) %>
-      <img class="center notice_image" src=<%=img%> />
-    </div>
-    <div class="col-lg-7 mb-4 notice_items" style="margin: auto;">
-      <% if investor_notice.investor_notice_items.present? %>
+    <%# link falls back to the GP's logo when unset — but the notice may have
+        neither (no image link entered, and no logo uploaded for this entity).
+        Rendering <img src=""> in that case shows a broken-image icon, so skip
+        the whole image column and let content take the full row instead. %>
+    <% img = investor_notice.link.presence || investor_notice.entity.logo&.url(expires_in: 60*60*24*7) %>
+    <% if img.present? %>
+      <div class="col-lg-5 mb-4 notice_image_div">
+        <%# A present img URL can still 404/403 at load time — a stale/deleted
+            attachment, an expired signed URL, whatever. That can't be detected
+            server-side without an extra request per image per render, so hide
+            the whole column client-side on load failure instead of showing a
+            broken-image icon. %>
+        <img class="center notice_image" src="<%= img %>" onerror="this.closest('.notice_image_div').style.display='none'" />
+      </div>
+    <% end %>
+    <div class="<%= img.present? ? 'col-lg-7' : 'col-lg-12' %> mb-4 notice_items" style="margin: auto;">
+      <%# Per-item criteria (InvestorNoticeItem#criteria) works exactly like
+          InvestorNotice#criteria (see _carousel.html.erb) — a Dentaku
+          expression checked per viewer, on top of whoever the parent notice
+          already targets. Must be re-checked every render for the same
+          reason the notice-level check is: it isn't cacheable. %>
+      <% visible_items = investor_notice.investor_notice_items.select { |item| InvestorNoticeCriteriaEvaluator.matches?(investor_notice, current_user, criteria: item.criteria) } %>
+      <% if visible_items.present? %>
         <div class="row">
-          <% investor_notice.investor_notice_items.each_with_index do |item, idx| %>
+          <% visible_items.each_with_index do |item, idx| %>
           
             <div class="card col-12">
                 <div class="card-body">
                   <div class="d-flex flex-row align-items-center">
-                    
-                    <div class="text-bg-<%= colors[idx] % 7 %> rounded-2 d-flex align-items-center justify-content-center p-6">
-                        <i class="ti ti-activity text-white fs-7"></i>
+
+                    <div class="text-bg-<%= colors[idx] % 7 %> rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                        <i class="ti ti-activity text-white fs-4"></i>
                     </div>
 
                     <div class="ms-3">
                       <h4 class="mb-0 fs-6">
-                      <% if item.link.present? %>
-                        <a href="<%= item.link %>"><%= item.title %></a>
+                      <%# item.link may contain [user.xxx] variables (e.g. [user.entity.sub_domain]) —
+                          resolved per viewer at render time; falls back to plain text (no <a>) if
+                          it's blank or a variable can't be resolved for this viewer. %>
+                      <% resolved_link = InvestorNoticeLinkInterpolator.resolve(item.link, current_user) %>
+                      <% if resolved_link.present? %>
+                        <a href="<%= resolved_link %>"><%= item.title %></a>
                       <% else %>
                         <%= item.title %>
                       <% end %>

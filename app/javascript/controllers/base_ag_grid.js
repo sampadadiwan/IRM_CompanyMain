@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import moment from 'moment'; // instead of dayjs
+import { formatLocaleDate, parseDate } from 'custom/locale_date_format';
 
 export default class BaseAgGrid extends Controller {
 
@@ -364,9 +364,12 @@ export default class BaseAgGrid extends Controller {
         const bodyViewport = gridElement.querySelector('.ag-body-viewport');
         if (!bodyViewport) return;
 
-        // Only apply offset fix to deals grid and capital commitments grid
+        // Only apply offset fix to capital commitments grid. deals_list_grid is
+        // excluded: its header is a normal flex item, so the viewport already
+        // starts below it and the offset just pushed a header-height of blank
+        // space above the first row.
         const gridId = gridElement.id;
-        if (gridId !== 'deals_list_grid' && gridId !== 'capital_commitments_table') {
+        if (gridId !== 'capital_commitments_table') {
             return;
         }
 
@@ -426,6 +429,8 @@ export default class BaseAgGrid extends Controller {
             enablePivot: enablePivot,
             chartDataType: 'series',
             aggFunc: aggFunc,
+            type: 'numericColumn',
+            cellClass: 'right-align-cell',
             valueFormatter: function (params) {
               if (params.value != null) {
                 // Format the number with two decimal places and comma separators
@@ -457,7 +462,10 @@ export default class BaseAgGrid extends Controller {
      * @param {Object} controller  - Typically `this` (the controller instance).
      * @param {string} field       - The data field in your JSON row data.
      * @param {string} headerName  - The human-readable column header.
-     * @param {string} dateFormat  - A dayjs (or moment) format string. Defaults to 'YYYY-MM-DD'.
+     * @param {string} dateFormat  - Optional strftime pattern (e.g. '%b %d, %Y').
+     *                               When omitted the active Rails locale's date
+     *                               format is used. NOT a moment/dayjs pattern —
+     *                               the app speaks strftime everywhere.
      * @param {boolean} enableRowGroup - Enable row grouping on this column.
      * @param {boolean} enablePivot - Enable pivot on this column.
      * @param {boolean} rowGroup   - Whether or not this column itself is part of the row group.
@@ -483,29 +491,27 @@ export default class BaseAgGrid extends Controller {
           // Optionally, you can define a custom comparator for date filtering:
           filterParams: {
             comparator: (filterLocalDateAtMidnight, cellValue) => {
-              // cellValue is the raw value in the cell.
-              if (!cellValue) return -1;  // or 0, depending on your use case
-              // parse the date using dayjs or moment
-              const cellDate = dayjs(cellValue);
-              if (cellDate.isBefore(filterLocalDateAtMidnight)) return -1;
-              if (cellDate.isAfter(filterLocalDateAtMidnight)) return 1;
+              // cellValue is the raw value in the cell. ag-Grid hands us the filter
+              // date at local midnight, so compare at day granularity — otherwise a
+              // timestamped cell never tests "equals" the picked day.
+              if (!cellValue) return -1;
+              const cellDate = parseDate(cellValue);
+              if (!cellDate) return -1;
+              cellDate.setHours(0, 0, 0, 0);
+              const diff = cellDate.getTime() - filterLocalDateAtMidnight.getTime();
+              if (diff < 0) return -1;
+              if (diff > 0) return 1;
               return 0;
             },
           },
           valueFormatter: (params) => {
+            // Guard falsy values before parsing: ag-Grid passes '' for an empty
+            // cell, and a date column has no meaningful epoch-0 reading.
             if (!params.value) return '';
-
-            // 1. Use the browser's locale
-            const userLocale = navigator.language || navigator.userLanguage;
-
-            // 2. Set moment’s locale
-            const m = moment(params.value).locale(userLocale);
-
-            // 3. Format the date either using moment’s default locale format
-            //    or a fallback if you want something explicit.
-            //    - `m.format('L')` uses a standard localized date format.
-            //    - `m.format(dateFormat || 'L')` lets you override if you pass a specific format.
-            return m.format(dateFormat || 'L');
+            // With no explicit `dateFormat` this falls back to the active Rails
+            // locale's date format (the app-date-format meta tag), so the cell
+            // matches every server-rendered date on the page.
+            return formatLocaleDate(params.value, dateFormat);
           }
         };
       }

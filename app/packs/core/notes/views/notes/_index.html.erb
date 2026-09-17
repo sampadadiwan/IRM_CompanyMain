@@ -1,14 +1,30 @@
 <% owner_id = params[:owner_id].presence
   owner_type = params[:owner_type].presence
+  # "For" repeats the same stakeholder on every row of a single-owner list, so it
+  # is dropped there. Seeded into the New Note link too, so the row this list
+  # gets back from the create stream has the same columns as its header.
+  show_owner = !single_owner_list?
   title ||= params[:title] || "Notes"
   from_source = params[:from].presence
   embedded_note_context = params[:embedded_note_context].presence
+  # Hide the "Summarise Notes" button if the notes are being displayed in the context of a deal investor tab, as summarization may not be relevant in that context.
+  # But still show in normal notes view for the user
+  hide_summarize_btn = embedded_note_context == "deal_investor_tab"
 %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
   <div class="d-flex gap-2">
-    <%= link_to "New Note", new_note_path("note[owner_id]": owner_id, "note[owner_type]": owner_type, "note[entity_id]": current_user.entity_id, return_to: params[:return_to], from: from_source, embedded_note_context: embedded_note_context), {class: "btn btn-outline-primary ti ti-plus"} %>
-    <% if owner_id.present? %>
+    <%# The enclosing notes_frame is target: "_top", so without an explicit
+        data-turbo-frame this link navigates the whole page away from the list.
+        Pointing it at new_note loads the form inline instead. %>
+    <%# LP CRM: when this list is filtered to a touch point (contact show page tabs),
+        carry it into the form so the new note is pre-linked to that person —
+        NotesController#new builds the note from these note[...] params. %>
+    <%# list_touch_point_id is this list's own filter, carried through the form so
+        the create response can tell whether the saved note belongs here — unlike
+        note[touch_point_id], which the user can change before saving. %>
+    <%= link_to "New Note", new_note_path("note[owner_id]": owner_id, "note[owner_type]": owner_type, "note[entity_id]": current_user.entity_id, "note[touch_point_id]": params[:touch_point_id].presence, list_touch_point_id: params[:touch_point_id].presence, show_owner: show_owner, return_to: params[:return_to], from: from_source, embedded_note_context: embedded_note_context, condensed: params[:condensed]), {class: "btn btn-outline-primary ti ti-plus", data: { turbo_frame: "new_note" }} %>
+    <% if owner_id.present? && !hide_summarize_btn %>
       <% if current_user.entity.support_agents.set?(:note_summarization_agent) %>
       <button type="button" class="btn btn-outline-secondary"
               data-bs-toggle="modal" data-bs-target="#run-note-summarizer-agent-modal">
@@ -37,19 +53,26 @@
   </div>
 </div>
 
+<%= render "notes/blank" %>
 <%=render SearchComponent.new(data_source: notes_path(params: params.to_unsafe_h), turbo_frame: "notes_frame") %>
 
 <div class="table-responsive">
-
   <table id="notes" class="table table-bordered dataTable ">
     <thead>
       <tr>
         <% unless params[:condensed].present? %>
+        <% if show_owner %>
         <th>
           <%= sort_link @q, :owner_name, "For" %>
         </th>
+        <% end %>
         <th>
           <%= sort_link @q, :user_first_name, "User" %>
+        </th>
+        <%# LP CRM: the person at the LP this note was with (Note#touch_point).
+            Kept out of the condensed (dashboard widget) column set. %>
+        <th>
+          With
         </th>
         <% end %>
         <th>
@@ -66,9 +89,12 @@
       </tr>
     </thead>
 
-    <tbody>
+    <tbody id="notes_table_body">
       <% notes.each do |note| %>
-        <%= render partial: "/notes/note", locals: {note: note} %>
+        <%# show_owner passed explicitly: the row is also re-rendered by turbo
+            streams, where this list's params aren't in the request, and a row
+            with a different column count than the header would misalign %>
+        <%= render partial: "/notes/note", locals: { note: note, show_owner: show_owner } %>
       <% end %>
     </tbody>
 

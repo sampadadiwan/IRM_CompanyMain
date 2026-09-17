@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Fund data in your AI client | CapHive</title>
+<meta name="description" content="Twenty-two read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/fund-data-in-your-ai-client.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Fund data in your AI client">
+<meta property="og:description" content="Twenty-two read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/fund-data-in-your-ai-client.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="resources">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-black tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>Fund data in your AI client
+          </nav>
+          <span class="chip-label">AI</span>
+          <h1 style="margin-top:22px">We didn’t add a chatbot. We made <em>the fund callable.</em></h1>
+          <p class="lede">Twenty-two read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-09">Aug 9, 2026</time>
+            <span class="dot">·</span>
+            <span>7 min read</span>
+            <span class="dot">·</span>
+            <span>AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <p>Every software vendor serving private funds shipped an AI feature in the last eighteen months. Almost all of them shipped the same one: a chat box in the bottom-right corner of their product.</p>
+        <p>We shipped one of those too. It's genuinely useful, and it's not what this article is about.</p>
+        <p>This is about the opposite move — the one that took longer and matters more.</p>
+        <p>Instead of putting an AI inside our product, we made our product available <em>to the AI you already use.</em> Twenty-two read-only tools. Your own API key. Your own model choice. Your governance rules, enforced on our side.</p>
+        <div class="stat-band" style="margin:34px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden"><div><strong>22</strong><span>read-only tools exposed</span></div><div><strong>0</strong><span>write operations</span></div><div><strong>30</strong><span>day access-token lifetime, auto-refreshing, revocable by…</span></div></div>
+        <h3>The question your IC is already asking</h3>
+        <p>"What's our AI strategy?"</p>
+        <p>The honest answer at most GPs in the $500M–$10B band is some version of: <em>our administrator's platform added a chat box, and two people on the team pay for a consumer AI subscription out of their own pocket.</em></p>
+        <p>That second half is the interesting one. Your team is already using an AI client daily. What it can't do is see your fund data — so they paste it in. Screenshots of the cap table. Exported capital account statements. A pasted KPI grid.</p>
+        <p>That's not an AI strategy. That's an exfiltration channel with a subscription.</p>
+        <div class="pull"><p>Your team isn't waiting for you to choose an AI tool. They chose one. The only open question is whether it reaches your data through a governed connection or through the clipboard.</p></div>
+        <h3>What it looks like in practice</h3>
+        <p>An operations lead opens their AI client — the same one they already use — and types:</p>
+        <div class="pull"><p>"Compare TVPI and DPI across all my funds as of last quarter, and flag any fund where called capital is above 80% of commitments."</p></div>
+        <p>The client calls our tools. It pulls the fund list, the ratio set, and the commitment aggregates. It assembles the answer.</p>
+        <p>What it does <strong>not</strong> do is compute the ratios. Those come out of the platform, calculated by the same engine that produced the numbers in the last LP report — because a number that an LLM arrived at by arithmetic is a number you cannot defend in a diligence call.</p>
+        <p>The AI's job here is retrieval, framing, and synthesis. The fund's job is the math. That line is deliberate, and we don't cross it.</p>
+        <figure style="margin:34px 0"><div style="background:#FFFFFF;border:1px solid var(--line);border-radius:14px;padding:22px;overflow-x:auto"><svg width="100%" id="svg-fund-data-in-your-ai-client-0" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="max-width: 970px; background-color: transparent;" viewBox="-50 -10 970 523" role="graphics-document document" aria-roledescription="sequence"><g><rect x="720" y="437" fill="#eaeaea" stroke="#666" width="150" height="65" name="D" rx="3" ry="3" class="actor actor-bottom"/><text x="795" y="469.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="795" dy="0">Fund data</tspan></text></g><g><rect x="515" y="437" fill="#eaeaea" stroke="#666" width="150" height="65" name="M" rx="3" ry="3" class="actor actor-bottom"/><text x="590" y="469.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="590" dy="0">CapHive MCP</tspan></text></g><g><rect x="289" y="437" fill="#eaeaea" stroke="#666" width="150" height="65" name="C" rx="3" ry="3" class="actor actor-bottom"/><text x="364" y="469.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="364" dy="0">AI client</tspan></text></g><g><rect x="0" y="437" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-bottom"/><text x="75" y="469.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">Ops lead</tspan></text></g><g><line id="actor3" x1="795" y1="65" x2="795" y2="437" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="D" data-et="life-line" data-id="D"/><g id="root-3" data-et="participant" data-type="participant" data-id="D"><rect x="720" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="D" rx="3" ry="3" class="actor actor-top"/><text x="795" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="795" dy="0">Fund data</tspan></text></g></g><g><line id="actor2" x1="590" y1="65" x2="590" y2="437" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="M" data-et="life-line" data-id="M"/><g id="root-2" data-et="participant" data-type="participant" data-id="M"><rect x="515" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="M" rx="3" ry="3" class="actor actor-top"/><text x="590" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="590" dy="0">CapHive MCP</tspan></text></g></g><g><line id="actor1" x1="364" y1="65" x2="364" y2="437" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="C" data-et="life-line" data-id="C"/><g id="root-1" data-et="participant" data-type="participant" data-id="C"><rect x="289" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="C" rx="3" ry="3" class="actor actor-top"/><text x="364" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="364" dy="0">AI client</tspan></text></g></g><g><line id="actor0" x1="75" y1="65" x2="75" y2="437" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="U" data-et="life-line" data-id="U"/><g id="root-0" data-et="participant" data-type="participant" data-id="U"><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-top"/><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">Ops lead</tspan></text></g></g><style>#svg-fund-data-in-your-ai-client-0{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:15px;fill:#101010;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#svg-fund-data-in-your-ai-client-0 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#svg-fund-data-in-your-ai-client-0 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#svg-fund-data-in-your-ai-client-0 .error-icon{fill:#FFFFFF;}#svg-fund-data-in-your-ai-client-0 .error-text{fill:#000000;stroke:#000000;}#svg-fund-data-in-your-ai-client-0 .edge-thickness-normal{stroke-width:1px;}#svg-fund-data-in-your-ai-client-0 .edge-thickness-thick{stroke-width:3.5px;}#svg-fund-data-in-your-ai-client-0 .edge-pattern-solid{stroke-dasharray:0;}#svg-fund-data-in-your-ai-client-0 .edge-thickness-invisible{stroke-width:0;fill:none;}#svg-fund-data-in-your-ai-client-0 .edge-pattern-dashed{stroke-dasharray:3;}#svg-fund-data-in-your-ai-client-0 .edge-pattern-dotted{stroke-dasharray:2;}#svg-fund-data-in-your-ai-client-0 .marker{fill:#8A8A8A;stroke:#8A8A8A;}#svg-fund-data-in-your-ai-client-0 .marker.cross{stroke:#8A8A8A;}#svg-fund-data-in-your-ai-client-0 svg{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:15px;}#svg-fund-data-in-your-ai-client-0 p{margin:0;}#svg-fund-data-in-your-ai-client-0 .actor{stroke:#FF4D00;fill:#FBF7F1;stroke-width:1;}#svg-fund-data-in-your-ai-client-0 rect.actor.outer-path[data-look="neo"]{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-fund-data-in-your-ai-client-0 rect.note[data-look="neo"]{stroke:#FF4D00;fill:#FFF3EC;filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-fund-data-in-your-ai-client-0 text.actor&gt;tspan{fill:#101010;stroke:none;}#svg-fund-data-in-your-ai-client-0 .actor-line{stroke:#FF4D00;}#svg-fund-data-in-your-ai-client-0 .innerArc{stroke-width:1.5;stroke-dasharray:none;}#svg-fund-data-in-your-ai-client-0 .messageLine0{stroke-width:1.5;stroke-dasharray:none;stroke:#5A5A5A;}#svg-fund-data-in-your-ai-client-0 .messageLine1{stroke-width:1.5;stroke-dasharray:2,2;stroke:#5A5A5A;}#svg-fund-data-in-your-ai-client-0 [id$="-arrowhead"] path{fill:#5A5A5A;stroke:#5A5A5A;}#svg-fund-data-in-your-ai-client-0 .sequenceNumber{fill:#757575;}#svg-fund-data-in-your-ai-client-0 [id$="-sequencenumber"]{fill:#5A5A5A;}#svg-fund-data-in-your-ai-client-0 [id$="-crosshead"] path{fill:#5A5A5A;stroke:#5A5A5A;}#svg-fund-data-in-your-ai-client-0 .messageText{fill:#101010;stroke:none;}#svg-fund-data-in-your-ai-client-0 .labelBox{stroke:#FF4D00;fill:#FBF7F1;filter:none;}#svg-fund-data-in-your-ai-client-0 .labelText,#svg-fund-data-in-your-ai-client-0 .labelText&gt;tspan{fill:#101010;stroke:none;}#svg-fund-data-in-your-ai-client-0 .loopText,#svg-fund-data-in-your-ai-client-0 .loopText&gt;tspan{fill:#101010;stroke:none;}#svg-fund-data-in-your-ai-client-0 .sectionTitle,#svg-fund-data-in-your-ai-client-0 .sectionTitle&gt;tspan{fill:#101010;stroke:none;}#svg-fund-data-in-your-ai-client-0 .loopLine{stroke-width:2px;stroke-dasharray:2,2;stroke:#FF4D00;fill:#FF4D00;}#svg-fund-data-in-your-ai-client-0 .note{stroke:#FF4D00;fill:#FFF3EC;}#svg-fund-data-in-your-ai-client-0 .noteText,#svg-fund-data-in-your-ai-client-0 .noteText&gt;tspan{fill:#333;stroke:none;font-weight:normal;}#svg-fund-data-in-your-ai-client-0 .activation0{fill:#F2EFEA;stroke:hsl(37.5, 23.5294117647%, 83.3333333333%);}#svg-fund-data-in-your-ai-client-0 .activation1{fill:#F2EFEA;stroke:hsl(37.5, 23.5294117647%, 83.3333333333%);}#svg-fund-data-in-your-ai-client-0 .activation2{fill:#F2EFEA;stroke:hsl(37.5, 23.5294117647%, 83.3333333333%);}#svg-fund-data-in-your-ai-client-0 .actorPopupMenu{position:absolute;}#svg-fund-data-in-your-ai-client-0 .actorPopupMenuPanel{position:absolute;fill:#FBF7F1;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);filter:drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));}#svg-fund-data-in-your-ai-client-0 .actor-man circle,#svg-fund-data-in-your-ai-client-0 line{fill:#FBF7F1;stroke-width:2px;}#svg-fund-data-in-your-ai-client-0 g rect.rect{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));stroke:#FF4D00;}#svg-fund-data-in-your-ai-client-0 .node .neo-node{stroke:#FF4D00;}#svg-fund-data-in-your-ai-client-0 [data-look="neo"].node rect,#svg-fund-data-in-your-ai-client-0 [data-look="neo"].cluster rect,#svg-fund-data-in-your-ai-client-0 [data-look="neo"].node polygon{stroke:url(#svg-fund-data-in-your-ai-client-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-fund-data-in-your-ai-client-0 [data-look="neo"].swimlane.cluster rect{filter:none;}#svg-fund-data-in-your-ai-client-0 [data-look="neo"].node path{stroke:url(#svg-fund-data-in-your-ai-client-0-gradient);stroke-width:1px;}#svg-fund-data-in-your-ai-client-0 [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-fund-data-in-your-ai-client-0 [data-look="neo"].node .neo-line path{stroke:#FF4D00;filter:none;}#svg-fund-data-in-your-ai-client-0 [data-look="neo"].node circle{stroke:url(#svg-fund-data-in-your-ai-client-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-fund-data-in-your-ai-client-0 [data-look="neo"].node circle .state-start{fill:#000000;}#svg-fund-data-in-your-ai-client-0 [data-look="neo"].icon-shape .icon{fill:url(#svg-fund-data-in-your-ai-client-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-fund-data-in-your-ai-client-0 [data-look="neo"].icon-shape .icon-neo path{stroke:url(#svg-fund-data-in-your-ai-client-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-fund-data-in-your-ai-client-0 :root{--mermaid-font-family:Arial,'Liberation Sans',Helvetica,sans-serif;}</style><g/><defs><symbol id="my-svg-computer" width="24" height="24"><path transform="scale(.5)" d="M2 2v13h20v-13h-20zm18 11h-16v-9h16v9zm-10.228 6l.466-1h3.524l.467 1h-4.457zm14.228 3h-24l2-6h2.104l-1.33 4h18.45l-1.297-4h2.073l2 6zm-5-10h-14v-7h14v7z"/></symbol></defs><defs><symbol id="my-svg-database" fill-rule="evenodd" clip-rule="evenodd"><path transform="scale(.5)" d="M12.258.001l.256.004.255.005.253.008.251.01.249.012.247.015.246.016.242.019.241.02.239.023.236.024.233.027.231.028.229.031.225.032.223.034.22.036.217.038.214.04.211.041.208.043.205.045.201.046.198.048.194.05.191.051.187.053.183.054.18.056.175.057.172.059.168.06.163.061.16.063.155.064.15.066.074.033.073.033.071.034.07.034.069.035.068.035.067.035.066.035.064.036.064.036.062.036.06.036.06.037.058.037.058.037.055.038.055.038.053.038.052.038.051.039.05.039.048.039.047.039.045.04.044.04.043.04.041.04.04.041.039.041.037.041.036.041.034.041.033.042.032.042.03.042.029.042.027.042.026.043.024.043.023.043.021.043.02.043.018.044.017.043.015.044.013.044.012.044.011.045.009.044.007.045.006.045.004.045.002.045.001.045v17l-.001.045-.002.045-.004.045-.006.045-.007.045-.009.044-.011.045-.012.044-.013.044-.015.044-.017.043-.018.044-.02.043-.021.043-.023.043-.024.043-.026.043-.027.042-.029.042-.03.042-.032.042-.033.042-.034.041-.036.041-.037.041-.039.041-.04.041-.041.04-.043.04-.044.04-.045.04-.047.039-.048.039-.05.039-.051.039-.052.038-.053.038-.055.038-.055.038-.058.037-.058.037-.06.037-.06.036-.062.036-.064.036-.064.036-.066.035-.067.035-.068.035-.069.035-.07.034-.071.034-.073.033-.074.033-.15.066-.155.064-.16.063-.163.061-.168.06-.172.059-.175.057-.18.056-.183.054-.187.053-.191.051-.194.05-.198.048-.201.046-.205.045-.208.043-.211.041-.214.04-.217.038-.22.036-.223.034-.225.032-.229.031-.231.028-.233.027-.236.024-.239.023-.241.02-.242.019-.246.016-.247.015-.249.012-.251.01-.253.008-.255.005-.256.004-.258.001-.258-.001-.256-.004-.255-.005-.253-.008-.251-.01-.249-.012-.247-.015-.245-.016-.243-.019-.241-.02-.238-.023-.236-.024-.234-.027-.231-.028-.228-.031-.226-.032-.223-.034-.22-.036-.217-.038-.214-.04-.211-.041-.208-.043-.204-.045-.201-.046-.198-.048-.195-.05-.19-.051-.187-.053-.184-.054-.179-.056-.176-.057-.172-.059-.167-.06-.164-.061-.159-.063-.155-.064-.151-.066-.074-.033-.072-.033-.072-.034-.07-.034-.069-.035-.068-.035-.067-.035-.066-.035-.064-.036-.063-.036-.062-.036-.061-.036-.06-.037-.058-.037-.057-.037-.056-.038-.055-.038-.053-.038-.052-.038-.051-.039-.049-.039-.049-.039-.046-.039-.046-.04-.044-.04-.043-.04-.041-.04-.04-.041-.039-.041-.037-.041-.036-.041-.034-.041-.033-.042-.032-.042-.03-.042-.029-.042-.027-.042-.026-.043-.024-.043-.023-.043-.021-.043-.02-.043-.018-.044-.017-.043-.015-.044-.013-.044-.012-.044-.011-.045-.009-.044-.007-.045-.006-.045-.004-.045-.002-.045-.001-.045v-17l.001-.045.002-.045.004-.045.006-.045.007-.045.009-.044.011-.045.012-.044.013-.044.015-.044.017-.043.018-.044.02-.043.021-.043.023-.043.024-.043.026-.043.027-.042.029-.042.03-.042.032-.042.033-.042.034-.041.036-.041.037-.041.039-.041.04-.041.041-.04.043-.04.044-.04.046-.04.046-.039.049-.039.049-.039.051-.039.052-.038.053-.038.055-.038.056-.038.057-.037.058-.037.06-.037.061-.036.062-.036.063-.036.064-.036.066-.035.067-.035.068-.035.069-.035.07-.034.072-.034.072-.033.074-.033.151-.066.155-.064.159-.063.164-.061.167-.06.172-.059.176-.057.179-.056.184-.054.187-.053.19-.051.195-.05.198-.048.201-.046.204-.045.208-.043.211-.041.214-.04.217-.038.22-.036.223-.034.226-.032.228-.031.231-.028.234-.027.236-.024.238-.023.241-.02.243-.019.245-.016.247-.015.249-.012.251-.01.253-.008.255-.005.256-.004.258-.001.258.001zm-9.258 20.499v.01l.001.021.003.021.004.022.005.021.006.022.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.023.018.024.019.024.021.024.022.025.023.024.024.025.052.049.056.05.061.051.066.051.07.051.075.051.079.052.084.052.088.052.092.052.097.052.102.051.105.052.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.048.144.049.147.047.152.047.155.047.16.045.163.045.167.043.171.043.176.041.178.041.183.039.187.039.19.037.194.035.197.035.202.033.204.031.209.03.212.029.216.027.219.025.222.024.226.021.23.02.233.018.236.016.24.015.243.012.246.01.249.008.253.005.256.004.259.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.021.224-.024.22-.026.216-.027.212-.028.21-.031.205-.031.202-.034.198-.034.194-.036.191-.037.187-.039.183-.04.179-.04.175-.042.172-.043.168-.044.163-.045.16-.046.155-.046.152-.047.148-.048.143-.049.139-.049.136-.05.131-.05.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.053.083-.051.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.05.023-.024.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.023.01-.022.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.127l-.077.055-.08.053-.083.054-.085.053-.087.052-.09.052-.093.051-.095.05-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.045-.118.044-.12.043-.122.042-.124.042-.126.041-.128.04-.13.04-.132.038-.134.038-.135.037-.138.037-.139.035-.142.035-.143.034-.144.033-.147.032-.148.031-.15.03-.151.03-.153.029-.154.027-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.01-.179.008-.179.008-.181.006-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.006-.179-.008-.179-.008-.178-.01-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.027-.153-.029-.151-.03-.15-.03-.148-.031-.146-.032-.145-.033-.143-.034-.141-.035-.14-.035-.137-.037-.136-.037-.134-.038-.132-.038-.13-.04-.128-.04-.126-.041-.124-.042-.122-.042-.12-.044-.117-.043-.116-.045-.113-.045-.112-.046-.109-.047-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.05-.093-.052-.09-.051-.087-.052-.085-.053-.083-.054-.08-.054-.077-.054v4.127zm0-5.654v.011l.001.021.003.021.004.021.005.022.006.022.007.022.009.022.01.022.011.023.012.023.013.023.015.024.016.023.017.024.018.024.019.024.021.024.022.024.023.025.024.024.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.052.11.051.114.051.119.052.123.05.127.051.131.05.135.049.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.044.171.042.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.022.23.02.233.018.236.016.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.012.241-.015.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.048.139-.05.136-.049.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.051.051-.049.023-.025.023-.024.021-.025.02-.024.019-.024.018-.024.017-.024.015-.023.014-.023.013-.024.012-.022.01-.023.01-.023.008-.022.006-.022.006-.022.004-.021.004-.022.001-.021.001-.021v-4.139l-.077.054-.08.054-.083.054-.085.052-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.044-.118.044-.12.044-.122.042-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.035-.143.033-.144.033-.147.033-.148.031-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.009-.179.009-.179.007-.181.007-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.007-.179-.007-.179-.009-.178-.009-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.031-.146-.033-.145-.033-.143-.033-.141-.035-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.04-.126-.041-.124-.042-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.051-.093-.051-.09-.051-.087-.053-.085-.052-.083-.054-.08-.054-.077-.054v4.139zm0-5.666v.011l.001.02.003.022.004.021.005.022.006.021.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.024.018.023.019.024.021.025.022.024.023.024.024.025.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.051.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.043.171.043.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.021.23.02.233.018.236.017.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.013.241-.014.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.049.139-.049.136-.049.131-.051.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.049.023-.025.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.022.01-.023.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.153l-.077.054-.08.054-.083.053-.085.053-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.048-.105.048-.106.048-.109.046-.111.046-.114.046-.115.044-.118.044-.12.043-.122.043-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.034-.143.034-.144.033-.147.032-.148.032-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.024-.161.024-.162.023-.163.023-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.01-.178.01-.179.009-.179.007-.181.006-.182.006-.182.004-.184.003-.184.001-.185.001-.185-.001-.184-.001-.184-.003-.182-.004-.182-.006-.181-.006-.179-.007-.179-.009-.178-.01-.176-.01-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.023-.162-.023-.161-.024-.159-.024-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.032-.146-.032-.145-.033-.143-.034-.141-.034-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.041-.126-.041-.124-.041-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.048-.105-.048-.102-.048-.1-.05-.097-.049-.095-.051-.093-.051-.09-.052-.087-.052-.085-.053-.083-.053-.08-.054-.077-.054v4.153zm8.74-8.179l-.257.004-.254.005-.25.008-.247.011-.244.012-.241.014-.237.016-.233.018-.231.021-.226.022-.224.023-.22.026-.216.027-.212.028-.21.031-.205.032-.202.033-.198.034-.194.036-.191.038-.187.038-.183.04-.179.041-.175.042-.172.043-.168.043-.163.045-.16.046-.155.046-.152.048-.148.048-.143.048-.139.049-.136.05-.131.05-.126.051-.123.051-.118.051-.114.052-.11.052-.106.052-.101.052-.096.052-.092.052-.088.052-.083.052-.079.052-.074.051-.07.052-.065.051-.06.05-.056.05-.051.05-.023.025-.023.024-.021.024-.02.025-.019.024-.018.024-.017.023-.015.024-.014.023-.013.023-.012.023-.01.023-.01.022-.008.022-.006.023-.006.021-.004.022-.004.021-.001.021-.001.021.001.021.001.021.004.021.004.022.006.021.006.023.008.022.01.022.01.023.012.023.013.023.014.023.015.024.017.023.018.024.019.024.02.025.021.024.023.024.023.025.051.05.056.05.06.05.065.051.07.052.074.051.079.052.083.052.088.052.092.052.096.052.101.052.106.052.11.052.114.052.118.051.123.051.126.051.131.05.136.05.139.049.143.048.148.048.152.048.155.046.16.046.163.045.168.043.172.043.175.042.179.041.183.04.187.038.191.038.194.036.198.034.202.033.205.032.21.031.212.028.216.027.22.026.224.023.226.022.231.021.233.018.237.016.241.014.244.012.247.011.25.008.254.005.257.004.26.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.022.224-.023.22-.026.216-.027.212-.028.21-.031.205-.032.202-.033.198-.034.194-.036.191-.038.187-.038.183-.04.179-.041.175-.042.172-.043.168-.043.163-.045.16-.046.155-.046.152-.048.148-.048.143-.048.139-.049.136-.05.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.05.051-.05.023-.025.023-.024.021-.024.02-.025.019-.024.018-.024.017-.023.015-.024.014-.023.013-.023.012-.023.01-.023.01-.022.008-.022.006-.023.006-.021.004-.022.004-.021.001-.021.001-.021-.001-.021-.001-.021-.004-.021-.004-.022-.006-.021-.006-.023-.008-.022-.01-.022-.01-.023-.012-.023-.013-.023-.014-.023-.015-.024-.017-.023-.018-.024-.019-.024-.02-.025-.021-.024-.023-.024-.023-.025-.051-.05-.056-.05-.06-.05-.065-.051-.07-.052-.074-.051-.079-.052-.083-.052-.088-.052-.092-.052-.096-.052-.101-.052-.106-.052-.11-.052-.114-.052-.118-.051-.123-.051-.126-.051-.131-.05-.136-.05-.139-.049-.143-.048-.148-.048-.152-.048-.155-.046-.16-.046-.163-.045-.168-.043-.172-.043-.175-.042-.179-.041-.183-.04-.187-.038-.191-.038-.194-.036-.198-.034-.202-.033-.205-.032-.21-.031-.212-.028-.216-.027-.22-.026-.224-.023-.226-.022-.231-.021-.233-.018-.237-.016-.241-.014-.244-.012-.247-.011-.25-.008-.254-.005-.257-.004-.26-.001-.26.001z"/></symbol></defs><defs><symbol id="my-svg-clock" width="24" height="24"><path transform="scale(.5)" d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.848 12.459c.202.038.202.333.001.372-1.907.361-6.045 1.111-6.547 1.111-.719 0-1.301-.582-1.301-1.301 0-.512.77-5.447 1.125-7.445.034-.192.312-.181.343.014l.985 6.238 5.394 1.011z"/></symbol></defs><defs><marker id="my-svg-arrowhead" refX="7.9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M -1 0 L 10 5 L 0 10 z"/></marker></defs><defs><marker id="my-svg-crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="4" refY="4.5"><path fill="none" stroke="#000000" stroke-width="1pt" d="M 1,2 L 6,7 M 6,2 L 1,7" style="stroke-dasharray: 0, 0;"/></marker></defs><defs><marker id="my-svg-filled-head" refX="15.5" refY="7" markerWidth="20" markerHeight="28" orient="auto"><path d="M 18,7 L9,13 L14,7 L9,1 Z"/></marker></defs><defs><marker id="my-svg-sequencenumber" refX="15" refY="15" markerWidth="60" markerHeight="40" orient="auto"><circle cx="15" cy="15" r="6"/></marker></defs><defs><marker id="my-svg-solidTopArrowHead" refX="7.9" refY="7.25" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 8 L 0 8 z"/></marker></defs><defs><marker id="my-svg-solidBottomArrowHead" refX="7.9" refY="0.75" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 0 L 0 8 z"/></marker></defs><defs><marker id="my-svg-stickTopArrowHead" refX="7.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 7 7" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><defs><marker id="my-svg-stickBottomArrowHead" refX="7.5" refY="0" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 7 L 7 0" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><text x="218" y="80" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">"Compare TVPI across my funds"</text><line x1="76" y1="111" x2="360" y2="111" class="messageLine0" data-et="message" data-id="i0" data-from="U" data-to="C" stroke-width="2" stroke="none" marker-end="url(#svg-fund-data-in-your-ai-client-0-arrowhead)" style="fill: none;"/><text x="476" y="126" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">call tools (OAuth token)</text><line x1="365" y1="157" x2="586" y2="157" class="messageLine0" data-et="message" data-id="i1" data-from="C" data-to="M" stroke-width="2" stroke="none" marker-end="url(#svg-fund-data-in-your-ai-client-0-arrowhead)" style="fill: none;"/><text x="591" y="172" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">resolve user + entity scope</text><path d="M 591,203 C 651,193 651,233 591,223" class="messageLine0" data-et="message" data-id="i2" data-from="M" data-to="M" stroke-width="2" stroke="none" marker-end="url(#svg-fund-data-in-your-ai-client-0-arrowhead)" style="fill: none;"/><text x="691" y="248" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">read-only query</text><line x1="591" y1="279" x2="791" y2="279" class="messageLine0" data-et="message" data-id="i3" data-from="M" data-to="D" stroke-width="2" stroke="none" marker-end="url(#svg-fund-data-in-your-ai-client-0-arrowhead)" style="fill: none;"/><text x="694" y="294" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">only this user's funds</text><line x1="794" y1="325" x2="594" y2="325" class="messageLine1" data-et="message" data-id="i4" data-from="D" data-to="M" stroke-width="2" stroke="none" marker-end="url(#svg-fund-data-in-your-ai-client-0-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><text x="479" y="340" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">results (call logged)</text><line x1="589" y1="371" x2="368" y2="371" class="messageLine1" data-et="message" data-id="i5" data-from="M" data-to="C" stroke-width="2" stroke="none" marker-end="url(#svg-fund-data-in-your-ai-client-0-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><text x="221" y="386" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">answer, numbers from platform</text><line x1="363" y1="417" x2="79" y2="417" class="messageLine1" data-et="message" data-id="i6" data-from="C" data-to="U" stroke-width="2" stroke="none" marker-end="url(#svg-fund-data-in-your-ai-client-0-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/></svg></div></figure>
+        <h3>The three questions procurement will ask</h3>
+        <p>Every one of these came up before we shipped. Each shaped the design.</p>
+        <p><strong>"Can it change anything?"</strong></p>
+        <p>No. Not "we've restricted it" — there is no write path. All 22 tools are read-only. The connection cannot create a capital call, edit a valuation, or delete a document, because no tool exists that does those things.</p>
+        <p><strong>"Whose data does it see?"</strong></p>
+        <p>Only what the authenticated user could already see in the product. Every query resolves through the same user and entity scoping the web interface uses. There's no service account, no elevated connector identity, no cross-tenant surface. If a user can't open a fund in the UI, the AI can't read it either.</p>
+        <p><strong>"Who decides who gets it?"</strong></p>
+        <p>Two levels, deliberately separated:</p>
+        <ol><li><strong>The platform gate</strong> — whether your firm has MCP access at all. Commercial, controlled by us.</li><li><strong>Your gate</strong> — which roles inside your firm can connect, and which AI clients are permitted. Self-serve, controlled by your own admin, changeable without a support ticket.</li></ol>
+        <p>That second gate includes an option most firms don't expect: you can extend access to the <strong>investor role</strong>. An LP asking their own AI client about their own capital account, scoped to exactly their own folio. Most firms will start with employees only — but the model supports it, and the scoping is the same code either way.</p>
+        <div class="pull"><p>"Read-only" is a promise. "No write tool exists" is an architecture. Ask any vendor which of the two they're offering.</p></div>
+        <h2>⚙️ Under the hood: no secrets to distribute</h2>
+        <p>The part I'd want to know about if I were evaluating this.</p>
+        <p>Connecting doesn't involve a client ID or a client secret. The AI client registers itself dynamically — <strong>OAuth 2.0 Dynamic Client Registration, RFC 7591</strong> — and authorises with <strong>PKCE</strong>, the flow designed for public clients that can't keep a secret.</p>
+        <p>This sounds like plumbing. It's actually the security property that matters most operationally.</p>
+        <p>The alternative — issuing each firm a client secret — means a credential exists that has to be transmitted, stored, rotated, and revoked when someone leaves. That credential is the thing that leaks. It leaks in a Slack message, a runbook, a screenshot in a support ticket.</p>
+        <p>With dynamic registration, there's no such artifact. A user authorises with their own login, gets a token scoped to themselves, and that token expires in 30 days with automatic refresh. When they leave, disabling their account ends their AI access at the same moment it ends their web access — no separate revocation step to forget.</p>
+        <p>And every tool call is logged. Not just the connection — each individual query, attributable to a user, available for audit.</p>
+        <table><thead><tr><th></th><th>Chatbot inside the vendor's product</th><th>Fund data callable from your AI client</th></tr></thead><tbody><tr><td>Where the AI runs</td><td>Vendor's infrastructure, vendor's model</td><td>Your client, your model, your key</td></tr><tr><td>Model choice</td><td>Whatever the vendor picked</td><td>Yours — set a default model per entity</td></tr><tr><td>Who pays for inference</td><td>Bundled into the licence, opaque</td><td>Your API account, itemised</td></tr><tr><td>Scope of data</td><td>Whatever the vendor's chat is wired to</td><td>Exactly what that user can already see</td></tr><tr><td>Works alongside your other tools</td><td>No</td><td>Yes — same client, same conversation</td></tr><tr><td>Leaves an audit trail</td><td>Sometimes</td><td>Every tool call, per user</td></tr></tbody></table>
+        <h3>Bring your own key — and your own model</h3>
+        <p>The same principle runs through our LLM configuration. Each entity can supply its own Anthropic or OpenRouter API key, and set its own default model.</p>
+        <p>Three consequences, all commercial rather than technical:</p>
+        <p><strong>Billing is yours and it's itemised.</strong> AI usage shows up on your API account, not buried in a per-seat licence with a margin on top. You can see what you're spending and on what.</p>
+        <p><strong>Model choice is yours.</strong> When a better or cheaper model ships — and one will, within months — you switch. You don't wait for our release cycle, and you don't get switched without being told.</p>
+        <p><strong>The data-residency conversation gets simpler.</strong> You're contracting with the model provider directly, under your own terms, rather than asking us to explain a sub-processor relationship in an LP's diligence questionnaire.</p>
+        <div class="pull"><p>If your AI features run on your vendor's key, your AI cost, your model, and your data-processing terms are all decisions someone else makes for you.</p></div>
+        <h2>📊 The impact</h2>
+        <p>Before: a cross-fund question meant an export, a workbook, and an analyst's afternoon — or a screenshot pasted into a consumer AI tool with no governance at all.</p>
+        <p>After: the question is asked in the client the team already uses, against <strong>22 read-only tools</strong>, scoped to the asker's own permissions, with <strong>every call logged</strong> and <strong>zero write paths</strong> exposed.</p>
+        <p>The measurable shift isn't time saved on any single query. It's this: <strong>the number of times fund data leaves your controlled environment to answer a question goes to zero</strong> — because the governed path is now easier than the clipboard.</p>
+        <h2>What to take from this</h2><div class="callout"><ol><li><strong>Assume your team is already using AI on your data.</strong> The useful question isn't whether to allow it. It's whether the path they're using is one you can audit.</li><li><strong>"Read-only" should mean no write tool exists.</strong> Ask any vendor to describe the write path they've disabled. If they can describe one, it's a configuration, not an architecture.</li><li><strong>Scoping must reuse the product's own permissions.</strong> A connector with its own service account and its own permission model is a second access-control system to keep in sync — and it will drift.</li><li><strong>Prefer dynamic registration over shared secrets.</strong> Any credential a human has to copy between systems is a credential that ends up somewhere it shouldn't.</li><li><strong>Don't let an LLM compute your numbers.</strong> Retrieval, comparison, and drafting: yes. Arithmetic that reaches an LP: no. Keep the calculation in the system that can show its work.</li></ol></div>
+        <h2>See it on your own structure</h2><p>If you want to see what your own funds look like from inside your AI client — same permissions your team already has, nothing new granted — DM me and I'll set up a walkthrough on your structure.</p><p>Worth doing even if you don't take it further: it makes the governance conversation concrete in a way a policy document never does.</p><div class="callout"><p>Question for the operators here: has your firm written down what your team is allowed to paste into an AI tool? Not what the policy should be — whether the policy exists. My sense is that most firms are one quarter behind their own staff on this.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Fund data in your AI client",
+  "description": "Twenty-two read-only tools, your own API key, your own model. Why the most useful AI feature we shipped this year has no interface of its own.",
+  "datePublished": "2026-08-09",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/fund-data-in-your-ai-client.html"
+}
+</script>
+</body>
+</html>

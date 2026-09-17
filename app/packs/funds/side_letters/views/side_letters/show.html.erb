@@ -1,0 +1,163 @@
+<%# Breadcrumbs come from the layout card (@bread_crumbs in the controller) %>
+<%= render FormCard.new(title: "Side Letter — #{@side_letter.investor.investor_name}") do %>
+  <%
+    pending_count = @obligations.count(&:pending_review?)
+    armed_count   = @obligations.count(&:armed?)
+    open_tasks    = @covenant_tasks.reject(&:completed?)
+    next_due      = open_tasks.filter_map(&:due_date).min
+  %>
+
+  <%# ── Two-column top section, mirroring the SupportAgent show page ── %>
+  <div class="row g-4 align-items-start mb-4">
+
+    <%# ── Left: key-value attributes ── %>
+    <div class="col-md-5">
+      <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
+          <i class="ti ti-list-details text-primary fs-5"></i>
+          <h5 class="mb-0 fw-semibold">Details</h5>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-bordered dataTable agent-detail-table mb-0">
+            <colgroup>
+              <col style="width: 150px;">
+              <col>
+            </colgroup>
+            <tr>
+              <td class="align-top">Investor</td>
+              <td><%= @side_letter.investor.investor_name %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Fund</td>
+              <td><%= @side_letter.fund.name %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Commitment</td>
+              <td><%= link_to @side_letter.capital_commitment.folio_id, capital_commitment_path(@side_letter.capital_commitment) %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Document</td>
+              <td><%= link_to @side_letter.document.name, document_path(@side_letter.document) %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Executed</td>
+              <td><%= @side_letter.executed_at&.strftime("%d %b %Y") || content_tag(:span, "—", class: "text-muted") %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Extraction</td>
+              <td><span class="badge bg-secondary-subtle text-secondary-emphasis"><%= @side_letter.extraction_status.humanize %></span></td>
+            </tr>
+            <% if @side_letter.notes.present? %>
+              <tr>
+                <td class="align-top">Notes</td>
+                <td><%= simple_format(@side_letter.notes) %></td>
+              </tr>
+            <% end %>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Right: where this side letter stands + actions ── %>
+    <div class="col-md-7">
+      <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
+          <i class="ti ti-file-text text-primary fs-5"></i>
+          <h5 class="mb-0 fw-semibold">Obligation Summary</h5>
+          <%= user_guide_icon_for(:side_letters, tooltip: "How side letter obligations work") %>
+          <% if pending_count.positive? %>
+            <span class="ms-auto badge bg-warning text-dark"><%= pending_count %> pending review</span>
+          <% else %>
+            <span class="ms-auto badge bg-success">All reviewed</span>
+          <% end %>
+        </div>
+        <div class="card-body p-4" data-controller="tooltip">
+          <div class="row g-3 mb-3">
+            <% tile_tips = {
+                 "Obligations" => "Everything this side letter commits you to — including items still pending review",
+                 "Armed" => "Event-driven obligations with no deadline until fired (e.g. key person notices, co-invest rights)",
+                 "Open tasks" => "Incomplete tracked tasks across all approved obligations",
+                 "Next due" => "The nearest deadline among open tasks"
+               } %>
+            <% {
+                 "Obligations" => @obligations.size,
+                 "Armed" => armed_count,
+                 "Open tasks" => open_tasks.size,
+                 "Next due" => next_due&.strftime("%d %b") || "—"
+               }.each do |label, value| %>
+              <div class="col-sm-3" title="<%= tile_tips[label] %>" data-bs-toggle="tooltip">
+                <div class="text-muted"><%= label %></div>
+                <div class="fs-4 fw-semibold"><%= value %></div>
+              </div>
+            <% end %>
+          </div>
+
+          <p class="text-muted mb-3">
+            Obligations extracted from this side letter wait in review until counsel approves them.
+            Approved date-driven obligations become tracked tasks with due-date alerts; armed
+            obligations are fired manually when their event occurs.
+          </p>
+
+          <hr>
+
+          <div class="d-flex flex-wrap gap-2">
+            <%# Runs the extraction agent against this side letter's commitment. Extraction
+                only ever produces pending_review rows, so this is safe to re-run — an
+                amended document is diffed against what counsel already approved. %>
+            <%# update? already implies the agent flag is on (SideLetterPolicy#agent_enabled?) %>
+            <% if policy(@side_letter).update? %>
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                      data-bs-target="#extract_side_letter_modal_<%= @side_letter.id %>"
+                      title="Read this side letter with AI and list the obligations it creates">
+                <i class="ti ti-robot"></i> Extract Obligations
+              </button>
+            <% end %>
+            <%= link_to edit_side_letter_path(@side_letter), class: "btn btn-outline-secondary" do %>
+              <i class="ti ti-edit"></i> Edit
+            <% end %>
+            <%= link_to side_letter_obligations_path, class: "btn btn-outline-secondary" do %>
+              <i class="ti ti-table"></i> Obligation Matrix
+            <% end %>
+            <%= link_to side_letters_path, class: "btn btn-outline-secondary" do %>
+              <i class="ti ti-files"></i> All Side Letters
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Tabs: the two grids ── %>
+  <div data-controller="tabs">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a class="nav-link active" data-bs-toggle="pill" href="#side-letter-obligations-tab">
+        Obligations (<%= @obligations.size %>)
+      </a>
+      <a class="nav-link" data-bs-toggle="pill" href="#side-letter-tasks-tab">
+        Covenant Tasks (<%= @covenant_tasks.size %>)
+      </a>
+    </nav>
+
+    <div class="tab-content">
+      <div id="side-letter-obligations-tab" class="tab-pane fade in show active">
+        <%= render "side_letter_obligations/matrix", obligations: @obligations, side_letter: @side_letter %>
+      </div>
+
+      <div id="side-letter-tasks-tab" class="tab-pane fade in">
+        <%# The real tasks grid (same as /tasks) — mark-completed checkbox included;
+            completing a row records the fulfillment on its obligation. Tasks span all
+            of this side letter's obligations, so side_letter_id (not owner) scopes
+            the Board / Show All / Incomplete links. %>
+        <%= render "/tasks/index", tasks: @covenant_tasks, owner: nil, for_entity: nil, search: false,
+                   side_letter_id: @side_letter.id %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# Outside the FormCard — see _action_modals for why %>
+<%= render "side_letter_obligations/action_modals", obligations: @obligations %>
+
+<% if policy(@side_letter).update? %>
+  <%= render "side_letters/extract_modal", side_letter: @side_letter %>
+<% end %>

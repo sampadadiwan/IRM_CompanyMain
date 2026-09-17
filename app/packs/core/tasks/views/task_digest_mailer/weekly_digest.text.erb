@@ -1,0 +1,37 @@
+<%# Plain-text part. HTML-only mail is a deliverability liability, and the three
+    buckets are the same ones the HTML view renders. %>
+<% week = @digest.week_range -%>
+WEEKLY TASKS — <%= @entity.name %>
+Week of <%= l(week.first) %> – <%= l(week.last) %>
+
+<%= @digest.counts[:completed_this_week] %> done this week | <%= @digest.counts[:due_next_week] %> due next week | <%= @digest.counts[:delayed] %> delayed | <%= @digest.counts[:open_total] %> open total
+<% if (note = digest_context_note(@digest)) -%>
+<%= note %>
+<% end -%>
+<% [[:delayed, "DELAYED", @digest.delayed, @digest.counts[:delayed], @digest.more_delayed, digest_delayed_url(@digest)],
+    [:due, "DUE NEXT WEEK", @digest.due_next_week, @digest.counts[:due_next_week], @digest.more_due_next_week, digest_due_next_week_url(@digest)],
+    [:completed, "DONE THIS WEEK", @digest.completed, @digest.counts[:completed_this_week], @digest.more_completed, digest_completed_url(@digest)]].each do |mode, heading, tasks, total, more, url| -%>
+
+<%= heading %> (<%= total %>)
+<% if tasks.empty? -%>
+  Nothing to report.
+<% else -%>
+<% tasks.each do |task| -%>
+<% date_value = mode == :completed ? task.completed_on : task.due_date -%>
+  - <%= digest_task_label(task) %><% if mode == :delayed %> (<%= pluralize(digest_days_late(task, @digest), "day") %> late)<% end %>
+    <%= mode == :completed ? "Done" : "Due" %> <%= date_value ? l(date_value) : "—" %> · <%= digest_task_meta(task) %>
+<% if (task_note = digest_task_note(task)) -%>
+    Note: <%= task_note %>
+<% end -%>
+    <%= digest_task_url(task, @entity) %>
+<% end -%>
+<% if more.positive? -%>
+  <%= pluralize(more, "more task") %> not shown: <%= url %>
+<% end -%>
+<% end -%>
+<% end -%>
+
+Open the task board: <%= digest_board_url(@entity) %>
+
+You receive this every Friday because you are tagged "Tasks" on <%= @entity.name %>.
+Ask an administrator to remove the tag to stop.

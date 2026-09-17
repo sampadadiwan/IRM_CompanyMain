@@ -1,0 +1,716 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Inside the Rails Monolith",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "request-path",
+        "label": "Request path",
+        "focus": [
+          "browser",
+          "stack",
+          "core-investors",
+          "base",
+          "db"
+        ],
+        "note": "A request flows through the Rack stack into a pack controller, using core/base and ActiveRecord."
+      },
+      {
+        "id": "funds-slice",
+        "label": "Funds pack",
+        "focus": [
+          "funds-calls",
+          "funds-dists",
+          "funds-reports",
+          "funds-portfolios"
+        ],
+        "note": "The funds vertical slice: capital activity, reporting, and portfolio management."
+      },
+      {
+        "id": "ai-slice",
+        "label": "AI pack",
+        "focus": [
+          "ai-agents",
+          "ai-llm",
+          "jobs-ai"
+        ],
+        "note": "Assistants, agents, and LLM services, with their ai_checks job queue."
+      },
+      {
+        "id": "jobs-layer",
+        "label": "Background jobs",
+        "focus": [
+          "sidekiq",
+          "jobs-docgen",
+          "jobs-ai",
+          "jobs-fundcalc",
+          "jobs-reminders",
+          "jobs-imports",
+          "jobs-cron"
+        ],
+        "note": "165 job classes grouped by function, executed on dedicated Sidekiq queues and cron."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "Browser",
+      "sublabel": "Turbo + 179 Stimulus + AG Grid",
+      "pos": [
+        507,
+        40
+      ],
+      "size": [
+        300,
+        64
+      ]
+    },
+    {
+      "id": "stack",
+      "type": "backend",
+      "label": "Rack Middleware + Rails Router",
+      "sublabel": "Website (caphive.com) \u00b7 ExceptionNotifier \u00b7 routes.rb \u00b7 /cable",
+      "pos": [
+        40,
+        170
+      ],
+      "size": [
+        1235,
+        64
+      ]
+    },
+    {
+      "id": "core-investors",
+      "type": "backend",
+      "label": "Investors & Entities",
+      "sublabel": "fees \u00b7 access rights",
+      "pos": [
+        40,
+        310
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "core-docs",
+      "type": "backend",
+      "label": "Documents & eSign",
+      "sublabel": "folders \u00b7 approvals",
+      "pos": [
+        40,
+        404
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "core-kyc",
+      "type": "backend",
+      "label": "KYC & AML",
+      "sublabel": "AML reports",
+      "pos": [
+        40,
+        498
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "core-notify",
+      "type": "backend",
+      "label": "Notifications",
+      "sublabel": "reminders \u00b7 nudges",
+      "pos": [
+        40,
+        592
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "funds-calls",
+      "type": "backend",
+      "label": "Capital Calls",
+      "sublabel": "commitments \u00b7 SOA",
+      "pos": [
+        220,
+        310
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "funds-dists",
+      "type": "backend",
+      "label": "Distributions",
+      "sublabel": "remittances",
+      "pos": [
+        220,
+        404
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "funds-reports",
+      "type": "backend",
+      "label": "Fund Reports",
+      "sublabel": "ratios \u00b7 scenarios",
+      "pos": [
+        220,
+        498
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "funds-portfolios",
+      "type": "backend",
+      "label": "Portfolios",
+      "sublabel": "side letters \u00b7 opps",
+      "pos": [
+        220,
+        592
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "ai-agents",
+      "type": "backend",
+      "label": "Assistants & Agents",
+      "sublabel": "chats \u00b7 support \u00b7 deal",
+      "pos": [
+        400,
+        310
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "ai-llm",
+      "type": "backend",
+      "label": "MCP + LLM Services",
+      "sublabel": "ruby_llm wrappers",
+      "pos": [
+        400,
+        404
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "alloc-engine",
+      "type": "backend",
+      "label": "Allocation Engine",
+      "sublabel": "account entries",
+      "pos": [
+        580,
+        310
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "sec-market",
+      "type": "backend",
+      "label": "Secondaries",
+      "sublabel": "offers \u00b7 sales",
+      "pos": [
+        760,
+        310
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "startups-deals",
+      "type": "backend",
+      "label": "Deals & Investments",
+      "sublabel": "pipeline \u00b7 valuations",
+      "pos": [
+        940,
+        310
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "startups-kpis",
+      "type": "backend",
+      "label": "KPIs",
+      "sublabel": "collection \u00b7 analysis",
+      "pos": [
+        940,
+        404
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "misc-imports",
+      "type": "backend",
+      "label": "Imports & Approvals",
+      "sublabel": "kanbans \u00b7 events",
+      "pos": [
+        1120,
+        310
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "misc-email",
+      "type": "backend",
+      "label": "Email-in & Search",
+      "sublabel": "mailboxes \u00b7 Chewy",
+      "pos": [
+        1120,
+        404
+      ],
+      "size": [
+        155,
+        64
+      ]
+    },
+    {
+      "id": "base",
+      "type": "backend",
+      "label": "core/base Foundation",
+      "sublabel": "base controllers \u00b7 components \u00b7 mailers \u00b7 mailboxes \u00b7 channels \u00b7 decorators",
+      "pos": [
+        40,
+        720
+      ],
+      "size": [
+        1235,
+        56
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "MySQL",
+      "sublabel": "via ActiveRecord",
+      "pos": [
+        50,
+        850
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "sidekiq",
+      "type": "messagebus",
+      "label": "Sidekiq Workers",
+      "sublabel": "queues: default \u00b7 serial \u00b7 doc_gen \u00b7 ai_checks \u00b7 db_restore \u00b7 sidekiq-cron",
+      "pos": [
+        280,
+        850
+      ],
+      "size": [
+        980,
+        56
+      ]
+    },
+    {
+      "id": "jobs-docgen",
+      "type": "backend",
+      "label": "Doc Generation",
+      "sublabel": "doc_gen \u00b7 SOA \u00b7 exports",
+      "pos": [
+        290,
+        970
+      ],
+      "size": [
+        145,
+        64
+      ]
+    },
+    {
+      "id": "jobs-ai",
+      "type": "backend",
+      "label": "AI Jobs",
+      "sublabel": "ai_checks \u00b7 agents",
+      "pos": [
+        450,
+        970
+      ],
+      "size": [
+        145,
+        64
+      ]
+    },
+    {
+      "id": "jobs-fundcalc",
+      "type": "backend",
+      "label": "Fund Calcs",
+      "sublabel": "ratios \u00b7 scenarios \u00b7 FX",
+      "pos": [
+        610,
+        970
+      ],
+      "size": [
+        145,
+        64
+      ]
+    },
+    {
+      "id": "jobs-reminders",
+      "type": "backend",
+      "label": "Reminders",
+      "sublabel": "KYC \u00b7 KPI \u00b7 notices",
+      "pos": [
+        770,
+        970
+      ],
+      "size": [
+        145,
+        64
+      ]
+    },
+    {
+      "id": "jobs-imports",
+      "type": "backend",
+      "label": "Imports & Bulk",
+      "sublabel": "uploads \u00b7 bulk actions",
+      "pos": [
+        930,
+        970
+      ],
+      "size": [
+        145,
+        64
+      ]
+    },
+    {
+      "id": "jobs-cron",
+      "type": "backend",
+      "label": "Cron & Ops",
+      "sublabel": "cron \u00b7 backups \u00b7 ops",
+      "pos": [
+        1090,
+        970
+      ],
+      "size": [
+        145,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "core pack",
+      "wraps": [
+        "core-investors",
+        "core-docs",
+        "core-kyc",
+        "core-notify"
+      ],
+      "pad": 8
+    },
+    {
+      "kind": "region",
+      "label": "funds pack",
+      "wraps": [
+        "funds-calls",
+        "funds-dists",
+        "funds-reports",
+        "funds-portfolios"
+      ],
+      "pad": 8
+    },
+    {
+      "kind": "region",
+      "label": "ai pack",
+      "wraps": [
+        "ai-agents",
+        "ai-llm"
+      ],
+      "pad": 8
+    },
+    {
+      "kind": "region",
+      "label": "allocation_engine",
+      "wraps": [
+        "alloc-engine"
+      ],
+      "pad": 8
+    },
+    {
+      "kind": "region",
+      "label": "secondaries pack",
+      "wraps": [
+        "sec-market"
+      ],
+      "pad": 8
+    },
+    {
+      "kind": "region",
+      "label": "startups pack",
+      "wraps": [
+        "startups-deals",
+        "startups-kpis"
+      ],
+      "pad": 8
+    },
+    {
+      "kind": "region",
+      "label": "misc pack",
+      "wraps": [
+        "misc-imports",
+        "misc-email"
+      ],
+      "pad": 8
+    },
+    {
+      "kind": "region",
+      "label": "165 job classes, grouped by function",
+      "wraps": [
+        "jobs-docgen",
+        "jobs-ai",
+        "jobs-fundcalc",
+        "jobs-reminders",
+        "jobs-imports",
+        "jobs-cron"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-stack",
+      "from": "browser",
+      "to": "stack",
+      "label": "HTTPS \u00b7 Turbo Streams",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "stack-core",
+      "from": "stack",
+      "to": "core-investors",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "stack-funds",
+      "from": "stack",
+      "to": "funds-calls",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "stack-ai",
+      "from": "stack",
+      "to": "ai-agents",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "stack-alloc",
+      "from": "stack",
+      "to": "alloc-engine",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "stack-sec",
+      "from": "stack",
+      "to": "sec-market",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "stack-startups",
+      "from": "stack",
+      "to": "startups-deals",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "stack-misc",
+      "from": "stack",
+      "to": "misc-imports",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "core-base",
+      "from": "core-notify",
+      "to": "base",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "funds-base",
+      "from": "funds-portfolios",
+      "to": "base",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "ai-base",
+      "from": "ai-llm",
+      "to": "base",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "alloc-base",
+      "from": "alloc-engine",
+      "to": "base",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "sec-base",
+      "from": "sec-market",
+      "to": "base",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "startups-base",
+      "from": "startups-kpis",
+      "to": "base",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "misc-base",
+      "from": "misc-email",
+      "to": "base",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "base-db",
+      "from": "base",
+      "to": "db",
+      "label": "ActiveRecord SQL",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "base-sidekiq",
+      "from": "base",
+      "to": "sidekiq",
+      "label": "perform_later",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24,
+      "labelDx": 54
+    },
+    {
+      "id": "sidekiq-docgen",
+      "from": "sidekiq",
+      "to": "jobs-docgen",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "sidekiq-ai",
+      "from": "sidekiq",
+      "to": "jobs-ai",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "sidekiq-fundcalc",
+      "from": "sidekiq",
+      "to": "jobs-fundcalc",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "sidekiq-reminders",
+      "from": "sidekiq",
+      "to": "jobs-reminders",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "sidekiq-imports",
+      "from": "sidekiq",
+      "to": "jobs-imports",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "sidekiq-cron",
+      "from": "sidekiq",
+      "to": "jobs-cron",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Functional components",
+      "items": [
+        "Each pack is a vertical slice owning its controllers, Trailblazer operations, models, Pundit policies, jobs, and views",
+        "core: investors, entities, documents/eSign, KYC/AML, notifications, reminders, fees, access rights",
+        "funds: capital calls, commitments, distributions, remittances, fund reports/ratios, portfolios, side letters",
+        "ai: assistants, chats, support/deal agents, MCP server, ruby_llm services; misc: imports, approvals, incoming email, Chewy/Elasticsearch indexing"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Jobs (165 classes)",
+      "items": [
+        "Dedicated queues with capped concurrency: serial, doc_gen, ai_checks; db_restore runs one-at-a-time in its own capsule",
+        "sidekiq-cron: SchedulerPollingJob every 10 min drives agent schedules; nightly DailyMorning, TrackingCurrency, RecurringTaskGenerator, CapitalRemittanceStatus",
+        "Hourly S3Check plus backup-freshness and replication-health watchdogs alert on stale backups or broken replication"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Shared foundation (core/base)",
+      "items": [
+        "Base controllers, models, mailers, and helpers every pack inherits",
+        "ActionMailbox mailboxes receive SendGrid Inbound Parse email; ActionCable channels power live updates at /cable",
+        "Website middleware (position 0) serves caphive.com; ExceptionNotification mails production errors"
+      ]
+    }
+  ]
+}

@@ -797,12 +797,14 @@ INDEX_folders='
   CREATE INDEX "idx_folders_full_path_owner_id_owner_type_entity_id_deleted_at" ON "folders"("full_path", "owner_id", "owner_type", "entity_id", "deleted_at");
   CREATE INDEX "idx_folders_owner_type_owner_id" ON "folders"("owner_type", "owner_id");
 '
-COLS_fund_ratios=("id" "capital_commitment_id" "cash_flows" "created_at" "deleted_at" "display_value" "end_date" "entity_id" "form_type_id" "fund_id" "import_upload_id" "label" "latest" "name" "notes" "owner_id" "owner_type" "portfolio_scenario_id" "scenario" "updated_at" "valuation_id" "value")
-TEXT_COLS_fund_ratios=("cash_flows" "display_value" "label" "name" "notes" "owner_type" "scenario")
+COLS_fund_ratios=("id" "capital_commitment_id" "cash_flows" "computation_context_id" "computation_context_type" "created_at" "deleted_at" "display_value" "end_date" "entity_id" "form_type_id" "fund_id" "import_upload_id" "label" "latest" "name" "notes" "owner_id" "owner_type" "scenario" "updated_at" "valuation_id" "value")
+TEXT_COLS_fund_ratios=("cash_flows" "computation_context_type" "display_value" "label" "name" "notes" "owner_type" "scenario")
 SCHEMA_fund_ratios='
   "id" BIGINT PRIMARY KEY,
   "capital_commitment_id" BIGINT,
   "cash_flows" JSON,
+  "computation_context_id" BIGINT,
+  "computation_context_type" VARCHAR(255),
   "created_at" DATETIME,
   "deleted_at" DATETIME,
   "display_value" VARCHAR(255),
@@ -817,7 +819,6 @@ SCHEMA_fund_ratios='
   "notes" TEXT,
   "owner_id" BIGINT,
   "owner_type" VARCHAR(255),
-  "portfolio_scenario_id" BIGINT,
   "scenario" VARCHAR(255),
   "updated_at" DATETIME,
   "valuation_id" BIGINT,
@@ -830,7 +831,7 @@ INDEX_fund_ratios='
   CREATE INDEX "idx_fund_ratios_form_type_id" ON "fund_ratios"("form_type_id");
   CREATE INDEX "idx_fund_ratios_fund_id" ON "fund_ratios"("fund_id");
   CREATE INDEX "idx_fund_ratios_owner_type_owner_id" ON "fund_ratios"("owner_type", "owner_id");
-  CREATE INDEX "idx_fund_ratios_portfolio_scenario_id" ON "fund_ratios"("portfolio_scenario_id");
+  CREATE INDEX "idx_fund_ratios_computation_context" ON "fund_ratios"("computation_context_type", "computation_context_id");
   CREATE INDEX "idx_fund_ratios_valuation_id" ON "fund_ratios"("valuation_id");
 '
 COLS_fund_unit_settings=("id" "carry" "created_at" "entity_id" "form_type_id" "fund_id" "import_upload_id" "isin" "json_fields" "management_fee" "name" "notes" "setup_fee" "updated_at")
@@ -1140,8 +1141,8 @@ INDEX_investments='
   CREATE INDEX "idx_investments_form_type_id" ON "investments"("form_type_id");
   CREATE INDEX "idx_investments_portfolio_company_id" ON "investments"("portfolio_company_id");
 '
-COLS_investor_kpi_mappings=("id" "ancestry" "autofill" "base_for_common_size" "category" "child_count" "compute_formula" "created_at" "data_type" "denomination" "entity_id" "form_type_id" "import_upload_id" "investor_id" "json_fields" "lower_threshold" "position" "rag_rules" "reported_kpi_name" "show_in_report" "standard_kpi_name" "updated_at" "upper_threshold")
-TEXT_COLS_investor_kpi_mappings=("ancestry" "autofill" "category" "compute_formula" "data_type" "denomination" "json_fields" "rag_rules" "reported_kpi_name" "standard_kpi_name")
+COLS_investor_kpi_mappings=("id" "ancestry" "autofill" "base_for_common_size" "category" "child_count" "compute_formula" "created_at" "data_type" "denomination" "entity_id" "form_type_id" "import_upload_id" "investor_id" "json_fields" "lower_threshold" "position" "rag_comparator_tag" "rag_direction" "rag_green_threshold" "rag_red_threshold" "reported_kpi_name" "show_in_report" "standard_kpi_name" "updated_at" "upper_threshold")
+TEXT_COLS_investor_kpi_mappings=("ancestry" "autofill" "category" "compute_formula" "data_type" "denomination" "json_fields" "rag_comparator_tag" "rag_direction" "reported_kpi_name" "standard_kpi_name")
 SCHEMA_investor_kpi_mappings='
   "id" BIGINT PRIMARY KEY,
   "ancestry" VARCHAR(255),
@@ -1160,7 +1161,10 @@ SCHEMA_investor_kpi_mappings='
   "json_fields" JSON,
   "lower_threshold" DECIMAL(20,2),
   "position" INTEGER,
-  "rag_rules" JSON,
+  "rag_comparator_tag" VARCHAR(50),
+  "rag_direction" VARCHAR(20),
+  "rag_green_threshold" DECIMAL(20,4),
+  "rag_red_threshold" DECIMAL(20,4),
   "reported_kpi_name" VARCHAR(255),
   "show_in_report" BOOLEAN,
   "standard_kpi_name" VARCHAR(255),
@@ -1796,20 +1800,16 @@ INDEX_tasks='
   CREATE INDEX "idx_tasks_task_template_id" ON "tasks"("task_template_id");
   CREATE INDEX "idx_tasks_user_id" ON "tasks"("user_id");
 '
-COLS_users=("id" "accept_terms" "accepted_terms_on" "access_rights_cache" "access_rights_cached_permissions" "active" "advisor_entity_id" "advisor_entity_roles" "call_code" "confirmation_sent_at" "confirmation_token" "created_at" "curr_role" "current_sign_in_at" "current_sign_in_ip" "deleted_at" "dept" "email" "enable_support" "encrypted_password" "entity_id" "entity_type" "extended_permissions" "failed_attempts" "first_name" "form_type_id" "investor_advisor_id" "json_fields" "last_name" "last_sign_in_at" "last_sign_in_ip" "last_synced_at" "last_synced_ccf_hex" "locked_at" "permissions" "phone" "primary_region" "primary_region_id" "regions" "remember_created_at" "reset_password_sent_at" "reset_password_token" "sale_notification" "session_token" "sign_in_count" "signature_data" "system_created" "tag_list" "unlock_token" "updated_at" "whatsapp_enabled")
-TEXT_COLS_users=("access_rights_cache" "advisor_entity_roles" "call_code" "confirmation_token" "curr_role" "current_sign_in_ip" "dept" "email" "encrypted_password" "entity_type" "first_name" "json_fields" "last_name" "last_sign_in_ip" "last_synced_ccf_hex" "phone" "primary_region" "regions" "reset_password_token" "session_token" "signature_data" "tag_list" "unlock_token")
+COLS_users=("id" "accept_terms" "accepted_terms_on" "active" "advisor_entity_id" "advisor_entity_roles" "call_code" "created_at" "curr_role" "current_sign_in_at" "current_sign_in_ip" "deleted_at" "dept" "email" "enable_support" "encrypted_password" "entity_id" "entity_type" "extended_permissions" "failed_attempts" "first_name" "form_type_id" "investor_advisor_id" "json_fields" "last_name" "last_sign_in_at" "last_sign_in_ip" "last_synced_at" "last_synced_ccf_hex" "locked_at" "permissions" "phone" "primary_region" "primary_region_id" "regions" "remember_created_at" "reset_password_sent_at" "reset_password_token" "sale_notification" "session_token" "sign_in_count" "signature_data" "system_created" "tag_list" "unlock_token" "updated_at" "whatsapp_enabled")
+TEXT_COLS_users=("advisor_entity_roles" "call_code" "curr_role" "current_sign_in_ip" "dept" "email" "encrypted_password" "entity_type" "first_name" "json_fields" "last_name" "last_sign_in_ip" "last_synced_ccf_hex" "phone" "primary_region" "regions" "reset_password_token" "session_token" "signature_data" "tag_list" "unlock_token")
 SCHEMA_users='
   "id" BIGINT PRIMARY KEY,
   "accept_terms" BOOLEAN,
   "accepted_terms_on" DATETIME,
-  "access_rights_cache" TEXT,
-  "access_rights_cached_permissions" INTEGER,
   "active" BOOLEAN,
   "advisor_entity_id" BIGINT,
   "advisor_entity_roles" VARCHAR(255),
   "call_code" VARCHAR(255),
-  "confirmation_sent_at" DATETIME,
-  "confirmation_token" VARCHAR(255),
   "created_at" DATETIME,
   "curr_role" VARCHAR(255),
   "current_sign_in_at" DATETIME,
@@ -1852,7 +1852,6 @@ SCHEMA_users='
   "whatsapp_enabled" BOOLEAN
 '
 INDEX_users='
-  CREATE INDEX "idx_users_confirmation_token" ON "users"("confirmation_token");
   CREATE INDEX "idx_users_deleted_at" ON "users"("deleted_at");
   CREATE INDEX "idx_users_email" ON "users"("email");
   CREATE INDEX "idx_users_entity_id" ON "users"("entity_id");
@@ -1946,13 +1945,13 @@ for table in "${TABLES[@]}"; do
 
     if [[ $is_text -eq 1 ]]; then
       if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
-        SELECT_LIST+="REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\"${c}\",\"\"), \"\"\"\", \"###DQ###\"), CHAR(10), \"###NL###\"), CHAR(13), \"###CR###\"), CHAR(9), \"###TAB###\"),"
+        SELECT_LIST+="REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\"${c}\",''), '\"', '###DQ###'), CHAR(10), '###NL###'), CHAR(13), '###CR###'), CHAR(9), '###TAB###'),"
       else
         SELECT_LIST+="REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\`${c}\`,''), '\"', '###DQ###'), CHAR(10), '###NL###'), CHAR(13), '###CR###'), CHAR(9), '###TAB###'),"
       fi
     else
       if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
-        SELECT_LIST+="IFNULL(\"${c}\",\"\"),"
+        SELECT_LIST+="IFNULL(\"${c}\",''),"
       else
         SELECT_LIST+="IFNULL(\`${c}\`,''),"
       fi

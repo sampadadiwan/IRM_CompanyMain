@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Cookie Policy — CapHive</title>
+<meta name="description" content="What cookies and similar technologies caphive.com uses, which categories they fall into, what third parties can see, and how to manage your choices in your browser.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/cookies.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Cookie Policy — CapHive">
+<meta property="og:description" content="What cookies caphive.com uses, why, and how to control them.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/cookies.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="legal">
+
+<!-- ==========================================================================
+     STATUS — inventory is real; counsel review is the one thing outstanding.
+     ==========================================================================
+     Sections 3, 4 and 5 were rewritten on 2026-08-16 against the actual
+     codebase, not a template. What was checked, so a reviewer can re-check it:
+
+       * caphive.com cookies — the ONLY cookies are GA4's _ga and
+         _ga_JR4ZT29M06, and they are gated behind Consent Mode v2
+         (website_src/_partials/analytics.html). No server cookie is set:
+         lib/middleware/website.rb short-circuits ahead of the session store,
+         and in production nginx serves the apex directly from public/website.
+       * Consent is stored in localStorage as caphive.consent.v1, not a cookie
+         (website_src/_partials/consent_banner.html).
+       * Third parties actually contacted by the browser: googletagmanager.com
+         (GA4) and fonts.googleapis.com / fonts.gstatic.com (Google Fonts).
+         No CDN, no ad platform, no embeds, no iframes anywhere on the site.
+         The demo forms POST to our own app host (app.caphive.com /
+         app.caphive.us), not to any third-party form processor. That request
+         carries no cookies — it is a credential-less cross-origin POST — so it
+         sets nothing and needs no consent entry here.
+       * app.caphive.com cookies — _caphive_session (60 min),
+         session_token, remember_user_token (Devise :rememberable),
+         currency_units, adminSettings, owner_type. The Gemfile carries no
+         analytics, error-tracking or session-replay SDK.
+
+     STILL OPEN, for the team rather than for readers:
+       1. Have qualified counsel review this text.
+       2. TWO REAL GAPS are described honestly in the page rather than papered
+          over — Google Fonts is hotlinked from Google's servers, so visitor
+          IPs reach Google before any consent (self-host the files to close
+          it), and consent proof is stored only in the visitor's own browser,
+          so we cannot evidence who consented to what. Both are flagged in
+          HTML comments at the relevant sections.
+       3. Re-run the checks above whenever a tag, embed or SDK is added, and
+          bump caphive.consent.v1 to re-prompt if the inventory materially
+          changes.
+       4. Delete the .callout marked DELETE ONCE COUNSEL SIGNS OFF.
+     ========================================================================== -->
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <span class="chip-label">Legal</span>
+      <h1>Cookie Policy</h1>
+      <p class="lede">
+        What we store on your device when you visit caphive.com, why we store it,
+        what third parties can see, and how to change your mind.
+      </p>
+      <p style="margin-top:28px"><span class="updated">Last updated — August 16, 2026</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= POLICY ================= -->
+<section class="section-sm">
+  <div class="wrap-narrow">
+
+    <!-- ======================================================================
+         DELETE ONCE COUNSEL SIGNS OFF — remove this entire .callout block
+         (from the opening <div class="callout"> to its closing </div>).
+         The cookie inventory below is now real and verified against the
+         codebase; legal review is the only remaining precondition.
+         ====================================================================== -->
+    <div class="callout">
+      <p><strong>Pending legal review.</strong> The inventory on this page reflects the site as built and has been verified against our own code, but this text has not yet been reviewed or approved by counsel.</p>
+    </div>
+    <!-- ============== END DELETE ONCE COUNSEL SIGNS OFF ============== -->
+
+    <nav class="toc" aria-label="On this page">
+      <p class="tile-kicker">On this page</p>
+      <ul>
+        <li><a href="#what">1. What cookies are</a></li>
+        <li><a href="#how">2. How we use them on caphive.com</a></li>
+        <li><a href="#categories">3. The categories we use</a></li>
+        <li><a href="#third-party">4. Third-party cookies and what they see</a></li>
+        <li><a href="#choices">5. Managing your choices</a></li>
+        <li><a href="#dnt">6. Do Not Track and Global Privacy Control</a></li>
+        <li><a href="#changes">7. Changes to this policy</a></li>
+        <li><a href="#contact">8. Contact</a></li>
+      </ul>
+    </nav>
+
+    <div class="prose">
+
+      <h2 id="what">1. What cookies are</h2>
+      <p>A cookie is a small text file that a website asks your browser to store on your device. When you return, the browser sends the file back, so the site can recognise the session and remember state. Cookies set by the site you are visiting are called first-party cookies. Cookies set by another domain whose content is loaded on the page are called third-party cookies.</p>
+      <p>Cookies are described by how long they last. A <strong>session cookie</strong> is deleted when you close the browser. A <strong>persistent cookie</strong> stays until it expires or you delete it.</p>
+      <p>This policy also covers similar technologies that do comparable things: local storage and session storage in your browser, pixels and tracking images in web pages or emails, software development kits, and device or browser fingerprinting. Where we say "cookies" below, we mean all of these. One of the entries in our inventory is a local storage item rather than a cookie, and it is marked as such.</p>
+
+      <h2 id="how">2. How we use them on caphive.com</h2>
+      <p>caphive.com is a marketing website, and it uses very few cookies. There are exactly two, both belonging to Google Analytics, and neither is set unless you accept them. We use them:</p>
+      <ul>
+        <li>to analyse how the site is used in aggregate — which pages people read, where they arrive from, where they drop off — so we can improve it.</li>
+      </ul>
+      <p>We also record your accept-or-decline choice itself, so we do not ask again on every page. That record is kept in your browser's local storage rather than in a cookie.</p>
+      <p>We do <strong>not</strong> use advertising or marketing cookies on this website, we do not use it to build profiles of individual investors, and we do not sell the data cookies produce. If you decline, no analytics cookie is written at all. How we handle the personal data behind these cookies, and the legal bases we rely on, is set out in our <a href="privacy.html">Privacy Policy</a>.</p>
+
+      <h2 id="categories">3. The categories we use</h2>
+      <p>We group cookies into four categories. Two of the four are not used on this website at all.</p>
+      <h3>3.1 Strictly necessary</h3>
+      <p>Required for the site to function and to be kept secure, including recording your cookie choices. These cannot be switched off through a consent banner. On caphive.com this category contains a single local storage item and no cookies — the public pages are static files, so nothing needs a server-side session.</p>
+      <h3>3.2 Preferences</h3>
+      <p>Remember choices you have made, so the site behaves the way you left it. <strong>Not used on caphive.com.</strong> The signed-in application does use preference cookies, listed in 3.6 below.</p>
+      <h3>3.3 Analytics</h3>
+      <p>Help us understand how the site is used, in aggregate. We set these only with your consent. Until you accept, our analytics provider runs in a restricted mode in which it stores nothing on your device and reports only anonymous, aggregate page counts that cannot be linked into a session or back to you.</p>
+      <h3>3.4 Marketing</h3>
+      <p>Measure campaign reach and allow advertising partners to show you content elsewhere. <strong>We set no marketing cookies, and we run no advertising tags or conversion pixels on this site.</strong> These signals are switched off permanently in our analytics configuration rather than left to your choice, so there is nothing here for you to decline.</p>
+
+      <h3>3.5 Cookie inventory — caphive.com</h3>
+      <p>This is the complete list for the public website. Both cookies are first-party, set on the caphive.com domain by Google Analytics 4 on our behalf.</p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Purpose</th>
+              <th scope="col">Category</th>
+              <th scope="col">Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>_ga</code></td><td>Distinguishes one visitor from another so usage can be counted in aggregate. Only written after you accept.</td><td>Analytics</td><td>2 years</td></tr>
+            <tr><td><code>_ga_JR4ZT29M06</code></td><td>Keeps the Google Analytics session state for our property, so a visit is not counted repeatedly as you move between pages. Only written after you accept.</td><td>Analytics</td><td>2 years</td></tr>
+            <tr><td><code>caphive.consent.v1</code><br><em>local storage, not a cookie</em></td><td>Records whether you accepted or declined analytics, so the banner is not shown again. Set whichever way you answer.</td><td>Strictly necessary</td><td>Until you clear your browser storage</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>There is no load-balancer cookie, no session cookie and no separate cross-site-request-forgery token on this site. The public pages are served as static files, so no server-side session is created for anonymous visitors.</p>
+      <p>One exception is worth naming for completeness: if you are signed in to the <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> application, its session cookie is scoped to the whole caphive.com domain, so your browser will also send it with requests to these public pages. The website never sets or reads it, and signing out clears it.</p>
+
+      <h3>3.6 Cookie inventory — app.caphive.com</h3>
+      <p>The signed-in application is a separate system with its own inventory. It runs <strong>no analytics, error-tracking, session-replay or marketing cookies of any kind</strong>. It does use preference cookies to remember how you have set up your own views, which is why it is not accurate to describe it as strictly-necessary-only.</p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Purpose</th>
+              <th scope="col">Category</th>
+              <th scope="col">Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>_caphive_session</code></td><td>Authenticates you and keeps you signed in. Also carries the token that protects form submissions against cross-site request forgery.</td><td>Strictly necessary</td><td>60 minutes</td></tr>
+            <tr><td><code>session_token</code></td><td>Ties the browser to one active sign-in, so a session cannot be used from two places at once.</td><td>Strictly necessary</td><td>Session</td></tr>
+            <tr><td><code>remember_user_token</code></td><td>Keeps you signed in between visits. Written only if you tick "remember me", and cleared when you sign out.</td><td>Strictly necessary</td><td>Until sign-out or expiry</td></tr>
+            <tr><td><code>currency_units</code></td><td>Remembers the currency units you last chose to view figures in.</td><td>Preferences</td><td>Persistent</td></tr>
+            <tr><td><code>adminSettings</code></td><td>Remembers your table layout — column order, widths and which columns you have hidden.</td><td>Preferences</td><td>Persistent</td></tr>
+            <tr><td><code>owner_type</code></td><td>Remembers the last filter you selected on a board view.</td><td>Preferences</td><td>Persistent</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The strictly necessary cookies above are set on our legitimate interest in operating a secure, authenticated service; the preference cookies are set as a result of a choice you make in the product itself, and clearing them simply returns those views to their defaults.</p>
+
+      <h2 id="third-party">4. Third-party cookies and what they see</h2>
+      <p>Some content on this site is served by other organisations. When your browser loads that content, the provider can see technical information about your request — your IP address, the page you were on, your browser and device, and the time — and can set its own cookies.</p>
+      <p>We keep this list deliberately short. There are two, both Google, and no others:</p>
+      <ul>
+        <li><strong>Google Analytics</strong> (googletagmanager.com) — receives page and event data to produce aggregate usage reports for us. Until you accept, it is loaded in a restricted mode that stores nothing on your device.</li>
+        <li><strong>Google Fonts</strong> (fonts.googleapis.com, fonts.gstatic.com) — serves the typefaces the site is set in. It sets no cookies, but it does receive your IP address as part of the request for the font files. <strong>This happens on every page whether or not you accept analytics</strong>, because the fonts are needed to render the page.</li>
+      </ul>
+      <!-- TODO — ENGINEERING, PRIVACY IMPROVEMENT:
+           Google Fonts is currently hotlinked from Google's servers
+           (_layout.html.erb preconnects to fonts.googleapis.com and
+           fonts.gstatic.com), so every visitor's IP reaches Google before any
+           consent is given. German courts have treated exactly this pattern as
+           a GDPR violation. Self-hosting the .woff2 files under
+           public/website/assets/ removes the third party entirely, costs
+           nothing, and would let the bullet above be deleted. Until that is
+           done, the disclosure must stay. -->
+      <p>We do not run a content delivery network, an advertising platform, a chat widget, a video embed or a social tracking pixel on this site. There are no iframes on any page.</p>
+      <p>We do not control Google's cookies and cannot read them. Google uses the data under its own privacy policy and may combine it with data it holds from other sites. Google offers a browser add-on that opts you out of Google Analytics across all websites.</p>
+
+      <h2 id="choices">5. Managing your choices</h2>
+      <h3>5.1 Your choice on this site</h3>
+      <p>The first time you visit, a banner asks whether you accept analytics cookies. Nothing non-essential is written before you answer, and declining is exactly as easy as accepting — the two buttons sit side by side and neither is pre-selected.</p>
+      <p>You can change your answer whenever you like: select <strong>Cookie settings</strong> in the footer of any page and the banner will reopen. Choosing "decline" after having accepted stops any further analytics cookie from being written; to remove cookies already stored, clear them in your browser as described below.</p>
+      <p>Because there is only one non-essential category on this site, the choice is a single accept-or-decline rather than a per-category panel. If we ever add another category, we will ask again with granular controls.</p>
+      <!-- TODO — ENGINEERING, BEFORE RELYING ON THIS FOR AN AUDIT:
+           Consent is stored client-side only, in localStorage under
+           caphive.consent.v1. We therefore CANNOT evidence who consented, to
+           what, or when — there is no server-side record of the banner version
+           shown or the choice made. That is acceptable while analytics is the
+           only non-essential category and the risk is low, but if a regulator
+           or an enterprise LP asks for proof of consent we have none. Closing
+           it means POSTing the choice plus a policy version to an endpoint and
+           retaining it. Revisit before adding any marketing tag. -->
+      <h3>5.2 Browser controls</h3>
+      <p>Your browser lets you see the cookies stored for a site, delete them, block cookies from particular sites, block all third-party cookies, or clear everything when you close the browser. The settings are usually under Privacy or Security. Vendor instructions are available for Chrome, Safari, Firefox and Edge in each browser's own help pages.</p>
+      <p>Two points to keep in mind. Blocking storage for this site may break parts of the signed-in application, which needs its session cookie to keep you authenticated. And because your cookie choice is itself remembered in your browser's storage, clearing everything also clears that choice, and you will be asked again on your next visit.</p>
+      <p>You can also use your browser's private or incognito mode, which discards cookies when the window closes.</p>
+      <h3>5.3 Withdrawing consent</h3>
+      <p>Where the law requires consent for a cookie, we ask for it before that cookie is set, and you can withdraw it at any time using the <strong>Cookie settings</strong> link described in 5.1. Strictly necessary items are not covered by that choice. If you cannot find a way to change your choices, write to <a href="mailto:hello@caphive.com">hello@caphive.com</a> and we will action your request.</p>
+
+      <h2 id="dnt">6. Do Not Track and Global Privacy Control</h2>
+      <p>Some browsers can send a "Do Not Track" (DNT) signal. There is no agreed industry standard for how a website should respond to it, so, like most websites, <strong>we do not currently change our behaviour in response to a DNT header</strong>. We will say so here if that changes.</p>
+      <p>Global Privacy Control (GPC) is a more recent signal that expresses an opt-out of the sale or sharing of personal data. Our position:</p>
+      <ul>
+        <li>We do not sell personal data, and we do not share it for cross-context behavioural advertising. There is nothing on this site for a GPC signal to opt you out of.</li>
+        <li>We do not read the GPC header programmatically. In practice the outcome is the same either way: analytics is off until you actively accept it, so a visitor sending GPC who never accepts is never tracked.</li>
+      </ul>
+      <p>Whatever signal your browser sends, you can always control cookies directly using section 5.</p>
+
+      <h2 id="changes">7. Changes to this policy</h2>
+      <p>We will update this page when the cookies we use change, when a new third party is added, or when the law changes. The date at the top shows when it was last revised. Where a change means we need consent we do not already have, we will ask again before setting the cookie — the consent banner is versioned, so a material change re-prompts everyone rather than relying on a choice made against an older policy. Material changes take effect <strong>14 days</strong> after publication.</p>
+
+      <h2 id="contact">8. Contact</h2>
+      <p>If you have a question about cookies on this site, or want us to action a choice for you:</p>
+      <ul>
+        <li>Email: <a href="mailto:hello@caphive.com">hello@caphive.com</a></li>
+        <li>Post: <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited, 801, One International Center, Tower 1, Senapati Bapat Marg, Lower Parel, Mumbai 400013, India</li>
+      </ul>
+      <p>For the wider picture, see our <a href="privacy.html">Privacy Policy</a>, which explains our roles as controller and processor and lists your rights, and our <a href="terms.html">Terms of Service</a>.</p>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+</body>
+</html>

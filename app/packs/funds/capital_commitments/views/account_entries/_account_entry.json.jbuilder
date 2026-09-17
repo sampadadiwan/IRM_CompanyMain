@@ -13,6 +13,7 @@ json.fund_currency account_entry.fund.currency
 json.folio_currency account_entry.capital_commitment&.folio_currency
 json.unit_type account_entry.capital_commitment&.unit_type
 json.investor_name account_entry.investor&.investor_name
+json.investing_entity account_entry.investor_kyc&.full_name || account_entry.investor&.investor_name
 
 # Tracking currency
 json.tracking_amount account_entry.tracking_amount.to_f

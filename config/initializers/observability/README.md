@@ -154,7 +154,9 @@ GRAFANA_PASS=xxx bundle exec rake grafana:provision:save
 
 ## Alert reference
 
-All 15 active alerts. Grouped by folder in Grafana Alerting UI.
+Grouped by folder in Grafana Alerting UI. All active alerts now live under **CapHive
+Alerts** — see `grafana_provision.yml` for the full, current list with exact PromQL;
+this table only calls out the ones worth a note.
 
 ### CapHive Alerts — infrastructure
 
@@ -163,6 +165,8 @@ All 15 active alerts. Grouped by folder in Grafana Alerting UI.
 | CPU Critical | avg CPU not-idle | >90% | 5m |
 | Memory Critical | node (MemTotal − MemAvailable) / MemTotal | >90% | 5m |
 | Disk Critical | max by instance, fstype!="tmpfs" | >90% | 5m |
+| Disk IO Saturation | rate(node_disk_io_time_seconds_total) | >90% busy | 5m |
+| Node Alive | `up{job="node"} == 0` | — | 2m |
 
 ### CapHive Alerts — rails
 
@@ -172,40 +176,31 @@ All 15 active alerts. Grouped by folder in Grafana Alerting UI.
 | Avg Request Duration Critical | irate sum/count × 1000 | >2000ms | 5m |
 | Sidekiq Retry Queue Critical | ruby_sidekiq_stats_retry_size | >20 jobs | 5m |
 | Web Memory Critical | avg ruby_rss (web/puma_worker) | >700 MB | 5m |
+| Web Worker Memory | ruby_rss per process (master/web/puma_master/puma_worker) | >450 MB | 5m |
+| Memory Sidekiq | ruby_rss per process (sidekiq) | >1000 MB | 5m — was firing repeatedly in July 2026, a real recurring leak |
+| Sidekiq Canary Stale | time() − ruby_sidekiq_canary_last_run_timestamp_seconds (SidekiqCanaryJob, every minute) | >600 s | 2m — catches a worker that is alive but not processing, which Sidekiq Down cannot |
+| Sidekiq Duplicate Workers | max(count by hostname of ruby_rss{type="sidekiq"}) | >1 | 5m — a second Sidekiq started outside the systemd unit |
+| P95 Response Time | approx: (P90+P99)/2 (no true P95 quantile exported) | >750ms | 5m |
 
-### Disk folder
+Sidekiq supervision, the canary and per-region provisioning order for the two Sidekiq Canary/Duplicate rules: `docs/technical/process_supervision.md`.
 
-| Alert | Threshold | Note |
-|---|---|---|
-| Disk Usage >85% | >85% | All nodes, no hardcoded IP |
-| Disk IO Saturation | >90% busy | Per device |
-
-### Memory folder
-
-| Alert | Threshold | Note |
-|---|---|---|
-| Web Worker Memory | >450 MB per process | Per Puma PID |
-| Memory Sidekiq | >1000 MB | Per Sidekiq PID — was firing July 2026, restart Sidekiq |
-| High Memory usage | <10% node free | Node-level OOM risk |
-
-### ResponseTimes folder
-
-| Alert | Threshold |
-|---|---|
-| P95 Response Time | >750ms |
-| P99 Response Times | >2.5s |
-
-### WebApp folder
-
-| Alert | Threshold |
-|---|---|
-| WebApp Alive | `up{job="rails_app"} == 0` for 2m |
-| Node Alive | `up{job="node"} == 0` for 5m |
-
-**Deleted (were noisy, not actionable):**
+**Deleted (were noisy, not actionable, or duplicated a rule above):**
 - `Errors > 30 errors` — absolute 4xx+5xx count; bot 404s at 3 req/s triggered this every evaluation cycle
 - `Enqued Sidekiq Jobs > 30` — Chewy alone runs 292 jobs/hr, so this fired on every index batch
 - `High CPU Usage` (CPU folder) — duplicate of CapHive Alerts CPU Critical
+- `Disk Usage > 85%` (Disk folder) — hardcoded to a single instance (10.0.1.56); Disk
+  Critical above already covers every instance via `max by(instance)`
+- `High Memory usage <10% free` (Memory folder) — no DB-instance exclusion, so it
+  could false-alarm on DB servers where InnoDB intentionally holds 70-85% RAM; Memory
+  Critical above already excludes them
+- `P99 Response Times` (ResponseTimes folder) — duplicated P99 Request Latency Critical
+- `WebApp Alive` (WebApp folder) — `up{job="rails_app"} == 0`, byte-for-byte the same
+  condition as Rails Exporter Down above, which already carries severity + `no_data_state`
+
+All 4 of the above, plus the 5 migrated rules, had **no `severity` label at all** in
+their pre-migration form — meaning even a full node outage could only ever reach email,
+never WhatsApp. See `export_legacy_alert_rules.sh` to re-pull the live definition of any
+rule if it's ever edited outside this file again.
 
 ---
 
@@ -222,7 +217,71 @@ sampada.diwan@gmail.com
 
 Group wait 30s, group interval 5m, repeat every 4h. To change recipients, edit `grafana_provision.yml` and re-run `rake grafana:provision:contact_points`.
 
----
+### Region identification (IN vs US)
+
+`grafana_provision.yml` is shared by both Grafana instances, so the region is NOT in the
+YAML — `rake grafana:provision:alert_rules` injects it per-instance from the target host:
+
+- every rule gets a `region: in` / `region: us` label (shown in email label tables, and
+  used by `GrafanaAlertsController` to tag the WhatsApp message and pick the right
+  Grafana link)
+- every summary annotation is prefixed with `[IN]` / `[US]`
+
+If notifications arrive without a region tag, the rules were provisioned by an older
+version of the rake task — re-run `rake grafana:provision:alert_rules` against both hosts.
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant Rake as rake grafana:provision:alert_rules
+    participant G as Grafana (IN or US)
+    participant App as GrafanaAlertsController
+    participant WA as WhatsApp (WATI)
+
+    Dev->>Rake: GRAFANA_URL=https://graphana.caphive.{com|us}
+    Rake->>Rake: region = REGION_BY_HOST[host]  (in / us)
+    Rake->>G: create rules with region label + [IN]/[US] summary prefix
+    Note over G: alert fires
+    G->>Dev: email — [IN]/[US] in subject (group label) + summary + label table
+    G->>App: POST /grafana/alert (critical only)
+    App->>App: read region label → tag header, pick Grafana link
+    App->>WA: "[IN] ALERT: ..." + link to firing instance
+```
+
+### Silence / Source links in notifications
+
+The Silence and Source buttons in alert emails are built from Grafana's `root_url`
+server setting — **not** anything provisioned by the rake task. If they point to
+`localhost:3000`, the Grafana container is missing its external URL.
+
+**Preferred fix (no container recreation)** — edit the ini in place and restart.
+The setting is only read at startup, so a restart is unavoidable, but `docker restart`
+keeps the container and all its state:
+
+```bash
+# -u root: the ini is root-owned; grafana runs as uid 472.
+# Use https://graphana.caphive.us on the US monitoring server.
+docker exec -u root grafana sed -i \
+  's|^;root_url =.*|root_url = https://graphana.caphive.com|' /etc/grafana/grafana.ini
+docker restart grafana
+curl -s -u admin:$GRAFANA_PASS https://graphana.caphive.com/api/admin/settings | jq '.server.root_url'
+```
+
+The container was started with `--rm`, so use `docker restart` — never `docker stop`
+then `docker start`: a plain stop triggers auto-remove and (with no volume) destroys
+dashboards, users, and alert state. The ini edit lives in the container's writable
+layer: it survives restarts but is lost if the container is ever recreated (e.g. an
+image upgrade) — when recreating, pass the env var instead, which overrides the ini:
+
+```bash
+-e GF_SERVER_ROOT_URL=https://graphana.caphive.com   # IN instance
+-e GF_SERVER_ROOT_URL=https://graphana.caphive.us    # US instance
+```
+
+Before any recreation, check for a persistent volume (`docker inspect grafana --format
+'{{json .Mounts}}'`) and back up `/var/lib/grafana/grafana.db` (`docker cp`).
+Everything in this directory is re-provisionable via `rake grafana:provision`, but
+manual changes are not.
 
 ---
 

@@ -19,6 +19,19 @@
         <%= @note.details %>
       </td>
     </tr>
+    <%# LP CRM: the person at the LP this note was with, if recorded. Links to
+        their contact page with the Notes tab open, matching the "With" column
+        in the notes list and the task show page. %>
+    <% if @note.touch_point %>
+      <tr>
+        <td>
+          With
+        </td>
+        <td>
+          <%= link_to @note.touch_point.full_name, investor_access_path(@note.touch_point, tab: "notes-tab") %>
+        </td>
+      </tr>
+    <% end %>
     <tr>
       <td>
         On

@@ -1,19 +1,59 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Investments</h1>
 
+  <%
+    portfolio_company_id = params[:portfolio_company_id]
+
+    # Investments and Shareholder Positions are two separate, mutually exclusive ways of
+    # tracking a portfolio company's cap table data. A brand new portfolio company (no data
+    # of either kind yet) is offered both entry points; once one kind of data exists, its
+    # button(s) stay and the other kind's entry point(s) are hidden so a company's cap table
+    # never ends up being built from a mix of both. When there's no portfolio_company_id
+    # context at all (e.g. the global Investments list), everything stays visible as before.
+    has_investments = portfolio_company_id.present? && Investment.where(portfolio_company_id: portfolio_company_id).exists?
+    has_shareholder_positions = portfolio_company_id.present? && ShareholderPosition.approved.where(portfolio_company_id: portfolio_company_id).exists?
+    show_investment_actions = portfolio_company_id.blank? || !has_shareholder_positions
+    show_shareholder_upload = portfolio_company_id.blank? || !has_investments
+  %>
+
   <div class="d-flex flex-wrap align-items-center gap-2">
-    <%= link_to "New Investment", new_investment_path(portfolio_company_id: params[:portfolio_company_id]), {class: "btn btn-outline-primary ti ti-plus d-inline-flex align-items-center"}  %>
-    <%= link_to new_import_upload_path(
-                  "import_upload[import_type]": "Investment",
-                  "sample_upload": "INVESTMENT_SAMPLE"),
-                class: "btn btn-outline-success d-inline-flex align-items-center" do %>
-      <i class="ti ti-upload"></i> <%= t_common(:upload) %>
+    <% if show_investment_actions %>
+      <%= link_to "New Investment", new_investment_path(portfolio_company_id: params[:portfolio_company_id]), {class: "btn btn-outline-primary ti ti-plus d-inline-flex align-items-center"}  %>
+      <%= link_to new_import_upload_path(
+                    "import_upload[import_type]": "Investment",
+                    "sample_upload": "INVESTMENT_SAMPLE"),
+                  class: "btn btn-outline-success d-inline-flex align-items-center" do %>
+        <i class="ti ti-upload"></i> <%= t_common(:upload) %>
+      <% end %>
+    <% end %>
+    <% if show_shareholder_upload %>
+
+
+      <%= link_to shareholder_positions_path(portfolio_company_id: params[:portfolio_company_id]),
+                  class: "btn btn-outline-success" do %>
+        <i class="ti ti-list"></i> View Shareholding Patterns
+      <% end %>
+      <%= link_to new_shareholder_position_upload_path(
+                    "sample_upload": "SHAREHOLDER_POSITION_SAMPLE",
+                    "owner_id": params[:portfolio_company_id],
+                    "owner_type": (params[:portfolio_company_id].present? ? "Investor" : nil)),
+                  class: "btn btn-outline-success d-inline-flex align-items-center" do %>
+        <i class="ti ti-upload"></i> <%= "Upload Shareholding Patterns" %>
+      <% end %>
+      <%
+        shareholder_positions_data_source = shareholder_positions_path(portfolio_company_id: params[:portfolio_company_id], format: :xlsx)
+        shareholder_positions_xl_link = download_xl_link(shareholder_positions_data_source)
+      %>
+      <%= link_to shareholder_positions_xl_link, class: "btn btn-outline-success", data: { turbo: false } do %>
+        <i class="ti ti-download"></i> <%= t_common(:download) + " Shareholding Patterns" %>
+      <% end %>
     <% end %>
 
-    <%= link_to investments_path(portfolio_company_id: params[:portfolio_company_id], index: true),
-                class: "btn btn-outline-success" do %>
-      <i class="ti ti-list"></i> View Investments
-    <% end %>
+    <% if show_investment_actions %>
+      <%= link_to investments_path(portfolio_company_id: params[:portfolio_company_id], index: true),
+                  class: "btn btn-outline-success" do %>
+        <i class="ti ti-list"></i> View Investments
+      <% end %>
 
     <%
       data_source ||= investments_path(params: params.to_unsafe_h, format: :xlsx)
@@ -23,8 +63,10 @@
     <%= link_to xl_link, class: "btn btn-outline-success", data: { turbo: false } do %>
       <i class="ti ti-download"></i> <%= t_common(:download) %>
     <% end %>
+    <% end %>
   </div>
 </div>
+
 
 <%= render "/layouts/filter", associations: [:portfolio_company] %>
 

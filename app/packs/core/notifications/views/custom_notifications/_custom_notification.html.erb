@@ -9,7 +9,7 @@
     <%= custom_notification.whatsapp %>
   </td>
   <td>
-    <%= custom_notification.for_type %> 
+    <%= custom_notification.for_type %>
     <%= link_to custom_notification.owner %>
   </td>
   <td>
@@ -20,5 +20,6 @@
   </td>
   <td>
     <%= link_to  t_common(:show), custom_notification , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_custom_notification_path(custom_notification) , {class: "btn btn-outline-primary"} %>
   </td>
 </tr>

@@ -1,9 +1,11 @@
 resources :investor_kpi_mappings do
   post 'generate', on: :collection
+  patch 'recompute_rag', on: :member
 end
 
 resources :kpis do
   patch 'approve', on: :member
+  patch 'unapprove', on: :member
   delete 'reject', on: :member
   patch 'approve_all', on: :collection
   put :restore_deleted, on: :member
@@ -23,6 +25,11 @@ resources :kpi_reports do
   get :show_deleted, on: :collection
   patch "refresh_import", on: :member
   patch "mark_reviewed", on: :member
+  post "validate_upload", on: :member      # dry-run workbook validation for the pre-save panel (saved report)
+  post "validate_upload", on: :collection  # same, for the New page (report context from form fields)
+  patch "reopen", on: :member              # fund: reopen a submitted report and ask the portco to re-upload
+  get "template", on: :member              # pre-filled KPI workbook template (portco + fund)
+  get "template", on: :collection          # same, for the New page (report context from form fields)
   get "portco_pending", on: :collection
 end
 
@@ -62,4 +69,12 @@ resources :deals do
   patch :agent_settings, action: :update_agent_settings, on: :member
   post :run_now, on: :member
   get :weekly_summary, on: :member
+  patch :update_ingest_address, on: :member
+
+  # Warehouse items — emails the Deal Update Agent couldn't auto-file.
+  # Nested under deals because items are always deal-scoped.
+  # @see WarehouseItemsController
+  resources :warehouse_items, only: [:index], controller: "warehouse_items" do
+    patch :resolve, on: :member
+  end
 end

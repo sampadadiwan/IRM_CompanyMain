@@ -1,22 +1,13 @@
 # frozen_string_literal: true
 
-# MCP tool to get detailed information about a specific portfolio company.
+# MCP tool to get one portfolio company's details.
+# Surface generated from the `portfolio_company` ontology.
+# Delegates to {PortfolioAssistantDataManager#get_portfolio_company_details}.
 class GetPortfolioCompanyDetailsTool < ApplicationMcpTool
-  description "Get detailed information about a specific portfolio company. Returns name, category, email, " \
-              "tags, city, amount invested, and last interaction date. " \
-              "Use list_portfolio_companies first to find the portfolio_company_id by name, then call this for full details."
-
-  input_schema(
-    properties: {
-      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company. Use list_portfolio_companies with { investor_name_cont: 'name' } to find IDs." }
-    },
-    required: ["portfolio_company_id"]
-  )
+  ontology "get_portfolio_company_details"
 
   def self.call(server_context:, portfolio_company_id:)
-    data_manager = PortfolioAssistantDataManager.new(user: server_context[:user])
-    data = data_manager.get_portfolio_company_details(portfolio_company_id: portfolio_company_id)
-
-    MCP::Tool::Response.new([{ type: "text", text: data.to_json }])
+    json PortfolioAssistantDataManager.new(user: server_context[:user])
+                                      .get_portfolio_company_details(portfolio_company_id: portfolio_company_id)
   end
 end

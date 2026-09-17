@@ -7,6 +7,19 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+<%# Forces every Turbo-driven visit that lands on a login/2FA page to be a full browser
+    reload instead of a soft Turbo render. Without it: an authenticated-app link clicked
+    after the session has expired is Turbo-intercepted, `authenticate_user!` redirects to
+    login, and Turbo follows that redirect as part of the SAME soft visit rather than a
+    hard navigation. The 2FA form's own `data: { turbo: false }` submit still does a real
+    POST from there, but by then the classic jQuery theme scripts (theme.js, app.init.js,
+    sidebarmenu.js — see public/modernize/js/) never got a fresh $(document).ready() to
+    bind their topbar/sidebar handlers to, since they only listen for that event and never
+    turbo:load (unlike app/javascript/application.js, which does). The dashboard the user
+    lands on afterwards inherits that half-initialized state, and only a manual reload
+    fixes it. See app/javascript/custom/turbo_handler.js for the same family of bug. %>
+<meta name="turbo-visit-control" content="reload" />
+
 <!-- Favicon icon-->
 <link rel="shortcut icon" type="image/png" href="/favicon.png" />
 
@@ -14,6 +27,7 @@
 <link rel="stylesheet" href="/modernize/css/styles.css" />
 
 <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+<%= render "/layouts/locale_date_meta" %>
 <%= javascript_importmap_tags %>
 
 
@@ -31,27 +45,41 @@
       <div class="position-relative z-index-5">
         <div class="row">
           <div class="col-xl-7 col-xxl-7 p-0 d-flex flex-column">
-            <div class="login-brand-section d-none d-xl-flex h-100 justify-content-center align-items-center p-5">
-              <div class="col-sm-8 col-md-6 col-xl-9">
-                <%= render "devise/shared/company_logo" %>
+            <div class="login-brand-section d-none d-xl-flex flex-column h-100 justify-content-center align-items-center p-5">
+              <%# Logo block takes the free vertical space so the ticker settles at the bottom. %>
+              <div class="brand-stage">
+                <div class="col-sm-8 col-md-6 col-xl-9 mx-auto">
+                  <%= render "devise/shared/company_logo" %>
+                </div>
               </div>
+              <%= render "devise/shared/finance_ticker", rows: 2 %>
             </div>
           </div>
           <div class="col-xl-5 col-xxl-5">
-            <div class="authentication-login min-vh-100 bg-body row justify-content-center align-items-center p-4">
-              <div class="col-sm-8 col-md-6 col-xl-9">
-                <% name = @current_entity&.name || "CapHive" %>
-                <!-- h5 class="card-title fw-semibold text-center"> Welcome to <%=name%> </h5 -->
-                <p class=" mb-9"></p>
+            <%# g-0 + col-12 + no padding so the page fills this column edge to edge.
+                Anything else leaves a white frame around the login panel. %>
+            <div class="authentication-login min-vh-100 row g-0 justify-content-center align-items-center">
+              <div class="col-12">
                 <%= yield %>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <%# Below xl the brand panel is hidden, so the running banner moves to a bar under the form. %>
+      <div class="d-xl-none">
+        <%= render "devise/shared/finance_ticker", rows: 1, variant: "finance-ticker--bar" %>
+      </div>
     </div>
   </div>
   <div class="dark-transparent sidebartoggler"></div>
+
+  <%# Modals render here, outside the .overflow-hidden wrapper above — nested inside it,
+      Bootstrap's fixed-position modal gets clipped by that ancestor in this app (the same
+      reason ToggleCard-hosted modals have to live outside the card). %>
+  <%= yield :modals %>
+
   <!-- Import Js Files -->
 
 <script src="/modernize/libs/jquery/dist/jquery.min.js"></script>

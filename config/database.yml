@@ -31,14 +31,16 @@ development:
   primary:
     <<: *default
     database: IRM_development
-    # password: Root1234$
-    # port: 33066
+    username: root
+    password: root
+    host: 127.0.0.1
   primary_replica:
     <<: *default_replica
     database: IRM_development
     database_tasks: false
-    # password: Root1234$
-    # port: 33066
+    username: root
+    password: root
+    host: 127.0.0.1
 
 staging:
   primary:

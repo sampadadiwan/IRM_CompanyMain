@@ -1,0 +1,165 @@
+---
+title: 'Case study: portfolio reports across 50+ companies | CapHive'
+description: A venture fund needed standardised, error-free company updates for its
+  LPs — from data that arrived as fifty different spreadsheets. Here is how that
+  reporting cycle runs now.
+og_title: 'Case study: 50+ portfolio companies, one reporting cycle'
+og_description: Collecting KPIs at source, approving them before they count, and letting
+  AI draft the narrative your analysts edit.
+data_page: cases
+og_type: article
+body_extra: |
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Case study: portfolio reports across 50+ companies",
+    "description": "A venture fund needed standardised, error-free company updates for its LPs — from data that arrived as fifty different spreadsheets.",
+    "datePublished": "2026-08-11",
+    "author": { "@type": "Organization", "name": "CapHive" },
+    "publisher": { "@type": "Organization", "name": "CapHive" },
+    "mainEntityOfPage": "https://caphive.com/case-portfolio-reports.html"
+  }
+  </script>
+---
+
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-orange tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="case-studies.html">Case Studies</a><span>/</span>Portfolio reports
+          </nav>
+          <span class="chip-label">Case study · Portfolios</span>
+          <h1 style="margin-top:22px">Fifty companies, fifty spreadsheets, <em>one deadline.</em></h1>
+          <p class="lede">A venture fund with 50+ portfolio companies wanted standardised, error-free one-page updates for its LPs. The reporting problem was never the writing. It was that the numbers arrived in fifty different shapes, and nobody could say which version was the real one.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-11">Aug 11, 2026</time>
+            <span class="dot">·</span>
+            <span>8 min read</span>
+            <span class="dot">·</span>
+            <span>Portfolios</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+
+        <div class="stat-band" style="margin:0 0 34px;border:1px solid var(--line);border-radius:14px;overflow:hidden">
+          <div><strong>50<em>+</em></strong><span>portfolio companies on one reporting cycle</span></div>
+          <div><strong>2</strong><span>stages between a submitted number and a reported one</span></div>
+          <div><strong>1</strong><span>action to queue a draft for every company</span></div>
+        </div>
+
+        <h3>The engagement</h3>
+        <p>A venture capital fund managing more than fifty portfolio companies, with four requirements: a centralised repository of information, a single source of truth, standardised and error-free one-page company updates for LPs, and a grip on capitalisation-table information across the portfolio.</p>
+        <p>Read those in order and you can see the dependency. You cannot standardise the update until you have a single source of truth. You cannot have a single source of truth while the numbers live in fifty inboxes.</p>
+
+        <h3>What the quarter used to look like</h3>
+        <p>An analyst emails fifty founders. Thirty reply within a fortnight, each with a slightly different workbook. Some report monthly, some quarterly. Column headers vary. One company sends a PDF. Two send nothing, and the analyst has to work out which two by reading their own sent folder.</p>
+        <p>Then the numbers get copied into a master file. Then the one-pagers get written, fifty times, by someone reading the master file and rephrasing it. Then someone senior reads all fifty and finds three that contradict the valuation on record.</p>
+        <div class="pull"><p>Every manual copy between a founder's spreadsheet and an LP's PDF is a place where a number can change without anyone deciding to change it.</p></div>
+
+        <h3>Step one — collection happens at the source</h3>
+        <p>The fund enables self-reporting for a period. Each company gets an email with a direct link to its own upload page for that exact period. No login. The link is valid for 15 days and the expiry date is written into the email, so "my link doesn't work" resolves itself.</p>
+        <p>Companies can nominate a designated KPI contact — tag a user <code>Kpi</code> and only those people get reminders, rather than everyone with an account. The portco user can <strong>Save Draft</strong> as often as they like without notifying the fund, then <strong>Submit Report</strong> when it's final, at which point the fund team is emailed and the report locks.</p>
+        <p>Two things stop bad files at the door:</p>
+        <ul>
+          <li><strong>Structure is checked in the browser.</strong> If date column headers are missing or invalid, both Save Draft and Submit are disabled with the error shown — the file gets fixed before it is ever submitted, not after an analyst opens it.</li>
+          <li><strong>Nobody who has already submitted gets chased.</strong> Bulk sends skip companies that have submitted, and the automated reminder job only re-contacts companies still sitting at <em>Link Sent</em> or <em>Draft Saved</em>. Reviewed reports drop out of all future cycles.</li>
+        </ul>
+        <p>And companies don't need the original email at all — <strong>Pending KPI Requests</strong> shows every outstanding request from every fund they report to, in one place.</p>
+
+        <h3>Step two — nothing counts until it is approved</h3>
+        <p>This is the "single source of truth" requirement, and it is a two-stage design rather than a policy.</p>
+        <p>Submitted KPIs land <strong>staged</strong>. Staged data does not appear in dashboards, performance tables or growth calculations. A fund admin opens the submitted report, clicks through to the grid view with staged values highlighted, and either approves individual figures or approves the lot. Identical values are skipped rather than duplicated; changed values are flagged for review.</p>
+        <p>Approval is also what triggers computation: quarterly, YTD and annual totals are recalculated automatically — from monthly actuals, or from quarterly actuals if that is all a company reports, but never both, so nothing is double-counted.</p>
+        <figure style="margin:30px 0">
+          <table>
+            <thead><tr><th>Stage</th><th>Status</th><th>Visible in dashboards?</th></tr></thead>
+            <tbody>
+              <tr><td>Request sent</td><td>Link Sent</td><td>—</td></tr>
+              <tr><td>Company saves progress</td><td>Draft Saved</td><td>No</td></tr>
+              <tr><td>Company submits</td><td>Submitted (staged)</td><td>No</td></tr>
+              <tr><td>Fund admin approves</td><td>Approved</td><td>Yes — and totals recompute</td></tr>
+              <tr><td>Fund admin marks reviewed</td><td>Reviewed</td><td>Yes — and reminders stop</td></tr>
+            </tbody>
+          </table>
+          <figcaption style="margin-top:10px;font-size:13px;color:var(--mut)">the gap between "a founder sent a number" and "we reported a number"</figcaption>
+        </figure>
+
+        <h3>Step three — chasing is a job for software</h3>
+        <p>The Portfolio Company Agent runs against every company in the portfolio and checks three things for the most recently completed period: has the company submitted its KPIs, are the required documents on file, and has a valuation been recorded. Missing KPIs and missing valuations are blocking findings.</p>
+        <p>If anything is outstanding and reminders are on, it emails the company <strong>one consolidated reminder</strong> listing exactly what is missing — never more than once a day, no matter how often the agent runs. It only operates inside a window you set: by default it starts checking 15 days after a period ends and stops at 60, because chasing a company on day 2 of a quarter annoys them and chasing on day 200 is pointless.</p>
+        <p>Every check is a rule against your own data. The agent makes no AI calls at all, needs no AI key, and costs nothing per run.</p>
+
+        <h3>Step four — the draft writes itself, your analyst edits it</h3>
+        <p>The report type is configured once: a name like "Quarterly LP Update", a set of sections, and an output template that fixes which sections appear, in what order, and how the KPI table is laid out. Sections can be written by hand or proposed by AI from the report name, then tightened — the instructions you give each section are what steer the narrative, so specific beats elegant.</p>
+        <p>A Word style document carries the firm's fonts, heading colours and table styles into every export. One report can hold several templates: a short LP summary and a longer internal version, or a clone with the sections reordered.</p>
+        <p>Then generation. For one company it's a form on the company's page; for the portfolio it's <strong>Bulk Generate Drafts</strong> — pick a template, a date range, a KPI period and tag, tick the companies, and one draft is queued per company with a notification as each lands. A draft takes roughly 30–90 seconds.</p>
+        <p>Before you commit to a run, a live badge tells you how many KPI periods actually exist for the settings you have chosen — green for all found, amber for "3 of 6", red for none. Missing data is a thing you discover on the configure screen, not in the output.</p>
+
+        <h2>⚙️ Under the hood: the parts that make review fast</h2>
+        <p><strong>Every section is graded.</strong> Each section tab carries a coloured dot — green for solid content, amber for suspiciously short, red for nothing generated. An analyst goes straight to the amber ones instead of reading fifty drafts end to end.</p>
+        <p><strong>Fixes are inline.</strong> Click a KPI cell, type the correct figure, press Enter — a green Saved badge confirms it. Double-click a narrative to rewrite it. Edited text takes precedence over the AI output and is what the Word export uses.</p>
+        <p><strong>Corrections survive regeneration.</strong> KPI corrections are stored separately from the raw KPI data, so re-running a section doesn't wipe them. And you can regenerate a single weak section without redoing the draft — it reuses the KPI data already fetched, and leaves every other section alone.</p>
+        <p><strong>Approval is a lock, not a label.</strong> Approving a draft freezes editing and unlocks Export to Word. The exported file carries the cover, the KPI table with your corrections applied, and your edited narratives, styled by the style document — and it lands in the company's Documents folder as well as on the draft page. If something is wrong afterwards, <em>Reopen for Editing</em> puts it back in Review; the previously exported file isn't deleted.</p>
+        <div class="pull"><p>AI that writes a report you cannot edit is a demo. AI that writes a first draft your analyst improves in four minutes is a reporting cycle.</p></div>
+
+        <h3>And next quarter</h3>
+        <p>Two things carry forward. The configure form pre-fills from that company's last draft — dates, periods, tag, chosen metrics — with a banner saying so. And an output template can queue drafts for every company automatically on a monthly or quarterly schedule, on a day you pick between 1 and 28 (28, because short months).</p>
+
+        <h2>📊 The impact</h2>
+        <p><strong>Before:</strong> fifty inboxes and one master spreadsheet, with collection closing about <strong>four weeks</strong> after the quarter ended — thirty replies inside the first fortnight and the rest chased one at a time. Then fifty hand-written one-pagers at roughly <strong>45 minutes each — about 37 analyst-hours</strong> — and a review pass whose main output was finding contradictions.</p>
+        <p><strong>After:</strong> collection closes inside the <strong>15-day</strong> link window, because companies submit into their own period and the consolidated reminder chases the stragglers without an analyst doing it. Nothing reaches a dashboard until a human approves it; totals recompute themselves on approval. Fifty drafts are queued in one action at 30–90 seconds each, and the analyst edits rather than writes — roughly <strong>4 minutes per draft, about 3.5 hours</strong> for the portfolio. The LP update arrives as a styled Word document built from the approved numbers.</p>
+        <p>The requirement was "standardised, error-free". Standardisation came from the template. Error-free came from removing the copies. The <strong>37 hours to 3.5</strong> came from the analyst stopping being the person who types the numbers in.</p>
+        <p style="margin-top:26px;font-size:13.5px;color:var(--mut);border-left:3px solid var(--line);padding-left:14px"><strong>On these figures.</strong> The workflow and platform behaviour described above are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them. The before-and-after figures in this section are a modelled composite — built from the platform's own behaviour and the hand-run baseline typical of a portfolio of this size — not a measurement taken at a single named client.</p>
+
+        <h2>What to take from this</h2>
+        <div class="callout">
+          <ol>
+            <li><strong>Collect at the source, into the period.</strong> A link that opens the right quarter for the right company removes an entire class of reconciliation.</li>
+            <li><strong>Put a gate between submitted and reported.</strong> Staged-then-approved is the cheapest single source of truth you will ever build.</li>
+            <li><strong>Validate the file before you accept it.</strong> A structural check in the browser costs nothing and saves an analyst opening it.</li>
+            <li><strong>Never chase a company twice in one day.</strong> One consolidated reminder listing everything missing beats three separate nags, and keeps founders responsive.</li>
+            <li><strong>Let AI draft, and make editing trivial.</strong> The value is in the ninety seconds you didn't spend on the first draft, not in pretending the first draft was final.</li>
+          </ol>
+        </div>
+
+        <h2>Where this goes next</h2>
+        <p>Read how the same portfolio data is restated across currencies in <a href="case-multi-currency-close.html">multi-currency computations and reporting</a>, or how the fund side of the ledger produces <a href="case-investor-statements.html">investor statements for 500+ LPs</a>. To see it on your own portfolio, <a href="contact.html">book a walkthrough</a>.</p>
+
+        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld, and the before-and-after figures in <em>The impact</em> are a modelled composite rather than a client-verified measurement — see the note there. The workflow, platform mechanics and behaviour described are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them.</p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="case-studies.html">More case studies</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>

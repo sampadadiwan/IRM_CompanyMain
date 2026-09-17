@@ -1,0 +1,29 @@
+<%= render FormCard.new(title: "Search synonym") do %>
+  <%= form_with(model: synonym) do |form| %>
+    <% if synonym.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% synonym.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <div class="form-group">
+      <%= form.label :terms, "Rule" %>
+      <%= form.text_field :terms, class: "form-control", maxlength: 500, required: true, placeholder: "drawdown, capital call" %>
+    </div>
+    <div class="form-group">
+      <%= form.label :note %>
+      <%= form.text_field :note, class: "form-control", maxlength: 255 %>
+    </div>
+    <div class="form-group form-check">
+      <%= form.check_box :enabled, class: "form-check-input" %>
+      <%= form.label :enabled, class: "form-check-label" %>
+    </div>
+    <div class="form-group">
+      <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
+      <%= link_to "Cancel", guide_search_synonyms_path, class: "btn btn-link" %>
+    </div>
+  <% end %>
+<% end %>

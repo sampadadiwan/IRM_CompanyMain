@@ -1,0 +1,72 @@
+// "Immediate Actions" confirmation modal — the pattern first used by the KYC "Request
+// Updates" popup: a left-bordered intro bar, then a stack of tinted cards each with a round
+// coloured icon, a bold one-line effect and a muted explanation. Extracted here so other
+// consequential actions (two-factor reset, ...) share one look instead of inline styles.
+//
+// Markup:
+//   .action-summary__intro                 (border-start callout)
+//   .action-summary__item.action-summary__item--{blue|amber|green|purple|red|grey}
+//     .action-summary__icon > i
+//     .action-summary__title / .action-summary__desc
+
+$action-summary-tints: (
+  blue:   (bg: #eff6ff, icon-bg: #dbeafe, icon: #2563eb),
+  amber:  (bg: #fffbeb, icon-bg: #fef3c7, icon: #d97706),
+  green:  (bg: #f0fdf4, icon-bg: #dcfce7, icon: #16a34a),
+  purple: (bg: #fdf4ff, icon-bg: #f3e8ff, icon: #9333ea),
+  red:    (bg: #fef2f2, icon-bg: #fee2e2, icon: #dc2626),
+  grey:   (bg: #f8fafc, icon-bg: #e2e8f0, icon: #475569)
+);
+
+.action-summary__intro {
+  border-left: 4px solid var(--bs-primary, #2563eb);
+  padding: 0.25rem 0 0.25rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.action-summary__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.action-summary__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+
+  @each $name, $tint in $action-summary-tints {
+    &--#{$name} {
+      background: map-get($tint, bg);
+
+      .action-summary__icon {
+        background: map-get($tint, icon-bg);
+        color: map-get($tint, icon);
+      }
+    }
+  }
+}
+
+.action-summary__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+}
+
+.action-summary__title {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.action-summary__desc {
+  color: var(--bs-secondary-color, #6c757d);
+  margin-top: 0.25rem;
+}

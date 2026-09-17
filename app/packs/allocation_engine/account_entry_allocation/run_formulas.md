@@ -10,7 +10,10 @@ The service follows a sequence of steps to safely clean existing data, prepare a
 
 ```mermaid
 graph TD
-    A[Start: RunFormulas] --> B[Delete Existing Entries]
+    A[Start: RunFormulas] --> PRE{Pre-run checks pass?}
+    PRE -- Yes --> B[Delete Existing Entries]
+    PRE -- No --> PCR[Persist Check Results + queue report]
+    PCR --> Q
     B --> C[Load Scratch SQLite DB]
     C --> D[Get Commitments]
     D --> E[Run Formulas]
@@ -25,7 +28,10 @@ graph TD
     M --> I
     I -- Done --> N[Final Catch-all Migration]
     F -- No --> O[Generate Fund Ratios]
-    N --> O
+    N --> POST{Post-run checks pass?}
+    POST -- Yes --> PCS[Persist Check Results if any warned]
+    PCS --> O
+    POST -- No --> PCR
     O --> P[Generate Investor Statements]
     P --> Q[Cleanup SQLite Files]
     Q --> R[Display Generated Links]
@@ -39,6 +45,18 @@ graph TD
 ```
 
 ## Detailed Steps
+
+### 0. Pre-run Checks (`run_pre_checks`)
+
+- Runs every enabled `PreRunCheck` formula in the run's `rule_for`/tag scope through
+  `AccountEntryAllocation::RunChecks`, once for the fund, **before anything is deleted**.
+- Every check runs even after one fails. If any failed, the `AllocationRun` status becomes
+  `Pre-run checks failed (N): …` and the operation goes down the failure track: nothing is deleted,
+  loaded or computed.
+- Check formulas are never part of `get_formulas`, so they never reach `RunFormula`, the commitment
+  cache scan or the delete scope.
+- See `docs/business_requirements/allocation_run_checks.md` for check formulas and their helpers
+  (`check_helpers.rb`).
 
 ### 1. Delete Existing Entries (`delete_existing_entries`)
 
@@ -71,6 +89,23 @@ This is the core execution logic:
 - Converts namespaced types back to primary types (e.g., `AccountEntrySqlite` -> `AccountEntry`).
 - Stores the original SQLite ID in `json_fields` for relinking.
 - **Relinking**: In the final step, it reconciles parent-child relationships between account entries by updating `parent_id` with the new primary IDs.
+
+### 5a. Post-run Checks (`run_post_checks`)
+
+- Runs every enabled `PostRunCheck` formula after the final migration and parent relinking,
+  against the primary database. It is skipped when the run's status isn't `Success`, which happens
+  when the background loader recorded a migration error without failing the step.
+- Any failure sets `Post-run checks failed (N): …` and fails the operation, so fund ratios, investor
+  statements and the links notification don't run. The entries already written stay.
+
+### 5b. Persist Check Results (`persist_check_results`)
+
+- Wired on **both** tracks (`step` + `left`), so it runs however the run ended.
+- When any check failed or warned, it merges the results into the run's `AllocationRunReport`
+  (`json_fields["run_checks"]`), queues `AllocationRunReportJob`, and notifies the user with a link
+  to the report. The report shows each check as a `1.5.n`/`1.6.n` finding. When every check passed,
+  it does nothing.
+- It never raises, so `cleanup_sqlite` still runs.
 
 ### 6. Post-Run Operations
 

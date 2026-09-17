@@ -1,0 +1,555 @@
+// Guided Report Wizard — a friendlier, step-by-step on-ramp in front of the
+// existing (unstyled-here) advanced Report Builder. Generous spacing and soft
+// tinted surfaces are deliberate: this flow is aimed at first-time / occasional
+// users, not the power-user builder.
+//
+// One consistent brand gradient (blue → violet, same as the Review card)
+// throughout the whole flow — CSS custom properties so every component below
+// just reads var(--wizard-accent), rather than hard-coding the colour in a
+// dozen places.
+
+.wizard-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  --wizard-accent: var(--bs-primary);
+  --wizard-accent-rgb: var(--bs-primary-rgb);
+  --wizard-accent-2: #7c3aed;
+}
+.wizard-shell[data-accent="rose"]   { --wizard-accent: #e11d48; --wizard-accent-rgb: 225, 29, 72; }
+
+// ── Hero icon (step 1 + review) ──────────────────────────────────────────
+.wizard-hero-icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(var(--wizard-accent-rgb), 0.22), rgba(var(--wizard-accent-rgb), 0.08));
+  color: var(--wizard-accent);
+  font-size: 2.1rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(var(--wizard-accent-rgb), 0.18);
+}
+
+// ── Help / tip box ────────────────────────────────────────────────────────
+.wizard-help-box {
+  position: relative;
+  background: linear-gradient(120deg, rgba(var(--wizard-accent-rgb), 0.08) 0%, rgba(var(--wizard-accent-rgb), 0.02) 100%);
+  border: 1px solid rgba(var(--wizard-accent-rgb), 0.18);
+  border-left: 3px solid var(--wizard-accent);
+  border-radius: 0 0.85rem 0.85rem 0;
+  padding: 1.25rem 1.5rem;
+}
+
+.wizard-help-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(var(--wizard-accent-rgb), 0.16);
+  color: var(--wizard-accent);
+  font-size: 1.1rem;
+  box-shadow: 0 0.2rem 0.5rem rgba(var(--wizard-accent-rgb), 0.15);
+}
+
+.wizard-help-example {
+  background: rgba(var(--bs-success-rgb), 0.08);
+  border: 1px dashed rgba(var(--bs-success-rgb), 0.35);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: var(--bs-success-text-emphasis, var(--bs-success));
+}
+
+.wizard-pack-label {
+  letter-spacing: 0.06em;
+}
+
+// ── Step 1: root-model picker dropdown ──────────────────────────────────
+.wizard-model-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.6rem;
+  background: rgba(var(--bs-primary-rgb), 0.1);
+  color: var(--bs-primary);
+  font-size: 1.2rem;
+}
+
+// ── Progress stepper — the current step's dot picks up that step's accent,
+// so moving through the wizard reads as a little colour journey. ──────────
+.wizard-progress-step {
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.wizard-progress-dot {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid var(--bs-border-color, #e2e5ec);
+  background: var(--bs-body-bg, #fff);
+  font-size: 1.05rem;
+  transition: all .2s ease;
+}
+
+.wizard-progress-step.is-current .wizard-progress-dot {
+  border-color: var(--wizard-accent);
+  background: var(--wizard-accent);
+  color: #fff;
+  box-shadow: 0 0 0 5px rgba(var(--wizard-accent-rgb), 0.16), 0 0.3rem 0.75rem rgba(var(--wizard-accent-rgb), 0.35);
+  transform: scale(1.08);
+}
+
+.wizard-progress-step.is-done .wizard-progress-dot {
+  border-color: var(--bs-success);
+  background: var(--bs-success);
+  color: #fff;
+}
+
+.wizard-progress-step.is-current .wizard-progress-label {
+  font-weight: 800;
+  color: var(--wizard-accent);
+}
+
+.wizard-progress-line {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bs-border-color, #e2e5ec);
+  margin: 0 0.25rem;
+  align-self: flex-start;
+  margin-top: 21px;
+}
+
+.wizard-progress-line.is-done {
+  background: var(--bs-success);
+}
+
+// ── Panel cards — repeatable section cards, styled like the Review card's
+// own hero: full gradient header in the step's accent, white text/icons. ──
+.wizard-panel-card {
+  border-radius: 0.9rem;
+  overflow: hidden;
+  border: 1px solid rgba(var(--wizard-accent-rgb), 0.14);
+  box-shadow: 0 0.5rem 1.25rem rgba(var(--wizard-accent-rgb), 0.09), 0 0.125rem 0.35rem rgba(0, 0, 0, 0.03);
+  background: var(--bs-body-bg, #fff);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.wizard-panel-card-header {
+  padding: 0.9rem 1.25rem;
+  background: linear-gradient(135deg, var(--wizard-accent) 0%, var(--wizard-accent-2) 100%);
+  color: #fff;
+}
+
+.wizard-panel-card-header h6 {
+  color: #fff;
+}
+
+// Icon badge — tinted-on-white inside a plain card, inverted to translucent-
+// white-on-gradient inside a .wizard-panel-card-header (same markup, the
+// header context alone changes how it reads).
+.wizard-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--wizard-accent-rgb), 0.16);
+  color: var(--wizard-accent);
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.wizard-panel-card-header .wizard-card-icon {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+// Badge sitting inside a gradient header (e.g. a count, or the joined
+// model's name) — same translucent-white pill language as the Review
+// card's model badge, so it reads against the gradient instead of
+// disappearing into it.
+.wizard-header-badge {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: #fff;
+  border-radius: 2rem;
+  padding: 0.3rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+
+// Chips (added joins / filters / review columns) — tinted-pill language,
+// coloured with whichever step's accent they're rendered on.
+.wizard-chip {
+  background: rgba(var(--wizard-accent-rgb), 0.09);
+  border: 1px solid rgba(var(--wizard-accent-rgb), 0.25);
+  color: var(--bs-body-color);
+  border-radius: 2rem;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.wizard-chip i:first-child {
+  color: var(--wizard-accent);
+}
+
+.wizard-chip em {
+  font-style: normal;
+  opacity: 0.7;
+}
+
+.wizard-chip-remove {
+  color: var(--bs-danger) !important;
+  opacity: 0.6;
+}
+
+.wizard-chip-remove:hover {
+  opacity: 1;
+}
+
+// ── Row cards — the "Available" / "Chosen" list items on the Columns and
+// Summarize steps. Deliberately NOT a flush list-group: each row is its own
+// small rounded card with breathing room between, closer to a modern
+// picker UI (Linear/Notion-style) than a dense table. ─────────────────────
+.wizard-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem;
+}
+
+.wizard-row-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--bs-border-color, #e2e5ec);
+  border-radius: 0.65rem;
+  background: var(--bs-body-bg, #fff);
+  transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
+}
+
+.wizard-row-card:hover {
+  border-color: rgba(var(--wizard-accent-rgb), 0.4);
+  background: rgba(var(--wizard-accent-rgb), 0.035);
+  transform: translateX(2px);
+}
+
+.wizard-row-card.wizard-row-added {
+  background: rgba(var(--bs-success-rgb), 0.05);
+  border-color: rgba(var(--bs-success-rgb), 0.25);
+}
+
+// Higher-specificity modifier (not a plain utility class) so it reliably
+// overrides the base row's row-flex layout regardless of stylesheet order —
+// used where a row needs two stacked lines (rename + aggregate picker).
+.wizard-row-card.wizard-row-card-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.wizard-row-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--wizard-accent-rgb), 0.13);
+  color: var(--wizard-accent);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.wizard-row-added .wizard-row-icon {
+  background: rgba(var(--bs-success-rgb), 0.16);
+  color: var(--bs-success);
+}
+
+// ── Joined-relation picker cards (Related Data step) ────────────────────
+.wizard-join-card {
+  position: relative;
+  border: 1px solid var(--bs-border-color, #e2e5ec);
+  border-radius: 0.85rem;
+  background: var(--bs-body-bg, #fff);
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.wizard-join-card:hover {
+  border-color: rgba(var(--wizard-accent-rgb), 0.5);
+  box-shadow: 0 0.5rem 1rem rgba(var(--wizard-accent-rgb), 0.1);
+  transform: translateY(-2px);
+}
+
+// Compound selectors (.badge.wizard-*) below, not bare .wizard-* — these are
+// always used together with Bootstrap's own .badge class in the markup, and
+// Bootstrap 5.3's .badge sets `color: var(--bs-badge-color, #fff)` (white,
+// meant to pair with a solid bg-* utility). A bare-class rule ties on
+// specificity with that and can lose depending on stylesheet order, which
+// silently produced white-on-near-white illegible text here.
+.badge.wizard-join-card-macro {
+  background: rgba(var(--wizard-accent-rgb), 0.14) !important;
+  color: var(--wizard-accent) !important;
+  border: 1px solid rgba(var(--wizard-accent-rgb), 0.3);
+  font-weight: 700;
+}
+
+// ── Aggregate legend (Summarize step) ────────────────────────────────────
+.badge.wizard-agg-badge {
+  background: rgba(var(--wizard-accent-rgb), 0.08) !important;
+  color: var(--bs-body-color) !important;
+  border: 1px solid rgba(var(--wizard-accent-rgb), 0.2);
+  font-weight: 600;
+  padding: 0.45rem 0.8rem;
+  cursor: help;
+  transition: background-color .15s ease;
+}
+
+.badge.wizard-agg-badge:hover {
+  background: rgba(var(--wizard-accent-rgb), 0.16);
+}
+
+.badge.wizard-agg-badge i {
+  color: var(--wizard-accent);
+}
+
+// ── Sort step: direction picker cards (replaces plain toggle buttons) ───
+.wizard-direction-card {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.25rem 1rem;
+  border: 2px solid var(--bs-border-color, #e2e5ec);
+  border-radius: 0.85rem;
+  background: var(--bs-body-bg, #fff);
+  text-align: center;
+  transition: all .15s ease;
+}
+
+.wizard-direction-card:hover {
+  border-color: rgba(var(--wizard-accent-rgb), 0.5);
+  transform: translateY(-2px);
+}
+
+.wizard-direction-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--wizard-accent-rgb), 0.1);
+  color: var(--wizard-accent);
+  font-size: 1.3rem;
+}
+
+.wizard-direction-radio:checked + .wizard-direction-card {
+  border-color: var(--wizard-accent);
+  background: rgba(var(--wizard-accent-rgb), 0.06);
+  box-shadow: 0 0 0 3px rgba(var(--wizard-accent-rgb), 0.14);
+}
+
+.wizard-direction-radio:checked + .wizard-direction-card .wizard-direction-card-icon {
+  background: var(--wizard-accent);
+  color: #fff;
+}
+
+.wizard-direction-radio:focus-visible + .wizard-direction-card {
+  outline: 2px solid var(--wizard-accent);
+  outline-offset: 2px;
+}
+
+// ── Review step ───────────────────────────────────────────────────────────
+.wizard-review-card {
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 0.75rem 2rem rgba(var(--bs-primary-rgb), 0.12), 0 0.125rem 0.5rem rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+}
+
+.wizard-review-card-header {
+  padding: 1.5rem 1.75rem;
+  background: linear-gradient(135deg, var(--bs-primary) 0%, #7c3aed 100%);
+  color: #fff;
+}
+
+.wizard-review-card-header-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+  font-weight: 700;
+}
+
+.wizard-review-card-header-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.wizard-review-model-badge {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 2rem;
+  padding: 0.4rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+
+.wizard-review-card-body {
+  background: var(--bs-body-bg, #fff);
+}
+
+.wizard-stat-tile {
+  border-radius: 0.75rem;
+  padding: 1.1rem 0.75rem;
+  text-align: center;
+  border: 1px solid transparent;
+  transition: transform .15s ease;
+}
+
+.wizard-stat-tile:hover {
+  transform: translateY(-2px);
+}
+
+.wizard-stat-tile-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.5rem;
+  font-size: 1rem;
+}
+
+.wizard-stat-tile-num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.wizard-stat-tile-label {
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color, #6c757d);
+  margin-top: 0.25rem;
+}
+
+.wizard-stat-tile-blue {
+  background: rgba(var(--bs-primary-rgb), 0.06);
+  border-color: rgba(var(--bs-primary-rgb), 0.12);
+}
+.wizard-stat-tile-blue .wizard-stat-tile-icon { background: rgba(var(--bs-primary-rgb), 0.15); color: var(--bs-primary); }
+.wizard-stat-tile-blue .wizard-stat-tile-num { color: var(--bs-primary); }
+
+.wizard-stat-tile-purple {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.18);
+}
+.wizard-stat-tile-purple .wizard-stat-tile-icon { background: rgba(124, 58, 237, 0.18); color: #7c3aed; }
+.wizard-stat-tile-purple .wizard-stat-tile-num { color: #7c3aed; }
+
+.wizard-stat-tile-amber {
+  background: rgba(var(--bs-warning-rgb), 0.1);
+  border-color: rgba(var(--bs-warning-rgb), 0.2);
+}
+.wizard-stat-tile-amber .wizard-stat-tile-icon { background: rgba(var(--bs-warning-rgb), 0.25); color: #b8860b; }
+.wizard-stat-tile-amber .wizard-stat-tile-num { color: #b8860b; }
+
+.wizard-review-section-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--bs-secondary-color, #6c757d);
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wizard-review-chip {
+  background: rgba(var(--bs-primary-rgb), 0.06);
+  border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+  color: var(--bs-body-color);
+  border-radius: 2rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wizard-review-chip i {
+  color: var(--bs-primary);
+}
+
+.wizard-review-sort-row {
+  background: rgba(var(--bs-primary-rgb), 0.04);
+  border-radius: 0.6rem;
+  padding: 0.85rem 1rem;
+}
+
+.wizard-review-sort-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(var(--bs-primary-rgb), 0.12);
+  color: var(--bs-primary);
+}
+
+// ── Scrollable lists (keep long column/join lists from blowing out the page) ─
+.wizard-scroll-list {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.wizard-scroll-list-sm {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+// ── Accent-themed buttons — Continue/Add/Save actions pick up whichever
+// step's colour they're rendered on, so the "colour journey" established by
+// the stepper carries through into the primary actions on each page too. ──
+.btn-wizard-accent {
+  background: var(--wizard-accent);
+  border-color: var(--wizard-accent);
+  color: #fff;
+}
+
+.btn-wizard-accent:hover,
+.btn-wizard-accent:focus {
+  background: var(--wizard-accent);
+  border-color: var(--wizard-accent);
+  color: #fff;
+  filter: brightness(0.92);
+}
+
+.btn-outline-wizard-accent {
+  border-color: var(--wizard-accent);
+  color: var(--wizard-accent);
+  background: transparent;
+}
+
+.btn-outline-wizard-accent:hover {
+  background: var(--wizard-accent);
+  border-color: var(--wizard-accent);
+  color: #fff;
+}
+
+// ── Inline column-label rename (columns + summarize steps) ─────────────────
+.wizard-label-input {
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+
+.wizard-label-input:focus {
+  background: var(--bs-body-bg, #fff) !important;
+  box-shadow: 0 0 0 2px rgba(var(--wizard-accent-rgb), 0.25);
+}

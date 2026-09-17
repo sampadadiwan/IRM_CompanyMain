@@ -1,0 +1,86 @@
+<%# Run-analysis target selector. Mirrors the Portfolio Scoring Dashboard's
+    "Run on" pattern: all / specific companies / by sector / by tag, plus an
+    "unanalyzed only" mode so an FM can fill gaps without paying for a full
+    re-run. Every mode is re-resolved server-side against entity_id — see
+    PresentationAnalystDashboardController#resolve_target_ids. %>
+<div class="modal fade" id="run-presentation-analysis-batch-modal" tabindex="-1"
+     aria-labelledby="run-presentation-analysis-batch-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <%= form_with url: run_analysis_presentation_analyst_dashboard_path,
+                    method: :post, data: { turbo: false } do %>
+        <div class="modal-header">
+          <h5 class="modal-title" id="run-presentation-analysis-batch-modal-label">
+            <i class="ti ti-robot"></i> Run Presentation Analyst
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body" data-controller="scoring-run-target">
+          <p class="text-muted"><%= PresentationAnalystAgent::DESCRIPTION %></p>
+
+          <div class="alert alert-secondary py-2">
+            <small>
+              <i class="ti ti-info-circle"></i>
+              Every portfolio company is a valid target — the agent only needs a KPI report
+              with a matching investor update or board deck attached.
+              <strong><%= total_portfolio_companies %></strong> portfolio <%= "company".pluralize(total_portfolio_companies) %> total.
+            </small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="presentation-target-mode">Run on</label>
+            <select class="form-select" id="presentation-target-mode" name="target_mode"
+                    data-action="change->scoring-run-target#modeChanged">
+              <option value="all">All portfolio companies</option>
+              <option value="unanalyzed">Only companies never analyzed (<%= presenter.not_analyzed_breakdown[:never_run] %>)</option>
+              <option value="selected">Specific companies</option>
+              <option value="by_sector">By sector</option>
+              <option value="by_tag">By tag</option>
+            </select>
+          </div>
+
+          <div class="mb-3 d-none" data-scoring-run-target-target="selectedPanel">
+            <label class="form-label" for="presentation-target-ids">Companies</label>
+            <select class="form-select" id="presentation-target-ids" name="target_ids[]" multiple size="10">
+              <% portfolio_companies.each do |name, id| %>
+                <option value="<%= id %>"><%= name %></option>
+              <% end %>
+            </select>
+            <small class="text-muted">Hold Ctrl/Cmd to select more than one.</small>
+          </div>
+
+          <div class="mb-3 d-none" data-scoring-run-target-target="sectorPanel">
+            <label class="form-label" for="presentation-target-sectors">Sectors</label>
+            <select class="form-select" id="presentation-target-sectors" name="target_sectors[]" multiple size="8">
+              <% sectors_for_select.each do |sector, count| %>
+                <option value="<%= sector %>"><%= sector %> (<%= count %>)</option>
+              <% end %>
+            </select>
+          </div>
+
+          <div class="mb-3 d-none" data-scoring-run-target-target="tagPanel">
+            <label class="form-label" for="presentation-target-tags">Tags</label>
+            <select class="form-select" id="presentation-target-tags" name="target_tags[]" multiple size="8">
+              <% tags_for_select.each do |tag, count| %>
+                <option value="<%= tag %>"><%= tag %> (<%= count %>)</option>
+              <% end %>
+            </select>
+          </div>
+
+          <details>
+            <summary class="text-muted"><small>What the agent does on each company</small></summary>
+            <pre class="text-muted mt-2 mb-0" style="white-space: pre-wrap;"><%= PresentationAnalystAgent::LONG_DESCRIPTION %></pre>
+          </details>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="ti ti-player-play"></i> Start Analysis
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -49,4 +49,8 @@ class KpiPolicy < KpiPolicyBase
   def reject?
     approve?
   end
+
+  def unapprove?
+    (user.company_admin? || user.has_cached_role?(:approver)) && record.approved?
+  end
 end

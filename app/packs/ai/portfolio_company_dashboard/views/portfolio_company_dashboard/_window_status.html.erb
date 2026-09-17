@@ -1,0 +1,58 @@
+<%#
+  Window status indicator bar — shows whether the automated checking window
+  is currently active, upcoming, or closed for the most recently completed period.
+  Displayed at the top of the dashboard, just below the title and above stat cards.
+
+  The window is computed from the agent's due_period, start_days_after_period_end,
+  and end_days_after_period_end settings via compute_check_period.
+
+  States:
+    - Active (green):       today is between window_start and window_end
+    - Not yet open (grey):  today is before window_start
+    - Closed (orange):      today is after window_end
+
+  @param period_info [Hash] from PortfolioCompanyAgent#compute_check_period with keys:
+    :check_date, :window_start, :window_end, :period_start, :period_end, :period_label
+%>
+
+
+<%
+  today        = Time.zone.today
+  window_start = period_info[:window_start]
+  window_end   = period_info[:window_end]
+  period_label = period_info[:period_label]
+
+  # Determine the window state and compute display values.
+  if today < window_start
+    # Not yet open — before T+start. Show days until window opens.
+    state       = :upcoming
+    days_until  = (window_start - today).to_i
+    color_class = "secondary"
+    icon        = "ti-clock-pause"
+    message     = "Next Window Opens: #{window_start.strftime('%b %d')} (#{period_label}, in #{days_until} #{'day'.pluralize(days_until)})"
+  elsif today <= window_end
+    # Active — within T+start to T+end. Show progress through the window.
+    state       = :active
+    total_days  = (window_end - window_start).to_i + 1
+    day_number  = (today - window_start).to_i + 1
+    color_class = "success"
+    icon        = "ti-circle-check"
+    message     = "Active Window: #{window_start.strftime('%b %d')} – #{window_end.strftime('%b %d')} (#{period_label}, Day #{day_number} of #{total_days})"
+  else
+    # Closed — past T+end. Show when the window ended and when the next one opens.
+    state       = :closed
+    color_class = "warning"
+    icon        = "ti-alert-circle"
+
+    # Compute the next window: the next period-end after check_date, then +start_days.
+    due_period  = period_info[:due_period] || "Quarter"
+    next_check  = Date.end_of_period(due_period, today)
+    next_start  = next_check + (window_start - period_info[:check_date]).to_i.days
+    message     = "Window Closed: #{window_end.strftime('%b %d')} was the last day for #{period_label}. Next window opens #{next_start.strftime('%b %d')}."
+  end
+%>
+
+<div class="alert alert-<%= color_class %> d-flex align-items-center mb-3 py-2" role="alert">
+  <i class="ti <%= icon %> me-2 fs-5"></i>
+  <span class="fw-semibold"><%= message %></span>
+</div>

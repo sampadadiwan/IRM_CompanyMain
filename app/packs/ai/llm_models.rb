@@ -30,8 +30,9 @@ module LlmModels
       key_field: :gemini_api_key,
       label: "Google Gemini",
       models: [
-        ["Gemini 3.1 Pro",  "gemini-3.1-pro-preview"],
-        ["Gemini 3 Flash",  "gemini-3-flash-preview"]
+        ["Gemini 3.1 Pro",   "gemini-3.1-pro-preview"],
+        ["Gemini 3 Flash",   "gemini-3-flash-preview"],
+        ["Gemini 3.7 Flash", "gemini-3.7-flash"]
       ]
     },
     openrouter: {

@@ -1,14 +1,10 @@
-<%# Call Notice Agent Panel - collapsible %>
-<% support_agent = SupportAgent.find_by(agent_type: "CallNoticeAgent", entity_id: current_user.entity_id) %>
-<% if support_agent.present? %>
-  <% report = SupportAgentReport.find_by(owner: capital_call, support_agent: support_agent) %>
-  <%= render "support_agents/progress_panel", 
-      report: report, 
-      support_agent: support_agent, 
-      target: capital_call %>
-<% end %>
-
-
+<%# Show pages carry nothing above the tab strip — every section, the reconciliation panel
+    included, lives in a tab (see the Reconciliation tab below). `reconciliation_agent` is the
+    entity's RemittanceReconciliationAgent, passed in by show.html.erb only when the agent is
+    actually enabled (entity flag set + provisioned + enabled) and the user may run it; nil hides
+    the tab entirely. %>
+<% reconciliation_agent = local_assigns[:reconciliation_agent] %>
+<% show_reconciliation_tab = reconciliation_agent.present? %>
 
 <div class="associated_entity" data-controller="tabs tabdetails">
 
@@ -21,6 +17,10 @@
 
       <% if policy(capital_call).assign_workflow? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">Workflow</a>
+      <% end %>
+
+      <% if show_reconciliation_tab %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reconciliation-tab">Reconciliation</a>
       <% end %>
     </nav>
 
@@ -44,6 +44,32 @@
         <% if policy(capital_call).assign_workflow? %>
           <div id="workflow-tab" class="tab-pane fade">
             <%= render "workflow_templates/workflow_tab", workflowable: capital_call %>
+          </div>
+        <% end %>
+
+        <%# Reconciliation tab — bank statement reconciliation for this call: once a run has
+            produced deposits, the tiered results with Confirm / Reassign / Undo. %>
+        <% if show_reconciliation_tab %>
+          <div id="reconciliation-tab" class="tab-pane fade">
+            <div id="reconciliation" class="associated_entity">
+              <%# Empty Turbo-stream target only — nothing is rendered here on page load. The
+                  Actions dropdown's "Run Reconciliation" submits via Turbo and the run action
+                  streams the live step-progress panel into #progress_panel_new (a hidden tab
+                  pane is still in the DOM, so the stream lands); it disappears again on the
+                  next page load. %>
+              <div id="progress_panel_new"></div>
+
+              <%# `latest` is the most recent report row for this call — during a run that is the
+                  step report (no deposits yet), afterwards the results report. Only the results report
+                  has deposits, so look for the newest one carrying them. %>
+              <% remit_report = SupportAgentReport.where(owner: capital_call, support_agent: reconciliation_agent).order(created_at: :desc).detect { |r| r.json_fields.key?("deposits") } %>
+              <% if remit_report.present? %>
+                <%= render "capital_calls/capital_remittance_reconciliation_panel",
+                    capital_call: capital_call, support_agent: reconciliation_agent, report: remit_report %>
+              <% else %>
+                <p class="text-muted">No reconciliation has been run for this call yet. Use <strong>Actions → Run Reconciliation</strong> to upload a bank statement.</p>
+              <% end %>
+            </div>
           </div>
         <% end %>
 

@@ -19,8 +19,12 @@ class CapitalRemittanceDecorator < ApplicationDecorator
   #   h.money_to_currency object.collected_amount
   # end
 
-  def investor_name
-    h.link_to object.investor_name, object.investor
+  def investing_entity_name
+    if object.investor_kyc
+      h.link_to(object.investor_kyc.full_name, h.investor_kyc_path(id: object.investor_kyc))
+    else
+      h.link_to(object.investor_name, object.investor)
+    end
   end
 
   def verified

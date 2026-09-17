@@ -147,7 +147,9 @@ class ChangeFundCurrencyJob < ApplicationJob
   end
 
   def validate_account_entry_exchange_rates(fund, old_currency, new_currency)
-    fund.account_entries.pluck(:reporting_date).compact.uniq.each do |date|
+    # distinct.pluck dedups in SQL — plain pluck built a Ruby array with one Date per
+    # ledger row (millions for a large fund) just to uniq it down to a handful of dates
+    fund.account_entries.distinct.pluck(:reporting_date).compact.each do |date|
       er = ExchangeRate.where(entity_id: @entity_id, from: old_currency, to: new_currency)
                        .where(as_of: ..date).last
       @missing_rates << "AccountEntry: #{old_currency}→#{new_currency} on #{date}" unless er
@@ -264,7 +266,8 @@ class ChangeFundCurrencyJob < ApplicationJob
 
   def reprocess_account_entries(fund, old_currency, new_currency, user_id)
     send_notification("#{fund.name}: converting #{fund.account_entries.count} account entries", user_id)
-    fund.account_entries.pluck(:reporting_date).compact.uniq.each do |date|
+    # distinct.pluck dedups in SQL instead of materializing one Date per ledger row
+    fund.account_entries.distinct.pluck(:reporting_date).compact.each do |date|
       er = ExchangeRate.where(entity_id: fund.entity_id, from: old_currency, to: new_currency)
                        .where(as_of: ..date).last
       next unless er

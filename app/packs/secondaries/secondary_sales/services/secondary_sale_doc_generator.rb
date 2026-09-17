@@ -25,7 +25,7 @@ class SecondarySaleDocGenerator
   end
 
   # template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(secondary_sale, _template_document, template_path)
+  def generate(secondary_sale, template_document, template_path)
     template = Sablon.template(File.expand_path(template_path))
 
     context = {}
@@ -42,7 +42,7 @@ class SecondarySaleDocGenerator
     context.store :context, DocGenContext.new(context)
 
     file_name = generated_file_name(secondary_sale)
-    convert(template, context, file_name, template_name: @template_name)
+    convert(template, context, file_name, template_name: @template_name, doc_template: template_document)
   end
 
   def pivot_for_investors

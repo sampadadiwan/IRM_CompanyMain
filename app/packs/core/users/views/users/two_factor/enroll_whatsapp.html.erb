@@ -1,5 +1,5 @@
 <%# WhatsApp-mode enrollment: user confirms a code sent to their WhatsApp %>
-<div id="two_factor_enroll_whatsapp_page">
+<div id="two_factor_enroll_whatsapp_page" data-controller="two-factor">
   <div class="login-container">
     <div class="login-header">
       <h2 class="h3 mb-2 fw-normal">Confirm Your WhatsApp</h2>
@@ -8,7 +8,7 @@
 
     <div class="login-body">
       <%- flash.each do |name, msg| -%>
-        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert #{name.to_s == 'alert' ? 'alert-danger' : 'alert-info'} text-center" if msg.is_a?(String) %>
       <%- end -%>
 
       <div class="alert alert-success text-center mb-3">
@@ -34,10 +34,23 @@
         </button>
       <% end %>
 
+      <%# Resend, same control as the SMS enrollment page and the login verification
+          screen. Hits send_whatsapp (30 s session cooldown server-side); the code is
+          TOTP so a resend always ships whatever is currently valid. %>
+      <div class="text-center mt-3">
+        <button type="button" id="send-whatsapp-btn" class="btn btn-link"
+                data-action="click->two-factor#sendWhatsapp">
+          Didn't get it? Resend code via WhatsApp
+        </button>
+      </div>
+
+      <div id="whatsapp-status" class="text-center mt-2" style="display: none;"></div>
+
       <div class="login-footer text-center mt-3">
-        <small class="text-muted">
-          Didn't receive it? Check your phone number or contact your administrator.
-        </small>
+        Wrong number? Contact your administrator — for security you can't change it here.
+        <%= link_to "Read the two-factor guide",
+                    public_guide_path("two_factor_authentication_user_guide"),
+                    target: "_blank", rel: "noopener" %>
       </div>
     </div>
   </div>

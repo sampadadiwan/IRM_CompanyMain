@@ -1,0 +1,67 @@
+<%#
+  Fund card variant C — "Stat strip".
+  One scannable row per fund: name, four capital stats with a thin called-bar,
+  ratios as chips, minimal actions menu. Densest option — many funds per screen.
+  Selected on the FM Landing Page Funds widget via metadata {card_type: 'card4'}.
+%>
+<%
+  fund ||= @fund
+  params[:force_units] = fund.default_currency_units
+
+  called_pct  = fund_called_pct(fund)
+  ratio_names = ["Gross Portfolio IRR", "XIRR", "Portfolio Value to Cost", "TVPI"]
+  ratios      = get_latest_fund_ratios(fund, ratio_names)
+%>
+
+<div class="col-lg-12 mb-2">
+  <div class="fc4-row">
+
+    <%# ── Name ────────────────────────────────────────────────────────── %>
+    <div class="fc4-name">
+      <b><%= link_to fund.name, fund %></b>
+      <small>
+        <% if fund.category.present? %><span><%= fund.category.sub("Category ", "Cat ") %></span><% end %>
+        <% if fund.start_date.present? %><span><%= fund.start_date.year %></span><% end %>
+        <span><%= fund.capital_commitments_count %> folios</span>
+      </small>
+    </div>
+
+    <%# ── Capital stats + called bar ──────────────────────────────────── %>
+    <div class="fc4-stats">
+      <div class="fc4-stat">
+        <span class="fc4-num"><%= money_to_currency(fund.committed_amount, params) %></span>
+        <span class="fc4-lbl">Committed</span>
+      </div>
+      <div class="fc4-stat">
+        <span class="fc4-num"><%= money_to_currency(fund.call_amount, params) %></span>
+        <span class="fc4-lbl">Called</span>
+      </div>
+      <div class="fc4-stat">
+        <span class="fc4-num"><%= money_to_currency(fund.collected_amount, params) %></span>
+        <span class="fc4-lbl">Collected</span>
+      </div>
+      <div class="fc4-stat">
+        <span class="fc4-num"><%= money_to_currency(fund.distribution_amount.abs, params) %></span>
+        <span class="fc4-lbl">Distributed</span>
+      </div>
+      <div class="fc4-track" role="img" aria-label="<%= called_pct %>% called">
+        <i style="width: <%= called_pct %>%"></i>
+      </div>
+    </div>
+
+    <%# ── Ratio chips ─────────────────────────────────────────────────── %>
+    <div class="fc4-ratios">
+      <% ratio_names.each do |name| %>
+        <% ratio = ratios[name] %>
+        <% next unless ratio %>
+        <%= link_to ratio, class: "fc4-chip" do %>
+          <span class="fc4-num fcv-<%= fund_ratio_tone(ratio) %>"><%= ratio.display_value %></span>
+          <span><%= fund_ratio_short_name(ratio) %></span>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%= render "funds/card_actions_menu", fund:, style: :dots %>
+  </div>
+</div>
+<% params[:force_units] = nil %>

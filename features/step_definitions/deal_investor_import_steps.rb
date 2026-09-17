@@ -62,6 +62,8 @@ end
 #   :with_reminder  — include Notes sheet with reminder columns populated
 #   :omit_premoney  — leave Pre Money Valuation blank
 #   :custom_fields  — include extra custom-field columns
+#   :mixed_dated_notes — Notes sheet with several rows, out of date order and one
+#                        undated, to pin down the last_interaction_date recompute
 def build_deal_investor_workbook(investor_name, opts = {})
   require "caxlsx"
 
@@ -97,13 +99,20 @@ def build_deal_investor_workbook(investor_name, opts = {})
     end
 
     # Sheet 3 — Notes (optional)
-    if opts[:with_notes] || opts[:with_reminder]
+    if opts[:with_notes] || opts[:with_reminder] || opts[:mixed_dated_notes]
       p.workbook.add_worksheet(name: "Notes") do |ws|
         ws.add_row ["Deal Investor", "On", "Details", "Tags",
                     "Reminder Emails", "Reminder Date"]
         if opts[:with_reminder]
           ws.add_row [investor_name, "2026-01-01", "Met at conference", "Meeting",
                       "investor@example.com", "2026-02-15"]
+        elsif opts[:mixed_dated_notes]
+          # Deliberately not in date order, and the last row is undated: the recompute
+          # must land on the max On (2026-04-15), not on whichever row came last.
+          ws.add_row [investor_name, "2026-01-01", "Intro meeting notes", "Meeting", "", ""]
+          ws.add_row [investor_name, "2026-04-15", "Diligence call", "Meeting", "", ""]
+          ws.add_row [investor_name, "2026-02-20", "Follow up", "Meeting", "", ""]
+          ws.add_row [investor_name, "", "Undated thought", "Meeting", "", ""]
         else
           ws.add_row [investor_name, "2026-01-01", "Intro meeting notes", "Meeting", "", ""]
         end
@@ -172,6 +181,14 @@ When("I import deal investors using the new template with notes") do
   run_deal_investor_import(tmp)
 end
 
+When("I import deal investors using the new template with notes on mixed dates") do
+  investor = Investor.where(entity_id: @user.entity_id).first
+  raise "No investor found for import" unless investor
+
+  tmp = build_deal_investor_workbook(investor.investor_name, mixed_dated_notes: true)
+  run_deal_investor_import(tmp)
+end
+
 When("I import deal investors using the new template with reminder notes") do
   investor = Investor.where(entity_id: @user.entity_id).first
   raise "No investor found for import" unless investor
@@ -215,6 +232,35 @@ Then("the deal investor should have deal activities created") do
   expect(di.deal_activities.count).to be > 0
 end
 
+When("the step tasks job runs again for the imported deal investor") do
+  deal_investor = @deal.deal_investors.last
+  first_activity = deal_investor.deal_activities.order(:sequence).first
+  GenerateDealStepTasksJob.perform_now(deal_investor.id, @user&.id, first_activity.id)
+end
+
+Then("the imported deal investor should have one task each for {string}") do |titles_csv|
+  deal_investor = @deal.deal_investors.last
+  details = deal_investor.tasks.includes(:rich_text_details).map { |task| task.details.to_plain_text.strip }
+
+  titles_csv.split(",").map(&:strip).each do |title|
+    expect(details.count(title)).to eq(1)
+  end
+end
+
+Then("the imported deal investor should have no task for {string}") do |title|
+  deal_investor = @deal.deal_investors.last
+  details = deal_investor.tasks.includes(:rich_text_details).map { |task| task.details.to_plain_text.strip }
+
+  expect(details).not_to include(title)
+end
+
+Then("the imported deal investor should be on the step {string}") do |step_title|
+  deal_investor = @deal.deal_investors.last.reload
+  current_step = deal_investor.deal_activities.find_by(template_id: deal_investor.deal_activity_id)
+
+  expect(current_step&.title).to eq(step_title)
+end
+
 Then("the deal investor activities should have updated statuses") do
   di = DealInvestor.where(deal_id: @deal.id).last
   # @first_step is the title set in the When step (first template title)
@@ -224,16 +270,24 @@ Then("the deal investor activities should have updated statuses") do
   expect(first_activity.status).to eq("Complete")
 end
 
+# The importer attaches notes to the DealInvestor (owner), not to the Investor —
+# notes.investor_id is left nil, so scoping by it matched nothing.
 Then("notes should be created for the deal investor") do
-  investor = @deal.deal_investors.last.investor
-  notes = Note.where(investor_id: investor.id)
+  notes = Note.where(owner: @deal.deal_investors.last)
   expect(notes.count).to be >= 1
   expect(notes.first.details.to_plain_text).to be_present
 end
 
+# The recompute runs once at the end of save_data, so it must find the max "On"
+# across the whole sheet rather than the last row processed.
+Then("the deal investor last interaction date should be {string}") do |date|
+  deal_investor = @deal.deal_investors.last
+
+  expect(deal_investor.reload.last_interaction_date).to eq(Date.parse(date))
+end
+
 Then("a reminder should be created for the note") do
-  investor = @deal.deal_investors.last.investor
-  note = Note.where(investor_id: investor.id).last
+  note = Note.where(owner: @deal.deal_investors.last).last
   expect(note).not_to be_nil
   expect(note.reminder).not_to be_nil
   expect(note.reminder.email).to eq("investor@example.com")

@@ -3,6 +3,17 @@ Given('I am at the tasks page') do
   sleep(1)
 end
 
+# Reproduces a pre-ActionText row: no rich_text record, text in the legacy
+# `details` column only. update_all because assigning `details` on a
+# has_rich_text model writes the ActionText record, not the column.
+Given('a legacy task {string} exists') do |text|
+  task = Task.new(entity: @user.entity, user: @user, details: 'placeholder')
+  task.send_notification_flag = false
+  task.save!
+  task.rich_text_details&.destroy
+  Task.where(id: task.id).update_all(details: "<div>#{text}</div>")
+end
+
 When('I create a new task with details {string} and due date {string}') do |details, due_date|
   click_on("New Task", match: :first)
   find("trix-editor[input='task_details_trix_input_task']").set(details)

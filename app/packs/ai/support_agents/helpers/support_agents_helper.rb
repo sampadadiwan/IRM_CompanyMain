@@ -1,12 +1,73 @@
 module SupportAgentsHelper
+  # Normalizes an execution result_summary into { total:, processed:, failed: }.
+  # Handles all three historical shapes:
+  #   - canonical {total, processed, failed} (scheduled path, and manual since Aug 2026)
+  #   - legacy manual-run {successes, errors}
+  #   - legacy batch-delegation {batch: true, target_count:} — recorded before
+  #     per-target counts existed; those runs completed, so target_count is
+  #     shown as processed (matching the old optimistic behavior)
+  def normalized_result_summary(summary)
+    s = (summary || {}).transform_keys(&:to_s)
+    legacy_batch = s["batch"] && s.key?("target_count") && !s.key?("processed")
+    processed = legacy_batch ? s["target_count"].to_i : (s["processed"] || s["successes"]).to_i
+    failed    = (s["failed"] || s["errors"]).to_i
+    total     = s.key?("total") ? s["total"].to_i : processed + failed
+    { total: total, processed: processed, failed: failed }
+  end
+
   # Renders execution result_summary hash as stat pill cards (Total / Processed / Failed).
+  # Links from an execution-history row back to the record(s) the run processed. Targets come
+  # from result_summary["targets"] ({id, name, type} per target, written by SupportAgentJob);
+  # for a row logged before targets were recorded, they are derived from the reports the agent
+  # saved while that run was executing (owner = the record processed). Where the target page
+  # has a tab holding the agent's output, the link opens that tab (the `tabs` Stimulus
+  # controller reads ?tab=<pane id>). Unknown target types render as plain text rather than
+  # guessing a route. Returns nil when nothing can be linked.
+  def execution_target_links(support_agent, summary, log: nil)
+    targets = Array((summary || {})["targets"] || (summary || {})[:targets])
+    targets = execution_targets_from_reports(support_agent, log) if targets.empty? && log
+    return nil if targets.empty?
+
+    links = targets.map do |t|
+      t = t.with_indifferent_access
+      path =
+        case t[:type]
+        when "CapitalCall"
+          tab = support_agent.agent_type == "RemittanceReconciliationAgent" ? "reconciliation-tab" : nil
+          capital_call_path(t[:id], tab: tab)
+        when "Fund" then fund_path(t[:id])
+        when "Investor" then investor_path(t[:id])
+        when "CapitalDistribution" then capital_distribution_path(t[:id])
+        end
+      path ? link_to(t[:name], path, class: "exec-target-link") : content_tag(:span, t[:name])
+    end
+    safe_join(links, ", ")
+  end
+
+  # Fallback for logs with no recorded targets: the reports this agent wrote between the
+  # run's start and completion (with a little slack either side) name the records it
+  # processed. One small query per such row; the history tab is a short, paginated list.
+  def execution_targets_from_reports(support_agent, log)
+    return [] if log.started_at.blank?
+
+    window = (log.started_at - 1.minute)..((log.completed_at || log.started_at) + 2.minutes)
+    # Dedup in Ruby: MySQL refuses DISTINCT + ORDER BY on a column outside the SELECT list,
+    # and a run's reports are a handful of rows at most.
+    SupportAgentReport.where(support_agent: support_agent, created_at: window)
+                      .where.not(owner_type: "Entity")
+                      .order(:created_at)
+                      .pluck(:owner_type, :owner_id, :owner_name)
+                      .uniq { |type, id, _| [type, id] }
+                      .map { |type, id, name| { type: type, id: id, name: name.presence || "#{type.titleize} ##{id}" } }
+  end
+
   def format_result_summary(summary)
     return "".html_safe if summary.blank?
 
-    s = summary.transform_keys(&:to_s)
-    total     = s["total"].to_i
-    processed = s["processed"].to_i
-    failed    = s["failed"].to_i
+    counts    = normalized_result_summary(summary)
+    total     = counts[:total]
+    processed = counts[:processed]
+    failed    = counts[:failed]
 
     pills = [
       { label: "Total",     value: total,     css: "exec-stat-pill--neutral" },

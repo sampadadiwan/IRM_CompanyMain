@@ -4,6 +4,7 @@ When('I create a Capital Call with percentage of commitment') do
   find('a.nav-link[href="#capital-calls-tab"]').click
   # sleep(0.2)
   click_on("New Call")
+  click_on("Classic Form")
   # sleep(0.2)
   fill_in 'capital_call_name', with: 'Demo call'
   # sleep(1)
@@ -23,6 +24,7 @@ When("I create a Capital Call with upload call basis") do
   find('a.nav-link[href="#capital-calls-tab"]').click
   # sleep(0.2)
   click_on("New Call")
+  click_on("Classic Form")
   # sleep(0.2)
   fill_in 'capital_call_name', with: 'Upload capital call'
   # sleep(1)
@@ -38,6 +40,7 @@ When("I create a Capital Call with investable call basis") do
   find('a.nav-link[href="#capital-calls-tab"]').click
   # sleep(0.2)
   click_on("New Call")
+  click_on("Classic Form")
   # sleep(0.2)
   fill_in 'capital_call_name', with: 'Investable capital call'
   # sleep(1)
@@ -171,6 +174,7 @@ When('I create a new capital call {string}') do |args|
 
   click_on "Calls"
   click_on "New Call"
+  click_on "Classic Form"
 
   fill_in('capital_call_name', with: @capital_call.name)
 
@@ -227,6 +231,7 @@ When('I create a new capital call {string} with fees') do |args|
 
   click_on "Calls"
   click_on "New Call"
+  click_on "Classic Form"
 
   fill_in('capital_call_name', with: @capital_call.name)
 
@@ -330,6 +335,33 @@ Then('The remittances should have the updated proper fees and call amount') do
   end
 end
 
+When("I change the capital call's call date to {string}") do |new_date|
+  visit(edit_capital_call_path(@capital_call))
+  click_on("Classic Form")
+  fill_in('capital_call_call_date', with: new_date)
+  click_on('Save')
+end
+
+Then('I should see the call date change warning naming all the remittances') do
+  expect(page).to have_css('#callDateChangeModal.show')
+  expect(page).to have_content("#{@capital_call.capital_remittances.count} remittance")
+end
+
+When('I confirm the call date change') do
+  within('#callDateChangeModal') do
+    click_on('Change Call Date')
+  end
+  expect(page).to have_content('Capital call was successfully updated')
+end
+
+Then("every capital remittance's remittance date should be {string}") do |new_date|
+  @capital_call.reload
+  @capital_call.capital_remittances.each do |cr|
+    cr.reload
+    expect(cr.remittance_date).to eq(Date.parse(new_date))
+  end
+end
+
 Then('I should see the capital call details') do
   find(".show_details_link").click
   @capital_call = CapitalCall.last
@@ -354,6 +386,19 @@ When('I mark the remittances as paid') do
     click_on "Save"
     # sleep(2)
     expect(page).to have_content("Capital remittance payment was successfully")
+  end
+end
+
+Then('I should see the remittance payments with investing entity names') do
+  # The remittance's own show page lists its payments via the same
+  # capital_remittance_payments/index row partial as the dedicated index page.
+  @capital_call.capital_remittances.each do |remittance|
+    visit(capital_remittance_url(remittance))
+    remittance.capital_remittance_payments.each do |payment|
+      within("#capital_remittance_payment_#{payment.id}") do
+        expect(page).to have_content(payment.investor_kyc&.full_name || payment.investor.investor_name)
+      end
+    end
   end
 end
 
@@ -467,6 +512,130 @@ Then('when the capital call is approved') do
   @capital_call.reload
 end
 
+Then('the capital call notifications are sent') do
+  @capital_call.send_notification
+  @capital_call.reload
+end
+
+Given('the notification deliveries are cleared') do
+  ActionMailer::Base.deliveries.clear
+end
+
+Then('no capital call notification emails should have been sent') do
+  ActionMailer::Base.deliveries.should be_empty
+end
+
+Then('some capital call notification emails should have been sent') do
+  ActionMailer::Base.deliveries.should_not be_empty
+end
+
+Then('the capital call reminder should be blocked because the call is not approved') do
+  @capital_call.approved.should be_falsey
+  ActionMailer::Base.deliveries.clear
+  @capital_call.reminder_capital_call
+  ActionMailer::Base.deliveries.should be_empty
+end
+
+Then('the capital call payment notification should be blocked because the call is not approved') do
+  @capital_call.approved.should be_falsey
+  cr = @capital_call.capital_remittances.first
+  cr.update_columns(verified: true)
+  crp = FactoryBot.create(:capital_remittance_payment, fund: cr.fund, entity: cr.entity, capital_remittance: cr)
+  ActionMailer::Base.deliveries.clear
+  crp.notify_capital_remittance_payment
+  ActionMailer::Base.deliveries.should be_empty
+end
+
+Given('I visit the first capital remittance for the call') do
+  @capital_remittance = @capital_call.capital_remittances.first
+  visit(capital_remittance_path(@capital_remittance))
+end
+
+Then('I should see {string} as the notification action') do |label|
+  click_on("Actions")
+  expect(page).to have_button(label)
+end
+
+Given('I manually set Notification Sent to Yes on the remittance') do
+  visit(edit_capital_remittance_path(@capital_remittance))
+  check("Notification Sent")
+  click_on("Save")
+  @capital_remittance.reload
+end
+
+# CapitalRemittance#notification_blocked_reasons grey-out — the dropdown item renders as a
+# disabled, tooltipped span (not a button) whenever any blocking reason applies.
+Then('I should see the notification action disabled with reason {string}') do |reason_substring|
+  click_on("Actions")
+  item = find(".dropdown-item.disabled", text: /Send Call Notification|Send Call Reminder/)
+  expect(item["data-bs-title"]).to include(reason_substring)
+end
+
+Given("the remittance's generated call notice is marked as pending approval again") do
+  remittance = @capital_call.capital_remittances.first
+  Document.where(owner_type: "CapitalRemittance", owner_id: remittance.id, owner_tag: "Generated").update_all(approved: false)
+end
+
+Given('the first commitment has skip_doc_gen enabled') do
+  @capital_call.capital_remittances.first.capital_commitment.update!(json_fields: { "skip_doc_gen" => "yes" })
+end
+
+# CapitalCallJob#notify silently skips remittances whose commitment has skip_doc_gen? true;
+# the Send Notification confirm message calls this out instead of leaving it unexplained.
+Then('I should see the skip doc gen warning when sending the call notification') do
+  visit(capital_call_path(@capital_call))
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Send Notification")
+
+  within "#ruleValidationModal.show" do
+    expect(page).to have_content("will NOT be notified because its commitment has 'Skip Doc Gen' set to Yes")
+  end
+end
+
+# rule_validation_controller.js suppresses confirmSection entirely once blockers fire, so the
+# Approve modal shouldn't show "This will approve..." copy alongside a blocked state.
+Then('I should see the approve blocker without the approval confirmation text') do
+  visit(capital_call_path(@capital_call))
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Approve")
+
+  within "#ruleValidationModal.show" do
+    expect(page).to have_content("Cannot Approve")
+    expect(page).to have_content("pending approval")
+    expect(page).not_to have_content("No notification is sent to investors yet")
+    expect(page).not_to have_button("Confirm & Save")
+  end
+end
+
+Given('I open the unapprove confirmation for the capital call') do
+  visit(capital_call_path(@capital_call))
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Unapprove")
+end
+
+Then('the unapprove confirmation popup should contain {string}') do |text|
+  expect(page).to have_css('#confirmModal', visible: true)
+  within('#confirmModal') do
+    expect(page).to have_content(text)
+  end
+end
+
+Given('I confirm the unapprove action') do
+  click_on "Proceed"
+  @capital_call.reload
+end
+
+Then('the capital call should no longer be approved') do
+  @capital_call.reload
+  expect(@capital_call.approved).to be_falsey
+end
+
 Then('Given I upload {string} file for Call remittances of the fund') do |file|
   visit(capital_call_path(@capital_call))
   click_on("Remittances")
@@ -576,7 +745,11 @@ Then('if the first remittance is deleted') do
 end
 
 Given('the fund has capital call template') do
-  @call_template = Document.create!(name: "Call Doc", owner_tag: "Call Template",
+  # Idempotent: some scenarios invoke this step twice. Document now rejects a second live
+  # template with the same owner/tag/name (that duplicate is exactly what made call-notice
+  # generation render, delete and re-render every notice), so reuse the existing one.
+  @call_template = @fund.documents.templates.find_by(name: "Call Doc", owner_tag: "Call Template") ||
+                   Document.create!(name: "Call Doc", owner_tag: "Call Template",
                                     owner: @fund, entity_id: @fund.entity_id, user: @user,
                                     file: File.new("public/sample_uploads/Drawdown notice format.docx", "r"))
 end
@@ -720,6 +893,19 @@ Then('the remittance investors should receive an email with subject including {s
   end
 end
 
+# Covers notify_capital_remittance.html.erb's <% else %> branch (no @custom_notification) —
+# the hardcoded `l @capital_remittance.capital_call.due_date` line, distinct from the
+# custom_notifications/mail partial exercised by the placeholder-substitution scenarios above.
+Then('the remittance investors should receive an email with the due date shown as Mon dd, yyyy') do
+  expected = I18n.l(@capital_call.due_date, format: :email, locale: :en)
+  @capital_call.capital_remittances.each do |cr|
+    user = cr.investor.investor_accesses.approved.first.user
+    open_email(user.email)
+    expect(current_email).not_to be_nil
+    expect(current_email.body.to_s).to include(expected)
+  end
+end
+
 Given('there is a custom notification with placeholders in place for the Call with email_method {string}') do |email_method|
   @capital_call = CapitalCall.last
   @custom_notification = CustomNotification.create!(
@@ -748,9 +934,14 @@ Then('the capital remittance notification placeholders are resolved correctly') 
       expect(body).not_to include("{{fund_name}}")
       expect(body).not_to include("{{capital_call_name}}")
       expect(body).not_to include("{{call_amount}}")
+      expect(body).not_to include("{{due_date}}")
       expect(body).not_to include("{{folio_id}}")
       expect(body).not_to include("{{committed_amount}}")
       expect(body).not_to include("{{remittance_amount}}")
+
+      # {{due_date}} resolves via I18n.l(..., format: :email, locale: :en), same Mon dd, yyyy
+      # shape as every other outgoing-email date — never the site's own date.formats.default.
+      expect(body).to include(I18n.l(@capital_call.due_date, format: :email, locale: :en))
 
       # Unknown placeholder preserved
       expect(body).to include("{{not_a_real_placeholder}}")
@@ -823,7 +1014,7 @@ Then('I should see the remittance docs upload errors') do
     next if idx.zero? # skip header row
 
     row[headers.length].include?("Success").should == true if [1, 2].include?(idx)
-    row[headers.length].include?("Call Name not found").should == true if idx == 3
+    row[headers.length].include?("Call Name must be specified for a Capital Call document").should == true if idx == 3
     row[headers.length].include?("Capital Call not found for Some capital call").should == true if idx == 4
     if idx == 5
       # row[headers.length].include?("Capital Remittance not found for SAAS Fund, Capital Call 25, 55 and Investor 6").should == true
@@ -849,7 +1040,7 @@ Then('call notice is generated for the remittances') do
   # ("N documents generated successfully") replaces the async "started" flash
   # before any fixed sleep could catch it.  Accept either message.
   expect(page).to have_content(
-    /Documentation generation started|documents generated/i,
+    /Documentation generation started|documents? generated/i,
     wait: 20
   )
 end
@@ -861,8 +1052,10 @@ Then('remittance notice must be generated for each remittance') do
     expected_name = "#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}"
     # The generate-docs job runs inline but ActionCable broadcasts "started" before
     # docs are committed, so the previous step can return while the job is mid-flight.
-    # Retry until this remittance's document lands in the DB.
-    eventually { cr.documents.pluck(:name).include?(expected_name).should == true }
+    # Retry until this remittance's document lands in the DB. The default 15s wait
+    # is too tight when many parallel workers are all driving LibreOffice conversions
+    # at once; give it the same 20s used elsewhere for this exact race.
+    eventually(timeout: 20) { cr.documents.pluck(:name).include?(expected_name).should == true }
   end
 end
 
@@ -878,6 +1071,53 @@ Given('I approve the capital call') do
   end
   click_on("Approve")
   click_on("Confirm & Save")
+end
+
+Then('I send the capital call notification') do
+  # The Approve confirmation modal (shared #ruleValidationModal, reused for every rule-validation
+  # button on the page) and its backdrop may still be closing from the previous step's submit —
+  # wait for both to fully clear before opening the next one, otherwise a leftover backdrop or
+  # a not-yet-closed modal can intercept clicks on the new one.
+  expect(page).to have_no_css("#ruleValidationModal.show")
+  expect(page).to have_no_css(".modal-backdrop")
+
+  # The previous step's approve submission can still be re-rendering this actions
+  # panel (e.g. a Turbo Stream update after "Confirm & Save"), detaching the "Actions"
+  # button between when Capybara finds it and when Playwright clicks it. Same
+  # retry-once pattern as "I switch to becoming the advisor for" above.
+  attempts = 0
+  begin
+    within "#capital_call_#{@capital_call.id}_actions" do
+      click_on("Actions")
+    end
+    click_on("Send Notification")
+  rescue Playwright::Error => e
+    attempts += 1
+    raise if attempts > 1 || !e.message.include?("not attached to the DOM")
+
+    retry
+  end
+
+  # Wait for the fade-in transition to finish (Bootstrap adds "show" once shown.bs.modal fires)
+  # before clicking inside it, otherwise the click can race the animation.
+  expect(page).to have_css("#ruleValidationModal.show")
+  within "#ruleValidationModal.show" do
+    click_on("Confirm & Save")
+  end
+end
+
+Then('I should see the sandbox warning when sending the call notification') do
+  expect(page).to have_no_css("#ruleValidationModal.show")
+  expect(page).to have_no_css(".modal-backdrop")
+
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Send Notification")
+
+  within "#ruleValidationModal.show" do
+    expect(page).to have_content("Sandbox is enabled")
+  end
 end
 
 Given('the remittances have proper notification users') do
@@ -909,8 +1149,12 @@ Then('the notification must be sent to the investors where the call notice was g
       # The approve action submits via Turbo (requestSubmit), which Capybara's
       # load-state wait doesn't block on, so CapitalCallJob may still be
       # in-flight when this step runs. Retry until the notification email lands.
+      # This scenario (multiple KYC-level remittances/notices) has repeatedly shown
+      # up as the last one still timing out under parallel load even after the
+      # doc-gen and stale-element races earlier in the same flow were fixed, so it
+      # gets more headroom than the plain single-remittance case.
       current_email = nil
-      eventually do
+      eventually(timeout: 30) do
         current_email = nil
         emails_sent_to(nu.email).each do |email|
           current_email = email if email.subject.include?("#{cr.fund.name}: #{cr.capital_call.name}")
@@ -978,7 +1222,7 @@ Then('remittance notice must be generated for the latest remittance for each kyc
     if group.size == 1
       cr = group.first
       puts "Only one remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id}, checking if notice is generated"
-      eventually { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
+      eventually(timeout: 20) { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
       next
     end
 
@@ -989,7 +1233,7 @@ Then('remittance notice must be generated for the latest remittance for each kyc
     end
     group.last.tap do |cr|
       puts "Checking remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id} IS generated"
-      eventually { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
+      eventually(timeout: 20) { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
     end
   end
 end
@@ -1080,7 +1324,9 @@ Then('I should see the remittances') do
 
   @capital_call.capital_remittances.each do |remittance|
     within("#capital_remittance_#{remittance.id}") do
-      expect(page).to have_content(remittance.investor.investor_name)
+      # The Investing Entity column shows the linked KYC's full_name once one exists,
+      # falling back to the plain investor_name until then.
+      expect(page).to have_content(remittance.investor_kyc&.full_name || remittance.investor.investor_name)
       expect(page).to have_content(remittance.verified ? "Yes" : "No")
       expect(page).to have_content(remittance.status)
       expect(page).to have_content(money_to_currency(remittance.due_amount))
@@ -1148,9 +1394,15 @@ Then('the corresponding remittances should be created with fees') do
 end
 
 Then('the generated doc must be attached to the capital remittances') do
-  CapitalRemittance.find_each do |cc|
-    docs = cc.documents.where(from_template_id: @call_template.id)
-    docs.count.should
+  @capital_call.capital_remittances.each do |cc|
+    # The generate-docs job runs inline but ActionCable broadcasts "started" before docs
+    # are committed, so the previous step can return while the job is mid-flight. Retry
+    # until this remittance's document lands in the DB (same gap as elsewhere in this file).
+    docs = nil
+    eventually(timeout: 20) do
+      docs = cc.documents.where(from_template_id: @call_template.id)
+      expect(docs.count).to eq(1)
+    end
     puts "Checking documents for remittance #{cc.id}. Got #{docs.first.name}"
     visit(capital_remittance_path(cc))
     within("#remittance_details") do
@@ -1159,4 +1411,69 @@ Then('the generated doc must be attached to the capital remittances') do
       expect(page).to have_content("Generated")
     end
   end
+end
+
+# ---------------------------------------------------------------------------
+# Duplicate call template regression (features/fund/call_notice_duplicate_template.feature)
+# ---------------------------------------------------------------------------
+
+Given('the fund also has a legacy duplicate of the capital call template') do
+  # Mimic a row created before Document validated template uniqueness: create it under a
+  # throwaway name so every callback (folder, entity, template flag) runs normally, then
+  # rename it past the validation with update_column. It is the newer of the two (higher id),
+  # so it is the one the de-duplicated lookup must pick.
+  @legacy_duplicate_template = Document.create!(name: "Call Doc (legacy duplicate)", owner_tag: "Call Template",
+                                                owner: @fund, entity_id: @fund.entity_id, user: @user,
+                                                file: File.new("public/sample_uploads/Drawdown notice format.docx", "r"))
+  @legacy_duplicate_template.update_column(:name, @call_template.name)
+  # Both are live and identical on (entity, owner, tag, name) - the exact production shape
+  expect(@fund.documents.templates.where(owner_tag: "Call Template", name: @call_template.name).count).to eq(2)
+end
+
+Then('each remittance must have exactly one call notice from the newest call template and no deleted notices') do
+  @capital_call ||= @fund.capital_calls.first
+  newest_template = @fund.documents.templates.where(owner_tag: "Call Template", name: @call_template.name).order(:id).last
+  expect(newest_template.id).to eq(@legacy_duplicate_template.id)
+
+  @capital_call.capital_remittances.each do |cr|
+    expected_name = "#{@call_template.name} - #{cr.investor_kyc} - #{cr.folio_id}"
+    # The job runs inline but its "started" broadcast fires before docs are committed; retry.
+    eventually(timeout: 20) { expect(cr.documents.where(name: expected_name).count).to eq(1) }
+
+    notice = cr.documents.find_by(name: expected_name)
+    # Rendered once, from the newest of the two same-named templates
+    expect(notice.from_template_id).to eq(newest_template.id)
+    # Nothing was generated-then-destroyed: Document soft-deletes (paranoia), so a
+    # delete-and-regenerate cycle would leave a deleted_at row behind for this remittance.
+    expect(Document.unscoped.where(owner: cr).where.not(deleted_at: nil)).to be_none
+  end
+end
+
+When('I try to upload another template {string} of type {string} from {string} for the fund') do |name, owner_tag, file|
+  # Same UI path as "the fund has a template ... of type ..." but without expecting success
+  visit(fund_path(@fund))
+  expect(page).to have_button("Actions", wait: 15)
+  click_on("Actions")
+  find('#misc_action_menu', wait: 10).hover
+  new_template_link = find_link("New Template", wait: 10)
+  # bypass Playwright's hover/stability checks: the link carries a Bootstrap tooltip that
+  # fades in on real mouse hover and intermittently blocks the click
+  page.execute_script("arguments[0].click()", new_template_link.native)
+  fill_in('document_name', with: name)
+  select(owner_tag, from: "document_owner_tag")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file}"), make_visible: true)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  sleep(10) # JS direct-upload to /upload endpoint; larger window for parallel load
+  check("document_template")
+  click_on("Save")
+end
+
+Then('the template upload must be rejected as a duplicate') do
+  # Server-side uniqueness error rendered by documents/_form's error list
+  expect(page).to have_content("already exists as a template with this tag here", wait: 15)
+  expect(page).not_to have_content("successfully")
+end
+
+Then('the fund must still have exactly one {string} template named {string}') do |owner_tag, name|
+  expect(@fund.documents.templates.where(owner_tag:, name:).count).to eq(1)
 end

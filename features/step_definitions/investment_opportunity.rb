@@ -252,6 +252,39 @@ Then('I can see all the investment_opportunity preview details') do
   end
 end
 
+# The metric tiles are uppercased by CSS, so the visible text Capybara sees is
+# "FUND RAISE AMOUNT". Match case insensitively, otherwise the negative
+# assertions below would pass even when the tiles are on screen.
+KEY_METRIC_LABELS = [/fund raise amount/i, /min ticket size/i, /last date/i].freeze
+
+Then('I can see the investment_opportunity key metrics') do
+  KEY_METRIC_LABELS.each { |label| expect(page).to have_text(label) }
+
+  force_units = @investment_opportunity.default_currency_units
+  expect(page).to have_content(money_to_currency(@investment_opportunity.fund_raise_amount, { force_units: }))
+
+  if force_units == "Crores" && @investment_opportunity.min_ticket_size.to_d < 10_000_000
+    # If min_ticket_size is less than a crore, then it is shown in lakhs
+    force_units = "Lakhs"
+  end
+  expect(page).to have_content(money_to_currency(@investment_opportunity.min_ticket_size, { force_units: }))
+  expect(page).to have_content(I18n.l(@investment_opportunity.last_date))
+end
+
+Then('I cannot see the investment_opportunity key metrics') do
+  KEY_METRIC_LABELS.each { |label| expect(page).to have_no_text(label) }
+end
+
+Then('I can see the investment_opportunity express interest actions') do
+  expect(page).to have_link("Express Interest")
+  expect(page).to have_text(/ready to invest/i)
+end
+
+Then('I cannot see the investment_opportunity express interest actions') do
+  expect(page).to have_no_link("Express Interest")
+  expect(page).to have_no_text(/ready to invest/i)
+end
+
 When('the RM create an EOI {string} and the corresponding kyc {string}') do |eoi_args, kyc_args|
   @expression_of_interest = FactoryBot.build(:expression_of_interest, investment_opportunity: @investment_opportunity, investor: @investor, user: @investor.users.first)
   key_values(@expression_of_interest, eoi_args)

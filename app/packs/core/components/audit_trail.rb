@@ -33,4 +33,14 @@ class AuditTrail < ViewComponent::Base
     end
     changes
   end
+
+  def own_and_associated_audits
+    @own_and_associated_audits ||= @model.own_and_associated_audits.includes(:associated, :auditable, :user).order(id: :desc)
+  end
+
+  # Bounded to this one record's (+ its associated records') history, so it's
+  # safe to pivot in full — see AuditFieldHistory for the "why bounded" note.
+  def field_history
+    @field_history ||= AuditFieldHistory.new(own_and_associated_audits, changes_for: ->(audit) { filtered_changes(audit) })
+  end
 end

@@ -1,0 +1,19 @@
+<%#
+  Dedicated new/create page for ShareholderPosition bulk uploads - entirely separate from the
+  generic app/packs/misc/import_uploads/views/import_uploads/new.html.erb (used by every other
+  bulk import type). Own form partial + own xlsx_preview copy + own Fully Dilluted % check panel,
+  so nothing here ever needs to touch the shared generic files.
+
+  The Fully Dilluted % check panel is rendered first (above the form) so the result is visible
+  immediately after a file is chosen, without needing to scroll down.
+%>
+
+
+<%= render NewCard.new do %>
+  <%= render FormCard.new(title: "Upload Shareholding Patterns") do %>
+    <%= render "form", import_upload: @import_upload %>
+  <% end %>
+<% end %>
+
+<%= render "shareholder_position_percentage_check", import_upload: @import_upload %>
+<%= render "xlsx_preview", import_upload: @import_upload %>

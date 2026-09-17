@@ -1,0 +1,258 @@
+<style>
+  .card-body .d-flex.flex-column .border.rounded:hover {
+    border-color: #4e73df !important;
+  }
+</style>
+
+<%# Agent action buttons — Run Validation, Send Reminders, and pending companies list.
+     - Run Validation: triggers PortfolioCompanyAgent batch run across all portfolio companies.
+     - Send Reminders: emails companies with any missing items (KPIs, documents, valuations).
+       Each email lists only what's missing. Deduplicates via last_kpi_reminder_sent_at.
+     - Overdue Companies: lists top 5 companies with blocking issues sorted by issue count.%>
+     
+<div class="card border-0 shadow-sm h-100">
+  <div class="card-body">
+    <h6 class="fw-bold mb-3">Agent Actions</h6>
+
+    <div class="d-flex flex-column gap-2 mb-4">
+            <%# Run Validation — triggers run_with_steps with Entity target (batch mode).
+           Includes a "Check period" dropdown that lets the FM select which period-end
+           date to validate against. "Auto" (default) uses the most recently completed
+           period; past period-end dates are shown for historical checks.
+           The selected value is passed as check_as_on_date to the agent. %>
+      <%
+        # Compute the last 4 period-end dates for the dropdown.
+        # Uses the agent's due_period setting (Quarterly by default).
+        due_period = support_agent.json_fields["due_period"] || "Quarter"
+        auto_date = Date.previous_end_of_period(due_period)
+        period_options = [auto_date]
+        3.times { period_options << Date.previous_end_of_period(due_period, period_options.last) }
+
+        # Build human-readable labels: "Q2 - Jun 30, 2026"
+        period_choices = period_options.map do |d|
+          quarter_num = ((d.month - 1) / 3) + 1
+          label = case due_period.to_s.downcase
+                  when "month"   then d.strftime("%B %Y")
+                  when "quarter" then "Q#{quarter_num} - #{d.strftime('%b %d, %Y')}"
+                  when "half year", "half_year", "halfyear"
+                    (d.month <= 6 ? "H1" : "H2") + " - #{d.strftime('%b %d, %Y')}"
+                  when "year"    then d.strftime("%Y")
+                  else d.to_s
+                  end
+          [label, d.to_s]
+        end
+      %>
+            <%# Form posts to the dashboard's own run_validation action (not the shared
+           support_agents run_with_steps). Passes target_mode + target selections
+           alongside check_as_on_date to PortfolioValidationJob.
+           Stimulus controller handles panel show/hide and submit validation. %>
+      <%= form_with url: run_validation_portfolio_company_dashboard_path,
+                    method: :post,
+                    class: "border rounded p-3 text-start",
+                    style: "transition: border-color 0.2s; cursor: default;",
+                    data: { controller: "portfolio-validation-target",
+                            portfolio_validation_target_total_value: portfolio_companies.size } do |f| %>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="ti ti-player-play"></i>
+          <div>
+            <strong>Run Validation</strong><br>
+            <small class="text-muted">Check data for completeness</small>
+          </div>
+        </div>
+
+        <%# Check period dropdown (existing) %>
+        <div class="mt-2">
+          <label class="form-label small text-muted mb-1">Check period</label>
+          <%= f.select :check_as_on_date,
+                options_for_select([["Auto (#{period_choices.first[0]})", ""]] + period_choices, ""),
+                {},
+                class: "form-select form-select-sm" %>
+        </div>
+
+        <%# Target selectors — Select2 multi-selects for scoping which companies to validate.
+             All three are optional: if nothing is selected, validation runs on all companies.
+             When multiple selectors are used, tags and sectors are AND'd (company must match both).
+             Mirrors the ratios selection pattern from portfolio_agent_run.html.erb. %>
+        <div class="mt-2">
+          <label class="form-label small text-muted mb-1">Tags</label>
+          <%= select_tag "target_tags[]",
+                options_for_select(tags_for_select.map { |tag, count| ["#{tag} (#{count})", tag] }),
+                class: "form-control select2",
+                multiple: true,
+                include_hidden: false,
+                data: { placeholder: "All tags" } %>
+        </div>
+
+        <div class="mt-2">
+          <label class="form-label small text-muted mb-1">Sectors</label>
+          <%= select_tag "target_sectors[]",
+                options_for_select(sectors_for_select.map { |sector, count| ["#{sector} (#{count})", sector] }),
+                class: "form-control select2",
+                multiple: true,
+                include_hidden: false,
+                data: { placeholder: "All sectors" } %>
+        </div>
+
+        <div class="mt-2">
+          <label class="form-label small text-muted mb-1">Companies</label>
+          <%= select_tag "target_ids[]",
+                options_for_select(portfolio_companies),
+                class: "form-control select2",
+                multiple: true,
+                include_hidden: false,
+                data: { placeholder: "All companies" } %>
+        </div>
+
+        <%# Send reminders toggle — only shown when agent-level send_kpi_reminder
+             is enabled. Unchecked by default so the FM sees validation results
+             first and can choose to send reminders separately. Hidden field
+             ensures send_reminders=0 is always submitted when unchecked. %>
+        <% if support_agent.json_fields["send_kpi_reminder"].to_s.downcase.in?(%w[yes true 1]) %>
+          <div class="mt-2">
+            <div class="form-check">
+              <%= f.hidden_field :send_reminders, value: "0" %>
+              <%= f.check_box :send_reminders, class: "form-check-input", id: "send_reminders_toggle" %>
+              <%= f.label :send_reminders, "Send reminders to companies with missing items", class: "form-check-label small text-muted" %>
+            </div>
+          </div>
+        <% end %>
+
+        <%= f.submit "Run", class: "btn btn-primary btn-sm mt-2 w-100",
+              data: { action: "click->portfolio-validation-target#confirmAndSubmit" } %>
+      <% end %>
+
+
+
+      <%# Batch progress panel appears here after Run Validation is clicked %>
+      <div id="batch_progress_panel"></div>
+      
+      <%# Send Reminders — collapse toggle that expands an inline per-company
+           selection panel below. Uses Bootstrap collapse instead of a modal
+           to avoid backdrop hover-flicker issues. %>
+      <a class="border rounded p-3 text-start d-flex align-items-center gap-2 text-decoration-none text-body <%= 'disabled' if presenter.overdue_companies.empty? %>"
+         style="transition: border-color 0.2s; cursor: pointer;"
+         data-bs-toggle="collapse" href="#sendRemindersPanel"
+         role="button" aria-expanded="false" aria-controls="sendRemindersPanel">
+        <i class="ti ti-mail-forward"></i>
+        <div>
+          <strong>Send Reminders</strong><br>
+          <small class="text-muted">
+            Select from <%= presenter.overdue_companies.size %> companies with missing submissions
+          </small>
+        </div>
+      </a>
+
+      <%# Inline collapsible panel for per-company reminder selection.
+           Select2 on top for search/select, table below shows selected companies
+           with last-sent dates and checkboxes. Stimulus controller syncs the two. %>
+      <% if presenter.overdue_companies.any? %>
+        <div class="collapse" id="sendRemindersPanel" data-controller="send-reminders-select">
+          <%= form_with url: send_reminders_portfolio_company_dashboard_path, method: :post do %>
+            <div class="border rounded p-3 mt-1">
+
+              <%# Select2 search — starts empty, selecting a company checks it
+                   in the table below. The table checkboxes are the source of truth
+                   for which companies receive reminders (via selected_ids[] inputs). %>
+              <label class="form-label small text-muted mb-1">Search & select companies</label>
+              <%
+                reminder_options = presenter.overdue_companies.map do |c|
+                  [c[:name], c[:owner_id]]
+                end
+              %>
+              <%= select_tag "reminder_search",
+                    options_for_select(reminder_options),
+                    class: "form-control select2",
+                    multiple: true,
+                    include_hidden: false,
+                    data: { placeholder: "Search companies...",
+                            send_reminders_select_target: "select" } %>
+
+              <%# Company table with checkboxes and last-sent info %>
+              <div class="mt-2" style="max-height: 250px; overflow-y: auto;">
+                <table class="table table-sm table-borderless mb-0 small">
+                  <thead>
+                    <tr class="border-bottom">
+                      <th style="width: 30px;">
+                        <input type="checkbox" class="form-check-input"
+                               data-action="change->send-reminders-select#toggleAll"
+                               data-send-reminders-select-target="selectAll"
+                               checked>
+                      </th>
+                      <th>Company</th>
+                      <th class="text-end">Issues</th>
+                      <th class="text-end">Last Reminded</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% presenter.overdue_companies.each do |company| %>
+                      <% last_sent = company[:last_reminder_sent_at] %>
+                      <% days_ago = last_sent ? (Date.current - last_sent).to_i : nil %>
+                      <tr data-send-reminders-select-target="row"
+                          data-owner-id="<%= company[:owner_id] %>">
+                        <td>
+                          <input type="checkbox" class="form-check-input" name="selected_ids[]"
+                                 value="<%= company[:owner_id] %>"
+                                 data-action="change->send-reminders-select#syncFromTable"
+                                 data-send-reminders-select-target="checkbox"
+                                 checked>
+                        </td>
+                        <td><%= company[:name] %></td>
+                        <td class="text-end text-danger"><%= company[:issues_count] %></td>
+                        <td class="text-end text-muted">
+                          <% if last_sent %>
+                            <%= last_sent.strftime('%b %d') %> (<%= days_ago %><%= "d" %>)
+                          <% else %>
+                            Never
+                          <% end %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+
+              <%= submit_tag "Send Reminders", class: "btn btn-primary btn-sm mt-2 w-100",
+                    data: { send_reminders_select_target: "submitBtn" } %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+
+
+      <%# View Pending Issues — server-side filter %>
+      <%= link_to portfolio_company_dashboard_path(status: "issues", anchor: "portfolio_table_frame"),
+            class: "border rounded p-3 text-start d-flex align-items-center gap-2",
+            style: "transition: border-color 0.2s;",
+            data: { turbo: false } do %>
+        <i class="ti ti-eye"></i>
+        <div>
+          <strong>View Pending Issues</strong><br>
+          <small class="text-muted">Filter and review all issues</small>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Pending Companies List %>
+    <% if presenter.overdue_companies.any? %>
+      <h6 class="fw-bold mb-2">Overdue Companies</h6>
+
+      <div class="list-group list-group-flush">
+        <% presenter.overdue_companies.first(5).each do |company| %>
+          <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-0">
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-danger"><i class="ti ti-point-filled"></i></span>
+              <span><%= company[:name] %></span>
+            </div>
+            <span class="text-danger small fw-bold">
+              <%= company[:issues_count] %> issues
+            </span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+  </div>
+</div>
+
+  

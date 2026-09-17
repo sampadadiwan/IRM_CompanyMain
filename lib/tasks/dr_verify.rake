@@ -78,12 +78,45 @@ namespace :dr do
     # redirect (https://localhost would be connection-refused → HTTP 000).
     # Retries: puma:restart fires seconds before this task (same
     # nginx:switch_app hook), so give a rebooting puma up to 30s per endpoint.
-    host_header = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first
-    http = lambda do |path, attempts: 6|
+    # The Host header must address the APP host — never the apex.
+    #
+    # On production the apex (caphive.com) is the website: nginx serves it
+    # straight from public/website and the Website middleware backs that up, so
+    # every /health_check/* URL there is a legitimate 404. Verified on a
+    # production DR box: caphive.com -> 404, www.caphive.com -> 301,
+    # app.caphive.com -> 200.
+    #
+    # HOST *is* the app host and every .env file sets it — app.caphive.com,
+    # app.caphive.us, dev.altconnects.com, dev.altconnects.us — so read it
+    # rather than re-deriving a value we already have.
+    host_header = ENV["HOST"].to_s.sub(%r{\Ahttps?://}, "").split("/").first.to_s.strip
+    if host_header.empty?
+      # Fallback for a stack whose env file predates HOST. DOMAIN can't be used
+      # as-is because it means different things per environment — production
+      # sets the apex, staging sets the app host — so reduce it to the base
+      # domain and re-prefix, matching aws:dns_cutover and aws:dr_verify_edge:
+      #   caphive.com         -> caphive.com     -> app.caphive.com
+      #   dev.altconnects.com -> altconnects.com -> dev.altconnects.com
+      # Note the two guesses this makes and HOST doesn't: the app prefix comes
+      # from RAILS_ENV, and the base domain is assumed to be the last two labels
+      # (fine for .com/.us; a multi-part suffix like foo.co.uk would need a real
+      # public-suffix list). That is why it is the fallback, not the primary.
+      domain = ENV["DOMAIN"].to_s.sub(%r{\Ahttps?://}, "").split("/").first.to_s.sub(/\Awww\./, "")
+      raise "Neither HOST nor DOMAIN is set — cannot derive the health-check host" if domain.empty?
+
+      base_domain = domain.split(".").last(2).join(".")
+      host_header = "#{Rails.env.production? ? 'app' : 'dev'}.#{base_domain}"
+      puts "⚠️  HOST not set — derived the health-check host from DOMAIN instead"
+    end
+    puts "🌐 Health checks will use Host: #{host_header}"
+    # host:/expect: default to the app host and 200 so existing callers are
+    # unchanged; the website checks below need a different host, and the
+    # www alias legitimately answers 301 rather than 200.
+    http = lambda do |path, host: host_header, expect: "200", attempts: 6|
       code = nil
       attempts.times do |i|
-        code = `curl -s -o /dev/null -w "%{http_code}" --max-time 60 -H "Host: #{host_header}" http://localhost#{path}`.strip
-        break if code == "200"
+        code = `curl -s -o /dev/null -w "%{http_code}" --max-time 60 -H "Host: #{host}" http://localhost#{path}`.strip
+        break if code == expect
 
         sleep 5 if i < attempts - 1
       end
@@ -97,6 +130,41 @@ namespace :dr do
       guarded.call(label) do
         code = http.call("#{path}.json")
         check.call(label, code == "200" ? :ok : :fail, "HTTP #{code}")
+      end
+    end
+
+    # --- 2b. Static marketing website on the apex ----------------------------
+    # The apex is a SEPARATE serving path from the app: nginx serves it straight
+    # from public/website (the Website middleware is the fallback). Every check
+    # above uses the app host, so a recovery that brought the application back
+    # but lost the public website would pass silently — half a recovery
+    # reported as a whole one.
+    # Gated on WEBSITE_HOSTS, the same opt-in the middleware itself uses; the
+    # first entry is canonical and the rest 301 to it (see lib/middleware/website.rb).
+    website_hosts = ENV["WEBSITE_HOSTS"].to_s.split(",").map(&:strip).reject(&:empty?)
+    if website_hosts.empty?
+      # :warn, not :ok — a check that did not run must never be counted among
+      # the ones that passed. The scorecard feeds an auditor-facing report whose
+      # headline is "N of M checks passed"; a skip rendered as ✅ inflates it.
+      # (.env.staging.us has no WEBSITE_HOSTS today, so this path is live.)
+      check.call("Static website", :warn, "skipped — WEBSITE_HOSTS not set for this stack")
+    else
+      canonical, *alias_hosts = website_hosts
+      guarded.call("HTTP website apex (#{canonical})") do
+        code = http.call("/", host: canonical)
+        check.call("HTTP website apex (#{canonical})", code == "200" ? :ok : :fail,
+                   code == "200" ? "serving public/website" : "HTTP #{code} — apex not serving the website")
+      end
+      alias_hosts.each do |alias_host|
+        label = "HTTP website alias (#{alias_host})"
+        guarded.call(label) do
+          # A redirect to the canonical host is the CORRECT answer here, so
+          # don't retry-until-200 — that would burn 30s and then report a false
+          # failure on a perfectly healthy alias.
+          code = http.call("/", host: alias_host, expect: "301", attempts: 2)
+          check.call(label, %w[301 308].include?(code) ? :ok : :fail,
+                     %w[301 308].include?(code) ? "redirects to #{canonical}" : "HTTP #{code} — expected 301 to #{canonical}")
+        end
       end
     end
 
@@ -160,7 +228,10 @@ namespace :dr do
     key_path = File.expand_path("~/.ssh/#{ENV.fetch('KEYNAME')}.pem")
 
     on_db_box = lambda do |host, cmd|
-      Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15) { |ssh| ssh.exec!(cmd).to_s.strip }
+      # verify_host_key: :never — see the matching comment in backup_db.rake's
+      # run_baked_restore; DB boxes get recreated with fresh host keys but
+      # often reuse the same private IP.
+      Net::SSH.start(host, "ubuntu", keys: [key_path], timeout: 15, verify_host_key: :never) { |ssh| ssh.exec!(cmd).to_s.strip }
     end
 
     guarded.call("Primary DB box (#{db_host})") do

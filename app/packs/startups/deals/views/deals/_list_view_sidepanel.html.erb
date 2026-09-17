@@ -5,12 +5,18 @@
     <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body p-0">
-    <turbo-frame id="deal_investor_frame">
+    <%# Plain div rather than a <turbo-frame src="..."> - the controller
+        (deals_list_ag_grid_controller.js #loadSidepanelContent) fetches each
+        investor's HTML itself and swaps it in via innerHTML instead of letting
+        Turbo manage the frame's src. That gives it control to abort a stale
+        in-flight request when a different investor is opened before the first
+        one finishes loading, which a src-driven turbo-frame doesn't expose. %>
+    <div id="deal_investor_panel_content" class="h-100">
       <div class="p-4 text-center">
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
-    </turbo-frame>
+    </div>
   </div>
 </div>

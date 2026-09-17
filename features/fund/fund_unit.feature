@@ -15,6 +15,7 @@ Scenario Outline: Generate fund units from capital call
   Given the investors are added to the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
+  Given the capital calls are approved
   Given the remittances are paid and verified
   Given the units are generated
   Then there should be correct units for the calls payment for each investor
@@ -42,6 +43,7 @@ Scenario Outline: Generate fund units from capital call when remittance is overp
   Given the investors are added to the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
+  Given the capital calls are approved
   Given the remittances are overpaid and verified
   Given the units are generated
   Then there should be correct units for the calls payment for each investor
@@ -101,6 +103,7 @@ Scenario Outline: Import fund units
   	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| name=Call 1;call_basis=Upload | 2120000 |
 
 
+@import
 Scenario Outline: Transfer Fund Units
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -114,6 +117,7 @@ Scenario Outline: Transfer Fund Units
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   When fund units are transferred "<transfer>"
@@ -129,6 +133,7 @@ Examples:
   	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,transfer_ratio=1,transfer_account_entries=true,account_entries_excluded=nil|
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil |
 
+@import
 Scenario Outline: Transfer Fund Units Validations
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -142,6 +147,7 @@ Scenario Outline: Transfer Fund Units Validations
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   Given there is a fund "name=Demo Fund 3;currency=INR;unit_types=A1,A2" for the entity
@@ -164,6 +170,7 @@ Examples:
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;unit_type=A2;fund_id=1  | commitment_date=2020-01-02;unit_type=A1;fund_id=2 | Commitments are not from the same fund.Commitments are not the same unit type. |
 
 
+@import
 Scenario Outline: Transfer Fund Units - Invalid Ratio
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -189,6 +196,7 @@ Examples:
   | 110   | Transfer ratio must be 100 or less.    |
 
 
+@import
 Scenario: Transfer Fund Units - fails when from commitment has no remaining units
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -202,6 +210,7 @@ Scenario: Transfer Fund Units - fails when from commitment has no remaining unit
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   Given the fund units are fully transferred
@@ -209,6 +218,7 @@ Scenario: Transfer Fund Units - fails when from commitment has no remaining unit
   Then I should get the error "From commitment does not have enough units."
 
 
+@import
 Scenario: Transfer Fund Units without account entries
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -222,6 +232,7 @@ Scenario: Transfer Fund Units without account entries
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   When fund units are transferred "price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=false,account_entries_excluded=nil"
@@ -232,6 +243,7 @@ Scenario: Transfer Fund Units without account entries
   And adjustments are create upon fund unit transfer
 
 
+@import
 Scenario: Transfer Fund Units with excluded account entries
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -245,6 +257,7 @@ Scenario: Transfer Fund Units with excluded account entries
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   When the fund units are transferred excluding the first account entry
@@ -252,6 +265,7 @@ Scenario: Transfer Fund Units with excluded account entries
   And the other account entries are pro-rated
 
 
+@import
 Scenario: Fund unit counter caches are correct after transfer
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -265,6 +279,7 @@ Scenario: Fund unit counter caches are correct after transfer
   And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
   And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
   And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  Given the capital calls are approved
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   When fund units are transferred "price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil"

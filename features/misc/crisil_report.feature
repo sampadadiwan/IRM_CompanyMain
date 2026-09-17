@@ -2,6 +2,7 @@
 Feature: Crisil Report
   Test Crisil Report generation
 
+@import
 Scenario Outline: Generate Crisil Report for fund
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"

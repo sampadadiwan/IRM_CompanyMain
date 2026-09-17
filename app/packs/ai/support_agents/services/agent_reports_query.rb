@@ -36,13 +36,15 @@ class AgentReportsQuery
   end
 
   # Reports scoped to +Investor+ owners (PortfolioScoringAgent only).
-  # Includes a JSONB filter to only surface reports carrying a top-level +score+ key.
+  # Surfaces both successful runs ("score" key) and failed runs ("error" key) —
+  # filtering to "score" only would hide every failure from the UI. Step-tracking
+  # reports are excluded via their "steps" key, which scoring reports never have.
   # @return [ActiveRecord::Relation<SupportAgentReport>]
   def scoring_reports
     return SupportAgentReport.none unless agent_type?("PortfolioScoringAgent")
 
     apply_owner_filter(agent_reports("Investor"))
-      .where("json_fields LIKE '%\"score\":%'")
+      .where("(json_fields LIKE '%\"score\":%' OR json_fields LIKE '%\"error\":%') AND json_fields NOT LIKE '%\"steps\":%'")
       .order(created_at: :desc)
   end
 
@@ -79,6 +81,30 @@ class AgentReportsQuery
     return SupportAgentReport.none unless agent_type?("RtaReconciliationAgent")
 
     agent_reports("Fund").where("json_fields LIKE '%\"scheme_results\":%'").order(updated_at: :desc).limit(50)
+  end
+
+  # The Obligations tab for SideLetterObligationAgent and CpCsExtractionAgent
+  # shows the obligations themselves (the LP Obligation Matrix), not
+  # SupportAgentReports — the matrix IS the agent's living output.
+  # CpCsExtractionAgent scopes to portfolio investment obligations only.
+  # Optional owner_id narrows to one commitment or investment.
+  # @return [ActiveRecord::Relation<SideLetterObligation>]
+  def side_letter_obligations
+    return SideLetterObligation.none unless agent_type?("SideLetterObligationAgent") || agent_type?("CpCsExtractionAgent")
+
+    scope = SideLetterObligation.where(entity_id: @support_agent.entity_id)
+                                .order(Arel.sql("next_due_date IS NULL, next_due_date ASC"))
+
+    if agent_type?("CpCsExtractionAgent")
+      scope = scope.where(sourceable_type: "PortfolioInvestment")
+                   .includes(:owner_user, :sourceable)
+      scope = scope.where(sourceable_id: @params[:owner_id]) if @params[:owner_id].present?
+    else
+      scope = scope.includes(:owner_user, side_letter: { capital_commitment: %i[investor fund] })
+      scope = scope.joins(:side_letter).where(side_letters: { capital_commitment_id: @params[:owner_id] }) if @params[:owner_id].present?
+    end
+
+    scope
   end
 
   private

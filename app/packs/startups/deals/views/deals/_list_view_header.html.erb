@@ -1,5 +1,14 @@
+<%# Header bar for the deals list view — title, filter toggle, Weekly Summary link,
+    Excel download, and new-deal button.
+    @param deal [Deal] the deal record (used for entity-level feature flags) %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4 pt-4">
-  <h3 class="h3 mb-0 text-gray-600"><%= deal.name %> </h3>
+  <div>
+    <h3 class="h3 mb-0 text-gray-600"><%= deal.name %></h3>
+    <%= render "deals/deal_ingest_address",
+               deal: deal,
+               ingest_address: @deal_ingest_address %>
+  </div>
+
   <span>
     <% if params[:all].blank? %>
       <%= link_to deal_path(deal, list_view: true, all: true), class: "btn btn-outline-primary" do %>
@@ -9,6 +18,18 @@
       <%= link_to deal_path(deal, list_view: true), class: "btn btn-outline-primary" do %>
         <i class="ti ti-filter"></i> Not Declined
       <% end %>
+    <% end %>
+    <%# Weekly Summary button — moved here from deal_details tabs for quick access %>
+    <% if deal.entity.support_agents.set?(:deal_management_agent) %>
+      <%= link_to weekly_summary_deal_path(deal), class: "btn btn-outline-primary" do %>
+        <i class="ti ti-report-analytics"></i> Weekly Summary
+      <% end %>
+    <% else %>
+      <span data-bs-toggle="tooltip" title="Deal Management Agent is disabled. Contact support to enable it">
+        <button class="btn btn-outline-primary" style="filter:grayscale(100%) opacity(0.7); pointer-events:none;">
+          <i class="ti ti-report-analytics"></i> Weekly Summary <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+        </button>
+      </span>
     <% end %>
     <%= link_to deal_path(deal, list_view: true, format: :xlsx), class: "btn btn-outline-primary" do %>
       <i class="ti ti-file-spreadsheet"></i> Download Excel

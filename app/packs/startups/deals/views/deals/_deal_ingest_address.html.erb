@@ -1,0 +1,66 @@
+<%# Shows the deal's ingest email address with copy and inline edit.
+    Same address for all users with deal access — the address identifies
+    the deal, not the user. Users can change the local-part to a custom
+    string (globally unique, validated on save).
+    @param deal [Deal] the deal record
+    @param ingest_address [DealIngestAddress] the deal's ingest address %>
+
+<% if ingest_address.present? %>
+  <div id="deal-ingest-address"
+     class="d-inline-flex align-items-center gap-1 bg-light rounded-pill px-2 py-1 mt-1"
+       data-controller="clipboard tooltip inline-edit">
+
+    <i class="ti ti-mail-forward text-muted"
+       data-bs-toggle="tooltip"
+       data-bs-placement="bottom"
+       data-bs-title="Send an email to this address to add a meeting note or task to this deal board"></i>
+
+    <%# Display mode — address + copy + edit buttons %>
+    <span data-inline-edit-target="display">
+      <code class="text-muted" data-clipboard-target="source"><%= ingest_address.full_address %></code>
+      <button type="button"
+              class="btn btn-link btn-sm p-0 text-muted"
+              data-action="click->clipboard#copy"
+              title="Copy email address">
+        <i class="ti ti-copy"></i>
+      </button>
+      <%# Only company admins (fund managers) can change the deal email address %>
+      <% if current_user.has_role?(:company_admin, deal.entity) %>
+        <button type="button"
+                class="btn btn-link btn-sm p-0 text-muted"
+                data-action="click->inline-edit#show"
+                title="Change email address">
+          <i class="ti ti-pencil"></i>
+        </button>
+      <% end %>
+    </span>
+
+    <% if current_user.has_role?(:company_admin, deal.entity) %>
+      <%# Edit mode — input + save/cancel, only for company admins %>
+      <span data-inline-edit-target="editor" class="d-none">
+        <%= form_with url: update_ingest_address_deal_path(deal),
+                      method: :patch,
+                      class: "d-inline-flex align-items-center gap-1" do |f| %>
+          <div class="input-group input-group-sm" style="max-width: 250px;">
+            <%= f.text_field :address,
+                             value: ingest_address.address,
+                             class: "form-control form-control-sm",
+                             placeholder: "e.g. fund-ii-2026",
+                             data: { inline_edit_target: "input" } %>
+            <span class="input-group-text text-muted">@<%= DealIngestAddress.domain %></span>
+          </div>
+          <button type="submit" class="btn btn-sm btn-outline-success p-1" title="Save">
+            <i class="ti ti-check"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary p-1"
+                  data-action="click->inline-edit#hide" title="Cancel">
+            <i class="ti ti-x"></i>
+          </button>
+        <% end %>
+        <% if ingest_address.errors[:address].any? %>
+          <small class="text-danger ms-1"><%= ingest_address.errors[:address].first %></small>
+        <% end %>
+      </span>
+    <% end %>
+  </div>
+<% end %>

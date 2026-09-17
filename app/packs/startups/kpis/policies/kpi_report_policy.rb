@@ -89,6 +89,22 @@ class KpiReportPolicy < KpiPolicyBase
     create?
   end
 
+  # Dry-run workbook validation (no writes). Anyone who may open the edit page may check a file —
+  # magic-link portco users included — so the pre-save panel works before anything is saved.
+  def validate_upload?
+    edit?
+  end
+
+  # Fund-only: reopen a submitted report and ask the portco to upload again.
+  def reopen?
+    mark_reviewed?
+  end
+
+  # Anyone who may edit (incl. magic-link portco users) may download the pre-filled workbook template.
+  def template?
+    edit?
+  end
+
   def destroy?
     update? && belongs_to_entity?(user, record)
   end

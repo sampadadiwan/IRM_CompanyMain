@@ -1,0 +1,347 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "misc Pack \u2014 Background Jobs",
+  "quality_profile": "showcase"
+ },
+ "components": [
+  {
+   "id": "j-import-fix-counts-job",
+   "type": "backend",
+   "label": "import_fix_counts",
+   "pos": [
+    40,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-import-upload-delete-all-job",
+   "type": "backend",
+   "label": "import_upload_delete_all",
+   "pos": [
+    40,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-import-upload-job",
+   "type": "backend",
+   "label": "import_upload",
+   "pos": [
+    40,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-approval-access-rights-job",
+   "type": "backend",
+   "label": "approval_access_rights",
+   "pos": [
+    40,
+    470
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-approval-generate-notifications-job",
+   "type": "backend",
+   "label": "approval_generate_notifications",
+   "pos": [
+    40,
+    508
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-approval-generate-responses-job",
+   "type": "backend",
+   "label": "approval_generate_responses",
+   "pos": [
+    40,
+    546
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-investor-added-job",
+   "type": "backend",
+   "label": "investor_added",
+   "pos": [
+    290,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-investor-notice-job",
+   "type": "backend",
+   "label": "investor_notice",
+   "pos": [
+    290,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-update-cards-job",
+   "type": "backend",
+   "label": "update_cards",
+   "pos": [
+    290,
+    432
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-form-type-job",
+   "type": "backend",
+   "label": "form_type",
+   "pos": [
+    290,
+    496
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fcf-name-change-job",
+   "type": "backend",
+   "label": "fcf_name_change",
+   "pos": [
+    290,
+    560
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "rails",
+   "type": "backend",
+   "label": "Rails App",
+   "sublabel": "perform_later",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    130,
+    60
+   ]
+  },
+  {
+   "id": "redis",
+   "type": "messagebus",
+   "label": "Redis",
+   "sublabel": "queues",
+   "pos": [
+    200,
+    40
+   ],
+   "size": [
+    100,
+    60
+   ]
+  },
+  {
+   "id": "mysql",
+   "type": "database",
+   "label": "MySQL",
+   "sublabel": "every job r/w",
+   "pos": [
+    360,
+    40
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "sidekiq",
+   "type": "backend",
+   "label": "Sidekiq Workers",
+   "sublabel": "capsules: default \u00b7 serial \u00b7 doc_gen \u00b7 ai_checks \u00b7 db_restore",
+   "pos": [
+    40,
+    180
+   ],
+   "size": [
+    470,
+    52
+   ]
+  },
+  {
+   "id": "ext-s3",
+   "type": "cloud",
+   "label": "S3",
+   "sublabel": "uploaded workbooks",
+   "pos": [
+    75,
+    700
+   ],
+   "size": [
+    150,
+    60
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "region",
+   "label": "misc/import_uploads (3)",
+   "wraps": [
+    "j-import-fix-counts-job",
+    "j-import-upload-delete-all-job",
+    "j-import-upload-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "misc/approvals (3)",
+   "wraps": [
+    "j-approval-access-rights-job",
+    "j-approval-generate-notifications-job",
+    "j-approval-generate-responses-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "misc/investor_notices (2)",
+   "wraps": [
+    "j-investor-added-job",
+    "j-investor-notice-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "misc/kanbans (1)",
+   "wraps": [
+    "j-update-cards-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "misc/form_types (1)",
+   "wraps": [
+    "j-form-type-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "misc/form_custom_fields (1)",
+   "wraps": [
+    "j-fcf-name-change-job"
+   ],
+   "pad": 8
+  }
+ ],
+ "connections": [
+  {
+   "id": "rails-redis",
+   "from": "rails",
+   "to": "redis",
+   "label": "enqueue",
+   "variant": "emphasis",
+   "labelDy": -26
+  },
+  {
+   "id": "redis-sidekiq",
+   "from": "redis",
+   "to": "sidekiq",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sidekiq-mysql",
+   "from": "sidekiq",
+   "to": "mysql",
+   "fromSide": "top",
+   "toSide": "bottom"
+  },
+  {
+   "id": "sk-col0",
+   "from": "sidekiq",
+   "to": "j-import-fix-counts-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col1",
+   "from": "sidekiq",
+   "to": "j-investor-added-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "call-import-upload-job",
+   "from": "j-import-upload-job",
+   "to": "ext-s3",
+   "fromSide": "left",
+   "toSide": "top",
+   "via": [
+    [
+     20,
+     421
+    ],
+    [
+     20,
+     682
+    ],
+    [
+     150,
+     682
+    ]
+   ]
+  }
+ ],
+ "cards": [
+  {
+   "dot": "emerald",
+   "title": "What lives here",
+   "items": [
+    "Excel import pipeline (uploads stored on S3 via Shrine), approval fan-out, investor notices, kanban and custom-field maintenance",
+    "Elasticsearch/Chewy indexing code also lives in this pack; index updates batch through Chewy's :sidekiq strategy"
+   ]
+  }
+ ]
+}

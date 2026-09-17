@@ -2,27 +2,47 @@
     portfolio_company_id = params[:portfolio_company_id]
     all_funding_rounds = @investments.select(:funding_round, :investment_date).
                                 order(investment_date: :asc).pluck(:funding_round).uniq
-    # This is required to ensure that the funding_round tables are cumulative. i.e first table from round A is displayed, then for funding_round B, we need to display the investments from round A and B and for funding_round C, we need to display the investments from round A, B and C.
-    funding_rounds = []
+
+    # Shareholding positions (e.g. Founders/Employees/Stakeholders uploaded via
+    # "Upload Stakeholder Positions") may reference a round - like "Seeding" - that has no
+    # matching Investment record at all. Without adding it here, that round (and its data)
+    # would never be rendered below.
+    if portfolio_company_id.present?
+      shareholder_positions = ShareholderPosition.approved.where(portfolio_company_id: portfolio_company_id)
+                                                  .where.not(position_amount: nil)
+
+      shareholder_position_rounds = shareholder_positions.filter_map do |sp|
+        if sp.round_name.present?
+          [sp.round_name, nil]
+        elsif sp.position_date.present?
+          [sp.position_date.strftime("%B %Y"), sp.position_date]
+        end
+      end.uniq { |round, _date| round }.sort_by { |_round, date| [date.nil? ? 1 : 0, date || 0] }
+
+      shareholder_position_rounds.each do |round, _date|
+        all_funding_rounds << round unless all_funding_rounds.include?(round)
+      end
+    end
+
 %>
 
 <%= render ToggleCard.new(title: "Cap Table by Funding Round", css_class: "show_cap_table", state: "show") do %>
     <div class="row">
         <% if params[:each_funding_round].blank? || params[:each_funding_round] == "true" %>
-            <!-- If all_funding_rounds is blank or true, show tables for each funding rounds incrementally -->
+            <!-- Each round's table is "As On" that round only - i.e. it shows just the investments/
+                 shareholder positions recorded specifically for that round, not carried forward
+                 from any earlier round. -->
             <% all_funding_rounds.each do |funding_round| %>
-            <% funding_rounds << funding_round %>
             <div class="col">
                 <h1 class="h4 mb-0 text-gray-800">Funding Round: <%= funding_round %></h1>
-                <%= render "/investments/funding_round", funding_round:, funding_rounds:, portfolio_company_id: %>
+                <%= render "/investments/funding_round", funding_round:, funding_rounds: [funding_round], portfolio_company_id: %>
             </div>
             <% end %>
         <% else %>
             <!-- If all_funding_rounds is false, show only all funding rounds -->
-            <% funding_rounds = all_funding_rounds %>
             <div class="col">
                 <h1 class="h4 mb-0 text-gray-800">Funding Round: All</h1>
-                <%= render "/investments/funding_round", funding_round: "All", funding_rounds:, portfolio_company_id: %>
+                <%= render "/investments/funding_round", funding_round: "All", funding_rounds: all_funding_rounds, portfolio_company_id: %>
             </div>
         <% end %>
     </div>

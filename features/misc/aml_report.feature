@@ -75,3 +75,34 @@ Scenario: Manually override AML status with a reason, tracked in the audit trail
   Given I mock aml and click on "Generate AML Report"
   Then I should see "No Match"
   Then I should not see "Potential Match"
+
+# incident 45847776 - AmlReportsController#index derived the breadcrumb from
+# @aml_reports.first.investor_kyc, so any request where the policy-scoped relation came back
+# empty 500ed. The two scenarios below cover the minimal shape (no reports at all) and the
+# real-world trigger (reports exist but belong to another entity).
+Scenario: Viewing AML reports for a KYC that has none renders an empty page, not an error
+  Given Im logged in as a user "first_name=Testuser4" for an entity "name=Urban14;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the entity has aml enabled "true"
+  Given there is an existing investor "investor_name=Investor 114"
+  Given I create a new InvestorKyc "PAN=ABCDE8888F;full_name=No Reports Name" to trigger aml report generation
+  Then I should see the "Investor kyc was successfully saved."
+  Then aml report is not generated for the investor kyc
+  Given I go to the AML reports page for the KYC
+  Then I should see the AML reports page with no reports for the KYC
+
+Scenario: Viewing AML reports owned by another entity renders an empty page, not an error
+  Given Im logged in as a user "first_name=Testuser5" for an entity "name=Urban15;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the entity has aml enabled "true"
+  Given there is an existing investor entity "investor_name=Investor 115;entity_type=Investor" with employee "first_name=LpUser"
+  Given the existing investor user has role "employee"
+  Given I create a new InvestorKyc "PAN=ABCDE7777F;full_name=Cross Entity Name" to trigger aml report generation
+  Then I should see the "Investor kyc was successfully saved."
+  Given I go to view the KYC
+  Given I click on "KYC Actions"
+  Given I mock aml and click on "Generate AML Report"
+  Then AML Report is Generated with PAN
+  Given I log in as the investor entity employee with aml enabled
+  Given I go to the AML reports page for the KYC
+  Then I should see the AML reports page with no reports for the KYC

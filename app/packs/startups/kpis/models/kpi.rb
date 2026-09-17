@@ -102,7 +102,7 @@ class Kpi < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name value notes percentage_change portfolio_company_id status updated_at category].sort.freeze
+    %w[name value notes percentage_change portfolio_company_id status updated_at].sort.freeze
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -130,9 +130,12 @@ class Kpi < ApplicationRecord
     end
   end
 
-  # Method to find the tagged KPI
+  # Method to find the tagged KPI (comparator KPI on the same date, e.g. Budget/PriorYear).
+  # Scoped to approved KPIs only — an unreviewed staging figure (still awaiting approval) isn't
+  # a trustworthy thing to judge another KPI against, mirroring KpiWorkbookReader's approved_index
+  # (the upload-time RAG warning has always been approved-only; this brings the live path in line).
   def find_tagged_kpi(tag_list)
-    Kpi.joins(:kpi_report)
+    Kpi.approved.joins(:kpi_report)
        .where(
          name: name,
          portfolio_company_id: portfolio_company_id,
@@ -142,52 +145,140 @@ class Kpi < ApplicationRecord
        .first
   end
 
-  # Helper method to determine RAG status from rules
-  def determine_rag_status_from_rules(ratio, rules_hash, comparison_type: 'ratio_rules')
-    return nil unless rules_hash.present? && rules_hash[comparison_type].present?
-
-    rules = rules_hash[comparison_type]
-
-    # Convert string keys to symbols for easier access if needed, or ensure consistency
-    # rules = rules.transform_keys(&:to_sym)
-
-    # Sort rules by min bound to ensure correct order of evaluation
-    sorted_rules = rules.values.sort_by { |r| r['min'] }
-
-    sorted_rules.each do |rule|
-      min_val = rule['min'] == '-Infinity' ? -Float::INFINITY : rule['min'].to_f
-      max_val = rule['max'] == 'Infinity' ? Float::INFINITY : rule['max'].to_f
-
-      if ratio >= min_val && ratio < max_val
-        # Find the key (rag_status name) that corresponds to this rule's values
-        return rules.key(rule)
-      end
-    end
-    nil # No matching status found
+  # The immediately-preceding report for this same KPI series — same name, same tag_list (so an
+  # Actual is judged against a prior Actual, never a Budget row), same period cadence, most
+  # recent as_of strictly before this one. No period arithmetic (no "1 month back" / "1 year
+  # back" math) — whatever the previous row in the DB actually is, is "the prior period"; the
+  # fund's own reporting cadence decides what dates exist, same philosophy as the tag-based
+  # comparators. Approved-only, for the same reason as find_tagged_kpi above. See "Addendum:
+  # prior-period comparator" in docs/technical/kpi_rag_rules_redesign.md.
+  def find_prior_period_kpi
+    Kpi.approved.joins(:kpi_report)
+       .where(
+         name: name,
+         portfolio_company_id: portfolio_company_id,
+         'kpi_reports.tag_list': kpi_report.tag_list,
+         'kpi_reports.period': kpi_report.period
+       )
+       .where(kpi_reports: { as_of: ...kpi_report.as_of })
+       .order('kpi_reports.as_of desc')
+       .first
   end
 
-  # Method to compute and set RAG status
-  def set_rag_status_from_ratio(tagged_kpi_tag_list)
-    Rails.logger.debug { "Kpi:  set_rag_status_from_ratio called for KPI: #{name}, value: #{value}, report_as_of: #{kpi_report.as_of}, pc_id: #{portfolio_company_id}" }
-    Rails.logger.debug { "Kpi:  Looking for tagged KPI with tag: #{tagged_kpi_tag_list}" }
+  # The immediately-following report for this same KPI series — the mirror of
+  # find_prior_period_kpi. Used only by recompute_dependent_rag_statuses! below: when a KPI's
+  # value is saved, it may be the "prior period" that some later, already-saved KPI has been
+  # missing, so that later one needs recomputing too. Deliberately NOT approved-scoped — unlike
+  # find_prior_period_kpi/find_tagged_kpi this isn't looking up a comparator value, it's finding
+  # the dependent KPI whose own status (approved or not — see recompute_rag_status!'s own guard)
+  # needs re-evaluating now that its comparator may have changed.
+  def find_next_period_kpi
+    Kpi.joins(:kpi_report)
+       .where(
+         name: name,
+         portfolio_company_id: portfolio_company_id,
+         'kpi_reports.tag_list': kpi_report.tag_list,
+         'kpi_reports.period': kpi_report.period
+       )
+       .where('kpi_reports.as_of > ?', kpi_report.as_of)
+       .order('kpi_reports.as_of asc')
+       .first
+  end
 
-    tagged_kpi = find_tagged_kpi(tagged_kpi_tag_list)
+  # Live RAG computation — see docs/technical/kpi_rag_rules_redesign.md (Phase 3) and its
+  # "Addendum: prior-period comparator". Recomputes whenever a value is saved, and cascades to
+  # dependent KPIs so a comparator entered after the KPI it judges still triggers a status update:
+  # a same-as_of sibling (e.g. Budget) for the tag-based comparators, or the next chronological
+  # report for the prior-period comparator. RAG rules apply only to approved KPIs — an unapproved
+  # (staging) row never gets a status of its own, and is never used as anyone else's comparator
+  # (find_tagged_kpi/find_prior_period_kpi are approved-scoped) — a figure still pending review
+  # shouldn't drive a flag anyone might act on before it's confirmed.
+  #
+  # Triggers on a value change (the normal case) OR on the status flip to approved: KpiApprover
+  # approves a KPI by changing `status`, not `value` (unless it's overwriting an existing approved
+  # record, which does change value) — without the status leg, a freshly-approved KPI would sit
+  # with no RAG status until its value happened to change again, and approving a comparator (e.g.
+  # Budget) wouldn't retroactively unlock the status of whatever it judges.
+  #
+  # Gated on `approved?` up front (not left to the callee) so an unapproved KPI's value being
+  # entered or edited — the common case during import/staging, and every row of a bulk upload —
+  # never even calls into recompute; it can't produce a status (see recompute_rag_status!'s own
+  # belt-and-suspenders check) or affect anyone else's (recompute_dependent_rag_statuses!'s), so
+  # there's nothing for either method to do until this row is approved.
+  after_save :recompute_rag_status!, if: :rag_recompute_trigger?
+  after_save :recompute_dependent_rag_statuses!, if: :rag_recompute_trigger?
 
-    Rails.logger.debug { "Kpi:  Found tagged_kpi: #{tagged_kpi.present? ? tagged_kpi.to_s : 'nil'}" }
-    Rails.logger.debug { "Kpi:  tagged_kpi.value: #{tagged_kpi&.value}" }
-    Rails.logger.debug { "Kpi:  investor_kpi_mapping&.rag_rules.present?: #{investor_kpi_mapping&.rag_rules.present?}" }
+  def rag_recompute_trigger?
+    # approved? here reads the CURRENT (post-save) status, so this only ever fires while heading
+    # into/staying in approved — there is deliberately no "revert to unapproved" leg here. That
+    # transition now exists (see unapprove! below), but it clears/cascades rag_status itself
+    # rather than relying on this after_save, so it doesn't need to trigger this leg too.
+    approved? && (saved_change_to_value? || saved_change_to_status?)
+  end
 
-    if tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value != 0 && investor_kpi_mapping&.rag_rules.present?
-      ratio = value.to_f / tagged_kpi.value
-      self.rag_status = determine_rag_status_from_rules(ratio, investor_kpi_mapping.rag_rules)
-      Rails.logger.debug { "Kpi:  RAG status determined: #{rag_status}" }
-    elsif tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value.zero?
-      self.rag_status = 'red'
-      Rails.logger.debug "--- RAG status set to 'red' due to division by zero."
-    else
-      self.rag_status = nil
-      Rails.logger.debug "--- RAG status set to nil (conditions not met)."
+  def recompute_rag_status!
+    # Unlike recompute_dependent_rag_statuses!'s approved? check below, this one is load-bearing,
+    # not redundant with the after_save trigger: the cascade in that method calls this on OTHER
+    # Kpi records (siblings/dependents), which the trigger's approved?-gating on self never saw.
+    mapping = investor_kpi_mapping
+    return unless approved? && mapping&.rag_configured?
+
+    comparator_value = nil
+    if mapping.rag_comparator_prior_period?
+      comparator_value = find_prior_period_kpi&.value # nil (no prior report yet) => RagStatusEvaluator returns no status
+    elsif mapping.rag_comparator_tag.present?
+      comparator = find_tagged_kpi(mapping.rag_comparator_tag)
+      comparator = nil if comparator&.id == id # comparing a value to itself isn't meaningful
+      comparator_value = comparator&.value
     end
-    save if changed?
+
+    new_status = RagStatusEvaluator.call(value: value, comparator_value: comparator_value, mapping: mapping)[:status]
+    update_column(:rag_status, new_status) if new_status != rag_status
+  end
+
+  def recompute_dependent_rag_statuses!
+    # Redundant with rag_recompute_trigger? above (only called via that after_save, on self) —
+    # kept as a cheap, self-documenting guard against this method being called some other way in
+    # the future without that gating already applied.
+    return unless approved?
+
+    cascade_dependent_rag_recompute!
+  end
+
+  # The actual dependent-recompute cascade, factored out of recompute_dependent_rag_statuses! so
+  # unapprove! (below) can also trigger it without tripping that method's approved? guard — by
+  # the time unapprove! calls this, self is already unapproved, which is exactly the case that
+  # needs the cascade (siblings/next-period KPIs that were judging themselves against this KPI as
+  # a comparator can no longer find it via find_tagged_kpi/find_prior_period_kpi, both of which
+  # are approved-scoped, so they need to re-evaluate now that their comparator has disappeared).
+  #
+  # Both cascade shapes run unconditionally, rather than branching on this KPI's own
+  # investor_kpi_mapping to pick one — same-as_of siblings (tag-based comparators, e.g. a
+  # Budget row saved after its Actual) and the next chronological report (the PriorPeriod
+  # comparator) are independent dependency shapes, and nothing guarantees every same-name KPI
+  # row shares one InvestorKpiMapping (no DB uniqueness constraint enforces that). Each
+  # dependent's own recompute_rag_status! call resolves correctness against ITS OWN mapping
+  # regardless of why it got re-checked, so cascading broadly here is always safe — at worst,
+  # one extra cheap query when a leg doesn't apply.
+  def cascade_dependent_rag_recompute!
+    Kpi.joins(:kpi_report)
+       .where(name: name, portfolio_company_id: portfolio_company_id, 'kpi_reports.as_of': kpi_report.as_of)
+       .where.not(id: id)
+       .find_each(&:recompute_rag_status!)
+    find_next_period_kpi&.recompute_rag_status!
+  end
+
+  # Reverts an approved KPI back to unapproved (e.g. an approver spots a mistake after the fact).
+  # Clears rag_status on self — an unapproved figure isn't confirmed, so it shouldn't keep
+  # showing a flag someone might act on (mirrors the reasoning in recompute_rag_status!'s
+  # approved?-gating) — and cascades to dependents, since this KPI may have been serving as
+  # someone else's approved comparator and now no longer qualifies.
+  def unapprove!
+    raise "KPI is not approved" unless approved?
+
+    transaction do
+      update!(status: :unapproved, rag_status: nil, approved_by_user_id: nil, approved_at: nil)
+      cascade_dependent_rag_recompute!
+    end
   end
 end

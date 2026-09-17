@@ -13,7 +13,8 @@
             Details
           </td>
           <td>
-            <%= task.details %>
+            <%# Same legacy-column fallback as the list row and the kanban card %>
+            <%= task.legacy_details? ? sanitize(task.details_html) : task.details %>
           </td>
         </tr>
 
@@ -75,12 +76,44 @@
           </td>
         </tr>
 
+        <%# LP CRM: the person at the LP this task involves, if recorded. Links to
+            their contact page with the Tasks tab open — the same destination as
+            the "With" column in the task lists.
+            This partial is also rendered into the task notification email
+            (tasks_mailer/send_notification), and mailer views have no *_path
+            helpers — only *_url. Fall back to the plain name there rather than
+            depending on the mailer's host configuration. %>
+        <% if task.touch_point %>
+        <tr>
+          <td>
+            With
+          </td>
+          <td>
+            <% if respond_to?(:investor_access_path) %>
+              <%= link_to task.touch_point.full_name, investor_access_path(task.touch_point, tab: "tasks-tab") %>
+            <% else %>
+              <%= task.touch_point.full_name %>
+            <% end %>
+          </td>
+        </tr>
+        <% end %>
+
         <tr>
           <td>
             Due Date
           </td>
           <td>
             <%= l task.due_date if task.due_date %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Status
+          </td>
+          <td>
+            <%# Kanban board status — kept in sync with Completed below %>
+            <%= task.status.titleize %>
           </td>
         </tr>
 

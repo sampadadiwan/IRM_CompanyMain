@@ -52,7 +52,7 @@ class CapitalCommitmentDocGenerator
     Rails.logger.debug { "Using context #{context} to render template" }
 
     file_name = generated_file_name(capital_commitment)
-    convert(template, context, file_name, template_name: @fund_doc_template_name)
+    convert(template, context, file_name, template_name: @fund_doc_template_name, doc_template: fund_doc_template)
 
     # Sometimes we have additional documents we want to append to the contribution agreement.
     # E.x Kyc PAN, KYC address proof etc

@@ -1,6 +1,10 @@
 module UpdateInvestor
   extend ActiveSupport::Concern
 
+  # Caps how many account_entries rows a single UPDATE statement in
+  # resync_account_entry_parent_names may lock at once -- see the comment there.
+  RESYNC_BATCH_SIZE = 5_000
+
   included do
     after_commit :update_association_name, only: :update?
     before_validation :reassign_entity_on_email_change, if: :persisted?
@@ -80,6 +84,16 @@ module UpdateInvestor
       portfolio_investments.update_all(portfolio_company_name: investor_name)
       deal_investors.update_all(investor_name:)
       update_folder_names
+
+      # AccountEntry#parent_name is a denormalized snapshot of parent.to_s, written once at
+      # creation (AccountEntryShared#setup_defaults: `self.parent_name ||= parent.to_s ...`)
+      # and never re-derived after that. An account_entry can be parented directly on this
+      # Investor, or indirectly via one of its AggregatePortfolioInvestment/PortfolioInvestment
+      # rows (both embed portfolio_company_name, just updated above, in their own #to_s) -- so
+      # without this resync, renaming an investor leaves every account_entry's cached
+      # parent_name (the grid's "For" column, and the parent name shown in the debug-mode
+      # account entry view) permanently stale.
+      resync_account_entry_parent_names
 
       # Check if investor entity has only one investor, and we changed its name
       if sole_investor?
@@ -231,6 +245,49 @@ module UpdateInvestor
   def sole_investor?
     exclude_category = %w[Trust Founder Employee].include?(category)
     Investor.where(investor_entity_id:).one? && !exclude_category
+  end
+
+  # Resyncs the denormalized AccountEntry#parent_name column after an investor rename.
+  # Called only from update_association_name, which already confirmed saved_change_to_investor_name?.
+  #
+  # account_entries.parent_type/parent_id is polymorphic (see AccountEntry::PARENT_TYPES) and
+  # indexed as a leftmost pair (idx_ae_parent_fund_name_flags), so each `where(parent_type:,
+  # parent_id:)` below is an index-scoped update_all, not a scan of the (very large) table.
+  def resync_account_entry_parent_names
+    # Direct parent: account entries attached straight to this Investor (parent_type "Investor").
+    # Investor#to_s (InvestorShared#to_s) is "investor_name : category" -- category is unaffected
+    # by a name-only rename, and `self` already carries the new investor_name in memory, so
+    # `to_s` here reflects the post-rename value.
+    resync_parent_name_for("Investor", id, to_s, entity_id)
+
+    # Indirect parents: AggregatePortfolioInvestment / PortfolioInvestment rows whose
+    # portfolio_company_name we just rewrote above via update_all. Their #to_s also reads the
+    # investment_instrument association, so unlike the plain-column updates above we can't fold
+    # this into a single update_all -- reload each (a handful of rows per investor, not
+    # account_entries-scale) and recompute its to_s to catch up account_entries.parent_name.
+    aggregate_portfolio_investments.includes(:investment_instrument).find_each do |api|
+      resync_parent_name_for("AggregatePortfolioInvestment", api.id, api.to_s, entity_id)
+    end
+
+    portfolio_investments.includes(:investment_instrument).find_each do |pi|
+      resync_parent_name_for("PortfolioInvestment", pi.id, pi.to_s, entity_id)
+    end
+  end
+
+  # One parent's worth of the resync above, batched so a single UPDATE never locks more
+  # account_entries rows than InnoDB's lock table can hold (Mysql2::Error: The total number
+  # of locks exceeds the lock table size).
+  #
+  # Every parent type goes through here, not just the direct one: the count of API/PI rows per
+  # investor is small, but the account_entries hanging off ONE of them is not -- the allocation
+  # engine writes an entry per (capital_commitment x portfolio_investment) per fund_formula per
+  # run (AccountEntryAllocation::AllocatePortfolioInvestments), so a single portfolio_investment
+  # reaches the same row counts as the direct-Investor case.
+  # we scope the account_entries by entity_id to avoid large inefficient queries
+  def resync_parent_name_for(parent_type, parent_id, parent_name, entity_id)
+    AccountEntry.where(parent_type:, parent_id:, entity_id:)
+                .in_batches(of: RESYNC_BATCH_SIZE, cursor: :id)
+                .update_all(parent_name: parent_name[0..254])
   end
 
   # Cascade an investor_entity_id change to records that reference the old entity.

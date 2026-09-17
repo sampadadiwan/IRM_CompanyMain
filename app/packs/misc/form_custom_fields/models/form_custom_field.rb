@@ -3,7 +3,7 @@ class FormCustomField < ApplicationRecord
 
   VALID_FIELD_TYPES = %w[TextField NumberField DateField TextArea CheckBox Radio Select
                          DataList MultiSelect Money File Header GridColumns Calculation].freeze
-  OPTION_FIELD_TYPES = %w[Select Radio CheckBox DataList MultiSelect].freeze
+  OPTION_FIELD_TYPES = %w[Select Radio DataList MultiSelect].freeze
   VALID_CONDITION_CRITERIAS = %w[eq not_eq contains lt lte gt gte].freeze
   VALID_CONDITION_STATES = %w[show].freeze
   VALID_FORMATS = %w[email phone url alphanumeric pan gstin ifsc].freeze
@@ -60,7 +60,7 @@ class FormCustomField < ApplicationRecord
 
   has_rich_text :info
 
-  RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select", CheckBox: "/form_custom_fields/display/check_box", NumberField: "/form_custom_fields/display/number" }.freeze
+  RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select", CheckBox: "/form_custom_fields/display/check_box", NumberField: "/form_custom_fields/display/number", TextArea: "/form_custom_fields/display/text_area" }.freeze
 
   # NumberField meta_data holds "precision,separator", e.g. "2,comma" or "0,none".
   # Blank meta_data means no formatting is applied (raw value is displayed).
@@ -204,7 +204,13 @@ class FormCustomField < ApplicationRecord
   before_create :set_default_values
   def set_default_values
     self.name = FormCustomField.to_name(name)
-    self.label ||= name.humanize
+    # The Label box says "leave blank to derive from name" but submits "", which ||= used to keep.
+    # Store what human_label was already showing for "" so the screens and upload template don't change.
+    if label.nil?
+      self.label = name.humanize
+    elsif label.blank?
+      self.label = name.humanize.titleize
+    end
   end
 
   def renderer
@@ -217,6 +223,14 @@ class FormCustomField < ApplicationRecord
 
   def human_label
     label.presence || name.humanize.titleize
+  end
+
+  # File fields whose meta_data marks them as sector skill prompts
+  # (e.g. "skill: true, sector: D2C"). Single source of truth for the tag check —
+  # used by SupportAgent#skill_for_sector and agent config health checks, which
+  # must agree on what counts as a skill field.
+  def skill_tagged?
+    field_type == "File" && meta_data.to_s.match?(/skill/i)
   end
 
   # This is no longer applicable as name cannot be changed on the UI

@@ -24,8 +24,9 @@ class SpecificFundAssistantTools < FundAssistantTools
     def name = "list_capital_calls"
     description "List capital calls for the current fund, with optional Ransack filtering, ordering, limiting and aggregation. " \
                 "Attributes: name, due_date, approved, call_date, status, verified, call_amount, collected_amount, percentage_called. " \
+                "There is no `scope` filter for capital calls (CapitalCall has no named scopes) -- use `query`, " \
+                "e.g. { approved_eq: true }, { status_eq: 'Overdue' }. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'due_date desc', limit: 5."
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'approved', 'unapproved', 'completed', 'incomplete'", required: false
     param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'call_amount', 'collected_amount')", required: false
     param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'status')", required: false
     param :query, type: :object, desc: "Ransack query hash.", required: false
@@ -38,12 +39,16 @@ class SpecificFundAssistantTools < FundAssistantTools
       @data_manager = data_manager
     end
 
-    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
+    def execute(query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
       q = (query || {}).with_indifferent_access
       q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
       q[:group_by] ||= group_by_field if group_by_field.present?
 
-      @data_manager.list_capital_calls(scope: scope, query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
+      # No `scope:` forwarded -- CapitalCall has no named scopes, and
+      # FundAssistantDataManager#list_capital_calls now hard-errors on any non-blank scope
+      # (see that method's comment) rather than silently ignoring one, so this tool must not
+      # advertise or pass through a capability that doesn't exist.
+      @data_manager.list_capital_calls(query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
     end
   end
 
@@ -112,8 +117,9 @@ class SpecificFundAssistantTools < FundAssistantTools
     def name = "list_capital_distributions"
     description "List capital distributions for the current fund, with optional Ransack filtering, ordering, limiting and aggregation. " \
                 "Attributes: title, distribution_date, approved, completed, distribution_on, gross_amount, income, reinvestment. " \
+                "There is no `scope` filter for capital distributions (CapitalDistribution has no named scopes) -- use `query`, " \
+                "e.g. { approved_eq: true }, { completed_eq: true }. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'distribution_date desc', limit: 5."
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'approved', 'unapproved', 'completed', 'incomplete'", required: false
     param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'gross_amount', 'income', 'reinvestment')", required: false
     param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'title', 'approved')", required: false
     param :query, type: :object, desc: "Ransack query hash.", required: false
@@ -126,12 +132,13 @@ class SpecificFundAssistantTools < FundAssistantTools
       @data_manager = data_manager
     end
 
-    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
+    def execute(query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
       q = (query || {}).with_indifferent_access
       q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
       q[:group_by] ||= group_by_field if group_by_field.present?
 
-      @data_manager.list_capital_distributions(scope: scope, query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
+      # No `scope:` forwarded -- see ListSpecificFundCapitalCalls above for why.
+      @data_manager.list_capital_distributions(query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
     end
   end
 
@@ -140,9 +147,9 @@ class SpecificFundAssistantTools < FundAssistantTools
     def name = "list_capital_remittance_payments"
     description "List capital remittance payments for the current fund. " \
                 "Attributes for query: status payment_date, reference_no, amount, folio_amount, tracking_amount. " \
+                "There is no `scope` filter for remittance payments (CapitalRemittancePayment has no named scopes) -- use `query` instead. " \
                 "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'payment_date desc', limit: 10."
     param :folio_ids, type: "array",  desc: "Filter by folio IDs", required: false
-    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'approved', 'unapproved'", required: false
     param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on (e.g., 'amount')", required: false
     param :group_by_field, type: :string, desc: "Field to group results by (e.g., 'payment_date')", required: false
     param :query, type: :object, desc: "Ransack query hash.", required: false
@@ -155,12 +162,13 @@ class SpecificFundAssistantTools < FundAssistantTools
       @data_manager = data_manager
     end
 
-    def execute(folio_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
+    def execute(folio_ids: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
       q = (query || {}).with_indifferent_access
       q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
       q[:group_by] ||= group_by_field if group_by_field.present?
 
-      @data_manager.list_capital_remittance_payments(folio_ids: folio_ids, scope: scope, query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
+      # No `scope:` forwarded -- see ListSpecificFundCapitalCalls above for why.
+      @data_manager.list_capital_remittance_payments(folio_ids: folio_ids, query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
     end
   end
 
@@ -184,7 +192,9 @@ class SpecificFundAssistantTools < FundAssistantTools
     end
 
     def execute(folio_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
-      return { error: "At least one filter (folio_ids or scope) or aggregate must be provided for list_capital_distribution_payments for this fund as the dataset is too large." }.to_json if folio_ids.blank? && scope.blank? && aggregate.blank?
+      # `query` was missing from this guard -- a request scoped only via a Ransack query
+      # (no folio_ids/scope) was incorrectly rejected even though it did supply a real filter.
+      return { error: "At least one filter (folio_ids, scope, or query) or aggregate must be provided for list_capital_distribution_payments for this fund as the dataset is too large." }.to_json if folio_ids.blank? && scope.blank? && (query.blank? || query.values.all?(&:blank?)) && aggregate.blank?
 
       q = (query || {}).with_indifferent_access
       q[:aggregate_field] ||= aggregate_field if aggregate_field.present?

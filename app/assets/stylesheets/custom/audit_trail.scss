@@ -1,0 +1,53 @@
+// Chevron rotation for the expand/collapse toggle on the Audit Trail page
+// (app/packs/core/base/views/audits/index.html.erb). Bootstrap's collapse JS
+// toggles the `collapsed` class on the trigger element itself, so we key off
+// that rather than adding any JS of our own.
+.audit-trail-toggle {
+  // !important guards against the theme's styles.css (public/modernize/css/styles.css),
+  // which loads after this file and can win equal-specificity ties on plain
+  // ".btn i"-shaped selectors, silently shrinking the icon back down.
+  //
+  // display: inline-block is required for the transform/rotate below to render at
+  // all — <i> is display:inline by default, and CSS transforms have no visual effect
+  // on non-replaced inline elements (the browser still reports the computed matrix
+  // in DevTools, it just never paints it).
+  i {
+    display: inline-block !important;
+    font-size: 1.5rem !important;
+    transition: transform 0.15s ease-in-out;
+  }
+
+  &:not(.collapsed) i,
+  &[aria-expanded="true"] i {
+    transform: rotate(90deg) !important;
+  }
+
+  &:hover i {
+    transform: scale(1.15) !important;
+  }
+
+  &:not(.collapsed):hover i,
+  &[aria-expanded="true"]:hover i {
+    transform: rotate(90deg) scale(1.15) !important;
+  }
+}
+
+.audit-trail-row {
+  &:hover {
+    background-color: var(--bs-tertiary-bg);
+  }
+}
+
+// Custom-fields (json_fields) diffs render a nested Json2table <table> inside
+// a single <td> of the AuditTrail component (app/packs/core/components/audit_trail.html.erb,
+// via layouts/_audit_changes.html.erb). Left unbounded, a large JSON diff blows
+// out that row's height while sibling cells stay single-line, producing a wall
+// of blank space — cap it and let it scroll instead.
+.audit-json-diff {
+  max-height: 220px;
+  overflow-y: auto;
+
+  table {
+    margin-bottom: 0;
+  }
+}

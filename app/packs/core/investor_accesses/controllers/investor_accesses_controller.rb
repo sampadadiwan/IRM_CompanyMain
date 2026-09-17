@@ -83,6 +83,12 @@ class InvestorAccessesController < ApplicationController
 
     authorize @investor_access
 
+    # LP CRM: entity_id is normally only set in create (from the investor), but
+    # setup_custom_fields needs it now to find the entity's "InvestorAccess" form
+    # type — without it the contact custom fields would not render on the new form.
+    @investor_access.entity_id ||= @investor_access.investor&.entity_id
+    setup_custom_fields(@investor_access)
+
     if @investor_access.investor_id.present?
       @investor = @investor_access.investor
       @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), Access: investor_accesses_path(investor_id: @investor.id), New: nil }
@@ -94,6 +100,9 @@ class InvestorAccessesController < ApplicationController
   # GET /investor_accesses/1/edit
   def edit
     @bread_crumbs[:Edit] = nil
+    # LP CRM: existing rows created before the form type existed have a nil
+    # form_type_id; resolve it so the contact custom fields render on edit too.
+    setup_custom_fields(@investor_access)
   end
 
   def approve
@@ -160,9 +169,19 @@ class InvestorAccessesController < ApplicationController
       # the check. entity_id/investor_id/user_id are fixed at creation; the user is re-derived from
       # email by InvestorAccess#update_user, and approved/email/tags remain editable.
       if @investor_access.update(investor_access_params.except(:entity_id, :investor_id, :user_id))
+        # Turbo sends the turbo-stream Accept header on every form submission, so
+        # this branch is also reached by the standalone /edit page (opened from the
+        # show page) — where the stream's targets (the list row and the
+        # new_investor_access frame) do not exist. Only the inline list/tab form
+        # (which carries the inline_frame marker, see _form) gets the stream; the
+        # standalone edit redirects back to the show page.
         format.turbo_stream do
           UserAlert.new(user_id: current_user.id, message: "Updated #{@investor_access.email}", level: "success").broadcast
-          render :update
+          if params[:inline_frame].present?
+            render :update
+          else
+            redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully updated."
+          end
         end
         format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_access }
@@ -199,14 +218,17 @@ class InvestorAccessesController < ApplicationController
     @bread_crumbs = {
       Investors: investors_path,
       @investor_access.investor.investor_name => investor_path(@investor_access.investor),
-      Access: investor_accesses_path(investor_id: @investor_access.investor_id),
+      User: investor_accesses_path(investor_id: @investor_access.investor_id),
       @investor_access.email => investor_access_path(@investor_access)
     }
   end
 
   # Only allow a list of trusted parameters through.
   def investor_access_params
+    # form_type_id + properties: LP CRM — tenant-configured contact custom fields
+    # (designation, POC role, intro, ...) via WithCustomField, same pattern as Task.
     params.require(:investor_access).permit(:investor_id, :user_id, :email, :cc, :approved,
-                                            :phone, :whatsapp_enabled, :granted_by, :entity_id, :first_name, :last_name, :call_code, :email_enabled, :tag_list)
+                                            :phone, :whatsapp_enabled, :granted_by, :entity_id, :first_name, :last_name, :call_code, :email_enabled, :tag_list,
+                                            :form_type_id, properties: {})
   end
 end

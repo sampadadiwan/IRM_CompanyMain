@@ -6,13 +6,16 @@
 #   SupportAgentsSetupService.new(entity_id).call
 #   SupportAgentsSetupService.new(entity_id, output: Rails.logger).call
 class SupportAgentsSetupService
-  DEFAULT_LLM_MODEL = "gemini-3-flash-preview"
+  # Written to SupportAgent#llm_model for every newly-created agent (see setup_agent below).
+  # Existing agents are never touched by a re-run -- their llm_model is left as whatever the
+  # user configured, same as json_fields' merge-without-overwrite behavior.
+  DEFAULT_LLM_MODEL = "gemini-3.7-flash".freeze
 
   # Extraction rule templates for KycDocExtractorAgent.
   # Applied dynamically at setup time, keyed by the entity's actual KYC FormType IDs.
   KYC_EXTRACTOR_BASE_RULES = [
     { "doc_label" => "Upload Tax ID",        "prompt" => "Extract the PAN number from this document. Return only the 10-character alphanumeric PAN (e.g. ABCDE1234F). No explanation.", "target_field" => "PAN" },
-    { "doc_label" => "Upload Address Proof", "prompt" => "Extract the full permanent address from this document. Return only the address as plain text, no labels or explanation.",    "target_field" => "address" }
+    { "doc_label" => "Upload Address Proof", "prompt" => "Extract the full permanent address from this document. Return only the address as plain text, no labels or explanation.", "target_field" => "address" }
   ].freeze
 
   # IndividualKyc/Default also extracts the investor's full name from the Tax ID document.
@@ -46,14 +49,21 @@ class SupportAgentsSetupService
       fields: [
         { name: "send_kpi_reminder",
           field_type: "Select", label: "Send KPI submission reminder", meta_data: "Yes,No", position: 7,
-          help_text: "When Yes, sends a reminder email to the portfolio company when KPIs are overdue " \
-                     "for the current period. Emails are only fired on the specific days-elapsed values " \
-                     "configured in 'Reminder days', preventing duplicate sends across daily runs." },
-        { name: "reminder_days",
-          field_type: "TextField", label: "Reminder days (days elapsed in period)", meta_data: "", position: 8,
-          help_text: "Comma-separated number of days elapsed since the period started on which to send " \
-                     "a reminder, e.g. '7,14,21'. The agent checks today's elapsed day count against this " \
-                     "list — no email fires on days not in the list. A reminder already sent today is skipped." }
+          help_text: "When Yes, sends a consolidated reminder email to the portfolio company listing " \
+                     "missing items (KPIs, documents, valuations) on each run inside the active checking " \
+                     "window. At most one reminder is sent per day." },
+        # @!attribute kpi_reminder_recipients [TextArea]
+        #   Comma-separated email addresses for KPI reminder delivery.
+        #   Previously the mailer fell back to @entity.employees (the fund team) which
+        #   sent reminders to the wrong people. This field ensures reminders only go to
+        #   explicitly configured contacts (e.g. portfolio company CFO/ops team).
+        #   When blank, no reminder email is sent even if send_kpi_reminder = Yes.
+        { name: "kpi_reminder_recipients",
+          field_type: "TextArea", label: "KPI reminder email recipients", meta_data: "", position: 8,
+          help_text: "Comma-separated email addresses that receive KPI reminder emails. " \
+                     "If left blank, no reminders are sent even when Send KPI submission reminder is Yes." }
+        # reminder_days was removed when reminders moved to the active-window model —
+        # cadence now follows the agent's run schedule, not a fixed day list.
       ]
     },
 
@@ -62,10 +72,10 @@ class SupportAgentsSetupService
       tag: "KycDocExtractorAgent",
       category: "Onboarding",
       agent: {
-        name:       "KYC Doc Extractor",
+        name: "KYC Doc Extractor",
         with_steps: false,
         json_fields: {
-          "overwrite_mode"   => "blank_only",
+          "overwrite_mode" => "blank_only",
           "extraction_rules" => {} # populated dynamically from the entity's KYC FormTypes
         }
         # No schedule — triggered on-demand during KYC document upload
@@ -78,14 +88,14 @@ class SupportAgentsSetupService
       tag: "DistributionReadinessAgent",
       category: "Finance",
       agent: {
-        name:       "Distribution Readiness",
+        name: "Distribution Readiness",
         with_steps: true,
         json_fields: {
-          "check_kyc"            => "Yes",
-          "check_net_payable"    => "Yes",
+          "check_kyc" => "Yes",
+          "check_net_payable" => "Yes",
           "check_docs_generated" => "Yes",
-          "check_docs_approved"  => "Yes",
-          "check_bank_details"   => "Yes"
+          "check_docs_approved" => "Yes",
+          "check_bank_details" => "Yes"
         }
       },
       fields: [
@@ -115,11 +125,11 @@ class SupportAgentsSetupService
       tag: "EsignMonitorAgent",
       category: "Ops",
       agent: {
-        name:       "E-Sign Monitor",
+        name: "E-Sign Monitor",
         with_steps: false,
         json_fields: {
-          "send_reminders"      => "Yes",
-          "flag_expired"        => "Yes",
+          "send_reminders" => "Yes",
+          "flag_expired" => "Yes",
           "reminder_after_days" => "3"
         },
         schedule: {
@@ -148,16 +158,16 @@ class SupportAgentsSetupService
       tag: "DataQualityAgent",
       category: "Ops",
       agent: {
-        name:       "Data Quality",
+        name: "Data Quality",
         with_steps: false,
         json_fields: {
           "check_commitment_overflows" => "Yes",
-          "check_missing_valuations"   => "Yes",
-          "check_stale_fx_rates"       => "Yes",
-          "send_report"                => "Yes",
-          "stale_valuation_days"       => "90",
-          "stale_fx_days"              => "30",
-          "email"                      => ""
+          "check_missing_valuations" => "Yes",
+          "check_stale_fx_rates" => "Yes",
+          "send_report" => "Yes",
+          "stale_valuation_days" => "90",
+          "stale_fx_days" => "30",
+          "email" => ""
         },
         schedule: {
           frequency: "daily", run_at_time: "01:00", timezone: "Asia/Kolkata",
@@ -201,11 +211,11 @@ class SupportAgentsSetupService
       tag: "NoteSummarizerAgent",
       category: "Ops",
       agent: {
-        name:       "Note Summarizer",
+        name: "Note Summarizer",
         with_steps: false,
         json_fields: {
           "summary_period" => "Quarter",
-          "tag_filter"     => "",
+          "tag_filter" => "",
           "auto_tag_notes" => "Yes",
           "available_tags" => "call,meeting,kpi,board-meeting,fundraising,risk,hiring,operations"
         },
@@ -242,20 +252,24 @@ class SupportAgentsSetupService
       tag: "DealManagementAgent",
       category: "Portfolio",
       agent: {
-        name:       "Deal Management",
+        name: "Deal Management",
         with_steps: false,
         json_fields: {
-          "check_progress"         => "Yes",
-          "stagnant_days"          => "14",
-          "check_documents"        => "Yes",
-          "required_docs"          => "NDA, Term Sheet, Pitch Deck",
-          "extract_terms"          => "Yes",
+          "check_progress" => "Yes",
+          "stagnant_days" => "14",
+          "check_documents" => "Yes",
+          "required_docs" => "NDA, Term Sheet, Pitch Deck",
+          "extract_terms" => "Yes",
           "term_extraction_prompt" => "",
-          "summarize_notes"        => "Yes",
-          "note_period"            => "Quarter",
-          "score_investors"        => "Yes",
+          "summarize_notes" => "Yes",
+          "note_period" => "Quarter",
+          "score_investors" => "Yes",
           "min_points_per_section" => "3",
-          "notify_email"           => ""
+          "notify_email" => "",
+          # enabled? fails closed — these were previously unseeded, leaving the
+          # weekly summary email and AI insight permanently (and silently) off
+          "weekly_summary" => "Yes",
+          "enable_ai_insight" => "Yes"
         },
         # Bundled seed file for the scoring rubric — uploaded automatically on first setup.
         # Path is relative to Rails.root. Skipped silently if the file is absent.
@@ -332,13 +346,25 @@ class SupportAgentsSetupService
       tag: "PortfolioScoringAgent",
       category: "Portfolio",
       agent: {
-        name:       "Portfolio Scoring Agent",
+        name: "Portfolio Scoring Agent",
         with_steps: false,
         json_fields: {
-          "min_points_per_section"   => "5",
-          "kpi_frequency"            => "All",
+          "min_points_per_section" => "5",
+          "kpi_frequency" => "All",
           "docs_from_last_n_reports" => 3,
-          "document_name_filter"     => ""
+          "document_name_filter" => ""
+        },
+        # Bundled rubrics, uploaded automatically on first setup. Without these
+        # the agent's config_issues check reports "No skill file uploaded" and
+        # every run fails, because skill_for_sector finds no document to read.
+        #
+        # Keys are FormCustomField names; paths are relative to Rails.root and
+        # skipped silently if absent. They are .txt rather than the .md sources
+        # under docs/ai/skills because FileUploader's MIME allowlist has no
+        # text/markdown entry.
+        skill_files: {
+          "generic_skill_file" => "public/sample_uploads/portfolio_scoring_generic_skill.txt",
+          "beauty_skincare_skill" => "public/sample_uploads/portfolio_scoring_beauty_skincare_skill.txt"
         }
         # No schedule — triggered on-demand or via the agent UI
       },
@@ -385,23 +411,23 @@ class SupportAgentsSetupService
       tag: "PresentationAnalystAgent",
       category: "Portfolio",
       agent: {
-        name:       "Investor Presentation Analyst",
+        name: "Investor Presentation Analyst",
         with_steps: true, # shows the 7-step progress panel in the agent UI
         json_fields: {
           "presentation_doc_names" => "Investor Update, Board Deck, Management Presentation, Quarterly Update, Investor Presentation",
-          "max_periods"            => "8",
-          "kpi_tag_list"           => "Actual",
-          "comparison_strategy"    => "all_periods",
-          "llm_model"              => "gemini-3-flash-preview",
-          "chat_config"            => { "enabled" => "true" }
+          "max_periods" => "8",
+          "kpi_tag_list" => "Actual",
+          "comparison_strategy" => "all_periods",
+          "llm_model" => "gemini-3.7-flash",
+          "chat_config" => { "enabled" => "true" }
         },
         schedule: {
           frequency: "monthly", run_on_day: 1, run_at_time: "06:00", timezone: "Asia/Kolkata",
           enabled: false,
-          notify_on_failure:         true,
-          notify_on_success:         false,
+          notify_on_failure: true,
+          notify_on_success: false,
           notify_on_partial_success: true,
-          notify_caphive_on_error:   true
+          notify_caphive_on_error: true
         }
       },
       fields: [
@@ -430,7 +456,7 @@ class SupportAgentsSetupService
           field_type: "TextField", label: "LLM model", meta_data: "", position: 5,
           help_text: "LLM model name used for all extraction, comparison, and question-generation calls. " \
                      "Must support a large context window (≥500K tokens) to process full presentations " \
-                     "without truncation. Default: gemini-3-flash-preview (1M token context)." }
+                     "without truncation. Default: gemini-3.7-flash." }
       ]
     },
 
@@ -438,14 +464,14 @@ class SupportAgentsSetupService
     {
       tag: "RtaReconciliationAgent",
       agent: {
-        name:       "RTA Reconciliation",
+        name: "RTA Reconciliation",
         with_steps: true,
         json_fields: {
-          "tolerance_units"        => "0.01",
-          "tolerance_pct"          => "0",
+          "tolerance_units" => "0.01",
+          "tolerance_pct" => "0",
           "check_pending_requests" => "Yes",
-          "send_report"            => "Yes",
-          "notify_email"           => ""
+          "send_report" => "Yes",
+          "notify_email" => ""
           # No default schedule — runs on-demand at statement upload time
         }
       },
@@ -481,6 +507,65 @@ class SupportAgentsSetupService
       ]
     },
 
+    # ── RemittanceReconciliationAgent ────────────────────────────────────
+    # Phase 3: ingests a bank statement, parses every deposit narration through the
+    # bank-specific parser registry, scores/tiers each against this call's outstanding
+    # remittances, and (opt-in via auto_apply_exact) auto-creates a CapitalRemittancePayment
+    # for every Exact-tier match.
+    {
+      tag: "RemittanceReconciliationAgent",
+      category: "Finance",
+      agent: {
+        name: "Remittance Reconciliation",
+        with_steps: true,
+        json_fields: {
+          "tolerance_amount" => "500",
+          "tolerance_pct" => "0",
+          "name_similarity_threshold" => "0.90",
+          "auto_apply_exact" => "No",
+          "llm_fuzzy_matching" => "No",
+          "send_report" => "Yes",
+          "notify_email" => ""
+        }
+        # No default schedule — runs on-demand at statement upload time, scoped to one
+        # CapitalCall per run.
+      },
+      # No File field here for the statement itself — uploaded per-run, same as RTA's
+      # rta_statement (see rta_run_modal.html.erb) once this agent gets its own run UI.
+      fields: [
+        { name: "tolerance_amount",
+          field_type: "NumberField", label: "Tolerance (absolute)", meta_data: "", position: 1,
+          help_text: "Maximum absolute shortfall/excess (fund currency) still treated as an exact amount " \
+                     "match. Absorbs wire charges deducted in transit. Default: 500." },
+        { name: "tolerance_pct",
+          field_type: "NumberField", label: "Tolerance (%)", meta_data: "", position: 2,
+          help_text: "Maximum percentage difference, OR'd with the absolute tolerance — either passing " \
+                     "is enough. Set to 0 to use the absolute tolerance only (default)." },
+        { name: "name_similarity_threshold",
+          field_type: "NumberField", label: "Name similarity threshold", meta_data: "", position: 3,
+          help_text: "Minimum Jaro-Winkler similarity (0-1) to accept a name-only match (no account number " \
+                     "in the narration) deterministically. Default: 0.90." },
+        { name: "auto_apply_exact",
+          field_type: "Select", label: "Auto-apply exact matches", meta_data: "Yes,No", position: 4,
+          help_text: "When Yes, Exact-tier deposits automatically create a CapitalRemittancePayment. " \
+                     "Defaults to No for every fund's first live run — a deliberate opt-in, not assumed. " \
+                     "Every other tier is always proposed only, regardless of this setting." },
+        { name: "llm_fuzzy_matching",
+          field_type: "Select", label: "AI-assisted name matching", meta_data: "Yes,No", position: 5,
+          help_text: "Reserved for a later phase: when Yes, names that deterministic similarity can't confidently " \
+                     "resolve are scored by the LLM in one batched call per statement. Not active yet — " \
+                     "the setting is stored but has no effect on a run until that phase ships." },
+        { name: "send_report",
+          field_type: "Select", label: "Email report after run", meta_data: "Yes,No", position: 6,
+          help_text: "When Yes, the run summary (tier counts, every funding-source discrepancy, every deposit " \
+                     "needing review) is emailed to the address below after each run." },
+        { name: "notify_email",
+          field_type: "TextField", label: "Notify email", meta_data: "", position: 7,
+          help_text: "Recipient of the reconciliation summary email. Leave blank to skip the email even when " \
+                     "'Email report after run' is Yes." }
+      ]
+    },
+
     # ── Additional agents (category provisioning only) ───────────────────────────
     {
       tag: "FundStatsAgent",
@@ -511,15 +596,165 @@ class SupportAgentsSetupService
       category: "Deal",
       agent: { name: "Deals Report", with_steps: false, json_fields: {} },
       fields: []
+    },
+
+    # ── SideLetterObligationAgent ────────────────────────────────────────────────
+    {
+      tag: "SideLetterObligationAgent",
+      category: "Ops",
+      agent: {
+        name: "Side Letter Obligations",
+        with_steps: true, # extraction runs show the step progress panel
+        json_fields: {
+          "source_type" => "capital_commitments",
+          "side_letter_doc_label" => "Side Letter",
+          "investment_doc_tag" => "",
+          "auto_extract_on_upload" => "No",
+          "default_reminder_days_before" => "7",
+          "overdue_escalation_days" => "3",
+          "notify_tag" => ""
+        },
+        # The daily scheduled run is the ENFORCEMENT pass (due-date alerts);
+        # extraction is triggered manually / per-commitment.
+        schedule: {
+          frequency: "daily", run_at_time: "07:00", timezone: "Asia/Kolkata",
+          enabled: true, notify_on_failure: true, notify_on_success: false,
+          notify_on_partial_success: true, notify_caphive_on_error: true
+        }
+      },
+      fields: [
+        # @field source_type [Select] Record type the agent scans — capital commitments
+        #   (side letters) or portfolio investments (SHA/SSA).
+        { name: "source_type",
+          field_type: "Select", label: "Source type",
+          meta_data: "capital_commitments,portfolio_investments", position: 1,
+          help_text: "What the agent scans. 'capital_commitments' extracts from side letters " \
+                     "on LP commitments (default). 'portfolio_investments' extracts from " \
+                     "investment agreements (SHA, SSA) on portfolio investments." },
+        # @field side_letter_doc_label [TextField] Document name for side letter matching.
+        #   Only relevant when source_type is capital_commitments.
+        { name: "side_letter_doc_label",
+          field_type: "TextField", label: "Side letter document name", meta_data: "", position: 2,
+          help_text: "Exact document name that identifies a side letter on a commitment " \
+                     "(e.g. 'Side Letter'). Extraction only reads documents with this name. " \
+                     "Only used when source type is 'capital_commitments'." },
+        # @field investment_doc_tag [TextField] Document tag for portfolio investment matching.
+        #   Only relevant when source_type is portfolio_investments.
+        { name: "investment_doc_tag",
+          field_type: "TextField", label: "Investment document tag", meta_data: "", position: 3,
+          help_text: "Document tag that identifies investment agreements on portfolio investments " \
+                     "(e.g. 'SHA', 'SSA'). The agent extracts from documents tagged with this value. " \
+                     "Only used when source type is 'portfolio_investments'." },
+        # @field auto_extract_on_upload [Select] Auto-trigger extraction on document upload.
+        { name: "auto_extract_on_upload",
+          field_type: "Select", label: "Auto-extract on upload", meta_data: "Yes,No", position: 4,
+          help_text: "When Yes, extraction runs automatically when a matching side letter " \
+                     "document is uploaded to a commitment. When No, extraction is run " \
+                     "manually from the agent page." },
+        # @field default_reminder_days_before [NumberField] Lead time for pre-due alerts.
+        { name: "default_reminder_days_before",
+          field_type: "NumberField", label: "Default reminder lead time (days)", meta_data: "", position: 5,
+          help_text: "How many days before an obligation's due date the upcoming alert is sent. " \
+                     "Stamped on newly extracted obligations; adjustable per obligation. " \
+                     "0 suppresses pre-due alerts. Default: 7." },
+        # @field overdue_escalation_days [NumberField] Re-alert cadence for overdue items.
+        { name: "overdue_escalation_days",
+          field_type: "NumberField", label: "Overdue escalation cadence (days)", meta_data: "", position: 6,
+          help_text: "How often an overdue obligation is re-alerted. Overdue alerts also " \
+                     "escalate to the notify tag group. Default: 3." },
+        # @field notify_tag [TextField] Employee tag for ownerless and escalation alerts.
+        { name: "notify_tag",
+          field_type: "TextField", label: "Notify tag", meta_data: "", position: 7,
+          help_text: "Employee tag receiving alerts for obligations without an owner user " \
+                     "and all overdue escalations, e.g. 'legal'. Leave blank to send these " \
+                     "to the entity's company admins instead." }
+      ]
+    },
+
+    # ── CpCsExtractionAgent ─────────────────────────────────────────────────────
+    {
+      tag: "CpCsExtractionAgent",
+      category: "Ops",
+      agent: {
+        name: "CP/CS Extraction",
+        with_steps: true,
+        json_fields: {
+          "investment_doc_tag" => "",
+          "auto_extract_on_upload" => "No",
+          "default_reminder_days_before" => "7",
+          "overdue_escalation_days" => "3",
+          "notify_tag" => ""
+        },
+        schedule: {
+          frequency: "daily", run_at_time: "07:00", timezone: "Asia/Kolkata",
+          enabled: true, notify_on_failure: true, notify_on_success: false,
+          notify_on_partial_success: true, notify_caphive_on_error: true
+        }
+      },
+      fields: [
+        # @field investment_doc_tag [TextField] Document tag for portfolio investment matching.
+        { name: "investment_doc_tag",
+          field_type: "TextField", label: "Investment document tag", meta_data: "", position: 1,
+          help_text: "Document tag that identifies investment agreements on portfolio investments " \
+                     "(e.g. 'SHA', 'SSA'). The agent extracts from documents tagged with this value." },
+        # @field auto_extract_on_upload [Select] Auto-trigger extraction on document upload.
+        { name: "auto_extract_on_upload",
+          field_type: "Select", label: "Auto-extract on upload", meta_data: "Yes,No", position: 2,
+          help_text: "When Yes, extraction runs automatically when a matching investment agreement " \
+                     "document is uploaded to a portfolio investment. When No, extraction is run " \
+                     "manually from the agent page." },
+        # @field default_reminder_days_before [NumberField] Lead time for pre-due alerts.
+        { name: "default_reminder_days_before",
+          field_type: "NumberField", label: "Default reminder lead time (days)", meta_data: "", position: 3,
+          help_text: "How many days before an obligation's due date the upcoming alert is sent. " \
+                     "Stamped on newly extracted obligations; adjustable per obligation. " \
+                     "0 suppresses pre-due alerts. Default: 7." },
+        # @field overdue_escalation_days [NumberField] Re-alert cadence for overdue items.
+        { name: "overdue_escalation_days",
+          field_type: "NumberField", label: "Overdue escalation cadence (days)", meta_data: "", position: 4,
+          help_text: "How often an overdue obligation is re-alerted. Overdue alerts also " \
+                     "escalate to the notify tag group. Default: 3." },
+        # @field notify_tag [TextField] Employee tag for ownerless and escalation alerts.
+        { name: "notify_tag",
+          field_type: "TextField", label: "Notify tag", meta_data: "", position: 5,
+          help_text: "Employee tag receiving alerts for obligations without an owner user " \
+                     "and all overdue escalations, e.g. 'legal'. Leave blank to send these " \
+                     "to the entity's company admins instead." }
+      ]
+    },
+
+    # ── TemplateFixAgent ─────────────────────────────────────────────────────────
+    # No config fields — everything (the problem description, the model) is
+    # supplied per-run from the "Fix Me" button on a template document, not
+    # configured on the agent. Also created lazily on first use (see
+    # DocumentsController#run_fix), so this entry mainly exists for admins who
+    # want to provision/see it ahead of time via Setup All Agents.
+    #
+    # enable_entity_flag: unlike every other entry, provisioning this agent also
+    # licenses it for the entity — Fix Me has no separate "enabled" gate of its
+    # own to flip on later, so a freshly-provisioned agent that still reads as
+    # entity-disabled would otherwise never become usable without a manual step.
+    {
+      tag: "TemplateFixAgent",
+      category: "Ops",
+      enable_entity_flag: true,
+      agent: {
+        name: "Template Fix Agent",
+        llm_model: "gemini-3.7-flash",
+        with_steps: true, # Fix Me runs show the step progress panel
+        json_fields: {}
+      },
+      fields: []
     }
   ].freeze
 
   # agent_type strings whose support_agents flag name doesn't follow the simple underscore convention.
   AGENT_TYPE_TO_FLAG = {
-    "NoteSummarizerAgent"     => :note_summarization_agent,
-    "LpAssistantAgent"        => :folio_assistant,
+    "NoteSummarizerAgent" => :note_summarization_agent,
+    "LpAssistantAgent" => :folio_assistant,
     "PortfolioAssistantAgent" => :portfolio_assistant,
-    "CashFlowAssistantAgent"  => :cash_flow_assistant_agent, # explicit for clarity
+    "CashFlowAssistantAgent" => :cash_flow_assistant_agent, # explicit for clarity
+    "RemittanceReconciliationAgent" => :capital_remittance_reconciliation_agent # flag predates the class's 30-char rename
   }.freeze
 
   # @param entity_id [Integer]
@@ -554,6 +789,22 @@ class SupportAgentsSetupService
     AGENT_TYPE_TO_FLAG.fetch(agent_type) { agent_type.underscore.to_sym }
   end
 
+  # Returns the template definitions of skill File fields for the given agent type —
+  # the source of truth for which fields MUST be tagged "skill: true, sector: …".
+  # Used by config health checks (e.g. PortfolioScoringAgent.config_issues) to detect
+  # instances whose live fields drifted from the template (blank meta_data etc.).
+  # Agent types without skill fields in their template return [] — so checks driven
+  # by this method are automatically a no-op for every other agent.
+  #
+  # @param agent_type [String] e.g. "PortfolioScoringAgent"
+  # @return [Array<Hash>] template field attrs whose meta_data marks them as skills
+  def self.skill_field_templates(agent_type)
+    cfg = SUPPORT_AGENT_FORM_CONFIGS.find { |c| c[:tag] == agent_type }
+    return [] unless cfg
+
+    (cfg[:fields] || []).select { |f| f[:field_type] == "File" && f[:meta_data].to_s.match?(/skill/i) }
+  end
+
   private
 
   def log(msg)
@@ -567,8 +818,8 @@ class SupportAgentsSetupService
   # ── Per-config setup ────────────────────────────────────────────────────────
 
   def setup_config(cfg)
-    tag = cfg[:tag]
-    ft  = find_or_create_form_type(cfg)
+    cfg[:tag]
+    ft = find_or_create_form_type(cfg)
     return unless ft
 
     upsert_custom_fields(ft, cfg[:fields])
@@ -609,10 +860,19 @@ class SupportAgentsSetupService
       else
         # Only propagate human-readable metadata — never overwrite structural fields set via UI
         updatable = field_attrs.slice(:label, :help_text)
-        changed   = updatable.any? { |k, v| fcf.send(k) != v }
+
+        # Exception: skill-tagged File fields (meta_data "skill: true, sector: …") are
+        # non-functional without their meta_data — skill_for_sector can never match them.
+        # Backfill it ONLY when the template tags the field as a skill AND the live value
+        # is blank (a blank skill tag is always drift, never a deliberate UI setting).
+        # Fields whose template meta_data is not skill-tagged — i.e. every other agent —
+        # are never touched.
+        updatable[:meta_data] = field_attrs[:meta_data] if field_attrs[:field_type] == "File" && field_attrs[:meta_data].to_s.match?(/skill/i) && fcf.meta_data.blank?
+
+        changed = updatable.any? { |k, v| fcf.send(k) != v }
         if changed
           fcf.update!(updatable)
-          log "    [fcf] '#{field_attrs[:name]}' — updated label/help_text"
+          log "    [fcf] '#{field_attrs[:name]}' — updated #{updatable.keys.join('/')}"
         else
           log "    [fcf] '#{field_attrs[:name]}' — up to date"
         end
@@ -628,13 +888,13 @@ class SupportAgentsSetupService
 
     if sa.new_record?
       sa.assign_attributes(
-        name:         agent_cfg[:name],
+        name: agent_cfg[:name],
         form_type_id: ft.id,
-        with_steps:   agent_cfg[:with_steps],
-        enabled:      true,
-        llm_model:    DEFAULT_LLM_MODEL,
-        category:     cfg[:category],
-        json_fields:  agent_cfg[:json_fields] || {}
+        with_steps: agent_cfg[:with_steps],
+        enabled: true,
+        llm_model: DEFAULT_LLM_MODEL,
+        category: cfg[:category],
+        json_fields: agent_cfg[:json_fields] || {}
       )
       sa.save!
       log "    [agent] Created #{tag} (ID=#{sa.id})"
@@ -650,6 +910,24 @@ class SupportAgentsSetupService
     end
 
     setup_schedule(sa, agent_cfg[:schedule]) if agent_cfg[:schedule]
+    enable_entity_flag!(tag) if cfg[:enable_entity_flag]
+  end
+
+  # Turns on the entity's support_agents bitflag for this agent — the separate
+  # licensing gate SupportAgent#entity_flag_enabled? checks (distinct from the
+  # SupportAgent record's own `enabled` column, which this method never touches).
+  # Opt-in per config entry via `enable_entity_flag: true` — provisioning the
+  # records does NOT imply licensing an agent, so this stays off for every
+  # existing entry; flip it on deliberately per agent, not globally.
+  def enable_entity_flag!(tag)
+    flag = self.class.flag_for(tag)
+    if @entity.support_agents.set?(flag)
+      log "    [entity flag] '#{flag}' already enabled"
+      return
+    end
+
+    @entity.support_agents.set!(flag)
+    log "    [entity flag] Enabled '#{flag}' on #{@entity.name}"
   end
 
   def setup_schedule(sa, schedule_cfg)
@@ -683,8 +961,14 @@ class SupportAgentsSetupService
   # Only adds keys that are missing — never overwrites UI-configured values.
   def backfill_extend_only_json_fields
     {
-      "KycOnboardingAgent"    => { "check_expiry" => "Yes", "expiry_warning_days" => "60,30,15" },
-      "PortfolioCompanyAgent" => { "send_kpi_reminder" => "Yes", "reminder_days" => "7,14,21" }
+      # validate_fields/validate_documents: enabled? fails closed, so without a
+      # seeded value the core KYC checks silently skip. send_reminder/trigger_aml
+      # are deliberately NOT seeded (outbound email / AML screening should be an
+      # explicit opt-in) — config_issues surfaces them instead.
+      "KycOnboardingAgent" => { "check_expiry" => "Yes", "expiry_warning_days" => "60,30,15",
+                                "validate_fields" => "Yes", "validate_documents" => "Yes" },
+      # reminder_days is gone — reminders follow the active-window model now
+      "PortfolioCompanyAgent" => { "send_kpi_reminder" => "Yes" }
     }.each do |agent_type, defaults|
       sa = SupportAgent.find_by(entity_id: @entity_id, agent_type: agent_type)
       next log "  [#{agent_type}] Not found — skipping json_fields update" unless sa
@@ -719,7 +1003,7 @@ class SupportAgentsSetupService
 
     rules = kyc_fts.each_with_object({}) do |ft, hash|
       entry = KYC_EXTRACTOR_BASE_RULES.dup
-      entry = entry + [KYC_EXTRACTOR_FULL_NAME_RULE] if ft.name == "IndividualKyc" && ft.tag == "Default"
+      entry += [KYC_EXTRACTOR_FULL_NAME_RULE] if ft.name == "IndividualKyc" && ft.tag == "Default"
       hash[ft.id.to_s] = entry
     end
     sa.update!(json_fields: sa.json_fields.merge("extraction_rules" => rules))
@@ -767,12 +1051,12 @@ class SupportAgentsSetupService
 
     begin
       doc = Document.new(
-        owner:      sa,
-        name:       doc_name,
-        entity_id:  @entity_id,
-        user_id:    user&.id,
+        owner: sa,
+        name: doc_name,
+        entity_id: @entity_id,
+        user_id: user&.id,
         send_email: false,
-        folder:     sa.document_folder
+        folder: sa.document_folder
       )
       doc.file = File.open(file_path)
       doc.save!

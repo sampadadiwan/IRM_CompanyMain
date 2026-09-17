@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Case study: capital drawdowns across 100+ LPs | CapHive</title>
+<meta name="description" content="A venture fund wanted its capital calls computed, fee-loaded, noticed, tracked and chased without a spreadsheet in the middle. Here is what each of those five verbs actually costs, and how the workflow removes it.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/case-capital-drawdowns.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Case study: drawdowns across 100+ LPs">
+<meta property="og:description" content="Computation by close, template notices approved one by one, payment tracking, arrears and the checklist that runs before a call goes out.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/case-capital-drawdowns.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="cases">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-black tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="case-studies.html">Case Studies</a><span>/</span>Capital drawdowns
+          </nav>
+          <span class="chip-label">Case study · Funds</span>
+          <h1 style="margin-top:22px">Five verbs, 100+ LPs, <em>and no spreadsheet in the middle.</em></h1>
+          <p class="lede">A venture fund with over a hundred LPs wanted its capital calls computed, fee-loaded, noticed, tracked and reconciled. Each of those is easy once. The cost is that they have to agree with each other afterwards.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-11">Aug 11, 2026</time>
+            <span class="dot">·</span>
+            <span>8 min read</span>
+            <span class="dot">·</span>
+            <span>Fund operations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+
+        <div class="stat-band" style="margin:0 0 34px;border:1px solid var(--line);border-radius:14px;overflow:hidden">
+          <div><strong>100<em>+</em></strong><span>LPs drawn down per call</span></div>
+          <div><strong>3</strong><span>ways to compute each investor's share</span></div>
+          <div><strong>1</strong><span>approval that locks the numbers investors received</span></div>
+        </div>
+
+        <h3>The engagement</h3>
+        <p>A venture capital fund with over 100 LPs, asking for five things: automate the computations, include the specified fees, generate customised notices, monitor payments, and remind investors who haven't paid.</p>
+        <p>Every fund asks for those five. The interesting part is the order they break in.</p>
+
+        <h3>Where drawdowns actually go wrong</h3>
+        <p>Not in the arithmetic. Twelve per cent of a commitment is not a hard sum. It goes wrong in the gap between the workbook that computed the amounts and the letters that went out — because the workbook keeps being edited after the letters are sent.</p>
+        <p>Someone spots a fee that should have applied to only two closes. Someone corrects a commitment that was adjusted mid-quarter. The master file now says something different from the notice sitting in an investor's inbox, and there is no moment in the process that says which one is authoritative.</p>
+        <div class="pull"><p>A capital call notice is a legal instruction to move money. The moment it is sent, the figures inside it stop being a draft — whether or not your process agrees.</p></div>
+
+        <h3>Step one — computation, by the basis the fund actually uses</h3>
+        <p>A call is created against the fund with a name, a call date, a due date and a basis. There are three bases, and they exist because funds genuinely differ:</p>
+        <ul>
+          <li><strong>Percentage of commitment</strong> — one percentage, applied to every investor's committed amount. An investor who committed $4,000,000 called at 25% owes $1,000,000 before fees.</li>
+          <li><strong>Investable capital percentage</strong> — you set one total to be called for the fund, and each investor's share comes from their most recent stored ratio on or before the due date. This is the basis you need when excused or defaulting investors change everyone else's share.</li>
+          <li><strong>Upload</strong> — amounts decided elsewhere, taken from a file exactly as given. No computation, no argument.</li>
+        </ul>
+        <p>Closes are first-class. Select which closes a call applies to, and give each its own percentage — First Close at 25%, Second Close at 10%, Third Close excluded — which is how a true-up actually works. Only investors in the selected closes get a remittance.</p>
+
+        <h3>Step two — fees that can be traced back to their components</h3>
+        <p>Fees attach to the call and are worked out per investor. They come in three behaviours: <strong>fees part of capital</strong>, which are added into the call amount and count toward called capital; <strong>other fees</strong>, which sit alongside as a separate line; and an <strong>investment amount</strong> earmarked within the call.</p>
+        <p>The standard mechanism links a fee to a named charge already recorded against each investor: give the fee a name and a date window, and every matching charge inside that window is summed. That is how recurring management fees and one-off upfront fees land without anyone retyping them.</p>
+        <p>And for every investor, the full breakdown is kept — the name, date and amount of each charge that made up the fee. When an LP queries a management fee, the answer is a list, not a recalculation.</p>
+
+        <h3>Step three — one remittance per investor, generated not typed</h3>
+        <p>Saving the call creates one <strong>remittance</strong> per eligible investor: their slice of this call. Generation is idempotent — running it again never produces duplicates — and re-runs itself automatically if you change the percentage or the total.</p>
+        <p>Every remittance carries two currencies, permanently. The <strong>folio currency</strong> is what the investor actually wires. The <strong>fund currency</strong> is what fund-level totals are built from, converted at the rate on the remittance date. Neither is derived on demand from the other at report time, which is precisely why called and collected can be compared without a footnote.</p>
+
+        <h3>Step four — notices, approved one at a time</h3>
+        <p>Notices are generated from the fund's Call Template — one per investor, in the background, or one at a time from a single remittance. Where a fund is set to notice per KYC, an investor with several folios gets one combined letter rather than four.</p>
+        <p>Then the part people try to skip: <strong>every notice must be individually approved</strong>. Open it, read it, approve it. Only approved notices are attached to the investor email, and any unapproved notice blocks the call's approval outright.</p>
+        <p>That is a deliberate friction. It guarantees a person has read each letter before it reaches an investor, and it is the reason approval can safely be irreversible.</p>
+
+        <h3>Step five — a checklist runs before you send</h3>
+        <p>The Call Notice Agent runs against one specific call and walks a fixed sequence, each step gating the next:</p>
+        <ol>
+          <li>Every investor on the call has a KYC record, and it is verified. If not, the checklist stops here — nothing later even runs.</li>
+          <li>The fund has at least one Call Notice template, and notices have actually been generated for each investor in scope.</li>
+          <li>All generated notices have been approved.</li>
+          <li>An active email notification is configured for this call.</li>
+          <li>A final confirmation that every gate has cleared.</li>
+        </ol>
+        <p>No AI, no configuration, nothing to skip — every check is a yes/no comparison against records you already have. It answers one question: is this call safe to send? Its warning banner also lists every fund with no Call Notice template uploaded, so that gap surfaces before a send rather than during one.</p>
+
+        <h3>Step six — approval locks the call</h3>
+        <p>Approving sends the notices with their approved documents attached, makes the call visible in the investor portal, records who approved it — and disables edit, delete, fee refresh and document generation.</p>
+        <p>That lock is the whole answer to the workbook problem. After approval, the numbers investors hold and the numbers the system holds cannot diverge, because there is no longer a mechanism by which they could.</p>
+        <figure style="margin:30px 0">
+          <table>
+            <thead><tr><th>Before approval</th><th>After approval</th></tr></thead>
+            <tbody>
+              <tr><td>Edit amounts, dates, investor list</td><td>Locked</td></tr>
+              <tr><td>Refresh fees</td><td>Disabled</td></tr>
+              <tr><td>Generate documents</td><td>Disabled</td></tr>
+              <tr><td>Notices not yet sent</td><td>Sent, with the approved document attached</td></tr>
+              <tr><td>Not visible to investors</td><td>Visible in the portal</td></tr>
+              <tr><td>—</td><td>Fund unit allocation still available</td></tr>
+            </tbody>
+          </table>
+          <figcaption style="margin-top:10px;font-size:13px;color:var(--mut)">what approval changes</figcaption>
+        </figure>
+
+        <h2>⚙️ Under the hood: monitoring, which is where the time really goes</h2>
+        <p><strong>Payments are records, not edits.</strong> Money in is entered as a payment against a remittance — amount in the investor's currency, payment date, a bank reference that must be unique within the fund, and an attached proof. Conversion to fund currency uses the rate on the payment date. The collected amount and payment date update themselves; nothing is recalculated by hand.</p>
+        <p>An investor paying in instalments simply has several payments. And a payment cannot be deleted once fund units have been allocated against it — you unwind the allocation first, deliberately.</p>
+        <p><strong>Verification is a toggle with consequences.</strong> Verifying refreshes the fees, recalculates the call amount, sets the status, updates the payment date and — if enabled — emails the investor a payment-received confirmation. Add a payment to an already-verified remittance and it <em>un-verifies itself</em>, so somebody looks at the new total before re-confirming. That single behaviour catches the partial-payment errors that otherwise surface at audit.</p>
+        <p><strong>Overdue maintains itself.</strong> A daily job flips unpaid pending remittances to Overdue once the due date passes. The overdue list is therefore always current without anyone producing it, which is what makes chasing a routine rather than a project. Paid allows a small rounding tolerance so a two-cent FX difference doesn't hold a remittance open; overpayment gets its own status rather than being quietly netted.</p>
+        <p><strong>Arrears carry.</strong> An unpaid balance from an earlier call is tracked on the remittance as an arrear amount, so the investor's true position travels with them from call to call instead of living in a side list.</p>
+        <div class="pull"><p>Collection efficiency is not a reporting problem. It is a consequence of whether your overdue list is produced automatically or produced by a person who is busy.</p></div>
+
+        <h2>📊 The impact</h2>
+        <p>The five verbs, answered: computation follows the basis the fund actually uses, including different rates per close; fees come from recorded charges with a traceable breakdown; notices are generated from a template and approved individually; payments post against remittances with proof, in both currencies; and overdue status is maintained daily rather than assembled.</p>
+        <p>What changed operationally is smaller and more important than any of those. There is exactly one set of figures. It becomes authoritative at a specific moment — approval — and after that moment the platform will not let it move.</p>
+
+        <h2>What to take from this</h2>
+        <div class="callout">
+          <ol>
+            <li><strong>Pick your basis explicitly.</strong> "Percentage of commitment" and "share of investable capital" diverge the moment someone is excused. Most workbooks never state which they use.</li>
+            <li><strong>Approve notices one by one.</strong> It feels slow at ten investors and it is the only reason approval at a hundred is safe.</li>
+            <li><strong>Lock after send.</strong> If your figures can still be edited after investors have them, you do not have a record — you have a draft with a distribution list.</li>
+            <li><strong>Keep folio and fund currency side by side.</strong> Converting at report time is how called and collected stop reconciling.</li>
+            <li><strong>Automate the overdue flip.</strong> A list that maintains itself gets acted on. A list someone has to build gets built late.</li>
+          </ol>
+        </div>
+
+        <h2>Where this goes next</h2>
+        <p>Drawdowns depend on verified investor records — see <a href="case-investor-onboarding.html">onboarding 200+ LPs</a> — and feed straight into <a href="case-investor-statements.html">investor statements</a>. To walk a real call end to end, <a href="contact.html">book a walkthrough</a>.</p>
+
+        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld. The workflow, platform mechanics and behaviour described are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them; supporting detail is illustrative of how engagements of this shape run.</p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="case-studies.html">More case studies</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Case study: capital drawdowns across 100+ LPs",
+  "description": "A venture fund wanted its capital calls computed, fee-loaded, noticed, tracked and chased without a spreadsheet in the middle.",
+  "datePublished": "2026-08-11",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/case-capital-drawdowns.html"
+}
+</script>
+</body>
+</html>

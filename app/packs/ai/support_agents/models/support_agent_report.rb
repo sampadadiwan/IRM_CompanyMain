@@ -1,6 +1,15 @@
+# frozen_string_literal: true
+
+# Stores per-target results for a SupportAgent run (one report per owner per agent).
+#
+# @see SupportAgent
+# @see PortfolioCompanyAgent
 class SupportAgentReport < ApplicationRecord
   belongs_to :owner, polymorphic: true
   belongs_to :support_agent
+  # @!attribute investor
+  #   Convenience join for Ransack search — assumes owner_type is "Investor".
+  belongs_to :investor, foreign_key: :owner_id, optional: true
 
   enum :status, { pending: "Pending", completed: "Completed", failed: "Failed" }
 
@@ -79,7 +88,31 @@ class SupportAgentReport < ApplicationRecord
     json_fields["final_status"]
   end
 
+  # Expiry findings live in field_issues (the KYC agent appends them there) but
+  # are not "missing fields" — excluded from the stat-card count below.
+  EXPIRY_ISSUE_TYPES = %w[kyc_expired kyc_expiring_soon].freeze
+
+  # Count of genuinely missing/invalid fields for the "Missing Fields" stat card.
+  # Counts only blocking entries: the agent also appends info/success rows
+  # (a plain .size over-counted) and expiry warnings (an expiring KYC is not a
+  # missing field). Lives on the model so views don't dig through json_fields.
+  #
+  # @return [Integer] blocking, non-expiry field issue count
+  def missing_field_count
+    (json_fields["field_issues"] || []).count do |issue|
+      issue["severity"] == "blocking" && EXPIRY_ISSUE_TYPES.exclude?(issue["type"].to_s)
+    end
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[owner_id owner_name owner_type status support_agent_name updated_at]
+  end
+
+  # Associations allowed for Ransack join-based search (e.g. investor name filtering).
+  #
+  # @param _auth_object [Object, nil] optional authorization context
+  # @return [Array<String>] allowlisted association names
+  def self.ransackable_associations(_auth_object = nil)
+    %w[investor]
   end
 end

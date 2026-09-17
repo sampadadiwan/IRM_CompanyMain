@@ -14,16 +14,16 @@ Feature: Bulk Verify Remittances from Capital Call Show Page
     Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
     Given there is a capital call "percentage_called=20;send_payment_notification_flag=true"
     Then the corresponding remittances should be created
+    Given the capital calls are approved
     Given the remittances are paid
 
 
   Scenario: Bulk verify modal explains the action in detail before confirming
     When I open the bulk verify remittances modal for the capital call
-    Then the bulk verify modal should contain "Unverified Remittance"
+    Then the bulk verify modal should contain "Eligible Remittance"
     And the bulk verify modal should contain "Only unverified remittances are affected"
     And the bulk verify modal should contain "Status recalculated, fees unchanged"
     And the bulk verify modal should contain "Payment notifications sent"
-    And the bulk verify modal should contain "Runs in the background"
     When I confirm the bulk verify remittances action
     Then all remittances for the capital call should be verified
 

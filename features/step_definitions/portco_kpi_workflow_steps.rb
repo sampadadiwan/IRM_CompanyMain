@@ -69,7 +69,7 @@ Given('the user {string} has the tag {string}') do |first_name, tag|
   # Set the tag on the investor_access (per-relationship) rather than globally on the user
   portco = @portfolio_company || Investor.find_by!(investor_name: 'TestStartup')
   access = InvestorAccess.find_by!(user: user, investor: portco)
-  existing = access.tag_list.to_s.split(',').map(&:strip).reject(&:blank?)
+  existing = access.tag_list.to_s.split(',').map(&:strip).compact_blank
   access.update_column(:tag_list, (existing | [tag]).join(','))
 end
 
@@ -120,8 +120,10 @@ end
 When('I create a KPI report shell for {string} as of {string} with period {string}') do |portco_name, as_of, period|
   portco = Investor.find_by!(investor_name: portco_name)
   visit(new_kpi_report_path(kpi_report: { portfolio_company_id: portco.id }))
+  advance_kpi_wizard_to(:report_details) # as_of / period live on the wizard's "Report Details" step
   fill_in('kpi_report_as_of', with: as_of)
   select period, from: 'kpi_report_period'
+  advance_kpi_wizard_to(:additional_details) # Save lives on the wizard's last step
   click_on('Save')
   sleep(1)
   @kpi_report = KpiReport.order(created_at: :desc).first
@@ -144,13 +146,13 @@ Given('the KPI report has an unapproved KPI') do
   name = "Revenue"
   mapping = InvestorKpiMapping.find_or_create_by(standard_kpi_name: name, entity: @entity, investor: @portfolio_company, reported_kpi_name: name)
   FactoryBot.create(:kpi,
-    kpi_report: @kpi_report,
-    entity: @entity,
-    portfolio_company: @portfolio_company,
-    name: name,
-    value: 100.0,
-    status: :unapproved,
-    investor_kpi_mapping_id: mapping.id)
+                    kpi_report: @kpi_report,
+                    entity: @entity,
+                    portfolio_company: @portfolio_company,
+                    name: name,
+                    value: 100.0,
+                    status: :unapproved,
+                    investor_kpi_mapping_id: mapping.id)
 end
 
 When('I visit the portco pending dashboard') do
@@ -352,17 +354,17 @@ end
 # Fund employees carry the Kpi tag on user.tag_list (not on investor_access).
 Given('the fund employee {string} has the tag {string}') do |first_name, tag|
   user = User.find_by!(first_name: first_name)
-  existing = user.tag_list.to_s.split(',').map(&:strip).reject(&:blank?)
+  existing = user.tag_list.to_s.split(',').map(&:strip).compact_blank
   user.update_column(:tag_list, (existing | [tag]).join(','))
 end
 
 Given('there is a second fund employee {string}') do |attrs|
-  attributes = attrs.split(';').map { |p| p.split('=') }.to_h.with_indifferent_access
+  attributes = attrs.split(';').to_h { |p| p.split('=') }.with_indifferent_access
   @second_fund_employee = FactoryBot.create(:user, entity: @entity,
-                                                    first_name: attributes[:first_name] || 'FundEmployee2',
-                                                    last_name: attributes.fetch(:last_name, 'User'),
-                                                    email: attributes.fetch(:email, "#{attributes[:first_name]&.downcase || 'fundemployee2'}@#{@entity.name.downcase.gsub(/\s+/, '')}.com"),
-                                                    active: true)
+                                                   first_name: attributes[:first_name] || 'FundEmployee2',
+                                                   last_name: attributes.fetch(:last_name, 'User'),
+                                                   email: attributes.fetch(:email, "#{attributes[:first_name]&.downcase || 'fundemployee2'}@#{@entity.name.downcase.gsub(/\s+/, '')}.com"),
+                                                   active: true)
 end
 
 Then('the fund employee {string} receives a submission notification email') do |first_name|
@@ -414,8 +416,9 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Builds a minimal XLSX in memory and returns it as a Base64 string.
-# valid: true  → first row has date-like column headers (Jan 2025 …) — passes structural check
-# valid: false → first row has plain-text headers only — fails structural check
+# valid: true  → header has date-like columns incl. "Q1 2025" (the quarter the test shells ask for,
+#                as_of 2025-03-31 / Quarter) and a mapped KPI row — passes the server-side check
+# valid: false → first row has plain-text headers only — fails the server-side check (no_header)
 def kpi_xlsx_base64(valid:)
   require "caxlsx"
   require "base64"
@@ -423,12 +426,12 @@ def kpi_xlsx_base64(valid:)
   Axlsx::Package.new do |p|
     p.workbook.add_worksheet(name: "Sheet1") do |ws|
       if valid
-        ws.add_row ["KPI Name", "Jan 2025", "Feb 2025", "Mar 2025"]
-        ws.add_row ["Revenue", 100, 200, 300]
+        ws.add_row ["KPI Name", "Jan 2025", "Feb 2025", "Mar 2025", "Q1 2025"]
+        ws.add_row ["Revenue", 100, 200, 300, 600]
       else
         # No date-like values in header row — controller raises a structural error
         ws.add_row ["KPI Name", "Notes", "Comments", "Status"]
-        ws.add_row ["Revenue", "Good", "Stable", "Active"]
+        ws.add_row %w[Revenue Good Stable Active]
       end
     end
     p.serialize(tmp.path)
@@ -439,7 +442,8 @@ def kpi_xlsx_base64(valid:)
 end
 
 # Dispatches the upload:complete event that kpi_xlsx_report_controller listens for,
-# carrying a File built from the given base64-encoded XLSX content.
+# carrying a File built from the given base64-encoded XLSX content. The controller posts the
+# File to KpiReportsController#validate_upload (multipart fallback) and renders the server verdict.
 # With importmaps, Stimulus controllers load asynchronously, so we poll until
 # the kpi-xlsx-report controller is registered before dispatching.
 def dispatch_kpi_upload(b64, filename)
@@ -563,9 +567,7 @@ end
 # Submitted/reviewed reports must be absent from the portco pending table.
 # If the table itself is absent (no pending reports at all) the assertion passes.
 Then('I should not see {string} within the pending reports table') do |text|
-  if page.has_css?('table', wait: 1)
-    within('table') { expect(page).not_to have_content(text) }
-  end
+  within('table') { expect(page).not_to have_content(text) } if page.has_css?('table', wait: 1)
 end
 
 # ── Scenario 29: Non-KPI notification regression ─────────────────────────────
@@ -649,7 +651,7 @@ Given('the user {string} has the tag {string} removed') do |first_name, tag|
   user = User.find_by!(first_name: first_name)
   portco = @portfolio_company || Investor.find_by!(investor_name: 'TestStartup')
   access = InvestorAccess.find_by!(user: user, investor: portco)
-  existing = access.tag_list.to_s.split(',').map(&:strip).reject(&:blank?)
+  existing = access.tag_list.to_s.split(',').map(&:strip).compact_blank
   access.update_column(:tag_list, (existing - [tag]).join(','))
 end
 
@@ -671,4 +673,216 @@ Then('all approved users are reachable for non-KPI notifications at {string}') d
   expect(kpi_tagged_ids.size).to be < all_users.size
   expect(kpi_tagged_ids).to include(@portco_user.id)
   expect(kpi_tagged_ids).not_to include(@second_portco_user.id)
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SUBMIT GATE & ACTOR-SCOPED PARAMS (server-side; docs/technical/kpi_portco_upload_validation_review.md §2.1/§2.2/§2.8)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Attaches a workbook to @kpi_report and stores its verdict, exactly as a portco upload + Save Draft
+# would. valid: true → contains the requested quarter (Q1 2025) with a mapped Revenue value.
+def attach_kpi_workbook_to_report(valid:)
+  require "caxlsx"
+  unless @portfolio_company.investor_kpi_mappings.exists?
+    @portfolio_company.investor_kpi_mappings.create!(entity_id: @portfolio_company.entity_id, reported_kpi_name: "Revenue", standard_kpi_name: "Revenue")
+    @portfolio_company.reload
+  end
+  tmp = Tempfile.new(["kpi_gate", ".xlsx"])
+  Axlsx::Package.new do |p|
+    p.workbook.add_worksheet(name: "MIS") do |ws|
+      if valid
+        ws.add_row ["KPI", "Jan 2025", "Feb 2025", "Mar 2025", "Q1 2025"]
+        ws.add_row ["Revenue", 100, 200, 300, 600]
+      else
+        # Only months of 2024 — the shell asks for Q1 2025, so requested_period_missing blocks it
+        ws.add_row ["KPI", "Jan 2024", "Feb 2024"]
+        ws.add_row ["Revenue", 100, 200]
+      end
+    end
+    p.serialize(tmp.path)
+  end
+  doc = @kpi_report.documents.build(entity_id: @entity.id, name: "KPIs", user_id: @user.id, file: File.open(tmp.path), owner: @kpi_report)
+  doc.save!
+  KpiUploadValidate.call(kpi_report: @kpi_report, user: @user)
+  @kpi_report.reload
+end
+
+Given('the KPI report has a valid KPIs workbook attached') do
+  attach_kpi_workbook_to_report(valid: true)
+end
+
+Given('the KPI report has a KPIs workbook attached that is missing the requested period') do
+  attach_kpi_workbook_to_report(valid: false)
+end
+
+# Bypasses the disabled buttons (what a tampered browser could do) and submits the form as "final".
+When('I force a final submit of the KPI report form') do
+  page.execute_script(<<~JS)
+    document.getElementById('submit_action_field').value = 'final';
+    document.getElementById('kpi-report-form').requestSubmit();
+  JS
+  sleep(1)
+end
+
+Given('there is a second portfolio company {string}') do |name_kv|
+  first = @portfolio_company
+  steps %(Given there is an existing portfolio company "#{name_kv}")
+  @other_portfolio_company = @portfolio_company
+  @portfolio_company = first
+end
+
+# Sends the kind of PATCH a portco could craft with dev tools: every fund-only field plus nested KPI
+# rows. Uses the page's own CSRF token and session, so only strong-params stand between it and the DB.
+When('I send a crafted PATCH for the KPI report with fund-only fields') do
+  approved_before = @kpi_report.kpis.approved.count
+  page.execute_script(<<~JS)
+    (async function () {
+      const body = new FormData();
+      body.append('kpi_report[notes]', 'tampered');
+      body.append('kpi_report[as_of]', '2024-12-31');
+      body.append('kpi_report[period]', 'Year');
+      body.append('kpi_report[tag_list]', 'Budget');
+      body.append('kpi_report[portfolio_company_id]', '#{@other_portfolio_company.id}');
+      body.append('kpi_report[entity_id]', '#{@other_portfolio_company.investor_entity_id}');
+      body.append('kpi_report[delete_kpis]', 'true');
+      body.append('kpi_report[kpis_attributes][0][name]', 'Injected');
+      body.append('kpi_report[kpis_attributes][0][value]', '999');
+      body.append('kpi_report[kpis_attributes][0][entity_id]', '#{@entity.id}');
+      const token = document.querySelector('meta[name="csrf-token"]')?.content
+                 || document.querySelector('input[name="authenticity_token"]')?.value || '';
+      body.append('authenticity_token', token);
+      try {
+        const r = await fetch('/kpi_reports/#{@kpi_report.id}', {
+          method: 'PATCH', headers: { 'X-CSRF-Token': token, 'Accept': 'text/html' },
+          body: body, credentials: 'same-origin', redirect: 'manual'
+        });
+        window.__patchStatus = r.status;
+      } catch (e) { window.__patchError = String(e); }
+      window.__patchDone = true;
+    })();
+  JS
+  eventually { expect(page.evaluate_script('window.__patchDone === true')).to be(true) }
+  @approved_before = approved_before
+end
+
+Then('the KPI report for {string} as of {string} is unchanged apart from notes {string}') do |portco_name, as_of, notes|
+  report = KpiReport.find(@kpi_report.id)
+  portco = Investor.find_by!(investor_name: portco_name)
+  expect(report.notes).to eq(notes)
+  expect(report.portfolio_company_id).to eq(portco.id)
+  expect(report.as_of).to eq(Date.parse(as_of))
+  expect(report.period).to eq('Quarter')
+  expect(report.tag_list).to eq('Actual')
+  expect(report.entity_id).to eq(@entity.id)
+  expect(report.kpis.unapproved.count).to eq(1), "delete_kpis must be ignored for portco actors"
+end
+
+Then('no approved KPI was created on the KPI report') do
+  expect(@kpi_report.reload.kpis.approved.count).to eq(@approved_before.to_i)
+  expect(Kpi.where(name: 'Injected')).to be_empty
+end
+
+Given('a portfolio company {string} of another fund exists') do |name|
+  other_fund = FactoryBot.create(:entity, entity_type: "Investment Fund")
+  portco_entity = FactoryBot.create(:entity, entity_type: "Investor")
+  @foreign_portco = FactoryBot.create(:investor, entity: other_fund, investor_entity: portco_entity, investor_name: name, category: "Portfolio Company")
+end
+
+When('I send a PATCH re-pointing the KPI report to {string}') do |name|
+  target = Investor.find_by!(investor_name: name)
+  visit(edit_kpi_report_path(@kpi_report))
+  page.execute_script(<<~JS)
+    (async function () {
+      const body = new FormData();
+      body.append('kpi_report[portfolio_company_id]', '#{target.id}');
+      const token = document.querySelector('meta[name="csrf-token"]')?.content
+                 || document.querySelector('input[name="authenticity_token"]')?.value || '';
+      body.append('authenticity_token', token);
+      try {
+        const r = await fetch('/kpi_reports/#{@kpi_report.id}', {
+          method: 'PATCH', headers: { 'X-CSRF-Token': token, 'Accept': 'text/html' },
+          body: body, credentials: 'same-origin', redirect: 'manual'
+        });
+        window.__patchStatus = r.status;
+      } catch (e) { window.__patchError = String(e); window.__patchStatus = -1; }
+    })();
+  JS
+  eventually { expect(page.evaluate_script('typeof window.__patchStatus === "number"')).to be(true) }
+  @patch_status = page.evaluate_script('window.__patchStatus')
+end
+
+Then('the KPI report for {string} as of {string} still points at {string}') do |_portco_name, _as_of, name|
+  # The DB assertion is what matters — the HTTP status of a Pundit refusal varies (403 vs redirect).
+  expect(KpiReport.find(@kpi_report.id).portfolio_company.investor_name).to eq(name)
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# IMPORT LIFECYCLE, REOPEN, TEMPLATE (§2.2 E, §3.4 P/Q)
+# ─────────────────────────────────────────────────────────────────────────────
+
+Then('the KPI report import status is {string}') do |status|
+  eventually { expect(KpiReport.find(@kpi_report.id).import_status).to eq(status) }
+end
+
+Then('the KPI report has an unapproved KPI {string} as of {string} with value {float}') do |name, as_of, value|
+  # Scoped to the shell's own period (a "Mar 2025" month column lands on a separate Month report)
+  kpi = Kpi.unapproved.joins(:kpi_report).where(name: name, portfolio_company_id: @portfolio_company.id, kpi_reports: { as_of: Date.parse(as_of), period: @kpi_report.period }).first
+  expect(kpi).to be_present
+  expect(kpi.value.to_f).to eq(value)
+end
+
+# What the controller does after a passed gate — set directly so we can exercise the job's failure path.
+Given('the KPI report is marked submitted with a pending import') do
+  @kpi_report.update_columns(status: 'submitted', submitted_at: Time.current, import_status: 'pending')
+end
+
+When('the KPI import job runs for the report') do
+  ImportKpiWorkbookJob.perform_now(@kpi_report.id, @user.id)
+end
+
+Then('the fund admin receives an email with subject containing {string}') do |text|
+  eventually do
+    mail = ActionMailer::Base.deliveries.find { |m| m.to.include?(@user.email) && m.subject.to_s.include?(text) }
+    expect(mail).to be_present, "no email to #{@user.email} with subject containing #{text}; subjects: #{ActionMailer::Base.deliveries.map(&:subject).inspect}"
+  end
+end
+
+When('I send a KPI notification to {string} as of {string} with period {string}') do |portco_name, as_of, period|
+  portco = Investor.find_by!(investor_name: portco_name)
+  visit(kpi_reports_path)
+  page.driver.post(send_portco_notification_kpi_reports_path, portfolio_company_id: portco.id, as_of: as_of, period: period) rescue nil
+  # Playwright has no driver.post — submit through a tiny form built on the page instead
+  page.execute_script(<<~JS)
+    (function () {
+      const f = document.createElement('form'); f.method = 'POST'; f.action = '#{send_portco_notification_kpi_reports_path}';
+      const add = (n, v) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); };
+      add('authenticity_token', document.querySelector('meta[name="csrf-token"]')?.content || '');
+      add('portfolio_company_id', '#{portco.id}'); add('as_of', '#{as_of}'); add('period', '#{period}');
+      document.body.appendChild(f); f.submit();
+    })();
+  JS
+  sleep(1)
+end
+
+Then('the generated KPI template for the report has header {string} and rows {string}') do |header_label, names|
+  result = KpiTemplateGenerate.call(kpi_report: @kpi_report)
+  tmp = Tempfile.new(["kpi_template", ".xlsx"], binmode: true)
+  tmp.write(result[:xlsx])
+  tmp.flush
+  @template_path = tmp.path
+  wb = Roo::Spreadsheet.open(tmp.path)
+  header = wb.row(1).map(&:to_s)
+  expect(header).to include(header_label)
+  names.split(',').map(&:strip).each do |n|
+    expect((2..wb.last_row).map { |i| wb.row(i).first.to_s }).to include(n)
+  end
+end
+
+Then('validating the generated template reports the requested period as present but blank') do
+  upload = ActionDispatch::Http::UploadedFile.new(tempfile: File.open(@template_path), filename: "template.xlsx",
+                                                  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+  verdict = KpiUploadValidate.call(kpi_report: @kpi_report, user: @portco_user, file: upload)[:verdict]
+  # Header parsed to the requested quarter; the sheet is empty so the only complaint is "blank"
+  expect(verdict['errors'].pluck('code')).to include('requested_period_blank')
+  expect(verdict['errors'].pluck('code')).not_to include('requested_period_missing', 'no_header')
 end

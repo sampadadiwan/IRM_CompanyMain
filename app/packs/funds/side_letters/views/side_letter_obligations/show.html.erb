@@ -1,0 +1,313 @@
+<%# Breadcrumbs come from the layout card (@bread_crumbs in the controller) %>
+<%= render FormCard.new(title: @obligation.title) do %>
+  <%# Contextual orientation banner — the state machine is the confusing part %>
+  <% if @obligation.pending_review? %>
+    <div class="alert alert-warning d-flex align-items-start gap-2">
+      <i class="ti ti-eye-check fs-5 mt-1"></i>
+      <div>
+        <strong>Awaiting counsel review.</strong> Nothing is tracked yet — approving creates the
+        tasks and alerts below; rejecting discards it permanently. Check the details against
+        <%= @obligation.source_clause.presence || "the side letter" %> before deciding.
+      </div>
+    </div>
+  <% elsif @obligation.armed? %>
+    <div class="alert alert-info d-flex align-items-start gap-2">
+      <i class="ti ti-bolt fs-5 mt-1"></i>
+      <div>
+        <strong>Armed — waiting on its event.</strong> This obligation has no deadline until the
+        triggering event happens (<%= @obligation.trigger_description.presence || "see trigger" %>).
+        When it does, use <strong>Fire</strong> to set the deadline and a tracked task is created.
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Two-column layout mirroring the SupportAgent show page:
+       key attributes left, the obligation text + actions right ── %>
+  <div class="row g-4 align-items-start mb-4" data-controller="tooltip">
+
+    <%# ── Left column: key-value attributes ── %>
+    <div class="col-md-5">
+      <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
+          <i class="ti ti-list-details text-primary fs-5"></i>
+          <h5 class="mb-0 fw-semibold">Details</h5>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-bordered dataTable agent-detail-table mb-0">
+            <colgroup>
+              <col style="width: 150px;">
+              <col>
+            </colgroup>
+            <tr>
+              <td class="align-top">Investor</td>
+              <td><%= link_to @obligation.investor.investor_name, side_letter_path(@obligation.side_letter) %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Fund</td>
+              <td><%= @obligation.fund.name %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Type</td>
+              <td><span class="badge bg-secondary-subtle text-secondary-emphasis"><%= @obligation.obligation_type.humanize %></span></td>
+            </tr>
+            <tr>
+              <td class="align-top">Source Clause</td>
+              <td><%= @obligation.source_clause.presence || content_tag(:span, "—", class: "text-muted") %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Trigger</td>
+              <td><%= @obligation.trigger_type.humanize %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Next Due</td>
+              <td><%= @obligation.next_due_date&.strftime("%d %b %Y") || (@obligation.armed? ? "On event" : content_tag(:span, "—", class: "text-muted")) %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Owner</td>
+              <td><%= @obligation.owner_label || content_tag(:span, "Unassigned", class: "text-muted") %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Reminder Lead</td>
+              <td><%= @obligation.reminder_days_before.zero? ? "Suppressed" : "#{@obligation.reminder_days_before} days" %></td>
+            </tr>
+            <tr>
+              <td class="align-top">Recurrence</td>
+              <td>
+                <% if @obligation.frequency_rrule.present? %>
+                  <code class="text-secondary"><%= @obligation.frequency_rrule %></code>
+                <% else %>
+                  One-off
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <td class="align-top">Extracted</td>
+              <td>
+                <% if @obligation.extracted_by_ai? %>
+                  AI<%= " (#{(@obligation.ai_confidence * 100).round}% confidence)" if @obligation.ai_confidence %>
+                <% else %>
+                  Manual entry
+                <% end %>
+              </td>
+            </tr>
+            <% if @obligation.mfn_relevant? %>
+              <tr>
+                <td class="align-top">MFN</td>
+                <td><span class="badge bg-secondary-subtle text-secondary-emphasis"><%= @obligation.mfn_review_status.humanize %></span></td>
+              </tr>
+            <% end %>
+            <tr>
+              <td class="align-top">Reviewed</td>
+              <td>
+                <% if @obligation.reviewed_at %>
+                  <%= @obligation.reviewed_by&.name %> · <%= @obligation.reviewed_at.strftime("%d %b %Y") %>
+                <% else %>
+                  <span class="text-muted">Pending</span>
+                <% end %>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Right column: the obligation as the side letter states it + actions ── %>
+    <div class="col-md-7">
+      <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
+          <i class="ti ti-file-text text-primary fs-5"></i>
+          <h5 class="mb-0 fw-semibold">About This Obligation</h5>
+          <span class="ms-auto"><%= obligation_status_badge(@obligation) %></span>
+        </div>
+        <div class="card-body p-4">
+          <% if @obligation.delta? %>
+            <div class="alert alert-warning py-2">
+              This obligation changed on re-extraction of an amended side letter — review against the previously approved version.
+            </div>
+          <% end %>
+
+          <% if @obligation.description.present? %>
+            <div class="text-muted text-uppercase mb-1">Obligation</div>
+            <%= simple_format(@obligation.description) %>
+          <% end %>
+
+          <% if @obligation.trigger_description.present? %>
+            <div class="text-muted text-uppercase mb-1 mt-3">Trigger</div>
+            <p><%= @obligation.trigger_description %></p>
+          <% end %>
+
+          <hr>
+
+          <%# Contextual actions, mirroring the agent page's Edit / Run Now / Delete row %>
+          <div class="d-flex flex-wrap gap-2">
+            <% if @obligation.pending_review? %>
+              <%= button_to approve_side_letter_obligation_path(@obligation), method: :patch,
+                            class: "btn btn-success", form: { data: { turbo: false } } do %>
+                <i class="ti ti-check"></i> Approve
+              <% end %>
+              <%= link_to edit_side_letter_obligation_path(@obligation), class: "btn btn-outline-secondary" do %>
+                <i class="ti ti-edit"></i> Edit
+              <% end %>
+              <%= button_to reject_side_letter_obligation_path(@obligation), method: :patch,
+                            class: "btn btn-outline-danger", form: { data: { turbo: false } } do %>
+                <i class="ti ti-x"></i> Reject
+              <% end %>
+            <% elsif @obligation.fired? %>
+              <%# Armed + already has tasks — show Waive instead of Fire %>
+              <button type="button" class="btn btn-outline-secondary"
+                      data-bs-toggle="modal" data-bs-target="#waive_obligation_modal_<%= @obligation.id %>">
+                <i class="ti ti-hand-stop"></i> Waive
+              </button>
+            <% elsif @obligation.armed? %>
+              <button type="button" class="btn btn-outline-primary"
+                      data-bs-toggle="modal" data-bs-target="#fire_obligation_modal_<%= @obligation.id %>">
+                <i class="ti ti-flame"></i> Fire
+              </button>
+            <% end %>
+            <% if @obligation.approved? && @obligation.obligation_active? %>
+              <button type="button" class="btn btn-outline-secondary"
+                      data-bs-toggle="modal" data-bs-target="#waive_obligation_modal_<%= @obligation.id %>">
+                <i class="ti ti-hand-stop"></i> Waive
+              </button>
+            <% end %>
+            <% if @obligation.approved? && @obligation.status.to_s.in?(ObligationRevert::REVERTIBLE_STATUSES) %>
+              <button type="button" class="btn btn-outline-warning"
+                      data-bs-toggle="modal" data-bs-target="#revert_obligation_modal_<%= @obligation.id %>">
+                <i class="ti ti-arrow-back-up"></i> Revert
+              </button>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+   <div class="mt-3">
+    <%= link_to side_letter_path(@obligation.side_letter), class: "btn btn-outline-secondary" do %>
+      <i class="ti ti-arrow-left"></i> Back to Side Letter
+    <% end %>
+    <%= link_to side_letter_obligations_path, class: "btn btn-outline-secondary" do %>
+      <i class="ti ti-table"></i> Obligation Matrix
+    <% end %>
+  </div>
+
+  <%# ── Tabs: the covenant's living history ── %>
+  <div data-controller="tabs">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a class="nav-link active" data-bs-toggle="pill" href="#obligation-tasks-tab">
+        Tasks (<%= @tasks.size %>)
+      </a>
+      <a class="nav-link" data-bs-toggle="pill" href="#obligation-fulfillments-tab">
+        Fulfillment History (<%= @fulfillments.size %>)
+      </a>
+      <a class="nav-link" data-bs-toggle="pill" href="#obligation-alerts-tab">
+        Alerts Sent (<%= @reminders.size %>)
+      </a>
+    </nav>
+
+    <div class="tab-content">
+      <div id="obligation-tasks-tab" class="tab-pane fade in show active">
+        <%# The real tasks grid — same one as /tasks, with the mark-completed
+            checkbox in the row. Completing a task here records the fulfillment. %>
+        <%= render "/tasks/index", tasks: @tasks, owner: @obligation, for_entity: nil, search: false %>
+      </div>
+
+      <div id="obligation-fulfillments-tab" class="tab-pane fade in">
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>By</th>
+                <th>Method</th>
+                <th>Period</th>
+                <th>Evidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @fulfillments.each do |fulfillment| %>
+                <tr>
+                  <td><%= fulfillment.fulfilled_at.strftime("%d %b %Y") %></td>
+                  <td><%= fulfillment.fulfilled_by&.name || "—" %></td>
+                  <td><%= fulfillment.fulfillment_method %></td>
+                  <td><%= fulfillment.period_covered %></td>
+                  <td>
+                    <% if fulfillment.document %>
+                      <%= link_to fulfillment.document.name, document_path(fulfillment.document) %>
+                    <% else %>
+                      —
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+              <% if @fulfillments.none? %>
+                <tr><td colspan="5" class="text-center text-muted py-3">No fulfillments recorded yet.</td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <% if policy(@obligation).fulfill? && @obligation.approved? %>
+          <h5 class="mt-3">Record fulfillment</h5>
+          <%= form_with url: fulfill_side_letter_obligation_path(@obligation), method: :post,
+                        scope: :obligation_fulfillment, data: { turbo: false },
+                        class: "row g-2 align-items-end" do |f| %>
+            <div class="col-md-2">
+              <%= f.label :fulfilled_at, "Date", class: "form-label" %>
+              <%= f.date_field :fulfilled_at, value: Time.zone.today, class: "form-control" %>
+            </div>
+            <div class="col-md-5">
+              <%= f.label :fulfillment_method, "How was it fulfilled?", class: "form-label" %>
+              <%= f.text_field :fulfillment_method, class: "form-control", required: true,
+                               placeholder: "e.g. ESG report sent via portal and email" %>
+            </div>
+            <div class="col-md-2">
+              <%= f.label :period_covered, "Period", class: "form-label" %>
+              <%= f.text_field :period_covered, class: "form-control", placeholder: "Q3 2026" %>
+            </div>
+            <div class="col-md-2">
+              <%= f.submit "Record", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <div id="obligation-alerts-tab" class="tab-pane fade in">
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Kind</th>
+                <th>For due date</th>
+                <th>Sent at</th>
+                <th>Recipient</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @reminders.each do |reminder| %>
+                <tr>
+                  <td>
+                    <% badge_class = { "overdue" => "bg-danger", "due" => "bg-warning text-dark" }.fetch(reminder.kind, "bg-info text-dark") %>
+                    <span class="badge <%= badge_class %>"><%= reminder.kind.humanize %></span>
+                  </td>
+                  <td><%= reminder.due_date&.strftime("%d %b %Y") %></td>
+                  <td><%= reminder.sent_at&.strftime("%d %b %Y %H:%M") %></td>
+                  <td><%= reminder.recipient_user&.name || "Notify group" %></td>
+                </tr>
+              <% end %>
+              <% if @reminders.none? %>
+                <tr><td colspan="4" class="text-center text-muted py-3">No alerts sent yet.</td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+<% end %>
+
+<%# Outside the FormCard — see _action_modals for why %>
+<%= render "side_letter_obligations/action_modals", obligations: [@obligation] %>

@@ -1,0 +1,96 @@
+<%# The controller wraps the notice as well as the diagram so its delegated click
+    handler reaches the formula links inside the notice too. %>
+<div data-controller="fund-formula-dependency-graph"
+     data-fund-formula-dependency-graph-url-template-value="<%= fund_formula_path(id: 'ID_PLACEHOLDER') %>"
+     data-fund-formula-dependency-graph-formulas-value="<%= @dependency_graph.tooltip_text_by_formula_id.to_json %>"
+     data-fund-formula-dependency-graph-full-source-value="<%= @dependency_graph.to_mermaid %>">
+
+  <%# The broken-reference notice comes first, before the explanatory text: it is the
+      reason to look at this page at all, and it must not be scrolled past. %>
+  <% if @dependency_graph.broken_references.any? %>
+  <div class="alert alert-danger mb-4">
+    <h5 class="alert-heading d-flex align-items-center mb-2">
+      <i class="ti ti-alert-triangle me-2 fs-4"></i>
+      <%= pluralize(@dependency_graph.broken_references.size, "broken reference") %> found -
+      these formulas will not calculate correctly
+    </h5>
+    <p class="mb-2">
+      Each one reads a value that will be empty when the allocation runs, so the formula
+      either fails outright or produces a wrong figure. They are highlighted red in the
+      diagram below.
+    </p>
+    <ul class="mb-0">
+      <% @dependency_graph.broken_references.each do |ref| %>
+        <li>
+          <%= link_to "#{ref.formula.sequence}: #{ref.formula.name}", "#", data: { formula_id: ref.formula.id } %>
+          references <code>@<%= ref.field_name %></code> -
+          <% if ref.reason == :no_producer %>
+            no enabled formula produces this value (a typo, or the formula that produced it was renamed or disabled).
+          <% else %>
+            the formula that produces this value runs at the same position or later, so it is not available yet.
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= render ToggleCard.new(title: "Formula Dependencies - #{@fund.name}", allow_toggle: false) do %>
+  <p class="text-muted">
+    Arrows show which formulas read another formula's computed field (e.g. a formula
+    using <code>@net_income</code> in its formula body). Click a formula to view its
+    full details in a side panel; hover a formula to preview its source.
+  </p>
+
+  <% if @dependency_graph.formulas.empty? %>
+    <p>No enabled formulas for this fund.</p>
+  <% else %>
+    <div class="fund-formula-dependency-graph">
+      <% if @dependency_graph.hidden_formulas.any? %>
+        <div class="mb-3">
+          <%# data-show-label lets the controller restore this wording when toggling back. %>
+          <button type="button" class="btn btn-outline-secondary btn-sm"
+                  data-action="fund-formula-dependency-graph#toggleIsolated"
+                  data-fund-formula-dependency-graph-target="toggleButton"
+                  data-show-label="Show <%= pluralize(@dependency_graph.hidden_formulas.size, "unconnected formula") %>">
+            Show <%= pluralize(@dependency_graph.hidden_formulas.size, "unconnected formula") %>
+          </button>
+          <span class="text-muted ms-2">
+            Hidden by default - these neither feed another formula nor read one.
+          </span>
+        </div>
+      <% end %>
+
+      <% if @dependency_graph.visible_formulas.empty? %>
+        <p class="text-muted">No formulas in this fund depend on each other - use the button above to see them all.</p>
+      <% end %>
+
+      <%# Rendered even when empty so the toggle always has a target to render into. %>
+      <pre class="mermaid" data-fund-formula-dependency-graph-target="diagram"><%= @dependency_graph.to_mermaid(@dependency_graph.visible_formulas) %></pre>
+    </div>
+  <% end %>
+<% end %>
+
+<%# Deliberately NOT a Bootstrap offcanvas. Bootstrap drives that from live JS state --
+    an internal _isShown flag, a separately-created backdrop element and a body
+    scroll-lock -- none of which survives a Turbo page snapshot. After a Back the markup
+    came back without the instance that owned it, leaving a panel that could not be
+    reopened and a stray backdrop over the page. This is a plain element whose open
+    state is one CSS class, so the snapshot always describes it completely. %>
+<div class="fund-formula-detail-panel" id="fund_formula_detail_panel"
+     data-fund-formula-dependency-graph-target="panel">
+  <div class="fund-formula-detail-panel__header">
+    <button type="button" class="btn-close ms-auto" aria-label="Close"
+            data-action="fund-formula-dependency-graph#closePanel"></button>
+  </div>
+  <div class="fund-formula-detail-panel__body">
+    <%# Deliberately no target="_top" here: that attribute promotes the frame's own src
+        navigation into a full-page visit, so clicking a node would flash the panel open
+        and then navigate away from this page. The action buttons inside opt out
+        individually instead (see show.html.erb). %>
+    <%= turbo_frame_tag "fund_formula_detail_frame" do %>
+      <p class="text-muted">Click a formula above to see its details here.</p>
+    <% end %>
+  </div>
+</div>
+</div>

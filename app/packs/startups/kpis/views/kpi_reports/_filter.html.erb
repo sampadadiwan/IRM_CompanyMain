@@ -9,6 +9,11 @@
   <input name="grid_view" value="true" hidden="hidden">
   <input name="compound" value="<%=params[:compound]%>" hidden="hidden">
   <input name="all" value="true" hidden="hidden">
+  <%# Preserve the staged-KPI visibility toggle across filter submissions;
+    without this, changing tag/period/category drops view_unapproved from
+    the URL and hides staged KPIs mid-review. %>
+<input name="view_unapproved" value="<%= params[:view_unapproved] %>" hidden="hidden">
+
   <% form.hidden_field :entity_id, value: current_user.entity_id %>
 
   <div class="form-group col-md-1">

@@ -21,11 +21,24 @@ class EntityMailer < ApplicationMailer
     mail(from: @from, to: @to, cc: @cc, subject:)
   end
 
+  # Sends a consolidated compliance reminder to portfolio company employees
+  # listing exactly which items (KPIs, Documents, Valuations) are missing.
+  #
+  # @param params[:entity_id] [Integer] the portfolio company entity
+  # @param params[:requesting_entity_id] [Integer] the fund entity requesting submissions
+  # @param params[:missing_items] [Array<String>] list of missing categories, e.g. ["KPIs", "Valuations"]
+  # @param params[:period_label] [String, nil] human-readable period, e.g. "Q2 2026"
   def kpi_reminder
     @entity = Entity.find params[:entity_id]
     @requesting_entity = Entity.find params[:requesting_entity_id]
-    @to ||= @entity.employees.pluck(:email).join(',')
-    subject = "Reminder: KPIs requested by #{@requesting_entity.name}"
+    @missing_items = params[:missing_items] || ["KPIs"]
+    @period_label = params[:period_label]
+    # Changed: prefer explicit recipient_emails from agent config so reminders
+    # reach the FM-configured contacts (e.g. portfolio company CFO) instead of
+    # the fund entity's employees. Falls back to entity employees for legacy
+    # callers (entities_controller#kpi_reminder) that don't pass recipient_emails.
+    @to ||= params[:recipient_emails].presence || @entity.employees.pluck(:email).join(',')
+    subject = "Action Required: Missing #{@missing_items.join(', ')} for #{@period_label || 'current period'}"
     send_mail(subject:)
   end
 

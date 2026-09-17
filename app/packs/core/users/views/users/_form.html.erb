@@ -32,27 +32,23 @@
     <div class="row">
       <div class="form-group col-5">
         <%= form.label "Country Code" %>
-        <%= form.number_field :call_code, class: "form-control" %>
+        <%= form.number_field :call_code, class: "form-control", placeholder: "e.g. 1, 44, 91" %>
+        <small class="form-text text-muted">Numeric dialing code, no "+" (e.g. 1 for US, 91 for India).</small>
       </div>
       <div class="form-group col-7">
-        <%= form.label :phone %>
+        <%= form.label :phone, "Mobile Phone" %>
         <%= form.number_field :phone, class: "form-control"  %>
+        <small class="form-text text-muted">Mobile number without the country code. Used for WhatsApp and SMS sign-in codes.</small>
       </div>
     </div>
 
 
-
-    <div class="form-group">
-      <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image (jpg or png only)",
-                              for_model: "user", field_name: "signature",
-                              model: user, allowed_types: ['image/*'].freeze %>
-
-    </div>
-
-    <div class="form-group">
-      <%= form.label :dept, "Department" %>
-      <%= form.text_field :dept, class: "form-control" %>
-    </div>
+    <% unless user.curr_role_investor? %>
+      <div class="form-group">
+        <%= form.label :dept, "Department" %>
+        <%= form.text_field :dept, class: "form-control" %>
+      </div>
+    <% end %>
 
 
     <% if !user.id.present? %>
@@ -72,26 +68,45 @@
       <% if user.id.present? %>
       <div class="form-group">
         <%= form.label :roles %>
-        <%= form.select :roles, ["company_admin"], {selected: user.roles.collect(&:name), include_hidden: false}, class: "form-control select2", multiple: true, name: "user[role_name][]" %>
+        <%# check no one can pass a support role %>
+        <%# also a user can have more roles such as investor which we do not allow to be changed here
+        those should remain unaffected %>
+        <%# include_hidden defaults to true here on purpose: for a multiple select, Rails uses that
+        hidden field to submit an empty user[role_name][] when every option is deselected. Without
+        it, deselecting all roles sends no role_name param at all, so UsersController#update's
+        params[:user].key?(:role_name) guard (there to avoid touching roles when the field isn't
+        rendered) sees nothing was submitted and leaves the old roles in place. %>
+        <%= form.select :roles, User::UPDATABLE_ROLES, {selected: user.roles.collect(&:name)}, class: "form-control select2", multiple: true, name: "user[role_name][]" %>
       </div>
       <% end %>
 
       <div class="form-group">
         <%= form.label :tag_list, "Tags" %>
         <i class="ti ti-info-circle ms-1" data-bs-toggle="tooltip" title="Tags help group users for sending notifications"></i>
-        <%= form.text_field :tag_list, class: "form-control" %>
+        <%= form.text_field :tag_list, class: "form-control", list: "user_tag_list_suggestions" %>
+        <datalist id="user_tag_list_suggestions">
+          <% User::NOTIFICATION_TAGS.each do |tag| %>
+            <option value="<%= tag %>">
+          <% end %>
+        </datalist>
         <small class="form-text text-muted">Comma separated list of tags</small>
       </div>
 
 
-      <% unless user.has_cached_role?(:company_admin) %>
-        <div class="associated_entity row">
+      <% hide_extended_permissions = user.curr_role_investor? && params[:debug].blank? %>
+      <% if !user.has_cached_role?(:company_admin) && !hide_extended_permissions %>
+        <div class="row g-2">
         <%= hidden_field_tag "user[extended_permissions][]", "" %>
         <% User.extended_permissions.pairs.each do |key, val| %>
-          <div class="form-group col">
-              <%= form.label :extended_permissions, key.titleize, class: "no-wrap" %>
-              <%= form.check_box :extended_permissions, {name: "user[extended_permissions][]",
-                  val: val, id: "extended_permissions#{val}", class: "form-check-input"}, val, nil   %>
+          <div class="col-md-6">
+            <div class="toggle-row">
+              <%= form.label :extended_permissions, key.titleize, class: "toggle-row-label", for: "extended_permissions#{val}" %>
+              <label class="ios-toggle">
+                <%= form.check_box :extended_permissions, {name: "user[extended_permissions][]",
+                    val: val, id: "extended_permissions#{val}", class: "ios-toggle-input"}, val, nil   %>
+                <span class="ios-toggle-slider"></span>
+              </label>
+            </div>
           </div>
         <% end %>
         </div>
@@ -99,26 +114,43 @@
 
     <% end %>
 
-    <div class="form-group">
-      <%= form.label :whatsapp_enabled %>
-      <%= form.check_box :whatsapp_enabled, class: "form-check-input" %>
+    <div class="toggle-row">
+      <div>
+        <%= form.label :whatsapp_enabled, class: "toggle-row-label" %>
+        <small class="form-text text-muted d-block">
+          Check only if the phone number above is registered with WhatsApp. Enables WhatsApp delivery for notifications and, if chosen, sign-in verification codes.
+        </small>
+      </div>
+      <label class="ios-toggle">
+        <%= form.check_box :whatsapp_enabled, class: "ios-toggle-input" %>
+        <span class="ios-toggle-slider"></span>
+      </label>
     </div>
 
-    <div class="form-group">
-      <%= form.label :enable_support %>
-      <%= form.check_box :enable_support, class: "form-check-input" %>
+    <div class="toggle-row">
+      <div>
+        <%= form.label :enable_support, class: "toggle-row-label" %>
+        <small class="form-text text-muted d-block">Gives the CapHive support team access to assist this user's account.</small>
+      </div>
+      <label class="ios-toggle">
+        <%= form.check_box :enable_support, class: "ios-toggle-input" %>
+        <span class="ios-toggle-slider"></span>
+      </label>
     </div>
 
     <% if user.id.present? && current_user == user %>
-      <div class="form-group">
-        <div class="d-flex align-items-center gap-2">
-          <%= form.label :two_factor_enabled, "Enable Two-Factor Authentication" %>
-          <%= user_guide_icon_for('two_factor', tooltip: 'Two-Factor Authentication Guide') %>
+      <div class="toggle-row">
+        <div>
+          <%= form.label :two_factor_enabled, "Enable Two-Factor Authentication", class: "toggle-row-label" %>
+          <small class="form-text text-muted d-block">
+            Require a verification code when signing in. You can choose between SMS, WhatsApp, or an authenticator app on your next login.
+            <%= link_to "Learn more", public_guide_path("two_factor_authentication_user_guide"), target: "_blank", rel: "noopener", class: "badge bg-primary-subtle text-primary text-decoration-none" %>
+          </small>
         </div>
-        <%= form.check_box :two_factor_enabled, class: "form-check-input" %>
-        <small class="form-text text-muted">
-          Require a verification code when signing in. You will choose between WhatsApp or an authenticator app on your next login.
-        </small>
+        <label class="ios-toggle">
+          <%= form.check_box :two_factor_enabled, class: "ios-toggle-input" %>
+          <span class="ios-toggle-slider"></span>
+        </label>
       </div>
     <% end %>
 
@@ -127,16 +159,22 @@
 
     <%= form.text_field :entity_id, class: "form-control", hidden: true %>
 
-    <% if current_user.has_cached_role?(:company_admin) %>
+    <% hide_permissions_for_investor = user.curr_role_investor? && params[:debug].blank? %>
+    <% if current_user.has_cached_role?(:company_admin) && !hide_permissions_for_investor %>
 
-      <div class="associated_entity row">
+      <div class="row g-2">
         <%= hidden_field_tag "user[permissions][]", "" %>
         <% User.permissions.pairs.each do |key, val| %>
           <% if user.entity.permissions.send("#{val}?") %>
-            <div class="form-group col-6">
-              <%= form.label :permissions, key.titleize, class: "no-wrap" %>
-              <%= form.check_box :permissions, {name: "user[permissions][]",
-                  val: val, id: "permissions_#{val}", class: "form-check-input"}, val, nil   %>
+            <div class="col-md-6">
+              <div class="toggle-row">
+                <%= form.label :permissions, key.titleize, class: "toggle-row-label", for: "permissions_#{val}" %>
+                <label class="ios-toggle">
+                  <%= form.check_box :permissions, {name: "user[permissions][]",
+                      val: val, id: "permissions_#{val}", class: "ios-toggle-input"}, val, nil   %>
+                  <span class="ios-toggle-slider"></span>
+                </label>
+              </div>
             </div>
             <% end %>
         <% end %>

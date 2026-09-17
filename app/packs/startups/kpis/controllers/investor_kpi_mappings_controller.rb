@@ -1,7 +1,7 @@
 class InvestorKpiMappingsController < ApplicationController
   after_action :verify_policy_scoped, only: [:index]
   after_action :verify_authorized, except: %i[index generate]
-  before_action :set_investor_kpi_mapping, only: %i[show edit update destroy]
+  before_action :set_investor_kpi_mapping, only: %i[show edit update destroy recompute_rag]
 
   # GET /investor_kpi_mappings or /investor_kpi_mappings.json
   def index
@@ -53,6 +53,17 @@ class InvestorKpiMappingsController < ApplicationController
     redirect_to investor_path(investor.id, tab: "kpi-mappings-tab"), notice: "Investor KPI Mappings generated"
   end
 
+  # Re-runs RAG evaluation for every approved KPI reported under this mapping — for when rules
+  # were added/edited after KPIs using it were already approved (recompute_rag_status! only
+  # fires from a Kpi's own after_save, so a rule change alone never touches existing rows).
+  # Queued rather than run inline, matching KpiApproveService's KpiCumulateJob/
+  # KpiPercentageChangeJob triggers elsewhere in this controller family — see
+  # RecomputeInvestorKpiMappingRagJob for why.
+  def recompute_rag
+    RecomputeInvestorKpiMappingRagJob.perform_later(@investor_kpi_mapping.id, current_user.id)
+    redirect_to investor_kpi_mapping_url(@investor_kpi_mapping), notice: "RAG recompute queued — you'll get a notification when it's done."
+  end
+
   # PATCH/PUT /investor_kpi_mappings/1 or /investor_kpi_mappings/1.json
   def update
     respond_to do |format|
@@ -89,6 +100,6 @@ class InvestorKpiMappingsController < ApplicationController
   # fx_conversion_method added for KPI currency conversion — controls how values are
   # converted from portco's reporting currency to fund's base currency at upload time.
   def investor_kpi_mapping_params
-    params.require(:investor_kpi_mapping).permit(:entity_id, :investor_id, :reported_kpi_name, :position, :category, :standard_kpi_name, :autofill, :compute_formula, :base_for_common_size, :lower_threshold, :upper_threshold, :data_type, :denomination, :fx_conversion_method, :parent_id, :show_in_report, :form_type_id, rag_rules: {}, properties: {})
+    params.require(:investor_kpi_mapping).permit(:entity_id, :investor_id, :reported_kpi_name, :position, :category, :standard_kpi_name, :autofill, :compute_formula, :base_for_common_size, :lower_threshold, :upper_threshold, :data_type, :denomination, :fx_conversion_method, :parent_id, :show_in_report, :form_type_id, :rag_comparator_tag, :rag_direction, :rag_red_threshold, :rag_green_threshold, properties: {})
   end
 end

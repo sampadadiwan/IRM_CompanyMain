@@ -1,3 +1,12 @@
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="red"/>
+<!--
+  CapHive mark. Geometry matches the website favicon (website_src/_layout.html.erb) and
+  public/manifests/icons/caphive-*.png, so the app, the site and the mail add-ins all show
+  the same icon. The viewBox is squared to 34x34 with the shape offset +2 on x, because the
+  site's 30x34 box distorts anywhere an icon is expected to be square.
+
+  Replaces the Rails placeholder, which was a plain red circle.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34" width="512" height="512">
+  <path d="M17 1L31 9v16L17 33 3 25V9L17 1z" fill="none" stroke="#FF4D00" stroke-width="3"/>
+  <path d="M17 9l7 4v8l-7 4-7-4v-8l7-4z" fill="#FF4D00"/>
 </svg>

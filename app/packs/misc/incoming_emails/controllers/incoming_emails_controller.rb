@@ -8,6 +8,15 @@ class IncomingEmailsController < ApplicationController
   def sendgrid
     Rails.logger.debug { "Processing incoming email, to: #{params[:to]}, from: #{params[:from]}, subject: #{params[:subject]}" }
 
+    # Deal Update Agent — route emails whose local part matches a
+    # DealIngestAddress to the deal ingest pipeline. All other emails
+    # fall through to the existing IncomingEmail logic below.
+    # @see DealIngestAuthenticator
+    if deal_ingest_email?(params[:to])
+      DealIngestAuthenticator.call(params)
+      return head :ok
+    end
+
     # Extract Message-ID from the raw headers string for idempotency on SendGrid retries
     message_id = params[:headers]&.match(/Message-ID:\s*<([^>]+)>/i)&.[](1)
 
@@ -23,6 +32,11 @@ class IncomingEmailsController < ApplicationController
       body: params[:html].presence || params[:text],
       cc_emails: params[:cc],
       message_id: message_id,
+      # Also stored as internet_message_id, which is the dedup key the Outlook and Gmail
+      # add-ins key on. Without this, an email ingested here is invisible to the add-ins'
+      # already-filed check and to idx_incoming_emails_dedup (NULL never collides), so a
+      # user opening that same message in Outlook is told it is unfiled and files it again.
+      internet_message_id: message_id,
       received_at: Time.current
     )
 
@@ -114,5 +128,23 @@ class IncomingEmailsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def incoming_email_params
     params.require(:incoming_email).permit(:from, :to, :subject, :body, :owner_id, :owner_type, :entity_id, :cc_emails, :message_id, :internet_message_id, :received_at)
+  end
+
+  # Whether the inbound email is addressed to a deal ingest address.
+  # Extracts the local part (16-hex token) from the To field and checks
+  # for an active DealIngestAddress record. This allows the deal update
+  # pipeline to share the same email domain as regular incoming emails,
+  # routing by address rather than by domain.
+  #
+  # @param to_field [String] the To field from SendGrid (may include display name)
+  # @return [Boolean]
+  def deal_ingest_email?(to_field)
+    return false if to_field.blank?
+
+    email = to_field.match(/<([^>]+)>/)&.[](1) || to_field.strip
+    local_part = email.split("@").first&.downcase
+    return false if local_part.blank?
+
+    DealIngestAddress.for_lookup(local_part).exists?
   end
 end

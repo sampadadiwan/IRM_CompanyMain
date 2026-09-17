@@ -1,0 +1,265 @@
+---
+title: E-Sign Monitor &mdash; Signature Pipeline Alerts | CapHive
+description: How CapHive's E-Sign Monitor checks every document sent for e-signature
+  across an entity, flags requests sitting unsigned too long and documents that expired
+  or failed, and emails a daily report.
+og_title: E-Sign Monitor | CapHive
+og_description: 'A daily pulse on the e-sign pipeline: pending signatures, expired
+  and voided documents, and who still needs to sign. Notification only.'
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>E-Sign Monitor
+      </nav>
+      <span class="chip-label">Onboarding &middot; Agent</span>
+      <h1 style="margin-top:22px">Every signature request that is <em>sitting still.</em></h1>
+      <p class="lede">
+        The E-Sign Monitor keeps watch over every document sent out for e-signature within your entity. Each time it runs it flags signature requests that have been unsigned too long, and documents that expired, were cancelled, voided or failed, then emails a status report to your team.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>The whole entity, in one pass</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>No &mdash; rule checks only</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A saved report, always &quot;ready&quot;, plus one combined email</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+<h2 id="what-it-does">What it does</h2>
+<p>The agent looks at the entity as a whole, not one document or fund, and considers only documents that were deliberately routed through the e-sign workflow. Anything never sent for e-signature is left out entirely.</p>
+<ol>
+  <li><strong>Gets started</strong> &mdash; sets up a fresh tracker to collect findings for this run.</li>
+  <li><strong>Finds documents waiting on a signature</strong> &mdash; any document still sitting in "requested" status for longer than your configured reminder window, where at least one signer has an email on file.</li>
+  <li><strong>Flags expired or failed documents</strong> &mdash; if this check is switched on, it finds documents that have expired, been cancelled, voided or failed. If switched off, the step is skipped and the report notes that it was skipped.</li>
+  <li><strong>Notifies your team</strong> &mdash; assembles the details for every pending document, including who still needs to sign, then sends a single combined email covering both pending and expired, voided or failed documents.</li>
+  <li><strong>Saves the report</strong> &mdash; stores the results so you can review them later. This agent always finishes in a "ready" state; it has no "blocked" outcome.</li>
+</ol>
+<p>It observes and reports only. It never resends, re-triggers or otherwise touches a document. If a document needs to be resent for signature, an ops user has to do that manually from the document's page.</p>
+
+<div class="pull">
+  <p>No action was taken on any document &mdash; this is a notification only.</p>
+  <cite>The closing line of every report email</cite>
+</div>
+
+<h2 id="what-it-needs">What it needs</h2>
+<h3>Configuration fields</h3>
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>What it controls</th></tr></thead>
+  <tbody>
+    <tr><td>Send e-sign reminders</td><td>Yes / No</td><td>Yes</td><td>This toggle currently has no effect. It appears in the settings form, but nothing in the agent's behaviour checks it &mdash; turning it on or off does not change which documents get flagged, or whether the email goes out.</td></tr>
+    <tr><td>Flag expired/voided documents</td><td>Yes / No</td><td>Yes</td><td>Set to Yes, the agent checks for expired, cancelled, voided or failed documents and lists them as blocking issues in the report. Set to No, that check is skipped and the report notes it did not run.</td></tr>
+    <tr><td>Reminder after (days)</td><td>Number</td><td>3</td><td>How many days a document can sit in "requested" status before the agent flags it as pending. The clock is measured from the last time the document record was updated.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+  <p><strong>Send e-sign reminders is not wired up.</strong> Toggling it changes nothing about what is detected or emailed. To stop the report going out, disable the agent's schedule or turn the agent off for the entity instead.</p>
+</div>
+
+<h3>Other things that feed into the run</h3>
+<ul>
+  <li><strong>Which documents get checked</strong> &mdash; only documents belonging to this entity that were actually sent for e-signature. Anything not sent through e-sign is ignored.</li>
+  <li><strong>Who gets the email</strong> &mdash; the agent looks for a list of employees tagged for e-sign notifications. There is currently no settings-page field for that tag, so in practice it is usually empty; when it is, the agent falls back to the entity's main contact email.</li>
+  <li><strong>No AI setup needed.</strong> This agent works entirely off rule checks. It does not call out to any AI model.</li>
+</ul>
+
+<h3>Setup checklist and warnings</h3>
+<p>The agent's General tab shows a yellow warning banner whenever the run's email could go nowhere. It flags a notification tag that matches no employees, because the report email would never be sent; no tag and no entity contact email, which leaves no possible recipient at all; and a "Flag expired/voided documents" toggle that has never been set, because an unset toggle counts as off and expired or failed documents would be silently ignored. Set it explicitly to Yes or No.</p>
+<p>A run with no valid recipients still finishes and saves its report as ready. The banner is the only up-front signal that nobody will be emailed.</p>
+
+<h2 id="turning-it-on">Turning it on</h2>
+<ul>
+  <li><strong>Where to switch it on.</strong> In the admin area, edit the entity and use the Support Agents section: a Company Admin ticks the E-Sign Monitor box and saves.</li>
+  <li><strong>AI key needed?</strong> No. This agent never calls an AI model.</li>
+  <li><strong>Who can manage it.</strong> Company Admin users only can set up, configure or run it.</li>
+  <li>If the agent is not enabled for your entity, the Run Now button on its page is disabled, with a tooltip telling you to contact your administrator.</li>
+</ul>
+
+<h2 id="running-it">Running it</h2>
+<ol>
+  <li>Open AI &rarr; Support Agents.</li>
+  <li>If this is the first time anyone has set up agents for your entity, click Setup All Agents once. This provisions the E-Sign Monitor along with its default settings and daily schedule.</li>
+  <li>Open the E-Sign Monitor.</li>
+  <li>On the General tab, click Run Now.</li>
+</ol>
+<p>Unlike the <a href="agent-kyc-onboarding.html">KYC Onboarding Agent</a>, which you can trigger from an individual investor's record, there is no per-document trigger here. The only thing you can run it against is the entity as a whole. After you click Run Now the check runs in the background; there is no live step-by-step view for this agent, so the result simply appears once the run finishes and the report is saved.</p>
+
+<h2 id="scheduling">Scheduling</h2>
+<p>The agent comes with a default daily schedule, set up automatically by Setup All Agents: once a day at 08:00 Asia/Kolkata. You can change the frequency, the time, or who gets notified on failure, partial success or full success from the agent's Schedule tab &mdash; toggle it on, set the frequency and run time, and choose your notification preferences. Scheduled runs produce exactly the same report as a manual run.</p>
+
+<h2 id="output">Where the output goes</h2>
+<ul>
+  <li><strong>The General tab</strong> &mdash; a View Report link showing the most recent run.</li>
+  <li><strong>The Execution History tab</strong> &mdash; every past run with its status and duration; open any row for the full report.</li>
+  <li><strong>Email</strong> &mdash; sent to the recipients described above.</li>
+</ul>
+<p>The email contains a summary banner whose tone reflects severity: red if any documents expired, yellow if only pending signatures were found, green and "All Clear" if neither. Below that sits a Pending Signatures table listing each stuck document, how long it has been waiting and who still needs to sign; an Expired / Voided table listing each flagged document and its status, noting that these cannot be automatically resent and must be re-initiated manually from the document's page; and a closing note confirming that no action was taken automatically. The subject line is built on the fly, along the lines of "[E-Sign Alert] 3 pending + 1 expired &mdash; Acme Fund".</p>
+
+<h2 id="reading-the-result">Reading the result</h2>
+<p>Every finding is recorded with one of three severities.</p>
+<ul>
+  <li><strong>Info, or "all clear"</strong> &mdash; no documents pending, no expired, voided or failed documents found, or a check was deliberately skipped. Nothing to act on.</li>
+  <li><strong>Warning</strong> &mdash; a document is pending past your reminder threshold, or a document was included in the notification email along with its list of outstanding signers.</li>
+  <li><strong>Blocking</strong> &mdash; a document has expired, been cancelled, voided or failed. This is the only severity that represents a real problem needing an ops user to step in and manually re-initiate the signature request.</li>
+</ul>
+<p>Even when blocking issues are found, the report itself always finishes in a ready state. The blocking label is there to draw your team's attention; it does not stop or gate any other workflow.</p>
+
+<h2 id="where-it-can-fail">Where it can fail</h2>
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Scenario</th><th>What you will see</th><th>What to do</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Turning off "Send e-sign reminders" expecting reminders to stop</td>
+      <td>No change at all. Pending-document detection and the email still run exactly the same either way, because this setting is not wired up yet.</td>
+      <td>Do not rely on this toggle. To stop the report going out, disable the agent's schedule or turn the agent off for the entity.</td>
+    </tr>
+    <tr>
+      <td>No pending or expired documents found &mdash; nothing sent for e-sign, or everything current and signed</td>
+      <td>Both checks come back clean and the notify step is skipped with "Nothing to report &mdash; notification skipped". No email goes out.</td>
+      <td>Expected on a clean pipeline. Check Execution History to confirm the run completed rather than assuming something broke.</td>
+    </tr>
+    <tr>
+      <td>No one configured to receive the email &mdash; the notification tag is empty, as it usually is, and the entity's main contact email is blank too</td>
+      <td>The notify step is skipped with "No email recipients configured &mdash; set notify_tag in agent settings". The report still saves, but nobody is told.</td>
+      <td>Make sure your entity has a main contact email set. There is currently no settings-page way to set the notification tag directly; that needs a manual backend change.</td>
+    </tr>
+    <tr>
+      <td>A document's signers have no email on file &mdash; every listed signer is missing an address</td>
+      <td>That document is left out of every check entirely. It never shows up in the report, even if it is genuinely stuck waiting on a signature.</td>
+      <td>If a document you expect to see flagged is missing from the report, check whether its signers actually have email addresses on file.</td>
+    </tr>
+    <tr>
+      <td>Reminder-window edge case &mdash; a document was last updated exactly on the reminder-day boundary</td>
+      <td>The check flags documents older than the threshold, not exactly at it, so a document updated exactly N days ago is not caught until the next day's run.</td>
+      <td>If you need same-day flagging, lower the "Reminder after (days)" setting by one.</td>
+    </tr>
+    <tr>
+      <td>Expired documents, with the expired/voided check on</td>
+      <td>They are always shown as blocking issues with an instruction to handle them manually. There is no automatic resend, by design.</td>
+      <td>Re-initiate the signature request manually from the document's page.</td>
+    </tr>
+    <tr>
+      <td>No documents have ever been sent for e-sign in this entity</td>
+      <td>Both checks come back empty every time and the notify step is always skipped &mdash; the agent essentially does nothing each day.</td>
+      <td>Expected. There is nothing to disable; the agent has nothing to report until your entity starts sending documents for e-signature.</td>
+    </tr>
+    <tr>
+      <td>Schedule timezone confusion</td>
+      <td>The run fires at the time in whatever timezone is configured on the Schedule tab &mdash; not your browser's local timezone.</td>
+      <td>Check the timezone shown on the Schedule tab before assuming the run time is wrong.</td>
+    </tr>
+    <tr>
+      <td>Running it manually right after a scheduled run</td>
+      <td>There is no deduplication. Each run starts fresh and re-sends the same pending and expired list if the underlying documents have not changed, so running it twice in a day can send two nearly identical emails to the same people.</td>
+      <td>Avoid clicking Run Now on a day the schedule has already fired, or adjust the schedule instead.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="faq">Questions we get asked</h2>
+<div class="faq">
+  <details>
+    <summary>I turned off "Send e-sign reminders" but the report still shows pending documents. Is that a bug?</summary>
+    <div>
+      <p>No &mdash; that setting is not connected to the agent's behaviour yet. It has no effect on what gets detected or emailed. The only thing controlling pending detection is "Reminder after (days)"; there is currently no way to fully suppress that check.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Does this agent ever actually resend a document for signature?</summary>
+    <div>
+      <p>No. It observes and notifies only, and never modifies a document. Every email it sends says so explicitly. Resending has to be done manually from the document's page.</p>
+    </div>
+  </details>
+  <details>
+    <summary>The agent ran but no email arrived. Why?</summary>
+    <div>
+      <p>Either there was nothing to report &mdash; no pending or expired documents, which is expected and needs no email &mdash; or there was no one configured to receive it, meaning no notification tag and no entity contact email. Check the Execution History detail for the exact reason.</p>
+    </div>
+  </details>
+  <details>
+    <summary>A document has been stuck for over a week but never shows up in the report. Why?</summary>
+    <div>
+      <p>Check that the document's signers actually have email addresses on file. Documents where every signer is missing an email are left out of every check this agent runs.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Can I change who receives the report?</summary>
+    <div>
+      <p>There is no settings-page field for this yet, so the agent falls back to the entity's main contact email. Setting up a tag-based recipient list requires a direct backend configuration change.</p>
+    </div>
+  </details>
+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Keep going</span>
+      <h2>Other agents in the <em>same workflow.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-kyc-onboarding.html">
+        <div>
+          <span class="kick">Onboarding</span>
+          <h3>KYC Onboarding Agent</h3>
+          <p>Reviews a completed KYC record for completeness, document validity and expiry.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-side-letter-obligation.html">
+        <div>
+          <span class="kick">Onboarding</span>
+          <h3>Side Letter Obligations</h3>
+          <p>Extracts every obligation from a side letter with its clause, for legal to review and track.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-call-notice.html">
+        <div>
+          <span class="kick">Finance</span>
+          <h3>Call Notice Agent</h3>
+          <p>Works through a capital call notice and what has to be true before it goes out.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team &mdash; funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

@@ -1,7 +1,11 @@
   <%
-    base_query = params[:q].to_unsafe_h rescue {}
+    base_query = filter_query
     # permit only scalar values for these keys - to_unsafe_h would also pass nested hashes/arrays into the where clause
-    owner_params = params.permit(:owner_id, :owner_type, :assigned_to_id).to_h
+    # compact_blank: an unselected filter (e.g. the board's assigned_to_id select
+    # auto-submitting as "") must not survive into owner_params — `where("" )`
+    # matches no row and silently zeroed every stat card whenever the board form
+    # posted at all, filter chosen or not.
+    owner_params = params.permit(:owner_id, :owner_type, :assigned_to_id).to_h.compact_blank
     task_types = {
       completed: {
         path: tasks_path(owner_params.merge(completed: :all, q: base_query.merge(ransack_query_params("completed", :eq, true)).to_json)),
@@ -30,6 +34,28 @@
     }
   %>
 
+  <%# All four numbers in one query, once — this used to rebuild the scope and
+      run a COUNT inside every card (Task.stat_counts). %>
+  <%
+    stat_scope = policy_scope(current_user.entity.tasks)
+    stat_scope = stat_scope.where(owner_params) if owner_params.present?
+    # Match the board/list's due-date quick filter (Task::DUE_FILTERS) — stats
+    # describe the currently filtered set, same as the category/tag filters
+    # below (those ride ransack so clean_query already covers them; due_filter
+    # is a plain param, same shape as TaskList#call's due_filter handling).
+    if params[:due_filter].present?
+      due_range = Task.due_filter_range(params[:due_filter])
+      stat_scope = stat_scope.where(due_date: due_range) if due_range
+    end
+    # Strip any existing 'completed' filter from the query so each card counts
+    # its own condition rather than the one the page is currently filtered by
+    clean_query = base_query.dup
+    if clean_query["c"].is_a?(Hash)
+      clean_query["c"] = clean_query["c"].reject { |_k, v| v["a"]&.any? { |_ak, av| av["name"] == "completed" } }
+    end
+    stat_counts = Task.stat_counts(stat_scope.ransack(clean_query).result)
+  %>
+
   <div class="row">
     <% task_types.each do |type, data| %>
       <div class="col">
@@ -38,24 +64,8 @@
             <div class="card-body">
               <div class="d-flex align-items-center mb-3">
                 <div>
-                  <%
-                    tasks = policy_scope(current_user.entity.tasks)
-                    tasks = tasks.where(owner_params) if owner_params.present?
-                    # Clean the base query from any existing 'completed' filters for accurate counting
-                    clean_query = base_query.dup
-                    if clean_query["c"].is_a?(Hash)
-                      clean_query["c"] = clean_query["c"].reject { |_k, v| v["a"]&.any? { |_ak, av| av["name"] == "completed" } }
-                    end
-
-                    tasks = tasks.ransack(clean_query).result
-                    count = if type == :due_this_week
-                              tasks.where(due_date: Date.today.beginning_of_week..Date.today.end_of_week).count
-                            else
-                              tasks.send(type).count
-                            end
-                  %>
                   <div data-controller="counters"
-                      data-counters-value-value="<%= count %>">
+                      data-counters-value-value="<%= stat_counts[type] %>">
                     <h3 class="fs-7" data-counters-target="output">0</h3>
                   </div>
                   <h3 class="fs-6"></h3>

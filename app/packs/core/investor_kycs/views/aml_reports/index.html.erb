@@ -5,6 +5,15 @@
 <div class="container-fluid px-2">
   <% units ||= nil%>
   <div class="row">
+    <% if @aml_reports.empty? %>
+      <%# Reaching this page with nothing visible is a real state, not an error: the "View AML
+          Reports" link on the KYC page is guarded by the unscoped association while this page
+          lists the policy-scoped rows. Without this copy the user just sees a bare heading
+          (incident 45847776). %>
+      <div class="col-12">
+        <p class="text-muted mb-0">No AML reports to display.</p>
+      </div>
+    <% end %>
     <% Document.where(owner:@aml_reports).includes(:owner,:rich_text_text).order(created_at: :desc).each do |doc| %>
         <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
             <%= render "/aml_reports/preview_document", document: doc, aml_report: doc.owner %>

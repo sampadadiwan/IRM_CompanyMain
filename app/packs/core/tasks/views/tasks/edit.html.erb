@@ -1,7 +1,23 @@
+<%# The edit form is reached two ways:
+      * inside the "new_task" frame, from a list/tab row's Edit link — the frame
+        is what lets the save swap the row in place; and
+      * as a standalone page (/tasks/:id/edit), e.g. from a task's show page or a
+        board card opened in its own tab.
+    Only the frame request gets the frame. On a standalone page the form would be
+    the ONLY thing in it, so update.turbo_stream's replace('new_task', blank)
+    would empty the page — the blank-screen-after-save bug. With no frame here,
+    the submit carries no Turbo-Frame header and TasksController#update redirects
+    to the task instead. %>
 <div>
-    <%= turbo_frame_tag "new_task" do %>        
-        <%= render NewCard.new do %>
-            <%= render "form", task: @task %>
-        <% end %>
+  <% if turbo_frame_request? %>
+    <%= turbo_frame_tag "new_task" do %>
+      <%= render NewCard.new do %>
+        <%= render "form", task: @task %>
+      <% end %>
     <% end %>
+  <% else %>
+    <%= render NewCard.new do %>
+      <%= render "form", task: @task %>
+    <% end %>
+  <% end %>
 </div>

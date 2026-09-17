@@ -4,7 +4,7 @@
   @param @deal [Deal] the target deal
   @param @period_deltas [Hash] period delta counts and details
   @param @stagnation [Hash] stagnation breakdown data
-  @param @tasks_summary [Hash] overdue/pending/completed task data
+  @param @tasks_summary [Hash] overdue/upcoming/pending/completed task data
   @param @ai_insight [String, nil] LLM-generated one-liner insight
 %>
 <%
@@ -22,6 +22,7 @@
   now_active          = @stagnation[:now_active_count] || @stagnation["now_active_count"] || 0
   overdue_count       = @tasks_summary[:overdue_count] || @tasks_summary["overdue_count"] || 0
   upcoming_count      = @tasks_summary[:upcoming_count] || @tasks_summary["upcoming_count"] || 0
+  pending_count       = @tasks_summary[:pending_count] || @tasks_summary["pending_count"] || 0
   completed_count     = @tasks_summary[:completed_count] || @tasks_summary["completed_count"] || 0
   highlighted_overdue = @tasks_summary[:highlighted_overdue] || @tasks_summary["highlighted_overdue"]
 
@@ -116,9 +117,11 @@
 <%# ── Tasks Quick View ── %>
 <%= sa_section(title: "Tasks") %>
 
+<%# Task counts — overdue/upcoming (7-day window)/pending (beyond 7 days or no due date)/completed %>
 <%= sa_kv_table(rows: [
   ["Overdue",   overdue_count,   { tone: overdue_count > 0 ? :danger : :success }],
-  ["Upcoming",  upcoming_count,  { tone: :info }],
+  ["Due Within 7 Days", upcoming_count, { tone: upcoming_count > 0 ? :warning : :info }],
+  ["Pending",   pending_count,   { tone: :info }],
   ["Completed", completed_count, { tone: :success }]
 ]) %>
 

@@ -54,6 +54,35 @@ module Rack
     AUTH_PATHS = ['/users/sign_in', '/users/reset_password', '/users/confirmation',
                   '/users/password', '/users/magic_link'].freeze
 
+    # The second-factor screens sit between a correct password and a session: the user is
+    # still anonymous to logged_in? but is exactly the "re-establishing a session" case the
+    # 404 rules below exempt AUTH_PATHS for. Without this a user on a hot shared office/VPN
+    # IP gets past sign-in (exempt) and is then 403'd on the code screen.
+    #
+    # An explicit list, exact-matched, for two reasons: the two resend endpoints
+    # (/two_factor/send_sms, /two_factor/send_whatsapp) are deliberately NOT here — they
+    # are not needed to establish a session and a blocked scanner must not keep reaching
+    # a CSRF-exempt, paid send (send_sms also keeps its own throttle below); and a prefix
+    # match would have exempted anything starting with the string.
+    #
+    # Deliberately NOT merged into AUTH_PATHS: the login throttles key on the email param,
+    # which these requests do not carry.
+    TWO_FACTOR_PAGE_PATHS = [
+      '/two_factor',                            # POST: verify the login code
+      '/two_factor/new',                        # GET:  login code screen
+      '/two_factor/select_mode',                # GET + POST
+      '/two_factor/enroll',                     # GET
+      '/two_factor/verify_enrollment',          # POST
+      '/two_factor/enroll_whatsapp',            # GET
+      '/two_factor/verify_whatsapp_enrollment', # POST
+      '/two_factor/enroll_sms',                 # GET
+      '/two_factor/verify_sms_enrollment'       # POST
+    ].freeze
+
+    def self.auth_path?(req)
+      AUTH_PATHS.include?(req.path) || TWO_FACTOR_PAGE_PATHS.include?(req.path)
+    end
+
     # Loopback must never be throttled or blocked: puma sits behind nginx on a
     # unix socket, so requests WITHOUT X-Forwarded-For (ALB health checks,
     # monit, dr:verify's localhost curls) all resolve to req.ip == 127.0.0.1.
@@ -131,6 +160,56 @@ module Rack
       end
     end
 
+    # Throttle the two-factor SMS send endpoint by IP.
+    #
+    # Every request here costs real money — it sends a text message. SMS pumping (toll
+    # fraud) is the standard attack: drive sends to premium-rate numbers and take a cut
+    # of the termination fee. This is the per-IP layer of a three-layer defence; the
+    # per-number and per-user layers are durable counters inside TwilioSmsDelivery,
+    # which is where the money is actually stopped. This one catches a single actor
+    # driving many accounts before the request reaches Rails at all.
+    #
+    # Deliberately NOT added to AUTH_PATHS: that list exempts paths from the 404 scanner
+    # rules because an anonymous user must be able to reach them to sign in. This
+    # endpoint is not needed to establish a session — it is an optional resend — so it
+    # gets no such exemption.
+    #
+    # Tighter than logins/ip (10 per 30s) because a legitimate user presses resend once
+    # or twice, never ten times.
+    #
+    # @see docs/technical/twilio_sms_otp_design.md section 9
+    # start_with? rather than ==: `post :send_sms` inside `resource :two_factor` generates
+    # /two_factor/send_sms(.:format), so /two_factor/send_sms.json reaches the same action.
+    # An exact match would compute no throttle key at all for that request.
+    throttle('otp_sms_send/ip', limit: 3, period: 60.seconds) do |req|
+      client_ip(req) if req.post? && req.path.start_with?('/two_factor/send_sms')
+    end
+
+    # Throttle the public demo-form endpoint by IP.
+    #
+    # This is the only unauthenticated, CSRF-exempt write endpoint in the app
+    # (WebsiteLeadsController#create), reachable cross-origin from the static
+    # website. The honeypot and the time-to-submit check inside WebsiteLeadCreate
+    # stop a naive bot; this stops a determined one from filling the table.
+    #
+    # 5 per hour is deliberately generous against real demand of a handful of
+    # demo requests per month, so the only way a genuine visitor trips it is by
+    # submitting the same form five times — at which point they have our
+    # attention anyway.
+    #
+    # Deliberately NOT added to AUTH_PATHS: that list exempts paths from the 404
+    # scanner rules because an anonymous user must reach them to sign in. This
+    # endpoint is not needed to establish a session.
+    #
+    # Exact == rather than start_with?: /website_leads/:id is the STAFF-only show
+    # page and must not share a throttle bucket with anonymous submissions. Only
+    # POSTs are counted, so the staff index (a GET on the same path) is untouched.
+    #
+    # @see docs/technical/website_lead_capture.md
+    throttle('website_leads/ip', limit: 5, period: 1.hour) do |req|
+      client_ip(req) if req.post? && req.path == '/website_leads'
+    end
+
     # Throttle IPs that hit 404 errors multiple times
     # Action	Effect
     # Attacker sends 5 requests	Allowed
@@ -150,7 +229,7 @@ module Rack
       # stale tabs spraying 404s), gating the auth endpoints here would lock
       # them out of ever re-authenticating — the login endpoints have their
       # own brute-force throttles above, so let them through.
-      next nil if AUTH_PATHS.include?(req.path)
+      next nil if auth_path?(req)
 
       ip = client_ip(req)
 
@@ -187,7 +266,7 @@ module Rack
       # anonymous user must always be able to reach sign-in to become an
       # authenticated (exempt) one. Login abuse is handled by the dedicated
       # login throttles.
-      next false if AUTH_PATHS.include?(req.path)
+      next false if auth_path?(req)
 
       ip = client_ip(req)
 

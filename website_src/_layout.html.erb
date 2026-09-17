@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<%# Every page on the site is rendered through this file by `rake website:build`.
+    The shared design system (assets/css/caphive.css) loads before any page's own
+    <style> block, so page styles can override it. Asset URLs go through asset()
+    which appends a content hash — /assets/ is cached for a day, so an unstamped
+    edit stays invisible. -%>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<%# site_config MUST render before analytics and before any script that reads
+    window.CAPHIVE. Analytics stays early so pageviews are recorded even if a
+    later asset stalls. -%>
+<%= partial "site_config" %><%= partial "analytics" %><title><%= title %></title>
+<meta name="description" content="<%= description %>">
+<%= robots %><meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="<%= canonical %>">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="<%= og_title %>">
+<meta property="og:description" content="<%= og_description %>">
+<meta property="og:type" content="<%= og_type %>">
+<meta property="og:url" content="<%= canonical %>">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<%# Lobster is the wordmark face: it only ever sets the word "CapHive" in display type (.wordmark). -%>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="<%= asset "assets/css/caphive.css" %>">
+<%= head_extra %></head>
+<body<%= body_attrs %>>
+
+<%= body_top %><!-- ================= NAV ================= -->
+<%= partial "nav" %>
+
+<%= partial "mobile_menu" %><%= content %><!-- ================= FOOTER ================= -->
+<%= partial "footer" %><%= partial "consent_banner" %><%= scripts %>

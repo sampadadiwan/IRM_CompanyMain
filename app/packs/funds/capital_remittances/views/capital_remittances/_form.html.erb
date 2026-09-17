@@ -40,6 +40,11 @@
 
       <%= custom_form_fields(capital_remittance, form) %>
 
+      <div class="form-group form-check">
+        <%= form.check_box :notification_sent, class: "form-check-input" %>
+        <%= form.label :notification_sent, "Notification Sent", class: "form-check-label" %>
+      </div>
+
       <div class="form-group">
         <%= form.label :notes %>
         <%= form.text_area :notes, class: "form-control"  %>

@@ -2,7 +2,7 @@
   <table class="table table-bordered dataTable">
     <tr>
       <td>
-        For
+        <i class="ti ti-target-arrow me-1 text-muted"></i>For
       </td>
       <td>
         <%= @custom_notification.for_type.present? ? @custom_notification.for_type : link_to(@custom_notification.owner) %>
@@ -10,7 +10,7 @@
     </tr>
     <tr>
       <td>
-        For Notification
+        <i class="ti ti-replace me-1 text-muted"></i>For Notification
       </td>
       <td>
         <%= @custom_notification.email_method&.humanize %>
@@ -20,7 +20,7 @@
     <% if @custom_notification.to.present? %>
     <tr>
       <td>
-        To
+        <i class="ti ti-users me-1 text-muted"></i>To
       </td>
       <td>
         <%= @custom_notification.to %>
@@ -30,7 +30,7 @@
 
     <tr>
       <td>
-        Subject
+        <i class="ti ti-heading me-1 text-muted"></i>Subject
       </td>
       <td>
         <%= @custom_notification.subject %>
@@ -39,7 +39,7 @@
 
     <tr>
       <td>
-        Tag
+        <i class="ti ti-tag me-1 text-muted"></i>Tag
       </td>
       <td>
         <%= @custom_notification.tag %>
@@ -48,7 +48,7 @@
 
     <tr>
       <td>
-        Body
+        <i class="ti ti-file-text me-1 text-muted"></i>Body
       </td>
       <td>
         <%= @custom_notification.body.html_safe %>
@@ -56,7 +56,7 @@
     </tr>
     <tr>
       <td>
-        Whatsapp
+        <i class="ti ti-brand-whatsapp me-1 text-muted"></i>Whatsapp
       </td>
       <td>
         <%= @custom_notification.whatsapp %>
@@ -65,7 +65,7 @@
 
     <tr>
       <td>
-        Attachment Names
+        <i class="ti ti-paperclip me-1 text-muted"></i>Attachment Names
       </td>
       <td>
         <%= @custom_notification.attachment_names %>
@@ -73,7 +73,7 @@
     </tr>
     <tr>
       <td>
-        Latest Match Only
+        <i class="ti ti-clock me-1 text-muted"></i>Latest Match Only
       </td>
       <td>
         <%= display_boolean @custom_notification.latest_doc_only %>
@@ -81,7 +81,7 @@
     </tr>
     <tr>
       <td>
-        Attachment Mandatory
+        <i class="ti ti-alert-circle me-1 text-muted"></i>Attachment Mandatory
       </td>
       <td>
         <%= display_boolean @custom_notification.attachment_mandatory %>
@@ -91,7 +91,7 @@
 
     <tr>
       <td>
-        <%= @custom_notification.owner_type %>
+        <i class="ti ti-link me-1 text-muted"></i><%= @custom_notification.owner_type %>
       </td>
       <td>
         <%= link_to @custom_notification.owner%>
@@ -100,7 +100,7 @@
     <% if @custom_notification.password_protect_attachment %>
       <tr>
         <td>
-          Password Protect Attachment
+          <i class="ti ti-lock me-1 text-muted"></i>Password Protect Attachment
         </td>
         <td>
           <%= display_boolean @custom_notification.password_protect_attachment%>
@@ -108,7 +108,7 @@
       </tr>
       <tr>
         <td>
-          Password
+          <i class="ti ti-key me-1 text-muted"></i>Password
         </td>
         <td>
           <%= @custom_notification.attachment_password %>
@@ -118,7 +118,7 @@
     <% if @custom_notification.show_details %>
       <tr>
         <td>
-          Show Details
+          <i class="ti ti-table me-1 text-muted"></i>Show Details
         </td>
         <td>
           <%= display_boolean @custom_notification.show_details %>
@@ -128,7 +128,7 @@
     <% if @custom_notification.is_erb %>
       <tr>
         <td>
-          Dynamic Template
+          <i class="ti ti-code me-1 text-muted"></i>Dynamic Template
         </td>
         <td>
           <%= display_boolean @custom_notification.is_erb %>
@@ -137,7 +137,7 @@
     <% end %>
     <tr>
       <td>
-        Enabled
+        <i class="ti ti-power me-1 text-muted"></i>Enabled
       </td>
       <td>
         <%= display_boolean @custom_notification.enabled %>
@@ -146,7 +146,7 @@
 
     <tr>
       <td>
-        Latest
+        <i class="ti ti-history me-1 text-muted"></i>Latest
       </td>
       <td>
         <%= display_boolean @custom_notification.latest %>
@@ -155,16 +155,29 @@
 
     <tr>
       <td>
-        Show View Details Link
+        <i class="ti ti-external-link me-1 text-muted"></i>Show View Details Link
       </td>
       <td>
         <%= display_boolean @custom_notification.show_details_link %>
       </td>
     </tr>
   </table>
-  <%# Action row: Edit + Send Notification + Delete %>
+  <%# Action row: Edit + Preview + Send Notification + Delete %>
+  <% preview_record, preview_helper, preview_extra_params = @custom_notification.first_preview_target %>
   <div class="d-flex align-items-center gap-2 mt-2">
-    <%= link_to t_common(:edit), edit_custom_notification_path(@custom_notification), class: "btn btn-outline-primary" if policy(@custom_notification).update? %>
+    <% if policy(@custom_notification).update? %>
+      <%= link_to edit_custom_notification_path(@custom_notification), class: "btn btn-outline-primary" do %>
+        <i class="ti ti-pencil"></i> <%= t_common(:edit) %>
+      <% end %>
+    <% end %>
+
+    <% if preview_record.present? && policy(preview_record).preview? %>
+      <% preview_target = Rails.env.test? ? "_top" : "_blank" %> <!-- Playwright requires the same window to check details -->
+      <%= link_to send(preview_helper, preview_record, email_method: @custom_notification.email_method, custom_notification_id: @custom_notification.id, **preview_extra_params),
+                  id: "custom_notification_preview_btn", class: "btn btn-outline-secondary", data: { turbo: false }, target: preview_target do %>
+        <i class="ti ti-mail"></i> Preview
+      <% end %>
+    <% end %>
 
     <% if @custom_notification.enabled && @custom_notification.owner_type == "Fund" && policy(@custom_notification.owner).trigger_adhoc_notification? %>
       <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#sendNotificationModal">
@@ -172,7 +185,11 @@
       </button>
     <% end %>
 
-    <%= button_to t_common(:delete), @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "d-inline deleteButton", data: { action: "click->confirm#popup", turbo: false } if policy(@custom_notification).destroy? %>
+    <% if policy(@custom_notification).destroy? %>
+      <%= button_to @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "d-inline deleteButton", data: { action: "click->confirm#popup", turbo: false } do %>
+        <i class="ti ti-trash"></i> <%= t_common(:delete) %>
+      <% end %>
+    <% end %>
   </div>
 
 <% end %>

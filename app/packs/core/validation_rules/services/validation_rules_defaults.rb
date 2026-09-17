@@ -149,7 +149,7 @@ module ValidationRulesDefaults
       },
       params: {},
       severity: "warning",
-      message_template: "Call notices have not been generated for: %{remittances_without_notices}. Please generate documents before approving."
+      message_template: "Call notices have not been generated for: %{remittances_without_notices}. Please generate documents for these remittances."
     },
     {
       name: "capital_call_notices_not_approved",
@@ -165,6 +165,44 @@ module ValidationRulesDefaults
       params: {},
       severity: "blocker",
       message_template: "There are %{unapproved_notices_count} generated call notice(s) pending approval. Please approve all documents before approving this call."
+    },
+    {
+      name: "capital_call_investors_without_notification_subscribers",
+      target_model: "CapitalCall",
+      enabled: true,
+      # Warning, not blocker: an unsubscribed investor doesn't stop the call from being approved,
+      # only from being notified — surfacing it here (rather than only reactively when a Send
+      # Call Notification button greys out) is what Open Question 6 asked for; it should not add
+      # a new gate to Approve itself.
+      description: "Warns when one or more investors on the call have nobody subscribed to Capital Call notifications, so this is caught before it silently blocks a send.",
+      condition_tree: {
+        "op" => "AND",
+        "conditions" => [
+          { "field" => "context.investors_without_notification_subscribers", "op" => "not_blank" }
+        ]
+      },
+      params: {},
+      severity: "warning",
+      message_template: "No investor contacts are subscribed to Capital Call notifications for: %{investors_without_notification_subscribers}. They will not receive the call notice until a contact is subscribed."
+    },
+
+    # ── CapitalCommitment ─────────────────────────────────────────────────────
+    {
+      name: "capital_commitment_investor_without_notification_subscribers",
+      target_model: "CapitalCommitment",
+      enabled: true,
+      # The commitment-time half of the Question 6 proactive check (the other half is the
+      # CapitalCall rule above). Warning only — it must never stop an investor being added.
+      description: "Warns when a commitment is added for an investor who has nobody subscribed to Capital Call notifications, so the gap is caught at onboarding rather than at send time.",
+      condition_tree: {
+        "op" => "AND",
+        "conditions" => [
+          { "field" => "context.investor_without_subscribers", "op" => "not_blank" }
+        ]
+      },
+      params: {},
+      severity: "warning",
+      message_template: "No investor contacts are subscribed to Capital Call notifications for %{investor_without_subscribers} — they will not receive call notices until a contact is subscribed."
     },
 
     # ── CapitalRemittance ─────────────────────────────────────────────────────
@@ -213,6 +251,26 @@ module ValidationRulesDefaults
       params: {},
       severity: "warning",
       message_template: "Run template trigger date %{trigger_end_date} is not a quarter-end date. Please confirm this is intentional."
+    },
+
+    # ── FundFormula ────────────────────────────────────────────────────────────
+    {
+      name: "fund_formula_cumulate_requires_roll_up",
+      target_model: "FundFormula",
+      enabled: true,
+      description: "Blocks saving a CumulateAccountEntry formula with roll_up disabled — " \
+                   "AccountEntryAllocation::CumulateAccountEntries skips every commitment " \
+                   "unless roll_up is true, so this combination always produces zero entries.",
+      condition_tree: {
+        "op" => "AND",
+        "conditions" => [
+          { "field" => "rule_type", "op" => "eq", "value" => "CumulateAccountEntry" },
+          { "field" => "roll_up", "op" => "eq", "value" => false }
+        ]
+      },
+      params: {},
+      severity: "blocker",
+      message_template: "A Cumulate formula with roll_up disabled will never produce entries. Enable roll_up or change the rule type."
     },
 
     # ── FundRatio ──────────────────────────────────────────────────────────────

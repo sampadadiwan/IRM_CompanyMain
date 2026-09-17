@@ -50,10 +50,13 @@ class ImportCapitalRemittance < ImportUtil
 
       result.success?
     else
-      # Raise appropriate errors if any required entity is missing or invalid
-      raise "Fund not found" unless fund
-      raise "Capital Call not found" unless capital_call
-      raise "Capital Commitment not found" unless capital_commitment
+      # Unreachable - inputs raises on each of these - but kept so a future edit
+      # cannot fall through and leave the row with an unexplained "Error"
+      raise "Fund not found: #{user_data['Fund']}" unless fund
+      raise "Capital Call not found: #{user_data['Capital Call']}" unless capital_call
+      raise "Capital Commitment not found for folio #{folio_id}" unless capital_commitment
+
+      raise "Investor not found for folio #{folio_id}"
     end
   end
 
@@ -72,11 +75,20 @@ class ImportCapitalRemittance < ImportUtil
 
   # Method to retrieve necessary inputs from user data and import upload
   def inputs(import_upload, user_data)
-    # Find the fund based on the name provided in user data
-    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
+    # Find the fund based on the name provided in user data - bail out with a
+    # readable message rather than a NoMethodError on nil further down
+    fund_name = user_data["Fund"]&.to_s&.strip
+    raise "Fund must be specified" if fund_name.blank?
+
+    fund = import_upload.entity.funds.where(name: fund_name).first
+    raise "Fund not found: #{fund_name}" unless fund
 
     # Find the capital call associated with the fund based on the name provided in user data
-    capital_call = fund.capital_calls.where(name: user_data["Capital Call"]).first
+    capital_call_name = user_data["Capital Call"]&.to_s&.strip
+    raise "Capital Call must be specified" if capital_call_name.blank?
+
+    capital_call = fund.capital_calls.where(name: capital_call_name).first
+    raise "Capital Call not found for fund #{fund_name}: #{capital_call_name}" unless capital_call
 
     # Retrieve the folio ID from user data
     folio_id = user_data["Folio No"]&.to_s
@@ -84,7 +96,10 @@ class ImportCapitalRemittance < ImportUtil
 
     # Find the capital commitment purely via the folio ID - the investor is derived from the commitment
     capital_commitment = fund.capital_commitments.where(folio_id:).first
-    investor = capital_commitment&.investor
+    raise "Capital Commitment not found for fund #{fund_name}, folio #{folio_id}" unless capital_commitment
+
+    investor = capital_commitment.investor
+    raise "Investor not found for folio #{folio_id}" unless investor
 
     # Return the retrieved inputs as an array
     [fund, capital_call, investor, folio_id, capital_commitment]

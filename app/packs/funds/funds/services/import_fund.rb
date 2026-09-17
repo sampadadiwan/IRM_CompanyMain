@@ -18,7 +18,7 @@ class ImportFund < ImportUtil
     show_portfolios = row_data["Show Fund Portfolios To Lps"]&.downcase == "yes"
 
     fund = import_upload.entity.funds.where(name:).first
-    raise "Fund already exists" if fund
+    raise "Fund '#{name}' already exists" if fund
 
     Fund.create!(entity_id: import_upload.entity_id, import_upload_id: import_upload.id, name:, currency:, unit_types:, commitment_doc_list:, tag_list:, details:, esign_emails:, show_fund_ratios:, show_portfolios:)
 

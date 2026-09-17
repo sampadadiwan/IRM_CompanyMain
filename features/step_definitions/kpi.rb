@@ -160,22 +160,82 @@ Given('a KPI {string} exists for the kpi report') do |args|
   @kpi.save!
 end
 
-Given('an Investor KPI Mapping for {string} with RAG rules:') do |kpi_name, rag_rules_json|
+# comparator_tag: pass "none" for a flat threshold (no comparator KPI needed) — RAG status then
+# computes automatically the moment the KPI's own value is saved, via Kpi#recompute_rag_status!.
+Given('an Investor KPI Mapping for {string} exists with RAG comparator {string}, direction {string}, red threshold {float}, green threshold {float}') do |kpi_name, comparator_tag, direction, red, green|
   investor_kpi_mapping = InvestorKpiMapping.find_or_initialize_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company, reported_kpi_name: kpi_name)
-  investor_kpi_mapping.rag_rules = JSON.parse(rag_rules_json)
+  investor_kpi_mapping.rag_comparator_tag = comparator_tag == 'none' ? nil : comparator_tag
+  investor_kpi_mapping.rag_direction = direction
+  investor_kpi_mapping.rag_red_threshold = red
+  investor_kpi_mapping.rag_green_threshold = green
   investor_kpi_mapping.save!
 end
 
-When('I compute the RAG status for KPI {string} with tagged KPI tag {string}') do |kpi_name, tagged_kpi_tag|
-  kpi = Kpi.find_by(name: kpi_name)
-  # Re-assign investor_kpi_mapping to ensure it has the latest rag_rules
-  kpi.investor_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: kpi.name, entity: @entity, investor: @portfolio_company)
-  kpi.set_rag_status_from_ratio(tagged_kpi_tag)
+# Approves the same-as_of KPI carrying this tag (e.g. "Budget" or the default "Actual" — see
+# kpi_reports.tag_list's DB default in db/schema.rb, there's no untagged/nil state to special-case
+# here), via KpiApprover — the same service the "Approve" button in the grid calls — so the
+# RAG-on-approval callback path (not just the RAG-on-value-save path) gets exercised.
+When('the KPI {string} tagged {string} is approved') do |kpi_name, tag|
+  kpi = Kpi.joins(:kpi_report).where(name: kpi_name, portfolio_company_id: @portfolio_company.id, 'kpi_reports.tag_list': tag).first
+  KpiApprover.call(kpi.id, @user.id)
+end
+
+# Same idea as above, but disambiguated by as_of instead of tag — for the PriorPeriod comparator,
+# where both the subject and its comparator typically share the same (blank) tag_list.
+When('the KPI {string} as of {string} is approved') do |kpi_name, as_of|
+  kpi = Kpi.joins(:kpi_report).where(name: kpi_name, portfolio_company_id: @portfolio_company.id, 'kpi_reports.as_of': Date.parse(as_of)).first
+  KpiApprover.call(kpi.id, @user.id)
+end
+
+# Mirrors "... is approved" above, but reverting via Kpi#unapprove! (the model method backing the
+# "Unapprove" button on the KPI show page) instead of KpiApprover — exercises the cascade that
+# clears this KPI's own rag_status and re-evaluates dependents that may have been judging
+# themselves against it as a comparator.
+When('the KPI {string} tagged {string} is unapproved') do |kpi_name, tag|
+  kpi = Kpi.joins(:kpi_report).where(name: kpi_name, portfolio_company_id: @portfolio_company.id, 'kpi_reports.tag_list': tag).first
+  kpi.unapprove!
 end
 
 Then('the KPI {string} should have RAG status {string}') do |kpi_name, expected_rag_status|
-  kpi = Kpi.find_by(name: kpi_name)
-  kpi.rag_status.should == expected_rag_status
+  kpi_under_test(kpi_name).rag_status.should == expected_rag_status
+end
+
+Then('the KPI {string} should have no RAG status') do |kpi_name|
+  kpi_under_test(kpi_name).rag_status.should be_nil
+end
+
+# A comparator KPI often shares its name with the actual KPI it judges, so Kpi.find_by(name:) is
+# ambiguous. Two different shapes of ambiguity show up here:
+#  - same-as_of comparators (Budget/PriorYear/etc.): the actual is whichever same-named KPI's
+#    report is NOT tagged with the mapping's rag_comparator_tag — excluded below.
+#  - the PriorPeriod comparator: both rows share the same (blank) tag_list, so that exclusion is
+#    a no-op, but they have different as_of dates — the "subject" of the assertion is always the
+#    latest one, regardless of which was inserted first (a scenario may create the prior period
+#    before or after the one it's judging, to exercise both the live and cascaded-recompute paths).
+def kpi_under_test(kpi_name)
+  mapping = InvestorKpiMapping.find_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company)
+  scope = Kpi.joins(:kpi_report).where(name: kpi_name, portfolio_company_id: @portfolio_company.id)
+  scope = scope.where.not('kpi_reports.tag_list': mapping.rag_comparator_tag) if mapping&.rag_comparator_tag.present?
+  scope.order('kpi_reports.as_of DESC, kpis.id DESC').first.reload
+end
+
+When('I attempt to save an Investor KPI Mapping for {string} with RAG comparator {string}, direction {string}, red threshold {float}, green threshold {float}') do |kpi_name, comparator_tag, direction, red, green|
+  @attempted_mapping = InvestorKpiMapping.find_or_initialize_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company, reported_kpi_name: kpi_name)
+  @attempted_mapping.rag_comparator_tag = comparator_tag == 'none' ? nil : comparator_tag
+  @attempted_mapping.rag_direction = direction
+  @attempted_mapping.rag_red_threshold = red
+  @attempted_mapping.rag_green_threshold = green
+  @attempted_mapping.save
+end
+
+Then('the mapping save should fail with an error about RAG thresholds') do
+  @attempted_mapping.errors.any?.should == true
+  @attempted_mapping.persisted?.should == false
+end
+
+When('I visit the Investor KPI Mapping show page for {string}') do |kpi_name|
+  mapping = InvestorKpiMapping.find_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company)
+  visit investor_kpi_mapping_path(mapping)
 end
 
 Given('KPI is enabled for the user') do
@@ -272,30 +332,36 @@ end
 
 When('I upload the kpi workbook {string} for validation') do |workbook_file|
   @import_file = workbook_file
+  advance_kpi_wizard_to(:upload) # the file input lives on the wizard's "Upload & Validate KPIs" step
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
 end
 
+# The workbook check is server-side (KpiReportsController#validate_upload → KpiWorkbookReader#validate);
+# the verdict is rendered into #kpi_validation_panel by turbo_stream after the upload completes.
 Then('I should see a validation report with the message {string}') do |message|
-  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
-    expect(page).to have_content(message, wait: 10)
+  within('#kpi_validation_panel') do
+    expect(page).to have_content(message, wait: 15)
   end
 end
 
 And('the report should list {string} found KPIs') do |count|
-  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
-    expect(page).to have_css('table tbody tr td span[style="color:green;"]', count: count.to_i, wait: 10)
+  within('#kpi_validation_panel') do
+    expect(page).to have_content("#{count} of ", wait: 15)
+    expect(page).to have_content("expected KPIs found")
   end
 end
 
 And('the report should list {string} missing KPIs') do |count|
-  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
-    expect(page).to have_css('table tbody tr td span[style="color:red;"]', count: count.to_i, wait: 10)
+  # "Missing" KPIs render as red badges (bg-danger-subtle) inside the "expected KPIs found" tile —
+  # there is no separate "Missing: ..." line to match on anymore.
+  within('#kpi_validation_panel') do
+    expect(page).to have_css('.badge.bg-danger-subtle', count: count.to_i, wait: 15)
   end
 end
 
 Then('I should see a validation error with the message {string}') do |error_message|
-  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
-    expect(page).to have_content(error_message, wait: 10)
+  within('#kpi_validation_panel') do
+    expect(page).to have_content(error_message, wait: 15)
   end
 end
 

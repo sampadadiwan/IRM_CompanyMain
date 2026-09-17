@@ -1,0 +1,90 @@
+---
+title: Page not found — CapHive
+description: The page you asked for could not be found. Head back to the CapHive home
+  page, explore the platform, or get in touch with our team.
+og_title: Page not found — CapHive
+og_description: The page you asked for could not be found.
+data_page: ''
+robots: noindex
+body_top: |+
+  <!-- ==========================================================================
+       SERVER CONFIGURATION REQUIRED
+       ==========================================================================
+       This file is only the design for the not-found page. The host or web
+       server must be configured to serve it for HTTP 404 responses, and it must
+       return a real 404 status code — not 200 with this body, which would let
+       search engines index every missing URL as a valid page.
+
+       Configure whichever applies to the deployment:
+         - Netlify / Vercel / Cloudflare Pages: a top-level 404.html is picked up
+               automatically; confirm the status code in the response headers.
+         - Nginx:   error_page 404 /404.html;  with an internal location block.
+         - Apache:  ErrorDocument 404 /404.html
+         - S3 + CloudFront: set the error document, and add a custom error
+               response mapping 404 -> /404.html with response code 404.
+
+       Verify after deploy:  curl -I https://caphive.com/does-not-exist
+       Expected first line:  HTTP/2 404
+       ========================================================================== -->
+
+...
+---
+
+
+<!-- ================= 404 HERO ================= -->
+<section class="page-hero center hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <div class="big-404" aria-hidden="true">404</div>
+      <h1>That page has moved, or never existed.</h1>
+      <p class="lede">
+        The link you followed points at something that is no longer here. Nothing is broken on your side —
+        start again from one of the routes below, or ask us and we will point you at the right place.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="index.html">
+          Back to home
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-outline" href="contact.html">Contact us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRY THESE ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="chip-label">Try these instead</span>
+      <h2>Three good places to <em>pick up again.</em></h2>
+    </div>
+    <div class="f-grid">
+      <a class="link-card reveal" href="products.html">
+        <div>
+          <span class="kick">Platform</span>
+          <h3>Products</h3>
+          <p>Funds, portfolios, deals and secondaries, AI agents and integrations — the whole platform in one overview.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card reveal" data-delay="1" href="resources.html">
+        <div>
+          <span class="kick">Insights</span>
+          <h3>Resources</h3>
+          <p>Writing on fund operations, reporting and where AI actually helps in private markets.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card reveal" data-delay="2" href="faq.html">
+        <div>
+          <span class="kick">Answers</span>
+          <h3>FAQ</h3>
+          <p>Implementation, data migration, security and pricing — the questions funds ask us first.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+

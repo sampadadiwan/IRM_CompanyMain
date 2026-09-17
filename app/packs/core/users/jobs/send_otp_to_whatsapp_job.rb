@@ -1,5 +1,10 @@
 class SendOtpToWhatsappJob < ApplicationJob
-  queue_as :default
+  # The code this job carries is a TOTP value, valid for roughly 30–60 seconds after it
+  # was computed at enqueue. On :default it sat behind bulk document and report
+  # generation and could arrive dead. :critical is first in the server's queue list
+  # (config/initializers/sidekiq.rb) and otherwise unused — same reasoning as
+  # SendOtpToSmsJob.
+  queue_as :critical
 
   def perform(user_id, code)
     user = User.find(user_id)

@@ -1,0 +1,84 @@
+<%# Extraction confirmation popup (same consequence-modal pattern as
+    side_letter_obligations/_waive_modal): spells out what the AI run will and
+    will not do before it happens. Locals: side_letter %>
+<div class="modal fade" id="extract_side_letter_modal_<%= side_letter.id %>" tabindex="-1"
+     aria-labelledby="extractSideLetterModalLabel_<%= side_letter.id %>" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="extractSideLetterModalLabel_<%= side_letter.id %>">
+          Extract Obligations — <%= side_letter.investor.investor_name %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%# turbo: false so the run redirects back here with a flash — this page has no
+          progress panel for the Turbo Stream response to replace. %>
+      <%= form_with url: run_support_agents_path, method: :post, data: { turbo: false } do |f| %>
+        <%= f.hidden_field :agent_type, value: "SideLetterObligationAgent" %>
+        <%= f.hidden_field :target_type, value: "CapitalCommitment" %>
+        <%= f.hidden_field :target_id, value: side_letter.capital_commitment_id %>
+
+        <div class="modal-body">
+          <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
+            <div class="fw-bold text-dark small">Immediate Actions</div>
+            <div class="text-muted small">The following will happen when you click <strong>Extract Obligations</strong>:</div>
+          </div>
+
+          <div class="d-flex flex-column gap-2 mb-3">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#dbeafe;">
+                <i class="ti ti-robot fs-5" style="color:#2563eb;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">The document is read by AI</div>
+                <div class="text-muted small mt-1">
+                  <strong><%= side_letter.document.name %></strong> is analysed for the obligations it
+                  creates. Anything the AI cannot tie to a specific clause is discarded, never shown.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#fef3c7;">
+                <i class="ti ti-clipboard-list fs-5" style="color:#d97706;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Findings wait for review</div>
+                <div class="text-muted small mt-1">
+                  New obligations arrive as <span class="badge bg-warning text-dark">Pending review</span>.
+                  No tasks are created and no alerts are sent until counsel approves them.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#dcfce7;">
+                <i class="ti ti-shield-check fs-5" style="color:#16a34a;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Approved obligations are untouched</div>
+                <div class="text-muted small mt-1">
+                  Nothing already approved is overwritten. If an amended side letter changed
+                  something, it arrives as a separate item flagged
+                  <span class="badge bg-info text-dark">Changed on re-extraction</span> for counsel to compare.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-muted small">
+            The run happens in the background and takes a minute or so — reload this page to see
+            the results. It is safe to run again whenever the document is amended.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Extract Obligations", class: "btn btn-outline-success" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

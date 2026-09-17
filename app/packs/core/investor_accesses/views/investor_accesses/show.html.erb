@@ -52,9 +52,13 @@
     </tr>
 
 
+    <%# LP CRM: tenant-configured contact details (designation, POC role, intro, ...)
+        stored as custom fields. The partial emits <tr> rows, so it must sit inside
+        the table — same embedding as investor_kycs/_show. Renders nothing when the
+        entity has no fields configured. %>
+    <%= display_custom_fields(@investor_access, timestamps_and_snapshot: false) %>
+
   </table>
-
-
 
   <div>
     <%= link_to  t_common(:edit) , edit_investor_access_path(@investor_access), {class: "btn btn-outline-primary" } %>
@@ -64,39 +68,105 @@
 
   <% end %>
 
+<%# LP CRM per-person view: notes and tasks recorded with this contact, shown as
+    tabs — same nav-pills + lazy turbo-frame design as investors/_stakeholder_details.
+    Both lists are scoped to this stakeholder AND this person (owner + touch_point),
+    and the frame ids (notes_frame / task_list) match what the notes/tasks index
+    pages render into, so search/pagination stay inside the tab. %>
+<% if @investor_access.persisted? %>
+  <div class="associated_entity" data-controller="tabs tabdetails">
+    <nav id="investor_access_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a id="contact_notes_tab" class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#notes-tab">
+        Notes
+      </a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">
+        Tasks
+      </a>
+      <%# Advisors only: @advisor_access_rights is set by the controller solely
+          when this access belongs to a user with the investor_advisor role %>
+      <% if @advisor_access_rights %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-access-tab">
+          Fund Access
+        </a>
+      <% end %>
+    </nav>
 
-
-
-  <% if @advisor_access_rights %>
-
-    <div class="table-responsive mt-5">
-      <h4>Fund Access Granted as Investor Advisor</h4>
-      <table class="table table-bordered dataTable">
-        <thead>
-          <tr>
-            <th class="text-col">Fund</th>
-            <th class="text-col">Granted By</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if @advisor_access_rights.present? %>
-            <% @advisor_access_rights.each do |access_right| %>
-              <tr>
-                <td class="text-col">
-                  <%= link_to access_right.owner.name, fund_path(access_right.owner) if access_right.owner %>
-                </td>
-                <td class="text-col">
-                  <%= access_right.granted_by&.full_name %>
-                </td>
-              </tr>
-            <% end %>
-          <% else %>
-            <tr>
-              <td class="text-col" colspan="2">No fund access rights found for this advisor.</td>
-            </tr>
+    <div class="tab-content">
+      <div id="notes-tab" class="tab-pane fade show active">
+        <div id="notes" class="associated_entity">
+          <%# touch_point_scope: "all" — this person's whole history, whether the
+              note was logged on the LP record or under one of its deal
+              investors. owner_id/owner_type no longer narrow the list; they stay
+              to prefill the "New Note" form with this stakeholder, so the
+              touch-point dropdown appears there. The "For" column shows which
+              record each note was logged against. %>
+          <%= turbo_frame_tag "notes_frame", target: "_top", loading: :lazy,
+                              src: notes_path(owner_id: @investor_access.investor_id, owner_type: "Investor",
+                                              touch_point_id: @investor_access.id, touch_point_scope: "all") do %>
+            <%= render "/layouts/loading" %>
           <% end %>
-        </tbody>
-      </table>
-    </div>
+        </div>
+      </div>
 
-  <% end %>
+      <div id="tasks-tab" class="tab-pane fade">
+        <div id="tasks" class="associated_entity">
+          <%# completed: :all so finished follow-ups stay visible in the history;
+              touch_point_scope: "all" so deal-side follow-ups with this person
+              appear alongside the stakeholder ones (see the notes tab above) %>
+          <%= turbo_frame_tag "task_list", target: "_top", loading: :lazy,
+                              src: tasks_path(owner_id: @investor_access.investor_id, owner_type: "Investor",
+                                              touch_point_id: @investor_access.id, touch_point_scope: "all",
+                                              completed: :all) do %>
+            <%= render "/layouts/loading" %>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Advisors only — pane for the Fund Access nav link above %>
+      <% if @advisor_access_rights %>
+        <div id="fund-access-tab" class="tab-pane fade">
+          <%# Same wrapper as the notes/tasks panes above so this tab picks up the
+              .associated_entity spacing and h1 sizing from scaffolds.scss %>
+          <div id="fund_access" class="associated_entity">
+            <%# Header mirrors tasks/_index.html.erb: title left, action slot right %>
+            <div id="fund_access_header" class="d-sm-flex align-items-center justify-content-between mb-4 task_header">
+              <h1 class="h3 mb-0 text-gray-800">Fund Access Granted as Investor Advisor</h1>
+              <div class="d-flex flex-wrap align-items-center gap-2"></div>
+            </div>
+
+            <div class="table-responsive">
+              <table id="fund_access_rights" class="table table-bordered dataTable">
+                <thead>
+                  <tr>
+                    <th class="text-col">Fund</th>
+                    <th class="text-col">Granted By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <%# any? not present? — @advisor_access_rights is a relation and the
+                      rows are iterated right after, so one load is enough %>
+                  <% if @advisor_access_rights.any? %>
+                    <% @advisor_access_rights.each do |access_right| %>
+                      <tr>
+                        <td class="text-col">
+                          <%= link_to access_right.owner.name, fund_path(access_right.owner) if access_right.owner %>
+                        </td>
+                        <td class="text-col">
+                          <%= access_right.granted_by&.full_name %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  <% else %>
+                    <tr>
+                      <td class="text-col" colspan="2">No fund access rights found for this advisor.</td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

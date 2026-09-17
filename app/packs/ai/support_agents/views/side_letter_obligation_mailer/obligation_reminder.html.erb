@@ -1,0 +1,45 @@
+<p>Hello <%= @user.first_name %>,</p>
+
+<p>
+  The following side letter obligations need your attention.
+  Overdue items are listed first.
+</p>
+
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th align="left">Status</th>
+      <th align="left">Investor</th>
+      <th align="left">Obligation</th>
+      <th align="left">Clause</th>
+      <th align="left">Due Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @items.each do |item| %>
+      <tr>
+        <td>
+          <% case item["kind"] %>
+          <% when "overdue" %>
+            <strong style="color: #b02a37;">Overdue</strong>
+          <% when "due" %>
+            <strong style="color: #cc8a00;">Due today</strong>
+          <% else %>
+            Upcoming
+          <% end %>
+        </td>
+        <td><%= item["investor_name"] %></td>
+        <td><%= item["title"] %></td>
+        <td><%= item["source_clause"] %></td>
+        <td><%= item["due_date"] %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p>
+  Completing the linked task records the fulfillment against the obligation.
+  You can review the full obligation matrix from the Side Letter Obligations agent page.
+</p>
+
+<p>Regards,<br/><%= @entity.name %></p>

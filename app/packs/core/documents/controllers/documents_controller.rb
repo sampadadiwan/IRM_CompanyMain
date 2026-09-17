@@ -3,7 +3,7 @@ class DocumentsController < ApplicationController
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list verify_accessibility]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download show_email_list]
   after_action :verify_policy_scoped, only: []
 
@@ -39,7 +39,7 @@ class DocumentsController < ApplicationController
 
       @documents = if @folder.entity_id == current_user.entity_id
                      policy_scope(Document)
-                   elsif !current_user.investor_advisor? || Pundit.policy(current_user, @folder).show? || (@folder.owner && Pundit.policy(current_user, @folder.owner).show?) || Folder.for_investor(current_user, @entity).where(id: @folder.id).present?
+                   elsif !current_user.investor_advisor? || Pundit.policy(current_user, @folder).show? || (@folder.owner && Pundit.policy(current_user, @folder.owner).show?) || Folder.for_investor(current_user, @entity).exists?(id: @folder.id)
                      # Ensure that the IA user has access to the folder, as IAs can only access certain funds/deals etc
                      Document.for_investor(current_user, @folder.entity).not_template
                    else
@@ -269,6 +269,12 @@ class DocumentsController < ApplicationController
     # approver workflow) or publish a document. Apply them here with their own authorization.
     apply_privileged_document_attrs!
 
+    # Not for general consumption: the _form only shows this field when
+    # document.template? && params[:debug].present?, but that's UI-only -- anyone with
+    # ordinary update? rights on a template could otherwise PATCH pdf_conversion_engine
+    # directly. Gate it server-side the same way, same pattern as the H7 attrs above.
+    apply_pdf_conversion_engine!
+
     respond_to do |format|
       # SECURITY (finding H6): strip entity_id so an existing document cannot be relocated to
       # another tenant via mass assignment. entity_id is set once at #create (owner-derived) and
@@ -276,7 +282,8 @@ class DocumentsController < ApplicationController
       # company's KPI magic-link upload uses nested documents_attributes (Document::NESTED_ATTRIBUTES)
       # on kpi_reports#update, a separate path that is intentionally left unchanged.
       # H7: approved/approved_by_id/public_visibility are applied above (gated), never mass-assigned.
-      if @document.update(document_params.except(:entity_id, :approved, :approved_by_id, :public_visibility))
+      # pdf_conversion_engine is applied above (gated), never mass-assigned.
+      if @document.update(document_params.except(:entity_id, :approved, :approved_by_id, :public_visibility, :pdf_conversion_engine))
         format.html { save_and_upload }
         format.json { render :show, status: :ok, location: @document }
       else
@@ -322,6 +329,34 @@ class DocumentsController < ApplicationController
     redirect_to document_url(@document), notice: "Document will be sent to the email addresses as requested."
   rescue StandardError => e
     redirect_to document_url(@document), alert: e.message
+  end
+
+  # AI "Fix Me": kicks off TemplateFixAgent against this template document with
+  # the user-described problem. Runs in the background — TemplateFixJob sends
+  # a UserAlert when the resulting draft (or failure) is ready.
+  def run_fix
+    issue_description = params[:issue_description].to_s.strip
+    if issue_description.blank?
+      redirect_to document_url(@document), alert: "Please describe the issue before running Fix Me."
+      return
+    end
+
+    support_agent = SupportAgent.find_or_create_by!(entity_id: current_user.entity_id, agent_type: "TemplateFixAgent") do |sa|
+      sa.name = "Template Fix Agent"
+      sa.category = "Ops"
+      sa.llm_model = "gemini-3.7-flash"
+      sa.enabled = true
+    end
+
+    TemplateFixJob.perform_later(
+      support_agent_id: support_agent.id,
+      document_id: @document.id,
+      issue_description: issue_description,
+      llm_model: params[:llm_model].presence,
+      user_id: current_user.id
+    )
+
+    redirect_to document_url(@document), notice: "Fix Me is running in the background — you'll get a notification when it's done."
   end
 
   def share_by_email
@@ -434,8 +469,21 @@ class DocumentsController < ApplicationController
     end
   end
 
+  # Internal debugging knob (docs/technical/m365_graph_pdf_conversion.md,
+  # docs/technical/google_docs_pdf_conversion.md), not a feature for general editors: only
+  # settable on a document that is already a template, and only when the request explicitly
+  # carries params[:debug] -- mirrors the same gate the form field itself is rendered behind,
+  # enforced here since the form-level gate alone is not a security boundary.
+  def apply_pdf_conversion_engine!
+    return unless document_params.key?(:pdf_conversion_engine)
+    return unless @document.template? && params[:debug].present?
+
+    @document.pdf_conversion_engine = document_params[:pdf_conversion_engine]
+  end
+
   def document_params
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list, :template, :template_docs_to_append,
+                                     :pdf_conversion_engine,
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page, :embed,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag, :approved, :approved_by_id,
                                      :tag_list, :folder_id, :file, :force_esign_order, :as_of, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy], emails: [])

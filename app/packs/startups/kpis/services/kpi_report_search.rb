@@ -4,7 +4,9 @@ class KpiReportSearch
 
     kpi_reports = filter_by_portfolio_company(kpi_reports, params)
 
-    if params[:budget_view].blank?
+    # .blank? does not handle string "false" properly - and returns false
+    # so we use standard boolean casting instead of relying on .blank?
+    unless ActiveModel::Type::Boolean.new.cast(params[:budget_view])
       no_val = params[:no_of_periods].to_s.strip
       no_of_periods = no_val.present? && no_val.to_i.positive? ? no_val.to_i : 12
       period = params[:period].presence || 'month'

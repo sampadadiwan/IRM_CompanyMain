@@ -1,0 +1,1161 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "funds Pack \u2014 Background Jobs",
+  "quality_profile": "showcase"
+ },
+ "components": [
+  {
+   "id": "j-change-fund-currency-job",
+   "type": "backend",
+   "label": "change_fund_currency",
+   "pos": [
+    40,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-access-rights-job",
+   "type": "backend",
+   "label": "fund_access_rights",
+   "pos": [
+    40,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-delete-all-job",
+   "type": "backend",
+   "label": "fund_delete_all",
+   "pos": [
+    40,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-doc-gen-job",
+   "type": "backend",
+   "label": "fund_doc_gen",
+   "pos": [
+    40,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-formulas-bulk-action-job",
+   "type": "backend",
+   "label": "fund_formulas_bulk_action",
+   "pos": [
+    40,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-llm-report-job",
+   "type": "backend",
+   "label": "fund_llm_report",
+   "pos": [
+    40,
+    520
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-notification-job",
+   "type": "backend",
+   "label": "fund_notification",
+   "pos": [
+    40,
+    558
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-ratio-run-template-batch-job",
+   "type": "backend",
+   "label": "fund_ratio_run_template_batch",
+   "pos": [
+    40,
+    596
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-ratios-bulk-action-job",
+   "type": "backend",
+   "label": "fund_ratios_bulk_action",
+   "pos": [
+    40,
+    634
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-ratios-job",
+   "type": "backend",
+   "label": "fund_ratios",
+   "pos": [
+    40,
+    672
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-ratios-scenario-job",
+   "type": "backend",
+   "label": "fund_ratios_scenario",
+   "pos": [
+    40,
+    710
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-snapshot-job",
+   "type": "backend",
+   "label": "fund_snapshot",
+   "pos": [
+    40,
+    748
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-units-bulk-action-job",
+   "type": "backend",
+   "label": "fund_units_bulk_action",
+   "pos": [
+    40,
+    786
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-units-job",
+   "type": "backend",
+   "label": "fund_units",
+   "pos": [
+    40,
+    824
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-ai-descriptions-job",
+   "type": "backend",
+   "label": "generate_ai_descriptions",
+   "pos": [
+    40,
+    862
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-tracking-currency-job",
+   "type": "backend",
+   "label": "tracking_currency",
+   "pos": [
+    40,
+    900
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-update-fund-formula-variable-map-job",
+   "type": "backend",
+   "label": "update_fund_formula_variable_map",
+   "pos": [
+    40,
+    938
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-xl-report-job",
+   "type": "backend",
+   "label": "xl_report",
+   "pos": [
+    40,
+    976
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-finalize-portfolio-scenario-job",
+   "type": "backend",
+   "label": "finalize_portfolio_scenario",
+   "pos": [
+    290,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-portfolio-report-extracts-job",
+   "type": "backend",
+   "label": "portfolio_report_extracts",
+   "pos": [
+    290,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-generate-tear-sheet-job",
+   "type": "backend",
+   "label": "generate_tear_sheet",
+   "pos": [
+    290,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-investment-job",
+   "type": "backend",
+   "label": "portfolio_investment",
+   "pos": [
+    290,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-investments-xl-report-job",
+   "type": "backend",
+   "label": "portfolio_investments_xl_report",
+   "pos": [
+    290,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-report-auto-generate-job",
+   "type": "backend",
+   "label": "portfolio_report_auto_generate",
+   "pos": [
+    290,
+    520
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-report-doc-gen-job",
+   "type": "backend",
+   "label": "portfolio_report_doc_gen",
+   "pos": [
+    290,
+    558
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-report-doc-gen-silent-job",
+   "type": "backend",
+   "label": "portfolio_report_doc_gen_silent",
+   "pos": [
+    290,
+    596
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-report-draft-job",
+   "type": "backend",
+   "label": "portfolio_report_draft",
+   "pos": [
+    290,
+    634
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-report-export-job",
+   "type": "backend",
+   "label": "portfolio_report_export",
+   "pos": [
+    290,
+    672
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-report-job",
+   "type": "backend",
+   "label": "portfolio_report",
+   "pos": [
+    290,
+    710
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-report-section-regenerate-job",
+   "type": "backend",
+   "label": "report_section_regenerate",
+   "pos": [
+    290,
+    748
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-portfolio-scenario-job",
+   "type": "backend",
+   "label": "portfolio_scenario",
+   "pos": [
+    290,
+    786
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-stock-adjustment-job",
+   "type": "backend",
+   "label": "stock_adjustment",
+   "pos": [
+    290,
+    824
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-update-portfolio-investments-job",
+   "type": "backend",
+   "label": "update_portfolio_investments",
+   "pos": [
+    290,
+    862
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-account-entry-allocation-job",
+   "type": "backend",
+   "label": "account_entry_allocation",
+   "pos": [
+    540,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-account-entry-delete-job",
+   "type": "backend",
+   "label": "account_entry_delete",
+   "pos": [
+    540,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-account-entry-explain-job",
+   "type": "backend",
+   "label": "account_entry_explain",
+   "pos": [
+    540,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-account-entry-report-commentary-job",
+   "type": "backend",
+   "label": "account_entry_report_commentary",
+   "pos": [
+    540,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-commitment-doc-job",
+   "type": "backend",
+   "label": "capital_commitment_doc",
+   "pos": [
+    540,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-commitment-remittance-job",
+   "type": "backend",
+   "label": "capital_commitment_remittance",
+   "pos": [
+    540,
+    520
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-commitment-soa-job",
+   "type": "backend",
+   "label": "capital_commitment_soa",
+   "pos": [
+    540,
+    558
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-call-date-change-job",
+   "type": "backend",
+   "label": "capital_call_date_change",
+   "pos": [
+    540,
+    622
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-call-job",
+   "type": "backend",
+   "label": "capital_call",
+   "pos": [
+    540,
+    660
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-distribution-job",
+   "type": "backend",
+   "label": "capital_distribution",
+   "pos": [
+    540,
+    724
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-distribution-date-change-job",
+   "type": "backend",
+   "label": "capital_distribution_date_change",
+   "pos": [
+    540,
+    788
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-distribution-payment-doc-job",
+   "type": "backend",
+   "label": "capital_distribution_payment_doc",
+   "pos": [
+    540,
+    826
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-distribution-payment-notification-job",
+   "type": "backend",
+   "label": "payment_notification",
+   "pos": [
+    540,
+    864
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-distribution-payment-recompute-fees-job",
+   "type": "backend",
+   "label": "payment_recompute_fees",
+   "pos": [
+    540,
+    902
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-remittance-doc-job",
+   "type": "backend",
+   "label": "capital_remittance_doc",
+   "pos": [
+    790,
+    330
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-remittance-status-job",
+   "type": "backend",
+   "label": "capital_remittance_status",
+   "pos": [
+    790,
+    368
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-remittances-bulk-action-job",
+   "type": "backend",
+   "label": "capital_remittances_bulk_action",
+   "pos": [
+    790,
+    406
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-remittances-counters-job",
+   "type": "backend",
+   "label": "capital_remittances_counters",
+   "pos": [
+    790,
+    444
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-capital-remittances-recompute-fees-job",
+   "type": "backend",
+   "label": "remittances_recompute_fees",
+   "pos": [
+    790,
+    482
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-import-capital-remittance-payments-fix-counts-job",
+   "type": "backend",
+   "label": "import_payments_fix_counts",
+   "pos": [
+    790,
+    520
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-import-capital-remittances-fix-counts-job",
+   "type": "backend",
+   "label": "import_fix_counts",
+   "pos": [
+    790,
+    558
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-corpus-details-job",
+   "type": "backend",
+   "label": "corpus_details",
+   "pos": [
+    790,
+    622
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-fund-report-job",
+   "type": "backend",
+   "label": "fund_report",
+   "pos": [
+    790,
+    660
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-info-on-investors-job",
+   "type": "backend",
+   "label": "info_on_investors",
+   "pos": [
+    790,
+    698
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-information-on-investments-job",
+   "type": "backend",
+   "label": "information_on_investments",
+   "pos": [
+    790,
+    736
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-sebi-report-job",
+   "type": "backend",
+   "label": "sebi_report",
+   "pos": [
+    790,
+    774
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-eoi-doc-job",
+   "type": "backend",
+   "label": "eoi_doc",
+   "pos": [
+    790,
+    838
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "j-investment-opportunity-job",
+   "type": "backend",
+   "label": "investment_opportunity",
+   "pos": [
+    790,
+    876
+   ],
+   "size": [
+    220,
+    30
+   ]
+  },
+  {
+   "id": "rails",
+   "type": "backend",
+   "label": "Rails App",
+   "sublabel": "perform_later",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    160,
+    60
+   ]
+  },
+  {
+   "id": "redis",
+   "type": "messagebus",
+   "label": "Redis",
+   "sublabel": "queues",
+   "pos": [
+    260,
+    40
+   ],
+   "size": [
+    130,
+    60
+   ]
+  },
+  {
+   "id": "mysql",
+   "type": "database",
+   "label": "MySQL",
+   "sublabel": "every job r/w",
+   "pos": [
+    840,
+    40
+   ],
+   "size": [
+    170,
+    60
+   ]
+  },
+  {
+   "id": "sidekiq",
+   "type": "backend",
+   "label": "Sidekiq Workers",
+   "sublabel": "capsules: default \u00b7 serial \u00b7 doc_gen \u00b7 ai_checks \u00b7 db_restore",
+   "pos": [
+    40,
+    180
+   ],
+   "size": [
+    970,
+    52
+   ]
+  },
+  {
+   "id": "ext-s3",
+   "type": "cloud",
+   "label": "S3",
+   "sublabel": "generated docs",
+   "pos": [
+    150,
+    1116
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "ext-xirr",
+   "type": "backend",
+   "label": "xirr_py",
+   "sublabel": "Docker :8000",
+   "pos": [
+    350,
+    1116
+   ],
+   "size": [
+    150,
+    60
+   ]
+  },
+  {
+   "id": "ext-llm",
+   "type": "external",
+   "label": "LLM Providers",
+   "sublabel": "OpenAI \u00b7 Gemini",
+   "pos": [
+    550,
+    1116
+   ],
+   "size": [
+    150,
+    60
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "region",
+   "label": "funds/funds (18)",
+   "wraps": [
+    "j-change-fund-currency-job",
+    "j-fund-access-rights-job",
+    "j-fund-delete-all-job",
+    "j-fund-doc-gen-job",
+    "j-fund-formulas-bulk-action-job",
+    "j-fund-llm-report-job",
+    "j-fund-notification-job",
+    "j-fund-ratio-run-template-batch-job",
+    "j-fund-ratios-bulk-action-job",
+    "j-fund-ratios-job",
+    "j-fund-ratios-scenario-job",
+    "j-fund-snapshot-job",
+    "j-fund-units-bulk-action-job",
+    "j-fund-units-job",
+    "j-generate-ai-descriptions-job",
+    "j-tracking-currency-job",
+    "j-update-fund-formula-variable-map-job",
+    "j-xl-report-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "funds/portfolios (15)",
+   "wraps": [
+    "j-finalize-portfolio-scenario-job",
+    "j-generate-portfolio-report-extracts-job",
+    "j-generate-tear-sheet-job",
+    "j-portfolio-investment-job",
+    "j-portfolio-investments-xl-report-job",
+    "j-portfolio-report-auto-generate-job",
+    "j-portfolio-report-doc-gen-job",
+    "j-portfolio-report-doc-gen-silent-job",
+    "j-portfolio-report-draft-job",
+    "j-portfolio-report-export-job",
+    "j-portfolio-report-job",
+    "j-portfolio-report-section-regenerate-job",
+    "j-portfolio-scenario-job",
+    "j-stock-adjustment-job",
+    "j-update-portfolio-investments-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "funds/capital_commitments (7)",
+   "wraps": [
+    "j-account-entry-allocation-job",
+    "j-account-entry-delete-job",
+    "j-account-entry-explain-job",
+    "j-account-entry-report-commentary-job",
+    "j-capital-commitment-doc-job",
+    "j-capital-commitment-remittance-job",
+    "j-capital-commitment-soa-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "funds/capital_calls (2)",
+   "wraps": [
+    "j-capital-call-date-change-job",
+    "j-capital-call-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "funds/capital_distributions (1)",
+   "wraps": [
+    "j-capital-distribution-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "funds/capital_distribution_payments (4)",
+   "wraps": [
+    "j-capital-distribution-date-change-job",
+    "j-capital-distribution-payment-doc-job",
+    "j-capital-distribution-payment-notification-job",
+    "j-capital-distribution-payment-recompute-fees-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "funds/capital_remittances (7)",
+   "wraps": [
+    "j-capital-remittance-doc-job",
+    "j-capital-remittance-status-job",
+    "j-capital-remittances-bulk-action-job",
+    "j-capital-remittances-counters-job",
+    "j-capital-remittances-recompute-fees-job",
+    "j-import-capital-remittance-payments-fix-counts-job",
+    "j-import-capital-remittances-fix-counts-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "funds/fund_reports (5)",
+   "wraps": [
+    "j-corpus-details-job",
+    "j-fund-report-job",
+    "j-info-on-investors-job",
+    "j-information-on-investments-job",
+    "j-sebi-report-job"
+   ],
+   "pad": 8
+  },
+  {
+   "kind": "region",
+   "label": "funds/investment_opportunities (2)",
+   "wraps": [
+    "j-eoi-doc-job",
+    "j-investment-opportunity-job"
+   ],
+   "pad": 8
+  }
+ ],
+ "connections": [
+  {
+   "id": "rails-redis",
+   "from": "rails",
+   "to": "redis",
+   "label": "enqueue",
+   "variant": "emphasis",
+   "labelDy": -26
+  },
+  {
+   "id": "redis-sidekiq",
+   "from": "redis",
+   "to": "sidekiq",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sidekiq-mysql",
+   "from": "sidekiq",
+   "to": "mysql",
+   "label": "ActiveRecord",
+   "fromSide": "top",
+   "toSide": "bottom"
+  },
+  {
+   "id": "sk-col0",
+   "from": "sidekiq",
+   "to": "j-change-fund-currency-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col1",
+   "from": "sidekiq",
+   "to": "j-finalize-portfolio-scenario-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col2",
+   "from": "sidekiq",
+   "to": "j-account-entry-allocation-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "sk-col3",
+   "from": "sidekiq",
+   "to": "j-capital-remittance-doc-job",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "call-fund-doc-gen-job",
+   "from": "j-fund-doc-gen-job",
+   "to": "ext-s3",
+   "fromSide": "left",
+   "toSide": "top",
+   "via": [
+    [
+     20,
+     459
+    ],
+    [
+     20,
+     1098
+    ],
+    [
+     225,
+     1098
+    ]
+   ]
+  },
+  {
+   "id": "call-fund-ratios-job",
+   "from": "j-fund-ratios-job",
+   "to": "ext-xirr",
+   "fromSide": "right",
+   "toSide": "top",
+   "via": [
+    [
+     271,
+     687
+    ],
+    [
+     271,
+     1098
+    ],
+    [
+     425,
+     1098
+    ]
+   ]
+  },
+  {
+   "id": "call-fund-llm-report-job",
+   "from": "j-fund-llm-report-job",
+   "to": "ext-llm",
+   "fromSide": "right",
+   "toSide": "top",
+   "via": [
+    [
+     279,
+     535
+    ],
+    [
+     279,
+     1089
+    ],
+    [
+     625,
+     1089
+    ]
+   ]
+  }
+ ],
+ "cards": [
+  {
+   "dot": "emerald",
+   "title": "What lives here",
+   "items": [
+    "Fund lifecycle math: ratios, scenarios, snapshots, units, FX tracking, plus SOA/doc generation for commitments, remittances, and distributions",
+    "fund_ratios_scenario_job and portfolio calcs also hit xirr_py; generate_ai_descriptions_job also calls the LLM providers"
+   ]
+  },
+  {
+   "dot": "violet",
+   "title": "Cadence",
+   "items": [
+    "TrackingCurrencyJob nightly at 01:00; CapitalRemittanceStatusJob at 01:30 flags overdue remittances",
+    "Account-entry allocation jobs are enqueued by capital call and distribution flows"
+   ]
+  }
+ ]
+}

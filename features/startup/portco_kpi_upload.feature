@@ -21,6 +21,7 @@ Feature: Portfolio Company KPI Self-Reporting
     Given there is a user "first_name=PortCoUser" for an existing entity "name=MyStartup;category=Portfolio Company"
     When I visit the KPI report edit page via a signed link for user "PortCoUser" and report "as_of=2024-12-31"
     Then I should see the KPI report form
+    And I go to the "Additional Details" step of the KPI report wizard
     When I fill in "Notes" with "Submitted via magic link"
     And I click "Save Draft"
     Then I must see the message "Kpi report was successfully updated."

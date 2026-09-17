@@ -1,12 +1,31 @@
 <tr id="note_<%= note.id %>">
 
+<%# show_owner matches the "For" header in _index.html.erb. Passed as a local by
+    the list; turbo-stream re-renders fall back to the echoed form param. %>
+<% show_owner = local_assigns.fetch(:show_owner) { params[:show_owner].to_s != "false" } %>
 <% unless params[:condensed].present? %>
+<% if show_owner %>
 <td>
-    <% owner_name = note.to_s %>
-    <%= link_to owner_name, polymorphic_path(note.owner) if note.owner.present? %>
+    <%# The href is built from owner_type/owner_id — no record needed to route.
+        The name still comes from the owner, which the controller batch-preloads
+        (one query per owner type, not per row). %>
+    <% path = owner_path(note.owner_type, note.owner_id) %>
+    <% if path && note.owner.present? %>
+      <%= link_to note.to_s, path %>
+    <% else %>
+      <%= note.to_s %>
+    <% end %>
 </td>
+<% end %>
 <td>
     <%= link_to note.user_full_name, notes_path(user_id: note.user_id) %>
+</td>
+<%# LP CRM: touch point — matches the "With" header added in _index.html.erb;
+    linked to that person's own contact page with the Notes tab open, which lists
+    their whole history (stakeholder notes and deal notes alike). Blank when the
+    note isn't about a specific contact. %>
+<td>
+    <%= link_to note.touch_point.full_name, investor_access_path(note.touch_point, tab: "notes-tab") if note.touch_point %>
 </td>
 <% end %>
 

@@ -13,7 +13,7 @@ class CapitalRemittancePaymentList < BaseList
     @q = CapitalRemittancePayment.ransack(@params[:q])
     @capital_remittance_payments = apply_policy_scope(@q.result, &)
 
-    @capital_remittance_payments = @capital_remittance_payments.includes(:fund, :investor, capital_remittance: :capital_commitment)
+    @capital_remittance_payments = @capital_remittance_payments.includes(:fund, :investor, capital_remittance: { capital_commitment: :investor_kyc })
 
     @capital_remittance_payments = filter_params(@capital_remittance_payments, :fund_id, :import_upload_id)
 

@@ -6,7 +6,7 @@ A step-by-step guide for connecting the CapHive MCP Server on staging with Claud
 
 ## What is This?
 
-The CapHive MCP Server allows AI clients to query fund management data directly from CapHive. Currently supported: **Claude.ai**. Users authenticate via OAuth, and the AI can then call 23 read-only tools covering funds, capital activity, portfolios, cap tables, documents, and commitments.
+The CapHive MCP Server allows AI clients to query fund management data directly from CapHive. Currently supported: **Claude.ai**. Users authenticate via OAuth, and the AI can then call 22 read-only tools covering funds, capital activity, portfolios, cap tables, documents, and commitments.
 
 **Staging URL:** `https://dev.altconnects.com/mcp`
 
@@ -114,7 +114,7 @@ Both should return JSON with the OAuth endpoints and MCP resource info.
 3. A browser popup opens with the CapHive login page
 4. Log in with your staging credentials (e.g., `fm1@ian.com` / `password`)
 5. You'll see an authorization prompt — click **"Authorize"**
-6. The popup closes and you're connected. You should see a green "Connected" status with all 23 tools listed.
+6. The popup closes and you're connected. You should see a green "Connected" status with all 22 tools listed.
 
 #### Step 3: Test It
 
@@ -326,7 +326,7 @@ POST https://dev.altconnects.com/mcp
     │
     ▼
 ┌─────────────────────────────────┐
-│  MCP Tools (23 tools)           │
+│  MCP Tools (22 tools)           │
 │  └─ Delegates to Data Managers  │  ← Same services used by FM/LP assistants
 └─────────────────────────────────┘
     │

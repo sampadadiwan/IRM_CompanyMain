@@ -20,7 +20,8 @@ class ImportRatioFormula < ImportUtil
     Rails.logger.debug row_data
 
     fund = import_upload.owner
-    raise "Fund not found" unless fund
+    # The fund is the upload owner, not a column in the sheet
+    raise "Fund not found - upload ratio formulas against a fund" unless fund
 
     # Accept both humanized text ("Add cashflow", "As on") and raw enum values ("add_cashflow", "as_on").
     level               = lookup_enum(RatioFormula.level,  row_data["Level"])

@@ -1,60 +1,93 @@
-<div id="main-content">
-    <% if Rails.env.development? %>
-    <div id="simulator-controls" style="display: none;" class="card">
-        <div class="section-title">Simulator: Test Emails</div>
-        <input type="text" id="sim-from" placeholder="Enter sender email..." value="john@example.com" class="investor-select">
-        <button id="sim-reload" class="btn btn-secondary" style="margin-top:12px;">Refresh Match</button>
+<%# Task pane markup. All state is driven by app/javascript/custom/outlook_addin.js;
+    sections are toggled with the `hidden` attribute rather than inline styles. %>
+
+<%# Development simulator. Lets the pane run in a plain browser tab against a message you
+    type in, so match / confirm / file / undo can be exercised without sideloading into
+    Outlook. Opt-in per environment (see OutlookAddinController#simulator_enabled?), and
+    the JS only activates it when window.CAPHIVE_SIMULATOR is set (see the layout). %>
+<% if simulator_enabled? %>
+  <section id="simulator-panel" class="mail-addin__card" hidden>
+    <div class="mail-addin__section-title">Simulator — no Outlook required</div>
+
+    <%# Stands in for Office.context.mailbox.userProfile.emailAddress. The server excludes
+        it from matching, so this is what lets the simulator reproduce "every email matches
+        the same investor" when a record is registered against the user's own address. %>
+    <label class="mail-addin__section-title" for="sim-mailbox">Mailbox owner</label>
+    <input type="text" id="sim-mailbox" class="mail-addin__select" value="me@fund.com">
+
+    <label class="mail-addin__section-title" for="sim-from">From</label>
+    <input type="text" id="sim-from" class="mail-addin__select" value="investor@example.com">
+
+    <label class="mail-addin__section-title" for="sim-to">To (comma separated)</label>
+    <input type="text" id="sim-to" class="mail-addin__select" value="manager@fund.com">
+
+    <label class="mail-addin__section-title" for="sim-cc">CC (comma separated)</label>
+    <input type="text" id="sim-cc" class="mail-addin__select" value="">
+
+    <label class="mail-addin__section-title" for="sim-subject">Subject</label>
+    <input type="text" id="sim-subject" class="mail-addin__select" value="Capital call question">
+
+    <%# Leave blank to exercise the no-Message-ID path; keep a value to test idempotency
+        by loading and filing the same message twice. %>
+    <label class="mail-addin__section-title" for="sim-message-id">Message-ID</label>
+    <input type="text" id="sim-message-id" class="mail-addin__select" value="&lt;sim-1@example.com&gt;">
+
+    <label class="mail-addin__section-title" for="sim-body">Body (HTML)</label>
+    <textarea id="sim-body" class="mail-addin__select" rows="3">&lt;p&gt;Simulated email body.&lt;/p&gt;</textarea>
+
+    <label class="mail-addin__section-title" for="sim-attachments">Attachments</label>
+    <input type="file" id="sim-attachments" class="mail-addin__select" multiple>
+
+    <%# Stands in for selecting a different message in Outlook — this is what makes the
+        ItemChanged path (the "files the wrong email" bug) testable. %>
+    <button id="sim-load" class="mail-addin__btn mail-addin__btn--secondary" style="margin-top:12px;">
+      Load this message
+    </button>
+  </section>
+<% end %>
+
+<div id="message-container"></div>
+
+<%# Shown until the first match request resolves. %>
+<section id="section-loading" class="mail-addin__card mail-addin__loading">
+  <div class="mail-addin__spinner"></div>
+  <p class="mail-addin__muted">Checking this email&hellip;</p>
+</section>
+
+<%# No message selected — e.g. the reading pane is closed. %>
+<section id="section-empty" class="mail-addin__card" hidden>
+  <p class="mail-addin__muted">Open an email to file it to CapHive.</p>
+</section>
+
+<%# No usable token. The sign-in dialog is a top-level window, where the session cookie
+    works — unlike this pane, which Outlook frames cross-site. %>
+<section id="section-signed-out" hidden>
+  <div class="mail-addin__card">
+    <div class="mail-addin__section-title">Sign in</div>
+    <p class="mail-addin__muted">Sign in to your CapHive account to file this email.</p>
+    <button id="sign-in-button" class="mail-addin__btn" style="margin-top:12px;">Sign in to CapHive</button>
+  </div>
+</section>
+
+<section id="section-ready" hidden>
+  <div class="mail-addin__card">
+    <div class="mail-addin__section-title">Filing against</div>
+    <div id="owner-name" class="mail-addin__value">&mdash;</div>
+    <div id="owner-reason" class="mail-addin__reason"></div>
+
+    <div id="owner-picker" hidden>
+      <input type="text" id="owner-search" class="mail-addin__select" placeholder="Search investors&hellip;" autocomplete="off">
+      <select id="owner-select" class="mail-addin__select" size="6"></select>
     </div>
-    <% end %>
 
-    <div id="loading" class="card" style="text-align: center; padding: 40px 20px;">
-        <div class="loading-spinner"></div>
-        <p style="color: var(--text-muted); font-size: 14px; margin: 0;">Analyzing email context...</p>
-    </div>
+    <button id="change-owner-button" class="mail-addin__link" hidden>Change record</button>
+  </div>
 
-    <div id="app-body" style="display: none;">
-        <div id="message-container"></div>
+  <div class="mail-addin__card">
+    <div class="mail-addin__section-title">Email</div>
+    <div id="email-subject" class="mail-addin__subject">&mdash;</div>
+  </div>
 
-        <div class="card">
-            <div class="section-title">Filing Target</div>
-            <div id="investor-display">
-                <div id="investor-name" class="value-large">-</div>
-            </div>
-
-            <div id="investor-selector-container" style="display: none; margin-top: 8px;">
-                <select id="investor-select" class="investor-select">
-                    <option value="">Choose an investor...</option>
-                </select>
-            </div>
-
-            <button id="change-investor-button" class="btn-secondary" style="margin-top: 12px; border:none; background:none; color: var(--primary); font-size: 13px; font-weight:600; cursor:pointer; padding:0; display:none;">
-                Change Investor
-            </button>
-        </div>
-
-        <div class="card">
-            <div class="section-title">Email Subject</div>
-            <div id="email-subject" style="font-size: 14px; color: var(--text-main); font-weight: 500;">-</div>
-        </div>
-
-        <div style="margin-top: 24px;">
-            <button id="file-button" class="btn" disabled>
-                File to CapHive
-            </button>
-        </div>
-    </div>
-</div>
-
-<script type="text/javascript">
-    window.emailData = {
-        subject: '',
-        from: '',
-        to: [],
-        cc: [],
-        body: '',
-        messageId: '',
-        internetMessageId: '',
-        receivedAt: null
-    };
-    window.matchedInvestors = [];
-</script>
+  <button id="file-button" class="mail-addin__btn" disabled>File to CapHive</button>
+  <button id="undo-button" class="mail-addin__btn mail-addin__btn--secondary" hidden>Undo</button>
+</section>

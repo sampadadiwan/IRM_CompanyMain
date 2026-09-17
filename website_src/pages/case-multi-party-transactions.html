@@ -1,0 +1,164 @@
+---
+title: 'Case study: 80+ secondary transactions in one week | CapHive'
+description: Seventy-five sellers, six buyers purchasing through ten entities, allocations
+  that kept moving and 150+ agreements to produce — with a one-week deadline. Here
+  is how that transaction runs.
+og_title: 'Case study: supercharging multi-party transactions'
+og_description: 75 sellers, 6 buyers, 10 buying entities, 80+ simultaneous transactions
+  and 150+ agreements, completed in a week.
+data_page: cases
+og_type: article
+body_extra: |
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Case study: 80+ secondary transactions in one week",
+    "description": "Seventy-five sellers, six buyers purchasing through ten entities, allocations that kept moving and 150+ agreements to produce.",
+    "datePublished": "2026-08-11",
+    "author": { "@type": "Organization", "name": "CapHive" },
+    "publisher": { "@type": "Organization", "name": "CapHive" },
+    "mainEntityOfPage": "https://caphive.com/case-multi-party-transactions.html"
+  }
+  </script>
+---
+
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-black tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="case-studies.html">Case Studies</a><span>/</span>Multi-party transactions
+          </nav>
+          <span class="chip-label">Case study · Secondaries</span>
+          <h1 style="margin-top:22px">Eighty-one counterparties, <em>one week.</em></h1>
+          <p class="lede">Seventy-five early investors and employees selling. Six buyers purchasing through ten entities. Eighty-plus transactions running at once, allocations that kept moving, 150+ agreements and compliance documents to produce — and a deadline of one week.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-11">Aug 11, 2026</time>
+            <span class="dot">·</span>
+            <span>8 min read</span>
+            <span class="dot">·</span>
+            <span>Secondaries</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+
+        <div class="stat-band" style="margin:0 0 34px;border:1px solid var(--line);border-radius:14px;overflow:hidden">
+          <div><strong>80<em>+</em></strong><span>transactions executed simultaneously</span></div>
+          <div><strong>150<em>+</em></strong><span>agreements and compliance documents produced</span></div>
+          <div><strong>1</strong><span>week, start to completion</span></div>
+        </div>
+
+        <h3>The engagement</h3>
+        <p>A secondary sale with 75 early investors and employees on the sell side, and six buyers acquiring through ten separate entities. Eighty-plus transactions to execute at the same time. Multiple details and documents to collect from every counterparty. Allocations that would keep changing until the last moment. And 150+ agreements and compliance filings to generate — inside seven days.</p>
+        <p>The arithmetic of that is the point. Seventy-five sellers times "email me your bank details and a tax ID" is not a week of work; it is a week of work <em>if nothing goes wrong</em>, which at eighty-one counterparties it will.</p>
+
+        <h3>Why multi-party secondaries break</h3>
+        <p>Because a single change propagates. A seller reduces their quantity by 800 units on day four. That changes one allocation, which changes a buying entity's total, which changes the advisor fee on that entity, which changes two agreements — one of which has already gone out for signature.</p>
+        <p>Run that on a spreadsheet with an email thread beside it and the failure mode isn't confusion. It's confident wrongness: a document that was correct when generated, sent after it stopped being correct.</p>
+        <div class="pull"><p>In a multi-party transaction, the hard problem is not producing 150 documents. It is knowing which of the 150 is stale.</p></div>
+
+        <h3>Step one — one venue, with the rules set in advance</h3>
+        <p>The sale is created with a submission window, a price basis and a cap. <strong>Percent allowed</strong> limits how much of their holding any seller may offer — the single most useful guardrail in an employee liquidity event. The price basis is either a <strong>fixed price</strong>, where everything trades at one number and there is nothing to negotiate, or a <strong>price range</strong>, where buyers bid inside a band and the system computes where supply and demand meet.</p>
+        <p>Large transactions can run as a <strong>tranche</strong> sale — allocation and verification repeated across rounds rather than settled once.</p>
+        <p>Access is granted per participant, marked Buyer or Seller. An investor can hold both roles in the same sale, selling part of a position while bidding for more. Only participants with the right access can see or submit anything.</p>
+
+        <h3>Step two — collection, from both sides, in a structured shape</h3>
+        <p>A <strong>seller offer</strong> carries the quantity, the price, the seller's tax ID, and the bank account and routing code that settlement will use. Optionally a pre-agreed buyer, and a flag for whether the offer participates in automatic matching. Sellers submit through their own portal, or the manager submits on their behalf where the sale is configured to allow it.</p>
+        <p>A <strong>buyer interest</strong> carries the buying entity, the quantity, the bid — inside the band for a price-range sale — the tax ID, and whether escrow has been deposited.</p>
+        <p>Two mechanics keep this honest at scale:</p>
+        <ul>
+          <li><strong>Offers are approved, and changing the quantity sends an offer back for re-approval.</strong> Only approved offers count toward total supply. A seller cannot quietly resize their position after the manager has built an allocation on it.</li>
+          <li><strong>Interests are shortlisted.</strong> Only shortlisted interests count toward demand and take part in clearing and allocation. Everything else stays visible but inert.</li>
+        </ul>
+
+        <h3>Step three — the clearing price, computed not negotiated</h3>
+        <p>For a price-range sale, the clearing price is derived from the shortlisted book:</p>
+        <ul>
+          <li>If demand is at or below supply, everyone fills and the clearing price is the <strong>lowest</strong> accepted bid.</li>
+          <li>If demand exceeds supply, the highest bidders are filled first and the clearing price is the <strong>marginal bid</strong> — the one at which supply runs out.</li>
+        </ul>
+        <p>Bids below that price stay shortlisted but unallocated, so if more supply appears they are still in the book. The result becomes the sale's final price, and every allocation prices from it.</p>
+        <figure style="margin:30px 0">
+          <table>
+            <thead><tr><th>Book</th><th>Quantity</th><th>Bid</th><th>Outcome</th></tr></thead>
+            <tbody>
+              <tr><td>Supply (approved offers)</td><td>600</td><td>—</td><td>—</td></tr>
+              <tr><td>Buyer X</td><td>400</td><td>120</td><td>Filled — 400</td></tr>
+              <tr><td>Buyer Y</td><td>200</td><td>115</td><td>Filled — 200, supply exhausted</td></tr>
+              <tr><td>Buyer Z</td><td>300</td><td>110</td><td>Unfilled, stays shortlisted</td></tr>
+            </tbody>
+          </table>
+          <figcaption style="margin-top:10px;font-size:13px;color:var(--mut)">demand 900 against supply 600 — clearing price is 115, the marginal bid</figcaption>
+        </figure>
+
+        <h3>Step four — allocations, manual where judgement matters</h3>
+        <p>An allocation links one offer to one interest with a quantity and a price. The manager can create them by hand, or let the automatic matching engine pair offers marked auto-match by price compatibility. Custom matching rules can be configured on the sale to enforce specific pairings — by geography, by investor category, by whatever the transaction requires.</p>
+        <p>Allocations remain changeable until either side is verified. That is the mechanism that made a moving allocation survivable here: the state is explicit, and the point at which it stops moving is a deliberate act rather than the passage of time.</p>
+
+        <h3>Step five — verification, then the agreements</h3>
+        <p>Verifying an offer confirms the seller's details — full name, address, tax ID, bank account — and identity and bank checks run in the background. Verifying an interest does the same for the buyer. Confirming an allocation marks both sides verified together.</p>
+        <p>Then the documents. <strong>The SPA is generated automatically when an offer is verified</strong>, provided the sale carries an Offer Template. It pulls the seller's details from the offer, the buyer's from the matched interest, and the signatory emails from each side, and files itself in the offer's folder. A separate buyer-side agreement comes from a Buyer Template, and an Allocation Template covers the allocation confirmation.</p>
+        <p>From there they go for e-signature: signers get a link, sign from a phone, and the executed copy files itself back, locked and approved. The provider is a setting on the firm rather than a fixture of the product — DocuSign or a regional equivalent, same envelope, same filing behaviour either way. Where a jurisdiction attaches something statutory to execution, that rides on the template too: a stamping configuration carries the stamp values, the signature page, and the note and its placement, so the stamping request goes out with the signature request and the agreement comes back stamped. Where a jurisdiction attaches nothing, that configuration is simply absent. A whole folder can be sent at once, queued with a small delay between documents so the signing provider isn't overwhelmed.</p>
+        <p>That is how 150+ documents happen in a week. Not by generating faster — by generating <em>on the event</em> that makes the document correct, from the record that makes it correct.</p>
+
+        <h2>⚙️ Under the hood: the three things that scale to eighty-one parties</h2>
+        <p><strong>Advisor fees are computed per offer and totalled per buying entity.</strong> Per share (allocated quantity × rate), percentage (allocated amount × rate), or flat. When an allocation moves, the fee moves with it, because it is derived rather than recorded.</p>
+        <p><strong>Escrow is tracked, not moved.</strong> Buyers mark escrow deposited on their interest; the platform records it for operations and makes no claim to have touched the money. Being explicit about what the software does not do is what lets an ops team trust the part it does.</p>
+        <p><strong>Notifications go to groups, not to a distribution list someone maintains.</strong> Ad-hoc messages can be sent to All Sellers, All Buyers, Approved Sellers, Verified Sellers or Shortlisted Buyers — categories defined by current state, so the message reaches whoever is in that state today. Status changes notify the employees configured on the sale, the investor's relationship managers, and their approved contacts.</p>
+        <div class="pull"><p>"Everyone who is verified but hasn't signed" is a question your transaction asks daily. It should be a filter, not a spreadsheet someone rebuilds each morning.</p></div>
+
+        <h2>📊 The impact</h2>
+        <p>Eighty-plus transactions executed simultaneously, 150+ agreements and compliance documents produced, and the whole thing completed within the week — with the company keeping control of how its cap table was realigned rather than discovering the shape afterwards.</p>
+        <p>The structural win is that every party saw one venue and one state. Sellers submitted against a cap they could see. Buyers bid into a band. The clearing price was computed from the book rather than argued into existence. And each document was created by the event that made it true, so nothing had to be checked for staleness before it was sent.</p>
+
+        <h2>What to take from this</h2>
+        <div class="callout">
+          <ol>
+            <li><strong>Cap what a seller may offer, at the sale level.</strong> One setting removes an entire class of downstream renegotiation.</li>
+            <li><strong>Make re-approval automatic on a quantity change.</strong> The alternative is an allocation built on a number that has since moved.</li>
+            <li><strong>Compute the clearing price; don't negotiate it.</strong> A derived price is one you can explain identically to seventy-five sellers.</li>
+            <li><strong>Generate documents from events, not from a batch job.</strong> "On verification" is a correctness guarantee; "on Thursday" is not.</li>
+            <li><strong>Define your communication groups by state.</strong> Shortlisted, approved, verified — these are the only audiences that matter, and they change hourly.</li>
+          </ol>
+        </div>
+
+        <h2>Where this goes next</h2>
+        <p>The same document generation and e-signature mechanics run the fund side — see <a href="case-investor-onboarding.html">onboarding 200+ LPs</a>. To talk through a transaction of your own, <a href="contact.html">book a walkthrough</a>.</p>
+
+        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld. The workflow, platform mechanics and behaviour described are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them; the worked book above is illustrative, and supporting detail reflects how engagements of this shape run.</p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="case-studies.html">More case studies</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>

@@ -1,6 +1,7 @@
 Feature: Commitment Adjustments
   Adjustments to capital commitments
 
+@import
 Scenario Outline: Create a commitment adjustment
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
@@ -27,6 +28,7 @@ Scenario Outline: Create a commitment adjustment
         | folio_amount_cents=10000000;adjustment_type=Arrear  | 100000000                  | 10000000                 |
         | folio_amount_cents=-10000000;adjustment_type=Arrear | 100000000                  | -10000000                |
   
+@import
 Scenario Outline: Create a commitment adjustment for 0 dollar commitment
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
@@ -60,8 +62,9 @@ Scenario Outline: Create a commitment adjustment for a remittance
   Given there is an existing investor "name=Investor 007"
   Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor 
   Given there is a capital call "close_percentages={'First Close':'20'}"
+  Given the capital calls are approved
   Given there are payments for each remittance
-  When a commitment adjustment "<adjustment>" is created for the last remittance 
+  When a commitment adjustment "<adjustment>" is created for the last remittance
   Then a reverse remittance payment must be generated for the remittance
   Given the remittances are verified
   Then the capital commitment should have a committed amount "<new_committed_amount_cents>"

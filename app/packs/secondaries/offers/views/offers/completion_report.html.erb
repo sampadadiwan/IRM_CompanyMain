@@ -88,7 +88,7 @@
                     <%= o.documents.collect(&:name).join(", ") %>
                 </td>
                 <td>
-                    <%= o.updated_at %>
+                    <%= l(o.updated_at) %>
                 </td>
             </tr>
             <% end %>

@@ -1,11 +1,14 @@
 class UsersController < ApplicationController
+  # Shared 2FA mode dispatch, also used by Users::SessionsController for password login.
+  include TwoFactorDispatch
+
   before_action :authenticate_user!, except: %w[magic_link no_password_login welcome cross_site_login redirect_to_subdomain]
   # skip_before_action :verify_authenticity_token, only: %i[magic_link]
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress whatsapp_webhook]
   skip_before_action :set_current_entity, only: %i[whatsapp_webhook]
 
-  before_action :set_user, only: %w[show update destroy edit]
+  before_action :set_user, only: %w[show update destroy edit reset_two_factor]
   after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook cross_site_login redirect_to_subdomain]
 
   def welcome; end
@@ -169,25 +172,29 @@ class UsersController < ApplicationController
       end
     end
 
+    # Security (Finding 7 follow-up): the link itself never carries a destination — see
+    # User#send_magic_link — so anything in params[:redirect_to] was appended by whoever
+    # is holding the URL. Accept it only as a same-origin path; an external host would
+    # otherwise 500 on Rails' open-redirect guard after a successful code, and a
+    # protocol-relative "//evil" must not slip through as a "path".
+    return_to = local_path_or_nil(params[:redirect_to])
+
     ActiveRecord::Base.connected_to(role: :writing) do
-      if @user.two_factor_enabled?
-        if @user.two_factor_mode.nil?
-          # Mode not yet chosen — send to selection screen before enrollment
-          session[:otp_user_id] = @user.id
-          redirect_to select_mode_two_factor_path
-          return
-        elsif @user.whatsapp_mode?
-          # WhatsApp mode — auto-send OTP before showing verification page
-          session[:otp_user_id] = @user.id
-          @user.send_otp_via_whatsapp
-          session[:otp_whatsapp_sent_at] = Time.current.to_s
-          redirect_to new_two_factor_path
-          return
-        else
-          session[:otp_user_id] = @user.id
-          redirect_to new_two_factor_path
-          return
-        end
+      # Shared with the password-login path in Users::SessionsController — see
+      # TwoFactorDispatch for why this branch is not written out twice. No sign_out
+      # here: on the magic-link path the user was never signed in to begin with.
+      two_factor_path = two_factor_challenge_path_for(@user)
+      if two_factor_path == :undeliverable
+        redirect_to new_session_path(User),
+                    alert: Users::SessionsController::UNDELIVERABLE_MESSAGE
+        return
+      elsif two_factor_path
+        # The link's own redirect_to only survives this request. Park it where
+        # after_sign_in_path_for (used by TwoFactorController#complete_login) will find
+        # it, so a 2FA user lands on the linked page rather than the dashboard.
+        session[:user_return_to] = return_to if return_to
+        redirect_to two_factor_path
+        return
       end
 
       sign_in @user
@@ -196,7 +203,7 @@ class UsersController < ApplicationController
       session[:support_user_id] = support_user_id if support_user_id.present?
     end
 
-    redirect_to(params[:redirect_to].presence || session[:user_return_to].presence || root_path,
+    redirect_to(return_to || session[:user_return_to].presence || root_path,
                 notice: "Signed in successfully")
   end
 
@@ -233,6 +240,40 @@ class UsersController < ApplicationController
     redirect_to root_path, notice: "Signed in as #{@user.full_name}"
   end
 
+  # POST /users/1/reset_two_factor
+  #
+  # Clears the user's two-factor METHOD (not the two-factor flag) so they pick a new one at
+  # their next login. Two callers share this action:
+  #   * the user themselves, from their own profile page — TwoFactorReset re-checks their
+  #     password (params[:password]) and we sign them out immediately so they go straight
+  #     to the mode-selection screen rather than sitting in a session whose second factor
+  #     is half-configured;
+  #   * a company admin / support user, from the target's user page — no password check
+  #     (the acting admin's own session + UserPolicy#reset_two_factor? is the gate); the
+  #     target's next login lands on mode selection via TwoFactorDispatch.
+  # See docs/technical/two_factor_authentication.md, "Resetting the two-factor method".
+  def reset_two_factor
+    authorize @user, :reset_two_factor?
+
+    result = TwoFactorReset.call(user: @user, actor: current_user,
+                                 password: params[:password], message: params[:message])
+
+    if result.success?
+      if @user.id == current_user.id
+        # Self-service: end the session now. Signing back in routes to select_mode
+        # because two_factor_mode is nil (TwoFactorDispatch).
+        sign_out current_user
+        redirect_to new_user_session_path,
+                    notice: "Your two-factor method has been reset. Sign in again to choose a new method."
+      else
+        redirect_to user_path(@user),
+                    notice: "Two-factor method reset for #{@user.full_name}. They will choose a new method at their next sign-in."
+      end
+    else
+      redirect_to user_path(@user), alert: result[:errors]
+    end
+  end
+
   # GET /users/1 or /users/1.json
   def show
     @bread_crumbs = { Users: users_path, "#{@user.full_name}": user_path(@user) }
@@ -264,9 +305,15 @@ class UsersController < ApplicationController
     respond_to do |format|
       if @user.update(user_params)
 
-        if current_user.has_cached_role?(:company_admin)
+        # Only touch roles when the roles field was actually submitted (it's only rendered for
+        # company admins) and only a company admin may change them at all. Any role not in
+        # User::UPDATABLE_ROLES (e.g. investor, support, investor_advisor, rm) is left untouched
+        # regardless of what was submitted here.
+        if current_user.has_cached_role?(:company_admin) && params[:user].key?(:role_name)
+          submitted_roles = Array(user_params[:role_name])
+
           User::UPDATABLE_ROLES.each do |role|
-            user_params[:role_name].present? && user_params[:role_name].include?(role) ? @user.add_role(role) : @user.remove_role(role)
+            submitted_roles.include?(role) ? @user.add_role(role) : @user.remove_role(role)
           end
         end
         format.html { redirect_to user_url(@user), notice: "User was successfully updated." }
@@ -322,6 +369,19 @@ class UsersController < ApplicationController
   # Policy checks use live DB queries; manual cache invalidation is not needed.
 
   private
+
+  # A caller-supplied destination is honoured only when it is a path on this host: it
+  # must start with a single "/" (so "//evil.example" and "/\\evil.example", which
+  # browsers read as protocol-relative URLs, are refused) and carry no scheme.
+  #
+  # @return [String, nil]
+  def local_path_or_nil(value)
+    value = value.to_s.strip
+    return nil if value.blank?
+    return nil unless value.start_with?("/") && !value.start_with?("//", "/\\")
+
+    value
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_user

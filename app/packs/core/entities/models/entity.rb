@@ -78,6 +78,11 @@ class Entity < ApplicationRecord
   has_many :access_rights, dependent: :destroy
   has_many :investments, dependent: :destroy
 
+  # Declared before :funds on purpose: templates restrict fund deletion, so groups (which
+  # restrict template deletion), run history and templates must go before the funds do.
+  has_many :allocation_run_template_groups, dependent: :destroy
+  has_many :allocation_group_runs, dependent: :destroy
+  has_many :allocation_run_templates, dependent: :destroy
   has_many :funds, dependent: :destroy, inverse_of: :entity
   has_many :account_entries, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
@@ -92,6 +97,7 @@ class Entity < ApplicationRecord
   has_many :fund_units, dependent: :destroy
   has_many :fund_reports, dependent: :destroy
   has_many :fund_formulas, dependent: :destroy
+  has_many :shareholder_positions, dependent: :destroy
 
   has_many :investor_accesses, dependent: :destroy
   has_many :investor_kycs, dependent: :destroy
@@ -133,7 +139,20 @@ class Entity < ApplicationRecord
   end
 
   after_save :run_post_process, if: :saved_change_to_entity_type?
-  after_commit :deactivate_employees, if: :saved_change_to_enabled?
+
+  # Off-boarding cascade. Fires wherever `active` flips (support UI, /admin, console) so the
+  # cascade can never be bypassed by editing the entity from another screen.
+  # NOTE: this replaces an older hook on `saved_change_to_enabled?` which never ran — entities
+  # have no `enabled` attribute and EntityEnabled#method_missing swallows unknown predicates,
+  # so the condition silently evaluated to nil on every commit.
+  # `on: :update` plus the !active? guard keeps this to the one transition that matters: an
+  # existing entity being switched off. Creating a row with active: false, or re-activating one,
+  # must not enqueue a cascade.
+  after_commit :cascade_deactivation, on: :update, if: -> { saved_change_to_active? && !active? }
+
+  # Set by EntitiesController#deactivate so the cascade job can alert the support user who
+  # triggered it once the (backgrounded) revocation finishes.
+  attr_accessor :deactivated_by_id
 
   def run_post_process
     result = SetupCompany.call(entity: self)
@@ -149,11 +168,12 @@ class Entity < ApplicationRecord
     end
   end
 
-  def deactivate_employees
-    return if enabled? # Only deactivate if entity is disabled
-
-    Rails.logger.info "Deactivating employees for entity #{id} - #{name}"
-    employees.update_all(active: false)
+  # Deactivating an entity switches off its staff logins and un-approves every investor access
+  # it granted. Both can span thousands of rows for a large client, so the work is backgrounded.
+  # Re-activating the entity deliberately does NOT restore anything — access has to be re-granted.
+  def cascade_deactivation
+    Rails.logger.info "Entity #{id} - #{name} deactivated; cascading to employees and investor accesses"
+    EntityDeactivationJob.perform_later(entity_id: id, user_id: deactivated_by_id)
   end
 
   def update_kanban_permissions
@@ -271,7 +291,7 @@ class Entity < ApplicationRecord
     offers.each(&:really_destroy!)
     valuations.each(&:really_destroy!)
     investor_notices.each(&:really_destroy!)
-    documents.each(&:really_destroy!)
+    documents.find_each(&:really_destroy!)
     doc_questions.each(&:really_destroy!)
     # messages.each(&:really_destroy!)
     tasks.each(&:really_destroy!)
@@ -289,18 +309,21 @@ class Entity < ApplicationRecord
     import_uploads.each(&:destroy!)
     investor_accesses.each(&:really_destroy!)
     access_rights.each(&:really_destroy!)
-    investments.each(&:really_destroy!)
-    account_entries.each(&:really_destroy!)
-    capital_calls.each(&:really_destroy!)
-    call_fees.each(&:really_destroy!)
-    capital_commitments.each(&:really_destroy!)
-    capital_remittances.each(&:really_destroy!)
-    capital_remittance_payments.each(&:really_destroy!)
-    capital_distributions.each(&:really_destroy!)
-    capital_distribution_payments.each(&:really_destroy!)
-    commitment_adjustments.each(&:really_destroy!)
-    fund_ratios.each(&:really_destroy!)
-    fund_units.each(&:really_destroy!)
+    investments.find_each(&:really_destroy!)
+    # Large per-entity tables are batched with find_each (~1000 rows in memory at a
+    # time) instead of loading the whole association; keyset pagination stays valid
+    # while rows are hard-deleted behind the cursor. account_entries is the largest.
+    account_entries.find_each(&:really_destroy!)
+    capital_calls.find_each(&:really_destroy!)
+    call_fees.find_each(&:really_destroy!)
+    capital_commitments.find_each(&:really_destroy!)
+    capital_remittances.find_each(&:really_destroy!)
+    capital_remittance_payments.find_each(&:really_destroy!)
+    capital_distributions.find_each(&:really_destroy!)
+    capital_distribution_payments.find_each(&:really_destroy!)
+    commitment_adjustments.find_each(&:really_destroy!)
+    fund_ratios.find_each(&:really_destroy!)
+    fund_units.find_each(&:really_destroy!)
     fund_reports.each(&:really_destroy!)
     fund_formulas.each(&:really_destroy!)
     funds.each(&:really_destroy!)

@@ -1,0 +1,290 @@
+---
+title: Portfolio Scoring Agent — Sector-Guided Company Scores | CapHive
+description: Scores each portfolio company 0–100 using a sector-specific scoring guide
+  and your configured AI model, with a grade, dimension breakdown and data-coverage
+  counts.
+og_title: Portfolio Scoring Agent | CapHive
+og_description: A 0–100 investment score per portfolio company, scored against a sector-specific
+  guide you upload.
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Portfolio Scoring Agent
+      </nav>
+      <span class="chip-label">Portfolio · Agent</span>
+      <h1 style="margin-top:22px">A 0&ndash;100 investment score, <em>against a guide you write.</em></h1>
+      <p class="lede">
+        The Portfolio Scoring Agent scores each portfolio company using a sector-specific scoring guide and AI. It gathers the company&rsquo;s documents, KPI data, valuations and investment history, sends all of that to your configured AI model together with the matching scoring guide, and stores a structured 0&ndash;100 investment score on the company.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>Every portfolio company with a sector set, or a single company</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>Yes &mdash; this agent&rsquo;s own model setting, or your entity default</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A new scoring report per run: score, grade, dimensions, data coverage</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>For each portfolio company, the agent works through four steps.</p>
+          <ol>
+            <li><strong>Find the right scoring guide.</strong> It looks at the company&rsquo;s sector and finds the matching scoring guide among the skill files you have uploaded for this agent. If the company has no sector set, or there is no matching guide and no general fallback guide either, or the matched file cannot be read as text, this step records an error &mdash; but the run continues anyway, so you still get a report explaining what went wrong rather than nothing at all.</li>
+            <li><strong>Gather the company&rsquo;s data.</strong> The agent collects the company&rsquo;s KPI reports, limited to those tagged &ldquo;Actual&rdquo; and filtered to your chosen frequency, along with its investment history, its valuations most recent first, its configuration fields, and the text of any documents attached to recent KPI reports. This step is skipped entirely if step one hit an error.</li>
+            <li><strong>Generate the score.</strong> The agent combines the scoring guide with everything gathered in step two into a single request to your configured AI model, and expects back a structured score: an overall score, a grade, a summary, and a breakdown by dimension, plus strengths, risks, recommendations and a note on how much data was available.</li>
+            <li><strong>Save the score.</strong> Every run creates a <strong>new</strong> score report rather than overwriting the last one, whether the run succeeded or recorded an error.</li>
+          </ol>
+          <div class="pull">
+            <p>Every run creates a new report rather than overwriting the last one, so your scoring history builds up over time.</p>
+          </div>
+          <p>
+            Companies with no sector set are left out of fund-wide runs entirely, before the agent even
+            starts. A batch run only looks at portfolio companies that have a sector assigned, so a company
+            with no sector quietly never gets a report from a fund-wide run.
+          </p>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Default</th><th>What it controls</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Generic Portfolio Skill (file upload)</td><td>&mdash;</td><td>The fallback scoring guide used when no sector-specific guide matches the company&rsquo;s sector. Upload a <strong>.md</strong> or <strong>.txt</strong> file. The name you give the upload must exactly match the field&rsquo;s label &mdash; &ldquo;Generic Portfolio Skill&rdquo; &mdash; for the agent to find it.</td></tr>
+              <tr><td>Beauty &amp; Skincare Skill (file upload)</td><td>&mdash;</td><td>A sector-specific scoring guide, used when a company&rsquo;s sector is set to &ldquo;Beauty &amp; Skincare.&rdquo; Matched through the field&rsquo;s internal sector tag. The same format and upload-name rules apply. You can add similar fields for other sectors the same way.</td></tr>
+              <tr><td>Min points per section</td><td><strong>5</strong></td><td>The minimum number of bullet points the AI must produce for each section of the score &mdash; both within each scoring dimension, for positives and concerns, and in the overall strengths, risks and recommendations lists. The system enforces a floor of 3 even if you set it lower, but a freshly set-up agent starts at 5.</td></tr>
+              <tr><td>KPI frequency filter</td><td>All</td><td>Restricts which KPI reporting periods are sent to the AI as context: All, Month, Quarter, Half Year, Year or YTD. &ldquo;All&rdquo; applies no filter.</td></tr>
+              <tr><td>Documents from last N KPI reports</td><td><strong>3</strong></td><td>How many of the most recent &ldquo;Actual&rdquo;-tagged KPI report periods the agent pulls document attachments from. If the field were left blank or zero, the system would fall back to 1, but a freshly set-up agent is seeded with 3.</td></tr>
+              <tr><td>Document name filter</td><td>(blank)</td><td>A comma-separated, case-insensitive list of document names to include from the selected reports. Leave blank to include every document from those reports.</td></tr>
+            </tbody>
+          </table>
+          <p>
+            On defaults you may have seen elsewhere: 3 and 1 for &ldquo;Min points per section&rdquo; and
+            &ldquo;Documents from last N KPI reports&rdquo; are only the system&rsquo;s last-resort fallback
+            if a field is missing or blank. When <strong>Setup All Agents</strong> provisions this agent it
+            writes in 5 and 3, and those are what a freshly configured agent will use.
+          </p>
+          <p>
+            Beyond that configuration, the agent reads the company&rsquo;s &ldquo;Actual&rdquo;-tagged KPI
+            reports and their attached documents, its valuations, its investment history and its own
+            configuration field values. PDF, Excel, PowerPoint, Word, plain text, Markdown and CSV files are
+            accepted for upload, though Word documents are accepted by the upload screen and currently have
+            no text-reading support.
+          </p>
+          <p>
+            The agent&rsquo;s General tab shows a yellow warning banner whenever the scoring-guide setup is
+            broken, before you run anything. It flags a scoring-guide field that is missing entirely
+            (re-run Setup All Agents to restore it); a scoring-guide field that has lost its sector tag &mdash;
+            the internal tag telling the agent which sector the file scores, without which the agent can
+            never match the file even though the upload looks fine on the edit page, and which re-running
+            Setup All Agents repairs automatically; and a scoring-guide field with no file uploaded,
+            including the general fallback.
+          </p>
+          <p>
+            If a run fails anyway, the failed report names the specific setup problem &mdash; for example
+            that the field is not tagged as a skill &mdash; rather than only saying no guide was found. Failed
+            runs are listed in the Scoring Reports tab alongside successful ones, with the error shown in the
+            status column.
+          </p>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <p>
+            A Company Admin turns the agent on in the administration area, under the entity&rsquo;s support
+            agents settings. While it is off, the <strong>Run Now</strong> button and the Run Scoring Agent
+            and Re-score buttons on a portfolio company&rsquo;s page are disabled.
+          </p>
+          <p>
+            The agent requires an AI provider key, configured under the LLM Keys area of AI &rarr; Support
+            Agents. It calls the AI model on essentially every run, unless it stops early because of a
+            scoring-guide error. It uses this agent&rsquo;s own model setting if one is configured, and your
+            entity&rsquo;s default model otherwise.
+          </p>
+          <p>
+            Only Company Admin users can run Setup All Agents and edit this agent&rsquo;s configuration
+            fields and uploaded scoring guides. The Run and Re-score buttons on a portfolio company&rsquo;s
+            page follow that company record&rsquo;s normal edit permissions.
+          </p>
+
+          <h2 id="running-it">Running it</h2>
+          <ul>
+            <li><strong>From the agent&rsquo;s own page.</strong> <strong>Run Now</strong> on the General tab. Without a specific company targeted, this scores every portfolio company that has a sector set, as one sequential batch with no per-company progress view; you get a single summary notification when it is done.</li>
+            <li><strong>From a single portfolio company&rsquo;s page.</strong> Run Scoring Agent, or Re-score from the score widget once a score already exists. This scores just that one company.</li>
+            <li><strong>Batch run.</strong> Select several companies from the Portfolio Agent Run screen and run the agent on them to queue one job covering all of them, with a single summary notification and no individual progress view.</li>
+          </ul>
+          <p>
+            A fund-wide or batch run scores every portfolio company that has a sector assigned, one after
+            another. If one company hits a problem it does not stop the rest &mdash; successes and errors are
+            both tallied into the final summary.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            The agent has the standard Schedule tab, but <strong>Setup All Agents does not turn on a default
+            schedule</strong> for it. It is designed to be run on demand, so recurring scoring needs the
+            Schedule tab configured yourself. Bear in mind that scoring your full portfolio on every
+            scheduled run means every company scored triggers an AI call &mdash; worth factoring into cost
+            before turning on a frequent schedule.
+          </p>
+
+          <h2 id="where-the-output-goes">Where the output goes</h2>
+          <ul>
+            <li><strong>Scoring Reports tab.</strong> On this agent&rsquo;s own page: every scoring report, across all companies. Failed runs appear here too, marked with a red Failed badge and the reason shown in the table, so you do not have to expand the row to see why a score did not generate.</li>
+            <li><strong>Execution History tab.</strong> Every run, with status and duration.</li>
+            <li><strong>Company Score widget</strong> on the portfolio company page. It shows the latest completed score, or the most recent failure&rsquo;s error message if the last run failed, or a prompt to run the agent if no report exists yet.</li>
+          </ul>
+          <p>
+            The score is <strong>not</strong> saved onto the portfolio company record itself. It lives
+            entirely inside that company&rsquo;s scoring report, and because every run creates a brand-new
+            report the history accumulates &mdash; the widget always shows the most recent one.
+          </p>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <p>A successful report includes:</p>
+          <ul>
+            <li><strong>Overall score</strong> &mdash; a whole number from 0 to 100.</li>
+            <li><strong>Grade</strong> &mdash; a free-form label, for example &ldquo;B+,&rdquo; returned by the AI. The product also derives its own qualitative label &mdash; Exceptional, Strong, Good, Adequate, Mixed, Underperforming or Distressed &mdash; purely from the numeric score band, independent of whatever grade text the AI returned.</li>
+            <li><strong>Summary</strong> &mdash; a narrative overview shown as the headline statement.</li>
+            <li><strong>Dimensions</strong> &mdash; a breakdown by scoring category, each with a name, score, weight, rationale and lists of positives and concerns. Each dimension is required to include at least the configured minimum number of points in both lists.</li>
+            <li><strong>Strengths, risks and recommendations</strong> &mdash; top-level lists, each expected to have at least the configured minimum number of items.</li>
+            <li><strong>Data coverage</strong> &mdash; counts of how many KPI periods, valuations and documents were actually used, shown as badges next to the score.</li>
+          </ul>
+          <p>
+            A failed report instead shows an error message and is marked as failed. The score widget displays
+            that error text directly, so you can see why a company has no score &mdash; most commonly a
+            missing or unreadable scoring guide for that company&rsquo;s sector.
+          </p>
+          <p>
+            Scores can be edited manually in place: double-click any field in the widget to overwrite it.
+            Edited fields get a small &ldquo;Edited&rdquo; badge next to the score.
+          </p>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <div class="callout">
+            <p>
+              <strong>The scoring guide is found by upload name, not by filename or by which field it was
+              attached through.</strong> The uploaded file&rsquo;s display name must exactly match the
+              field&rsquo;s label &mdash; &ldquo;Generic Portfolio Skill,&rdquo; &ldquo;Beauty &amp; Skincare
+              Skill&rdquo; &mdash; or the agent will not find it, however correct the upload looks on the edit
+              page.
+            </p>
+          </div>
+          <ul>
+            <li><strong>No sector set means a company is silently left out, not flagged.</strong> Fund-wide and batch runs filter out any portfolio company with no sector value before the agent starts, so those companies never get a report, failed or otherwise, from that kind of run. Run the agent directly from that company&rsquo;s own page instead and it does proceed, failing with a clear message that no sector is configured.</li>
+            <li><strong>No scoring guide matches the company&rsquo;s sector.</strong> The agent looks for an uploaded file tagged for the company&rsquo;s exact sector, case-insensitively, falling back to a file tagged &ldquo;General&rdquo; if one exists. If neither is found, the report fails with a message naming the sector that had no match. Supporting a new sector needs both a new upload field configured for that sector and a file uploaded to it whose upload name matches that field&rsquo;s label exactly.</li>
+            <li><strong>Wrong file format for a scoring guide or KPI document.</strong> The agent can only read <strong>.txt</strong> and <strong>.md</strong> files as text. Word documents and any other file type are accepted by the upload screen but have no text-reading logic, so they are silently treated as empty rather than causing an error. For a scoring guide this surfaces as a message that the file is empty or could not be read; for a KPI document attachment it just means that document contributes nothing to the AI&rsquo;s context, with no visible warning anywhere in the report.</li>
+            <li><strong>The AI&rsquo;s response does not contain a usable score.</strong> The agent looks for a structured score in the reply in a few different ways before giving up. If the answer is all prose with no structured score, or is missing required fields &mdash; overall score, grade, summary, dimension breakdown &mdash; the run is recorded as a failure with that error message. It will never silently save a report with incomplete or malformed data.</li>
+            <li><strong>An out-of-range score, or an empty dimension list</strong>, is caught the same way and also results in a failed report rather than a saved-but-wrong score.</li>
+            <li><strong>KPI document gathering only looks at your most recent few &ldquo;Actual&rdquo; reports.</strong> The &ldquo;Documents from last N KPI reports&rdquo; setting, 3 by default, limits which report periods are scanned for documents. A document attached to an older report outside that window is never sent to the AI, even if your document name filter would otherwise have allowed it.</li>
+            <li><strong>The document name filter is an exact, case-insensitive match, not a partial match.</strong> A filter value that does not exactly match a document&rsquo;s stored name silently excludes that document, with no error or warning.</li>
+            <li><strong>Re-running creates a new report; it never updates the previous one.</strong> If you re-run scoring and it fails, the widget shows that new failure message in place of your last good score, because the widget always shows the most recent report. Re-run successfully to restore a visible score.</li>
+            <li><strong>Changing a company&rsquo;s category away from &ldquo;Portfolio Company&rdquo; and back clears its sector.</strong> The system blanks the sector field whenever a company&rsquo;s category changes away from Portfolio Company, so switching the category back later does not bring the old sector value back. Re-set the sector, and re-verify the scoring guide match, afterwards.</li>
+          </ul>
+
+          <h2 id="questions">Questions</h2>
+          <div class="faq">
+            <details>
+              <summary>A company has a sector set but never shows up when I run the agent for my whole fund.</summary>
+              <div>
+                <p>Try running it directly from that company&rsquo;s own page. Fund-wide and batch runs only include companies that have a sector value saved at all &mdash; if the sector is set but does not exactly match a configured scoring guide, or the General fallback, the company is still included in the run. Check that company&rsquo;s individual report for the specific error rather than assuming it was skipped.</p>
+              </div>
+            </details>
+            <details>
+              <summary>The score widget says the last scoring run failed, with no useful detail.</summary>
+              <div>
+                <p>Open the failed report and read the error message; it is also shown directly in the widget. The two most common causes are no scoring guide matching the company&rsquo;s sector, and the scoring guide being uploaded in an unsupported file format.</p>
+              </div>
+            </details>
+            <details>
+              <summary>I uploaded a scoring guide but the agent still says no skill is configured.</summary>
+              <div>
+                <p>The uploaded file&rsquo;s display name must exactly match the field&rsquo;s label, for example &ldquo;Generic Portfolio Skill&rdquo; or &ldquo;Beauty &amp; Skincare Skill.&rdquo; The agent looks the file up by that name &mdash; not by which field it was attached through, and not by the original filename from your computer.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Can I use a Word document as a scoring guide?</summary>
+              <div>
+                <p>No. Only <strong>.md</strong> and <strong>.txt</strong> files are read as scoring guide text. Other file types accepted by the upload screen, such as PDF and Excel, are intended for KPI documents rather than scoring guides.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Why does &ldquo;Min points per section&rdquo; show 5 when some documentation says the default is 3?</summary>
+              <div>
+                <p>3 is only the system&rsquo;s last-resort fallback for when the field is blank or invalid. An agent freshly provisioned through Setup All Agents is seeded with 5, and that is the value you will see in the product.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Does scoring write anything back onto the portfolio company record?</summary>
+              <div>
+                <p>No. The score lives only on the scoring report tied to that company. The portfolio company record itself is never changed by this agent.</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>set.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-portfolio-company.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Portfolio Company Agent</h3>
+          <p>Rule-based checks on KPI submissions, required documents and valuations, company by company.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-presentation-analyst.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Investor Presentation Analyst</h3>
+          <p>Reads investor presentations across periods and surfaces commitment misses and dropped risks.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-portfolio-report.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Portfolio Report Agent</h3>
+          <p>Investment-grade evaluation reports built section by section from a company's pitch materials.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

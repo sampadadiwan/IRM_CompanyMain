@@ -1,0 +1,63 @@
+<%#
+  Allocation run checker report. Everything lives in tabs: the summary, the "did the run
+  happen correctly" checks (section 1) and the "do the numbers add up" checks (section 2).
+  See docs/business_requirements/allocation_run_checker.md.
+%>
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <div>
+      <%# Fund and period live in the details table below, so no subtitle here. %>
+      <h1 class="h3 mb-0 text-gray-800">Allocation Run Check</h1>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <%= link_to "Back", allocate_form_fund_path(@fund), class: "btn btn-outline-secondary" %>
+      <%= link_to run_account_entries_path(@allocation_run), class: "btn btn-outline-info" do %>
+        <i class="ti ti-list-details"></i> Account Entries
+      <% end %>
+      <% if policy(@report).create? && @report.finished? %>
+        <%= button_to allocation_run_reports_path(allocation_run_id: @allocation_run.id),
+                      method: :post, class: "btn btn-outline-primary", form_class: "d-inline" do %>
+          <i class="ti ti-refresh"></i> Check again
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# The whole tab block sits in one Turbo Frame, not just the summary: while the checks are
+      still running the frame reloads itself every few seconds, and the findings tabs have to
+      arrive in the same reload as the summary. Wrapping only the summary would flip the badge
+      to Pass / Warn / Fail while both findings tabs still read "not produced a result yet".
+      The reload resets the open tab to Summary, which is where the reviewer is looking while
+      it is pending, and the polling stops as soon as the report is finished. %>
+  <%= turbo_frame_tag "allocation_run_report" do %>
+  <div data-controller="tabs">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a class="nav-link <%= 'active' if @tab == 'summary' %>" data-bs-toggle="tab" href="#summary">Summary</a>
+      <a class="nav-link <%= 'active' if @tab == 'run' %>" data-bs-toggle="tab" href="#run">
+        Did the run happen correctly?
+        <span class="badge bg-secondary-subtle text-secondary ms-1"><%= @report.findings_for("run").size %></span>
+      </a>
+      <a class="nav-link <%= 'active' if @tab == 'arithmetic' %>" data-bs-toggle="tab" href="#arithmetic">
+        Do the numbers add up?
+        <span class="badge bg-secondary-subtle text-secondary ms-1"><%= @report.findings_for("arithmetic").size %></span>
+      </a>
+    </nav>
+
+    <div class="tab-content">
+      <div id="summary" class="tab-pane fade <%= 'show active' if @tab == 'summary' %>">
+        <%= render "summary", report: @report, allocation_run: @allocation_run %>
+      </div>
+
+      <div id="run" class="tab-pane fade <%= 'show active' if @tab == 'run' %>">
+        <%= render "findings", report: @report, group: "run", allocation_run: @allocation_run,
+                   empty_message: "The checks have not produced a result yet." %>
+      </div>
+
+      <div id="arithmetic" class="tab-pane fade <%= 'show active' if @tab == 'arithmetic' %>">
+        <%= render "findings", report: @report, group: "arithmetic", allocation_run: @allocation_run,
+                   empty_message: "The checks have not produced a result yet." %>
+      </div>
+    </div>
+  </div>
+  <% end %>
+<% end %>

@@ -108,10 +108,26 @@ class ImportUtil < Trailblazer::Operation
     false
   end
 
+  # Normalise a single spreadsheet cell.
+  # Files pasted together from Word/web pages routinely carry non-breaking spaces (U+00A0)
+  # and other unicode blanks. String#strip only removes ASCII whitespace, so those
+  # characters survive and silently break exact-match lookups such as
+  # entity.funds.where(name: "\u00A0Artha Fund IV"), which then returns nil.
+  #
+  # [[:blank:]] and not [[:space:]]: blank covers spaces and tabs including the
+  # unicode ones, while leaving newlines alone. Some cells legitimately hold
+  # multi-line text - a fund formula body is Ruby source, and folding its newlines
+  # into spaces joins two statements into one line and makes it unparseable.
+  def sanitize_cell(value)
+    return nil if value.nil?
+
+    value.to_s.gsub(/[[:blank:]]/, " ").strip.squeeze(" ")
+  end
+
   # get header row without the mandatory *
   def get_headers(headers)
     # The headers are transformed by strip, squeeze and titleize and then stripped of *
-    ret_headers = headers.compact.each { |x| x&.delete!("*") }.map { |h| h&.downcase&.strip&.squeeze(" ")&.titleize }
+    ret_headers = headers.compact.each { |x| x&.delete!("*") }.map { |h| sanitize_cell(h)&.downcase&.titleize }
     Rails.logger.debug { "ret_headers = #{ret_headers}" }
     ret_headers
   end
@@ -140,7 +156,7 @@ class ImportUtil < Trailblazer::Operation
           end
 
           # This sanitizes each row by stripping and squeezing spaces
-          sanitized_row = row[..(headers.length - 1)].map { |x| x&.to_s&.strip&.squeeze(" ") }
+          sanitized_row = row[..(headers.length - 1)].map { |x| sanitize_cell(x) }
 
           # Fail fast: an earlier row failed, so skip the remaining rows as they may depend on it (eg a Sell based on a failed Buy)
           if stopped_at
@@ -153,6 +169,14 @@ class ImportUtil < Trailblazer::Operation
           # Ensure the Audit trail is created as the user who uploaded the file
           success = Audited.audit_class.as_user(import_upload.user) do
             process_row(headers, custom_field_headers, sanitized_row, import_upload, ctx)
+          end
+          # If this is a ShareholderPosition import, allow the importer to inject a computed Fully Dilluted % into the sanitized row
+          if import_upload.import_type == "ShareholderPosition"
+            fd_index = headers.index("Fully Dilluted %") || headers.index("Fully Diluted %")
+            if fd_index && fd_index >= 0
+              computed = import_upload.instance_variable_get(:@last_row_computed_percent)
+              sanitized_row[fd_index] = computed if computed.present?
+            end
           end
           # add row to results sheet
           sheet.add_row(sanitized_row)
@@ -186,7 +210,9 @@ class ImportUtil < Trailblazer::Operation
         true
       else
         import_upload.failed_row_count += 1
-        row << "Error"
+        # save_row returned falsy without raising, so there is no message to show.
+        # Say that plainly rather than leaving a bare "Error" in the results sheet.
+        row << "Error - the row could not be saved. Check that every record it refers to exists."
         false
       end
     rescue ActiveRecord::Deadlocked => e
@@ -211,8 +237,8 @@ class ImportUtil < Trailblazer::Operation
     if form_type.nil? && FormType::MULTIPLE_FORM_TYPES_ALLOWED.include?(model.class.name)
       raise "Form Type must be specified for #{model.class.name} when setting up custom fields"
     elsif form_type.present?
-      # Create a map of label to form custom field for faster lookup
-      fcf_label_map = form_type.form_custom_fields.index_by { |f| f.label.downcase }
+      # Create a map of column header to form custom field for faster lookup
+      fcf_label_map = custom_field_header_map(form_type)
     end
 
     custom_field_headers.delete("Update Only")
@@ -227,12 +253,13 @@ class ImportUtil < Trailblazer::Operation
         Rails.logger.debug { "### setup_custom_fields: processing #{cfh}" }
         next if cfh.blank? # && user_data[cfh].present?
 
-        json_fields_key = if form_type.present? && fcf_label_map[cfh.downcase].present?
+        fcf = fcf_label_map[custom_field_header_key(cfh)] if form_type.present?
+        json_fields_key = if fcf.present?
                             # Get the json fields key from the form custom field name based on the label
-                            fcf_label_map[cfh.downcase].name
-                          elsif form_type.present? && fcf_label_map[cfh.downcase].blank?
+                            fcf.name
+                          elsif form_type.present?
                             # In the tests we may not have created the custom fields yet, so allow that, but in the real world we should raise an error
-                            Rails.env.test? ? FormCustomField.to_name(cfh) : raise("Custom field #{cfh} not found in form type #{form_type.name}")
+                            Rails.env.test? ? FormCustomField.to_name(cfh) : raise("Custom field #{cfh} not found in form type #{form_type.name} (tag #{form_type.tag})")
                           else
                             # Create the json fields key from the header
                             FormCustomField.to_name(cfh)
@@ -244,8 +271,32 @@ class ImportUtil < Trailblazer::Operation
   end
   # rubocop:enable Metrics/CyclomaticComplexity
 
+  # Maps a normalised column header to its form custom field, keyed on both the label and the name.
+  # Keyed on human_label, not label: a Label left blank in the UI is stored as "" (or nil), yet the
+  # screens and the upload template (generate_upload_xlsx) show name.humanize.titleize - keying on the
+  # raw label collapsed every such field onto one "" key and no column could match.
+  # Keys go through the same titleize as get_headers, which turns "-" and "_" into spaces, so a label
+  # like "Pre-Money Valuation" or "udr_1" still matches its own column.
+  # The name is also accepted as it is shown as "Import Column Name" on the form type page.
+  # When keys collide, an explicit label beats a label derived from the name, which beats the name -
+  # so a column that matched an explicitly labelled field before still resolves to that same field.
+  def custom_field_header_map(form_type)
+    fields = form_type.form_custom_fields.to_a
+    explicit, derived = fields.partition { |fcf| fcf.label.present? }
+    by_name = fields.index_by { |fcf| custom_field_header_key(fcf.name) }
+    by_derived_label = derived.index_by { |fcf| custom_field_header_key(fcf.human_label) }
+    by_explicit_label = explicit.index_by { |fcf| custom_field_header_key(fcf.label) }
+    by_name.merge(by_derived_label).merge(by_explicit_label)
+  end
+
+  # Squeezed again after titleize: get_headers squeezes first, so "Photo - Joint Holder" arrives as
+  # "Photo   Joint Holder" once titleize has turned the "-" into a space.
+  def custom_field_header_key(header)
+    sanitize_cell(sanitize_cell(header)&.downcase&.titleize).to_s.downcase
+  end
+
   def setup_exchange_rate(model, user_data)
-    as_of = Date.local_parse(user_data["As Of"]) if user_data["As Of"].present?
+    as_of = parse_date_cell(user_data, "As Of")
     ExchangeRate.create(from: user_data["From Currency"], to: user_data["To Currency"], as_of:, rate: user_data["Exchange Rate"], entity_id: model.entity_id, notes: "Imported with #{model}")
   end
 
@@ -261,7 +312,16 @@ class ImportUtil < Trailblazer::Operation
       next if idx.zero?
 
       exchange_rate = [headers, row].transpose.to_h
-      exchange_rate["As Of"] = Date.local_parse(exchange_rate["As Of"].to_s)
+      # Skip trailing blank rows rather than sorting a nil As Of below, and name
+      # the sheet in the error when a rate carries an unparseable date
+      next if exchange_rate.values.all? { |v| v.to_s.strip.blank? }
+
+      begin
+        exchange_rate["As Of"] = parse_date_cell(exchange_rate, "As Of", required: true)
+      rescue StandardError => e
+        raise "Exchange Rates sheet, row #{idx + 1}: #{e.message}"
+      end
+
       exchange_rates << exchange_rate
     end
 
@@ -271,6 +331,53 @@ class ImportUtil < Trailblazer::Operation
 
   def stz(val)
     val&.strip&.squeeze(" ")
+  end
+
+  # ── Cell helpers ────────────────────────────────────────────────────────────
+  # A row that fails must say which column is wrong. Reading a cell straight out
+  # of user_data and calling strip/downcase/split on it raises a bare
+  # NoMethodError when the cell is empty, which tells the user nothing about
+  # what to fix. These helpers keep the failure message anchored to the column.
+
+  # Fetch a cell value. Pass required: true to reject a blank cell by name.
+  def cell(user_data, column, required: false)
+    value = user_data[column]
+    raise "#{column} must be specified" if required && value.to_s.strip.blank?
+
+    value
+  end
+
+  # Yes/No flag columns. A blank cell is false rather than a NoMethodError.
+  def flag?(value)
+    %w[yes true y].include?(value.to_s.strip.downcase)
+  end
+
+  # Parse a date cell. Date.local_parse falls back to Date.parse, which reports
+  # "no implicit conversion of nil into String" for a blank cell and "invalid
+  # date" for a malformed one - neither names the column, so translate both.
+  def parse_date_cell(user_data, column, required: false)
+    raw = user_data[column]
+
+    if raw.to_s.strip.blank?
+      raise "#{column} must be specified" if required
+
+      return nil
+    end
+
+    # Roo hands back real Date/Time objects for date formatted cells - convert those
+    # directly rather than round tripping them through the string parser
+    return raw.to_date if !raw.is_a?(String) && raw.respond_to?(:to_date)
+
+    begin
+      Date.local_parse(raw.strip)
+    rescue StandardError
+      raise "#{column} '#{raw}' is not a valid date. Use the format #{date_format_example}"
+    end
+  end
+
+  # A sample date in the locale's format, so the user has something to copy
+  def date_format_example
+    Time.zone.today.strftime(I18n.t("date.formats.default"))
   end
 
   def defer_counter_culture_updates

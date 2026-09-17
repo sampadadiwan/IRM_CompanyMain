@@ -4,6 +4,12 @@ class InvestorKycAction < Trailblazer::Operation
     validate = ctx[:validate].nil? ? ctx[:investor_user] : ctx[:validate]
     # If the KYC is verified, then its also completed by the investor
     investor_kyc.completed_by_investor = investor_kyc.verified if investor_kyc.verified
+    # If a fund user explicitly flips completed_by_investor from true -> false, unlock the KYC for the investor again.
+    # (Avoid forcing draft_saved on normal edits where completed_by_investor was already false.)
+    if !ctx[:investor_user] && investor_kyc.completed_by_investor_was && !investor_kyc.completed_by_investor
+      investor_kyc.submission_status = "draft_saved"
+      investor_kyc.submitted_at = nil
+    end
     investor_kyc.save(validate:)
   end
 

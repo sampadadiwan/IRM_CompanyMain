@@ -1,15 +1,43 @@
       <%= custom_form_fields(capital_call, form) %>
 
-      <div class="form-group">
-        <%= form.label :send_call_notice_flag, "Send Call Notification" %>
-        <%= form.check_box :send_call_notice_flag, class: "form-check-input" %>
-        <small class="text-muted">Send call notification to investors when call is approved and will also attach the call notice.</small>
+      <div class="toggle-row">
+        <div class="d-flex align-items-start gap-3">
+          <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-primary-subtle">
+            <i class="ti ti-mail-forward fs-5 text-primary-emphasis"></i>
+          </span>
+          <div>
+            <%= form.label :send_call_notice_flag, class: "toggle-row-label" do %>
+              Send Call Notification
+              <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+                 data-bs-title="Emails go out to every investor on this call as soon as it's approved, with the call notice PDF attached. Turn this off to approve the call without notifying investors."></i>
+            <% end %>
+            <small class="form-text text-muted d-block">Notifies investors when the call is approved and attaches the call notice.</small>
+          </div>
+        </div>
+        <label class="ios-toggle">
+          <%= form.check_box :send_call_notice_flag, class: "ios-toggle-input" %>
+          <span class="ios-toggle-slider"></span>
+        </label>
       </div>
 
-      <div class="form-group">
-        <%= form.label :send_payment_notification_flag, "Send Payment Notification" %>
-        <%= form.check_box :send_payment_notification_flag, class: "form-check-input" %>
-        <small class="text-muted">Send payment notifications to investors when remittance is verified</small>
+      <div class="toggle-row">
+        <div class="d-flex align-items-start gap-3">
+          <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 kpi-info-icon bg-success-subtle">
+            <i class="ti ti-receipt-2 fs-5 text-success-emphasis"></i>
+          </span>
+          <div>
+            <%= form.label :send_payment_notification_flag, class: "toggle-row-label" do %>
+              Send Payment Notification
+              <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+                 data-bs-title="Emails the investor as soon as their remittance against this call is marked verified, confirming their payment was received."></i>
+            <% end %>
+            <small class="form-text text-muted d-block">Notifies investors when their remittance is verified.</small>
+          </div>
+        </div>
+        <label class="ios-toggle">
+          <%= form.check_box :send_payment_notification_flag, class: "ios-toggle-input" %>
+          <span class="ios-toggle-slider"></span>
+        </label>
       </div>
 
       <%
@@ -19,14 +47,24 @@
           fee_computations = call_fees.map{|cf| [cf.name, cf.id]}
       %>
       <div class="form-group">
-        <%= form.label :fee_formula_ids, "Call Fee Formulas" %>
+        <%= form.label :fee_formula_ids do %>
+          <i class="ti ti-calculator me-1"></i>Call Fee Formulas
+          <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+             data-bs-title="Formulas defined for this fund that compute additional fees on top of the call amount — select any that apply to this call."></i>
+        <% end %>
         <%= form.select :fee_formula_ids, fee_computations, {include_blank: false, include_hidden: false}, class: "form-control select2", multiple: true %>
       </div>
       <% end %>
 
       <div class="form-group">
-        <%= form.label :notes, "Notes" %>
+        <%= form.label :notes, raw('<i class="ti ti-notes me-1"></i>Notes') %>
         <%= form.rich_text_area :notes, class: "form-control"  %>
+      </div>
+
+      <div class="fw-semibold mb-2">
+        <i class="ti ti-receipt-tax me-1"></i>Additional Fees
+        <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+           data-bs-title="One-off fees for this call, summed from Fee/Expense account entries already booked against investors' commitments (or computed from a formula, support only). To reuse a formula defined elsewhere on this fund, add it under Call Fee Formulas above instead."></i>
       </div>
 
       <div id='form_call_fee'>

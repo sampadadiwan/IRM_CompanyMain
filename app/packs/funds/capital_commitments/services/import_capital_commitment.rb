@@ -10,10 +10,10 @@ class ImportCapitalCommitment < ImportUtil
 
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
-    raise "Fund not found" unless fund
+    raise "Fund not found: #{user_data['Fund']}" unless fund
 
     investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
-    raise "Stakeholder not found" unless investor
+    raise "Stakeholder not found: #{user_data['Stakeholder']}" unless investor
 
     update_only = user_data["Update Only"]
     folio_id, _, _, folio_currency, = get_params(user_data, import_upload)
@@ -25,7 +25,7 @@ class ImportCapitalCommitment < ImportUtil
         save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)
       else
         # Update only, but we dont have a pre-existing capital_commitment
-        raise "Capital Commitment not found for #{folio_id}"
+        raise "Capital Commitment not found for folio #{folio_id} in fund #{fund.name} - Update Only rows must match an existing commitment"
       end
     elsif capital_commitment.nil?
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:, fund:, folio_currency:)
@@ -37,7 +37,7 @@ class ImportCapitalCommitment < ImportUtil
     # No update, and we dont have a pre-existing capital_commitment
     else
       # No update, but we have a pre-existing capital_commitment
-      raise "Capital Commitment already exists for #{folio_id}"
+      raise "Capital Commitment already exists for folio #{folio_id} in fund #{fund.name}. Set Update Only to Yes to update it"
     end
     true
   end
@@ -80,7 +80,7 @@ class ImportCapitalCommitment < ImportUtil
     kyc_full_name = user_data["Kyc Investing Entity"]
     if kyc_full_name.present?
       kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
-      raise "KYC not found" unless kyc
+      raise "KYC not found for #{investor.investor_name}: #{kyc_full_name}" unless kyc
     else
       kyc = fund.entity.investor_kycs.where(investor_id: investor.id).last
     end
@@ -95,14 +95,14 @@ class ImportCapitalCommitment < ImportUtil
   def get_params(user_data, import_upload)
     folio_id = user_data["Folio No"].presence
     unit_type = user_data["Unit Type"].presence
-    commitment_date = Date.local_parse(user_data["Commitment Date"]) if user_data["Commitment Date"].present?
+    commitment_date = parse_date_cell(user_data, "Commitment Date")
     folio_currency = user_data["Folio Currency"].presence
     onboarding_completed = user_data["Onboarding Completed"] == "Yes"
     feeder_fund_name = user_data["Feeder Fund"].presence
     feed_fund = nil
     if feeder_fund_name.present?
       feed_fund = import_upload.entity.funds.where(name: feeder_fund_name).first
-      raise "Feeder Fund not found" unless feed_fund
+      raise "Feeder Fund not found: #{feeder_fund_name}" unless feed_fund
     end
 
     [folio_id, unit_type, commitment_date, folio_currency, onboarding_completed, feed_fund]
@@ -127,7 +127,36 @@ class ImportCapitalCommitment < ImportUtil
       # Grant access rights to the fund
       capital_commitment.grant_access_to_fund
     end
+    warn_about_unsubscribed_investors(import_upload)
     true
+  end
+
+  # Question 6 (docs/user_guides/capital_call_actions_and_notifications_matrix.md): the spreadsheet
+  # importer is the normal onboarding path, so the proactive "nobody is subscribed to Capital Call
+  # notifications" check has to run here too, not just on the single-commitment form. It runs the
+  # same rule as the form (CapitalCommitmentRuleContextProvider, admin-configurable) and must run
+  # AFTER grant_access_to_fund above — subscription is judged through the fund policy, which needs
+  # those access rights. One aggregated alert rather than a row-level note because the results
+  # sheet is already written by the time access is granted.
+  # user_alerts.message is a 255-char VARCHAR, so the name list is capped and the whole message
+  # truncated as a last resort.
+  MAX_NAMES_IN_ALERT = 5
+
+  def warn_about_unsubscribed_investors(import_upload)
+    unsubscribed = import_upload.imported_data.includes(:investor, :fund).filter_map do |capital_commitment|
+      results = ValidationRuleEvaluator.call(record: capital_commitment, entity: import_upload.entity)
+      capital_commitment.investor.investor_name if results.any? { |r| r.rule.name == "capital_commitment_investor_without_notification_subscribers" }
+    end.uniq.sort
+    return if unsubscribed.empty?
+
+    names = unsubscribed.first(MAX_NAMES_IN_ALERT).join(", ")
+    names += " and #{unsubscribed.size - MAX_NAMES_IN_ALERT} more" if unsubscribed.size > MAX_NAMES_IN_ALERT
+    message = "Imported, but no investor contacts are subscribed to Capital Call notifications for #{unsubscribed.size} investor(s): #{names}. They will not receive call notices until a contact is subscribed."
+    # Shown as the standard on-screen alert when the import finishes (the same channel as the
+    # "Import ... is complete" message). Persisted via create! rather than new+broadcast so the
+    # warning is auditable in the user_alerts table even though there is no UI that lists past
+    # alerts.
+    UserAlert.create!(user_id: import_upload.user_id, entity_id: import_upload.entity_id, level: "warning", message: message.truncate(255))
   end
 
   def defer_counter_culture_updates

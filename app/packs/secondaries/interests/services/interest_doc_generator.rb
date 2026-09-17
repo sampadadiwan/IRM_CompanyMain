@@ -55,7 +55,7 @@ class InterestDocGenerator
     add_image(context, :interest_signature, interest.signature)
 
     file_name = generated_file_name(interest)
-    convert(template, context, file_name, template_name: template_document.name)
+    convert(template, context, file_name, template_name: template_document.name, doc_template: template_document)
 
     additional_footers = []
     additional_headers = []

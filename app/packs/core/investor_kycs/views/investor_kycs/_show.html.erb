@@ -188,12 +188,12 @@
                 "link_sent"   => "bg-info",
                 "draft_saved" => "bg-warning text-dark",
                 "completed"   => "bg-success",
-                "verified"    => "bg-dark"
+                "verified"    => "bg-success",
               }.fetch(investor_kyc.submission_status, "bg-secondary")
             %>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                    <span class="text-muted">Send Status</span>
+                    <span class="text-muted">KYC Status</span>
                     <span class="text-end">
                         <span class="badge <%= submission_status_badge_class %>"><%= investor_kyc.submission_status.humanize %></span>
                         <% if investor_kyc.submitted_at.present? %>
@@ -213,7 +213,9 @@
                 </li>
 
                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                    <span class="text-muted">Completed</span>
+                    <div>
+                        <span class="text-muted d-block">Completed by Investor</span>
+                    </div>
                     <span class="fw-bold "><%= display_boolean investor_kyc.completed_by_investor %></span>
                 </li>
 

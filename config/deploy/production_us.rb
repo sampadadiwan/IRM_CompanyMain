@@ -5,8 +5,8 @@
 # You can define all roles on a single server, or split them:
 
 # ap_south_1
-server "54.147.171.162", user: "ubuntu", roles: %w[primary app db web]
-server "35.153.176.117", user: "ubuntu", roles: %w[app web]
+server "3.91.253.138", user: "ubuntu", roles: %w[primary app db web]
+server "100.24.62.166", user: "ubuntu", roles: %w[app web]
 # ap_south_2
 # server "", user: "ubuntu", roles: %w[primary app db web]
 # server "", user: "ubuntu", roles: %w[app web] if ENV["LB"]
@@ -14,6 +14,12 @@ server "35.153.176.117", user: "ubuntu", roles: %w[app web]
 set :rails_env, "production"
 set :stage, :production
 set :env_variant, "us"
+
+# Enables the static-website server blocks in nginx_conf.erb: apex serves
+# public/website, www 301s to the apex. Pairs with WEBSITE_HOSTS in
+# .env.production.us. Note the page canonical tags point at caphive.com, so
+# .us-served pages canonicalize there for search engines.
+set :website_domain, "caphive.us"
 
 set :ssh_options, keys: "~/.ssh/caphive2.us.pem", compression: false, keepalive: true
 

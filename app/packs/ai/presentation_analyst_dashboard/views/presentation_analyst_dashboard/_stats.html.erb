@@ -1,0 +1,131 @@
+<%# Tier cards — one per accountability bucket plus Not Analyzed. Each card
+    links to the dashboard with a ?status= tier slug that filters the table
+    below. Full-page navigations rather than Turbo Frame swaps so the active
+    card, the distribution chart and the table all stay in sync. %>
+
+<%# Toolbar. Sector and tag scope the whole portfolio — every number below is
+    computed against the subset they select. %>
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <div class="d-flex align-items-center gap-2 flex-wrap"
+       data-controller="scoring-scope-filter">
+    <select class="form-select form-select-sm" style="width: 190px;"
+            aria-label="Filter by sector"
+            data-action="change->scoring-scope-filter#navigate">
+      <option value="<%= presentation_dashboard_path_with(sector: nil) %>">All sectors</option>
+      <% sectors_for_select.each do |sector, count| %>
+        <option value="<%= presentation_dashboard_path_with(sector: sector) %>"
+                <%= "selected" if @sector_filter == sector %>>
+          <%= sector %> (<%= count %>)
+        </option>
+      <% end %>
+    </select>
+
+    <select class="form-select form-select-sm" style="width: 190px;"
+            aria-label="Filter by tag"
+            data-action="change->scoring-scope-filter#navigate">
+      <option value="<%= presentation_dashboard_path_with(tag: nil) %>">All tags</option>
+      <% tags_for_select.each do |tag, count| %>
+        <option value="<%= presentation_dashboard_path_with(tag: tag) %>"
+                <%= "selected" if @tag_filter == tag %>>
+          <%= tag %> (<%= count %>)
+        </option>
+      <% end %>
+    </select>
+
+    <% if presentation_scope_narrowed? %>
+      <%= link_to presentation_dashboard_path_with(sector: nil, tag: nil),
+            class: "btn btn-sm btn-outline-secondary", data: { turbo: false } do %>
+        <i class="ti ti-x"></i> Clear scope
+      <% end %>
+    <% end %>
+  </div>
+
+  <small class="text-muted">
+    <% if presenter.last_run_at %>
+      Last run <%= l(presenter.last_run_at, format: :abbr_date_time) %>
+      &nbsp;·&nbsp;
+    <% end %>
+    <%= presenter.scored_reports.size %> of <%= presenter.total_companies %> companies analyzed
+  </small>
+</div>
+
+<% if presentation_scope_narrowed? %>
+  <div class="alert alert-info py-2 d-flex align-items-center gap-2">
+    <i class="ti ti-filter"></i>
+    <div>
+      Showing <strong><%= presenter.total_companies %></strong>
+      <%= "company".pluralize(presenter.total_companies) %> in
+      <strong><%= presentation_scope_description %></strong>.
+      Every figure below covers this subset only.
+    </div>
+  </div>
+<% end %>
+
+<div class="row g-3 mb-4">
+  <% PresentationAnalystPresenter::TIERS.each do |tier| %>
+    <div class="col-md">
+      <% tier_active = status_filter == tier[:slug] %>
+      <%= link_to presentation_dashboard_path_with(status: tier_active ? nil : tier[:slug]),
+            class: "card border-0 shadow-sm h-100 text-decoration-none scoring-tier-card sd-tier--#{tier[:slug]} #{'scoring-tier-card--active' if tier_active}",
+            data: { turbo: false },
+            "data-bs-toggle": "tooltip",
+            title: tier_active ? "Showing this bucket — click to clear the filter" : "Filter the table to #{presenter.label_for(tier[:slug])}" do %>
+        <div class="card-body py-2 px-3">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <small class="text-muted">
+              <%= tier[:label] %>
+              <span class="text-body-tertiary">(<%= tier[:grades] %>)</span>
+            </small>
+            <span class="sd-tier-icon <%= "is-clearable" if tier_active %>">
+              <i class="ti <%= tier_active ? 'ti-x' : tier[:icon] %>"></i>
+            </span>
+          </div>
+          <h4 class="mb-0 sd-tier-num"><%= presenter.counts_by_tier[tier[:slug]] %></h4>
+          <small class="text-muted">Score <%= tier[:min] %>–<%= tier[:max] %></small>
+          <div class="progress mt-2" style="height: 4px;">
+            <div class="progress-bar bg-<%= tier[:color] %>"
+                 style="width: <%= presenter.share_for_tier(tier[:slug]) %>%"></div>
+          </div>
+          <small class="text-muted"><%= presenter.share_for_tier(tier[:slug]) %>% of portfolio</small>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Not Analyzed — the fifth card. Rolls up the two ways a company ends up
+      with no usable score: it ran but found nothing, or it never ran. %>
+  <% not_analyzed = PresentationAnalystPresenter::NOT_ANALYZED %>
+  <% breakdown = presenter.not_analyzed_breakdown %>
+  <div class="col-md">
+    <% not_analyzed_active = status_filter == not_analyzed[:slug] %>
+    <%= link_to presentation_dashboard_path_with(status: not_analyzed_active ? nil : not_analyzed[:slug]),
+          class: "card border-0 shadow-sm h-100 text-decoration-none scoring-tier-card sd-tier--#{not_analyzed[:slug]} #{'scoring-tier-card--active' if not_analyzed_active}",
+          data: { turbo: false },
+          "data-bs-toggle": "tooltip",
+          title: not_analyzed_active ? "Showing this bucket — click to clear the filter" : "Show companies with no usable score" do %>
+      <div class="card-body py-2 px-3">
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <small class="text-muted"><%= not_analyzed[:label] %></small>
+          <span class="sd-tier-icon <%= "is-clearable" if not_analyzed_active %>">
+            <i class="ti <%= not_analyzed_active ? 'ti-x' : not_analyzed[:icon] %>"></i>
+          </span>
+        </div>
+        <h4 class="mb-0 sd-tier-num"><%= presenter.not_analyzed_count %></h4>
+        <small class="text-muted">
+          <% if presenter.not_analyzed_count.zero? %>
+            Every company analyzed
+          <% else %>
+            <%= [
+                  ("#{breakdown[:blocked]} found nothing" if breakdown[:blocked].positive?),
+                  ("#{breakdown[:never_run]} never run" if breakdown[:never_run].positive?)
+                ].compact.join(" · ") %>
+          <% end %>
+        </small>
+        <div class="progress mt-2" style="height: 4px;">
+          <div class="progress-bar bg-secondary" style="width: <%= presenter.share_for_not_analyzed %>%"></div>
+        </div>
+        <small class="text-muted"><%= presenter.share_for_not_analyzed %>% of portfolio</small>
+      </div>
+    <% end %>
+  </div>
+</div>

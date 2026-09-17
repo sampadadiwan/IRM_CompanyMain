@@ -1,0 +1,58 @@
+<%# Grade distribution — all seven bands from the scoring skill file, so the
+    x-axis is identical run to run even when a band is empty. Bar colour is
+    inherited from the band's tier rather than separately defined, keeping the
+    chart and the cards visually reconciled.
+
+    Bands are derived from overall_score, NOT from the LLM's grade string. %>
+<div class="card border-0 shadow-sm h-100">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <h6 class="fw-bold mb-0">Grade Distribution</h6>
+        <span class="badge bg-light text-dark border"
+              data-bs-toggle="tooltip" title="Companies with a usable score">
+          <%= presenter.scored_reports.size %> scored
+        </span>
+        <% if presenter.headline_score %>
+          <span class="badge bg-<%= presenter.tier_meta(presenter.headline_tier.to_s)[:color] %>"
+                data-bs-toggle="tooltip" title="Portfolio average, shown on the headline above">
+            avg <%= presenter.headline_score %>
+          </span>
+        <% end %>
+      </div>
+      <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip"
+         title="Companies per grade band. Bands are derived from the 0-100 overall score, not from the grade text the agent wrote."></i>
+    </div>
+
+    <% if presenter.scored_reports.empty? %>
+      <div class="text-center text-muted py-5">
+        <i class="ti ti-chart-bar" style="font-size: 2rem; opacity: 0.3;"></i>
+        <p class="mt-2 mb-0">No companies scored yet.</p>
+        <small>Run the scoring agent to populate the distribution.</small>
+      </div>
+    <% else %>
+      <%# One URL per band, built server-side with the active sector/tag/basis
+          filters already merged, so clicking a bar narrows rather than resets. %>
+      <% band_urls = presenter.distribution_tiers.map { |tier| scoring_dashboard_path_with(status: tier) } %>
+      <div data-controller="scoring-distribution-chart"
+           data-scoring-distribution-chart-labels-value="<%= presenter.grade_distribution.keys.to_json %>"
+           data-scoring-distribution-chart-values-value="<%= presenter.grade_distribution.values.to_json %>"
+           data-scoring-distribution-chart-tiers-value="<%= presenter.distribution_tiers.to_json %>"
+           data-scoring-distribution-chart-urls-value="<%= band_urls.to_json %>"
+           style="position: relative; height: 260px;">
+        <canvas data-scoring-distribution-chart-target="canvas"></canvas>
+      </div>
+
+      <%# Legend doubles as the tier key for the cards above — same labels, same order. %>
+      <div class="d-flex flex-wrap gap-3 justify-content-center mt-3">
+        <% PortfolioScoringPresenter::TIERS.each do |tier| %>
+          <small class="text-muted d-flex align-items-center gap-1">
+            <i class="ti ti-square-filled text-<%= tier[:color] %>"></i>
+            <%= tier[:label] %> (<%= tier[:grades] %>)
+          </small>
+        <% end %>
+      </div>
+      <small class="text-muted mt-2 d-block text-center">Click a bar to filter the table to that tier</small>
+    <% end %>
+  </div>
+</div>

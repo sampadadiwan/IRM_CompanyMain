@@ -1,0 +1,86 @@
+<%#
+  One section of the report: every check in it, its result and the folios or entry names it
+  affected. Each check chooses its own columns, so the headers come from the finding's own
+  "columns" list and every row is a value array already in that order. Where a row identifies
+  something in the ledger, the finding also carries a filter for it and the row gets a link
+  through to those account entries.
+  Locals: report, group, allocation_run, empty_message
+%>
+<% findings = report.findings_for(group) %>
+<% if findings.empty? %>
+  <p class="text-muted"><%= empty_message %></p>
+<% else %>
+  <% findings.each do |finding| %>
+    <%
+      severity = finding["severity"]
+      icon = { "pass" => "ti ti-circle-check", "warn" => "ti ti-alert-triangle",
+               "fail" => "ti ti-alert-octagon" }.fetch(severity, "ti ti-circle-minus")
+      rows = finding["rows"] || []
+      filters = finding["filters"] || []
+    %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex align-items-start gap-2">
+          <span class="text-<%= { 'pass' => 'success', 'warn' => 'warning', 'fail' => 'danger' }.fetch(severity, 'secondary') %>">
+            <i class="<%= icon %>"></i>
+          </span>
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+              <span class="badge <%= AllocationRunReport.badge_class(severity) %>">
+                <%= severity == "skipped" ? "Not applicable" : severity.capitalize %>
+              </span>
+              <strong><%= finding["code"] %> — <%= finding["title"] %></strong>
+            </div>
+            <p class="mb-0 mt-2"><%= finding["summary"] %></p>
+          </div>
+        </div>
+
+        <% if rows.any? %>
+          <div class="table-responsive mt-3">
+            <table class="table table-bordered align-middle mb-1">
+              <thead>
+                <tr>
+                  <% (finding["columns"] || []).each do |header| %>
+                    <th><%= header %></th>
+                  <% end %>
+                  <% if filters.any?(&:present?) %>
+                    <th></th>
+                  <% end %>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.each_with_index do |row, index| %>
+                  <tr>
+                    <% row.each do |value| %>
+                      <td><%= value %></td>
+                    <% end %>
+                    <% if filters.any?(&:present?) %>
+                      <td>
+                        <% path = finding_entries_path(allocation_run, filters[index]) %>
+                        <% if path %>
+                          <%# turbo_frame: "_top" -- this row sits inside the show page's
+                              "allocation_run_report" frame (see show.html.erb), which polls while
+                              the check is running. Without this the click navigates inside that
+                              frame instead of the full page; the account entries screen has no
+                              matching turbo-frame id, so Turbo finds nothing to swap in and the
+                              link appears to do nothing. %>
+                          <%= link_to path, class: "btn btn-sm btn-outline-info", data: { bs_toggle: "tooltip", turbo_frame: "_top" },
+                                      title: "Open the account entries behind this row" do %>
+                            <i class="ti ti-list-details"></i>
+                          <% end %>
+                        <% end %>
+                      </td>
+                    <% end %>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          <% if finding["truncated"].to_i.positive? %>
+            <p class="text-muted mb-0">and <%= finding["truncated"] %> more not listed here.</p>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+<% end %>

@@ -22,7 +22,13 @@ class ImportInvestorAdvisor < ImportUtil
     end
 
     entity = import_upload.entity
+    # Guard the lookup - every line below dereferences the investor, so a name
+    # that does not match would otherwise fail with a bare NoMethodError on nil
+    raise "Stakeholder must be specified" if investor_name.to_s.strip.blank?
+
     investor = entity.investors.where(investor_name:).first
+    raise "Stakeholder not found: #{investor_name}" unless investor
+
     pre_process_investor_account(user_data)
 
     investor_advisor = InvestorAdvisor.where(email:, entity_id: investor.investor_entity_id).first
@@ -73,7 +79,7 @@ class ImportInvestorAdvisor < ImportUtil
       else
         # If Add To is not recognized, raise an error
         Rails.logger.debug { "######## Add To not recognized in import row #{user_data['Name']}" }
-        raise "Add To not recognized"
+        raise "Add To '#{user_data['Add To']}' not recognized. Use 'Fund' or 'Secondary Sale'"
       end
 
       if owner

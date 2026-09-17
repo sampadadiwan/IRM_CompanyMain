@@ -103,8 +103,9 @@ Tasks for this deal and its investors:
 
 **Count cards:**
 - **Overdue tasks** — past due date, not completed. Clicking "View details" expands a collapsible table inline.
-- **Upcoming pending tasks** — due this week, not yet completed. Collapsible table inline.
-- **Tasks completed this week** — marked done during the period. Collapsible table inline.
+- **Due within 7 days** — upcoming tasks due today through 7 days from now. Collapsible table inline.
+- **Pending tasks** — no due date set, or due beyond 7 days. Collapsible table inline.
+- **Completed this week** — marked done during the period. Collapsible table inline.
 
 **Highlighted overdue task** — the most critical overdue item showing:
 - Task name

@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Data rooms | CapHive</title>
+<meta name="description" content="The virtual data room is the last piece of fund infrastructure still priced like it is 2009 — and the only one that goes dark the moment the deal closes.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/data-rooms.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Data rooms">
+<meta property="og:description" content="The virtual data room is the last piece of fund infrastructure still priced like it is 2009 — and the only one that goes dark the moment the deal closes.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/data-rooms.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="resources">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-white">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="blog.html">Insights</a><span>/</span>Data rooms
+          </nav>
+          <span class="chip-label">Fund operations</span>
+          <h1 style="margin-top:22px">You’re renting a filing cabinet by the page. It can’t <em>read anything inside it.</em></h1>
+          <p class="lede">The virtual data room is the last piece of fund infrastructure still priced like it is 2009 — and the only one that goes dark the moment the deal closes.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-09">Aug 9, 2026</time>
+            <span class="dot">·</span>
+            <span>8 min read</span>
+            <span class="dot">·</span>
+            <span>Fund operations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+        <p>Ask a fund COO what their data room costs and you'll usually get a pause, then a range.</p>
+        <p>The pause is the interesting part. Per-page pricing, per-GB overages, per-project licences, per-user seats that renew whether or not anyone logged in this quarter. Very few people can state the number cleanly, which is itself a fact about the category.</p>
+        <p>But the cost isn't the real problem. This is:</p>
+        <p><strong>When the raise closes, the data room goes dark.</strong> The LPA, the DDQ responses, the audited statements, the subscription documents — everything the next three years of LP questions will refer back to — sits in a system your operations team stopped paying attention to the day the fund closed.</p>
+        <p>And the whole time, the thing holding your most valuable documents could not read a single one of them.</p>
+        <div class="stat-band" style="margin:34px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden"><div><strong>0</strong><span>documents an LP sees that you didn't explicitly share</span></div><div><strong>1</strong><span>checkbox to cascade access down an entire folder tree,…</span></div><div><strong>∞</strong><span>how long it stays available</span></div></div>
+        <h3>A data room isn't a product. It's a permission model.</h3>
+        <p>Strip away the branding and every VDR does three things: hold files, control who sees which ones, and record who looked.</p>
+        <p>We didn't build a separate product for that, because we already had the hard part — a folder tree with permissions that flow downward, sitting under the same roof as your funds, investors, commitments and KYC records.</p>
+        <p>So the data room is a folder. A special one, with rules:</p>
+        <ul><li><strong>Investors never see the root.</strong> They see only the sub-folders you have explicitly shared with them. An LP with access to "Q3 Update" cannot see that "Lead Investor Pack" exists — not "can't open it", <em>can't see it.</em></li><li><strong>Access cascades.</strong> Grant a firm access to a sub-folder, tick "apply to files and sub folders", and everything beneath it inherits. One decision, one place, no per-file permission grid to maintain and get wrong.</li><li><strong>Sharing outward doesn't require an account.</strong> A prospect who has never logged in gets a secure view link to a single document — and that link still respects that document's download and print settings.</li></ul>
+        <pre style="background:var(--bg-2,#F6F4F0);border:1px solid var(--line);border-radius:12px;padding:20px;overflow-x:auto;font-size:13.5px;line-height:1.7">Data Room/
+├── Q3 Investor Update/     → shared with all LPs
+├── Lead Investor Pack/     → lead investors only
+├── DDQ Responses 2026/     → shared per requesting LP
+└── New Deal Preview/       → not yet shared with anyone</pre>
+        <div class="pull"><p>An investor who can see that a folder exists has already learned something you didn't intend to tell them.</p></div>
+        <h3>Control that survives the download</h3>
+        <p>Two features here do more work than their size suggests.</p>
+        <p><strong>Download and print are per-document decisions.</strong> Turn them off and the viewer gets a protected, watermarked copy rather than the original file. The document is readable and not portable — which is the actual requirement when you're sharing a term sheet with eleven prospects.</p>
+        <p><strong>Every view is recorded.</strong> Each document carries a list of who opened it and when. That's an audit answer, and it's also an intelligence signal: the LP who has opened the LPA four times this week is at a different stage of the decision than the one who never opened it at all.</p>
+        <h3>Signatures live in the same place as the documents</h3>
+        <p>Subscription documents are the clearest case for why a bolted-on e-sign integration is worse than a built-in one: the document being signed <em>is</em> the fund's document, on the investor's record, in the folder the auditor will look in.</p>
+        <p>So e-signing runs inside the same document store, and a daily agent watches the whole pipeline.</p>
+        <p>The <strong>E-Sign Monitor</strong> sweeps every document in the entity that was sent for signature and reports two categories: requests sitting unsigned past your configured window (three days by default), and documents that expired, were cancelled, voided, or failed.</p>
+        <p>Note carefully what it does <em>not</em> do. <strong>It never touches a document.</strong> It doesn't resend, re-trigger, or nudge the signer. Its report says so explicitly. It tells your team what's stuck; a human decides what to do about it.</p>
+        <p>That restraint is deliberate. An agent that automatically re-sends signature requests will, on the day it goes wrong, email a hundred LPs a second copy of a document they already signed. The cost of that mistake is far higher than the cost of a person clicking resend.</p>
+        <div class="pull"><p>For anything that touches an LP's inbox, the safe default is an agent that reports and a human that acts. Automation earns the right to act only where being wrong is cheap.</p></div>
+        <h2>⚙️ Under the hood: the documents are readable</h2>
+        <p>Here's the capability a rented data room structurally cannot offer, no matter what it charges.</p>
+        <p>Our documents are read by AI into <strong>Document Q&amp;A</strong> — structured question-and-answer facts extracted from the content. A KYC form becomes queryable fields. A financial statement becomes retrievable figures.</p>
+        <p>The important part isn't the extraction. It's what consumes it: <strong>those facts power the platform's support agents and AI rules.</strong> The document isn't just stored and searched — it participates. A compliance rule can check a value that only exists inside a PDF. An agent preparing a capital call can verify something the ops team would otherwise have to open a document to confirm.</p>
+        <p>That's only possible because the data room isn't a separate silo. It's the same document store the rest of the fund runs on, which means anything that can read your documents already knows what a capital commitment, a portfolio company, and an LP are.</p>
+        <p>A standalone VDR could add AI search tomorrow — and it would still be AI over a folder of PDFs, with no idea which investor, which fund, or which commitment any of them belong to. <strong>Context isn't a feature you add. It's an architecture you either have or don't.</strong></p>
+        <table><thead><tr><th></th><th>Rented VDR</th><th>Data room inside the fund platform</th></tr></thead><tbody><tr><td>Pricing</td><td>Per page, per GB, per project, per seat</td><td>Part of the platform</td></tr><tr><td>Lifespan</td><td>The project. Goes dark at close</td><td>Permanent — it's your document store</td></tr><tr><td>Permissions</td><td>Its own model, maintained separately</td><td>The platform's own inheritance, one place</td></tr><tr><td>Knows what a capital commitment is</td><td>No</td><td>Yes</td></tr><tr><td>Documents readable by your agents</td><td>No</td><td>Yes — extracted facts feed agents and rules</td></tr><tr><td>E-signature</td><td>An integration</td><td>The same document, same record</td></tr><tr><td>Audit of who viewed what</td><td>Yes</td><td>Yes — on the record the auditor already opens</td></tr></tbody></table>
+        <h2>🔭 What we're building next: agents that work the data room</h2>
+        <p><strong>Everything below is roadmap, not shipped.</strong> It's where this goes, and I'd rather describe it honestly than imply it exists. If one of these would change how your raise runs, tell me — it moves up the list.</p>
+        <p><strong>1. Data Room Curator.</strong> Checks each shared folder against the pack it's supposed to be — LP DDQ pack, prospect teaser pack, annual pack — and reports what's missing, what's older than your staleness threshold, and what's duplicated across folders. The question it answers: <em>is the thing we shared with this LP actually complete?</em></p>
+        <p><strong>2. DDQ Responder.</strong> An LP sends a 200-question due diligence questionnaire. The agent drafts answers grounded strictly in the documents already in your data room, <strong>citing the source document and page for every answer</strong>, and flagging every question it cannot support rather than composing something plausible. Same rule as our side letter agent: no citation, no answer.</p>
+        <p><strong>3. Version Drift Monitor.</strong> Finds superseded documents still sitting in shared folders — last year's LPA, the prior quarter's report, a term sheet that changed after it was shared — and the same document existing in two folders at two versions. This is the error class that causes real damage, and nobody catches it by browsing.</p>
+        <p><strong>4. Exposure Check.</strong> Runs before a folder is shared, not after. Scans for content that shouldn't leave: another LP's name or commitment amount in a sample capital account, bank details, personal data in an unredacted attachment. Flags it to a human — never auto-redacts.</p>
+        <p><strong>5. Engagement Signals.</strong> Reads the view trail and turns it into a fundraise read: which prospects are actually working through the pack, which document everyone abandons halfway, which LP went quiet three days after opening the LPA. Feeds straight into the relationship record so the follow-up is timed off behaviour rather than a calendar.</p>
+        <div class="pull"><p>The next generation of data room isn't a nicer place to put files. It's a system that has read them, and tells you what's missing before your LP does.</p></div>
+        <figure style="margin:34px 0"><div style="background:#FFFFFF;border:1px solid var(--line);border-radius:14px;padding:22px;overflow-x:auto"><svg width="100%" id="svg-data-rooms-0" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="flowchart" style="max-width: 662.571px; background-color: transparent;" viewBox="0 0 662.57080078125 503.5" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#svg-data-rooms-0{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:15px;fill:#101010;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#svg-data-rooms-0 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#svg-data-rooms-0 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#svg-data-rooms-0 .error-icon{fill:#FFFFFF;}#svg-data-rooms-0 .error-text{fill:#000000;stroke:#000000;}#svg-data-rooms-0 .edge-thickness-normal{stroke-width:1px;}#svg-data-rooms-0 .edge-thickness-thick{stroke-width:3.5px;}#svg-data-rooms-0 .edge-pattern-solid{stroke-dasharray:0;}#svg-data-rooms-0 .edge-thickness-invisible{stroke-width:0;fill:none;}#svg-data-rooms-0 .edge-pattern-dashed{stroke-dasharray:3;}#svg-data-rooms-0 .edge-pattern-dotted{stroke-dasharray:2;}#svg-data-rooms-0 .marker{fill:#8A8A8A;stroke:#8A8A8A;}#svg-data-rooms-0 .marker.cross{stroke:#8A8A8A;}#svg-data-rooms-0 svg{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:15px;}#svg-data-rooms-0 p{margin:0;}#svg-data-rooms-0 .label{font-family:Arial,'Liberation Sans',Helvetica,sans-serif;color:#101010;}#svg-data-rooms-0 .cluster-label text{fill:#000000;}#svg-data-rooms-0 .cluster-label span{color:#000000;}#svg-data-rooms-0 .cluster-label span p{background-color:transparent;}#svg-data-rooms-0 .label text,#svg-data-rooms-0 span{fill:#101010;color:#101010;}#svg-data-rooms-0 .node rect,#svg-data-rooms-0 .node circle,#svg-data-rooms-0 .node ellipse,#svg-data-rooms-0 .node polygon,#svg-data-rooms-0 .node path{fill:#FBF7F1;stroke:#FF4D00;stroke-width:1px;}#svg-data-rooms-0 .rough-node .label text,#svg-data-rooms-0 .node .label text,#svg-data-rooms-0 .image-shape .label,#svg-data-rooms-0 .icon-shape .label{text-anchor:middle;}#svg-data-rooms-0 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#svg-data-rooms-0 .rough-node .label,#svg-data-rooms-0 .node .label,#svg-data-rooms-0 .image-shape .label,#svg-data-rooms-0 .icon-shape .label{text-align:center;}#svg-data-rooms-0 .node.clickable{cursor:pointer;}#svg-data-rooms-0 .root .anchor path{fill:#8A8A8A!important;stroke-width:0;stroke:#8A8A8A;}#svg-data-rooms-0 .arrowheadPath{fill:#0b0b0b;}#svg-data-rooms-0 .edgePath .path{stroke:#8A8A8A;stroke-width:1px;}#svg-data-rooms-0 .flowchart-link{stroke:#8A8A8A;fill:none;}#svg-data-rooms-0 .edgeLabel{background-color:#F2EFEA;text-align:center;}#svg-data-rooms-0 .edgeLabel p{background-color:#F2EFEA;}#svg-data-rooms-0 .edgeLabel rect{opacity:0.5;background-color:#F2EFEA;fill:#F2EFEA;}#svg-data-rooms-0 .labelBkg{background-color:rgba(242, 239, 234, 0.5);}#svg-data-rooms-0 .cluster rect{fill:#FFFFFF;stroke:hsl(0, 0%, 90%);stroke-width:1px;}#svg-data-rooms-0 .cluster text{fill:#000000;}#svg-data-rooms-0 .cluster span{color:#000000;}#svg-data-rooms-0 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:Arial,'Liberation Sans',Helvetica,sans-serif;font-size:12px;background:#FFFFFF;border:1px solid hsl(0, 0%, 90%);border-radius:2px;pointer-events:none;z-index:100;}#svg-data-rooms-0 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#101010;}#svg-data-rooms-0 rect.text{fill:none;stroke-width:0;}#svg-data-rooms-0 .icon-shape,#svg-data-rooms-0 .image-shape{background-color:#F2EFEA;text-align:center;}#svg-data-rooms-0 .icon-shape p,#svg-data-rooms-0 .image-shape p{background-color:#F2EFEA;padding:2px;}#svg-data-rooms-0 .icon-shape .label rect,#svg-data-rooms-0 .image-shape .label rect{opacity:0.5;background-color:#F2EFEA;fill:#F2EFEA;}#svg-data-rooms-0 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#svg-data-rooms-0 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#svg-data-rooms-0 .node .neo-node{stroke:#FF4D00;}#svg-data-rooms-0 [data-look="neo"].node rect,#svg-data-rooms-0 [data-look="neo"].cluster rect,#svg-data-rooms-0 [data-look="neo"].node polygon{stroke:url(#svg-data-rooms-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-data-rooms-0 [data-look="neo"].swimlane.cluster rect{filter:none;}#svg-data-rooms-0 [data-look="neo"].node path{stroke:url(#svg-data-rooms-0-gradient);stroke-width:1px;}#svg-data-rooms-0 [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-data-rooms-0 [data-look="neo"].node .neo-line path{stroke:#FF4D00;filter:none;}#svg-data-rooms-0 [data-look="neo"].node circle{stroke:url(#svg-data-rooms-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-data-rooms-0 [data-look="neo"].node circle .state-start{fill:#000000;}#svg-data-rooms-0 [data-look="neo"].icon-shape .icon{fill:url(#svg-data-rooms-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-data-rooms-0 [data-look="neo"].icon-shape .icon-neo path{stroke:url(#svg-data-rooms-0-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-data-rooms-0 :root{--mermaid-font-family:Arial,'Liberation Sans',Helvetica,sans-serif;}</style><g><marker id="my-svg_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5;"/></marker><marker id="my-svg_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5; stroke-dasharray: 1, 0;"/></marker><g class="root"><g class="clusters"/><g class="edgePaths"><path d="M331.278,65.5L331.278,69.667C331.278,73.833,331.278,82.167,331.278,89.833C331.278,97.5,331.278,104.5,331.278,108L331.278,111.5" id="my-svg-L_A_B_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_A_B_0" data-points="W3sieCI6MzMxLjI3NzU4Nzg5MDYyNSwieSI6NjUuNX0seyJ4IjozMzEuMjc3NTg3ODkwNjI1LCJ5Ijo5MC41fSx7IngiOjMzMS4yNzc1ODc4OTA2MjUsInkiOjExNS41fV0=" data-look="classic" marker-end="url(#svg-data-rooms-0_flowchart-v2-pointEnd)"/><path d="M331.278,173L331.278,177.167C331.278,181.333,331.278,189.667,331.278,197.333C331.278,205,331.278,212,331.278,215.5L331.278,219" id="my-svg-L_B_C_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_B_C_0" data-points="W3sieCI6MzMxLjI3NzU4Nzg5MDYyNSwieSI6MTczfSx7IngiOjMzMS4yNzc1ODc4OTA2MjUsInkiOjE5OH0seyJ4IjozMzEuMjc3NTg3ODkwNjI1LCJ5IjoyMjN9XQ==" data-look="classic" marker-end="url(#svg-data-rooms-0_flowchart-v2-pointEnd)"/><path d="M237.012,273.813L214.447,279.094C191.883,284.375,146.754,294.938,124.189,303.719C101.625,312.5,101.625,319.5,101.625,323L101.625,326.5" id="my-svg-L_C_D_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_C_D_0" data-points="W3sieCI6MjM3LjAxMTk2Mjg5MDYyNSwieSI6MjczLjgxMjc5MjI4MjQxNTR9LHsieCI6MTAxLjYyNSwieSI6MzA1LjV9LHsieCI6MTAxLjYyNSwieSI6MzMwLjV9XQ==" data-look="classic" marker-end="url(#svg-data-rooms-0_flowchart-v2-pointEnd)"/><path d="M101.625,388L101.625,392.167C101.625,396.333,101.625,404.667,101.625,412.333C101.625,420,101.625,427,101.625,430.5L101.625,434" id="my-svg-L_D_E_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_D_E_0" data-points="W3sieCI6MTAxLjYyNSwieSI6Mzg4fSx7IngiOjEwMS42MjUsInkiOjQxM30seyJ4IjoxMDEuNjI1LCJ5Ijo0Mzh9XQ==" data-look="classic" marker-end="url(#svg-data-rooms-0_flowchart-v2-pointEnd)"/><path d="M331.278,280.5L331.278,284.667C331.278,288.833,331.278,297.167,331.278,304.833C331.278,312.5,331.278,319.5,331.278,323L331.278,326.5" id="my-svg-L_C_F_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_C_F_0" data-points="W3sieCI6MzMxLjI3NzU4Nzg5MDYyNSwieSI6MjgwLjV9LHsieCI6MzMxLjI3NzU4Nzg5MDYyNSwieSI6MzA1LjV9LHsieCI6MzMxLjI3NzU4Nzg5MDYyNSwieSI6MzMwLjV9XQ==" data-look="classic" marker-end="url(#svg-data-rooms-0_flowchart-v2-pointEnd)"/><path d="M425.543,273.812L448.109,279.093C470.675,284.375,515.806,294.937,538.372,303.719C560.938,312.5,560.938,319.5,560.938,323L560.938,326.5" id="my-svg-L_C_G_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_C_G_0" data-points="W3sieCI6NDI1LjU0MzIxMjg5MDYyNSwieSI6MjczLjgxMjA0MTc1ODc1MzR9LHsieCI6NTYwLjkzNzk4ODI4MTI1LCJ5IjozMDUuNX0seyJ4Ijo1NjAuOTM3OTg4MjgxMjUsInkiOjMzMC41fV0=" data-look="classic" marker-end="url(#svg-data-rooms-0_flowchart-v2-pointEnd)"/><path d="M560.938,388L560.938,392.167C560.938,396.333,560.938,404.667,560.938,412.333C560.938,420,560.938,427,560.938,430.5L560.938,434" id="my-svg-L_G_H_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_G_H_0" data-points="W3sieCI6NTYwLjkzNzk4ODI4MTI1LCJ5IjozODh9LHsieCI6NTYwLjkzNzk4ODI4MTI1LCJ5Ijo0MTN9LHsieCI6NTYwLjkzNzk4ODI4MTI1LCJ5Ijo0Mzh9XQ==" data-look="classic" marker-end="url(#svg-data-rooms-0_flowchart-v2-pointEnd)"/></g><g class="edgeLabels"><g class="edgeLabel"><g class="label" data-id="L_A_B_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_B_C_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_C_D_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_D_E_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_C_F_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_C_G_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g><g class="edgeLabel"><g class="label" data-id="L_G_H_0" transform="translate(0, 0)"><text y="-10.1" text-anchor="middle"><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle"/></text></g></g><g><rect class="background" style="stroke: none"/></g></g><g class="nodes"><g class="node default" id="my-svg-flowchart-A-0" data-look="classic" transform="translate(331.277587890625, 36.75)"><rect class="basic label-container" style="" x="-94.046875" y="-28.75" width="188.09375" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Data</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Room</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">(never</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> visible</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> to</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> LPs)</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-B-1" data-look="classic" transform="translate(331.277587890625, 144.25)"><rect class="basic label-container" style="" x="-83.203125" y="-28.75" width="166.40625" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Sub-folder</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">shared</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> with</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> a</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> firm</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-C-3" data-look="classic" transform="translate(331.277587890625, 251.75)"><rect class="basic label-container" style="" x="-94.265625" y="-28.75" width="188.53125" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Access</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> cascades</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">to</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> files</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> +</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> child</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> folders</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-D-5" data-look="classic" transform="translate(101.625, 359.25)"><rect class="basic label-container" style="" x="-93.625" y="-28.75" width="187.25" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">LP</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> sees</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> only</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">their</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> own</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> sub-folders</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-E-7" data-look="classic" transform="translate(101.625, 466.75)"><rect class="basic label-container" style="" x="-71.8125" y="-28.75" width="143.625" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">View</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> recorded</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">who</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> +</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> when</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-F-9" data-look="classic" transform="translate(331.277587890625, 359.25)"><rect class="basic label-container" style="" x="-86.027587890625" y="-28.75" width="172.05517578125" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Download</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> off</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> →</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">watermarked</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> copy</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-G-11" data-look="classic" transform="translate(560.93798828125, 359.25)"><rect class="basic label-container" style="" x="-93.6328125" y="-28.75" width="187.265625" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Read</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> into</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Document</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Q&amp;A</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> facts</tspan></tspan></text></g></g></g><g class="node default" id="my-svg-flowchart-H-13" data-look="classic" transform="translate(560.93798828125, 466.75)"><rect class="basic label-container" style="" x="-75.71142578125" y="-28.75" width="151.4228515625" height="57.5"/><g class="label" style="" transform="translate(0, -16.75)"><rect/><g><rect class="background" style="stroke: none"/><text y="-10.1" style=""><tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Agents</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> +</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> rules</tspan></tspan><tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em"><tspan font-style="normal" class="text-inner-tspan" font-weight="normal">use</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> the</tspan><tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> content</tspan></tspan></text></g></g></g></g></g></g><defs><filter id="my-svg-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><defs><filter id="my-svg-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><linearGradient id="my-svg-gradient" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#FF4D00" stop-opacity="1"/><stop offset="100%" stop-color="hsl(37.5, 0%, 83.3333333333%)" stop-opacity="1"/></linearGradient></svg></div></figure>
+        <h2>📊 The impact</h2>
+        <p>Before: a per-project VDR priced by the page, holding the documents your LPs will ask about for the next decade, in a system that expires — with a separate permission model your team maintains twice and an e-sign integration that lives somewhere else again.</p>
+        <p>After: one document store where <strong>access cascades from a single checkbox</strong>, <strong>every view is recorded</strong>, <strong>download and print are per-document decisions</strong>, <strong>signatures happen on the same record</strong>, and <strong>a daily agent reports everything stuck in the signing pipeline</strong>.</p>
+        <p>The question worth asking internally: <strong>if a prospect asked for your full DDQ pack this afternoon, how long until you could confirm — not assume — that what you shared was complete and current?</strong></p>
+        <p>If the answer involves someone opening folders one by one, that's the gap. It's also exactly what roadmap item #1 is for.</p>
+        <h2>What to take from this</h2><div class="callout"><ol><li><strong>Price the data room over the fund's life, not the raise.</strong> A per-project VDR looks cheap next to a platform until you count the years after close, when the documents are still being asked about and the room is dark.</li><li><strong>Visibility is stronger than permission.</strong> "They can't open it" is a weaker guarantee than "they can't see it exists". Check which one your current tool gives you.</li><li><strong>Turn off download by default on anything pre-commitment.</strong> A watermarked view copy is readable and not forwardable. This costs you nothing and closes the most common leak — a helpful prospect sending your deck to a friend.</li><li><strong>Treat the view log as a fundraise signal, not just an audit record.</strong> Who opened the LPA, how often, and how recently is the most honest engagement data in your raise — nobody performs interest by re-reading a legal document.</li><li><strong>Demand citations from any AI that answers questions about your documents.</strong> A DDQ answer without a source is a liability with good grammar. Applies to every vendor in this space, including us.</li></ol></div>
+        <h2>See it on your own structure</h2><p>If you're paying per page for a room that shuts down at close, the exercise worth doing is simple: list the documents your LPs have asked about in the last twelve months, and check how many are in a system your ops team still opens.</p><p>If that list is uncomfortable, DM me and I'll show you what the same folders look like when the fund's own agents can read them.</p><div class="callout"><p>Question for fund COOs: what do you actually do with your data room after the fund closes — migrate it, keep paying for it, or export it to a drive and hope? I suspect the third answer is far more common than anyone admits publicly.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Data rooms",
+  "description": "The virtual data room is the last piece of fund infrastructure still priced like it is 2009 — and the only one that goes dark the moment the deal closes.",
+  "datePublished": "2026-08-09",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/data-rooms.html"
+}
+</script>
+</body>
+</html>

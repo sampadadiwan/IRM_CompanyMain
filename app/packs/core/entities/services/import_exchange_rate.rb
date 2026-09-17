@@ -19,7 +19,7 @@ class ImportExchangeRate < ImportUtil
 
     exchange_rate = ExchangeRate.find_by(exchange_rate_attributes.slice(:from, :to, :entity_id, :as_of))
     if exchange_rate.present?
-      raise "Duplicate, already present"
+      raise "Duplicate - an exchange rate for #{exchange_rate_attributes[:from]} to #{exchange_rate_attributes[:to]} as of #{exchange_rate_attributes[:as_of]} already exists"
     else
       ExchangeRate.create!(exchange_rate_attributes)
       true
@@ -28,12 +28,12 @@ class ImportExchangeRate < ImportUtil
 
   def get_exchange_rate_attributes(user_data, import_upload)
     {
-      from: user_data["From"],
-      to: user_data["To"],
+      from: cell(user_data, "From", required: true),
+      to: cell(user_data, "To", required: true),
       import_upload_id: import_upload.id,
-      rate: user_data["Rate"],
+      rate: cell(user_data, "Rate", required: true),
       entity_id: import_upload.entity_id,
-      as_of: Date.local_parse(user_data["As Of"]),
+      as_of: parse_date_cell(user_data, "As Of", required: true),
       notes: user_data["Notes"]
     }
   end

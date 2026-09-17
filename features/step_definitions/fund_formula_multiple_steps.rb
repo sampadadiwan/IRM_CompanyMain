@@ -67,8 +67,10 @@ end
 
 # ─── Engine-level steps ─────────────────────────────────────────────────────
 
-# Seeds identical (generated: false) account entries on every commitment of the
-# fund — these are the raw entries the period helpers sum over during the run.
+# Seeds identical account entries on every commitment of the fund — these are the
+# raw entries the period helpers sum over during the run. generated defaults to
+# false; an optional "generated" column sets it (the incremental copy trims only
+# generated rows).
 Given("the commitments have the following seed account entries:") do |table|
   @fund.capital_commitments.find_each do |capital_commitment|
     table.hashes.each do |row|
@@ -82,7 +84,7 @@ Given("the commitments have the following seed account entries:") do |table|
         entity: @fund.entity,
         investor: capital_commitment.investor,
         folio_id: capital_commitment.folio_id,
-        generated: false,
+        generated: row["generated"] == "true",
         cumulative: false
       )
     end

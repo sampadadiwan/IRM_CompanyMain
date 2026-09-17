@@ -363,7 +363,9 @@ Given('the last investor has a user {string}') do |args|
   investor = cr.investor
   user = FactoryBot.create(:user, entity: investor.investor_entity, whatsapp_enabled: true)
   user1 = FactoryBot.create(:user, entity: investor.investor_entity)
-  FactoryBot.create(:user, entity: investor.investor_entity, phone: "321")
+  # A dialable number, not "321" — User#phone_must_be_dialable rejects the latter on
+  # create. The digits are arbitrary; only that there is a third user matters here.
+  FactoryBot.create(:user, entity: investor.investor_entity, phone: "9000000321")
 
   key_values(user, args)
   user.save!
@@ -540,7 +542,7 @@ end
 
 # ── Fund Commitment Adhoc Notification steps ─────────────────────────────────
 
-# Creates a fund-level CustomNotification wired to the adhoc_notification mailer method
+# Creates a fund-level CustomNotification wired to the adhoc_fund_notification mailer method
 Given('there is an adhoc custom notification for the fund with subject {string}') do |subject|
   @custom_notification = CustomNotification.create!(
     entity: @fund.entity,
@@ -548,7 +550,7 @@ Given('there is an adhoc custom notification for the fund with subject {string}'
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     enabled: true
   )
 end
@@ -564,7 +566,7 @@ Given('there is an adhoc custom notification for the fund with a blank body and 
     subject: subject,
     body: "<div><br></div>",
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     enabled: true
   )
 end
@@ -577,7 +579,7 @@ Given('there is an adhoc custom notification for the fund with placeholders and 
     subject: subject,
     body: "Dear {{investor_name}}, your commitment to {{fund_name}} of {{committed_amount}} is confirmed. Unsupported: {{not_a_real_placeholder}}.",
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     enabled: true
   )
 end
@@ -605,7 +607,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     enabled: true
   )
@@ -619,7 +621,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     latest_doc_only: latest_doc_only == "true",
     enabled: true
@@ -627,7 +629,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
 end
 
 # Same but with an explicit show_details_link, so a scenario can verify the "View Commitment"
-# link on the shared adhoc_notification template is gated by this flag
+# link on the shared adhoc_notification template (rendered by adhoc_fund_notification) is gated by this flag
 Given('there is an adhoc custom notification for the fund with subject {string} and show_details_link {string}') do |subject, show_details_link|
   @custom_notification = CustomNotification.create!(
     entity: @fund.entity,
@@ -635,7 +637,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     show_details_link: show_details_link == "true",
     enabled: true
   )
@@ -643,7 +645,7 @@ end
 
 # "notify_via" here is the Gherkin-readable name for what's actually just a different
 # email_method value: "investor_kyc" -> "adhoc_kyc_notification" (FundInvestorKycMailer),
-# anything else -> the regular "adhoc_notification" (CapitalCommitmentMailer). There is no
+# anything else -> "adhoc_fund_notification" (CapitalCommitmentMailer). There is no
 # separate notify_via field/column — this step just picks which mailer/iteration path runs.
 Given('there is an adhoc custom notification for the fund with subject {string} and attachment_names {string} and notify_via {string}') do |subject, attachment_names, notify_via|
   @custom_notification = CustomNotification.create!(
@@ -652,14 +654,15 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_notification",
+    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     enabled: true
   )
 end
 
 # Same but with an explicit show_details_link instead of attachment_names, so a scenario can
-# verify the "View KYC" link on the shared adhoc_notification template in investor_kyc mode
+# verify the "View KYC" link on the shared adhoc_notification template (rendered by
+# adhoc_kyc_notification) in investor_kyc mode
 Given('there is an adhoc custom notification for the fund with subject {string} and notify_via {string} and show_details_link {string}') do |subject, notify_via, show_details_link|
   @custom_notification = CustomNotification.create!(
     entity: @fund.entity,
@@ -667,7 +670,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_notification",
+    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_fund_notification",
     show_details_link: show_details_link == "true",
     enabled: true
   )
@@ -684,7 +687,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     password_protect_attachment: password_protect_attachment == "true",
     attachment_password: attachment_password.presence,
     enabled: true
@@ -700,7 +703,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     password_protect_attachment: password_protect_attachment == "true",
     attachment_password: attachment_password.presence,
@@ -718,7 +721,7 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     subject: subject,
     body: Faker::Lorem.paragraph,
     whatsapp: Faker::Lorem.sentence,
-    email_method: "adhoc_notification",
+    email_method: "adhoc_fund_notification",
     attachment_names: attachment_names.presence,
     attachment_mandatory: attachment_mandatory == "true",
     enabled: true
@@ -743,6 +746,18 @@ Given('the first two commitments share the same investor kyc') do
   kyc.save(validate: false)
   @shared_investor_kyc = kyc
   first_two.each { |cc| cc.update!(investor_kyc_id: kyc.id) }
+end
+
+# Gives the shared kyc's two commitments distinct cc overrides — proves
+# FundInvestorKycNotifier#email_data combines every linked commitment's cc rather than
+# picking just one (an investor can hold multiple commitments to the same fund sharing
+# one KYC, each with its own cc).
+And('the first two commitments have ccs {string} and {string}') do |cc1, cc2|
+  first_two = @fund.capital_commitments.order(:id).limit(2).to_a
+  [[first_two.first, cc1], [first_two.second, cc2]].each do |cc, email|
+    cc.properties[:cc] = email
+    cc.save
+  end
 end
 
 # Overrides the shared investor kyc's full_name, which the step above sets equal to
@@ -952,6 +967,22 @@ Then('all commitment investors receive the notification email') do
   end
 end
 
+# Every commitment's notification_users should have received the email, cc'd to the
+# commitment-level cc address (proves FundCommitmentNotifier#email_data forwards
+# CapitalCommitment#cc via additional_ccs, not just entity_setting.cc/InvestorAccess#cc).
+Then('all commitment investors receive the notification email cc\'d to {string}') do |cc_email|
+  @fund.capital_commitments.each do |cc|
+    recipients = cc.investor.notification_users(cc)
+    expect(recipients).not_to be_empty, "notification_users is empty for commitment #{cc}"
+    recipients.each do |user|
+      open_email(user.email)
+      expect(current_email).not_to be_nil, "No email delivered to #{user.email}"
+      expect(current_email.cc).to include(cc_email),
+                                  "Expected cc #{cc_email} on email to #{user.email}, got #{current_email.cc.inspect}"
+    end
+  end
+end
+
 # Only the first commitment's users should have received the email
 Then('only the first commitment investor receives the notification email') do
   first_cc = @fund.capital_commitments.order(:id).first
@@ -1120,6 +1151,19 @@ Then('exactly one notification email is sent for the shared investor kyc') do
   end
 end
 
+# KYC-mode counterpart to "all commitment investors receive the notification email cc'd
+# to {string}" — proves FundInvestorKycNotifier#email_data forwards the shared kyc's
+# commitment-level cc via additional_ccs.
+And('the investor kyc notification email is cc\'d to {string}') do |cc_email|
+  investor = @shared_investor_kyc.investor
+  investor.notification_users(@shared_investor_kyc).each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil, "No email delivered to #{user.email}"
+    expect(current_email.cc).to include(cc_email),
+                                "Expected cc #{cc_email} on email to #{user.email}, got #{current_email.cc.inspect}"
+  end
+end
+
 # KYC-mode counterpart to "the notification email has the document {string} attached" —
 # checks the shared investor kyc's recipient(s) instead of iterating every commitment.
 And('the investor kyc notification email has the document {string} attached') do |doc_name|
@@ -1152,7 +1196,7 @@ Then('I do not see a preview adhoc notification button') do
 end
 
 When('I click the preview adhoc notification button for {string}') do |label|
-  click_on("Preview Adhoc Notification (#{label})")
+  click_on("Preview Adhoc Fund Notification (#{label})")
 end
 
 Then('I see the adhoc notification preview with subject {string}') do |subject|

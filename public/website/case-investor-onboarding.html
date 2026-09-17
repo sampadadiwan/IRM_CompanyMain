@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>Case study: onboarding 200+ LPs digitally | CapHive</title>
+<meta name="description" content="A fund raising from 200+ investors under one of the world's most paperwork-heavy regimes needed to share strategy documents, collect KYC, generate and execute agreements, and keep it all institutional. Here is how that onboarding runs, step by step — and which parts of it are jurisdiction rather than mechanism.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/case-investor-onboarding.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="Case study: 200+ LPs onboarded digitally">
+<meta property="og:description" content="Data room, custom KYC forms, one-touch document generation, e-signature and a KYC repository that later capital events depend on.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://caphive.com/case-investor-onboarding.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="cases">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<article>
+  <!-- ================= ARTICLE HERO ================= -->
+  <header class="page-hero article-hero hero-tinted tint-black tint-deep">
+    <div class="wrap">
+      <div class="hero-panel">
+        <div class="article-measure">
+          <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a><span>/</span><a href="case-studies.html">Case Studies</a><span>/</span>Investor onboarding
+          </nav>
+          <span class="chip-label">Case study · Funds</span>
+          <h1 style="margin-top:22px">200+ LPs onboarded, <em>without a single Word form.</em></h1>
+          <p class="lede">An alternative investment fund raising from more than two hundred investors had four problems that all looked like paperwork and were really one problem: nothing that arrived could be trusted by the system that came next.</p>
+          <div class="article-meta">
+            <time datetime="2026-08-11">Aug 11, 2026</time>
+            <span class="dot">·</span>
+            <span>9 min read</span>
+            <span class="dot">·</span>
+            <span>Onboarding</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ARTICLE BODY ================= -->
+  <div class="article-body">
+    <div class="wrap">
+      <div class="article-card">
+        <div class="article-measure">
+          <div class="prose">
+
+        <div class="stat-band" style="margin:0 0 34px;border:1px solid var(--line);border-radius:14px;overflow:hidden">
+          <div><strong>200<em>+</em></strong><span>LPs onboarded digitally</span></div>
+          <div><strong>1</strong><span>touch to generate an investor's document set</span></div>
+          <div><strong>0</strong><span>KYC packs re-keyed into a second system</span></div>
+        </div>
+
+        <h3>The engagement</h3>
+        <p>A fund taking on 200+ investors, with four stated requirements. Share confidential strategy and track-record material with prospects. Collect investor information and documents. Generate agreements from varying templates and execute them electronically. And build an institutional process for managing KYC information on an ongoing basis — not just through the raise.</p>
+        <p>Those read as four projects. They are one, because each stage is only as good as what the previous stage handed it.</p>
+
+        <p>This fund raised under a regime that requires more than a US raise does: alongside the subscription agreement, tax form and accredited-investor representation, it needed a government identity-registry lookup, a category classification validated against the regulator's own taxonomy, and a stamped instrument — for two hundred investors, most of whom were never in the same room as the fund. Everything below therefore had to survive the harder version of the problem.</p>
+        <div class="pull"><p>The question worth asking of any onboarding system is not whether it knows your regulator. It is whether your regulator is hard-coded. Here it is a tag on a field.</p></div>
+
+        <h3>Stage one — the data room, before anyone is an investor</h3>
+        <p>Strategy documents and track record go into a permission-controlled Data Room, organised into sub-folders. Access is granted per investor firm, per sub-folder, and each investor sees only what has been explicitly shared with them — nothing above it, nothing beside it.</p>
+        <p>Access can cascade to every file and folder underneath, or stop at one folder. Revoking is the same action in reverse. Individual documents can also be shared by link, which is what most prospect conversations actually need.</p>
+        <div class="pull"><p>A data room is not a folder with a password. It is a record of who was shown what, which is a different thing entirely when someone asks eighteen months later.</p></div>
+
+        <h3>Stage two — collecting information the system can act on</h3>
+        <p>Each investor receives a secure link and completes their own KYC — no <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> account required. What they see is not a fixed form. It is built from a <strong>form type</strong>: the standard field set plus whatever custom fields the fund has defined, grouped into wizard steps.</p>
+        <p>That matters because the same investor type needs different questions in different regulatory contexts. Every field can carry a <strong>regulatory environment</strong> tag, and switching an environment on <em>adds</em> its fields to the form rather than forking it. A tagged form picks up that regime's extra questions — investor category and sub-category, say, with sub-categories validated against the category chosen, or an additional declaration set. Packs ship for the regimes we have been asked for; a regime without one is a set of custom fields defined once and reused, which is what most regimes are once you stop treating each as a separate product.</p>
+        <p>Non-individual investors — trusts, LLCs, LLPs, corporates — get their own field set entirely: beneficial ownership, authorised signatories, FATCA/CRS classification, because non-individual KYC is a separate record type rather than a checkbox on the individual form. That last field is the one every jurisdiction on the list has in common, for the obvious reason: it is the one the US exported to all of them.</p>
+        <p>Where a form needs more than three pages, extra steps are switched on and given real names — <em>Beneficial Ownership</em>, <em>FATCA Declarations</em>. A step with no fields assigned to it is never rendered, so the trust form is longer than the individual form without anyone maintaining two wizards.</p>
+        <p>Two details did more work than they should have:</p>
+        <ul>
+          <li><strong>Interim saves don't validate.</strong> An investor can stop halfway through a nine-step trust form and come back tomorrow. Validation is enforced on submit, not on save — which removed most abandoned forms.</li>
+          <li><strong>Documents can fill the form.</strong> With the document-first wizard on, the investor uploads their ID and address proof first; extraction reads them and opens the form pre-filled, so their job is checking rather than typing. Anyone who prefers to type still can.</li>
+        </ul>
+
+        <h3>Stage three — verification that isn't a person reading a scan</h3>
+        <p>Verification means one thing whatever the country: the value is checked against an authoritative source that is not the investor, and the <em>whole</em> response is stored rather than a summary — a pass/fail badge for the operator, an auditable record underneath. A name mismatch becomes a flag on day one instead of a discovery in month six when a distribution bounces.</p>
+        <p>Which authoritative sources exist is regional. Where a national tax-identifier registry can be called, verification runs automatically in the background whenever the identifier, full name or date of birth changes, confirming the number exists and that the registered name and date of birth match what is on file. Bank verification runs the same way on account number, routing code or name, confirming the beneficiary name at the bank. Where a central KYC registry exists, a lookup returns the registry record — an identifier search, a one-time passcode to the investor's registered mobile, then the downloaded record shown side by side with the current values before anything is copied across; where the investor cannot be reached for a passcode, a secondary route answers from identifier and date of birth alone. Each lands as its own dated <em>KYC Data</em> record and is kept permanently, so "where did this address come from" always has an answer.</p>
+        <p>Three of the checks in this stage are not regional at all, and they are the ones that carry the most weight wherever there is no national KYC registry to call — the US included. <strong>Extraction</strong> reads the uploaded identity and address documents. <strong>Cross-checking</strong> compares the value read out of a document against the value typed into the form. <strong>AML screening</strong> runs sanctions, PEP, warnings and adverse-media lists, which are international by construction — a sanctions list does not care where your fund is domiciled. A US fund gets all three on day one, without a registry connector existing.</p>
+
+        <h3>Stage four — documents generated once, signed electronically</h3>
+        <p>Agreements are generated from templates against the investor's own record — one touch per investor, or one action for a folder. Every generated document must be explicitly approved before it goes anywhere, then signatories are added with a label and a signing order.</p>
+        <p>Signers get an email link and sign from a phone. <strong>The signing provider is a setting on the fund, not a fixture of the product</strong> — DocuSign or a regional equivalent, with the same generated document, the same labelled signatories, the same signing order and the same filing behaviour behind either. This fund signed through its own regional provider, using a government-backed digital signature credential; a fund in Boston sends the identical envelope through DocuSign and never encounters that credential at all. Sequential order means signer two is only notified once signer one is done; parallel means everyone at once. When the last signature lands, the executed copy is filed back automatically against the investor, locked and approved. Requests expire after 90 days if they stall, which is a feature — a signature request with no expiry is just an open loop.</p>
+        <p>Where execution carries a statutory attachment, <strong>the attachment travels with the template</strong>. For this fund that attachment was duty-stamped paper: a document template carries its own stamping configuration — the stamp values by tag, which page the signature sits on, and the note and its placement — and every document generated from that template inherits it. When the document is sent, the stamping request goes to the provider alongside the signature request, so the executed copy comes back stamped rather than stamped afterwards by someone with a courier. In a jurisdiction with nothing to attach — the US among them — that configuration is simply absent and everything around it is unchanged.</p>
+        <p>A whole folder can go out at once with <strong>Send All for eSign</strong>, which picks up every generated, approved, unsent document and queues them with a small random delay between each so the signing provider isn't hammered.</p>
+
+        <figure style="margin:30px 0">
+          <table>
+            <thead><tr><th>Requirement</th><th>What it runs on</th></tr></thead>
+            <tbody>
+              <tr><td>Share confidential strategy material</td><td>Data Room sub-folders, access per investor firm, cascading or not</td></tr>
+              <tr><td>Collect investor information</td><td>Form types with custom fields and named wizard steps; regulatory packs added by tag, not by forking the form; secure link, no login</td></tr>
+              <tr><td>Collect documents</td><td>Required-document checklist per KYC type; investor sees the same checklist you do</td></tr>
+              <tr><td>Verify identity</td><td>Extraction, cross-check and AML screening everywhere; national registry connectors where they exist — here automatic tax-identifier and bank checks, plus a central KYC registry lookup</td></tr>
+              <tr><td>Generate agreements</td><td>Template-based generation per investor, individually approved</td></tr>
+              <tr><td>Execute electronically</td><td>E-signature through DocuSign or a regional equivalent, with labelled signatories and signing order; statutory stamping carried on the template where the jurisdiction has any; executed copy filed automatically</td></tr>
+              <tr><td>Manage KYC on an ongoing basis</td><td>Verified flag with who and when; expiry dates with 60/30/15-day warnings</td></tr>
+            </tbody>
+          </table>
+          <figcaption style="margin-top:10px;font-size:13px;color:var(--mut)">four stated requirements, mapped to mechanics</figcaption>
+        </figure>
+
+        <h2>⚙️ Under the hood: the checklist that runs before a human does</h2>
+        <p>When an investor marks their form complete, the KYC Onboarding Agent works through a fixed sequence before anyone opens the record.</p>
+        <p>It checks that every required field — standard and custom — actually holds a value, and that the value isn't a placeholder like "N/A", "TEST" or "--". It checks that every document-upload field has a file behind it. It shows the AI each uploaded file together with the label it was filed under, and asks whether the file is in fact that document. For fields configured for cross-checking, it reads the value out of the document and compares it to what was typed in the form. Then it checks the expiry date against the warning windows the team configured.</p>
+        <p>The result is a report marked <strong>ready</strong> or <strong>blocked</strong>. If nothing blocking came up, AML screening starts on its own.</p>
+        <p>None of that is judgement work. All of it was previously costing judgement time.</p>
+        <div class="pull"><p>The compliance officer's scarcest asset is attention on the hard cases. Every mechanical check you automate is attention returned to them.</p></div>
+
+        <h3>And the "ongoing" part, which is where most onboarding projects quietly fail</h3>
+        <p>Onboarding is usually scoped as a raise-period activity. It isn't. A <strong>Docs Completed</strong> flag maintains itself as files land against the checklist. Expiry dates carry 60-, 30- and 15-day warning windows that email the team before a record lapses. Verification records who signed off and when.</p>
+        <p>That last one is load-bearing. A verified KYC is the precondition for generating an investor's capital call notices and their investor statement — the statement run will refuse a commitment whose KYC isn't verified and report it by name rather than skipping it silently. Onboarding debt is drawdown debt with a delay.</p>
+
+        <h2 id="travels">🌍 What travels, and what is configuration</h2>
+        <p>This engagement ran under one particular regime. Almost none of what made it work belongs to that regime. Here is the split, stated plainly enough to argue with.</p>
+        <figure style="margin:30px 0">
+          <table>
+            <thead><tr><th>Stage</th><th>Identical in every jurisdiction</th><th>What actually changes</th></tr></thead>
+            <tbody>
+              <tr><td>Data room</td><td>Per-firm, per-folder access; cascade or stop; record of who saw what</td><td>Nothing</td></tr>
+              <tr><td>Form definition</td><td>Form types, custom fields, named wizard steps, interim saves, document-first entry</td><td>Which regulatory pack is switched on — or none, and the fields are simply defined</td></tr>
+              <tr><td>Verification</td><td>Extraction, form-to-document cross-check, AML screening, full-response storage</td><td>Whether a national identity registry exists to call, and which one</td></tr>
+              <tr><td>Document generation</td><td>Template-based, per-investor, individually approved before it moves</td><td>The template text — which was always going to be yours</td></tr>
+              <tr><td>Execution</td><td>Envelope, signatory labels, signing order, auto-filing, 90-day expiry</td><td>Provider (DocuSign, or a regional equivalent) and the signing credential behind it</td></tr>
+              <tr><td>Statutory attachment</td><td>—</td><td>Only where a regime requires a stamped instrument; in the US there is nothing to attach and the configuration is simply absent</td></tr>
+              <tr><td>Ongoing KYC</td><td>Verified flag with who and when; 60/30/15-day expiry warnings; the block on unverified commitments</td><td>What expires, and after how long</td></tr>
+            </tbody>
+          </table>
+          <figcaption style="margin-top:10px;font-size:13px;color:var(--mut)">six of seven rows are the same wherever the fund sits</figcaption>
+        </figure>
+        <p>One clarification we would rather make than let a table imply otherwise: <strong>there is no US regulatory pack today</strong>, in the way packs ship for the regimes we have been asked for so far. Nothing about a US raise needs one — a Reg D subscription pack is a field set, a document checklist and a DocuSign envelope, all of which are configuration on the day you start. But if a US fund wants its own tagged, validated field set with sub-category rules enforced, that is something we would build with you, and we would rather say so here than have you find out on the call.</p>
+
+        <h2>📊 The impact</h2>
+        <p><strong>200+ limited partners onboarded through one digitised process</strong> — strategy material shared under access control, information and documents collected through customised forms, agreements generated in one touch and executed electronically, and a KYC repository that later capital events read from directly.</p>
+        <p>The operational point isn't that each step got faster, though it did. It is that no step re-keys the previous one. The name that came back verified from the identity registry is the name on the generated agreement, is the name on the call notice, is the name on the statement.</p>
+
+        <h2>What to take from this</h2>
+        <div class="callout">
+          <ol>
+            <li><strong>Count round trips, not review time.</strong> If review takes twenty minutes and onboarding takes two weeks, the review is not your problem.</li>
+            <li><strong>Ask for the document before the form.</strong> An investor will photograph an ID card in ten seconds and mistype the number in thirty.</li>
+            <li><strong>Keep jurisdiction differences in the form definition</strong> — not in a folder of Word files someone has to remember to update in three places. A regime you enter in year three should cost you a field set, not a second onboarding system.</li>
+            <li><strong>Make every generated document individually approvable.</strong> Bulk generation without per-document approval is how the wrong figure reaches an investor.</li>
+            <li><strong>Scope onboarding past the close.</strong> Expiry, re-verification and document completeness are the part that decides whether year three is calm.</li>
+          </ol>
+        </div>
+
+        <h2>Where this goes next</h2>
+        <p>The same verified records are what a drawdown runs against — see <a href="case-capital-drawdowns.html">capital drawdowns across 100+ LPs</a>, or <a href="case-investor-statements.html">investor statements for 500+ LPs</a>. If you want to talk through your own onboarding, <a href="contact.html">book a walkthrough</a>.</p>
+
+        <p style="margin-top:34px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:18px">Client name withheld. The workflow, platform mechanics and behaviour described are exactly as <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs them; supporting detail is illustrative of how engagements of this shape run. <a href="#travels">What travels, and what is configuration</a> marks which parts of it are regional settings rather than platform behaviour.</p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="case-studies.html">More case studies</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Case study: onboarding 200+ LPs digitally",
+  "description": "A fund raising from 200+ investors under one of the world's most paperwork-heavy regimes needed to share strategy documents, collect KYC, generate and execute agreements, and keep it all institutional.",
+  "datePublished": "2026-08-11",
+  "author": { "@type": "Organization", "name": "CapHive" },
+  "publisher": { "@type": "Organization", "name": "CapHive" },
+  "mainEntityOfPage": "https://caphive.com/case-investor-onboarding.html"
+}
+</script>
+</body>
+</html>

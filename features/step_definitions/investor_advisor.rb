@@ -49,10 +49,27 @@
 
 
   Then('I switch to becoming the advisor for {string}') do |investor_name|
-    #sleep(2)
-    # Select the investor_name from the drop down with id investor_advisor
-    within("#investor_advisors_form") do
-      select(investor_name, from: "id")
+    # The topbar persona picker (_personas.html.erb) auto-submits a switch to
+    # investor_advisors[0] on DOMContentLoaded for any user whose home entity
+    # is an "Investor Advisor" entity - true for every advisor user right after
+    # login. That auto-submit's navigation can still be in flight when this step
+    # starts driving the dropdown, detaching #investor_advisors_form mid-select
+    # (Playwright "Element is not attached to the DOM"). Wait for the auto-submit
+    # to land (it sets investor_advisor_id) before doing our own explicit select,
+    # then retry once if we still lose the race.
+    deadline = Time.now + Capybara.default_max_wait_time
+    sleep(0.1) while @user.reload.investor_advisor_id.nil? && Time.now < deadline
+
+    attempts = 0
+    begin
+      within("#investor_advisors_form") do
+        select(investor_name, from: "id")
+      end
+    rescue Playwright::Error => e
+      attempts += 1
+      raise if attempts > 1 || !e.message.include?("not attached to the DOM")
+
+      retry
     end
   end
 

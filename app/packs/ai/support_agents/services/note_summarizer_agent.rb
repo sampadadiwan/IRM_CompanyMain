@@ -101,6 +101,19 @@ class NoteSummarizerAgent < SupportAgentService
     )
   end
 
+  # Setup health check — with tagging off but a tag filter set, untagged notes
+  # never match the filter, so summaries silently cover nothing.
+  def self.config_issues(support_agent)
+    fields = support_agent.json_fields || {}
+    issues = missing_toggle_issues(support_agent, { "auto_tag_notes" => "automatic note tagging" })
+
+    if fields["tag_filter"].to_s.strip.present? && !toggle_on?(support_agent, "auto_tag_notes")
+      issues << "'tag_filter' is set but 'auto_tag_notes' is off — untagged notes will never match the filter, so summaries may cover nothing."
+    end
+
+    issues
+  end
+
   private
 
   # Sets up investor context, computes the period date range from summary_period, and

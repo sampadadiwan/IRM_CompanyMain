@@ -36,6 +36,10 @@ class FundFormulaPolicy < FundBasePolicy
     user.enable_funds || support?
   end
 
+  def dependencies?
+    index?
+  end
+
   def generate_formula?
     create?
   end

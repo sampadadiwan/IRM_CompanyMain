@@ -8,6 +8,15 @@ class KpiReport < ApplicationRecord
 
   PERIODS = ["Month", "Quarter", "Half Year", "Year", "YTD"].freeze
 
+  # File types the KPI workbook upload accepts (Uppy restriction; the server re-checks via Roo).
+  WORKBOOK_FILE_TYPES = %w[.xlsx .xls .csv].freeze
+
+  # Outcome of the import that follows a portco submission (import_status column):
+  #   pending  → submitted, ImportKpiWorkbookJob not finished yet
+  #   imported → data staged (unapproved); the fund has been notified
+  #   failed   → the import hit blocking errors; the report was reopened (draft_saved) for the portco
+  IMPORT_STATUSES = %w[pending imported failed].freeze
+
   # Lifecycle of a portco self-reporting request.
   # shell_created → link_sent → draft_saved → submitted → reviewed
   enum :status, {
@@ -85,6 +94,43 @@ class KpiReport < ApplicationRecord
       # If no new kpis are uploaded, we will not import any kpis
       Rails.logger.info "skipping ImportKpiWorkbookJob for KpiReport #{id}"
     end
+  end
+
+  # Tells the fund a portco submission has been staged. Called by ImportKpiWorkbookJob after a clean
+  # import (never from the request that flipped the status — see kpi_reports_controller#update), so
+  # "submitted" in the fund's inbox always means "and the data is there". Sends only to employees
+  # tagged "Kpi" if any exist; falls back to all employees. Idempotent via fund_notified_at.
+  def notify_fund_of_submission!
+    return if fund_notified_at.present?
+
+    recipients = entity.employees.with_tag('Kpi')
+    recipients = entity.employees if recipients.empty?
+    recipients.find_each do |employee|
+      KpiReportSubmittedNotifier.with(record: self, entity_id: entity_id).deliver_later(employee)
+    end
+    update_columns(fund_notified_at: Time.current)
+  end
+
+  # Tells the fund a portco submission could not be imported (post-gate failure — rare) and reopens the
+  # report so the portco can fix and resubmit; reminders resume because the status leaves `submitted`.
+  def reopen_after_failed_import!
+    update_columns(status: 'draft_saved', import_status: 'failed', submitted_at: nil)
+    recipients = entity.employees.with_tag('Kpi')
+    recipients = entity.employees if recipients.empty?
+    recipients.find_each do |employee|
+      KpiReportImportFailedNotifier.with(record: self, entity_id: entity_id).deliver_later(employee)
+    end
+  end
+
+  # Fund-side "reopen and ask for re-upload": back to draft_saved, clear submission markers, re-send the link.
+  def reopen_for_portco!(entity_id_for_notification)
+    update_columns(status: 'draft_saved', submitted_at: nil, import_status: nil, fund_notified_at: nil)
+    SendPortcoNotification.call(model: self, entity_id: entity_id_for_notification)
+  end
+
+  # Portco has no non-computed KPI mappings — nothing can be imported from any workbook (§2.7).
+  def no_kpi_mappings?
+    portfolio_company.present? && portfolio_company.investor_kpi_mappings.not_compute.none?
   end
 
   def convert_kpis_to_csv

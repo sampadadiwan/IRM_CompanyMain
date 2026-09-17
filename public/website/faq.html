@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  /* Website host -> the app host that receives its demo requests. Mirrors
+     WEBSITE_HOSTS in each deployment's .env file; keep the two in step, because
+     the receiving endpoint only returns CORS headers for origins in that list
+     and a mismatch here fails as a browser-side CORS error with nothing in our
+     logs to explain it. */
+  var ENDPOINTS = {
+    'caphive.com':          'https://app.caphive.com/website_leads',
+    'www.caphive.com':      'https://app.caphive.com/website_leads',
+    'caphive.us':           'https://app.caphive.us/website_leads',
+    'www.caphive.us':       'https://app.caphive.us/website_leads',
+    /* Staging is deliberately not a caphive.* domain. */
+    'altconnects.com':      'https://dev.altconnects.com/website_leads',
+    'www.altconnects.com':  'https://dev.altconnects.com/website_leads',
+    'dev.altconnects.com':  'https://dev.altconnects.com/website_leads'
+  };
+
+  /* Development is the one case the table cannot express. A single Rails process
+     serves BOTH the website (Host: caphive.localhost) and the app (Host:
+     localhost), on whichever port the developer started it on — 3000 and 3001
+     are both in use across this repo's Procfiles and .env.development. So derive
+     the app origin from the page's own port rather than hardcoding one and
+     having it fail on the other. Still cross-origin: the hostname differs, so
+     this exercises the real CORS path rather than quietly bypassing it. */
+  function endpointFor(hostname){
+    if(/(^|\.)localhost$/.test(hostname)){
+      return location.protocol + '//localhost' + (location.port ? ':' + location.port : '') + '/website_leads';
+    }
+    return ENDPOINTS[hostname] || '';
+  }
+
+  window.CAPHIVE = {
+    /* Empty for an unrecognised host — a preview deploy, someone's laptop, an
+       archived copy. The form then falls back to composing an email in the
+       visitor's own mail client rather than posting into a stack that would
+       reject it, so an unlisted host degrades instead of silently losing leads. */
+    formEndpoint: endpointFor(location.hostname),
+
+    /* Where the browser goes after a successful submission. Having its own URL
+       is what makes the conversion measurable. Do not change without updating
+       the conversion trigger in the analytics property. */
+    thankYouUrl: 'thank-you.html',
+
+    /* The public scheduling link. Every booking CTA on the site stays HIDDEN
+       while this is empty, and the header button keeps pointing at the contact
+       form — an advertised booking link that does not book is worse than no
+       booking link at all.
+
+       Availability must be genuinely bookable in US business hours; for an
+       India-based team that means evenings IST. The SAME url belongs in the
+       outbound email signature, which is not wired and must be edited by hand
+       (docs/marketing/gtm_prerequisites_work/C6_outbound_email_template.md §4).
+
+       If this account is ever closed or renamed, blank this line rather than
+       leaving a dead link on the highest-intent button on the site. */
+    bookingUrl: 'https://calendly.com/caphive-support'
+  };
+}());
+</script>
+<!-- Google tag (gtag.js) — GA4 property for caphive.com.
+     Rendered into the <head> of every page by _layout.html.erb, so the
+     measurement ID lives here and nowhere else.
+
+     Consent Mode v2: analytics_storage starts DENIED, so gtag.js loads and
+     sends cookieless pings but sets no _ga cookie until the visitor accepts in
+     the banner (_partials/consent_banner.html). The stored choice is replayed
+     below — synchronously, before config — so a returning visitor who already
+     accepted is measured properly on their very first pageview rather than
+     from the second one onwards. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // We run no advertising tags, so the ad_* signals are denied permanently and
+  // the banner never grants them. Only analytics_storage is the visitor's call.
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied'
+  });
+
+  // localStorage throws in some privacy modes — a read failure just means we
+  // stay on the denied default, which is the safe direction to fail in.
+  try {
+    if(localStorage.getItem('caphive.consent.v1') === 'granted'){
+      gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  } catch(e){}
+
+  gtag('js', new Date());
+  gtag('config', 'G-JR4ZT29M06');
+
+  // Named entry point for conversion events, so assets/js/caphive.js never
+  // touches gtag directly and stays loadable on any page rendered without this
+  // partial (it stubs caphiveTrack to a no-op when absent).
+  //
+  // Consent is deliberately NOT re-checked here. Consent Mode already suppresses
+  // the cookie while analytics_storage is denied, and a cookieless event is
+  // still the signal we want counted — gating on consent here would undercount
+  // conversions for no privacy gain.
+  //
+  // Never pass PII: the analytics property is not a place to store a lead.
+  window.caphiveTrack = function(name, params){
+    if(typeof gtag === 'function') gtag('event', name, params || {});
+  };
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JR4ZT29M06"></script>
+<title>FAQ — Implementation, Data, Security &amp; Pricing | CapHive</title>
+<meta name="description" content="Answers to the questions funds ask before they move: supported structures, single modules, shadow books, migration, parallel runs, data ownership, SSO, pricing and exit.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="canonical" href="https://caphive.com/faq.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 34'%3E%3Cpath d='M15 1L29 9v16L15 33 1 25V9L15 1z' fill='none' stroke='%23FF4D00' stroke-width='3'/%3E%3Cpath d='M15 9l7 4v8l-7 4-7-4v-8l7-4z' fill='%23FF4D00'/%3E%3C/svg%3E">
+<meta property="og:title" content="FAQ — Implementation, Data, Security &amp; Pricing | CapHive">
+<meta property="og:description" content="Supported structures, single modules, shadow books, migration, parallel runs, data ownership, SSO, pricing and exit — answered plainly.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://caphive.com/faq.html">
+<meta property="og:image" content="https://caphive.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Lobster&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/caphive.css?v=3a2cb24c">
+</head>
+<body data-page="faq">
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="index.html" aria-label="CapHive home"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+  <nav class="nav-links" aria-label="Primary">
+    <div class="has-menu">
+      <a class="nav-link" href="products.html" data-nav="products">
+        Products
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="funds.html"><strong>Funds</strong><span>Investor onboarding, capital calls, fund accounting</span></a>
+        <a href="portfolios.html"><strong>Portfolios</strong><span>Company data, performance, LP &amp; GP reporting</span></a>
+        <a href="deals-secondaries.html"><strong>Deals &amp; Secondaries</strong><span>Pipelines, SPVs, multi-party transactions</span></a>
+        <a href="ai-agents.html"><strong>AI Agents</strong><span>Sixteen agents purpose-built for private markets</span></a>
+        <a href="integrations.html"><strong>Data &amp; Integrations</strong><span>ERPs, e-sign, APIs</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="who-we-serve.html" data-nav="solutions">Who We Serve</a>
+    <div class="has-menu">
+      <a class="nav-link" href="resources.html" data-nav="resources">
+        Resources
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="nav-menu">
+        <a href="blog.html"><strong>Insights</strong><span>Writing on operations, AI and private markets</span></a>
+        
+        <a href="case-studies.html"><strong>Case Studies</strong><span>What changed for funds running on CapHive</span></a>
+        <a href="security.html"><strong>Security &amp; Trust</strong><span>Controls, hosting, certifications</span></a>
+        <a href="faq.html"><strong>FAQ</strong><span>Implementation, data, pricing, migration</span></a>
+      </div>
+    </div>
+    <a class="nav-link" href="about.html" data-nav="about">About</a>
+    <a class="nav-link" href="contact.html" data-nav="contact">Contact</a>
+  </nav>
+  <div class="nav-cta">
+    <div class="has-menu login-menu">
+      <button type="button" class="login nav-link">
+        Login
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Pinned per region, same as the footer's "Login — IND" / "Login — USA"
+           links. The trigger above is a non-navigating button — only these two
+           actually go anywhere. -->
+      <div class="nav-menu">
+        <a href="https://app.caphive.com/">Login — IND</a>
+        <a href="https://app.caphive.us/">Login — USA</a>
+      </div>
+    </div>
+    <!-- caphive.js rewrites this href to window.CAPHIVE.bookingUrl when that is set, so the
+         header CTA, the contact page and the outbound email signature all carry the same
+         link. Falls back to the contact form while no booking url is configured. -->
+    <a class="btn btn-primary btn-nav" href="contact.html" data-booking-cta>Setup a Demo</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <!-- Mirrors the desktop .login-menu dropdown in nav.html.erb, which is
+       hidden on mobile along with the rest of .nav-cta. Trigger is a plain
+       button (there's no login landing page to link to), so unlike the
+       Products/Resources groups below the whole row is the toggle. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <button type="button" class="mm-toggle mm-toggle-label" aria-expanded="false" aria-controls="mmLogin" aria-label="Show Login options">
+        Login
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmLogin" hidden>
+      <a class="mm-sub" href="https://app.caphive.com/">Login — IND</a>
+      <a class="mm-sub" href="https://app.caphive.us/">Login — USA</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="index.html">Home</a>
+
+  <!-- Products / Resources mirror the two desktop dropdowns in nav.html.erb.
+       The label stays a plain link so the parent page is still reachable; the
+       chevron beside it is a separate button that expands the children. Keep
+       both lists in step with the .nav-menu blocks in nav.html.erb. -->
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="products.html">Products</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmProducts" aria-label="Show Products pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmProducts" hidden>
+      <a class="mm-sub" href="funds.html">Funds</a>
+      <a class="mm-sub" href="portfolios.html">Portfolios</a>
+      <a class="mm-sub" href="deals-secondaries.html">Deals &amp; Secondaries</a>
+      <a class="mm-sub" href="ai-agents.html">AI Agents</a>
+      <a class="mm-sub" href="integrations.html">Data &amp; Integrations</a>
+    </div>
+  </div>
+
+  <a href="who-we-serve.html">Who We Serve</a>
+
+  <div class="mm-group">
+    <div class="mm-row">
+      <a href="resources.html">Resources</a>
+      <button type="button" class="mm-toggle" aria-expanded="false" aria-controls="mmResources" aria-label="Show Resources pages">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="mm-panel" id="mmResources" hidden>
+      <a class="mm-sub" href="blog.html">Insights</a>
+      <a class="mm-sub" href="case-studies.html">Case Studies</a>
+      <a class="mm-sub" href="security.html">Security &amp; Trust</a>
+      <a class="mm-sub" href="faq.html">FAQ</a>
+    </div>
+  </div>
+
+  <hr class="mm-divider">
+
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+
+  <!-- Same booking-url swap as the desktop header CTA. -->
+  <a class="btn btn-primary" href="contact.html" data-booking-cta>Setup a Demo</a>
+</div>
+<script>
+(function(){
+  /* Inline rather than in assets/js/caphive.js because the homepage renders
+     _partials/index_scripts.html and never loads caphive.js — anything put
+     there would leave the accordion dead on the homepage.
+
+     The sub-links are ordinary <a>s, so the existing "close the menu on any
+     link click" handler in both script bundles already covers them. The
+     chevron is a <button>, so it deliberately does not match that selector
+     and expanding never closes the menu. */
+  document.querySelectorAll('#mobileMenu .mm-toggle').forEach(function(btn){
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if(!panel) return;
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero center hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <span class="chip-label">FAQ</span>
+      <h1>Questions funds actually <em>ask us.</em></h1>
+      <p class="lede">
+        These are the questions that come up on first calls and in diligence, answered the way we answer
+        them on the call. Where something depends on your structure, we say so.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- TODO: add FAQPage JSON-LD structured data at build time — this page carries no inline scripts, so the
+     schema.org markup for these question / answer pairs must be injected by the build or the CMS. -->
+
+<!-- ================= PLATFORM & SCOPE ================= -->
+<section class="section" style="padding-top:96px">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:32px">
+      <span class="tile-kicker">01 · Platform</span>
+      <h2 style="font-size:clamp(28px,3.4vw,42px)">Platform &amp; scope</h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>Which fund structures do you support?</summary>
+        <div>
+          <p><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> runs closed-end and evergreen vehicles, SPVs and co-investment structures, with multi-entity master–feeder arrangements handled in one ledger. The platform is used today across Indian AIF structures and US fund structures, including the fee, hurdle and waterfall mechanics each requires.</p>
+          <!-- TODO: confirm the exact list of supported structures, jurisdictions and regulatory regimes with the product team before launch -->
+          <p>Whether your specific structure is supported out of the box or needs configuration is a question we answer in discovery, not in a marketing page. See <a href="funds.html">Funds</a> for the accounting layer, or <a href="contact.html">ask us directly</a>.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Can we use only one module, or is it all or nothing?</summary>
+        <div>
+          <p>One module is a normal way to start. Firms commonly begin with <a href="funds.html">Funds</a> for onboarding and capital events, or with <a href="portfolios.html">Portfolios</a> when reporting is the immediate pain, and add the rest later.</p>
+          <p>Because the modules share one underlying record, adding a second one is configuration rather than a second migration.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Do you replace our fund administrator, or work alongside them?</summary>
+        <div>
+          <p><span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> fits three ways, and funds pick the one that matches where they are. Some insource fund administration onto the platform outright. Others keep their existing administrator and run shadow books on <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> — or just use the modules they need, like Portfolios or Investor Relations — while the administrator continues; shadow books are reconciled continuously, which usually makes the relationship easier rather than redundant. And some go for an integrated approach: <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> plus one of our partner fund administrators, or <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> plus their existing administrator, who we help train on the platform.</p>
+          <p>The mechanics are on the <a href="funds.html">Funds</a> page.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Do you support multi-currency and multi-entity funds?</summary>
+        <div>
+          <p>Yes. Multi-currency and multi-entity ledgers are computed in a single close, with translation and dual-ledger reporting — EUR and USD in one cycle is a pattern we run today.</p>
+          <p>Entity hierarchies, feeders and blockers roll up to fund-level and investor-level numbers without a consolidation spreadsheet sitting in between.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Can our LPs log in?</summary>
+        <div>
+          <p>Yes. Each investor gets a portal with their capital account, statements, notices and tax documents, scoped so they see only their own positions.</p>
+          <p>You control what is published and when, so nothing reaches an LP before you have reviewed it. Onboarding through the same portal has taken firms from three weeks to two days.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Can our fund administrator log in?</summary>
+        <div>
+          <p>Yes. Administrators, auditors and outsourced finance teams get their own role-scoped access, with every action written to the audit log.</p>
+          <p>Administrators can also work through file exchange or the API instead of the interface — see <a href="integrations.html">Data &amp; Integrations</a>.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= IMPLEMENTATION & MIGRATION ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:32px">
+      <span class="tile-kicker">02 · Implementation</span>
+      <h2 style="font-size:clamp(28px,3.4vw,42px)">Implementation &amp; migration</h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>How long does implementation take?</summary>
+        <div>
+          <p>Weeks, not quarters. A single fund with clean records and one module moves fastest; several vintages, multiple entities and a full historic migration take longer.</p>
+          <!-- TODO: confirm typical implementation ranges by fund count and module before launch, then state them here -->
+          <p>We give you a sequence and an effort estimate in writing after discovery, so the timeline is yours to hold us to rather than ours to promise.</p>
+        </div>
+      </details>
+      <details>
+        <summary>How does migration of historic data work?</summary>
+        <div>
+          <p>Migration is our work, not yours. You hand over the spreadsheets, statements and documents you already have; we load commitments, capital events, valuations and investor records, and reconcile the result back to your last audited close.</p>
+          <p>Anything that does not tie out is raised as a question rather than quietly adjusted.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What is the parallel run?</summary>
+        <div>
+          <p>One close, computed both ways. Your existing process and <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> produce the same period's NAV, capital accounts and waterfall side by side, and we resolve every difference until they agree to the last decimal.</p>
+          <p>Only after that do you stop running the old process. It is the step that makes going live uneventful.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What does our team have to do during implementation?</summary>
+        <div>
+          <p>Three things: answer structure and fee-term questions in discovery, hand over the historic records you hold, and review the parallel-run comparison. That is where your time goes.</p>
+          <p>Data entry, template building and reconciliation sit with us. If your records are held by an administrator, we work with them directly.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What if our historic records are incomplete?</summary>
+        <div>
+          <p>Common, and workable. We migrate from the last point the records are reliable, carry forward opening balances, and flag the gaps rather than inventing numbers to fill them.</p>
+          <p>Where a prior period cannot be reconstructed, it stays documented as an opening position, which auditors generally prefer to a reconstructed guess.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DATA & SECURITY ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:32px">
+      <span class="tile-kicker">03 · Data</span>
+      <h2 style="font-size:clamp(28px,3.4vw,42px)">Data &amp; security</h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>What do the AI agents have access to?</summary>
+        <div>
+          <p>Only the data the user asking already has permission to see. Agents run inside the same permission model and audit log as the interface, so an agent cannot surface a fund, entity or investor that the user could not open themselves.</p>
+          <p>Every agent action is logged with the user, the prompt and the records touched. See <a href="ai-agents.html">AI Agents</a> for what each one does.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Is our data used to train models?</summary>
+        <div>
+          <!-- TODO: confirm the exact model-training and sub-processor position with legal, and state the model providers used, before launch -->
+          <p>Our intent is that client fund data is not used to train third-party models, and that this is written into the contract rather than left to a policy page. Confirm the current wording with us before you rely on it.</p>
+          <p>The controls, sub-processors and data-flow detail belong on <a href="security.html">Security &amp; Trust</a> and in the diligence pack we will send you.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Where is our data hosted?</summary>
+        <div>
+          <!-- TODO: confirm hosting regions, cloud provider and data-residency options before launch -->
+          <p>Hosting region and data-residency options depend on your jurisdiction and are confirmed in writing during diligence — India and US options are the ones we are asked about most.</p>
+          <p>Encryption is applied in transit and at rest. The current posture is documented on <a href="security.html">Security &amp; Trust</a>.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Do you support SSO?</summary>
+        <div>
+          <p>Yes. SSO / OAuth is supported, along with role-based permissions and full audit logging of every user action.</p>
+          <p>If your firm enforces MFA or conditional access at the identity provider, those controls carry through to <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span>. Details on <a href="security.html">Security &amp; Trust</a>.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Who owns the data, and can we export it?</summary>
+        <div>
+          <p>You do. Your fund, investor and portfolio data remains yours throughout, and you can export it — structured records and stored documents — at any point during the engagement, not only at the end.</p>
+          <p>Exports are available through the interface and the API. See <a href="integrations.html">Data &amp; Integrations</a>.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Do you have an API?</summary>
+        <div>
+          <p>Yes. The API covers funds, investors, capital events, portfolio positions and documents, so <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> can feed your data warehouse or receive data from systems you already run.</p>
+          <p>Bank, custodian, ERP and e-sign connections are covered on <a href="integrations.html">Data &amp; Integrations</a>.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMMERCIALS ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:32px">
+      <span class="tile-kicker">04 · Commercials</span>
+      <h2 style="font-size:clamp(28px,3.4vw,42px)">Commercials</h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>How is pricing calculated?</summary>
+        <div>
+          <p>Pricing is quoted per engagement. The drivers are which modules you take, how many funds and entities you run, how many investors sit on the platform, and how much historic migration is involved.</p>
+          <p>We do not publish a rate card because a single-fund manager and a multi-vintage platform are not the same engagement. <a href="pricing.html">Pricing</a> sets out what goes into a quote.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Is there a per-investor fee?</summary>
+        <div>
+          <p>Investor count is one of the inputs to a quote, so a fund with 4,000 investors is priced differently from one with 40. Whether that appears as a per-investor line or is absorbed into the platform fee depends on how the engagement is structured.</p>
+          <p>Ask for the breakdown and we will show which component moves when your investor base grows. See <a href="pricing.html">Pricing</a>.</p>
+        </div>
+      </details>
+      <details>
+        <summary>How long is the contract?</summary>
+        <div>
+          <p>Annual terms are the norm, with multi-year options where a larger migration is involved. Migration and implementation are scoped separately from the recurring platform fee, so you can see what is one-off and what is ongoing.</p>
+          <p>Notice periods and renewal mechanics are in the agreement — read them alongside our <a href="terms.html">Terms of Service</a>.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What support do we get?</summary>
+        <div>
+          <p>Every engagement includes a named point of contact who knows your structures, onboarding and training for your team, and support on a shared channel rather than a ticket queue you shout into.</p>
+          <!-- TODO: confirm support hours, response-time targets and any premium support tier before launch -->
+          <p>Stated support hours and response-time targets are set out in the agreement. Ask us for the current commitment.</p>
+        </div>
+      </details>
+      <details>
+        <summary>What happens if we leave?</summary>
+        <div>
+          <p>You leave with your data. On exit we provide a full structured export of fund, investor, portfolio and transaction records, plus the stored documents, in formats your next system or administrator can load.</p>
+          <p>We will also work directly with the incoming provider during the handover. Retention and deletion after exit follow the agreement and our <a href="privacy.html">Privacy Policy</a>.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STILL STUCK ================= -->
+<section class="section-sm">
+  <div class="wrap">
+    <div class="section-head center reveal" style="margin-bottom:32px">
+      <span class="chip-label">Still stuck</span>
+      <h2>Your question isn't <em>here.</em></h2>
+      <p>Structures, edge cases in the waterfall, an auditor's requirement — send it over. Someone who has run fund operations will answer, not a script.</p>
+    </div>
+    <div class="hero-cta reveal" data-delay="1" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+      <a class="btn btn-primary" href="contact.html">
+        Ask us directly
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-outline" href="security.html">Security &amp; Trust</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html"><img class="logo" src="assets/img/caphive-logo-original.png?v=04e7b692" alt="CapHive" width="89" height="34"></a>
+        
+        <p class="addr">
+          167 Madison Avenue,<br>
+          Suite 205 #4854,<br>
+          New York City, NY 10016,<br>
+          United States
+        </p>
+        <p class="addr">
+          801, One International Center, Tower 1,<br>
+          Senapati Bapat Marg, Lower Parel,<br>
+          Mumbai 400013,<br>
+          India<br>
+          <a class="mailto" href="mailto:hello@caphive.com">hello@CapHive.com</a>
+        </p>
+      </div>
+      <div class="foot-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Platform overview</a></li>
+          <li><a href="funds.html">Funds</a></li>
+          <li><a href="portfolios.html">Portfolios</a></li>
+          <li><a href="deals-secondaries.html">Deals &amp; Secondaries</a></li>
+          <li><a href="ai-agents.html">AI Agents</a></li>
+          <li><a href="integrations.html">Data &amp; Integrations</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="who-we-serve.html">Venture &amp; growth funds</a></li>
+          <li><a href="who-we-serve.html">Private equity</a></li>
+          <li><a href="who-we-serve.html">Family offices</a></li>
+          <li><a href="who-we-serve.html">Fund administrators</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="resources.html">Insights</a></li>
+          <li><a href="case-studies.html">Case Studies</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Get Started</h4>
+        <ul>
+          <li><a href="contact.html">Setup a Demo</a></li>
+          <li><a href="security.html">Security &amp; Trust</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+                    <li><a href="https://app.caphive.com/">Login — IND</a></li>
+          <li><a href="https://app.caphive.us/">Login — USA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span data-year>2026</span> <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> Private Limited. All rights reserved.</p>
+            <p class="legal-links">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="cookies.html" data-consent-open>Cookie settings</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot-mark" aria-hidden="true">CapHive</div>
+</footer><!-- ================= COOKIE CONSENT ================= -->
+<!-- Small bottom-left card, not a full-width bar and not a modal: it never
+     covers the page content or blocks reading. Ships hidden and is revealed by
+     the script below only when no choice is stored yet, so returning visitors
+     never see it again.
+
+     The script is inline rather than in assets/js/caphive.js on purpose — the
+     homepage runs _partials/index_scripts.html and does not load caphive.js, so
+     anything living there would be dead on the busiest page of the site. -->
+<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+  <p class="consent-text">
+    We use analytics cookies to see which pages are useful. Nothing is set until you accept.
+    <a href="cookies.html">Cookie Policy</a>
+  </p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-sm btn-outline" data-consent="denied">Decline</button>
+    <button type="button" class="btn btn-sm btn-dark" data-consent="granted">Accept</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'caphive.consent.v1';   /* version in the key: bump to re-ask after a policy change */
+  var el = document.getElementById('consent');
+  if(!el) return;
+
+  function read(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function write(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  var hideTimer;
+  function show(){
+    /* cancel a pending hide, or reopening within the fade-out would be undone
+       by that timer firing afterwards */
+    clearTimeout(hideTimer);
+    el.hidden = false;
+    requestAnimationFrame(function(){ el.classList.add('in'); });
+  }
+  function hide(){
+    el.classList.remove('in');
+    /* keep it in the DOM until the transition finishes, then take it out of the
+       tab order entirely */
+    hideTimer = setTimeout(function(){ el.hidden = true; }, 300);
+  }
+
+  function choose(value){
+    write(value);
+    /* gtag is defined in the head partial, which runs before this script. The
+       guard covers the case where an ad blocker stripped it. */
+    if(typeof gtag === 'function'){
+      gtag('consent', 'update', { analytics_storage: value === 'granted' ? 'granted' : 'denied' });
+    }
+    hide();
+  }
+
+  el.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){ choose(b.dataset.consent); });
+  });
+
+  /* "Cookie settings" in the footer reopens the banner so a choice can be
+     changed or withdrawn later — required, and the only way back once the
+     banner has been dismissed. */
+  document.querySelectorAll('[data-consent-open]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(); });
+  });
+
+  if(!read()) show();
+})();
+</script>
+
+
+<script src="assets/js/caphive.js?v=da387eda"></script>
+</body>
+</html>

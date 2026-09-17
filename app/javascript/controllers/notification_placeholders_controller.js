@@ -4,17 +4,34 @@ import { Controller } from "@hotwired/stimulus"
 // knowing the available names - the list is keyed by email_method since different notification
 // types are rendered by different mailers, each exposing a different set of placeholders.
 export default class extends Controller {
-    static values = { placeholders: Object, fundDefaults: Object }
-    static targets = ["emailMethodSelect", "placeholderSelect", "editor", "overrideWarning"]
+    static values = { placeholders: Object, fundDefaults: Object, autoAttachMethods: Array }
+    static targets = ["emailMethodSelect", "placeholderSelect", "editor", "overrideWarning", "blankAttachmentHint"]
 
     connect() {
         this.renderOptions()
         this.renderOverrideWarning()
+        this.renderBlankAttachmentHint()
     }
 
     emailMethodChanged() {
         this.renderOptions()
         this.renderOverrideWarning()
+        this.renderBlankAttachmentHint()
+    }
+
+    // Some mailers (e.g. CapitalRemittanceMailer#notify_capital_remittance/reminder_capital_remittance,
+    // CapitalDistributionPaymentsMailer#send_notification) always attach the owner's own generated
+    // notice document via attach_all_files, regardless of attachment_names - so "blank" doesn't mean
+    // "no attachments" for those. See CustomNotification::AUTO_ATTACHED_EMAIL_METHODS.
+    renderBlankAttachmentHint() {
+        if (!this.hasBlankAttachmentHintTarget) return
+
+        const emailMethod = this.emailMethodSelectTarget.value
+        const autoAttaches = this.autoAttachMethodsValue.includes(emailMethod)
+
+        this.blankAttachmentHintTarget.textContent = autoAttaches
+            ? "this email's own generated notice document is still attached automatically - this field only adds extra documents on top of it."
+            : "this email is sent with no attachments."
     }
 
     // Warns that saving this call/distribution-specific notification will override the fund's

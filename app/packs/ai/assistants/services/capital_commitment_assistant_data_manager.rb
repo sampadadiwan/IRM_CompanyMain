@@ -46,6 +46,33 @@ class CapitalCommitmentAssistantDataManager
     end
   end
 
+  # Query object for filtering Documents.
+  class DocumentQuery
+    include HasScope
+
+    has_scope :approved, type: :boolean
+    has_scope :not_approved, type: :boolean
+    has_scope :template, type: :boolean
+    has_scope :not_template, type: :boolean
+    has_scope :sent_for_esign, type: :boolean
+    has_scope :not_sent_for_esign, type: :boolean
+    has_scope :signed, type: :boolean
+    has_scope :esign_status_completed, type: :boolean
+    has_scope :esign_status_failed, type: :boolean
+    has_scope :esign_status_requested, type: :boolean
+
+    def perform(collection:, params:)
+      apply_scopes(collection, params)
+    end
+  end
+
+  # Server-side ceiling applied whenever a caller (the LLM) doesn't supply an explicit
+  # `limit`. Mirrors FundAssistantDataManager::DEFAULT_QUERY_LIMIT / PortfolioAssistant
+  # DataManager::DEFAULT_QUERY_LIMIT -- kept here too even though every list in this class
+  # is already scoped to a single commitment (small row counts today), so a future change
+  # that widens the scope doesn't silently lose the cap.
+  DEFAULT_QUERY_LIMIT = 500
+
   # Initializes the data manager.
   #
   # @param user [User] The user context for data retrieval.
@@ -54,6 +81,24 @@ class CapitalCommitmentAssistantDataManager
     @user = user
     @capital_commitment = capital_commitment
   end
+
+  # Applies the caller's limit if given, otherwise falls back to DEFAULT_QUERY_LIMIT.
+  def bounded_limit(relation, limit)
+    relation.limit(limit.presence || DEFAULT_QUERY_LIMIT)
+  end
+  private :bounded_limit
+
+  # Returns an error hash when `scope` was supplied but isn't declared on `query_class` (a
+  # HasScope-including *Query class). Before this, an unrecognized/hallucinated scope name
+  # was silently dropped -- the LLM's tool call looked successful but quietly returned an
+  # *unfiltered* result, with no signal that the requested scope didn't exist. Returns nil
+  # when scope is blank or recognized, so callers can `return error if error`.
+  def unrecognized_scope_error(query_class, scope)
+    return nil if scope.blank? || query_class.scopes_configuration.key?(scope.to_sym)
+
+    { error: "Unknown scope '#{scope}'. Valid scopes: #{query_class.scopes_configuration.keys.join(', ')}" }
+  end
+  private :unrecognized_scope_error
 
   # Retrieves detailed information for the capital commitment.
   #
@@ -102,15 +147,22 @@ class CapitalCommitmentAssistantDataManager
 
     relation = Pundit.policy_scope(@user, CapitalRemittance).where(capital_commitment_id: @capital_commitment.id).includes(:fund, :capital_call, :capital_commitment)
 
-    # Use HasScope to apply filters safely
-    scope_params = scope.present? ? { scope => true } : {}
+    # Use HasScope to apply filters safely. The key must be a Symbol: HasScope's declared
+    # `as:` (defaulting to the scope name given to `has_scope`) is always a Symbol, and
+    # `hash.key?(key)` on a plain Hash is type-sensitive -- a String key here would never
+    # match, so the requested scope would silently never apply (was a real bug: previously
+    # `{ scope => true }` with `scope` a raw String).
+    scope_error = unrecognized_scope_error(CapitalRemittanceQuery, scope)
+    return scope_error if scope_error
+
+    scope_params = scope.present? ? { scope.to_sym => true } : {}
     relation = CapitalRemittanceQuery.new.perform(collection: relation, params: scope_params)
 
     results = relation.ransack(ransack_query).result
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |r|
       {
@@ -141,15 +193,19 @@ class CapitalCommitmentAssistantDataManager
     relation = Pundit.policy_scope(@user, CapitalDistributionPayment).includes(:fund, :capital_commitment)
     relation = relation.where(capital_commitment_id: @capital_commitment.id)
 
-    # Use HasScope to apply filters safely
-    scope_params = scope.present? ? { scope => true } : {}
+    # Use HasScope to apply filters safely. See list_capital_remittances above for why the
+    # key must be `scope.to_sym`, not the raw String `scope`.
+    scope_error = unrecognized_scope_error(CapitalDistributionPaymentQuery, scope)
+    return scope_error if scope_error
+
+    scope_params = scope.present? ? { scope.to_sym => true } : {}
     relation = CapitalDistributionPaymentQuery.new.perform(collection: relation, params: scope_params)
 
     results = sort.present? ? relation.ransack(s: sort).result : relation
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
 
     results.map do |p|
       {
@@ -174,11 +230,21 @@ class CapitalCommitmentAssistantDataManager
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
 
-    # Find documents associated with the commitment
-    relation = Pundit.policy_scope(@user, Document).where(owner_id: @capital_commitment.id, owner_type: 'CapitalCommitment')
-    relation = relation.send(scope) if scope.present? && Document.respond_to?(scope)
+    # Find documents associated with the commitment. `.includes(:folder)` avoids an N+1 --
+    # the map below calls `d.folder&.full_path` per row.
+    relation = Pundit.policy_scope(@user, Document).where(owner_id: @capital_commitment.id, owner_type: 'CapitalCommitment').includes(:folder)
+
+    # Route scope through a declared allowlist (HasScope), never a raw `send` -- Document
+    # (like every AR model) responds_to? real methods such as destroy_all/delete_all/
+    # update_all, so `relation.send(scope) if relation.respond_to?(scope)` would let an
+    # LLM-supplied scope string execute one of those against every document this user can see.
+    scope_error = unrecognized_scope_error(DocumentQuery, scope)
+    return scope_error if scope_error
+
+    scope_params = scope.present? ? { scope.to_sym => true } : {}
+    relation = DocumentQuery.new.perform(collection: relation, params: scope_params)
     documents = relation.ransack(ransack_query).result
-    documents = documents.limit(limit) if limit.present?
+    documents = bounded_limit(documents, limit)
 
     documents.map do |d|
       {
@@ -268,7 +334,7 @@ class CapitalCommitmentAssistantDataManager
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
-    results = results.limit(limit) if limit.present?
+    results = bounded_limit(results, limit)
     results.map do |u|
       {
         id: u.id,

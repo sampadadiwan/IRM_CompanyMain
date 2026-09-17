@@ -12,9 +12,15 @@ class AllocationRunsController < ApplicationController
 
   def unlock
     fund = @allocation_run.fund
-    # We want to unlock AllocationRuns with the same end_date
-    if AllocationRun.where(fund: fund, end_date: @allocation_run.end_date).update_all(locked: false).positive?
-      flash[:notice] = "AllocationRun unlocked successfully."
+    # Unlock every locked run overlapping this one's period, not just an exact end_date
+    # match -- locked_and_overlapping (the check that blocks a new run) matches on
+    # fund + date-range overlap, so unlocking has to use the same definition or a
+    # differently-dated overlapping run is left locked and still blocks new runs.
+    result = AllocationRun.where(fund: fund).locked
+                          .overlapping(@allocation_run.start_date, @allocation_run.end_date)
+                          .update_all(locked: false)
+    if result.positive?
+      flash[:notice] = "Unlocked #{result} AllocationRun#{'s' if result != 1} for this period."
     else
       flash[:alert] = "Failed to unlock AllocationRun."
     end

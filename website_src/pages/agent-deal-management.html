@@ -1,0 +1,308 @@
+---
+title: Deal Management Agent — AI Agents | CapHive
+description: How CapHive's Deal Management Agent checks one open deal — investor stagnation,
+  overdue steps, missing data-room documents, AI-extracted deal terms, note summaries
+  and investor scores.
+og_title: Deal Management Agent | CapHive
+og_description: Health checks on a single open deal, ending in a pipeline digest email.
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Deal Management Agent
+      </nav>
+      <span class="chip-label">Deals &middot; Agent</span>
+      <h1 style="margin-top:22px">Health checks on <em>one open deal.</em></h1>
+      <p class="lede">The Deal Management Agent monitors the health of a single open deal: stagnant investors, overdue activity steps, missing data-room documents, extracted deal terms, per-investor note summaries and AI scores. It runs scoped to one deal at a time — on demand from the deal page or on a weekly schedule — and finishes with a pipeline digest email.</p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>One open deal at a time</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>Yes — for term extraction, note summaries and scoring</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>Deal report, per-investor reports, pipeline digest email</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>
+            Each run walks through one deal and checks it from several angles. Every step other
+            than the final save has its own on/off switch, so turning one off does not stop the
+            others from running.
+          </p>
+          <ol>
+            <li><strong>Gets started</strong> — loads its settings and confirms the deal is still Open. If the deal is closed, the run stops immediately, nothing changes, and no report is produced.</li>
+            <li><strong>Checks deal progress</strong> — for every investor not marked Declined or Complete, it looks for stagnation on a per-step basis. Each deal step can carry its own expected number of days, and that step-level duration becomes the stagnation threshold for investors currently on it. An investor five days into a step configured for three days is flagged as stagnant; an investor five days into a step configured for thirty days is not. Where a step has no configured duration, the global stagnant threshold applies — 14 days by default. Any activity step still open past its due date is called out as an overdue, blocking issue.</li>
+            <li><strong>Checks the document checklist</strong> — looks in the deal's data room for each document name on your required-documents list, matching without regard to case. Anything missing is flagged as blocking; anything found is logged as a pass.</li>
+            <li><strong>Extracts deal terms</strong> — sends every readable document in the data room to the AI and asks it to pull out structured deal terms: valuation, instrument type, closing date, board seats and more. This step can reuse a previous result instead of reading everything again.</li>
+            <li><strong>Runs the investor pipeline</strong> — for each active investor, it gathers documents from that investor's folder and from their completed activity attachments, can summarise them with the AI under Key Themes, Action Items and Investor Engagement, and can score the investor from 0 to 100 against your scoring rubric. Scores are written straight back to the investor's record.</li>
+            <li><strong>Sends an email digest</strong> — one consolidated pipeline summary to whoever is set as the notify recipient, covering overdue activities, document gaps, extracted terms and a leaderboard of investor scores. If anything blocking turned up anywhere in the run, an alert banner is added automatically.</li>
+            <li><strong>Saves the report</strong> — stores the deal-level report and a separate report for each active investor.</li>
+          </ol>
+
+          <div class="callout">
+            <p>
+              <strong>Re-running the agent and seeing the same extracted terms is by design, not a
+              fault.</strong> Term extraction remembers what it read last time. If nothing in the data
+              room has been added, removed or changed since the last run, and the extraction
+              instructions have not changed either, the agent reuses the previous result rather than
+              paying to read every document again. To force a fresh read, add, remove or change a
+              document in the data room, or edit the extraction instructions — a small change is enough.
+            </p>
+          </div>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <p>
+            Settings live on the agent's own edit page. An unset Yes/No field counts as off.
+          </p>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Default</th><th>What it controls</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Check deal progress</td><td>Yes</td><td>Stagnation detection and overdue-activity flagging.</td></tr>
+              <tr><td>Stagnant threshold (days)</td><td>14</td><td>The global fallback threshold. A step's own configured duration takes priority over this value, so it only applies to investors on steps with no duration set.</td></tr>
+              <tr><td>Check document checklist</td><td>Yes</td><td>The required-document presence check.</td></tr>
+              <tr><td>Required documents</td><td>NDA, Term Sheet, Pitch Deck</td><td>Comma-separated document names checked against the data room, matched without regard to case. Blank skips the check entirely.</td></tr>
+              <tr><td>Extract deal terms</td><td>Yes</td><td>AI extraction of deal terms from every document in the data room.</td></tr>
+              <tr><td>Term extraction prompt</td><td>blank</td><td>Custom extraction instructions. Blank uses the built-in instructions, which look for pre- and post-money valuation, equity percentage, investment amount, instrument type, closing date, board seats, pro-rata rights, anti-dilution, right of first refusal, drag-along rights and lock-up period.</td></tr>
+              <tr><td>Summarize investor notes &amp; docs</td><td>Yes</td><td>The three-part AI summary per investor. Only runs for investors with at least one document.</td></tr>
+              <tr><td>Note period</td><td>Quarter</td><td>How far back the agent looks when gathering an investor's documents and activity attachments. It does not affect term extraction, which always reads the whole data room.</td></tr>
+              <tr><td>Score investors</td><td>Yes</td><td>AI scoring of each active investor from 0 to 100. Investors with no documents can still be scored from activity history and notes alone.</td></tr>
+              <tr><td>Scoring Skill File</td><td>seeded default</td><td>The document that defines your scoring rubric.</td></tr>
+              <tr><td>Min bullet points per section</td><td>3</td><td>The minimum number of bullets the AI must write for each scoring rationale and each top-level list.</td></tr>
+              <tr><td>Weekly summary</td><td>Yes</td><td>The weekly summary content — charts, task lists and the digest email itself. With this off, no digest is sent even when a notify email is set.</td></tr>
+              <tr><td>Report period (days)</td><td>7</td><td>How far back the weekly summary looks when calculating step transitions, new investors, status changes and completed tasks. Left blank, it defaults to one day, so only today's changes appear.</td></tr>
+              <tr><td>AI insight</td><td>Yes</td><td>The AI-written insight section inside the weekly summary. Only applies when Weekly summary is on.</td></tr>
+              <tr><td>Notify email</td><td>blank</td><td>Who receives the post-run pipeline digest. Blank means no email at all goes out.</td></tr>
+            </tbody>
+          </table>
+
+          <h3>The scoring rubric</h3>
+          <p>
+            The Scoring Skill File should be a plain text or Markdown document describing your
+            scoring dimensions and how much each one counts. The built-in default rubric uses four
+            weighted dimensions: Engagement &amp; Responsiveness (30%), Document Readiness (25%),
+            Commitment Signals (25%) and Pipeline Health (20%). Running Setup All Agents uploads that
+            default for you. A file you upload replaces the default completely — the agent reads
+            whatever text is in your document and hands it to the AI as scoring instructions, word for
+            word. If the uploaded file turns out to be empty or unreadable, the agent falls back to the
+            built-in rubric rather than failing the run.
+          </p>
+
+          <h3>What else it reads</h3>
+          <ul>
+            <li>Documents sitting in the deal's data-room folder, used by the document checklist and term extraction.</li>
+            <li>Documents in each investor's own folder, plus attachments on their completed activity steps within the note period, used by the note summaries and scoring.</li>
+            <li>Each investor's activity steps, including due dates and status.</li>
+            <li>Investor notes, tier, status and committed amount, used as extra context for scoring.</li>
+          </ul>
+          <p>
+            Supported document formats throughout: PDF, TXT, Markdown, Excel, PowerPoint, Word and
+            CSV. Anything in another format is left out of whatever the AI sees.
+          </p>
+
+          <h3>Setup checklist</h3>
+          <div class="pull">
+            <p>An unset Yes/No toggle counts as off, not on — a step whose toggle was never given a value is silently skipped, which is easy to mistake for the agent working normally.</p>
+          </div>
+          <p>
+            The agent's General tab shows a yellow warning banner listing anything in that state. For
+            this agent it flags:
+          </p>
+          <ul>
+            <li>Any of the seven check toggles that has never been set — deal progress, document checklist, term extraction, note summaries, investor scoring, weekly summary and AI insight. Agents provisioned before the weekly summary and AI insight options existed commonly have those two unset; re-running Setup All Agents fills them in as Yes.</li>
+            <li>A blank notify email, which means the pipeline digest — this agent's main output — will never be sent.</li>
+            <li>A Scoring Skill File field with no uploaded document, in which case scoring quietly uses the built-in default rubric instead of yours.</li>
+          </ul>
+          <p>Resolve the banner items before relying on the digest or on custom scoring.</p>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <ol>
+            <li>An administrator turns on the Deal Management Agent for your organisation, from the Support Agents section of the entity's admin settings.</li>
+            <li>An AI provider key is configured under the LLM Keys area of Support Agents. The progress check and the document checklist are deterministic on their own, but term extraction, note summaries and scoring all need a working key.</li>
+            <li>The agent uses your organisation's default AI model unless someone sets a model override on the agent's own edit page.</li>
+            <li>Only users with the Company Admin role can change the agent's settings. Running it from a deal page requires only permission to edit that deal.</li>
+          </ol>
+          <p>
+            If the organisation-wide toggle is off, the Run Now button on the agent's own page is
+            disabled. The Run Agent button on an individual deal page is checked only against your
+            permission to edit that deal, not against the organisation toggle.
+          </p>
+
+          <h2 id="running-it">Running it</h2>
+          <p>
+            <strong>From the deal page — the normal path.</strong> Open a deal, find the Run Agent
+            button in the deal's agent settings area, and confirm. This runs against that one deal
+            only; there is no run-for-every-deal option here. For a view across every open deal, use
+            the <a href="agent-deals-report.html">Deals Report Agent</a> instead.
+          </p>
+          <p>
+            <strong>From the Support Agents list.</strong> Open the Deal Management Agent card, go to
+            the General tab and click Run Now. You are asked to pick which deal to run it against.
+          </p>
+          <p>
+            <strong>Scheduled runs</strong> start automatically per the Schedule tab, always against
+            whichever deal the schedule was set up for.
+          </p>
+          <p>
+            The agent does not show a live, step-by-step progress panel. After you trigger it you see a
+            queued notice, and the result appears once the run finishes — refresh the Deal Reports tab
+            or the deal page to see the new report.
+          </p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            A weekly schedule is created automatically by Setup All Agents: every Monday at 07:00
+            Asia/Kolkata, with failure notifications on, success notifications off, and <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> support
+            notified if something errors. It ships turned off — nothing runs automatically until
+            someone enables it.
+          </p>
+          <p>
+            To turn it on, open the agent's Schedule tab, confirm or adjust the frequency, day, time and
+            time zone, switch Enabled on, and save.
+          </p>
+
+          <h2 id="where-the-output-goes">Where the output goes</h2>
+          <ul>
+            <li><strong>Weekly Summary dashboard</strong> — reached from the Weekly Summary button on the deals list header. It shows the latest report's data: step transitions, the stagnation breakdown, period deltas for new and dropped investors, tasks that are overdue, upcoming, pending and completed, charts and the AI insight. A report selector lets you open older reports for comparison. Only visible when the agent is enabled for your organisation.</li>
+            <li><strong>Deal-level report</strong> — a fresh report each time the agent runs against the deal, so history builds up over time and the most recent one is always marked as the latest. Found on the agent's Deal Reports tab and on the deal's own agent tab.</li>
+            <li><strong>Per-investor reports</strong> — one per active investor, replaced each run rather than kept as history, so only the latest result per investor is available.</li>
+            <li><strong>Score write-back</strong> — when scoring succeeds, the investor's AI score and letter grade are updated directly on their record.</li>
+            <li><strong>Email</strong> — the pipeline digest goes to the notify email. The subject line is prefixed "[ALERT]" if anything blocking was found anywhere in the run, and "[Digest]" otherwise. No email goes out if the field is blank.</li>
+            <li><strong>Execution History tab</strong> — every run, including failed ones, with status and duration.</li>
+          </ul>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <p>The deal-level report includes:</p>
+          <ul>
+            <li><strong>Progress issues, document issues and digest issues</strong> — the problems found by each check, each with a type, a message and a severity of Blocking, Warning or Info.</li>
+            <li><strong>Extracted terms</strong> — the structured deal terms returned by the AI. Empty if extraction was turned off, there were no documents to read, or the AI's response could not be understood.</li>
+            <li><strong>Term extraction tracking information</strong> — the markers the agent uses to decide whether it can reuse a previous extraction.</li>
+            <li><strong>Score leaderboard</strong> — every investor with name, status, AI score and grade, highest score first.</li>
+            <li><strong>Health scores</strong> — a snapshot of each investor's health at the time of the progress check.</li>
+            <li><strong>Overall status</strong> — "blocked" if anything blocking turned up anywhere in the run, otherwise "ready".</li>
+          </ul>
+          <p>
+            Each per-investor report holds the written summary, the full score breakdown — overall
+            score, grade, a short summary, the scoring dimensions with positives and concerns, plus
+            top-level strengths, risks and recommendations — how many documents and activity items were
+            found, and a status of "ready" when documents were found, "skipped" when none were, or
+            "failed" when something went wrong.
+          </p>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <ul>
+            <li><strong>Closed deals are skipped entirely.</strong> If the deal is not marked Open, the agent stops at the start with a warning and produces no report at all, so there is nothing to inspect.</li>
+            <li><strong>No required documents configured means the checklist does nothing.</strong> Leave the field blank and you get a single success note saying no required documents are configured, rather than a real check.</li>
+            <li><strong>No documents in the data room means term extraction is skipped, not failed.</strong> The agent records that there were no documents and moves on; extracted terms stay empty.</li>
+            <li><strong>Investors with no documents get no summary, but may still be scored.</strong> The note-summary step needs at least one document and is skipped without one. Scoring, if it is on, can still produce a score from activity history and notes alone.</li>
+            <li><strong>A missing or empty Scoring Skill File falls back to the built-in rubric</strong> rather than raising an error. If you uploaded a custom rubric and the scores do not seem to reflect it, check that the file contains readable text.</li>
+            <li><strong>Very large data rooms can hit size limits.</strong> Each document is capped at 5,000 characters and the whole data room context at 50,000 characters per investor or deal. Once that is reached, the documents processed earliest are the ones left out — which can quietly leave recent or large files out of term extraction and scoring, with only a technical log recording it.</li>
+            <li><strong>Leaving the notify email blank silences the digest entirely.</strong> The run still finishes and the report still saves, but nobody is told, even when blocking issues were found. There is no separate always-notify-on-blockers setting.</li>
+            <li><strong>The deal page's Run Agent button is not gated the same way as the agent's own page.</strong> It checks only your permission to edit that deal, so it is worth confirming with an administrator that the feature is actually on for your organisation before relying on it.</li>
+            <li><strong>Older references to reminder settings no longer do anything.</strong> An earlier version sent per-activity email reminders through separate settings. Those have been folded into the single post-run digest, and Setup All Agents removes the old settings automatically.</li>
+          </ul>
+
+          <h2 id="faq">Questions we are asked</h2>
+          <div class="faq">
+            <details>
+              <summary>I re-ran the agent and the extracted terms did not change. Why?</summary>
+              <div>
+                <p>Term extraction reuses its previous result when nothing has changed. If no document in the data room was added, removed or modified, and the extraction instructions are the same, the agent skips the AI call and reuses what it found last time.</p>
+                <p>Touch a document or edit the instructions to force a fresh read.</p>
+              </div>
+            </details>
+            <details>
+              <summary>An investor has no score even though scoring is turned on.</summary>
+              <div>
+                <p>Check that investor's report for its status and score details. Scoring can fail quietly — logged but not shown — if the AI's response was not in the expected format, or if the score returned was outside the 0 to 100 range. In either case no score or grade is saved for that investor.</p>
+              </div>
+            </details>
+            <details>
+              <summary>I uploaded a new Scoring Skill File but the scores look unchanged.</summary>
+              <div>
+                <p>Make sure the file actually contains text, and that the upload replaced the existing file on the agent's edit page rather than sitting alongside it. An empty or unreadable file falls back to the default rubric with no error shown.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Why did no digest email arrive after a run that found blockers?</summary>
+              <div>
+                <p>The notify email was most likely left blank. The run still completes and the report still saves — there is simply nobody to send it to. Set an address on the agent's edit page.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Can I run this for every deal in the pipeline at once?</summary>
+              <div>
+                <p>No. This agent always targets one deal at a time. Use the <a href="agent-deals-report.html">Deals Report Agent</a> for a fundraising summary across every open deal.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>set.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-deals-report.html">
+        <div>
+          <span class="kick">Deals</span>
+          <h3>Deals Report Agent</h3>
+          <p>Fundraising status for every open deal — fill rate, staleness and top investors.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-presentation-analyst.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Investor Presentation Analyst</h3>
+          <p>Reads a portfolio company's investor presentations and compares reporting periods.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-note-summarizer.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Note Summarizer Agent</h3>
+          <p>AI summaries of an investor's notes for the last full month or quarter.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

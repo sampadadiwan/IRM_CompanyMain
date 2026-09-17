@@ -38,6 +38,7 @@ class CapitalDistributionsController < ApplicationController
     @bread_crumbs = { Funds: funds_path, "#{@capital_distribution.fund.name}": fund_path(@capital_distribution.fund), New: nil }
     authorize @capital_distribution
     setup_custom_fields(@capital_distribution)
+    apply_clone_from(@capital_distribution, params[:clone_from_id], params[:clone_mode]) if params[:clone_from_id].present?
   end
 
   # GET /capital_distributions/1/edit
@@ -65,6 +66,9 @@ class CapitalDistributionsController < ApplicationController
   def update
     respond_to do |format|
       if @capital_distribution.update(capital_distribution_params)
+        # Editing distribution_date after payments already exist re-dates every capital_distribution_payment
+        # to match (see docs/technical/call_and_distribution_date_cascade_plan.md) and triggers a fee recompute.
+        CapitalDistributionDateChangeJob.perform_later(@capital_distribution.id, current_user.id) if @capital_distribution.saved_change_to_distribution_date?
         format.html { redirect_to capital_distribution_url(@capital_distribution), notice: "Capital distribution was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_distribution }
       else
@@ -127,6 +131,35 @@ class CapitalDistributionsController < ApplicationController
   end
 
   private
+
+  # Pre-fills a new (unsaved) capital distribution from an existing one, for the "Clone"
+  # and "Create With Fees" actions on the show page. Nothing is persisted here - the user
+  # reviews/edits on the new form and saves via the normal create action. Cross-fund copying
+  # is allowed - the caller already authorized `create?` on the target fund (in #new), and
+  # `authorize source, :show?` below covers the source fund, so both sides are permission-checked.
+  def apply_clone_from(target, source_id, mode)
+    source = CapitalDistribution.find(source_id)
+    authorize source, :show?
+
+    if mode == "full"
+      target.title = "#{source.title} (Copy)"
+      target.distribution_on = source.distribution_on
+      target.cost_of_investment_cents = source.cost_of_investment_cents
+      target.income_cents = source.income_cents
+      target.reinvestment_cents = source.reinvestment_cents
+      target.unit_prices = source.unit_prices
+      target.form_type_id = source.form_type_id
+      target.send_notification_on_complete = source.send_notification_on_complete
+      target.notes = source.notes
+      # Deliberately not copied: completed, approved, approved_by_user_id, generate_payments_paid,
+      # distribution_amount_cents, completed_distribution_amount_cents, distribution_date (stays "today") -
+      # these are progress/state fields on the source, not setup fields for a fresh draft.
+    end
+
+    source.distribution_fees.each do |fee|
+      target.distribution_fees.build(fee.attributes.except("id", "capital_distribution_id", "entity_id", "fund_id", "created_at", "updated_at"))
+    end
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_capital_distribution

@@ -14,7 +14,8 @@ class FundCommitmentNotifier < BaseNotifier
       capital_commitment_id: record.id,
       investor_id: record.investor_id,
       from_email: record.fund.custom_fields.from_email,
-      custom_notification_id: params[:custom_notification_id]
+      custom_notification_id: params[:custom_notification_id],
+      additional_ccs: record.cc
     }
   end
 

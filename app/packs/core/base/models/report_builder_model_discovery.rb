@@ -60,8 +60,74 @@ class ReportBuilderModelDiscovery
     @all_models = nil
   end
 
-  def self.associations_for(klass)
-    klass.reflect_on_all_associations.filter_map do |r|
+  # Associations that are noise for report building, hidden from the "+ Add
+  # related data" pickers (both the advanced builder and the guided wizard,
+  # plus the /report_builder/associations drill-down endpoint — all three
+  # go through this method). Internal plumbing (Entity/EntitySetting,
+  # FormType/FormCustomFields), audit trails, incoming-email records, and
+  # exchange-rate lookups aren't things a business user is reporting on;
+  # the whole Workflow subsystem is excluded by target-model prefix since
+  # it spans many association names. Edit here to change what's offered.
+  EXCLUDED_ASSOCIATION_NAMES = %w[
+    form_type form_types form_custom_fields
+    entity entity_setting entity_settings
+    audits associated_audits own_and_associated_audits
+    incoming_emails incoming_email
+    exchange_rate exchange_rates
+    investor_signatory trustee_signatory
+    folder folders document_folder document_folders data_room_folder
+    noticed_events custom_notifications
+    access_rights fund_formulas ratio_formulas portfolio_scenarios
+    approvals approval_responses
+  ].freeze
+
+  # Hand-picked "+ Add related data" options per root model — the join-picker
+  # equivalent of ADDITIONAL_COLUMNS_FROM (which already curates which
+  # associations' *columns* are joinable). Auto-discovering every AR
+  # association (the previous behaviour, still used as the fallback below for
+  # any root model not listed here) surfaces 30-40+ options per model, most
+  # of them irrelevant to reporting — this keeps only the handful that are
+  # actually central to that model's story. Add an entry here for a root
+  # model as it comes up in practice; there's no requirement to curate all of
+  # ReportBuilderModelDiscovery::ROOT_MODELS up front.
+  CURATED_JOINS = {
+    "Investor" => %w[capital_commitments investor_kycs capital_distribution_payments capital_remittances fund_units],
+    "Fund" => %w[capital_commitments capital_calls capital_distribution_payments capital_remittances fund_units portfolio_investments],
+    "CapitalCommitment" => %w[investor fund capital_remittances capital_distribution_payments capital_remittance_payments fund_units investor_kyc],
+    "CapitalCall" => %w[fund capital_remittances],
+    "CapitalDistribution" => %w[fund capital_distribution_payments],
+    "CapitalDistributionPayment" => %w[fund investor capital_commitment capital_distribution investor_kyc],
+    "CapitalRemittance" => %w[fund capital_call capital_remittance_payments investor_kyc],
+    "CapitalRemittancePayment" => %w[capital_remittance capital_call fund investor capital_commitment investor_kyc],
+  }.freeze
+
+  # Packs that are gated behind an entity-level feature flag (Entity#permissions,
+  # see EntityEnabled) rather than always being available. A tenant that
+  # doesn't have Deals turned on shouldn't be offered "+ Add related data"
+  # options that only make sense for Deals (Offer, SecondarySale, ...) when
+  # reporting on a Funds-pack root, and vice versa — the packs a model lives
+  # under (see .pack_for) line up with these three flags closely enough to
+  # use directly. Packs not listed here (Core, Misc, AI, Other) are treated
+  # as always-available shared/foundational data.
+  PACK_PERMISSION_FLAGS = {
+    "Funds" => :enable_funds,
+    "Startups" => :enable_deals,
+    "Secondaries" => :enable_secondary_sale
+  }.freeze
+
+  # entity: when given, associations belonging to a pack the entity hasn't
+  # enabled are hidden (see PACK_PERMISSION_FLAGS above). Left nil, no
+  # entity-based filtering happens — every caller that has a current entity
+  # in scope should pass one.
+  def self.associations_for(klass, entity: nil)
+    curated_names = CURATED_JOINS[klass.name]
+    reflections = if curated_names
+                    curated_names.filter_map { |name| klass.reflect_on_association(name.to_sym) }
+                  else
+                    klass.reflect_on_all_associations
+                  end
+
+    reflections.filter_map do |r|
       next if r.options[:polymorphic]
 
       target_klass = begin
@@ -69,6 +135,9 @@ class ReportBuilderModelDiscovery
       rescue StandardError
         next
       end
+
+      next if excluded_association?(r.name.to_s, target_klass.name)
+      next if entity && !pack_enabled_for?(target_klass, entity)
 
       {
         name: r.name.to_s,
@@ -82,6 +151,24 @@ class ReportBuilderModelDiscovery
       nil
     end
   end
+
+  def self.excluded_association?(name, target_model_name)
+    EXCLUDED_ASSOCIATION_NAMES.include?(name) ||
+      name.start_with?("workflow") ||
+      target_model_name.to_s.start_with?("Workflow")
+  end
+  private_class_method :excluded_association?
+
+  def self.pack_enabled_for?(target_klass, entity)
+    flag = PACK_PERMISSION_FLAGS[pack_for(target_klass)]
+    return true unless flag
+    return true unless entity.respond_to?(:permissions)
+
+    entity.permissions.public_send("#{flag}?")
+  rescue StandardError
+    true
+  end
+  private_class_method :pack_enabled_for?
 
   def self.pack_for(klass)
     path = Object.const_source_location(klass.name)&.first.to_s

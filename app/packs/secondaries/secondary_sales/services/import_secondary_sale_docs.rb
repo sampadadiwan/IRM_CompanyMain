@@ -3,6 +3,7 @@ class ImportSecondarySaleDocs < ImportUtil
 
   STANDARD_HEADERS = ["SecondarySale", "Investor", "Id No", "Document Type", "Document Name", "File Name",
                       "Tags", "Send Email", "Orignal Format", "Folder"].freeze
+  DOCUMENT_TYPES = %w[Offer Interest Allocation].freeze
   attr_accessor :commitments
 
   def standard_headers
@@ -64,15 +65,18 @@ class ImportSecondarySaleDocs < ImportUtil
         doc.save ? [true, "Success"] : [false, doc.errors.full_messages.join(", ")]
       end
     elsif model.nil?
-      [false, "#{user_data['Document Type']} not found for #{id_no}"]
+      [false, "#{user_data['Document Type']} #{id_no} not found in #{secondary_sale.name}"]
     elsif investor.nil?
-      [false, "Investor not found"]
+      [false, "Investor not found: #{user_data['Investor']}"]
     else
-      [false, "SecondarySale not found"]
+      [false, "SecondarySale not found: #{user_data['SecondarySale']}"]
     end
   end
 
-  def key_info
+  # save_secondary_sale_doc calls this with four arguments - the method took none,
+  # so every row failed with "wrong number of arguments" before reaching any of
+  # the messages below
+  def key_info(user_data, import_upload, context)
     # Get the SecondarySale
     secondary_sale = import_upload.entity.secondary_sales.where(name: user_data["SecondarySale"]).first
     raise "SecondarySale #{user_data['SecondarySale']} not found" unless secondary_sale
@@ -88,27 +92,25 @@ class ImportSecondarySaleDocs < ImportUtil
 
   def find_model(user_data, secondary_sale)
     id = user_data["Id No"].presence
+    document_type = user_data["Document Type"]
+    raise "Id No must be specified" if id.blank?
 
-    case user_data["Document Type"]
+    # The trailing `nil` this method used to end with discarded the Interest and
+    # Allocation branches, so those document types always resolved to no owner
+    case document_type
     when "Offer"
-      offer = Offer.where(secondary_sale_id: secondary_sale.id, id:).last
-      raise "Offer not found for #{id_no}" unless offer
-
-      return offer
+      # `id_no` was not in scope here - the miss raised NameError instead of this message
+      Offer.where(secondary_sale_id: secondary_sale.id, id:).last ||
+        raise("Offer #{id} not found in secondary sale #{secondary_sale.name}")
     when "Interest"
-
-      interest = Interest.where(secondary_sale_id: secondary_sale.id, id:).last
-      raise "Interest not found" unless interest
-
-      interest
+      Interest.where(secondary_sale_id: secondary_sale.id, id:).last ||
+        raise("Interest #{id} not found in secondary sale #{secondary_sale.name}")
     when "Allocation"
-      allocation = Allocation.where(secondary_sale_id: secondary_sale.id, id:).last
-      raise "Allocation not found" unless allocation
-
-      allocation
+      Allocation.where(secondary_sale_id: secondary_sale.id, id:).last ||
+        raise("Allocation #{id} not found in secondary sale #{secondary_sale.name}")
+    else
+      raise "Document Type '#{document_type}' is not valid. Use one of: #{DOCUMENT_TYPES.join(', ')}"
     end
-
-    nil
   end
 
   def post_process(_ctx, unzip_dir:, **)

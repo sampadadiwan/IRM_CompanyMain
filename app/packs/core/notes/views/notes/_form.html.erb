@@ -1,10 +1,34 @@
 <% return_to ||= nil %>
+<%
+  # new.html.erb / edit.html.erb wrap this form in the new_note frame either way,
+  # so the Turbo-Frame header on submit cannot tell "loaded inline into the notes
+  # list" from "opened as its own /notes/new page" — both submit from inside that
+  # frame. Only the inline load *arrives* as a frame request, so decide here and
+  # carry the answer in the form.
+  inline_frame = turbo_frame_request_id == "new_note"
+%>
 <%= render FormCard.new(title: "Note") do %>
 
-<%= form_with(model: note, validate: true) do |form| %>
+<%# Standalone page: escape the frame so create's redirect navigates the page as
+    it always has. Turbo would otherwise hunt for a new_note frame in the
+    destination and find none. %>
+<%= form_with(model: note, validate: true, data: (inline_frame ? {} : { turbo_frame: "_top" })) do |form| %>
   <%= hidden_field_tag :return_to, return_to if return_to.present? %>
   <%= hidden_field_tag :embedded_note_context, params[:embedded_note_context] %>
   <%= hidden_field_tag :embedded_owner_id, params[:owner_id].presence || params.dig(:note, :owner_id) %>
+  <%# The contact filter of the list this form was opened from — distinct from
+      note[touch_point_id], which is the note's own contact. The controller
+      compares the two to decide whether the saved note belongs in that list. %>
+  <% list_touch_point_id = params[:list_touch_point_id].presence || params[:touch_point_id].presence %>
+  <%= hidden_field_tag :list_touch_point_id, list_touch_point_id if list_touch_point_id %>
+  <%# Echoed back so the row returned by the create stream carries the same
+      columns as the list that opened this form (see notes/_note.html.erb) %>
+  <%= hidden_field_tag :show_owner, params[:show_owner] if params[:show_owner].present? %>
+  <%# _note.html.erb reads params[:condensed] to pick its column set. Carry it
+      through the submit so the row prepended by create matches the table it
+      lands in (the dashboard widget renders this list condensed). %>
+  <%= hidden_field_tag :condensed, params[:condensed] if params[:condensed].present? %>
+  <%= hidden_field_tag :inline_frame, "new_note" if inline_frame %>
   <% if note.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(note.errors.count, "error") %> prohibited this note from being saved:</h2>
@@ -19,6 +43,7 @@
 
 
   <%
+    edit_mode = note.persisted?
     note_context = params[:embedded_note_context].presence
     note_context ||= "deal_investor_tab" if params[:from] == "deal_details"
     restricted_embedded_context = note_context.in?(%w[deal_tab deal_investor_tab])
@@ -37,7 +62,18 @@
       owner_options = investor_owner_options
     end
 
-    owner_type_disabled = restricted_embedded_context
+    # Ensure current owner remains visible even if it is not in the default scoped options.
+    if edit_mode && owner_options.present? && note.owner_id.present? && owner_options.none? { |(_label, value)| value.to_s == note.owner_id.to_s }
+      owner_label = case effective_owner_type
+                    when "DealInvestor", "Investor"
+                      note.owner&.respond_to?(:investor_name) ? note.owner.investor_name : note.owner_id.to_s
+                    else
+                      note.owner_id.to_s
+                    end
+      owner_options.unshift([owner_label, note.owner_id])
+    end
+
+    owner_type_disabled = restricted_embedded_context || edit_mode
     owner_type_options = if note_context.blank?
       [["User", "User"], ["Investor", "Investor"]]
     elsif effective_owner_type == "Investor"
@@ -46,50 +82,93 @@
       [["Deal Investor", "DealInvestor"]]
     end
 
-    owner_locked = effective_owner_type == "DealInvestor" && note.owner_id.present? && note_context == "deal_investor_tab"
+    # In edit mode, owner type is display-only and must reflect the current persisted owner type.
+    owner_type_options = [[effective_owner_type == "DealInvestor" ? "Deal Investor" : effective_owner_type, effective_owner_type]] if edit_mode
+
+    owner_locked = edit_mode || (effective_owner_type == "DealInvestor" && note.owner_id.present? && note_context == "deal_investor_tab")
     show_for_field = effective_owner_type != "User"
-    show_name_field = note_context.blank? && effective_owner_type == "User"
+    show_name_field = effective_owner_type == "User"
+    owner_name_value = if edit_mode && effective_owner_type == "User"
+      note.owner&.respond_to?(:full_name) ? note.owner.full_name : note.owner&.to_s
+    else
+      current_user.full_name
+    end
   %>
 
   <div data-controller="note-owner">
-    <div class="form-group">
-      <%= form.label :owner_type, "Owner Type" %>
-      <%= form.select :owner_type,
-        owner_type_options,
-        { selected: effective_owner_type, include_blank: false },
-        class: "form-control",
-        disabled: owner_type_disabled,
-        data: {
-          "note-owner-target": "ownerType",
-          action: "change->note-owner#ownerTypeChanged"
-        } %>
-      <%= form.hidden_field :owner_type if owner_type_disabled %>
-      <%= form.hidden_field :entity_id if owner_type_disabled %>
-    </div>
+    <%# Opened from a deal or deal investor tab, the owner type is fixed by that
+        tab — submit it hidden instead of showing a greyed-out select that looks
+        editable. Outside those tabs (e.g. editing an existing note) the disabled
+        select stays: there it is the only thing saying what the note belongs to. %>
+    <% if restricted_embedded_context %>
+      <%= form.hidden_field :owner_type %>
+      <%= form.hidden_field :entity_id %>
+    <% else %>
+      <div class="form-group">
+        <%= form.label :owner_type, "Owner Type" %>
+        <%= form.select :owner_type,
+          owner_type_options,
+          { selected: effective_owner_type, include_blank: false },
+          class: "form-control",
+          disabled: owner_type_disabled,
+          data: {
+            "note-owner-target": "ownerType",
+            action: "change->note-owner#ownerTypeChanged"
+          } %>
+        <%= form.hidden_field :owner_type if owner_type_disabled %>
+        <%= form.hidden_field :entity_id if owner_type_disabled %>
+      </div>
+    <% end %>
 
     <% if owner_options.present? %>
-      <div class="form-group <%= show_for_field ? '' : 'd-none' %>" data-note-owner-target="ownerForGroup">
-        <%= form.label :owner_id, "For" %>
-        <%= form.select :owner_id,
-          owner_options,
-          { selected: note.owner_id, include_blank: !owner_locked },
-          class: "form-control",
-          disabled: owner_locked,
-          data: {
-            "note-owner-target": "ownerForSelect",
-            locked: owner_locked
-          } %>
-        <%= form.hidden_field :owner_id if owner_locked %>
-      </div>
+      <%# Same for "For" on a deal investor's own tab: that tab already picked the
+          investor. The deal tab keeps its select — there you choose which
+          investor on the deal the note is about. %>
+      <% if owner_locked && restricted_embedded_context %>
+        <%= form.hidden_field :owner_id %>
+      <% else %>
+        <div class="form-group <%= show_for_field ? '' : 'd-none' %>" data-note-owner-target="ownerForGroup">
+          <%= form.label :owner_id, "For" %>
+          <%= form.select :owner_id,
+            owner_options,
+            { selected: note.owner_id, include_blank: !owner_locked },
+            class: "form-control",
+            disabled: owner_locked,
+            data: {
+              "note-owner-target": "ownerForSelect",
+              locked: owner_locked
+            } %>
+          <%= form.hidden_field :owner_id if owner_locked %>
+        </div>
+      <% end %>
     <% else %>
       <%= form.hidden_field :owner_id %>
     <% end %>
 
     <div class="form-group <%= show_name_field ? '' : 'd-none' %>" data-note-owner-target="ownerNameGroup">
       <%= form.label :owner_name, "Name" %>
-      <%= text_field_tag :owner_name, current_user.full_name, class: "form-control", disabled: true %>
+      <%= text_field_tag :owner_name, owner_name_value, class: "form-control", disabled: true %>
     </div>
   </div>
+
+  <%# LP CRM: which person at the LP this note was with. Options come from the
+      LP's recorded contacts (InvestorAccess rows, approved or not) — see
+      Investor#touch_point_options and WithTouchPoint. A DealInvestor offers its
+      parent LP's contacts, so deal-side notes name the same people.
+      Rendered only when the owner is already loaded (the flows from the
+      stakeholder page and the deal investor tab both pass owner_id); on the
+      generic /notes/new page the owner is picked client-side and we keep the
+      MVP free of extra JS. %>
+  <% if note.owner.respond_to?(:touch_point_options) %>
+    <% touch_point_options = note.owner.touch_point_options %>
+    <% if touch_point_options.present? %>
+      <div class="form-group">
+        <%= form.label :touch_point_id, "Touch Point" %>
+        <%= form.select :touch_point_id, touch_point_options, { selected: note.touch_point_id, include_blank: true }, class: "form-control" %>
+        <small class="text-muted">Who at the stakeholder this note was with.</small>
+      </div>
+    <% end %>
+  <% end %>
 
   <div class="form-group">
     <%= form.label :on %>
@@ -123,8 +202,16 @@
 
   <% end %>
 
-  <div class="form-group">
+  <div class="form-group d-flex gap-2">
     <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+    <%# Only the inline flow has a frame to clear — opened as a full page there is
+        nothing to cancel back to. %>
+    <% if inline_frame %>
+      <button type="button" class="btn btn-outline-secondary"
+              data-controller="frame-clear"
+              data-frame-clear-frame-value="new_note"
+              data-action="frame-clear#clear">Cancel</button>
+    <% end %>
   </div>
 <% end %>
 

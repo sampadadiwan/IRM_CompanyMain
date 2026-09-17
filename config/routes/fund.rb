@@ -43,6 +43,7 @@ resources :fund_formulas do
   get "generate_ai_descriptions", on: :collection
   get "generate_ai_description", on: :member
   get "generate_formula", on: :collection
+  get "dependencies", on: :collection
   post 'bulk_actions', on: :collection
   post 'fetch_templates', on: :collection
 end
@@ -50,6 +51,7 @@ end
 resources :fund_unit_settings
 resources :portfolio_investments do
   get 'base_amount_form', on: :collection
+  post 'check_duplicate_sell', on: :collection
 end
 resources :portfolio_investment_snapshots, controller: "portfolio_investments", defaults: { snapshot: true }
 
@@ -89,6 +91,17 @@ resources :fund_ratio_run_templates do
   get  'runs',           on: :member
 end
 
+# Allocation run templates and groups — see docs/technical/allocation_run_templates.md
+resources :allocation_run_templates do
+  # JSON: statement documents available on a fund, for the template form's fund switch
+  get 'statement_documents', on: :collection
+end
+resources :allocation_run_template_groups, except: :index do
+  get  'preflight', on: :member # the up-front check page, before anything runs
+  post 'run',       on: :member # records the group run and enqueues the job
+end
+resources :allocation_group_runs, only: %i[index show]
+
 resources :capital_remittance_payments do
   get "preview", on: :member
 end
@@ -121,6 +134,7 @@ resources :capital_remittances do
   patch 'generate_docs', on: :member
   patch 'send_notification', on: :member
   post 'bulk_actions', on: :collection
+  get 'bulk_verify_modal', on: :collection
   get "preview", on: :member
   post 'allocate_units', on: :member
   put :restore_deleted, on: :member
@@ -130,11 +144,30 @@ resources :capital_calls do
   get 'search', on: :collection
   post 'reminder', on: :member
   post 'approve', on: :member
+  patch 'unapprove', on: :member
+  post 'notify', on: :member
   patch 'generate_docs', on: :member
   patch 'allocate_units', on: :member
   patch 'recompute_fees', on: :member
+  post 'confirm_reconciliation_deposit', on: :member
+  post 'reassign_reconciliation_deposit', on: :member
+  post 'undo_reconciliation_deposit', on: :member
+  post 'confirm_all_exact_reconciliation_deposits', on: :member
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
+end
+
+# Side letter obligation tracking (LP Obligation Matrix + review gate)
+resources :side_letters
+resources :side_letter_obligations do
+  member do
+    patch :approve
+    patch :reject
+    patch :waive
+    patch :revert
+    post :fire
+    post :fulfill
+  end
 end
 
 resources :capital_commitments do
@@ -203,3 +236,7 @@ resources :allocation_runs do
   patch 'unlock', on: :member
   patch 'unlock_all', on: :collection
 end
+
+# Allocation run checker — see docs/business_requirements/allocation_run_checker.md.
+# create takes an allocation_run_id and queues the checks; show renders the report.
+resources :allocation_run_reports, only: %i[show create]

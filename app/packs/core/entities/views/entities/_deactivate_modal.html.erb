@@ -1,0 +1,111 @@
+<%# Support-only off-boarding confirmation. Rendered outside the button div (and outside the card)
+    so opening it never reflows the button row — see entities/show.html.erb. %>
+<div class="modal fade" id="deactivateEntityModal" tabindex="-1" aria-labelledby="deactivateEntityModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deactivateEntityModalLabel">Deactivate <%= entity.name %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_with url: deactivate_entity_path(entity), method: :patch do |f| %>
+        <div class="modal-body">
+          <div class="border-start border-4 border-danger ps-3 py-1 mb-3">
+            <div class="fw-bold text-dark">Immediate Actions</div>
+            <div class="text-muted">The following will happen as soon as you click <strong>Deactivate Entity</strong>:</div>
+          </div>
+
+          <div class="d-flex flex-column gap-2 mb-3">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fef2f2;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#fee2e2;">
+                <i class="ti ti-user-off fs-5" style="color:#dc2626;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">
+                  All <%= entity.employees.where(active: true).count %> active employee login(s) disabled
+                </div>
+                <div class="text-muted mt-1">Every user belonging to this entity is marked inactive and can no longer sign in.</div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#fef3c7;">
+                <i class="ti ti-lock-off fs-5" style="color:#d97706;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">
+                  All <%= entity.investor_accesses.approved.count %> approved investor access(es) revoked
+                </div>
+                <div class="text-muted mt-1">
+                  Each one is set to <span class="badge bg-warning text-dark">Un-approved</span>, so investor portal
+                  users lose the portal, their documents, reports and data rooms for this entity.
+                  Investor advisors and relationship managers who hold fund-level access rights keep them —
+                  revoke those separately if the client is leaving.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#dbeafe;">
+                <i class="ti ti-mail-off fs-5" style="color:#2563eb;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Investor emails and notifications stop</div>
+                <div class="text-muted mt-1">Capital calls, distributions, notices and reminders only go to approved
+                  investor access, so no further mail is sent for this entity.</div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#dcfce7;">
+                <i class="ti ti-database fs-5" style="color:#16a34a;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">No data is deleted</div>
+                <div class="text-muted mt-1">Funds, investors, commitments, documents and history all remain intact —
+                  this only withdraws access.</div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#f3e8ff;">
+                <i class="ti ti-arrow-back-up fs-5" style="color:#9333ea;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Re-activating does not restore access</div>
+                <div class="text-muted mt-1">If the entity is made active again, employee logins and investor access
+                  stay switched off and have to be granted again, one by one.</div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f8fafc;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#e2e8f0;">
+                <i class="ti ti-clock fs-5" style="color:#475569;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Revocation runs in the background</div>
+                <div class="text-muted mt-1">For a large client this can take a few minutes. You will get an alert once
+                  every login and access has been revoked.</div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+          <div class="form-check">
+            <%= check_box_tag :confirm_deactivate, "1", false, class: "form-check-input", required: true, id: "confirm_deactivate" %>
+            <%= label_tag :confirm_deactivate, "I understand that #{entity.name} will lose all employee and investor access.", class: "form-check-label" %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+          <%= f.submit "Deactivate Entity", class: "btn btn-outline-danger", id: "entity_deactivate_submit_btn" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

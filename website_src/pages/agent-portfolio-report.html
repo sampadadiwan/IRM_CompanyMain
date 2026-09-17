@@ -1,0 +1,273 @@
+---
+title: Portfolio Report Agent — AI Portfolio Evaluation Reports | CapHive
+description: 'The AI engine behind AI Portfolio Reports: evaluation documents generated
+  per portfolio company from uploaded pitch materials, one section at a time, on demand.'
+og_title: Portfolio Report Agent | CapHive
+og_description: Investment-grade evaluation reports generated section by section from
+  a company's own documents.
+data_page: ai-agents
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span>/</span><a href="ai-agents.html">AI Agents</a><span>/</span>Portfolio Report Agent
+      </nav>
+      <span class="chip-label">Portfolio · Agent</span>
+      <h1 style="margin-top:22px">Evaluation reports built <em>one section at a time.</em></h1>
+      <p class="lede">
+        The Portfolio Report Agent is the AI engine behind AI Portfolio Reports &mdash; investment-grade evaluation documents generated per portfolio company from uploaded pitch materials. It does not behave like a typical support agent: it has no report history of its own, no Schedule tab and no fund- or entity-level batch run, and instead generates or refines one report section at a time, on demand.
+      </p>
+      <dl class="agent-facts">
+        <div class="agent-fact"><dt>Runs against</dt><dd>One section of one report</dd></div>
+        <div class="agent-fact"><dt>Uses AI</dt><dd>Yes &mdash; your entity&rsquo;s configured model, plus OpenAI for refinement</dd></div>
+        <div class="agent-fact"><dt>Output</dt><dd>A collated report from reviewed sections, exportable to PDF or Word</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="article-body">
+  <div class="wrap">
+    <div class="article-card">
+      <div class="article-measure">
+        <div class="prose">
+          <h2 id="what-it-does">What it does</h2>
+          <p>
+            The agent works on one report <strong>section</strong> at a time &mdash; not on a whole
+            portfolio company, and not on the entity as a whole. For each section it:
+          </p>
+          <ol>
+            <li><strong>Gets ready.</strong> The underlying agent record is created automatically the first time it is needed, named &ldquo;Portfolio Report Generator.&rdquo;</li>
+            <li><strong>Loads the source documents.</strong> It uses already-extracted document text where that exists, or pulls it fresh from the report&rsquo;s linked document folder otherwise. In normal use the report&rsquo;s linked documents &mdash; pitch deck, financials and so on, as PDF, text, Word or Markdown, Excel or PowerPoint &mdash; are downloaded and their text extracted once, then that same extracted text is reused across every section of the report.</li>
+            <li><strong>Optionally searches the web.</strong> Only when web search is turned on for that section. The company name is identified from the documents using a quick AI lookup, one or more search queries are built to fit the section &mdash; a news-style search for &ldquo;Recent Updates &amp; Developments&rdquo; or &ldquo;Negative News,&rdquo; a broader search for &ldquo;Key Risks&rdquo; or &ldquo;Competition Analysis&rdquo; &mdash; and those searches run at the same time.</li>
+            <li><strong>Picks the right template.</strong> A structured outline for the type of section being generated: Company Overview, Key Products &amp; Services, Financial Snapshot, Market Size &amp; Target, SWOT Analysis, Founders &amp; Shareholders, Raise History and Valuations, Recent Updates &amp; Developments, Custom Charts.</li>
+            <li><strong>Decides whether to generate or refine</strong>, based on whether you typed an instruction for changing existing content or left the field blank to start fresh.</li>
+            <li><strong>Generates or refines the content.</strong> Generating builds the section from the template, the document content and any web search results, then sends that to your entity&rsquo;s configured AI model. If web search is on and the section already has document-based content, the agent instead generates only the new web-sourced material and adds it underneath as &ldquo;Additional Insights from Web Search,&rdquo; rather than rewriting the section. Refining uses a separate, dedicated AI session &mdash; always a specific OpenAI model, regardless of which provider your entity has configured as its default &mdash; that remembers up to your last ten rounds of edits to that section, so follow-up instructions build on what came before.</li>
+            <li><strong>Saves the section</strong> as either the document-only version or the web-enhanced version, and marks it as not yet reviewed.</li>
+          </ol>
+          <p>
+            Two section types skip this process entirely and are handled by their own dedicated
+            generators: <strong>Custom Charts</strong>, built directly from spreadsheet data in the
+            report&rsquo;s documents, and <strong>Investment Fit Evaluation</strong>, scored against a
+            selected Investment Criteria Template.
+          </p>
+
+          <h2 id="what-it-needs">What it needs</h2>
+          <p>
+            The agent has <strong>no user-configurable settings today</strong>. There is no Edit-page
+            settings form and no dedicated custom settings panel; it exists in the system mainly so it can
+            be grouped under the Portfolio category. Everything that functions like configuration happens
+            implicitly, through what you choose each time you generate or refine a section: whether to
+            refine or generate fresh, whether web search is on, what instruction you type, and which
+            documents the report is linked to.
+          </p>
+          <p>What the agent draws on instead:</p>
+          <table>
+            <thead>
+              <tr><th>Input</th><th>Source</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Pitch documents &mdash; PDF, text, Word or Markdown, Excel, PowerPoint, CSV</td><td>The report&rsquo;s linked document folder, created from a portfolio company&rsquo;s &ldquo;Company Evaluation&rdquo; folder when the report is first created.</td></tr>
+              <tr><td>Investment Criteria Template</td><td>Selected, or created, when the report is set up. Required for the Investment Fit Evaluation section, which shows a placeholder if no template is selected.</td></tr>
+              <tr><td>Web search results</td><td>Live web searches, run only when web search is turned on for a given section.</td></tr>
+              <tr><td>Prior refinement history</td><td>The last ten rounds of edit instructions and responses for that section, used only by the refine path.</td></tr>
+            </tbody>
+          </table>
+
+          <h2 id="turning-it-on">Turning it on</h2>
+          <p>
+            There is no feature toggle visible to end users. The underlying agent record is created and
+            activated automatically the first time it is needed &mdash; when a report&rsquo;s first section
+            is generated &mdash; rather than requiring an administrator to turn anything on first.
+          </p>
+          <p>
+            The feature does require an AI provider key. Section generation uses your entity&rsquo;s default
+            AI model, and the refine path additionally requires an OpenAI credential to be configured,
+            regardless of which provider your entity has set as its default, since refinement is always
+            handled by a specific OpenAI model.
+          </p>
+          <p>
+            Access to creating and editing AI Portfolio Reports is controlled by the normal permissions for
+            that feature, not by a support agent toggle. There is no on/off switch beyond your existing
+            report permissions &mdash; the agent is simply available whenever an AI Portfolio Report is
+            created.
+          </p>
+
+          <h2 id="running-it">Running it</h2>
+          <p>
+            There is no Run Now button, no run history tab and no generic support agent screen for this
+            agent. It is used entirely from the AI Portfolio Reports area.
+          </p>
+          <ol>
+            <li>Create a new portfolio report. Select the portfolio company, and optionally pick or create an Investment Criteria Template.</li>
+            <li>Once created, the report is linked to that company&rsquo;s evaluation document folder, and every section is generated once automatically, in sequence, with a short pause between sections.</li>
+            <li>Open the report to review the generated sections, one at a time, in a section-by-section editor.</li>
+            <li>To regenerate or refine a section, type an optional instruction &mdash; leave it blank to regenerate from scratch, or describe a change to refine the existing content &mdash; toggle web search on or off, and submit. The new content appears on the page once it is ready.</li>
+            <li>Mark a section <strong>reviewed</strong> to include it in the final assembled report. Sections that have not been reviewed are left out.</li>
+          </ol>
+          <p>There is no batch or entity-wide mode. Every action targets exactly one section of one report.</p>
+
+          <h2 id="scheduling">Scheduling</h2>
+          <p>
+            Not supported, and not really applicable to how the feature works. There is no standing
+            pipeline to schedule. Generation happens once automatically when the report is created, and
+            again on demand whenever you choose to regenerate or refine a section.
+          </p>
+
+          <h2 id="where-the-output-goes">Where the output goes</h2>
+          <ul>
+            <li><strong>The report itself.</strong> Each section&rsquo;s generated content sits in the section editor, with a toggle between the document-only version and the web-enhanced version where one was generated.</li>
+            <li><strong>Collated Report.</strong> Assembled fresh from only the sections marked reviewed, in their set order. This is the presentable version.</li>
+            <li><strong>Export.</strong> PDF and Word export for sharing the collated report outside the platform.</li>
+            <li><strong>Chat assistant.</strong> A chat panel on the report&rsquo;s page, grounded in the same pitch document content plus a live web search tool.</li>
+          </ul>
+          <p>
+            Nothing is saved to a support agent report history, and this agent emails nothing
+            automatically.
+          </p>
+          <p>
+            One caveat on the chat assistant: the sample starter questions shown for it include
+            cross-portfolio, dashboard-style phrasing &mdash; &ldquo;Top 5 portfolio companies by
+            valuation,&rdquo; &ldquo;Which companies missed KPIs?&rdquo; &mdash; while its actual knowledge
+            is limited to the one report&rsquo;s own documents. Questions that span multiple companies are
+            not answerable with the information it has.
+          </p>
+
+          <h2 id="reading-the-result">Reading the result</h2>
+          <p>
+            A finished AI Portfolio Report is a sequence of sections. Each carries a section type, the
+            document-grounded content, the web-enhanced content where one was generated, which version is
+            currently shown, whether it is marked reviewed and therefore included in the collated output,
+            the last ten rounds of refinement history, and any charts embedded in that section.
+          </p>
+          <p>
+            Supported sections span company narrative (Company Overview, Key Products &amp; Services,
+            Founders &amp; Shareholders), financials (Financial Snapshot, Custom Charts), market context
+            (Market Size &amp; Target, SWOT Analysis, Competitive Landscape), funding history (Raise History
+            and Valuations), risk (Market Risks, Operational Risks, Adverse Media), diligence (AML and KYB
+            screening), deal terms (Investment Terms), and a template-driven Investment Fit Evaluation
+            score.
+          </p>
+
+          <h2 id="where-it-can-fail">Where it can fail</h2>
+          <div class="callout">
+            <p>
+              <strong>Refine always uses a specific OpenAI model, regardless of your entity&rsquo;s AI
+              settings.</strong> If your entity has only configured a Gemini or Anthropic key and no OpenAI
+              credential, Generate will work fine but Refine will fail, because refinement is hardcoded to
+              use OpenAI rather than your entity&rsquo;s configured default model.
+            </p>
+          </div>
+          <ul>
+            <li><strong>Missing or incomplete source documents.</strong> If the report&rsquo;s folder has no documents, or only documents in unsupported formats, every text-based section is generated purely from the AI&rsquo;s general knowledge with no real grounding in the company&rsquo;s actual materials. No warning is shown; the section simply generates with weaker or more generic content than expected.</li>
+            <li><strong>Web search depends on a quick AI lookup succeeding first.</strong> Identifying the company name for web search is itself a small AI step. If it comes back blank and there is no company name on file to fall back on, web search context is silently skipped for that section with no visible error.</li>
+            <li><strong>Investment Fit Evaluation quietly does nothing without a template.</strong> With no Investment Criteria Template selected for the report, that section shows a &ldquo;Not Configured&rdquo; placeholder rather than failing the report &mdash; easy to miss, since the rest of the report generates normally around it.</li>
+            <li><strong>The initial batch generation skips any section that already has content.</strong> If that first automatic pass is retriggered, for example after a partial failure, sections that already generated successfully are left untouched and only the still-blank sections are processed. Usually that is what you want, but it also means a section with bad or incomplete content from a failed first attempt is not retried automatically; it has to be regenerated by hand.</li>
+            <li><strong>Web-enhanced content is only appended, never used to check the original.</strong> When web search adds material to a section that already has document-based content, the web-sourced content is added at the end. If the original document-based content was wrong or out of date, the web addition does not catch or correct it.</li>
+            <li><strong>Failures during the initial batch generation are logged, but not shown.</strong> If a section fails during that first automatic pass, the failure is recorded behind the scenes and the system moves on. There is no in-product indicator afterwards showing which sections failed &mdash; you would need to notice that a section is still blank and regenerate it yourself.</li>
+            <li><strong>There is no on/off toggle for this feature visible to users</strong>, even though one exists conceptually for consistency with the other agents. Disabling it would have no effect, since nothing in the report-generation flow checks it before running.</li>
+          </ul>
+
+          <h2 id="questions">Questions</h2>
+          <div class="faq">
+            <details>
+              <summary>Where is the Run Now button for this agent?</summary>
+              <div>
+                <p>There is not one. The agent only runs in the context of an AI Portfolio Report. Create a report for a specific portfolio company and its sections generate automatically; use the report&rsquo;s own page afterwards to regenerate individual sections.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Can I schedule it to run periodically for all portfolio companies?</summary>
+              <div>
+                <p>No. There is no schedule, no entity-wide batch mode and no separate report history. It is a per-report, per-section, on-demand generator only.</p>
+              </div>
+            </details>
+            <details>
+              <summary>I asked the chat assistant about KPIs across my whole portfolio and it had no answer.</summary>
+              <div>
+                <p>The chat assistant only has access to the single report&rsquo;s uploaded documents, not your entire portfolio. The sample questions shown for the feature include cross-portfolio phrasing, but the assistant only ever has one report&rsquo;s pitch documents to draw on.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Refine is not working even though Generate works fine.</summary>
+              <div>
+                <p>Refine always uses a specific OpenAI model, regardless of what AI provider your entity has configured as default. Confirm an OpenAI credential is set up for your entity &mdash; it is required for Refine even if your default model is Gemini or Anthropic.</p>
+              </div>
+            </details>
+            <details>
+              <summary>A section looks like it was never generated.</summary>
+              <div>
+                <p>Check whether the initial automatic generation pass hit an error for that section. Failures during that first pass are logged behind the scenes but not shown in the product, and the system will not automatically retry a section that already has content &mdash; even if that content is blank or a placeholder left over from a failed attempt. Regenerate that section manually.</p>
+              </div>
+            </details>
+            <details>
+              <summary>Why does my Investment Fit Evaluation section say &ldquo;Not Configured&rdquo;?</summary>
+              <div>
+                <p>No Investment Criteria Template was selected when the report was created, or none exists yet. Edit the report to select or create a template, then regenerate that section.</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= OTHER AGENTS ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Other agents</span>
+      <h2>The rest of the <em>set.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="agent-presentation-analyst.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Investor Presentation Analyst</h3>
+          <p>Reads investor presentations across periods and surfaces commitment misses and dropped risks.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-portfolio-scoring.html">
+        <div>
+          <span class="kick">Portfolio</span>
+          <h3>Portfolio Scoring Agent</h3>
+          <p>A 0&ndash;100 investment score per company, graded against a sector-specific scoring guide.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="agent-note-summarizer.html">
+        <div>
+          <span class="kick">Data</span>
+          <h3>Note Summarizer Agent</h3>
+          <p>AI summaries of an investor&rsquo;s notes for the last full month or quarter.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

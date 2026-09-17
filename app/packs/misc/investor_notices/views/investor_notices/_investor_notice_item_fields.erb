@@ -15,14 +15,28 @@
       <%= f.text_field :details, class: "form-control"  %>
     </div>
 
-    <div class="form-group col-md-3">
-      <%= f.label :link %>
-      <%= f.text_field :link, class: "form-control"  %>
-    </div>
+    <%# link can carry [user.xxx] variables (InvestorNoticeLinkInterpolator) —
+        support only, same gate as InvestorNotice#criteria. %>
+    <% if current_user.support? %>
+      <div class="form-group col-md-3">
+        <%= f.label :link %>
+        <%= f.text_field :link, class: "form-control", placeholder: "[user.entity.sub_domain]" %>
+      </div>
+    <% end %>
 
-    <div class="form-group col-md-1">    
+    <div class="form-group col-md-1">
         <%= f.label :none, "&nbsp;".html_safe %>
         <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger" %>
     </div>
+
+    <%# Per-item condition, evaluated the same way as InvestorNotice#criteria
+        (InvestorNoticeCriteriaEvaluator) — narrows which viewers see this one
+        line item, on top of whoever the parent notice already targets. %>
+    <% if current_user.support? %>
+      <div class="form-group col-md-12">
+        <%= f.label :criteria, "Show Only If (optional, support only)" %>
+        <%= f.text_field :criteria, class: "form-control", placeholder: '[investor.category] == "Lead Investor"' %>
+      </div>
+    <% end %>
 
 </div>

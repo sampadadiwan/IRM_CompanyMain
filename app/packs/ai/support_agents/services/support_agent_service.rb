@@ -37,6 +37,41 @@ class SupportAgentService < Trailblazer::Operation
     step_label(step_id).truncate(12, omission: '')
   end
 
+  # Configuration health check shown on the agent show page before any run.
+  # Subclasses that depend on specific setup (e.g. PortfolioScoringAgent's
+  # sector skill files) override this to return human-readable problem strings.
+  # The default is "no issues" so agents without special setup render no banner
+  # and are completely unaffected.
+  #
+  # @param _support_agent [SupportAgent] the agent record to inspect
+  # @return [Array<String>] human-readable configuration problems (empty = healthy)
+  def self.config_issues(_support_agent)
+    []
+  end
+
+  # Class-level mirror of the instance enabled? check (which fails CLOSED —
+  # a missing/blank json_fields key disables the step). Used by config_issues
+  # overrides so their warnings agree with actual runtime behaviour.
+  def self.toggle_on?(support_agent, key)
+    %w[true 1 enabled yes].include?((support_agent.json_fields || {})[key].to_s.downcase)
+  end
+
+  # Flags toggle keys the agent reads via enabled?() that were never set —
+  # since enabled? fails closed, a missing key silently skips the step, which
+  # users routinely mistake for the agent being broken. An explicit "No" is a
+  # deliberate choice and is NOT flagged.
+  #
+  # @param toggles [Hash{String => String}] json_fields key => human description of the step it gates
+  # @return [Array<String>]
+  def self.missing_toggle_issues(support_agent, toggles)
+    fields = support_agent.json_fields || {}
+    toggles.filter_map do |key, feature|
+      next if fields[key].to_s.strip.present?
+
+      "'#{key}' is not set, so #{feature} is silently skipped. Set it to Yes or No on the agent edit page."
+    end
+  end
+
   def initialize_agent(ctx, **)
     @support_agent = SupportAgent.find(ctx[:support_agent_id])
     ctx[:support_agent] = @support_agent
@@ -119,7 +154,10 @@ class SupportAgentService < Trailblazer::Operation
   end
 
   def enabled?(field)
-    %w[true 1 enabled yes].include? @support_agent.json_fields[field]&.downcase
+    # to_s guards against non-string JSON values (true, 1) which would
+    # otherwise raise NoMethodError on downcase — keeps this in lockstep
+    # with the class-level toggle_on? used by config health checks
+    %w[true 1 enabled yes].include? @support_agent.json_fields[field].to_s.downcase
   end
 
   # Initializes a SupportAgentReport with step definitions
@@ -172,19 +210,23 @@ class SupportAgentService < Trailblazer::Operation
 
     report.save!
 
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "support_agent_report_#{report.id}",
-      target: "step_#{step_data['step']}",
-      partial: "support_agents/step_circle",
-      locals: { step: step_data }
-    )
+    begin
+      Turbo::StreamsChannel.broadcast_replace_to(
+        "support_agent_report_#{report.id}",
+        target: "step_#{step_data['step']}",
+        partial: "support_agents/step_circle",
+        locals: { step: step_data }
+      )
 
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "support_agent_report_#{report.id}",
-      target: "progress_bar_#{report.id}",
-      partial: "support_agents/progress_bar",
-      locals: { report: report }
-    )
+      Turbo::StreamsChannel.broadcast_replace_to(
+        "support_agent_report_#{report.id}",
+        target: "progress_bar_#{report.id}",
+        partial: "support_agents/progress_bar",
+        locals: { report: report }
+      )
+    rescue StandardError, ScriptError => e
+      Rails.logger.warn { "[SupportAgentService] Broadcast failed: #{e.message}" }
+    end
   end
 
   def mark_step_running(report, step_id)
@@ -216,12 +258,16 @@ class SupportAgentService < Trailblazer::Operation
     report.status = status.to_s == "ready" ? :completed : :failed
     report.save!
 
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "support_agent_report_#{report.id}",
-      target: "progress_panel_#{report.id}",
-      partial: "support_agents/progress_panel",
-      locals: { report: report, support_agent: report.support_agent, target: report.owner, collapsed: false }
-    )
+    begin
+      Turbo::StreamsChannel.broadcast_replace_to(
+        "support_agent_report_#{report.id}",
+        target: "progress_panel_#{report.id}",
+        partial: "support_agents/progress_panel",
+        locals: { report: report, support_agent: report.support_agent, target: report.owner, collapsed: false }
+      )
+    rescue StandardError, ScriptError => e
+      Rails.logger.warn { "[SupportAgentService] Broadcast failed: #{e.message}" }
+    end
   end
 
   def cancelled?(report)

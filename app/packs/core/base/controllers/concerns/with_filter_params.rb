@@ -81,6 +81,26 @@ module WithFilterParams
     end
   end
 
+  # LP CRM: resolve the touch_point_id filter to a contact this user is allowed
+  # to see. The sibling of with_owner_access above, for the other dimension notes
+  # and tasks can be filtered by: the person at the LP rather than the LP itself.
+  #
+  # It arrives as a bare param (from the "With" links and the contact show page
+  # tabs) and, now that deal-side notes/tasks carry touch points, it can widen a
+  # list beyond a single owner — so authorise the contact's stakeholder here
+  # rather than leaning on the note/task policy scope alone. Returns nil when the
+  # contact is unknown or not visible; callers then show nothing.
+  #
+  # Controller-only, like with_owner_access: it needs Pundit's policy helper.
+  def authorized_touch_point
+    return nil if params[:touch_point_id].blank?
+
+    access = InvestorAccess.find_by(id: params[:touch_point_id])
+    return nil if access&.investor.blank?
+
+    policy(access.investor).show? ? access : nil
+  end
+
   def get_q_param(name)
     value = nil
     @q.conditions.each do |condition|

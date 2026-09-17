@@ -14,7 +14,9 @@ class DealInvestor < ApplicationRecord
   update_index('deal_investor') { self if index_record? }
 
   has_rich_text :notes
-  belongs_to :deal, touch: true
+  # touch deal runs after save when any of the following fields change: status, primary_amount_cents, secondary_investment_cents, fee_cents, pre_money_valuation_cents, deal_activity_id
+  # we dont want to touch the deal on every save, as deal_investor gets updated a lot with callbacks from notes/tasks
+  belongs_to :deal
   belongs_to :investor
   belongs_to :entity
   # This is the currently active activity for the investor
@@ -27,6 +29,10 @@ class DealInvestor < ApplicationRecord
 
   # Non-persisted actor used to attribute initial step task generation.
   attr_accessor :created_by_user_id
+
+  # Set by importers that create the activities inline, so this record's after_create_commit
+  # job doesn't race with them and generate the step tasks a second time.
+  attr_accessor :skip_activity_generation
 
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :deal, prefix: :deal
@@ -53,7 +59,8 @@ class DealInvestor < ApplicationRecord
     "Company Advisor; text-col" => "company_advisor; text-col",
     "Notes; text-col" => "notes; text-col",
     "Tags; text-col" => "tags; text-col",
-    "Health Score; num-col" => "health_score; num-col"
+    "Health Score; num-col" => "health_score; num-col",
+    "Last Interaction; date-col" => "last_interaction_date; date-col"
   }.freeze
 
   CARD_VIEW_ATTRS = {
@@ -76,6 +83,75 @@ class DealInvestor < ApplicationRecord
   before_validation :calc_total_amount
   before_save :set_investor_entity_id
   before_save :track_status_change
+  # Changes that mean someone actually worked this investor. deal_activity_id is
+  # how a completed step shows up here: PerformActivityAction moves the investor
+  # on to the next step and saves.
+  #
+  # Deliberately not "any save". WithFolder saves the record the first time its
+  # document folder is needed — that is, on merely opening the sidepanel — and
+  # messages_viewed writes read counters. Neither is an interaction, and both
+  # would otherwise shuffle the grid just for looking at it.
+  INTERACTION_ATTRIBUTES = %w[
+    status primary_amount_cents secondary_investment_cents
+    fee_cents pre_money_valuation_cents deal_activity_id
+  ].freeze
+
+  after_save :touch_deal, if: :interaction_change?
+  after_save :register_own_interaction, if: :interaction_change?
+
+  def interaction_change?
+    saved_changes.keys.intersect?(INTERACTION_ATTRIBUTES)
+  end
+
+  def touch_deal
+    deal&.touch
+  end
+
+  # ---------------------------------------------------------------------------
+  # last_interaction_date — the deals grid's default sort key
+  #
+  # Three things count as an interaction:
+  #   * a note's `on` date          (Note#update_investor)
+  #   * a task's completed_on       (Task#register_owner_interaction)
+  #   * a meaningful edit to the investor itself, including completing a step,
+  #     which registers today (register_own_interaction above)
+  #
+  # The first two are dates the *user* asserts rather than timestamps we observe,
+  # so a note typed today about a meeting in March must not move the investor.
+  # All writers use update_column: a note/task save must not cascade back through
+  # this model's callbacks (touch_deal, Chewy indexing, calc_total_amount), and
+  # updated_at is the tiebreaker for rows that have no interaction date at all —
+  # bumping it here would defeat that.
+  # ---------------------------------------------------------------------------
+
+  def register_own_interaction
+    register_interaction(Time.zone.today)
+  end
+
+  # The incremental rule, used from the UI: only ever moves forward.
+  def register_interaction(date)
+    return if date.blank?
+
+    date = date.to_date if date.respond_to?(:to_date)
+    return if last_interaction_date.present? && last_interaction_date >= date
+
+    update_column(:last_interaction_date, date)
+  end
+
+  # The full recompute, used after a bulk note upload. Imported notes arrive in any
+  # order and may be backdated, so "only if larger" would settle on whichever row
+  # happened to be processed last rather than the true maximum. Writes nil when
+  # nothing carries a date.
+  #
+  # Notes and completed tasks only — this deliberately does not fold in the
+  # today-stamp that register_own_interaction leaves. The same import writes the
+  # investor rows (statuses, amounts) moments earlier, so including it would put
+  # every imported investor on today's date and bury the historical "On" dates the
+  # upload exists to carry.
+  def recompute_last_interaction_date!
+    latest = [inv_notes.maximum(:on), tasks.completed.maximum(:completed_on)].compact.max
+    update_column(:last_interaction_date, latest)
+  end
 
   def set_investor_entity_id
     self.investor_entity_id = investor.investor_entity_id
@@ -95,7 +171,20 @@ class DealInvestor < ApplicationRecord
   after_create_commit :create_activities_later
 
   def create_activities_later
+    # Duting import we generate Activities inline so we skip here
+    return if skip_activity_generation
+
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor", created_by_user_id)
+  end
+
+  # LP CRM: a deal investor's touch points are its LP's people — the same
+  # contacts the stakeholder page offers — so a conversation logged inside a deal
+  # names the same person as one logged on the LP record, and the contact's page
+  # can show both. See WithTouchPoint for how notes/tasks use these.
+  delegate :touch_point_options, to: :investor
+
+  def touch_point_investor_id
+    investor_id
   end
 
   def name
@@ -132,7 +221,7 @@ class DealInvestor < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[total_amount investor_name tier tags source deal_lead primary_amount secondary_investment fee]
+    %w[total_amount investor_name tier tags source deal_lead primary_amount secondary_investment fee last_interaction_date]
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -165,7 +254,7 @@ class DealInvestor < ApplicationRecord
     end
   end
 
-  def set_deal_investor_activity(user_id = nil)
+  def set_deal_investor_activity(user_id = nil, synchronous: false)
     # After activities are created, set the deal_investor to the first incomplete activity (lowest sequence).
     # Only set it if not already pointing to a valid activity.
     return if deal_activity_id.present? && deal_activities.exists?(template_id: deal_activity_id)
@@ -177,7 +266,22 @@ class DealInvestor < ApplicationRecord
     update_column(:deal_activity_id, first_activity.template_id)
 
     # Ensure tasks for the initial step are generated immediately after assigning current step.
-    GenerateDealStepTasksJob.perform_later(id, user_id, first_activity.id)
+    # Callers already running in a background job pass synchronous: true, so the tasks are in
+    # place by the time that job reports itself done; web requests keep the async hop.
+    return GenerateDealStepTasksJob.perform_later(id, user_id, first_activity.id) unless synchronous
+
+    generate_step_tasks_inline(user_id, first_activity)
+  end
+
+  # The current step is written above before the tasks are generated, so a raise here cannot be
+  # left to the caller's retry: the guard at the top of set_deal_investor_activity would see a
+  # valid current step and return before getting this far. Hand the work to the queue instead,
+  # which retries on its own.
+  def generate_step_tasks_inline(user_id, activity)
+    GenerateDealStepTasksJob.perform_now(id, user_id, activity.id)
+  rescue StandardError => e
+    Rails.logger.error "Inline step task generation failed for deal investor #{id}: #{e.message}"
+    GenerateDealStepTasksJob.perform_later(id, user_id, activity.id)
   end
 
   def messages_viewed(current_user)

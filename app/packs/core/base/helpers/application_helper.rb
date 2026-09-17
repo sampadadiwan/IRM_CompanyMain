@@ -68,6 +68,87 @@ module ApplicationHelper
     end
   end
 
+  # Maps every ransackable attribute name, exactly as Ransack's own attribute_select
+  # names it (base columns as-is, association columns as "#{association}_#{column}" —
+  # see Ransack::Helpers::FormBuilder#attr_from_base_and_column), to its Rails column
+  # type. Used by the generic search filter (_condition_fields.html.erb) so its
+  # Stimulus controller knows when to swap the value input for a locale-date one.
+  # Only resolves one level of association (matches every current call site).
+  def ransack_filter_attribute_types(klass, associations = [])
+    types = attribute_types_for(klass)
+
+    Array(associations).each do |assoc|
+      reflection = klass.reflect_on_association(assoc)
+      next unless reflection
+
+      begin
+        attribute_types_for(reflection.klass).each do |column, type|
+          types["#{assoc}_#{column}"] = type
+        end
+      rescue StandardError
+        next # polymorphic/unresolvable association klass
+      end
+    end
+
+    types
+  end
+
+  # Same input-group markup as date_field_tag (locale-formatted display input +
+  # hidden ISO input + calendar-icon native date input, driven by the locale-date
+  # Stimulus controller), but for a Ransack value_fields builder rather than a bound
+  # model attribute — the submitted field goes through v.hidden_field so Ransack's
+  # own name/id generation is used (this also has to work inside the "add row"
+  # cocoon-style cloned templates, which only munge Rails-generated name/id attrs).
+  # `active:` controls the initial visible/enabled state — pass true when this
+  # condition's currently-selected attribute is already a date/datetime (e.g. on
+  # reload after a date filter was submitted). filter_controller.js takes over
+  # toggling it from there as the user changes the attribute select.
+  def ransack_date_value_field(v, css_class: "form-control", active: false)
+    date        = coerce_date_tag(v.object.value)
+    i18n_format = I18n.t("date.formats.default")
+    locale_val  = date ? l(date) : ""
+    iso_val     = date ? date.iso8601 : ""
+    # "col" makes this div (not the input-group inside it) the flex item the
+    # surrounding .row expects — matches the plain text_field it replaces.
+    wrapper_class = active ? "value-field-date col" : "value-field-date col d-none"
+
+    content_tag(:div, class: wrapper_class) do
+      content_tag(:div, class: "input-group",
+        data: { controller: "locale-date", "locale-date-format-value": i18n_format }
+      ) do
+        display = tag.input(
+          type:         "text",
+          # Suffixed so it doesn't collide with the plain text_field's id, which is
+          # bound to the same v/:value pair and rendered alongside this in the DOM
+          id:           "#{v.field_id(:value)}_display",
+          value:        locale_val,
+          class:        css_class,
+          autocomplete: "off",
+          data:         {
+            "locale-date-target": "display",
+            action: "click->locale-date#openPicker input->locale-date#inputChanged"
+          }
+        )
+        hidden = v.hidden_field(:value, id: nil, value: iso_val, disabled: !active,
+          data: { "locale-date-target": "hidden" }
+        )
+        icon_span = content_tag(:span, class: "input-group-text",
+          style: "cursor:pointer;",
+          data:  { action: "click->locale-date#openPicker" }
+        ) do
+          concat tag.i(class: "fas fa-calendar", style: "pointer-events:none;")
+          concat tag.input(
+            type:  "date",
+            value: iso_val,
+            style: "position:absolute; width:0; height:0; opacity:0; overflow:hidden;",
+            data:  { "locale-date-target": "picker", action: "change->locale-date#pickerChanged" }
+          )
+        end
+        display + hidden + icon_span
+      end
+    end
+  end
+
   private
 
   def coerce_date_tag(value)
@@ -76,6 +157,11 @@ module ApplicationHelper
     Date.local_parse(value.to_s)
   rescue StandardError
     nil
+  end
+
+  def attribute_types_for(klass)
+    ransackable = klass.ransackable_attributes
+    klass.columns_hash.slice(*ransackable).transform_values(&:type)
   end
 
   public
@@ -199,7 +285,7 @@ module ApplicationHelper
   end
 
   def sortable_header(q, attr, label, **)
-    sort_link(q, attr, **) do
+    sort_link(q, attr, hide_indicator: true, **) do
       active_sort = q.sorts.find { |s| s.name == attr.to_s }
 
       icon_up = ''.html_safe
@@ -207,9 +293,9 @@ module ApplicationHelper
 
       case active_sort&.dir
       when 'asc'
-        icon_down = content_tag(:span, "▼", class: "arrow")
-      when 'desc'
         icon_up = content_tag(:span, "▲", class: "arrow")
+      when 'desc'
+        icon_down = content_tag(:span, "▼", class: "arrow")
       else
         icon_up = content_tag(:span, "▲", class: "arrow")
         icon_down = content_tag(:span, "▼", class: "arrow")
@@ -253,6 +339,61 @@ module ApplicationHelper
   def pie_chart_colors_from_css
     @pie_chart_colors_from_css ||= (1..15).map { |i| "var(--pie-color-#{i})" }
     @pie_chart_colors_from_css
+  end
+
+  # True when a notes/tasks list is scoped to exactly one owner — a stakeholder's
+  # or deal investor's own tab. Every row then repeats the same name, so the
+  # "For" column is dead weight and gets dropped.
+  #
+  # Deliberately false for the two mixed-owner scopes that also pass owner params:
+  #   * a contact's page (touch_point_scope=all) spans the LP's own records AND
+  #     its deal investors' — there the column is the only thing distinguishing them
+  #   * a deal's Tasks tab (deal_id) spans the Deal and every DealInvestor on it
+  def single_owner_list?
+    params[:owner_id].present? && params[:owner_type].present? &&
+      params[:touch_point_scope] != "all" && params[:deal_id].blank?
+  end
+
+  # Path to a polymorphic owner built from its type and id alone — the record is
+  # never dereferenced to generate the URL. Safe because WithFriendlyId overrides
+  # to_param to return the id, so this is byte-identical to what
+  # polymorphic_path(record) would produce for slugged models too.
+  #
+  # Returns nil for an owner type with no show route (e.g. SideLetterObligation),
+  # so callers can fall back to plain text.
+  def owner_path(owner_type, owner_id)
+    return nil if owner_type.blank? || owner_id.blank?
+
+    route = "#{owner_type.underscore}_path"
+    return nil unless respond_to?(route)
+
+    public_send(route, owner_id)
+  rescue ActionController::UrlGenerationError
+    nil
+  end
+
+  # A task's policy answer, memoized for the duration of ONE render.
+  #
+  # List rows ask the policy two questions each and kanban cards three, and for
+  # any user who is not a company admin every one of those walks down to an
+  # AccessRight lookup — twice over for a DealInvestor owner, via its parent
+  # Deal's policy. Rows sharing an owner repeated identical queries dozens of
+  # times per list and hundreds per board.
+  #
+  # The answer depends only on the user (fixed for the request) and on the task's
+  # entity, support flag and owner — so those form the key, and rows with the
+  # same owner collapse to a single evaluation.
+  #
+  # Scoped to the render on purpose. A longer-lived cache is NOT safe here: the
+  # investor-advisor switch changes the user's entity and roles mid-session, and
+  # an entry that outlives it answers with pre-switch permissions (SEC-12 in
+  # features/advisor/investor_advisor.feature catches exactly that).
+  def task_permits?(task, question)
+    @task_policy_memo ||= {}
+    key = [task.owner_type, task.owner_id, task.entity_id, task.for_support, question]
+    return @task_policy_memo[key] if @task_policy_memo.key?(key)
+
+    @task_policy_memo[key] = policy(task).public_send(question)
   end
 
   def resolve_doc_color(document_name, custom_colors)

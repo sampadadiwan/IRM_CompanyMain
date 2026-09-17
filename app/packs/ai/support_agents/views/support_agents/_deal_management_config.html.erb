@@ -19,6 +19,14 @@
       label: "#{from_step.title} → #{to_step.title}"
     }
   end
+  if templates.any?
+  last_step = templates.last
+  transition_pairs << {
+    value: "#{last_step.sequence}-0",
+    label: "#{last_step.title} → Completed"
+  }
+  end
+
 
   selected = config["preset_steps"].to_s.split(",").map(&:strip).compact_blank.to_set
 %>
@@ -26,8 +34,9 @@
 <hr class="my-4">
 <h5>Deal Management Configuration</h5>
 
+<%# Member route for persisted agents, collection route for new agents (no :id needed) %>
 <div data-controller="deal-management-config"
-     data-deal-management-config-steps-url-value="<%= deal_steps_support_agent_path(support_agent) %>">
+     data-deal-management-config-steps-url-value="<%= support_agent.persisted? ? deal_steps_support_agent_path(support_agent) : deal_steps_support_agents_path %>">
   <%= form.hidden_field :json_fields,
       value: { "deal_ids" => deal_id.to_s, "preset_steps" => config["preset_steps"].to_s }.to_json,
       data: { "deal-management-config-target": "jsonField" } %>

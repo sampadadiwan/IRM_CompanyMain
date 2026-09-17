@@ -23,7 +23,7 @@ require "nokogiri"
 #   the paragraph to inherit the style's numbering and shifts every subsequent
 #   heading number up by one.
 class DocxNumberingFixer
-  W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main".freeze
 
   CONTENT_ENTRIES = %w[
     word/document.xml
@@ -53,8 +53,8 @@ class DocxNumberingFixer
         return @docx_path
       end
 
-      num_doc  = Nokogiri::XML(num_xml) { |c| c.strict }
-      body_doc = Nokogiri::XML(doc_xml) { |c| c.strict }
+      num_doc  = Nokogiri::XML(num_xml, &:strict)
+      body_doc = Nokogiri::XML(doc_xml, &:strict)
 
       new_num_nodes = patch_document!(body_doc, num_doc)
 
@@ -126,9 +126,7 @@ class DocxNumberingFixer
       ilvl     = ilvl_el ? wval(ilvl_el, "val").to_i : nil
 
       # Track non-suppressed Heading1 paragraphs for counter reference
-      if style == "Heading1" && num_id != "0"
-        heading_num += 1
-      end
+      heading_num += 1 if style == "Heading1" && num_id != "0"
 
       # Only act on real list paragraphs (numId present and not 0)
       next unless num_id && num_id != "0" && !ilvl.nil?
@@ -137,14 +135,14 @@ class DocxNumberingFixer
       p_rPr  = pPr.at_xpath("w:rPr", ns)
       vanish = p_rPr&.at_xpath("w:vanish", ns)
 
-      if ilvl == 0 && vanish
+      if ilvl.zero? && vanish && heading_num.positive?
         # Hidden ilvl=0 counter-setter: needs a clone with startOverride
         cache_key = "#{num_id}_#{heading_num}"
 
         unless clone_cache[cache_key]
           abstract_id = num_to_abstract[num_id]
           unless abstract_id
-            next  # can't clone without an abstractNumId
+            next # can't clone without an abstractNumId
           end
 
           max_num_id += 1
@@ -206,6 +204,7 @@ class DocxNumberingFixer
   def copy_zip(zip, out)
     zip.each do |entry|
       next if entry.directory?
+
       out.put_next_entry(
         entry.name, nil, nil,
         Zip::Entry::DEFLATED,
@@ -222,11 +221,13 @@ class DocxNumberingFixer
 
   def wval(el, attr = "val")
     return nil unless el
+
     el["#{W_NS}#{attr}"] || el["w:#{attr}"]
   end
 
   def set_wval(el, val)
     return unless el
+
     if el["#{W_NS}val"]
       el["#{W_NS}val"] = val
     else

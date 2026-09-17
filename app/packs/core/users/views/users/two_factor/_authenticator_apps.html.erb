@@ -1,0 +1,93 @@
+<%# App store download links for the supported TOTP apps.
+    Shown on the mode-selection and enrollment screens because a first-time user
+    reaches those pages with nothing installed and no way to get past them.
+    Links open in a new tab so a half-finished enrollment is never navigated away from.
+
+    Each link also carries a QR code. This screen is routinely opened on a desktop
+    browser — that's where 2FA setup usually happens — and a plain link there only
+    ever opens the store page on the SAME desktop. A QR lets a phone camera jump
+    straight to the store on the phone instead. Each QR is also a button that opens
+    a shared zoom modal (see qr_zoom_controller.js) — at this small a size, a phone
+    camera aimed at the pair can pick up the wrong one, since both sit in frame at once.
+
+    Local (optional): intro — override the leading sentence. %>
+<div class="authenticator-apps" data-controller="qr-zoom">
+  <p class="authenticator-apps__intro">
+    <%= local_assigns.fetch(:intro, "Don't have an authenticator app yet? Install one of these free apps on your phone — any of them works. On a computer, scan a code below with your phone's camera to open the store, or tap it to enlarge first.") %>
+  </p>
+
+  <%# offset gives the QR a quiet zone (a QR with no border margin can fail to scan);
+      fill is explicit white so it stays scannable against the dark-mode card background. %>
+  <% qr_svg = lambda do |url|
+       RQRCode::QRCode.new(url).as_svg(
+         offset: 44,
+         fill: "ffffff",
+         viewbox: true,
+         svg_attributes: { class: "authenticator-apps__qr" }
+       )
+     end %>
+
+  <% [
+       { name: "Google Authenticator",
+         ios: "https://apps.apple.com/app/google-authenticator/id388497605",
+         android: "https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" },
+       { name: "Microsoft Authenticator",
+         ios: "https://apps.apple.com/app/microsoft-authenticator/id983156458",
+         android: "https://play.google.com/store/apps/details?id=com.azure.authenticator" },
+       { name: "Twilio Authy",
+         ios: "https://apps.apple.com/app/twilio-authy/id494168017",
+         android: "https://play.google.com/store/apps/details?id=com.authy.authy" }
+     ].each do |app| %>
+    <div class="authenticator-apps__item">
+      <div class="authenticator-apps__name"><%= app[:name] %></div>
+      <div class="authenticator-apps__stores">
+        <%# rel="noopener" — these are third-party stores opened in a new tab. %>
+        <div class="authenticator-apps__store-group">
+          <button type="button" class="authenticator-apps__qr-btn"
+                  data-bs-toggle="modal" data-bs-target="#qr-zoom-modal"
+                  data-action="click->qr-zoom#open"
+                  data-qr-zoom-label-param="<%= "#{app[:name]} — iPhone" %>"
+                  aria-label="Enlarge QR code for <%= app[:name] %> on iPhone">
+            <%= raw qr_svg.call(app[:ios]) %>
+            <span class="authenticator-apps__qr-zoom-icon"><i class="fas fa-search-plus"></i></span>
+          </button>
+          <a href="<%= app[:ios] %>" class="authenticator-apps__store" target="_blank" rel="noopener noreferrer">
+            <i class="fab fa-apple"></i> iPhone
+          </a>
+        </div>
+        <div class="authenticator-apps__store-group">
+          <button type="button" class="authenticator-apps__qr-btn"
+                  data-bs-toggle="modal" data-bs-target="#qr-zoom-modal"
+                  data-action="click->qr-zoom#open"
+                  data-qr-zoom-label-param="<%= "#{app[:name]} — Android" %>"
+                  aria-label="Enlarge QR code for <%= app[:name] %> on Android">
+            <%= raw qr_svg.call(app[:android]) %>
+            <span class="authenticator-apps__qr-zoom-icon"><i class="fas fa-search-plus"></i></span>
+          </button>
+          <a href="<%= app[:android] %>" class="authenticator-apps__store" target="_blank" rel="noopener noreferrer">
+            <i class="fab fa-google-play"></i> Android
+          </a>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<%# Single shared modal for all six QR codes above, rendered outside this partial's
+    normal position — see devise.html.erb's `yield :modals`. %>
+<% content_for :modals do %>
+  <div class="modal fade" id="qr-zoom-modal" tabindex="-1" aria-labelledby="qr-zoom-modal-label" aria-hidden="true"
+       data-controller="qr-zoom" data-action="qr-zoom:selected@window->qr-zoom#populate">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="qr-zoom-modal-label" data-qr-zoom-target="modalLabel"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <div class="qr-zoom-modal__svg-wrap" data-qr-zoom-target="modalBody"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

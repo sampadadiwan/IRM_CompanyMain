@@ -17,6 +17,15 @@ Feature: Import Deal Investors
     And the deal investor should have deal activities created
 
   @import
+  Scenario: Import generates the first step's tasks once, not twice
+    Given there are "3" existing investor ""
+    And the deal has deal activity templates "Deck Sent,Meeting 1" imported
+    And the deal step "Deck Sent" has the following tasks: "Send deck, Log intro call"
+    When I import deal investors using the new template
+    And the step tasks job runs again for the imported deal investor
+    Then the imported deal investor should have one task each for "Send deck, Log intro call"
+
+  @import
   Scenario: Import updates deal activity statuses from the Deal Steps sheet
     Given there are "3" existing investor ""
     And the deal has deal activity templates "Deck Sent,Meeting 1" imported
@@ -24,10 +33,27 @@ Feature: Import Deal Investors
     Then the deal investor activities should have updated statuses
 
   @import
+  Scenario: Import raises tasks for the first step the Deal Steps sheet left incomplete
+    Given there are "3" existing investor ""
+    And the deal has deal activity templates "Deck Sent,Meeting 1" imported
+    And the deal step "Deck Sent" has the following tasks: "Send deck"
+    And the deal step "Meeting 1" has the following tasks: "Book intro call"
+    When I import deal investors using the new template with deal steps
+    Then the imported deal investor should be on the step "Meeting 1"
+    And the imported deal investor should have one task each for "Book intro call"
+    And the imported deal investor should have no task for "Send deck"
+
+  @import
   Scenario: Import creates notes from the Notes sheet
     Given there are "3" existing investor ""
     When I import deal investors using the new template with notes
     Then notes should be created for the deal investor
+
+  @import
+  Scenario: Import sets the last interaction date to the latest note date
+    Given there are "3" existing investor ""
+    When I import deal investors using the new template with notes on mixed dates
+    Then the deal investor last interaction date should be "2026-04-15"
 
   @import
   Scenario: Import creates notes with a reminder

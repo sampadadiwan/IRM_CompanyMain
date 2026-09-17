@@ -1,0 +1,309 @@
+---
+title: Data &amp; Integrations — Connect Banks, Custodians &amp; ERPs | CapHive
+description: CapHive connects to the systems your fund already runs on — banks, custodians,
+  administrators, accounting, KYC, e-sign and storage — with an API and webhooks for
+  the rest.
+og_title: Data &amp; Integrations — CapHive
+og_description: A system of record is only as good as the data flowing into it. CapHive
+  connects to the systems your fund already runs on, and exposes an API for the rest.
+data_page: integrations
+---
+
+
+<!-- ================= HERO ================= -->
+<section class="page-hero center hero-tinted tint-white">
+  <div class="wrap">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb" style="justify-content:center">
+        <a href="index.html">Home</a><span>/</span><a href="products.html">Products</a><span>/</span>Data &amp; Integrations
+      </nav>
+      <span class="chip-label">Data &amp; Integrations</span>
+      <h1>Your fund's data, <em>flowing in on its own.</em></h1>
+      <p class="lede">
+        A system of record is only as good as the data that reaches it. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> connects to the systems
+        your fund already runs on, ingests the files it cannot connect to, and exposes an API for everything else.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="contact.html">
+          Setup a Demo
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+
+      <!-- the artefact this module produces: the breadth of what feeds the ledger.
+           Categories of system only — never vendor names. The vendor coverage grid
+           that used to sit below was parked in _holding/ because those connections
+           do not exist yet; keep this list category-level so it stays true. -->
+      <div class="hero-marquee" aria-hidden="true">
+        <div class="marquee">
+          <div class="marquee-track" data-dup>
+            <span class="client">Banking &amp; payments</span>
+            <span class="client">Custodians</span>
+            <span class="client">Fund administrators</span>
+            <span class="client">Accounting &amp; ERP</span>
+            <span class="client">KYC / AML &amp; identity</span>
+            <span class="client">E-signature</span>
+            <span class="client">Data rooms &amp; storage</span>
+            <span class="client">Communications</span>
+            <span class="client">BI &amp; warehouse</span>
+            <span class="client">Valuation &amp; market data</span>
+            <span class="client">REST API &amp; webhooks</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= THREE WAYS DATA ARRIVES ================= -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">How data arrives</span>
+      <h2>Three routes into <em>one ledger.</em></h2>
+      <p>Most funds have a mix: two systems with a proper API, four that only produce files, and one internal tool nobody wants to replace. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> takes all three.</p>
+    </div>
+    <div class="f-grid">
+      <div class="f-card reveal">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 12H4m5 0l-3-3m3 3l-3 3M15 12h5m-5 0l3-3m-3 3l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Direct connections, built to order</h3>
+        <!-- Reworded: these connectors are not shipped out of the box. The claim is speed of
+             build on an API-first platform, not existing coverage. Do not add vendor names. -->
+        <p>Name the bank, custodian or administrator and we will build the feed. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> is API-first underneath — everything the product does, it does through its own endpoints — so a new connection is a mapping exercise measured in weeks, not a re-platforming measured in quarters.</p>
+      </div>
+      <div class="f-card reveal" data-delay="1">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 3h8l4 4v14H6V3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Uploads and downloads, in the formats you already use</h3>
+        <p>Data moves both ways, in the file formats your team works in today. Download a ready-made Excel template, fill it in and upload it back — commitments, capital events, KPIs, valuations, investor and portfolio company records all load in bulk. And everything in the platform comes back out again as Excel, CSV, PDF or Word.</p>
+      </div>
+      <div class="f-card reveal" data-delay="2">
+        <div class="f-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>API and webhooks</h3>
+        <p>For internal tools, dashboards and anything bespoke, your engineers read and write directly — and subscribe to events instead of polling for changes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FILES & FORMATS =================
+     Expansion of the "uploads and downloads" card above. Keep every claim here to
+     what the platform actually does: xlsx/csv upload templates, xlsx/csv exports on
+     lists, and generated PDF / Word documents from customer templates. -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="split reveal">
+      <div class="split-text">
+        <span class="tile-kicker">Files &amp; formats</span>
+        <h2>Every list goes in, <em>and every list comes out.</em></h2>
+        <p>Nobody wants to retype a spreadsheet into a system, and nobody wants their numbers trapped once they are in one. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> treats the file as a first-class way to move data — in bulk, in both directions, in the formats finance teams actually send each other.</p>
+        <ul class="check-list">
+          <li>Excel and CSV uploads for bulk creation and updates — commitments, capital events, KPIs, valuations, investor and portfolio company records</li>
+          <li>A downloadable template behind every upload, pre-built with the right columns and picklists, so a file is never rejected for its shape</li>
+          <li>Excel and CSV exports on the lists and reports themselves, filtered exactly as you see them on screen rather than as a fixed extract</li>
+          <li>PDF and Word documents generated from your own templates — capital notices, statements, certificates and investor reports, in your wording and your branding</li>
+          <li>The original uploaded file kept alongside the data taken from it, so any figure can be traced back to the document it arrived on</li>
+        </ul>
+      </div>
+      <div class="frame" aria-hidden="true">
+        <div class="frame-bar"><i></i><i></i><i></i></div>
+        <div class="frame-body">
+          <div class="frame-top">
+            <div class="frame-fund">Import &amp; export<small>MERIDIAN GROWTH FUND III</small></div>
+          </div>
+          <div style="margin-top:22px">
+            <div class="deal"><span>Commitments — template</span><span class="amt">.xlsx</span><span class="pill done">Download</span></div>
+            <div class="deal"><span>Q1 commitments upload</span><span class="amt">142 rows</span><span class="pill done">Loaded</span></div>
+            <div class="deal"><span>Portfolio KPIs — workbook</span><span class="amt">.xlsx</span><span class="pill done">Loaded</span></div>
+            <div class="deal"><span>Account entries export</span><span class="amt">.csv</span><span class="pill done">Ready</span></div>
+            <div class="deal"><span>Capital call notices</span><span class="amt">.pdf / .docx</span><span class="pill done">Generated</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= API ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="split reveal">
+      <div class="split-text">
+        <span class="tile-kicker">API &amp; webhooks</span>
+        <h2>Everything in the platform, <em>available to your engineers.</em></h2>
+        <p>The API is how <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> expects to be extended. If a workflow belongs in your own tooling, read the fund, portfolio and transaction data from <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> rather than copying it.</p>
+        <ul class="check-list">
+          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
+          <li>REST API over the same objects the product uses — funds, investors, commitments, capital events, positions and documents</li>
+          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
+          <li>A sandbox environment with representative data, so integrations are built and tested away from live funds</li>
+          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
+          <li>Scoped API keys, so a credential can read portfolio data without touching investor records</li>
+          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive -->
+          <li>Every API call attributed and logged alongside actions taken in the interface</li>
+        </ul>
+        <div class="hero-cta" style="margin-top:28px">
+          <a class="btn btn-outline" href="contact.html">Request API documentation</a>
+        </div>
+      </div>
+      <div class="frame" aria-hidden="true">
+        <div class="frame-bar"><i></i><i></i><i></i></div>
+        <div class="frame-body">
+          <div class="frame-top">
+            <div class="frame-fund">Connections<small>MERIDIAN GROWTH FUND III</small></div>
+          </div>
+          <div style="margin-top:22px">
+            <div class="pos"><span>Bank statement feed</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">Synced 06:00</span></div>
+            <div class="pos"><span>Custodian positions</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">Synced 06:12</span></div>
+            <div class="pos"><span>Accounting ledger</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">Synced 06:20</span></div>
+            <div class="pos"><span>E-sign envelopes</span><div class="pos-bar"><i style="width:72%"></i></div><span class="pos-val">3 in flight</span></div>
+            <div class="pos"><span>FX rates</span><div class="pos-bar"><i style="width:100%"></i></div><span class="pos-val">Synced 06:00</span></div>
+          </div>
+          <div style="margin-top:20px">
+            <div class="deal"><span>webhook · capital_event.funded</span><span class="amt">200 OK</span><span class="pill done">Delivered</span></div>
+            <div class="deal"><span>webhook · valuation.updated</span><span class="amt">200 OK</span><span class="pill done">Delivered</span></div>
+            <div class="deal"><span>webhook · investor.kyc_cleared</span><span class="amt">retry 1</span><span class="pill warn">Queued</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DATA QUALITY ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="split rev reveal">
+      <div class="split-text">
+        <span class="tile-kicker">Data quality</span>
+        <h2>Data that arrives is data you can <em>sign off on.</em></h2>
+        <p>Ingestion is the easy half. The work is knowing that a number in an LP statement can be traced back to the file it came from, and that nothing was quietly double-counted on the way.</p>
+        <ul class="check-list">
+          <li>Validation rules applied on arrival — formats, dates, currencies, mandatory fields and sign conventions</li>
+          <li>Duplicate detection on restated files, re-sent statements and repeated transaction references</li>
+          <li>Exception queues, so a failed row is assigned to a person rather than lost in a log</li>
+          <li>Full lineage from source file to statement line, with the original document retained</li>
+        </ul>
+      </div>
+      <div class="frame" aria-hidden="true">
+        <div class="frame-bar"><i></i><i></i><i></i></div>
+        <div class="frame-body">
+          <div class="frame-top">
+            <div class="frame-fund">Ingestion run<small>TODAY · 06:00 UTC</small></div>
+          </div>
+          <div class="frame-stats" style="margin-top:20px">
+            <div class="frame-stat"><div class="v">4,182</div><div class="k">ROWS INGESTED</div></div>
+            <div class="frame-stat"><div class="v">6</div><div class="k">EXCEPTIONS</div></div>
+            <div class="frame-stat"><div class="v">2</div><div class="k">DUPLICATES DROPPED</div></div>
+          </div>
+          <div style="margin-top:20px">
+            <div class="deal"><span>Unmapped narration — bank feed</span><span class="amt">3 rows</span><span class="pill warn">Review</span></div>
+            <div class="deal"><span>FX rate missing — 12 Mar</span><span class="amt">1 row</span><span class="pill warn">Review</span></div>
+            <div class="deal"><span>Restated custodian file</span><span class="amt">2 rows</span><span class="pill done">Superseded</span></div>
+            <div class="deal"><span>Lineage — statement line 114</span><span class="amt">source.csv</span><span class="pill done">Traced</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Questions</span>
+      <h2>What funds ask us <em>first.</em></h2>
+    </div>
+    <div class="faq reveal" data-delay="1">
+      <details>
+        <summary>Do you support our bank?</summary>
+        <div>
+          <p>Send us a sample statement and we will tell you which route applies. Where a bank publishes a connection or a host-to-host file drop, <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> reads from it directly. Where it does not, the same statement you download today is ingested through a mapped template, and reconciliation works identically either way.</p>
+          <!-- TODO: confirm which banks are connected directly today before naming any of them here -->
+        </div>
+      </details>
+      <details>
+        <summary>What if a system has no API?</summary>
+        <div>
+          <p>Then it almost certainly produces a file, and that is enough. We map the file layout once — columns, headers, date and number formats — and every subsequent file of that shape is parsed, validated and reconciled without manual handling.</p>
+          <p>If the system produces neither a connection nor a file, data is entered in <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> and the system stops being the source of record for that item.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Who owns the data?</summary>
+        <div>
+          <p>You do. Your fund data, documents and the records derived from them remain yours. <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> processes them to run the platform for you, and we do not treat your fund or investor data as an input to anything else.</p>
+          <div class="tag-row" style="margin-top:16px"><a class="tag" href="security.html">How access is controlled</a></div>
+        </div>
+      </details>
+      <details>
+        <summary>Can we export everything?</summary>
+        <div>
+          <p>Yes. Structured data exports and the original uploaded documents are available on demand, in formats you can load elsewhere. Export is a standing capability, not a concession at the end of a contract.</p>
+          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: exact export formats, delivery method and turnaround -->
+        </div>
+      </details>
+      <details>
+        <summary>How long does an integration take?</summary>
+        <div>
+          <p>It depends on which route the system falls into. A mapped file template is usually the fastest, a direct connection depends on how quickly the counterparty grants access, and a bespoke API build moves at your engineering team's pace.</p>
+          <p>We scope each connection in discovery and give you a sequence, so the integrations that unblock your first close are done first.</p>
+          <!-- TODO: VERIFY before launch — do not publish unless confirmed by CapHive: typical timelines per integration route -->
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RELATED ================= -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="chip-label">Keep going</span>
+      <h2>What the data <em>feeds.</em></h2>
+    </div>
+    <div class="f-grid reveal" data-delay="1">
+      <a class="link-card" href="funds.html">
+        <div>
+          <span class="kick">01 · Funds</span>
+          <h3>Funds</h3>
+          <p>The ledger the data lands in — capital events, computations, waterfalls and investor statements.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="ai-agents.html">
+        <div>
+          <span class="kick">AI Agents</span>
+          <h3>AI Agents</h3>
+          <p>Agents work on the same connected data, which is why their answers reconcile to your books.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="link-card" href="security.html">
+        <div>
+          <span class="kick">Trust</span>
+          <h3>Security &amp; Trust</h3>
+          <p>How connections are authenticated, how access is scoped, and what is logged.</p>
+        </div>
+        <span class="arrow-btn"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2>See <span class="wordmark"><span class="wm-cap">Cap</span>Hive</span> on your <em>own fund data.</em></h2>
+    <p style="max-width:720px;margin-inline:auto">Book a walkthrough with our team — funds, portfolios, deals &amp; secondaries, end to end.</p>
+    <div class="hero-cta">
+      <a class="btn btn-white" href="contact.html">
+        Setup a Demo
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="products.html">Explore the platform</a>
+    </div>
+    <a class="cta-mail" href="mailto:hello@caphive.com">or write to hello@CapHive.com</a>
+  </div>
+</section>
+

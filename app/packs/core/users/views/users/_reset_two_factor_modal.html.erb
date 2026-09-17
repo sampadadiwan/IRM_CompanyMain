@@ -1,0 +1,161 @@
+<%#
+  "Reset Two-Factor Method" confirmation — same layout as the KYC "Request Updates" popup
+  (investor_kycs/_request_updates_modal): an "Immediate Actions" callout, tinted cards that
+  spell out every consequence, then the input the action needs, then Cancel / Confirm.
+
+  Locals:
+    user       – the User whose method is being reset
+    self_reset – true when current_user IS that user (password + acknowledgement required),
+                 false for an administrator (optional message to the user instead)
+
+  Copy is mode-aware: `mode_label` / `mode_target` describe what will stop working.
+  Rendered OUTSIDE any ToggleCard/table (Bootstrap modal rule); trigger button lives in the
+  2FA row of users/show.
+%>
+<%
+  mode_label  = user.two_factor_mode.to_s.titleize
+  mode_target = case user.two_factor_mode
+                when "authenticator" then "your authenticator app entry"
+                when "whatsapp"      then "codes sent to WhatsApp #{user.masked_phone_with_call_code}"
+                when "sms"           then "codes texted to #{user.masked_phone_with_call_code}"
+                else "your current method"
+                end
+  # Modes the user could pick next time — the same list the mode-selection screen and the
+  # reset email use (TwoFactorAuthenticatable#available_two_factor_modes).
+  next_modes = user.available_two_factor_mode_labels
+  subject = self_reset ? "you" : user.full_name
+%>
+<div class="modal fade" id="resetTwoFactorModal" tabindex="-1" aria-labelledby="resetTwoFactorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="resetTwoFactorModalLabel">
+          <i class="ti ti-shield-x me-1"></i>
+          Reset Two-Factor Method<%= " for #{user.full_name}" unless self_reset %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= form_with url: reset_two_factor_user_path(user), method: :post, data: { turbo: false, controller: "reset-two-factor" } do |f| %>
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">Immediate Actions</div>
+            <div class="text-muted">The following will happen immediately when you click <strong>Reset 2FA Method</strong>:</div>
+          </div>
+
+          <div class="action-summary__list" id="reset_two_factor_effects">
+            <div class="action-summary__item action-summary__item--red">
+              <span class="action-summary__icon"><i class="ti ti-shield-off"></i></span>
+              <div>
+                <div class="action-summary__title">Current method removed: <span class="badge bg-secondary"><%= mode_label %></span></div>
+                <div class="action-summary__desc">
+                  <%= self_reset ? "Your" : "Their" %> <%= mode_target.sub(/^your /, "") %> will stop working right away.
+                  <%= self_reset ? "You" : "They" %> cannot use it to sign in again.
+                </div>
+              </div>
+            </div>
+
+            <% if self_reset %>
+              <div class="action-summary__item action-summary__item--blue">
+                <span class="action-summary__icon"><i class="ti ti-logout"></i></span>
+                <div>
+                  <div class="action-summary__title">You will be signed out now</div>
+                  <div class="action-summary__desc">
+                    Sign in again straight away and you will be taken to the method-selection screen to set up a new one.
+                  </div>
+                </div>
+              </div>
+            <% else %>
+              <div class="action-summary__item action-summary__item--blue">
+                <span class="action-summary__icon"><i class="ti ti-login"></i></span>
+                <div>
+                  <div class="action-summary__title">Takes effect at their next sign-in</div>
+                  <div class="action-summary__desc">
+                    Nothing changes for <%= user.full_name %> mid-session. The next time they sign in they will be asked to choose a new method before continuing.
+                  </div>
+                </div>
+              </div>
+            <% end %>
+
+            <div class="action-summary__item action-summary__item--green">
+              <span class="action-summary__icon"><i class="ti ti-shield-check"></i></span>
+              <div>
+                <div class="action-summary__title">Two-factor authentication stays switched on</div>
+                <div class="action-summary__desc">
+                  This does <strong>not</strong> disable 2FA. At the next sign-in <%= subject %> must pick a new method —
+                  <%= next_modes.to_sentence(last_word_connector: " or ", two_words_connector: " or ") %> — and confirm it before getting in.
+                </div>
+              </div>
+            </div>
+
+            <div class="action-summary__item action-summary__item--purple">
+              <span class="action-summary__icon"><i class="ti ti-mail"></i></span>
+              <div>
+                <div class="action-summary__title">Confirmation email sent</div>
+                <div class="action-summary__desc">
+                  An email goes to <strong><%= user.email %></strong> confirming the reset and who performed it. This action is recorded in the audit log.
+                </div>
+              </div>
+            </div>
+
+            <% if self_reset %>
+              <div class="action-summary__item action-summary__item--grey">
+                <span class="action-summary__icon"><i class="ti ti-info-circle"></i></span>
+                <div>
+                  <div class="action-summary__title">Before you continue, have ready…</div>
+                  <div class="action-summary__desc">
+                    Your phone (for WhatsApp or text message) <strong>or</strong> an authenticator app installed
+                    (Google Authenticator, Microsoft Authenticator, Authy).
+                    If you lose access to every method, an administrator will have to reset this for you.
+                  </div>
+                </div>
+              </div>
+            <% else %>
+              <div class="action-summary__item action-summary__item--amber">
+                <span class="action-summary__icon"><i class="ti ti-alert-triangle"></i></span>
+                <div>
+                  <div class="action-summary__title">Verify the request is genuine</div>
+                  <div class="action-summary__desc">
+                    Asking a helpdesk to reset two-factor is a common way accounts are taken over.
+                    Confirm you are actually speaking to <%= user.full_name %> before proceeding.
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <hr class="my-3">
+
+          <% if self_reset %>
+            <div class="mb-3">
+              <%= f.label :password, "Confirm your password", class: "form-label fw-semibold" %>
+              <small class="text-muted d-block mb-2">Required to make security changes to your account.</small>
+              <%= f.password_field :password, class: "form-control", required: true, autocomplete: "current-password",
+                    data: { reset_two_factor_target: "password", action: "input->reset-two-factor#toggle" } %>
+            </div>
+            <div class="form-check">
+              <%= check_box_tag :acknowledge, "1", false, class: "form-check-input", id: "reset_two_factor_acknowledge",
+                    data: { reset_two_factor_target: "acknowledge", action: "change->reset-two-factor#toggle" } %>
+              <%= label_tag :reset_two_factor_acknowledge, "I understand my current two-factor method will stop working immediately.", class: "form-check-label" %>
+            </div>
+          <% else %>
+            <div class="mb-1">
+              <%= f.label :message, "Optional message to #{user.first_name}", class: "form-label fw-semibold" %>
+              <small class="text-muted d-block mb-2">This will be included in the email sent to the user.</small>
+              <%= f.text_area :message, rows: 3, class: "form-control",
+                    placeholder: "e.g. As discussed on the phone, please set up the Authenticator app when you next sign in." %>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+          <%= f.submit "Reset 2FA Method", class: "btn btn-outline-success",
+                id: "reset_two_factor_submit",
+                disabled: self_reset,
+                data: { reset_two_factor_target: "submit", disable_with: "Resetting..." } %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

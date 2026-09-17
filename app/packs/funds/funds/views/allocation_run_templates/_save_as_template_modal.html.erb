@@ -1,0 +1,64 @@
+<%#
+  "Save as allocation run template" for one past run on the fund's allocation screen. Copies
+  the run's fund and every option; asks only for a name. Locals: run (AllocationRun)
+%>
+<div class="modal fade" id="saveTemplateModal-<%= run.id %>" tabindex="-1" aria-labelledby="saveTemplateModalLabel-<%= run.id %>" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="saveTemplateModalLabel-<%= run.id %>">
+          <i class="ti ti-template me-1"></i> Save as Allocation Run Template
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_with url: allocation_run_templates_path, method: :post do |f| %>
+        <%= hidden_field_tag :from_allocation_run_id, run.id %>
+        <%= hidden_field_tag :return_to, allocate_form_fund_path(run.fund, run_allocations: true) %>
+        <div class="modal-body">
+          <div class="action-summary__intro">
+            <div class="fw-bold text-dark">What will be saved</div>
+            <div class="text-muted">The settings of this run of <strong><%= run.fund.name %></strong>, so it can be run again for any period — on its own or inside a group with other funds.</div>
+          </div>
+          <div class="action-summary__list">
+            <div class="action-summary__item action-summary__item--blue">
+              <span class="action-summary__icon"><i class="ti ti-copy"></i></span>
+              <div>
+                <div class="action-summary__title">Fund and options are copied</div>
+                <div class="action-summary__desc">
+                  <%= run.run_allocations ? "Formulas (#{run.rule_for.presence || 'Both'}#{run.tag_list.present? ? ", tags: #{run.tag_list}" : ''})" : "No formulas" %>,
+                  <%= run.generate_soa ? "investor statements for #{run.statement_for} using \"#{run.template_name}\"" : "no investor statements" %>,
+                  <%= run.fund_ratios ? "fund ratios generated" : "no fund ratios" %>.
+                </div>
+              </div>
+            </div>
+            <div class="action-summary__item action-summary__item--amber">
+              <span class="action-summary__icon"><i class="ti ti-calendar-off"></i></span>
+              <div>
+                <div class="action-summary__title">The period is not saved</div>
+                <div class="action-summary__desc">The start and end date (<%= l run.start_date %> – <%= l run.end_date %>) are left out. You enter them each time the template or its group is run.</div>
+              </div>
+            </div>
+            <div class="action-summary__item action-summary__item--green">
+              <span class="action-summary__icon"><i class="ti ti-list-numbers"></i></span>
+              <div>
+                <div class="action-summary__title">Nothing runs now</div>
+                <div class="action-summary__desc">Saving only creates the template. Add it to a group under <strong>Funds → Allocation Run Templates</strong> to run it with other funds in order.</div>
+              </div>
+            </div>
+          </div>
+          <hr class="my-3">
+          <div class="mb-1">
+            <%= f.label "allocation_run_template[name]", "Template name", class: "form-label fw-semibold" %>
+            <small class="text-muted d-block mb-2">Say which fund and which close it is for, e.g. <em><%= run.fund.name %> — quarterly</em>.</small>
+            <%= text_field_tag "allocation_run_template[name]", "#{run.fund.name} — #{run.tag_list.presence || run.rule_for.presence || 'allocation'}".truncate(100),
+                               class: "form-control", required: true, maxlength: 100 %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Save template", class: "btn btn-outline-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

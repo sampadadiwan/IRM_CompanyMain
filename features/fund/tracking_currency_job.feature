@@ -6,6 +6,7 @@ Feature: Tracking Currency Job
   # Entity currency scenarios: verify entity_currency_amount_cents / entity_currency_fmv_cents
   # are populated on portfolio investments so cross-fund aggregations work on a single column.
 
+  @import
   Scenario: Entity currency populated for a fund whose currency differs from the entity currency
     Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
     Given the user has role "company_admin"
@@ -27,6 +28,7 @@ Feature: Tracking Currency Job
     Then the entity currency amounts should be calculated for the USD fund
     And the entity currency FMV should be calculated for the USD fund
 
+  @import
   Scenario: Entity currency equals fund currency — entity currency columns are a direct copy
     Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
     Given the user has role "company_admin"
@@ -47,6 +49,7 @@ Feature: Tracking Currency Job
     When I run the TrackingCurrencyJob for the fund
     Then the entity currency amounts should equal the fund currency amounts for the INR fund
 
+  @import
   Scenario: Entity currency FMV is refreshed when exchange rates are updated and force is used
     Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
     Given the user has role "company_admin"
@@ -73,6 +76,7 @@ Feature: Tracking Currency Job
     When I run the TrackingCurrencyJob with force for the fund
     Then the entity currency amounts should be recalculated for the fund
 
+  @import
   Scenario: Cross-fund entity currency aggregation — both funds have non-zero entity currency columns
     Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
     Given the user has role "company_admin"
@@ -93,6 +97,7 @@ Feature: Tracking Currency Job
     When I run the TrackingCurrencyJob for all funds in the entity
     Then every portfolio investment in the entity should have a non-zero entity currency amount
 
+  @import
   Scenario: Recalculate tracking currency for a fund
     Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
     Given the user has role "company_admin"
@@ -112,6 +117,7 @@ Feature: Tracking Currency Job
     When I run the TrackingCurrencyJob for the fund
     Then the tracking amounts should be calculated for the fund
 
+  @import
   Scenario: Recalculate tracking currency for a fund with force
     Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
     Given the user has role "company_admin"

@@ -20,8 +20,12 @@
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
 
-      <% if current_user.entity_id == deal.entity_id && deal.entity.support_agents.set?(:deal_management_agent) %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#ai-agent-tab"><i class="ti ti-robot me-1"></i>AI Agent</a>
+      <% if current_user.entity_id == deal.entity_id %>
+        <% if deal.entity.support_agents.set?(:deal_management_agent) %>
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#ai-agent-tab"><i class="ti ti-robot me-1"></i>AI Agent</a>
+        <% else %>
+          <span class="nav-link disabled text-muted" style="opacity:0.65; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Deal Management Agent is disabled. Contact support to enable it"><i class="ti ti-robot me-1"></i>AI Agent <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i></span>
+        <% end %>
       <% end %>
 
     </nav>

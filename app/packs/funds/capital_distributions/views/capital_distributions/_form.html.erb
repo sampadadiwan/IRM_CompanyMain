@@ -1,7 +1,13 @@
 
+<% persisted = capital_distribution.persisted? %>
+
   <%= render FormCard.new(title: "Distribution : #{capital_distribution.fund&.name}") do %>
 
-    <%= form_with(model: capital_distribution, validate: true) do |form| %>
+  <% if persisted %>
+    <div data-controller="date-change-warning" data-date-change-warning-original-value-value="<%= capital_distribution.distribution_date&.iso8601 %>">
+  <% end %>
+
+    <%= form_with(model: capital_distribution, validate: true, data: (persisted ? { action: "submit->date-change-warning#interceptSubmit" } : {})) do |form| %>
       <% if capital_distribution.errors.any? %>
         <div class="alert alert-danger">
           <h2><%= pluralize(capital_distribution.errors.count, "error") %> prohibited this capital_distribution from being saved:</h2>
@@ -15,7 +21,14 @@
       <% end %>
 
       <div data-controller="currencyformat">
-        <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+        <% if !persisted && params[:clone_from_id].present? %>
+          <div class="form-group">
+            <%= form.label :fund_id, "Fund" %>
+            <%= form.collection_select :fund_id, policy_scope(Fund).where(entity_id: capital_distribution.entity_id), :id, :name, {}, class: "form-control" %>
+          </div>
+        <% else %>
+          <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+        <% end %>
         <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
         <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
 
@@ -50,7 +63,7 @@
 
         <div class="form-group">
           <%= form.label :distribution_date %>
-          <%= form.date_field :distribution_date, class: "form-control", disabled:  %>
+          <%= form.date_field :distribution_date, class: "form-control", data: (persisted ? { date_change_warning_target: "input" } : {}) %>
         </div>
 
         <% if capital_distribution.fund.unit_types.present? %>
@@ -108,5 +121,10 @@
         </div>
       </div>
     <% end %>
+
+  <% if persisted %>
+    <%= render "capital_distributions/distribution_date_change_modal", capital_distribution: capital_distribution %>
+    </div>
+  <% end %>
 
 <% end %>

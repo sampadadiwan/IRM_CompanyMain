@@ -55,6 +55,22 @@ class UserPolicy < ApplicationPolicy
     user.regions.present?
   end
 
+  # Who may see the two-factor row on the user page (status + method badge). Widened from
+  # "self only" so an administrator can see WHICH method a user is on before resetting it.
+  def view_two_factor?
+    user.id == record.id || (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
+  end
+
+  # Who may clear a user's two-factor METHOD back to "none" (TwoFactorReset). The user
+  # themselves (they re-prove their password inside the operation), a company admin of the
+  # same entity, or support. Only meaningful once a method has actually been chosen — before
+  # that the user is already headed for the mode-selection screen, so the button is hidden.
+  def reset_two_factor?
+    return false unless record.two_factor_enabled? && record.two_factor_mode.present?
+
+    user.id == record.id || (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
+  end
+
   # Authorizes admin/support impersonation ("login as"). The acting user (`user`) may impersonate
   # the target (`record`) only if:
   #   1. they hold the :support or :super role, AND

@@ -56,7 +56,11 @@ export default class extends Controller {
       this.element.dispatchEvent(new CustomEvent("upload:complete", {
         bubbles: true,
         detail: {
-          file: file.data // Not file.meta, not file.response, not just file
+          file: file.data, // Not file.meta, not file.response, not just file
+          uploadId: this.element.id, // lets listeners scoped to one upload field ignore others
+          // Shrine cached-file JSON (same value the hidden field submits) — server-side validators
+          // (e.g. KpiReportsController#validate_upload) open the cached object from this reference.
+          uploadedData: this.resultTarget.value
         }
       }));
 

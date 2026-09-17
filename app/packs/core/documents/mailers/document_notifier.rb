@@ -23,7 +23,11 @@ class DocumentNotifier < BaseNotifier
       fund_id: fund_id,
       investor_id: investor_id,
       msg: params[:msg],
-      email_method: params[:email_method]
+      email_method: params[:email_method],
+      # Only a CapitalCommitment-owned document has an unambiguous single commitment to
+      # pull a cc override from (a Fund/Deal-owned data room doc could span many investors
+      # and commitments, so it's deliberately left without one).
+      additional_ccs: (record.owner&.cc if record.owner_type == "CapitalCommitment")
     }
   end
 

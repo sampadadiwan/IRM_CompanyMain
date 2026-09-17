@@ -1,0 +1,63 @@
+<%# Staff-only list of demo requests from the public website.
+
+    Read-only by design — there is no edit or destroy path. Every column below is
+    visitor-supplied and is rendered through ERB's default escaping; nothing here
+    may reach for raw or html_safe.
+
+    See docs/technical/website_lead_capture.md. %>
+<div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+  <div class="card-body px-4 py-3">
+    <div class="row align-items-center">
+      <div class="col-9">
+        <h4 class="fw-semibold mb-8"><%= t('top_menus.website_leads') %></h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+              <a class="text-muted text-decoration-none" href="/">Home</a>
+            </li>
+            <li class="breadcrumb-item" aria-current="page"><%= t('top_menus.website_leads') %></li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if @website_leads.empty? %>
+  <div class="alert alert-info">
+    No demo requests yet. They arrive here the moment someone submits the form on the website.
+  </div>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead>
+        <tr>
+          <th>Received</th>
+          <th>Name</th>
+          <th>Firm</th>
+          <th>Role</th>
+          <th>Email</th>
+          <th>Source</th>
+          <th>Page</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @website_leads.each do |lead| %>
+          <tr>
+            <td class="text-nowrap"><%= link_to l(lead.submitted_at, format: :long), website_lead_path(lead) %></td>
+            <td><%= lead.name %></td>
+            <td><%= lead.firm.presence || "—" %></td>
+            <td><%= lead.role.presence || "—" %></td>
+            <td><%= mail_to lead.email %></td>
+            <%# Direct traffic is the common case and prints as a dash rather than
+                an empty cell, so a missing UTM reads as "none" not "broken". %>
+            <td><%= lead.utm_source.presence || "—" %></td>
+            <td><%= lead.landing_page.presence || "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%= raw pagy_bootstrap_nav(@pagy) %>
+<% end %>

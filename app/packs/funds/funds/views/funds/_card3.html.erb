@@ -1,0 +1,103 @@
+<%#
+  Fund card variant B — "Refined current".
+  Full width, same two-column split as the classic card, but the column chart is
+  replaced by a stacked capital bar and the icon rows by a flat tile grid.
+  Selected on the FM Landing Page Funds widget via metadata {card_type: 'card3'}.
+%>
+<%
+  fund ||= @fund
+  params[:force_units] = fund.default_currency_units
+
+  called_pct      = fund_called_pct(fund)
+  distributed_pct = fund_distributed_pct(fund)
+  uncalled_amount = fund.committed_amount - fund.call_amount
+
+  # Stacked bar segments, all as % of committed so they sum to 100:
+  #   called (net of what came back) | uncalled | distributed
+  committed_f       = fund.committed_amount.to_f
+  dist_of_committed = committed_f.positive? ? ((fund.distribution_amount.abs.to_f / committed_f) * 100).round.clamp(0, called_pct) : 0
+  seg_called        = called_pct - dist_of_committed
+  seg_uncalled      = 100 - called_pct
+  seg_distributed   = dist_of_committed
+
+  # Average commitment per folio (nil when there are no folios)
+  avg_commitment = fund.capital_commitments_count.positive? ? fund.committed_amount / fund.capital_commitments_count : nil
+
+  ratio_names = ["Gross Portfolio IRR", "XIRR", "Portfolio Value to Cost", "TVPI"]
+  ratios      = get_latest_fund_ratios(fund, ratio_names)
+%>
+
+<div class="col-lg-12 mb-4">
+  <div class="fc3-card">
+
+    <%# ── Header ──────────────────────────────────────────────────────── %>
+    <div class="fc3-header">
+      <div>
+        <h3 class="fc3-title"><%= link_to fund.name, fund %></h3>
+        <div class="fc3-sub">
+          <% if fund.category.present? %><span><%= fund.category %></span><% end %>
+          <% if fund.start_date.present? %><span>Vintage <%= fund.start_date.year %></span><% end %>
+          <span><%= fund.capital_commitments_count %> folios</span>
+        </div>
+      </div>
+      <%= render "funds/card_actions_menu", fund: %>
+    </div>
+
+    <div class="fc3-body">
+      <%# ── Capital: stacked bar + legend ───────────────────────────────── %>
+      <div class="fc3-capital">
+        <div>
+          <div class="fc3-stack" role="img" aria-label="<%= called_pct %>% of commitments called, <%= distributed_pct %>% of called returned">
+            <i class="fc3-stack-called" style="width: <%= seg_called %>%"></i>
+            <i class="fc3-stack-uncalled" style="width: <%= seg_uncalled %>%"></i>
+            <i class="fc3-stack-distributed" style="width: <%= seg_distributed %>%"></i>
+          </div>
+          <div class="fc3-caption">
+            <%= called_pct %>% of commitments called · <%= distributed_pct %>% of called returned
+          </div>
+        </div>
+
+        <div class="fc3-legend">
+          <div class="fc3-legend-item fc3-legend-item--called">
+            <span class="fc3-num"><%= money_to_currency(fund.call_amount, params) %></span>
+            <span class="fc3-lbl">Called</span>
+          </div>
+          <div class="fc3-legend-item fc3-legend-item--uncalled">
+            <span class="fc3-num"><%= money_to_currency(uncalled_amount, params) %></span>
+            <span class="fc3-lbl">Uncalled</span>
+          </div>
+          <div class="fc3-legend-item fc3-legend-item--distributed">
+            <span class="fc3-num"><%= money_to_currency(fund.distribution_amount.abs, params) %></span>
+            <span class="fc3-lbl">Distributed</span>
+          </div>
+        </div>
+
+        <div class="fc3-caption">
+          Committed <b class="fc3-num"><%= money_to_currency(fund.committed_amount, params) %></b>
+        </div>
+      </div>
+
+      <%# ── Tiles: ratios + counts ──────────────────────────────────────── %>
+      <div class="fc3-tiles">
+        <% ratio_names.each do |name| %>
+          <% ratio = ratios[name] %>
+          <% next unless ratio %>
+          <div class="fc3-tile">
+            <span class="fc3-num fcv-<%= fund_ratio_tone(ratio) %>"><%= ratio.display_value %></span>
+            <span class="fc3-tile-lbl"><%= link_to ratio.name, ratio %></span>
+          </div>
+        <% end %>
+        <div class="fc3-tile">
+          <span class="fc3-num"><%= fund.capital_commitments_count %></span>
+          <span class="fc3-tile-lbl">Folios</span>
+        </div>
+        <div class="fc3-tile">
+          <span class="fc3-num"><%= avg_commitment ? money_to_currency(avg_commitment, params) : "—" %></span>
+          <span class="fc3-tile-lbl">Avg commitment</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<% params[:force_units] = nil %>

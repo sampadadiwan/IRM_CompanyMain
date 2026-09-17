@@ -1,47 +1,65 @@
-<div class='nested-fields'>
-    
-<div class='row'>
-    <% 
-        capital_call = f.object.capital_call
-        names = capital_call.fee_account_entry_names 
-    %>
-    <div class="form-group col" data-controller="otherselect" data-otherselect-select-id-value="#call_fee_fee_name">
-        <%= f.label :name %>
+<div class='nested-fields p-3 border rounded-3 mb-3'>
+<%
+    capital_call = f.object.capital_call
+    names = capital_call.fee_account_entry_names
+%>
+<div class='row g-2 align-items-end'>
+    <div class="form-group col-md-2" data-controller="otherselect" data-otherselect-select-id-value="#call_fee_fee_name">
+        <%= f.label :name do %>
+          <i class="ti ti-tag me-1"></i>Name
+          <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+             data-bs-title="Must match the name of an existing Fee/Expense account entry already booked against investors' commitments — the fee amount is summed from those entries within the date range below. Pick Other only together with Formula, otherwise this fee computes to $0."></i>
+        <% end %>
         <%= f.select :name, names, {include_blank: true}, class: "form-control", id: "fee_name", "data-action": "change->otherselect#checkOtherName"  %>
         <%= f.text_field :name, class: "form-control", disabled: true, id: "other_name", hidden: true %>
     </div>
-    
-    <div class="form-group col">
-        <%= f.label :start_date %>
+
+    <div class="form-group col-md-2">
+        <%= f.label :start_date, raw('<i class="ti ti-calendar-event me-1"></i>Start Date') %>
         <%= f.date_field :start_date, class: "form-control", id: "fee_start_date" %>
     </div>
 
-    <div class="form-group col">
-        <%= f.label :end_date %>
+    <div class="form-group col-md-2">
+        <%= f.label :end_date, raw('<i class="ti ti-calendar-off me-1"></i>End Date') %>
         <%= f.date_field :end_date, class: "form-control", id: "fee_end_date" %>
     </div>
 
-    <div class="form-group col">
-        <%= f.label :fee_type %>
-        <%= f.select :fee_type, CapitalCall::FEE_TYPES, {}, class: "form-control", id: "call_fee_types"%>        
+    <div class="form-group col-md-2">
+        <%= f.label :fee_type do %>
+          <i class="ti ti-category me-1"></i>Fee Type
+          <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+             data-bs-title="Fees Part Of Capital: folded into the capital fee due alongside the call. Other Fees: kept as a separate miscellaneous fee. Investment Amount: counted as investment principal rather than a fee."></i>
+        <% end %>
+        <%= f.select :fee_type, CapitalCall::FEE_TYPES, {}, class: "form-control", id: "call_fee_types"%>
     </div>
-</div>
-<div class='row'>
+
     <% if current_user.support? %>
-        <div class="form-group col-md-2">
-            <%= f.label :formula %>
-            <%= f.check_box :formula, class: "form-check-input", id: "fee_notes" %>
+        <div class="form-group col-auto">
+          <div class="mb-1">
+            <span class="toggle-row-label"><i class="ti ti-code me-1"></i>Formula</span>
+            <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+               data-bs-title="Support only. When on, Notes must contain a Ruby expression computing the fee amount in cents instead of summing account entries by name."></i>
+          </div>
+          <label class="ios-toggle">
+            <%= f.check_box :formula, class: "ios-toggle-input", id: "fee_formula" %>
+            <span class="ios-toggle-slider"></span>
+          </label>
         </div>
     <% end %>
 
-    <div class="form-group col-md-8">
-        <%= f.label :notes %>
+    <div class="form-group col">
+        <%= f.label :notes do %>
+          <i class="ti ti-notes me-1"></i>Notes
+          <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+             data-bs-title="A free-text note about this fee — or, if Formula (support only) is turned on, a Ruby expression evaluated to compute the fee amount in cents."></i>
+        <% end %>
         <%= f.text_field :notes, class: "form-control", id: "fee_notes" %>
     </div>
 
-    <div class="form-group col-md-1">    
-        <%= f.label :none, "&nbsp;".html_safe %>
-        <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger" %>
+    <div class="form-group col-auto">
+        <%= link_to_remove_association raw('<i class="ti ti-trash"></i>'), f,
+              class: "btn btn-outline-danger", "aria-label": "Delete fee",
+              data: { bs_toggle: "tooltip", bs_placement: "top", bs_title: "Delete this fee" } %>
     </div>
 </div>
 </div>

@@ -24,7 +24,9 @@ class ImportInterest < ImportUtil
       raise "No Interest Id specified for update" unless user_data["Id"]
 
       interest = Interest.find_by(entity_id: import_upload.entity_id, investor_id: investor.id, secondary_sale_id: secondary_sale.id, id: user_data["Id"])
-      raise "No interest found for update, for investor with #{investor}" unless interest
+      # Name the investor, not the AR object - interpolating `investor` dumped an
+      # inspect blob of the whole record into the results sheet
+      raise "Interest #{user_data['Id']} not found for #{investor.investor_name} in this secondary sale" unless interest
     else
       interest = Interest.new(entity_id: import_upload.entity_id, user_id: user.id, investor_id: investor.id, secondary_sale_id: secondary_sale.id)
     end
@@ -65,7 +67,8 @@ class ImportInterest < ImportUtil
     # Allow only people who can short list to short list
     policy = InterestPolicy.new(import_upload.user, interest)
     if policy.short_list?
-      short_listed_status = user_data["Short Listed Status"].downcase.squeeze(" ")
+      # A blank cell used to raise "undefined method 'downcase' for nil" here
+      short_listed_status = user_data["Short Listed Status"].to_s.downcase.squeeze(" ")
       if policy.owner?
         # Owners can set the short listed status to anything
         short_listed_status = Interest::STATUS_SHORT_LISTED if ["shortlisted", "short listed"].include?(short_listed_status)

@@ -66,6 +66,38 @@
         <% if @kpi_report.submitted_at.present? %>
           <small class="text-muted ms-2">Submitted <%= I18n.l(@kpi_report.submitted_at, format: :short) %></small>
         <% end %>
+        <%# Portco self-reporting: nothing can be imported until the fund configures KPI mappings (§2.7) %>
+        <% if @kpi_report.enable_portco_upload && @kpi_report.no_kpi_mappings? %>
+          <span class="badge bg-danger ms-2" data-bs-toggle="tooltip" title="Add mappings under Investors → KPI Mappings; the portco's uploads are rejected until then">No KPI mappings configured</span>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+
+  <%# Outcome of the last workbook check / import (§2.2 E, §2.10) — the fund's at-a-glance summary %>
+  <% verdict = @kpi_report.validation_result %>
+  <% if @kpi_report.import_status.present? || verdict.present? %>
+    <tr>
+      <td>
+        Workbook import
+      </td>
+      <td>
+        <% case @kpi_report.import_status
+           when 'pending' %><span class="badge bg-info text-dark">Import pending</span>
+        <% when 'imported' %><span class="badge bg-success">Imported</span>
+        <% when 'failed' %><span class="badge bg-danger">Import failed — reopened for the portco</span>
+        <% end %>
+        <% if verdict.present? %>
+          <% err_n = Array(verdict['errors']).size; warn_n = Array(verdict['warnings']).size %>
+          <span class="badge <%= err_n.positive? ? 'bg-danger' : 'bg-success' %> ms-1"><%= pluralize(err_n, 'error') %></span>
+          <span class="badge <%= warn_n.positive? ? 'bg-warning text-dark' : 'bg-light text-dark border' %> ms-1"><%= pluralize(warn_n, 'warning') %></span>
+          <% if verdict.dig('summary', 'cells_ok').present? %>
+            <span class="ms-2"><%= verdict.dig('summary', 'cells_ok') %> values staged<% if verdict.dig('summary', 'cells_changed').to_i.positive? %>, <%= verdict.dig('summary', 'cells_changed') %> differ from approved<% end %></span>
+          <% end %>
+          <% if @kpi_report.validated_at.present? %>
+            <small class="text-muted ms-2">checked <%= I18n.l(@kpi_report.validated_at, format: :short) %></small>
+          <% end %>
+        <% end %>
       </td>
     </tr>
   <% end %>
@@ -122,6 +154,13 @@
 
 <%= link_to  t_common(:edit), edit_kpi_report_path(@kpi_report, signed_id: params[:signed_id]), {class: "btn btn-outline-primary"} %>
 
+    <%# Fund side: send a submitted/reviewed report back to the portco and re-send the magic link (§3.4 Q) %>
+    <% if policy(@kpi_report).reopen? && (@kpi_report.status_submitted? || @kpi_report.status_reviewed?) && @kpi_report.enable_portco_upload %>
+      <%= button_to "Reopen & ask to re-upload", reopen_kpi_report_path(@kpi_report), method: :patch, form_class: "d-inline",
+                    class: "btn btn-outline-warning",
+                    data: { action: "click->confirm#popup", msg: "This puts the report back to Draft Saved and emails the portfolio company a fresh upload link. Proceed?", method: :patch, turbo: false } %>
+    <% end %>
+
     <% msg = "Refreshing will re-run the import which will create and update the KPIs. Do you want to proceed?" %>
     <% if policy(@kpi_report).refresh_import? %>
       <%= button_to "Refresh", refresh_import_kpi_report_path("kpi_report[id]": @kpi_report.id, "kpi_report[upload_new_kpis]": true, "kpi_report[update_existing_kpis]": true),
@@ -153,4 +192,11 @@
 <div class="associated_entity">
   <%= render "/kpi_reports/details", kpi_report: @kpi_report %>
 </div>
+<% end %>
+
+<%# The full workbook check (errors / warnings / how each cell was read) — same partial the portco saw %>
+<% if @kpi_report.validation_result.present? && current_user %>
+  <%= render ToggleCard.new(title: "Workbook check details", state: "hide") do %>
+    <%= render "kpi_reports/validation_panel", verdict: @kpi_report.validation_result, kpi_report: @kpi_report %>
+  <% end %>
 <% end %>

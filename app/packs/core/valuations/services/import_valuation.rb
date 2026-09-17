@@ -7,11 +7,11 @@ class ImportValuation < ImportUtil
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
     # puts "processing #{user_data}"
-    valuation_date = Date.local_parse(user_data['Valuation Date'])
+    valuation_date = parse_date_cell(user_data, 'Valuation Date', required: true)
     valuation_cents = user_data['Valuation'].to_d * 100
     per_share_value_cents = user_data['Per Share Value'].to_d * 100
-    investor_name = user_data['Portfolio Company']
-    instrument_name = user_data['Instrument']
+    investor_name = cell(user_data, 'Portfolio Company', required: true)
+    instrument_name = cell(user_data, 'Instrument', required: true)
     entity = import_upload.entity
 
     investor = entity.investors.where(investor_name:, category: "Portfolio Company").first
@@ -21,7 +21,7 @@ class ImportValuation < ImportUtil
     if Rails.env.test?
       investment_instrument = investor.investment_instruments.create(name: instrument_name, entity_id: investor.entity_id, currency: entity.currency) if investment_instrument.nil?
     elsif investment_instrument.nil?
-      raise "Investment Instrument #{instrument_name} not found"
+      raise "Investment Instrument '#{instrument_name}' not found for #{investor_name}"
     end
 
     valuation = investor.valuations.find_or_initialize_by(entity_id: investor.entity_id,

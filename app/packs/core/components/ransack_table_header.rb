@@ -82,12 +82,15 @@ class RansackTableHeader < ViewComponent::Base
 
   private
 
-  def cache_key
-    ["#{@model}Header", current_user, entity, @referrer, @report_id]
+  def cache_key(default_columns_map)
+    # default_columns_map must be part of the key: callers like fund_formulas pick a
+    # different map per-request (e.g. params[:debug]), and without this the cached
+    # result from one variant gets served to the other until the 5-day expiry.
+    ["#{@model}Header", current_user, entity, @referrer, @report_id, default_columns_map]
   end
 
   def fetch_columns(entity, default_columns_map)
-    Rails.cache.fetch(cache_key, expires_in: 5.days) do
+    Rails.cache.fetch(cache_key(default_columns_map), expires_in: 5.days) do
       get_columns(entity, default_columns_map)
     end
   end

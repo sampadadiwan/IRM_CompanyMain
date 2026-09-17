@@ -1,81 +1,52 @@
-<div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
-  <div class="card-body px-4 py-3">
-    <div class="row align-items-center">
-      <div class="col-9">
-        <h4 class="fw-semibold mb-8"><%= t('top_menus.user_guides') %></h4>
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-              <a class="text-muted text-decoration-none" href="/">Home</a>
-            </li>
-            <li class="breadcrumb-item" aria-current="page"><%= t('top_menus.user_guides') %></li>
-          </ol>
-        </nav>
+<header class="page-hero hero-tinted tint-cream" style="padding-bottom:64px">
+  <div class="wrap-wide">
+    <div class="hero-panel">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <%= link_to "Home", root_path %><span>/</span><%= t('top_menus.user_guides') %>
+      </nav>
+      <span class="chip-label"><%= t('top_menus.user_guides') %></span>
+      <h1>Everything you need to <em>run CapHive.</em></h1>
+      <p class="lede"><%= @guides.count %> guides, grouped by area — search to jump straight to one.
+        Looking for a quick answer? <%= link_to "Browse all FAQs", faqs_path %>.</p>
+    </div>
+  </div>
+</header>
+
+<div data-controller="list-filter">
+  <div class="wrap-wide">
+    <div class="hero-panel" style="padding:0">
+      <div class="guide-search">
+        <div class="guide-search-box">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M11.5 11.5L15 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <input type="text" class="guide-search-input" placeholder="Search guides…"
+                 data-action="input->list-filter#filter" data-list-filter-target="input">
+          <button type="button" class="guide-search-clear is-hidden"
+                  data-action="click->list-filter#clear" data-list-filter-target="clearButton" aria-label="Clear search">&times;</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div data-controller="list-filter">
-  <ul class="nav nav-pills p-3 mb-3 rounded align-items-center card flex-row">
-    <li class="nav-item flex-grow-1 me-3">
-      <div class="input-group">
-        <span class="input-group-text bg-transparent border-0">
-          <i class="ti ti-search fs-4"></i>
-        </span>
-        <input type="text" class="form-control border-0 ps-0" placeholder="<%= t('top_menus.user_guides') %>..."
-               data-action="input->list-filter#filter" data-list-filter-target="input">
-        <button class="btn btn-link text-muted d-none" type="button" data-action="click->list-filter#clear" data-list-filter-target="clearButton">
-          <i class="ti ti-x fs-4"></i>
-        </button>
+  <div class="section-sm" style="padding-top:40px">
+    <div class="wrap-wide">
+      <div data-list-filter-target="noResults" class="guide-empty is-hidden">
+        No user guides found matching your search.
       </div>
-    </li>
-    <li class="nav-item ms-auto">
-      <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
-        <%= @guides.count %> Guides Available
-      </span>
-    </li>
-  </ul>
 
-  <div class="tab-content">
-    <div data-list-filter-target="noResults" class="alert alert-warning d-none mx-3">
-      No user guides found matching your search.
-    </div>
-    <% @grouped_guides.each do |group, guides| %>
-      <% if group.present? %>
-        <h5 class="px-2 mt-3 mb-2 text-muted fw-semibold">
-          <i class="ti ti-folder me-1"></i><%= group %>
-        </h5>
-      <% end %>
-      <div class="note-has-grid row">
-        <% guides.each do |guide| %>
-          <% type = ["note-social", "note-important", "note-business"].sample %>
-          <div class="col-md-4 single-note-item all-category mb-4 <%= type %>" data-list-filter-target="item">
-            <div class="card card-body h-100 mb-0 shadow-sm border-0">
-              <span class="side-stick"></span>
-              <h6 class="note-title text-truncate w-75 mb-0">
-                <%= link_to guide[:title], user_guide_path(id: guide[:id]), class: "fw-bolder text-dark", target: "_blank" %>
-              </h6>
-              <p class="note-date fs-2 text-muted mb-3">
-                <%= group.present? ? group : "Documentation" %>
-              </p>
-              <div class="note-content">
-                <p class="note-inner-content text-muted mb-4" style="min-height:50px;">
-                  <%= guide[:description] %>
-                </p>
-              </div>
-              <div class="d-flex align-items-center mt-auto pt-3 border-top">
-                <%= link_to user_guide_path(id: guide[:id]), class: "btn btn-sm btn-primary rounded-pill px-3", target: "_blank" do %>
-                  View Guide
-                <% end %>
-                <div class="ms-auto">
-                  <i class="ti ti-book fs-5 text-muted"></i>
-                </div>
-              </div>
-            </div>
+      <% @grouped_guides.each do |group, guides| %>
+        <div class="guide-group">
+          <span class="tile-kicker"><%= group.presence || "General" %></span>
+          <div class="articles guide-articles">
+            <% guides.each do |guide| %>
+              <%= link_to user_guide_path(id: guide[:id]), class: "article guide-article", data: { list_filter_target: "item" } do %>
+                <h3><%= guide[:title] %></h3>
+                <p><%= guide[:description] %></p>
+                <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <% end %>
+            <% end %>
           </div>
-        <% end %>
-      </div>
-    <% end %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>

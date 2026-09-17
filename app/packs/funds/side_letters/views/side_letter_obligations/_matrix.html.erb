@@ -1,0 +1,55 @@
+<%# The LP Obligation Matrix table — shared between the standalone index page,
+    the side letter show tab, and the agent's "Obligation Matrix" tab.
+    Locals: obligations (relation/array); side_letter (optional — pre-scopes the
+    Add Obligation button; without it the form asks which side letter). %>
+<% side_letter = local_assigns[:side_letter] %>
+<%# data-controller="tooltip" activates the title= tooltips on badges/buttons below %>
+<div data-controller="tooltip">
+<%# Header bar mirrors the tasks grid: label left, actions right %>
+<div class="d-sm-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <h5 class="mb-0">Obligations</h5>
+    <%= user_guide_icon_for(:side_letter_obligations, tooltip: "How side letter obligations work") %>
+  </div>
+  <% if policy(SideLetterObligation.new(entity_id: current_user.entity_id)).new? %>
+    <%= link_to new_side_letter_obligation_path(side_letter_id: side_letter&.id),
+                class: "btn btn-outline-primary d-inline-flex align-items-center",
+                title: "Manually record an obligation from a side letter — it joins the same counsel review queue as AI-extracted ones",
+                data: { turbo: false, bs_toggle: "tooltip" } do %>
+      <i class="ti ti-plus"></i> Add Obligation
+    <% end %>
+  <% end %>
+</div>
+<div class="table-responsive">
+  <%# Same table classes as the tasks grid (tasks/_index.html.erb) so both grids
+      render with the identical dataTable header/border styling %>
+  <table id="obligation-matrix" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>Investor</th>
+        <th>Type</th>
+        <th>Obligation</th>
+        <th>Owner</th>
+        <th>Next Due</th>
+        <th>Status</th>
+        <th>Legal Category</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% obligations.each do |obligation| %>
+        <%= render "side_letter_obligations/side_letter_obligation", obligation: obligation %>
+      <% end %>
+      <% if obligations.none? %>
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">No obligations found.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+</div>
+
+<%# NOTE: the Fire/Waive/Revert modals for these rows are NOT rendered here —
+    pages embedding this matrix must render "side_letter_obligations/action_modals"
+    OUTSIDE their main card/div to avoid modal flicker. %>

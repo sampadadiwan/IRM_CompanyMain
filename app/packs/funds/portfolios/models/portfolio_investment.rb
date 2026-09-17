@@ -12,6 +12,7 @@ class PortfolioInvestment < ApplicationRecord
   include PortfolioInvestmentCounters  # Counter cache logic
   include WithCustomField              # JSON-based custom field support
   include ForInvestor                  # Scopes for investor filtering
+  include WithNextSteps                # has_many :tasks (polymorphic owner) + task template generation
   include RansackerAmounts.new(fields: %w[amount cost_of_sold fmv gain])
   include PortfolioInvestmentShared
 
@@ -347,6 +348,31 @@ class PortfolioInvestment < ApplicationRecord
   # Applies a stock split (used for backward adjustments)
   def split(stock_split_ratio)
     StockSplitter.new(self).split(stock_split_ratio)
+  end
+
+  ##########################################################
+  ################# DUPLICATE SELL DETECTION ###############
+  ##########################################################
+
+  # Sells matching `candidate`'s date/quantity/amount/company/instrument/fund/entity,
+  # ignoring ref_id — ref_id is exactly the field used to tell two otherwise-identical
+  # sells apart, so it must stay out of the match itself. Used by the duplicate-PI
+  # confirmation flow (PortfolioInvestmentsController#check_duplicate_sell) to warn the
+  # user before save, instead of letting a second identical sell silently get a wrong
+  # realized gain out of AttributionService (see the row-locking fix there for the other
+  # half of this bug: even a non-duplicate concurrent sell could race on the same buy lot).
+  def self.matching_sells(candidate)
+    scope = sells.where(
+      portfolio_company_id: candidate.portfolio_company_id,
+      investment_instrument_id: candidate.investment_instrument_id,
+      fund_id: candidate.fund_id,
+      entity_id: candidate.entity_id,
+      investment_date: candidate.investment_date,
+      quantity: candidate.quantity,
+      ex_expenses_base_amount_cents: candidate.ex_expenses_base_amount_cents
+    )
+    # Only exclude self when editing a persisted record; a brand-new candidate has no id yet.
+    candidate.id.present? ? scope.where.not(id: candidate.id) : scope
   end
 
   ##########################################################

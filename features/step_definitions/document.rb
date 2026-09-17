@@ -399,6 +399,16 @@ Then('the document notification commitment placeholders are resolved correctly')
   expect(body).to include("{{not_a_real_placeholder}}")
 end
 
+# Proves DocumentNotifier#email_data forwards the owning CapitalCommitment's cc via
+# additional_ccs when a document filed under a commitment is sent via "Send Document".
+Then('the commitment document notification email is cc\'d to {string}') do |cc_email|
+  recipient = @capital_commitment.investor.notification_users.first
+  open_email(recipient.email)
+  expect(current_email).not_to be_nil, "No email delivered to #{recipient.email}"
+  expect(current_email.cc).to include(cc_email),
+                              "Expected cc #{cc_email} on email to #{recipient.email}, got #{current_email.cc.inspect}"
+end
+
 Then('user sends a single document using that Custom Notification') do
   visit document_path(@document)
   click_on "Send Document"

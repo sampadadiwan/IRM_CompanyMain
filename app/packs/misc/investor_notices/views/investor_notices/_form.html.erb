@@ -69,6 +69,26 @@
               <%= form.select :category, Investor.INVESTOR_CATEGORIES(current_user.entity) , {include_blank: true}, class: "form-control"  %>
             </div>
 
+            <%# Support only — same gate as the other Dentaku formula fields in this
+                app (FundFormula#formula, CallFee#formula). Kept out of the strong
+                params for everyone else too (investor_notice_params), not just
+                hidden here. %>
+            <% if current_user.support? %>
+              <div class="form-group">
+                <%= form.label :criteria, "Show Only If (optional, support only)" %>
+                <%= form.text_field :criteria, class: "form-control", placeholder: '[investor.category] == "Lead Investor"' %>
+                <small>
+                  Further restricts who sees this notice, on top of the audience above.
+                  Checked live for each investor when their dashboard loads — leave blank to
+                  show to everyone the notice above already targets. Available variables:
+                  <code>[investor.category]</code>, <code>[investor.investor_name]</code>,
+                  <code>[investor.city]</code>, <code>[user.phone]</code> (the logged-in
+                  person's own phone number, blank string if unset)<% if investor_notice.owner_type == "Fund" %>,
+                  <code>[fund.name]</code>, <code>[fund.currency]</code><% end %>.
+                </small>
+              </div>
+            <% end %>
+
             <div class="form-group" data-controller="trixurl">
               <%= form.label :details, "HTML to be displayed" %>
               <%= form.rich_text_area :details, class: "form-control"  %>

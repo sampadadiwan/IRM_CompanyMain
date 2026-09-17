@@ -13,10 +13,14 @@
     url ||= polymorphic_path(@q.klass.new) # Default URL for the form
     page_size ||= false # Flag to enable page size selection
     page_size_options ||= [["", ""], 10, 20, 50, 100] # Options for page size dropdown
+    # Attribute name -> Rails column type, so the filter's Stimulus controller can
+    # swap in a locale-date input when a date/datetime attribute is selected
+    filter_attribute_types = ransack_filter_attribute_types(@q.klass, associations)
   %>
 
   <%# Render a ToggleCard component for the filter form %>
-  <%= render ToggleCard.new(title: "Filter", css_class: css_class, controller: "filter", state: state) do %>
+  <%= render ToggleCard.new(title: "Filter", css_class: css_class, controller: "filter", state: state,
+    data: { "filter-attribute-types-value": filter_attribute_types.to_json }) do %>
 
     <%# Optional LLM chat form (currently disabled with `false &&`) %>
     <% if false && current_user.enable_user_llm_chat %>

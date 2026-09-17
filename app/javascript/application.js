@@ -44,13 +44,10 @@ document.addEventListener("turbo:load", () => {
     }
   })
 
-  // Initialize Google Analytics (Production only)
-  if (document.location.hostname.search("localhost") !== 0) {
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-4CPQNX69HM');
-  }
+  // Google Analytics in the authenticated app was removed deliberately: it tracked
+  // signed-in fund staff and LP sessions, which the public cookie policy says the
+  // signed-in application does not do. Don't reintroduce it without a privacy
+  // review and a matching change to website_src/pages/cookies.html.
 
   // Initialize SimpleBar for custom scrollbars
   $(".data-simplebar").each(function() {

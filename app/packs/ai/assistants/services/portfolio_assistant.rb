@@ -7,6 +7,18 @@ class PortfolioAssistant < BaseAssistant
   DESCRIPTION = "I can help you with portfolio companies, valuations, investments, cap tables, KPIs, fund ratios, and documents.".freeze
   AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash-preview').freeze
 
+  # Unlike PortfolioCompanyAssistant, this assistant previously had no default_report_queries
+  # override, so scheduling a report against it via AssistantReportJob silently ran with an
+  # empty query list (inherits BaseAssistant#default_report_queries -> []) and produced nothing.
+  CROSS_PORTFOLIO_REPORT_QUERIES = [
+    "List all portfolio companies with their sector/tags and city. Format as a table.",
+    "Show total invested and current FMV broken down by portfolio company (use the aggregate group_by feature). Format as a table sorted by total invested descending.",
+    "List the most recent valuation for every portfolio company. Include valuation date, per-share value, and currency.",
+    "Plot a bar chart of total invested amount by portfolio company across the whole portfolio.",
+    "Show current TVPI and RVPI for every portfolio company, sorted by TVPI descending.",
+    "List documents uploaded across the portfolio in the last 30 days."
+  ].freeze
+
   def initialize(user:, chat: nil)
     super
     @data_manager = PortfolioAssistantDataManager.new(user: user)
@@ -15,6 +27,7 @@ class PortfolioAssistant < BaseAssistant
   def tools
     [
       PortfolioAssistantTools::ListPortfolioCompanies.new(@data_manager),
+      PortfolioAssistantTools::GetPortfolioCompanySnapshot.new(@data_manager),
       PortfolioAssistantTools::GetPortfolioCompanyDetails.new(@data_manager),
       PortfolioAssistantTools::ListValuations.new(@data_manager),
       PortfolioAssistantTools::ListPortfolioInvestments.new(@data_manager),
@@ -53,7 +66,9 @@ class PortfolioAssistant < BaseAssistant
         - When `aggregate` is `'group_by'`, you MUST provide both `aggregate_field` and `group_by_field`.
       - If you need to find a portfolio company, use `ListPortfolioCompanies`.
       - Once you have the `portfolio_company_id`, you can query its valuations, investments, extracts, or documents.
+      - For a general "overview" or "summarize this company" question about ONE company, prefer `GetPortfolioCompanySnapshot` (total invested, current FMV, latest valuation, TVPI/RVPI in one call) over chaining several other tools together.
       - NEVER call `list_portfolio_kpis`, `list_fund_ratios`, or `list_portfolio_investments` without filters (portfolio_company_ids, fund_ids, or a specific query/scope). These datasets are too large to retrieve unfiltered.
+      - **KPI Date Range Default**: `list_portfolio_kpis` defaults to the last 12 months when no date filter is given. If the user asks for a longer history (e.g. "3-year trend", "since inception", "all time"), you MUST pass `all_time_eq: 'true'` or an explicit `kpi_report_as_of_gteq` in the query -- otherwise you will silently get only 12 months of data and must NOT present it as the full history the user asked for.
       - For cap table information for a single company, use `GetCapTable`.
       - To get investment details across multiple portfolio companies (cross-company analysis), use `GetInvestmentsInCapTable`.
       - For KPIs, you can pass multiple `portfolio_company_ids` to `ListPortfolioKpis`.
@@ -79,5 +94,9 @@ class PortfolioAssistant < BaseAssistant
       Current User ID: #{@user.id}
       Todays Date: #{Time.zone.today}
     SYSTEM
+  end
+
+  def default_report_queries
+    CROSS_PORTFOLIO_REPORT_QUERIES
   end
 end

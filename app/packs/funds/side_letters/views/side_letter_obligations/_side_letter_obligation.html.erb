@@ -1,0 +1,117 @@
+<%# One matrix row. Actions depend on lifecycle state:
+    pending  -> approve / edit (inline via Turbo Stream) / reject
+    armed    -> fire (with due date)
+    active   -> waive / record fulfillment
+    The row id matches dom_id(obligation) so turbo_stream.replace can
+    swap it for the inline edit form or refresh it after save. %>
+<tr id="<%= dom_id(obligation) %>">
+  <%# Investor column: commitment obligations link to their side letter;
+      portfolio investment obligations link to the obligation detail page %>
+  <td>
+    <% if obligation.side_letter.present? %>
+      <%= link_to obligation.source_investor&.investor_name, side_letter_path(obligation.side_letter) %>
+    <% else %>
+      <%= link_to obligation.source_investor&.investor_name || "Unknown", side_letter_obligation_path(obligation) %>
+    <% end %>
+    <div class="text-muted"><%= obligation.source_fund&.name %></div>
+  </td>
+  <td><%= obligation.obligation_type.humanize %></td>
+  <td>
+    <%# Commitment obligations link to the show page (full detail view).
+        Portfolio obligations have no show page yet — open inline edit instead
+        (the controller guards against saving non-pending obligations). %>
+    <% if obligation.side_letter.present? %>
+      <%= link_to obligation.title, side_letter_obligation_path(obligation) %>
+    <% else %>
+      <%= link_to obligation.title, edit_side_letter_obligation_path(obligation, format: :turbo_stream),
+                  data: { turbo: true } %>
+    <% end %>
+    <% if obligation.source_clause.present? %>
+      <div class="text-muted"><%= obligation.source_clause %></div>
+    <% end %>
+    <% if obligation.delta? %>
+      <span class="badge bg-warning text-dark">Changed on re-extraction</span>
+    <% end %>
+    <% if obligation.mfn_relevant? %>
+      <span class="badge bg-light text-dark border">MFN</span>
+    <% end %>
+  </td>
+  <td><%= obligation.owner_label || tag.span("Unassigned", class: "text-muted") %></td>
+  <td>
+    <%# Next Due column: show due date for dated obligations, or the latest fired
+    task's due date for armed obligations (with "On event" as the base label) %>
+<% if obligation.next_due_date.present? %>
+  <%= obligation.next_due_date.strftime("%d %b %Y") %>
+<% elsif obligation.armed? %>
+  <% latest_task = obligation.tasks.where(completed: [nil, false]).order(due_date: :asc).first %>
+  <% if latest_task&.due_date %>
+    <%= latest_task.due_date.strftime("%d %b %Y") %>
+    <div class="text-muted small">On event · <%= obligation.tasks.count %> task(s)</div>
+  <% else %>
+    <span class="text-muted">On event</span>
+  <% end %>
+<% end %>
+  </td>
+  <td><%= obligation_status_badge(obligation) %></td>
+    <%# Legal classification assigned by the LLM — counsel can correct via edit before approving %>
+  <td><%= legal_category_badge(obligation) %></td>
+  <td>
+    <% if obligation.pending_review? %>
+      <div class="d-flex gap-1 flex-wrap">
+        <%# Approve via Turbo Stream — replaces this row in-place without page reload %>
+        <%= button_to approve_side_letter_obligation_path(obligation), method: :patch,
+                      class: "btn btn-success",
+                      title: "Activate this obligation: dated items become tracked tasks with due-date alerts; event-driven ones go armed",
+                      data: { bs_toggle: "tooltip" } do %>
+          <i class="ti ti-check"></i> Approve
+        <% end %>
+        <%# Edit inline via Turbo Stream — replaces this row with the inline edit form.
+            Uses a mini form (POST to inline_edit) so Turbo sends a fetch request
+            that the controller can respond to with turbo_stream format. %>
+        <%= link_to edit_side_letter_obligation_path(obligation, format: :turbo_stream),
+                    class: "btn btn-outline-secondary",
+                    title: "Correct the extracted details (owner, dates, clause) before approving",
+                    data: { bs_toggle: "tooltip", turbo: true } do %>
+          <i class="ti ti-edit"></i> Edit
+        <% end %>
+        <%# Reject via Turbo Stream — replaces this row in-place without page reload %>
+<%= button_to reject_side_letter_obligation_path(obligation), method: :patch,
+              class: "btn btn-outline-danger",
+              title: "Discard — a rejected obligation never creates tasks or alerts",
+              data: { bs_toggle: "tooltip" } do %>
+          <i class="ti ti-x"></i> Reject
+        <% end %>
+      </div>
+    <% elsif obligation.fired? %>
+      <%# Already fired (has tasks) — offer Waive instead of a second Fire.
+          Multi-fire support for repeat events is deferred. %>
+      <button type="button" class="btn btn-outline-secondary"
+              title="End this obligation: open tasks are removed, history is kept"
+              data-bs-toggle="modal" data-bs-target="#waive_obligation_modal_<%= obligation.id %>">
+        <i class="ti ti-hand-stop"></i> Waive
+      </button>
+    <% elsif obligation.armed? %>
+      <%# Popup confirms the consequences before firing (Request Updates pattern).
+          The modal markup lives in _action_modals, rendered OUTSIDE the page's
+          main card — nesting it in the row makes it flicker. %>
+      <button type="button" class="btn btn-outline-primary"
+              title="The event happened? Set a deadline — a tracked task is created and alerts follow"
+              data-bs-toggle="modal" data-bs-target="#fire_obligation_modal_<%= obligation.id %>">
+        <i class="ti ti-flame"></i> Fire
+      </button>
+    <% elsif obligation.obligation_active? %>
+      <button type="button" class="btn btn-outline-secondary"
+              title="End this obligation: open tasks are removed, history is kept"
+              data-bs-toggle="modal" data-bs-target="#waive_obligation_modal_<%= obligation.id %>">
+        <i class="ti ti-hand-stop"></i> Waive
+      </button>
+    <% elsif obligation.approved? && obligation.status.to_s.in?(ObligationRevert::REVERTIBLE_STATUSES) %>
+      <%# Escape hatch for a wrongly waived obligation %>
+      <button type="button" class="btn btn-outline-warning"
+              title="Waived by mistake? Restore the obligation — tasks and alerts resume"
+              data-bs-toggle="modal" data-bs-target="#revert_obligation_modal_<%= obligation.id %>">
+        <i class="ti ti-arrow-back-up"></i> Revert
+      </button>
+    <% end %>
+  </td>
+</tr>

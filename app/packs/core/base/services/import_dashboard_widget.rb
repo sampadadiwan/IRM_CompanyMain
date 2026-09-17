@@ -22,12 +22,16 @@ class ImportDashboardWidget < ImportUtil
     metadata = user_data["Metadata"].strip.delete("\t") if user_data["Metadata"].present?
 
     size = user_data["Size"]
-    enabled = %w[true yes].include?(user_data["Enabled"].downcase)
-    display_name = %w[true yes].include?(user_data["Display Name"].downcase)
-    display_tag = %w[true yes].include?(user_data["Display Tag"].downcase)
+    # flag? treats a blank cell as false - calling downcase on it directly raised
+    # a bare NoMethodError that named neither the row nor the column
+    enabled = flag?(user_data["Enabled"])
+    display_name = flag?(user_data["Display Name"])
+    display_tag = flag?(user_data["Display Tag"])
     name = user_data["Name"]
-    show_menu = %w[true yes].include?(user_data["Show Menu"].downcase)
+    show_menu = flag?(user_data["Show Menu"])
 
+    # The Id column carries the source system's ids, which will not exist in the
+    # target entity - an unmatched id creates a new widget here by design
     widget = DashboardWidget.where(id:, entity_id: import_upload.entity_id).first
 
     if widget.present?

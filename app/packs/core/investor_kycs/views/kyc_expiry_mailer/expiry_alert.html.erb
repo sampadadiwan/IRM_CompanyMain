@@ -14,7 +14,7 @@
   <% if @investor_kyc.expiry_date.present? %>
   <tr>
     <td style="padding:6px 12px;font-weight:bold">Expiry Date</td>
-    <td style="padding:6px 12px"><%= @investor_kyc.expiry_date %></td>
+    <td style="padding:6px 12px"><%= l(@investor_kyc.expiry_date) %></td>
   </tr>
   <% end %>
 </table>

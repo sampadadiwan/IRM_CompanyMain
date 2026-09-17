@@ -76,7 +76,7 @@ Given('there is an RtaReconciliationAgent configured for the entity') do
     agent_type: "RtaReconciliationAgent",
     name: "RTA Reconciliation",
     enabled: true,
-    llm_model: "gemini-3-flash-preview",
+    llm_model: "gemini-3.7-flash",
     json_fields: {
       "tolerance_units" => "0.01",
       "tolerance_pct" => "0",

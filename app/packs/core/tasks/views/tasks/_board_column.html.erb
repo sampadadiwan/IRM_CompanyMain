@@ -1,0 +1,28 @@
+<%# One kanban column per Task.status. The card body is the drop zone —
+    task_board_controller reads data-status to know what to PATCH. %>
+<div class="col-md-4">
+  <div class="card task-board-column h-100">
+    <div class="card-header fw-semibold">
+      <%= status.titleize %>
+      <span class="badge bg-secondary"><%= tasks.size %></span>
+      <% if status == "done" %>
+        <%# Done is bounded to a recent window (TaskList::BOARD_DONE_WINDOW) so
+            years of completed work can't crowd out active cards. Say so — the
+            list's "Show All" has no such bound, and the two views otherwise look
+            like they disagree about what is finished. %>
+        <span class="text-muted fw-normal">(last <%= TaskList::BOARD_DONE_WINDOW.inspect %>)</span>
+      <% end %>
+    </div>
+    <%# id: turbo_stream target for a card that changes column on save (an inline
+        edit that completes a task, say) — see update.turbo_stream.erb %>
+    <div class="card-body task-board-column-body"
+         id="board_column_<%= status %>"
+         data-task-board-target="column"
+         data-status="<%= status %>"
+         data-action="dragover->task-board#dragOver drop->task-board#drop">
+      <% tasks.each do |task| %>
+        <%= render "/tasks/board_task", task: task %>
+      <% end %>
+    </div>
+  </div>
+</div>

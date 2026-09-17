@@ -37,6 +37,11 @@ namespace :aws do
     Rake::Task['aws:environment'].reenable
     Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"])
+    # setup_pulumi_config runs `pulumi stack select --create`, so without this
+    # the stack is created in whichever backend happens to be logged in —
+    # creating a production stack on Pulumi Cloud after its state has moved to
+    # S3 is exactly the split-brain PULUMI_STATE.md warns about.
+    ensure_pulumi_backend!(args[:env_name] || "#{args[:stack]}.#{args[:env_variant]}")
     setup_infra(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant], args[:branch])
   end
 
@@ -52,6 +57,8 @@ namespace :aws do
     Rake::Task['aws:environment'].reenable
     Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"], web_server_name: "AppServer", db_server_name: "DB-Redis-ES")
+    # Same reason as aws:setup_infra: this creates the stack.
+    ensure_pulumi_backend!(args[:env_name] || "#{args[:stack]}.#{args[:env_variant]}")
     setup_pulumi_config(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant])
   end
 
@@ -87,6 +94,11 @@ namespace :aws do
 
     puts "🩺 DR readiness for #{stack} (#{env_variant}) → DR region #{region}\n\n"
 
+    # Point at this env's state bucket before the checks read anything from
+    # Pulumi. Non-fatal: a scorecard reports problems, it does not refuse to
+    # run because of one — check 4b below records whatever state we end up in.
+    ensure_pulumi_backend!(env_name, fatal: false)
+
     results = [] # [status, label, detail]
     check = ->(label, status, detail = "") { results << [status, label, detail] }
 
@@ -94,7 +106,12 @@ namespace :aws do
     # Exact same checks the hourly alert runs — covers cadence, full-age,
     # replica presence, and bucket reachability in one shot
     begin
-      failures = DbBackupFreshnessJob.new.collect_failures
+      # env_name is REQUIRED here. Without it the job falls back to
+      # Rails.application.credentials, which locally are the default (staging)
+      # keys — so a production scorecard checked production's backup buckets
+      # using staging's IAM user and reported AccessDenied, or worse would have
+      # silently reported on the wrong account had the permission existed.
+      failures = DbBackupFreshnessJob.new.collect_failures(env_name: env_name)
       if failures.empty?
         check.("Backup freshness (primary + replica)", :ok, "within thresholds")
       else
@@ -111,6 +128,18 @@ namespace :aws do
     # --- 2. AMIs present + recent in the DR region ---------------------------
     %w[AppServer DB-Redis-ES Observability].each do |name|
       ami = latest_ami(name, region)
+      # latest_ami returns nil when nothing matches. Without this the next line
+      # raises NoMethodError and the scorecard reports "undefined method
+      # 'image_id' for nil", which says nothing about what is actually wrong or
+      # how to fix it — the AMI was simply never copied to this region.
+      if ami.nil?
+        check.("AMI #{name} in #{region}", :fail,
+               "no AMI tagged '#{name}' in #{region} — copy one with " \
+               "rake \"aws:copy_ami[<source-ami-id>, #{region}, #{env_name}]\" " \
+               "or bake+copy with rake \"aws:create_and_copy_ami[#{name}, #{region}, #{env_name}]\"")
+        next
+      end
+
       age_days = ((Time.now - Time.parse(ami.creation_date)) / 86_400).round
       status = age_days > 8 ? :warn : :ok # weekly bake → >8d means the cron missed
       check.("AMI #{name} in #{region}", status,
@@ -164,7 +193,20 @@ namespace :aws do
         check.("Pulumi stack #{stack}-#{region}", :ok, "config complete (#{domain})")
       end
     else
-      check.("Pulumi stack #{stack}-#{region}", :fail, "#{stack_file} not found")
+      # A warning, not a failure — and deliberately consistent with check 4b
+      # below, which tolerates the same fact ("a brand-new DR region
+      # legitimately has no stack yet"). setup_infra runs setup_pulumi_config,
+      # which does `pulumi stack select --create` and writes this file, so a DR
+      # run creates it.
+      #
+      # Still worth flagging: generating it at DR time needs the region's AMIs
+      # to already exist, and IRM-Infra's CI validates the key set of every
+      # Pulumi.*.yaml — a file that does not exist is a file that has never
+      # been validated. Pre-creating it moves both checks before the incident.
+      check.("Pulumi stack #{stack}-#{region}", :warn,
+             "#{stack_file} not found — setup_infra creates it during a DR run, but " \
+             "pre-create it so CI validates it: " \
+             "rake \"aws:setup_pulumi_config[#{stack}, AppServer, DB-Redis-ES, #{region}, #{env_variant}, #{env_name}]\"")
     end
 
     # --- 4b. Pulumi state backend reachable ----------------------------------
@@ -178,7 +220,22 @@ namespace :aws do
         # Which backend are we actually talking to? (personal cloud vs S3)
         who, = Open3.capture3("pulumi whoami --verbose", chdir: "../IRM-Infra")
         backend = who.lines.grep(/Backend URL/i).first.to_s.split(/URL:?\s*/i).last.to_s.strip
-        if names.include?("#{stack}-#{region}")
+        # After the S3 migration, "reachable" is not enough: being logged into
+        # ANOTHER env's bucket reads a different environment entirely, and the
+        # replica bucket is read-only outside a real outage. Report which.
+        expected = (pulumi_state_buckets(env_name)[:primary] rescue nil)
+        replica  = (pulumi_state_buckets(env_name)[:replica] rescue nil)
+        current_bucket = backend.start_with?("s3://") ? backend.sub(%r{\As3://}, "").split("?").first : nil
+
+        if current_bucket && replica && current_bucket == replica
+          check.("Pulumi state backend", :fail,
+                 "logged into the REPLICA bucket #{current_bucket} — read-only outside a real outage; " \
+                 "use s3://#{expected} (see IRM-Infra/PULUMI_STATE.md)")
+        elsif current_bucket && expected && current_bucket != expected
+          check.("Pulumi state backend", :fail,
+                 "logged into #{current_bucket}, but #{env_name} state lives in #{expected} — " \
+                 "pulumi reads would describe the wrong environment")
+        elsif names.include?("#{stack}-#{region}")
           check.("Pulumi state backend", :ok, "stack #{stack}-#{region} present#{" on #{backend}" unless backend.empty?}")
         else
           # Not fatal: a brand-new DR region legitimately has no stack yet —
@@ -233,11 +290,14 @@ namespace :aws do
     last_pass = nil
     if File.exist?(drill_log)
       File.readlines(drill_log).each do |line|
-        cols = line.split("|").map(&:strip)
-        # | Date | Variant | Region | Result | RTO | Branch |
-        next unless cols[4] == "PASSED" && cols[2] == env_variant
+        # | Date | Stack | Variant | Region | Result | RTO | Branch |
+        cols = line.split("|").map(&:strip).reject(&:empty?)
+        next unless cols.size == 7 # skips the title line, header row, and separator row
 
-        last_pass = [last_pass, Time.parse(cols[1])].compact.max rescue last_pass
+        row_date, row_stack, row_variant, _region, row_result, = cols
+        next unless row_result == "PASSED" && row_stack == stack && row_variant == env_variant
+
+        last_pass = [last_pass, Time.parse(row_date)].compact.max rescue last_pass
       end
     end
     if last_pass.nil?
@@ -260,23 +320,43 @@ namespace :aws do
 
   # Quarterly DR drill: proves the WHOLE recovery chain (AMIs present, Pulumi
   # stack deployable, S3 backups restorable, deploy + migrations + cutover)
-  # by rebuilding STAGING in the DR region, unattended, and measuring the time.
+  # by rebuilding a stack in the DR region, unattended, and measuring the time.
   # An untested DR plan is a hypothesis — this turns it into a measurement.
   #
   #   rake "aws:dr_drill[in]"                      # staging IN → AWS_BACKUP_REGION
   #   rake "aws:dr_drill[in, ap-south-2]"          # explicit region
   #   TEARDOWN=true rake "aws:dr_drill[in]"        # pulumi destroy after the drill
   #
+  #   # production — same non-interactive sequence, real prod backups/creds:
+  #   CONFIRM_PRODUCTION=true TEARDOWN=true \
+  #     rake "aws:dr_drill[in, ap-south-2, production.in, production]"
+  #
   # Notes:
   # - Commits only to a dr_drill_* branch; main is never touched. The task
   #   returns your working tree to the original branch afterwards.
   # - Without TEARDOWN=true the drill infra keeps running (and costing) —
   #   the teardown command is printed at the end.
-  desc "Run an unattended DR drill against staging in the DR region and report RTO"
-  task :dr_drill, [:env_variant, :region, :env_name] do |t, args|
-    args.with_defaults(env_variant: 'in')
+  # - `stack` (4th arg) defaults to 'staging'. Passing 'production' rebuilds
+  #   the REAL production Pulumi stack (production-<region>) in the DR region
+  #   using live production backups and credentials — this is a genuine DR
+  #   exercise against the production account, not a scaled-up staging test.
+  #   It refuses to run unless CONFIRM_PRODUCTION=true is ALSO set, so a
+  #   staging command copy-pasted with the extra arg can't silently fire
+  #   against production.
+  desc "Run an unattended DR drill (staging by default; production requires CONFIRM_PRODUCTION=true) and report RTO"
+  task :dr_drill, [:env_variant, :region, :env_name, :stack] do |t, args|
+    args.with_defaults(env_variant: 'in', stack: 'staging')
     env_variant = args[:env_variant]
-    env_name = args[:env_name] || "staging.#{env_variant}"
+    stack = args[:stack]
+
+    if stack == 'production' && ENV['CONFIRM_PRODUCTION'] != 'true'
+      abort "❌ Refusing to drill stack 'production' without CONFIRM_PRODUCTION=true set. " \
+            "This rebuilds the real production Pulumi stack in the DR region using live " \
+            "production backups and credentials — set the env var deliberately if that's " \
+            "what you intend; it is not a typo-guard to silence casually."
+    end
+
+    env_name = args[:env_name] || "#{stack}.#{env_variant}"
 
     # Load .env.<env_name> + credentials BEFORE resolving the region, so an
     # AWS_BACKUP_REGION defined in the env file (not just the shell) is seen
@@ -285,41 +365,99 @@ namespace :aws do
 
     region = args[:region] || ENV["AWS_BACKUP_REGION"] || raise("Pass a region or set AWS_BACKUP_REGION (shell or .env.#{env_name})")
 
+    # A drill runs `pulumi up` against real infrastructure, so the backend must
+    # be right BEFORE any of it starts: the wrong bucket would rebuild the wrong
+    # environment, and a missing passphrase would fail the drill partway
+    # through, after it had already provisioned. Fatal here, unlike the
+    # dr_readiness scorecard which only reports. See aws_utils.rb.
+    ensure_pulumi_backend!(env_name)
+
     original_branch = `git rev-parse --abbrev-ref HEAD`.strip
-    drill_branch = "dr_drill_#{env_variant}_#{Time.now.strftime('%Y_%m_%d_%H%M')}"
+    branch_prefix = stack == 'staging' ? "dr_drill_#{env_variant}" : "dr_drill_#{stack}_#{env_variant}"
+    drill_branch = "#{branch_prefix}_#{Time.now.strftime('%Y_%m_%d_%H%M')}"
     started_at = Time.now
     result = "FAILED"
 
-    puts "🚨 DR DRILL: rebuilding staging (#{env_variant}) in #{region} on branch #{drill_branch}"
+    puts "🚨 DR DRILL: rebuilding #{stack} (#{env_variant}) in #{region} on branch #{drill_branch}"
+    # Capture the whole run — including the ensure block's summary and report
+    # line — to docs/dr_runs/<branch>.log, so the transcript exists without the
+    # operator having to pipe through tee.
+    with_dr_transcript(drill_branch) do
     begin
+      # setup_infra writes the evidence report itself for a REAL recovery; for a
+      # drill we defer it to the ensure block below so a FAILED drill produces a
+      # report too — "we tried and it broke here" is itself audit-relevant.
+      @dr_report_deferred = true
       # The full non-interactive DR sequence — the same code path a real
       # production DR uses, which is the point of the drill
-      setup_infra("staging", "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
+      setup_infra(stack, "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
       result = "PASSED"
     ensure
       duration_min = ((Time.now - started_at) / 60).round(1)
 
-      # Return the operator's working tree to where it was
-      run_cmd("git checkout #{original_branch}") unless original_branch.empty?
+      # Evidence FIRST, housekeeping second. Anything that can raise in here
+      # replaces the exception that actually failed the drill and skips
+      # everything below it — and the whole point of this ensure block is that a
+      # failed drill still leaves a record. The git checkout below is exactly
+      # such a statement, so it now runs last and swallows its own errors.
 
       # Append to the drill log — the audit trail that DR is tested, not assumed
       log_file = Rails.root.join("docs", "dr_drills.md")
-      File.write(log_file, "# DR Drill Log\n\n| Date | Variant | Region | Result | RTO (min) | Branch |\n|---|---|---|---|---|---|\n") unless File.exist?(log_file)
+      unless File.exist?(log_file)
+        File.write(log_file, <<~HEADER)
+          # DR Drill Log
+
+          > **Rebuild (min)** is the time from the start of the recovery command to the
+          > stack passing `recovery:verify`. It is *not* end-to-end RTO: it excludes
+          > incident detection, the decision to declare a disaster, and DNS cutover plus
+          > TTL propagation. Per-run evidence reports are in `docs/dr_runs/`.
+
+          | Date | Stack | Variant | Region | Result | Rebuild (min) | Branch |
+          |---|---|---|---|---|---|---|
+        HEADER
+      end
       File.open(log_file, "a") do |f|
-        f.puts "| #{started_at.strftime('%Y-%m-%d %H:%M')} | #{env_variant} | #{region} | #{result} | #{duration_min} | #{drill_branch} |"
+        f.puts "| #{started_at.strftime('%Y-%m-%d %H:%M')} | #{stack} | #{env_variant} | #{region} | #{result} | #{duration_min} | #{drill_branch} |"
       end
 
-      puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured RTO: #{duration_min} minutes (logged to docs/dr_drills.md)"
+      # Evidence report for every outcome, pass or fail
+      write_dr_report(stack: stack, region: region, env_variant: env_variant,
+                      branch: drill_branch, result: result, started_at: started_at, drill: true)
+
+      puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured rebuild time: #{duration_min} minutes (logged to docs/dr_drills.md)"
+      puts "   NOTE: that figure excludes detection, disaster declaration, and DNS cutover/TTL —"
+      puts "         it is rebuild time, not end-to-end RTO. See the report for the full scope."
+
+      # Return the operator's working tree to where it was.
+      #
+      # Runs AFTER the evidence is on disk, and never raises: a drill that dies
+      # between commit_dr_changes' `git checkout -B <drill_branch>` and its
+      # commit leaves modified config files on the drill branch, and `git
+      # checkout <original>` then fails with "local changes would be
+      # overwritten". Raising here would discard the real failure and take the
+      # drill log and the evidence report down with it — a worse outcome than
+      # leaving the operator on the drill branch, which the message below
+      # tells them how to fix.
+      unless original_branch.empty?
+        begin
+          run_cmd("git checkout #{original_branch}")
+        rescue StandardError => e
+          puts "⚠️  Could not return to '#{original_branch}': #{e.message}"
+          puts "   You are still on '#{drill_branch}'. The drill's config edits are here;"
+          puts "   switch back with: git checkout #{original_branch}  (add --force to discard them)"
+        end
+      end
 
       if result == "PASSED"
         if ENV["TEARDOWN"] == "true"
           puts "🧹 TEARDOWN=true — destroying drill infra..."
-          run_cmd("pulumi destroy --stack staging-#{region} --yes --color=always", "../IRM-Infra")
+          run_cmd("pulumi destroy --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra")
         else
           puts "⚠️  Drill infra is still RUNNING (and costing money) in #{region}."
-          puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack staging-#{region} --yes"
+          puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack #{stack}-#{region} --yes"
         end
       end
+    end
     end
   end
 
@@ -484,6 +622,25 @@ namespace :aws do
     cleanup_amis(args[:instance_name], args[:destination_region])
   end
 
+  desc "Create+copy AMIs for every weekly-baked instance (ENV: INSTANCES=comma,separated to override)"
+  task :create_all_amis, [:env_name] do |_t, args|
+    names = ENV["INSTANCES"].presence&.split(",")&.map(&:strip) || AwsUtils::BAKED_INSTANCE_NAMES
+    failures = []
+    names.each do |name|
+      puts "\n=== baking #{name} ==="
+      # reenable so the same task can run once per instance name; each
+      # invocation does the full create → cross-region copy → cleanup cycle.
+      Rake::Task["aws:create_and_copy_ami"].reenable
+      Rake::Task["aws:create_and_copy_ami"].invoke(name, nil, args[:env_name])
+    rescue StandardError => e
+      # One failed bake (e.g. instance not running) must not abandon the rest —
+      # collect and fail loudly at the end instead.
+      puts "❌ bake failed for #{name}: #{e.class}: #{e.message}"
+      failures << name
+    end
+    abort "\n❌ bakes failed for: #{failures.join(', ')} — re-run with INSTANCES=#{failures.join(',')}" if failures.any?
+    puts "\n✅ all #{names.size} bakes complete"
+  end
 
   desc "Delete old AMIs with the same name pattern"
   task :delete_old_amis, [:name_tag, :region, :env_name] do |t, args|
@@ -532,6 +689,25 @@ namespace :aws do
       access_key_id: credentials[:AWS_ACCESS_KEY_ID],
       secret_access_key: credentials[:AWS_SECRET_ACCESS_KEY],
     })
+
+    # Aws.config only reaches SDK clients created IN THIS PROCESS. Several
+    # checks and every pulumi call shell out — `aws ssm get-parameter`,
+    # `aws route53 list-hosted-zones-by-name`, `pulumi stack ls` — and a
+    # subprocess inherits the shell's AWS environment, not Aws.config. Without
+    # this, those calls silently ran as whoever the operator happened to be:
+    # dr_readiness reported "security token is invalid" for SSM, "zone not
+    # found" for Route53, and AccessDenied on the Pulumi state bucket, while
+    # every in-process check passed against the right account.
+    ENV["AWS_ACCESS_KEY_ID"]     = credentials[:AWS_ACCESS_KEY_ID].to_s
+    ENV["AWS_SECRET_ACCESS_KEY"] = credentials[:AWS_SECRET_ACCESS_KEY].to_s
+    ENV["AWS_DEFAULT_REGION"]    = ENV["AWS_REGION"].to_s
+
+    # A session token or profile left over from an assumed role belongs to
+    # DIFFERENT keys; pairing either with these static credentials is what
+    # produces UnrecognizedClientException rather than a clean AccessDenied.
+    ENV.delete("AWS_SESSION_TOKEN")
+    ENV.delete("AWS_SECURITY_TOKEN")
+    ENV.delete("AWS_PROFILE")
   end
 
 
@@ -746,13 +922,54 @@ namespace :aws do
     # server is rebuilt or a cron dies. Applied to both backup buckets — S3 does
     # NOT replicate lifecycle actions, so the replica needs its own copy.
     # App-asset buckets are deliberately excluded (assets are kept forever).
+    #
+    # "Never clobbers" applies to RETENTION: an existing config's rules are
+    # never modified or replaced. The expired-delete-marker cleanup rule is
+    # ADDITIVE, though — appended to existing configs that lack it, with every
+    # existing rule resent verbatim (put_bucket_lifecycle_configuration always
+    # replaces the whole config, so appending requires resending them).
+
+    # Strips nil members from an SDK rule struct converted via to_h so it can
+    # be resent in a put request. Empty hashes are kept — `filter: {}` is
+    # meaningful ("whole bucket") and required on a rule.
+    def lifecycle_rule_to_request_h(value)
+      case value
+      when Hash  then value.transform_values { |v| lifecycle_rule_to_request_h(v) }.reject { |_, v| v.nil? }
+      when Array then value.map { |v| lifecycle_rule_to_request_h(v) }
+      else value
+      end
+    end
+
     def ensure_lifecycle!(client:, bucket:, days:)
+      # Versioned buckets: when expiration (or any delete) removes an object,
+      # S3 leaves a zero-byte delete marker on top; noncurrent_version_expiration
+      # then purges the real bytes, and the markers linger FOREVER — thousands
+      # of "ghost" 0 GB snapshot prefixes cluttering every restore listing.
+      # expired_object_delete_marker removes markers whose versions are all
+      # gone. It cannot share an expiration block with `days`, hence its own rule.
+      marker_rule = {
+        id: "irm-expired-delete-marker-cleanup",
+        status: "Enabled",
+        filter: {}, # whole bucket
+        expiration: { expired_object_delete_marker: true }
+      }
+
       begin
-        client.get_bucket_lifecycle_configuration(bucket: bucket)
-        puts "✅ Lifecycle already configured on '#{bucket}' — leaving as-is."
+        existing = client.get_bucket_lifecycle_configuration(bucket: bucket).rules
+        if existing.any? { |r| r.expiration&.expired_object_delete_marker }
+          puts "✅ Lifecycle already configured on '#{bucket}' (incl. delete-marker cleanup) — leaving as-is."
+        else
+          client.put_bucket_lifecycle_configuration(
+            bucket: bucket,
+            lifecycle_configuration: {
+              rules: existing.map { |r| lifecycle_rule_to_request_h(r.to_h) } + [marker_rule]
+            }
+          )
+          puts "🧹 Appended expired-delete-marker cleanup rule to '#{bucket}' (#{existing.size} existing rule(s) preserved verbatim)."
+        end
         return
       rescue Aws::S3::Errors::NoSuchLifecycleConfiguration
-        # No lifecycle yet — apply the retention rule below
+        # No lifecycle yet — apply the retention + marker-cleanup rules below
       end
 
       client.put_bucket_lifecycle_configuration(
@@ -772,13 +989,13 @@ namespace :aws do
             # xbcloud uploads via multipart; failed uploads leave invisible,
             # billed parts behind — abort them after a week.
             abort_incomplete_multipart_upload: { days_after_initiation: 7 }
-          }]
+          }, marker_rule]
         }
       )
-      puts "🗓️  Lifecycle applied to '#{bucket}': expire after #{days}d, purge noncurrent versions after 30d."
+      puts "🗓️  Lifecycle applied to '#{bucket}': expire after #{days}d, purge noncurrent versions after 30d, clean expired delete markers."
     end
 
-    retention_days = ENV.fetch("DB_BACKUP_RETENTION_DAYS", "90").to_i
+    retention_days = ENV.fetch("DB_BACKUP_RETENTION_DAYS", "180").to_i
     ensure_lifecycle!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, days: retention_days)
     ensure_lifecycle!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket, days: retention_days)
 
@@ -791,7 +1008,7 @@ namespace :aws do
     # key management, no extra KMS grants needed for replication, and the
     # instance-role IAM stays as scoped as Point 5 left it.
     # NOTE: applies to newly written objects only — pre-existing objects stay
-    # as they were (they age out via the 90d lifecycle anyway).
+    # as they were (they age out via the retention lifecycle anyway).
     def ensure_encryption!(client:, bucket:)
       begin
         client.get_bucket_encryption(bucket: bucket)

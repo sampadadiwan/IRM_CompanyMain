@@ -8,6 +8,11 @@ gem 'faraday-typhoeus'
 # Gem for segmenting paragraphs into sentences
 gem 'pragmatic_segmenter'
 
+# Ruby 4.0 removed cgi from the standard library (require "cgi" now only pulls in
+# cgi/escape); several models/views need CGI.parse/CGI.unescapeHTML, which only the
+# standalone gem still provides.
+gem 'cgi'
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'dentaku'
 gem 'pdf-reader'
@@ -49,7 +54,9 @@ gem 'rswag-api'
 gem 'rswag-ui'
 
 # Use Redis adapter to run Action Cable in production
-gem "redis"
+# Pinned < 6: Action Cable's redis subscription adapter (actioncable/lib/action_cable/subscription_adapter/redis.rb)
+# hardcodes `gem "redis", ">= 4", "< 6"` and raises Gem::LoadError against redis 6.x.
+gem "redis", "< 6"
 # Background Jobs
 gem 'memoized'
 gem "sidekiq"
@@ -76,6 +83,11 @@ gem "aws-sdk-ec2", require: false
 gem 'aws-sdk-iam'
 gem "aws-sdk-s3", require: false
 gem "aws-sdk-sns"
+# Cost-audit rake task (lib/tasks/aws_cost_audit.rake) — all share aws-sdk-core
+gem "aws-sdk-costexplorer", require: false
+gem "aws-sdk-cloudwatch", require: false
+gem "aws-sdk-cloudwatchlogs", require: false
+gem "aws-sdk-elasticloadbalancingv2", require: false
 # Elastic search client
 gem 'chewy'
 
@@ -142,6 +154,13 @@ gem 'rack-attack'
 # for making external API calls
 gem 'httparty'
 gem 'rubyzip', "2.4.1"
+
+# SMS delivery for two-factor one-time codes. See docs/technical/twilio_sms_otp_design.md.
+gem 'twilio-ruby'
+# Phone number parsing/validation (wraps Google's libphonenumber metadata). Twilio requires
+# E.164 and users.phone/call_code carry no format validation, so numbers must be normalised
+# before they can be dialled. Per-country trunk-prefix and length rules are not regex-able.
+gem 'phonelib'
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]
@@ -222,7 +241,6 @@ group :development do
 
   gem "capistrano-rails", require: false
   gem 'capistrano-rvm'
-  gem 'capistrano-sidekiq', github: 'seuros/capistrano-sidekiq', ref: "784b04c973e5c074dc78c30746077c9e6fd2bb9a"
   gem 'foreman'
 
   # gem 'capistrano-solid_queue', require: false
@@ -232,6 +250,7 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem 'capybara-email'
+  gem 'cucumber', '10.2.0'
   gem 'cucumber-rails', require: false
   gem 'database_cleaner-active_record'
 
@@ -271,8 +290,12 @@ gem 'htmltoword'
 gem 'i18n-tasks', group: :development
 gem 'ice_cube'
 gem 'json_schemer'
-gem 'mcp'
+# MCP (Model Context Protocol) server SDK — exposes fund data as tools for external AI clients.
+# Pinned to ~> 1.3 to prevent surprise upgrades; 1.3.0 introduced dns_rebinding_protection
+# which requires allowed_hosts configuration for non-localhost deployments.
+gem 'mcp', '~> 1.3'
 gem 'ruby_linear_regression'
 gem 'ruby_llm'
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary'
+gem 'email_reply_parser'

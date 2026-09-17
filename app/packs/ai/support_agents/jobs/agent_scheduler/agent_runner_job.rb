@@ -59,7 +59,12 @@ class AgentRunnerJob
     targets = @support_agent.agent.new.targets(@entity.id)
 
     # Special handling for PortfolioCompanyAgent: process as batch with shared context
-    return execute_portfolio_company_batch(targets) if @support_agent.agent_type == "PortfolioCompanyAgent" && targets.many?
+    return execute_agent_batch(targets) if @support_agent.agent_type == "PortfolioCompanyAgent" && targets.many?
+
+    # SideLetterObligationAgent: a scheduled run IS the enforcement pass (entity-wide
+    # due-date scan inside process_batch) — always dispatch there, regardless of
+    # target count; per-target execution would run extraction instead.
+    return execute_agent_batch(targets) if @support_agent.agent_type == "SideLetterObligationAgent"
 
     # Default: process each target individually
     successes = []
@@ -78,14 +83,14 @@ class AgentRunnerJob
     build_execution_result(successes, errors)
   end
 
-  # Executes PortfolioCompanyAgent as a scheduled batch.
-  # Delegates to PortfolioCompanyAgent.process_batch (same as adhoc path) with
-  # execution_mode: :scheduled so notifications are batched and the chart job
-  # runs silently without per-company chat UI.
+  # Executes an agent with a process_batch entry point as a scheduled batch.
+  # Delegates to <Agent>.process_batch (same as adhoc path) with
+  # execution_mode: :scheduled so notifications are batched (and, for
+  # SideLetterObligationAgent, the run becomes the enforcement pass).
   #
-  # @param targets [Array] portfolio company targets
+  # @param targets [Array] agent targets
   # @return [Hash] execution result
-  def execute_portfolio_company_batch(targets)
+  def execute_agent_batch(targets)
     result = @support_agent.agent.process_batch(
       support_agent_id: @support_agent.id,
       targets: targets,
@@ -152,11 +157,15 @@ class AgentRunnerJob
       success: status != :failed,
       successes: successes,
       errors: errors,
-      summary: {
+      # build_summary is the shared canonical shape (total/processed/failed) used
+      # by both the scheduled and manual paths. It also persists capped per-target
+      # error_details so scheduled failure/partial-success emails can render the
+      # "What failed" table — previously scheduled runs stored counts only.
+      summary: AgentExecutionLog.build_summary(
+        total: successes.count + errors.count,
         processed: successes.count,
-        failed: errors.count,
-        total: successes.count + errors.count
-      }
+        errors: errors
+      )
     }
   end
 
@@ -218,8 +227,8 @@ class AgentRunnerJob
 
     issues = report.json_fields["esign_issues"] || []
     base.merge(
-      docs_checked:    issues.count { |i| i["type"] == "notified" },
-      notified:        issues.count { |i| i["type"] == "notified" },
+      docs_checked: issues.count { |i| i["type"] == "notified" },
+      notified: issues.count { |i| i["type"] == "notified" },
       expired_flagged: issues.count { |i| i["type"] == "expired" }
     )
   rescue StandardError => e

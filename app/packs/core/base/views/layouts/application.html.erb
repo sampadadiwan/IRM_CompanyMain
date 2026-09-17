@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <%= render "/layouts/locale_date_meta" %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <meta charset="utf-8">
@@ -42,10 +43,6 @@
       <link href="/vendor/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
       <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
-      <!-- Tracking -->
-      <!-- NOTE: /js/clarity.js was deleted when the Clarity loader moved inline
-           (CDN) into the modernize layout — a local reference here just 404s. -->
-      <script async src="https://www.googletagmanager.com/gtag/js?id=G-4CPQNX69HM"></script>
       <!-- PDFTron -->
       <script src='/lib/webviewer.min.js'></script>
       <script src='/lib/core/webviewer-core.min.js'></script>

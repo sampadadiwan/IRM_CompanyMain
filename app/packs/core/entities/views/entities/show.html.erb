@@ -38,6 +38,24 @@
           <%= @entity.entity_type %>
         </td>
       </tr>
+      <%# Support needs to see the off-boarding state — the Deactivate button hides once it is off %>
+      <%# Same check as EntityPolicy#deactivate? — deliberately not user.support?, which is also true
+          for a support user impersonating a client user %>
+      <% if current_user&.has_cached_role?(:support) %>
+        <tr>
+          <td>
+            Status
+          </td>
+          <td>
+            <% if @entity.active? %>
+              <span class="badge bg-success">Active</span>
+            <% else %>
+              <span class="badge bg-danger">Deactivated</span>
+              <span class="text-muted ms-2">Employee logins and investor access have been revoked.</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
       <tr>
         <td>
           Url
@@ -271,6 +289,19 @@
                         msg: "Are you sure you want to generate a database dump now?", method: "post"
                       } %>
       <% end %>
+      <% if policy(@entity).deactivate? %>
+        <%# Opens the deactivate modal, which is rendered outside this div (see below) %>
+        <button type="button" class="btn btn-outline-danger" id="entity_deactivate_btn"
+                data-bs-toggle="modal" data-bs-target="#deactivateEntityModal">
+          <i class="ti ti-ban"></i> Deactivate
+        </button>
+      <% end %>
     </div>
   </div>
 </div>
+
+<%# Kept outside the card and the button div: Bootstrap moves focus and adds a backdrop when the
+    modal opens, and nesting it inside the button row makes the buttons flicker as it does so. %>
+<% if policy(@entity).deactivate? %>
+  <%= render "entities/deactivate_modal", entity: @entity %>
+<% end %>

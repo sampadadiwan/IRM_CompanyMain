@@ -12,12 +12,6 @@ Given("the user has two-factor authentication enabled and configured") do
   @user.update!(two_factor_enabled: true, otp_secret: secret, two_factor_mode: "authenticator")
 end
 
-Given("the user has two-factor authentication enabled and configured with backup codes") do
-  secret = User.generate_otp_secret
-  @user.update!(two_factor_enabled: true, otp_secret: secret, two_factor_mode: "authenticator")
-  @backup_codes = @user.generate_backup_codes!
-end
-
 Given("the user has two-factor authentication enabled in whatsapp mode") do
   secret = User.generate_otp_secret
   @user.update!(two_factor_enabled: true, otp_secret: secret, two_factor_mode: "whatsapp",
@@ -78,21 +72,73 @@ When("I enter an invalid TOTP code and confirm") do
   click_on("Confirm & Enable 2FA")
 end
 
-Then("I should see backup codes") do
-  expect(page).to have_content("Backup Codes")
-  expect(page).to have_content("Continue to Dashboard")
-end
-
 Then("the user should have 2FA enabled in authenticator mode") do
   @user.reload
   expect(@user.two_factor_enabled).to be true
   expect(@user.two_factor_mode).to eq("authenticator")
   expect(@user.otp_secret).not_to be_nil
-  expect(@user.otp_backup_codes).not_to be_nil
 end
 
 Then("I should still be on the enrollment page") do
   expect(page).to have_current_path(verify_enrollment_two_factor_path, wait: 5)
+end
+
+# Choosing a mode must not write it — only the confirming code does.
+Then("the user should still have no two-factor method") do
+  @user.reload
+  expect(@user.two_factor_enabled).to be true
+  expect(@user.two_factor_mode).to be_nil
+end
+
+When("I visit the 2FA mode selection page directly") do
+  visit select_mode_two_factor_path
+end
+
+When("I visit the 2FA enrollment page directly") do
+  visit enroll_two_factor_path
+end
+
+When("I visit the 2FA verification page directly") do
+  visit new_two_factor_path
+end
+
+Then("I should not be on a two-factor page") do
+  expect(page).not_to have_current_path(%r{\A/two_factor}, wait: 5)
+end
+
+# The profile toggle goes through the same update path; this exercises the model
+# callback (TwoFactorAuthenticatable#clear_two_factor_method_when_disabled) directly.
+When("two-factor authentication is switched off for the user") do
+  @user.update!(two_factor_enabled: false)
+end
+
+When("two-factor authentication is switched on again for the user") do
+  @user.update!(two_factor_enabled: true)
+end
+
+Then("the user should have two-factor off with no method and no secret") do
+  @user.reload
+  expect(@user.two_factor_enabled).to be false
+  expect(@user.two_factor_mode).to be_nil
+  expect(@user.otp_secret).to be_nil
+end
+
+# update_columns: an administrator unticking the box is an ordinary edit, but the user
+# in this scenario may carry a number the phone validation would now refuse.
+Given("the user's WhatsApp has been switched off by an administrator") do
+  @user.update_columns(whatsapp_enabled: false)
+end
+
+Then("no WhatsApp code should have been sent") do
+  expect(SendOtpToWhatsappJob).not_to have_received(:perform_later)
+end
+
+# Codes copied out of a message often carry a space in the middle or at the end.
+When("I enter a valid TOTP code with spaces around it") do
+  @user.reload
+  code = @user.current_otp
+  fill_in("otp_code", with: " #{code[0, 3]} #{code[3, 3]} ")
+  click_on("Verify")
 end
 
 # ── WhatsApp enrollment steps ────────────────────────────────────────────────
@@ -110,13 +156,27 @@ When("I enter the WhatsApp OTP to confirm enrollment") do
   click_on("Confirm & Enable 2FA")
 end
 
+Then("I should see the resend WhatsApp code button") do
+  expect(page).to have_button("Didn't get it? Resend code via WhatsApp")
+end
+
+When("I click the resend WhatsApp code button") do
+  click_on("Didn't get it? Resend code via WhatsApp")
+  expect(page).to have_css("#whatsapp-status", visible: :visible, wait: 10)
+end
+
+# enroll_whatsapp has just sent a code, so the 30-second server-side cooldown in
+# send_whatsapp is still running — the resend is refused with the wait message. That is
+# the honest thing to assert here: the button is wired and the endpoint answered.
+Then("I should see the WhatsApp resend cooldown message") do
+  expect(page).to have_css("#whatsapp-status", text: "Please wait 30 seconds", wait: 10)
+end
+
 Then("the user should have 2FA enabled in whatsapp mode") do
   @user.reload
   expect(@user.two_factor_enabled).to be true
   expect(@user.two_factor_mode).to eq("whatsapp")
   expect(@user.otp_secret).not_to be_nil
-  # WhatsApp mode has no backup codes
-  expect(@user.otp_backup_codes).to be_nil.or(eq("[]"))
 end
 
 # ── Login verification steps ─────────────────────────────────────────────────
@@ -161,22 +221,4 @@ end
 
 Then("I should not be on the 2FA verification page") do
   expect(page).not_to have_content("Two-Factor Authentication")
-end
-
-# ── Backup code steps ────────────────────────────────────────────────────────
-
-When("I enter a valid backup code") do
-  fill_in("otp_code", with: @backup_codes.first)
-  click_on("Verify")
-end
-
-When("I enter an invalid backup code") do
-  fill_in("otp_code", with: "INVALID-CODE")
-  click_on("Verify")
-end
-
-Then("the backup code should be consumed") do
-  @user.reload
-  remaining = JSON.parse(@user.otp_backup_codes || "[]")
-  expect(remaining.size).to eq(7) # 8 original - 1 consumed
 end

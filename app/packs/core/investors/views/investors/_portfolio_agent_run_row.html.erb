@@ -11,7 +11,7 @@
   <td>
     <% if investor.support_agent_report&.updated_at %>
       <%= time_ago_in_words(investor.support_agent_report.updated_at) %> ago
-      <%= investor.support_agent_report.updated_at %>
+      <%= l(investor.support_agent_report.updated_at) %>
     <% else %>
       <span class="text-muted">Never</span>
     <% end %>

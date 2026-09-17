@@ -88,6 +88,9 @@
                     <% if kpi.unapproved? %>
                       <small class="badge bg-warning-subtle text-warning mb-1">Pending</small><br>
                     <% end %>
+                    <% if kpi.rag_status.present? %>
+                      <small class="badge <%= rag_status_badge_class(kpi.rag_status) %> mb-1"><%= kpi.rag_status.titleize %></small><br>
+                    <% end %>
                     <%= display_kpi(kpi, ikm, params: params) %>
                     <br>
                     <%= kpi_percentage_class(kpi, ikm).html_safe %>

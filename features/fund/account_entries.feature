@@ -2,6 +2,7 @@ Feature: Account Entries
   Can run allocation
 
 
+@import
 Scenario Outline: Allocate account entries
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
@@ -43,6 +44,23 @@ Scenario Outline: Allocate Account Entries
       |user     |entity                                 |fund                 |
       |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
 
+Scenario Outline: Formula reads a computed field without the cache flag set
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there are chained Fund Formulas relying on a computed field without the cache flag set
+  When I am at the fund details page
+  Given that Account Entries are allocated
+  Then I see AllocationRun created
+  Then the dependent formula's account entry reflects the earlier formula's computed value
+
+  Examples:
+      |user     |entity                                 |fund                 |
+      |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
+
 Scenario Outline: When AllocationRun is locked
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -58,6 +76,27 @@ Scenario Outline: When AllocationRun is locked
   Given I lock the AllocationRun
   Given that Account Entries are allocated
   Then I get the error on AllocationRun creation
+
+  Examples:
+      |user     |entity                                 |fund                 |
+      |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
+
+Scenario Outline: Unlocking one AllocationRun also unlocks other runs overlapping the same period
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there are Fund Formulas are added to the fund
+  When I am at the fund details page
+  Given that Account Entries are allocated
+  Then I see AllocationRun created
+  Given I lock the AllocationRun
+  Given there is another locked AllocationRun on the same fund overlapping the same period with a later end date
+  When I unlock the AllocationRun
+  Then both AllocationRuns should be unlocked
 
   Examples:
       |user     |entity                                 |fund                 |
@@ -92,6 +131,12 @@ Scenario Outline: Edit Account Entry parent
   Then an account entry is created for the commitment
   Then I edit the account entry with debug "true"
   Then the account entry parent is updated
+  # Regression coverage: re-pointing the parent a SECOND time, after parent_name is already
+  # cached from the first edit above, is what exposed the stale-parent_name bug -- the first
+  # edit alone would pass even with the bug, since parent_name starts blank.
+  Given there is a portfolio investment for the account entry parent test
+  Then I re-point the account entry parent to the portfolio investment with debug "true"
+  Then the account entry parent and parent name reflect the portfolio investment
 
 
   Examples:
@@ -99,7 +144,7 @@ Scenario Outline: Edit Account Entry parent
       |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
 
 
-@notification
+@notification @import
 Scenario Outline: AE download in a job
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -110,9 +155,11 @@ Scenario Outline: AE download in a job
   Then I should see the "Import in progress"
   Then There should be "8" capital commitments created
   And Given I upload "account_entries.xlsx" file for Account Entries
+  Given each investor has a "verified" kyc linked to the commitment
   Given I filter the AEs
   And I download all the AEs
   Then a new file is generated for the download
+  Then the downloaded account entries file shows the investing entity names
   And I get an email with the file attached
   Given I filter and pivot the AEs
   And I download all the pivoted AEs

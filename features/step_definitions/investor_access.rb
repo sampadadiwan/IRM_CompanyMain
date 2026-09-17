@@ -173,3 +173,46 @@ Given('investor access {string} in the portfolio company') do |arg|
     end
   end
 end
+# The standalone edit (opened from the show page) must redirect back to show —
+# the turbo-stream response, meant for the inline list flow, would otherwise
+# leave the browser stuck on /edit with the save applied but invisible.
+Then('I should be back on the contact page for {string}') do |email|
+  ia = InvestorAccess.find_by(email: email)
+  expect(ia).to be_present
+  # have_current_path waits for the Turbo redirect to complete
+  expect(page).to have_current_path(investor_access_path(ia), ignore_query: true)
+  expect(page).to have_content(ia.email)
+end
+
+Then('the contact {string} should have cc {string}') do |email, cc|
+  expect(InvestorAccess.find_by(email: email).cc).to include(cc)
+end
+
+# Close only exists in the inline (turbo-frame) flow, where it clears the form
+# frame. On the standalone /edit page it would blank the form with no navigation.
+Then('the standalone edit form should have no {string} button') do |label|
+  expect(page).to have_button('Save') # form is on screen
+  expect(page).not_to have_content(label)
+end
+
+# ── Portal-user creation from an access row ──────────────────────────────────
+
+# "944902587" is nine digits where +91 needs ten: exactly what
+# User#phone_must_be_dialable refuses at the user form.
+When('an investor access is created for {string} with phone {string}') do |email, phone|
+  @phone_access = InvestorAccess.create!(investor: @investor,
+                                         entity_id: @investor.entity_id,
+                                         first_name: "New",
+                                         last_name: "LP",
+                                         email:,
+                                         phone:,
+                                         approved: true)
+end
+
+Then('that investor access should have a portal user') do
+  expect(@phone_access.reload.user).to be_present
+end
+
+Then('that portal user should have the phone number {string}') do |phone|
+  expect(@phone_access.reload.user.phone).to eq(phone)
+end

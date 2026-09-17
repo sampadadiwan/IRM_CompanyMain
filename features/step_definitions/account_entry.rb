@@ -13,7 +13,9 @@ end
 Given('I filter the AEs') do
   @document_name = "account_entries.xlsx"
   visit account_entries_path(filter: true)
-  find('#q_c_0_v_0_value').set('01/01/2020')
+  # The default condition row filters on reporting_date (a date attribute), so the
+  # value field renders as the locale-date widget rather than the plain text field.
+  find('.value-field-date input[type="text"]').set('01/01/2020')
   find('button.search-button[type="submit"]').click
   sleep(2)
 end
@@ -74,6 +76,32 @@ Then('a new file is generated for the download') do
   expect(@doc.name).to include(@document_name.split('.').first)
 end
 
+Then('the downloaded account entries file shows the investing entity names') do
+  file = @doc.file.download
+  data = Roo::Spreadsheet.open(file.path)
+  headers = data.row(1)
+  folio_idx = headers.index("Folio")
+  investing_entity_idx = headers.index("Investing Entity")
+
+  checked = 0
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    folio_id = row[folio_idx]
+    next if folio_id.blank?
+
+    commitment = CapitalCommitment.find_by(fund_id: @fund.id, folio_id: folio_id.to_s)
+    next unless commitment&.investor_kyc
+
+    # The commitment's linked KYC full_name should appear in the Investing Entity
+    # column instead of the plain investor name.
+    expect(row[investing_entity_idx]).to eq(commitment.investor_kyc.full_name)
+    checked += 1
+  end
+
+  expect(checked).to be_positive
+end
+
 Given('the user can receive emails') do
   @user ||= User.first
   @user.entity.entity_setting.update_columns(sandbox: false)
@@ -97,7 +125,9 @@ end
 
 Given('I filter and pivot the AEs') do
   visit account_entries_path(filter: true)
-  find('#q_c_0_v_0_value').set('01/01/2020')
+  # The default condition row filters on reporting_date (a date attribute), so the
+  # value field renders as the locale-date widget rather than the plain text field.
+  find('.value-field-date input[type="text"]').set('01/01/2020')
   check('q_pivot')
   sleep(0.5)
   find('button.search-button[type="submit"]').click

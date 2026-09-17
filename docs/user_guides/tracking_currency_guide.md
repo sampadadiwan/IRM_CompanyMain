@@ -2,13 +2,15 @@
 
 A **tracking currency** is a single reporting currency in which a fund's financial activity is restated, alongside the fund's own base currency. It lets you report consistently across funds that operate in different currencies — for example, viewing an INR fund and a EUR fund side by side, both expressed in USD.
 
+> **Where to find it:** Choose the **Tracking currency** when you create the fund (Sidebar → [**Funds → Funds**](/funds), then create the fund) and load rates under Company menu → [**Exchange Rates**](/exchange_rates). The figures appear in the **Tracking Currency** card on the fund page; refresh them on demand with the fund's **Actions → Misc → Generate Tracking Numbers**. Needs the tracking currency feature enabled for your company and update access on the fund.
+
 This guide explains what gets converted, which exchange-rate dates are used, and the rules that keep the figures accurate. It's written for finance and reporting teams.
 
 ---
 
 ## Why a Tracking Currency?
 
-Imagine your firm runs three funds — one in INR, one in EUR, one in GBP — and your investment committee wants one consolidated view in USD. Rather than converting by hand each time, you set a **tracking currency** of USD, and the system automatically keeps a USD figure next to every base-currency figure.
+Imagine your firm runs three funds — one in INR, one in EUR, one in GBP — and your investment committee wants one consolidated view in USD. Rather than converting by hand each time, you choose a **tracking currency** of USD on each fund when you create it (it is locked afterwards; only CapHive support can change it), and the system automatically keeps a USD figure next to every base-currency figure.
 
 ```mermaid
 flowchart LR
@@ -16,7 +18,7 @@ flowchart LR
     B --> C[Consolidated cross-fund reporting]
 ```
 
-The conversion runs automatically (typically daily) for every fund whose tracking currency differs from its base currency, so the reporting figures are always current.
+The conversion runs automatically every night at 01:00 for every fund whose tracking currency differs from its base currency, in companies that have the tracking currency feature enabled.
 
 ---
 
@@ -55,11 +57,11 @@ Each record is converted using the rate on the date that best reflects when it a
 
 ## The Rules That Keep It Accurate
 
-- **Runs automatically.** The conversion runs regularly for any fund whose tracking currency differs from its base currency — no manual step.
+- **Runs automatically.** The conversion runs nightly for any fund whose tracking currency differs from its base currency, provided the tracking currency feature is enabled for your company. A normal run only fills records whose tracking amount is still zero; **Generate Tracking Numbers** runs the same conversion on demand.
 - **Percentages aren't converted.** Figures that are percentages (such as "Ownership %") stay as they are — a percentage is currency-neutral, so it keeps a 1:1 value.
 - **FMV always refreshes.** Original investment costs are set once, but the tracking FMV is recalculated every run so it always reflects the most recent valuation and the latest rate for that valuation's date.
-- **Missing rates are flagged.** If an exchange rate is missing for a needed date, the system skips that record and alerts administrators so the rate can be added — it never guesses.
-- **Corrections can be re-applied.** If a historical exchange rate is later corrected, an administrator can force a recalculation so the tracking figures are brought back into line.
+- **Missing rates are flagged.** If an exchange rate is missing for a needed date, the system skips that record, shows an in-app error alert to the user who triggered the run and emails CapHive support, so the rate can be added — it never guesses.
+- **Corrections need support.** If a historical exchange rate is later corrected, already-converted records keep their figures until CapHive support runs a forced regeneration; a normal run does not overwrite them.
 
 ---
 
@@ -81,14 +83,107 @@ Because FMV refreshes every run, the next time a newer valuation or a corrected 
 
 ## Frequently Asked Questions
 
+### Navigation and getting there
+
+**Where do I set a fund's tracking currency?**
+In the **Tracking currency** drop-down on the fund form when you create the fund (the list offers your company currency plus every currency you have exchange rates from). After the fund is saved the field is locked for normal users; only CapHive support can change it on **Actions → Edit Fund**. Leave it blank, or equal to the fund currency, if you don't need one.
+
+**Where do I see tracking-currency figures?**
+Open the fund (Sidebar → [**Funds → Funds**](/funds), then the fund): users with update access see a **Tracking Currency ([code])** card with committed, called, collected and distributed amounts. Commitments show **Tracking Committed Amount** on their page and **Tracking Committed / Collected / Distributed / Adjusted** as extra columns on the fund's **Commitments** list; distribution payments and portfolio scenarios show tracking figures too. See [What Gets Converted](#what-gets-converted).
+
+**Where do I add the exchange rates it needs?**
+Company menu → [**Exchange Rates**](/exchange_rates). Use **New Exchange Rate** for one rate (From = fund currency, To = tracking currency, Rate, As of) or **Import** to upload many. **Show All** lists historical rates; the default view shows only the latest rate per currency pair.
+
+**Where are the buttons to recalculate tracking figures now?**
+For one fund: fund page **Actions → Misc → Generate Tracking Numbers**. For every fund in your company: Company menu → **Exchange Rates**, then **Generate Tracking Amounts** on any latest rate row. Both need the tracking currency feature enabled for your company.
+
+### Creating, updating and managing tracking currency
+
 **Do I need to set the tracking currency per fund?**
-The tracking currency is configured for your organisation/fund. Once set, conversion happens automatically for any fund whose base currency is different.
+Yes. Each fund has its own **Tracking currency**, chosen when the fund is created. Conversion runs for funds whose tracking currency is set and different from the fund currency, and only when the tracking currency feature is enabled for your company.
+
+**How do I set up tracking currency for a fund?**
+Ask CapHive support to enable the tracking currency feature for your company, add exchange rates from the fund currency to the tracking currency covering every transaction date, and create the fund with the **Tracking currency** selected. The next nightly run, or **Generate Tracking Numbers**, fills in the figures.
+
+**How do I change or remove a fund's tracking currency?**
+You cannot from the edit form: the field is locked after creation because every tracking figure would need reprocessing. Contact CapHive support, who can change it and force a full regeneration.
+
+**How do I correct a wrong historical exchange rate?**
+Fix or re-add the rate under Company menu → **Exchange Rates**, then ask CapHive support to run a forced regeneration. A normal **Generate Tracking Numbers** only fills records whose tracking amount is still zero, so it does not overwrite figures already converted at the wrong rate.
+
+**How do I bulk load exchange rates?**
+Company menu → [**Exchange Rates**](/exchange_rates) → **Import**, and upload the sample file with From, To, Rate and As of for each date. Imported rates are then used by the next nightly run or by **Generate Tracking Amounts**.
+
+**What permission do I need?**
+The tracking currency feature must be enabled for your company (CapHive support switches it on). **Generate Tracking Numbers** on a fund needs update access on that fund; **Generate Tracking Amounts** on the Exchange Rates page is available to users of your company on the latest rate rows.
+
+### Why use a tracking currency
+
+**Why should I use a tracking currency?**
+It keeps a second, consistent reporting-currency figure next to every fund-currency amount, converted at the rate on each transaction's own date. Consolidated reports across funds in INR, EUR and GBP can then be added up in, say, USD without converting by hand or mixing today's rate with historical flows.
+
+**What does a tracking currency let me do?**
+Report committed, called, collected and distributed capital across funds in one currency, see portfolio cost and FMV in that currency, compute XIRR and MOIC in the tracking currency on portfolio scenarios, and give an investment committee or parent company figures in its own reporting currency.
+
+**What happens if I don't set one up?**
+Everything still works in the fund currency and folio currency, but there are no tracking figures: cross-fund totals in different currencies cannot be added up in CapHive, and anyone needing a single reporting currency must convert exports manually.
+
+**Who typically uses tracking currency?**
+Finance and reporting teams at managers running funds in several currencies, and groups whose parent entity reports in a different currency. Tracking figures are a manager-side reporting tool.
+
+### What happens when I …
+
+**What happens every night?**
+At 01:00 a background job runs for every fund of companies with the feature enabled. For funds with a distinct tracking currency it converts account entries, remittance payments, remittances, distribution payments, commitment adjustments and commitments whose tracking amount is still zero, at the fund-to-tracking rate on or before each record's date, and refreshes portfolio investment FMV. The related commitment and remittance totals are then refreshed.
+
+**What happens when I click Generate Tracking Numbers on a fund?**
+The same conversion runs straight away for that fund only, and you see "Tracking currency update started, please check back in a few mins." You get in-app progress alerts ending in "Tracking/entity currency updated for fund [name]", plus an in-app error list if any rate was missing. Already-converted records are not recalculated.
+
+**What happens when I click Generate Tracking Amounts on an exchange rate?**
+The conversion runs for every fund in your company, not just funds using that currency pair. Funds without a distinct tracking currency only get their portfolio investment figures refreshed. You receive the same in-app progress and error alerts.
+
+**What happens when I add a new exchange rate?**
+Nothing is converted immediately. The rate is marked latest for its currency pair, and it is used by the next nightly run or manual generation for records dated on or after its as-of date that still have no tracking amount. Separately, the new rate can trigger portfolio investment and (if enabled) commitment exchange-rate adjustments.
+
+**What happens if an exchange rate is missing?**
+Records on dates with no rate on or before that date are skipped and keep a zero tracking amount; nothing is guessed. The run reports the missing currency pair and dates in an error alert to the user who triggered it and in an error email to CapHive support. Add the rate and run **Generate Tracking Numbers** again.
+
+**Which rate is used if there is none for the exact date?**
+The most recent rate from the fund currency to the tracking currency with an as-of date on or before the record's date. Only the direct direction is looked up, so a USD→INR rate is not used for an INR fund tracked in USD; add the INR→USD rate (the **Reverse** button on a rate pre-fills it).
+
+**What happens to percentage account entries?**
+Entries whose name contains "Percentage" (such as "Ownership Percentage") are copied 1:1 into the tracking amount instead of being multiplied by the rate, because a percentage is currency-neutral.
+
+### Troubleshooting and edge cases
 
 **Why is a figure missing in the tracking currency?**
-Most often, an exchange rate is missing for the relevant date. Administrators are notified; add the rate and the figure will populate on the next run.
+Most often, no exchange rate from the fund currency to the tracking currency exists on or before that record's date. Add the rate under **Exchange Rates** and run **Generate Tracking Numbers**, or wait for the nightly run. A newly created record also shows zero until the next run.
 
 **Why didn't an ownership percentage convert?**
 Percentages are currency-neutral and deliberately left unchanged.
 
-**A historical rate was wrong and has been fixed — will old figures update?**
-Yes, but an administrator needs to force a recalculation so the corrected rate flows through to the affected tracking amounts.
+**A historical rate was wrong and has been fixed - will old figures update?**
+Not by themselves. Already-converted records keep their tracking amount until a forced regeneration is run, which is only available to CapHive support. Portfolio FMV is the exception: it is refreshed on every run.
+
+**The Tracking Currency card is not on my fund page - why?**
+It only shows when the fund has a tracking currency different from its own currency and you have update access on the fund.
+
+**Generate Tracking Numbers does nothing or is refused - why?**
+The tracking currency feature is not enabled for your company, or you lack update access on the fund. If it runs but figures stay zero, check the error alert for missing rates.
+
+**The currency I want is not in the Tracking currency list - why?**
+The list is built from your company currency plus the From currencies of your exchange rates. Add an exchange rate involving that currency first, then create the fund.
+
+**Do investors see tracking-currency amounts?**
+Mostly not. The fund page card and the commitment details are shown only to the fund manager's users, but a distribution payment's page shows **Tracking Currency** and **Tracking Net Payable** to anyone who can open that payment, including the investor.
+
+---
+
+## Related Guides
+
+- [Capital Commitments](capital_commitments_user_guide) - tracking committed, collected, distributed and adjusted amounts per folio.
+- [Capital Calls](capital_calls_user_guide) - remittances and payments converted at their call and payment dates.
+- [Capital Distributions](capital_distributions_user_guide) - tracking net and gross payable on distribution payments.
+- [Portfolio Investments](portfolio_investments_user_guide) - cost and FMV restated in the tracking currency.
+- [Account Entries Period Report](account_entries_period_report_user_guide) - reporting on account entries, which carry tracking amounts.
+- [Valuations](valuations_user_guide) - the latest valuation date drives the FMV conversion rate.

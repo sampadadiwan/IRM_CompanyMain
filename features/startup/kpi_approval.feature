@@ -39,6 +39,17 @@ Feature: KPI Approval Workflow
     Then I should not see the KPI "Revenue" with value "1,000.0"
     And the KPI "Revenue" should not exist in the database
 
+  Scenario: Toggling a KPI between approved and unapproved from its own show page
+    Given there is an approved KPI "name=Revenue;value=1000" for the company
+    When I am on the KPI show page for "Revenue"
+    Then I should see an "Unapprove" button
+    And I should not see an "Approve" button
+    When I click "Unapprove" and confirm
+    Then the KPI "Revenue" should have "unapproved" status in the database
+    When I am on the KPI show page for "Revenue"
+    Then I should see an "Approve" button
+    And I should not see an "Unapprove" button
+
   Scenario: Verifying unapproved KPI statistics cards
     Given the following unapproved KPIs exist for the company:
       | name    | value | period_relative |

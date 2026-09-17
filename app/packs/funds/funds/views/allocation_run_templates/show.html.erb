@@ -1,0 +1,107 @@
+<%# Template show page: everything in tabs — details, the groups it is in, the runs it produced. %>
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800"><%= @template.name %></h1>
+      <div class="text-muted">Allocation run template for <%= link_to @template.fund.name, fund_path(@template.fund) %></div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <%= link_to "Back", allocation_run_templates_path(tab: "templates"), class: "btn btn-outline-secondary" %>
+      <%= link_to edit_allocation_run_template_path(@template), class: "btn btn-outline-primary" do %><i class="ti ti-pencil"></i> Edit<% end %>
+      <% if @template.allocation_run_template_groups.any? %>
+        <button type="button" class="btn btn-outline-danger" disabled data-bs-toggle="tooltip"
+                title="This template is in a group. Remove it from the group first, then delete.">
+          <i class="ti ti-trash"></i> Delete
+        </button>
+      <% else %>
+        <%= button_to allocation_run_template_path(@template), method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton d-inline",
+                      data: { action: "click->confirm#popup", turbo: false, msg: "Delete allocation run template \"#{@template.name}\"? Past runs are kept." } do %>
+          <i class="ti ti-trash"></i> Delete
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <div data-controller="tabs">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a class="nav-link <%= 'active' if @tab == 'details' %>" data-bs-toggle="tab" href="#details">Details</a>
+      <a class="nav-link <%= 'active' if @tab == 'groups' %>" data-bs-toggle="tab" href="#groups">Groups <span class="badge bg-secondary-subtle text-secondary ms-1"><%= @template.allocation_run_template_groups.size %></span></a>
+      <a class="nav-link <%= 'active' if @tab == 'runs' %>" data-bs-toggle="tab" href="#runs">Runs <span class="badge bg-secondary-subtle text-secondary ms-1"><%= @run_items.size %></span></a>
+    </nav>
+
+    <div class="tab-content">
+      <div id="details" class="tab-pane fade <%= 'show active' if @tab == 'details' %>">
+        <table class="table table-bordered align-middle">
+          <tr><th class="w-25">Fund</th><td><%= link_to @template.fund.name, fund_path(@template.fund) %></td></tr>
+          <tr><th>What it does</th><td><%= template_option_badges(@template) %></td></tr>
+          <tr><th>Run allocation formulas</th><td><%= display_boolean @template.run_allocations %></td></tr>
+          <tr><th>Formula scope</th><td><%= @template.scope_label %></td></tr>
+          <tr><th>Formula tags</th><td><%= @template.tags.any? ? @template.tags.join(", ") : content_tag(:span, "All enabled formulas", class: "text-muted fst-italic") %></td></tr>
+          <tr><th>Generate fund ratios</th><td><%= display_boolean @template.fund_ratios %></td></tr>
+          <tr><th>Explain formulas</th><td><%= display_boolean @template.explain %></td></tr>
+          <tr><th>Sample run</th><td><%= display_boolean @template.sample %></td></tr>
+          <tr><th>Generate investor statements</th><td><%= display_boolean @template.generate_soa %></td></tr>
+          <% if @template.generate_soa? %>
+            <tr><th>Statement for</th><td><%= @template.statement_for %></td></tr>
+            <tr><th>Statement document</th>
+              <td>
+                <% if @template.statement_document %>
+                  <%= @template.statement_document.name %>
+                <% else %>
+                  <span class="badge bg-danger-subtle text-danger">Missing — pick another before running</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+          <tr><th>Notes</th><td><%= @template.description.presence || "—" %></td></tr>
+          <tr><th>Created by</th><td><%= @template.user.full_name %> on <%= l @template.created_at, format: :abbr_date_time %></td></tr>
+        </table>
+      </div>
+
+      <div id="groups" class="tab-pane fade <%= 'show active' if @tab == 'groups' %>">
+        <% if @template.allocation_run_template_groups.empty? %>
+          <p class="text-muted">Not in any group yet. <%= link_to "Create a group", new_allocation_run_template_group_path %> to run it as part of a close.</p>
+        <% else %>
+          <table class="table table-bordered align-middle">
+            <thead><tr><th>Group</th><th>Position in group</th><th></th></tr></thead>
+            <tbody>
+              <% @template.group_items.includes(:allocation_run_template_group).each do |item| %>
+                <tr>
+                  <td><%= link_to item.allocation_run_template_group.name, allocation_run_template_group_path(item.allocation_run_template_group) %></td>
+                  <td><span class="art-pos"><%= item.position %></span></td>
+                  <td><%= link_to "Open group", allocation_run_template_group_path(item.allocation_run_template_group), class: "btn btn-sm btn-outline-secondary" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+
+      <div id="runs" class="tab-pane fade <%= 'show active' if @tab == 'runs' %>">
+        <% if @run_items.empty? %>
+          <p class="text-muted">This template has not been run as part of a group yet.</p>
+        <% else %>
+          <table class="table table-bordered align-middle">
+            <thead><tr><th>Group run</th><th>Period</th><th>Result</th><th>Details</th><th></th></tr></thead>
+            <tbody>
+              <% @run_items.each do |item| %>
+                <% gr = item.allocation_group_run %>
+                <tr>
+                  <td><%= link_to gr.group_name, allocation_group_run_path(gr) %><br><small class="text-muted"><%= l gr.created_at, format: :abbr_date_time %></small></td>
+                  <td><%= l gr.start_date %> – <%= l gr.end_date %></td>
+                  <td><%= group_run_item_status_badge(item.status) %></td>
+                  <td><%= item.message %></td>
+                  <td>
+                    <% if item.allocation_run %>
+                      <%= link_to "Account entries", account_entries_path(filter: true, fund_id: item.fund_id, q: ransack_query_params_multiple([["allocation_run_id", :eq, item.allocation_run_id], ["reporting_date", :eq, gr.end_date.to_fs(:db)]])), class: "btn btn-sm btn-outline-info" %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

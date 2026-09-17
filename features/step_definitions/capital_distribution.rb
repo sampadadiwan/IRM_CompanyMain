@@ -27,6 +27,11 @@ When("I create a Capital Distribution {string}") do |args|
 
   click_button 'Save'
   expect(page).to have_content("Capital distribution was successfully created")
+  # @capital_distribution above is the unsaved FactoryBot.build used only to fill in the form;
+  # the actual persisted record is a separate object created server-side by the Save submit.
+  # Steps further down the scenario (Clone/Create With Fees) need the real id, so re-point
+  # @capital_distribution at the row that was actually created.
+  @capital_distribution = CapitalDistribution.last
   # sleep(2)
 end
 
@@ -197,6 +202,67 @@ Then('the tax should reduce the income_with_fees_cents correctly') do
   end
 end
 
+When('I create with fees from the capital distribution') do
+  visit(capital_distribution_path(@capital_distribution))
+  within "#capital_distribution_#{@capital_distribution.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Replicate Distribution")
+end
+
+Then('the distribution actions menu should offer {string} but not {string}') do |present_label, absent_label|
+  click_on("Actions")
+  expect(page).to have_link(present_label)
+  expect(page).not_to have_link(absent_label)
+end
+
+When('I visit the capital distributions list for the fund') do
+  visit(capital_distributions_path(fund_id: @fund.id))
+end
+
+Then('the new distribution form should show the source title as a copy with {string} fee rows') do |count|
+  expect(find_field('capital_distribution_title').value).to eq("#{@capital_distribution.title} (Copy)")
+  expect(all('.nested-fields').count).to eq(count.to_i)
+end
+
+Then('the new distribution form should have a blank title with {string} fee rows pre-filled') do |count|
+  expect(find_field('capital_distribution_title').value).to be_blank
+  expect(all('.nested-fields').count).to eq(count.to_i)
+end
+
+
+Then('a new Capital Distribution should exist as an independent clone with matching fee rows') do
+  cloned = CapitalDistribution.order(:id).last
+  expect(cloned.id).not_to eq(@capital_distribution.id)
+  expect(cloned.title).to eq("#{@capital_distribution.title} (Copy)")
+  expect(cloned.income_cents).to eq(@capital_distribution.income_cents)
+  expect(cloned.cost_of_investment_cents).to eq(@capital_distribution.cost_of_investment_cents)
+  expect(cloned.distribution_fees.count).to eq(@capital_distribution.distribution_fees.count)
+  expect(cloned.distribution_fees.pluck(:name, :fee_type)).to match_array(@capital_distribution.distribution_fees.pluck(:name, :fee_type))
+  expect(cloned.distribution_fees.pluck(:id) & @capital_distribution.distribution_fees.pluck(:id)).to be_empty
+end
+
+Then("the source capital distribution's fee rows should be unchanged") do
+  @capital_distribution.reload
+  expect(@capital_distribution.distribution_fees.count).to be_positive
+end
+
+Then('the new distribution form should offer {string} as a fund choice') do |fund_name|
+  expect(page).to have_select('capital_distribution_fund_id', with_options: [fund_name])
+end
+
+When('I switch the new distribution\'s fund to {string}') do |fund_name|
+  select fund_name, from: 'capital_distribution_fund_id'
+end
+
+Then('the new Capital Distribution should belong to the fund {string} with matching fee rows') do |fund_name|
+  target_fund = Fund.find_by(name: fund_name)
+  cloned = CapitalDistribution.order(:id).last
+  expect(cloned.fund_id).to eq(target_fund.id)
+  expect(cloned.entity_id).to eq(target_fund.entity_id)
+  expect(cloned.distribution_fees.count).to eq(@capital_distribution.distribution_fees.count)
+end
+
 Given('the fund has {string} capital distribution') do |count|
   (1..count.to_i).each do |_i|
     cc = FactoryBot.create(:capital_distribution, fund: @fund)
@@ -234,6 +300,32 @@ When('I create a new capital distribution {string}') do |args|
   click_on "Save"
   # sleep(2)
   expect(page).to have_content("Capital distribution was successfully")
+end
+
+When("I change the capital distribution's distribution date to {string}") do |new_date|
+  visit(edit_capital_distribution_path(@capital_distribution))
+  fill_in('capital_distribution_distribution_date', with: new_date)
+  click_on('Save')
+end
+
+Then('I should see the distribution date change warning naming all the payments') do
+  expect(page).to have_css('#distributionDateChangeModal.show')
+  expect(page).to have_content("#{@capital_distribution.capital_distribution_payments.count} payment")
+end
+
+When('I confirm the distribution date change') do
+  within('#distributionDateChangeModal') do
+    click_on('Change Distribution Date')
+  end
+  expect(page).to have_content('Capital distribution was successfully updated')
+end
+
+Then("every capital distribution payment's payment date should be {string}") do |new_date|
+  @capital_distribution.reload
+  @capital_distribution.capital_distribution_payments.each do |cdp|
+    cdp.reload
+    expect(cdp.payment_date).to eq(Date.parse(new_date))
+  end
 end
 
 Then('the capital distribution must reflect the payments') do
@@ -291,7 +383,8 @@ Then('I should be able to see my capital distributions') do
     puts "checking capital distrbution payment for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id
       puts "Distribution Visible"
-      expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
+      # The Investing Entity column prefers the commitment's linked KYC full_name over the plain investor_name.
+      expect(page).to have_content(cc.investor_kyc&.full_name || @investor.investor_name) if @user.curr_role != "investor"
       expect(page).to have_content(money_to_currency(cc.net_payable))
       expect(page).to have_content(money_to_currency(cc.gross_payable))
       expect(page).to have_content(I18n.l(cc.payment_date))
@@ -470,7 +563,7 @@ Then('I should see the commitment and distribuition docs upload errors') do
     if idx == 5
       # row[headers.length].include?("Capital Commitment not found for SAAS Fund, 1001 and Investor 1").should == true
     end
-    row[headers.length].include?("Distribution Name not found").should == true if idx == 6
+    row[headers.length].include?("Distribution Name must be specified for a Capital Distribution document").should == true if idx == 6
     row[headers.length].include?("Capital Distribution not found for SAAS Fund, Distribution 99").should == true if idx == 7
     if idx == 8
       # row[headers.length].include?("Capital Distribution Payment not found for SAAS Fund, Distribution 3, 10 and Investor 1").should == true
@@ -506,13 +599,47 @@ Given('We Generate documents for the capital distribution') do
   click_on("Generate Documents")
   click_on("Proceed")
   sleep(5) # Wait for the job to complete
-  expect(page).to have_content("Documentation generation started")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N documents generated successfully") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Documentation generation started|documents? generated/i,
+    wait: 20
+  )
+end
+
+When('I generate distribution payment documents directly for the capital distribution') do
+  @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
+  # KYC must be verified or DocGenJob#validate skips the payment — same setup as
+  # "We Generate documents for the capital distribution" above, but this step calls
+  # the job directly (perform_now) instead of driving it through the UI, so a
+  # SQL query counter wrapped around this step (see sql_query_count_steps.rb)
+  # observes the job's own queries instead of a separate browser/server process's.
+  @capital_distribution_payments.each do |cdp|
+    next if cdp.capital_commitment&.investor_kyc&.verified
+
+    if cdp.capital_commitment.investor_kyc.present?
+      cdp.capital_commitment.investor_kyc.update_columns(verified: true, completed_by_investor: true, submission_status: "verified")
+    else
+      investor_kyc = InvestorKyc.new(investor: cdp.capital_commitment.investor, entity: @entity, verified: true, completed_by_investor: true, submission_status: "verified", full_name: cdp.investor_name, PAN: Faker::Alphanumeric.alphanumeric(number: 10).upcase, birth_date: Time.zone.today - 18.years)
+      investor_kyc.save(validate: false)
+      cdp.capital_commitment.investor_kyc = investor_kyc
+      cdp.capital_commitment.save(validate: false)
+    end
+  end
+
+  # nil payment id triggers the bulk "all payments in this distribution" path in
+  # CapitalDistributionPaymentDocJob#models
+  CapitalDistributionPaymentDocJob.perform_now(@capital_distribution.id, nil, @user.id)
 end
 
 Given('The distribution payment documents are approved') do
   @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
   @capital_distribution_payments.each do |cdp|
-    eventually { expect(cdp.documents.count).to be_positive }
+    # perform_now runs the job's own code synchronously, but doc conversion happens on
+    # a separate LibreOffice-profile thread (see DocumentGeneratorBase), so the document
+    # row can still land after this call returns. Same 20s as the sibling doc-gen waits.
+    eventually(timeout: 20) { expect(cdp.documents.count).to be_positive }
     cdp.documents.each do |doc|
       doc.approved = true
       res = doc.save
@@ -629,7 +756,13 @@ Given('dist notice is generated for the dist payments') do
   click_on("Generate Documents")
   click_on("Proceed")
   sleep(10) # Wait for the job to complete
-  expect(page).to have_content("Documentation generation started, please check back in a few mins. Each distribution payment will have the customized document attached")
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N documents generated successfully") replaces the async "started" flash
+  # before this assertion could catch it. Accept either message.
+  expect(page).to have_content(
+    /Documentation generation started|documents? generated/i,
+    wait: 20
+  )
 end
 
 Then('dist notice must be generated for each dist payment') do
@@ -637,9 +770,14 @@ Then('dist notice must be generated for each dist payment') do
   distribution_template_name = @capital_distribution.fund.documents.where(owner_tag: "Distribution Template").first.name
   @capital_distribution.capital_distribution_payments.each do |cdp|
     puts "Checking distribution payment #{cdp.id} for investor #{cdp.investor_name} for document #{distribution_template_name} - #{cdp.investor_kyc} - #{cdp.folio_id}"
-    puts "All Available documents for distribution payment #{cdp.id}: #{cdp.documents.pluck(:name)}"
+    # The generate-docs job runs inline but ActionCable broadcasts "started" before docs
+    # are committed, so the previous step can return while the job is mid-flight. Retry
+    # (same gap fixed for the analogous capital-call/commitment doc-gen checks).
+    eventually(timeout: 20) do
+      puts "All Available documents for distribution payment #{cdp.id}: #{cdp.documents.pluck(:name)}"
+      cdp.documents.reload.pluck(:name).include?("#{distribution_template_name} - #{cdp.investor_kyc} - #{cdp.folio_id}").should == true
+    end
     puts "------------------------------------------------------------------------"
-    cdp.documents.pluck(:name).include?("#{distribution_template_name} - #{cdp.investor_kyc} - #{cdp.folio_id}").should == true
   end
 end
 

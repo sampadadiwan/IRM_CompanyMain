@@ -37,6 +37,7 @@ Given('there is a KYC for the investor with submission_status {string} and no ma
     full_name: nil, PAN: nil, birth_date: nil, address: nil, corr_address: nil,
     bank_name: nil, bank_branch: nil, bank_account_type: nil, bank_account_number: nil, ifsc_code: nil
   )
+  @investor_kyc.form_type = @form_type if @form_type.present?
   @investor_kyc.save!(validate: false)
   puts "\n########### InvestorKyc (no mandatory fields filled in) ############"
   puts @investor_kyc.to_json

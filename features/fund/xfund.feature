@@ -104,6 +104,7 @@ Scenario Outline: Fund E-Signatures Report
     |  	      |entity_type=Investment Fund;enable_funds=true  |name=Test fund 888      |Fund was successfully created|
 
 
+@import
 Scenario Outline: Duplicate account entry bulk upload
     Given Im logged in as a user "" for an entity "<entity>"
     Given the user has role "company_admin"

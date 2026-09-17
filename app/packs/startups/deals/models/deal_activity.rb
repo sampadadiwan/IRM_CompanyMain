@@ -36,10 +36,29 @@ class DealActivity < ApplicationRecord
   before_destroy :clear_investor_activity_pointer, if: :Template?
   after_commit :recreate_activities, unless: :destroyed?
 
+  # Completing a step is an interaction with the investor, alongside a note's "On"
+  # date and a task's completed_on.
+  #
+  # It has to live here rather than on DealInvestor. CompleteDealActivity saves the
+  # investor only when the step just completed is its *current* one and another
+  # incomplete step follows it — so completing the last step, or ticking one out of
+  # order, never reached DealInvestor's own callbacks. Every completion route
+  # (the grid's inline dropdown, #toggle_completed, PerformActivityAction's
+  # `Complete!`) goes through save, so this one hook covers them all.
+  after_save :register_investor_interaction, if: :saved_change_to_status?
+
   validate :check_done
 
   def set_defaults
     self.status = "Template" if deal_investor_id.nil?
+  end
+
+  # Templates are excluded for free: set_defaults forces their status to "Template",
+  # and they have no deal_investor to register against.
+  def register_investor_interaction
+    return unless Complete?
+
+    deal_investor&.register_interaction(Time.zone.today)
   end
 
   def clear_investor_activity_pointer

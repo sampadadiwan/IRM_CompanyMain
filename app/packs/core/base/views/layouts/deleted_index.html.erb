@@ -71,6 +71,10 @@
                       <i class="ti ti-restore me-1"></i> Restore
                     <% end %>
                   <% end %>
+                  <%= link_to audits_path(auditable_type: record.class.name, auditable_id: record.id),
+                              class: "btn btn-sm btn-outline-secondary rounded-pill px-3 ms-1" do %>
+                    <i class="ti ti-history me-1"></i> Audit Trail
+                  <% end %>
                 </td>
               </tr>
             <% end %>

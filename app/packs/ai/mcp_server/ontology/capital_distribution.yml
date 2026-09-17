@@ -1,0 +1,163 @@
+# Ontology for CapitalDistribution as exposed over MCP.
+---
+entity: capital_distribution
+label: Capital Distribution
+model: CapitalDistribution
+description: >-
+  A fund-level event returning capital to investors. Each distribution generates one capital
+  distribution payment per applicable folio, which is where investor-level amounts live.
+
+relationships:
+  fund:
+    target: fund
+    cardinality: many_to_one
+    note: Pass fund_ids rather than a Ransack condition on fund_id.
+    resolve_with: list_funds
+  capital_distribution_payments:
+    target: capital_distribution_payment
+    cardinality: one_to_many
+    note: Per-investor payable amounts for this distribution.
+    resolve_with: list_capital_distribution_payments
+
+fields:
+  title:
+    type: string
+    description: Name of the distribution (e.g. "Distribution 2 - Exit proceeds").
+    sortable: true
+  distribution_date:
+    type: date
+    description: Date of the distribution.
+    sortable: true
+  distribution_on:
+    type: enum
+    values: ["Commitment Percentage", "Investable Capital Percentage", "Upload"]
+    description: >-
+      How the distribution was apportioned across folios. Accepts either the label or its
+      stored integer (0, 1, 2 respectively).
+    sortable: true
+  approved:
+    type: boolean
+    description: >-
+      Whether the distribution has been approved. Unapproved distributions have not been
+      issued and should normally be excluded from "distributed to date" answers.
+    sortable: true
+  completed:
+    type: boolean
+    description: Whether the distribution has been fully processed.
+    sortable: true
+  gross_amount:
+    type: money
+    stored_as: gross_amount_cents
+    currency: the fund's currency
+    description: Gross amount distributed, before carry and fees.
+    sortable: true
+    aggregatable: true
+  distribution_amount:
+    type: money
+    stored_as: distribution_amount_cents
+    currency: the fund's currency
+    description: >-
+      NET amount distributed to investors, after carry and fees. This is the figure returned
+      as net_amount on each row, and the one that matches a fund's distribution_amount.
+    sortable: true
+    aggregatable: true
+  carry:
+    type: money
+    stored_as: carry_cents
+    currency: the fund's currency
+    description: Carried interest taken out of the gross amount.
+    sortable: true
+    aggregatable: true
+  fee:
+    type: money
+    stored_as: fee_cents
+    currency: the fund's currency
+    description: Fees taken out of the gross amount.
+    sortable: true
+    aggregatable: true
+  income:
+    type: money
+    stored_as: income_cents
+    currency: the fund's currency
+    description: Income component of the distribution, as opposed to return of capital.
+    sortable: true
+    aggregatable: true
+  reinvestment:
+    type: money
+    stored_as: reinvestment_cents
+    currency: the fund's currency
+    description: Portion of the distribution reinvested rather than paid out.
+    sortable: true
+    aggregatable: true
+  cost_of_investment:
+    type: money
+    stored_as: cost_of_investment_cents
+    currency: the fund's currency
+    description: Cost basis of the investment being distributed against.
+    sortable: true
+    aggregatable: true
+  fund_id:
+    type: reference
+    target: fund
+    description: Owning fund. Prefer the fund_ids parameter.
+    sortable: false
+  created_at:
+    type: datetime
+    description: When the distribution row was created. Not the distribution date.
+    sortable: true
+  updated_at:
+    type: datetime
+    description: When the distribution row last changed.
+    sortable: true
+
+returned_only:
+  net_amount:
+    type: money
+    description: >-
+      distribution_amount under a different key on the returned row. Filter and sort with
+      distribution_amount.
+  notes:
+    type: text
+    description: Free-text notes on the distribution. Not ransackable.
+  view_link:
+    type: string
+    description: Relative CapHive URL for the distribution.
+
+unavailable:
+  id:
+    reason: Not declared in CapitalDistribution.ransackable_attributes, so conditions on it are ignored.
+  net_amount:
+    reason: Output key only.
+    use_instead: distribution_amount
+  gross_amount_cents:
+    reason: The physical column, not a queryable attribute.
+    use_instead: gross_amount
+
+measures:
+  total_distributed_gross:
+    expression: sum of gross_amount
+    description: Gross distributions before carry and fees.
+  total_distributed_net:
+    expression: sum of distribution_amount
+    description: >-
+      Net distributions to investors. This is the number to use for DPI-style questions, not
+      gross_amount.
+  total_carry:
+    expression: sum of carry
+    description: Carried interest taken across the matching distributions.
+
+caveats:
+  - >-
+    gross_amount and distribution_amount are the same distribution before and after carry and
+    fees. Never add them together, and be explicit about which one you are quoting.
+  - >-
+    Unapproved distributions are included unless you filter approved_true. "Distributed to
+    date" almost always means approved only.
+  - Money filters take MAJOR units, not cents.
+
+tools:
+  list_capital_distributions:
+    kind: list
+    summary: Use it for fund-level questions about capital returned to investors.
+    params:
+      fund_ids:
