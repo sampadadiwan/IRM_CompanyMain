@@ -614,6 +614,45 @@ Given('I generate a portfolio as of report for {string}') do |string|
   )
 end
 
+# Drives PortfolioInvestmentsXlReportJob directly (bypassing the UI) so these email-isolation
+# scenarios don't need portfolio investments/valuations set up - only a fund to own the report.
+When('I run the portfolio investment report job for the fund') do
+  PortfolioInvestmentsXlReportJob.perform_now(Date.today.strftime('%Y-%m-%d'), @user.id, fund_id: @fund.id)
+end
+
+# Mirrors the "Send Document" custom notifications set up in features/step_definitions/document.rb,
+# parameterized on subject/email_method so it can stand in for either an unrelated notification
+# (email_method "send_document") or one deliberately scoped to the report's own email_method
+# ("send_portfolio_investment_report").
+Given('there is a Custom Notification for the entity with subject {string} for email_method {string}') do |subject, email_method|
+  CustomNotification.create!(
+    entity: @entity,
+    owner: @entity,
+    for_type: "Send Document",
+    email_method: email_method,
+    subject: subject,
+    body: "Test notification body for #{subject}",
+    enabled: true
+  )
+end
+
+Then('the portfolio investment report email subject should not be {string}') do |subject|
+  open_email(@user.email)
+  expect(current_email).not_to be_nil, "No email delivered to #{@user.email}"
+  expect(current_email.subject).not_to eq(subject)
+end
+
+Then('the portfolio investment report email subject should be {string}') do |subject|
+  open_email(@user.email)
+  expect(current_email).not_to be_nil, "No email delivered to #{@user.email}"
+  expect(current_email.subject).to eq(subject)
+end
+
+Then('the portfolio investment report email should have an attachment') do
+  open_email(@user.email)
+  expect(current_email.attachments).not_to be_empty
+end
+
 Then('the portfolio as of report should be generated for the date {string} with expected data') do |string|
   @report = Document.last
   file = @report.file.download
