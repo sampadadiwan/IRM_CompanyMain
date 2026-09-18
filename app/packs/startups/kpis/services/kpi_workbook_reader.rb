@@ -124,6 +124,7 @@ class KpiWorkbookReader
 
     @portfolio_company = portfolio_company
     @portfolio_company_id = portfolio_company.id
+    @fx_converter = KpiFxConverter.new(portfolio_company)
     Rails.logger.debug { "Portfolio Company: #{@portfolio_company.name}" }
     # Fiscal-year start (1-based month) from the existing month_offset_for_fy setting — portco's own
     # json_fields first, then the fund's EntitySetting, then the April default. Same resolution order
@@ -835,14 +836,14 @@ class KpiWorkbookReader
     # FX conversion: convert from portco's kpi_currency to fund's base currency.
     # Denomination scaling is already applied upstream by KpiValueNormalizer —
     # this step converts the currency using the mapping's fx_conversion_method.
-    fx_rate = resolve_fx_rate(investor_kpi_mapping, kpi_report)
+    fx_rate = @fx_converter.resolve_fx_rate(investor_kpi_mapping, kpi_report)
     original_value = nil
     if fx_rate
       original_value = value.to_d
       value = value.to_d * fx_rate
-    elsif investor_kpi_mapping.present? && !investor_kpi_mapping.fx_not_applicable?
-      kpi_currency = @portfolio_company.json_fields&.dig('kpi_currency')
-      fund_currency = @portfolio_company.entity.currency
+    elsif investor_kpi_mapping.present? && !investor_kpi_mapping.fx_not_applicable? && @fx_converter.conversion_needed?
+      kpi_currency = @fx_converter.kpi_currency
+      fund_currency = @fx_converter.fund_currency
       if kpi_currency.present? && kpi_currency != fund_currency
         msg = "Missing FX rate for #{kpi_currency}→#{fund_currency} on #{kpi_report.as_of}, storing unconverted"
         Rails.logger.warn(msg)
@@ -1417,50 +1418,8 @@ class KpiWorkbookReader
     nil
   end
 
-  # Resolves the FX rate for a KPI based on the mapping's fx_conversion_method.
-  # Returns nil if currencies are the same, method is not_applicable, or rate is missing.
-  # @param investor_kpi_mapping [InvestorKpiMapping] the mapping with fx_conversion_method
-  # @param kpi_report [KpiReport] the report (provides as_of date and period)
-  # @return [BigDecimal, nil] the FX rate to multiply by, or nil if no conversion needed
-  def resolve_fx_rate(investor_kpi_mapping, kpi_report)
-    kpi_currency = @portfolio_company.json_fields&.dig('kpi_currency')
-    fund_currency = @portfolio_company.entity.currency
-    return nil if kpi_currency.blank? || kpi_currency == fund_currency
-    return nil if investor_kpi_mapping.fx_not_applicable?
-
-    entity_id = @portfolio_company.entity_id
-
-    if investor_kpi_mapping.fx_report_date?
-      ExchangeRate.get_rate(kpi_currency, fund_currency, kpi_report.as_of, entity_id)
-    elsif investor_kpi_mapping.fx_average_rate?
-      opening_date = period_start_date(kpi_report)
-      closing_date = kpi_report.as_of
-      opening_rate = ExchangeRate.get_rate(kpi_currency, fund_currency, opening_date, entity_id)
-      closing_rate = ExchangeRate.get_rate(kpi_currency, fund_currency, closing_date, entity_id)
-      return nil unless opening_rate && closing_rate
-
-      (opening_rate + closing_rate) / 2.0
-    end
-  end
-
-  # Calculates the period start date for average rate FX conversion.
-  # @param kpi_report [KpiReport] the report with as_of and period
-  # @return [Date] the opening date of the period
-  def period_start_date(kpi_report)
-    as_of = kpi_report.as_of
-    case kpi_report.period&.downcase
-    when 'quarter'
-      as_of.beginning_of_quarter
-    when 'half year'
-      as_of - 6.months + 1.day
-    when 'year'
-      as_of.beginning_of_year
-    when 'ytd'
-      @portfolio_company.start_of_financial_year_date(as_of)
-    else
-      as_of.beginning_of_month
-    end
-  end
+  # FX rate resolution and period start date calculation are delegated to KpiFxConverter
+  # (initialized as @fx_converter) so the same logic is reusable by KpiCurrencyRecomputeJob.
 
   # From all mapping matches on one row (label columns only), decide which one the row represents:
   # - a parent and one of its own children on the same row → the child (filled-down layout), and the

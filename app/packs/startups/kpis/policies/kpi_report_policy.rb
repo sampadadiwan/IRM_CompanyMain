@@ -64,6 +64,10 @@ class KpiReportPolicy < KpiPolicyBase
     index?
   end
 
+  def recompute_fx_conversion?
+    index?
+  end
+
   def mark_reviewed?
     user.enable_kpis && (belongs_to_entity?(user, record) || permissioned_employee?)
   end

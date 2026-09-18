@@ -2,7 +2,7 @@ class KpiReportsController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[show edit update validate_upload template], if: -> { params[:signed_id].present? }
   # validate_upload is called by JS after Uppy finishes; the magic link's signed_id keeps it usable
   # by unauthenticated portco users, and CSRF is enforced by the token the form page carries.
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze refresh_import mark_reviewed reopen]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative recompute_fx_conversion analyze refresh_import mark_reviewed reopen]
   before_action :set_kpi_report_for_validation, only: %i[validate_upload template]
   after_action :verify_authorized, except: %i[index search show_performance chart_refresh refresh_import portco_pending]
   after_action :verify_policy_scoped, only: %i[index chart_refresh]
@@ -296,6 +296,13 @@ class KpiReportsController < ApplicationController
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Recompute cumulative and forward fill started."
   end
   # rubocop:enable Rails/SkipsModelValidations
+
+  # Enqueues a background job to re-convert all FX-converted KPIs for the
+  # portfolio company using current exchange rates.
+  def recompute_fx_conversion
+    KpiCurrencyRecomputeJob.perform_later(@kpi_report.portfolio_company_id, user_id: current_user.id)
+    redirect_to request.referer || kpi_report_url(@kpi_report), notice: "FX conversion recompute started."
+  end
 
   def send_portco_notification
     # Ensure we handle single or multiple portfolio_company_ids

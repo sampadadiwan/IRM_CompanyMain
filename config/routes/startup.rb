@@ -14,6 +14,7 @@ end
 resources :kpi_reports do
   patch 'recompute_cumulative', on: :member
   patch 'recompute_percentage_change', on: :member
+  patch 'recompute_fx_conversion', on: :member
   post "analyze", on: :member
   post 'send_portco_notification', on: :collection
   post 'chart_refresh', on: :collection
