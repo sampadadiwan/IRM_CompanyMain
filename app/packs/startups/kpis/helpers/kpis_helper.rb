@@ -163,6 +163,27 @@ module KpisHelper
     result
   end
 
+  # Returns a Bootstrap tooltip-wrapped span when the KPI was FX-converted,
+  # showing the original value in the portco's reporting currency and the rate used.
+  # Returns the raw content unchanged when no conversion data is present.
+  # @param content [String] the formatted KPI value HTML to wrap
+  # @param kpi [Kpi] the KPI record (checked for original_value and fx_rate_used)
+  # @param portfolio_company [Investor, nil] the portco (provides kpi_currency from json_fields);
+  #   falls back to kpi.portfolio_company when nil
+  # @return [String] HTML-safe string, either a tooltip span or the original content
+  def fx_tooltip_wrap(content, kpi, portfolio_company = nil)
+    return content if kpi.original_value.blank? || kpi.fx_rate_used.blank?
+
+    portco = portfolio_company || kpi.portfolio_company
+    kpi_currency = portco&.json_fields&.dig('kpi_currency') || '?'
+    formatted_original = number_with_precision(kpi.original_value, precision: 2, delimiter: ',')
+    formatted_rate = number_with_precision(kpi.fx_rate_used, precision: 4, delimiter: ',')
+    tooltip = "Original: #{kpi_currency} #{formatted_original} @ #{formatted_rate}"
+
+    tag.span(class: 'fx-converted', data: { bs_toggle: 'tooltip', bs_placement: 'top' },
+             title: tooltip) { content }
+  end
+
   def kpi_percentage_class(kpi, investor_kpi_mapping)
     css_class = if  investor_kpi_mapping&.lower_threshold&.positive? &&
                     kpi.percentage_change < investor_kpi_mapping.lower_threshold

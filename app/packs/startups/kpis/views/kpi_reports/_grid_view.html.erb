@@ -253,9 +253,9 @@
     <%# .present? does not handle string "false" properly - and returns true
     # so we use standard boolean casting instead of relying on .present? %>
     <% if ActiveModel::Type::Boolean.new.cast(params[:compound]) %>
-      <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:  %>
+      <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:, portfolio_company: investor %>
     <% else %>
-      <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:  %>
+      <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:, portfolio_company: investor %>
     <% end %>
 
   <% end %>
