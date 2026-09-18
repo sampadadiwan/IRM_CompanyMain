@@ -5,12 +5,20 @@
 
     kpi_chart_settings = KpiChartSetting.where(user_id: current_user.id)
     kpi_chart_settings = kpi_chart_settings.where(portfolio_company_id: portfolio_company_id) if portfolio_company_id.present?
+
+    kpi_currency = investor&.json_fields&.dig('kpi_currency')
+    fund_currency = investor&.entity&.currency
+    show_currency_toggle = kpi_currency.present? && kpi_currency != fund_currency
 %>
 <!-- FLEXIBLE CHART VERSION 2.0 -->
-<div data-controller="kpi-chart"
+<div data-controller="kpi-chart <%= 'kpi-currency-toggle' if show_currency_toggle %>"
      data-kpi-chart-portfolio-company-id-value="<%= portfolio_company_id %>"
      data-kpi-chart-entity-id-value="<%= current_user.entity_id %>"
-     data-kpi-chart-refresh-url-value="<%= chart_refresh_kpi_reports_path %>">
+     data-kpi-chart-refresh-url-value="<%= chart_refresh_kpi_reports_path %>"
+     <% if show_currency_toggle %>
+       data-kpi-currency-toggle-kpi-currency-value="<%= kpi_currency %>"
+       data-kpi-currency-toggle-fund-currency-value="<%= fund_currency %>"
+     <% end %>>
   <% if params[:no_actions].blank? %>
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
       <div data-controller="export-xl"></div>
@@ -24,6 +32,13 @@
       <span>
         <% if params[:q].blank?%>
           <%= render "kpi_reports/filter", entity: @entity %>
+        <% end %>
+        <% if show_currency_toggle %>
+          <button class="btn btn-outline-secondary btn-sm me-2"
+                  data-kpi-currency-toggle-target="button"
+                  data-action="click->kpi-currency-toggle#toggle">
+            <i class="ti ti-arrows-exchange me-1"></i>Viewing: <%= fund_currency %> (Fund)
+          </button>
         <% end %>
         <div class="btn-group me-2">
           <div class="dropdown">

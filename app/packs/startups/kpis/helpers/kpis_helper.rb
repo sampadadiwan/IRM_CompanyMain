@@ -165,13 +165,16 @@ module KpisHelper
 
   # Returns a Bootstrap tooltip-wrapped span when the KPI was FX-converted,
   # showing the original value in the portco's reporting currency and the rate used.
+  # Also emits data-fund-display / data-original-display attributes for the
+  # kpi-currency-toggle Stimulus controller to swap on toggle.
   # Returns the raw content unchanged when no conversion data is present.
   # @param content [String] the formatted KPI value HTML to wrap
   # @param kpi [Kpi] the KPI record (checked for original_value and fx_rate_used)
+  # @param investor_kpi_mapping [InvestorKpiMapping, nil] the mapping (for formatting original value)
   # @param portfolio_company [Investor, nil] the portco (provides kpi_currency from json_fields);
   #   falls back to kpi.portfolio_company when nil
   # @return [String] HTML-safe string, either a tooltip span or the original content
-  def fx_tooltip_wrap(content, kpi, portfolio_company = nil)
+  def fx_tooltip_wrap(content, kpi, investor_kpi_mapping = nil, portfolio_company = nil)
     return content if kpi.original_value.blank? || kpi.fx_rate_used.blank?
 
     portco = portfolio_company || kpi.portfolio_company
@@ -180,8 +183,30 @@ module KpisHelper
     formatted_rate = number_with_precision(kpi.fx_rate_used, precision: 4, delimiter: ',')
     tooltip = "Original: #{kpi_currency} #{formatted_original} @ #{formatted_rate}"
 
-    tag.span(class: 'fx-converted', data: { bs_toggle: 'tooltip', bs_placement: 'top' },
+    original_display = fx_format_original_value(kpi, investor_kpi_mapping, kpi_currency)
+
+    tag.span(class: 'fx-converted',
+             data: { bs_toggle: 'tooltip', bs_placement: 'top',
+                     kpi_currency_toggle_target: 'cell',
+                     fund_display: content, original_display: original_display },
              title: tooltip) { content }
+  end
+
+  # Formats the original (pre-conversion) KPI value with the portco's currency symbol.
+  # Used by fx_tooltip_wrap to build the data-original-display attribute for the toggle.
+  # @param kpi [Kpi] the KPI record with original_value
+  # @param investor_kpi_mapping [InvestorKpiMapping, nil] the mapping (for data_type awareness)
+  # @param kpi_currency [String] the portco's reporting currency code (e.g., "USD")
+  # @return [String] formatted original value string
+  def fx_format_original_value(kpi, investor_kpi_mapping, kpi_currency)
+    val = kpi.original_value
+    formatted = number_with_precision(val, precision: 2, delimiter: ',')
+
+    if investor_kpi_mapping&.data_type == 'money'
+      "#{kpi_currency} #{formatted}"
+    else
+      formatted
+    end
   end
 
   def kpi_percentage_class(kpi, investor_kpi_mapping)

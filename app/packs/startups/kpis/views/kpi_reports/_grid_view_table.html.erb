@@ -91,7 +91,7 @@
                     <% if kpi.rag_status.present? %>
                       <small class="badge <%= rag_status_badge_class(kpi.rag_status) %> mb-1"><%= kpi.rag_status.titleize %></small><br>
                     <% end %>
-                    <%= fx_tooltip_wrap(display_kpi(kpi, ikm, params: params), kpi, portfolio_company) %>
+                    <%= fx_tooltip_wrap(display_kpi(kpi, ikm, params: params), kpi, ikm, portfolio_company) %>
                     <br>
                     <%= kpi_percentage_class(kpi, ikm).html_safe %>
                     <% if kpi.notes.present? %>
