@@ -227,7 +227,9 @@ module FundsHelper
     # Filter Investor Advisors to ensure they have permission to the fund
     approved_investor_access_ia = approved_investor_access_ia.filter do |ia|
       policy = Pundit.policy(ia.user, model)
-      policy.permissioned_investor_advisor?(as_entity_id: model.entity_id) || policy.show?
+      policy.permissioned_investor_advisor?(as_entity_id: model.entity_id) || policy.show? ||
+        # Keep this preview in step with the send-time rule in Investor#notification_users.
+        ia.investor.visible_from_home_entity?(ia.user, model)
     end
 
     # Tag-excluded contacts (both regular and IA) shown as a single "not subscribed" list

@@ -362,7 +362,9 @@ class Investor < ApplicationRecord
         if user.has_cached_role?(:investor_advisor)
           # Use the original user object directly. dup clears the primary key and association cache,
           # causing has_cached_role? to fail. permissioned_investor_advisor? does not use curr_role.
-          policy.permissioned_investor_advisor?(as_entity_id: investor_entity_id) || policy.show?
+          policy.permissioned_investor_advisor?(as_entity_id: investor_entity_id) ||
+            policy.show? ||
+            visible_from_home_entity?(user, model)
         else
           # For normal users, check show? first; fall back to overview? for models
           # (like Deal) where investors access via overview? rather than show?.
@@ -372,6 +374,23 @@ class Investor < ApplicationRecord
     else
       users
     end
+  end
+
+  # An investor_advisor's entity_id is whichever host entity he last switched into — transient state
+  # rewritten by InvestorAdvisor#switch/#revert, not a permission boundary. Judged by `policy.show?`
+  # alone, a contact would receive or miss a notification depending on where he happened to be
+  # switched when somebody else pressed Send ("No users to send the document" on a KYC document
+  # whose only contact was an advisor switched into another client).
+  #
+  # Restricted to investor records in the advisor's OWN home entity — there he is the investor, not
+  # acting as an advisor — and evaluated against User#home_persona, i.e. exactly the entity and
+  # roles InvestorAdvisor.revert would leave him with. Roles borrowed from the host entity do not
+  # carry over, so this can only confirm access he already holds at home, never add to it.
+  def visible_from_home_entity?(user, model)
+    return false unless investor_entity_id == user.advisor_entity_id
+
+    persona = user.home_persona
+    persona.present? && Pundit.policy(persona, model).show?
   end
 
   # The one definition of "someone at this investor will actually receive Capital Call emails"

@@ -73,16 +73,41 @@ module WithAuthentication
   private
 
   # Define the method to handle the error
-  def deny_access
+  def deny_access(exception = nil)
     if request.headers['Authorization'].present?
       render json: { error: "Access Denied" }, status: :forbidden
     elsif request.headers['Turbo-Frame'].present?
       frame_id = ERB::Util.html_escape(request.headers['Turbo-Frame'])
-      render html: "<turbo-frame id='#{frame_id}'><div class='alert alert-danger mb-0'>Access Denied</div></turbo-frame>".html_safe,
+      render html: "<turbo-frame id='#{frame_id}'><div class='alert alert-danger mb-0'>#{access_denied_message(exception)}</div></turbo-frame>".html_safe,
              status: :forbidden
     else
-      redirect_to root_path, alert: "Access Denied"
+      redirect_to root_path, alert: access_denied_message(exception)
     end
+  end
+
+  # An investor advisor switched into a client entity is authorized as that entity, so a link to
+  # his OWN investment (e.g. a document notification — see Investor#visible_from_home_entity?) is
+  # denied until he switches his persona back. Say so instead of a bare "Access Denied".
+  # Cheap: runs only on the deny path and re-checks just the denied record — with the same policy
+  # class that denied it — against the home persona, which holds no access the user lacks at home
+  # (User#home_persona). The result is HTML-escaped: layouts/_alerts.html.erb renders flashes with
+  # html_safe, and the entity name is admin-editable.
+  def access_denied_message(exception)
+    default = "Access Denied"
+    return default unless exception.is_a?(Pundit::NotAuthorizedError) && current_user&.investor_advisor?
+
+    record = exception.record
+    persona = current_user.home_persona
+    return default unless persona && record.is_a?(ApplicationRecord) && exception.query.present?
+
+    policy_class = exception.policy&.class || Pundit::PolicyFinder.new(record).policy!
+    return default unless policy_class.new(persona, record).public_send(exception.query)
+
+    "#{default}: you are currently switched into #{ERB::Util.html_escape(current_user.entity.name)}. " \
+      "Switch your persona to Self to view this."
+  rescue StandardError => e
+    Rails.logger.warn { "access_denied_message: #{e.class}: #{e.message}" }
+    default
   end
 
   def prepare_exception_notifier
