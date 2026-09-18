@@ -11,10 +11,9 @@ class KpiCurrencyRecomputeJob < ApplicationJob
   def perform(portfolio_company_id, user_id: nil)
     portfolio_company = Investor.find(portfolio_company_id)
     converter = KpiFxConverter.new(portfolio_company)
-    user = User.find(user_id) if user_id
 
     unless converter.conversion_needed?
-      notify(user, portfolio_company, "No FX conversion needed — KPI currency matches fund currency.")
+      send_notification("No FX conversion needed — KPI currency matches fund currency.", user_id, :info)
       return
     end
 
@@ -43,7 +42,8 @@ class KpiCurrencyRecomputeJob < ApplicationJob
     message = "FX recompute complete for #{portfolio_company.investor_name}: #{recomputed} KPIs updated."
     message += " Missing rates for: #{missing_rates.first(10).join(', ')}." if missing_rates.any?
 
-    notify(user, portfolio_company, message)
+    level = missing_rates.any? ? :warning : :success
+    send_notification(message, user_id, level)
   end
 
   private
@@ -54,20 +54,5 @@ class KpiCurrencyRecomputeJob < ApplicationJob
     Kpi.where(portfolio_company_id: portfolio_company.id)
        .where.not(original_value: nil)
        .includes(:investor_kpi_mapping, :kpi_report)
-  end
-
-  # @param user [User, nil] the user to notify
-  # @param portfolio_company [Investor] the portfolio company
-  # @param message [String] the notification message
-  def notify(user, portfolio_company, message)
-    Rails.logger.info(message)
-    return unless user
-
-    Notification.create(
-      recipient: user,
-      actor: user,
-      action: message,
-      notifiable: portfolio_company
-    )
   end
 end
