@@ -40,6 +40,39 @@ module AccountEntryAllocation
     # drift from the total by up to about N x 0.005; 1.00 is immaterial at fund level.
     DEFAULT_TOLERANCE = 1.0
 
+    # Every helper a check formula can call: signature, where it can run (pre, post or either) and what
+    # it checks. The AI check suggester sends this list as the only vocabulary it may use, and
+    # docs/modules/allocation/allocation_run_checks.md documents the same helpers -- keep all three
+    # in step when adding one.
+    HELPER_CATALOGUE = [
+      { signature: 'allowed_entry_names("Entry Type", ["Name", ...])', kind: "pre",
+        purpose: "Every uploaded entry of that entry type in the period uses one of the names (exact match)." },
+      { signature: 'required_custom_fields(:account_entries, ["Label", ...], fund_level_only: true)', kind: "pre",
+        purpose: "Uploaded entries (optionally fund-level only, or entry_types: [...]) have a value for each custom field label." },
+      { signature: 'required_custom_fields(:portfolio_investments, ["Label", ...])', kind: "pre",
+        purpose: "Portfolio investments dated in the period have a value for each custom field label." },
+      { signature: 'entries_mapped_to_portfolio_investment(["Entry Type", ...])', kind: "pre",
+        purpose: "Uploaded entries of those entry types are mapped to one of this fund's portfolio investments." },
+      { signature: "fx_rates_present(within_days: 5)", kind: "pre",
+        purpose: "An exchange rate exists within the window before the end date for every currency pair the fund needs." },
+      { signature: "valuations_present(within_months: 3, severity: :warning)", kind: "pre",
+        purpose: "Every portfolio company held has a valuation within the window before the end date." },
+      { signature: "folio_shares_total(:json_field_key)", kind: "pre",
+        purpose: "Each code read from that json field of fund-level uploads and investments maps to a folio field whose percentages total 100." },
+      { signature: 'unit_settings_present(["key", ...])', kind: "pre",
+        purpose: "Every unit type in use has a unit setting with a value for each column or json field key." },
+      { signature: "fund_entries_allocated(except: [])", kind: "post",
+        purpose: "Every fund-level uploaded entry was picked up by an entry allocation formula that ran." },
+      { signature: "fund_entries_tie_to_folios(tolerance: 1.0, except: [])", kind: "post",
+        purpose: "Fund-level totals equal what the allocation formulas wrote to the folios." },
+      { signature: 'portfolio_allocations_tie("Formula name" => :amount_column_cents)', kind: "post",
+        purpose: "Each portfolio investment's amount column equals what that portfolio allocation formula wrote to the folios." },
+      { signature: 'since_inception_matches_history(["Name", ...])', kind: "either",
+        purpose: "Each folio's stored 'Since Inception <Name>' on the end date equals the sum of its <Name> entries to that date." },
+      { signature: 'check!(condition, "message")', kind: "either",
+        purpose: "Fails with the message unless the condition is true; for one-off checks no helper covers." }
+    ].freeze
+
     # P1/P2: every uploaded entry of entry_type is named one of names.
     #   allowed_entry_names("Non Deal Income", ["Income from Temporary Investments", "Miscelleneous Income"])
     def allowed_entry_names(entry_type, names, severity: :fail)
@@ -316,6 +349,94 @@ module AccountEntryAllocation
                               "(tolerance #{money(tolerance.to_d * 100)}).",
                     columns: ["Formula", "Portfolio investment", "Amount", "Investment", "Allocated to folios", "Difference"],
                     rows:, filters:, truncated: mismatches.size - shown.size)
+    end
+
+    # Every code the allocation formulas split by is shared out 100% across the folios. Allocation
+    # formulas read a code such as "UDR - 2" from the fund-level entry or portfolio investment they
+    # allocate (json field field_key), turn it into a folio field name ("udr_2") and multiply by that
+    # folio's percentage. A code no folio has a field for, or whose percentages do not add up to 100,
+    # allocates part of the amount to nobody -- silently.
+    # Codes are read from this period's fund-level uploads and every investment held by the end date;
+    # folios are the commitments an allocation run for the end date includes.
+    #   folio_shares_total(:fund_level_udr_code)
+    def folio_shares_total(field_key, tolerance: 0.01, severity: :fail)
+      field_key = field_key.to_s
+      codes = Set.new
+      each_json_fields_batch(uploaded_entries.where(capital_commitment_id: nil), []) { |_, json| codes << json[field_key] }
+      PortfolioInvestment.include_proforma.where(fund_id: @fund.id, investment_date: ..@end_date)
+                         .pluck(:json_fields).each { |json| codes << (json.is_a?(String) ? JSON.parse(json) : json.to_h)[field_key] }
+      codes = codes.compact_blank.map(&:to_s).uniq.sort
+      return passed("No fund-level upload or portfolio investment has a #{field_key.humanize(capitalize: false)}.") if codes.empty?
+
+      shares = CapitalCommitment.where(fund_id: @fund.id, commitment_date: ..@end_date).pluck(:json_fields)
+                                .map { |json| json.is_a?(String) ? JSON.parse(json) : json.to_h }
+      offenders = codes.filter_map do |code|
+        folio_field = code.to_s.downcase.delete("-").parameterize(separator: "_")
+        total = shares.sum(0.to_d) { |json| json[folio_field].to_d }
+        next if (total - 100).abs <= tolerance.to_d
+
+        [code, folio_field, shares.count { |json| json[folio_field].present? }, total.round(4).to_s("F")]
+      end
+      return passed("#{codes.size} #{'code'.pluralize(codes.size)} used; each is shared out 100% across #{shares.size} #{'folio'.pluralize(shares.size)}.") if offenders.empty?
+
+      check_problem(severity, "#{offenders.size} of #{codes.size} #{'code'.pluralize(codes.size)} #{offenders.size == 1 ? 'is' : 'are'} " \
+                              "not shared out 100% across the folios.",
+                    columns: ["Code", "Folio field", "Folios with a value", "Total %"], rows: offenders)
+    end
+
+    # Every unit type in use has a unit setting with a value for each key the waterfall formulas read.
+    # A key is a unit setting column (e.g. carry) or a json field (e.g. catch_up). A formula reading
+    # fund_unit_setting.json_fields['catch_up'] for a unit type with no setting fails the run mid-way.
+    #   unit_settings_present(["catch_up", "hurdle_rate"])
+    def unit_settings_present(keys, severity: :fail)
+      keys = Array(keys).map(&:to_s)
+      columns = FundUnitSetting.column_names
+      settings = FundUnitSetting.where(fund_id: @fund.id).to_a.index_by { |s| s.name.to_s.downcase }
+      in_use = CapitalCommitment.where(fund_id: @fund.id).group(:unit_type).count
+      offenders = in_use.filter_map do |unit_type, folios|
+        setting = settings[unit_type.to_s.downcase]
+        missing = if setting.nil?
+                    ["no unit setting"]
+                  else
+                    keys.reject { |key| columns.include?(key) ? !setting[key].nil? : setting.json_fields.to_h[key].present? }
+                  end
+        [unit_type.presence || "(blank)", folios, missing.join(", ")] if missing.any?
+      end
+      return passed("Every unit type in use (#{in_use.size}) has a unit setting with #{keys.to_sentence}.") if offenders.empty?
+
+      check_problem(severity, "#{offenders.size} unit #{offenders.size == 1 ? 'type lacks' : 'types lack'} the settings the formulas read.",
+                    columns: ["Unit type", "Folios", "Missing"], rows: offenders)
+    end
+
+    # Each folio's stored "Since Inception <name>" on the end date equals the sum of all its <name>
+    # entries up to that date. The guard for incremental allocation, which stores a total and carries it
+    # forward instead of summing history every run: a wrong carried total shows up here.
+    #   since_inception_matches_history(["Management Fees", "Audit Fees"])
+    def since_inception_matches_history(names, tolerance: DEFAULT_TOLERANCE, severity: :fail)
+      names = Array(names)
+      stored_names = names.index_by { |n| "Since Inception #{n}" }
+      folio_entries = AccountEntry.where(fund_id: @fund.id, cumulative: false, deleted_at: nil).where.not(capital_commitment_id: nil)
+      history = exact_groups(folio_entries.where(name: names, reporting_date: ..@end_date), :capital_commitment_id, :name)
+      stored = exact_groups(folio_entries.where(name: stored_names.keys, reporting_date: @end_date), :capital_commitment_id, :name)
+               .select { |(_, name), _| stored_names.key?(name) }
+      return passed("No Since Inception totals for these names are stored on #{I18n.l(@end_date)}.") if stored.empty?
+
+      offenders = stored.filter_map do |(commitment_id, stored_name), stats|
+        expected = history.dig([commitment_id, stored_names[stored_name]], :amount_cents) || 0
+        difference = stats[:amount_cents] - expected
+        [commitment_id, stored_name, stats[:amount_cents], expected, difference] if difference.abs > tolerance.to_d * 100
+      end
+      return passed("#{stored.size} Since Inception #{'total'.pluralize(stored.size)} on #{I18n.l(@end_date)} match the full history.") if offenders.empty?
+
+      shown = offenders.first(ROW_LIMIT)
+      folios = CapitalCommitment.where(id: shown.map(&:first)).pluck(:id, :folio_id).to_h
+      rows = shown.map { |id, name, amount, expected, difference| [name, folios[id], money(amount), money(expected), money(difference)] }
+      filters = shown.map do |id, name, *|
+        [["fund_id", :eq, @fund.id], ["capital_commitment_id", :eq, id], ["name", :eq, name], ["reporting_date", :eq, @end_date.to_fs(:db)]]
+      end
+      check_problem(severity, "#{offenders.size} stored Since Inception #{offenders.size == 1 ? 'total differs' : 'totals differ'} " \
+                              "from the full history by more than #{money(tolerance.to_d * 100)}.",
+                    columns: ["Entry", "Folio", "Stored", "Full history", "Difference"], rows:, filters:, truncated: offenders.size - shown.size)
     end
 
     private

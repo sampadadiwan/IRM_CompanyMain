@@ -23,7 +23,9 @@ module CapHive
     config.autoload_paths += Rails.root.glob('app/packs/**/').reject do |path|
       path_str = path.to_s
       path_str.match?(%r{/(controllers|channels|dashboards|policies)/[^/]+}) ||
-        path_str.match?(%r{/(delivery_methods|account_entry_allocation)/?$})
+        path_str.match?(%r{/(delivery_methods|account_entry_allocation)/?$}) ||
+        # nested namespaces inside the allocation engine, e.g. IncrementalMigration::Plan
+        path_str.include?("/account_entry_allocation/")
     end
     config.autoload_paths += Rails.root.glob('app/packs/**/controllers/concerns/')
     config.autoload_paths << Rails.root.join('lib')

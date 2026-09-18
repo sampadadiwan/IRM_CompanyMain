@@ -344,20 +344,41 @@ no changes. Funds 346 and 349 have no formulas.
 
 **Ready:** 316, 317, 318, 319. **Not ready:** 320 and 321 (finding 6), 324–328 (finding 7).
 
-The steps below are done in one go by `rake "allocation:enable_incremental[fund,<id>]"` (or
-`[entity,<id>]`): a dry run by default, `APPLY=true` to write, and
-`allocation:disable_incremental` to switch a fund back off. It refuses any fund with a formula it
-cannot safely handle.
+Support does the steps below from the fund formulas page: **Actions > Incremental allocation**.
+Every change is previewed first and applied only from that preview:
+- **Preview:** shows each formula change (before, after and the new description), anything that
+  blocks the switch, and each tracking starting value (stored now, recomputed).
+- **Apply:** plans the change again and writes nothing if the fund changed since the preview, or if
+  an allocation run or run group is in progress on it.
+- **Record:** every preview and apply is kept in the page's history, with who did it and when.
+
+The page also lists the recommended order of steps and ticks each one off from the fund's data.
+
+Every formula the switch changes also gets a description saying what the formula calculates, how,
+and why it was changed (added after any description the formula already had). Switching a fund off
+puts the old formulas and descriptions back.
+
+The rake tasks in `lib/tasks/incremental_allocation.rake` print the same plans and are kept for
+switching every fund in an entity at once:
+- `allocation:enable_incremental[fund|entity,<id>]`
+- `allocation:disable_incremental`
+- `allocation:describe_incremental`
+- `allocation:reseed_carry_forward`
+
+They are dry runs unless `APPLY=true` (`DRY_RUN=true` previews the reseed).
 
 For each fund:
 
 - [ ] Deploy the engine change (it does nothing until a fund is switched on).
-- [ ] Apply the fund's formula changes (section 6), with the automatic backup.
-- [ ] **Tracking funds (316, 319):** correct the saved tracking starting values for the most recent
-      saved date, then verify.
+- [ ] Add the fund's run checks (**Actions > Suggest run checks**), including "Since Inception totals
+      match history", which confirms the switch in production.
+- [ ] Re-run the most recent period before switching.
+- [ ] Preview and apply the switch; the fund's formula changes (section 6) are part of it.
+- [ ] **Tracking funds (316, 319):** recompute the saved tracking starting values for the most recent
+      saved date ("Recompute starting values" on the same page), then verify.
 - [ ] **318, 321:** seed tracking starting values before those formulas are used.
-- [ ] Switch the fund on.
-- [ ] Re-run the most recent period and compare with the previous results.
+- [ ] Re-run the most recent period after switching; its post-run checks compare the carried totals
+      with the full history.
 - [ ] Tell the owners of fund 316's carry and catch-up figures about the tracking bug's effect on
       USD classes.
 - [ ] Agree the operating procedure for back-dated corrections (finding 8).

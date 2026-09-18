@@ -112,6 +112,7 @@ class AllocationGroupRunPreflight < Trailblazer::Operation
     return check if start_date.blank? || end_date.blank? || end_date < start_date
 
     check_permission(check, user, fund)
+    check_formula_operation(check, fund)
     check_template_integrity(check, template, fund)
     check_locked_period(check, template, fund, start_date, end_date)
     check_validation_rules(check, template, fund, start_date, end_date)
@@ -137,6 +138,14 @@ class AllocationGroupRunPreflight < Trailblazer::Operation
     return if FundPolicy.new(user, fund).allocate?
 
     check.messages << Message.new(severity: "blocker", text: "You do not have the right to run allocations on #{fund.name}.")
+  end
+
+  # A run starting while the fund's formulas are being switched (FundFormulaOperation apply) could load
+  # formulas from before the write and the incremental flag from after it.
+  def check_formula_operation(check, fund)
+    return unless FundAllocationActivity.formula_operation_applying?(fund)
+
+    check.messages << Message.new(severity: "blocker", text: "#{fund.name}'s formulas are being changed (Actions > Incremental allocation). Wait for that to finish.")
   end
 
   # Decisions 15 and 16: a vanished statement document or an unknown formula tag is a wrong

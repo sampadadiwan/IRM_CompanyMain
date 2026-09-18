@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_15_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2025,6 +2025,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_100000) do
     t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true, length: { slug: 70, scope: 70 }
     t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type", length: { slug: 140 }
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
+  end
+
+  create_table "fund_formula_operations", force: :cascade do |t|
+    t.datetime "applied_at"
+    t.bigint "applied_by_id"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "error"
+    t.bigint "fund_id", null: false
+    t.string "operation", limit: 30, null: false
+    t.json "params"
+    t.json "plan"
+    t.datetime "previewed_at"
+    t.bigint "requested_by_id", null: false
+    t.json "result"
+    t.string "status", limit: 20, default: "previewing", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_fund_formula_operations_on_entity_id"
+    t.index ["fund_id", "created_at"], name: "index_fund_formula_operations_on_fund_id_and_created_at"
+    t.index ["status"], name: "index_fund_formula_operations_on_status"
   end
 
   create_table "fund_formulas", force: :cascade do |t|

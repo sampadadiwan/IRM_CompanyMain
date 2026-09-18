@@ -1,0 +1,9 @@
+<%# Locals: operation %>
+<%
+  css = { "previewing" => "bg-info-subtle text-info", "applying" => "bg-info-subtle text-info",
+          "previewed" => "bg-primary-subtle text-primary", "applied" => "bg-success-subtle text-success",
+          "blocked" => "bg-warning-subtle text-warning", "refused" => "bg-warning-subtle text-warning",
+          "failed" => "bg-danger-subtle text-danger" }.fetch(operation.status, "bg-secondary-subtle text-secondary")
+  label = operation.suggestions? && operation.previewed? ? "Ready" : operation.status.humanize
+%>
+<span class="badge <%= css %>"><%= label %></span>

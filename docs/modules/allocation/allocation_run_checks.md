@@ -263,6 +263,56 @@ comparing nothing.
 **Limit:** this assumes an investment's amount columns are in the same currency as the entries
 allocated from it (the fund's). It has not been verified for instruments held in another currency.
 
+### `folio_shares_total(field_key, tolerance: 0.01)`
+
+Allocation formulas that split by a code do three things:
+- read a code such as "UDR - 2" from the fund-level entry or portfolio investment they allocate,
+  from the json field `field_key`
+- turn the code into a folio field name ("udr_2")
+- multiply by that folio's percentage
+
+A code that no folio has a field for, or whose percentages don't add up to 100, allocates part of
+the amount to nobody, with no error. This check catches it before the run deletes anything.
+
+- **Codes:** from this period's fund-level uploads, and every portfolio investment held by the end
+  date (proforma included).
+- **Folios:** the commitments an allocation run for the end date includes
+  (`commitment_date <= end_date`).
+- **Passes** when each code's percentages total 100 within `tolerance` (percentage points).
+
+**Rows:** Code, Folio field, Folios with a value, Total %.
+
+### `unit_settings_present(keys)`
+
+Every unit type in use by the fund's commitments has a unit setting with a value for each key.
+Unit types are matched to settings ignoring case, as `fund_unit_setting` does in MySQL. A key can be
+a unit setting column (such as `carry`) or a json field (such as `catch_up`). A waterfall formula
+that reads `fund_unit_setting.json_fields['catch_up']` for a unit type with no setting stops the
+run part-way with `undefined method 'json_fields' for nil`; fund 342's run 1854 did exactly that.
+
+**Rows:** Unit type, Folios, Missing ("no unit setting" or the missing keys).
+
+### `since_inception_matches_history(names, tolerance: 1.0)`
+
+Compares each folio's stored `Since Inception <name>` entry on the end date with the sum of all its
+non-cumulative `<name>` entries up to that date. Names are matched exactly.
+
+- **Why it exists:** under incremental allocation a run stores a total and the next run carries it
+  forward instead of summing history, so a wrong carried total shows up here. On a production copy
+  it replaces the snapshot diff used in development.
+- **Where it runs:** normally as a post-run check. As a pre-run check it tests the previous run's
+  totals.
+- **Folios left out:** a folio with no stored entry for a name (for example one skipped by the
+  formula) is not compared.
+
+**Rows:** Entry, Folio, Stored, Full history, Difference.
+
+### Helper catalogue
+
+`CheckHelpers::HELPER_CATALOGUE` lists every helper with its signature, where it can run and what
+it checks. The AI check suggester (fund formulas page, Actions > Suggest run checks) sends that list
+as the only vocabulary it may use. When adding a helper, add it to the catalogue and to this section.
+
 ### `cash_reconciles(...)`: pending definition
 
 The equation is opening cash + portfolio sales − exit costs − other costs − portfolio buys −

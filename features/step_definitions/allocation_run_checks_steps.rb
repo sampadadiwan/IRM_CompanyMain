@@ -91,6 +91,17 @@ end
 
 ### Data #######################################################################
 
+Given('folio {string} has custom field {string} of {string}') do |folio_id, key, value|
+  commitment = arc_commitment!(folio_id)
+  commitment.update_column(:json_fields, commitment.json_fields.to_h.merge(key => value))
+end
+
+# "key=value,key=value" json fields on a unit setting named after a unit type
+Given('the fund has a unit setting {string} with json fields {string}') do |name, pairs|
+  json_fields = pairs.split(",").to_h { |pair| pair.split("=", 2).map(&:strip) }
+  FundUnitSetting.create!(entity_id: @fund.entity_id, fund: @fund, name:, json_fields:)
+end
+
 # Columns: name, entry_type, amount (amount_cents), reporting_date, generated, and optionally
 # folio (a folio from "the fund has folios"; blank = fund level), parent ("portfolio investment",
 # "portfolio company" or blank) and custom_fields ("key=value,key=value"; a blank value is kept

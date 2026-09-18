@@ -108,6 +108,8 @@ class ImportUtil < Trailblazer::Operation
     false
   end
 
+  delegate :sanitize_cell, to: :class
+
   # Normalise a single spreadsheet cell.
   # Files pasted together from Word/web pages routinely carry non-breaking spaces (U+00A0)
   # and other unicode blanks. String#strip only removes ASCII whitespace, so those
@@ -118,7 +120,9 @@ class ImportUtil < Trailblazer::Operation
   # unicode ones, while leaving newlines alone. Some cells legitimately hold
   # multi-line text - a fund formula body is Ruby source, and folding its newlines
   # into spaces joins two statements into one line and makes it unparseable.
-  def sanitize_cell(value)
+  #
+  # A class method so code outside an import (FundFormulaAttributes) can store exactly what an import would.
+  def self.sanitize_cell(value)
     return nil if value.nil?
 
     value.to_s.gsub(/[[:blank:]]/, " ").strip.squeeze(" ")

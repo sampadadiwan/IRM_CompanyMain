@@ -24,7 +24,8 @@ class ImportFundFormula < ImportUtil
     # The fund is the upload owner, not a column in the sheet
     raise "Fund not found - upload fund formulas against a fund" unless fund
 
-    name, description, entry_type, formula, rule_type, rule_for, tag_list, roll_up, meta_data, generate_ytd_qtly, enabled, sequence, cache = read_row_data(row_data)
+    attrs = FundFormulaAttributes.from_row(row_data)
+    sequence = attrs.delete(:sequence)
     update_only = row_data["Update Only"]&.downcase == "yes"
 
     if update_only
@@ -34,45 +35,19 @@ class ImportFundFormula < ImportUtil
       fund_formula = fund.fund_formulas.find_by(id:)
       raise "FundFormula with id #{id} not found for Fund #{fund.id}" unless fund_formula
 
-      attrs = { name:, description:, rule_type:, rule_for:, formula:, entry_type:, roll_up:, enabled:, tag_list:, generate_ytd_qtly:, meta_data:, import_upload_id: import_upload.id, add_to_commitment_cache: cache }
-      attrs[:sequence] = sequence.presence&.to_i if sequence.present?
-      fund_formula.update!(attrs)
+      attrs[:sequence] = sequence.to_i if sequence
+      fund_formula.update!(**attrs, import_upload_id: import_upload.id)
 
     else
       # Find by a composite key of attributes to prevent duplicates.
-      fund_formula = fund.fund_formulas.find_or_initialize_by(entity_id: fund.entity_id, name:, description:, rule_type:, rule_for:, formula:, entry_type:, generate_ytd_qtly:, meta_data:)
+      fund_formula = fund.fund_formulas.find_or_initialize_by(entity_id: fund.entity_id, **attrs.slice(:name, :description, :rule_type, :rule_for, :formula, :entry_type, :generate_ytd_qtly, :meta_data))
 
-      if fund_formula.id.present?
-        raise "FundFormula #{fund_formula.id} already exists"
-      else
-        attrs = { entity_id: fund.entity_id, fund_id: fund.id, name:, description:, rule_type:, rule_for:, formula:, entry_type:, roll_up:, enabled:, import_upload_id: import_upload.id, tag_list:, generate_ytd_qtly:, meta_data:, add_to_commitment_cache: cache }
-        attrs[:sequence] = sequence.presence&.to_i if sequence.present?
-        fund.fund_formulas.create!(attrs)
-      end
+      raise "FundFormula #{fund_formula.id} already exists" if fund_formula.id.present?
+
+      attrs[:sequence] = sequence.to_i if sequence
+      fund.fund_formulas.create!(**attrs, entity_id: fund.entity_id, fund_id: fund.id, import_upload_id: import_upload.id)
     end
 
     true
-  end
-
-  # Reads and parses data from a row hash into individual variables.
-  #
-  # @param row_data [Hash] The data for a single row.
-  # @return [Array] An array of parsed values from the row.
-  def read_row_data(row_data)
-    name = row_data["Name"]
-    description = row_data["Description"]
-    entry_type = row_data["Entry Type"]
-    formula = row_data["Formula"]
-    rule_type = row_data["Rule Type"]
-    rule_for = row_data["Rule For"]
-    tag_list = row_data["Tag List"]
-    roll_up = row_data["Rollup"]&.downcase == "yes"
-    meta_data = row_data["Metadata"]
-    generate_ytd_qtly = row_data["Generate Ytd, Quarterly, Since Inception Numbers"]&.downcase == "yes"
-    enabled = row_data["Enabled"]&.downcase == "yes"
-    sequence = row_data["Sequence"]&.strip
-    cache = row_data["Cache"]&.downcase == "yes"
-
-    [name, description, entry_type, formula, rule_type, rule_for, tag_list, roll_up, meta_data, generate_ytd_qtly, enabled, sequence, cache]
   end
 end

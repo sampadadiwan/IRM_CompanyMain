@@ -1,0 +1,8 @@
+<%# Suggest run checks, before the fund has any suggestion set %>
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0 text-gray-800">Suggest run checks</h1>
+    <%= link_to "Back", fund_formulas_path(fund_id: @fund.id), class: "btn btn-outline-secondary" %>
+  </div>
+  <%= render "fund_formula_operations/generate", fund: @fund %>
+<% end %>

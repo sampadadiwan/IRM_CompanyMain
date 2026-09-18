@@ -1,0 +1,106 @@
+<%#
+  An incremental allocation plan (AccountEntryAllocation::IncrementalMigration::Plan) and, once applied,
+  what was written. Locals: operation, fund
+%>
+<% plan = AccountEntryAllocation::IncrementalMigration::Plan.from_h(operation.plan) %>
+
+<% if plan.already_enabled? %>
+  <div class="alert alert-secondary">This fund is already on incremental allocation. Nothing to switch on.</div>
+<% elsif operation.blocked? && !plan.blocked? %>
+  <div class="alert alert-secondary">Nothing to change.</div>
+<% end %>
+
+<% if operation.applied? %>
+  <div class="alert alert-success">
+    Applied: <%= pluralize(operation.result.to_h["formulas"].to_i, "formula") %> changed,
+    <%= pluralize(operation.result.to_h["starting_values"].to_i, "starting value") %> written<%= case operation.result.to_h["flag"] when true then ", fund switched on" when false then ", fund switched off" end %>.
+  </div>
+<% end %>
+
+<% if plan.blocked? %>
+  <div class="alert alert-danger">
+    <strong>Blocked.</strong> These formulas read history the switch cannot handle automatically. Edit them, then preview again.
+    <ul class="mb-0 mt-2">
+      <% plan.blockers.each do |b| %>
+        <li><%= b["message"] %> <%= link_to "Open", fund_formula_path(b["formula_id"]), data: { turbo_frame: "_top" } if b["formula_id"] %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<% if plan.warnings.any? %>
+  <div class="alert alert-warning">
+    <ul class="mb-0">
+      <% plan.warnings.each do |w| %><li><%= w["message"] %></li><% end %>
+    </ul>
+  </div>
+<% end %>
+
+<% if plan.edits.any? %>
+  <h5 class="mt-3"><%= plan.operation == "disable_incremental" ? "Formulas to restore" : "Formula changes" %> (<%= plan.edits.size %>)</h5>
+  <% plan.edits.each do |edit| %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <strong>Seq <%= edit["sequence"] %> — <%= edit["name"] %></strong>
+          <% if edit["pattern"].present? %><span class="badge bg-secondary-subtle text-secondary"><%= edit["pattern"].humanize %></span><% end %>
+        </div>
+        <% if edit["formula_before"] != edit["formula_after"] %>
+          <div class="row mt-2">
+            <div class="col-md-6"><div class="small text-muted">Now</div><pre class="bg-light p-2 small text-wrap"><%= edit["formula_before"] %></pre></div>
+            <div class="col-md-6"><div class="small text-muted">After</div><pre class="bg-light p-2 small text-wrap"><%= edit["formula_after"] %></pre></div>
+          </div>
+        <% end %>
+        <% if edit["description_before"] != edit["description_after"] %>
+          <div class="small text-muted">Description after</div>
+          <div class="small" style="white-space: pre-wrap"><%= edit["description_after"].presence || "(none)" %></div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<% if plan.reseeds.any? %>
+  <h5 class="mt-3">Starting values (<%= plan.reseed_value_count %>)</h5>
+  <% if !plan.values_computed? %>
+    <p class="text-muted">Not computed for this preview.</p>
+  <% end %>
+  <% folios = CapitalCommitment.where(id: plan.reseeds.flat_map { |r| r["values"].pluck("capital_commitment_id") }).pluck(:id, :folio_id).to_h %>
+  <% plan.reseeds.each do |reseed| %>
+    <details class="mb-2" <%= "open" if plan.reseeds.size == 1 %>>
+      <summary>Seq <%= reseed["sequence"] %> — <%= reseed["name"] %> on <%= l(Date.parse(reseed["date"])) %>
+        (<%= reseed["values"].count { |v| v["old_cents"] && BigDecimal(v["old_cents"]) != BigDecimal(v["new_cents"]) } %> changing)</summary>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered mt-2">
+          <thead><tr><th>Folio</th><th class="text-end">Stored now</th><th class="text-end">Recomputed</th></tr></thead>
+          <tbody>
+            <% reseed["values"].each do |v| %>
+              <tr>
+                <td><%= folios[v["capital_commitment_id"]] || v["capital_commitment_id"] %></td>
+                <td class="text-end"><%= v["old_cents"] ? number_with_delimiter(format("%.2f", BigDecimal(v["old_cents"]) / 100)) : "No stored entry — left alone" %></td>
+                <td class="text-end"><%= number_with_delimiter(format("%.2f", BigDecimal(v["new_cents"]) / 100)) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  <% end %>
+<% end %>
+
+<% if plan.edits.empty? && plan.reseeds.empty? && !plan.already_enabled? && !plan.blocked? %>
+  <p class="text-muted">No formula changes.<%= " The fund's incremental flag will be set #{plan.flag ? 'on' : 'off'}." unless plan.flag.nil? %></p>
+<% end %>
+
+<% if operation.can_apply? %>
+  <div class="d-flex align-items-center gap-3 mt-3">
+    <%= button_to apply_fund_formula_operation_path(operation), method: :patch, class: "btn btn-primary",
+                  form: { data: { turbo_frame: "_top", turbo_confirm: "Apply these changes to #{fund.name}? The fund is checked again first; if anything changed since this preview, nothing is written." } } do %>
+      Apply
+    <% end %>
+    <span class="text-muted">Planned again before writing: if anything has changed since this preview, nothing is written.</span>
+  </div>
+<% elsif operation.refused? %>
+  <%= button_to "Preview again", fund_formula_operations_path(fund_id: fund.id, operation: operation.operation, date: operation.params.to_h["date"]),
+                method: :post, class: "btn btn-outline-primary mt-3", form: { data: { turbo_frame: "_top" } } %>
+<% end %>

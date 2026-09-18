@@ -1,0 +1,94 @@
+<%#
+  Incremental allocation for one fund (support only): where the fund stands, the recommended steps,
+  the preview buttons and the history of every preview and apply.
+  See openspec/changes/incremental-allocation-ui.
+%>
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">Incremental allocation</h1>
+      <div class="text-muted"><%= @fund.name %> —
+        <% if @steps.enabled? %>
+          <span class="badge bg-success-subtle text-success">On incremental allocation</span>
+        <% else %>
+          <span class="badge bg-secondary-subtle text-secondary">Sums all history every run</span>
+        <% end %>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <%= link_to "Back", fund_formulas_path(fund_id: @fund.id), class: "btn btn-outline-secondary" %>
+      <%= link_to "Suggest run checks", suggestions_fund_formula_operations_path(fund_id: @fund.id), class: "btn btn-outline-info ti ti-list-check" %>
+    </div>
+  </div>
+
+  <p class="text-muted">
+    An incremental fund stores each Since Inception total and carries it forward, instead of adding up the
+    fund's whole history on every run. Every change is previewed first and applied only when you confirm it.
+    Nothing is written while an allocation run is in progress on the fund.
+  </p>
+
+  <h5 class="mt-4">Recommended steps</h5>
+  <ol class="list-group list-group-numbered mb-4">
+    <% @steps.steps.each do |step| %>
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        <div class="ms-2 me-auto">
+          <div class="fw-bold"><%= step.title %></div>
+          <span class="text-muted"><%= step.detail %></span>
+        </div>
+        <% if step.done %>
+          <span class="badge bg-success-subtle text-success"><i class="ti ti-check"></i> Done</span>
+        <% elsif @steps.next_step == step %>
+          <span class="badge bg-primary-subtle text-primary">Next</span>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+
+  <h5>Actions</h5>
+  <div class="d-flex flex-wrap gap-2 align-items-end mb-4">
+    <% if @steps.enabled? %>
+      <%= button_to "Preview switching off", fund_formula_operations_path(fund_id: @fund.id, operation: "disable_incremental"),
+                    method: :post, class: "btn btn-outline-danger" %>
+      <%= form_with url: fund_formula_operations_path, method: :post, class: "d-flex gap-2 align-items-end" do |f| %>
+        <%= hidden_field_tag :fund_id, @fund.id %>
+        <%= hidden_field_tag :operation, "reseed_carry_forward" %>
+        <div>
+          <label class="form-label mb-0 small" for="date">Starting values on (blank: each formula's latest date)</label>
+          <%= date_field_tag :date, nil, class: "form-control" %>
+        </div>
+        <%= f.submit "Preview recomputing starting values", class: "btn btn-outline-primary" %>
+      <% end %>
+    <% else %>
+      <%= button_to "Preview switching to incremental", fund_formula_operations_path(fund_id: @fund.id, operation: "enable_incremental"),
+                    method: :post, class: "btn btn-primary" %>
+    <% end %>
+  </div>
+
+  <h5>History</h5>
+  <% if @operations.empty? %>
+    <p class="text-muted">Nothing has been previewed for this fund yet.</p>
+  <% else %>
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead>
+          <tr><th>Operation</th><th>Status</th><th>Requested</th><th>Applied</th><th></th></tr>
+        </thead>
+        <tbody>
+          <% @operations.each do |operation| %>
+            <tr>
+              <td><%= operation.operation.humanize %></td>
+              <td><%= render "fund_formula_operations/status", operation: %></td>
+              <td><%= operation.requested_by&.full_name %><br><span class="text-muted"><%= l(operation.created_at, format: :abbr_date_time) %></span></td>
+              <td>
+                <% if operation.applied_at %>
+                  <%= operation.applied_by&.full_name %><br><span class="text-muted"><%= l(operation.applied_at, format: :abbr_date_time) %></span>
+                <% end %>
+              </td>
+              <td><%= link_to "Open", fund_formula_operation_path(operation), class: "btn btn-sm btn-outline-info" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+<% end %>

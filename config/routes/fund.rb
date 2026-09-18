@@ -48,6 +48,14 @@ resources :fund_formulas do
   post 'fetch_templates', on: :collection
 end
 
+# Actions > Incremental allocation / Suggest run checks on the fund formulas page (support only)
+resources :fund_formula_operations, only: %i[index show create] do
+  get "suggestions", on: :collection
+  patch "apply", on: :member
+  post "add_suggestions", on: :member
+  post "download_suggestions", on: :member
+end
+
 resources :fund_unit_settings
 resources :portfolio_investments do
   get 'base_amount_form', on: :collection
