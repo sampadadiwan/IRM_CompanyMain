@@ -771,11 +771,21 @@ end
 # documents association) so an "adhoc_kyc_notification" notification's attachment_names can
 # find it — analogous to "the first commitment has document ..." but for the KYC-mode owner.
 And('the shared investor kyc has document {string} with file {string}') do |doc_name, file_name|
+  create_investor_kyc_document(@shared_investor_kyc, doc_name, file_name)
+end
+
+# Same, but for @investor_kyc (set by "a InvestorKyc is created with details ...") — used by
+# the Entity-level notify_kyc_required / kyc_required_reminder preview scenarios.
+And('the investor kyc has document {string} with file {string}') do |doc_name, file_name|
+  create_investor_kyc_document(@investor_kyc, doc_name, file_name)
+end
+
+def create_investor_kyc_document(investor_kyc, doc_name, file_name)
   Document.create!(
-    entity: @shared_investor_kyc.entity,
+    entity: investor_kyc.entity,
     name: doc_name,
-    owner: @shared_investor_kyc,
-    folder: @shared_investor_kyc.document_folder,
+    owner: investor_kyc,
+    folder: investor_kyc.document_folder,
     user: @user,
     file: File.new("public/sample_uploads/#{file_name}", "r")
   )
