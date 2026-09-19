@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { formatLocaleDate } from 'custom/locale_date_format';
-import { localeDateFilterParams } from 'custom/ag_locale_date_filter';
+import { localeDateFilterParams, localeDateGridOptions } from 'custom/ag_locale_date_filter';
 
 export default class BaseAgGrid extends Controller {
 
@@ -47,6 +47,9 @@ export default class BaseAgGrid extends Controller {
 
         // let the grid know which columns and what data to use
         this.gridOptions = {
+            // Typeable locale-format date filters — must be at grid level, see
+            // custom/ag_locale_date_filter.js.
+            ...localeDateGridOptions,
             getRowId: params => params.data.id,
             defaultExcelExportParams: {
                 columnKeys: this.getExportColumns(),

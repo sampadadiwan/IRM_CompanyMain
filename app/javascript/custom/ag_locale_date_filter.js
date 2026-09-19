@@ -142,12 +142,25 @@ export class LocaleDateFilterComponent {
   }
 }
 
-// The filterParams every agDateColumnFilter in the app should use: the typeable
-// locale date component plus a comparator that reads the raw cell value. Both halves
-// are needed — without the comparator ag-Grid compares a date string against a Date
-// and every row silently tests as "not equal".
+// The date filter is configured in TWO places, and putting either half in the other
+// one fails silently:
+//
+//   localeDateGridOptions -> the GRID options object. ag-Grid resolves the date
+//     component with getCompDetails(this.gridOptions, {propertyName: "dateComponent"},
+//     "agDateInput", ...) — it reads gridOptions and nothing else. A `dateComponent`
+//     placed in a column's filterParams is ignored without warning and you get the
+//     stock calendar-only <input type="date"> back.
+//
+//   localeDateFilterParams -> the COLUMN's filterParams, for the comparator, which is
+//     per-column and has no meaning at grid level.
+//
+// Every grid that builds its own gridOptions has to spread the first one in;
+// BaseAgGrid, the deals list and the adhoc grid each construct their own.
+export const localeDateGridOptions = {
+  dateComponent: LocaleDateFilterComponent
+};
+
 export const localeDateFilterParams = {
-  dateComponent: LocaleDateFilterComponent,
   comparator: (filterLocalDateAtMidnight, cellValue) => {
     // cellValue is the raw value in the cell. ag-Grid hands us the filter date at
     // local midnight, so compare at day granularity — otherwise a timestamped cell
