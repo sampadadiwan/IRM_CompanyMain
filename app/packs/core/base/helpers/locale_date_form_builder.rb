@@ -47,7 +47,7 @@ class LocaleDateFormBuilder < ActionView::Helpers::FormBuilder
         readonly:            readonly,
         data:                {
           "locale-date-target": "display",
-          action: "input->locale-date#inputChanged"
+          action: "input->locale-date#inputChanged blur->locale-date#inputBlurred"
         }
       )
 

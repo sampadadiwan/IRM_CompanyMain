@@ -139,3 +139,76 @@ export function formatLocaleDateTime(value, format = null) {
   return pattern ? strftime(date, pattern)
                  : date.toLocaleString(undefined, BROWSER_TIME_OPTS);
 }
+
+// Human-readable rendering of a strftime pattern ("%d/%m/%Y" -> "dd/mm/yyyy"),
+// for placeholders and tooltips that tell the user what to type.
+export function dateFormatHint(format = null) {
+  const pattern = format || appDateFormat();
+  if (!pattern) return "";
+  return pattern.replace("%d", "dd").replace("%m", "mm").replace("%Y", "yyyy");
+}
+
+// Reads a date the USER TYPED, in the active locale's format, and returns ISO
+// "YYYY-MM-DD" (or null). This is the inverse of formatLocaleDate and the one
+// place typed dates are interpreted — the locale-date Stimulus controller and
+// the ag-Grid column filter both go through it so a date typed into a filter
+// means the same thing as a date typed into a form.
+//
+// ISO input is accepted too, so a Capybara `fill_in` and a value round-tripped
+// from the server both work regardless of the active locale.
+export function parseLocaleDate(value, format = null) {
+  if (value === null || value === undefined) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  // Ruby Time#to_s / ActiveSupport datetime prefix, or an exact ISO date
+  const isoPrefix = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoPrefix) return validIsoDate(`${isoPrefix[1]}-${isoPrefix[2]}-${isoPrefix[3]}`);
+
+  const pattern = format || appDateFormat();
+  if (!pattern) return null;
+
+  // Positional order of the day/month/year tokens within the locale's pattern
+  const tokens = [
+    { key: "d", pos: pattern.indexOf("%d") },
+    { key: "m", pos: pattern.indexOf("%m") },
+    { key: "y", pos: pattern.indexOf("%Y") }
+  ];
+  // A pattern missing any of the three can't be read back positionally — bail out
+  // rather than mapping capture groups onto the wrong parts.
+  if (tokens.some((t) => t.pos === -1)) return null;
+  const order = tokens.sort((a, b) => a.pos - b.pos).map((t) => t.key);
+
+  // Escape regex metacharacters in the separators (e.g. the '.' in %d.%m.%Y)
+  // before substituting the capture groups.
+  const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const strict = escaped
+    .replace("%d", "(\\d{1,2})")
+    .replace("%m", "(\\d{1,2})")
+    .replace("%Y", "(\\d{4})");
+
+  let match = raw.match(new RegExp("^" + strict + "$"));
+  // Fall back to a separator-agnostic read in the same token order, so "1-2-2026"
+  // and "1.2.2026" work under a %d/%m/%Y locale. Only the punctuation is relaxed;
+  // the day/month/year order is still the locale's.
+  if (!match) match = raw.match(/^(\d{1,4})[\/\-. ](\d{1,2})[\/\-. ](\d{1,4})$/);
+  if (!match) return null;
+
+  const parts = {};
+  order.forEach((key, i) => { parts[key] = match[i + 1].padStart(2, "0"); });
+  if (parts.y.length !== 4) return null;
+  return validIsoDate(`${parts.y}-${parts.m}-${parts.d}`);
+}
+
+// Returns the ISO string only if it denotes a real calendar date, so an
+// impossible date such as "31/02/2026" is rejected rather than silently
+// rolling over into March and filtering on a day the user never asked for.
+function validIsoDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const roundTrips = date.getUTCFullYear() === y &&
+                     date.getUTCMonth() === m - 1 &&
+                     date.getUTCDate() === d;
+  return roundTrips ? iso : null;
+}

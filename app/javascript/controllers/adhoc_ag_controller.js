@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { formatLocaleDate } from "custom/locale_date_format"
+import { localeDateFilterParams } from "custom/ag_locale_date_filter"
 
 export default class extends Controller {
 
@@ -294,6 +295,10 @@ class DynamicAgGrid {
                 case 'dateColumn':
                     colDef.type = 'dateColumn';
                     colDef.filter = 'agDateColumnFilter';
+                    // Without these the filter compares the raw date STRING in the cell
+                    // against a Date and nothing ever matches, and its input is the
+                    // browser-locale calendar rather than a typeable app-locale one.
+                    colDef.filterParams = localeDateFilterParams;
                     colDef.valueFormatter = (params) =>
                         params.value ? formatLocaleDate(params.value) : '';
                     break;

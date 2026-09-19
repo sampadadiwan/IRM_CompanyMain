@@ -1,0 +1,49 @@
+// Styles for the typeable date filter used by ag-Grid's agDateColumnFilter
+// (app/javascript/custom/ag_locale_date_filter.js). It replaces ag-Grid's stock
+// <input type="date">, which can only be driven by the browser's calendar, with a
+// text input in the app's locale format plus an icon for the native picker.
+.ag-locale-date-filter {
+  .ag-input-field-wrapper {
+    position: relative;
+  }
+
+  // Leave room for the calendar icon so a typed date never runs underneath it.
+  .ag-input-field-input {
+    padding-right: 1.75rem;
+  }
+
+  .ag-locale-date-filter-icon {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: 0.6;
+    line-height: 1;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    i {
+      pointer-events: none;
+    }
+  }
+
+  // Present only to receive showPicker() from the icon — never interacted with directly.
+  .ag-locale-date-filter-picker {
+    position: absolute;
+    width: 0;
+    height: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  // Applied on blur only, so a half-typed date isn't marked wrong mid-keystroke.
+  .ag-locale-date-filter-invalid {
+    border-color: var(--bs-danger, #dc3545);
+  }
+}

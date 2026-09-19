@@ -1,8 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
+import { parseLocaleDate } from "custom/locale_date_format"
 
 // Keeps a locale-formatted display input, a hidden ISO submission input, and a
 // transparent native <input type="date"> in sync.
-// Clicking the display text input or the calendar icon both open the native picker.
+// The display input is a plain text field the user types into; the calendar icon
+// is the only thing that opens the native picker (clicking the text field must not,
+// or the popup steals focus and the field becomes effectively calendar-only).
 export default class extends Controller {
   static targets = ["display", "picker", "hidden"]
   static values  = { format: String }
@@ -21,58 +24,64 @@ export default class extends Controller {
     const iso = this.pickerTarget.value  // "YYYY-MM-DD"
     if (!iso) return
 
-    if (this.hasHiddenTarget) this.hiddenTarget.value = iso
-
-    const [year, month, day] = iso.split("-")
-    this.displayTarget.value = this.formatValue
-      .replace("%d", day.padStart(2, "0"))
-      .replace("%m", month.padStart(2, "0"))
-      .replace("%Y", year)
+    this.commit(iso)
+    this.displayTarget.value = this.formatIso(iso)
+    this.displayTarget.classList.remove("is-invalid")
   }
 
   // Called when the user types directly into the display input (or a test fills it in).
   // Accepts both locale-formatted strings and ISO "YYYY-MM-DD" so Capybara fill_in works.
   inputChanged() {
+    // A half-typed date is not a value yet, and neither is an unparseable one. Either
+    // way the previously committed date has to be cleared: leaving it behind would
+    // submit a date the user can no longer see (a filter silently applying a stale bound).
+    const iso = this.parseToIso(this.displayTarget.value)
+    this.commit(iso || "")
+    // Validity is only signalled on blur — flagging mid-keystroke would mark every
+    // partially-typed date red.
+    if (iso) this.displayTarget.classList.remove("is-invalid")
+  }
+
+  // On blur, rewrite a recognised date into the canonical locale format (so "1.2.2026"
+  // becomes "01/02/2026") and flag anything left unparseable.
+  inputBlurred() {
     const raw = this.displayTarget.value.trim()
     if (!raw) {
-      if (this.hasHiddenTarget) this.hiddenTarget.value = ""
-      // Clear the picker so a subsequent calendar open doesn't restore the old date
-      if (this.hasPickerTarget) this.pickerTarget.value = ""
+      this.displayTarget.classList.remove("is-invalid")
       return
     }
     const iso = this.parseToIso(raw)
-    if (!iso) return
-    if (this.hasHiddenTarget) this.hiddenTarget.value = iso
-    if (this.hasPickerTarget)  this.pickerTarget.value  = iso
+    if (iso) {
+      this.displayTarget.value = this.formatIso(iso)
+      this.displayTarget.classList.remove("is-invalid")
+    } else {
+      this.displayTarget.classList.add("is-invalid")
+    }
   }
 
-  // Parses a date string to ISO "YYYY-MM-DD".
-  // Handles ISO input, Ruby datetime strings (Time#to_s), and locale-formatted input.
+  // Writes the committed ISO value to both the submitted hidden input and the native
+  // picker, so reopening the calendar shows what the text field currently says.
+  // Fires `change` on the hidden input because that is the element filter forms bind
+  // their auto-refresh to — without it, a typed date never triggers the refresh that
+  // an icon-picked one does.
+  commit(iso) {
+    if (this.hasPickerTarget) this.pickerTarget.value = iso
+    if (!this.hasHiddenTarget) return
+    if (this.hiddenTarget.value === iso) return
+    this.hiddenTarget.value = iso
+    this.hiddenTarget.dispatchEvent(new Event("change", { bubbles: true }))
+  }
+
   parseToIso(raw) {
-    // Ruby Time#to_s / ActiveSupport datetime prefix: "2024-03-02 00:00:00 +0530" or exact ISO
-    const dtMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)
-    if (dtMatch) return `${dtMatch[1]}-${dtMatch[2]}-${dtMatch[3]}`
+    return parseLocaleDate(raw, this.formatValue)
+  }
 
-    const fmt = this.formatValue
-    // Determine the positional order of day/month/year tokens in the format string
-    const order = [
-      { key: "d", pos: fmt.indexOf("%d") },
-      { key: "m", pos: fmt.indexOf("%m") },
-      { key: "y", pos: fmt.indexOf("%Y") }
-    ].sort((a, b) => a.pos - b.pos).map(x => x.key)
-
-    // Escape regex metacharacters in separator characters (e.g. '.' in %d.%m.%Y)
-    // before substituting the date-part capture groups.
-    const escaped = fmt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    const pattern = escaped
-      .replace("%d", "(\\d{1,2})")
-      .replace("%m", "(\\d{1,2})")
-      .replace("%Y", "(\\d{4})")
-    const match = raw.match(new RegExp("^" + pattern + "$"))
-    if (!match) return null
-
-    const parsed = {}
-    order.forEach((key, i) => { parsed[key] = match[i + 1].padStart(2, "0") })
-    return `${parsed.y}-${parsed.m}-${parsed.d}`
+  // Renders ISO "YYYY-MM-DD" in the locale's strftime format.
+  formatIso(iso) {
+    const [year, month, day] = iso.split("-")
+    return this.formatValue
+      .replace("%d", day.padStart(2, "0"))
+      .replace("%m", month.padStart(2, "0"))
+      .replace("%Y", year)
   }
 }

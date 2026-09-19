@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import { formatLocaleDate } from "custom/locale_date_format";
 
 export default class extends Controller {
   connect() {
@@ -182,7 +183,10 @@ export default class extends Controller {
           const widget = element.closest("[data-controller~='locale-date']");
           const display = widget.querySelector("[data-locale-date-target='display']");
           if (display) {
-            display.value = data[key];
+            // data[key] came off the hidden input, so it is ISO. Render it in the
+            // widget's own locale format first — writing the ISO string straight
+            // into the visible field would show "2026-02-01" in a dd/mm/yyyy form.
+            display.value = formatLocaleDate(data[key], widget.dataset.localeDateFormatValue);
             display.dispatchEvent(new Event("input", { bubbles: true }));
           }
         } else {
