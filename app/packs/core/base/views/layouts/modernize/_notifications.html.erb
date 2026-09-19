@@ -60,11 +60,11 @@
         </div>
     </li>
 
-    <% if current_user && current_user.entity.is_fund? && ENV['FAQ_ASSISTANT_ID'].present? %>
+    <% if current_user && current_user.curr_role != "investor" %>
 
-        <li class="nav-item dropdown">
-            <%= link_to faq_threads_path, target: "caphive_support_bot", class: "nav-link nav-icon-hover", "data-bs-toggle": "tooltip", title: "Support Bot" do %>
-                <i class="ti ti-robot"></i>
+        <li class="nav-item">
+            <%= link_to faqs_path, class: "nav-link nav-icon-hover", "data-bs-toggle": "tooltip", title: "FAQs" do %>
+                <i class="ti ti-help-circle"></i>
             <% end %>
         </li>
 
