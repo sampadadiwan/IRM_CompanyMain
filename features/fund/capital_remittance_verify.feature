@@ -93,3 +93,33 @@ Feature: Capital Remittance Verify Confirmation Popup
     When I click verify on the first remittance
     Then the verify confirmation popup should contain "Once verified, this remittance becomes eligible for fund unit allocation."
     And I proceed with the remittance verification
+
+
+  # The payments upload carries Verified once per payment row, but the flag belongs to the
+  # remittance, so two rows for one folio can disagree. The importer used to keep whichever row came
+  # last, silently, so a stray "No" under a "Yes" cancelled a verification with nothing to show for
+  # it. Now the remittance is left unverified — the recoverable direction, since verifying emails
+  # investors and releases unit allocation — and both the row and the import say why.
+  # See ImportCapitalRemittancePayment#record_verified_request.
+  Scenario: Payment rows that disagree about Verified leave the remittance unverified
+    Given there is a capital call "percentage_called=20"
+    Then the corresponding remittances should be created
+    Given the capital calls are approved
+    When I import two payments for the first remittance with Verified "Yes" and "No"
+    Then the payments import should succeed with no failed rows
+    And both payments should be recorded on the first remittance
+    And the imported remittance should not be verified
+    And the payments import should warn that the payment rows disagree about Verified
+    And the payments import results should mark the verified rows "Success with warnings"
+
+
+  # Control for the rule above: the same sheet with both rows agreeing still verifies, so the
+  # conflict check is not just refusing everything.
+  Scenario: Payment rows that agree on Verified = Yes verify the remittance
+    Given there is a capital call "percentage_called=20"
+    Then the corresponding remittances should be created
+    Given the capital calls are approved
+    When I import two payments for the first remittance with Verified "Yes" and "Yes"
+    Then the payments import should succeed with no failed rows
+    And both payments should be recorded on the first remittance
+    And the imported remittance should be verified

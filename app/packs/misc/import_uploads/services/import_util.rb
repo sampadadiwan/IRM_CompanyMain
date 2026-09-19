@@ -136,6 +136,19 @@ class ImportUtil < Trailblazer::Operation
     ret_headers
   end
 
+  # Record a non-fatal problem with the row currently being imported, from inside save_row.
+  # The row is still saved and still counts as processed - the results sheet says
+  # "Success with warnings" instead of "Success" and spells out what was skipped in the
+  # detail column, the same column an "Error" row uses.
+  #
+  # Use this, not raise, when part of a row cannot be applied but the rest of it is correct and
+  # worth keeping. Importers should also aggregate the same warnings into import_upload.status
+  # and a level "warning" UserAlert, since those are what the import summary screen shows -
+  # see ImportCapitalRemittancePayment#warn_about_skipped_verifications.
+  def warn_row(message)
+    (@row_warnings ||= []) << message
+  end
+
   private
 
   def process_rows(import_upload, headers, data, ctx)
@@ -206,10 +219,19 @@ class ImportUtil < Trailblazer::Operation
 
     user_data = [headers, row].transpose.to_h
     Rails.logger.debug { "#### user_data = #{user_data}" }
+    # Reset the buffer warn_row appends to, so warnings never leak from the previous row
+    @row_warnings = []
     begin
       if save_row(user_data, import_upload, custom_field_headers, ctx)
         import_upload.processed_row_count += 1
-        row << "Success"
+        # A warned row is still a success: it is counted as processed and does not stop a
+        # fail_fast importer. Only the results sheet distinguishes it.
+        if @row_warnings.any?
+          row << "Success with warnings"
+          row << @row_warnings.join("; ")
+        else
+          row << "Success"
+        end
         # Explicit boolean so process_rows can detect a failed row for fail_fast importers
         true
       else

@@ -591,6 +591,18 @@ Key columns: Fund, Capital Call, Amount (folio currency), Currency, optional fun
 - Reference numbers must be unique within the fund.
 - An identical payment (same fund, remittance, amount, reference, and date) won't be duplicated.
 - With **Update Only = Yes**, rows that don't match an existing payment are skipped.
+- **Verified = Yes only works on an approved call.** Verifying requires approval, the same rule that
+  greys out the Verify action on screen. If the call isn't approved the payment is still imported —
+  the remittance just stays unverified, the row is marked *Success with warnings* in the Results
+  file, and the import finishes with a warning naming the calls involved. Approve the call and
+  verify the remittances (the **Verify Pending Remittances** bulk action does the lot); there's no
+  need to re-upload the file. Note that **Verified** on the *remittance* import behaves differently
+  — it creates the remittance already verified, so it works even before approval, which is what
+  makes it usable for loading long-settled historical calls.
+- **Use the same Verified value on every row for a folio.** Verified belongs to the remittance, not
+  to the individual payment, so if you upload three payments for one folio all three rows must
+  agree. Rows that disagree leave that remittance unverified and are flagged in the Results file —
+  verify it from the screen once the payments are in.
 
 ---
 
@@ -697,6 +709,12 @@ Open the call and click **Delete** (needs destroy access on the fund), then conf
 
 **How do I bulk upload or download calls, remittances and payments?**
 Calls: on the fund's **Calls** tab use **Upload** (an import of type CapitalCall) and **Download** (Excel). Remittances and payments: open the call's **Remittances** tab and use the **Upload / Download** dropdown, which has **Download**, **Upload Remittances** and **Upload Payments**. **Upload Remittances** is disabled unless the call basis is "Upload" or some remittances are missing. See [Importing Calls, Remittances and Payments](#importing-calls-remittances-and-payments).
+
+**Why were my uploaded payments not marked Verified even though the sheet said Verified = Yes?**
+Because the capital call was not approved. **Verified** is a flag on the remittance, not on the payment, and verifying requires an approved call — the same rule that greys out **Actions → Verify** on screen, because verification is what releases payment-received emails and makes the money count towards collected totals. The payments themselves are still imported: those rows are marked *Success with warnings* in the Results file, the reason is spelled out next to each one, and the import finishes with a warning listing the calls involved. Approve the call, then click **Verify Pending Remittances** on its **Remittances** tab — do not re-upload the file, or the payments will be rejected as duplicates. See [Verifying a Remittance](#verifying-a-remittance).
+
+**Why does Verified = Yes work on the remittance upload but not on the payment upload?**
+The remittance upload creates the remittance, so it can be born verified; the payment upload has to change a remittance that already exists, which is where the approval rule applies. That difference is deliberate — it is what lets you load long-settled historical calls (with **Remittances Verified = Yes** on the call import, or **Verified** on the remittance import) without approving and notifying calls that closed years ago. See [Importing payments](#importing-payments).
 
 **How do I record a payment from an investor?**
 Open the remittance (fund → **Calls** tab → the call → **Remittances** tab → the row), stay on its **Payments** tab and click [**New Payment**](/capital_remittance_payments/new). Enter the amount in the folio currency, the payment date, a reference number that is unique within the fund, notes and proof, then save. For many payments at once use **Upload / Download → Upload Payments** on the call's Remittances tab. See [Recording Investor Payments](#recording-investor-payments).

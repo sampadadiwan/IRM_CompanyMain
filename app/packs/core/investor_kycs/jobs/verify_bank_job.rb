@@ -3,11 +3,22 @@ class VerifyBankJob < ApplicationJob
   DELAY_SECONDS = 120
 
   def perform(obj_class:, obj_id:)
+    # The record may have been deleted between enqueue and run - nothing to verify
+    record = obj_class.constantize.find_by(id: obj_id)
+    if record.nil?
+      Rails.logger.info { "Skipping VerifyBankJob: #{obj_class} #{obj_id} no longer exists" }
+      return
+    end
+
     Chewy.strategy(:sidekiq) do
-      @model = obj_class.constantize.find(obj_id)
-      @model = @model.decorate if @model.decorator_class?
       # remove when default decorator for kyc is fixed
-      @model = InvestorKycVerificationDecorator.decorate(obj_class.constantize.find(obj_id)) if obj_class.ends_with?("Kyc")
+      @model = if obj_class.ends_with?("Kyc")
+                 InvestorKycVerificationDecorator.decorate(record)
+               elsif record.decorator_class?
+                 record.decorate
+               else
+                 record
+               end
       if @model.bank_verification_enabled?
         verify
         if %w[InvestorKyc IndividualKyc NonIndividualKyc].include?(obj_class)

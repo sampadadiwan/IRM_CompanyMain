@@ -100,6 +100,14 @@ Scenario Outline: Import capital remittance payments
   And Given I upload "capital_remittance_payments_multi_currency.xlsx" file for the remittances of the capital call
   Then There should be "5" remittance payments created
   And the capital remittance payments must have the data in the sheet
+  # The sheet asks for Verified = Yes on rows whose calls were imported and so are not approved.
+  # Verifying against an unapproved call is refused (CapitalRemittance#verified_requires_approval),
+  # but the payments are facts and are still imported - so the import succeeds and warns rather
+  # than silently dropping the flag, which is what it used to do.
+  And the payments import should succeed with no failed rows
+  And the payments import should warn that the remittances were not verified
+  And the payments import results should mark the verified rows "Success with warnings"
+  And none of the remittances should be verified
   And the remittances are generated for the capital calls
   And the capital commitments are updated with remittance numbers
   And the funds are updated with remittance numbers

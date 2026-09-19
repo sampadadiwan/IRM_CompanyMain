@@ -261,3 +261,113 @@ Then('the imported remittances should be linked to the fund and capital call') d
     expect(cr.investor).to be_present
   end
 end
+
+# ── Verified on the payments import ─────────────────────────────────────────────
+# The payments import applies `Verified` to the CapitalRemittance in a background job, long after
+# the results sheet has been written, so neither an unapproved call nor rows that disagree about the
+# flag can fail the row the way a missing folio does. The payments are imported and the import warns
+# instead - see ImportCapitalRemittancePayment#verified_requested?, #record_verified_request and
+# #warn_about_skipped_verifications.
+
+# Scenarios that build the sheet themselves set @import_upload; the ones that upload a sample file
+# through the UI do not, so fall back to the last import.
+def payments_import_upload
+  @import_upload || ImportUpload.last
+end
+
+Then('the payments import should succeed with no failed rows') do
+  import_upload = payments_import_upload
+  expect(import_upload.failed_row_count).to eq(0),
+                                            "Import failed: #{import_upload.status} #{import_upload.error_text}"
+  expect(import_upload.processed_row_count).to be_positive
+end
+
+Then('the payments import should warn that the remittances were not verified') do
+  import_upload = payments_import_upload
+  # Shown on the import page's Status row, and it must not have been overwritten with "Completed"
+  expect(import_upload.status).to include("not marked Verified").and include("not approved")
+  alert = UserAlert.where(user_id: import_upload.user_id, level: "warning").last
+  expect(alert).not_to be_nil, "Expected a warning UserAlert for the unapproved calls"
+  expect(alert.message).to include("not marked Verified")
+end
+
+Then('the payments import results should mark the verified rows {string}') do |result_text|
+  import_upload = payments_import_upload
+  tempfile = import_upload.import_results.download
+  data = Roo::Spreadsheet.open(tempfile.path)
+  headers = ImportServiceBase.new.get_headers(data.row(1))
+  result_col = headers.length # result column appended after all data columns
+  results = data.to_a.drop(1).map { |row| row[result_col] }
+  expect(results).to include(result_text),
+                     "Expected a row marked '#{result_text}' in the import results, got #{results.uniq.inspect}"
+  # Every row still imported - none of them failed. Deliberately not RSpec's `all` matcher: the
+  # Cucumber World includes Capybara::DSL, whose `all` element finder shadows it and hands the
+  # matcher object to the driver as a CSS selector.
+  failed = results.compact.reject { |result| result.start_with?("Success") }
+  expect(failed).to be_empty, "Expected every row to import, but some failed: #{failed.inspect}"
+end
+
+Then('none of the remittances should be verified') do
+  expect(@fund.capital_remittances.verified).to be_empty
+end
+
+# `Verified` is a column on every payment row but a flag on the remittance, so two rows for one folio
+# can disagree. The sheet is generated from the scenario's own remittance rather than kept as a
+# fixture, so the folio id, currency and amounts always match the fund that was just built - the same
+# approach as the non-breaking-space step above.
+When('I import two payments for the first remittance with Verified {string} and {string}') do |first, second|
+  require "caxlsx"
+  @remittance = @capital_call.capital_remittances.order(:id).first
+  # Half the call amount per row, in major units - the importer multiplies the cell by 100. Both the
+  # folio and the fund amount are given so no exchange rate lookup is needed (the capital_commitment
+  # factory sets folio_currency to the fund currency).
+  half = (@remittance.folio_call_amount_cents / 2) / 100.0
+  tmp = Tempfile.new(["capital_remittance_payments_verified", ".xlsx"])
+
+  Axlsx::Package.new do |p|
+    p.workbook.add_worksheet(name: "Capital Remittance Payments") do |ws|
+      ws.add_row(["Fund *", "Capital Call *", "Amount (Folio Currency)*", "Currency *",
+                  "Amount (Fund Currency)*", "Folio No*", "Virtual Bank Account ", "Verified",
+                  "Reference No", "Payment Date *", "Notes", "Update Only"])
+      [first, second].each_with_index do |verified, idx|
+        # Distinct reference numbers so the second row is not rejected as a duplicate payment
+        ws.add_row([@fund.name, @capital_call.name, half, @remittance.capital_commitment.folio_currency,
+                    half, @remittance.folio_id, nil, verified, "VERIFIED-CONFLICT-#{idx + 1}",
+                    @capital_call.due_date.strftime("%Y-%m-%d"), nil, nil])
+      end
+    end
+    p.serialize(tmp.path)
+  end
+
+  @import_upload = ImportUpload.create!(entity: @entity, owner: @fund, import_type: "CapitalRemittancePayment",
+                                        name: "Verified payment import", user_id: @user.id,
+                                        import_file: File.open(tmp.path))
+  ImportUploadJob.perform_now(@import_upload.id)
+  @import_upload.reload
+  @remittance.reload
+ensure
+  tmp&.close
+  tmp&.unlink
+end
+
+Then('both payments should be recorded on the first remittance') do
+  expect(@remittance.capital_remittance_payments.count).to eq(2)
+end
+
+# Named for the imported remittance rather than "the first remittance", which is already taken by a
+# browser-level check in capital_call_bulk_verify_remittances_steps.rb
+Then('the imported remittance should be verified') do
+  expect(@remittance.reload.verified).to be_truthy
+end
+
+Then('the imported remittance should not be verified') do
+  expect(@remittance.reload.verified).to be_falsey
+end
+
+Then('the payments import should warn that the payment rows disagree about Verified') do
+  import_upload = payments_import_upload
+  expect(import_upload.status).to include("disagree about Verified").and include(@remittance.folio_id.to_s)
+  alert = UserAlert.where(user_id: import_upload.user_id, level: "warning").last
+  expect(alert).not_to be_nil, "Expected a warning UserAlert naming the conflicting folio"
+  expect(alert.message).to include("disagree about Verified")
+end
