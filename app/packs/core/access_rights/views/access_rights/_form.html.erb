@@ -104,10 +104,15 @@
         <% end %>
       </div>
 
-      <div class="form-group">
-          <%= form.label :notify, "Send Notification" %>
-          <%= form.check_box :notify, class: "form-check-input"  %>
-      </div>
+      <%# No notify box for a folder grant (AccessRight#send_notification needs owner.send_email,
+          which folders have no column for) nor when editing: send_notification is an
+          after_create_commit, so it can never fire from this form on an existing record. %>
+      <% if access_right.owner_type != "Folder" && !access_right.persisted? %>
+        <div class="form-group">
+            <%= form.label :notify, "Send Notification" %>
+            <%= form.check_box :notify, class: "form-check-input"  %>
+        </div>
+      <% end %>
 
       <div class="form-group">
         <%= form.submit t_common(:save), {class: "btn btn-outline-primary", data: {action: "click->access#checkRequiredFilled"}}%>

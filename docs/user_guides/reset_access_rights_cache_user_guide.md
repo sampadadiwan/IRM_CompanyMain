@@ -21,7 +21,7 @@ There is nothing to reset. When a user sees too much or too little, check the li
 
 1.  **Investor cannot see a fund or document**:
     *   Open the stakeholder (Sidebar → **Stakeholders → View Stakeholders**) and check the person's row on the **Users** tab is **Approved**.
-    *   Check the fund's **Access** tab (or the document's or folder's **Access Rights** tab) has a grant covering their stakeholder by name, category or tag. For documents in a shared folder, existing files are covered only if **Apply to files and sub folders** was ticked.
+    *   Check the fund's **Access** tab (or the document's or folder's **Access Rights** tab) has a grant covering their stakeholder by name, category or tag. A folder grant covers the files already inside it, but the background job that copies it down the tree may still be running on a large folder.
     *   On the fund, **Actions → Misc → Check Access Rights** lists commitments whose stakeholder has no fund grant.
 
 2.  **Employee cannot see something**:
@@ -99,7 +99,7 @@ Commitments, KYC, notes and Stakeholder Users move to the surviving stakeholder 
 The page they are looking at was loaded before the change. Ask them to reload; if it still shows, check for another grant that covers them, such as a category or tag grant, a folder grant inherited by the document, or a second stakeholder they belong to.
 
 **A user cannot see something I just shared.**
-Ask them to reload the page. If it still does not appear, their Stakeholder User may be unapproved, the grant may target a different stakeholder or category, or (for documents) the grant may be on the parent folder without **Apply to files and sub folders** ticked for existing files.
+Ask them to reload the page. If it still does not appear, their Stakeholder User may be unapproved, the grant may target a different stakeholder or category, or (for documents) the background job that copies a folder grant onto existing files may still be running.
 
 **An old support note tells me to reset the access rights cache.**
 That advice predates the cache's removal. Follow the checks in this FAQ instead; if access is still wrong after them, contact CapHive support with the user's email and the item they cannot see.

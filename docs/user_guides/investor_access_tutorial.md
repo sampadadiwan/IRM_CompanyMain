@@ -22,7 +22,7 @@ Managing who can see what in CapHive is handled through a simple "Two-Key" syste
 ## 🚀 Key Takeaways
 *   **Approval is Mandatory**: A user sees nothing until their "Investor Access" is approved. The **Approved** box is pre-ticked on the **New Users** form; bulk-uploaded rows are unapproved unless the **Approved** column says `Yes`.
 *   **Access is Explicit**: Investors only see data (Funds, Docs) that has been specifically shared with them via "Access Rights."
-*   **Inheritance Saves Time**: New documents and sub-folders added to a shared folder inherit its access; existing contents are covered when you tick **Apply to files and sub folders**.
+*   **Inheritance Saves Time**: Sharing a folder covers the documents and sub-folders already inside it, and anything added later inherits the access automatically.
 *   **Immediate Revocation**: Unapproving a user instantly blocks their view of all data.
 *   **Multi-Firm Support**: A regular investor login belongs to one investor entity; people who act for several investors are set up as investor advisors and switch using the persona dropdown in the top bar.
 *   **Notification Topics**: Tag a contact with specific topics (e.g. `CapitalCall`, `KYC`) so they only receive relevant emails. Contacts with no tags receive everything.
@@ -97,7 +97,7 @@ The **Access Type** list also offers **Employee** (and **Advisor** on funds, inv
 If you share a **Folder** with an investor, they automatically get access to:
 *   Any new documents you upload to that folder in the future.
 *   Any sub-folders created inside it later.
-*   Documents and sub-folders already inside it — **only** if you tick **Apply to files and sub folders** on the grant, which copies it down the tree in a background job.
+*   Documents and sub-folders already inside it — a background job copies the grant down the tree. This always happens on a folder grant; there is no option to skip it.
 
 ### Revoking Access
 *   **Temporary Block**: Click **UnApprove** on their Investor Access record. They immediately stop seeing the stakeholder's funds, documents and other shared items and stop receiving its notification emails; clicking **Approve** restores access.
@@ -194,7 +194,7 @@ When an investor logs in, they see a simplified dashboard tailored to them:
 *   **Investments**: Details of the funds they have invested in.
 *   **Documents**: A library of reports, tax forms, and notices shared with them.
 *   **Deals**: Information on active or past investment opportunities.
-*   **Notifications**: They receive an in-app notification and email ("You have been granted access to …") when you share a document, folder or fund with them and tick **Send Notification** (for documents and folders, only when the document's **Send Email** option is on). These access emails are not filtered by Notification Topics.
+*   **Notifications**: They receive an in-app notification and email ("You have been granted access to …") when you share a fund or a single document with them and tick **Send Notification** — for a document, only when its **Send Email** option is on. Folder grants offer no **Send Notification** box and never email. These access emails are not filtered by Notification Topics.
 
 ```mermaid
 sequenceDiagram
@@ -260,7 +260,7 @@ In the sidebar go to [**Stakeholders → All Stakeholder Access**](/investor_acc
 No. **Download Stakeholder Users** always exports every investor access in your company, even if the list is filtered or you opened it from **Pending Access**. Filter the Excel file afterwards, for example on the **Approved** column, to get a subset.
 
 **How do I grant an Access Right, and what are the options?**
-On the fund, document or folder, click **Grant Access**, pick an **Access Type** and the target, tick **Send Notification** if you want an email, and **Save**. Types are **All Users for Specific Stakeholder**, **All Stakeholders of Specific Category**, **All Stakeholders with Tag**, plus **Employee** and **Advisor** (funds, opportunities, secondary sales) or **Specific User** and **Employee** (documents and folders). Deals offer only **All Users for Specific Stakeholder**, **Employee** and **Advisor**.
+On the fund, document or folder, click **Grant Access**, pick an **Access Type** and the target, and **Save**. On a fund or a single document you can also tick **Send Notification** to email the users covered; folder grants have no such box and never email. Types are **All Users for Specific Stakeholder**, **All Stakeholders of Specific Category**, **All Stakeholders with Tag**, plus **Employee** and **Advisor** (funds, opportunities, secondary sales) or **Specific User** and **Employee** (documents and folders). Deals offer only **All Users for Specific Stakeholder**, **Employee** and **Advisor**.
 
 **How do I remove an Access Right?**
 On the fund's **Access** tab, or the document's or folder's **Access Rights** tab, click **Delete** on the grant's row. You need the same permission as for granting, which is permission to update the fund, document or folder.
@@ -300,10 +300,10 @@ The person immediately stops seeing the stakeholder's funds, documents and other
 The Investor Access row is soft-deleted and disappears from the **Users** tab; the person's CapHive login account is not deleted. If the person was an investor advisor, their fund-level Access Rights are also revoked for any fund where no other approved access still links them. There is no restore button, so re-add the person to undo it; no one is notified.
 
 **What happens when I grant an Access Right?**
-One grant is saved per selected stakeholder, category or user (a tag creates one grant per stakeholder currently carrying that tag), and every approved user it covers can see the item at once. If **Send Notification** is ticked, those users get an in-app notification and an email ("You have been granted access to …"); for documents and folders this happens only when the document's **Send Email** option is on. Replicated copies on sub-folders and files never send notifications.
+One grant is saved per selected stakeholder, category or user (a tag creates one grant per stakeholder currently carrying that tag), and every approved user it covers can see the item at once. If **Send Notification** is ticked, those users get an in-app notification and an email ("You have been granted access to …"); for a document this happens only when its **Send Email** option is on. Folder grants have no **Send Notification** box and never email. Replicated copies on sub-folders and files never send notifications.
 
 **What happens when I share a folder?**
-The grant applies to the folder, and new documents and sub-folders added later inherit it automatically. Existing files and sub-folders are covered only if you tick **Apply to files and sub folders**, which runs a background job to copy the grant down the tree. See [Managing Visibility & Folders](#4-managing-visibility--folders).
+The grant applies to the folder, and new documents and sub-folders added later inherit it automatically. Existing files and sub-folders are covered too: a background job copies the grant down the tree, always, with no checkbox to turn it off. See [Managing Visibility & Folders](#4-managing-visibility--folders).
 
 **What happens when I delete an Access Right?**
 The grant is soft-deleted and users covered only by it lose sight of the item immediately. When the item is a folder, or owns a document folder (such as a fund), a background job also removes the copies that were cascaded to the files and sub-folders beneath it. No one is notified.
@@ -356,7 +356,7 @@ Yes. Investor advisors are stored in Investor Access records (shown as **Advisor
 Yes. Put their addresses, comma separated, in the contact's **Cc** field; they are copied on every email sent to that contact. Invalid addresses are rejected on save.
 
 **Does un-approving or deleting access notify the investor?**
-No. Approve, un-approve, delete and access-right removal send no email or in-app message to the investor; only granting an Access Right with **Send Notification** ticked does.
+No. Approve, un-approve, delete and access-right removal send no email or in-app message to the investor; only granting an Access Right on a fund or a single document with **Send Notification** ticked does.
 
 ---
 *For technical troubleshooting or advanced permission setups, please refer to the Administrator Guide or contact support.*

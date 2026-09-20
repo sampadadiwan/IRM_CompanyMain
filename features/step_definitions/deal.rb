@@ -740,15 +740,22 @@ Given('I give {string} access to {string} from the deal access overview') do |ac
     find('.select2-search__field').set(investor_name)
     find('li.select2-results__option', text: investor_name).click
 
-    check("access_right_cascade") if access_type == "folder"
+    # No cascade checkbox any more - AccessRightsController#create forces cascade
+    # on every Folder grant, because a right on the folder alone grants nothing.
 
     click_on("Save")
     sleep(1)
   else
     investor = Investor.find_by!(investor_name: investor_name)
-    owner = access_type == "folder" ? @deal.document_folder : @deal
-    owner_type = access_type == "folder" ? "Folder" : "Deal"
-    AccessRight.find_or_create_by!(owner:, entity_id: @deal.entity_id, access_to_investor_id: investor.id, access_type: owner_type)
+    # Mirror the UI branch exactly: it grants on the "Deal Documents" child folder
+    # (consolidated_access_rights.html.erb uses @deal_documents_folder, not document_folder),
+    # and AccessRightsController#create forces cascade on every Folder grant.
+    folder = access_type == "folder"
+    owner = folder ? @deal.deal_documents_folder : @deal
+    AccessRight.find_or_create_by!(owner:, entity_id: @deal.entity_id, access_to_investor_id: investor.id,
+                                   access_type: folder ? "Folder" : "Deal") do |ar|
+      ar.cascade = folder
+    end
   end
 end
 

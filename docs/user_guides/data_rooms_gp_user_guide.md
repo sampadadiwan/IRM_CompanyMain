@@ -29,7 +29,7 @@ Data Rooms give you a dedicated, permission-controlled folder space to share doc
 | **Data Room** | A top-level folder reserved for investor-facing documents: the folder named exactly **Data Room** directly under your root folder. It is not created automatically when the feature is enabled; CapHive support sets it up. |
 | **Sub-Folder** | A folder you create inside the Data Room to organise documents by topic, investor group, or deal. |
 | **Access Right** | A permission record that grants a specific investor firm (or user) visibility of a sub-folder, plus anything added to it later. |
-| **Cascade** | When "Apply to files and sub folders" is checked on an access right, access is also copied down to the child folders and documents already inside. |
+| **Cascade** | Granting access on a folder also copies that access down to the child folders and documents already inside. This always happens on a folder grant; there is nothing to switch on. |
 | **Investor Access** | The gate that lets an investor's user log in to the portal. Must be approved before any access rights take effect. |
 
 ---
@@ -55,8 +55,8 @@ sequenceDiagram
 
     Admin->>Platform: Create sub-folder inside Data Room
     Admin->>Platform: Upload documents to sub-folder
-    Admin->>Platform: Grant Access → select investor firm
-    Admin->>Platform: Check "Apply to files and sub folders" → Save
+    Admin->>Platform: Grant Access → select investor firm → Save
+    Platform->>Platform: Copies access to existing sub-folders and documents
     Platform-->>LP: Data Rooms card on dashboard (via your sub-domain)
     LP->>Platform: Clicks Data Rooms → sees only their sub-folders
     LP->>Platform: Opens sub-folder → reads or downloads documents
@@ -144,7 +144,7 @@ Any investor already granted access to the sub-folder sees new documents once a 
 
 ## Granting Investor Access to a Sub-Folder
 
-Access is controlled at the **sub-folder level**. Granting access to a sub-folder gives the investor visibility of documents and child folders added to it in the future; documents and child folders **already inside** are covered only if you tick **Apply to files and sub folders**.
+Access is controlled at the **sub-folder level**. Granting access to a sub-folder gives the investor visibility of the documents and child folders **already inside** it, as well as anything added to it later.
 
 ```mermaid
 sequenceDiagram
@@ -156,8 +156,8 @@ sequenceDiagram
     Admin->>Folder: Open folder → Access Rights tab
     Admin->>AR: Click Grant Access
     Admin->>AR: Select Stakeholder (investor firm)
-    Admin->>AR: Check Apply to files and sub folders
     Admin->>AR: Click Save
+    AR->>AR: Background job copies access to existing contents
     AR-->>Investor: Investor can now view all docs in this folder
 ```
 
@@ -172,12 +172,12 @@ sequenceDiagram
 |---|---|
 | **Access Type** | Select **All Users for Specific Stakeholder** to share with a specific investor firm. |
 | **Select Stakeholder** | Choose the investor firm from the dropdown. |
-| **Apply to files and sub folders** | **Check this box** to copy access onto the documents and child folders already inside (a background job does this). Without it, existing contents are not shared. |
-| **Send Notification** | Has no effect on folders — no email or notification is sent when you grant access to a sub-folder. To tell investors, tick **Send Email** when uploading a document, or email them separately. |
 
 5. Click **Save**.
 
-The investor firm now appears in the Access Rights table. Their users will see this sub-folder (and, once the background job finishes, its existing contents if you ticked cascade) on their next page load.
+There is no **Apply to files and sub folders** box and no **Send Notification** box on a folder grant. Access always copies onto the documents and child folders already inside (a background job does this), and no email or notification is ever sent. To tell investors, tick **Send Email** when uploading a document, or email them separately.
+
+The investor firm now appears in the Access Rights table. Their users will see this sub-folder, and its existing contents once the background job finishes, on their next page load.
 
 > **Prerequisite:** The investor must already have an **approved Investor Access** record before the access right takes effect. If they still cannot see the folder after sharing, check that their Investor Access is approved. See the [Investor Access & Permissions Guide](investor_access_tutorial.md).
 
@@ -227,7 +227,7 @@ To remove an investor's access to a sub-folder:
 3. Find the investor's row in the access rights table.
 4. Click **Delete**.
 
-The row is removed immediately, and a background job then removes that stakeholder's (or user's) access rights from every child folder and document in the subtree — whether or not cascade was ticked when access was granted. The investor loses sight of the whole subtree once the job finishes.
+The row is removed immediately, and a background job then removes that stakeholder's (or user's) access rights from every child folder and document in the subtree. The investor loses sight of the whole subtree once the job finishes.
 
 Folders themselves cannot be deleted or renamed; empty an unwanted sub-folder by deleting its documents and access rights.
 
@@ -277,7 +277,7 @@ Select **Data Room** in the tree, then [**Actions → New Folder**](/folders/new
 Select the sub-folder in the tree and choose [**Actions → New Document**](/documents/new), fill in **Name** and **Upload File**, optionally tick **Send Email**, and **Save** (or **Save & Upload More**). For many files use **Actions → Bulk Upload** (spreadsheet import) or the folder's **Upload / Edit** page. See [Uploading Documents](#uploading-documents).
 
 **How do I share a sub-folder with an investor?**
-Open the sub-folder page → **Access Rights** tab → **Grant Access**. Choose the **Access Type** (**All Users for Specific Stakeholder**, **All Stakeholders of Specific Category**, **All Stakeholders with Tag**, **Specific User** or **Employee**), pick the stakeholder (investor), category, tag or user, tick **Apply to files and sub folders**, and **Save**. See [Granting Investor Access to a Sub-Folder](#granting-investor-access-to-a-sub-folder).
+Open the sub-folder page → **Access Rights** tab → **Grant Access**. Choose the **Access Type** (**All Users for Specific Stakeholder**, **All Stakeholders of Specific Category**, **All Stakeholders with Tag**, **Specific User** or **Employee**), pick the stakeholder (investor), category, tag or user, and **Save**. See [Granting Investor Access to a Sub-Folder](#granting-investor-access-to-a-sub-folder).
 
 **How do I remove or change an investor's access?**
 Open the sub-folder page → **Access Rights** tab, find the row and click **Delete**. Access rights cannot be edited: to change who is covered, delete the row and grant access again. See [Revoking or Changing Access](#revoking-or-changing-access).
@@ -322,14 +322,14 @@ The document is saved with the download and printing values on the form (pre-fil
 **What happens when I tick Send Email on the upload form?**
 Once the document's access rights are copied, every user covered by them gets an in-app notification and an email ("Document Uploaded: <name>" unless you have a custom notification). It is sent once, right after upload. Only users with an approved Investor Access on your company can then open the document.
 
-**What happens when I grant access with Apply to files and sub folders ticked?**
+**What happens when I grant access on a sub-folder?**
 One access right per selected stakeholder or user is saved on the folder, and a background job copies it onto every document already in the folder and onto every child folder at any depth (and their documents). The investor's users see the sub-folder and its contents on their next page load once the job finishes. Documents added later inherit it automatically.
 
-**What happens if I grant access without ticking Apply to files and sub folders?**
-Only the folder itself gets the access right. Documents already inside it and existing child folders are not shared, so the investor sees the folder but not those files; only documents uploaded into the folder afterwards (and sub-folders created afterwards) pick up the access. Delete and re-grant with the box ticked to cover existing content.
+**Can I share a folder without sharing what is already inside it?**
+No. Folder grants always cover the existing contents. There is no **Apply to files and sub folders** checkbox, because a right on the folder alone would show the investor an empty-looking folder: the documents and child folders each need their own copy of the right to be visible. To share a narrower set, grant access on the specific sub-folder or document instead.
 
-**Does ticking Send Notification on a Data Room access right email the investor?**
-No. For folder access rights the notification is skipped (folders have no send-email setting), so no one is notified when you grant access to a sub-folder. To tell investors, tick **Send Email** when uploading a document, use **Send Document** on a document, or email them separately.
+**Does granting Data Room access email the investor?**
+No, and the form has no **Send Notification** box for a folder grant. Notifications are skipped for folder access rights (folders have no send-email setting), so no one is told when you grant access to a sub-folder. To tell investors, tick **Send Email** when uploading a document, use **Send Document** on a document, or email them separately.
 
 **What happens when I delete an access right on a sub-folder?**
 The row is soft-deleted immediately, and a background job then removes, from that folder, every child folder and every document inside them, all access rights copied from it plus any other rights for the same stakeholder or the same user. The investor loses sight of the whole subtree once the job finishes. No one is notified, and the deletion cannot be undone from the UI; grant access again instead.
@@ -346,7 +346,7 @@ The document is soft-deleted and disappears from the tree and from every investo
 ### Troubleshooting and edge cases
 
 **An investor says they cannot see the Data Room or a shared document. What should I check?**
-Check that their Investor Access on your company is approved (Sidebar → [**Stakeholders → Pending Access**](/investor_accesses?approved=false)), since documents are only shown to users with approved access. Then check the sub-folder's **Access Rights** tab lists their firm, category, tag or user, and that the right was granted with **Apply to files and sub folders** if the files were already there.
+Check that their Investor Access on your company is approved (Sidebar → [**Stakeholders → Pending Access**](/investor_accesses?approved=false)), since documents are only shown to users with approved access. Then check the sub-folder's **Access Rights** tab lists their firm, category, tag or user. If the right is listed but the files are not visible yet, the background job that copies it onto existing contents may still be running.
 
 **The Data Rooms card is missing from an investor's dashboard. Why?**
 The card only shows when the investor is logged in through your company's own CapHive sub-domain or custom domain, their login has funds enabled, your company has Data Rooms switched on, and a folder named exactly **Data Room** exists under your root folder. Otherwise send them to the [Data Rooms list](/folders/data_rooms), which lists your company if they are one of your stakeholders.
@@ -370,7 +370,7 @@ No. The category or tag is expanded into per-stakeholder access rights at the mo
 Yes. In **Grant Access**, set **Access Type** to **Specific User** and pick the person in **Select Specific User**. Other users at the same firm do not get access.
 
 **Does sharing a sub-folder also cover child folders inside it?**
-Only if you tick **Apply to files and sub folders**. Without it, existing child folders and existing documents are not covered; see "What happens if I grant access without ticking Apply to files and sub folders?" above.
+Yes, at any depth, along with their documents. A background job copies the right down the whole subtree, and folders created later inherit it at creation. See "What happens when I grant access on a sub-folder?" above.
 
 **Can investors upload documents to the Data Room?**
 No. Investors have read-only access. Only your company's users can create folders and upload or delete documents.
