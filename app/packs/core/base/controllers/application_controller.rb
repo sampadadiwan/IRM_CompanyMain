@@ -17,6 +17,10 @@ class ApplicationController < ActionController::Base
   # so its helper is declared here rather than relying on include_all_helpers.
   helper TaskFiltersHelper
 
+  # Folder foreign keys the deleted-records list may need to resolve; see
+  # #referenced_folders_for.
+  FOLDER_REFERENCE_COLUMNS = %w[document_folder_id data_room_folder_id folder_id].freeze
+
   before_action :prepare_exception_notifier
   before_action :validate_page_limit
 
@@ -62,11 +66,64 @@ class ApplicationController < ActionController::Base
     model_class = controller_name.classify.constantize
     @q = model_class.only_deleted.ransack(params[:q])
     @pagy, @records = pagy(policy_scope(@q.result))
+    @deletion_users = deletion_users_for(model_class, @records)
+    @referenced_folders = referenced_folders_for(@records)
 
     render "layouts/deleted_index"
   end
 
   private
+
+  # Folders referenced by the rows on this page, resolved in one query. The
+  # Actions cell has to decide between "Restore", "Restore Record & Folder" and
+  # "Restore Folder & All Docs", which it used to do with a `Folder.find_by` per
+  # row — ~22 queries for a page of 20 deleted Documents.
+  #
+  # with_deleted rather than only_deleted: the cell needs to tell "no such folder"
+  # apart from "folder exists and is deleted", so it checks `deleted?` on the hit.
+  def referenced_folders_for(records)
+    ids = records.flat_map do |record|
+      FOLDER_REFERENCE_COLUMNS.filter_map { |column| record.send(column) if record.respond_to?(column) }
+    end.uniq
+    return {} if ids.empty?
+
+    Folder.with_deleted.where(id: ids).index_by(&:id)
+  rescue StandardError => e
+    Rails.logger.warn("[show_deleted] could not preload folders: #{e.message}")
+    {}
+  end
+
+  # Who deleted each row on the current page, for the "Deleted By" column.
+  # `audits` is one of the large tables, so this is a single query bounded to the
+  # ids actually on screen, hitting the (auditable_type, auditable_id, version)
+  # index rather than doing a per-row lookup in the view.
+  #
+  # Paranoia's #destroy runs the :destroy callbacks, so audited's
+  # `before_destroy :audit_destroy` does record a soft delete as action "destroy".
+  # But `Audited.current_user_method` only resolves inside a request: a delete from
+  # a background job, an import, or a cascading `dependent: :destroy` child writes an
+  # audit with no user (roughly two thirds of them in practice), so the view falls
+  # back to "System". A record can also be deleted, restored and deleted again —
+  # ordering by version/id and indexing last keeps the most recent deletion.
+  def deletion_users_for(model_class, records)
+    ids = records.map(&:id)
+    return {} if ids.empty?
+
+    audits = Audit.where(auditable_type: model_class.base_class.name, auditable_id: ids, action: "destroy")
+                  .order(:version, :id)
+                  .index_by(&:auditable_id)
+
+    # Resolved by hand rather than with `includes(:user)`: User is acts_as_paranoid
+    # too (see Trackable), so the association's default scope hides a since-deleted
+    # user and the column would print "System" for what was a real person.
+    user_ids = audits.each_value.filter_map { |a| a.user_id if a.user_type == "User" }.uniq
+    users = user_ids.empty? ? {} : User.with_deleted.where(id: user_ids).index_by(&:id)
+
+    audits.transform_values { |a| users[a.user_id] }.compact
+  rescue StandardError => e
+    Rails.logger.warn("[show_deleted] could not load deletion audits for #{model_class}: #{e.message}")
+    {}
+  end
 
   # counter_culture's before_restore hook already applies a +1 delta to each
   # counter as restore(recursive: true) cascades — that part works. What it

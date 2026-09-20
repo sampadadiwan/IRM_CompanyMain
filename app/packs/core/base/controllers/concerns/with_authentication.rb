@@ -11,6 +11,8 @@ module WithAuthentication
     # via phishing links or open redirects to silently switch an advisor's entity.
     before_action :switch_advisor, if: proc { |controller| controller.request.post? && controller.current_user&.has_cached_role?(:investor_advisor) && controller.params[:investor_advisor_id].present? }
     before_action :authenticate_user!, unless: :devise_controller?
+    # After authenticate_user!, so current_user is resolved by the time we read it.
+    before_action :set_current_user
     before_action :configure_permitted_parameters, if: :devise_controller?
 
     rescue_from Pundit::NotAuthorizedError, with: :deny_access
@@ -159,6 +161,16 @@ module WithAuthentication
       # Redirect to the path with tenant_sub_domain in the parameter
       redirect_to "#{request.protocol}#{@current_entity.sub_domain}.#{ENV.fetch('BASE_DOMAIN', nil)}#{request.path}?#{request.query_string}", allow_other_host: true
     end
+  end
+
+  # Publishes the acting user as ambient state so background jobs enqueued during
+  # this request can be attributed to them (ApplicationJob reads Current.user at
+  # enqueue time). Audits written *during* the request do not depend on this —
+  # Audited::Sweeper reads current_user_or_support_user directly — so this is
+  # deliberately the same value, keeping the two paths from disagreeing about who
+  # acted when support staff are impersonating.
+  def set_current_user
+    Current.user = current_user_or_support_user
   end
 
   # This is called by the audited get see config/initializers/audited.rb For support staff that login as a user, we need to return the support user. This is so that any changes made will be logged under the support user and not the user they are importsonating
