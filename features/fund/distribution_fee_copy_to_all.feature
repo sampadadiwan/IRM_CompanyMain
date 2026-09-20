@@ -27,14 +27,18 @@ Feature: Copying a distribution fee row carries its dates in the user's format
     Then every fee row start date should display "01/02/2026"
     And every fee row should submit the start date "2026-02-01"
 
-  Scenario: The copied date follows the active locale
+  Scenario: The copied date is read in the active locale, not a fixed one
+    # The mirror of the scenario above. en-US reads %m/%d/%Y, so the SAME calendar
+    # day — 1 February 2026 — is typed 02/01/2026 here and 01/02/2026 there, and both
+    # must reach the server as the same ISO value. Getting this backwards is the exact
+    # confusion the locale-date widget exists to prevent.
     Given my browser sends an Accept-Language header of "en-US"
     When I open the new Capital Distribution form for "Fee Copy Fund"
     And I add "2" distribution fee rows
     And I fill in the first fee row start date with "02/01/2026"
     And I copy the first fee row to all rows
     Then every fee row start date should display "02/01/2026"
-    And every fee row should submit the start date "2026-01-02"
+    And every fee row should submit the start date "2026-02-01"
 
   Scenario: Copying a row with no date clears the other rows rather than restoring ISO
     Given my browser sends an Accept-Language header of "en-GB"
