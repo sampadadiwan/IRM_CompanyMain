@@ -154,6 +154,22 @@ Then('the capital commitments must have the correct feeder fund data') do
   cc_without_feeder_fund.is_feeder_fund.should == false
 end
 
+Then('the capital commitments must keep their feeder fund data when the column is absent') do
+  cc_with_feeder_fund = @fund.capital_commitments.find_by(folio_id: "201")
+  cc_without_feeder_fund = @fund.capital_commitments.find_by(folio_id: "202")
+
+  # The re-imported sheet has no Feeder Fund column at all, so the link set by the first
+  # import has to survive - but the rest of the row must still have been applied.
+  cc_with_feeder_fund.notes.should == "Updated by re-import"
+  cc_without_feeder_fund.notes.should == "Updated by re-import"
+
+  cc_with_feeder_fund.feeder_fund.should == @feeder_fund
+  cc_with_feeder_fund.is_feeder_fund.should == true
+
+  cc_without_feeder_fund.feeder_fund.should be_nil
+  cc_without_feeder_fund.is_feeder_fund.should == false
+end
+
 Then('the capital commitments must have the percentages updated') do
   puts "### Checking capital commitments percentages"
   ap CapitalCommitment.all.pluck(:id, :percentage)

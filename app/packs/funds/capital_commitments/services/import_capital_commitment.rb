@@ -1,8 +1,20 @@
 class ImportCapitalCommitment < ImportUtil
   STANDARD_HEADERS = ["Stakeholder", "Fund", "Folio Currency", "Committed Amount (Folio Currency)", "Committed Amount (Fund Currency)", "Fund Close", "Notes", "Folio No", "Unit Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Investing Entity", "Investor Signatory Emails", "Update Only", "Form Tag"].freeze
 
+  # Columns the template offers but does not demand. They are NOT in STANDARD_HEADERS on
+  # purpose: validate_headers and the browser-side preview (xlsx_preview_controller) treat
+  # every standard header as required, so listing "Feeder Fund" there would reject every
+  # sheet built from an older template. Listing it here keeps it out of custom_field_headers
+  # instead, so it never leaks into the form type as a custom field.
+  FEEDER_FUND_HEADER = "Feeder Fund".freeze
+  OPTIONAL_HEADERS = [FEEDER_FUND_HEADER].freeze
+
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  def ignore_headers
+    OPTIONAL_HEADERS
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
@@ -16,7 +28,7 @@ class ImportCapitalCommitment < ImportUtil
     raise "Stakeholder not found: #{user_data['Stakeholder']}" unless investor
 
     update_only = user_data["Update Only"]
-    folio_id, _, _, folio_currency, = get_params(user_data, import_upload)
+    folio_id, _, _, folio_currency, = get_params(user_data)
     capital_commitment = CapitalCommitment.where(entity_id: import_upload.entity_id, folio_id:, fund_id: fund.id, investor_id: investor.id).first
 
     if update_only == "Yes"
@@ -43,21 +55,20 @@ class ImportCapitalCommitment < ImportUtil
   end
 
   def save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)
-    _, unit_type, commitment_date, _, onboarding_completed, feeder_fund = get_params(user_data, import_upload)
+    _, unit_type, commitment_date, _, onboarding_completed = get_params(user_data)
 
     capital_commitment.assign_attributes(fund_close: user_data["Fund Close"], commitment_date:,
                                          onboarding_completed:, imported: true, investor:,
                                          investor_name: investor.investor_name, unit_type:,
-                                         feeder_fund_id: feeder_fund&.id, is_feeder_fund: feeder_fund.present?,
                                          import_upload_id: import_upload.id, notes: user_data["Notes"],
                                          esign_emails: user_data["Investor Signatory Emails"])
+    capital_commitment.assign_attributes(feeder_fund_attributes(user_data, import_upload))
 
     # Ensure KYC is set for the capital commitment
     get_kyc(user_data, investor, fund, capital_commitment)
     # Get the form type for the capital commitment
     form_type = get_form_type(import_upload, user_data)
     # Setup custom fields
-    custom_field_headers.delete("Feeder Fund")
     setup_custom_fields(user_data, capital_commitment, custom_field_headers, form_type:)
     # Setup exchange rate if foreign currency
     setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
@@ -92,20 +103,30 @@ class ImportCapitalCommitment < ImportUtil
     end
   end
 
-  def get_params(user_data, import_upload)
+  def get_params(user_data)
     folio_id = user_data["Folio No"].presence
     unit_type = user_data["Unit Type"].presence
     commitment_date = parse_date_cell(user_data, "Commitment Date")
     folio_currency = user_data["Folio Currency"].presence
     onboarding_completed = user_data["Onboarding Completed"] == "Yes"
-    feeder_fund_name = user_data["Feeder Fund"].presence
-    feed_fund = nil
-    if feeder_fund_name.present?
-      feed_fund = import_upload.entity.funds.where(name: feeder_fund_name).first
-      raise "Feeder Fund not found: #{feeder_fund_name}" unless feed_fund
-    end
 
-    [folio_id, unit_type, commitment_date, folio_currency, onboarding_completed, feed_fund]
+    [folio_id, unit_type, commitment_date, folio_currency, onboarding_completed]
+  end
+
+  # "Feeder Fund" is optional, so a sheet that does not carry the column at all must leave the
+  # commitment's feeder fund alone - an Update Only row from an older template would otherwise
+  # silently unlink a commitment that was tied to a feeder fund on the form. A column that IS
+  # present but blank still clears it: that is how a row says "this one is not from a feeder fund".
+  def feeder_fund_attributes(user_data, import_upload)
+    return {} unless user_data.key?(FEEDER_FUND_HEADER)
+
+    feeder_fund_name = user_data[FEEDER_FUND_HEADER].presence
+    return { feeder_fund_id: nil, is_feeder_fund: false } if feeder_fund_name.nil?
+
+    feeder_fund = import_upload.entity.funds.where(name: feeder_fund_name).first
+    raise "Feeder Fund not found: #{feeder_fund_name}" unless feeder_fund
+
+    { feeder_fund_id: feeder_fund.id, is_feeder_fund: true }
   end
 
   def post_process(ctx, import_upload:, **)
