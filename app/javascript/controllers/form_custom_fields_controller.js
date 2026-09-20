@@ -79,7 +79,12 @@ export default class extends Controller {
     let fcf_change_id = $( changed_elem ).attr("id");
     console.log(`fcf_change_id = ${fcf_change_id}`);
     let required_on_show = $( changed_elem ).attr("required");
-    let val = $( changed_elem ).val().toString();
+    // A multi-select .val() is an array, so trim per element rather than trimming the joined
+    // string — that way " Passport" is cleaned whether it arrives alone or as "Other, Passport".
+    // Legacy values saved before the option lists were cleaned still carry that space, and an
+    // untrimmed comparison below would leave the dependent field hidden.
+    let raw = $( changed_elem ).val();
+    let val = (Array.isArray(raw) ? raw : [raw]).map(v => (v == null ? "" : v.toString().trim())).join(",");
     console.log(`required_on_show = ${required_on_show}, ${val}`);
     let fcf_change_value = val.toLowerCase();
     // console.log( `Input ${fcf_change_id} changed to ${fcf_change_value}` );
@@ -90,7 +95,7 @@ export default class extends Controller {
         // We have to use the criteria eq, not eq, etc. to match the value
         // We have the state show, hide
         let criteria = $(elem).attr("data-match-criteria")
-        let data_match_value = $(elem).attr("data-match-value").toLowerCase();
+        let data_match_value = $(elem).attr("data-match-value").trim().toLowerCase();
         let matched = null;
         if (fcf_change_value && criteria == "contains") {
             matched = (fcf_change_value.includes(data_match_value) || data_match_value.includes(fcf_change_value)) ? "matched" : "not-matched";

@@ -382,8 +382,11 @@ module WithCustomField
   end
 
   def satisfies_condition?(fcf, json_fields)
-    actual_value = json_fields[fcf.condition_on]&.to_s&.downcase
-    data_match_value = fcf.condition_params.to_s.downcase
+    # Both sides are trimmed: a value saved before the option lists were cleaned can still
+    # carry the leading space that the old bare meta_data.split(",") gave it, and an untrimmed
+    # value would silently fail every comparison below — hiding a field the form showed.
+    actual_value = json_fields[fcf.condition_on]&.to_s&.strip&.downcase
+    data_match_value = fcf.condition_params.to_s.strip.downcase
     criteria = fcf.condition_criteria
     state = fcf.condition_state
 

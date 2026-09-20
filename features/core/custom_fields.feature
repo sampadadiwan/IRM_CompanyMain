@@ -125,3 +125,66 @@ Scenario: Select custom field without options fails model validation
   Given the user has role "company_admin"
   When I try to create a custom field "name=Category;field_type=Select" for "IndividualKyc" without options
   Then the custom field should not be saved with error "must provide at least one option for Select"
+
+
+# An option field keeps its whole choice list in one comma-separated meta_data string, so an
+# admin typing "Individual, HUF, LLP" used to create a choice whose value was " HUF" — the
+# space was then saved into json_fields and every exact-match consumer (the ransack custom
+# field filters, search_custom_fields, satisfies_condition? and its JS twin) stopped matching
+# that row. See FormCustomField#options / #normalize_option_meta_data.
+Scenario Outline: Whitespace around the options of an option field is ignored
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  When I create a custom field "<custom_field>" for "IndividualKyc"
+  Then the custom field options should be "<options>"
+  And the custom field meta_data should be "<meta_data>"
+
+  Examples:
+    | custom_field                                                         | options                       | meta_data           |
+    | name=Constitution;field_type=Select;meta_data=Individual, HUF, LLP   | Individual\|HUF\|LLP          | Individual,HUF,LLP  |
+    | name=Poi Type;field_type=Radio;meta_data=TIN, Passport,Aadhaar       | TIN\|Passport\|Aadhaar        | TIN,Passport,Aadhaar|
+    | name=Sectors;field_type=MultiSelect;meta_data=Fintech , D2C          | Fintech\|D2C                  | Fintech,D2C         |
+    | name=Country;field_type=DataList;meta_data=India ,  Singapore        | India\|Singapore              | India,Singapore     |
+
+# The leading "," or " ," in a choice list is the idiom for "start this dropdown empty".
+# Trimming must keep that empty choice: dropping it would promote the first real choice to the
+# default and silently record an answer nobody gave.
+Scenario Outline: The blank first option of a dropdown is preserved when whitespace is trimmed
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  When I create a custom field "<custom_field>" for "IndividualKyc"
+  Then the custom field options should be "<options>"
+  And the first custom field option should be blank
+
+  Examples:
+    | custom_field                                                    | options                        |
+    | name=Domicile;field_type=Select;meta_data= ,Foreign,Domestic    | EMPTY\|Foreign\|Domestic     |
+    | name=Gst;field_type=Select;meta_data=,Yes, No                   | EMPTY\|Yes\|No               |
+    | name=Depository;field_type=Radio;meta_data= , NSDL, CDSL        | EMPTY\|NSDL\|CDSL            |
+
+# meta_data means something completely different for every non-option field type, so it has to
+# survive exactly as typed - Ruby for Calculation, "precision,separator" for NumberField, an
+# ISO currency for Money, and "skill: true, sector: X" tags for File (SupportAgent#skill_for_sector
+# matches on those spaces).
+Scenario Outline: Non-option field types keep their meta_data exactly as typed
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  When I create a custom field "<custom_field>" for "IndividualKyc"
+  Then the custom field meta_data should be "<meta_data>"
+
+  Examples:
+    | custom_field                                                                   | meta_data                       |
+    | name=Scoring Skill File;field_type=File;meta_data=skill: true, sector: General | skill: true, sector: General    |
+    | name=Duration;field_type=NumberField;meta_data=2, comma                        | 2, comma                        |
+    | name=Notes;field_type=TextArea;meta_data=5                                     | 5                               |
+
+# A value saved before the option lists were cleaned still carries the old leading space, so
+# both sides of a conditional comparison are trimmed. Without that, the dependent field stays
+# hidden on screen while the server can still insist it is required - a mandatory field the
+# user cannot see, blocking the save.
+Scenario: A conditional field still matches a value saved before the option list was cleaned
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the entity has custom fields "name=Constitution;field_type=Select;meta_data=Individual,HUF,LLP#name=Huf Deed No;field_type=TextField;required=true;condition_on=constitution;condition_criteria=eq;condition_state=show;condition_params=HUF" for "IndividualKyc"
+  When a KYC stores the legacy value " HUF" for custom field "constitution"
+  Then the custom field "huf_deed_no" should be required on that KYC

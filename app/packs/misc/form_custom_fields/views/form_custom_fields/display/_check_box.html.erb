@@ -1,4 +1,4 @@
-<% options = custom_field.meta_data.to_s.split(",").map(&:strip) %>
+<% options = custom_field.options %>
 <% if options.count == 2 %>
     <% value = options[0] if ["true", true, "1", 1].include?(value) %>
     <% value = options[1] if ["false", false, "0", 0].include?(value) %>

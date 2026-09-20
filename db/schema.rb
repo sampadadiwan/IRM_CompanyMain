@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_15_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_20_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1498,6 +1498,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_100000) do
     t.string "document_name"
     t.bigint "entity_id", null: false
     t.string "for_class", limit: 25
+    t.integer "import_upload_id"
     t.bigint "owner_id", null: false
     t.string "owner_type", null: false
     t.string "qtype", limit: 10
