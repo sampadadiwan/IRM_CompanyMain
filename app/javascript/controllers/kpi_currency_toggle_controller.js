@@ -75,12 +75,12 @@ export default class extends Controller {
     this.buttonTargets.forEach((btn) => {
       if (this.showingOriginal) {
         btn.innerHTML = `<i class="ti ti-arrows-exchange me-1"></i>Viewing: ${this.kpiCurrencyValue} (KPI)`
-        btn.classList.remove("btn-outline-secondary")
-        btn.classList.add("btn-info")
+        btn.classList.remove("btn-light", "text-dark")
+        btn.classList.add("btn-warning", "text-dark")
       } else {
         btn.innerHTML = `<i class="ti ti-arrows-exchange me-1"></i>Viewing: ${this.fundCurrencyValue} (Fund)`
-        btn.classList.remove("btn-info")
-        btn.classList.add("btn-outline-secondary")
+        btn.classList.remove("btn-warning")
+        btn.classList.add("btn-light")
       }
     })
   }
