@@ -3,7 +3,7 @@
 # All FundRatio rows produced by that run reference this record via the polymorphic
 # computation_context association on FundRatio.
 #
-# Design rationale, JSON indexing, and fingerprint details: docs/features/fund_ratio_run.md
+# Design rationale, JSON indexing, and fingerprint details: docs/modules/funds/fund_ratios/fund_ratio_run.md
 class FundRatioRun < ApplicationRecord
   # MySQL rejects literal defaults on JSON columns, so we declare them here instead.
   # These ensure new records always have arrays rather than nil, even before save.
@@ -56,7 +56,7 @@ class FundRatioRun < ApplicationRecord
 
   # MEMBER OF uses the multi-valued index on the JSON array column (MySQL 8.0.17+).
   # Each array element gets its own index entry, so these queries hit the index rather
-  # than doing a full-table scan. See docs/features/fund_ratio_run.md — "JSON Array Indexing".
+  # than doing a full-table scan. See docs/modules/funds/fund_ratios/fund_ratio_run.md — "JSON Array Indexing".
   # SQLite (used in tests) does not support MEMBER OF — use json_each() instead.
   scope :for_source_fund, lambda { |id|
     if connection.adapter_name.downcase.include?("sqlite")

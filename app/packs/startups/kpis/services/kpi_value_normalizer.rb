@@ -2,7 +2,7 @@
 
 # Turns a raw spreadsheet cell into the number the portco meant.
 #
-# Principle (docs/technical/kpi_portco_upload_validation_review.md §2.4): interpret formatting,
+# Principle (docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md §2.4): interpret formatting,
 # store the intended number, and never silently store 0. Understands thousands separators
 # (Western and Indian grouping), accounting negatives, currency prefixes/suffixes, unit
 # suffixes (K/L/M/Cr/B), and percent signs. Placeholders are skipped with a warning; Excel

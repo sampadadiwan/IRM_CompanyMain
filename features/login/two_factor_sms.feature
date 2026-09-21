@@ -3,7 +3,7 @@ Feature: Two-Factor Authentication by SMS
   SMS is the third delivery mode alongside WhatsApp and authenticator apps. It is offered
   only when the deployment has it switched on and the user's stored number can actually
   be texted — there is no per-user opt-in column, the number itself is the entitlement.
-  See docs/technical/twilio_sms_otp_design.md.
+  See docs/modules/two_factor_auth/twilio_sms_otp_design.md.
 
   Background:
     Given there is a user "" for an entity "entity_type=Company"

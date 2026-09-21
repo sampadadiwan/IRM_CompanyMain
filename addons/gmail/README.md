@@ -91,7 +91,7 @@ action. After `rake gmail:setup`:
 
 Test deployments only ever install for the script's owner. Reaching clients requires a
 Google Workspace Marketplace listing — see "Distribution" in
-`docs/technical/mail_addin_review.md`.
+`docs/modules/mail_addins/mail_addin_review.md`.
 
 ## OAuth scopes
 

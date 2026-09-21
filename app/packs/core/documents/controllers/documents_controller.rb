@@ -469,8 +469,8 @@ class DocumentsController < ApplicationController
     end
   end
 
-  # Internal debugging knob (docs/technical/m365_graph_pdf_conversion.md,
-  # docs/technical/google_docs_pdf_conversion.md), not a feature for general editors: only
+  # Internal debugging knob (docs/modules/documents/m365_graph_pdf_conversion.md,
+  # docs/modules/documents/google_docs_pdf_conversion.md), not a feature for general editors: only
   # settable on a document that is already a template, and only when the request explicitly
   # carries params[:debug] -- mirrors the same gate the form field itself is rendered behind,
   # enforced here since the form-level gate alone is not a security boundary.

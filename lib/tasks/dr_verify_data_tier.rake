@@ -1,6 +1,6 @@
 #  dr:verify_data_tier — prove Redis, Sidekiq and Elasticsearch actually work
 # =============================================================================
-# Phase 4 of component recovery (see docs/DR_COMPONENT_RECOVERY.md).
+# Phase 4 of component recovery (see docs/operations/dr/dr_component_recovery.md).
 #
 # Runs ON an app server (via `cap <stage> partial:verify_data_tier`), because it
 # uses the application's own REDIS_URL / ELASTIC_SEARCH_URL and credentials.
@@ -9,7 +9,7 @@
 # /health_check/redis_check, which exercises Rails.cache — and this app uses
 # :solid_cache_store, i.e. MySQL. So after any repair that moves Redis to a new
 # address, every existing check can pass while Sidekiq and ActionCable point at
-# a dead Redis. Recorded as finding #5 in DR_COMPONENT_RECOVERY.md.
+# a dead Redis. Recorded as finding #5 in dr_component_recovery.md.
 #
 # Deliberately additive: dr:verify is drill-tested and is not modified.
 #

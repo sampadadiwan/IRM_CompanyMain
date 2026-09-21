@@ -80,4 +80,4 @@ Email alert controls are hidden in the current UI. The backend is fully function
 | `completion_mailer.rb` | Email notifications |
 | `run.sh` | Alternative entry point for CLI mode |
 
-For detailed documentation, see `docs/cucumber_dashboard/`.
+For detailed documentation, see `docs/engineering/testing/cucumber_dashboard/`.

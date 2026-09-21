@@ -1,7 +1,7 @@
 # One attempt to deliver a two-factor one-time code over SMS.
 #
 # There are no inbound delivery receipts by design (see
-# docs/technical/twilio_sms_otp_design.md), so a row here records what happened on the
+# docs/modules/two_factor_auth/twilio_sms_otp_design.md), so a row here records what happened on the
 # send call and nothing after it. `queued` means Twilio accepted the message, not that
 # a handset received it.
 class OtpDelivery < ApplicationRecord

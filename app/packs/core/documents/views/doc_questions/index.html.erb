@@ -1,37 +1,5 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Doc Questions</h1>
-  <span>
-    <%= link_to "New Question", new_doc_question_path("doc_question[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
-    <%= link_to "Download", doc_questions_path(format: :xlsx), {class: "btn btn-outline-success"}  %>
-  </span>
-</div>
-<div class="table-responsive" data-controller="datatable">
-  <table id="doc_questions" class="table table-bordered dataTable jqDataTable">
-    <thead>
-      <tr>
-        <th class="text-col">
-          Tags
-        </th>
-        <th class="text-col">
-          Question
-        </th>
-        <th class="text-col">
-          For
-        </th>
-        <th class="text-col">
-          Document Name
-        </th>
-        <th class="text-col">
-          Type
-        </th>
-        <th class="action-col">
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @doc_questions.each do |doc_question| %>
-        <%= render doc_question %>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<turbo-frame id="doc_questions_frame" target="_top">
+
+  <%= render "/doc_questions/index" %>
+
+</turbo-frame>

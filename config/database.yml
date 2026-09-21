@@ -34,6 +34,7 @@ development:
     username: root
     password: root
     host: 127.0.0.1
+    # port: 33066
   primary_replica:
     <<: *default_replica
     database: IRM_development
@@ -41,6 +42,7 @@ development:
     username: root
     password: root
     host: 127.0.0.1
+    # port: 33066
 
 staging:
   primary:

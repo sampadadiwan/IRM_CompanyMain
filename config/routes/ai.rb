@@ -48,7 +48,7 @@ end
 
 resources :customer_support_escalations, only: %i[show update]
 
-# FAQ Manager — support-managed user-guide FAQs and chatbot guide search (docs/ai/guide_faq_search_prd.md)
+# FAQ Manager — support-managed user-guide FAQs and chatbot guide search (docs/modules/ai/customer_support_agent/guide_faq_search_prd.md)
 resources :faq_entries do
   member do
     patch :publish

@@ -3,10 +3,20 @@ wb = xlsx_package.workbook
 form_type, custom_field_names, custom_headers = get_form_type("CapitalCommitment")
 kyc_form_type, kyc_custom_field_names, kyc_custom_headers = get_form_type("InvestorKyc")
 
+# Loading the relation here is deliberate - the rows below iterate the same records, and the
+# header row has to know up front whether any of them came in through a feeder fund.
+capital_commitments = @capital_commitments.to_a
+feeder_fund_ids = capital_commitments.filter_map(&:feeder_fund_id).uniq
+# Resolved with one query instead of including :feeder_fund on the shared list relation, which
+# would load a Fund per commitment for the HTML and JSON index too.
+feeder_fund_names = feeder_fund_ids.any? ? Fund.where(id: feeder_fund_ids).pluck(:id, :name).to_h : {}
+# Only a master fund's folios carry one, so the column is left out entirely when none do.
+has_feeder_fund = feeder_fund_names.any?
+
 wb.add_worksheet(name: "CapitalCommitment") do |sheet|
   # Create the header row
 
-  headers = ["Fund", "Investor", "Investing Entity", "Folio No", "Commitment Date", "Unit Type", "Percentage", "Folio Currency", "Committed (Folio Currency)", "Fund Currency", "Committed", "Called", "Collected", "Distributed", "Fund Close", "Virtual Bank Account"] + custom_headers + ["Investing Entity", "PAN", "Address", "Bank Account", "IFSC Code"] + kyc_custom_headers
+  headers = ["Fund"] + (has_feeder_fund ? ["Feeder Fund"] : []) + ["Investor", "Investing Entity", "Folio No", "Commitment Date", "Unit Type", "Percentage", "Folio Currency", "Committed (Folio Currency)", "Fund Currency", "Committed", "Called", "Collected", "Distributed", "Fund Close", "Virtual Bank Account"] + custom_headers + ["Investing Entity", "PAN", "Address", "Bank Account", "IFSC Code"] + kyc_custom_headers
 
   has_tracking_currency = false
   if params[:fund_id].present?
@@ -20,12 +30,12 @@ wb.add_worksheet(name: "CapitalCommitment") do |sheet|
   sheet.add_row(headers)
 
   # Create entries for each item
-  @capital_commitments.each do |cc|
+  capital_commitments.each do |cc|
     kyc = cc.investor_kyc
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
     kyc_custom_field_values = get_custom_values(kyc, kyc_form_type, kyc_custom_field_names)
 
-    values = [cc.fund.name, cc.investor_name, cc.investor_kyc&.full_name, cc.folio_id, cc.commitment_date, cc.unit_type, cc.percentage, cc.folio_currency, cc.folio_committed_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.collected_amount, cc.distribution_amount, cc.fund_close, cc.virtual_bank_account] + custom_field_values + [kyc&.full_name, kyc&.PAN, kyc&.address, kyc&.bank_account_number, kyc&.ifsc_code] + kyc_custom_field_values
+    values = [cc.fund.name] + (has_feeder_fund ? [feeder_fund_names[cc.feeder_fund_id]] : []) + [cc.investor_name, cc.investor_kyc&.full_name, cc.folio_id, cc.commitment_date, cc.unit_type, cc.percentage, cc.folio_currency, cc.folio_committed_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.collected_amount, cc.distribution_amount, cc.fund_close, cc.virtual_bank_account] + custom_field_values + [kyc&.full_name, kyc&.PAN, kyc&.address, kyc&.bank_account_number, kyc&.ifsc_code] + kyc_custom_field_values
 
     if has_tracking_currency
       values << cc.tracking_committed_amount.to_d

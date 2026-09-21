@@ -10,7 +10,7 @@
 # bearer token is minted for the authenticated user and handed back to Apps Script through
 # Google's usercallback mechanism, using the state token the add-on generated.
 #
-# @see docs/technical/mail_addin_review.md
+# @see docs/modules/mail_addins/mail_addin_review.md
 class GmailAddinController < ApplicationController
   # Apps Script hands control back through this host only. Validated strictly, because the
   # redirect carries an access token in its query string — accepting an arbitrary

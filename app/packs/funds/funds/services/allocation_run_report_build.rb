@@ -1,5 +1,5 @@
 # Runs the allocation run checker over one finished AllocationRun and writes the result into
-# its AllocationRunReport. See docs/business_requirements/allocation_run_checker.md.
+# its AllocationRunReport. See docs/modules/allocation/allocation_run_checker_requirements.md.
 #
 #   AllocationRunReportBuild.call(report: report)
 #
@@ -147,7 +147,7 @@ class AllocationRunReportBuild < Trailblazer::Operation
   # PreRunCheck / PostRunCheck). Unlike every other check here they cannot be recomputed from the
   # ledger -- they describe the data at the moment the run happened -- so they are read back from
   # what AccountEntryAllocation::RunFormulas stored on this report, one finding per check, rows
-  # and all. See docs/business_requirements/allocation_run_checks.md.
+  # and all. See docs/modules/allocation/allocation_run_checks.md.
   #
   # The engine only stores results when a check failed or warned. For a kind with nothing stored,
   # a single summary finding says what can still be concluded from the run's status.

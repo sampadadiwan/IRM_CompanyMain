@@ -3,7 +3,7 @@ Feature: LP CRM
   contacts are InvestorAccess records (approved=false, custom fields for details),
   notes/tasks link to a contact via touch_point, and the contact show page
   surfaces that history as tabs.
-  See docs/features/lp_relationship_crm_alt_mvp_prd.md
+  See docs/modules/investors/lp_relationship_crm_alt_mvp_prd.md
 
   Background:
     Given Im logged in as a user "" for an entity "entity_type=Company"

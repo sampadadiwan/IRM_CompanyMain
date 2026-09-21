@@ -676,7 +676,7 @@ Then('all approved users are reachable for non-KPI notifications at {string}') d
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SUBMIT GATE & ACTOR-SCOPED PARAMS (server-side; docs/technical/kpi_portco_upload_validation_review.md §2.1/§2.2/§2.8)
+# SUBMIT GATE & ACTOR-SCOPED PARAMS (server-side; docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md §2.1/§2.2/§2.8)
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Attaches a workbook to @kpi_report and stores its verdict, exactly as a portco upload + Save Draft

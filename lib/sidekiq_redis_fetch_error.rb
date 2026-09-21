@@ -9,7 +9,7 @@
 # a second and goes straight back to polling. So a Redis blip that Sidekiq had
 # already recovered from arrived at the handler looking exactly like a failed job
 # and was emailed as a production error, carrying no job, no arguments and no
-# request. See docs/incidents/2026-08-14-2d7eca43-sidekiq-redis-fetch-timeout.md.
+# request.
 #
 # Those fetch-loop failures are counted for Prometheus instead of emailed. The
 # count is what makes suppressing the email safe rather than blind: Sidekiq notifies

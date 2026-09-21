@@ -343,7 +343,7 @@ module DocumentGeneratorBase
   # doc_template: the source Document (template: true) this file was generated from, if
   # known. Its pdf_conversion_engine picks the conversion path below -- every existing
   # caller that doesn't pass it (or a template that hasn't opted in) gets the unchanged
-  # LibreOffice path. See docs/technical/m365_graph_pdf_conversion.md.
+  # LibreOffice path. See docs/modules/documents/m365_graph_pdf_conversion.md.
   def convert_to_accessible_pdf(file_name, template_name = nil, doc_template: nil)
     docx_path = "#{file_name}.docx"
     pdf_path  = "#{file_name}.pdf"
@@ -441,7 +441,7 @@ module DocumentGeneratorBase
   # where LibreOffice's rendering is known to be wrong, so silently reverting to it on
   # error would produce a document that looks fine but has the exact defect this was
   # meant to avoid. The job should fail and alert instead. See
-  # docs/technical/m365_graph_pdf_conversion.md.
+  # docs/modules/documents/m365_graph_pdf_conversion.md.
   def convert_via_m365(docx_path, pdf_path)
     result = M365PdfConversion.call(docx_path: docx_path, pdf_path: pdf_path)
     unless result.success?
@@ -458,7 +458,7 @@ module DocumentGeneratorBase
   end
 
   # No fallback to LibreOffice on failure, same reasoning as convert_via_m365 above. See
-  # docs/technical/google_docs_pdf_conversion.md.
+  # docs/modules/documents/google_docs_pdf_conversion.md.
   def convert_via_google_docs(docx_path, pdf_path)
     result = GoogleDocsPdfConversion.call(docx_path: docx_path, pdf_path: pdf_path)
     unless result.success?

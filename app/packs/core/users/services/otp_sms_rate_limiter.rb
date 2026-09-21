@@ -1,6 +1,6 @@
 # Rate limits for two-factor SMS sends.
 #
-# See docs/technical/twilio_sms_otp_design.md section 9.
+# See docs/modules/two_factor_auth/twilio_sms_otp_design.md section 9.
 #
 # WHY THIS IS NOT OPTIONAL SCOPE
 #

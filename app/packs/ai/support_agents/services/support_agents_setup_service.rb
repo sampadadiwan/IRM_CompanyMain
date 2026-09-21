@@ -360,7 +360,7 @@ class SupportAgentsSetupService
         #
         # Keys are FormCustomField names; paths are relative to Rails.root and
         # skipped silently if absent. They are .txt rather than the .md sources
-        # under docs/ai/skills because FileUploader's MIME allowlist has no
+        # in docs/modules/ai/portfolio_scoring_agent because FileUploader's MIME allowlist has no
         # text/markdown entry.
         skill_files: {
           "generic_skill_file" => "public/sample_uploads/portfolio_scoring_generic_skill.txt",

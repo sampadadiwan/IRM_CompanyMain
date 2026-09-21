@@ -64,7 +64,16 @@ class AccessRightsController < ApplicationController
   # POST /access_rights or /access_rights.json
   def create
     @access_rights = initialize_from_params(access_right_params)
-    @access_rights.each { |access_right| access_right.granted_by = current_user }
+    @access_rights.each do |access_right|
+      access_right.granted_by = current_user
+      # A right on the folder alone grants nothing: Document.for_investor and
+      # Folder.for_investor join the child's own access_rights, and only the
+      # FolderAccessJob that Folder#access_rights_changed enqueues for cascade=true
+      # creates those rows. So folder grants always cascade and the form no longer
+      # asks - an unticked box used to leave the stakeholder with a data room they
+      # could open and no files inside it.
+      access_right.cascade = true if access_right.owner_type == "Folder"
+    end
     @access_rights.each(&:save)
     @access_rights = AccessRight.includes(:investor, :owner).where(id: @access_rights.collect(&:id))
     @partial_to_use = params[:partial_to_use] || "access_right"

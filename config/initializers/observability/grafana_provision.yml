@@ -397,7 +397,7 @@ alert_rules:
   # any host. 10 minutes clears a deploy's or the daily restart's gap. NoData
   # (every exporter restarted and no canary has run since) alerts too.
   # Provision per region only once the canary metric exists there, or this fires
-  # immediately on NoData — docs/technical/process_supervision.md#monitoring-and-alerts.
+  # immediately on NoData — docs/operations/process_supervision.md#monitoring-and-alerts.
   - title: "Sidekiq Canary Stale"
     group: rails
     expr: 'time() - max(ruby_sidekiq_canary_last_run_timestamp_seconds)'

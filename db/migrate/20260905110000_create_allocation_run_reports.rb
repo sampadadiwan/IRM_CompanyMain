@@ -1,4 +1,4 @@
-# Allocation Run Checker — see docs/business_requirements/allocation_run_checker.md.
+# Allocation Run Checker — see docs/modules/allocation/allocation_run_checker_requirements.md.
 #
 # One report per AllocationRun, holding the Pass / Warn / Fail result of the deterministic
 # checks in sections 1 (did the run happen correctly) and 2 (do the numbers add up). The

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Managed user-guide FAQs (docs/ai/guide_faq_search_prd.md).
+# Managed user-guide FAQs (docs/modules/ai/customer_support_agent/guide_faq_search_prd.md).
 #
 #   rake guide_faqs:import_markdown [REFRESH=1] # FAQ sections in docs/user_guides → FaqEntry
 #   rake guide_faqs:export FILE=tmp/faqs.xlsx # spreadsheet of every FAQ (default tmp/faqs.xlsx)

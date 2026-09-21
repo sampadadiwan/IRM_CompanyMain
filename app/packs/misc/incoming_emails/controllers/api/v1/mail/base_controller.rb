@@ -13,7 +13,7 @@ module Api
       # in any current browser. Apps Script has no browser context at all.
       #
       # Both clients authenticate with a Doorkeeper bearer token instead.
-      # @see docs/technical/mail_addin_review.md
+      # @see docs/modules/mail_addins/mail_addin_review.md
       class BaseController < ActionController::API
         before_action :set_cors_headers
         before_action :authenticate_token!, except: :preflight

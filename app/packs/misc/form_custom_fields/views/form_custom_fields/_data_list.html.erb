@@ -13,7 +13,7 @@
          } %>
    <% end %>
 
-    <% options = field.meta_data.present? ? field.meta_data.split(",") : [] %>
+    <% options = field.options %>
 
     <%= f.text_field field.name, class: "form-control custom_field", required: field.required,
         list: "options_#{field.name}", autocomlete: "off" %>

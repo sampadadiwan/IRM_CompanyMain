@@ -28,7 +28,7 @@ class EmailBounceEventsController < ApplicationController
   # POST /email_bounce_events/:id/disable_recipient_email
   #
   # Manual, admin-triggered only — bounce/complaint detection itself never touches
-  # InvestorAccess.email_enabled automatically (see docs/features/
+  # InvestorAccess.email_enabled automatically (see docs/modules/notifications/
   # email_bounce_complaint_detection_prd.md, Non-Goals). Updates records individually
   # (not update_all) so InvestorAccess's existing `audited` tracking (via `Trackable.new`)
   # captures who did this and when.

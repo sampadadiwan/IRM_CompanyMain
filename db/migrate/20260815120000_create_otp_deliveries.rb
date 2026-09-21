@@ -1,5 +1,5 @@
 # Records every attempt to deliver a two-factor one-time code over SMS.
-# See docs/technical/twilio_sms_otp_design.md.
+# See docs/modules/two_factor_auth/twilio_sms_otp_design.md.
 #
 # Why a dedicated table rather than reusing WhatsappLog: WhatsappLog belongs_to
 # :notification and :entity, and an OTP send has neither. The user is signed out at

@@ -33,7 +33,7 @@
 # In production nginx serves the apex directly from public/website (see
 # config/deploy/templates/nginx_conf.erb), so this middleware is the
 # dev/test server and a production fallback. Full design:
-# docs/technical/website_serving.md
+# docs/modules/website/website_serving.md
 class Website
   # Matches Entity#sub_domain values; anything else in ?sub_domain= is
   # ignored rather than reflected into a redirect Location.

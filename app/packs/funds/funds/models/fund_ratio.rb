@@ -1,4 +1,4 @@
-# See docs/features/fund_ratio_run.md for the computation_context design and
+# See docs/modules/funds/fund_ratios/fund_ratio_run.md for the computation_context design and
 # how fund_id relates to cross-fund / cross-portfolio runs.
 class FundRatio < ApplicationRecord
   include WithValidationRules

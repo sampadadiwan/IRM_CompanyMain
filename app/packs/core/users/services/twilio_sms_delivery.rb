@@ -1,6 +1,6 @@
 # Starts one Twilio Verify verification over SMS, and records the attempt.
 #
-# See docs/technical/twilio_sms_otp_design.md, sections 2 and 17.
+# See docs/modules/two_factor_auth/twilio_sms_otp_design.md, sections 2 and 17.
 #
 # WHAT CHANGED FROM THE MESSAGES API (tag sms-messages-api-v1)
 #

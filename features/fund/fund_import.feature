@@ -16,6 +16,9 @@ Scenario Outline: Import capital commitments
   And the capital commitments must have the percentages updated
   And the fund must have the counter caches updated
   And the investors must have access rights to the fund
+  # No folio here came in through a feeder fund, so the export leaves the column out entirely.
+  When I download the commitments xlsx export for the fund
+  Then the commitments xlsx export must not have a feeder fund column
   And Given I upload "account_entries.xlsx" file for Account Entries
   Then There should be "19" account_entries created
   And the account_entries must have the data in the sheet
@@ -32,6 +35,14 @@ Scenario: Import capital commitments with a feeder fund
   Then I should see the "Import in progress"
   Then There should be "2" capital commitments created
   And the capital commitments must have the correct feeder fund data
+  # Feeder Fund is an optional column: a sheet built from an older template does not carry it,
+  # and an Update Only row from such a sheet must not silently unlink the feeder fund.
+  And Given I upload "capital_commitments_feeder_fund_update.xlsx" file for "Commitments" of the fund
+  Then There should be "2" capital commitments created
+  And the capital commitments must keep their feeder fund data when the column is absent
+  When I download the commitments xlsx export for the fund
+  Then the commitments xlsx export must show feeder fund "SAAS Fund Feeder" for folio "201"
+  And the commitments xlsx export must show feeder fund "" for folio "202"
 
 
 @import
@@ -100,6 +111,14 @@ Scenario Outline: Import capital remittance payments
   And Given I upload "capital_remittance_payments_multi_currency.xlsx" file for the remittances of the capital call
   Then There should be "5" remittance payments created
   And the capital remittance payments must have the data in the sheet
+  # The sheet asks for Verified = Yes on rows whose calls were imported and so are not approved.
+  # Verifying against an unapproved call is refused (CapitalRemittance#verified_requires_approval),
+  # but the payments are facts and are still imported - so the import succeeds and warns rather
+  # than silently dropping the flag, which is what it used to do.
+  And the payments import should succeed with no failed rows
+  And the payments import should warn that the remittances were not verified
+  And the payments import results should mark the verified rows "Success with warnings"
+  And none of the remittances should be verified
   And the remittances are generated for the capital calls
   And the capital commitments are updated with remittance numbers
   And the funds are updated with remittance numbers

@@ -164,7 +164,7 @@
   /* ============================================================
      CONVERSION PATH
      The demo form and the events that measure it.
-     See docs/technical/website_lead_capture.md.
+     See docs/modules/website/website_lead_capture.md.
      ============================================================ */
   var CFG = window.CAPHIVE || {};
   /* caphiveTrack is defined by _partials/analytics.html. Stubbed so this file

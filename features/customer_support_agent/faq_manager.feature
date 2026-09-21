@@ -4,7 +4,7 @@ Feature: FAQ Manager — support-managed user-guide FAQs and chatbot guide searc
   I want to manage user-guide FAQs in the app and have the guide pages and the chatbot use them
   So that answers can be corrected and added without a code change or deploy
 
-  # See docs/ai/guide_faq_search_prd.md. Elasticsearch is bypassed in tests, so search runs on
+  # See docs/modules/ai/customer_support_agent/guide_faq_search_prd.md. Elasticsearch is bypassed in tests, so search runs on
   # GuideSearch's database backend, which applies the same synonyms and strong-match rule.
 
   Background:

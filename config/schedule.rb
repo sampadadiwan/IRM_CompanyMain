@@ -44,7 +44,7 @@ every :saturday, at: '1:00 am', roles: [:app] do
   # 01:00 UTC Saturday (server clocks are UTC): 6:30am IST; Friday 9pm EDT /
   # 8pm EST in the US. Puma and sidekiq come back on their own — both systemd
   # units are enabled — and the reboot stops sidekiq through its unit, so
-  # in-flight jobs drain before shutdown. See docs/technical/process_supervision.md.
+  # in-flight jobs drain before shutdown. See docs/operations/process_supervision.md.
   command 'sudo reboot'
 end
 

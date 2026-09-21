@@ -5,7 +5,7 @@
  * talks to /api/v1/mail/*. All matching, dedup and persistence live in Rails, shared with
  * the Gmail add-on, so the same email filed from either client produces the same record.
  *
- * Behaviours this fixes over the previous version (docs/technical/mail_addin_review.md):
+ * Behaviours this fixes over the previous version (docs/modules/mail_addins/mail_addin_review.md):
  *  - authenticates with a bearer token instead of a session cookie, which Outlook's
  *    cross-site iframe never sends
  *  - re-reads the message on ItemChanged, so the pane cannot file email A while the user

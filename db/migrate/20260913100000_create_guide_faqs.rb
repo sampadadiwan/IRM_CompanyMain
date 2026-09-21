@@ -1,4 +1,4 @@
-# Managed FAQs and guide search (docs/ai/guide_faq_search_prd.md).
+# Managed FAQs and guide search (docs/modules/ai/customer_support_agent/guide_faq_search_prd.md).
 #
 # 1. faq_entries — one row per FAQ question on a user guide. Production is the master copy;
 #    `rake guide_faqs:export` snapshots published rows to docs/user_guides/faqs/*.yml.

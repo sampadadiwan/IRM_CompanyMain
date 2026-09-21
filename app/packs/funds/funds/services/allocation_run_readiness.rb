@@ -62,6 +62,18 @@ class AllocationRunReadiness
   # @return [Hash{Array(String, String) => Array<String>}, nil] nil when the fund needs no rate at
   #   all, {} when every needed rate is present
   def missing_fx_rates
+    sources = fx_rate_sources
+    return nil if sources.empty?
+
+    sources.reject do |(from, to), _|
+      ExchangeRate.where(entity_id: @entity_id, from:, to:).exists?(as_of: since..@end_date)
+    end
+  end
+
+  # Every currency pair the fund needs a rate for, whether or not one exists, and what needs it.
+  # Shared with the run check suggester, which suggests an FX rate check only for a fund that has one.
+  # @return [Hash{Array(String, String) => Array<String>}] empty when the fund needs no rate
+  def fx_rate_sources
     sources = Hash.new { |h, k| h[k] = [] }
 
     @fund.investment_instruments
@@ -79,12 +91,7 @@ class AllocationRunReadiness
     end
 
     sources[[@fund.currency, @fund.tracking_currency]] << "tracking currency" if @fund.has_tracking_currency?
-
-    return nil if sources.empty?
-
-    sources.reject do |(from, to), _|
-      ExchangeRate.where(entity_id: @entity_id, from:, to:).exists?(as_of: since..@end_date)
-    end
+    sources.to_h
   end
 
   # The latest rate dated on or before end_date for a pair, for saying how stale.

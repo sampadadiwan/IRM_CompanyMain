@@ -78,7 +78,7 @@ class UserPolicy < ApplicationPolicy
   #      whitelist includes their OWN email (allow_login_as checks the support user's email).
   # This is enforced server-side against the authenticated acting user, which is why the new
   # login_as flow cannot be redeemed by an anonymous party holding a leaked URL (unlike the old
-  # signed-link flow — see UsersController#login_as and docs/technical/security_review_2026_07.md H2).
+  # signed-link flow — see UsersController#login_as and docs/security/security_review_2026_07.md H2).
   def login_as?
     return false unless user.has_cached_role?(:support) || user.has_cached_role?(:super)
 

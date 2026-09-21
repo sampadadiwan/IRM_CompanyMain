@@ -94,7 +94,7 @@ flowchart TD
 ```
 
 - When a new folder is created, it inherits the parent's access — and so do any documents already inside it.
-- When you change a folder's access, the change cascades to all sub-folders and their documents (when the right is set to cascade).
+- When you change a folder's access, the change cascades to all sub-folders and their documents.
 
 ---
 
@@ -217,7 +217,7 @@ The link respects the document's download and printing settings.
 
 ## Document Access Rights
 
-Access rights decide who sees a document in the portal, and are usually **inherited from the folder** automatically. You can also grant access on a single document directly (open the document → **Access Rights** tab → **Grant Access**, choose the user or stakeholder, and set whether it should cascade further). Document-level access **extends** folder access; it doesn't override folder restrictions.
+Access rights decide who sees a document in the portal, and are usually **inherited from the folder** automatically. You can also grant access on a single document directly (open the document → **Access Rights** tab → **Grant Access**, then choose the user or stakeholder). Document-level access **extends** folder access; it doesn't override folder restrictions.
 
 ---
 
@@ -375,7 +375,7 @@ Every user who has an access right on the new document (and, for fund, deal and 
 The folder gets its level and full path from the parent (paths must be unique), copies every access right of the parent onto itself and any documents inside, and inherits the parent's owner and **Private** flag. Nobody is notified. Folders you create are **regular**; their name and parent are locked once saved, so no folder can be renamed from the UI. See [Creating a Folder](#creating-a-folder).
 
 **What happens when I grant access on a folder?**
-An access right is created on the folder and, if it is set to cascade, a background job copies it onto every document and sub-folder beneath it (large trees take a few minutes). No one is emailed for a folder grant, even with **Send Notification** ticked (folders have no send-email setting); the change is silent and they simply see the documents next time they log in. On a single document, **Send Notification** emails only when that document's **Send Email** is on. Removing the access right removes what it granted.
+An access right is created on the folder and a background job copies it onto every document and sub-folder beneath it (large trees take a few minutes). Folder grants always cascade — there is no checkbox, because a right on the folder alone would show the folder and none of its contents. No one is emailed for a folder grant, and the form offers no **Send Notification** box for one: folders have no send-email setting, so the change is silent and stakeholders simply see the documents next time they log in. On a single document, **Send Notification** is still offered and emails only when that document's **Send Email** is on. Removing the access right removes what it granted.
 
 **What happens when I change a folder's Allow Download, Printing or Original switches?**
 Saving the folder queues a job that overwrites those three switches on every document in the folder and in all sub-folders, so any per-document exception you had set is replaced. The change takes effect for stakeholders as soon as the job finishes; nobody is notified. See [Download and Print Controls](#download-and-print-controls).
@@ -426,7 +426,7 @@ The folder name and path update automatically, including all sub-folders (e.g. r
 No. System folders are named by the platform and have no **Upload / Edit** button. Ask your administrator if one needs to change. See [System vs Regular Folders](#system-vs-regular-folders).
 
 **If I add access to a folder, do existing documents get it too?**
-Yes, when the access right cascades: a background job propagates it to all sub-folders and documents, and any folder created later under it inherits it at creation.
+Yes, always. A background job propagates the right to all sub-folders and documents, and any folder created later under it inherits it at creation. Folder grants cascade unconditionally; there is no option to turn it off.
 
 **How do I share with someone who has no account?**
 Open the document, go to the **Shares** tab and click [**New**](/doc_shares/new), then enter one or more recipient emails separated by commas. They receive a secure view link; the tab shows whether the email was sent, when it was first viewed and how many times. The **Shares** tab is only available to company administrators and only when data rooms are enabled for your company. See [Sharing a Document Externally](#sharing-a-document-externally).
@@ -441,7 +441,7 @@ Set **Allow Download** off on the fund's document folder (open the folder → **
 Any file can be uploaded. PDFs preview in the viewer; other formats render in the browser or download. Videos play inline.
 
 **How do I grant a single user or stakeholder access to one document?**
-Open the document, go to the **Access Rights** tab and click **Grant Access**. Choose the user or stakeholder and whether the right should cascade. Document-level rights extend the folder's rights; they never remove access the folder already grants. See [Document Access Rights](#document-access-rights).
+Open the document, go to the **Access Rights** tab and click **Grant Access**, then choose the user or stakeholder. Document-level rights extend the folder's rights; they never remove access the folder already grants. See [Document Access Rights](#document-access-rights).
 
 **Where do I see the AI-extracted Q&A for a document?**
 Open the document page; a **Q&A** tab appears next to **Tasks** once CapHive holds extracted facts for the file. Extraction is not triggered by upload and there is no button for it; it runs when support enables it for a document type. There is no separate "Document Questions" page. See [Document Q&A](#document-qa).

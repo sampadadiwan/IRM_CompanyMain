@@ -182,7 +182,7 @@ this table only calls out the ones worth a note.
 | Sidekiq Duplicate Workers | max(count by hostname of ruby_rss{type="sidekiq"}) | >1 | 5m — a second Sidekiq started outside the systemd unit |
 | P95 Response Time | approx: (P90+P99)/2 (no true P95 quantile exported) | >750ms | 5m |
 
-Sidekiq supervision, the canary and per-region provisioning order for the two Sidekiq Canary/Duplicate rules: `docs/technical/process_supervision.md`.
+Sidekiq supervision, the canary and per-region provisioning order for the two Sidekiq Canary/Duplicate rules: `docs/operations/process_supervision.md`.
 
 **Deleted (were noisy, not actionable, or duplicated a rule above):**
 - `Errors > 30 errors` — absolute 4xx+5xx count; bot 404s at 3 req/s triggered this every evaluation cycle

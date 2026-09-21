@@ -6,6 +6,60 @@ class ApplicationJob < ActiveJob::Base
   # Most jobs are safe to ignore if the underlying records are no longer available
   discard_on ActiveJob::DeserializationError
 
+  # --- Audit attribution ----------------------------------------------------
+  #
+  # `audited` names the actor from Audited.store, a thread-local that
+  # Audited::Sweeper fills from the controller on each request. A job runs on a
+  # different thread in a different process, so that store is empty and every
+  # audit the job writes lands with user_id NULL — which was ~74% of the whole
+  # audits table (worst for updates: 94% of job-written update audits).
+  #
+  # So we carry the acting user across the process boundary ourselves: captured
+  # from Current.user when the job is enqueued, restored around perform, and
+  # handed to audited via as_user. Because the restore also sets Current.user, a
+  # job that enqueues another job propagates the same actor down the chain.
+  #
+  # The id travels as a plain Integer, never a GlobalID to the User record. This
+  # class sets `discard_on ActiveJob::DeserializationError` above, and User is
+  # acts_as_paranoid (see Trackable), so a GlobalID pointing at a since-deleted
+  # user would raise on deserialize and silently discard the entire job — losing
+  # real work, not merely the attribution.
+  def serialize
+    super.merge("acting_user_id" => Current.user&.id)
+  end
+
+  def deserialize(job_data)
+    super
+    @acting_user_id = job_data["acting_user_id"]
+  end
+
+  around_perform do |job, block|
+    user = job.acting_user
+
+    if user
+      Current.set(user: user) { Audited.audit_class.as_user(user) { block.call } }
+    else
+      # Nothing known about the actor (a sidekiq-cron run, a console enqueue, or
+      # a job enqueued before this code shipped). Leave the audits unattributed
+      # rather than inventing an actor — a wrong name in a compliance trail is
+      # worse than an honest blank.
+      block.call
+    end
+  end
+
+  # with_deleted: a user who has since been deactivated should still attribute to
+  # their own name. Falls back to Current.user for perform_now, which never goes
+  # through serialize/deserialize.
+  def acting_user
+    return @acting_user if defined?(@acting_user)
+
+    @acting_user = if @acting_user_id
+                     User.with_deleted.find_by(id: @acting_user_id)
+                   else
+                     Current.user
+                   end
+  end
+
   def send_notification(message, user_id, level = "success")
     if level == "danger"
       Rails.logger.error { message }

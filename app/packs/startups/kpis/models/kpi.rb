@@ -151,7 +151,7 @@ class Kpi < ApplicationRecord
   # back" math) — whatever the previous row in the DB actually is, is "the prior period"; the
   # fund's own reporting cadence decides what dates exist, same philosophy as the tag-based
   # comparators. Approved-only, for the same reason as find_tagged_kpi above. See "Addendum:
-  # prior-period comparator" in docs/technical/kpi_rag_rules_redesign.md.
+  # prior-period comparator" in docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md.
   def find_prior_period_kpi
     Kpi.approved.joins(:kpi_report)
        .where(
@@ -185,7 +185,7 @@ class Kpi < ApplicationRecord
        .first
   end
 
-  # Live RAG computation — see docs/technical/kpi_rag_rules_redesign.md (Phase 3) and its
+  # Live RAG computation — see docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md (Phase 3) and its
   # "Addendum: prior-period comparator". Recomputes whenever a value is saved, and cascades to
   # dependent KPIs so a comparator entered after the KPI it judges still triggers a status update:
   # a same-as_of sibling (e.g. Budget) for the tag-based comparators, or the next chronological

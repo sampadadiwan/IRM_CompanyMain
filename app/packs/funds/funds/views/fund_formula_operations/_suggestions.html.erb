@@ -1,0 +1,127 @@
+<%#
+  A run check suggestion set: every suggestion with where it came from, the evidence, its test result
+  against the last successful run, and a severity choice. Selected ones are added as formulas or
+  downloaded as an importable xlsx. Locals: operation, fund
+%>
+<%
+  plan = operation.plan.to_h
+  suggestions = operation.suggestion_list
+  run = plan["tested_against_run_id"] && AllocationRun.find_by(id: plan["tested_against_run_id"])
+  result_css = { "pass" => "bg-success-subtle text-success", "warn" => "bg-warning-subtle text-warning",
+                 "fail" => "bg-danger-subtle text-danger" }
+  added = Array(operation.result.to_h["added"]).flat_map { |a| a["keys"] }.to_set
+%>
+
+<% if operation.previewed? %>
+  <p class="text-muted mb-2">
+    <%= pluralize(suggestions.size, "suggestion") %>.
+    <% if run %>
+      Each was tested against allocation run #<%= run.id %> (<%= l(run.start_date) %> to <%= l(run.end_date) %>), the fund's last successful run.
+    <% else %>
+      The fund has no successful allocation run, so none could be tested.
+    <% end %>
+  </p>
+
+  <% if plan["ai_error"].present? %>
+    <div class="alert alert-warning">AI suggestions could not be generated: <%= plan["ai_error"] %>. The rule-based suggestions below are unaffected.</div>
+  <% end %>
+
+  <%= form_with url: add_suggestions_fund_formula_operation_path(operation), method: :post, data: { turbo_frame: "_top" } do %>
+    <% [[FundFormula::PRE_RUN_CHECK, "Pre-run checks", "Run before anything is deleted; a failure stops the run."],
+        [FundFormula::POST_RUN_CHECK, "Post-run checks", "Run after the entries are written; a failure stops fund ratios, statements and the rest of a group run."]].each do |rule_type, heading, blurb| %>
+      <% group = suggestions.select { |s| s.rule_type == rule_type } %>
+      <% next if group.empty? %>
+      <h5 class="mt-3"><%= heading %></h5>
+      <p class="text-muted small"><%= blurb %></p>
+
+      <% group.each do |s| %>
+        <% result = s.result.to_h %>
+        <div class="card mb-2">
+          <div class="card-body py-2">
+            <div class="d-flex align-items-start gap-2">
+              <div class="pt-1">
+                <%= check_box_tag "keys[]", s.key, false, id: "suggestion_#{s.key.parameterize}", disabled: !@addable_keys&.include?(s.key) %>
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <label for="suggestion_<%= s.key.parameterize %>" class="fw-bold mb-0"><%= s.name %></label>
+                  <span class="badge <%= s.ai? ? 'bg-info-subtle text-info' : 'bg-secondary-subtle text-secondary' %>"><%= s.ai? ? "AI" : "Rule" %></span>
+                  <span class="badge <%= result_css.fetch(result['result'], 'bg-secondary-subtle text-secondary') %>">
+                    <%= { "not_tested" => "Not tested", "skipped" => "Skipped" }.fetch(result["result"], result["result"].to_s.capitalize) %>
+                  </span>
+                  <% if added.include?(s.key) %>
+                    <span class="badge bg-success-subtle text-success">Added</span>
+                  <% elsif !@addable_keys&.include?(s.key) && s.errors.blank? %>
+                    <span class="badge bg-light text-dark">Already present</span>
+                  <% end %>
+                  <% if s.supports_severity? %>
+                    <%= select_tag "severity[#{s.key}]", options_for_select([["Fail (stops the run)", "fail"], ["Warning", "warning"]], s.severity),
+                                   class: "form-select form-select-sm w-auto ms-auto" %>
+                  <% end %>
+                </div>
+                <div class="small mt-1"><%= s.description %></div>
+                <% if result["summary"].present? %>
+                  <div class="small mt-1 <%= 'text-danger' if result['result'] == 'fail' %>">Test: <%= result["summary"] %></div>
+                <% end %>
+                <% if s.errors.present? %>
+                  <div class="small text-danger mt-1">Cannot be added: <%= s.errors.to_sentence %></div>
+                <% end %>
+                <% if s.similar_to.present? %>
+                  <div class="small text-muted mt-1">The fund already has a check using the same helper:
+                    <%= safe_join(s.similar_to.map { |f| link_to("seq #{f['sequence']} #{f['name']}", fund_formula_path(f["formula_id"]), data: { turbo_frame: "_top" }) }, ", ") %>
+                  </div>
+                <% end %>
+
+                <details class="small mt-1">
+                  <summary>Formula and evidence</summary>
+                  <pre class="bg-light p-2 mt-1 text-wrap mb-1"><%= s.formula %></pre>
+                  <ul class="mb-1">
+                    <% s.evidence.to_a.each do |e| %>
+                      <li>
+                        <% if e["formula_id"] %>
+                          <%= link_to "seq #{e['sequence']} #{e['name']}", fund_formula_path(e["formula_id"]), data: { turbo_frame: "_top" } %>:
+                        <% end %>
+                        <%= e["detail"] %>
+                      </li>
+                    <% end %>
+                  </ul>
+                  <% if result["rows"].present? %>
+                    <div class="table-responsive">
+                      <table class="table table-sm table-bordered mb-1">
+                        <thead><tr><% result["columns"].to_a.each do |c| %><th><%= c %></th><% end %></tr></thead>
+                        <tbody>
+                          <% result["rows"].each do |row| %><tr><% row.each do |v| %><td><%= v %></td><% end %></tr><% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                    <% if result["truncated"].to_i.positive? %><div class="text-muted">and <%= result["truncated"] %> more.</div><% end %>
+                  <% end %>
+                </details>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <%= submit_tag "Add selected", class: "btn btn-primary" %>
+      <%= submit_tag "Download selected as xlsx", class: "btn btn-outline-success",
+                     formaction: download_suggestions_fund_formula_operation_path(operation), data: { turbo: false } %>
+      <span class="text-muted small align-self-center">The xlsx is in the fund formula import format; importing it unchanged adds the same formulas.</span>
+    </div>
+  <% end %>
+
+  <% if plan["rejected"].present? %>
+    <h5 class="mt-4">AI suggestions not offered</h5>
+    <ul class="small">
+      <% plan["rejected"].each do |r| %>
+        <li><strong><%= r["name"].presence || "(unnamed)" %></strong>: <%= Array(r["errors"]).to_sentence %> <code><%= r["formula"].to_s.truncate(200) %></code></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <hr>
+  <h5>Generate again</h5>
+  <%= render "fund_formula_operations/generate", fund: %>
+<% end %>

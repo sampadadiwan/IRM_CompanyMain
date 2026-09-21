@@ -2,7 +2,7 @@ Feature: Resetting the two-factor method
   A user's two-factor METHOD (Authenticator / WhatsApp / SMS) can be cleared back to
   "none" — by the user from their profile, or by a company admin from the user's page —
   so a fresh method is chosen at the next sign-in. Two-factor itself is never switched
-  off by a reset. See docs/technical/two_factor_authentication.md.
+  off by a reset. See docs/modules/two_factor_auth/two_factor_authentication.md.
 
   Scenario Outline: User changes their own two-factor method after re-entering their password
     Given there is a user "<user>" for an entity "<entity>"

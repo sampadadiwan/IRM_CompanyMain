@@ -63,12 +63,8 @@
               "data-action": "change->access#addErrorCheck" %>
         </div>
 
-      <% if access_right.access_type == "Folder" %>
-        <div class="form-group">
-          <%= form.label :cascade, "Apply to files and sub folders" %>
-          <%= form.check_box :cascade, class: "form-check-input"  %>
-        </div>
-      <% end %>
+      <%# Folder grants always cascade - AccessRightsController#create forces it, because a
+          right on the folder alone grants nothing downward. No checkbox to override it. %>
 
       <div class="form-group" id="permissions_form_group">
         <% AccessRight.permissions.pairs.each do |key, val| %>
@@ -78,10 +74,14 @@
         <% end %>
       </div>
 
-      <div class="form-group">
-          <%= form.label :notify, "Send Notification" %>
-          <%= form.check_box :notify, class: "form-check-input"  %>
-      </div>
+      <%# Deal grants can notify; folder grants cannot - AccessRight#send_notification needs
+          owner.send_email and folders have no such column, so the box was dead there. %>
+      <% if access_right.owner_type != "Folder" %>
+        <div class="form-group">
+            <%= form.label :notify, "Send Notification" %>
+            <%= form.check_box :notify, class: "form-check-input"  %>
+        </div>
+      <% end %>
 
 
       <div class="form-group">

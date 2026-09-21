@@ -2,7 +2,7 @@
 #
 # The checks themselves are arithmetic and lookups — no AI — so the same run always produces
 # the same Pass / Warn / Fail result. See AllocationRunReportBuild for what each check does,
-# and docs/business_requirements/allocation_run_checker.md for why.
+# and docs/modules/allocation/allocation_run_checker_requirements.md for why.
 #
 # There is exactly one report per run (unique index on allocation_run_id): re-checking a run
 # overwrites the previous result in place.

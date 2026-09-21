@@ -124,7 +124,7 @@ site.
    so caphive.com and caphive.us each reach their own stack; an unrecognised host
    falls back to the old `mailto:` draft. Handler lives in `assets/js/caphive.js`,
    duplicated in `_partials/index_scripts.html` for the homepage. See
-   `docs/technical/website_lead_capture.md`.
+   `docs/modules/website/website_lead_capture.md`.
 
 3. ~~Add `og.png`~~ **Done.** 1200×630 at the site root, rendered from
    `assets/og-source.html` with headless Chrome so it uses the real Geist and

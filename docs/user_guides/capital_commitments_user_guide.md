@@ -264,6 +264,8 @@ flowchart TD
 
 Commitments can be bulk-loaded from a spreadsheet during onboarding. Imports do not skip the usual automations: after the file is processed, percentages are recalculated, remittances are created for existing calls and access to the fund is granted. No investor email is sent. The import file must include the standard set of columns (investor, folio ID, fund close, commitment date, unit type, folio committed amount, and folio currency).
 
+**Feeder Fund** is an optional column at the end of the sample file, for a master fund whose commitments come in through feeder vehicles. Put the feeder fund's name there exactly as it is on CapHive — it must be a feeder of the fund in the **Fund** column, or the row fails — and the commitment is saved with that feeder fund and flagged as coming from one, the same as ticking **Feeder Fund** and picking it on the commitment form. Leave the cell blank for a direct commitment. Because the column is optional, a file that does not have it at all is still accepted, and on an **Update Only** row it leaves the commitment's existing feeder fund alone; a blank cell in a column that *is* present clears it. The Excel export names the feeder fund too, in a **Feeder Fund** column right after **Fund**, which appears only when one of the exported folios has one.
+
 ---
 
 ## Worked Example
@@ -339,7 +341,7 @@ Open the commitment and click **Delete** (needs destroy access on the fund), the
 Adjustments cannot be edited. To correct one, open it from the commitment's **Adjustments** tab, click **Delete** (destroy access needed) and add a new one. Arrear adjustments created from a remittance's **Create Arrears Adjustment** cannot be deleted from here.
 
 **How do I bulk upload or download commitments?**
-On the fund's **Commitments** tab click **Upload** (an import of type CapitalCommitment) and use the sample file. Set **Update Only** to Yes on rows that should update an existing folio instead of creating one. **Download** offers **Export All** (Excel) and **Export Visible** (the rows on screen). See [Importing Commitments](#importing-commitments).
+On the fund's **Commitments** tab click **Upload** (an import of type CapitalCommitment) and use the sample file. Set **Update Only** to Yes on rows that should update an existing folio instead of creating one. **Download** offers **Export All** (Excel) and **Export Visible** (the rows on screen); the export carries a **Feeder Fund** column next to **Fund**, but only when at least one exported folio actually came in through a feeder fund. See [Importing Commitments](#importing-commitments).
 
 **How do I generate commitment agreements or investor statements?**
 For one folio open the commitment and choose **Actions → Generate All Documents** or **Generate [template name]** (fund documents tagged **Commitment Template**), or **Actions → Generate Investor Statement** to pick an investor statement template, start and end date and **For** (Commitment or Investing Entity). For every folio use the **Generate** dropdown on the fund's **Commitments** tab.
@@ -401,6 +403,9 @@ A background job builds a document from each **Commitment Template** (a commitme
 
 **What happens when I upload commitments?**
 Each row creates a commitment (or updates one when **Update Only** is Yes; a duplicate folio without it is rejected). After the whole file is processed, percentages are recalculated per fund, remittances are created for existing calls, access to the fund is granted, and you get one alert naming investors with nobody subscribed to Capital Call notifications. No investor email is sent.
+
+**How do I load commitments that come in through a feeder fund?**
+Add a **Feeder Fund** column to the upload file (it is the last column of the sample) and put the feeder fund's name in it, spelled as it is on CapHive. The feeder must already exist with the fund in the **Fund** column set as its master fund, otherwise the row is rejected with "Feeder Fund not found" or a message that it is not a feeder of that fund. A blank cell means a direct commitment. Dropping the column from the file is fine — existing commitments keep whichever feeder fund they already had.
 
 **What happens when a new exchange rate is added for a foreign-currency folio?**
 Only if your company has the exchange-rate commitment adjustment option switched on: a background job creates an **Exchange Rate** adjustment on each matching folio for the change in fund-currency value of its uncalled amount. Otherwise nothing changes until you add an adjustment yourself.

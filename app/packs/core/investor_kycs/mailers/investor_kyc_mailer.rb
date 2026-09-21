@@ -53,4 +53,19 @@ class InvestorKycMailer < ApplicationMailer
     subject = "Reminder to update KYC: #{@investor_kyc.entity.name}"
     send_mail(subject:)
   end
+
+  private
+
+  # Same override, for the same reason, as CapitalCommitmentMailer / FundInvestorKycMailer:
+  # the ApplicationMailer default (@notification&.model) is correct for real sends
+  # (InvestorKycNotifier passes record: investor_kyc, so @notification.model IS @investor_kyc),
+  # but WithEmailPreview builds no Noticed::Notification, so @notification is nil there.
+  # Without this, the "Preview KYC Required" / "Preview KYC Required Reminder" links rendered
+  # zero attachment_names-matched documents even when the real email would attach them.
+  #
+  # private: keeps this resolver out of CustomNotification#email_methods, which reads
+  # instance_methods(false) on each mailer to populate the "For Notification" dropdown.
+  def custom_notification_documents_owner
+    @investor_kyc
+  end
 end

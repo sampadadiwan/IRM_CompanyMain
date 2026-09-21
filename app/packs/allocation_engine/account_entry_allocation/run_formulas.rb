@@ -60,7 +60,9 @@ module AccountEntryAllocation
       # The fund ids alone are not unique enough: two runs of the *same* fund (parallel
       # cucumber processes all seed fund id 1, and two users can kick off the same fund
       # in production) would otherwise share one scratch file and clobber each other.
-      scratch_key = "#{fund_ids.join('_')}_#{Process.pid}"
+      # In development the scratch copy is kept and reused across runs (see reuse_scratch_db?),
+      # so it gets a stable name instead of a per-process one.
+      scratch_key = reuse_scratch_db? ? "#{fund_ids.join('_')}_dev" : "#{fund_ids.join('_')}_#{Process.pid}"
 
       # The scratch files run to several GB for a real fund, so they have to sit on real
       # disk. /tmp is a tmpfs on most dev machines: a tmpfs is backed by RAM+swap rather
@@ -126,22 +128,33 @@ module AccountEntryAllocation
         Rails.logger.warn { "load_sqlite_db: #{scratch_dir} is a tmpfs; a large load can fail with 'disk I/O error' once RAM+swap are exhausted" }
       end
 
-      # Execute the external migration script and wait for it to finish.
-      # The script handles the heavy lifting of bulk exporting/importing via TSV.
-      # Always a fresh load, development included: the copy depends on the run window, so a file
-      # left by an earlier run cannot be reused.
-      started_at = Time.zone.now
-      require "open3"
-      script_output, status = Open3.capture2e(env, "bash #{script_path}")
-      success = status.success?
-      duration = (Time.zone.now - started_at).round(1)
+      # In development, reuse the copy an earlier run left behind (see reuse_scratch_db?). It is not
+      # refreshed automatically: after changing data in MySQL, run with ALLOCATION_FRESH_SCRATCH_DB=1.
+      reused = reuse_scratch_db? && File.exist?(ctx[:sqlite_path]) && File.exist?(reusable_marker(ctx[:sqlite_path]))
 
-      # Log the script's whole output on every run, not just failures. It ends with a
-      # per-table record count, which is the only way to tell a load that legitimately
-      # found no rows from one that silently exported the wrong thing.
-      Rails.logger.info do
-        "load_sqlite_db: #{script_path.basename} exited #{status.exitstatus} after #{duration}s\n" \
-          "----- script output -----\n#{script_output}----- end script output -----"
+      if reused
+        Rails.logger.info { "load_sqlite_db: development - reusing scratch DB #{ctx[:sqlite_path]}" }
+        notify("Reusing the existing scratch DB for fund #{fund.name} (development only). Set ALLOCATION_FRESH_SCRATCH_DB=1 to rebuild it.", :info, ctx[:user_id])
+        success = true
+      else
+        # The marker is dropped before a rebuild so a failed or interrupted load is never reused.
+        FileUtils.rm_f(reusable_marker(ctx[:sqlite_path]))
+
+        # Execute the external migration script and wait for it to finish.
+        # The script handles the heavy lifting of bulk exporting/importing via TSV.
+        started_at = Time.zone.now
+        require "open3"
+        script_output, status = Open3.capture2e(env, "bash #{script_path}")
+        success = status.success?
+        duration = (Time.zone.now - started_at).round(1)
+
+        # Log the script's whole output on every run, not just failures. It ends with a
+        # per-table record count, which is the only way to tell a load that legitimately
+        # found no rows from one that silently exported the wrong thing.
+        Rails.logger.info do
+          "load_sqlite_db: #{script_path.basename} exited #{status.exitstatus} after #{duration}s\n" \
+            "----- script output -----\n#{script_output}----- end script output -----"
+        end
       end
 
       unless success
@@ -171,6 +184,8 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "Successfully loaded isolated SQLite DB for Entity ID: #{entity_id}" }
 
+      FileUtils.touch(reusable_marker(ctx[:sqlite_path])) if reuse_scratch_db? && !reused
+
       # Clear any existing connection pool for this path to ensure we see the fresh file
       AccountEntryAllocation::WithScratchSqlite.disconnect_pool(ctx[:sqlite_path])
 
@@ -180,6 +195,9 @@ module AccountEntryAllocation
       begin
         with_scratch_sqlite(ctx[:sqlite_path]) do
           AccountEntrySqlite.where(allocation_run_id: ctx[:allocation_run_id]).delete_all
+          # A reused copy still holds what earlier runs generated for this period. The primary DB
+          # lost those rows in delete_existing_entries; drop them here too or formulas double-count.
+          delete_existing_scratch_entries(ctx) if reused
           entry_count = AccountEntrySqlite.where(fund_id: fund.id).count
           commitment_count = CapitalCommitmentSqlite.where(fund_id: fund.id).count
           db_size_mb = (File.size(ctx[:sqlite_path]) / 1024.0 / 1024.0).round(1)
@@ -211,6 +229,30 @@ module AccountEntryAllocation
       end
 
       true
+    end
+
+    # Development only: keep the scratch SQLite copy between runs instead of re-exporting it
+    # from MySQL every time -- for a large fund the export takes minutes and several GB.
+    # The copy is a snapshot: changes made in MySQL afterwards (uploads, edited investments, a
+    # master fund run) are not seen until it is rebuilt. Set ALLOCATION_FRESH_SCRATCH_DB=1 to
+    # rebuild it, or delete tmp/allocation/*_dev.sqlite3*.
+    def reuse_scratch_db?
+      Rails.env.development? && ENV["ALLOCATION_FRESH_SCRATCH_DB"].blank?
+    end
+
+    # Written once the load script finishes, so a half-built copy is never reused.
+    def reusable_marker(sqlite_path)
+      "#{sqlite_path}.complete"
+    end
+
+    # The scratch-copy twin of delete_existing_primary_entries: the entries this run's formulas
+    # generated in the period on an earlier run.
+    def delete_existing_scratch_entries(ctx)
+      formula_ids = get_formulas(ctx).pluck(:id)
+      deleted = formula_ids.each_slice(100).sum do |chunked_ids|
+        AccountEntrySqlite.where(fund_id: ctx[:fund].id, reporting_date: ctx[:start_date]..ctx[:end_date], fund_formula_id: chunked_ids).delete_all
+      end
+      Rails.logger.info { "load_sqlite_db: removed #{deleted} entries of earlier runs from the reused scratch DB" }
     end
 
     # Filesystem type and free space (MB) for the scratch dir, or [nil, nil] if df is
@@ -247,6 +289,12 @@ module AccountEntryAllocation
 
       # First, disconnect the pool to close all file handles
       AccountEntryAllocation::WithScratchSqlite.disconnect_pool(sqlite_path) if sqlite_path
+
+      # In development the copy is kept for the next run (see reuse_scratch_db?).
+      if reuse_scratch_db?
+        Rails.logger.info { "cleanup_sqlite: development - keeping scratch DB #{sqlite_path} for reuse" } if sqlite_path
+        return true
+      end
 
       [sqlite_path].compact.each do |path|
         if File.exist?(path)
@@ -355,7 +403,7 @@ module AccountEntryAllocation
 
     # Pre/post-run checks: FundFormulas with rule type PreRunCheck/PostRunCheck. Every check of the
     # kind runs even after one fails; any failure then stops the run, any warning only gets
-    # recorded. See docs/business_requirements/allocation_run_checks.md.
+    # recorded. See docs/modules/allocation/allocation_run_checks.md.
     def run_pre_checks(ctx, **)
       ctx[:check_results] = []
       return true unless ctx[:run_allocations]

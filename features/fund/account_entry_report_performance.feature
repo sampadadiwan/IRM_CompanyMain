@@ -4,7 +4,7 @@ Feature: Account Entries Period Report stays bounded on large ledgers
   which is the largest table in the system. The page must therefore hold to a fixed,
   small number of queries against that table no matter how many entries a fund has,
   refuse a date range wide enough to scan the whole ledger, and never 500 on a bad page
-  number. See docs/technical/account_entry_report_performance.md.
+  number. See docs/modules/reports/account_entry_report_performance.md.
 
   These scenarios assert the query budget as well as the numbers, because a correct
   report built from eight scans of the ledger is exactly the regression being prevented.

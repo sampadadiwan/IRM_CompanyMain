@@ -3,7 +3,7 @@
 
   The check is entirely server-side (KpiReportsController#validate_upload → KpiWorkbookReader#validate);
   the kpi-xlsx-report Stimulus controller only forwards the uploaded file reference and renders the
-  turbo_stream response into #kpi_validation_panel. See docs/technical/kpi_portco_upload_validation_review.md.
+  turbo_stream response into #kpi_validation_panel. See docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md.
 %>
 <%
   kpi_document = kpi_report.persisted? ? kpi_report.documents.where(name: "KPIs").first : nil

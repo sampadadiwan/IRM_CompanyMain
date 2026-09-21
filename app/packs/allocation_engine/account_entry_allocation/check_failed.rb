@@ -7,7 +7,7 @@ module AccountEntryAllocation
   #                         columns: ["Entry name", "Entries"], rows: [["Audit fee", 3], ["Bank charge", 1]])
   #
   # A plain `raise "message"` fails a check too; this class only exists to carry rows.
-  # See docs/business_requirements/allocation_run_checks.md.
+  # See docs/modules/allocation/allocation_run_checks.md.
   class CheckFailed < StandardError
     attr_reader :columns, :rows, :filters, :truncated
 

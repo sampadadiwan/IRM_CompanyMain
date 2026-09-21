@@ -3,7 +3,7 @@
 # Step definitions for Deal Update Agent v2 processing scenarios.
 # Tests the DealIngestProcessor pipeline — LLM parsing, stakeholder
 # matching, Note/Task creation, and warehouse flow.
-# Key v2 change: warehoused emails do NOT send a notification.
+# Key v2 change: warehoused emails send a notification with reason.
 
 # --- LLM Stubbing ---
 
@@ -192,4 +192,21 @@ Then("a v2 Task should exist on {string} assigned to the sender") do |investor_n
                                "Expected a Task on #{investor_name} but none found"
   expect(@created_task.assigned_to).to eq(@user),
                                        "Expected task assigned to sender but got user ##{@created_task.assigned_to_id}"
+end
+
+# Asserts a warehoused notification email was sent to the sender
+# with the expected reason. The DealIngestMailer#warehoused action
+# sends an email with subject containing "needs review" when an
+# email is warehoused for any of three reasons: unmatched_stakeholder,
+# unknown_intent, or conflicting_stakeholder.
+#
+# @param reason [String] the warehouse reason (unmatched_stakeholder,
+#   unknown_intent, conflicting_stakeholder)
+Then("a v2 warehoused email should be sent with reason {string}") do |reason|
+  warehoused_mail = ActionMailer::Base.deliveries.find do |mail|
+    mail.to.include?(@user.email) && mail.subject&.include?("needs review")
+  end
+  expect(warehoused_mail).not_to be_nil,
+    "Expected a warehoused email to #{@user.email} but none found. " \
+    "Deliveries: #{ActionMailer::Base.deliveries.map(&:subject)}"
 end

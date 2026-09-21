@@ -49,7 +49,7 @@
     <%= render "account_entry_reports/detail_pivot", pivot: @detail_pivot %>
   <% else %>
     <%# Fund-level account_entries can run into the hundreds of millions of rows across a
-        fund's history - see docs/technical/account_entry_report_performance.md. Nothing
+        fund's history - see docs/modules/reports/account_entry_report_performance.md. Nothing
         is queried against it until a folio, entry name or entry type narrows the scan. %>
     <div class="alert alert-info" role="alert">
       <i class="ti ti-filter me-1"></i>

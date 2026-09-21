@@ -396,6 +396,23 @@ Scenario: Preview button resolves a KYC notification to the investor's own Inves
   Then I see the notification preview with subject "KYC New 1"
 
 
+# Regression: InvestorKycMailer had no custom_notification_documents_owner override, so the
+# preview (which builds no Noticed::Notification) resolved a nil owner and listed zero
+# attachments even though the real send would attach the attachment_names match.
+@notification
+Scenario: KYC notification preview lists the document that attachment_names would attach
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "name=Investor 1" with "1" users
+  Given there is a custom notification "subject=KYC New 1;email_method=notify_kyc_required;attachment_names=PAN Card" in place for the KYC
+  Given a InvestorKyc is created with details "PAN=ABCD9870;send_kyc_form_to_user=false" by "false"
+  And the investor kyc has document "PAN Card" with file "sample_kyc1.pdf"
+  Given I visit the custom notification show page
+  When I click the Preview button on the custom notification page
+  Then I see the notification preview with subject "KYC New 1"
+  And I see "PAN Card" listed as an attachment in the preview
+
+
 @notification
 Scenario Outline: Capital distribution specific notification overrides the fund-level default
   Given Im logged in as a user "<user>" for an entity "<entity>"

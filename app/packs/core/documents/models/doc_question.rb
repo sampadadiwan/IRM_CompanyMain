@@ -5,6 +5,7 @@ class DocQuestion < ApplicationRecord
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true
+  belongs_to :import_upload, optional: true
   enum :qtype, {
     validation: "Validation",
     extraction: "Extraction",

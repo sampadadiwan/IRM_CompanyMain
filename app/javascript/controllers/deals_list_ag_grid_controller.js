@@ -1,4 +1,5 @@
 import BaseAgGrid from "controllers/base_ag_grid"
+import { localeDateGridOptions } from "custom/ag_locale_date_filter"
 import * as bootstrap from "bootstrap"
 
 // Row-menu actions that open the offcanvas on a specific tab with that tab's
@@ -509,6 +510,10 @@ export default class extends BaseAgGrid {
     // Create a NEW gridOptions object that will be used by the base class
     // We remove the range selection and cell focus features to avoid the persistent blue highlight on cells.
     this.gridOptions = {
+        // This replaces BaseAgGrid's gridOptions wholesale, so the date component
+        // has to be re-declared here or date filters fall back to ag-Grid's own
+        // calendar-only input.
+        ...localeDateGridOptions,
         rowSelection: 'multiple',
         suppressRowClickSelection: true,
         suppressCellFocus: true,

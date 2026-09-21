@@ -94,6 +94,14 @@
             <i class="ti ti-bell-plus"></i> Add Stakeholder Notice
           <% end %>
           <div class="dropdown-divider"></div>
+          <%# AI Portfolio Reports — gated on portfolio_report_agent flag enabled by super admin %>
+          <% if current_user.entity.support_agents.set?(:portfolio_report_agent) %>
+            <%= link_to ai_portfolio_reports_path,
+                        class: "dropdown-item d-flex align-items-center",
+                        data: { turbo: false } do %>
+              <i class="ti ti-file-analytics"></i> AI Portfolio Reports
+            <% end %>
+          <% end %>
           <% if SupportAgent.find_by(entity_id: current_user.entity_id, agent_type: "PortfolioCompanyAgent") %>
             <%= link_to portfolio_company_dashboard_path,
                         class: "dropdown-item d-flex align-items-center",

@@ -1,6 +1,6 @@
 # Step definitions for features/fund/fund_ratio_run.feature.
 # Tests the FundRatioRun audit model and cross-fund/cross-portfolio ratio generation.
-# See docs/features/fund_ratio_run.md for full design rationale.
+# See docs/modules/funds/fund_ratios/fund_ratio_run.md for full design rationale.
 
 ### Helpers ###################################################################
 

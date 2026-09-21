@@ -1,4 +1,4 @@
-# LP CRM MVP (docs/features/lp_relationship_crm_alt_mvp_prd.md):
+# LP CRM MVP (docs/modules/investors/lp_relationship_crm_alt_mvp_prd.md):
 # A note/task stays owned by the Investor (the LP-level timeline is unchanged),
 # but can additionally point at the person at the LP it involved — the "touch
 # point", an InvestorAccess record. An access belongs to exactly one investor,

@@ -1,0 +1,65 @@
+<%#
+  One preview (incremental allocation) or suggestion set (run checks). The body sits in a Turbo Frame
+  that reloads itself while the job is running (auto-refresh controller), as on the allocation run report.
+%>
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800"><%= @operation.suggestions? ? "Suggest run checks" : @operation.operation.humanize %></h1>
+      <div class="text-muted">
+        <%= @fund.name %> — requested by <%= @operation.requested_by&.full_name %>, <%= l(@operation.created_at, format: :abbr_date_time) %>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <%= link_to "Fund formulas", fund_formulas_path(fund_id: @fund.id), class: "btn btn-outline-secondary" %>
+      <% if @operation.suggestions? %>
+        <%= link_to "Incremental allocation", fund_formula_operations_path(fund_id: @fund.id), class: "btn btn-outline-secondary" %>
+      <% else %>
+        <%= link_to "Back", fund_formula_operations_path(fund_id: @fund.id), class: "btn btn-outline-secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <%= turbo_frame_tag "fund_formula_operation" do %>
+    <div data-controller="auto-refresh"
+         data-auto-refresh-url-value="<%= fund_formula_operation_path(@operation) %>"
+         data-auto-refresh-active-value="<%= @operation.active? %>"
+         data-auto-refresh-interval-value="4000">
+
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <%= render "fund_formula_operations/status", operation: @operation %>
+        <% if @operation.previewed_at %>
+          <span class="text-muted">Prepared <%= l(@operation.previewed_at, format: :abbr_date_time) %></span>
+        <% end %>
+        <% if @operation.applied_at %>
+          <span class="text-muted">· Applied by <%= @operation.applied_by&.full_name %>, <%= l(@operation.applied_at, format: :abbr_date_time) %></span>
+        <% end %>
+      </div>
+
+      <% if @operation.active? %>
+        <div class="alert alert-info d-flex align-items-center gap-2">
+          <i class="ti ti-loader"></i>
+          <div><%= @operation.previewing? ? "Preparing. This can take a few minutes for a large fund." : "Applying." %> This page refreshes itself every few seconds.</div>
+        </div>
+      <% end %>
+
+      <% if @operation.error.present? %>
+        <div class="alert <%= @operation.refused? ? 'alert-warning' : 'alert-danger' %>">
+          <%= @operation.refused? ? "Not applied: " : "" %><%= @operation.error %>
+        </div>
+      <% end %>
+
+      <% if @operation.suggestions? && @operation.failed? %>
+        <%= render "fund_formula_operations/generate", fund: @fund %>
+      <% end %>
+
+      <% if @operation.plan.present? %>
+        <% if @operation.suggestions? %>
+          <%= render "fund_formula_operations/suggestions", operation: @operation, fund: @fund %>
+        <% else %>
+          <%= render "fund_formula_operations/plan", operation: @operation, fund: @fund %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

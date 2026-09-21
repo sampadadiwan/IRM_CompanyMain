@@ -2,7 +2,7 @@
 
 ## Why
 
-Side letters create legally binding obligations (covenants) — reporting deadlines, fee arrangements, co-investment rights, notice requirements — that today live in PDFs attached to commitments and in institutional memory. Nothing extracts them, tracks them, or alerts anyone before a deadline is missed; the first signal of a breach is an LP calling to enforce a term. The full feature intent is documented in `docs/features/us_gtm/side_letter_obligations.md`.
+Side letters create legally binding obligations (covenants) — reporting deadlines, fee arrangements, co-investment rights, notice requirements — that today live in PDFs attached to commitments and in institutional memory. Nothing extracts them, tracks them, or alerts anyone before a deadline is missed; the first signal of a breach is an LP calling to enforce a term. The full feature intent is documented in `docs/gtm/us_gtm/side_letter_obligations.md`.
 
 ## What Changes
 
@@ -37,5 +37,5 @@ Deferred (data model ready, not built): MFN comparison dashboard, automatic firi
 - **Tasks pack**: `Task` gains `SideLetterObligation` as a polymorphic owner type; task completion hook to record fulfillment; task board/list unaffected structurally.
 - **Notifications**: new Noticed notifier + mailer for consolidated obligation alerts (existing stack; no new channels).
 - **Scheduling**: relies on `AgentSchedule`/`SchedulerPollingJob` — production cron registration for `SchedulerPollingJob` must be verified/added (`config/initializers/sidekiq.rb`).
-- **Docs**: `docs/features/us_gtm/side_letter_obligations.md` (already updated) is the product reference; `ai_document_intelligence.md` scope-note added.
+- **Docs**: `docs/gtm/us_gtm/side_letter_obligations.md` (already updated) is the product reference; `ai_document_intelligence.md` scope-note added.
 - **Tests**: Cucumber features only (no RSpec), `:inline` ActiveJob adapter, dialect-portable SQL (test env runs SQLite).

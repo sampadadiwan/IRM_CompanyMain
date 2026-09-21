@@ -8,7 +8,7 @@ class User < ApplicationRecord
   include TwoFactorAuthenticatable
   # Phone-number normalisation and SMS eligibility for the SMS two-factor mode.
   # Kept separate from TwoFactorAuthenticatable because it is about the number, not
-  # about codes. See docs/technical/twilio_sms_otp_design.md.
+  # about codes. See docs/modules/two_factor_auth/twilio_sms_otp_design.md.
   include SmsDeliverable
 
   include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions two_factor_mode])
@@ -431,6 +431,65 @@ class User < ApplicationRecord
   # This checks that the user has currently switched to the investor advisor role
   def investor_advisor?
     advisor_entity_id.present? && advisor_entity_id != entity_id
+  end
+
+  # In-memory mirror of InvestorAdvisor.revert: a detached, read-only User configured exactly as
+  # this advisor would be after reverting to his home entity — entity_id, entity_type, curr_role
+  # and roles all come from the home persona (advisor_entity_id / advisor_entity_roles), nothing
+  # is persisted. Returns nil unless the user is an advisor currently switched into a host entity.
+  #
+  # Used by Investor#notification_users to ask "would this contact see X in his own entity?"
+  # without the answer depending on which host entity he happens to be switched into. Roles a
+  # host entity granted on switch are deliberately dropped, so the persona can never see more
+  # than the real user sees after pressing Revert — for policies that use has_cached_role?, which
+  # is every policy reachable from the notification paths; the uncached has_role? (only the
+  # ValidationRule policies) would still read the persisted, switched-in roles.
+  def home_persona
+    return nil unless has_cached_role?(:investor_advisor) && investor_advisor?
+
+    # Memoized per switch state: notification loops call this once per record for the same user
+    # object, and the persona costs three queries to build.
+    key = [entity_id, advisor_entity_id, advisor_entity_roles]
+    return @home_persona if @home_persona_key == key
+
+    @home_persona_key = key
+    @home_persona = build_home_persona
+  end
+
+  def build_home_persona
+    # A fresh instance rather than dup: dup clears the primary key and association cache, which
+    # breaks has_cached_role? (see Investor#notification_users).
+    persona = User.find(id)
+    persona.entity_id = advisor_entity_id
+    persona.entity_type = persona.entity&.entity_type
+    persona.investor_advisor_id = nil
+
+    role_names = home_role_names(home_entity_type: persona.entity_type)
+    persona.curr_role = role_names.first
+
+    # InvestorAdvisor.revert re-adds these with add_role (find-or-create), so a role name with no
+    # Role row yet must still count; an unsaved Role satisfies rolify's has_cached_role? lookup
+    # (it only compares name/resource) without writing anything.
+    existing_roles = Role.where(name: role_names, resource_type: nil, resource_id: nil).to_a
+    missing_roles = (role_names - existing_roles.map(&:name)).map { |name| Role.new(name:) }
+    roles_association = persona.association(:roles)
+    roles_association.target = existing_roles + missing_roles
+    roles_association.loaded!
+
+    persona.readonly!
+    persona
+  end
+  private :build_home_persona
+
+  # The roles this advisor holds in his home entity — exactly what InvestorAdvisor.revert re-adds.
+  # setup_defaults forces investor_advisor into advisor_entity_roles for an "Investor Advisor"
+  # entity, and revert adds it when the list is empty; both live here so the real revert and
+  # User#home_persona cannot drift (an admin can store advisor_entity_roles without it).
+  def home_role_names(home_entity_type: nil)
+    names = advisor_entity_roles.to_s.split(",").map(&:strip).reject(&:empty?)
+    home_entity_type ||= Entity.where(id: advisor_entity_id).pick(:entity_type)
+    names << "investor_advisor" if names.empty? || home_entity_type == "Investor Advisor"
+    names.uniq
   end
 
   def investor_advisor

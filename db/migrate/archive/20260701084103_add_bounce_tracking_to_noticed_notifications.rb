@@ -7,7 +7,7 @@ class AddBounceTrackingToNoticedNotifications < ActiveRecord::Migration[8.1]
     # tracking_id/entity_id: bounce tracking is scoped to notifier-driven sends only
     # (Noticed::Notification must exist) — mailers invoked directly without a
     # notification (magic links, KYC reminders, AI digest mailers, etc.) are not tagged
-    # and generate no SES bounce/complaint events. See docs/features/
+    # and generate no SES bounce/complaint events. See docs/modules/notifications/
     # email_bounce_complaint_detection_prd.md for the accepted coverage tradeoff.
     add_column :noticed_notifications, :tracking_id, :string
     add_column :noticed_notifications, :entity_id, :bigint

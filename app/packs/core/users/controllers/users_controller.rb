@@ -251,7 +251,7 @@ class UsersController < ApplicationController
   #   * a company admin / support user, from the target's user page — no password check
   #     (the acting admin's own session + UserPolicy#reset_two_factor? is the gate); the
   #     target's next login lands on mode selection via TwoFactorDispatch.
-  # See docs/technical/two_factor_authentication.md, "Resetting the two-factor method".
+  # See docs/modules/two_factor_auth/two_factor_authentication.md, "Resetting the two-factor method".
   def reset_two_factor
     authorize @user, :reset_two_factor?
 

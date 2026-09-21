@@ -1,5 +1,5 @@
 # Prepares incoming_emails for the rewritten Outlook/Gmail add-ins
-# (docs/technical/mail_addin_review.md).
+# (docs/modules/mail_addins/mail_addin_review.md).
 #
 # Three problems this fixes:
 #

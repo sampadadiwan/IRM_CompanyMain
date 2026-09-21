@@ -214,7 +214,7 @@ class TemplateFixAgent < SupportAgentService
     # 2,800-paragraph template, an unconstrained ReAct loop spent its entire
     # turn budget manually searching/inspecting individual paragraphs and never
     # got around to calling the known fixer at all, exhausting the budget with
-    # zero edits made (see docs/notes/template_fix_agent_handover_note.md #6).
+    # zero edits made (see docs/modules/documents/template_fix_agent_handover_note.md #6).
     # Applying them here guarantees the 90%-of-cases fix always happens, and
     # leaves the model's whole budget for the residual, document-specific issue.
     workspace.apply_external_fixer! { |path| DocxFormattingPreserver.apply!(path) }

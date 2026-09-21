@@ -3,7 +3,7 @@ Feature: Incremental since_inception allocation
   copy of its account entries (rows since the financial-year start, uploaded rows, and the latest
   row per key before that), so since_inception cannot re-sum all history. It carries forward the
   previous run's stored "Since Inception <name>" total and adds the movement after it instead.
-  See docs/technical/incremental_allocation_history.md section 12.
+  See docs/modules/allocation/incremental_allocation_history.md section 12.
 
   Every scenario runs October 2024 on a fund with an April financial year, so the copy keeps
   rows from 2024-04-01.

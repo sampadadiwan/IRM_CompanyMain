@@ -74,7 +74,7 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
     # Send the report to the user
     DocumentNotifier.with(record: report_doc,
                           entity_id: report_doc.entity_id,
-                          email_method: "send_document").deliver(user)
+                          email_method: "send_portfolio_investment_report").deliver(user)
 
     send_notification("Portfolio Investment Report sent via email. #{ActionController::Base.helpers.link_to('Click to view Report', document_url(report_doc.id))}".html_safe, user_id)
   end

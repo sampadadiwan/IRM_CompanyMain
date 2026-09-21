@@ -126,7 +126,7 @@ class CustomNotification < ApplicationRecord
     mailer_methods = if for_type == "InvestorKyc"
                        mailer_classes.first.instance_methods(false).map(&:to_s)
                      elsif for_type == "Send Document"
-                       %w[send_document]
+                       %w[send_document send_portfolio_investment_report]
                      elsif for_type == "InvestmentOpportunity"
                        InvestmentOpportunity::NOTIFICATION_METHODS
                      elsif owner_type == "CapitalCall" || for_type == "CapitalCall"

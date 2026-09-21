@@ -3,7 +3,7 @@ Feature: Server-side KPI workbook validation — extended coverage
   plausibility warnings, header quirks, number locales, fund-side severity, endpoint authorisation,
   stale-verdict handling, upload types, import-job emails, the fund's show page and template variants.
 
-  # Reference: docs/technical/kpi_portco_upload_validation_review.md
+  # Reference: docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md
 
   Background:
     Given there is a user "first_name=FundAdmin" for an entity "name=VentureFund;entity_type=Investment Fund"

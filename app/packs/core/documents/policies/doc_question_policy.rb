@@ -16,6 +16,10 @@ class DocQuestionPolicy < ApplicationPolicy
     create?
   end
 
+  def import?
+    create?
+  end
+
   def update?
     create?
   end

@@ -14,7 +14,7 @@ Feature: Investor Presentation Analyst Agent
   #
   # Tag @llm marks scenarios that make live API calls (gemini-3-flash).
   #
-  # PRD: docs/ai/investor_presentation_analyst_prd.md
+  # PRD: docs/modules/ai/investor_presentation_analyst_prd.md
 
   Background:
     Given there is a user "" for an entity "entity_type=Investment Fund"

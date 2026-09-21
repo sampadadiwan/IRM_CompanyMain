@@ -27,15 +27,20 @@
 
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-primary dropdown-toggle ti ti-checks" type="button"
+          <button class="btn btn-outline-primary dropdown-toggle ti ti-list" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Enable All
+            Actions
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
           <%= button_to "Enable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: true, fund_id: params[:fund_id] }, class: "dropdown-item ti ti-checks" %>
           <%= button_to "Disable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: false, fund_id: params[:fund_id] }, class: "dropdown-item ti ti-copy-x" %>
           <%= link_to "Filter", fund_formulas_path(fund_id: params[:fund_id], q: ransack_query_params(:fund_id, :eq, params[:fund_id])), method: :patch, params: {fund_id: params[:fund_id] }, class: "dropdown-item ti ti-filter" %>
+          <% if policy(FundFormulaOperation).index? %>
+            <div class="dropdown-divider"></div>
+            <%= link_to "Incremental allocation", fund_formula_operations_path(fund_id: params[:fund_id]), class: "dropdown-item ti ti-stack-2" %>
+            <%= link_to "Suggest run checks", suggestions_fund_formula_operations_path(fund_id: params[:fund_id]), class: "dropdown-item ti ti-list-check" %>
+          <% end %>
 
           </div>
         </div>

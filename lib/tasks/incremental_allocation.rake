@@ -1,12 +1,19 @@
 # Incremental since_inception allocation: move funds onto it, back off it, and correct stored totals.
-# See docs/technical/incremental_allocation_history.md section 12 and AccountEntryAllocation::IncrementalMigration.
+# See docs/modules/allocation/incremental_allocation_history.md section 12 and AccountEntryAllocation::IncrementalMigration.
+#
+# Thin wrappers: the plans, their printout and the writes all live in IncrementalMigration, which the fund
+# formulas page (Actions > Incremental allocation) uses too. Prefer the page for a single fund.
 #
 #   # One fund, or every fund in an entity. Dry run by default: prints the formula edits, blockers,
 #   # and the corrected starting values, and changes nothing. APPLY=true does it.
 #   bundle exec rake "allocation:enable_incremental[fund,319]"
 #   bundle exec rake "allocation:enable_incremental[entity,6349]" APPLY=true
 #
-#   # Back off: flag off, formulas restored from the audit trail (tracking fixes kept)
+#   # Every formula enable_incremental edits also gets a description of what it computes and why it was
+#   # changed (written whole if blank, appended otherwise). Backfill funds migrated before that:
+#   bundle exec rake "allocation:describe_incremental[fund,342]" APPLY=true
+#
+#   # Back off: flag off, formulas and their descriptions restored from the audit trail (tracking fixes kept)
 #   bundle exec rake "allocation:disable_incremental[fund,319]" APPLY=true
 #
 #   # Correct one formula's stored since-inception entries on a date (DRY_RUN=true to preview)
@@ -37,6 +44,17 @@ namespace :allocation do
     results.each { |fund, result| puts format("  %-6<id>s %-50<name>s %<result>s", id: fund.id, name: fund.name.truncate(50), result:) }
   end
 
+  desc "Describe the formulas enable_incremental edited, where the description is missing (APPLY=true to write)"
+  task :describe_incremental, %i[scope id] => :environment do |_t, args|
+    apply = ENV["APPLY"] == "true"
+    puts apply ? "APPLYING" : "DRY RUN (APPLY=true to write)"
+    incremental_funds(args[:scope], args[:id]).each do |fund|
+      AccountEntryAllocation::IncrementalMigration.new(fund).describe!(apply:)
+    rescue StandardError => e
+      puts "[fund #{fund.id}] FAILED, nothing changed for this fund: #{e.class}: #{e.message}"
+    end
+  end
+
   desc "Take a fund, or every fund in an entity, off incremental allocation (APPLY=true to write)"
   task :disable_incremental, %i[scope id] => :environment do |_t, args|
     apply = ENV["APPLY"] == "true"
@@ -54,32 +72,9 @@ namespace :allocation do
   desc "Recompute a formula's stored since-inception entries on a date from full history (DRY_RUN=true to preview)"
   task :reseed_carry_forward, %i[fund_id date sequences] => :environment do |_t, args|
     fund = Fund.find(args[:fund_id])
-    date = Date.parse(args[:date])
-    dry_run = ENV["DRY_RUN"] == "true"
     formulas = fund.fund_formulas.where(sequence: args[:sequences].split.map(&:to_i)).order(:sequence).to_a
     abort "No formulas found for sequences #{args[:sequences]}" if formulas.empty?
 
-    migration = AccountEntryAllocation::IncrementalMigration.new(fund)
-    updated = missing = 0
-    migration.with_full_copy do
-      formulas.each do |fund_formula|
-        puts "\n#{fund_formula.sequence} #{fund_formula.name}"
-        migration.since_inception_totals(fund_formula, fund_formula.formula, date).each do |cc_id, total|
-          entry = migration.stored_entry(fund_formula, cc_id, date)
-          if entry.nil?
-            missing += 1
-            puts "  commitment #{cc_id}: no stored entry on #{date}, left alone"
-            next
-          end
-
-          puts format("  commitment %<cc>d: %<old>.2f -> %<new>.2f", cc: cc_id, old: entry.amount_cents / 100, new: total.to_d / 100)
-          next if dry_run
-
-          migration.write_stored_total(entry, total)
-          updated += 1
-        end
-      end
-    end
-    puts "\n#{'DRY RUN, nothing written. ' if dry_run}updated=#{updated} missing=#{missing}"
+    AccountEntryAllocation::IncrementalMigration.new(fund).reseed!(formulas:, date: Date.parse(args[:date]), apply: ENV["DRY_RUN"] != "true")
   end
 end

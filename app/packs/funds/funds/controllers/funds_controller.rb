@@ -267,6 +267,12 @@ class FundsController < ApplicationController
         flash[:alert] = "An allocation run group is currently running on this fund. Wait for it to finish before starting a manual run."
         redirect_back_or_to(root_path) and return
       end
+      # A run starting while formulas are being switched could load formulas from before the write and
+      # the incremental flag from after it (FundFormulaOperation).
+      if FundAllocationActivity.formula_operation_applying?(@fund)
+        flash[:alert] = "The fund's formulas are being changed (Actions > Incremental allocation). Wait for that to finish before starting a run."
+        redirect_back_or_to(root_path) and return
+      end
 
       template_name = template_id ? Document.find(template_id).name : nil
 

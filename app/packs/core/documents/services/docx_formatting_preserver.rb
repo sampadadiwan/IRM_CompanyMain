@@ -545,7 +545,7 @@ class DocxFormattingPreserver
         # "<w:r><w:t>...first sentence. </w:t></w:r><w:r><w:tab/><w:t>Second
         # sentence...</w:t></w:r>" — producing a large unwanted gap mid-sentence.
         # Confirmed live on clause 5.2.6 of MessedUpDocTemplate.docx (see
-        # docs/notes/template_fix_agent_handover_note.md #Issue 3): the stray tab
+        # docs/modules/documents/template_fix_agent_handover_note.md #Issue 3): the stray tab
         # sat on the paragraph's SECOND run, which the single-first-run check
         # above never looked at. A run-leading tab is never legitimate in a list
         # paragraph — the number's own tab stop already positions the first line,

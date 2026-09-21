@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
-import { formatLocaleDate, parseDate } from 'custom/locale_date_format';
+import { formatLocaleDate } from 'custom/locale_date_format';
+import { localeDateFilterParams, localeDateGridOptions } from 'custom/ag_locale_date_filter';
 
 export default class BaseAgGrid extends Controller {
 
@@ -46,6 +47,9 @@ export default class BaseAgGrid extends Controller {
 
         // let the grid know which columns and what data to use
         this.gridOptions = {
+            // Typeable locale-format date filters — must be at grid level, see
+            // custom/ag_locale_date_filter.js.
+            ...localeDateGridOptions,
             getRowId: params => params.data.id,
             defaultExcelExportParams: {
                 columnKeys: this.getExportColumns(),
@@ -488,22 +492,8 @@ export default class BaseAgGrid extends Controller {
           enablePivot: enablePivot,
           rowGroup: rowGroup,
           chartDataType: 'category',
-          // Optionally, you can define a custom comparator for date filtering:
-          filterParams: {
-            comparator: (filterLocalDateAtMidnight, cellValue) => {
-              // cellValue is the raw value in the cell. ag-Grid hands us the filter
-              // date at local midnight, so compare at day granularity — otherwise a
-              // timestamped cell never tests "equals" the picked day.
-              if (!cellValue) return -1;
-              const cellDate = parseDate(cellValue);
-              if (!cellDate) return -1;
-              cellDate.setHours(0, 0, 0, 0);
-              const diff = cellDate.getTime() - filterLocalDateAtMidnight.getTime();
-              if (diff < 0) return -1;
-              if (diff > 0) return 1;
-              return 0;
-            },
-          },
+          // Typeable locale-format filter input + the day-granularity comparator.
+          filterParams: localeDateFilterParams,
           valueFormatter: (params) => {
             // Guard falsy values before parsing: ag-Grid passes '' for an empty
             // cell, and a date column has no meaningful epoch-0 reading.

@@ -34,7 +34,7 @@
 #                                scoring of the ambiguous name band); read nowhere yet, so it has
 #                                no effect on a run until that phase lands
 #
-# @see docs/ai/capital_remittance_reconciliation_agent_prd.md
+# @see docs/modules/ai/capital_remittance_reconciliation_agent_prd.md
 # @see SupportAgentService
 # @see BankDepositNarrationParser
 class RemittanceReconciliationAgent < SupportAgentService
@@ -266,7 +266,7 @@ class RemittanceReconciliationAgent < SupportAgentService
   end
 
   # Scores every non-internal deposit against ctx[:candidates] and assigns a tier. See the
-  # decision table in docs/ai/capital_remittance_reconciliation_agent_prd.md §6.4.
+  # decision table in docs/modules/ai/capital_remittance_reconciliation_agent_prd.md §6.4.
   def score_deposits(ctx, **)
     report = ctx[:support_agent_report]
     mark_step_running(report, :score_deposits) if report

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # The weekly task digest — one email per opted-in fund employee, every Friday.
-# See docs/product/weekly_task_digest_prd.md and WeeklyTaskDigestJob.
+# See docs/modules/tasks/weekly_task_digest_prd.md and WeeklyTaskDigestJob.
 #
 # Takes user_id/entity_id as params rather than an address list so
 # ApplicationMailer#setup_defaults resolves the from address, CC, reply-to and —

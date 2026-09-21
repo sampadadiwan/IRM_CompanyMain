@@ -4,7 +4,7 @@
 # A template is usually created with "Save as allocation run template" from a past
 # AllocationRun (see .from_allocation_run), or from scratch with the same form fields.
 # It may belong to any number of AllocationRunTemplateGroups; it cannot be deleted while
-# it is still a member of one (decision 17 in docs/business_requirements/allocation_run_sequences.md).
+# it is still a member of one (decision 17 in docs/modules/allocation/allocation_run_sequences.md).
 class AllocationRunTemplate < ApplicationRecord
   # nil rule_for means "Both" — same convention as AllocationRun / the allocation screen.
   RULE_FOR_OPTIONS = %w[Accounting Reporting].freeze

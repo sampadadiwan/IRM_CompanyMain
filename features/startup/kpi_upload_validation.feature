@@ -3,7 +3,7 @@ Feature: Server-side validation of portco KPI workbooks
   As a portco user I want to see exactly how my file was read (raw → stored) before I submit
   So that formatting is interpreted, nothing becomes a silent 0, and the fund gets the period it asked for
 
-  # Reference: docs/technical/kpi_portco_upload_validation_review.md (§2.1–§2.10 sign-offs, phase 1)
+  # Reference: docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md (§2.1–§2.10 sign-offs, phase 1)
 
   Background:
     Given there is a user "first_name=FundAdmin" for an entity "name=VentureFund;entity_type=Investment Fund"

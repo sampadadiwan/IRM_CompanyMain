@@ -7,7 +7,7 @@
 # this. See config/initializers/sidekiq.rb for the schedule.
 #
 # @see WebsiteLeadRetention
-# @see docs/technical/website_lead_capture.md
+# @see docs/modules/website/website_lead_capture.md
 class WebsiteLeadPurgeJob < ApplicationJob
   queue_as :low
 

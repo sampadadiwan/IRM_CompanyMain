@@ -253,7 +253,15 @@ class InvestorKyc < ApplicationRecord
       # For investor advisors, check if they have access to the kyc across all the entities they are advisors for
       across_all_entities = user.has_cached_role?(:investor_advisor)
       Rails.logger.debug { "Checking user: #{user.id} for KYC: #{id} across_all_entities: #{across_all_entities}" }
-      InvestorKycPolicy.new(user, self).show?(across_all_entities:)
+      policy = InvestorKycPolicy.new(user, self)
+      policy.show?(across_all_entities:) ||
+        # across_all_entities only sees user-level access rights, so an advisor who is a plain
+        # contact on his OWN record was never matched. Plain show? is what the UI authorizes for
+        # his current persona (for a non-advisor it is the same call, so skip it); the home-entity
+        # check covers him while switched into a client (same rule as Investor#notification_users).
+        # Neither exceeds what he can open.
+        (across_all_entities && policy.show?) ||
+        investor.visible_from_home_entity?(user, self)
     end
   end
 

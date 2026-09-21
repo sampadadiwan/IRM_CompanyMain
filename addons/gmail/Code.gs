@@ -5,7 +5,7 @@
  * behind /api/v1/mail/*, shared with the Outlook task pane, so an email filed from Gmail
  * and the same email filed from Outlook produce the same record.
  *
- * What changed from the previous version (docs/technical/mail_addin_review.md):
+ * What changed from the previous version (docs/modules/mail_addins/mail_addin_review.md):
  *  - sign-in no longer collects the CapHive password in a plaintext CardService input;
  *    it opens a browser tab where the normal session (and therefore SSO/MFA) applies
  *  - the API host comes from a script property instead of being hardcoded to a dev server

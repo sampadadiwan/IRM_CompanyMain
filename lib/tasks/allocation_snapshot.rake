@@ -1,6 +1,6 @@
 # Snapshots a fund's account entries into a side table, and diffs two snapshots, so a change to
 # the allocation engine or its formulas can be checked against what the same run produced before.
-# Built for docs/technical/incremental_allocation_history.md: snapshot, re-run a window, snapshot
+# Built for docs/modules/allocation/incremental_allocation_history.md: snapshot, re-run a window, snapshot
 # again, and require an empty diff.
 #
 # Usage:

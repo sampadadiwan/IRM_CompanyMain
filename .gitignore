@@ -24,10 +24,6 @@ DS_Store
 mcp.json
 .env.secrets
 
-# IMAP app password for bin/incident-watch (see docs/technical/incident_rca_system.md).
-# The preferred location is ~/.config/incident_watch.env, outside the repo entirely.
-config/incident_watch.env
-
 /.aider.tags.cache.v3
 .aider*
 /db/sphinx
@@ -111,7 +107,7 @@ npm-debug.log*
 yarn-error.log*
 dev-debug.log
 
-# DR run transcripts (docs/dr_runs/*.log) stay ignored by the *.log rule
+# DR run transcripts (docs/operations/dr/runs/*.log) stay ignored by the *.log rule
 # above, deliberately. They are raw console capture of a production recovery:
 # multi-megabyte, and whatever any command happened to print. One of them was
 # found to contain the database password in plaintext, and a secret committed

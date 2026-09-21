@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Builds one recipient's weekly task digest — the three row sets and the summary
-# stats behind them. See docs/product/weekly_task_digest_prd.md.
+# stats behind them. See docs/modules/tasks/weekly_task_digest_prd.md.
 #
 # Called once per (entity, recipient) pair by WeeklyTaskDigestJob, and rendered by
 # TaskDigestMailer. Kept out of the mailer so the buckets and the numbers can be

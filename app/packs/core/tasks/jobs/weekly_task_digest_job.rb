@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Sends the weekly task digest. Cron-scheduled for Friday from
-# config/initializers/sidekiq.rb; see docs/product/weekly_task_digest_prd.md.
+# config/initializers/sidekiq.rb; see docs/modules/tasks/weekly_task_digest_prd.md.
 #
 # Three gates, all required, before anyone hears from us:
 #   1. the entity is an Investment Fund (Entity.funds)

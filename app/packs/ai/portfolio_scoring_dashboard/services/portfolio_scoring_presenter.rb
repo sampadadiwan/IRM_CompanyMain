@@ -31,7 +31,7 @@ class PortfolioScoringPresenter
   # can end up with no usable score (see #not_scored_breakdown).
   NOT_SCORED = { slug: "not_scored", label: "Not Scored", grades: nil, color: "secondary", icon: "ti-help-circle" }.freeze
 
-  # The seven grade bands from docs/ai/skills/generic_portfolio_scoring_skill.md.
+  # The seven grade bands from docs/modules/ai/portfolio_scoring_agent/generic_portfolio_scoring_skill.md.
   # Drives the distribution chart's fixed x-axis; each band maps to a tier so the
   # bar colour is inherited rather than separately defined.
   GRADE_BANDS = [

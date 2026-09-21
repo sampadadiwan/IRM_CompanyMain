@@ -87,8 +87,8 @@ class InvestorAdvisor < ApplicationRecord
     # Finding 8: Role assignment must be atomic during revert.
     ActiveRecord::Base.transaction do
       user.roles.delete_all
-      user.advisor_entity_roles&.split(",")&.each { |role| user.add_role(role.strip) }
-      user.add_role(:investor_advisor) if user.roles.reload.empty?
+      # setup_defaults above has already set entity_type to the home entity's type.
+      user.home_role_names(home_entity_type: user.entity_type).each { |role| user.add_role(role) }
     end
 
     # In case we also have a persona sent in

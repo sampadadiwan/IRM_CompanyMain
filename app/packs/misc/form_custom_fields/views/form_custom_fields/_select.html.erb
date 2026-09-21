@@ -12,7 +12,7 @@
            bs_title:     field.info.body.to_html                # sanitised HTML
          } %>
    <% end %>
-    <% options = field.meta_data.present? ? field.meta_data.split(",") : [] %>
+    <% options = field.options %>
 
     <% if field.js_events.blank? %>
         <%= f.select field.name, options, {}, class: "form-control custom_field", required: field.required %>

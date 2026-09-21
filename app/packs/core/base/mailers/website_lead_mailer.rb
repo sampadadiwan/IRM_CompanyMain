@@ -6,7 +6,7 @@
 # this record does not have.
 #
 # @see WebsiteLeadCreate
-# @see docs/technical/website_lead_capture.md
+# @see docs/modules/website/website_lead_capture.md
 class WebsiteLeadMailer < ApplicationMailer
   # Inbound leads go to the commercial mailbox, NOT to SUPPORT_EMAIL_TO — that
   # address is the support/exception firehose (ExceptionNotifier, escalations,

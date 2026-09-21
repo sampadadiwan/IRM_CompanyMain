@@ -430,3 +430,40 @@ Then('the custom field should not be saved with error {string}') do |msg|
   @cf_save_result.should == false
   @cf_errors.full_messages.join(" ").should include(msg)
 end
+
+# Builds one custom field and keeps it on @cf so the assertions below can inspect it.
+# Distinct from "the entity has custom fields", which creates several and keeps none.
+When('I create a custom field {string} for {string}') do |args, form_class|
+  ft = @entity.form_types.where(name: form_class, tag: "Default").first_or_initialize
+  ft.save!
+  @form_type = ft
+  @cf = ft.form_custom_fields.build
+  key_values(@cf, args)
+  @cf.save!
+end
+
+# Options are given pipe-separated because a comma is the separator under test. EMPTY stands
+# for the intentional blank choice that makes a dropdown start with nothing selected — it has
+# to survive trimming, so it needs to be expressible here.
+Then('the custom field options should be {string}') do |expected|
+  @cf.options.should == expected.split("|").map { |option| option == "EMPTY" ? "" : option }
+end
+
+Then('the first custom field option should be blank') do
+  @cf.options.first.should == ""
+end
+
+Then('the custom field meta_data should be {string}') do |expected|
+  @cf.meta_data.should == expected
+end
+
+# Simulates a row saved before the option lists were cleaned: the value still carries the
+# leading space the old bare meta_data.split(",") gave it.
+When('a KYC stores the legacy value {string} for custom field {string}') do |value, field_name|
+  @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity, form_type: @form_type)
+  @investor_kyc.json_fields[field_name] = value
+end
+
+Then('the custom field {string} should be required on that KYC') do |field_name|
+  @investor_kyc.required_fields_for.map(&:name).should include(field_name)
+end

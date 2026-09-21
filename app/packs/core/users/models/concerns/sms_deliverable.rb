@@ -1,7 +1,7 @@
 # Turns the phone number we hold for a user into something Twilio will actually dial,
 # and answers whether SMS two-factor is available to them at all.
 #
-# See docs/technical/twilio_sms_otp_design.md sections 4 and 7.
+# See docs/modules/two_factor_auth/twilio_sms_otp_design.md sections 4 and 7.
 #
 # Why eligibility is computed rather than stored in a column:
 #

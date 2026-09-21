@@ -5,6 +5,9 @@ class DocQuestionsController < ApplicationController
   def index
     authorize DocQuestion
     @doc_questions = policy_scope(DocQuestion)
+    # The import upload show page renders this index inside a turbo-frame to show
+    # just the questions that one upload created
+    @doc_questions = @doc_questions.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
   end
 
   # GET /doc_questions/1 or /doc_questions/1.json

@@ -92,7 +92,7 @@ class SupportClientMapping < ApplicationRecord
       #
       # Trade-off accepted: this means a switched support user has cross-entity access beyond the
       # single mapping. That is a deliberate, documented risk-acceptance for support operations —
-      # see docs/technical/security_review_2026_07.md (finding H1). Access is still gated by the
+      # see docs/security/security_review_2026_07.md (finding H1). Access is still gated by the
       # user actually holding the :support role, which is granted only to trusted internal staff.
       # revert() re-adds :support so the switch/revert lifecycle stays symmetric.
       # user.remove_role(:support)

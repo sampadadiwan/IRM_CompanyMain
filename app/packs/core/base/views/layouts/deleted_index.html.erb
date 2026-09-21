@@ -13,6 +13,7 @@
             <th class="ps-4">ID</th>
             <th>Name / Details</th>
             <th>Deleted At</th>
+            <th>Deleted By</th>
             <th class="text-end pe-4">Actions</th>
           </tr>
         </thead>
@@ -33,19 +34,46 @@
                     <%= record.deleted_at ? l(record.deleted_at, format: :long_date_time) : "" %>
                   </span>
                 </td>
+                <td>
+                  <% deleted_by = (@deletion_users || {})[record.id] %>
+                  <% if deleted_by %>
+                    <div class="d-flex align-items-center">
+                      <span class="rounded-circle bg-secondary-subtle text-secondary d-inline-flex align-items-center justify-content-center me-2 flex-shrink-0"
+                            style="width: 28px; height: 28px;">
+                        <i class="ti ti-user fs-7"></i>
+                      </span>
+                      <div>
+                        <div class="fw-medium text-dark">
+                          <%= deleted_by.to_s %>
+                          <% if deleted_by.deleted? %>
+                            <span class="badge bg-secondary-subtle text-secondary ms-1">deactivated</span>
+                          <% end %>
+                        </div>
+                        <% if deleted_by.try(:email).present? %>
+                          <div class="text-muted small"><%= deleted_by.email %></div>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% else %>
+                    <span class="text-muted" data-bs-toggle="tooltip"
+                          title="Deleted by a background job, an import, or as a cascade from a parent record — no signed-in user was recorded">
+                      System
+                    </span>
+                  <% end %>
+                </td>
                 <td class="text-end pe-4">
                   <%
-                    deleted_folder = nil
-                    %w[document_folder_id data_room_folder_id].each do |folder_attr|
-                      if record.respond_to?(folder_attr) && record.send(folder_attr).present?
-                        deleted_folder = Folder.only_deleted.find_by(id: record.send(folder_attr))
-                        break if deleted_folder
-                      end
-                    end
+                    # Both lookups come from @referenced_folders, preloaded in one query
+                    # by ApplicationController#referenced_folders_for — no per-row queries here.
+                    folders = @referenced_folders || {}
+                    deleted_folder = %w[document_folder_id data_room_folder_id].filter_map { |folder_attr|
+                      folders[record.send(folder_attr)] if record.respond_to?(folder_attr) && record.send(folder_attr).present?
+                    }.find(&:deleted?)
+                    parent_folder = record.is_a?(Document) ? folders[record.folder_id] : nil
                   %>
 
-                  <% if record.is_a?(Document) && Folder.with_deleted.where(id: record.folder_id).first&.deleted? %>
-                    <% folder = Folder.with_deleted.find_by(id: record.folder_id) %>
+                  <% if parent_folder&.deleted? %>
+                    <% folder = parent_folder %>
                     <%= button_to polymorphic_path([:restore_deleted, folder]),
                                   method: :put,
                                   form_class: "deleteButton",
@@ -80,7 +108,7 @@
             <% end %>
           <% else %>
             <tr>
-              <td colspan="4" class="text-center py-5 text-muted">
+              <td colspan="5" class="text-center py-5 text-muted">
                 <i class="ti ti-trash-off fs-1 d-block mb-2"></i>
                 No deleted records found.
               </td>

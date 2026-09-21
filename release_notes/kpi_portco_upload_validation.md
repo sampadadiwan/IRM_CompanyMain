@@ -79,7 +79,7 @@ Fund users see exactly the same Workbook check on the report's edit page and on 
 
 - One server-side check is used for the pre-save panel, the submit gate and the import itself, so what the portco is shown is what gets stored — the old browser-side check has been removed.
 - Fund-only fields (which portfolio company, period, tag, deleting KPIs, adding KPI rows by hand) are now enforced on the server for portco users, not just hidden in the form.
-- Full details, sign-offs and QA scripts: `docs/technical/kpi_portco_upload_validation_review.md`; portco flow QA: `docs/manual_qa/portco_kpi_upload_workflow.md`.
+- Full details, sign-offs and QA scripts: `docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md`; portco flow QA: `docs/engineering/testing/manual_qa/portco_kpi_upload_workflow.md`.
 
 ## Rollout notes
 

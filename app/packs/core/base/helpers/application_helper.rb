@@ -11,6 +11,8 @@ module ApplicationHelper
     # Derive id the same way Rails does for tag helpers: replace [] with _ and strip trailing _
     field_id    = options.delete(:id) || name.to_s.delete("]").gsub(/[^a-zA-Z0-9_:.-]/, "_").gsub(/_+/, "_").gsub(/_\z/, "")
     i18n_format = I18n.t("date.formats.default")
+    # Human-readable version of the strftime format, used as placeholder and tooltip
+    format_hint = i18n_format.gsub("%d", "dd").gsub("%m", "mm").gsub("%Y", "yyyy")
     locale_val  = date ? l(date) : ""
     iso_val     = date ? date.iso8601 : ""
 
@@ -27,21 +29,27 @@ module ApplicationHelper
     hidden_data = caller_data.deep_merge({ "locale-date-target": "hidden" })
 
     content_tag(:div, class: "input-group",
-      data: { controller: "locale-date", "locale-date-format-value": i18n_format }
+      data: { controller: "locale-date tooltip", "locale-date-format-value": i18n_format }
     ) do
-      # Display-only text input — has the id so Capybara/tests can find it; no name, never submitted
+      # Display-only text input — has the id so Capybara/tests can find it; no name, never submitted.
+      # Typing is the primary interaction: clicking here must NOT open the native picker (that
+      # steals focus and makes the field effectively calendar-only) — the icon below does that.
       display = tag.input(
-        type:         "text",
-        id:           field_id,
-        value:        locale_val,
-        class:        css_class,
-        autocomplete: "off",
-        disabled:     disabled,
-        required:     required,
-        readonly:     readonly,
-        data:         {
+        type:                "text",
+        id:                  field_id,
+        value:               locale_val,
+        placeholder:         format_hint,
+        title:               "Enter date in #{format_hint} format",
+        "data-bs-toggle":    "tooltip",
+        "data-bs-placement": "top",
+        class:               css_class,
+        autocomplete:        "off",
+        disabled:            disabled,
+        required:            required,
+        readonly:            readonly,
+        data:                {
           "locale-date-target": "display",
-          action: "click->locale-date#openPicker input->locale-date#inputChanged"
+          action: "input->locale-date#inputChanged blur->locale-date#inputBlurred"
         }
       )
       # Hidden ISO input — carries the actual value for form submission; id suppressed (lives on display)
@@ -106,6 +114,7 @@ module ApplicationHelper
   def ransack_date_value_field(v, css_class: "form-control", active: false)
     date        = coerce_date_tag(v.object.value)
     i18n_format = I18n.t("date.formats.default")
+    format_hint = i18n_format.gsub("%d", "dd").gsub("%m", "mm").gsub("%Y", "yyyy")
     locale_val  = date ? l(date) : ""
     iso_val     = date ? date.iso8601 : ""
     # "col" makes this div (not the input-group inside it) the flex item the
@@ -114,19 +123,24 @@ module ApplicationHelper
 
     content_tag(:div, class: wrapper_class) do
       content_tag(:div, class: "input-group",
-        data: { controller: "locale-date", "locale-date-format-value": i18n_format }
+        data: { controller: "locale-date tooltip", "locale-date-format-value": i18n_format }
       ) do
+        # Clicking here must not open the native picker — filters are most often typed.
         display = tag.input(
-          type:         "text",
+          type:                "text",
           # Suffixed so it doesn't collide with the plain text_field's id, which is
           # bound to the same v/:value pair and rendered alongside this in the DOM
-          id:           "#{v.field_id(:value)}_display",
-          value:        locale_val,
-          class:        css_class,
-          autocomplete: "off",
-          data:         {
+          id:                  "#{v.field_id(:value)}_display",
+          value:               locale_val,
+          placeholder:         format_hint,
+          title:               "Enter date in #{format_hint} format",
+          "data-bs-toggle":    "tooltip",
+          "data-bs-placement": "top",
+          class:               css_class,
+          autocomplete:        "off",
+          data:                {
             "locale-date-target": "display",
-            action: "click->locale-date#openPicker input->locale-date#inputChanged"
+            action: "input->locale-date#inputChanged blur->locale-date#inputBlurred"
           }
         )
         hidden = v.hidden_field(:value, id: nil, value: iso_val, disabled: !active,

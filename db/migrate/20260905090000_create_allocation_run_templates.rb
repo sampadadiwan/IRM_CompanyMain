@@ -1,4 +1,4 @@
-# Allocation Run Templates and Groups — see docs/business_requirements/allocation_run_sequences.md.
+# Allocation Run Templates and Groups — see docs/modules/allocation/allocation_run_sequences.md.
 #
 # An AllocationRunTemplate is one fund plus the parameters it is always run with (everything on
 # the allocation screen except the period). A group is an ordered list of templates run one

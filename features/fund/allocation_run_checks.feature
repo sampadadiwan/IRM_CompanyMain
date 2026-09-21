@@ -5,7 +5,7 @@ Feature: Allocation run pre-run and post-run checks
   computes anything; post-run checks run after every formula. Every check of a kind runs, then any
   failure stops the run. Failed and warning check results are stored on the run's allocation run
   report, which shows each check as its own finding (1.5.n pre-run, 1.6.n post-run).
-  See docs/business_requirements/allocation_run_checks.md.
+  See docs/modules/allocation/allocation_run_checks.md.
 
   Background:
     Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
@@ -244,6 +244,91 @@ Feature: Allocation run pre-run and post-run checks
       """
     When the "pre" checks are run for that allocation run
     Then check "Valuations" should have result "warn" mentioning "no valuation dated within 30 days"
+
+  Scenario: folio_shares_total fails a code whose folio percentages do not add up to 100
+    Given the fund has folios "101,102"
+    And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
+    And folio "101" has custom field "udr_1" of "60"
+    And folio "102" has custom field "udr_1" of "40"
+    And folio "101" has custom field "udr_2" of "70"
+    And these account entries were uploaded:
+      | name       | entry_type       | amount | reporting_date | generated | custom_fields               |
+      | Audit Fees | Non Deal Expense | 100    | 2024-02-01     | false     | fund_level_udr_code=UDR - 1 |
+      | Bank Fees  | Non Deal Expense | 100    | 2024-02-02     | false     | fund_level_udr_code=UDR - 2 |
+    And the fund has a "PreRunCheck" check "Shares" with formula:
+      """
+      folio_shares_total(:fund_level_udr_code)
+      """
+    When the "pre" checks are run for that allocation run
+    Then check "Shares" should have result "fail" mentioning "UDR - 2"
+    And check "Shares" should mention "70.0"
+    And check "Shares" should not mention "UDR - 1"
+
+  Scenario: folio_shares_total passes when every code is shared out 100%
+    Given the fund has folios "101,102"
+    And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
+    And folio "101" has custom field "udr_1" of "60"
+    And folio "102" has custom field "udr_1" of "40"
+    And these account entries were uploaded:
+      | name       | entry_type       | amount | reporting_date | generated | custom_fields               |
+      | Audit Fees | Non Deal Expense | 100    | 2024-02-01     | false     | fund_level_udr_code=UDR - 1 |
+    And the fund has a "PreRunCheck" check "Shares" with formula:
+      """
+      folio_shares_total(:fund_level_udr_code)
+      """
+    When the "pre" checks are run for that allocation run
+    Then check "Shares" should have result "pass" mentioning "shared out 100%"
+
+  Scenario: unit_settings_present lists unit types missing a setting or a key
+    Given the fund has folios "101"
+    And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
+    And the fund has a unit setting "A1" with json fields "catch_up=0.2"
+    And the fund has a "PreRunCheck" check "Catch up only" with formula:
+      """
+      unit_settings_present(["catch_up"])
+      """
+    And the fund has a "PreRunCheck" check "Catch up and hurdle" with formula:
+      """
+      unit_settings_present(["catch_up", "hurdle_rate"])
+      """
+    When the "pre" checks are run for that allocation run
+    Then check "Catch up only" should have result "pass" mentioning "catch_up"
+    And check "Catch up and hurdle" should have result "fail" mentioning "hurdle_rate"
+
+  Scenario: since_inception_matches_history compares each folio's stored total with its history
+    Given the fund has folios "101,102"
+    And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
+    And these account entries were uploaded:
+      | name                       | entry_type | amount | reporting_date | generated | folio |
+      | Audit Fees                 | Fee        | 10000  | 2024-01-15     | true      | 101   |
+      | Since Inception Audit Fees | Reporting  | 10000  | 2024-03-31     | true      | 101   |
+      | Audit Fees                 | Fee        | 10000  | 2024-01-15     | true      | 102   |
+      | Since Inception Audit Fees | Reporting  | 15000  | 2024-03-31     | true      | 102   |
+    And the fund has a "PostRunCheck" check "History" with formula:
+      """
+      since_inception_matches_history(["Audit Fees"])
+      """
+    When the "post" checks are run for that allocation run
+    Then check "History" should have result "fail" mentioning "1 stored Since Inception total differs"
+    And check "History" should mention "102"
+    And check "History" should not mention "101"
+
+  Scenario: since_inception_matches_history passes when every stored total equals its history
+    Given the fund has folios "101,102"
+    And there is a finished allocation run "start_date=2024-01-01;end_date=2024-03-31"
+    And these account entries were uploaded:
+      | name                       | entry_type | amount | reporting_date | generated | folio |
+      | Audit Fees                 | Fee        | 10000  | 2024-01-15     | true      | 101   |
+      | Since Inception Audit Fees | Reporting  | 10000  | 2024-03-31     | true      | 101   |
+      | Audit Fees                 | Fee        | 4000   | 2023-12-15     | true      | 102   |
+      | Audit Fees                 | Fee        | 6000   | 2024-02-15     | true      | 102   |
+      | Since Inception Audit Fees | Reporting  | 10000  | 2024-03-31     | true      | 102   |
+    And the fund has a "PostRunCheck" check "History" with formula:
+      """
+      since_inception_matches_history(["Audit Fees"])
+      """
+    When the "post" checks are run for that allocation run
+    Then check "History" should have result "pass" mentioning "match the full history"
 
   # ── Post-run check helpers ───────────────────────────────────────────────────
 

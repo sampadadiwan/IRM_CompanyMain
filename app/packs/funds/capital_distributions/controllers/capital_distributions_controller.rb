@@ -67,7 +67,7 @@ class CapitalDistributionsController < ApplicationController
     respond_to do |format|
       if @capital_distribution.update(capital_distribution_params)
         # Editing distribution_date after payments already exist re-dates every capital_distribution_payment
-        # to match (see docs/technical/call_and_distribution_date_cascade_plan.md) and triggers a fee recompute.
+        # to match (see docs/modules/funds/call_and_distribution_date_cascade_plan.md) and triggers a fee recompute.
         CapitalDistributionDateChangeJob.perform_later(@capital_distribution.id, current_user.id) if @capital_distribution.saved_change_to_distribution_date?
         format.html { redirect_to capital_distribution_url(@capital_distribution), notice: "Capital distribution was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_distribution }

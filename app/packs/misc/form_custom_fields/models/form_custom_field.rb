@@ -52,6 +52,9 @@ class FormCustomField < ApplicationRecord
   validates :name, uniqueness: { scope: :form_type_id }
   validates :name, presence: true
   normalizes :name, :label, with: ->(value) { value&.strip }
+  # condition_params is compared against a stored value, so padding around it is never
+  # meaningful — it only ever causes a condition to silently stop matching.
+  normalizes :condition_params, with: ->(value) { value&.strip }
 
   validates :field_type, inclusion: { in: VALID_FIELD_TYPES }
   validates :condition_criteria, inclusion: { in: VALID_CONDITION_CRITERIAS }, allow_blank: true
@@ -89,6 +92,37 @@ class FormCustomField < ApplicationRecord
   scope :not_regulatory, -> { where(reg_env: [nil, ""]) }
   scope :for_env, ->(env) { where(reg_env: env) }
   scope :filterable, -> { where(filter_in_search: true).where.not(field_type: UNFILTERABLE_TYPES) }
+
+  # An option field keeps its whole choice list in one comma-separated meta_data string, and
+  # admins naturally type "Individual, HUF, LLP". Without this, " HUF" becomes the option's
+  # value as well as its label, so the space is saved into json_fields and every exact-match
+  # consumer (the register_cf_ransacker filters, search_custom_fields, satisfies_condition?
+  # and its JS twin) stops matching the row.
+  #
+  # Blank entries are kept. A leading "," or " ," is the idiom for "start this dropdown
+  # empty" — dropping it would promote the first real choice to the default and silently
+  # record an answer nobody gave.
+  before_validation :normalize_option_meta_data
+
+  # Only for the option types: meta_data means something different for every other field type
+  # (Ruby for Calculation, "precision,separator" for NumberField, an ISO currency for Money,
+  # "skill: true, sector: X" tags for File) and must be left exactly as typed.
+  def normalize_option_meta_data
+    return unless OPTION_FIELD_TYPES.include?(field_type)
+    return if meta_data.blank?
+
+    normalized = parse_options(meta_data).join(",")
+    # Never let normalisation empty out a field that had something in it — that would trip
+    # meta_data_present_for_option_types on input this used to accept.
+    self.meta_data = normalized if normalized.present?
+  end
+
+  # The option list as the screens should render it. Use this rather than splitting meta_data
+  # at the call site: it strips each choice while preserving the intentional blank one, and it
+  # is safe on a nil meta_data.
+  def options
+    parse_options(meta_data)
+  end
 
   validate :meta_data_kosher?, if: -> { field_type == "Calculation" }
   validate :meta_data_present_for_option_types
@@ -282,6 +316,12 @@ class FormCustomField < ApplicationRecord
   end
 
   private
+
+  # Splits a comma-separated option list and trims each choice. Deliberately does NOT
+  # compact_blank — see normalize_option_meta_data for why the empty choice has to survive.
+  def parse_options(value)
+    value.to_s.split(",").map(&:strip)
+  end
 
   def validate_min_max_rule(rules, min_key, max_key)
     min = rules[min_key]

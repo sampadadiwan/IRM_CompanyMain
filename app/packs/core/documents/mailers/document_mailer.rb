@@ -50,6 +50,17 @@ class DocumentMailer < ApplicationMailer
     send_mail(subject:)
   end
 
+  # Distinct from send_document so this never picks up an entity's existing "send_document"
+  # CustomNotification (e.g. one written for Statement of Account/KYC docs) - entity.custom_notification
+  # matches purely on email_method with no awareness of what kind of document is being sent, so a
+  # generic KYC-oriented template would otherwise hijack every generated Portfolio Investment Report
+  # email too. Entities can still add their own CustomNotification scoped to this email_method.
+  def send_portfolio_investment_report
+    subject = "#{@document.name} uploaded by #{@document.entity.name}"
+    pw_protect_attach_file(@document, @custom_notification)
+    send_mail(subject:)
+  end
+
   def email_link
     # Link will expire in 1 week
     @link = @document.file.url(expires_in: (60 * 60 * 24 * 7), response_content_disposition: "inline; filename=#{@document.name_with_extension}")

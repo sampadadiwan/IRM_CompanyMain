@@ -10,7 +10,7 @@ import { Controller } from "@hotwired/stimulus";
 //   3. renders the turbo_stream response, which replaces #kpi_validation_panel.
 // The panel's own controller (kpi-validation-panel) toggles the submit guard from the server's
 // error count. No regexes, no counting, no rules here — by design
-// (docs/technical/kpi_portco_upload_validation_review.md §2.3).
+// (docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md §2.3).
 export default class extends Controller {
   static targets = ["spinner"];
   static values = {

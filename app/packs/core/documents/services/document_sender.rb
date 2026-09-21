@@ -2,8 +2,11 @@ class DocumentSender
   def self.send(document, _user_id, custom_notification_id)
     # If the document is subject to approval and is approved only then send it
     if (document.subject_to_approval? && document.approved) || !document.subject_to_approval?
-      if document.notification_users.present?
-        document.notification_users.each do |user|
+      # Resolve recipients once: notification_users walks every access right and runs a policy
+      # per contact, so evaluating it for present? and again for each doubled the cost.
+      users = document.notification_users
+      if users.present?
+        users.each do |user|
           DocumentNotifier.with(record: document,
                                 entity_id: document.entity_id,
                                 email_method: "send_document",

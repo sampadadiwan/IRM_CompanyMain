@@ -13,7 +13,9 @@ class DocumentPolicy < ApplicationPolicy
         user.enable_documents && belongs_to_entity?(user, record) &&
         (user.has_cached_role?(:company_admin) || (record.owner.present? && owner_policy.show? && !record.folder.private))
       ) ||
-      (user.enable_documents && show_investor? && !user.investor_advisor?) ||
+      # Cheap checks first: show_investor? runs a multi-join query that is discarded for a
+      # switched-in advisor anyway.
+      (user.enable_documents && !user.investor_advisor? && show_investor?) ||
       (record.owner.present? && owner_policy.show? && !record.folder.private && not_generated_or_approved)
   end
 

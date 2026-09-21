@@ -37,7 +37,7 @@
 #   result = TwoFactorReset.call(user: target, actor: current_user, password: params[:password], message: params[:message])
 #   result.success? / result[:errors]
 #
-# See docs/technical/two_factor_authentication.md, "Resetting the two-factor method".
+# See docs/modules/two_factor_auth/two_factor_authentication.md, "Resetting the two-factor method".
 class TwoFactorReset < Trailblazer::Operation
   step :ensure_resettable
   step :verify_password_if_self

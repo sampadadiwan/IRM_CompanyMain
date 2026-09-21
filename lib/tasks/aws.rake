@@ -62,7 +62,7 @@ namespace :aws do
     setup_pulumi_config(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant])
   end
 
-  # Automates the "always-true readiness" checklist from docs/DR_GUIDE.md §1:
+  # Automates the "always-true readiness" checklist from docs/operations/dr/dr_guide.md §1:
   # everything that must be true BEFORE a disaster for DR to work. Prints a
   # ✅/⚠️/❌ scorecard; exits non-zero if any hard failure — so it can run in
   # cron/CI later. Read-only: checks, never fixes.
@@ -286,7 +286,7 @@ namespace :aws do
     end
 
     # --- 8. Drill recency -------------------------------------------------------
-    drill_log = Rails.root.join("docs/dr_drills.md")
+    drill_log = Rails.root.join("docs/operations/dr/dr_drills.md")
     last_pass = nil
     if File.exist?(drill_log)
       File.readlines(drill_log).each do |line|
@@ -315,7 +315,7 @@ namespace :aws do
     fails = results.count { |s, _, _| s == :fail }
     warns = results.count { |s, _, _| s == :warn }
     puts "\n#{fails.zero? ? '🟢' : '🔴'} #{results.size} checks: #{results.size - fails - warns} ok, #{warns} warnings, #{fails} failures"
-    abort "❌ NOT DR-ready — fix the failures above (see docs/DR_GUIDE.md §1)" if fails.positive?
+    abort "❌ NOT DR-ready — fix the failures above (see docs/operations/dr/dr_guide.md §1)" if fails.positive?
   end
 
   # Quarterly DR drill: proves the WHOLE recovery chain (AMIs present, Pulumi
@@ -380,7 +380,7 @@ namespace :aws do
 
     puts "🚨 DR DRILL: rebuilding #{stack} (#{env_variant}) in #{region} on branch #{drill_branch}"
     # Capture the whole run — including the ensure block's summary and report
-    # line — to docs/dr_runs/<branch>.log, so the transcript exists without the
+    # line — to docs/operations/dr/runs/<branch>.log, so the transcript exists without the
     # operator having to pipe through tee.
     with_dr_transcript(drill_branch) do
     begin
@@ -402,7 +402,7 @@ namespace :aws do
       # such a statement, so it now runs last and swallows its own errors.
 
       # Append to the drill log — the audit trail that DR is tested, not assumed
-      log_file = Rails.root.join("docs", "dr_drills.md")
+      log_file = Rails.root.join("docs", "operations", "dr", "dr_drills.md")
       unless File.exist?(log_file)
         File.write(log_file, <<~HEADER)
           # DR Drill Log
@@ -410,7 +410,7 @@ namespace :aws do
           > **Rebuild (min)** is the time from the start of the recovery command to the
           > stack passing `recovery:verify`. It is *not* end-to-end RTO: it excludes
           > incident detection, the decision to declare a disaster, and DNS cutover plus
-          > TTL propagation. Per-run evidence reports are in `docs/dr_runs/`.
+          > TTL propagation. Per-run evidence reports are in `docs/operations/dr/runs/`.
 
           | Date | Stack | Variant | Region | Result | Rebuild (min) | Branch |
           |---|---|---|---|---|---|---|
@@ -424,7 +424,7 @@ namespace :aws do
       write_dr_report(stack: stack, region: region, env_variant: env_variant,
                       branch: drill_branch, result: result, started_at: started_at, drill: true)
 
-      puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured rebuild time: #{duration_min} minutes (logged to docs/dr_drills.md)"
+      puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured rebuild time: #{duration_min} minutes (logged to docs/operations/dr/dr_drills.md)"
       puts "   NOTE: that figure excludes detection, disaster declaration, and DNS cutover/TTL —"
       puts "         it is rebuild time, not end-to-end RTO. See the report for the full scope."
 

@@ -1,0 +1,15 @@
+<%# The generate buttons. Locals: fund %>
+<p class="text-muted">
+  Suggestions come from fixed rules that read this fund's formulas, custom field forms and past uploads,
+  and each one is tested against the fund's last successful allocation run before it is shown. Nothing is
+  added until you select it. "With AI" also asks AI for fund-specific checks the rules do not cover; those are
+  validated and tested the same way.
+</p>
+<div class="d-flex gap-2">
+  <%= button_to "Generate suggestions", fund_formula_operations_path(fund_id: fund.id, operation: "suggest_checks"),
+                method: :post, class: "btn btn-primary", form: { data: { turbo_frame: "_top" } } %>
+  <%= button_to fund_formula_operations_path(fund_id: fund.id, operation: "suggest_checks", ai: true),
+                method: :post, class: "btn btn-outline-primary", form: { data: { turbo_frame: "_top" } } do %>
+    <i class="ti ti-robot-face"></i> Generate with AI
+  <% end %>
+</div>

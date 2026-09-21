@@ -108,6 +108,8 @@ class ImportUtil < Trailblazer::Operation
     false
   end
 
+  delegate :sanitize_cell, to: :class
+
   # Normalise a single spreadsheet cell.
   # Files pasted together from Word/web pages routinely carry non-breaking spaces (U+00A0)
   # and other unicode blanks. String#strip only removes ASCII whitespace, so those
@@ -118,7 +120,9 @@ class ImportUtil < Trailblazer::Operation
   # unicode ones, while leaving newlines alone. Some cells legitimately hold
   # multi-line text - a fund formula body is Ruby source, and folding its newlines
   # into spaces joins two statements into one line and makes it unparseable.
-  def sanitize_cell(value)
+  #
+  # A class method so code outside an import (FundFormulaAttributes) can store exactly what an import would.
+  def self.sanitize_cell(value)
     return nil if value.nil?
 
     value.to_s.gsub(/[[:blank:]]/, " ").strip.squeeze(" ")
@@ -130,6 +134,19 @@ class ImportUtil < Trailblazer::Operation
     ret_headers = headers.compact.each { |x| x&.delete!("*") }.map { |h| sanitize_cell(h)&.downcase&.titleize }
     Rails.logger.debug { "ret_headers = #{ret_headers}" }
     ret_headers
+  end
+
+  # Record a non-fatal problem with the row currently being imported, from inside save_row.
+  # The row is still saved and still counts as processed - the results sheet says
+  # "Success with warnings" instead of "Success" and spells out what was skipped in the
+  # detail column, the same column an "Error" row uses.
+  #
+  # Use this, not raise, when part of a row cannot be applied but the rest of it is correct and
+  # worth keeping. Importers should also aggregate the same warnings into import_upload.status
+  # and a level "warning" UserAlert, since those are what the import summary screen shows -
+  # see ImportCapitalRemittancePayment#warn_about_skipped_verifications.
+  def warn_row(message)
+    (@row_warnings ||= []) << message
   end
 
   private
@@ -202,10 +219,19 @@ class ImportUtil < Trailblazer::Operation
 
     user_data = [headers, row].transpose.to_h
     Rails.logger.debug { "#### user_data = #{user_data}" }
+    # Reset the buffer warn_row appends to, so warnings never leak from the previous row
+    @row_warnings = []
     begin
       if save_row(user_data, import_upload, custom_field_headers, ctx)
         import_upload.processed_row_count += 1
-        row << "Success"
+        # A warned row is still a success: it is counted as processed and does not stop a
+        # fail_fast importer. Only the results sheet distinguishes it.
+        if @row_warnings.any?
+          row << "Success with warnings"
+          row << @row_warnings.join("; ")
+        else
+          row << "Success"
+        end
         # Explicit boolean so process_rows can detect a failed row for fail_fast importers
         true
       else

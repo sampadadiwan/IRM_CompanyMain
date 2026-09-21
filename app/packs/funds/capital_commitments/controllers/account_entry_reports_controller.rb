@@ -11,7 +11,7 @@ class AccountEntryReportsController < ApplicationController
   # account_entries is very large; the report scopes carry a MAX_EXECUTION_TIME hint
   # (AccountEntryReport::STATEMENT_TIMEOUT_MS) so a runaway range is killed by MySQL
   # rather than pinning a replica connection. Turn that into an actionable message
-  # instead of a 500. See docs/technical/account_entry_report_performance.md.
+  # instead of a 500. See docs/modules/reports/account_entry_report_performance.md.
   rescue_from ActiveRecord::StatementInvalid, with: :handle_report_timeout
 
   # GET /account_entry_reports/fund_report
@@ -32,7 +32,7 @@ class AccountEntryReportsController < ApplicationController
 
     page = build_page(fund: @fund)
     # A fund-level, unfiltered scan of account_entries is one of the most expensive things
-    # this app can be asked to do (see docs/technical/account_entry_report_performance.md):
+    # this app can be asked to do (see docs/modules/reports/account_entry_report_performance.md):
     # account_entries is unboundedly large, so nothing is queried against it until the
     # request already carries a folio, entry name or entry type - a bare allocation_run_id
     # (see the "View Report" link on the allocation screen) is always ANDed onto the query

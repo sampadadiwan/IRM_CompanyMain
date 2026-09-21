@@ -1,6 +1,6 @@
 # Turns one public demo-form submission into a WebsiteLead and a notification.
 #
-# See docs/technical/website_lead_capture.md. Called from
+# See docs/modules/website/website_lead_capture.md. Called from
 # WebsiteLeadsController#create — the only unauthenticated write path in this
 # app — so every step here runs on input from a stranger.
 #

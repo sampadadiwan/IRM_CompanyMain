@@ -2,7 +2,7 @@
 
 # Dry-run validation of a KPI workbook for a KpiReport — the single source of truth the portco
 # sees BEFORE saving and the controller uses as the submit gate
-# (docs/technical/kpi_portco_upload_validation_review.md §3.1 A/C).
+# (docs/modules/portfolio/kpis/kpi_portco_upload_validation_review.md §3.1 A/C).
 #
 # Resolves the workbook from either:
 #   - `file_data`  : the Shrine cached-file JSON Uppy hands the form after upload (nothing is

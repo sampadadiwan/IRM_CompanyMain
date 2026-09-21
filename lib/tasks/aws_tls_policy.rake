@@ -37,7 +37,7 @@
 #   logs configured (IRM-Infra/alb.py sets no access_logs), so there is no
 #   ssl_protocol field to count old clients with beforehand — do staging first,
 #   then production, and watch the ClientTLSNegotiationErrorCount metric on the
-#   prod ALB for a day. Once verified, docs/marketing/gtm_prerequisites_work/
+#   prod ALB for a day. Once verified, docs/gtm/prerequisites/
 #   E2_security_questionnaire.md (D2) and E1_security_page_content.md are
 #   unblocked to claim "TLS 1.2 or higher".
 

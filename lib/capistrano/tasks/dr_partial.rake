@@ -1,6 +1,6 @@
 #  partial:* — Capistrano entry points for single-component recovery
 # =============================================================================
-# Phase 2 of component recovery (see docs/DR_COMPONENT_RECOVERY.md).
+# Phase 2 of component recovery (see docs/operations/dr/dr_component_recovery.md).
 #
 # These are THIN wrappers over rake tasks that already exist and are drill-
 # tested. They add no recovery logic of their own; what they add is a way to run
