@@ -28,26 +28,12 @@ export default class extends Controller {
 
   connect() {
     this.showingOriginal = false
-    try {
-      const saved = localStorage.getItem("kpi_currency_toggle")
-      if (saved === "original") {
-        this.showingOriginal = true
-        this._apply()
-      }
-    } catch (_e) {
-      // localStorage unavailable — default to fund currency
-    }
   }
 
   /** @param {Event} _event */
   toggle(_event) {
     this.showingOriginal = !this.showingOriginal
     this._apply()
-    try {
-      localStorage.setItem("kpi_currency_toggle", this.showingOriginal ? "original" : "fund")
-    } catch (_e) {
-      // localStorage unavailable — toggle still works for the session
-    }
   }
 
   /** Swaps cell text, tooltip, and updates button label. */
@@ -63,11 +49,12 @@ export default class extends Controller {
       const originalTooltip = cell.dataset.originalTooltip
       if (fundTooltip && originalTooltip) {
         const newTitle = this.showingOriginal ? originalTooltip : fundTooltip
-        cell.setAttribute("title", newTitle)
         const bsTooltip = bootstrap.Tooltip.getInstance(cell)
         if (bsTooltip) {
           bsTooltip.dispose()
         }
+        cell.removeAttribute("data-bs-original-title")
+        cell.setAttribute("title", newTitle)
         new bootstrap.Tooltip(cell)
       }
     })
