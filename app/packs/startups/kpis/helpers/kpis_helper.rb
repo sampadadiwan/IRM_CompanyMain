@@ -179,17 +179,21 @@ module KpisHelper
 
     portco = portfolio_company || kpi.portfolio_company
     kpi_currency = portco&.json_fields&.dig('kpi_currency') || '?'
+    fund_currency = portco&.entity&.currency || '?'
     formatted_original = number_with_precision(kpi.original_value, precision: 2, delimiter: ',')
+    formatted_fund = number_with_precision(kpi.value, precision: 2, delimiter: ',')
     formatted_rate = number_with_precision(kpi.fx_rate_used, precision: 4, delimiter: ',')
-    tooltip = "Original: #{kpi_currency} #{formatted_original} @ #{formatted_rate}"
+    fund_tooltip = "Original: #{kpi_currency} #{formatted_original} @ #{formatted_rate}"
+    original_tooltip = "Converted: #{fund_currency} #{formatted_fund} @ #{formatted_rate}"
 
     original_display = fx_format_original_value(kpi, investor_kpi_mapping, kpi_currency)
 
     tag.span(class: 'fx-converted',
              data: { bs_toggle: 'tooltip', bs_placement: 'top',
                      kpi_currency_toggle_target: 'cell',
-                     fund_display: content, original_display: original_display },
-             title: tooltip) { content }
+                     fund_display: content, original_display: original_display,
+                     fund_tooltip: fund_tooltip, original_tooltip: original_tooltip },
+             title: fund_tooltip) { content }
   end
 
   # Formats the original (pre-conversion) KPI value with the portco's currency symbol.

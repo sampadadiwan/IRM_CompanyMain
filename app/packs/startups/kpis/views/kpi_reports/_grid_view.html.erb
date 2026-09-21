@@ -33,13 +33,6 @@
         <% if params[:q].blank?%>
           <%= render "kpi_reports/filter", entity: @entity %>
         <% end %>
-        <% if show_currency_toggle %>
-          <button class="btn btn-outline-secondary btn-sm me-2"
-                  data-kpi-currency-toggle-target="button"
-                  data-action="click->kpi-currency-toggle#toggle">
-            <i class="ti ti-arrows-exchange me-1"></i>Viewing: <%= fund_currency %> (Fund)
-          </button>
-        <% end %>
         <div class="btn-group me-2">
           <div class="dropdown">
             <button class="btn btn-outline-info dropdown-toggle ti ti-chart-dots" type="button"
@@ -268,9 +261,9 @@
     <%# .present? does not handle string "false" properly - and returns true
     # so we use standard boolean casting instead of relying on .present? %>
     <% if ActiveModel::Type::Boolean.new.cast(params[:compound]) %>
-      <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:, portfolio_company: investor %>
+      <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:, portfolio_company: investor, show_currency_toggle: show_currency_toggle, fund_currency: fund_currency %>
     <% else %>
-      <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:, portfolio_company: investor %>
+      <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:, portfolio_company: investor, show_currency_toggle: show_currency_toggle, fund_currency: fund_currency %>
     <% end %>
 
   <% end %>

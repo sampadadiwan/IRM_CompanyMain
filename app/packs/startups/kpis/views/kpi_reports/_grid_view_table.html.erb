@@ -19,8 +19,15 @@
     <thead>
       <tr>
         <th class="sticky-col">
-          <div class="d-flex align-items-center gap-2">
+          <div class="d-flex align-items-center justify-content-between gap-2">
             KPI
+            <% if local_assigns[:show_currency_toggle] %>
+              <button class="btn btn-outline-secondary btn-sm py-0 px-2"
+                      data-kpi-currency-toggle-target="button"
+                      data-action="click->kpi-currency-toggle#toggle">
+                <i class="ti ti-arrows-exchange me-1"></i>Viewing: <%= local_assigns[:fund_currency] %> (Fund)
+              </button>
+            <% end %>
           </div>
         </th>
         <th>Category</th>

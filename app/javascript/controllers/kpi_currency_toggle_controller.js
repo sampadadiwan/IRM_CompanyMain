@@ -50,7 +50,7 @@ export default class extends Controller {
     }
   }
 
-  /** Swaps cell text and updates button label. */
+  /** Swaps cell text, tooltip, and updates button label. */
   _apply() {
     this.cellTargets.forEach((cell) => {
       const fundDisplay = cell.dataset.fundDisplay
@@ -58,6 +58,18 @@ export default class extends Controller {
       if (!fundDisplay || !originalDisplay) return
 
       cell.innerHTML = this.showingOriginal ? originalDisplay : fundDisplay
+
+      const fundTooltip = cell.dataset.fundTooltip
+      const originalTooltip = cell.dataset.originalTooltip
+      if (fundTooltip && originalTooltip) {
+        const newTitle = this.showingOriginal ? originalTooltip : fundTooltip
+        cell.setAttribute("title", newTitle)
+        const bsTooltip = bootstrap.Tooltip.getInstance(cell)
+        if (bsTooltip) {
+          bsTooltip.dispose()
+        }
+        new bootstrap.Tooltip(cell)
+      }
     })
 
     this.buttonTargets.forEach((btn) => {
