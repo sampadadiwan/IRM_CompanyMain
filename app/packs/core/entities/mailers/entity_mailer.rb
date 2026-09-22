@@ -10,14 +10,16 @@ class EntityMailer < ApplicationMailer
     add_support_to_cc
     @error_msg = params[:error_msg]
     @main_error = params[:main_error]
-    subject = params[:subject].presence || params[:main_error].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} Errors"
+    @context = error_context
+    subject = params[:subject].presence || params[:main_error].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} #{default_error_subject}"
     mail(from: @from, to: @to, cc: @cc, subject:)
   end
 
   def spa_job_errors
     add_support_to_cc
     @error_msg = params[:error_msg]
-    subject = params[:subject].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} Errors"
+    @context = error_context
+    subject = params[:subject].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} #{default_error_subject}"
     mail(from: @from, to: @to, cc: @cc, subject:)
   end
 
@@ -53,7 +55,9 @@ class EntityMailer < ApplicationMailer
     # (e.g. SkippedNotificationReportJob links to the skipped notifications it just reported).
     @filter_url = params[:filter_url]
     @filter_label = params[:filter_label]
-    subject = "#{ENV.fetch('BASE_DOMAIN', nil)} #{params[:subject].presence || 'Errors'}"
+    # Who/what/where block rendered above the error list — see ErrorReportContext.
+    @context = error_context
+    subject = "#{ENV.fetch('BASE_DOMAIN', nil)} #{params[:subject].presence || default_error_subject}"
     to = params[:to].presence || support_emails
     mail(to:, subject:)
   end
@@ -86,6 +90,25 @@ class EntityMailer < ApplicationMailer
   end
 
   private
+
+  # The caller's own diagnostic block when it supplied one (jobs pass `context: error_context`),
+  # otherwise everything still recoverable from the mailer's params — so callers that predate
+  # ErrorReportContext at least name the user and entity instead of nothing at all.
+  def error_context
+    params[:context].presence || ErrorReportContext.for_mailer(user: @user, entity: @entity)
+  rescue StandardError => e
+    # Belt and braces: ErrorReportContext already rescues internally, but this mailer's whole
+    # job is to report a failure. It must never be the thing that fails.
+    Rails.logger.error("EntityMailer#error_context failed: #{e.class}: #{e.message}")
+    nil
+  end
+
+  # "Errors in TrackingCurrencyJob" beats a bare "Errors" in a support inbox that receives
+  # these from a dozen different jobs. Falls back to "Errors" when the source is unknown.
+  def default_error_subject
+    source = @context.is_a?(Hash) ? @context["Source"] : nil
+    source.present? ? "Errors in #{source}" : "Errors"
+  end
 
   def support_emails
     # Fetch the default support email from the environment
