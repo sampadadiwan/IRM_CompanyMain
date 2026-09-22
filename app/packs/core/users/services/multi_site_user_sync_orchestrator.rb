@@ -32,7 +32,15 @@ class MultiSiteUserSyncOrchestrator
     rescue SyncApiClient::FatalError => e
       @errors << { user_id: user.id, email: user.email, error: e.message }
     end
-    EntityMailer.with(error_msg: @errors, entity_id: last_entity_id).notify_errors.deliver_now if @errors.present?
+    return if @errors.blank?
+
+    EntityMailer.with(
+      error_msg: @errors,
+      entity_id: last_entity_id,
+      context: ErrorReportContext.for_service("MultiSiteUserSyncOrchestrator.sync_all",
+                                              entity_id: last_entity_id,
+                                              "Users failing sync" => @errors.size)
+    ).notify_errors.deliver_now
   end
 
   # @param user [User]

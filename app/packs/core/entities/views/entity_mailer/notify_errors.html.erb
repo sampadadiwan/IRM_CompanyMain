@@ -1,4 +1,5 @@
 <div>
+    <%= render "entity_mailer/error_context", context: @context %>
     The following errors were detected:
     <ol>
         <% @error_msg.each do |k, v| %>

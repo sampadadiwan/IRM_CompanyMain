@@ -150,7 +150,8 @@ class SendPortcoNotificationJob < ApplicationJob
       to: user.email,
       error_msg: formatted_errors,
       subject: "Errors sending PortCo KPI notifications",
-      entity_id: user.entity_id
+      entity_id: user.entity_id,
+      context: error_context(entity_id: user.entity_id, "Portfolio companies with errors" => @error_msgs.size)
     ).notify_errors.deliver_now
   end
 end

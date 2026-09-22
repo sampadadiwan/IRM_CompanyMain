@@ -1,4 +1,5 @@
 <div>
+    <%= render "entity_mailer/error_context", context: @context %>
     <%= @main_error || "Errors were detected:" %>
     <% if defined?(@show_btn) && @show_btn %>
         <a class="btn btn-sm btn-outline-danger" type="button"

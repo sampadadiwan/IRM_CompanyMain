@@ -25,12 +25,60 @@ class ApplicationJob < ActiveJob::Base
   # user would raise on deserialize and silently discard the entire job — losing
   # real work, not merely the attribution.
   def serialize
-    super.merge("acting_user_id" => Current.user&.id)
+    # @enqueued_from is already set when this is a RE-serialize (a retry re-enqueues the job).
+    # Recomputing there would overwrite the real call site with nil, since a retry's stack holds
+    # nothing but ActiveJob/Sidekiq frames.
+    super.merge("acting_user_id" => Current.user&.id, "enqueued_from" => @enqueued_from || enqueue_origin)
   end
 
   def deserialize(job_data)
     super
     @acting_user_id = job_data["acting_user_id"]
+    @enqueued_from = job_data["enqueued_from"]
+  end
+
+  # --- Error-report attribution ---------------------------------------------
+  #
+  # The call site that enqueued this job, e.g.
+  # "app/packs/core/entities/controllers/exchange_rates_controller.rb:13:in `update'".
+  # Captured at enqueue time because by the time the job runs on a Sidekiq thread the
+  # originating request is long gone, and an error email that names only the job class
+  # cannot tell a scheduled sweep apart from a button someone pressed. Travels in the job
+  # payload alongside acting_user_id and is surfaced by ErrorReportContext.for_job.
+  #
+  # nil for a sidekiq-cron run (no application frame on the stack) and for perform_now,
+  # which never serializes at all — in both cases the row is simply omitted from the email.
+  attr_reader :enqueued_from
+
+  # Diagnostic block for an error email raised from inside this job. Extra keys are appended
+  # as-is; symbol keys are humanized. See ErrorReportContext.
+  #
+  #   EntityMailer.with(error_msg:, entity_id:, context: error_context(entity_id:, force:))
+  #               .notify_errors.deliver_now
+  def error_context(**extra)
+    ErrorReportContext.for_job(self, **extra)
+  end
+
+  # This file's own path as backtrace_cleaner reports it. Derived rather than written out so
+  # moving this file can't silently degrade the attribution back to naming
+  # ApplicationJob#serialize as the trigger. Both paths are absolute, so relative_path_from
+  # cannot raise here.
+  OWN_BACKTRACE_PATH = Pathname.new(__FILE__).relative_path_from(Rails.root).to_s.freeze
+
+  # Rails.backtrace_cleaner strips the Rails.root prefix and silences gem frames, so the first
+  # surviving "app/..." or "lib/..." line is the application call site that enqueued this job —
+  # once this file's own frames are dropped, since `serialize` above is itself an "app/..." line
+  # and would otherwise always win. Runs once per enqueue, on the enqueueing thread; a failure
+  # here must never take an enqueue down, hence the rescue.
+  def enqueue_origin
+    # caller(1, 40): this runs on every single enqueue in the app, including bulk loops, so the
+    # stack is capped rather than materialized in full. The enqueueing app frame sits a handful
+    # of frames up, well inside 40.
+    Rails.backtrace_cleaner.clean(caller(1, 40)).find do |line|
+      line.start_with?("app/", "lib/") && !line.start_with?(OWN_BACKTRACE_PATH)
+    end
+  rescue StandardError
+    nil
   end
 
   around_perform do |job, block|
@@ -92,7 +140,8 @@ class ApplicationJob < ActiveJob::Base
     if error_msg.present?
       logger.info @main_error
       send_notification(@main_error, user_id, :danger)
-      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg:, main_error: @main_error).doc_gen_errors.deliver_now
+      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg:, main_error: @main_error,
+                        context: error_context).doc_gen_errors.deliver_now
     end
   end
 

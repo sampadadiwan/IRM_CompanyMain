@@ -32,7 +32,18 @@ class TrackingCurrencyJob < ApplicationJob
 
       send_errors_notification("Errors occurred during Tracking Currency Job", @error_msg, user_id) if @error_msg.present?
 
-      EntityMailer.with(error_msg: @error_msg, entity_id: entity_id).notify_errors.deliver_now if @error_msg.present?
+      # context: names the job, the acting user, the call site that enqueued it and the
+      # arguments it ran with — without it the support inbox gets a bare "Missing rates: ..."
+      # with no way to tell which fund, which trigger or which run produced it.
+      if @error_msg.present?
+        EntityMailer.with(
+          error_msg: @error_msg,
+          entity_id: entity_id,
+          context: error_context(entity_id: entity_id, force: force,
+                                 "Fund" => fund_scope_label(fund_id),
+                                 "Funds processed" => funds.size)
+        ).notify_errors.deliver_now
+      end
     end
   end
 
@@ -79,7 +90,7 @@ class TrackingCurrencyJob < ApplicationJob
            .where("name LIKE ?", "%Percentage%")
            .update_all("tracking_amount_cents = amount_cents")
     rescue StandardError => e
-      @missing_rates << "Account Entries: #{fund.currency}->#{fund.tracking_currency} on #{date}"
+      record_missing_rate("Account Entries", fund, date, scope.where(reporting_date: date))
       Rails.logger.error "Error updating tracking currency for account entries on #{date}: #{e.message}"
     end
     {}
@@ -99,7 +110,7 @@ class TrackingCurrencyJob < ApplicationJob
       scope.where(payment_date: date)
            .update_all("tracking_amount_cents = amount_cents * #{rate}")
     rescue StandardError
-      @missing_rates << "Remittance Payments: #{fund.currency}->#{fund.tracking_currency} on #{date}"
+      record_missing_rate("Remittance Payments", fund, date, scope.where(payment_date: date))
     end
 
     # Ensure counter caches (totals) on the parent Remittance are updated after payment changes
@@ -127,7 +138,7 @@ class TrackingCurrencyJob < ApplicationJob
         )
       end
     rescue StandardError
-      @missing_rates << "Remittances: #{fund.currency}->#{fund.tracking_currency} on #{date}"
+      record_missing_rate("Remittances", fund, date, scope.where(remittance_date: date))
     end
     {}
   rescue StandardError => e
@@ -154,7 +165,7 @@ class TrackingCurrencyJob < ApplicationJob
          tracking_display_only_with_fees_cents = display_only_with_fees_cents * #{rate}"
       )
     rescue StandardError
-      @missing_rates << "Distributions: #{fund.currency}->#{fund.tracking_currency} on #{date}"
+      record_missing_rate("Distributions", fund, date, scope.where(payment_date: date))
     end
     {}
   rescue StandardError => e
@@ -173,7 +184,7 @@ class TrackingCurrencyJob < ApplicationJob
       scope.where(as_of: date)
            .update_all("tracking_amount_cents = amount_cents * #{rate}")
     rescue StandardError
-      @missing_rates << "Commitment Adjustments: #{fund.currency}->#{fund.tracking_currency} on #{date}"
+      record_missing_rate("Commitment Adjustments", fund, date, scope.where(as_of: date))
     end
     {}
   rescue StandardError => e
@@ -196,7 +207,7 @@ class TrackingCurrencyJob < ApplicationJob
         "tracking_orig_committed_amount_cents = orig_committed_amount_cents * #{rate}"
       )
     rescue StandardError
-      @missing_rates << "Capital Commitments: #{fund.currency}->#{fund.tracking_currency} on #{date}"
+      record_missing_rate("Capital Commitments", fund, date, scope.where(commitment_date: date))
     end
 
     # Rebuild tracking_adjustment_amount_cents from commitment_adjustments.tracking_amount_cents.
@@ -257,7 +268,7 @@ class TrackingCurrencyJob < ApplicationJob
 
       pi.update_columns(updates) if updates.any?
     rescue StandardError => e
-      @missing_rates << "Portfolio Investment (#{pi.id}): #{e.message}"
+      @missing_rates << "Portfolio Investment (#{pi.id}) in #{fund_label(fund)}: #{e.message}"
       Rails.logger.error "Error updating PI #{pi.id}: #{e.message}"
     end
 
@@ -269,6 +280,39 @@ class TrackingCurrencyJob < ApplicationJob
     { "#{fund.name}: Portfolio Investments" => e.message }
   end
 
+  # One missing-rate line for the error email. The fund and the number of rows left unconverted
+  # are part of the message because the report is read in a support inbox with no other context:
+  # "Capital Commitments: USD->INR on 1899-12-30" names neither the fund that holds the bad date
+  # nor how much is affected.
+  #
+  # `scope` arrives as an unexecuted relation and is counted here, on the failure path only, once
+  # per (kind, date) — a COUNT with the fund and date already filtered, never a row load. If that
+  # COUNT itself fails the line is still recorded without the tally: the point of this method is
+  # to make sure the missing rate gets reported, and a decoration must not be able to lose it.
+  def record_missing_rate(label, fund, date, scope = nil)
+    rows = begin
+      scope&.count
+    rescue StandardError => e
+      Rails.logger.error "Could not count rows for missing rate #{label} on #{date}: #{e.message}"
+      nil
+    end
+    tally = rows ? " (#{rows} row(s) not converted)" : ""
+    @missing_rates << "#{label}: #{fund_label(fund)} #{fund.currency}->#{fund.tracking_currency} " \
+                      "on #{date}#{tally}"
+  end
+
+  def fund_label(fund)
+    "#{fund.name} (##{fund.id})"
+  end
+
+  # What this run covered, for the error email: one named fund, or the whole scheduled sweep.
+  def fund_scope_label(fund_id)
+    return "All funds in scope" if fund_id.blank?
+
+    fund = Fund.find_by(id: fund_id)
+    fund ? fund_label(fund) : "##{fund_id} (fund not found)"
+  end
+
   # Returns the exchange rate multiplier from fund currency to the target currency.
   # Returns 1 when currencies are the same to avoid a DB lookup.
   def entity_rate_for(fund, target_currency, date)
@@ -276,7 +320,7 @@ class TrackingCurrencyJob < ApplicationJob
 
     er = fund.get_exchange_rate(fund.currency, target_currency, date)
     unless er
-      @missing_rates << "Portfolio Investments: #{fund.currency}->#{target_currency} on #{date}"
+      @missing_rates << "Portfolio Investments: #{fund_label(fund)} #{fund.currency}->#{target_currency} on #{date}"
       return nil
     end
     er.rate

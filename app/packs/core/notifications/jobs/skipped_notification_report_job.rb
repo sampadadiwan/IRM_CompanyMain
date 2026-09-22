@@ -52,10 +52,23 @@ class SkippedNotificationReportJob < ApplicationJob
       subject: "#{custom_notification&.subject || 'Notification'}: recipients skipped for missing attachments",
       entity_id: entity_id,
       filter_url: skipped_notifications_url(entity_id),
-      filter_label: "View skipped notifications"
+      filter_label: "View skipped notifications",
+      context: error_context(entity_id: entity_id,
+                             "Notification template" => custom_notification&.subject,
+                             "Triggered the send" => triggering_user_label(triggered_by_user_id),
+                             "Recipients skipped" => notifications.size)
     ).notify_errors.deliver_now
 
     Noticed::Notification.where(id: notifications.map(&:id)).update_all(skip_reported_at: Time.current)
+  end
+
+  # The admin whose send produced this batch of skips — distinct from the job's own acting
+  # user, which for this job is whoever's mailer happened to schedule the report.
+  def triggering_user_label(triggered_by_user_id)
+    return nil if triggered_by_user_id.blank?
+
+    user = User.with_deleted.find_by(id: triggered_by_user_id)
+    user ? "#{user.full_name} (#{user.email}, user ##{user.id})" : "user ##{triggered_by_user_id}"
   end
 
   # Links straight to the Notifications list, pre-filtered to this entity's skipped rows —
