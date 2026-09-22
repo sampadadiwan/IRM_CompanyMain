@@ -1,0 +1,53 @@
+<%#
+  The folios behind one row of the fund totals sheet, largest first. Rendered into the sheet's
+  shared Turbo Frame when a reviewer opens a row — so a difference at fund level can be traced
+  to the folios carrying it, and from there into how each number was computed.
+  Locals: folios, name, fund, allocation_run
+%>
+<%= turbo_frame_tag "tie_out_folios" do %>
+  <div class="card shadow mb-4 border-bottom-info">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-info">Folios behind <%= name %></h6>
+    </div>
+    <div class="card-body">
+      <% if folios[:rows].any? %>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle">
+            <thead>
+              <tr>
+                <th>Folio</th>
+                <th>Investor</th>
+                <th class="text-end">Amount</th>
+                <th style="width: 1%;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% folios[:rows].each do |folio_id, commitment_name, amount_cents, entry_id, reporting_date| %>
+                <tr>
+                  <td><%= folio_id %></td>
+                  <td><%= commitment_name %></td>
+                  <td class="text-end"><%= money_to_currency Money.new(amount_cents, fund.currency), params %></td>
+                  <td>
+                    <%# The entry page, whose "How this was worked out" card explains the number. %>
+                    <%= link_to account_entry_path(entry_id, reporting_date: reporting_date),
+                                class: "btn btn-sm btn-outline-primary", data: { turbo_frame: "_top" },
+                                title: "How this was worked out" do %>
+                      <i class="ti ti-calculator"></i>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if folios[:total_count] > folios[:rows].size %>
+          <p class="text-muted mb-0">
+            Showing the <%= folios[:rows].size %> largest of <%= folios[:total_count] %> folios.
+          </p>
+        <% end %>
+      <% else %>
+        <p class="text-muted mb-0">This run produced no folio entries named <%= name %>.</p>
+      <% end %>
+    </div>
+  </div>
+<% end %>

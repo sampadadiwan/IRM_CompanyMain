@@ -1,9 +1,10 @@
 class AccountEntriesController < ApplicationController
+  helper AccountEntryExplanationHelper
   include FundsHelper
   include WithCustomFieldFilter
 
   after_action :verify_authorized, except: %i[index delete_all]
-  before_action :set_account_entry, only: %i[show edit update destroy explain]
+  before_action :set_account_entry, only: %i[show edit update destroy explain explanation_node]
   # around_action :log_memory_delta if Rails.env.development?
 
   def adhoc
@@ -135,6 +136,25 @@ class AccountEntriesController < ApplicationController
     end
   end
 
+  # GET /account_entries/:id/explanation_node
+  # One opened line of the entry page's "How this was worked out" card, fetched into its Turbo
+  # Frame: another entry's own breakdown, or — kind=aggregate — the entries this entry's rule
+  # totalled. Lazy on purpose, so the entry page builds only its own level.
+  def explanation_node
+    # Authorized by set_account_entry, as explanation_node? — see AccountEntryPolicy.
+    @explanation = AccountEntryExplanation.new(@account_entry)
+    @path = Array(params[:path]).map(&:to_i)
+    @depth = params[:depth].to_i
+    if params[:kind] == "aggregate"
+      @nodes, @more = @explanation.window_nodes(helper: params[:helper], name: params[:name].presence,
+                                                entry_type: params[:entry_type].presence)
+    else
+      @nodes = @explanation.root.children
+      @formula = @explanation.formula
+    end
+    render layout: false
+  end
+
   # POST /account_entries/:id/explain
   # Enqueues a background job that calls the LLM and stores the result in json_fields.
   def explain
@@ -200,6 +220,12 @@ class AccountEntriesController < ApplicationController
                      else
                        AccountEntry.find(params[:id])
                      end
+
+    # find_by returns nil where find would have raised, and `authorize nil` then fails with
+    # "unable to find policy NilClassPolicy for nil" — a 500 that says nothing about the real
+    # problem, which is simply that no entry has this id on this date. Raise the same thing the
+    # no-date branch above already raises, so a wrong id is a 404 either way.
+    raise ActiveRecord::RecordNotFound, "No AccountEntry #{params[:id]} on #{params[:reporting_date]}" if @account_entry.nil?
 
     authorize @account_entry
     @bread_crumbs = { Funds: funds_path,

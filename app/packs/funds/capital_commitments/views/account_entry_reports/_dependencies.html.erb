@@ -1,0 +1,122 @@
+<%#
+  What this allocation run produced for each entry name, and what each of those totals is built
+  from. A fund's staff did not write its formulas — a fund has 43 enabled formulas on average
+  and about 90% of them are computed from other computed numbers — so being able to see what a
+  number is made of is what makes it judgeable.
+
+  Every dependency is another row of this same table: "NAV" is built from "Capital Collected"
+  and the "Since Inception" lines, all of which the same run produced. So expanding a row costs
+  no query, and the arithmetic is checkable by eye.
+
+  See docs/modules/allocation/allocation_run_review_proposals.md (proposal 1).
+  Locals: totals, fund, allocation_run
+%>
+<%= turbo_frame_tag "dependencies_panel" do %>
+  <%# The link to a total's folio entries, built once with a placeholder where the name goes, so
+      the rows the controller inserts can link without the server rendering every branch. %>
+  <% placeholder = "ENTRYNAMEPLACEHOLDER" %>
+  <% link_template = account_entries_path(filter: true, fund_id: fund.id,
+                                          q: ransack_query_params_multiple([["allocation_run_id", :eq, allocation_run.id],
+                                                                            ["name", :eq, placeholder],
+                                                                            ["reporting_date", :eq, allocation_run.end_date.to_fs(:db)]])) %>
+  <div class="card shadow mb-4 border-bottom-primary" data-controller="entry-totals"
+       data-entry-totals-link-template-value="<%= link_template %>"
+       data-entry-totals-placeholder-value="<%= placeholder %>">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <h6 class="m-0 font-weight-bold text-primary">
+        How these numbers are built
+        <span class="text-muted fw-normal ms-1">
+          &mdash; run of <%= l allocation_run.start_date %> to <%= l allocation_run.end_date %>
+        </span>
+      </h6>
+      <%= link_to account_entries_path(filter: true, fund_id: fund.id,
+                                       q: ransack_query_params_multiple([["allocation_run_id", :eq, allocation_run.id],
+                                                                         ["reporting_date", :eq, allocation_run.end_date.to_fs(:db)]])),
+                  class: "btn btn-sm btn-outline-info", data: { turbo_frame: "_top" } do %>
+        <i class="ti ti-list-details me-1"></i>Entries this run produced
+      <% end %>
+    </div>
+
+    <div class="card-body">
+      <% if totals.any_rows? %>
+        <div class="row g-2 align-items-center mb-3">
+          <div class="col-md-5">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text"><i class="ti ti-search"></i></span>
+              <%= text_field_tag :dependency_search, nil, class: "form-control",
+                    placeholder: "Find an entry name…", autocomplete: "off",
+                    data: { entry_totals_target: "search", action: "input->entry-totals#apply" } %>
+              <button class="btn btn-outline-secondary" type="button"
+                      data-action="entry-totals#clear" title="Clear the search">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+            <small class="text-muted">Matches a name, or anything it is built from.</small>
+          </div>
+          <div class="col-md-4">
+            <div class="form-check">
+              <%= check_box_tag :dependency_hide_zero, "1", true, class: "form-check-input",
+                    data: { entry_totals_target: "zeroToggle", action: "change->entry-totals#apply" } %>
+              <%= label_tag :dependency_hide_zero, "Hide rows totalling zero", class: "form-check-label" %>
+            </div>
+            <%# Off by default: a reviewer usually arrives with one number in mind, and it is often
+                partway down a chain. On, it lists only the finals nothing else feeds into, so
+                the tab reads as one tree walked from the top. %>
+            <div class="form-check">
+              <%= check_box_tag :dependency_top_only, "1", false, class: "form-check-input",
+                    data: { entry_totals_target: "topToggle", action: "change->entry-totals#apply" } %>
+              <%= label_tag :dependency_top_only, "Top-level numbers only", class: "form-check-label",
+                            title: "Only totals that nothing else in this run is built from" %>
+            </div>
+          </div>
+          <div class="col-md-3 text-md-end text-muted">
+            showing <span data-entry-totals-target="count">0</span>
+            of <%= totals.rows.size %>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Entry name</th>
+                <th class="text-end">Total this run</th>
+                <th class="text-end">Folio entries</th>
+                <th style="width: 1%;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% totals.rows.each do |row| %>
+                <%= render "account_entry_reports/dependency_row", row: row, fund: fund,
+                           allocation_run: allocation_run, link_template: link_template,
+                           placeholder: placeholder %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <%# Shown until the reader searches or asks for the top-level numbers — see
+            entry_totals_controller.js. Rendered visible so the prompt is there before the
+            controller connects. %>
+        <p class="text-muted" data-entry-totals-target="empty">
+          Search for an entry name, or tick “Top-level numbers only”, to see what the totals are built from.
+        </p>
+
+        <%# The whole sheet as a graph, so any row can be opened any number of levels down without
+            a request: name -> its total, its folio entry count, the totals it is built from
+            (largest first) and whether each is added or taken away. to_json escapes <, > and &,
+            so no value can close this tag. %>
+        <% graph = totals.rows.to_h do |row|
+             [row.name, { total: money_to_currency(Money.new(row.system_cents, fund.currency), params),
+                          entries: number_with_delimiter(row.entry_count),
+                          deps: row.dependencies.map(&:name),
+                          signs: row.dependencies.to_h { |dep| [dep.name, row.sign_of(dep)] },
+                          earlier: row.dependencies.select { |dep| row.earlier_period?(dep) }.map(&:name),
+                          top: row.top }]
+           end %>
+        <script type="application/json" data-entry-totals-target="graph"><%= json_escape(graph.to_json).html_safe %></script>
+      <% else %>
+        <p class="text-muted mb-0">This run produced no folio entries.</p>
+      <% end %>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,38 @@
+<%#
+  One entry name's total for this run, as a top-level row of the Dependencies tab. Opening it
+  inserts the totals it is built from, each of which opens in turn — see
+  entry_totals_controller.js, which builds those rows from the sheet's own graph so nothing is
+  fetched. Only the top level is rendered here.
+  Locals: row, fund, allocation_run, link_template, placeholder
+%>
+<tr data-entry-totals-target="row" hidden
+    data-entry-totals-name="<%= row.name %>"
+    data-entry-totals-zero="<%= row.system_cents.to_d.zero? %>"
+    data-depth="0">
+  <td>
+    <% if row.dependencies? %>
+      <button type="button" class="btn btn-sm btn-link p-0 me-1 text-decoration-none"
+              data-action="entry-totals#toggle" title="What this total is built from">
+        <i class="ti ti-chevron-right"></i>
+      </button>
+    <% else %>
+      <span class="d-inline-block me-1" style="width: 1rem;"></span>
+    <% end %>
+    <span class="fw-semibold"><%= row.name %></span>
+    <% if row.top %>
+      <span class="badge bg-secondary-subtle text-secondary fw-normal ms-1"
+            title="Nothing else in this run is built from this total">top level</span>
+    <% end %>
+  </td>
+  <td class="text-end figure"><%= money_to_currency Money.new(row.system_cents, fund.currency), params %></td>
+  <td class="text-end text-body-secondary"><%= number_with_delimiter row.entry_count %></td>
+  <td>
+    <%# The folio entries behind this name. Each opens its own derivation, which is the same
+        question asked of one investor rather than of the fund. %>
+    <%= link_to link_template.sub(placeholder, ERB::Util.url_encode(row.name)),
+                class: "btn btn-sm btn-outline-info", data: { turbo_frame: "_top" },
+                title: "The folio entries behind this total" do %>
+      <i class="ti ti-users"></i>
+    <% end %>
+  </td>
+</tr>

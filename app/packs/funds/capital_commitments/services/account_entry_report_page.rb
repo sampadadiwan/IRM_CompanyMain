@@ -67,18 +67,33 @@ class AccountEntryReportPage
     end
   end
 
-  # True once the user picked at least one folio, entry name or entry type. Deliberately
-  # NOT satisfied by allocation_run_id alone: that's always applied as an extra AND
-  # condition on the query once it does run (see the "View Report" link on the allocation
-  # screen), but it must not by itself excuse the user from picking a filter - landing on
-  # this report with none of the three chosen has to show the filter form, full stop, no
-  # matter what other params the URL carries. account_entries is large enough that a
-  # fund-wide, unfiltered scan is expensive (see
-  # docs/modules/reports/account_entry_report_performance.md) — the controller uses this to
-  # decide whether to actually run the report or just show the filter form.
+  # True once the request is narrow enough to run the report.
+  #
+  # Either the user picked at least one folio, entry name or entry type, or the request is
+  # scoped to a single allocation run. account_entries is large enough that a fund-wide,
+  # unfiltered scan is expensive (see docs/modules/reports/account_entry_report_performance.md)
+  # — the controller uses this to decide whether to actually run the report or just show the
+  # filter form.
+  #
+  # An allocation_run_id is a bound in its own right, not an excuse for the absence of one: a
+  # run covers one fund over one period, allocation_run_id is indexed on account_entries
+  # (index_account_entries_on_allocation_run_id), and the run's own dates clamp the reporting
+  # date range on top of it. It was previously excluded here, which meant the "View Report"
+  # link on the allocation screen — the one a reviewer follows to look at what a run produced —
+  # landed on a filter form and showed nothing until they guessed a filter. Reviewing a run is
+  # exactly the case this report is opened for.
   def filter_selected?
-    @entry_names.present? || @entry_types.present? || @commitment_ids.present?
+    run_scoped? || @entry_names.present? || @entry_types.present? || @commitment_ids.present?
   end
+
+  # Scoped to one allocation run, which is what the fund totals sheet is drawn for.
+  def run_scoped? = @allocation_run_id.present?
+
+  # The user actually picked a folio, entry name or entry type — as opposed to arriving here
+  # scoped to a run and nothing else. The detail pivot is built only for these: a run covers
+  # every name and every folio, which is a pivot nobody can read and a page nobody wants to
+  # wait for. The totals sheet is the summary of a whole run; the pivot is for a chosen slice.
+  def explicit_filters? = @entry_names.present? || @entry_types.present? || @commitment_ids.present?
 
   # Returns { section_key => AccountEntryReportInsight or nil }. Lazy - see the
   # constructor. Never generates: commentary only generates when the user clicks

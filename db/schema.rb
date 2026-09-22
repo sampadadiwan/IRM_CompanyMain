@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_20_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_20_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -4086,6 +4086,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_20_100000) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "tie_out_figures", force: :cascade do |t|
+    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0", null: false
+    t.date "as_of_date", null: false
+    t.bigint "capital_commitment_id"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.string "entry_type", limit: 60
+    t.bigint "fund_id", null: false
+    t.string "name", limit: 125, null: false
+    t.text "notes"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["capital_commitment_id"], name: "index_tie_out_figures_on_capital_commitment_id"
+    t.index ["entity_id"], name: "index_tie_out_figures_on_entity_id"
+    t.index ["fund_id", "as_of_date", "capital_commitment_id", "name"], name: "idx_tie_out_figures_lookup"
+    t.index ["fund_id"], name: "index_tie_out_figures_on_fund_id"
+    t.index ["user_id"], name: "index_tie_out_figures_on_user_id"
+  end
+
   create_table "tool_calls", force: :cascade do |t|
     t.json "arguments"
     t.datetime "created_at", null: false
@@ -4885,6 +4904,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_20_100000) do
   add_foreign_key "tasks", "users"
   add_foreign_key "tear_sheet_presentations", "entities"
   add_foreign_key "tear_sheet_presentations", "portfolio_report_extracts"
+  add_foreign_key "tie_out_figures", "capital_commitments"
+  add_foreign_key "tie_out_figures", "entities"
+  add_foreign_key "tie_out_figures", "funds"
+  add_foreign_key "tie_out_figures", "users"
   add_foreign_key "tool_calls", "messages"
   add_foreign_key "user_alerts", "entities"
   add_foreign_key "user_alerts", "users"

@@ -1,0 +1,25 @@
+<%#
+  One opened term, fetched into its Turbo Frame: another entry's own breakdown, or the entries a
+  total summed. The frame id is echoed back so the reply lands in the line that was opened.
+%>
+<%= turbo_frame_tag params[:frame_id] do %>
+  <% if @nodes.any? %>
+    <% if @formula.present? %>
+      <%# The rule behind this line, on one quiet line; the whole of it is in the tooltip. %>
+      <div class="expl-subformula" data-bs-toggle="tooltip" title="<%= @formula.squish.truncate(600) %>">
+        <i class="ti ti-math-function flex-none"></i><code><%= @formula.squish %></code>
+      </div>
+    <% end %>
+    <% @nodes.each_with_index do |child, i| %>
+      <%= render "account_entries/explanation_node", node: child, entry: @account_entry, depth: @depth + 1,
+                 index: i, path: @path, can_open: true %>
+    <% end %>
+    <% if @more %>
+      <div class="text-body-secondary small py-1 ps-4">Earlier periods are counted in the total but not listed.</div>
+    <% end %>
+  <% else %>
+    <div class="text-body-secondary small py-1 ps-4">
+      <%= @explanation.leaf_reason.presence || "Worked out directly from the fund's records — not from other entries." %>
+    </div>
+  <% end %>
+<% end %>

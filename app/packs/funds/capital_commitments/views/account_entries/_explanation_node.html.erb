@@ -1,0 +1,101 @@
+<%#
+  One term of a formula, and beneath it what it is made of. Recursive.
+
+  Two ways a term opens:
+    · inline — the parts of a sum, product or named step are already on the page, so they are
+      drawn straight away (open for the first level, folded below it);
+    · on demand — another entry, a total of entries, or the fund-level entry a share came from
+      is fetched into a lazy Turbo Frame the first time it is opened, so the entry page never
+      builds more than its own level.
+
+  <details> gives open/closed for free, and a lazy frame inside a closed <details> is not visible,
+  so Turbo does not fetch it until the reader opens that line.
+
+  Locals: node, entry, depth, index, path, can_open
+%>
+<% frame_id = "expl_#{path.join('_')}_#{depth}_#{index}" %>
+<% opens_later = node.lazy? && can_open && depth < 12 && (node.entry_id.nil? || path.exclude?(node.entry_id)) %>
+<% opens_here = node.composite? %>
+<% badge = case node.kind
+           when :aggregate then ["info", "added up over time", "Several of this folio's entries, added together. Open to see them."]
+           when :source then ["primary", "share of a fund total", "The fund-level amount this folio's share was split out of."]
+           when :earlier then ["secondary", "earlier period", "Read at an earlier date than this run's, so it is not opened here."]
+           when :missing then ["warning", "not found", "The rule reads this, but the run produced no such entry for this folio on this date."]
+           when :input then ["secondary", "set by the system", "Supplied by the allocation run, not worked out by a rule."]
+           end %>
+
+<% op_class, op_glyph = if node.subtracted? then ["op-minus", "−"]
+                        elsif node.divisor? then ["op-divide", "÷"]
+                        elsif node.op == :multiply then ["op-times", "×"]
+                        else [nil, ""]
+                        end %>
+<%= tag.public_send(opens_later || opens_here ? :details : :div,
+                    class: "expl-node d#{[depth, 3].min}", open: (opens_here && depth <= 1) || nil) do %>
+  <%= tag.public_send(opens_later || opens_here ? :summary : :div, class: "expl-row") do %>
+    <span class="expl-chev">
+      <% if opens_later || opens_here %><i class="ti ti-chevron-right"></i><% end %>
+    </span>
+
+    <%# How the term combines with the one before it. The first term of a product is what the
+        rest multiply or divide, so it carries no operator. %>
+    <%# Only the sign is coloured for a deduction; colouring the whole line made every
+        subtracted term read as an error. %>
+    <span class="expl-op <%= op_class %>"><%= op_glyph %></span>
+
+    <span class="expl-label" data-bs-toggle="tooltip" title="<%= node.expression.to_s.squish.truncate(300) %>">
+      <%# A number written into the rule reads as one in the value column, like every other line,
+          rather than as a label with a gap where its figure should be. %>
+      <% if node.kind == :constant %>
+        <span class="expl-fixed">a fixed number</span>
+      <% else %>
+        <span class="expl-name"><%= node.label %></span>
+      <% end %>
+      <% if badge %>
+        <span class="badge bg-<%= badge[0] %>-subtle text-<%= badge[0] %> fw-normal align-middle ms-1"
+              data-bs-toggle="tooltip" title="<%= badge[2] %>"><%= badge[1] %></span>
+      <% end %>
+      <% if node.note.present? %>
+        <small class="expl-note"><%= node.note %></small>
+      <% end %>
+    </span>
+
+    <span class="expl-leader" aria-hidden="true"></span>
+
+    <span class="expl-value figure <%= node.money? && node.numeric_value ? 'is-money' : 'is-plain' %>">
+      <%= explanation_value(node, entry.fund) %>
+    </span>
+
+    <span class="expl-link">
+      <% if node.entry_id.present? %>
+        <%= link_to account_entry_path(node.entry_id, reporting_date: node.reporting_date),
+                    class: "text-body-secondary", data: { bs_toggle: "tooltip", turbo_frame: "_top" },
+                    title: "Open this entry" do %><i class="ti ti-external-link"></i><% end %>
+      <% end %>
+    </span>
+  <% end %>
+
+  <% if opens_here %>
+    <div class="expl-kids">
+      <% node.children.each_with_index do |child, i| %>
+        <%= render "account_entries/explanation_node", node: child, entry: entry, depth: depth + 1,
+                   index: i, path: path, can_open: can_open %>
+      <% end %>
+    </div>
+  <% elsif opens_later %>
+    <div class="expl-kids">
+      <%# An aggregate lists the entries the owning entry's rule totalled; an entry or a
+          fund-level source opens into its own breakdown. %>
+      <% src = if node.kind == :aggregate
+                 explanation_node_account_entry_path(entry.id, reporting_date: entry.reporting_date, kind: "aggregate",
+                                                     helper: node.helper, name: node.name, entry_type: node.entry_type,
+                                                     path: path, depth: depth, frame_id: frame_id)
+               else
+                 explanation_node_account_entry_path(node.entry_id, reporting_date: node.reporting_date,
+                                                     path: path + [node.entry_id], depth: depth, frame_id: frame_id)
+               end %>
+      <%= turbo_frame_tag frame_id, src: src, loading: :lazy do %>
+        <div class="text-body-secondary small py-1"><i class="ti ti-loader me-1"></i>Working it out…</div>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

@@ -35,6 +35,7 @@ and change notes all live together in that feature's module folder.
 | `mail_addins/` | Outlook and Gmail add-ins. |
 | `website/` | Public website serving and lead capture. |
 | `data_management/` | Data recovery and entity DB dumps. |
+| `integrations/` | Third-party integration research and design (accounting systems, etc.). |
 
 ## Where does a new doc go?
 

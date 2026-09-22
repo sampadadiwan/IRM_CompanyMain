@@ -74,12 +74,23 @@ resources :account_entries do
   get 'adhoc', on: :collection
   post 'adhoc', on: :collection
   post 'explain', on: :member
+  # One opened line of the entry page's explanation, fetched into its Turbo Frame.
+  get 'explanation_node', on: :member
 end
 
 resources :account_entry_reports, only: [] do
   get 'fund_report', on: :collection
   get 'folio_report', on: :collection
   post 'generate_commentary', on: :collection
+  # What each of a run's entry-name totals is built from — see
+  # docs/modules/allocation/allocation_run_review_proposals.md (proposal 1).
+  get 'dependencies', on: :collection
+  # The tie-out sheet (proposal 3 in docs/modules/allocation/allocation_run_review_proposals.md)
+  # is hidden for now. Its code is kept, but it has no routes, so it cannot be reached by URL
+  # either. To bring it back, restore:
+  #   get 'tie_out', on: :collection
+  #   get 'tie_out_folios', on: :collection
+  # and, below, `resources :tie_out_figures, only: :create`.
 end
 
 resources :fund_units do

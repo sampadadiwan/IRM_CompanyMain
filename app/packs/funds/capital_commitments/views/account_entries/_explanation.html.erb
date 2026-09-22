@@ -1,0 +1,201 @@
+<%#
+  How this entry's number was worked out — its rule broken into the terms it returns, and every
+  term that is another entry opening into that entry's own breakdown. Replaces the flat
+  Explanation box: see AccountEntryExplanation, and
+  docs/modules/allocation/allocation_run_review_proposals.md (proposal 1).
+  Locals: entry
+%>
+<% explanation = AccountEntryExplanation.new(entry) %>
+<% root = explanation.root %>
+<% can_open = policy(entry).explanation_node? %>
+<% ai_status = entry.json_fields.to_h["ai_explanation_status"] %>
+<% ai_data = entry.json_fields.to_h["ai_explanation_data"] %>
+
+<style>
+  /* Scoped to this card. Laid out like a worked statement: label, dotted leader, figure — so the
+     eye can travel from a name to its number on a wide screen — with operators as small chips,
+     type that quietens as the tree goes deeper, and no borders on lines. */
+  .explanation-card { --expl-muted: var(--bs-secondary-color); --expl-rule: var(--bs-border-color); }
+  .explanation-card .figure { font-variant-numeric: tabular-nums; }
+  .explanation-card code { color: var(--bs-body-color); background: none; }
+
+  .explanation-card .expl-node > summary { list-style: none; }
+  .explanation-card .expl-node > summary::-webkit-details-marker { display: none; }
+  .explanation-card .expl-row { display: flex; align-items: baseline; gap: .5rem; padding: .45rem .6rem;
+                                border-radius: .5rem; transition: background-color .12s ease; }
+  .explanation-card summary.expl-row { cursor: pointer; }
+  .explanation-card .expl-row:hover { background-color: var(--bs-tertiary-bg); }
+  .explanation-card summary.expl-row:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 1px; }
+
+  .explanation-card .expl-chev { width: 1.25rem; height: 1.25rem; flex: none; display: inline-flex;
+                                 align-items: center; justify-content: center; border-radius: 50%;
+                                 color: var(--expl-muted); align-self: center; }
+  .explanation-card summary.expl-row:hover .expl-chev { background-color: var(--bs-secondary-bg); }
+  .explanation-card .expl-chev i { transition: transform .15s ease; font-size: .85rem; }
+  .explanation-card details[open] > summary .expl-chev i { transform: rotate(90deg); }
+
+  /* How a term joins the one before it: a quiet chip, coloured only for a deduction. */
+  .explanation-card .expl-op { width: 1.4rem; height: 1.4rem; flex: none; display: inline-flex;
+                               align-items: center; justify-content: center; border-radius: .35rem;
+                               font-size: .9rem; font-weight: 700; line-height: 1; align-self: center; }
+  .explanation-card .expl-op:empty { visibility: hidden; }
+  .explanation-card .op-times, .explanation-card .op-divide { color: var(--expl-muted); background: var(--bs-secondary-bg); }
+  .explanation-card .op-minus { color: var(--bs-danger); background: var(--bs-danger-bg-subtle); }
+
+  .explanation-card .expl-label { flex: 0 1 auto; min-width: 0; }
+  .explanation-card .expl-name { font-weight: 600; }
+  .explanation-card .expl-fixed { color: var(--expl-muted); font-style: italic; font-weight: 400; }
+  .explanation-card .expl-note { display: block; color: var(--expl-muted); font-size: .8rem; font-weight: 400; margin-top: .1rem; }
+
+  /* The leader: a dotted line from the name to its figure, as on a printed statement. */
+  .explanation-card .expl-leader { flex: 1 1 2rem; min-width: 1.5rem; border-bottom: 1px dotted var(--expl-rule);
+                                   transform: translateY(-.28em); }
+  .explanation-card .expl-value { flex: none; min-width: 8.5rem; text-align: right; }
+  .explanation-card .expl-value.is-money { font-weight: 600; }
+  .explanation-card .expl-value.is-plain { color: var(--expl-muted); }
+  .explanation-card .expl-link { flex: none; width: 1.25rem; text-align: center; opacity: 0; transition: opacity .12s ease; }
+  .explanation-card .expl-row:hover .expl-link, .explanation-card .expl-link a:focus-visible { opacity: 1; }
+
+  /* Depth: the tree reads by indentation and a soft rule, and type steps down a notch per level. */
+  .explanation-card .expl-kids { margin-left: 1.05rem; padding-left: .65rem; border-left: 2px solid var(--bs-secondary-bg); }
+  .explanation-card .expl-node.d0 > .expl-row { font-size: 1rem; }
+  .explanation-card .expl-node.d1 > .expl-row { font-size: .95rem; }
+  .explanation-card .expl-node.d2 > .expl-row,
+  .explanation-card .expl-node.d3 > .expl-row { font-size: .9rem; }
+  .explanation-card .expl-node.d2 .expl-name, .explanation-card .expl-node.d3 .expl-name { font-weight: 500; }
+
+  /* The rule behind an opened line: one quiet line, full text on hover. */
+  .explanation-card .expl-subformula { display: flex; align-items: center; gap: .4rem; margin: .1rem 0 .35rem;
+                                       padding: .3rem .6rem; border-radius: .4rem; background: var(--bs-tertiary-bg);
+                                       color: var(--expl-muted); font-size: .78rem; }
+  .explanation-card .expl-subformula code { color: var(--expl-muted); overflow: hidden; text-overflow: ellipsis;
+                                            white-space: nowrap; min-width: 0; }
+  .explanation-card .formula-block code { white-space: pre-wrap; word-break: break-word; font-size: .85rem; }
+  .explanation-card .expl-head { display: flex; gap: .5rem; padding: 0 .6rem .5rem; margin-bottom: .25rem;
+                                 border-bottom: 1px solid var(--bs-border-color-translucent);
+                                 color: var(--expl-muted); font-size: .72rem; font-weight: 600;
+                                 letter-spacing: .07em; text-transform: uppercase; }
+  @media (prefers-reduced-motion: reduce) {
+    .explanation-card .expl-row, .explanation-card .expl-chev i, .explanation-card .expl-link { transition: none; }
+  }
+</style>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow-sm border-0 mb-4 explanation-card" data-controller="tooltip">
+      <div class="card-header border-bottom py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h5 class="mb-0 fw-bold"><i class="ti ti-calculator me-2 text-info"></i>How this was worked out</h5>
+        <%# The AI explanation stays: it writes the same working up in sentences. %>
+        <% if explanation.breakdown_recorded? && policy(entry).explain? %>
+          <% if ai_status == "pending" %>
+            <button class="btn btn-sm btn-outline-secondary" disabled>
+              <span class="spinner-border spinner-border-sm me-1"></span>Generating…
+            </button>
+          <% else %>
+            <%= button_to ai_status == "complete" ? "Regenerate AI explanation" : "Explain in words (AI)",
+                          explain_account_entry_path(entry, reporting_date: entry.reporting_date),
+                          method: :post, class: "btn btn-sm #{ai_status == 'complete' ? 'btn-outline-info' : 'btn-info'}",
+                          data: { turbo: false } %>
+          <% end %>
+        <% end %>
+      </div>
+
+      <div class="card-body">
+        <%# The rule first: every line below is one of its terms, so reading it first is what makes
+            the rest legible. The snapshot the run stored, not the fund formula as it reads today. %>
+        <% if explanation.formula.present? %>
+          <div class="formula-block bg-body-secondary border rounded p-3 mb-3">
+            <div class="d-flex align-items-baseline justify-content-between flex-wrap gap-2 mb-2">
+              <span class="text-body-secondary small text-uppercase fw-semibold" style="letter-spacing:.06em;">
+                <i class="ti ti-math-function me-1"></i>The rule that produced this
+              </span>
+              <span class="text-body-secondary small" data-bs-toggle="tooltip"
+                    title="Saved on the entry when the run happened, so it is what actually produced this number — not the fund formula as it reads today, which may have been edited since.">
+                <i class="ti ti-info-circle me-1"></i>as it was when the run happened
+              </span>
+            </div>
+            <code class="d-block small text-body"><%= explanation.formula %></code>
+            <% if explanation.description.present? %>
+              <p class="small text-body-secondary mb-0 mt-2"><%= explanation.description %></p>
+            <% end %>
+          </div>
+        <% end %>
+
+        <% if (reason = explanation.leaf_reason).present? %>
+          <div class="d-flex align-items-start gap-2 text-body-secondary">
+            <i class="ti ti-circle-dashed mt-1"></i><div><%= reason %></div>
+          </div>
+        <% elsif root.children.empty? %>
+          <p class="text-body-secondary mb-0">
+            <i class="ti ti-circle-dashed me-1"></i>This number is worked out directly from the fund's records, not from other entries.
+          </p>
+        <% else %>
+          <% unless explanation.breakdown_recorded? %>
+            <div class="alert alert-light border small d-flex gap-2">
+              <i class="ti ti-info-circle mt-1"></i>
+              <div>This run was made without “Explain Formulas”, so the values of the steps inside the
+                rule were not recorded. The shape of the rule, and the other entries it read, are shown.</div>
+            </div>
+          <% end %>
+
+          <div class="expl-head">
+            <span class="flex-grow-1" style="padding-left: 3.4rem;">What it is made of</span>
+            <span class="text-end" style="min-width: 8.5rem;">Value</span>
+            <span style="width: 1.25rem;"></span>
+          </div>
+
+          <% root.children.each_with_index do |child, i| %>
+            <%= render "account_entries/explanation_node", node: child, entry: entry, depth: 0,
+                       index: i, path: [entry.id], can_open: can_open %>
+          <% end %>
+
+          <%# The tie-out, only where it means something: a rule that adds its terms up. For one that
+              multiplies or divides, its lines are inputs and totalling them is a category error. %>
+          <% if explanation.additive? && !explanation.reconciles?.nil? %>
+            <div class="d-flex justify-content-end mt-3 pt-3 border-top small">
+              <% if explanation.reconciles? %>
+                <span class="text-success"><i class="ti ti-circle-check me-1"></i>The lines above add up to this entry exactly.</span>
+              <% else %>
+                <span class="text-warning-emphasis" data-bs-toggle="tooltip"
+                      title="The rule adds these lines, and they do not come back to the entry. Worth looking into.">
+                  <i class="ti ti-alert-triangle me-1"></i>The lines above come to
+                  <strong class="figure"><%= money_to_currency Money.new(explanation.parts_total, entry.fund.currency), params %></strong>,
+                  not <strong class="figure"><%= money_to_currency entry.amount, params %></strong>.
+                </span>
+              <% end %>
+            </div>
+          <% elsif !explanation.additive? %>
+            <p class="text-body-secondary small mt-3 mb-0">
+              <i class="ti ti-math-symbols me-1"></i>This rule multiplies or divides, so the lines above are the
+              figures it worked from rather than parts of a sum.
+            </p>
+          <% end %>
+
+          <% unless can_open %>
+            <p class="text-body-secondary small mt-2 mb-0">Opening the entries behind each line is available to the fund's staff.</p>
+          <% end %>
+        <% end %>
+
+        <%# The AI's write-up, in sentences, when one has been asked for. %>
+        <% if ai_data.is_a?(Hash) && (ai_data["summary"].present? || ai_data["conclusion"].present?) %>
+          <div class="border-top mt-4 pt-3">
+            <div class="text-body-secondary small text-uppercase fw-semibold mb-2" style="letter-spacing:.06em;">
+              <i class="ti ti-sparkles me-1"></i>In words
+            </div>
+            <% if ai_data["summary"].present? %><p class="mb-2"><%= ai_data["summary"] %></p><% end %>
+            <% if ai_data["conclusion"].present? %><p class="mb-0 text-body-secondary"><%= ai_data["conclusion"] %></p><% end %>
+          </div>
+        <% end %>
+        <% if ai_status == "pending" %>
+          <div class="alert alert-info d-flex align-items-center mt-3 mb-0">
+            <span class="spinner-border spinner-border-sm me-2"></span>The AI explanation is being written. Refresh, or wait for the notification.
+          </div>
+        <% elsif ai_status == "error" %>
+          <div class="alert alert-danger mt-3 mb-0">
+            <i class="ti ti-alert-circle me-1"></i>The AI explanation could not be written. Press “Explain in words (AI)” to try again.
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

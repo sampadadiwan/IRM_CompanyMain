@@ -2,7 +2,7 @@
   <%= render "account_entry_reports/filter_form",
         url: fund_report_account_entry_reports_path,
         fund: @fund,
-        heading: "#{@fund.name} \u2014 Account Entries Report",
+        heading: "#{@fund.name} — Account Entries Report",
         start_date: @start_date, end_date: @end_date,
         commitment_options: @commitment_options, commitment_ids: @commitment_ids,
         available_entry_names: @available_entry_names, entry_names: @entry_names,
@@ -11,42 +11,91 @@
         allocation_run_id: @allocation_run_id %>
 
   <% if @filter_selected %>
-    <%= render "account_entry_reports/summary_kpis", report: @report, fund: @fund %>
-    <%= render "account_entry_reports/commentary", insight: @insights["summary_kpis"], fund: @fund, capital_commitment: nil, section_key: "summary_kpis", start_date: @start_date, end_date: @end_date %>
+    <%# Summary first — the KPIs and both charts are already computed by the report's two
+        aggregate passes, so they cost nothing extra to show together.
+        The "Tie out to your figures" tab is deliberately not rendered for now: its code is
+        still here (AllocationRunTieOut, TieOutFiguresController, the tie_out partials and the
+        tie_out/tie_out_folios routes), just not linked. See
+        docs/modules/allocation/allocation_run_review_proposals.md. %>
+    <div data-controller="tabs">
+      <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+        <a class="nav-link active" data-bs-toggle="tab" href="#summary_tab">
+          <i class="ti ti-gauge me-1"></i>Summary
+        </a>
+        <a class="nav-link" data-bs-toggle="tab" href="#detail_tab">
+          <i class="ti ti-table me-1"></i>Detail
+        </a>
+        <% if @allocation_run.present? %>
+          <a class="nav-link" data-bs-toggle="tab" href="#dependencies_tab">
+            <i class="ti ti-sitemap me-1"></i>Dependencies
+          </a>
+        <% end %>
+      </nav>
 
-    <div class="row mb-4">
-      <div class="col-md-6">
-        <div class="card shadow mb-4 border-bottom-primary">
-          <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Breakdown by Entry Name</h6>
-          </div>
-          <div class="card-body">
-            <div class="chart-area">
-              <%= render "account_entry_reports/breakdown_chart", report: @report, fund: @fund %>
+      <div class="tab-content">
+        <div id="summary_tab" class="tab-pane fade show active">
+          <%= render "account_entry_reports/summary_kpis", report: @report, fund: @fund %>
+          <%= render "account_entry_reports/commentary", insight: @insights["summary_kpis"], fund: @fund, capital_commitment: nil, section_key: "summary_kpis", start_date: @start_date, end_date: @end_date %>
+
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card shadow mb-4 border-bottom-primary">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Breakdown by Entry Name</h6>
+                </div>
+                <div class="card-body">
+                  <div class="chart-area">
+                    <%= render "account_entry_reports/breakdown_chart", report: @report, fund: @fund %>
+                  </div>
+                  <%= render "account_entry_reports/commentary", insight: @insights["breakdown"], fund: @fund, capital_commitment: nil, section_key: "breakdown", start_date: @start_date, end_date: @end_date %>
+                </div>
+              </div>
             </div>
-            <%= render "account_entry_reports/commentary", insight: @insights["breakdown"], fund: @fund, capital_commitment: nil, section_key: "breakdown", start_date: @start_date, end_date: @end_date %>
+            <div class="col-md-6">
+              <div class="card shadow mb-4 border-bottom-primary">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Trailing-Period Trend</h6>
+                </div>
+                <div class="card-body">
+                  <div class="chart-area">
+                    <%= render "account_entry_reports/trend_chart", report: @report, fund: @fund %>
+                  </div>
+                  <%= render "account_entry_reports/commentary", insight: @insights["trend"], fund: @fund, capital_commitment: nil, section_key: "trend", start_date: @start_date, end_date: @end_date %>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="col-md-6">
-        <div class="card shadow mb-4 border-bottom-primary">
-          <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Trailing-Period Trend</h6>
+
+        <% if @allocation_run.present? %>
+          <div id="dependencies_tab" class="tab-pane fade">
+            <%# loading: :lazy — a hidden tab pane is not visible, so Turbo fetches this the
+                first time the tab is opened and never for a reviewer who only wanted the
+                summary. %>
+            <%= turbo_frame_tag "dependencies_panel", loading: :lazy,
+                  src: dependencies_account_entry_reports_path(fund_id: @fund.id, allocation_run_id: @allocation_run.id) do %>
+              <p class="text-muted"><i class="ti ti-loader me-1"></i>Working out what each number is built from…</p>
+            <% end %>
           </div>
-          <div class="card-body">
-            <div class="chart-area">
-              <%= render "account_entry_reports/trend_chart", report: @report, fund: @fund %>
-            </div>
-            <%= render "account_entry_reports/commentary", insight: @insights["trend"], fund: @fund, capital_commitment: nil, section_key: "trend", start_date: @start_date, end_date: @end_date %>
-          </div>
+        <% end %>
+
+        <div id="detail_tab" class="tab-pane fade">
+          <% if @show_detail %>
+            <%# Paging inside this frame re-requests the action, which detects the frame id and
+                builds only the pivot - the KPIs and both charts are not recomputed. %>
+            <%= render "account_entry_reports/detail_pivot", pivot: @detail_pivot %>
+          <% else %>
+            <%# Scoped to a run and nothing else: a pivot of every name against every folio is
+                unreadable and slow, and the tie-out sheet already summarises the whole run. %>
+            <p class="text-muted">
+              Pick an <strong>Entry Name</strong>, <strong>Entry Type</strong> or
+              <strong>Investor / Folio</strong> above to see the detail table for part of this run.
+            </p>
+          <% end %>
         </div>
+
       </div>
     </div>
-
-    <h4>Detail</h4>
-    <%# Paging inside this frame re-requests the action, which detects the frame id and
-        builds only the pivot - the KPIs and both charts above are not recomputed. %>
-    <%= render "account_entry_reports/detail_pivot", pivot: @detail_pivot %>
   <% else %>
     <%# Fund-level account_entries can run into the hundreds of millions of rows across a
         fund's history - see docs/modules/reports/account_entry_report_performance.md. Nothing
@@ -56,6 +105,7 @@
       Pick at least one <strong>Investor / Folio</strong>, <strong>Entry Name</strong>, or
       <strong>Entry Type</strong> above, then click <strong>View Report</strong>. This report
       isn't run until you do &mdash; a fund's full ledger is too large to load by default.
+      Opening it from an allocation run scopes it to that run, and it runs straight away.
     </div>
   <% end %>
 </div>

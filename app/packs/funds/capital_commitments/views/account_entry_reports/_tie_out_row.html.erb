@@ -1,0 +1,55 @@
+<%#
+  One row of the fund totals sheet: our total for an entry name, a box for the fund's own
+  figure, and the difference. Saving replaces this row alone (see TieOutFiguresController),
+  so typing a figure never re-runs the report's aggregate passes.
+  Locals: row, fund, allocation_run
+%>
+<% dom_id = "tie_out_row_#{Digest::MD5.hexdigest(row.name)}" %>
+<% state_class = { match: "table-success", differs: "table-danger" }[row.state] %>
+<%# data- attributes drive the sheet's search and zero-row toggle (tie_out_sheet_controller). %>
+<tr id="<%= dom_id %>" class="<%= state_class %>"
+    data-entry-totals-target="row"
+    data-entry-totals-name="<%= row.name %>"
+    data-entry-totals-zero="<%= row.system_cents.to_d.zero? %>"
+    data-entry-totals-entered="<%= row.entered? %>">
+  <td>
+    <%= row.name %>
+    <small class="text-muted d-block"><%= pluralize row.entry_count, "entry" %></small>
+  </td>
+  <td class="text-end"><%= money_to_currency Money.new(row.system_cents, fund.currency), params %></td>
+  <td>
+    <%# Upsert on change: one box, no add/edit distinction, and an empty box clears the figure.
+        onchange (not a Save button) is how the rest of this app submits an inline field —
+        see tasks/_filter_bar.html.erb and kpi_reports/performance_table.html.erb. %>
+    <%= form_with url: tie_out_figures_path, method: :post, data: { turbo_stream: true } do |form| %>
+      <%= form.hidden_field :fund_id, value: fund.id %>
+      <%= form.hidden_field :allocation_run_id, value: allocation_run.id %>
+      <%= form.hidden_field :name, value: row.name %>
+      <%# Carried back so the reply can redraw this row without recomputing our own total. %>
+      <%= form.hidden_field :system_cents, value: row.system_cents %>
+      <%= form.hidden_field :entry_count, value: row.entry_count %>
+      <%= form.text_field :amount, value: row.entered? ? (row.own_cents.to_d / 100).to_s("F") : "",
+                          class: "form-control form-control-sm text-end",
+                          placeholder: "—", autocomplete: "off",
+                          onchange: "this.form.requestSubmit();",
+                          "aria-label": "Your figure for #{row.name}" %>
+    <% end %>
+  </td>
+  <td class="text-end">
+    <% if row.entered? %>
+      <span class="<%= row.match? ? 'text-success' : 'text-danger fw-bold' %>">
+        <%= money_to_currency Money.new(row.difference_cents, fund.currency), params %>
+      </span>
+    <% else %>
+      <span class="text-muted">&mdash;</span>
+    <% end %>
+  </td>
+  <td>
+    <%# Lazy: the folios behind a row are only queried when the reviewer asks for them. %>
+    <%= link_to tie_out_folios_account_entry_reports_path(fund_id: fund.id, allocation_run_id: allocation_run.id, name: row.name),
+                class: "btn btn-sm btn-outline-info", data: { turbo_frame: "tie_out_folios" },
+                title: "Show the folios behind this total" do %>
+      <i class="ti ti-users"></i>
+    <% end %>
+  </td>
+</tr>
