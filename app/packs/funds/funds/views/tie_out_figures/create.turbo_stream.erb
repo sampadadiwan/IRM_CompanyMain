@@ -1,0 +1,13 @@
+<%#
+  Replaces the one row the reviewer typed in, so the rest of the report — including its two
+  aggregate passes over account_entries — is left alone.
+%>
+<% dom_id = "tie_out_row_#{Digest::MD5.hexdigest(@row.name)}" %>
+<%= turbo_stream.replace dom_id do %>
+  <%= render "account_entry_reports/tie_out_row", row: @row, fund: @fund, allocation_run: @allocation_run %>
+<% end %>
+<% if @error.present? %>
+  <%= turbo_stream.prepend "tie_out_errors" do %>
+    <div class="alert alert-danger"><%= @error %></div>
+  <% end %>
+<% end %>

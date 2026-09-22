@@ -1,0 +1,112 @@
+<%#
+  The fund totals sheet: what this allocation run produced for each entry name, beside the
+  fund's own figure from its spreadsheet, and the difference. Step one of how a fund reviews a
+  run — see docs/modules/allocation/allocation_run_review_proposals.md (proposal 3).
+
+  Rows come from AllocationRunTieOut, folded out of the report's own pass 1 over
+  account_entries; nothing here adds a scan of that table.
+  Locals: tie_out, fund, allocation_run
+%>
+<%= turbo_frame_tag "tie_out_panel" do %>
+<div class="card shadow mb-4 border-bottom-primary">
+  <div class="card-header py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <h6 class="m-0 font-weight-bold text-primary">
+      Tie out to your figures
+      <span class="text-muted fw-normal ms-1">
+        &mdash; run of <%= l allocation_run.start_date %> to <%= l allocation_run.end_date %>
+      </span>
+    </h6>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-secondary-subtle text-secondary">
+        <%= tie_out.entered_count %> of <%= tie_out.rows.size %> entered
+      </span>
+      <span class="badge bg-success-subtle text-success"><%= tie_out.match_count %> match</span>
+      <span class="badge <%= tie_out.differs_count.positive? ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary' %>">
+        <%= tie_out.differs_count %> differ
+      </span>
+      <%# Every row of that list carries a "How was this computed?" button, so this is the way
+          from a fund total to any single number's derivation. %>
+      <%= link_to account_entries_path(filter: true, fund_id: fund.id,
+                                       q: ransack_query_params_multiple([["allocation_run_id", :eq, allocation_run.id],
+                                                                         ["reporting_date", :eq, allocation_run.end_date.to_fs(:db)]])),
+                  class: "btn btn-sm btn-outline-info", data: { turbo_frame: "_top" } do %>
+        <i class="ti ti-list-details me-1"></i>Entries this run produced
+      <% end %>
+    </div>
+  </div>
+  <div class="card-body" data-controller="entry-totals">
+    <%# Target for TieOutFiguresController's error stream. Without it Turbo discards the stream
+        silently and a rejected save looks like a successful one. %>
+    <div id="tie_out_errors"></div>
+    <% if tie_out.any_rows? %>
+      <p class="text-muted">
+        Type the figures from your own spreadsheet in the <strong>Yours</strong> column. Nothing
+        here changes the ledger &mdash; these are your notes about this period, and they stay
+        against <%= l tie_out.as_of_date %> even if the run is repeated.
+      </p>
+
+      <%# A run can produce hundreds of entry names while the sheet being tied out against has a
+          handful of lines, so the search box is the way in, not a nicety. Filtering happens on
+          the page: the rows are already here and a round trip would re-run the report's
+          aggregate pass to redraw numbers that have not changed. %>
+      <div class="row g-2 align-items-center mb-3">
+        <div class="col-md-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="ti ti-search"></i></span>
+            <%= text_field_tag :tie_out_search, nil, class: "form-control",
+                  placeholder: "Find an entry name…", autocomplete: "off",
+                  data: { entry_totals_target: "search", action: "input->entry-totals#apply" } %>
+            <button class="btn btn-outline-secondary" type="button"
+                    data-action="entry-totals#clear" title="Clear">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-check">
+            <%= check_box_tag :tie_out_hide_zero, "1", true, class: "form-check-input",
+                  data: { entry_totals_target: "zeroToggle", action: "change->entry-totals#apply" } %>
+            <%= label_tag :tie_out_hide_zero, "Hide rows totalling zero", class: "form-check-label" %>
+          </div>
+        </div>
+        <div class="col-md-3 text-md-end text-muted">
+          showing <span data-entry-totals-target="count"><%= tie_out.rows.size %></span>
+          of <%= tie_out.rows.size %>
+        </div>
+      </div>
+
+      <%# The folios behind a row land here, above the table — below a table of hundreds of rows
+          they would render off-screen and the button would look broken. %>
+      <%= turbo_frame_tag "tie_out_folios" %>
+
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead>
+            <tr>
+              <th>Entry name</th>
+              <th class="text-end">Ours</th>
+              <th class="text-end" style="width: 11rem;">Yours</th>
+              <th class="text-end">Difference</th>
+              <th style="width: 1%;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% tie_out.rows.each do |row| %>
+              <%= render "account_entry_reports/tie_out_row",
+                         row: row, fund: fund, allocation_run: allocation_run %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted" data-entry-totals-target="empty" hidden>
+        No entry name matches that search.
+      </p>
+    <% else %>
+      <p class="text-muted mb-0">
+        This run produced no folio entries to tie out. If that is unexpected, the
+        <%= link_to "allocation run check", allocate_form_fund_path(fund) %> says why.
+      </p>
+    <% end %>
+  </div>
+</div>
+<% end %>

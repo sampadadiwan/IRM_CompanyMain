@@ -41,4 +41,12 @@ class AccountEntryPolicy < FundBasePolicy
   def explain?
     show?
   end
+
+  # Opening a line of the entry page's "How this was worked out" card walks into other entries,
+  # the fund-level entries a share came from, and the fund's own formulas. show? also admits
+  # investors, who may read their own entries but have no business reading the fund's workings,
+  # so this is narrower. set_account_entry authorizes by action name, so it must be called this.
+  def explanation_node?
+    permissioned_employee?
+  end
 end

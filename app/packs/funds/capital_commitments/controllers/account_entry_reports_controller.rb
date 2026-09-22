@@ -32,15 +32,17 @@ class AccountEntryReportsController < ApplicationController
 
     page = build_page(fund: @fund)
     # A fund-level, unfiltered scan of account_entries is one of the most expensive things
-    # this app can be asked to do (see docs/modules/reports/account_entry_report_performance.md):
-    # account_entries is unboundedly large, so nothing is queried against it until the
-    # request already carries a folio, entry name or entry type - a bare allocation_run_id
-    # (see the "View Report" link on the allocation screen) is always ANDed onto the query
-    # once it runs, but does not by itself excuse picking one of those three; with none
-    # picked this only resolves dates and populates the filter dropdowns.
+    # this app can be asked to do (see docs/modules/reports/account_entry_report_performance.md),
+    # so nothing is queried against it until the request is narrow enough. A folio, entry name
+    # or entry type does that — and so does a single allocation_run_id, which covers one fund
+    # over one period and is indexed. See AccountEntryReportPage#filter_selected?; with none of
+    # them this only resolves dates and populates the filter dropdowns.
     @filter_selected = page.filter_selected?
 
-    if @filter_selected
+    # The pivot is only built for a chosen slice, never for a whole run — see
+    # AccountEntryReportPage#explicit_filters?.
+    @show_detail = page.explicit_filters?
+    if @show_detail
       @detail_pivot = page.detail_pivot(page: params[:page])
       # Pivot pagination: render the frame alone and skip the rest of the page's queries.
       return render(partial: "account_entry_reports/detail_pivot", locals: { pivot: @detail_pivot }) if detail_frame_request?
@@ -48,6 +50,63 @@ class AccountEntryReportsController < ApplicationController
 
     assign_page(page, load_report: @filter_selected)
     fund_bread_crumbs("Account Entries Report")
+  end
+
+  # GET /account_entry_reports/dependencies
+  # What each of a run's entry-name totals is built from. Fetched by a lazy Turbo Frame when
+  # the reviewer opens that tab, so a report opened for the charts never pays for it. Building
+  # it runs the report's first aggregate pass over account_entries and folds the rows out of
+  # it, then reads the fund's formulas to link each row to the rows it depends on — see
+  # AllocationRunTieOut's performance contract.
+  def dependencies
+    @fund = policy_scope(Fund).find(params[:fund_id])
+    authorize @fund, :period_report?
+    @allocation_run = AllocationRun.find_by!(id: params[:allocation_run_id], fund_id: @fund.id)
+
+    report = AccountEntryReport.new(fund: @fund, start_date: @allocation_run.start_date,
+                                    end_date: @allocation_run.end_date, allocation_run_id: @allocation_run.id)
+    @totals = AllocationRunTieOut.new(report: report, fund: @fund, allocation_run: @allocation_run)
+
+    render partial: "account_entry_reports/dependencies",
+           locals: { totals: @totals, fund: @fund, allocation_run: @allocation_run }
+  end
+
+  # GET /account_entry_reports/tie_out
+  # The fund totals sheet for one allocation run, as its own panel. Fetched by a lazy Turbo
+  # Frame when the reviewer opens that tab, so a report opened to look at the charts never pays
+  # for it. Building it runs the report's first aggregate pass over account_entries and folds
+  # the rows out of it — see AllocationRunTieOut's performance contract.
+  def tie_out
+    @fund = policy_scope(Fund).find(params[:fund_id])
+    authorize @fund, :period_report?
+    # Scoped to this fund: a URL can pair any fund_id with any allocation_run_id, and an
+    # unscoped lookup would draw the sheet over another fund's period while labelling it this
+    # fund's. Same lookup #dependencies and #assign_page use.
+    @allocation_run = AllocationRun.find_by!(id: params[:allocation_run_id], fund_id: @fund.id)
+
+    report = AccountEntryReport.new(fund: @fund, start_date: @allocation_run.start_date,
+                                    end_date: @allocation_run.end_date, allocation_run_id: @allocation_run.id)
+    @tie_out = AllocationRunTieOut.new(report: report, fund: @fund, allocation_run: @allocation_run,
+                                       with_figures: true)
+
+    render partial: "account_entry_reports/tie_out",
+           locals: { tie_out: @tie_out, fund: @fund, allocation_run: @allocation_run }
+  end
+
+  # GET /account_entry_reports/tie_out_folios
+  # The folios behind one row of the fund totals sheet, rendered into the row's Turbo Frame.
+  # Runs only when a reviewer opens a row, so the sheet itself stays free of per-row queries.
+  def tie_out_folios
+    @fund = policy_scope(Fund).find(params[:fund_id])
+    authorize @fund, :period_report?
+    @allocation_run = AllocationRun.find_by!(id: params[:allocation_run_id], fund_id: @fund.id)
+    @name = params[:name].to_s
+    # No AccountEntryReport here: this needs one bounded query for one name, not the page's
+    # two aggregate passes.
+    @folios = AllocationRunTieOut.new(report: nil, fund: @fund, allocation_run: @allocation_run).folios(@name)
+
+    render partial: "account_entry_reports/tie_out_folios",
+           locals: { folios: @folios, name: @name, fund: @fund, allocation_run: @allocation_run }
   end
 
   # GET /account_entry_reports/folio_report
@@ -157,6 +216,14 @@ class AccountEntryReportsController < ApplicationController
       @report.preload!
       @insights = page.insights
     end
+    # The run this report is scoped to, if any. Its totals sheet is a tab of its own and is
+    # fetched lazily (see #tie_out), so nothing is folded for it here.
+    #
+    # Scoped to this fund on purpose: a URL can pair any fund_id with any allocation_run_id,
+    # and a run belonging to a different fund would otherwise draw a tie-out sheet of the wrong
+    # fund's totals. When the id does not resolve the tab still renders and says so — silently
+    # dropping the tab looks exactly like the feature not existing.
+    @allocation_run = AllocationRun.find_by(id: page.allocation_run_id, fund_id: @fund.id) if page.allocation_run_id
     # Surfaced by the views so a clamped range is visible, not silent.
     @range_clamped = page.range_clamped
     @requested_start_date = page.requested_start_date
