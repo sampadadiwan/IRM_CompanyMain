@@ -131,6 +131,13 @@ class ImportInvestorKpiMapping < ImportUtil
     autofill = nil if autofill == "na"
     raise "Invalid autofill value '#{autofill}' for InvestorKpiMapping" if autofill.present? && InvestorKpiMapping.autofills.keys.exclude?(autofill)
 
+    # Normalize denomination — treat "NA"/"na" as blank (no denomination).
+    # Valid enum values: millions, crores, lakhs, thousands.
+    # @see InvestorKpiMapping enum :denomination
+    denomination = user_data["Denomination"].to_s.downcase.strip
+    denomination = nil if denomination.blank? || denomination == "na"
+    raise "Invalid Denomination value '#{user_data['Denomination']}'. Valid values: #{InvestorKpiMapping.denominations.keys.join(', ')}" if denomination.present? && InvestorKpiMapping.denominations.keys.exclude?(denomination)
+
     # Parse and normalize FX conversion method from import Excel/CSV.
     # Accepts exact enum values ("not_applicable", "report_date", "average_rate") as well as
     # common aliases ("na", "n/a", "none", "spot", "average", "avg"). Blank/missing defaults
@@ -146,7 +153,7 @@ class ImportInvestorKpiMapping < ImportUtil
     attributes = {
       category: user_data["Category"].presence,
       data_type: data_type,
-      denomination: user_data["Denomination"].presence,
+      denomination: denomination,
       # FX conversion method determines how KPI values are converted from portco's reporting
       # currency to the fund's base currency during upload (not_applicable / report_date / average_rate).
       fx_conversion_method: fx_conversion,

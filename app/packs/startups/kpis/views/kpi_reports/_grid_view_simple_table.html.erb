@@ -74,7 +74,7 @@
             %>
             <td id="value_<%=kpi&.id%>" class="<%= kpi_class %>" style="<%= kpi_style %>">
               <% if kpi %>
-                <%= fx_tooltip_wrap(display_kpi(kpi, ikm, params: params), kpi, ikm, portfolio_company) %>
+                <%= fx_tooltip_wrap(display_kpi(kpi, ikm, params: params), kpi, ikm, portfolio_company, params: params) %>
               <% else %>
               <% end %>
             </td>
