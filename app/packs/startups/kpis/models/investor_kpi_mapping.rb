@@ -62,8 +62,12 @@ class InvestorKpiMapping < ApplicationRecord
 
   # Sets IAS 21-aligned FX conversion default based on KPI category.
   # Percentage KPIs are always not_applicable (25% is 25% in any currency).
+  # Skipped when import_upload_id is set — the import service assigns fx_conversion_method
+  # explicitly, but changed? returns false when the assigned value equals the enum default
+  # (not_applicable), so checking changed? alone is insufficient.
   # @return [void]
   def set_default_fx_conversion_method
+    return if import_upload_id.present?
     return if fx_conversion_method_changed?
     return self.fx_conversion_method = 'not_applicable' if percentage?
 

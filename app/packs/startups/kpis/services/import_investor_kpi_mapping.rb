@@ -9,6 +9,15 @@ class ImportInvestorKpiMapping < ImportUtil
     "Update Only"
   ].freeze
 
+  # Common aliases for fx_conversion_method enum values accepted during import.
+  # Maps user-friendly or shorthand inputs to valid InvestorKpiMapping enum keys.
+  # @see InvestorKpiMapping::FX_CONVERSION_METHODS
+  FX_CONVERSION_ALIASES = {
+    "na" => "not_applicable", "n/a" => "not_applicable", "none" => "not_applicable",
+    "spot" => "report_date", "spot_rate" => "report_date",
+    "average" => "average_rate", "avg" => "average_rate"
+  }.freeze
+
   # Returns the standard headers for the import file.
   def standard_headers
     STANDARD_HEADERS
@@ -122,12 +131,17 @@ class ImportInvestorKpiMapping < ImportUtil
     autofill = nil if autofill == "na"
     raise "Invalid autofill value '#{autofill}' for InvestorKpiMapping" if autofill.present? && InvestorKpiMapping.autofills.keys.exclude?(autofill)
 
-    # Parse FX conversion method from import. Accepts "Not Applicable", "Report Date", "Average Rate".
-    # Blank/missing defaults to "not_applicable" for backward compatibility — existing CSVs without
-    # this column will work unchanged, and portcos reporting in the same currency as the fund skip conversion.
-    fx_conversion = user_data["FX Conversion"].to_s.downcase.strip.tr(" ", "_")
-    fx_conversion = "not_applicable" if fx_conversion.blank? || fx_conversion == "na"
-    raise "Invalid FX Conversion value '#{user_data['FX Conversion']}' for InvestorKpiMapping" if InvestorKpiMapping.fx_conversion_methods.keys.exclude?(fx_conversion)
+    # Parse and normalize FX conversion method from import Excel/CSV.
+    # Accepts exact enum values ("not_applicable", "report_date", "average_rate") as well as
+    # common aliases ("na", "n/a", "none", "spot", "average", "avg"). Blank/missing defaults
+    # to "not_applicable" for backward compatibility — existing CSVs without this column work
+    # unchanged. Key must be "Fx Conversion" (titleized) — ImportUtil#get_headers titleizes
+    # all headers via .downcase.titleize, so "FX Conversion" in Excel becomes "Fx Conversion".
+    # @see InvestorKpiMapping::FX_CONVERSION_METHODS
+    fx_conversion = user_data["Fx Conversion"].to_s.downcase.strip.tr(" ", "_")
+    fx_conversion = FX_CONVERSION_ALIASES.fetch(fx_conversion, fx_conversion)
+    fx_conversion = "not_applicable" if fx_conversion.blank?
+    raise "Invalid FX Conversion value '#{user_data['Fx Conversion']}'. Valid values: #{FX_CONVERSION_ALIASES.keys.join(', ')}, #{InvestorKpiMapping.fx_conversion_methods.keys.join(', ')}" if InvestorKpiMapping.fx_conversion_methods.keys.exclude?(fx_conversion)
 
     attributes = {
       category: user_data["Category"].presence,
