@@ -38,7 +38,53 @@ class AllocationRun < ApplicationRecord
     %w[end_date fund_ratios generate_soa locked start_date status tag_list template_name user_id].sort
   end
 
+  # Runs this allocation again into the same run record, with exactly the settings stored on it,
+  # so the period's entries are replaced rather than duplicated under a new run.
+  #
+  #   AllocationRun.find(3331).rerun!              # queued, like a run started from the screen
+  #   AllocationRun.find(3331).rerun!(now: true)   # runs in this console and blocks until done
+  #
+  # explain and sample are not stored on a run, so they are fixed here at explain: true,
+  # sample: false. A locked run is unlocked and re-run; it is not locked again afterwards.
+  #
+  # Refuses when another locked run overlapping the period still owns entries (re-running would
+  # replace that run's figures too), when a run group is using the fund, or when the fund's
+  # formulas are being changed -- the same guards as the allocate screen (FundsController#allocate).
+  # An older locked run for the same dates that a later run has already replaced owns no entries,
+  # so it does not block.
+  def rerun!(now: false)
+    blocking = AllocationRun.where(fund_id:).where.not(id:).locked.overlapping(start_date, end_date)
+                            .find { |run| AccountEntry.exists?(fund_id:, allocation_run_id: run.id) }
+    raise ArgumentError, "The period overlaps locked allocation run #{blocking.id} (#{blocking.start_date} to #{blocking.end_date}), which still owns entries." if blocking
+    raise ArgumentError, "An allocation run group is currently running on this fund." if AllocationGroupRun.fund_busy?(fund_id)
+    raise ArgumentError, "The fund's formulas are being changed. Wait for that to finish." if FundAllocationActivity.formula_operation_applying?(fund)
+
+    template_id = statement_template_id
+    # Unlocked, and the status cleared so the run reads as in progress as a newly created run does,
+    # until the engine records the outcome.
+    update_columns(locked: false, status: nil)
+
+    args = [fund_id, start_date, end_date]
+    kwargs = { rule_for:, tag_list:, run_allocations:, explain: true, user_id:, generate_soa:, statement_for:, template_id:,
+               fund_ratios:, sample: false, allocation_run_id: id }
+    now ? AccountEntryAllocationJob.perform_now(*args, **kwargs) : AccountEntryAllocationJob.perform_later(*args, **kwargs)
+  end
+
   private
+
+  # The run keeps the statement template's name; the job needs its id. Looked up among the same
+  # templates the allocate screen offers. Only statement generation uses it, so a name that can't
+  # be resolved fails the rerun only when this run generates statements.
+  def statement_template_id
+    return if template_name.blank?
+
+    templates = fund.capital_commitments.first&.templates(["SOA Template", "Investor Statement Template"]) || []
+    matches = templates.select { |d| d.name == template_name }
+    return matches.first.id if matches.size == 1
+    return unless generate_soa
+
+    raise ArgumentError, "#{matches.empty? ? 'No' : matches.size} statement template#{'s' unless matches.size == 1} named #{template_name.inspect} for this fund."
+  end
 
   def fund_not_busy_with_another_group_run
     return if fund_id.blank? || !AllocationGroupRun.fund_busy?(fund_id)
