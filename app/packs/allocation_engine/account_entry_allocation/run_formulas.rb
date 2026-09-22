@@ -839,7 +839,7 @@ module AccountEntryAllocation
         batch_size = 5_000
         idx = 1
         loop do
-          msg = "Cleaning up primary account entries for #{fund.name} in the run period: #{start_date} - #{end_date}, formula chunk batch #{idx}"
+          msg = "Cleaning up primary account entries for #{fund.name} in the run period: #{start_date} - #{end_date}, batch #{idx}"
           Rails.logger.debug { msg }
           notify(msg, :info, user_id)
 
