@@ -70,8 +70,8 @@ Feature: KPI Currency Conversion
     And the KPI "Revenue" for "2024-01-31" should have no original_value
 
   Scenario: Missing exchange rate stores value unconverted
-    Given the portfolio company has kpi_currency "USD"
-    # No exchange rates set up for USD→INR
+    Given the portfolio company has kpi_currency "EUR"
+    # No exchange rates exist for EUR→INR — common.rb only creates USD rates
     And the following KPI mappings exist for currency conversion:
       | name    | category         | fx_conversion_method |
       | Revenue | Income Statement | average_rate         |
@@ -110,7 +110,7 @@ Feature: KPI Currency Conversion
       | Revenue         | Income Statement |                      |
       | Working Capital | Balance Sheet    |                      |
       | Headcount       | Operating Metrics|                      |
-      | Capex           | Cash Flow        |                      |
+      | Capex           | Cashflow Statement |                    |
     Then the mapping "Revenue" should have fx_conversion_method "average_rate"
     And the mapping "Working Capital" should have fx_conversion_method "report_date"
     And the mapping "Headcount" should have fx_conversion_method "not_applicable"

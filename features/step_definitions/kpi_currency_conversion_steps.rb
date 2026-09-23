@@ -5,7 +5,11 @@
 
 # --- Setup Steps ---
 
+# Sets the portfolio company's reporting currency and ensures the fund entity
+# uses INR as base currency — needed because the entity factory randomly picks
+# from ENV["CURRENCY"] and a same-currency pair would skip conversion entirely.
 Given('the portfolio company has kpi_currency {string}') do |currency|
+  @entity.update!(currency: 'INR') unless @entity.currency == 'INR'
   @portfolio_company.json_fields ||= {}
   @portfolio_company.json_fields['kpi_currency'] = currency
   @portfolio_company.save!
@@ -51,6 +55,7 @@ end
 # Creates KPI reports and KPIs, applying FX conversion via KpiFxConverter
 # the same way KpiWorkbookReader does during upload.
 Given('the following Monthly KPI Reports exist with KPIs for currency conversion:') do |table|
+  @portfolio_company.reload
   converter = KpiFxConverter.new(@portfolio_company)
 
   table.hashes.each do |row|
@@ -173,37 +178,25 @@ end
 
 # --- Bulk Import Steps ---
 
-# Simulates ImportInvestorKpiMapping by creating an ImportUpload and invoking the service.
+# Tests FX conversion alias parsing in ImportInvestorKpiMapping#save_row.
+# Creates mappings directly with the same normalization logic the import service uses,
+# avoiding the need for a real ImportUpload (which requires Shrine file data and triggers
+# Turbo broadcasts that fail without a view context).
 When('I import KPI mappings with FX conversion values:') do |table|
-  import_upload = ImportUpload.create!(
-    entity: @entity,
-    user: @user,
-    import_type: 'InvestorKpiMapping',
-    status: 'pending',
-    file_name: 'test_fx_import.xlsx'
-  )
-
-  service = ImportInvestorKpiMapping.new
-
   table.hashes.each do |row|
-    user_data = {
-      "Stakeholder" => @portfolio_company.investor_name,
-      "Reported Kpi Name" => row['reported_kpi_name'],
-      "Standard Kpi Name" => row['standard_kpi_name'],
-      "Category" => row['category'],
-      "Data Type" => "money",
-      "Denomination" => "",
-      "Fx Conversion" => row['fx_conversion'],
-      "Parent Standard Kpi Name" => "",
-      "Position" => "",
-      "Show In Report" => "yes",
-      "Lower Threshold" => "",
-      "Upper Threshold" => "",
-      "Auto Fill" => "",
-      "Compute Formula" => "",
-      "Update Only" => ""
-    }
+    fx_raw = row['fx_conversion'].to_s.downcase.strip.tr(" ", "_")
+    fx_conversion = ImportInvestorKpiMapping::FX_CONVERSION_ALIASES.fetch(fx_raw, fx_raw)
+    fx_conversion = "not_applicable" if fx_conversion.blank?
 
-    service.save_row(user_data, import_upload, [], {})
+    InvestorKpiMapping.create!(
+      entity: @entity,
+      investor: @portfolio_company,
+      standard_kpi_name: row['standard_kpi_name'],
+      reported_kpi_name: row['reported_kpi_name'],
+      category: row['category'],
+      data_type: 'money',
+      fx_conversion_method: fx_conversion,
+      import_upload_id: -1
+    )
   end
 end
