@@ -163,6 +163,59 @@ module KpisHelper
     result
   end
 
+  # Returns a Bootstrap tooltip-wrapped span when the KPI was FX-converted,
+  # showing the original value in the portco's reporting currency and the rate used.
+  # Also emits data-fund-display / data-original-display attributes for the
+  # kpi-currency-toggle Stimulus controller to swap on toggle.
+  # Returns the raw content unchanged when no conversion data is present.
+  # @param content [String] the formatted KPI value HTML to wrap
+  # @param kpi [Kpi] the KPI record (checked for original_value and fx_rate_used)
+  # @param investor_kpi_mapping [InvestorKpiMapping, nil] the mapping (for formatting original value)
+  # @param portfolio_company [Investor, nil] the portco (provides kpi_currency from json_fields);
+  #   falls back to kpi.portfolio_company when nil
+  # @param params [Hash] request params — carries force_units/units for denomination formatting
+  # @return [String] HTML-safe string, either a tooltip span or the original content
+  def fx_tooltip_wrap(content, kpi, investor_kpi_mapping = nil, portfolio_company = nil, params: {})
+    return content if kpi.original_value.blank? || kpi.fx_rate_used.blank?
+
+    portco = portfolio_company || kpi.portfolio_company
+    kpi_currency = portco&.json_fields&.dig('kpi_currency') || '?'
+    fund_currency = portco&.entity&.currency || '?'
+    formatted_original = number_with_precision(kpi.original_value, precision: 2, delimiter: ',')
+    formatted_fund = number_with_precision(kpi.value, precision: 2, delimiter: ',')
+    formatted_rate = number_with_precision(kpi.fx_rate_used, precision: 4, delimiter: ',')
+    fund_tooltip = "Original: #{kpi_currency} #{formatted_original} @ #{formatted_rate}"
+    original_tooltip = "Converted: #{fund_currency} #{formatted_fund} @ #{formatted_rate}"
+
+    original_display = fx_format_original_value(kpi, investor_kpi_mapping, kpi_currency, params: params)
+
+    tag.span(class: 'fx-converted',
+             data: { bs_toggle: 'tooltip', bs_placement: 'top',
+                     kpi_currency_toggle_target: 'cell',
+                     fund_display: content, original_display: original_display,
+                     fund_tooltip: fund_tooltip, original_tooltip: original_tooltip },
+             title: fund_tooltip) { content }
+  end
+
+  # Formats the original (pre-conversion) KPI value with the portco's currency symbol,
+  # respecting denomination settings (force_units/units) from params so the toggled
+  # original-currency display matches the fund-currency denomination (e.g., "Millions").
+  # @param kpi [Kpi] the KPI record with original_value
+  # @param investor_kpi_mapping [InvestorKpiMapping, nil] the mapping (for data_type awareness)
+  # @param kpi_currency [String] the portco's reporting currency code (e.g., "USD")
+  # @param params [Hash] request params — carries force_units/units for denomination
+  # @return [String] formatted original value string
+  def fx_format_original_value(kpi, investor_kpi_mapping, kpi_currency, params: {})
+    val = kpi.original_value
+
+    if investor_kpi_mapping&.data_type == 'money'
+      formatted = money_to_currency(val, params)
+      "#{kpi_currency} #{formatted}"
+    else
+      number_with_precision(val, precision: 2, delimiter: ',')
+    end
+  end
+
   def kpi_percentage_class(kpi, investor_kpi_mapping)
     css_class = if  investor_kpi_mapping&.lower_threshold&.positive? &&
                     kpi.percentage_change < investor_kpi_mapping.lower_threshold

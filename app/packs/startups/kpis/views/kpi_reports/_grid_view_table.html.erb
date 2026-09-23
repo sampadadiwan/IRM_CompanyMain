@@ -19,8 +19,15 @@
     <thead>
       <tr>
         <th class="sticky-col">
-          <div class="d-flex align-items-center gap-2">
+          <div class="d-flex align-items-center justify-content-between gap-2">
             KPI
+            <% if local_assigns[:show_currency_toggle] %>
+              <button class="btn btn-light btn-sm py-0 px-2 text-dark"
+                      data-kpi-currency-toggle-target="button"
+                      data-action="click->kpi-currency-toggle#toggle">
+                <i class="ti ti-arrows-exchange me-1"></i>Viewing: <%= local_assigns[:fund_currency] %> (Fund)
+              </button>
+            <% end %>
           </div>
         </th>
         <th>Category</th>
@@ -91,7 +98,7 @@
                     <% if kpi.rag_status.present? %>
                       <small class="badge <%= rag_status_badge_class(kpi.rag_status) %> mb-1"><%= kpi.rag_status.titleize %></small><br>
                     <% end %>
-                    <%= display_kpi(kpi, ikm, params: params) %>
+                    <%= fx_tooltip_wrap(display_kpi(kpi, ikm, params: params), kpi, ikm, portfolio_company, params: params) %>
                     <br>
                     <%= kpi_percentage_class(kpi, ikm).html_safe %>
                     <% if kpi.notes.present? %>

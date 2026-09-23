@@ -18,7 +18,7 @@
       <h3 class="card-title mb-0"><%= title %></h3>
     </div>
     <div class="card-body">
-      <%= render 'grid_view_simple_table', kpi_reports: kpi_reports, investor_kpi_mappings: mappings %>
+      <%= render 'grid_view_simple_table', kpi_reports: kpi_reports, investor_kpi_mappings: mappings, portfolio_company: portfolio_company, show_currency_toggle: (index == 0 && local_assigns[:show_currency_toggle]), fund_currency: local_assigns[:fund_currency] %>
     </div>
   </div>
 <% end %>

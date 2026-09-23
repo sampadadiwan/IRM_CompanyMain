@@ -92,7 +92,7 @@
                                 <td class="value_<%= kpi&.id %>">
                                     <% if kpi_report %>
                                         <% if kpi %>
-                                            <span class="<%= kpi.value.to_f.negative? ? 'text-danger' : nil %>"><%= display_kpi(kpi, ikm, params: params) %></span>
+                                            <span class="<%= kpi.value.to_f.negative? ? 'text-danger' : nil %>"><%= fx_tooltip_wrap(display_kpi(kpi, ikm, params: params), kpi, ikm, nil, params: params) %></span>
                                         <% end %>
                                     <% end %>
                                 </td>
@@ -136,7 +136,7 @@
                                 <td class="value_<%= kpi&.id %>">
                                     <% if kpi_report %>
                                         <% if kpi %>
-                                            <span class="<%= kpi.value.to_f.negative? ? 'text-danger' : nil %>"><%= display_kpi(kpi, ikm, params: params) %></span>
+                                            <span class="<%= kpi.value.to_f.negative? ? 'text-danger' : nil %>"><%= fx_tooltip_wrap(display_kpi(kpi, ikm, params: params), kpi, ikm, nil, params: params) %></span>
                                         <% end %>
                                     <% end %>
                                 </td>

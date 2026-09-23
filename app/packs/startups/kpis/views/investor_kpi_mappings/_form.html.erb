@@ -43,6 +43,19 @@
     <small class="form-text text-muted">Select the denomination for this KPI. This is used in importing the data from the input kpi sheets.</small>
   </div>
 
+    <%# FX Conversion dropdown — determines how KPI values are converted from the portco's
+      reporting currency to the fund's base currency during upload.
+      Placed below Denomination because both relate to value transformation at import time. %>
+  <div class="form-group">
+    <%= form.label :fx_conversion_method, "FX Conversion" %>
+    <%= form.select :fx_conversion_method,
+        InvestorKpiMapping::FX_CONVERSION_METHODS.map { |m| [m.humanize.titleize, m] },
+        { include_blank: false },
+        class: "form-control" %>
+    <small class="form-text text-muted">How to convert this KPI from the portfolio company's currency to the fund's currency. "Report Date" uses the spot rate; "Average Rate" uses the period average.</small>
+  </div>
+
+
   <div class="form-group">
     <%= form.label :parent_id %>
     <%= form.select :parent_id, InvestorKpiMapping.where(investor_id: investor_kpi_mapping.investor_id).map { |kpi| [kpi.reported_kpi_name, kpi.id] }, { include_blank: true }, class: "form-control select2" %>

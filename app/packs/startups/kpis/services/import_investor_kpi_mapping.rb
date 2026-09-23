@@ -1,10 +1,22 @@
 class ImportInvestorKpiMapping < ImportUtil
-  # Defines the standard headers expected in the import file.
+  # Standard headers expected in the mapping bulk import CSV/Excel file.
+  # "FX Conversion" added for KPI currency conversion — tells the parser which
+  # FX rate method to apply per mapping (Not Applicable / Report Date / Average Rate).
   STANDARD_HEADERS = [
     "Stakeholder", "Reported Kpi Name", "Standard Kpi Name", "Category",
-    "Data Type", "Denomination", "Parent Standard Kpi Name", "Position", "Show In Report",
-    "Lower Threshold", "Upper Threshold", "Auto Fill", "Compute Formula", "Update Only"
+    "Data Type", "Denomination", "Fx Conversion", "Parent Standard Kpi Name", "Position",
+    "Show In Report", "Lower Threshold", "Upper Threshold", "Auto Fill", "Compute Formula",
+    "Update Only"
   ].freeze
+
+  # Common aliases for fx_conversion_method enum values accepted during import.
+  # Maps user-friendly or shorthand inputs to valid InvestorKpiMapping enum keys.
+  # @see InvestorKpiMapping::FX_CONVERSION_METHODS
+  FX_CONVERSION_ALIASES = {
+    "na" => "not_applicable", "n/a" => "not_applicable", "none" => "not_applicable",
+    "spot" => "report_date", "spot_rate" => "report_date",
+    "average" => "average_rate", "avg" => "average_rate"
+  }.freeze
 
   # Returns the standard headers for the import file.
   def standard_headers
@@ -119,10 +131,32 @@ class ImportInvestorKpiMapping < ImportUtil
     autofill = nil if autofill == "na"
     raise "Invalid autofill value '#{autofill}' for InvestorKpiMapping" if autofill.present? && InvestorKpiMapping.autofills.keys.exclude?(autofill)
 
+    # Normalize denomination — treat "NA"/"na" as blank (no denomination).
+    # Valid enum values: millions, crores, lakhs, thousands.
+    # @see InvestorKpiMapping enum :denomination
+    denomination = user_data["Denomination"].to_s.downcase.strip
+    denomination = nil if denomination.blank? || denomination == "na"
+    raise "Invalid Denomination value '#{user_data['Denomination']}'. Valid values: #{InvestorKpiMapping.denominations.keys.join(', ')}" if denomination.present? && InvestorKpiMapping.denominations.keys.exclude?(denomination)
+
+    # Parse and normalize FX conversion method from import Excel/CSV.
+    # Accepts exact enum values ("not_applicable", "report_date", "average_rate") as well as
+    # common aliases ("na", "n/a", "none", "spot", "average", "avg"). Blank/missing defaults
+    # to "not_applicable" for backward compatibility — existing CSVs without this column work
+    # unchanged. Key must be "Fx Conversion" (titleized) — ImportUtil#get_headers titleizes
+    # all headers via .downcase.titleize, so "FX Conversion" in Excel becomes "Fx Conversion".
+    # @see InvestorKpiMapping::FX_CONVERSION_METHODS
+    fx_conversion = user_data["Fx Conversion"].to_s.downcase.strip.tr(" ", "_")
+    fx_conversion = FX_CONVERSION_ALIASES.fetch(fx_conversion, fx_conversion)
+    fx_conversion = "not_applicable" if fx_conversion.blank?
+    raise "Invalid FX Conversion value '#{user_data['Fx Conversion']}'. Valid values: #{FX_CONVERSION_ALIASES.keys.join(', ')}, #{InvestorKpiMapping.fx_conversion_methods.keys.join(', ')}" if InvestorKpiMapping.fx_conversion_methods.keys.exclude?(fx_conversion)
+
     attributes = {
       category: user_data["Category"].presence,
       data_type: data_type,
-      denomination: user_data["Denomination"].presence,
+      denomination: denomination,
+      # FX conversion method determines how KPI values are converted from portco's reporting
+      # currency to the fund's base currency during upload (not_applicable / report_date / average_rate).
+      fx_conversion_method: fx_conversion,
       show_in_report: user_data["Show In Report"].to_s.downcase == "yes",
       lower_threshold: user_data["Lower Threshold"].presence,
       upper_threshold: user_data["Upper Threshold"].presence,

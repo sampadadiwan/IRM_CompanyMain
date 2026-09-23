@@ -20,11 +20,25 @@
       <% cache_if(current_user != nil, cache_key(["investor_datshboard_kpis", @investor]), expires_in: 5.day) do %>
         <% colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze %>
 
+        <%
+          kpi_currency = @investor.json_fields&.dig('kpi_currency')
+          fund_currency = @investor.entity&.currency
+          show_kpi_currency_toggle = kpi_currency.present? && kpi_currency != fund_currency
+        %>
         <% index = 0 %>
         <% cards_data = [] %>
         <% kpis.each do |kpi| %>
           <% color = colors[index % colors.length]; index += 1 %>
-          <% cards_data << { path: nil, stat: number_with_precision(kpi.value, precision: 2, delimiter: ','), subtitle: kpi.name, progress_bar_color: color, text_info: nil } %>
+          <%
+            stat_value = number_with_precision(kpi.value, precision: 2, delimiter: ',')
+            subtitle = kpi.name
+            if show_kpi_currency_toggle && kpi.original_value.present? && kpi.fx_rate_used.present?
+              original_formatted = number_with_precision(kpi.original_value, precision: 2, delimiter: ',')
+              fx_tooltip = "Original: #{kpi_currency} #{original_formatted} @ #{number_with_precision(kpi.fx_rate_used, precision: 4)}"
+              subtitle = "#{ERB::Util.html_escape(kpi.name)} <i class='ti ti-info-circle text-muted' data-bs-toggle='tooltip' title='#{ERB::Util.html_escape(fx_tooltip)}'></i>".html_safe
+            end
+          %>
+          <% cards_data << { path: nil, stat: stat_value, subtitle: subtitle, progress_bar_color: color, text_info: nil } %>
         <% end %>
 
         <div class="row">

@@ -5,12 +5,20 @@
 
     kpi_chart_settings = KpiChartSetting.where(user_id: current_user.id)
     kpi_chart_settings = kpi_chart_settings.where(portfolio_company_id: portfolio_company_id) if portfolio_company_id.present?
+
+    kpi_currency = investor&.json_fields&.dig('kpi_currency')
+    fund_currency = investor&.entity&.currency
+    show_currency_toggle = kpi_currency.present? && kpi_currency != fund_currency
 %>
 <!-- FLEXIBLE CHART VERSION 2.0 -->
-<div data-controller="kpi-chart"
+<div data-controller="kpi-chart <%= 'kpi-currency-toggle' if show_currency_toggle %>"
      data-kpi-chart-portfolio-company-id-value="<%= portfolio_company_id %>"
      data-kpi-chart-entity-id-value="<%= current_user.entity_id %>"
-     data-kpi-chart-refresh-url-value="<%= chart_refresh_kpi_reports_path %>">
+     data-kpi-chart-refresh-url-value="<%= chart_refresh_kpi_reports_path %>"
+     <% if show_currency_toggle %>
+       data-kpi-currency-toggle-kpi-currency-value="<%= kpi_currency %>"
+       data-kpi-currency-toggle-fund-currency-value="<%= fund_currency %>"
+     <% end %>>
   <% if params[:no_actions].blank? %>
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
       <div data-controller="export-xl"></div>
@@ -94,6 +102,7 @@
               <%= content_tag :button, "Download", class: "dropdown-item ti ti-download", data: {action: "click->export-xl#export", tableid: "kpi_reports_grid", filename: 'kpi_reports', bs_toggle: "tooltip", bs_title: "Download KPI reports as Excel file"} %>
               <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-percentage", data: {bs_toggle: "tooltip", bs_title: "Regenrate % change compared to the previous period (by default this is computed when uploading KPI data)"} if kpi_reports.last %>
               <%= button_to "Recompute Auto-Fill", recompute_cumulative_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-refresh", data: {bs_toggle: "tooltip", bs_title: "Recompute cumulative and forward fill calculations for this company"} if kpi_reports.last %>
+              <%= button_to "Recompute FX Conversion", recompute_fx_conversion_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-currency-dollar", data: {bs_toggle: "tooltip", bs_title: "Recompute currency conversion using current exchange rates for this company"} if kpi_reports.last %>
               <% if investor %>
                 <a href="#" class="dropdown-item ti ti-bell" data-bs-toggle="modal" data-bs-target="#sendReminderModal-<%= investor.id %>">
                   Send Reminder
@@ -252,9 +261,9 @@
     <%# .present? does not handle string "false" properly - and returns true
     # so we use standard boolean casting instead of relying on .present? %>
     <% if ActiveModel::Type::Boolean.new.cast(params[:compound]) %>
-      <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:  %>
+      <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:, portfolio_company: investor, show_currency_toggle: show_currency_toggle, fund_currency: fund_currency %>
     <% else %>
-      <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:  %>
+      <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:, portfolio_company: investor, show_currency_toggle: show_currency_toggle, fund_currency: fund_currency %>
     <% end %>
 
   <% end %>

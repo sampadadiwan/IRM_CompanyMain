@@ -124,6 +124,7 @@ class KpiWorkbookReader
 
     @portfolio_company = portfolio_company
     @portfolio_company_id = portfolio_company.id
+    @fx_converter = KpiFxConverter.new(portfolio_company)
     Rails.logger.debug { "Portfolio Company: #{@portfolio_company.name}" }
     # Fiscal-year start (1-based month) from the existing month_offset_for_fy setting — portco's own
     # json_fields first, then the fund's EntitySetting, then the April default. Same resolution order
@@ -832,6 +833,26 @@ class KpiWorkbookReader
 
     kpi.investor_kpi_mapping = investor_kpi_mapping if investor_kpi_mapping.present?
 
+    # FX conversion: convert from portco's kpi_currency to fund's base currency.
+    # Denomination scaling is already applied upstream by KpiValueNormalizer —
+    # this step converts the currency using the mapping's fx_conversion_method.
+    fx_rate = @fx_converter.resolve_fx_rate(investor_kpi_mapping, kpi_report)
+    original_value = nil
+    if fx_rate
+      original_value = value.to_d
+      value = value.to_d * fx_rate
+    elsif investor_kpi_mapping.present? && !investor_kpi_mapping.fx_not_applicable? && @fx_converter.conversion_needed?
+      kpi_currency = @fx_converter.kpi_currency
+      fund_currency = @fx_converter.fund_currency
+      if kpi_currency.present? && kpi_currency != fund_currency
+        msg = "Missing FX rate for #{kpi_currency}→#{fund_currency} on #{kpi_report.as_of}, storing unconverted"
+        Rails.logger.warn(msg)
+        @error_msg << { msg: msg, portfolio_company: @portfolio_company.name, document: @document.name,
+                        document_id: @document.id, kpi_name: raw_kpi_name, sheet: sheet, period: period,
+                        parsed_period: parsed_period, old_value: nil, new_value: nil, row: row_index, col: col_index }
+      end
+    end
+
     # Check if an approved KPI with the same value already exists.
     # If it does, we don't even need to create an unapproved one.
     # Also scoped by mapping ID to handle duplicate names under different parents.
@@ -848,10 +869,14 @@ class KpiWorkbookReader
 
     Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} Unapproved KPI: #{kpi.name}, value: #{value}" }
 
-    # Assign attributes to the KPI entry
+    # Assign attributes to the KPI entry.
+    # original_value: pre-conversion value in portco's kpi_currency (nil if no conversion).
+    # fx_rate_used: the FX rate applied for audit trail and re-computation (nil if no conversion).
     kpi.assign_attributes(
       value: value,
       display_value: value,
+      original_value: original_value,
+      fx_rate_used: fx_rate,
       investor_kpi_mapping_id: investor_kpi_mapping&.id,
       notes: "Imported from Document #{@document&.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
     )
@@ -1392,6 +1417,9 @@ class KpiWorkbookReader
                    kpi: mappings.first.reported_kpi_name)
     nil
   end
+
+  # FX rate resolution and period start date calculation are delegated to KpiFxConverter
+  # (initialized as @fx_converter) so the same logic is reusable by KpiCurrencyRecomputeJob.
 
   # From all mapping matches on one row (label columns only), decide which one the row represents:
   # - a parent and one of its own children on the same row → the child (filled-down layout), and the
