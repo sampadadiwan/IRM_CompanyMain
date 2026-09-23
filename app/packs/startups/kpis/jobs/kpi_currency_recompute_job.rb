@@ -39,6 +39,9 @@ class KpiCurrencyRecomputeJob < ApplicationJob
       end
     end
 
+    # Bust the dashboard KPI widget cache — its key includes the investor's updated_at.
+    portfolio_company.touch if recomputed > 0
+
     message = "FX recompute complete for #{portfolio_company.investor_name}: #{recomputed} KPIs updated."
     message += " Missing rates for: #{missing_rates.first(10).join(', ')}." if missing_rates.any?
 
