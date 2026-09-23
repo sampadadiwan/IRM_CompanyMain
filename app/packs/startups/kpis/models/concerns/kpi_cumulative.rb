@@ -343,9 +343,13 @@ module KpiCumulative
     )
 
     if cumulative_kpi
+      # Backfill mapping on existing cumulated KPIs that predate mapping inheritance.
+      # Without the mapping the grid view cannot match the KPI to its row and shows N/A.
+      cumulative_kpi.investor_kpi_mapping ||= investor_kpi_mapping || fallback_investor_kpi_mapping
+
       existing_value = cumulative_kpi.value
       same_value = existing_value.to_d.round(6) == cumulative_sum.to_d.round(6)
-      return if same_value && !force
+      return if same_value && !force && !cumulative_kpi.investor_kpi_mapping_id_changed?
 
       cumulative_kpi.value = cumulative_sum
       cumulative_kpi.notes = note
@@ -383,7 +387,9 @@ module KpiCumulative
     # validation (required for records created after MAPPING_ID_REQUIRED_FROM) and nothing would
     # be written. Legacy sources that predate mapping assignment may not be linked even though a
     # mapping exists for the company, so fall back to looking it up by standard name.
-    kpi.investor_kpi_mapping ||= investor_kpi_mapping || fallback_investor_kpi_mapping if kpi.new_record?
+    # Applied to both new and existing records: existing cumulated KPIs created before mapping
+    # inheritance was added may still have a nil mapping_id, which breaks grid view display.
+    kpi.investor_kpi_mapping ||= investor_kpi_mapping || fallback_investor_kpi_mapping
 
     kpi.value = cumulative_sum
     kpi.notes = note
