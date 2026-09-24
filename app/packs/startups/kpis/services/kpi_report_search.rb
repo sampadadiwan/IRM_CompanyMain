@@ -25,9 +25,12 @@ class KpiReportSearch
       end
       date = Time.zone.today - delta
 
-      latest_kpi_report = kpi_reports.order(as_of: :desc).first
+      # MAX() avoids a MySQL filesort on the full (wide, text/json-heavy) row that order+first triggered, which was exhausting sort_buffer_size.
+      # .except(:includes, ...) strips eager-loading from the incoming scope, since ActiveRecord turns includes into LEFT OUTER JOINs
+      # (with has_many fan-out) once a column is passed to an aggregate, which is unnecessary just to compute a MAX.
+      latest_as_of = kpi_reports.except(:includes, :preload, :eager_load).maximum(:as_of)
 
-      date = (latest_kpi_report.as_of - delta).end_of_month + 1.day if latest_kpi_report.present? && latest_kpi_report.as_of.present?
+      date = (latest_as_of - delta).end_of_month + 1.day if latest_as_of.present?
       kpi_reports = kpi_reports.where(kpi_reports: { as_of: date.. })
     end
 
