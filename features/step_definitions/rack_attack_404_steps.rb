@@ -133,9 +133,15 @@ Then('{string} can still browse the app normally') do |name|
   expect(response.headers['Location'].to_s).not_to include('/users/sign_in')
 end
 
+# Reads through Rack::Attack.cache.store, NOT Rails.cache: the two only
+# happen to be the same object under the @rack_attack hook. @rack_attack_redis
+# points the attack store at Redis while Rails.cache stays in memory, and
+# production splits them too (Redis vs Solid Cache) — asserting on Rails.cache
+# would quietly stop looking at the counter the middleware actually writes.
 Then('no 404 strikes are recorded against IP {string}') do |ip|
-  expect(Rails.cache.read("rack::attack:404:#{ip}", raw: true)).to be_nil,
-    "expected no 404 counter for #{ip}, found #{Rails.cache.read("rack::attack:404:#{ip}", raw: true).inspect}"
+  counter = Rack::Attack.cache.store.read("rack::attack:404:#{ip}", raw: true)
+  expect(counter).to be_nil,
+    "expected no 404 counter for #{ip}, found #{counter.inspect}"
 end
 
 Then('{string} receives {string} within {int} visits to {string}') do |name, status_text, attempts, path|

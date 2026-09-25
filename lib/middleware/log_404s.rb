@@ -44,10 +44,13 @@
 #
 # Q: Why Rack::Attack.cache.store instead of Rails.cache?
 # A: rack_attack.rb points Rack::Attack.cache.store at a dedicated Redis store
-#    in every env but test (see its comment there) — this counter and the
-#    throttle/blocklist rules that read it (limit_404_errors,
-#    block_ip_after_repeated_404s) must all agree on the same backing store,
-#    or the count silently splits into two disconnected copies.
+#    in production/staging and leaves it on Rails.cache in development/test
+#    (see its comment there) — this counter and the throttle/blocklist rules
+#    that read it (limit_404_errors, block_ip_after_repeated_404s) must all
+#    agree on the same backing store, or the count silently splits into two
+#    disconnected copies. Never reach for Rails.cache here: in production the
+#    two are DIFFERENT stores (Redis vs Solid Cache), so the bug would only
+#    ever show up in production, where the counter would read as 0 forever.
 #
 # Q: An IP is wrongly blocked in production right now — how do I clear it?
 # A: These counters live in Rack::Attack's own Redis-backed store (see
@@ -64,6 +67,15 @@
 #    spoofed cookies, shared IPs, sign-in-while-blocked, and expiry. Note
 #    Rack::Attack is ENABLED in the test env; scenarios get a real cache via
 #    features/support/rack_attack.rb.
+#
+#    That suite runs on a MemoryStore, which proves the RULES but nothing
+#    about the store production actually uses, so
+#    rack_attack_404_blocking_redis.feature (@rack_attack_redis) re-runs the
+#    core block/throttle/exemption path against a real Redis-backed
+#    RedisCacheStore. That is the configuration where rack-attack wraps the
+#    store in RedisCacheStoreProxy (which forces raw: true on read AND write)
+#    and where the namespace and the INCR-set TTL apply — none of which the
+#    MemoryStore path exercises. It needs a local Redis on REDIS_URL.
 # ─────────────────────────────────────────────────────────────────────────────
 class Log404s
   # Devise (via Warden) writes "warden.user.<scope>.key" into the session only
