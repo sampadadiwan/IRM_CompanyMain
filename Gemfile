@@ -212,6 +212,11 @@ end
 group :development do
   gem 'packs-rails'
   # gem 'stimpack'
+  # SES suppression list + configuration-set inspection for the ses:bounce_stats
+  # rake task (lib/tasks/ses_bounce_stats.rake). Diagnostic only — the app sends
+  # via the SES SMTP interface and never calls the SES API, so this is not needed
+  # in production. (That task's time series comes from aws-sdk-cloudwatch, above.)
+  gem "aws-sdk-sesv2", require: false
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem 'annotate'
   gem "letter_opener", group: :development

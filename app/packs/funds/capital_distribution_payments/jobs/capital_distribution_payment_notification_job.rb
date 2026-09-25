@@ -12,8 +12,34 @@ class CapitalDistributionPaymentNotificationJob < ApplicationJob
     failure = 0
     @error_msg = {}
 
+    payments = @capital_distribution.capital_distribution_payments.includes(:fund, { investor: :approved_users }, :capital_commitment)
+
+    # Nothing would be sent at all under these conditions (see
+    # CapitalDistributionPayment#send_notification), so there is nothing to preflight and no
+    # reason to alert anyone.
+    distribution_sends = @capital_distribution.send_notification_on_complete && @capital_distribution.approved &&
+                         !@capital_distribution.manual_generation
+
+    # Size-check every payment's attachments before sending any of them, so an oversized
+    # document stops the whole distribution run instead of bouncing investor by investor.
+    # Scoped to the payments this run would actually email — an oversized document on one
+    # already notified (or not yet completed) must not block the rest of the distribution.
+    # Returns rather than raises — a raise would just have Sidekiq retry the same batch.
+    blocked = distribution_sends && NotificationAttachmentPreflight.batch_error_message(
+      payments.where(completed: true, notification_sent: [false, nil]),
+      @capital_distribution.custom_notification(:send_notification),
+      context: "Cannot send distribution notices for #{@capital_distribution}",
+      skip_if: ->(cdp) { cdp.capital_commitment.skip_doc_gen? }
+    ) { |cdp| NotificationAttachmentPreflight.auto_attached_documents(cdp) }
+    if blocked.present?
+      send_notification(blocked, user_id, "danger")
+      NotificationAttachmentPreflight.report_blocked_send(blocked, entity_id: @capital_distribution.entity_id, user_id:,
+                                                                   subject: "Distribution notices not sent")
+      return
+    end
+
     Chewy.strategy(:sidekiq) do
-      @capital_distribution.capital_distribution_payments.includes(:fund, { investor: :approved_users }, :capital_commitment).find_each do |cdp|
+      payments.find_each do |cdp|
         result = CapitalDistributionPaymentSendNotification.call(capital_distribution_payment: cdp, force_notification: false)
         success += 1 if result.success?
         failure += 1 unless result.success?

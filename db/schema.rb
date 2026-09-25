@@ -2590,6 +2590,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_20_120000) do
     t.string "denomination", limit: 20
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
+    t.string "fx_conversion_method", limit: 20, default: "not_applicable", null: false
     t.bigint "import_upload_id"
     t.bigint "investor_id", null: false
     t.json "json_fields"

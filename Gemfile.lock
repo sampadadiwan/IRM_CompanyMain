@@ -193,6 +193,9 @@ GEM
       aws-sdk-core (~> 3, >= 3.254.1)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.5)
+    aws-sdk-sesv2 (1.107.0)
+      aws-sdk-core (~> 3, >= 3.254.0)
+      aws-sigv4 (~> 1.5)
     aws-sdk-sns (1.118.0)
       aws-sdk-core (~> 3, >= 3.254.0)
       aws-sigv4 (~> 1.5)
@@ -1196,6 +1199,7 @@ DEPENDENCIES
   aws-sdk-elasticloadbalancingv2
   aws-sdk-iam
   aws-sdk-s3
+  aws-sdk-sesv2
   aws-sdk-sns
   aws-sdk-wafv2
   better_errors

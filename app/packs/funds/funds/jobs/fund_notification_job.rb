@@ -28,6 +28,24 @@ class FundNotificationJob < ApplicationJob
   def perform_by_capital_commitment(fund, custom_notification, commitment_ids, triggered_by_user_id)
     # nil/empty means all commitments; otherwise filter to the selected subset
     commitments = commitment_ids.present? ? fund.capital_commitments.where(id: commitment_ids) : fund.capital_commitments
+
+    # Size-check what each commitment would be sent before enqueuing any of it. Checked per
+    # commitment rather than once, because attachment_names resolves against each commitment's
+    # own documents — two investors on the same send can legitimately receive different files.
+    # Returns rather than raises so Sidekiq does not retry a batch that cannot succeed.
+    blocked = NotificationAttachmentPreflight.batch_error_message(
+      commitments, custom_notification,
+      context: "Cannot send \"#{custom_notification.subject}\" for #{fund.name}",
+      # A commitment nobody would be emailed for must not block the fund's whole send. Not
+      # expressible in SQL — notification_users runs a Pundit policy per contact.
+      skip_if: ->(commitment) { commitment.investor.notification_users(commitment).empty? }
+    )
+    if blocked.present?
+      NotificationAttachmentPreflight.report_blocked_send(blocked, entity_id: fund.entity_id, user_id: triggered_by_user_id,
+                                                                   subject: "Fund notification not sent")
+      return
+    end
+
     commitments.find_each do |commitment|
       investor = commitment.investor
       # recipients will be the capital_commitment.investor.notification_users
@@ -59,6 +77,22 @@ class FundNotificationJob < ApplicationJob
     # to fund.capital_commitments below. .distinct is still needed here even with an
     # id filter, since the same KYC can join back to multiple matching commitment rows.
     kycs = investor_kyc_ids.present? ? fund.investor_kycs.where(id: investor_kyc_ids).distinct : fund.investor_kycs.distinct
+
+    # Same size preflight as the capital-commitment path above — attachment_names resolves
+    # against each InvestorKyc's own documents here (FundInvestorKycMailer overrides
+    # custom_notification_documents_owner), so it is checked per KYC and stops the whole run.
+    blocked = NotificationAttachmentPreflight.batch_error_message(
+      kycs, custom_notification,
+      context: "Cannot send \"#{custom_notification.subject}\" for #{fund.name}",
+      # Same as the commitment path: a KYC with no resolvable recipients is not part of this send.
+      skip_if: ->(kyc) { kyc.investor.notification_users(kyc).empty? }
+    )
+    if blocked.present?
+      NotificationAttachmentPreflight.report_blocked_send(blocked, entity_id: fund.entity_id, user_id: triggered_by_user_id,
+                                                                   subject: "Fund notification not sent")
+      return
+    end
+
     kycs.find_each do |kyc|
       # notification_users is generic (Investor#notification_users, app/packs/core/investors/models/investor.rb) —
       # it resolves InvestorKycPolicy via Pundit for an InvestorKyc argument with no special-casing needed,

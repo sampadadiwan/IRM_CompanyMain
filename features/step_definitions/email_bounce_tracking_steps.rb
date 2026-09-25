@@ -5,9 +5,13 @@
 # Builds a well-formed SES bounce/complaint payload (the "Message" field of the SNS
 # envelope) tagged with the given tracking_id, matching the shape ProcessSesNotificationJob
 # expects (see docs/modules/notifications/email_bounce_complaint_detection_prd.md §8.4).
-def build_ses_message(notification_type, tracking_id:, recipient_email:, bounce_type: nil, bounce_subtype: nil, complaint_feedback_type: nil, diagnostic_code: "550 5.1.1 user unknown")
+# type_field selects which SES wiring the payload imitates. Production uses a configuration
+# set, which names the field "eventType"; the legacy identity-notification path names it
+# "notificationType". Stubbing only the legacy name is what let a job that read only
+# notificationType pass its tests while recording nothing from real, live events.
+def build_ses_message(notification_type, tracking_id:, recipient_email:, bounce_type: nil, bounce_subtype: nil, complaint_feedback_type: nil, diagnostic_code: "550 5.1.1 user unknown", type_field: "eventType")
   payload = {
-    "notificationType" => notification_type,
+    type_field => notification_type,
     "mail" => {
       "messageId" => SecureRandom.uuid,
       "headers" => [{ "name" => "X-CapHive-Tracking-Id", "value" => tracking_id }]
@@ -34,12 +38,15 @@ end
 
 # POSTs an SNS envelope to the webhook via Rack::Test, mirroring the pattern already used
 # for the SendGrid webhook in features/step_definitions/incoming_emails.rb.
-def post_ses_notification(message_hash:, signing_cert_url: "https://sns.us-east-1.amazonaws.com/fake.pem")
+def post_ses_notification(message_hash:, signing_cert_url: "https://sns.us-east-1.amazonaws.com/fake.pem", topic_arn: TEST_SNS_TOPIC_ARN)
   envelope = {
     "Type" => "Notification",
     "MessageId" => SecureRandom.uuid,
-    "TopicArn" => "arn:aws:sns:us-east-1:123456789012:test-topic",
-    "Message" => message_hash.to_json,
+    "TopicArn" => topic_arn,
+    # A String is passed through verbatim: SES's topic-validation message is plain text in
+    # the Message field, not JSON, and to_json would wrap it into a valid JSON string and
+    # hide the very case being tested.
+    "Message" => message_hash.is_a?(String) ? message_hash : message_hash.to_json,
     "Timestamp" => Time.current.iso8601,
     "SignatureVersion" => "1",
     "Signature" => "fake-signature",
@@ -114,6 +121,43 @@ When('SES reports a bounce for that email') do
   payload = build_ses_message("Bounce", tracking_id: @notification.tracking_id, recipient_email: @notification.recipient.email, bounce_type: "Permanent", bounce_subtype: "General")
   @last_ses_response = post_ses_notification(message_hash: payload)
   expect(@last_ses_response.last_response.status).to eq(200)
+end
+
+# The legacy identity-notification shape. Kept covered because ProcessSesNotificationJob
+# accepts both, and an environment wired that way must keep working.
+When('SES reports a bounce for that email using the legacy notificationType field') do
+  payload = build_ses_message("Bounce", tracking_id: @notification.tracking_id,
+                                        recipient_email: @notification.recipient.email,
+                                        bounce_type: "Permanent", bounce_subtype: "General",
+                                        type_field: "notificationType")
+  @last_ses_response = post_ses_notification(message_hash: payload)
+  expect(@last_ses_response.last_response.status).to eq(200)
+end
+
+When('SES publishes its plain-text topic validation message') do
+  # Verbatim from staging - SES sends this as the SNS Message body, not JSON.
+  @last_ses_response = post_ses_notification(
+    message_hash: "Successfully validated SNS topic for Amazon SES event publishing."
+  )
+  expect(@last_ses_response.last_response.status).to eq(200)
+end
+
+When('SES reports a bounce from an SNS topic we do not own') do
+  payload = build_ses_message("Bounce", tracking_id: SecureRandom.uuid,
+                                        recipient_email: "victim@example.com",
+                                        bounce_type: "Permanent", bounce_subtype: "General")
+  @last_ses_response = post_ses_notification(
+    message_hash: payload,
+    topic_arn: "arn:aws:sns:us-east-1:999999999999:attacker-topic"
+  )
+end
+
+Then('the notification should be rejected as coming from an unexpected topic') do
+  expect(@last_ses_response.last_response.status).to eq(403)
+end
+
+Then('no email bounce events should be recorded') do
+  expect(EmailBounceEvent.count).to eq(0)
 end
 
 When('SES reports a complaint for that email') do

@@ -12,6 +12,7 @@ class SesNotificationsController < ActionController::API
   MESSAGE_VERIFIER = Aws::SNS::MessageVerifier.new
 
   before_action :verify_sns_signature!
+  before_action :verify_sns_topic!
 
   # POST /ses_notifications
   def create
@@ -22,6 +23,10 @@ class SesNotificationsController < ActionController::API
       ProcessSesNotificationJob.perform_later(@sns_message["Message"])
     when "UnsubscribeConfirmation"
       Rails.logger.info("SNS unsubscribe confirmation received for topic #{@sns_message['TopicArn']}")
+    else
+      # Signed by SNS and from our topic, but not a type we handle. Logged rather than
+      # dropped silently, so an unexpected shape is visible instead of looking like success.
+      Rails.logger.warn("Ignoring SNS message of unhandled Type=#{@sns_message['Type'].inspect} (MessageId=#{@sns_message['MessageId']})")
     end
 
     render json: { status: "ok" }
@@ -39,6 +44,28 @@ class SesNotificationsController < ActionController::API
     end
   rescue JSON::ParserError
     render json: { error: "invalid_json" }, status: :bad_request
+  end
+
+  # A valid SNS signature proves only that SOME SNS topic in SOME AWS account sent this -
+  # it does not bind the message to ours. Without this check anyone could subscribe this
+  # endpoint to a topic they control (confirm_subscription below would confirm it for them)
+  # and then inject Bounce payloads: writing EmailBounceEvent rows and setting bounced_at /
+  # bounce_type on any Noticed::Notification whose tracking UUID they guessed.
+  #
+  # Fails closed. If SES_SNS_TOPIC_ARN is unset nothing is accepted, because an endpoint
+  # that cannot tell our topic from a stranger's should not be processing events at all.
+  # ses:setup_bounce_tracking prints the value to configure.
+  def verify_sns_topic!
+    expected = ENV.fetch("SES_SNS_TOPIC_ARN", nil).presence
+    if expected.blank?
+      Rails.logger.error("Rejected SES notification: SES_SNS_TOPIC_ARN is not configured, so the sending topic cannot be verified")
+      return render json: { error: "topic_not_configured" }, status: :forbidden
+    end
+
+    return if @sns_message["TopicArn"] == expected
+
+    Rails.logger.warn("Rejected SES notification from unexpected topic #{@sns_message['TopicArn'].inspect} (expected #{expected.inspect})")
+    render json: { error: "unexpected_topic" }, status: :forbidden
   end
 
   def confirm_subscription

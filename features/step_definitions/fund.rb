@@ -849,6 +849,46 @@ And('the first commitment has document {string} with file {string}') do |doc_nam
   )
 end
 
+# Creates a document with a fabricated file_data size and NO bytes in storage, so the
+# attachment size limit can be exercised without committing a large fixture.
+#
+# The absence of a real file is deliberate and load-bearing: ApplicationMailer#attach_doc /
+# #pw_protect_attach_file would raise on `file.read` if they ever got that far, so these
+# scenarios passing is itself the proof that attachment_allowed? short-circuits before the
+# read rather than downloading a document only to discard it.
+And('the second commitment has an oversized document {string} of {int} MB') do |doc_name, megabytes|
+  cc = @fund.capital_commitments.order(:id).second
+  doc = Document.new(entity: cc.entity, name: doc_name, owner: cc, folder: cc.document_folder, user: @user)
+  doc.file_data = {
+    "id" => "size-guard/#{doc_name.parameterize}.pdf",
+    "storage" => "store",
+    "metadata" => { "filename" => "#{doc_name}.pdf", "size" => megabytes * 1024 * 1024, "mime_type" => "application/pdf" }
+  }.to_json
+  doc.save!(validate: false)
+end
+
+# Several documents that are each individually within the limit but together exceed it —
+# covers the running-total half of the guard, which a per-document check alone would miss.
+And('the second commitment has {int} documents of {int} MB each named {string}') do |count, megabytes, doc_name|
+  cc = @fund.capital_commitments.order(:id).second
+  count.times do |i|
+    # Distinct names on purpose. attachments[] is keyed by filename, so same-named documents
+    # collapse into ONE MIME part - three of those would be one attachment on the wire, not
+    # three, and the running total would be measuring a message that never existed.
+    doc = Document.create!(
+      entity: cc.entity, name: "#{doc_name} #{i + 1}", owner: cc, folder: cc.document_folder,
+      user: @user, file: File.new("public/sample_uploads/sample_kyc1.pdf", "r")
+    )
+    # Real bytes are kept here, unlike the single-document step above: the earlier documents
+    # in this set are under the limit and must genuinely attach, so that the guard is proven
+    # to fire on the accumulated total rather than on any one file. Only the reported size is
+    # inflated, which is what attachment_allowed? reads.
+    data = JSON.parse(doc.file_data)
+    data["metadata"]["size"] = megabytes * 1024 * 1024
+    doc.update_column(:file_data, data.to_json)
+  end
+end
+
 # Same as "the first commitment has document ..." but marks the document as generated
 # (owner_tag: "Generated") and approved — proves an approved generated document still attaches
 # normally, unlike its unapproved counterpart below. See Document#exclude_generated_unapproved.

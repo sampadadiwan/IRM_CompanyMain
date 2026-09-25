@@ -131,7 +131,23 @@ class CapitalCall < ApplicationRecord
   def reminder_capital_call
     return unless approved?
 
-    capital_remittances.where(status: %w[Pending Overdue]).find_each do |cr|
+    pending = capital_remittances.where(status: %w[Pending Overdue])
+
+    # Same size preflight as the initial call notice (CapitalCallJob#notify): stop the whole
+    # reminder run rather than letting an oversized attachment bounce recipient by recipient.
+    blocked = NotificationAttachmentPreflight.batch_error_message(
+      pending, custom_notification(:reminder_capital_remittance),
+      context: "Cannot send call reminders for #{name}",
+      # Matches the skip in the loop below, so a commitment this run would never email cannot
+      # block the reminder for everyone else.
+      skip_if: ->(cr) { cr.capital_commitment.skip_doc_gen? }
+    ) { |cr| NotificationAttachmentPreflight.auto_attached_documents(cr) }
+    if blocked.present?
+      NotificationAttachmentPreflight.report_blocked_send(blocked, entity_id:, subject: "Capital call reminders not sent")
+      return
+    end
+
+    pending.find_each do |cr|
       next if cr.capital_commitment.skip_doc_gen?
 
       cr.investor.notification_users(fund, with_tag: 'CapitalCall').each do |user|

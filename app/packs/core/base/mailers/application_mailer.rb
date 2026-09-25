@@ -175,67 +175,19 @@ class ApplicationMailer < ActionMailer::Base
   #   "SOA_*_03_2026"           -> false -> wildcard match,  every matching document attached
   #   "Statement of Account"    -> false -> exact match,     every doc named exactly "Statement of Account" attached
   def attach_custom_notification_documents
-    if @custom_notification && @custom_notification.documents.present?
-      @custom_notification.documents.each do |document|
-        pw_protect_attach_file(document, @custom_notification)
-      end
-    end
-
-    if @custom_notification && @custom_notification.attachment_names.present? && custom_notification_documents_owner.respond_to?(:documents)
-      latest_doc_only = @custom_notification.latest_doc_only
-      attachment_name_list.each do |name|
-        documents = documents_matching_attachment_name(name)
-        documents = documents.limit(1) if latest_doc_only
-        documents.each { |document| pw_protect_attach_file(document, @custom_notification) }
-      end
-    end
+    NotificationAttachmentPreflight
+      .custom_notification_documents(@custom_notification, custom_notification_documents_owner)
+      .each { |document| pw_protect_attach_file(document, @custom_notification) }
   end
 
-  # @custom_notification.attachment_names, parsed into individual names. CSV.parse_line so a
-  # name containing a literal comma (e.g. a date range like "01 July,2025 to 31 December,2025")
-  # can be protected by wrapping it in quotes; unquoted entries still split on comma exactly
-  # like before. Falls back to a plain comma split if the value has unbalanced quotes, so a
-  # typo can't silently drop all attachments.
+  # Delegates so the preflight and the send resolve attachment_names identically.
   def attachment_name_list
-    return [] if @custom_notification&.attachment_names.blank?
-
-    names = begin
-      CSV.parse_line(@custom_notification.attachment_names).to_a
-    rescue CSV::MalformedCSVError
-      @custom_notification.attachment_names.split(',')
-    end
-    names.compact.map(&:strip).compact_blank
+    NotificationAttachmentPreflight.attachment_name_list(@custom_notification)
   end
 
-  # The documents matching one attachment_names entry on custom_notification_documents_owner —
-  # shared by attach_custom_notification_documents and missing_mandatory_attachment_names so
-  # both use the exact same wildcard-vs-exact resolution rule.
-  #
-  # The PATTERN is squished before use; the stored name is not touched. It doesn't need to be:
-  # Document normalizes :name with squish, and migration 20260814100000 backfilled every row
-  # written before that, so document names in the database carry no stray whitespace. Squishing
-  # the pattern is what covers an attachment_names entry typed or pasted with a doubled space.
-  #
-  # This deliberately leaves the comparison itself in SQL rather than doing it in Ruby.
-  # documents.name is utf8mb4_0900_ai_ci: MySQL treats "Konig" and "König" as equal and gives
-  # zero weight to formatting characters, so "- Ishan" matches "- <U+2060>Ishan" — and real
-  # document names here contain both accents and zero-width joiners. A Ruby comparison
-  # (casecmp?/Regexp) is case-insensitive only, so it would silently stop matching those rows.
-  # Keeping the match in the database preserves that behavior exactly, and keeps the relation
-  # lazy so latest_doc_only's .limit(1) still becomes a SQL LIMIT instead of loading every match.
-  #
-  # exclude_generated_unapproved drops a generated-but-unapproved document from the match
-  # entirely (regardless of attachment_mandatory) - we never send those. That also means an
-  # attachment_names entry whose only match is generated-but-unapproved is treated as absent,
-  # so it can trigger missing_mandatory_attachment_names just like a genuinely missing document.
+  # Delegates for the same reason as attachment_name_list above.
   def documents_matching_attachment_name(name)
-    pattern = name.to_s.squish
-    documents = if pattern.include?('*')
-                  custom_notification_documents_owner.documents.where("name like ? ESCAPE ?", wildcard_to_like(pattern), '\\')
-                else
-                  custom_notification_documents_owner.documents.where(name: pattern)
-                end
-    documents.exclude_generated_unapproved.order(created_at: :desc)
+    NotificationAttachmentPreflight.documents_matching_attachment_name(custom_notification_documents_owner, name)
   end
 
   # attachment_names entries that resolve to zero documents for the current recipient's owner —
@@ -248,8 +200,9 @@ class ApplicationMailer < ActionMailer::Base
     attachment_name_list.reject { |name| documents_matching_attachment_name(name).exists? }
   end
 
-  # Marks this recipient's Noticed::Notification as skipped instead of sending it, when
-  # attachment_mandatory is on and a required document is missing. Guarded on @notification
+  # Marks this recipient's Noticed::Notification as skipped instead of sending it — either
+  # because attachment_mandatory is on and a required document is missing, or because an
+  # attachment breached NotificationAttachmentPreflight::MAX_ATTACHMENT_BYTES. Guarded on @notification
   # being present — that's only ever true for real notifier-driven sends (see
   # custom_notification_documents_owner above); previews build no Notification and should keep
   # rendering normally rather than silently going blank. entity_id is set explicitly here
@@ -260,14 +213,17 @@ class ApplicationMailer < ActionMailer::Base
   # runs in response to an actual skip, never on a blind timer. The delay gives sibling
   # recipient jobs from the same trigger a chance to finish first, so they're more likely to be
   # swept into one report instead of several.
-  def record_notification_skip(missing_names)
+  def record_notification_skip(reason)
     return unless @notification
 
     @notification.update_columns(
-      skip_reason: "Missing required attachment(s): #{missing_names.join(', ')}",
+      skip_reason: reason.to_s.truncate(254),
       entity_id: @entity&.id
     )
-    schedule_skipped_notification_report(@custom_notification.id)
+    # The report is grouped by custom_notification_id, so there is nothing to
+    # group by (and nothing for the job to find) without one. The skip_reason is
+    # still recorded above and still shows on the notifications screen.
+    schedule_skipped_notification_report(@custom_notification.id) if @custom_notification
   rescue StandardError => e
     Rails.logger.error("record_notification_skip failed for notification #{@notification&.id}: #{e.message}")
   end
@@ -302,19 +258,55 @@ class ApplicationMailer < ActionMailer::Base
     @notification&.model
   end
 
+  # The one gate every DOCUMENT attachment passes through — attach_doc and
+  # pw_protect_attach_file below are the only two methods that attach a Document
+  # row, so guarding here covers every notification mailer without each one
+  # needing to know about the limit.
+  #
+  # The rule itself lives in NotificationAttachmentPreflight, NOT here, so that the
+  # up-front batch check and this send-time check cannot disagree — a preflight that
+  # passed something the mailer then refused would be a bug in its own right.
+  #
+  # It does NOT cover mailers that attach generated output rather than a Document
+  # (ReportMailer#scheduled_report, UserMailer#audit_download/#model_download).
+  # Those build the bytes in memory and call mail() directly rather than going
+  # through send_mail, so there is no Notification to record a skip against. They
+  # are single-recipient, user-initiated downloads rather than bulk investor sends,
+  # so the blast radius is one email. features/core/notification_attachment_size.feature
+  # enumerates every attachment site and fails if a new unguarded one appears.
+  #
+  # Records the breach instead of raising: raising here would fail the Noticed
+  # delivery job and retry the same oversized send indefinitely. send_mail checks
+  # the flag and skips the message cleanly, reusing the existing skip machinery.
+  def attachment_allowed?(document)
+    # Tracked per attachment key rather than as a running sum: attachments[] is keyed by
+    # filename, so re-adding the same name REPLACES the part instead of appending one. Summing
+    # blindly would count a 4 MB document matched by two attachment_names entries as 8 MB and
+    # refuse a message that is really 4 MB. NotificationAttachmentPreflight#violations does the
+    # same, so the two layers stay in step.
+    @attached_sizes ||= {}
+    reason = NotificationAttachmentPreflight.rejection_reason(document, attached_sizes: @attached_sizes)
+
+    if reason
+      @oversized_attachments ||= []
+      @oversized_attachments << reason
+      return false
+    end
+
+    @attached_sizes[NotificationAttachmentPreflight.attachment_key(document)] =
+      NotificationAttachmentPreflight.document_byte_size(document)
+    true
+  end
+
   def attach_doc(document)
+    return unless attachment_allowed?(document)
+
     file = document.file
     # Add the file to the document
     attachments["#{document.name}.#{document.uploaded_file_extension}"] = file.read
     file.close
     # Cleanup
     File.delete(file) if file.instance_of?(::File)
-  end
-
-  # Converts a '*' wildcard pattern (e.g. "SOA_*_03_2026") into a SQL LIKE pattern,
-  # escaping any literal %/_ characters in the non-wildcard parts.
-  def wildcard_to_like(name)
-    name.split('*', -1).map { |part| ActiveRecord::Base.sanitize_sql_like(part) }.join('%')
   end
 
   # Convinience method to send mail with simply the subject
@@ -328,12 +320,38 @@ class ApplicationMailer < ActionMailer::Base
       # (@notification present). Previews build no Notification — record_notification_skip
       # would be a no-op there anyway, so let previews render normally instead of going blank.
       if missing.present? && @notification
-        record_notification_skip(missing)
+        record_notification_skip("Missing required attachment(s): #{missing.join(', ')}")
         return
       end
 
       attach_custom_notification_documents
     end
+
+    # Refuse the whole message rather than quietly sending it short of the
+    # document it exists to deliver. @oversized_attachments is set by
+    # attachment_allowed? — including from an attach_all_files call made by the
+    # action BEFORE send_mail, which is why this check sits outside the
+    # @custom_notification branch above.
+    # Guarded on @notification for the same reason as the missing-attachment bail above:
+    # a preview builds no Notification, and blanking it would hide the body the user is
+    # trying to check. The oversized document is left off the preview either way.
+    if @oversized_attachments.present?
+      reason = "Attachment too large: #{@oversized_attachments.join('; ')}"
+
+      if @notification
+        Rails.logger.warn("Not sending mail to #{@to}: #{reason}")
+        record_notification_skip(reason)
+        return
+      end
+
+      # No Notification means either a preview (which should still render — blanking it hides
+      # the body the admin is checking) or a mailer invoked outside a notifier. The message
+      # goes out without the document in that second case, so log it at error level: there is
+      # no skip row to find it by, and a silent drop is exactly what this whole guard exists
+      # to prevent. WorkflowMailer avoids landing here by running the same check itself.
+      Rails.logger.error("Sending mail to #{@to} WITHOUT an attachment - #{reason} (no Noticed::Notification to record a skip against)")
+    end
+
     # send the email
     if @to.present?
       if template_path.present? && template_name.present?
@@ -366,6 +384,10 @@ class ApplicationMailer < ActionMailer::Base
   end
 
   def pw_protect_attach_file(document, custom_notification)
+    # Checked before password_protect_attachment below, so an oversized document
+    # never gets downloaded and run through pdftk just to be discarded.
+    return unless attachment_allowed?(document)
+
     # Do we need to password protect the documents?
     file = if custom_notification&.password_protect_attachment
              password_protect_attachment(document, document.owner, custom_notification)

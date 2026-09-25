@@ -5,6 +5,21 @@ class DocumentSender
       # Resolve recipients once: notification_users walks every access right and runs a policy
       # per contact, so evaluating it for present? and again for each doubled the cost.
       users = document.notification_users
+
+      # Stop the whole send before fanning out if anything it would attach is too big.
+      # DocumentMailer#send_document attaches the document itself, and send_mail adds the
+      # CustomNotification's own documents on top, so both count toward the one email.
+      # (attachment_names contributes nothing here - custom_notification_documents_owner is
+      # the Document, which has no `documents` association.) Raising matches the existing
+      # guards below; both callers already turn it into operator-visible feedback.
+      # Resolved the same way DocumentMailer#set_document does, so the preflight counts the
+      # same CustomNotification documents the send will attach. find_by(id: nil) would return
+      # nil and quietly miss them whenever no explicit id was passed.
+      custom_notification = document.entity.custom_notification("send_document", custom_notification_id:)
+      attachable = [document] + (custom_notification ? custom_notification.documents.to_a : [])
+      oversize = NotificationAttachmentPreflight.error_message(attachable, context: "Cannot send #{document.name}")
+      raise StandardError, oversize if oversize
+
       if users.present?
         users.each do |user|
           DocumentNotifier.with(record: document,
