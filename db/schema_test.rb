@@ -2889,12 +2889,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_20_120000) do
     t.string "display_value", limit: 30
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
+    t.decimal "fx_rate_used", precision: 20, scale: 8
     t.bigint "import_upload_id"
     t.bigint "investor_kpi_mapping_id"
     t.json "json_fields"
     t.bigint "kpi_report_id", null: false
     t.string "name", limit: 100
     t.string "notes"
+    t.decimal "original_value", precision: 20, scale: 6
     t.bigint "owner_id"
     t.decimal "percentage_change", precision: 6, scale: 2, default: "0.0"
     t.bigint "portfolio_company_id"
