@@ -123,7 +123,16 @@ class Entity < ApplicationRecord
   include FileUploader::Attachment(:logo)
 
   monetize :total_investments, as: "total", with_model_currency: :currency
-  monetize :per_share_value_cents, with_model_currency: :currency
+
+  # The headline share price comes from the entity's own valuations. It used to be read from
+  # `entities.per_share_value_cents`, a denormalised copy written by a Valuation after_save --
+  # but that hook only fired for valuations with a blank `owner_type` (15 of 3,793 rows) and
+  # used a silent `save`, so the column is 0.0 for every entity in production. The column is
+  # now unread; dropping it is a separate migration.
+  # Valuation's `default_scope` already excludes synthetic rows, and paranoia excludes deleted ones.
+  def latest_valuation
+    valuations.order(valuation_date: :desc).first
+  end
 
   TYPES = ["Investor", "Investor Advisor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Angel Fund", "Group Company"].freeze
   SECONDARY_BUYERS = ["Investor", "Investment Advisor", "Family Office"].freeze

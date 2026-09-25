@@ -77,13 +77,6 @@ class Valuation < ApplicationRecord
 
   # Ensure callback to the owner
   after_save :update_owner
-  after_save :update_entity
-  def update_entity
-    if owner_type.blank?
-      entity.per_share_value_cents = per_share_value_cents
-      entity.save
-    end
-  end
 
   def update_owner
     if ((!synthetic && saved_change_to_valuation_cents?) ||

@@ -68,13 +68,30 @@ class ApplicationRecord < ActiveRecord::Base
     investor_list.uniq
   end
 
+  # A create or a destroy must always reach the index -- to add the document, or to remove it.
+  # Neither is detectable from `previous_changes` by the time Chewy's after_commit runs:
+  #   * create  -- an `after_save` hook that re-saves the row (Entity#run_post_process ->
+  #                SetupCompany) applies a second, empty changeset and wipes it.
+  #   * destroy -- Trackable makes most models `acts_as_paranoid`, whose soft delete writes
+  #                `deleted_at` outside dirty tracking and leaves `destroyed?` false.
+  # `previous_changes.empty?` used to stand in for both, but it also matched a save that
+  # persisted nothing, so every no-op save enqueued a full reindex. Flag the two real
+  # lifecycle events instead.
+  after_create :mark_index_lifecycle_event
+  after_destroy :mark_index_lifecycle_event
+
   # Check if we should save the record to ES or not
   def index_record?(index_class = nil)
     # For InvestorKyc we have STI, hence index_class is passed in as param, for all else we use the class name
     index_class ||= "#{self.class.name}Index".constantize
-    # We need to check if the record is new or any of the searchable fields have changed
-    previous_changes.empty? || previous_changes.keys.map(&:to_sym).intersect?(index_class::SEARCH_FIELDS)
-    # Only if they have changed we index to ES
+    return true if @index_lifecycle_event || destroyed?
+
+    # Otherwise index only when a field the index actually stores has changed.
+    previous_changes.keys.map(&:to_sym).intersect?(index_class::SEARCH_FIELDS)
+  end
+
+  def mark_index_lifecycle_event
+    @index_lifecycle_event = true
   end
 
   DEFAULT_DATA_TYPE = "String".freeze

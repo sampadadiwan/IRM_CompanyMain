@@ -9,7 +9,8 @@
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                             Valuation (Share Price)</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            <%= money_to_currency entity.per_share_value, params %>
+                            <% latest_valuation = entity.latest_valuation %>
+                            <%= money_to_currency(latest_valuation&.per_share_value || Money.new(0, entity.currency), params) %>
                         </div>
                     </div>
                     <div class="col-auto">
