@@ -305,6 +305,48 @@ Feature: Fund Commitment Adhoc Notification
     When I click the preview adhoc notification button for "Statement Ready"
     Then I see the adhoc notification preview with subject "Statement Ready"
     And I see "SOA_FundA_03_2026" listed as an attachment in the preview
+    And the preview does not report anything over the size limit
+
+  # Preview is where an admin answers "will this attach the right file?", and an oversized
+  # document is silently refused at attach time - so without an explicit warning the preview
+  # shows an empty attachment list, identical to a pattern that matched nothing. The admin
+  # would go looking for a naming problem that does not exist.
+  @attachment
+  Scenario: Preview reports a document that is too large to attach
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has an oversized document "Annual Report" of 20 MB
+    Given there is an adhoc custom notification for the fund with subject "Annual Report" and attachment_names "Annual Report"
+    When I open the actions menu on the first capital commitment
+    When I click the preview adhoc notification button for "Annual Report"
+    Then I see the adhoc notification preview with subject "Annual Report"
+    And I see "Annual Report" reported in the preview as over the size limit
+    And I see no attachments listed in the preview
+
+  # The RUNNING TOTAL half of the rule, in the preview. No single file breaches the limit, so a
+  # per-document check reports nothing at all here - the preview would show two attachments, a
+  # third silently missing, and no explanation. This is the case the first version of the
+  # preview warning got wrong.
+  @attachment
+  Scenario: Preview reports documents that together exceed the size limit
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has 3 documents of 3 MB each named "Quarterly Pack"
+    Given there is an adhoc custom notification for the fund with subject "Quarterly Pack" and attachment_names "Quarterly Pack*" and latest_doc_only "false"
+    When I open the actions menu on the first capital commitment
+    When I click the preview adhoc notification button for "Quarterly Pack"
+    Then I see the adhoc notification preview with subject "Quarterly Pack"
+    And I see the preview report something over the size limit
+    # Two of the three fit and must still be listed - the guard drops only what tips the total.
+    And I see 2 attachments listed in the preview
 
   Scenario: Notification in Investor KYC mode sends one combined email when commitments share a KYC
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"

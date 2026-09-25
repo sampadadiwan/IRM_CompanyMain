@@ -83,6 +83,7 @@ module WithEmailPreview
       @html_body = html_part.body.decoded
       @attachments = mail.attachments
       @subject = mail.subject
+      @oversized_attachments = oversized_preview_attachments(resource, custom_notification_id, mail)
 
       # Render the email preview without layout
       render "/layouts/email_preview", layout: false
@@ -92,6 +93,56 @@ module WithEmailPreview
       Rails.logger.debug @error_message
       render "/layouts/email_preview", layout: true
     end
+  end
+
+  # Documents this email would carry that are over the size limit, so the preview can say so.
+  #
+  # Without this the preview is actively misleading: ApplicationMailer#attachment_allowed?
+  # refuses an oversized document, and send_mail deliberately does NOT blank a preview
+  # (there is no Noticed::Notification to record a skip against, and hiding the body would
+  # defeat the point). The document simply vanishes from the attachment list - identical to
+  # what an attachment_names pattern that matched nothing looks like. Preview is exactly where
+  # an admin checks "will this attach the right file?", so that ambiguity matters.
+  #
+  # `resource` is the right owner to resolve against: every mailer that overrides
+  # custom_notification_documents_owner returns this same record
+  # (CapitalCommitmentMailer -> @capital_commitment, FundInvestorKycMailer -> @investor_kyc),
+  # and the base implementation returns @notification&.model, which in a real send IS that
+  # record. It is nil only in a preview, which is why the preview has to pass it explicitly.
+  #
+  # Uses violation_details rather than checking each document alone, so the RUNNING TOTAL rule
+  # is covered too: several documents that each fit but together exceed the limit are refused
+  # by the mailer, and a per-document check would report nothing at all for them.
+  #
+  # Scoped to the CustomNotification's own documents plus its attachment_names matches, in that
+  # resolver's own order - which is exactly the list ApplicationMailer#attach_custom_notification_
+  # documents iterates. Deliberately does NOT add the record's other documents: most notification
+  # mailers (CapitalCommitmentMailer, the KYC mailers) have no attach_all_files, so folding those
+  # in injects files the mailer never attaches, shifts the running total, and names the wrong
+  # document. A running-total scenario caught exactly that.
+  #
+  # The cost is that a mailer which DOES auto-attach (CapitalRemittanceMailer,
+  # CapitalDistributionPaymentsMailer, ApprovalMailer) has its generated notice unchecked in the
+  # preview. Covering it needs per-mailer knowledge here, which is the drift this whole design
+  # avoids; the batch preflight and the send-time guard both still stop those sends.
+  #
+  # Filtered against what actually got attached, so a document that fitted is never named.
+  def oversized_preview_attachments(resource, custom_notification_id, mail)
+    custom_notification = CustomNotification.find_by(id: custom_notification_id)
+    candidates = NotificationAttachmentPreflight.custom_notification_documents(custom_notification, resource)
+
+    # Compared on the name WITHOUT its extension: attachments are filed as
+    # "<name>.<ext>" while a violation detail carries the bare document name.
+    attached = mail.attachments.map { |a| a.filename.to_s.sub(/\.[^.]*\z/, "") }
+    NotificationAttachmentPreflight.violation_details(candidates).filter_map do |detail|
+      next if attached.include?(detail[:document])
+
+      NotificationAttachmentPreflight.sentence_for(detail)
+    end
+  rescue StandardError => e
+    # A warning that cannot be computed must never take down the preview itself.
+    Rails.logger.warn("oversized_preview_attachments failed: #{e.message}")
+    []
   end
 
   # Renders the email preview template with the specified layout option.

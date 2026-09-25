@@ -856,6 +856,17 @@ end
 # #pw_protect_attach_file would raise on `file.read` if they ever got that far, so these
 # scenarios passing is itself the proof that attachment_allowed? short-circuits before the
 # read rather than downloading a document only to discard it.
+And('the first commitment has an oversized document {string} of {int} MB') do |doc_name, megabytes|
+  cc = @fund.capital_commitments.order(:id).first
+  doc = Document.new(entity: cc.entity, name: doc_name, owner: cc, folder: cc.document_folder, user: @user)
+  doc.file_data = {
+    "id" => "size-guard/#{doc_name.parameterize}.pdf",
+    "storage" => "store",
+    "metadata" => { "filename" => "#{doc_name}.pdf", "size" => megabytes * 1024 * 1024, "mime_type" => "application/pdf" }
+  }.to_json
+  doc.save!(validate: false)
+end
+
 And('the second commitment has an oversized document {string} of {int} MB') do |doc_name, megabytes|
   cc = @fund.capital_commitments.order(:id).second
   doc = Document.new(entity: cc.entity, name: doc_name, owner: cc, folder: cc.document_folder, user: @user)
@@ -869,6 +880,21 @@ end
 
 # Several documents that are each individually within the limit but together exceed it —
 # covers the running-total half of the guard, which a per-document check alone would miss.
+# Same as the second-commitment step below, on the FIRST commitment - the preview action always
+# previews the first one, and the running-total rule has to be visible there too.
+And('the first commitment has {int} documents of {int} MB each named {string}') do |count, megabytes, doc_name|
+  cc = @fund.capital_commitments.order(:id).first
+  count.times do |i|
+    doc = Document.create!(
+      entity: cc.entity, name: "#{doc_name} #{i + 1}", owner: cc, folder: cc.document_folder,
+      user: @user, file: File.new("public/sample_uploads/sample_kyc1.pdf", "r")
+    )
+    data = JSON.parse(doc.file_data)
+    data["metadata"]["size"] = megabytes * 1024 * 1024
+    doc.update_column(:file_data, data.to_json)
+  end
+end
+
 And('the second commitment has {int} documents of {int} MB each named {string}') do |count, megabytes, doc_name|
   cc = @fund.capital_commitments.order(:id).second
   count.times do |i|
@@ -1345,6 +1371,39 @@ end
 Then('I see {string} listed as an attachment in the preview') do |doc_name|
   expect(page).to have_css("h6", text: "Attachments:")
   expect(page).to have_content(doc_name)
+end
+
+# The counterpart to the step above. An oversized document is refused by attachment_allowed?,
+# so it never reaches mail.attachments - without the warning block the preview looks exactly
+# like an attachment_names pattern that matched nothing, which is the opposite conclusion.
+Then('I see {string} reported in the preview as over the size limit') do |doc_name|
+  expect(page).to have_content("over the 7 MB limit"),
+                  "Preview does not report the size problem, so an oversized document is " \
+                  "indistinguishable from one that simply did not match."
+  expect(page).to have_content(doc_name)
+end
+
+# Name-free on purpose: the three documents are created in the same second, so the
+# created_at DESC order the resolver uses - and therefore WHICH of them tips the total - is
+# not stable. What must be stable is that the preview says something at all.
+Then('I see the preview report something over the size limit') do
+  expect(page).to have_content("over the 7 MB limit"),
+                  "Preview reports nothing, so a document dropped for the accumulated total is invisible."
+end
+
+Then('I see {int} attachments listed in the preview') do |count|
+  expect(page).to have_css("h6", text: "Attachments:")
+  within(:xpath, "//h6[contains(., 'Attachments:')]/following-sibling::ul[1]") do
+    expect(page).to have_css("li", count: count)
+  end
+end
+
+Then('I see no attachments listed in the preview') do
+  expect(page).not_to have_css("h6", text: "Attachments:")
+end
+
+Then('the preview does not report anything over the size limit') do
+  expect(page).not_to have_content("over the 7 MB limit")
 end
 
 # Placeholder substitution is verified per-commitment against CapitalCommitmentMailer::PLACEHOLDERS:
