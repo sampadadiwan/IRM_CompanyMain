@@ -497,6 +497,205 @@ class User < ApplicationRecord
     @inv_adv
   end
 
+  # Is this account set up as an investor advisor at all? Used to decide whether the advisor
+  # health check is worth showing on the user page.
+  def investor_advisor_account?
+    has_cached_role?(:investor_advisor) || InvestorAdvisor.with_deleted.exists?(user_id: id)
+  end
+
+  # Health check for an investor advisor account - the usual complaint is "I signed in but there
+  # is no company switcher in the top bar".
+  #
+  #   User.check_investor_advisor("ops@example.com")   # prints a report
+  #   user.check_investor_advisor
+  #
+  # Returns the issue list from #investor_advisor_setup_issues; empty means the setup is complete.
+  def self.check_investor_advisor(email)
+    user = with_deleted.find_by(email: email.to_s.strip)
+    if user.nil?
+      puts "No user with email #{email}" # rubocop:disable Rails/Output
+      return nil
+    end
+
+    user.check_investor_advisor
+  end
+
+  # rubocop:disable Rails/Output -- a console report; stdout is the point
+  def check_investor_advisor
+    issues = investor_advisor_setup_issues
+    home = Entity.find_by(id: advisor_entity_id)
+
+    puts "User            #{id} #{email} (active=#{active}, deleted_at=#{deleted_at.inspect})"
+    puts "Current entity  #{entity_id} #{entity&.name.inspect} type=#{entity&.entity_type.inspect}"
+    puts "Home entity     #{advisor_entity_id.inspect} #{home&.name.inspect} type=#{home&.entity_type.inspect}"
+    puts "advisor_entity_roles=#{advisor_entity_roles.inspect} curr_role=#{curr_role.inspect} " \
+         "investor_advisor_id=#{investor_advisor_id.inspect}"
+    puts "roles           #{roles.pluck(:name).inspect}"
+    puts "switched in?    #{investor_advisor?}   company switcher shown? #{advisor_entity_id.present?}"
+    puts "switcher lists  #{switchable_advisor_entities.pluck('entities.name').inspect}"
+
+    if issues.empty?
+      puts "\nOK - nothing blocking the company switcher."
+    else
+      puts "\n#{issues.size} issue(s):"
+      issues.each do |issue|
+        puts "\n  [#{issue[:severity].to_s.upcase}] #{issue[:summary]}"
+        puts "        Why: #{issue[:detail]}"
+        puts "        Fix: #{issue[:fix]}"
+      end
+    end
+
+    issues
+  end
+  # rubocop:enable Rails/Output
+
+  # The grants the topbar switcher would actually list, exactly as _personas.html.erb builds it.
+  def switchable_advisor_entities
+    InvestorAdvisor.joins(:entity).where(user_id: id).where(entities: { active: true })
+  end
+
+  # Every invariant an investor advisor needs, worst first. Each issue is a hash of
+  #   { severity: :blocker | :warning, summary:, detail:, fix: }
+  # phrased for whoever is looking at the user page, not for a developer.
+  def investor_advisor_setup_issues
+    issues = []
+
+    if deleted_at.present?
+      issues << { severity: :blocker,
+                  summary: "This user account has been deleted",
+                  detail: "Deleted accounts cannot sign in.",
+                  fix: "Restore the account if this was a mistake." }
+    end
+
+    unless active
+      issues << { severity: :blocker,
+                  summary: "This user account is switched off",
+                  detail: "Inactive users are not allowed to sign in.",
+                  fix: "Set the user back to active." }
+    end
+
+    issues.concat(home_entity_issues)
+    issues.concat(advisor_role_issues)
+
+    if switchable_advisor_entities.none?
+      hidden = InvestorAdvisor.with_deleted.where(user_id: id).count
+      issues << if hidden.zero?
+                  { severity: :blocker,
+                    summary: "This advisor has not been given access to any company",
+                    detail: "The switcher lists the companies that have added them as an advisor, and there are none.",
+                    fix: "Ask the client company to add #{email} as an investor advisor." }
+                else
+                  { severity: :blocker,
+                    summary: "None of this advisor's #{hidden} company grants can be used",
+                    detail: "They have been deleted, or the companies themselves are deactivated, so the switcher " \
+                            "has nothing to offer.",
+                    fix: "See the individual grants below." }
+                end
+    end
+
+    if investor_advisor? && entity.present? && investor_advisor.nil?
+      issues << { severity: :warning,
+                  summary: "This advisor is signed in to a company they have no grant for",
+                  detail: "They are currently switched into #{entity&.name}, but no advisor grant exists there. " \
+                          "Their menu will fall back to their own permissions instead of the ones meant for that company.",
+                  fix: "Add an advisor grant for them at #{entity&.name}, or ask them to switch back to Self." }
+    end
+
+    InvestorAdvisor.with_deleted.where(user_id: id).includes(:entity).find_each do |grant|
+      issues.concat(grant.setup_issues)
+    end
+
+    # each_with_index keeps the original order within a severity - Ruby's sort_by is not stable,
+    # and the per-grant issues must stay grouped in the order they were gathered.
+    issues.each_with_index.sort_by { |issue, i| [issue[:severity] == :blocker ? 0 : 1, i] }.map(&:first)
+  end
+
+  # The company switcher in the top bar appears only once the advisor's own firm is recorded on
+  # the user (advisor_entity_id). That is written by setup_defaults, and only when the user's
+  # company is of type "Investor Advisor" - which is why converting an existing user into an
+  # advisor without moving them first leaves them with no switcher.
+  def home_entity_issues
+    return [home_entity_missing_issue] if advisor_entity_id.blank?
+
+    home = Entity.find_by(id: advisor_entity_id)
+    if home.nil?
+      return [{ severity: :blocker,
+                summary: "This advisor's own firm no longer exists",
+                detail: "Their account points at company #{advisor_entity_id}, which is not in the system.",
+                fix: "Set the user's company to their advisory firm and save, so it is recorded again." }]
+    end
+
+    issues = []
+    unless home.entity_type == "Investor Advisor"
+      issues << { severity: :warning,
+                  summary: "#{home.name} is not set up as an advisory firm",
+                  detail: "It is recorded as \"#{home.entity_type}\". The switcher works today, but if this user is " \
+                          "ever saved again their advisor settings will not be rebuilt.",
+                  fix: "Change #{home.name}'s company type to \"Investor Advisor\"." }
+    end
+    unless home.active?
+      issues << { severity: :warning,
+                  summary: "#{home.name}, this advisor's own firm, is deactivated",
+                  detail: "They can still act for their clients, but their own company is switched off.",
+                  fix: "Reactivate #{home.name} if that was not intended." }
+    end
+    issues
+  end
+
+  def home_entity_missing_issue
+    if entity&.entity_type == "Investor Advisor"
+      { severity: :blocker,
+        summary: "No company switcher in the top bar",
+        detail: "This advisor's own firm is not recorded on their account, and the switcher only appears once it " \
+                "is. Their company #{entity.name} is already an advisory firm, so this was simply never filled " \
+                "in - it happens when an existing user is made an advisor after their account was created.",
+        fix: "In the Rails console: u = User.find(#{id}); u.setup_defaults; u.save! - then ask them to sign in again." }
+    else
+      { severity: :blocker,
+        summary: "No company switcher in the top bar",
+        detail: "This advisor's own firm is not recorded on their account, and the switcher only appears once it " \
+                "is. They currently belong to #{entity&.name || 'no company'}" \
+                "#{" (#{entity.entity_type})" if entity&.entity_type}, which is not an advisory firm, so the " \
+                "setting was never filled in.",
+        fix: "Create their advisory firm as a company of type \"Investor Advisor\", move this user into it, and " \
+             "save - then ask them to sign in again." }
+    end
+  end
+
+  def advisor_role_issues
+    issues = []
+
+    unless has_cached_role?(:investor_advisor)
+      issues << { severity: :blocker,
+                  summary: "This user is not marked as an investor advisor",
+                  detail: "Without that, client companies cannot add them as an advisor and the switch is refused.",
+                  fix: "Give the user the investor advisor role." }
+    end
+
+    # home_role_names only forces investor_advisor back in when the list is empty or the home
+    # company is an "Investor Advisor" - otherwise a Revert silently drops the role.
+    stored_roles = advisor_entity_roles.to_s.split(",").map(&:strip).reject(&:empty?)
+    if advisor_entity_id.present? && stored_roles.any? && stored_roles.exclude?("investor_advisor") &&
+       Entity.where(id: advisor_entity_id).pick(:entity_type) != "Investor Advisor"
+      issues << { severity: :warning,
+                  summary: "Switching back to Self would remove this user's advisor status",
+                  detail: "The roles kept for their own firm (#{stored_roles.join(', ')}) do not include investor " \
+                          "advisor, so pressing Self would leave them unable to switch back out again.",
+                  fix: "Add investor_advisor to the user's advisor_entity_roles." }
+    end
+
+    if entity && entity_type != entity.entity_type
+      issues << { severity: :warning,
+                  summary: "This user's recorded company type is out of date",
+                  detail: "The account says \"#{entity_type}\" but #{entity.name} is a \"#{entity.entity_type}\". " \
+                          "Some screens pick what to show from this.",
+                  fix: "In the Rails console: u = User.find(#{id}); u.setup_defaults; u.save!" }
+    end
+
+    issues
+  end
+  private :home_entity_issues, :home_entity_missing_issue, :advisor_role_issues
+
   # Security fix (Finding 7 — redirect_to phishing): redirect_to parameter removed.
   # The magic link email must not embed a caller-supplied redirect destination.
   # After authentication, the destination is determined solely from session[:user_return_to]

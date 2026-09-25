@@ -1,0 +1,93 @@
+<%# Advisor health check, shown on the user page for support staff only (users/show.html.erb).
+    The usual ticket is "the advisor signed in but has no company switcher in the top bar", and
+    every condition behind that lives on a different record - the user, their firm, and each
+    client grant. User#investor_advisor_setup_issues gathers them into one list with a fix for
+    each; this partial only renders it. %>
+<% issues    = user.investor_advisor_setup_issues
+   blockers  = issues.count { |i| i[:severity] == :blocker }
+   switcher  = user.advisor_entity_id.present?
+   switchable = user.switchable_advisor_entities.pluck("entities.name") %>
+
+<div class="card shadow mb-4" id="investor_advisor_check">
+  <div class="card-header py-3 d-flex align-items-center gap-2">
+    <h2 class="m-0 font-weight-bold text-primary fs-4">Investor Advisor Health Check</h2>
+    <span class="badge bg-secondary">Support only</span>
+    <% if issues.empty? %>
+      <span class="badge bg-success ms-auto">All good</span>
+    <% elsif blockers.positive? %>
+      <span class="badge bg-danger ms-auto"><%= pluralize(blockers, "problem") %></span>
+    <% else %>
+      <span class="badge bg-warning text-dark ms-auto"><%= pluralize(issues.size, "warning") %></span>
+    <% end %>
+  </div>
+
+  <div class="card-body">
+    <table class="table table-bordered dataTable no_hover_table mb-3">
+      <tr>
+        <td>Company switcher in the top bar</td>
+        <td>
+          <% if switcher %>
+            <span class="badge bg-success">Shown</span>
+          <% else %>
+            <span class="badge bg-danger">Not shown</span>
+          <% end %>
+        </td>
+      </tr>
+      <tr>
+        <td>Their own advisory firm</td>
+        <td>
+          <% home = Entity.find_by(id: user.advisor_entity_id) %>
+          <%= home ? "#{home.name} (#{home.entity_type})" : "Not recorded" %>
+        </td>
+      </tr>
+      <tr>
+        <td>Currently acting as</td>
+        <td>
+          <%= user.entity&.name %>
+          <% if user.investor_advisor? %>
+            <span class="badge bg-info ms-1">Switched in</span>
+          <% else %>
+            <span class="badge bg-secondary ms-1">Self</span>
+          <% end %>
+        </td>
+      </tr>
+      <tr>
+        <td>Companies they can switch to</td>
+        <td>
+          <% if switchable.any? %>
+            <ul class="a11y-inline-list" aria-label="Companies">
+              <% switchable.each do |name| %>
+                <li><span class="badge bg-success"><%= name %></span></li>
+              <% end %>
+            </ul>
+          <% else %>
+            <span class="badge bg-danger">None</span>
+          <% end %>
+        </td>
+      </tr>
+    </table>
+
+    <% if issues.empty? %>
+      <p class="mb-0 text-success">
+        <i class="ti ti-circle-check"></i>
+        Nothing is blocking this advisor. If they still report a problem, ask them to sign out and back in.
+      </p>
+    <% else %>
+      <ul class="list-unstyled mb-0">
+        <% issues.each do |issue| %>
+          <% blocker = issue[:severity] == :blocker %>
+          <li class="border-start border-4 <%= blocker ? "border-danger" : "border-warning" %> ps-3 mb-3">
+            <div class="fw-semibold">
+              <span class="badge <%= blocker ? "bg-danger" : "bg-warning text-dark" %> me-1">
+                <%= blocker ? "Problem" : "Warning" %>
+              </span>
+              <%= issue[:summary] %>
+            </div>
+            <div class="fs-2 text-body-secondary"><%= issue[:detail] %></div>
+            <div class="fs-2"><span class="fw-semibold">What to do:</span> <%= issue[:fix] %></div>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+</div>
