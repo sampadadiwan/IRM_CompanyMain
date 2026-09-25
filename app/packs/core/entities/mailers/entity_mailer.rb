@@ -51,6 +51,11 @@ class EntityMailer < ApplicationMailer
 
   def notify_errors
     @error_msg = params[:error_msg]
+    # Optional. When present the view renders these rows as a table INSTEAD of the numbered
+    # error list, so a report about many recipients can be read at a glance. Shape:
+    # { title:, summary:, headers: [...], rows: [[...], ...], footnote:, guidance: }.
+    # Every existing caller passes only error_msg and renders exactly as before.
+    @error_table = params[:error_table]
     # Optional — a link back into the app pre-filtered to whatever this error report is about
     # (e.g. SkippedNotificationReportJob links to the skipped notifications it just reported).
     @filter_url = params[:filter_url]

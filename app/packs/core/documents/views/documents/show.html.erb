@@ -259,7 +259,8 @@
                   msg = "This will send an email to the recipients who have access to this document using custom notification
                   <br><strong>#{link_to cust_not.subject, custom_notification_path(cust_not), target: '_blank'}</strong><br>Proceed?<br>
                   #{link_to 'View Who Gets Notified', show_email_list_document_path(@document), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}
-                  #{link_to 'View Custom Notifications', custom_notifications_path(entity_id: @document.entity_id, filter: true, q: query_params), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}"
+                  #{link_to 'View Custom Notifications', custom_notifications_path(entity_id: @document.entity_id, filter: true, q: query_params), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}
+                  #{attachment_size_caution(send_document_attachments(@document, cust_not))}"
                   %>
                   <%= button_to "Send #{cust_not.subject}",
                   send_document_notification_document_path(@document, custom_notification_id: cust_not.id),

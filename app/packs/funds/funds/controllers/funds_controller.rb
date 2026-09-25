@@ -351,6 +351,19 @@ class FundsController < ApplicationController
     # renders when @custom_notification.email_method == "adhoc_kyc_notification" — harmless
     # to always pass through since FundNotificationJob ignores whichever of the two doesn't apply.
     investor_kyc_ids = params[:investor_kyc_ids].presence
+
+    # Documents attached to the notification itself go to EVERY recipient, so if one of them
+    # breaches the size limit this send cannot succeed for anyone - and that is knowable right
+    # here, synchronously. FundNotificationJob preflights the rest (attachment_names resolves
+    # per recipient and needs the recipient list), but its verdict only reaches the operator as
+    # an email minutes later. Saying so now, on the page they are already looking at, is the
+    # difference between a caught mistake and a mystery.
+    oversize = NotificationAttachmentPreflight.error_message(
+      @custom_notification.documents.to_a,
+      context: "Cannot send \"#{@custom_notification.subject}\""
+    )
+    return redirect_back_or_to(fund_path(@fund), alert: oversize) if oversize
+
     @fund.adhoc_notification(@custom_notification.id, commitment_ids:, investor_kyc_ids:, triggered_by_user_id: current_user.id)
     redirect_back_or_to(fund_path(@fund), notice: "Notification trigger started for #{@fund.name}.")
   end

@@ -136,8 +136,25 @@ class CapitalRemittance < ApplicationRecord
       owner_type: "CapitalRemittance", owner_id: id, owner_tag: "Generated", approved: false
     )
     reasons << "no investor contacts are subscribed to Capital Call notifications" unless investor.capital_call_subscribers?(fund)
+    # Attachment size, checked HERE and not only at send time. This button is the one call path
+    # with no batch preflight - it sends a single remittance directly - so without this the
+    # controller reports "Sent notification.", the mailer then refuses the oversized attachment,
+    # and the operator finds out from a skipped-notification report minutes later. Both callers
+    # of this method use it pre-emptively (the show page greys the button out and lists the
+    # reasons; the controller refuses the request), so adding it here covers both.
+    reasons.concat(NotificationAttachmentPreflight.violations(oversized_check_documents))
     reasons
   end
+
+  # Mirrors CapitalRemittanceMailer#attach_all_files plus the notification's own uploads, which
+  # is what an email for THIS remittance would carry. The notification is resolved the same way
+  # #send_notification resolves it, so a reminder is judged on the reminder template.
+  def oversized_check_documents
+    email_method = notification_sent ? :reminder_capital_remittance : :notify_capital_remittance
+    NotificationAttachmentPreflight.auto_attached_documents(self) +
+      NotificationAttachmentPreflight.custom_notification_documents(capital_call.custom_notification(email_method), self)
+  end
+  private :oversized_check_documents
 
   # Reasons the payment-received notification would not actually reach the investor.
   # That notification has no manual send control of its own — it's fired automatically,

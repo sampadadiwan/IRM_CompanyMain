@@ -889,6 +889,40 @@ And('the second commitment has {int} documents of {int} MB each named {string}')
   end
 end
 
+# A document attached directly to the notification template, oversized. These go to EVERY
+# recipient identically, which is why the controller can refuse the send synchronously.
+And('the custom notification has an oversized document {string} of {int} MB') do |doc_name, megabytes|
+  doc = Document.new(entity: @custom_notification.entity, name: doc_name,
+                     owner: @custom_notification, folder: @custom_notification.document_folder,
+                     user: @user)
+  doc.file_data = {
+    "id" => "size-guard/#{doc_name.parameterize}.pdf",
+    "storage" => "store",
+    "metadata" => { "filename" => "#{doc_name}.pdf", "size" => megabytes * 1024 * 1024, "mime_type" => "application/pdf" }
+  }.to_json
+  doc.save!(validate: false)
+end
+
+# The first commitment's investor must genuinely receive the email. Distinct from
+# "all commitment investors receive..." which iterates every commitment and asserts nothing
+# for one whose notification_users is empty - vacuously passing exactly where this matters.
+Then('the first commitment investor receives the notification email') do
+  first_cc = @fund.capital_commitments.order(:id).first
+  recipients = first_cc.investor.notification_users(first_cc)
+  expect(recipients).not_to be_empty, "notification_users is empty for the first commitment"
+  recipients.each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil, "No email delivered to #{user.email}"
+    expect(current_email.subject).to include @custom_notification.subject
+  end
+end
+
+Then('the second commitment has no notification recipients') do
+  second_cc = @fund.capital_commitments.order(:id).second
+  msg = "expected the second commitment to have no recipients - otherwise this scenario does not test what it claims"
+  expect(second_cc.investor.notification_users(second_cc)).to be_empty, msg
+end
+
 # Same as "the first commitment has document ..." but marks the document as generated
 # (owner_tag: "Generated") and approved — proves an approved generated document still attaches
 # normally, unlike its unapproved counterpart below. See Document#exclude_generated_unapproved.
@@ -966,6 +1000,11 @@ And('the notification email does not have the document {string} attached') do |d
 end
 
 # Trigger with no commitment_ids → nil → FundNotificationJob sends to all commitments
+# Deliberately WITHOUT triggered_by_user_id. "Skipped notification report falls back to the
+# entity's company admins when no admin triggered the send" depends on that absence, and because
+# @user is itself a company_admin the report reaches the same address either way - so passing a
+# user here makes that scenario pass while testing nothing. Scenarios that need a trigger use
+# "triggered by the admin for all commitments" below.
 When('the adhoc notification is triggered for all commitments') do
   @fund.adhoc_notification(@custom_notification.id)
 end
@@ -1098,6 +1137,56 @@ Then('the entity\'s company admins receive a skipped notification report mention
   expect(current_email).not_to be_nil, "No skipped-notification report delivered to company admin #{@user.email}"
   expect(current_email.body.to_s).to include(doc_name)
   expect(current_email.body.to_s).to include("skip_reason_not_null")
+end
+
+# In-app alerts for a blocked send are broadcast from an UNSAVED UserAlert (the message is
+# longer than the 255-char user_alerts.message column, so it is never persisted). That makes
+# them invisible to a table query, which is how the capital-call paths went live with no
+# on-screen alert at all: they simply never passed a user_id, and nothing failed. Capturing the
+# broadcast is the only way to assert it.
+Given('in-app alerts are captured') do
+  @captured_alerts = []
+  captured = @captured_alerts
+  allow_any_instance_of(UserAlert).to receive(:broadcast) do |alert|
+    captured << { user_id: alert.user_id, level: alert.level, message: alert.message.to_s }
+    true
+  end
+end
+
+Then('the triggering user gets a danger in-app alert mentioning {string}') do |text|
+  expect(@captured_alerts).not_to be_nil, "Add 'Given in-app alerts are captured' before the send"
+  missing = "No in-app alert was broadcast, so a blocked send leaves nothing on screen - the " \
+            "operator would only ever learn about it by email."
+  expect(@captured_alerts).not_to be_empty, missing
+
+  alert = @captured_alerts.last
+  expect(alert[:level]).to eq("danger")
+  wrong_user = "Alert went to user #{alert[:user_id].inspect}, not the triggering admin #{@user.id}."
+  expect(alert[:user_id]).to eq(@user.id), wrong_user
+  expect(alert[:message]).to include(text)
+end
+
+# The blocked-send email must identify WHOSE document is oversized, not just the document.
+#
+# CapitalCommitment#to_s is what the message interpolates ("Delta Ventures, Folio: TEST-68484C"),
+# so this asserts against the same string an operator would use to find the commitment in the
+# app. A message that names only the file is unactionable on a real send: a fund with 137
+# investors all holding a document called "Annual Report" gives the operator nowhere to start.
+Then('the blocked-send email names the second commitment investor') do
+  second_cc = @fund.capital_commitments.order(:id).second
+  expect(current_email).not_to be_nil, "No blocked-send email to assert against — open_email must run first"
+  # Unescaped before comparing: the body is HTML, so a factory-generated investor name like
+  # "D'Amore LLC" is rendered as "D&#39;Amore LLC". Comparing raw passes or fails depending on
+  # which names Faker happened to produce, which is how this assertion looked green on a
+  # four-scenario run and red on the full suite.
+  body = CGI.unescapeHTML(current_email.body.to_s)
+  message = "Blocked-send email does not name #{second_cc} — the operator cannot tell which " \
+            "investor's document is oversized. Body was: #{body}"
+  expect(body).to include(second_cc.to_s), message
+end
+
+Then('the email body should not contain {string}') do |body_content|
+  expect(current_email.body.to_s).not_to include(body_content)
 end
 
 # The email to each commitment investor should have the named document attached

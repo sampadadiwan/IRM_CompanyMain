@@ -512,8 +512,39 @@ Then('when the capital call is approved') do
   @capital_call.reload
 end
 
+# Inflates the reported size of an existing remittance document rather than uploading a real
+# large file. attach_all_files reads size from Shrine metadata, so this is what the preflight
+# sees; the bytes on disk are irrelevant and a multi-MB fixture has no place in the repo.
+Given('one remittance has an oversized document {string} of {int} MB') do |doc_name, megabytes|
+  doc = Document.where(owner_type: "CapitalRemittance", name: doc_name).first
+  doc ||= Document.where(owner_type: "CapitalRemittance").first
+  raise "no CapitalRemittance document to inflate" if doc.nil?
+
+  data = JSON.parse(doc.file_data)
+  data["metadata"]["size"] = megabytes * 1024 * 1024
+  doc.update_column(:file_data, data.to_json)
+  @oversized_remittance_id = doc.owner_id
+end
+
+# The remittance carrying the oversized document has ALREADY been notified, so this run would
+# never email it. It must therefore not block the remittances that have not been notified -
+# otherwise one stale document silences every first-time notice on the call.
+Given('the remittance with the oversized document is already notified') do
+  raise "no oversized remittance recorded" if @oversized_remittance_id.nil?
+
+  CapitalRemittance.where(id: @oversized_remittance_id).update_all(notification_sent: true)
+end
+
+Then('the remittances that were not yet notified still receive their notices') do
+  pending_ids = CapitalRemittance.where(notification_sent: false).pluck(:id)
+  expect(ActionMailer::Base.deliveries).not_to be_empty,
+                                               "expected notices for the #{pending_ids.size} un-notified remittance(s), got none"
+end
+
 Then('the capital call notifications are sent') do
-  @capital_call.send_notification
+  # @user, exactly as CapitalCallsController#notify passes current_user.id - without it a
+  # size-blocked run reports by email only and nothing appears on screen.
+  @capital_call.send_notification(@user.id)
   @capital_call.reload
 end
 
@@ -523,6 +554,28 @@ end
 
 Then('no capital call notification emails should have been sent') do
   ActionMailer::Base.deliveries.should be_empty
+end
+
+# A BLOCKED send does not leave deliveries empty — the operator's "not sent" report is itself
+# an email. Asserting emptiness would fail for the right reason while reading like the wrong
+# one, so this separates the two: no investor may receive a notice, and the operator MUST
+# receive the report. "Nothing was sent at all" would also pass if the preflight silently did
+# nothing, which is the failure mode this whole feature exists to prevent.
+Then('no {word} notice reaches an investor, only the blocked-send report') do |_kind|
+  reports, notices = ActionMailer::Base.deliveries.partition { |m| m.subject.to_s.include?("not sent") }
+
+  expect(notices).to be_empty,
+                     "Expected the oversized attachment to stop every notice, but these were sent: " \
+                     "#{notices.map(&:subject).inspect}"
+  expect(reports).not_to be_empty,
+                         "The send was stopped but nobody was told — no blocked-send report was delivered."
+
+  # The report has to be actionable, which is the whole point of the table: which email, which
+  # investor, which document, how big.
+  body = reports.first.body.to_s
+  expect(body).to include("Investor / Folio")
+  expect(body).to include("Why it was blocked")
+  expect(body).to include("NO emails were sent - the entire send was stopped")
 end
 
 Then('some capital call notification emails should have been sent') do
@@ -574,6 +627,48 @@ end
 Given("the remittance's generated call notice is marked as pending approval again") do
   remittance = @capital_call.capital_remittances.first
   Document.where(owner_type: "CapitalRemittance", owner_id: remittance.id, owner_tag: "Generated").update_all(approved: false)
+end
+
+# The reminder button on the remittances tab. Runs INSIDE the request (no job), so it returns
+# the BlockedSend rather than reporting through a broadcast only - CapitalCallsController#reminder
+# turns that into a flash. Its preflight is wired separately from CapitalCallJob#notify's (see
+# the comment on #blocked_by_attachment_size?), so notify passing proves nothing about this.
+When('the capital call reminders are sent') do
+  @blocked_reminder = @capital_call.reminder_capital_call(@user.id)
+  @capital_call.reload
+end
+
+Then('the reminder run is blocked, naming the oversized document') do
+  silent = "reminder_capital_call returned nothing, so the controller cannot tell the operator " \
+           'anything and would report "Reminder sent" for a run that sent nothing.'
+  expect(@blocked_reminder).to be_present, silent
+
+  message = @blocked_reminder.to_s
+  expect(message).to include("over the 7 MB limit for a single attachment")
+  expect(message).to include("NO emails were sent - the entire send was stopped")
+
+  # The flash form has to stay small: the session is a cookie store with a 4 KB budget for
+  # everything, and the full message can name ten recipients. It must still name the investor.
+  expect(@blocked_reminder.headline.length).to be < 600
+  expect(@blocked_reminder.headline).to include("Nothing was sent to anyone")
+
+  reminders = ActionMailer::Base.deliveries.reject { |m| m.subject.to_s.include?("not sent") }
+  expect(reminders).to be_empty, "A reminder was emailed despite the oversized attachment: #{reminders.map(&:subject)}"
+end
+
+Then('the reminder run goes ahead') do
+  expect(@blocked_reminder).to be_nil, "The reminder run was blocked: #{@blocked_reminder}"
+end
+
+# skip_doc_gen? reads a json_fields key, so it cannot be scoped into the relation - it is the
+# one filter the preflight applies in Ruby, via skip_if. Setting it on the remittance holding
+# the oversized document is what proves the skip is applied BEFORE the size check rather than
+# after it.
+Given('the commitment with the oversized document has skip_doc_gen enabled') do
+  doc = Document.where(owner_type: "CapitalRemittance").order(:id).find { |d| d.file&.size.to_i > 7.megabytes }
+  raise "no oversized CapitalRemittance document found" if doc.nil?
+
+  CapitalRemittance.find(doc.owner_id).capital_commitment.update!(json_fields: { "skip_doc_gen" => "yes" })
 end
 
 Given('the first commitment has skip_doc_gen enabled') do

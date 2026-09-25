@@ -579,9 +579,99 @@ Feature: Fund Commitment Adhoc Notification
     And the first commitment has document "Annual Report" with file "sample_kyc1.pdf"
     And the second commitment has an oversized document "Annual Report" of 20 MB
     Given there is an adhoc custom notification for the fund with subject "Annual Report" and attachment_names "Annual Report"
+    And in-app alerts are captured
+    # "by the admin" because an in-app alert needs someone to send it to - FundsController always
+    # passes current_user.id. The plain trigger step has no user on purpose (see its definition).
+    When the adhoc notification is triggered by the admin for all commitments
+    Then no commitment investor receives a notification email
+    And the triggering user gets a danger in-app alert mentioning "over the 7 MB limit"
+    And the user receives an email with "not sent" in the subject
+    # The operator has to be able to ACT on this email, which means two things the earlier
+    # version of the message left out. It must name whose document is oversized - "Annual
+    # Report is 20 MB" is unusable on a 137-investor send when only one of them is at fault -
+    # and it must say that the investors NOT named got nothing either. Without the second
+    # sentence the email reads as "one investor failed", and nothing else corrects that: a
+    # batch blocked before it starts writes no Noticed::Notification, so the notifications
+    # list shows neither a sent nor a skipped row for the investors who were fine.
+    And the blocked-send email names the second commitment investor
+    # The email reports this as a table - which email, which investor, which document, how big,
+    # why - because the single-paragraph version it replaced was unreadable once more than one
+    # recipient was involved.
+    And the email body should contain "Investor / Folio"
+    And the email body should contain "Annual Report"
+    And the email body should contain "20 MB"
+    And the email body should contain "Larger than the 7 MB limit for one attachment"
+    And the email body should contain "NO emails were sent - the entire send was stopped"
+    And the email body should contain "1 recipient whose attachments were within the limit"
+    # Client-facing: their own admin triggered this, so the support-facing diagnostic header
+    # (host, environment, triggered-by) must not be in it.
+    And the email body should not contain "Environment"
+
+  # THE CASE THIS MISSED IN PRACTICE.
+  #
+  # The preflight deliberately skips commitments nobody would be emailed for - otherwise one
+  # dormant commitment holding a large document would block the notification for every other
+  # investor in the fund. The consequence is easy to misread as a broken limit: an oversized
+  # document sitting on a commitment with no recipients does NOT stop the send, and the
+  # investors who do have recipients are emailed normally. That is correct, and it needs to
+  # stay correct - the alternative is a single dead commitment silencing a whole fund.
+  @attachment
+  Scenario: A commitment nobody would be emailed for does not block the send for everyone else
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is an existing investor "" with "0" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Annual Report" with file "sample_kyc1.pdf"
+    And the second commitment has an oversized document "Annual Report" of 20 MB
+    Given there is an adhoc custom notification for the fund with subject "Annual Report" and attachment_names "Annual Report"
+    When the adhoc notification is triggered for all commitments
+    Then the second commitment has no notification recipients
+    And the first commitment investor receives the notification email
+    And the notification email has the document "Annual Report" attached
+
+  # The counterpart, so the two cannot be confused: the SAME oversized document on a
+  # commitment that does have recipients stops the run for everyone.
+  @attachment
+  Scenario: An oversized document on a commitment with recipients blocks the whole send
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Annual Report" with file "sample_kyc1.pdf"
+    And the second commitment has an oversized document "Annual Report" of 20 MB
+    Given there is an adhoc custom notification for the fund with subject "Annual Report" and attachment_names "Annual Report"
     When the adhoc notification is triggered for all commitments
     Then no commitment investor receives a notification email
     And the user receives an email with "not sent" in the subject
+    And the blocked-send email names the second commitment investor
+    And the email body should contain "NO emails were sent - the entire send was stopped"
+
+  # A document attached to the NOTIFICATION rather than to a commitment goes to every
+  # recipient identically, so one oversized one stops the run regardless of who is on it.
+  @attachment
+  Scenario: An oversized document on the notification itself stops the send
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with subject "Quarterly Pack"
+    And the custom notification has an oversized document "Quarterly Pack" of 20 MB
+    When the adhoc notification is triggered for all commitments
+    Then no commitment investor receives a notification email
+    And the user receives an email with "not sent" in the subject
+    # Every recipient is affected here, since the document hangs off the notification rather
+    # than off one commitment - so there is no "whose attachments were fine" clause to add,
+    # and the message must not invent one.
+    And the email body should contain "NO emails were sent - the entire send was stopped."
+    And the email body should not contain "within the limit"
 
   # The running-total half of the guard: no single document breaches the limit, but the
   # message they would produce together does. A per-document check alone would send this.
@@ -599,6 +689,12 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all commitments
     Then no commitment investor receives a notification email
     And the user receives an email with "not sent" in the subject
+    And the blocked-send email names the second commitment investor
+    # The running-total rule reports the total reached, not just the one document's size -
+    # otherwise a table row reading "3 MB" against a "7 MB" limit looks like a false positive.
+    And the email body should contain "Together with the other attachments this email reaches"
+    And the email body should contain "over the 7 MB limit for one email"
+    And the email body should contain "NO emails were sent - the entire send was stopped"
 
   # Regression guard on the size check itself — documents under the limit must be
   # completely unaffected. This is the common path for every client.

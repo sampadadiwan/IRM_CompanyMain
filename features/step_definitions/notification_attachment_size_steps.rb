@@ -94,7 +94,12 @@ PREFLIGHT_CALL_SITES = {
   ["app/packs/funds/capital_calls/models/capital_call.rb", "reminder_capital_call"] => "Capital call reminders",
   ["app/packs/funds/capital_distribution_payments/jobs/capital_distribution_payment_notification_job.rb", "perform"] => "Distribution notices",
   ["app/packs/funds/funds/jobs/fund_notification_job.rb", "perform_by_capital_commitment"] => "Adhoc fund notification",
-  ["app/packs/funds/funds/jobs/fund_notification_job.rb", "perform_by_investor_kyc"] => "Adhoc KYC notification"
+  ["app/packs/funds/funds/jobs/fund_notification_job.rb", "perform_by_investor_kyc"] => "Adhoc KYC notification",
+  # Not a fan-out point, but the only place a blocked send is reported to the operator
+  # SYNCHRONOUSLY. Documents attached to the notification itself are identical for every
+  # recipient, so this can answer before anything is queued; lose it and the operator is
+  # back to learning about it from an email minutes later.
+  ["app/packs/funds/funds/controllers/funds_controller.rb", "trigger_adhoc_notification"] => "Adhoc send form (synchronous guard)"
 }.freeze
 
 # True when the named method reaches the preflight — directly, or through one helper defined

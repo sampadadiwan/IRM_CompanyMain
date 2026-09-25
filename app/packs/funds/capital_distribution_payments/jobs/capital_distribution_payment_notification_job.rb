@@ -32,7 +32,7 @@ class CapitalDistributionPaymentNotificationJob < ApplicationJob
       skip_if: ->(cdp) { cdp.capital_commitment.skip_doc_gen? }
     ) { |cdp| NotificationAttachmentPreflight.auto_attached_documents(cdp) }
     if blocked.present?
-      send_notification(blocked, user_id, "danger")
+      # report_blocked_send broadcasts the UserAlert itself now.
       NotificationAttachmentPreflight.report_blocked_send(blocked, entity_id: @capital_distribution.entity_id, user_id:,
                                                                    subject: "Distribution notices not sent")
       return

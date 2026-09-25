@@ -105,6 +105,49 @@ Then('the data should be correctly displayed for each Capital Distribution Payme
   end
 end
 
+# Inflates the reported size of a generated distribution notice. attach_all_files reads size
+# from Shrine metadata, so this is exactly what the preflight sees.
+Given('one distribution payment has an oversized document of {int} MB') do |megabytes|
+  doc = Document.where(owner_type: "CapitalDistributionPayment").first
+  raise "no CapitalDistributionPayment document to inflate" if doc.nil?
+
+  data = JSON.parse(doc.file_data)
+  data["metadata"]["size"] = megabytes * 1024 * 1024
+  doc.update_column(:file_data, data.to_json)
+  @oversized_payment_id = doc.owner_id
+end
+
+# Mirrors the capital call step: skip_doc_gen? reads a json_fields key, so it is the one filter
+# the preflight applies in Ruby rather than in SQL. Flagging the payment that holds the oversized
+# document proves the skip runs BEFORE the size check.
+Given('the commitment with the oversized distribution document has skip_doc_gen enabled') do
+  raise "run the oversized-document step first" if @oversized_payment_id.blank?
+
+  CapitalDistributionPayment.find(@oversized_payment_id).capital_commitment
+                            .update!(json_fields: { "skip_doc_gen" => "yes" })
+end
+
+# Deliberately NOT "the investors must receive email ..." - that step walks every Investor and
+# demands an email for each, which is wrong here: the skip_doc_gen payment must receive nothing.
+# What matters is that the rest of the distribution went out despite the oversized document
+# sitting on the skipped one.
+Then('the distribution payments that were not skipped still receive their notices') do
+  skipped = CapitalDistributionPayment.find(@oversized_payment_id)
+  skipped_emails = skipped.investor.emails.compact
+  others = Investor.where.not(id: skipped.investor_id).flat_map(&:emails).compact
+
+  notices = ActionMailer::Base.deliveries.reject { |m| m.subject.to_s.include?("not sent") }
+  expect(notices).not_to be_empty,
+                        "No distribution notice was sent at all - the oversized document on the skip_doc_gen " \
+                        "payment blocked the whole run, which is exactly what skip_if exists to prevent."
+
+  recipients = notices.flat_map { |m| Array(m.to) }.uniq
+  expect(recipients & skipped_emails).to be_empty,
+                                        "The skip_doc_gen payment's investor was emailed: #{(recipients & skipped_emails).inspect}"
+  expect(recipients & others).not_to be_empty,
+                                    "No other investor received a notice; recipients were #{recipients.inspect}"
+end
+
 When('the capital distribution notifications are sent') do
   CapitalDistributionPaymentNotificationJob.perform_now(@capital_distribution.id, @user.id)
 end

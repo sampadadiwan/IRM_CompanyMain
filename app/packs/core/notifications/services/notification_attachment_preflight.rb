@@ -64,24 +64,61 @@ class NotificationAttachmentPreflight
     "#{document.name}.#{extension}"
   end
 
+  # Which rule this document breaks, and the numbers behind it — nil when it is fine.
+  #
   # attached_sizes is {attachment_key => bytes} for what has already been accepted onto this
   # message. A hash rather than a running total because attachments[] is keyed by filename:
   # adding a document whose key is already present REPLACES that part, so the prospective
   # total is the merge, not the sum. Summing blindly would count a 4 MB document matched by
   # two attachment_names entries as 8 MB and refuse a message that is really 4 MB.
-  def self.rejection_reason(document, attached_sizes: {})
+  #
+  # Split out from the sentence below because the operator's email renders these as TABLE
+  # CELLS (document / size / why) while a recorded skip_reason and a flash message need one
+  # sentence. Deriving both from this hash keeps them from disagreeing about whether a
+  # document is over the limit, which is the one thing about this check that must not vary.
+  def self.rejection_detail(document, attached_sizes: {})
     size = document_byte_size(document)
     return nil if size.zero?
 
-    return "#{document.name} is #{human(size)} - over the #{human(MAX_ATTACHMENT_BYTES)} limit for a single attachment" if size > MAX_ATTACHMENT_BYTES
+    return { document: document.name, size:, rule: :single } if size > MAX_ATTACHMENT_BYTES
 
-    # Within the limit alone; it is the accumulated total that breaches it. Worded
-    # differently so the recorded skip_reason is not misleading about which rule fired.
+    # Within the limit alone; it is the accumulated total that breaches it. Reported
+    # differently so neither the skip_reason nor the table is misleading about which rule fired.
     prospective = attached_sizes.merge(attachment_key(document) => size).values.sum
-    return "#{document.name} would take the total over the #{human(MAX_ATTACHMENT_BYTES)} limit for one email" if prospective > MAX_ATTACHMENT_BYTES
+    return { document: document.name, size:, rule: :total, total: prospective } if prospective > MAX_ATTACHMENT_BYTES
 
     nil
   end
+
+  def self.rejection_reason(document, attached_sizes: {})
+    detail = rejection_detail(document, attached_sizes:)
+    detail && sentence_for(detail)
+  end
+
+  # One-line form, for a Noticed::Notification#skip_reason, a flash, or a log line. The exact
+  # wording is depended on by features/fund/*.feature and by rows already written to
+  # skip_reason in production, so it is left alone.
+  def self.sentence_for(detail)
+    case detail[:rule]
+    when :single
+      "#{detail[:document]} is #{human(detail[:size])} - over the #{human(MAX_ATTACHMENT_BYTES)} limit for a single attachment"
+    when :total
+      "#{detail[:document]} would take the total over the #{human(MAX_ATTACHMENT_BYTES)} limit for one email"
+    end
+  end
+
+  # Table-cell form. The document name and its size are their own columns, so this says only
+  # WHY, and says it in terms the operator can act on.
+  def self.cell_for(detail)
+    case detail[:rule]
+    when :single
+      "Larger than the #{human(MAX_ATTACHMENT_BYTES)} limit for one attachment"
+    when :total
+      "Together with the other attachments this email reaches #{human(detail[:total])}, " \
+      "over the #{human(MAX_ATTACHMENT_BYTES)} limit for one email"
+    end
+  end
+  private_class_method :cell_for
 
   # Documents are checked per recipient rather than once per send: attachment_names
   # resolves against each recipient's own record (ApplicationMailer#custom_notification_
@@ -91,8 +128,9 @@ class NotificationAttachmentPreflight
   # Accumulates exactly as the mailer does while attaching, so this answers the same
   # question the mailer will answer later, in the same order.
   #
-  # Returns [] when the set is sendable, otherwise a list of human-readable problems.
-  def self.violations(documents)
+  # Returns [] when the set is sendable, otherwise one rejection_detail hash per refused
+  # document. Callers render those as sentences (#violations) or as table rows.
+  def self.violation_details(documents)
     docs = Array(documents).compact.uniq
     return [] if docs.empty?
 
@@ -104,10 +142,17 @@ class NotificationAttachmentPreflight
     #     name an innocent file in the operator's email.
     sizes = {}
     docs.filter_map do |doc|
-      reason = rejection_reason(doc, attached_sizes: sizes)
-      sizes[attachment_key(doc)] = document_byte_size(doc) if reason.nil?
-      reason
+      detail = rejection_detail(doc, attached_sizes: sizes)
+      sizes[attachment_key(doc)] = document_byte_size(doc) if detail.nil?
+      detail
     end
+  end
+
+  # The same answer as violation_details, rendered as sentences. Kept because the synchronous
+  # single-document path (DocumentSender, FundsController#trigger_adhoc_notification) shows a
+  # flash, not a table.
+  def self.violations(documents)
+    violation_details(documents).map { |detail| sentence_for(detail) }
   end
 
   # ---------------------------------------------------------------------------
@@ -205,21 +250,124 @@ class NotificationAttachmentPreflight
   # alert the operator. Use it for conditions that cannot be expressed in SQL (e.g.
   # CapitalCommitment#skip_doc_gen?, which reads a json_fields key); scope the rest into the
   # relation so it never reaches Ruby.
-  def self.batch_error_message(records, custom_notification, context: nil, skip_if: nil)
+  def self.batch_error_message(records, custom_notification, context: nil, skip_if: nil, email_label: nil)
     problems = []
+    rows = []
+    checked = 0
+    affected = Set.new
+    label = email_label.presence || custom_notification&.subject.presence || "-"
 
     each_record(records) do |record|
       next if skip_if&.call(record)
 
+      checked += 1
       auto = block_given? ? Array(yield(record)) : []
-      problems.concat(violations(auto + custom_notification_documents(custom_notification, record)))
+      # Labelled with the record, and NOT uniq'd across records. "Quarterly Report is 10 MB"
+      # is useless on a 137-investor send - the operator cannot act on it without knowing
+      # whose document it is. Every affected recipient is named so the offending documents
+      # can actually be found and fixed.
+      violation_details(auto + custom_notification_documents(custom_notification, record))
+        .each do |detail|
+          affected << record.id
+          problems << "#{record} - #{sentence_for(detail)}"
+          rows << [label, record.to_s, detail[:document], human(detail[:size]), cell_for(detail)]
+        end
     end
 
-    problems.uniq!
     return nil if problems.blank?
 
-    build_message(problems, context)
+    scope = batch_scope(checked, affected.size)
+    BlockedSend.new(message: build_message(summarise(problems), context, scope:),
+                    headline: flash_headline(problems, context),
+                    table: build_table(rows, context, scope))
   end
+
+  # Bounded form, for a flash. The session is a cookie store (4 KB for the WHOLE session), and
+  # `message` can name ten recipients - long enough to risk CookieOverflow once anything else is
+  # in the session, and far too long to read in a banner either way. Names the first recipient,
+  # counts the rest, and points at the email that carries the full table.
+  def self.flash_headline(problems, context)
+    prefix = context.present? ? "#{context}: " : ""
+    extra = problems.size - 1
+    more = extra.positive? ? " ...and #{extra} more recipient#{'s' if extra > 1}." : ""
+    "#{prefix}#{problems.first}.#{more} Nothing was sent to anyone - the full list is in the " \
+      "email just sent to you."
+  end
+  private_class_method :flash_headline
+
+  # What a blocked batch produces: one sentence for a log line, a flash or an in-app alert,
+  # and the same facts as table rows for the operator's email.
+  #
+  # Callers only ever ask `present?` and hand the result to report_blocked_send, so the two
+  # travel together and cannot be reported inconsistently. blank? is pinned to false rather
+  # than inherited, so `if blocked.present?` at five call sites cannot quietly change meaning
+  # if Struct ever gains an #empty?.
+  BlockedSend = Struct.new(:message, :headline, :table, keyword_init: true) do
+    def to_s
+      message
+    end
+
+    def blank?
+      false
+    end
+  end
+
+  # The columns a blocked send is read by: which email, which investor, and why. Size is its
+  # own column because "10 MB" sitting next to a 7 MB limit is the whole diagnosis, and the
+  # document name is its own column so it can be searched for in the app.
+  BLOCKED_TABLE_HEADERS = ["Email", "Investor / Folio", "Document", "Size", "Why it was blocked"].freeze
+
+  def self.build_table(rows, context, scope)
+    {
+      title: context.presence,
+      summary: scope,
+      headers: BLOCKED_TABLE_HEADERS,
+      rows: rows.first(MAX_LISTED_PROBLEMS),
+      footnote: table_footnote(rows.size),
+      guidance: "Email attachments grow by about 37% when encoded, so a larger file is rejected " \
+                "by many mail servers. Reduce the file size, or share it from the portal instead."
+    }
+  end
+  private_class_method :build_table
+
+  def self.table_footnote(total)
+    return nil if total <= MAX_LISTED_PROBLEMS
+
+    extra = total - MAX_LISTED_PROBLEMS
+    "...and #{extra} more row#{'s' if extra > 1}, not listed here."
+  end
+  private_class_method :table_footnote
+
+  # The send is all-or-nothing, so the operator has to be told the RECIPIENTS THEY WERE NOT
+  # WARNED ABOUT got nothing either. A message that names only the offending investor reads
+  # as "one investor failed", and there is nothing else to correct that impression: the batch
+  # enqueues no Noticed::Notification at all, so the notifications list shows neither a sent
+  # nor a skipped row for the investors whose documents were perfectly fine.
+  def self.batch_scope(checked, affected)
+    unaffected = checked - affected
+    stopped = "NO emails were sent - the entire send was stopped"
+    return "#{stopped}." if unaffected <= 0
+
+    # Deliberately says neither "above" nor "below": this same sentence is the summary line
+    # over the email's table AND the tail of the one-line message used for the log, the flash
+    # and the in-app alert, where there is no table at all.
+    "#{stopped}, including #{unaffected} recipient#{'s' if unaffected > 1} whose attachments were within " \
+      "the limit. Fix the oversized document#{'s' if affected > 1} and trigger the notification again to " \
+      "send to everyone."
+  end
+  private_class_method :batch_scope
+
+  # Names every affected recipient up to a point, then counts the rest. A send blocked for
+  # 137 investors should say so, without pasting 137 lines into an email.
+  MAX_LISTED_PROBLEMS = 10
+
+  def self.summarise(problems)
+    return problems if problems.size <= MAX_LISTED_PROBLEMS
+
+    extra = problems.size - MAX_LISTED_PROBLEMS
+    problems.first(MAX_LISTED_PROBLEMS) + ["...and #{extra} more recipient#{'s' if extra > 1} with the same problem"]
+  end
+  private_class_method :summarise
 
   # Accepts a relation (batched) or a plain array, so callers that already hold records in
   # memory - and the specs - do not have to care.
@@ -246,7 +394,13 @@ class NotificationAttachmentPreflight
   #
   # Recipient rule is SkippedNotificationReportJob#recipient_email: whoever triggered it, else
   # the entity's company admins.
-  def self.report_blocked_send(message, entity_id:, user_id: nil, subject: "Notification not sent")
+  # Accepts the BlockedSend from batch_error_message, or a bare String from the synchronous
+  # single-document paths - those have no per-recipient rows to tabulate, so they keep the
+  # sentence-and-list email they already had.
+  def self.report_blocked_send(blocked, entity_id:, user_id: nil, subject: "Notification not sent")
+    message = blocked.to_s
+    table = blocked.try(:table)
+
     # Logged BEFORE working out who to tell. An entity with no company admins and no
     # triggering user would otherwise abort a whole batch leaving no trace anywhere — the
     # operator would just see a send that silently did not happen.
@@ -259,10 +413,32 @@ class NotificationAttachmentPreflight
       return
     end
 
-    EntityMailer.with(to:, error_msg: { "Send stopped" => message }, subject:, entity_id:).notify_errors.deliver_later
+    # error_msg is the sentence form the table replaces. Both are passed: an entity_mailer view
+    # that renders only the list still says something useful, and a String caller has no table.
+    EntityMailer.with(to:, error_msg: { "Send stopped" => message }, error_table: table, subject:,
+                      entity_id:).notify_errors.deliver_later
+
+    # An email on its own is a poor place to learn that the button you just pressed did
+    # nothing: the batch never enqueues a Noticed::Notification, so there is no skipped row,
+    # nothing in the notifications list, and the page still said "trigger started". Broadcast
+    # to the operator who pressed it so the failure lands where they are already looking.
+    # CapitalDistributionPaymentNotificationJob already did this by hand; doing it here covers
+    # every blocked path the same way.
+    broadcast_blocked_alert(message, entity_id:, user_id:)
   rescue StandardError => e
     Rails.logger.error("report_blocked_send failed: #{e.message}")
   end
+
+  # Best-effort: an alert that cannot be delivered must never take down the reporting that
+  # precedes it, which is the part that actually persists.
+  def self.broadcast_blocked_alert(message, entity_id:, user_id:)
+    return if user_id.blank?
+
+    UserAlert.new(user_id:, entity_id:, message:, level: "danger").broadcast
+  rescue StandardError => e
+    Rails.logger.warn("could not broadcast blocked-send alert: #{e.message}")
+  end
+  private_class_method :broadcast_blocked_alert
 
   # Convenience for callers that just want to stop: returns nil when sendable, or the
   # message to raise/show when not.
@@ -275,11 +451,14 @@ class NotificationAttachmentPreflight
 
   # Shared wording so the operator sees the same explanation whichever check stopped the
   # send, and is told what to do rather than just what failed.
-  def self.build_message(problems, context)
+  def self.build_message(problems, context, scope: nil)
     prefix = context.present? ? "#{context}: " : ""
-    "#{prefix}#{problems.join('; ')}. " \
-      "Email attachments grow by about 37% when encoded, so a larger file is rejected by many " \
-      "mail servers. Reduce the file size, or share it from the portal instead."
+    ["#{prefix}#{problems.join('; ')}.",
+     # Only the batch path knows how many recipients were swept up; the synchronous
+     # single-document path (error_message) blocks one email and says so by context.
+     scope,
+     "Email attachments grow by about 37% when encoded, so a larger file is rejected by many " \
+     "mail servers. Reduce the file size, or share it from the portal instead."].compact_blank.join(" ")
   end
   private_class_method :build_message
 

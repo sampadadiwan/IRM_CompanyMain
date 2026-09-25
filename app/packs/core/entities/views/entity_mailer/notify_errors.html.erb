@@ -1,11 +1,22 @@
 <div>
-    <%= render "entity_mailer/error_context", context: @context %>
-    The following errors were detected:
-    <ol>
-        <% @error_msg.each do |k, v| %>
-            <li><%= k.to_s.humanize %>: <%= v %></li>
-        <% end %>
-    </ol>
+    <%#
+      The table form goes to a client's own admins about a send THEY triggered, so the
+      diagnostic header (triggered-by, entity, host, environment) is noise to them — only the
+      timestamp is worth keeping. Every other notify_errors caller is a crash or job-failure
+      report read by support, where that header is the point, so it is left untouched there.
+    %>
+    <% if @error_table.present? %>
+        <%= render "entity_mailer/error_context", context: @context&.slice("Occurred at") %>
+        <%= render "entity_mailer/error_table", table: @error_table %>
+    <% else %>
+        <%= render "entity_mailer/error_context", context: @context %>
+        The following errors were detected:
+        <ol>
+            <% @error_msg.each do |k, v| %>
+                <li><%= k.to_s.humanize %>: <%= v %></li>
+            <% end %>
+        </ol>
+    <% end %>
     <% if @filter_url.present? %>
         <p><%= link_to (@filter_label.presence || "View these in the app"), @filter_url %></p>
     <% end %>

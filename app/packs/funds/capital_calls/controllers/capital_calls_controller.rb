@@ -151,12 +151,21 @@ class CapitalCallsController < ApplicationController
   end
 
   def reminder
-    @capital_call.reminder_capital_call
+    # reminder_capital_call runs in this request, so a size-blocked run is known before the
+    # redirect. Reporting "Reminder sent" and leaving the operator to discover otherwise by
+    # email is the failure this replaces.
+    blocked = @capital_call.reminder_capital_call(current_user.id)
+    # headline, not the full message: this goes into a cookie-backed flash.
+    return redirect_to capital_call_url(@capital_call), alert: blocked.headline if blocked.present?
+
     redirect_to capital_call_url(@capital_call), notice: "Reminder sent for capital call."
   end
 
   def notify
-    @capital_call.send_notification
+    # current_user so a send stopped by the attachment size preflight raises an in-app alert for
+    # whoever pressed this, not only an email. The work itself is queued, so the verdict arrives
+    # as a UserAlert broadcast rather than a flash.
+    @capital_call.send_notification(current_user.id)
     redirect_to capital_call_url(@capital_call), notice: "Notification sending process started, please check back in a few mins."
   end
 
