@@ -33,6 +33,92 @@ Given('Given I upload a kpis file for the portfolio company') do
   expect(@iu.reload.failed_row_count == 0).to be true
 end
 
+# Parameterized variant of "Given I upload a kpi mappings file for the company" above, for
+# regression scenarios that need a specific mappings sheet (e.g. a real customer file that
+# reproduced a bug) rather than the shared investor_kpi_mappings_test_1.xlsx fixture. `file` is
+# relative to public/sample_uploads/, same as every other file-path step in this codebase.
+Given('Given I upload a kpi mappings file {string} for the portfolio company') do |file|
+  visit(investor_path(@portfolio_company))
+  page.execute_script("document.body.style.zoom = '80%'")
+  click_on("Kpi Mapping")
+  sleep(2)
+  click_on("Upload")
+  sleep(2)
+  fill_in('import_upload_name', with: "Mapping Upload")
+  @import_file = file
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  sleep(2)
+  @iu = ImportUpload.last
+  ImportUploadJob.perform_now(@iu.id)
+  sleep(4)
+  expect(@iu.reload.failed_row_count == 0).to be true
+end
+
+# Imports a full KPI workbook (multi-sheet, dates-as-columns — the format KpiWorkbookReader reads,
+# distinct from the single-row-per-datapoint "kpis.xlsx" format the legacy ImportKpi service above
+# reads) against the portfolio company. Attaches the file as the report's "KPIs" document and runs
+# the real ImportKpiWorkbookJob directly, the same way kpi_upload_validation_steps.rb's "the workbook
+# is imported for the KPI report" does — scripting the wizard's Uppy file picker for a real multi-sheet
+# workbook (vs. the small in-memory fixtures those wizard scenarios generate) is exactly the kind of
+# interaction this codebase's own comments already call out as unreliable to automate (see
+# kpi_wizard_helpers.rb). The shell report's own as_of/period is otherwise a no-op here: the reader
+# scans every period it finds in the sheets regardless (confirmed against this real file - it created
+# 21 KpiReports spanning 10 quarters from Q1 FY24 to Q2 FY26, only one of which is this shell), it just
+# also flags the requested one as not found if it doesn't happen to match, which is harmless.
+Given('I import the KPI workbook {string} for the portfolio company') do |file|
+  @kpi_report = KpiReport.new(entity: @entity, portfolio_company: @portfolio_company, user: @user,
+                              as_of: Date.today.beginning_of_quarter, period: "Quarter", tag_list: "Actual",
+                              enable_portco_upload: true)
+  @kpi_report.save!(validate: false)
+  document = @kpi_report.documents.build(entity_id: @entity.id, name: "KPIs", user_id: @user.id,
+                                          file: File.open(File.absolute_path("./public/sample_uploads/#{file}")), owner: @kpi_report)
+  document.save!
+  ImportKpiWorkbookJob.perform_now(@kpi_report.id, @user.id)
+end
+
+Then('there should be {string} Kpis for the portfolio company') do |count|
+  expect(Kpi.where(portfolio_company: @portfolio_company).count).to eq(count.to_i)
+end
+
+When('I go to the Kpis tab on the investor show page for the portfolio company') do
+  # Cleared here (rather than at scenario start) so setup emails - e.g. from creating the
+  # investor/entity - don't get swept into the "no error email" check below.
+  ActionMailer::Base.deliveries.clear
+  visit(investor_path(@portfolio_company))
+  page.execute_script("document.body.style.zoom = '80%'")
+  click_on("Kpis")
+  sleep(2)
+end
+
+# Mirrors the real dropdown-menu interaction the "Actions" button drives (see the .ti-settings
+# dropdown in kpi_reports/_grid_view.html.erb) -
+# opens the menu and clicks a plain link inside it, e.g. "View Including Staged". Distinct from
+# "I approve all staged KPIs" (kpi_approval_steps.rb), which opens the same menu for a button_to that
+# needs the confirm-modal handled, not a plain link.
+When('I click Actions then {string} on the Kpis page') do |link_text|
+  click_on("Actions")
+  click_on(link_text)
+  sleep(1)
+end
+
+Then('all pending KPIs for the portfolio company should be approved without error') do
+  expect(page).to have_content("All pending KPIs were successfully approved.")
+  expect(Kpi.where(portfolio_company: @portfolio_company).unapproved.count).to eq(0)
+  # Approve All runs KpiApproveService synchronously, which cumulates and recomputes percentage
+  # change for every affected report inline - the same call chain that raised "Out of sort memory"
+  # in production. A failure there doesn't necessarily fail the request (KpiCumulateJob rescues and
+  # emails on error rather than raising - see "a KPI cumulation error email should be sent" above),
+  # so the success flash alone isn't proof nothing went wrong; checking no error email was sent closes
+  # that gap.
+  # Checked across every delivery rather than just emails_sent_to(@user.email): KpiCumulateJob mails
+  # the user who triggered the approval, but a failure deeper in the chain can notify someone else,
+  # and a missed recipient would make this assertion pass for the wrong reason.
+  error_mail = ActionMailer::Base.deliveries.find { |m| m.subject.match?(/error/i) }
+  expect(error_mail).to be_nil, "Expected no error email, but got: #{error_mail&.subject}"
+end
+
 # And Given I upload a kpi mappings file for the company
 And('Given I upload a kpi mappings file for the company') do
   @portfolio_company ||= Investor.portfolio_companies.last

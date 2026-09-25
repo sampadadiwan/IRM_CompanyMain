@@ -152,6 +152,16 @@ class Kpi < ApplicationRecord
   # fund's own reporting cadence decides what dates exist, same philosophy as the tag-based
   # comparators. Approved-only, for the same reason as find_tagged_kpi above. See "Addendum:
   # prior-period comparator" in docs/modules/portfolio/kpis/kpi_rag_rules_redesign.md.
+  #
+  # This (and find_next_period_kpi/find_tagged_kpi below) filters by portfolio_company_id + name
+  # without entity_id, which the index_kpis_on_pc_name_status composite covers (see
+  # 20260924160000_add_sort_memory_fix_indexes.rb), narrowing the row count that ORDER BY
+  # kpi_reports.as_of then has to filesort over - the ORDER BY itself can't be satisfied by any
+  # index on kpis (as_of lives on the joined table), so this doesn't eliminate the filesort, only
+  # shrinks it, same as the fetch_related_*_kpis case in kpi_cumulative.rb. Unlike that case and
+  # find_or_create_kpi_report (kpi_workbook_reader.rb), no staging backtrace has actually landed on
+  # this specific method - this composite is preventative hardening against the same query shape,
+  # not a confirmed fix for an observed failure here.
   def find_prior_period_kpi
     Kpi.approved.joins(:kpi_report)
        .where(

@@ -313,7 +313,7 @@ module KpisHelper
   # mappings. For other entity types (e.g., portco self-reporting), builds ad-hoc
   # mappings from the KPI names found in the given reports.
   #
-  # @param kpi_reports [ActiveRecord::Relation] the KPI reports being displayed
+  # @param kpi_reports [ActiveRecord::Relation, Array<KpiReport>] the KPI reports being displayed
   # @param investor [Investor] the portfolio company (investor record)
   # @param current_user [User] the logged-in user
   # @param category [String, nil] optional category filter (e.g., "Income Statement")
@@ -324,7 +324,12 @@ module KpisHelper
                  raw = investor&.investor_kpi_mappings&.order(:position) || InvestorKpiMapping.none
                  raw.sort_by_ancestry(raw)
                else
-                 Kpi.where(kpi_report_id: kpi_reports.unscope(:order).pluck("kpi_reports.id")).pluck(:name).uniq.map do |kpi_name|
+                 # kpi_reports may be an unloaded Relation (called from the controller) or an
+                 # already-loaded Array (called from the grid view partial, which sorts in Ruby
+                 # to avoid a filesort - see _grid_view.html.erb) - handle both without forcing
+                 # a load or an ordered query in either case.
+                 kpi_report_ids = kpi_reports.is_a?(ActiveRecord::Relation) ? kpi_reports.unscope(:order).pluck(:id) : kpi_reports.map(&:id)
+                 Kpi.where(kpi_report_id: kpi_report_ids).distinct.pluck(:name).map do |kpi_name|
                    InvestorKpiMapping.new(standard_kpi_name: kpi_name, reported_kpi_name: kpi_name, category: "General")
                  end
                end

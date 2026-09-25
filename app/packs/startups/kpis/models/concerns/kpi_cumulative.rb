@@ -173,9 +173,28 @@ module KpiCumulative
   # Fetches all monthly KPIs with the 'Actual' tag for this specific KPI name and portfolio company.
   # Results are ordered chronologically by the report's as_of date.
   #
+  # entity_id/portfolio_company_id/status/name here are covered by a single composite index
+  # (see 20260924160000_add_sort_memory_fix_indexes.rb) so MySQL can satisfy this WHERE with one
+  # index lookup instead of an index_merge across the entity_id and portfolio_company_id indexes.
+  # The merge itself was never the sort-memory problem (index_merge_intersect doesn't touch
+  # sort_buffer_size - it merges already-ordered rowid streams). What matters is that without the
+  # composite, the merge step ran against every kpi this entity/company has ever had, and ALL of
+  # those rows then had to be filesorted for the ORDER BY kpi_reports.as_of below - a sort that no
+  # index on kpis can avoid, since as_of lives on the joined table (see the preload note below).
+  # The composite index shrinks the candidate set the unavoidable filesort has to work over, from
+  # "every kpi for this entity/company" down to just the ones matching this name too.
+  #
+  # preload (not includes) deliberately: combining .joins(:kpi_report) with .includes(:kpi_report)
+  # makes ActiveRecord eager_load the association (a LEFT OUTER JOIN pulling every kpi_reports
+  # column - analysis, json_fields, validation_result, etc - into the same result set that then
+  # gets sorted by as_of), which reintroduces the exact wide-row-filesort problem the composite
+  # index above doesn't touch. .joins still gives us the INNER JOIN needed for the WHERE and the
+  # ORDER BY; .preload loads kpi_report via a separate, narrow "WHERE id IN (...)" query instead,
+  # so the sort only ever has to buffer bare `kpis` rows.
+  #
   # @return [ActiveRecord::Relation]
   def fetch_related_monthly_kpis
-    entity.kpis.approved.joins(:kpi_report).includes(:kpi_report)
+    entity.kpis.approved.joins(:kpi_report).preload(:kpi_report)
           .where(name: name, portfolio_company_id: portfolio_company_id)
           .where(kpi_reports: { tag_list: 'Actual', period: 'Month' })
           .order("kpi_reports.as_of ASC")
@@ -203,9 +222,12 @@ module KpiCumulative
   # company. These are directly-reported Quarter figures (not auto-generated cumulative ones,
   # which never carry the 'Actual' tag), so this only matches genuine quarterly source data.
   #
+  # Same index_merge/sort-memory concern, same composite index, and same eager_load-vs-preload
+  # fix as fetch_related_monthly_kpis above.
+  #
   # @return [ActiveRecord::Relation]
   def fetch_related_quarterly_kpis
-    entity.kpis.approved.joins(:kpi_report).includes(:kpi_report)
+    entity.kpis.approved.joins(:kpi_report).preload(:kpi_report)
           .where(name: name, portfolio_company_id: portfolio_company_id)
           .where(kpi_reports: { tag_list: 'Actual', period: 'Quarter' })
           .order("kpi_reports.as_of ASC")
