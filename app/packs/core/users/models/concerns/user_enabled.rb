@@ -95,8 +95,10 @@ module UserEnabled
   #   * A grant saved with no permissions leaves every flag false, so the advisor switches in to
   #     an app with nothing in it, and policies that open with user.enable_funds deny before
   #     reaching their access-right check - a denial that looks like an access-rights problem and
-  #     is not one. This is the easy state to land in: investor_advisors.permissions defaults to
-  #     0 and the Add Investor Advisor form's checkboxes all start unticked.
+  #     is not one. Advisors added from a commitment are safe - InvestorAdvisorsController
+  #     #create_for_investor copies the investor entity's permissions onto the grant. It is the
+  #     Advisors page's own New Investor Advisor form that can leave them at 0, since its
+  #     checkboxes start unticked and the column defaults to 0.
   #     User#investor_advisor_setup_issues reports this as a blocker.
   #   * investor_advisor here is User#investor_advisor, which looks the grant up in the CURRENT
   #     entity. If the advisor is switched into an entity that has no grant for them, this
