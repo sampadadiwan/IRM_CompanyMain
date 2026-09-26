@@ -13,7 +13,10 @@ module WithFolder
     # The folder in which all the documents of this model should go
     belongs_to :document_folder, class_name: "Folder", dependent: :destroy, optional: true
     has_many :folders, as: :owner, dependent: :destroy
-    after_commit :update_root_folder, only: %i[update]
+    # `on:`, not `only:` -- ActiveRecord's after_commit only understands `on:`, so the
+    # `only: %i[update]` this used to carry was silently ignored and the hook ran on every
+    # commit, create and destroy included.
+    after_commit :update_root_folder, on: %i[update]
     # Used to check if its being destroyed and not setup_document_folder
     attr_accessor :being_destroyed
 
@@ -41,31 +44,88 @@ module WithFolder
 
   # Get or Create the folder based on folder_path
   def setup_document_folder
-    if document_folder_id.blank? && folder_path.present?
-      folder = Folder.where(entity_id:, full_path: folder_path).last
-      # Since the folder gets created lazily, it sometimes gets called in a show action
-      # So we need to ensure that its created on the primary and not replica
-      ActiveRecord::Base.connected_to(role: :writing) do
-        folder ||= setup_folder_from_path(folder_path)
+    path = persisted_folder_path
+    return if document_folder_id.present? || path.blank?
 
-        # Ensure the owner is setup right
-        self.document_folder = folder
-        save
+    folder = Folder.where(entity_id:, full_path: path).last
+    # Since the folder gets created lazily, it sometimes gets called in a show action
+    # So we need to ensure that its created on the primary and not replica
+    ActiveRecord::Base.connected_to(role: :writing) do
+      # Before minting a brand new folder, adopt one this record already owns (see
+      # #adoptable_owned_folder). Without this, a record whose document_folder_id never got
+      # written ends up owning one folder per visit.
+      folder ||= adoptable_owned_folder(path)
+      folder ||= setup_folder_from_path(path)
 
-        document_folder.owner = self
-        document_folder.save
+      # Ensure the owner is setup right
+      link_document_folder(folder)
 
-        if respond_to?(:private_folder_names)
-          private_folder_names.each do |private_folder_name|
-            # Create these folders, but with owner as nil so no one can see the docs except the entity
-            document_folder.children.create(name: private_folder_name, entity_id: entity_id, private: true)
-          end
+      document_folder.owner = self
+      document_folder.save
+
+      if respond_to?(:private_folder_names)
+        private_folder_names.each do |private_folder_name|
+          # Create these folders, but with owner as nil so no one can see the docs except the entity
+          document_folder.children.create(name: private_folder_name, entity_id: entity_id, private: true)
         end
       end
-
-      folder
     end
-    # self.document_folder
+
+    folder
+  end
+
+  # Writes the owner -> folder pointer.
+  #
+  # This used to be a bare `save`, and that was the root cause of the "Full path combination
+  # must be unique" storm: many owners are created in a deliberately invalid state (an
+  # InvestorKyc is saved with `validate: false` while PAN/address/bank details are still
+  # blank), so the `save` here returned false, nobody checked, and document_folder_id stayed
+  # NULL -- while the Folder row itself was created and stamped with `owner`. Every later
+  # touch then saw a blank document_folder_id and created *another* folder for the same
+  # owner. When the record finally became valid it latched onto one of them, and the first
+  # rename after that tried to move it onto its twin's path, which
+  # Folder's `full_path` + owner + entity uniqueness rule forbids -- forever, on every edit.
+  #
+  # update_column, not save: this pointer is bookkeeping and must not depend on the owner
+  # passing validation. It also writes exactly one column, so a half-filled form sitting in
+  # memory on a failed submit cannot be persisted as a side effect (a `save(validate: false)`
+  # here would write all of it).
+  def link_document_folder(folder)
+    self.document_folder = folder
+
+    # A new record has no row to update yet; its own save writes the foreign key.
+    persisted? ? update_column(:document_folder_id, folder.id) : save
+  end
+
+  # A folder that this record already owns in the place the new folder would go.
+  #
+  # Defence in depth for the bug described on #link_document_folder: if a stale duplicate is
+  # already lying around, reuse it instead of adding a third. Deliberately scoped to direct
+  # children of the expected parent, so the data room / private / "Deal Documents" folders
+  # that live *under* document_folder (and inherit its owner via Folder#set_parent_permissions)
+  # are never mistaken for the document folder itself.
+  def adoptable_owned_folder(path)
+    return nil unless persisted?
+
+    parent_path = path.split("/")[0...-1].join("/").presence || "/"
+    parent = Folder.where(entity_id:, full_path: parent_path).last
+    return nil if parent.nil?
+
+    parent.children.where(entity_id:, owner_id: id, owner_type: self.class.base_class.name, folder_type:).order(:id).first
+  end
+
+  # folder_path built from what is actually in the database.
+  #
+  # #folder_path reads attributes off the instance, so during a failed form submit it reflects
+  # what the user typed rather than what was stored -- that is how folder "SP Family Trust"
+  # came to exist a day before the KYC's full_name was ever changed to it. Unsaved input must
+  # not name a folder; once the edit really commits, update_root_folder enqueues the rename.
+  def persisted_folder_path
+    return folder_path unless persisted? && has_changes_to_save?
+
+    # base_class so an in-memory STI type change (InvestorKyc#set_investor_name rewrites
+    # `type` before save) cannot make this lookup miss its own row.
+    self.class.base_class.find_by(id:)&.folder_path || folder_path
   end
 
   def folder_name
