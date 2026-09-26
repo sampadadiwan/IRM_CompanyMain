@@ -2912,13 +2912,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_160000) do
     t.index ["as_of"], name: "index_kpi_reports_on_as_of"
     t.index ["deleted_at"], name: "index_kpi_reports_on_deleted_at"
     t.index ["document_folder_id"], name: "index_kpi_reports_on_document_folder_id"
-    t.index ["entity_id"], name: "index_kpi_reports_on_entity_id"
     t.index ["entity_id", "as_of"], name: "index_kpi_reports_on_entity_id_and_as_of"
+    t.index ["entity_id"], name: "index_kpi_reports_on_entity_id"
     t.index ["form_type_id"], name: "index_kpi_reports_on_form_type_id"
-    t.index ["portfolio_company_id", "entity_id", "as_of", "period", "tag_list"], name: "index_kpi_reports_on_natural_key"
     t.index ["owner_id"], name: "index_kpi_reports_on_owner_id"
-    t.index ["portfolio_company_id"], name: "index_kpi_reports_on_portfolio_company_id"
     t.index ["portfolio_company_id", "as_of"], name: "index_kpi_reports_on_portfolio_company_id_and_as_of"
+    t.index ["portfolio_company_id", "entity_id", "as_of", "period", "tag_list"], name: "index_kpi_reports_on_natural_key"
+    t.index ["portfolio_company_id"], name: "index_kpi_reports_on_portfolio_company_id"
     t.index ["status"], name: "index_kpi_reports_on_status"
     t.index ["user_id"], name: "index_kpi_reports_on_user_id"
   end
@@ -2949,8 +2949,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_160000) do
     t.datetime "updated_at", null: false
     t.decimal "value", precision: 20, scale: 6
     t.index ["deleted_at"], name: "index_kpis_on_deleted_at"
-    t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["entity_id", "portfolio_company_id", "status", "name"], name: "index_kpis_on_entity_pc_status_name"
+    t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
     t.index ["investor_kpi_mapping_id"], name: "index_kpis_on_investor_kpi_mapping_id"
     t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"

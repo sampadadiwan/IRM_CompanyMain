@@ -84,6 +84,7 @@ module WithEmailPreview
       @attachments = mail.attachments
       @subject = mail.subject
       @oversized_attachments = oversized_preview_attachments(resource, custom_notification_id, mail)
+      @attachment_documents = preview_attachment_documents(resource, custom_notification_id, mail)
 
       # Render the email preview without layout
       render "/layouts/email_preview", layout: false
@@ -127,22 +128,108 @@ module WithEmailPreview
   # avoids; the batch preflight and the send-time guard both still stop those sends.
   #
   # Filtered against what actually got attached, so a document that fitted is never named.
+  #
+  # Returns one hash per refused document - see #describe_violations - because the warning links
+  # the name to the file. An oversized document is the one thing in this preview NOT reachable
+  # through the attachment list, so without that link the admin is told a file is too big and
+  # left to go and find it.
   def oversized_preview_attachments(resource, custom_notification_id, mail)
     custom_notification = CustomNotification.find_by(id: custom_notification_id)
     candidates = NotificationAttachmentPreflight.custom_notification_documents(custom_notification, resource)
+                                                .compact.uniq
 
     # Compared on the name WITHOUT its extension: attachments are filed as
     # "<name>.<ext>" while a violation detail carries the bare document name.
     attached = mail.attachments.map { |a| a.filename.to_s.sub(/\.[^.]*\z/, "") }
-    NotificationAttachmentPreflight.violation_details(candidates).filter_map do |detail|
-      next if attached.include?(detail[:document])
-
-      NotificationAttachmentPreflight.sentence_for(detail)
-    end
+    details = NotificationAttachmentPreflight.violation_details(candidates)
+    # Paired BEFORE the attached filter, so dropping a line cannot shift the pairing of the ones
+    # that remain.
+    describe_violations(details, candidates).reject { |problem| attached.include?(problem[:name]) }
   rescue StandardError => e
     # A warning that cannot be computed must never take down the preview itself.
     Rails.logger.warn("oversized_preview_attachments failed: #{e.message}")
     []
+  end
+
+  # Each violation with the Document it is about, so the warning can link to the file.
+  #
+  # A detail carries only the document's NAME. That is deliberate in the preflight - the same
+  # hashes travel through a 137-recipient batch send, where holding a record per violation is
+  # retention nobody asked for - so the pairing is done here, where there are at most a handful.
+  #
+  # violation_details walks `candidates` in order and keeps the ones it refuses, so the details
+  # are a SUBSEQUENCE of that list: consuming a matching name as each detail is paired recovers
+  # the exact record even when several documents share a name. That is the running-total case -
+  # three identically named files, one of which tips the total - where matching by name alone
+  # would link every line to whichever came first.
+  #
+  # :message is the unchanged one-line form, used when there is no document to link (a name that
+  # no longer resolves). :rest is that sentence minus its leading name, so the name becomes the
+  # link text and the rendered wording still reads exactly as the one-line form does everywhere
+  # else - sentence_for's wording is asserted by features and already written to skip_reason
+  # rows in production, so it is composed here rather than changed there.
+  def describe_violations(details, candidates)
+    remaining = candidates.dup
+    details.map do |detail|
+      name = detail[:document]
+      index = remaining.index { |document| document.name == name }
+      sentence = NotificationAttachmentPreflight.sentence_for(detail)
+
+      { document: index.nil? ? nil : remaining.delete_at(index),
+        name:,
+        rest: sentence.delete_prefix(name),
+        message: sentence }
+    end
+  end
+
+  # The Document behind each attachment this email actually carries, keyed by the attachment's
+  # filename, so the preview can link a listed attachment to the file itself.
+  #
+  # Preview exists to answer "will this attach the RIGHT file?", and a name on its own often
+  # cannot: attachment_names resolves by pattern and `latest_doc_only` picks one of several
+  # same-named documents, so the name the admin sees is exactly the part that is not in doubt.
+  # Without a link the only way to check the contents is to trigger a real send.
+  #
+  # Matched on NotificationAttachmentPreflight.attachment_key - the same "<name>.<extension>"
+  # ActionMailer files the part under (ApplicationMailer#attach_doc, #pw_protect_attach_file).
+  # A key either equals a listed attachment's filename or is left unlinked; it never guesses.
+  #
+  # Looked up BY the names already on the message rather than by re-resolving what the mailer
+  # would attach. That keeps it to a couple of rows on a table CLAUDE.md flags as very large
+  # (auto_attached_documents would load every document on the record), and it needs no
+  # per-mailer knowledge: an attachment is linkable if a document of that name exists on the
+  # record, whichever code path put it there.
+  #
+  # Candidate order mirrors the mailer's attach order, and last-one-wins mirrors attachments[]
+  # being a hash: the record's own documents oldest-first (attach_all_files runs in the mailer
+  # action, before send_mail), then the CustomNotification's own (attach_custom_notification_
+  # documents, inside it). So for two documents sharing a filename the link resolves to the
+  # newest, and a CustomNotification upload beats a same-named document on the record - which
+  # is the part the mailer would have attached last.
+  #
+  # A password-protected attachment (custom_notification.password_protect_attachment) is
+  # encrypted on its way into the message; the link opens the stored original. That is the
+  # document the admin is checking, not a copy of the encrypted part.
+  def preview_attachment_documents(resource, custom_notification_id, mail)
+    filenames = mail.attachments.map { |a| a.filename.to_s }
+    return {} if filenames.empty?
+
+    # attach_doc keys on "<name>.<ext>", so dropping the last extension yields the document
+    # name back even when the name itself contains a dot.
+    names = filenames.map { |filename| filename.sub(/\.[^.]*\z/, "") }.uniq
+    candidates = []
+    candidates += resource.documents.where(name: names).order(:created_at).to_a if resource.respond_to?(:documents)
+    candidates += CustomNotification.find_by(id: custom_notification_id)&.documents.to_a
+
+    candidates.each_with_object({}) do |document, map|
+      key = NotificationAttachmentPreflight.attachment_key(document)
+      map[key] = document if filenames.include?(key)
+    end
+  rescue StandardError => e
+    # A link that cannot be resolved must never take down the preview itself - the list still
+    # renders, just as plain text.
+    Rails.logger.warn("preview_attachment_documents failed: #{e.message}")
+    {}
   end
 
   # Renders the email preview template with the specified layout option.
