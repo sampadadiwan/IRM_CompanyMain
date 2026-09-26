@@ -177,13 +177,27 @@ end
 
 # Creates an InvestorAdvisor record AND calls switch(), changing the user's entity_id
 # to the advising entity. This mirrors the real advisor workflow.
+# Builds the grant and switches the advisor into the host entity in one step.
+#
 # 'employee' is included in allowed_roles so that after switch() the user has
 # has_cached_role?(:employee) = true, which FundBasePolicy::Scope requires to call for_employee.
+#
+# The advisor's own user must already live in an entity_type=Investor Advisor entity, otherwise
+# advisor_entity_id is never recorded, InvestorAdvisor refuses to create the grant, and
+# User#investor_advisor? would stay false even after the switch.
 Given('the advisor {string} is switched into entity {string}') do |email, entity_kv|
   user   = User.find_by!(email: email)
   entity = Entity.find_by!(name: entity_kv.split('=').last)
-  ia = InvestorAdvisor.create!(user: user, entity: entity, email: user.email,
+  ia = InvestorAdvisor.new(user: user, entity: entity, email: user.email,
          allowed_roles: ['employee', 'investor_advisor'])
+  # Once the advisor is switched in, User#get_permissions reads THIS grant's permissions
+  # instead of the user's own, so a grant with none leaves every enable_* flag false and any
+  # policy opening with user.enable_funds (FundPolicy#show?) denies on that first condition,
+  # before an access right is ever looked at - a denial that reads as an access-rights failure
+  # but is really a missing module flag. Mirror the user's own permissions so these scenarios
+  # exercise the access right, which is what they are here to test.
+  User.permissions.keys.each { |permission| ia.permissions.set(permission) }
+  ia.save!
   ia.switch(user)
   user.reload
 end

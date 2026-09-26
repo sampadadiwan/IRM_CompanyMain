@@ -84,10 +84,33 @@ module UserEnabled
     get_permissions.enable_reports? && entity&.permissions&.enable_reports?
   end
 
+  # The source of every enable_* flag above, and it MOVES when an advisor switches.
+  #
+  # While an investor advisor is switched into a host entity, their module flags come from that
+  # entity's InvestorAdvisor grant, not from the user record - the host decides what its advisor
+  # may see. Back home (investor_advisor? false) the user's own permissions apply again.
+  #
+  # Two consequences worth knowing before debugging a permissions report:
+  #
+  #   * A grant saved with no permissions leaves every flag false, so the advisor switches in to
+  #     an app with nothing in it, and policies that open with user.enable_funds deny before
+  #     reaching their access-right check - a denial that looks like an access-rights problem and
+  #     is not one. This is the easy state to land in: investor_advisors.permissions defaults to
+  #     0 and the Add Investor Advisor form's checkboxes all start unticked.
+  #     User#investor_advisor_setup_issues reports this as a blocker.
+  #   * investor_advisor here is User#investor_advisor, which looks the grant up in the CURRENT
+  #     entity. If the advisor is switched into an entity that has no grant for them, this
+  #     silently falls back to their own permissions rather than failing - which is more access
+  #     than the host entity ever granted, not less.
+  #
+  # investor_advisor? keys off the advisor_entity_id column, not the investor_advisor role, so a
+  # user whose home entity was never typed "Investor Advisor" never takes the grant branch here
+  # at all. See User#setup_defaults.
   def get_permissions
     investor_advisor? && investor_advisor ? investor_advisor.permissions : permissions
   end
 
+  # Same switching rule as get_permissions above.
   def get_extended_permissions
     investor_advisor? && investor_advisor ? investor_advisor.extended_permissions : extended_permissions
   end
