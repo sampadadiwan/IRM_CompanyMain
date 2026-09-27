@@ -155,8 +155,8 @@ The cache is automatically updated via `after_commit` hooks in several models:
 ---
 
 ## 🧪 Testing Strategy
-- **Unit Tests**: Check `spec/models/user_spec.rb` (or specific concern specs) for cache structure verification.
-- **Policy Tests**: Many RSpec policy specs rely on `AccessRightsCache` being correctly populated.
+- **Cucumber only**: cache structure and policy behaviour are both verified through `.feature`
+  scenarios — there are no unit specs for this concern.
 - **Integration**: Cucumber features involving "Investor login" or "Granting permissions" exercise the full flow from `AccessRight` creation to cache lookup.
 
 ---

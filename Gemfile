@@ -205,10 +205,11 @@ group :development, :test do
   gem 'pry-byebug'
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false
-  gem 'rubocop-rspec', require: false
 
+  # Not a test tier of its own — there are no specs. Cucumber is built on it:
+  # features/support/env.rb requires 'rspec/rails' and 'cucumber/rspec/doubles', and step
+  # definitions use RSpec::Expectations and RSpec::Mocks. Removing this breaks every feature.
   gem 'rspec-rails'
-  gem 'rswag-specs'
 end
 
 gem 'awesome_print'

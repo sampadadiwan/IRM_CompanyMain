@@ -15,11 +15,20 @@ This document provides essential information for AI agents working on the IRM (I
 - **Brakeman (Security):** `bundle exec brakeman`
 
 ### Testing
-- **Run all RSpec tests:** `bundle exec rspec`
-- **Run a single test file:** `bundle exec rspec spec/requests/investors_spec.rb`
-- **Run a specific test case:** `bundle exec rspec spec/requests/investors_spec.rb:10`
-- **Run Cucumber features:** `bundle exec cucumber`
+
+**Cucumber is the only test framework for this codebase.** Do not add RSpec specs; write
+`.feature` files under `features/` instead.
+
+- **Run all features:** `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber`
+- **Run a single feature:** `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/deal/deal_investor.feature`
+- **Run a single scenario:** `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/deal/deal_investor.feature:10`
 - **Run Playwright tests:** `npx playwright test`
+
+Two prerequisites, both of which fail confusingly when missed:
+- **Always prefix with a random `TEST_ENV_NUMBER`.** Unset, every run shares one SQLite
+  database, so concurrent runs corrupt each other.
+- **Redis must be up on 6379.** Fund-creating scenarios fail with a Redis connection error
+  otherwise.
 
 ---
 
@@ -60,10 +69,11 @@ This project uses `packs-rails` for modularization and several design patterns f
 - **ActiveStorage:** Used for file handling alongside **Shrine**.
 
 ### Testing & Quality
-- **Cucumber:** Integration tests in `features/`. Scenarios in `.feature` files, steps in `step_definitions/`.
+- **Cucumber:** The only test framework. Scenarios in `.feature` files under `features/`, steps in
+  `step_definitions/`. Models, services and requests are all covered here — there is no unit-test tier.
   - Reuse existing steps; use `FactoryBot` for setup; use `Capybara` for automation.
+  - Factories live in `spec/factories/` (the only surviving part of the old RSpec setup).
   - Refer to `features/features.md` for more info.
-- **RSpec:** Primary framework for models, services, and requests.
 - **Playwright:** Used for end-to-end browser testing.
 - **Linting:** RuboCop for Ruby, Brakeman for security.
 
@@ -94,8 +104,8 @@ This project uses `packs-rails` for modularization and several design patterns f
 - **Background Tasks:** Use Sidekiq workers (located in `jobs/` directories within packs).
 
 ### 3. Verification
-- **Test First:** Try to find or create a spec for your changes.
-- **Run Tests:** `bundle exec rspec <file>` is your friend.
+- **Test First:** Find or create a `.feature` scenario for your changes.
+- **Run Tests:** `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber <feature>` is your friend.
 - **Linting:** Always run `bundle exec rubocop <modified_files>` to ensure style consistency.
 - **Security:** Run `bundle exec brakeman` if you make changes to controllers or data handling.
 

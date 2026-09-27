@@ -923,11 +923,6 @@ GEM
     rswag-api (2.17.0)
       activesupport (>= 5.2, < 8.2)
       railties (>= 5.2, < 8.2)
-    rswag-specs (2.17.0)
-      activesupport (>= 5.2, < 8.2)
-      json-schema (>= 2.2, < 7.0)
-      railties (>= 5.2, < 8.2)
-      rspec-core (>= 2.14)
     rswag-ui (2.17.0)
       actionpack (>= 5.2, < 8.2)
       railties (>= 5.2, < 8.2)
@@ -955,10 +950,6 @@ GEM
       rack (>= 1.1)
       rubocop (>= 1.89.0, < 2.0)
       rubocop-ast (>= 1.44.0, < 2.0)
-    rubocop-rspec (3.10.2)
-      lint_roller (~> 1.1)
-      regexp_parser (>= 2.0)
-      rubocop (~> 1.86, >= 1.86.2)
     ruby-ole (1.2.13.1)
     ruby-prof (2.0.5)
       base64
@@ -1313,11 +1304,9 @@ DEPENDENCIES
   rqrcode (~> 2.0)
   rspec-rails
   rswag-api
-  rswag-specs
   rswag-ui
   rubocop-performance
   rubocop-rails
-  rubocop-rspec
   ruby-openai!
   ruby-prof
   rubyXL (= 3.4.33)
