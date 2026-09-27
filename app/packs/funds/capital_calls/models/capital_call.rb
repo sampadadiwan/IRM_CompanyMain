@@ -9,6 +9,7 @@ class CapitalCall < ApplicationRecord
   include WithCustomNotifications
 
   include ForInvestor
+  include BlocksDestroyWithFundUnits
 
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees", "Investment Amount"].freeze
   CALL_BASIS = ["Percentage of Commitment", "Upload", "Investable Capital Percentage"].freeze
@@ -203,4 +204,9 @@ class CapitalCall < ApplicationRecord
   #   workflow_display_name → to_s
   #   workflow_url          → capital_call_path(self)
   #   workflow_attachable_files → []
+
+  # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
+  def allocated_fund_units
+    FundUnit.where(owner_type: "CapitalRemittance", owner_id: capital_remittances.select(:id))
+  end
 end

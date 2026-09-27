@@ -432,11 +432,14 @@ class InvestorsController < ApplicationController
 
   # DELETE /investors/1 or /investors/1.json
   def destroy
-    @investor.destroy
-
     respond_to do |format|
-      format.html { redirect_to investors_url, notice: "Stakeholder was successfully deleted." }
-      format.json { head :no_content }
+      if @investor.destroy
+        format.html { redirect_to investors_url, notice: "Stakeholder was successfully deleted." }
+        format.json { head :no_content }
+      else
+        format.html { redirect_to investor_url(@investor), alert: @investor.errors.full_messages.join(", ") }
+        format.json { render json: @investor.errors, status: :unprocessable_entity }
+      end
     end
   end
 

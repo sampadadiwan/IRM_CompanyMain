@@ -31,6 +31,7 @@ class CapitalDistributionPayment < ApplicationRecord
 
   include ForInvestor
   include CapitalDistributionPaymentShared
+  include BlocksDestroyWithFundUnits
 
   update_index('capital_distribution_payment') { self if index_record? }
 
@@ -224,5 +225,10 @@ class CapitalDistributionPayment < ApplicationRecord
     grouped.sort.map do |name, rows|
       ConsolidatedFee.new(name:, amount: Money.new(rows.sum(&:amount)), date: rows.map(&:date).max) # TODO: Discuss if latest date is ok
     end
+  end
+
+  # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
+  def allocated_fund_units
+    fund_units
   end
 end

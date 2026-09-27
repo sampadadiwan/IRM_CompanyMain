@@ -18,8 +18,19 @@ class TrackingCurrencyJob < ApplicationJob
                 # fund.currency matches entity.currency) so cross-fund SUM queries always work.
                 Fund.joins(:entity).merge(Entity.where_permissions(:enable_tracking_currency))
               end
+      # A fund whose tracking currency is being changed (or whose change failed and awaits a retry)
+      # is owned by ChangeTrackingCurrencyJob: converting it here would write amounts at whichever
+      # currency happens to be saved mid-change. That job rebuilds it through #rebuild_fund instead.
+      funds = funds.without_tracking_currency_change
 
       funds.each do |fund|
+        # The list above was loaded when the sweep started, which can be long before this fund's
+        # turn: a change may have been claimed, or even completed, since. Re-read the fund so it is
+        # skipped while claimed and otherwise converted at its current tracking currency, not the
+        # stale one held in memory.
+        fund.reload
+        next if fund.tracking_currency_change_pending?
+
         update_fund(fund, user_id, force: force)
       rescue StandardError => e
         Rails.logger.debug e.backtrace
@@ -47,6 +58,52 @@ class TrackingCurrencyJob < ApplicationJob
     end
   end
 
+  # Rebuilds every tracking amount of one fund at the rates for each row's own date, for callers
+  # outside #perform (ChangeTrackingCurrencyJob, ChangeFundCurrencyJob).
+  #
+  # #update_fund reports problems by merging into @error_msg / @missing_rates, which only #perform
+  # sets up; calling it on a bare instance raised NoMethodError on nil at the first merge. This sets
+  # that state up and hands the problems back, because the caller has to decide whether the rebuild
+  # counts as done - a missing rate is rescued per date inside each convert_* method, so no
+  # exception reaches the caller when rows are left unconverted.
+  #
+  # @return [Hash] fund-level errors, plus :missing_rates when any rows could not be converted;
+  #   empty when every tracking amount was rebuilt
+  def rebuild_fund(fund, user_id)
+    @error_msg = {}
+    @missing_rates = Set.new
+    update_fund(fund, user_id, force: true)
+    @error_msg[:missing_rates] = @missing_rates.to_a if @missing_rates.any?
+    @error_msg
+  end
+
+  # Zeroes every stored tracking amount of the fund, for when its tracking currency is removed (or
+  # set to the fund's own currency). Leaving the old figures in place would show them under the
+  # fund-currency label, because every tracking monetize falls back to fund.currency.
+  #
+  # Rollup columns (funds.tracking_*, capital_commitments.tracking_collected/distribution...,
+  # aggregate_portfolio_investments.tracking_*) are zeroed directly rather than re-counted: every
+  # row they sum is zero after this, so re-counting could only arrive at the same answer, slower.
+  def clear_tracking_amounts(fund)
+    send_notification("Clearing tracking currency amounts for fund #{fund.name}", nil)
+    # account_entries is the largest table: one UPDATE per reporting_date, the same slicing
+    # convert_account_entries uses. Not in_batches - its `id IN (...)` UPDATE is planned by MySQL on
+    # the partitioned table as a full PRIMARY index scan (EXPLAIN: ~6.9M rows on the production copy)
+    # and locks every row it scans, i.e. the whole table, once per batch; on the production copy it
+    # failed with "total number of locks exceeds the lock table size" for a 4k-entry fund. Filtering
+    # on fund_id + reporting_date uses the fund_id index and prunes to one partition.
+    scope = fund.account_entries.where.not(tracking_amount_cents: 0)
+    scope.distinct.pluck(:reporting_date).each do |date|
+      scope.where(reporting_date: date).update_all(tracking_amount_cents: 0)
+    end
+
+    TRACKING_COLUMNS.each do |association, columns|
+      fund.public_send(association).update_all(columns.index_with(0))
+    end
+    fund.portfolio_investments.include_proforma.update_all(tracking_amount_cents: 0, tracking_fmv_cents: 0)
+    Fund.where(id: fund.id).update_all(FUND_TRACKING_COLUMNS.index_with(0))
+  end
+
   def update_fund(fund, user_id, force: false)
     Audited.audit_class.as_user("TrackingCurrencyJob") do
       if fund.has_tracking_currency?
@@ -56,6 +113,7 @@ class TrackingCurrencyJob < ApplicationJob
         @error_msg.merge!(convert_distributions(fund, user_id, force: force))
         @error_msg.merge!(convert_commitment_adjustments(fund, user_id, force: force))
         @error_msg.merge!(convert_capital_commitments(fund, user_id, force: force))
+        @error_msg.merge!(fix_tracking_rollups(fund))
       end
 
       # PI entity currency columns run for every fund so cross-fund SUM queries always work.
@@ -65,7 +123,59 @@ class TrackingCurrencyJob < ApplicationJob
     end
   end
 
+  # Tracking columns zeroed by #clear_tracking_amounts, per fund association (account_entries and
+  # portfolio_investments are handled separately: the first is batched, the second needs
+  # include_proforma).
+  TRACKING_COLUMNS = {
+    capital_remittance_payments: %i[tracking_amount_cents],
+    capital_remittances: %i[tracking_call_amount_cents tracking_collected_amount_cents],
+    capital_distribution_payments: %i[tracking_net_payable_cents tracking_gross_payable_cents
+                                      tracking_reinvestment_with_fees_cents tracking_income_with_fees_cents
+                                      tracking_expense_with_fees_cents tracking_tax_with_fees_cents
+                                      tracking_display_only_with_fees_cents],
+    commitment_adjustments: %i[tracking_amount_cents],
+    capital_commitments: %i[tracking_orig_committed_amount_cents tracking_adjustment_amount_cents
+                            tracking_committed_amount_cents tracking_collected_amount_cents
+                            tracking_distribution_amount_cents],
+    aggregate_portfolio_investments: %i[tracking_bought_amount_cents tracking_sold_amount_cents tracking_fmv_cents]
+  }.freeze
+
+  FUND_TRACKING_COLUMNS = %i[tracking_committed_amount_cents tracking_call_amount_cents tracking_co_invest_call_amount_cents
+                             tracking_collected_amount_cents tracking_distribution_amount_cents].freeze
+
   private
+
+  # The convert_* methods write with update_all / update_columns, which skip counter_culture, so the
+  # rollups those rows feed were left holding whatever they summed before the conversion - on a
+  # forced rebuild, figures in the old currency. Re-count the ones fed by remittances and
+  # distribution payments (commitment adjustments are re-counted in convert_capital_commitments,
+  # portfolio investments in convert_portfolio_investments).
+  #
+  # `where` is applied to the table being counted INTO, so it is { id: } for the fund itself and
+  # { fund_id: } for its commitments; column_name limits each pass to the tracking column, leaving
+  # the fund-currency rollups on the same relations alone.
+  def fix_tracking_rollups(fund)
+    {
+      CapitalRemittance => { fund: %w[tracking_call_amount_cents tracking_collected_amount_cents],
+                             capital_commitment: %w[tracking_collected_amount_cents] },
+      CapitalDistributionPayment => { fund: %w[tracking_distribution_amount_cents],
+                                      capital_commitment: %w[tracking_distribution_amount_cents] }
+    }.each do |model, relations|
+      relations.each do |relation, columns|
+        where = relation == :fund ? { id: fund.id } : { fund_id: fund.id }
+        columns.each { |column| model.counter_culture_fix_counts(only: relation, column_name: column, where:) }
+      end
+    end
+
+    # Nothing rolls commitments' tracking_committed_amount_cents up to the fund (the counter_culture
+    # on CapitalCommitment covers committed_amount_cents only), so the fund header's "Tracking
+    # Committed" was never populated. Sum it here, where every commitment's value has just been set.
+    Fund.where(id: fund.id).update_all(tracking_committed_amount_cents: fund.capital_commitments.sum(:tracking_committed_amount_cents))
+    {}
+  rescue StandardError => e
+    Rails.logger.debug e.backtrace
+    { "#{fund.name}: Tracking rollups" => e.message }
+  end
 
   def convert_account_entries(fund, user_id, force: false)
     send_notification("Updating tracking currency for account entries", user_id)

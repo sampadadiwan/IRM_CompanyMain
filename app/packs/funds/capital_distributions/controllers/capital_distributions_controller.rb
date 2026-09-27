@@ -91,11 +91,14 @@ class CapitalDistributionsController < ApplicationController
 
   # DELETE /capital_distributions/1 or /capital_distributions/1.json
   def destroy
-    CapitalDistributionDestroy.call(capital_distribution: @capital_distribution)
-
     respond_to do |format|
-      format.html { redirect_to fund_url(@capital_distribution.fund), notice: "Capital distribution was successfully destroyed." }
-      format.json { head :no_content }
+      if CapitalDistributionDestroy.call(capital_distribution: @capital_distribution).success?
+        format.html { redirect_to fund_url(@capital_distribution.fund), notice: "Capital distribution was successfully destroyed." }
+        format.json { head :no_content }
+      else
+        format.html { redirect_to capital_distribution_url(@capital_distribution), alert: @capital_distribution.errors.full_messages.join(", ") }
+        format.json { render json: @capital_distribution.errors, status: :unprocessable_entity }
+      end
     end
   end
 

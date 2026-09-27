@@ -2,17 +2,14 @@ class CapitalDistributionDestroy < Trailblazer::Operation
   step :save_with_pi
 
   def save_with_pi(_ctx, capital_distribution:, **)
-    # This operation saves the capital distribution and updates the portfolio investments with the new capital_distribution_id.
-    cd_saved = false, pis_saved = false
-    # Ensure both capital_distribution and portfolio_investments are saved in a transaction
+    # Unlink the portfolio investments (they outlive the distribution) and destroy it, atomically
+    destroyed = false
     CapitalDistribution.transaction do
-      # If portfolio_investment_ids are provided, update the portfolio investments
-      pis_saved = capital_distribution.portfolio_investments.update_all(capital_distribution_id: nil).positive? if capital_distribution.portfolio_investments.present?
-
-      cd_saved = capital_distribution.destroy
+      capital_distribution.portfolio_investments.update_all(capital_distribution_id: nil)
+      destroyed = capital_distribution.destroy
+      # destroy returns false when a before_destroy guard aborts (e.g. fund units allocated) — undo the unlink too
+      raise ActiveRecord::Rollback unless destroyed
     end
-    # Return true if both capital_distribution and portfolio investments (if any) were saved successfully
-    cd_saved && (pis_saved || capital_distribution.portfolio_investments.blank?)
+    destroyed.present?
   end
-  # rubocop:enable Rails/SkipsModelValidations
 end

@@ -128,10 +128,15 @@ class CapitalRemittancesController < ApplicationController
 
       redirect_to capital_remittance_path(@capital_remittance), alert: "Cannot delete this remittance as units have already been allocated for payments #{links_html}.<br> Please adjust the units before deleting the remittance."
     else
-      @capital_remittance.destroy
+      # BlocksDestroyWithFundUnits still refuses when units exist that the payment check above misses
       respond_to do |format|
-        format.html { redirect_to capital_remittances_url, notice: "Capital remittance was successfully destroyed." }
-        format.json { head :no_content }
+        if @capital_remittance.destroy
+          format.html { redirect_to capital_remittances_url, notice: "Capital remittance was successfully destroyed." }
+          format.json { head :no_content }
+        else
+          format.html { redirect_to capital_remittance_url(@capital_remittance), alert: @capital_remittance.errors.full_messages.join(", ") }
+          format.json { render json: @capital_remittance.errors, status: :unprocessable_entity }
+        end
       end
     end
   end

@@ -1,0 +1,45 @@
+<%# Support-only form for FundsController#change_tracking_currency. The change itself runs in
+    ChangeTrackingCurrencyJob; this page states what it will do before anyone commits to it. %>
+<%
+  ratio_end_dates = @fund.fund_ratios.distinct.count(:end_date)
+  current = @fund.tracking_currency.presence || "none"
+%>
+<%= render FormCard.new(title: "Change Tracking Currency for #{@fund.name}") do %>
+  <% if @fund.tracking_currency_change_pending? %>
+    <%= render "funds/tracking_currency_change_banner", fund: @fund %>
+  <% end %>
+
+  <div class="alert alert-info">
+    <p class="mb-2">
+      Fund currency: <strong><%= @fund.currency %></strong>. Current tracking currency: <strong><%= current %></strong>.
+    </p>
+    <p class="mb-1">When you submit, in the background:</p>
+    <ul class="mb-2">
+      <li>Exchange rates from <%= @fund.currency %> to the new currency are checked for every date that will be converted. If any is missing, nothing is changed and you are told which.</li>
+      <li>Every tracking amount (account entries, commitments, remittances, distributions, adjustments, portfolio investments and the fund totals) is recalculated at the rate for its own date. Choosing <em>None</em> zeroes them instead.</li>
+      <li>Fund ratios are regenerated for the <%= pluralize(ratio_end_dates, "end date") %> that already have them, replacing ratios labelled with the old currency.</li>
+      <li>Allocation runs on this fund are blocked until it finishes.</li>
+    </ul>
+    <p class="mb-0">Not changed: documents and reports already generated or sent to investors, and fund snapshots.</p>
+  </div>
+
+  <%= form_with(url: change_tracking_currency_fund_path(@fund), method: :post, local: true) do |form| %>
+    <div class="form-group">
+      <%= label_tag :new_tracking_currency, "New tracking currency" %>
+      <%= select_tag :new_tracking_currency,
+                     options_for_select(@fund.tracking_currency_options, params[:new_tracking_currency]),
+                     include_blank: "None (remove the tracking currency)", class: "form-control" %>
+      <small class="text-muted">Only currencies this entity has exchange rates for are listed.</small>
+    </div>
+
+    <div class="form-group">
+      <%= label_tag :confirm_fund_name, "Type the fund name to confirm" %>
+      <%= text_field_tag :confirm_fund_name, nil, class: "form-control", placeholder: @fund.name, autocomplete: "off" %>
+    </div>
+
+    <div class="actions">
+      <%= form.submit "Change Tracking Currency", class: "btn btn-outline-danger", disabled: @fund.tracking_currency_change_pending? %>
+      <%= link_to "Cancel", fund_path(@fund), class: "btn btn-outline-secondary" %>
+    </div>
+  <% end %>
+<% end %>

@@ -102,7 +102,12 @@ class ChangeFundCurrencyJob < ApplicationJob
         # Step 18: Rebuild tracking currency amounts if the fund uses one
         if fund.has_tracking_currency?
           send_notification("#{fund.name}: updating tracking currency amounts", user_id)
-          TrackingCurrencyJob.new.update_fund(fund, user_id, force: true)
+          # rebuild_fund, not update_fund: update_fund needs the error state only #perform sets up.
+          tracking_errors = TrackingCurrencyJob.new.rebuild_fund(fund, user_id)
+          if tracking_errors.present?
+            send_notification("#{fund.name}: some tracking amounts could not be rebuilt: #{tracking_errors.to_json}",
+                              user_id, "danger")
+          end
         end
 
         # Step 19: Recompute fund ratios for every previously-computed end date
@@ -493,13 +498,8 @@ class ChangeFundCurrencyJob < ApplicationJob
   end
 
   def recompute_fund_ratios(fund, user_id)
-    end_dates = fund.fund_ratios.pluck(:end_date).uniq
-    return if end_dates.empty?
-
-    send_notification("#{fund.name}: recomputing fund ratios for #{end_dates.size} date(s)", user_id)
-    end_dates.each do |end_date|
-      FundRatiosJob.perform_later(fund.id, nil, end_date, user_id, true)
-    end
+    queued = FundRatioRecompute.call(fund, user_id)
+    send_notification("#{fund.name}: recomputing fund ratios for #{queued} date(s)", user_id) if queued.positive?
   end
 
   # rubocop:enable Rails/SkipsModelValidations

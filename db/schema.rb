@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2316,6 +2316,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_160000) do
     t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.string "tracking_currency", limit: 3
+    t.datetime "tracking_currency_change_started_at"
+    t.string "tracking_currency_change_state", limit: 20
+    t.string "tracking_currency_changing_to", limit: 3
     t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.bigint "trustee_signatory_id"
     t.string "unit_types"

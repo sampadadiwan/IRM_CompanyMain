@@ -98,6 +98,11 @@ class CapitalRemittancePayment < ApplicationRecord
   before_destroy :check_units_before_deletion
   # This method is called before the payment is deleted, to check if we can delete the payment
   def check_units_before_deletion
+    # Skip when a parent (remittance, call, commitment, stakeholder, fund, entity) is being destroyed: the
+    # remittance's fund_units go in the same cascade, but payments are destroyed first
+    # (declaration order), so the check would always see the units still allocated and abort.
+    return if destroyed_by_association
+
     # if units are already allocated then we cannot delete this payment
     if units_already_allocated?
       errors.add(:base, "Units have already been allocated for this payment. Please adjust the units before deleting the payment.")

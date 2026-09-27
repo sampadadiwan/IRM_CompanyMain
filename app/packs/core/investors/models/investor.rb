@@ -10,6 +10,7 @@ class Investor < ApplicationRecord
   include ForInvestor
   include WithSupportAgent
   include InvestorShared
+  include BlocksDestroyWithFundUnits
   # Lets an Investor have a WorkflowTemplate assigned/launched against it —
   # used for both LP onboarding and portfolio-company KPI report review.
   include Workflowable
@@ -448,5 +449,14 @@ class Investor < ApplicationRecord
 
   def logo_doc
     documents.where(name: "Logo").first
+  end
+
+  # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
+  def allocated_fund_units
+    fund_units
+  end
+
+  def fund_units_block_label
+    "stakeholder"
   end
 end

@@ -222,6 +222,9 @@ resources :funds do
   get 'dashboard', on: :member
   get 'analytics', on: :member
   post 'generate_tracking_numbers', on: :member
+  get 'change_tracking_currency', on: :member
+  post 'change_tracking_currency', on: :member
+  post 'retry_tracking_currency_change', on: :member
   get 'show_email_list', on: :member
   patch 'trigger_adhoc_notification', on: :member
   put :restore_deleted, on: :member

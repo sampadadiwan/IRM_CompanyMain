@@ -14,6 +14,7 @@ class CapitalRemittance < ApplicationRecord
   include CapitalRemittanceFees
   include CapitalRemittanceCallBasis
   include CapitalRemittanceShared
+  include BlocksDestroyWithFundUnits
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
   STANDARD_COLUMNS = {
@@ -345,5 +346,10 @@ class CapitalRemittance < ApplicationRecord
     grouped.sort.map do |name, rows|
       ConsolidatedFee.new(name:, amount: Money.new(rows.sum(&:amount)), date: nil) # or pick earliest/latest (see below)
     end
+  end
+
+  # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
+  def allocated_fund_units
+    fund_units
   end
 end

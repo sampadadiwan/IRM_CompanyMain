@@ -1,0 +1,25 @@
+<%# Shown while ChangeTrackingCurrencyJob owns the fund (FundTrackingCurrencyChange). Tracking figures
+    on this page are mid-rebuild or, after a failure, partly rebuilt - say so rather than let them
+    read as final. %>
+<% target = fund.tracking_currency_changing_to || "none (removing it)" %>
+<% if fund.tracking_currency_change_retryable? %>
+  <div class="alert alert-danger d-flex flex-wrap align-items-center gap-2" id="tracking_currency_change_banner">
+    <div class="flex-grow-1">
+      <% if fund.tracking_currency_change_failed? %>
+        <strong>Tracking currency change to <%= target %> failed.</strong>
+      <% else %>
+        <%# Still "in progress" long after it started: the job is taken to have died without releasing it. %>
+        <strong>Tracking currency change to <%= target %> did not finish.</strong>
+      <% end %>
+      Tracking amounts may be partly rebuilt and should not be relied on. Allocation runs are blocked until it completes.
+    </div>
+    <% if policy(fund).retry_tracking_currency_change? %>
+      <%= button_to "Retry", retry_tracking_currency_change_fund_path(fund), method: :post, class: "btn btn-sm btn-outline-danger" %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="alert alert-warning" id="tracking_currency_change_banner">
+    <strong>Tracking currency change to <%= target %> in progress.</strong>
+    Tracking amounts are being rebuilt and may be inconsistent until it completes. Allocation runs are blocked meanwhile.
+  </div>
+<% end %>
