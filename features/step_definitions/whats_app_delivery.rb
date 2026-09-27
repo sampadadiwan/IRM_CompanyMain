@@ -16,7 +16,7 @@ end
 
 Given('the document notifies the WhatsApp-enabled investor user') do
   @document = Document.last
-  allow_any_instance_of(Document).to receive(:notification_users).and_return([@investor_user])
+  stub_document_notification_recipients(@investor_user)
 end
 
 Given('there is a custom notification for the document with subject {string} and whatsapp {string}') do |subject, whatsapp_message|

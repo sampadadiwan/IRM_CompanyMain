@@ -1,3 +1,12 @@
+<%#
+  One row per email that will go out, not per person. A contact who represents several
+  stakeholders appears once per stakeholder, because each of those emails carries that
+  stakeholder's own cc addresses (InvestorAccess#cc plus the cc on their commitments in this
+  fund). See docs/modules/notifications/document_notification_cc_resolution.md.
+
+  The cc addresses themselves are deliberately not listed here: ApplicationMailer#setup_cc
+  assembles them from three sources at send time, and duplicating that here would drift.
+%>
 <table id="users" class="table table-bordered  dataTable jqDataTable">
   <thead>
     <tr>
@@ -8,17 +17,25 @@
         <th>
             Email
         </th>
+
+        <th>
+            Stakeholder
+        </th>
     </tr>
   </thead>
 
   <tbody>
-    <% @notification_users.each do |user| %>
+    <% @notification_recipients.each do |user, investor| %>
     <tr>
         <td>
         <%= user.full_name %>
         </td>
         <td>
         <%= user.email %>
+        </td>
+        <td>
+        <%# No investor means the access right names this person directly - usually an employee. %>
+        <%= investor ? investor.investor_name : "&mdash;".html_safe %>
         </td>
     </tr>
     <% end %>

@@ -135,8 +135,15 @@ class ApplicationMailer < ActionMailer::Base
 
     # Never CC the recipient on their own email — avoids duplicate delivery when
     # entity_setting.cc matches a fund employee who is also a direct recipient.
+    #
+    # Also dedupe case-insensitively, keeping the first occurrence. The three sources concatenated
+    # above (entity_setting.cc, the contact's InvestorAccess#cc, and additional_ccs) overlap
+    # routinely — a stakeholder's advisor is frequently also named on the commitment cc, and one
+    # address then appeared twice on the same email.
     if @cc.present? && @user.present?
-      cc_list = @cc.split(",").map(&:strip).reject { |addr| addr.casecmp?(@user.email) }
+      cc_list = @cc.split(",").map(&:strip).compact_blank
+                   .reject { |addr| addr.casecmp?(@user.email) }
+                   .uniq(&:downcase)
       @cc = cc_list.any? ? cc_list.join(", ") : nil
     end
   end

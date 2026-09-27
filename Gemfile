@@ -194,6 +194,14 @@ group :development, :test do
   gem 'bullet'
   gem 'htmlbeautifier'
   gem 'parallel_tests'
+  # Deliberately NOT adding cuke_modeler. It only exists to unlock
+  # `parallel_cucumber --group-by scenarios`, and that mode silently runs fewer scenarios than
+  # it should: measured on `--tags @notification`, a single cucumber process and
+  # `--group-by steps` across 6 workers both report 215 scenarios / 2398 steps, while
+  # `--group-by scenarios` reports 212 / 2336. Three scenarios vanish inside parallel_tests'
+  # own scenario enumeration (these features use Scenario Outlines heavily, so example-row
+  # expansion is the likely culprit - not root-caused). A green run that quietly skipped three
+  # scenarios is worse than a slower one, so group by steps and accept the lumpier split.
   gem 'pry-byebug'
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false

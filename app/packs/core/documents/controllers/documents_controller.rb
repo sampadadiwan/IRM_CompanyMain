@@ -370,8 +370,11 @@ class DocumentsController < ApplicationController
     end
   end
 
+  # One row per email that will actually go out, not per person: the same contact appears once
+  # for each stakeholder they represent, because each of those emails carries a different cc
+  # list. See docs/modules/notifications/document_notification_cc_resolution.md.
   def show_email_list
-    @notification_users = @document.notification_users
+    @notification_recipients = @document.notification_recipients
   end
 
   private
