@@ -99,29 +99,114 @@ class GrafanaProvisioner
   def provision_contact_points
     puts "\n=== Contact Points ==="
     existing = get('/api/v1/provisioning/contact-points')
-    @spec[:contact_points].each do |cp|
-      # Expand ${VAR_NAME} placeholders from ENV so secrets stay out of the YAML
-      resolved = deep_expand_env(cp)
+    # get/put/post swallow HTTP errors and return the error body, so a wrong GRAFANA_PASS
+    # would otherwise look like an empty list and every contact point "Created".
+    raise "Cannot list contact points on #{@cfg[:url]}: #{existing.inspect.truncate(300)}" unless existing.is_a?(Array)
+
+    resolved_points = @spec[:contact_points].map do |cp|
+      # Expand ${VAR_NAME} placeholders so secrets stay out of the YAML
+      resolved = deep_expand_env(cp, strict: true)
       found    = existing.find { |e| e['name'] == cp[:name].to_s }
       if found
         put("/api/v1/provisioning/contact-points/#{found['uid']}", resolved)
-        puts "  Updated: #{cp[:name]}"
+        puts "  Sent update: #{cp[:name]}"
       else
         post('/api/v1/provisioning/contact-points', resolved)
-        puts "  Created: #{cp[:name]}"
+        puts "  Sent create: #{cp[:name]}"
       end
+      resolved
+    end
+
+    verify_webhook_contact_points!(resolved_points)
+  end
+
+  # Reads the webhook contact points back from Grafana's live Alertmanager config and
+  # raises unless each carries exactly what was sent. The HTTP helpers ignore status
+  # codes, so a rejected PUT (bad setting, 401) printed "Updated" and left the old,
+  # broken contact point in place — the way the WhatsApp webhook ran for months with an
+  # ignored header and an empty token. authorization_credentials is a secure field that
+  # Grafana never returns; secureFields only says whether it is set.
+  VERIFIED_WEBHOOK_SETTINGS = %i[url httpMethod authorization_scheme].freeze
+
+  def verify_webhook_contact_points!(resolved_points)
+    config = get('/api/alertmanager/grafana/config/api/v1/alerts')
+    receivers = Array(config.dig('alertmanager_config', 'receivers'))
+    raise "Cannot read the Alertmanager config on #{@cfg[:url]} to verify contact points" if receivers.empty?
+
+    resolved_points.select { |cp| cp[:type].to_s == 'webhook' }.each do |cp|
+      live = receivers.find { |r| r['name'] == cp[:name].to_s }&.dig('grafana_managed_receiver_configs', 0)
+      raise "Contact point '#{cp[:name]}' is missing on #{@cfg[:url]} after provisioning" unless live
+
+      settings = cp[:settings] || {}
+      VERIFIED_WEBHOOK_SETTINGS.each do |key|
+        next unless settings.key?(key)
+        next if live.dig('settings', key.to_s).to_s == settings[key].to_s
+
+        raise "Contact point '#{cp[:name]}' on #{@cfg[:url]}: #{key} is #{live.dig('settings', key.to_s).inspect}, " \
+              "expected #{settings[key].inspect} — the update was rejected"
+      end
+      credentials_missing = settings.key?(:authorization_credentials) && live.dig('secureFields', 'authorization_credentials') != true
+      raise "Contact point '#{cp[:name]}' on #{@cfg[:url]}: authorization_credentials is not set — the update was rejected" if credentials_missing
+
+      puts "  Verified: #{cp[:name]} -> #{live.dig('settings', 'url')}"
     end
   end
 
-  # Recursively expand ${VAR_NAME} in all string values from ENV.
-  # Missing ENV vars expand to empty string (Grafana will accept it; you will see auth failures).
-  def deep_expand_env(obj)
+  # Recursively expand ${VAR_NAME} in all string values, from ENV or — for the webhook
+  # URL and token — from the region being provisioned (see region_placeholder).
+  #
+  # strict: a missing value aborts. Contact points are expanded strictly: a missing value
+  # used to become "", which Grafana accepts — that is how the WhatsApp contact point went
+  # live with an empty webhook token and answered every alert 401 (found 2026-09-27).
+  # Viewer users stay lenient: they deliberately skip when GRAFANA_VIEWER_PASSWORD is unset.
+  def deep_expand_env(obj, strict: false)
     case obj
-    when Hash   then obj.transform_values { |v| deep_expand_env(v) }
-    when Array  then obj.map { |v| deep_expand_env(v) }
-    when String then obj.gsub(/\$\{([A-Z0-9_]+)\}/) { ENV[$1].to_s }
+    when Hash   then obj.transform_values { |v| deep_expand_env(v, strict:) }
+    when Array  then obj.map { |v| deep_expand_env(v, strict:) }
+    when String then obj.gsub(/\$\{([A-Z0-9_]+)\}/) { placeholder_value(::Regexp.last_match(1), strict:) }
     else obj
     end
+  end
+
+  # IN and US are independent environments: each Grafana alerts through its OWN region's
+  # app, authenticated with that app's token. Keyed by #region (from GRAFANA_URL's host).
+  REGION_TARGETS = {
+    'in' => { env_name: 'production.in', app_url: 'https://app.caphive.com' },
+    'us' => { env_name: 'production.us', app_url: 'https://app.caphive.us' }
+  }.freeze
+
+  # Always derived from the Grafana being provisioned, never from ENV: the old YAML told
+  # operators to `export GRAFANA_WEBHOOK_TOKEN`, and a token left in the shell from an IN
+  # run would otherwise be pushed to the US Grafana (IN and US are independent).
+  REGION_DERIVED_PLACEHOLDERS = %w[GRAFANA_WEBHOOK_URL GRAFANA_WEBHOOK_TOKEN].freeze
+
+  def placeholder_value(name, strict:)
+    derived = REGION_DERIVED_PLACEHOLDERS.include?(name)
+    value = derived ? region_placeholder(name) : ENV.fetch(name, nil)
+    warn "  Ignoring ENV #{name}: it is always taken from region '#{region}'" if derived && ENV[name].present? && ENV[name] != value
+    raise "#{name} is not set (ENV, or derived for region '#{region}') — refusing to provision an empty value" if strict && value.blank?
+
+    value.to_s
+  end
+
+  # Placeholders resolved from the region being provisioned.
+  def region_placeholder(name)
+    case name
+    when 'GRAFANA_WEBHOOK_URL'   then "#{region_target.fetch(:app_url)}/grafana/alert"
+    when 'GRAFANA_WEBHOOK_TOKEN' then region_credentials[:grafana_webhook_token].presence
+    end
+  end
+
+  def region_target
+    REGION_TARGETS.fetch(region) { raise "No region target for Grafana host '#{region}' — add it to REGION_TARGETS" }
+  end
+
+  def region_credentials
+    env_name = region_target.fetch(:env_name)
+    key_path = Rails.root.join('config', 'credentials', "#{env_name}.key")
+    raise "Key file not found for '#{env_name}' at #{key_path}" unless File.exist?(key_path)
+
+    Rails.application.encrypted(Rails.root.join('config', 'credentials', "#{env_name}.yml.enc"), key_path: key_path)
   end
 
   # ── Notification policy ─────────────────────────────────────────────────────
@@ -984,7 +1069,14 @@ class GrafanaProvisioner
   end
 
   def auth!(req)
-    req['Authorization'] = "Basic #{Base64.strict_encode64("#{@cfg[:user]}:#{@cfg[:pass]}")}"
+    req['Authorization'] = "Basic #{Base64.strict_encode64("#{@cfg[:user]}:#{grafana_pass}")}"
+  end
+
+  # GRAFANA_PASS from ENV, else the target region's own credentials — so provisioning the
+  # US Grafana can never be attempted with the IN password, or vice versa.
+  def grafana_pass
+    @grafana_pass ||= @cfg[:pass].presence ||
+                      (REGION_TARGETS.key?(region) ? region_credentials[:GRAFANA_PASS].to_s : '')
   end
 
   def http
