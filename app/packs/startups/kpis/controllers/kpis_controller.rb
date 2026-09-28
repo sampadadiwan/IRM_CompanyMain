@@ -132,7 +132,7 @@ class KpisController < ApplicationController
   def approve
     @kpi = KpiApproveService.call([@kpi.id], current_user.id)
     respond_to do |format|
-      format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI was successfully approved.") }
+      format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI approved. Cumulative values are being computed — refresh the page in a few seconds.") }
       format.json { render :show, status: :ok, location: @kpi }
     end
   end
@@ -173,7 +173,7 @@ class KpisController < ApplicationController
       end
 
       KpiApproveService.call(kpi_ids, current_user.id)
-      notice = "All pending KPIs were successfully approved."
+      notice = "All pending KPIs approved. Cumulative values are being computed — refresh the page in a few seconds."
     end
 
     respond_to do |format|

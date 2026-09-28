@@ -21,11 +21,14 @@ class KpiApproveService
     # report_ids scopes the job to only the reports containing the approved KPIs.
     # The KpiCumulative concern handles writing to downstream Quarter/YTD/Year
     # reports internally — we only need to feed it the source reports.
-    portco_ids = @result_kpis.pluck(:portfolio_company_id).uniq
+    # Pass a single integer, not an array — Kpi.new(portfolio_company_id: [id])
+    # silently casts the array to nil, which breaks Phase 2 (Compute) by querying
+    # reports with portfolio_company_id IS NULL instead of the intended company.
+    portco_id = @result_kpis.first.portfolio_company_id
     source_report_ids = @result_kpis.map(&:kpi_report_id).uniq
 
     KpiCumulateJob.perform_later(
-      portco_ids,
+      portco_id,
       user_id: user_id,
       force: true,
       report_ids: source_report_ids,

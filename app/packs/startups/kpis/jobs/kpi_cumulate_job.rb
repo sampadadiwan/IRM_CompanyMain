@@ -67,23 +67,27 @@ class KpiCumulateJob < ApplicationJob
     # This runs AFTER aggregation is complete for all processed reports.
     # It finds all mappings that require computation and triggers the calculation.
     # The computation logic in KpiCumulative#perform_computation iterates over all relevant Q/YTD reports for the PC.
-    begin
-      InvestorKpiMapping.where(investor_id: portfolio_company_id, autofill: 'compute').find_each do |mapping|
-        # We need an instance to call the concern method.
-        # Create a temporary KPI object to trigger the logic defined in the Concern.
-        kpi = Kpi.new(
-          portfolio_company_id: portfolio_company_id,
-          entity_id: mapping.entity_id,
-          name: mapping.standard_kpi_name,
-          investor_kpi_mapping: mapping
-        )
-        kpi.autofill(force: force)
-        @error_msgs.concat(kpi.autofill_errors) if kpi.respond_to?(:autofill_errors) && kpi.autofill_errors.present?
+    # Array() ensures each pc_id is a single integer — Kpi.new requires a scalar
+    # portfolio_company_id; passing an array silently casts to nil and queries the
+    # wrong reports. KpiApproveService now sends a scalar, but this guard protects
+    # against any other caller that might still pass an array.
+    Array(portfolio_company_id).each do |pc_id|
+      begin
+        InvestorKpiMapping.where(investor_id: pc_id, autofill: 'compute').find_each do |mapping|
+          kpi = Kpi.new(
+            portfolio_company_id: pc_id,
+            entity_id: mapping.entity_id,
+            name: mapping.standard_kpi_name,
+            investor_kpi_mapping: mapping
+          )
+          kpi.autofill(force: force)
+          @error_msgs.concat(kpi.autofill_errors) if kpi.respond_to?(:autofill_errors) && kpi.autofill_errors.present?
+        end
+      rescue StandardError => e
+        error_info = "Failed to compute KPI data for PortfolioCompany #{pc_id}: #{e.message}"
+        Rails.logger.error error_info
+        @error_msgs << { pc_id: pc_id, message: error_info }
       end
-    rescue StandardError => e
-      error_info = "Failed to compute KPI data for PortfolioCompany #{portfolio_company_id}: #{e.message}"
-      Rails.logger.error error_info
-      @error_msgs << { pc_id: portfolio_company_id, message: error_info }
     end
 
     if @error_msgs.present?

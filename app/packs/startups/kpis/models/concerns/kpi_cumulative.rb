@@ -97,13 +97,25 @@ module KpiCumulative
   end
 
   # Performs forward fill by taking the latest monthly 'Actual' KPI value and applying it to
-  # Quarterly and YTD reports.
+  # Quarterly and YTD reports. When no monthly data exists, falls back to directly-reported
+  # Quarter KPIs — mirroring how perform_cumulation uses process_quarterly_derived_cumulatives
+  # for entities that report at Quarter granularity.
+  #
+  # @param force [Boolean] when true, overwrites existing values
   def perform_forward_fill(force: false)
     related_kpis = fetch_related_monthly_kpis
-    return if related_kpis.empty?
+    monthly_years = related_kpis.to_set { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
-    process_quarterly_forward_fill(related_kpis, force: force)
-    process_yearly_forward_fill(related_kpis, force: force)
+    unless related_kpis.empty?
+      process_quarterly_forward_fill(related_kpis, force: force)
+      process_yearly_forward_fill(related_kpis, force: force)
+    end
+
+    # Fallback: when data is reported at Quarter granularity (no monthly data),
+    # carry the latest quarter value into YTD and Year. Fiscal years already
+    # covered by monthly data are skipped via skip_years so values are never
+    # written from both sources.
+    process_quarterly_derived_forward_fill(force: force, skip_years: monthly_years)
   end
 
   # Performs computation based on a custom formula defined in the KPI mapping.
@@ -334,6 +346,47 @@ module KpiCumulative
         last_val = kpis_in_year.last.value.to_f
         process_cumulative_kpi(nil, last_val, 'YTD', nil, last_date, note: "Auto-generated Forward Fill", force: force)
       end
+    end
+  end
+
+  # Carries the latest directly-reported quarterly value into YTD and Year for entities
+  # that report at Quarter granularity without underlying monthly 'Actual' data. Mirrors
+  # process_quarterly_derived_cumulatives but uses last-value (forward fill) semantics
+  # instead of summing.
+  #
+  # @param force [Boolean] when true, overwrites existing values
+  # @param skip_years [Set] fiscal years that already have monthly data — skip to avoid
+  #   writing the same period from both monthly and quarterly sources
+  def process_quarterly_derived_forward_fill(force: false, skip_years: [])
+    related_quarters = fetch_related_quarterly_kpis
+    return if related_quarters.empty?
+
+    quarters_by_year = related_quarters.group_by { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
+
+    quarters_by_year.each do |fiscal_year, kpis_in_year|
+      next if skip_years.include?(fiscal_year)
+
+      quarters_present = kpis_in_year.index_by { |kpi| fiscal_quarter_number(kpi.kpi_report.as_of) }
+
+      # Each quarter's value is carried forward as the YTD snapshot at that date.
+      # Unlike cumulate (which requires contiguous quarters from Q1), forward fill
+      # treats each quarter independently — each is a point-in-time balance.
+      quarters_present.keys.sort.each do |quarter|
+        as_of = quarters_present[quarter].kpi_report.as_of
+        next if as_of > Date.current
+
+        last_val = quarters_present[quarter].value.to_f
+        process_cumulative_kpi(nil, last_val, 'YTD', nil, as_of, note: "Auto-generated Forward Fill (from quarters)", force: force)
+      end
+
+      # Year = Q4 value (the final balance) when all 4 quarters are present
+      next unless (1..4).all? { |q| quarters_present.key?(q) }
+
+      fy_end = fiscal_year_key(quarters_present[4].kpi_report.as_of, style: :range).last
+      next if fy_end > Date.current
+
+      last_val = quarters_present[4].value.to_f
+      process_cumulative_kpi(nil, last_val, 'Year', nil, fy_end, note: "Auto-generated Forward Fill (from quarters)", force: force)
     end
   end
 
