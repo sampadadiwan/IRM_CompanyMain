@@ -1,6 +1,38 @@
-/* Apply pointer cursor only to control cells containing the expand span */
-td[data-row-toggle-target="control"] .expand {
+/* Apply pointer cursor only to control cells containing the expand span.
+   The +/- text set by row_toggle_controller.js stays in the DOM as a
+   fallback but is hidden (font-size: 0) in favor of the tabler-icons circle-plus/circle-minus
+   glyph, which the "modernize" layout's tabler-icons.css already loads app-wide.
+   Covers both markup shapes used across KPI grids (target on the <td>) and the cap table
+   (target on the <tr>). */
+td[data-row-toggle-target="control"] .expand,
+tr[data-row-toggle-target="control"] .expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  font-size: 0;
   cursor: pointer;
+  position: relative;
+}
+
+td[data-row-toggle-target="control"] .expand {
+  margin-left: 4px;
+}
+
+td[data-row-toggle-target="control"] .expand:before,
+tr[data-row-toggle-target="control"] .expand:before {
+  font-family: "tabler-icons" !important;
+  content: "\ea69";
+  font-size: 20px;
+  line-height: 1;
+  color: var(--bs-primary);
+}
+
+/* When open, show minus icon */
+td[data-row-toggle-target="control"] .expand.expanded:before,
+tr[data-row-toggle-target="control"] .expand.expanded:before {
+  content: "\ea68";
 }
 
 /* Optionally: change pointer cursor on hover to make clickable area clearer */
@@ -14,6 +46,52 @@ td[data-row-toggle-target="control"]:hover .expand {
     color: #212529;
     border: 1px solid lightgray /* dark grey */
   }
+}
+
+/* Kedaara-style pill shape for the header tag badges (Actual/Projected/etc.), using the
+   same light "normal" colours kedaara.css defines for badge-tag-* rather than its dark
+   teal theme, so it renders correctly for tenants without kedaara.css loaded. */
+#kpi_reports_grid thead .badge.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100px;
+  padding: 0.45em 0.9em;
+  /* match the date header text size above the pill instead of the browser's
+     default 80% shrink on <small> */
+  font-size: 1em;
+  font-weight: 500;
+  line-height: 1;
+}
+
+#kpi_reports_grid thead .badge-tag-actual {
+  background-color: #E3EEF9 !important;
+  color: #1976D2 !important;
+}
+
+#kpi_reports_grid thead .badge-tag-budget {
+  background-color: #EAF1EB !important;
+  color: #579158 !important;
+}
+
+#kpi_reports_grid thead .badge-tag-ic-case {
+  background-color: #FDEDE0 !important;
+  color: #EF6C00 !important;
+}
+
+#kpi_reports_grid thead .badge-tag-audited {
+  background-color: #FFEBF6 !important;
+  color: #FF0084 !important;
+}
+
+#kpi_reports_grid thead .badge-tag-projected {
+  background-color: #F0EAFB !important;
+  color: #6f42c1 !important;
+}
+
+#kpi_reports_grid thead .badge-tag-other {
+  background-color: #E2E2F6 !important;
+  color: #1f22a6 !important;
 }
 
 table.dataTable>tbody>tr.child ul.dtr-details {
@@ -962,6 +1040,45 @@ tr.dt-rowReorder-moving td.dtfc-fixed-right:last-child {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Overlay buttons for horizontally-scrollable tables (see table_scroll_controller.js) */
+.table-scroll-wrapper {
+  position: relative;
+}
+
+.table-scroll-btn {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--bs-primary);
+  color: #fff;
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.table-scroll-btn:hover,
+.table-scroll-btn:focus-visible,
+.table-scroll-btn:active {
+  opacity: 1;
+}
+
+.table-scroll-btn i {
+  font-size: inherit;
+}
+
+.table-scroll-btn-left {
+  left: 0;
+}
+
+.table-scroll-btn-right {
+  right: 0;
 }
 
 /* Ensure consistent borders when rows are toggled */

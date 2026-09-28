@@ -12,7 +12,9 @@ export default class extends Controller {
     this.controlTargets.forEach(ctrl => {
       const span = ctrl.querySelector("span.expand")
       if (span) {
-        span.textContent = ">"
+        // Reset the symbol to the collapsed state
+        // use +/- and not >
+        span.textContent = "+"
         span.classList.remove("expanded")
       }
       // Set initial aria-expanded
@@ -117,7 +119,7 @@ export default class extends Controller {
     }
 
     if (symbol) {
-      symbol.textContent = opening ? "−" : ">"
+      symbol.textContent = opening ? "−" : "+"
       symbol.classList.toggle("expanded", opening)
     }
 
@@ -148,7 +150,7 @@ export default class extends Controller {
     }
 
     if (symbol) {
-      symbol.textContent = opening ? "−" : ">"
+      symbol.textContent = opening ? "−" : "+"
       symbol.classList.toggle("expanded", opening)
     }
 

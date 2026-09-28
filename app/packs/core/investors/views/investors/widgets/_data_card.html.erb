@@ -25,13 +25,15 @@
       <div>
         <strong><%= label.titleize %></strong>
         <% value = safe_field_value(investor, key) %>
-        <% if value.is_a?(Date) %>
-          <span><%= l(value) %></span>
-        <% elsif value.is_a?(Money) %>
-          <span><%= money_to_currency value, params %></span>
-        <% else %>
-          <span><%= value %></span>
-        <% end %>
+        <% display_value = if value.is_a?(Date)
+                              l(value)
+                            elsif value.is_a?(Money)
+                              money_to_currency(value, params)
+                            else
+                              value
+                            end %>
+        <% safe_title = CGI.escapeHTML(strip_tags(display_value.to_s)).html_safe %>
+        <span title="<%= safe_title %>"><%= display_value %></span>
       </div>
     <% end %>
   </div>

@@ -74,6 +74,7 @@ export default class BaseAgGrid extends Controller {
             },
             onFirstDataRendered: (event) => {
                 this.ensureFirstRowVisible(event);
+                this.autoSizeColumnsToFitContent(event);
             },
 
             onColumnVisible: (event) => {
@@ -281,6 +282,27 @@ export default class BaseAgGrid extends Controller {
                 console.warn('Unable to reset AG Grid initial scroll position', e);
             }
         });
+    }
+
+    // Expands every non-flex column to fit its widest rendered value, so long
+    // text (e.g. fund/company names) doesn't get truncated by a narrow
+    // default column width. Flex columns are skipped since ag-Grid can't
+    // auto-size a column that's set to fill remaining space.
+    autoSizeColumnsToFitContent(event) {
+        const columnApi = event?.columnApi || this.gridOptions?.columnApi;
+        if (!columnApi) return;
+
+        try {
+            const colIds = columnApi.getAllGridColumns()
+                .filter(col => {
+                    const def = col.getColDef();
+                    return !def.flex && !def.pinned && !def.suppressSizeToFit;
+                })
+                .map(col => col.getColId());
+            if (colIds.length) columnApi.autoSizeColumns(colIds, false);
+        } catch (e) {
+            console.warn('Unable to auto-size AG Grid columns to content', e);
+        }
     }
 
     refreshGridLayout(event) {
