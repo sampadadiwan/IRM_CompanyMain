@@ -52,9 +52,30 @@ A secondary issue: legacy cumulated KPI records created before mapping inheritan
 
 **Rationale:** Two independently queued Sidekiq jobs have no ordering guarantee. The percentage job must run after cumulated Quarter/YTD/Year KPIs exist. `perform_now` inside the cumulation job guarantees this ordering.
 
+### 5. Scalar `portco_id` with `Array()` defensive guard
+
+**Choice:** `KpiApproveService` passes `@result_kpis.first.portfolio_company_id` (single integer) instead of `.pluck(:portfolio_company_id).uniq` (array). Phase 2 Compute in `KpiCumulateJob` wraps the parameter in `Array()` before iterating.
+
+**Rationale:** `Kpi.new(portfolio_company_id: [1719])` silently casts the array to `nil` via ActiveRecord's integer type casting. This caused Phase 2 to query `KpiReport.where(portfolio_company_id: nil)`, finding orphan reports instead of the intended company. The `Array()` guard protects against any other caller that might still pass an array.
+
+### 6. Forward fill quarterly fallback via `process_quarterly_derived_forward_fill`
+
+**Choice:** When `fetch_related_monthly_kpis` returns empty (no monthly data), fall back to reading Quarter KPIs directly to derive YTD values. A `skip_years` parameter avoids double-processing fiscal years that already have monthly data.
+
+**Alternative considered:** Requiring all companies to have monthly data for forward fill. Rejected because many portfolio companies report quarterly only, and forward fill YTD was silently broken for all of them — both on main and our branch.
+
+### 7. Approval notice message over auto-refresh
+
+**Choice:** Show a flash notice ("Cumulative values are being computed — refresh the page in a few seconds") on `approve` and `approve_all` actions.
+
+**Alternatives considered:** (a) Turbo Stream polling for job completion, (b) `perform_now` to block the response until computation finishes. Both rejected: (a) adds frontend complexity for a rare interaction, (b) blocks the HTTP response for seconds, degrading UX. The notice is simple, honest, and matches the async nature of the Sidekiq job.
+
 ## Risks / Trade-offs
 
 - **[Risk] Large approval batches could slow the job** → Mitigated by scoping to only the approved reports' IDs. The concern handles downstream Quarter/YTD/Year internally, so the input set stays small.
 - **[Risk] `report_ids` parameter changes the job signature** → Mitigated by making it an optional keyword argument with `nil` default. Existing callers are unaffected.
 - **[Risk] Mapping backfill on existing records could overwrite intentional nil** → Mitigated by using `||=` (only assigns when nil). No known case where a nil mapping is intentional on a cumulated record.
 - **[Trade-off] Incremental mapping backfill vs. one-time migration** → Accepted: convergence is slower but requires zero operational effort. Records are fixed as they're naturally reprocessed.
+- **[Risk] Array passed to `Kpi.new` silently casts to nil** → Fixed at source (`KpiApproveService` now passes scalar) and guarded at destination (`Array()` in job). Both layers needed because other callers may exist.
+- **[Risk] Forward fill quarterly fallback could double-process fiscal years with monthly data** → Mitigated by `skip_years` parameter that excludes years already handled by the monthly-based forward fill path.
+- **[Trade-off] Flash notice vs. auto-refresh** → Accepted: notice is simpler than Turbo Stream polling, and the async delay is typically 2–5 seconds. Can be upgraded to polling in a future iteration.
