@@ -42,12 +42,24 @@
 #    always carries the TTL, and rack_attack.rb reads with cache.read (which
 #    can never create a key), never fetch.
 #
+# Q: Why Rack::Attack.cache.store instead of Rails.cache?
+# A: rack_attack.rb points Rack::Attack.cache.store at a dedicated Redis store
+#    in production/staging and leaves it on Rails.cache in development/test
+#    (see its comment there) — this counter and the throttle/blocklist rules
+#    that read it (limit_404_errors, block_ip_after_repeated_404s) must all
+#    agree on the same backing store, or the count silently splits into two
+#    disconnected copies. Never reach for Rails.cache here: in production the
+#    two are DIFFERENT stores (Redis vs Solid Cache), so the bug would only
+#    ever show up in production, where the counter would read as 0 forever.
+#
 # Q: An IP is wrongly blocked in production right now — how do I clear it?
-# A: In a prod console ("key" is a reserved word in MySQL, keep the backticks):
-#      SolidCache::Entry.where("`key` LIKE ?", "%rack::attack:%").delete_all
-#    or delete the specific "rack::attack:404:<ip>" / ":blocked:<ip>" /
-#    ":throttled:<ip>" entries. Blocks also self-expire ~5 minutes after the
-#    404s stop.
+# A: These counters live in Rack::Attack's own Redis-backed store (see
+#    config/initializers/rack_attack.rb), not Solid Cache. In a prod console:
+#      store = Rack::Attack.cache.store
+#      store.delete("rack::attack:404:<ip>")
+#      store.delete("rack::attack:throttled:<ip>")
+#      store.delete("rack::attack:blocked:<ip>")
+#    Blocks also self-expire ~5 minutes after the 404s stop.
 #
 # Q: How is all of this tested?
 # A: features/security/rack_attack_404_blocking.feature (@rack_attack) runs
@@ -55,6 +67,15 @@
 #    spoofed cookies, shared IPs, sign-in-while-blocked, and expiry. Note
 #    Rack::Attack is ENABLED in the test env; scenarios get a real cache via
 #    features/support/rack_attack.rb.
+#
+#    That suite runs on a MemoryStore, which proves the RULES but nothing
+#    about the store production actually uses, so
+#    rack_attack_404_blocking_redis.feature (@rack_attack_redis) re-runs the
+#    core block/throttle/exemption path against a real Redis-backed
+#    RedisCacheStore. That is the configuration where rack-attack wraps the
+#    store in RedisCacheStoreProxy (which forces raw: true on read AND write)
+#    and where the namespace and the INCR-set TTL apply — none of which the
+#    MemoryStore path exercises. It needs a local Redis on REDIS_URL.
 # ─────────────────────────────────────────────────────────────────────────────
 class Log404s
   # Devise (via Warden) writes "warden.user.<scope>.key" into the session only
@@ -145,11 +166,11 @@ class Log404s
         # expires — previously the expiry was only set on first write, a branch
         # that never ran because rack_attack.rb's fetch-with-block had already
         # created the key (with no TTL), making every counter permanent.
-        new_count = Rails.cache.increment(key, 1, raw: true, expires_in: 1.minute)
+        new_count = Rack::Attack.cache.store.increment(key, 1, raw: true, expires_in: 1.minute)
         if new_count.nil?
           # Some stores return nil when incrementing a missing key instead of
           # initializing it — seed the counter explicitly in that case.
-          Rails.cache.write(key, 1, raw: true, expires_in: 1.minute)
+          Rack::Attack.cache.store.write(key, 1, raw: true, expires_in: 1.minute)
           new_count = 1
         end
 

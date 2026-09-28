@@ -12,6 +12,30 @@ module DocumentHelper
     file.metadata['filename'] if file.metadata
   end
 
+  # Where a link on a document's name should go: the stored file itself, opened in the browser,
+  # falling back to the document page.
+  #
+  # Same rule as documents/_card_view.html.erb. `orignal` is what says the file may be served
+  # as-is, and not_generated_or_approved keeps a generated-but-unapproved draft behind the
+  # document page, where the approval state is visible - a direct link would hand out a file
+  # nobody has signed off yet. Everything else goes to document_path, which authorizes through
+  # DocumentPolicy#show? rather than handing out a signed URL.
+  #
+  # Returns nil when there is no file to point at, so callers can render plain text instead of
+  # a link that 404s.
+  def document_file_url(document)
+    return nil if document.blank? || document.file.blank?
+
+    if document.orignal && policy(document).not_generated_or_approved
+      document.file.url(response_content_disposition: "inline; filename=#{document.name_with_extension}")
+    else
+      document_path(document)
+    end
+  rescue StandardError => e
+    Rails.logger.warn("document_file_url failed for document #{document&.id}: #{e.message}")
+    nil
+  end
+
   # This method returns all the folders to be displayed in the tree view
   def get_tree_view_folders(params, current_user, entity, documents)
     entity_id = params[:entity_id].present? ? params[:entity_id].to_i : current_user.entity_id

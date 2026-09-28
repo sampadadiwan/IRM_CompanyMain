@@ -1,7 +1,10 @@
-Feature: Fund tracking currency is locked to support after creation
-  Tracking currency can corrupt tracking amounts across account entries if changed
-  carelessly after a fund has committed activity, so only support may correct it once
-  a fund exists. See FundPolicy#update_tracking_currency?.
+Feature: Fund tracking currency is locked on the edit form after creation
+  Tracking amounts are stored in the tracking currency but labelled with whatever
+  funds.tracking_currency says, so editing the column alone would relabel old-currency figures as
+  the new currency. Once a fund exists the edit form's field is locked for everyone - support
+  included - and a direct update is refused. The only way to change it is the support-only
+  Actions > Change Tracking Currency, which also rebuilds the tracking amounts (see
+  change_tracking_currency.feature and FundPolicy#change_tracking_currency?).
 
   Background:
     Given Im logged in as a user "first_name=Test" for an entity "name=Test Entity;entity_type=Investment Fund;currency=USD"
@@ -14,12 +17,17 @@ Feature: Fund tracking currency is locked to support after creation
 
   Scenario: A regular company admin cannot change tracking currency via a direct update
     When I try to update the fund's tracking currency to "USD" bypassing the disabled field
-    Then the tracking currency update should be denied
+    Then the tracking currency update should be refused
     And the fund's tracking currency should still be blank
 
-  Scenario: A support user can change tracking currency after creation
+  Scenario: A regular company admin cannot open the Change Tracking Currency screen
+    When I visit the change tracking currency page for the fund
+    Then the tracking currency update should be denied
+
+  Scenario: Support also cannot change tracking currency from the edit form
     Given the user has role "support"
     When I visit the edit page for the fund
-    Then the tracking currency field should not be disabled
+    Then the tracking currency field should be disabled
     When I try to update the fund's tracking currency to "USD" bypassing the disabled field
-    Then the fund's tracking currency should be "USD"
+    Then the tracking currency update should be refused
+    And the fund's tracking currency should still be blank

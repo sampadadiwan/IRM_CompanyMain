@@ -53,9 +53,6 @@
                   <%
                     currencies = fund.entity.exchange_rates.pluck(:from) << fund.entity.currency
                     currency_disabled = !fund.new_record?
-                    # Tracking currency is locked after creation except for support, who can
-                    # correct a bad value (see FundPolicy#update_tracking_currency?)
-                    tracking_currency_disabled = currency_disabled && !policy(fund).update_tracking_currency?
                   %>
                   <div class="form-group">
                     <%= form.label :currency %>
@@ -65,8 +62,15 @@
 
                   <div class="form-group">
                     <%= form.label :tracking_currency %>
-                    <%= form.select :tracking_currency, currencies.uniq, {include_blank: true}, class: "form-control", disabled: tracking_currency_disabled  %>
-                    <small>If you want to track the fund in a different currency, leave blank if not applicable</small>
+                    <%# Locked for everyone once the fund exists: changing it means rebuilding every tracking
+                        amount, which only Actions > Change Tracking Currency does (ChangeTrackingCurrencyJob).
+                        FundsController#update refuses the change even if the disabled attribute is removed. %>
+                    <%= form.select :tracking_currency, fund.tracking_currency_options, {include_blank: true}, class: "form-control", disabled: currency_disabled  %>
+                    <% if fund.new_record? %>
+                      <small>If you want to track the fund in a different currency, leave blank if not applicable</small>
+                    <% else %>
+                      <small>Cannot be edited once the fund exists, because every tracking amount must be recalculated. Contact support to change it.</small>
+                    <% end %>
                   </div>
 
                   <% if fund.entity.permissions.enable_units? %>

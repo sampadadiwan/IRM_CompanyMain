@@ -194,13 +194,22 @@ group :development, :test do
   gem 'bullet'
   gem 'htmlbeautifier'
   gem 'parallel_tests'
+  # Deliberately NOT adding cuke_modeler. It only exists to unlock
+  # `parallel_cucumber --group-by scenarios`, and that mode silently runs fewer scenarios than
+  # it should: measured on `--tags @notification`, a single cucumber process and
+  # `--group-by steps` across 6 workers both report 215 scenarios / 2398 steps, while
+  # `--group-by scenarios` reports 212 / 2336. Three scenarios vanish inside parallel_tests'
+  # own scenario enumeration (these features use Scenario Outlines heavily, so example-row
+  # expansion is the likely culprit - not root-caused). A green run that quietly skipped three
+  # scenarios is worse than a slower one, so group by steps and accept the lumpier split.
   gem 'pry-byebug'
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false
-  gem 'rubocop-rspec', require: false
 
+  # Not a test tier of its own — there are no specs. Cucumber is built on it:
+  # features/support/env.rb requires 'rspec/rails' and 'cucumber/rspec/doubles', and step
+  # definitions use RSpec::Expectations and RSpec::Mocks. Removing this breaks every feature.
   gem 'rspec-rails'
-  gem 'rswag-specs'
 end
 
 gem 'awesome_print'
@@ -212,6 +221,11 @@ end
 group :development do
   gem 'packs-rails'
   # gem 'stimpack'
+  # SES suppression list + configuration-set inspection for the ses:bounce_stats
+  # rake task (lib/tasks/ses_bounce_stats.rake). Diagnostic only — the app sends
+  # via the SES SMTP interface and never calls the SES API, so this is not needed
+  # in production. (That task's time series comes from aws-sdk-cloudwatch, above.)
+  gem "aws-sdk-sesv2", require: false
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem 'annotate'
   gem "letter_opener", group: :development

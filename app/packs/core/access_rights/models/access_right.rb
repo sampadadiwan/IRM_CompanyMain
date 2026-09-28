@@ -202,6 +202,34 @@ class AccessRight < ApplicationRecord
     end
   end
 
+  # The same recipients as #users, but each paired with the investor whose access THIS right
+  # grants - so a notifier can look up that investor's cc addresses (InvestorAccess#cc and
+  # CapitalCommitment#cc) instead of having to guess which stakeholder an email is "for".
+  #
+  # Returns [user, investor] pairs. `investor` is nil when the right names a person directly
+  # (#user_id, typically an employee): there is no stakeholder context to draw a cc from.
+  #
+  # The recipient set is deliberately derived from #users in every branch, so this cannot
+  # widen or narrow who gets emailed - it only attaches the investor. See
+  # docs/modules/notifications/document_notification_cc_resolution.md.
+  def notification_recipients(model = owner)
+    if user_id.present?
+      # Guarded for the same reason as Investor#notification_users: a right naming a user whose
+      # row is gone must not put a nil recipient into the fan-out.
+      user ? [[user, nil]] : []
+    elsif access_to_investor_id.present?
+      # investor.notification_users applies the Pundit filter against `model`, exactly as
+      # #users does - passing `model` through keeps a document-level right judged against the
+      # document and a fund-level right against the fund.
+      investor.notification_users(model).map { |contact| [contact, investor] }
+    elsif access_to_category.present?
+      # No policy filter here, so `model` is not needed - see category_recipients.
+      category_recipients
+    else
+      []
+    end
+  end
+
   after_commit :update_owner
   # This is to bust any cached dashboards showing the commitments
   def update_owner
@@ -223,6 +251,36 @@ class AccessRight < ApplicationRecord
       entity.investors.where(category: access_to_category)
     else
       investor ? [investor] : []
+    end
+  end
+
+  # Category rights ("All Stakeholders of Specific Category") cover every investor of a
+  # category, so one contact can map to several of them.
+  #
+  # Deliberately still exactly ONE row per contact here - same count as before this change.
+  # A category right is a single access right; splitting it per investor would multiply mail
+  # volume for every tenant using it, which is not what the per-access-right rule asked for.
+  # The stakeholder is attached only when it is unambiguous (the contact maps to exactly one
+  # investor of this category); when it is ambiguous the pair carries no investor, so the cc
+  # lookup falls back to today's behaviour rather than guessing.
+  #
+  # Starts from #users so the recipient set stays byte-identical to today's - that query has
+  # its own quirks (it filters on users.entity_id, not investor_accesses.entity_id) and
+  # changing who receives mail is not this change's job.
+  def category_recipients
+    category_investors = investors.index_by(&:id)
+    return users.map { |contact| [contact, nil] } if category_investors.empty?
+
+    # One query for the whole category rather than per user - #users is already flagged as
+    # inefficient upstream; no need to add an N+1 underneath it.
+    by_email = InvestorAccess.approved
+                             .where(entity_id:, investor_id: category_investors.keys)
+                             .pluck(:email, :investor_id)
+                             .group_by { |email, _| email.to_s.downcase }
+
+    users.map do |contact|
+      investor_ids = by_email[contact.email.to_s.downcase].to_a.map(&:last).uniq
+      [contact, investor_ids.one? ? category_investors[investor_ids.first] : nil]
     end
   end
 

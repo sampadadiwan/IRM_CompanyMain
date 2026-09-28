@@ -327,13 +327,13 @@ end
 
 Given('there is a Custom Notification for the entity') do
   @document = Document.first
-  allow_any_instance_of(Document).to receive(:notification_users).and_return([@user])
+  stub_document_notification_recipients(@user)
   @custom_notification = FactoryBot.create(:custom_notification, entity: @entity, owner: @entity, for_type: "Send Document", body: Faker::Lorem.paragraphs.join(". "), email_method: "send_document")
 end
 
 Given('there is a Custom Notification with placeholders for the entity') do
   @document = Document.first
-  allow_any_instance_of(Document).to receive(:notification_users).and_return([@user])
+  stub_document_notification_recipients(@user)
   @custom_notification = CustomNotification.create!(
     entity: @entity,
     owner: @entity,
@@ -687,4 +687,116 @@ Then('the generated investor statement has as_of equal to end date') do
   doc = @capital_commitment.documents.generated.last
   puts "Checking as_of: doc.as_of=#{doc.as_of}, end_date=#{@end_date.to_date}"
   expect(doc.as_of).to eq(@end_date.to_date)
+end
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+# Fund data room notifications. A data room document is owned by the Fund (Folder owner, see
+# WithDataRoom), so it has no commitment of its own to read a cc from and no single investor -
+# the delivering access right supplies both. See
+# docs/modules/notifications/document_notification_cc_resolution.md.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+
+Given('the investor contact has cc {string}') do |cc|
+  @investor_access.update!(cc:)
+  expect(@investor_access.reload.cc).to include(cc.split(",").first)
+end
+
+When('a document {string} is uploaded to the fund data room') do |document_name|
+  @fund.reload
+  # send_email: true is what triggers Document#send_notification_for_owner via
+  # DocumentPostCreateJob. ActiveJob runs inline in test, so the emails are delivered here.
+  @document = Document.create!(entity: @fund.entity, name: document_name,
+                               folder: @fund.data_room_folder, send_email: true, user: @user,
+                               file: File.new("public/sample_uploads/merge_test/CapHive - GST Certificate.pdf", "r"))
+  # setup_folder derives owner from the folder, which is what makes this a Fund-owned document.
+  expect(@document.owner_type).to eq("Fund")
+end
+
+Then('the data room document notification email is cc\'d to {string}') do |cc_email|
+  open_email(@investor_user.email)
+  expect(current_email).not_to be_nil, "No email delivered to #{@investor_user.email}"
+  expect(current_email.cc).to include(cc_email),
+                              "Expected cc #{cc_email} on the data room email to #{@investor_user.email}, got #{current_email.cc.inspect}"
+end
+
+Then('the data room document notifies the same people the access rights resolve to') do
+  # The old resolution, replicated: every access right's users, flattened and uniq'd. The new
+  # per-access-right fan-out must email exactly this set of people - no more, no fewer.
+  expected = (@document.access_rights.map(&:users).flatten +
+              @document.owner.access_rights.map(&:users).flatten).compact.map(&:id).uniq.sort
+
+  expect(@document.notification_users.map(&:id).uniq.sort).to eq(expected)
+end
+
+Then('each data room notification recipient carries the stakeholder its access right names') do
+  pairs = @document.notification_recipients
+  expect(pairs).not_to be_empty
+
+  pairs.each do |user, investor|
+    expect(investor).not_to be_nil, "No stakeholder resolved for #{user.email} - its cc addresses would be lost"
+    expect(investor.id).to eq(@investor.id)
+  end
+end
+
+Then('duplicate access rights for one stakeholder produce a single notification') do
+  # The stakeholder is reachable twice: through the document's OWN access right (copied from the
+  # data room folder by setup_access_rights) and through the FUND's, which notification_recipients
+  # unions in. Those are separate rows with different owners, so AccessRight#access_is_unique does
+  # not collapse them - it only forbids two rows with the same owner. The dedupe on
+  # [user_id, investor_id] is what turns them into one email.
+  doc_rights = @document.access_rights.where(access_to_investor_id: @investor.id).count
+  fund_rights = @document.owner.access_rights.where(access_to_investor_id: @investor.id).count
+  expect(doc_rights + fund_rights).to be > 1,
+                                      "Expected the stakeholder to be reachable through more than one access right " \
+                                      "(document: #{doc_rights}, fund: #{fund_rights}) to exercise the dedupe"
+
+  for_investor = @document.notification_recipients.select { |_user, investor| investor&.id == @investor.id }
+  expect(for_investor.map { |user, _investor| user.id }.uniq.size).to eq(for_investor.size)
+end
+
+Given('every access right for the stakeholder is revoked') do
+  AccessRight.where(access_to_investor_id: @investor.id).find_each(&:destroy)
+  expect(AccessRight.where(access_to_investor_id: @investor.id).count).to eq(0)
+end
+
+Then('uploading a document to the fund data room logs the stakeholder as committed but without access') do
+  expect(Rails.logger).to receive(:warn)
+    .with(/hold a commitment in this fund but no access right delivers this document/)
+    .at_least(:once)
+
+  steps %(
+    When a document "Fund Update Q4" is uploaded to the fund data room
+  )
+end
+
+Given("one stakeholder contact's login row has been deleted") do
+  accesses = @investor.approved_investor_accesses.order(:id).to_a
+  expect(accesses.size).to be > 1, "Need at least two contacts so one can be orphaned"
+  @orphaned_access = accesses.first
+  @surviving_access = accesses.last
+
+  # delete_all, not destroy: User has `has_many :investor_accesses, dependent: :destroy`, so a
+  # destroy would take the contact row with it and there would be nothing orphaned. A hard delete
+  # leaves investor_accesses.user_id pointing at a row that no longer exists - exactly the state
+  # found on the production dump.
+  User.where(id: @orphaned_access.user_id).delete_all
+  expect(User.exists?(@orphaned_access.user_id)).to be(false)
+end
+
+Then('the remaining stakeholder contact still receives the data room notification') do
+  open_email(@surviving_access.email)
+  expect(current_email).not_to be_nil,
+                              "The orphaned contact blocked the whole notification - nobody received #{@document.name}"
+
+  resolved = @document.notification_recipients.map { |user, _investor| user.email }
+  expect(resolved).to include(@surviving_access.email)
+  expect(resolved).not_to include(@orphaned_access.email)
+end
+
+Then('the data room document notification email cc\'s {string} exactly once') do |cc_email|
+  open_email(@investor_user.email)
+  expect(current_email).not_to be_nil, "No email delivered to #{@investor_user.email}"
+  occurrences = current_email.cc.to_a.count { |addr| addr.to_s.casecmp?(cc_email) }
+  expect(occurrences).to eq(1),
+                         "Expected #{cc_email} exactly once, found it #{occurrences} time(s) in #{current_email.cc.inspect}"
 end

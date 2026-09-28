@@ -2,6 +2,7 @@
 #   - an allocation run group that is using (or has yet to reach) the fund
 #   - an allocation run on the fund that has not finished
 #   - a fund formula operation (switch to incremental, recompute starting values, ...) still in progress
+#   - a tracking currency change (ChangeTrackingCurrencyJob) in progress, or failed and awaiting a retry
 #
 # A run or operation still "in progress" after FundFormulaOperation::STALE_AFTER is taken to have crashed:
 # its status would otherwise block the fund for ever.
@@ -30,6 +31,7 @@ class FundAllocationActivity
   def reason(except: nil)
     return "An allocation run group is currently running on this fund. Wait for it to finish." if AllocationGroupRun.fund_busy?(@fund.id)
     return "An allocation run on this fund has not finished yet. Wait for it to finish." if unfinished_run?
+    return "The fund's tracking currency is being changed. Wait for it to finish." if @fund.tracking_currency_change_pending?
 
     operation = FundFormulaOperation.live.where(fund_id: @fund.id).where.not(id: except&.id).first
     "#{operation} is still #{operation.status} on this fund. Wait for it to finish." if operation

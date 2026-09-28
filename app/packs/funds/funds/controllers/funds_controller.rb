@@ -8,7 +8,7 @@ class FundsController < ApplicationController
   helper PortfolioHelper
   helper FundStatisticsHelper
   helper LpFlowHelper
-  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers show_email_list trigger_adhoc_notification analytics]
+  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers change_tracking_currency retry_tracking_currency_change show_email_list trigger_adhoc_notification analytics]
 
   # GET /funds/1/analytics
   def analytics
@@ -141,10 +141,19 @@ class FundsController < ApplicationController
 
   # PATCH/PUT /funds/1 or /funds/1.json
   def update
-    # SECURITY: the edit form disables the tracking_currency select for non-support users, but
-    # that's UI-only - fund_params still permits it, so a direct PATCH could otherwise bypass
-    # the lock. Re-check server-side (see FundPolicy#update_tracking_currency?).
-    authorize(@fund, :update_tracking_currency?) if tracking_currency_change_requested?
+    # The edit form disables tracking_currency once the fund exists, but fund_params still permits
+    # it (it is set on #create), so a direct PATCH could otherwise change it. A plain update would
+    # only relabel the stored tracking amounts, never convert them - refuse it for everyone,
+    # support included, and point at the change that does the conversion (ChangeTrackingCurrencyJob).
+    if tracking_currency_change_requested?
+      message = "The tracking currency cannot be edited here. Support can change it from " \
+                "Actions > Change Tracking Currency, which also rebuilds the tracking amounts."
+      respond_to do |format|
+        format.html { redirect_to fund_path(@fund), alert: message }
+        format.json { render json: { tracking_currency: [message] }, status: :unprocessable_entity }
+      end
+      return
+    end
 
     respond_to do |format|
       if @fund.update(fund_params)
@@ -273,6 +282,11 @@ class FundsController < ApplicationController
         flash[:alert] = "The fund's formulas are being changed (Actions > Incremental allocation). Wait for that to finish before starting a run."
         redirect_back_or_to(root_path) and return
       end
+      # Allocation writes tracking amounts; mid-change they would be in whichever currency is saved.
+      if @fund.tracking_currency_change_pending?
+        flash[:alert] = "The fund's tracking currency is being changed. Wait for that to finish before starting a run."
+        redirect_back_or_to(root_path) and return
+      end
 
       template_name = template_id ? Document.find(template_id).name : nil
 
@@ -330,8 +344,58 @@ class FundsController < ApplicationController
 
   def generate_tracking_numbers
     force = params[:force].to_s.downcase == "true"
+    authorize(@fund, :force_generate_tracking_numbers?) if force
+    # TrackingCurrencyJob skips a fund mid-change anyway; say so rather than report a start.
+    if @fund.tracking_currency_change_pending?
+      redirect_to fund_path(@fund), alert: "A tracking currency change is pending on this fund; it rebuilds the tracking numbers itself."
+      return
+    end
+
     TrackingCurrencyJob.perform_later(fund_id: @fund.id, user_id: current_user.id, force: force)
     redirect_to fund_path(@fund), notice: "Tracking currency update started, please check back in a few mins."
+  end
+
+  # GET  - the change form (current value, target currency, consequences, typed confirmation).
+  # POST - checks the request, claims the fund and enqueues ChangeTrackingCurrencyJob, which checks
+  #        exchange rates, saves the currency and rebuilds every tracking amount and fund ratio.
+  # Support only (FundPolicy#change_tracking_currency?).
+  def change_tracking_currency
+    return render(:change_tracking_currency) unless request.post?
+
+    new_currency = params[:new_tracking_currency].presence
+    error = tracking_currency_change_error(new_currency)
+    if error
+      flash.now[:alert] = error
+      render :change_tracking_currency, status: :unprocessable_entity
+      return
+    end
+
+    begin
+      ChangeTrackingCurrencyJob.perform_later(@fund.id, current_user.id, @fund.tracking_currency_change_token)
+    rescue StandardError
+      # Claimed but never queued: nothing would ever release the fund, so let go before reporting.
+      @fund.release_tracking_currency_change!
+      raise
+    end
+    redirect_to fund_path(@fund), notice: "Tracking currency change to #{new_currency || 'none'} started. " \
+                                          "You will be notified when the tracking amounts have been rebuilt."
+  end
+
+  # Re-runs a ChangeTrackingCurrencyJob that raised partway, or whose worker died (stale), to the
+  # same target currency.
+  def retry_tracking_currency_change
+    if @fund.reclaim_failed_tracking_currency_change!
+      begin
+        ChangeTrackingCurrencyJob.perform_later(@fund.id, current_user.id, @fund.tracking_currency_change_token)
+      rescue StandardError
+        # Back to failed, so the Retry button is offered again rather than a change that never runs.
+        @fund.mark_tracking_currency_change_failed!
+        raise
+      end
+      redirect_to fund_path(@fund), notice: "Tracking currency change restarted."
+    else
+      redirect_to fund_path(@fund), alert: "There is no failed tracking currency change to retry on this fund."
+    end
   end
 
   def show_email_list
@@ -351,6 +415,19 @@ class FundsController < ApplicationController
     # renders when @custom_notification.email_method == "adhoc_kyc_notification" — harmless
     # to always pass through since FundNotificationJob ignores whichever of the two doesn't apply.
     investor_kyc_ids = params[:investor_kyc_ids].presence
+
+    # Documents attached to the notification itself go to EVERY recipient, so if one of them
+    # breaches the size limit this send cannot succeed for anyone - and that is knowable right
+    # here, synchronously. FundNotificationJob preflights the rest (attachment_names resolves
+    # per recipient and needs the recipient list), but its verdict only reaches the operator as
+    # an email minutes later. Saying so now, on the page they are already looking at, is the
+    # difference between a caught mistake and a mystery.
+    oversize = NotificationAttachmentPreflight.error_message(
+      @custom_notification.documents.to_a,
+      context: "Cannot send \"#{@custom_notification.subject}\""
+    )
+    return redirect_back_or_to(fund_path(@fund), alert: oversize) if oversize
+
     @fund.adhoc_notification(@custom_notification.id, commitment_ids:, investor_kyc_ids:, triggered_by_user_id: current_user.id)
     redirect_back_or_to(fund_path(@fund), notice: "Notification trigger started for #{@fund.name}.")
   end
@@ -366,7 +443,24 @@ class FundsController < ApplicationController
 
   def tracking_currency_change_requested?
     fund_params.key?(:tracking_currency) &&
-      fund_params[:tracking_currency].presence != @fund.tracking_currency
+      fund_params[:tracking_currency].presence != @fund.tracking_currency.presence
+  end
+
+  # Why a tracking currency change cannot start, or nil after claiming the fund for it. The claim
+  # is last, so a rejected request never leaves the fund marked as changing.
+  # @param new_currency [String, nil] nil removes the tracking currency
+  def tracking_currency_change_error(new_currency)
+    return "Type the fund name exactly to confirm." if params[:confirm_fund_name].to_s.strip != @fund.name
+    return "#{new_currency} is not a currency this entity has exchange rates for." if new_currency && @fund.tracking_currency_options.exclude?(new_currency)
+    return "The tracking currency is already #{new_currency || 'not set'}." if new_currency == @fund.tracking_currency.presence
+
+    # An allocation run writes tracking amounts as it creates account entries; one running under the
+    # change would write them at whichever currency is saved at that moment.
+    busy = FundAllocationActivity.new(@fund).reason
+    return busy if busy
+    return "A tracking currency change is already pending on this fund." unless @fund.claim_tracking_currency_change!(new_currency)
+
+    nil
   end
 
   # Only allow a list of trusted parameters through.

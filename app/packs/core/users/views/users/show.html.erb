@@ -234,6 +234,13 @@
     </div>
   </div>
 
+  <%# Advisor health check - support staff only, and only for accounts that are actually set up
+      as an investor advisor. Answers "why can this advisor not switch companies?" without a
+      console session. %>
+  <% if current_user.support? && @user.investor_advisor_account? %>
+    <%= render "users/investor_advisor_check", user: @user %>
+  <% end %>
+
   <%# Reset-2FA confirmation popup (trigger button is in the Two-Factor row above). Rendered
       outside the card so the modal is not trapped in the card's stacking context. %>
   <% if policy(@user).reset_two_factor? %>

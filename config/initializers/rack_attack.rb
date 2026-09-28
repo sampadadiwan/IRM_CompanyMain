@@ -13,7 +13,61 @@ module Rack
     # safelisting). It must implement .increment and .write like
     # ActiveSupport::Cache::Store
 
-    Rack::Attack.cache.store = Rails.cache
+    # Rack::Attack's counters (this file's throttle/blocklist DSL, plus the
+    # manual rack::attack:404:/:throttled:/:blocked: keys below and in
+    # Log404s) used to share Rails.cache, which is Solid Cache/MySQL in
+    # production. Under a 404-scanner storm that meant dozens of concurrent
+    # `INSERT ... ON DUPLICATE KEY UPDATE`s into solid_cache_entries per
+    # second, and MySQL's gap-locking on its unique key_hash index deadlocked
+    # (mysql-error.log, 2026-09-25 — all deadlocking transactions were
+    # solid_cache_entries inserts keyed "rack::attack:...:limit_404_errors:*").
+    # Redis's atomic INCR/EXPIRE has no equivalent lock, so give Rack::Attack
+    # its own Redis-backed store instead — namespaced so its keys can't
+    # collide with Sidekiq's or Action Cable's on the same Redis instance.
+    # Every other Rails.cache call in the app (fragment/query caching, etc.)
+    # is untouched and stays on Solid Cache.
+    #
+    # Redis is opted INTO for the deployed environments, rather than opted out
+    # of for test. Development and test keep plain Rails.cache:
+    #   * test — @rack_attack cucumber scenarios swap Rails.cache to a fresh
+    #     MemoryStore and mirror it onto Rack::Attack.cache.store themselves
+    #     (features/support/rack_attack.rb); forcing Redis here would fight
+    #     that swap, and the travel_to scenarios cannot expire a real Redis
+    #     TTL. The Redis store gets its own coverage instead —
+    #     features/security/rack_attack_404_blocking_redis.feature.
+    #   * development — cache_store is :null_store unless tmp/caching-dev.txt
+    #     exists, so these counters have always been inert locally. Pointing
+    #     dev at Redis buys nothing (dev traffic is 127.0.0.1, safelisted
+    #     below, so the rules can never fire) and costs a Redis round trip per
+    #     404 — or a full connect timeout per request with no local Redis up.
+    Rack::Attack.cache.store =
+      if Rails.env.production? || Rails.env.staging?
+        ActiveSupport::Cache::RedisCacheStore.new(
+          # NO default, deliberately. This store backs a SECURITY control and
+          # every Redis failure fails OPEN (see the timeouts below), so a
+          # missing REDIS_URL would quietly point at a non-existent localhost
+          # Redis and switch OFF every throttle plus the 404 blocklist —
+          # visible only as "RedisCacheStore: read failed" log lines. Better
+          # to refuse to boot. REDIS_URL is set in .env.production.* /
+          # .env.staging.* (aws_utils.rb's update_env_file writes it).
+          url: ENV.fetch('REDIS_URL'),
+          namespace: 'rack_attack',
+          pool: { size: ENV.fetch('RAILS_MAX_THREADS', 5).to_i, timeout: 5 },
+          # Rack::Attack runs INSIDE the request path, so a Redis outage has
+          # to cost milliseconds, not seconds. ActiveSupport's defaults are 1s
+          # per timeout and redis-rb retries a failed connect once, so a dead
+          # Redis would add ~2s per store op — and the 404 rules below do up
+          # to 3 ops per anonymous request, i.e. ~6s of dead weight on every
+          # request. RedisCacheStore#failsafe rescues Redis::BaseError and
+          # returns nil regardless (nil.to_i == 0 => no throttle, no block),
+          # so the behaviour on an outage is already fail-open; these settings
+          # only bound how slowly it fails.
+          connect_timeout: 0.2, read_timeout: 0.2, write_timeout: 0.2,
+          reconnect_attempts: 0
+        )
+      else
+        Rails.cache
+      end
 
     # Enabled in ALL environments, including test: the @rack_attack cucumber
     # scenarios exercise these rules end-to-end. This is safe for the rest of
@@ -46,6 +100,28 @@ module Rack
     # reader onto different keys.
     def self.client_ip(req)
       (req.env['action_dispatch.remote_ip'] || req.ip).to_s
+    end
+
+    # The per-IP 404 strike count Log404s maintains, read at most ONCE per
+    # request. Both 404 rules below need it and Rack::Attack evaluates the
+    # blocklist before the throttle, so without this memo every anonymous
+    # request paid two identical store reads — two Redis round trips, in the
+    # request path, for one value.
+    #
+    # cache.store, NOT Rails.cache: Log404s writes this key via cache.store
+    # too, and writer and reader must agree on the backing store or the
+    # defense silently splits onto two disconnected copies of the key.
+    #
+    # read, NOT fetch-with-block: fetch writes its 0 default with no TTL on a
+    # miss, and since this runs on every request it pre-created the key before
+    # Log404s ever saw a 404 — which skipped Log404s' expiring first write and
+    # made every per-IP counter permanent (nil.to_i is 0 anyway).
+    #
+    # Memoized in req.env, like Log404s.authenticated?. 0 is truthy in Ruby,
+    # so ||= caches a genuine "no strikes" answer instead of re-reading it.
+    def self.bad_request_count_for(req, ip)
+      req.env['rack.attack.404_count'] ||=
+        cache.store.read("rack::attack:404:#{ip}", raw: true).to_i
     end
 
     # Devise endpoints an anonymous user must always be able to reach to
@@ -233,23 +309,19 @@ module Rack
 
       ip = client_ip(req)
 
-      # read, NOT fetch-with-block: fetch writes its 0 default with no TTL on
-      # a miss, and since this runs on every request it pre-created the key
-      # before Log404s ever saw a 404 — which skipped Log404s' expiring first
-      # write and made every per-IP counter permanent (nil.to_i is 0 anyway).
-      bad_request_count = Rails.cache.read("rack::attack:404:#{ip}", raw: true).to_i
+      bad_request_count = bad_request_count_for(req, ip)
       throttle_request = bad_request_count > 5
 
       if throttle_request
         Rails.logger.info "rack::attack: Throttling IP #{ip} after #{bad_request_count} 404s"
-        Rails.logger.debug { "rack::attack:throttled:#{ip} #{Rails.cache.read("rack::attack:throttled:#{ip}")}" }
+        Rails.logger.debug { "rack::attack:throttled:#{ip} #{cache.store.read("rack::attack:throttled:#{ip}")}" }
 
         # Store a throttle flag for 5 minutes
-        Rails.cache.write("rack::attack:throttled:#{ip}", true, expires_in: 5.minutes)
+        cache.store.write("rack::attack:throttled:#{ip}", true, expires_in: 5.minutes)
       end
 
       # Return true if the IP is currently throttled
-      Rails.cache.read("rack::attack:throttled:#{ip}").present? ? ip : nil
+      cache.store.read("rack::attack:throttled:#{ip}").present? ? ip : nil
     end
 
     # Action	Effect
@@ -270,21 +342,19 @@ module Rack
 
       ip = client_ip(req)
 
-      # read, NOT fetch-with-block — see limit_404_errors above: fetch's
-      # 0-default write had no TTL and made the counter permanent.
-      bad_request_count = Rails.cache.read("rack::attack:404:#{ip}", raw: true).to_i
+      bad_request_count = bad_request_count_for(req, ip)
       block_request = bad_request_count > 10
 
       if block_request
         Rails.logger.info "rack::attack:Blocking IP #{ip} after #{bad_request_count} 404s"
-        Rails.logger.debug { "rack::attack:blocked:#{ip} #{Rails.cache.read("rack::attack:blocked:#{ip}")}" }
+        Rails.logger.debug { "rack::attack:blocked:#{ip} #{cache.store.read("rack::attack:blocked:#{ip}")}" }
 
         # Store a block flag for 5 minutes
-        Rails.cache.write("rack::attack:blocked:#{ip}", true, expires_in: 5.minutes)
+        cache.store.write("rack::attack:blocked:#{ip}", true, expires_in: 5.minutes)
       end
 
       # Return true if IP is in the blocked list
-      Rails.cache.read("rack::attack:blocked:#{ip}").present?
+      cache.store.read("rack::attack:blocked:#{ip}").present?
     end
 
     ### Custom Throttle Response ###

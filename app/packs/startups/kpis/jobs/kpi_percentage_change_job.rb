@@ -13,7 +13,22 @@ class KpiPercentageChangeJob < ApplicationJob
 
   def recompute_percentage_change(portfolio_companies, user_id)
     portfolio_companies.each do |port_co|
-      Kpi.where(entity_id: port_co.entity_id, portfolio_company_id: port_co.id).approved.joins(:kpi_report).order("kpi_report.as_of ASC").group_by { |x| [x.name, x.kpi_report.period, x.owner_id, x.kpi_report.tag_list] }.each do |key, kpis|
+      # No .order here on purpose: sorting kpis by the joined kpi_reports.as_of can't be satisfied
+      # by any index on kpis (the ORDER BY column lives on the other side of the join, confirmed
+      # via EXPLAIN + FORCE INDEX - MySQL filesorts regardless), and it was dead weight anyway -
+      # group_by doesn't care about input order, and Kpi.recompute_percentage_change re-sorts each
+      # group by kpi_report.as_of itself.
+      #
+      # .joins stays: it is what applies KpiReport's paranoia scope to the join
+      # (INNER JOIN kpi_reports ON kpi_reports.deleted_at IS NULL AND ...), so a kpi
+      # whose report was soft-deleted without cascading - KpiReport#delete / .delete_all skip the
+      # dependent: :destroy callback - stays excluded. Without it x.kpi_report is nil under the
+      # same paranoia scope and the group_by key below raises NoMethodError. The join itself costs
+      # nothing here; only the ORDER BY did. .preload (not .includes) then loads kpi_report via a
+      # separate narrow query, avoiding an N+1 on the period/tag_list calls in the group_by key
+      # without turning the join into a wide eager_load - same reasoning as
+      # KpiCumulative#fetch_related_monthly_kpis.
+      Kpi.where(entity_id: port_co.entity_id, portfolio_company_id: port_co.id).approved.joins(:kpi_report).preload(:kpi_report).group_by { |x| [x.name, x.kpi_report.period, x.owner_id, x.kpi_report.tag_list] }.each do |key, kpis|
         msg = "Recomputing percentage change for #{key} for #{port_co.name} : #{kpis.length} kpis"
         Rails.logger.debug msg
         send_notification(msg, user_id, :info)

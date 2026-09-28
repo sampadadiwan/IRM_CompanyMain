@@ -1,0 +1,167 @@
+/* Chrome for the email preview page (layouts/email_preview.html.erb).
+ *
+ * Its own stylesheet, and not part of application.scss, because the preview deliberately
+ * renders with `layout: false` (WithEmailPreview#preview) - it opens in its own tab and must
+ * NOT inherit the app's CSS: the point of the page is that the email body inside it looks the
+ * way the recipient will see it, and Bootstrap's reboot cascading into that body would make
+ * the preview lie. So the page links this file on its own, the way outlook_addin links
+ * mail_addin.
+ *
+ * Every selector is a class. The email body inlined into the page carries the mailer layout's
+ * own <style> block (`table { width: 100% }`, `h6 { color: grey }`, `p, ul, ol { ... }`), which
+ * now arrives AFTER this file - a class still beats an element selector whichever order they
+ * load in, which is what keeps the two independent.
+ */
+
+.email-preview {
+  background: #f6f6f6;
+  box-sizing: border-box;
+  font-family: sans-serif;
+  margin: 0 auto;
+  max-width: 700px;
+  padding: 16px;
+}
+
+.email-preview__panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.email-preview__badge {
+  background: #eef2f7;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: .02em;
+  padding: 8px 14px;
+}
+
+.email-preview__meta {
+  margin: 0;
+  padding: 12px 14px;
+}
+
+.email-preview__row {
+  display: flex;
+  font-size: 14px;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.email-preview__label {
+  color: #6b7280;
+  flex: 0 0 68px;
+  font-weight: bold;
+}
+
+.email-preview__value {
+  color: #111827;
+  word-break: break-word;
+}
+
+.email-preview__body {
+  padding: 0;
+}
+
+/* The oversize warning. Red because the document the admin came here to check is NOT going to
+   be attached, and the attachment list below cannot show its absence. */
+.email-preview__alert {
+  background: #fdecee;
+  border: 1px solid #f0a5ad;
+  border-left: 4px solid #c22032;
+  border-radius: 6px;
+  color: #7d1420;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+}
+
+.email-preview__alert-title {
+  color: #a31624;
+  font-size: 14px;
+  font-weight: bold;
+  margin: 0 0 8px;
+}
+
+.email-preview__alert-list {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.email-preview__alert-list li {
+  font-size: 14px;
+  list-style: disc;
+  margin: 0 0 4px;
+  padding: 0;
+}
+
+/* Red, not the usual blue: inside a red panel a blue link reads as belonging to something else.
+   Bold because it is the actionable thing in the alert. */
+.email-preview__alert-link {
+  color: #7d1420;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.email-preview__alert-link:hover {
+  color: #4d0b13;
+}
+
+.email-preview__alert-note {
+  color: #7d1420;
+  font-size: 13px;
+  margin: 0;
+}
+
+.email-preview__attachments {
+  padding: 12px 14px;
+}
+
+/* No text-transform on this heading. It changes the text the BROWSER reports - Capybara reads an
+   uppercased "ATTACHMENTS: 1" while the @attachment steps match on "Attachments:", and a screen
+   reader can spell out a short all-caps word as an acronym. Styled small and bold instead. */
+.email-preview__attachments h6 {
+  color: #374151;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: .02em;
+  margin: 0 0 8px;
+}
+
+.email-preview__attachments ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.email-preview__attachments li {
+  border-top: 1px solid #f1f2f4;
+  color: #111827;
+  font-size: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  word-break: break-word;
+}
+
+.email-preview__attachments li:first-child {
+  border-top: 0;
+}
+
+.email-preview__file {
+  color: #1b62c9;
+  text-decoration: underline;
+}
+
+.email-preview__file:hover {
+  color: #0f4795;
+}
+
+.email-preview__empty {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0;
+}

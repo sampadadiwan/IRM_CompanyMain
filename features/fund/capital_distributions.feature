@@ -262,5 +262,91 @@ Scenario: Distribution actions menu offers Replicate Distribution and no separat
   When I visit the capital distributions list for the fund
   Then the distribution actions menu should offer "Replicate Distribution" but not "Clone"
 
+  # Distribution notices attach the payment's own generated documents
+  # (CapitalDistributionPaymentsMailer#attach_all_files), so the same size limit and the same
+  # all-or-nothing rule apply: one oversized notice stops the notices for the whole distribution.
+  @doc_gen @notification @attachment
+  Scenario: An oversized document on a distribution payment stops every notification
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "2" users
+    Given there is an existing investor "" with "2" users
+    Given there is a fund "name=Test fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    When I create a new capital distribution "cost_of_investment_cents=10050000;"
+    # Required, not decoration: "I create a new capital distribution" leaves @capital_distribution
+    # as the unsaved FactoryBot object it filled the form from, and this is the step that rebinds
+    # it to the row the UI actually created. Without it the next step saves a duplicate, trips
+    # the title uniqueness validation, and reloads a record with a nil id.
+    Then I should see the capital distrbution details
+    Then when the capital distrbution is approved
+    Given the fund has a template "Distribution Template" of type "Distribution Template"
+    Given there is a custom notification for the capital distribution with subject "Custom Dist Notification" with email_method "send_notification"
+    And We Generate documents for the capital distribution
+    And The distribution payment documents are approved
+    And when the capital distrbution payments are marked as paid
+    Given one distribution payment has an oversized document of 20 MB
+    And the notification deliveries are cleared
+    And in-app alerts are captured
+    When the capital distribution notifications are sent
+    Then no distribution notice reaches an investor, only the blocked-send report
+    # The job already threaded the triggering user through, unlike the capital call paths -
+    # asserting it here keeps it that way.
+    And the triggering user gets a danger in-app alert mentioning "over the 7 MB limit"
 
+  # The Ruby-side skip: a payment whose commitment is flagged skip_doc_gen is not part of this
+  # run, so an oversized document on it must not stop the distribution for everyone else. Same
+  # rule as the capital call path, wired separately, so it needs its own scenario.
+  @doc_gen @notification @attachment
+  Scenario: An oversized document on a skip_doc_gen payment does not block the distribution
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "2" users
+    Given there is an existing investor "" with "2" users
+    Given there is a fund "name=Test fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    When I create a new capital distribution "cost_of_investment_cents=10050000;"
+    # Required, not decoration: "I create a new capital distribution" leaves @capital_distribution
+    # as the unsaved FactoryBot object it filled the form from, and this is the step that rebinds
+    # it to the row the UI actually created. Without it the next step saves a duplicate, trips
+    # the title uniqueness validation, and reloads a record with a nil id.
+    Then I should see the capital distrbution details
+    Then when the capital distrbution is approved
+    Given the fund has a template "Distribution Template" of type "Distribution Template"
+    Given there is a custom notification for the capital distribution with subject "Custom Dist Notification" with email_method "send_notification"
+    And We Generate documents for the capital distribution
+    And The distribution payment documents are approved
+    And when the capital distrbution payments are marked as paid
+    Given one distribution payment has an oversized document of 20 MB
+    And the commitment with the oversized distribution document has skip_doc_gen enabled
+    And the notification deliveries are cleared
+    When the capital distribution notifications are sent
+    Then the distribution payments that were not skipped still receive their notices
 
+  # Regression guard: normal-sized distribution notices are unaffected.
+  @doc_gen @notification @attachment
+  Scenario: Distribution notices under the size limit send exactly as before
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "2" users
+    Given there is an existing investor "" with "2" users
+    Given there is a fund "name=Test fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    When I create a new capital distribution "cost_of_investment_cents=10050000;"
+    # Required, not decoration: "I create a new capital distribution" leaves @capital_distribution
+    # as the unsaved FactoryBot object it filled the form from, and this is the step that rebinds
+    # it to the row the UI actually created. Without it the next step saves a duplicate, trips
+    # the title uniqueness validation, and reloads a record with a nil id.
+    Then I should see the capital distrbution details
+    Then when the capital distrbution is approved
+    Given the fund has a template "Distribution Template" of type "Distribution Template"
+    Given there is a custom notification for the capital distribution with subject "Custom Dist Notification" with email_method "send_notification"
+    And We Generate documents for the capital distribution
+    And The distribution payment documents are approved
+    And when the capital distrbution payments are marked as paid
+    And the notification deliveries are cleared
+    When the capital distribution notifications are sent
+    Then the investors must receive email with subject "Custom Dist Notification" with the document "Distribution Template" attached

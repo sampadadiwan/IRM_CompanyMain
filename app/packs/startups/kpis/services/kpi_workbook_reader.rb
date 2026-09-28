@@ -235,7 +235,8 @@ class KpiWorkbookReader
                 else
                   "Failed to process sheet '#{sheet}' in KPI import file: #{e.message}"
                 end
-          Rails.logger.debug e.backtrace
+          # Log the error backtrace for debugging purposes
+          Rails.logger.error e.backtrace
           Rails.logger.error(msg)
           add_issue(:error, :sheet_failed, msg, sheet: sheet)
           next

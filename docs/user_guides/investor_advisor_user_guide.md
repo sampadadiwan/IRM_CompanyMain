@@ -53,6 +53,7 @@ Access is always **explicit**: an advisor sees a fund or investor only if you've
 
 - You need to be a **Company Admin** of the fund's entity **and** have the *Investor Advisors* feature enabled on your user.
 - You'll need the advisor's email address.
+- The advisor's own firm must be an entity of type **Investor Advisor**. When the email is new to CapHive the steps below create that firm for you. If the person already has a login, they must already sit in such a firm — otherwise the save is refused, because an advisor set up outside one can never switch into your client.
 
 ### Steps
 
@@ -200,6 +201,24 @@ Only company admins of the fund's entity can add advisors. Ask a company admin t
 
 **The advisor cannot find the client in their persona dropdown.**
 The dropdown lists only active entities with an advisor record for that user. Check the advisor's row is still on the stakeholder's **Users** tab and that the investor's entity has not been deactivated; if the advisor record was deleted, add them again from the commitment.
+
+**The advisor has no persona dropdown in the top bar at all.**
+This is different from the dropdown being empty: the whole control is missing. It appears only once the advisor's own advisory firm is recorded on their account, which happens automatically when their login is created inside a firm whose entity type is **Investor Advisor**. If it never got recorded they will see no dropdown however many clients have added them. Ask CapHive support to check the advisor's user page, which shows exactly what is missing.
+
+**We turned an existing user into an advisor and the dropdown never appeared.**
+That is the usual cause of a missing dropdown. Adding an advisor from a commitment creates the login and the firm together, but when the email already belongs to someone in your system — for example an existing stakeholder user — that step is skipped and their advisory firm is never recorded on their account. Support can repair the account in seconds; the advisor then signs out and back in.
+
+**Adding an advisor is refused with "… is not an advisory firm".**
+The email belongs to a user who sits inside an ordinary company — a fund, a company or a stakeholder entity — rather than an advisory one. Create their firm as an entity of type **Investor Advisor**, move that user into it, then add them as an advisor. This check exists so the advisor is not created in a state where they could never switch to your client.
+
+**The advisor signs in, switches to our client and the app looks empty.**
+Once switched in, the advisor's menus come from the advisor record at that client, not from their own account, so a record with no modules ticked shows an advisor almost nothing and can make funds look inaccessible even where access has been granted. Advisors added with **Actions → Add Investor Advisor** inherit the investor's modules automatically; ones added from Company menu → [**Advisors**](/investor_advisors) need the boxes ticked on that form. Edit the advisor and enable the modules they need.
+
+**The advisor can switch to our client but every screen is empty.**
+Switching in grants no access by itself — it only puts the advisor into the client's view. They see a fund, deal or document only where it has been shared with them explicitly. Open the fund and grant them access, or add them again from the relevant commitment, which does both in one step.
+
+**How do we check an advisor's setup is complete?**
+Ask CapHive support to open the advisor's user page. For advisor accounts it shows an **Investor Advisor Health Check** listing whether the dropdown will appear, which companies they can switch to, and anything blocking them — each with what to do about it. It is visible to support only, so send them the advisor's email address.
 
 ## Related Guides
 

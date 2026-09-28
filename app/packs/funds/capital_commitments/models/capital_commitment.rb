@@ -12,6 +12,7 @@ class CapitalCommitment < ApplicationRecord
   include WithFriendlyId
   include WithIncomingEmail
   include CapitalCommitmentShared
+  include BlocksDestroyWithFundUnits
 
   # Set by import upload when importing commitments
   attr_accessor :imported
@@ -304,5 +305,10 @@ class CapitalCommitment < ApplicationRecord
 
   def skip_doc_gen?
     json_fields["skip_doc_gen"].to_s.strip.downcase == "yes"
+  end
+
+  # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
+  def allocated_fund_units
+    fund_units
   end
 end

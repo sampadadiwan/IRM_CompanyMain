@@ -9,6 +9,7 @@ class CapitalCall < ApplicationRecord
   include WithCustomNotifications
 
   include ForInvestor
+  include BlocksDestroyWithFundUnits
 
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees", "Investment Amount"].freeze
   CALL_BASIS = ["Percentage of Commitment", "Upload", "Investable Capital Percentage"].freeze
@@ -91,8 +92,14 @@ class CapitalCall < ApplicationRecord
     end
   end
 
-  def send_notification
-    CapitalCallJob.perform_later(id, "Notify") if approved? && send_call_notice_flag && !manual_generation
+  # triggered_by_user_id is carried through only so a blocked send can be reported back to the
+  # person who pressed the button — an in-app alert where they are already looking, not just an
+  # email minutes later. Optional: nothing else depends on it, and a job enqueued by an older
+  # deploy arrives with two arguments.
+  def send_notification(triggered_by_user_id = nil)
+    return unless approved? && send_call_notice_flag && !manual_generation
+
+    CapitalCallJob.perform_later(id, "Notify", triggered_by_user_id)
   end
 
   # True once any investor has actually been emailed the call notice
@@ -128,10 +135,31 @@ class CapitalCall < ApplicationRecord
   # every Pending/Overdue remittance. Deliberately does NOT check send_call_notice_flag,
   # notification_sent or notice approval, and does not set notification_sent — see
   # docs/user_guides/capital_call_actions_and_notifications_matrix.md.
-  def reminder_capital_call
+  # Returns the NotificationAttachmentPreflight::BlockedSend when the run was stopped, nil when
+  # it went ahead. This one runs INSIDE the request (the remittances-tab Reminder button), so
+  # the caller can turn a block into a flash immediately rather than reporting success and
+  # leaving the operator to find out by email.
+  def reminder_capital_call(triggered_by_user_id = nil)
     return unless approved?
 
-    capital_remittances.where(status: %w[Pending Overdue]).find_each do |cr|
+    pending = capital_remittances.where(status: %w[Pending Overdue])
+
+    # Same size preflight as the initial call notice (CapitalCallJob#notify): stop the whole
+    # reminder run rather than letting an oversized attachment bounce recipient by recipient.
+    blocked = NotificationAttachmentPreflight.batch_error_message(
+      pending, custom_notification(:reminder_capital_remittance),
+      context: "Cannot send call reminders for #{name}",
+      # Matches the skip in the loop below, so a commitment this run would never email cannot
+      # block the reminder for everyone else.
+      skip_if: ->(cr) { cr.capital_commitment.skip_doc_gen? }
+    ) { |cr| NotificationAttachmentPreflight.auto_attached_documents(cr) }
+    if blocked.present?
+      NotificationAttachmentPreflight.report_blocked_send(blocked, entity_id:, user_id: triggered_by_user_id,
+                                                                   subject: "Capital call reminders not sent")
+      return blocked
+    end
+
+    pending.find_each do |cr|
       next if cr.capital_commitment.skip_doc_gen?
 
       cr.investor.notification_users(fund, with_tag: 'CapitalCall').each do |user|
@@ -176,4 +204,9 @@ class CapitalCall < ApplicationRecord
   #   workflow_display_name → to_s
   #   workflow_url          → capital_call_path(self)
   #   workflow_attachable_files → []
+
+  # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
+  def allocated_fund_units
+    FundUnit.where(owner_type: "CapitalRemittance", owner_id: capital_remittances.select(:id))
+  end
 end

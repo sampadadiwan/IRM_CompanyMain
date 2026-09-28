@@ -89,12 +89,24 @@ class FundPolicy < FundBasePolicy
     record.entity.permissions.set?(:enable_tracking_currency) && update?
   end
 
-  # Tracking currency is locked after fund creation for regular users, because changing it
-  # requires safely reprocessing account entries/tracking amounts (see TrackingCurrencyJob) -
-  # only support may correct a bad value post-creation. (Replaces the old unauthenticated
-  # ?debug=true escape hatch on the fund edit form, which any user with edit access could use.)
-  def update_tracking_currency?
+  # Force regeneration recomputes every tracking amount of the fund, not only the unfilled ones.
+  # It used to be offered to anyone who added ?debug=true to the fund page URL; it is a support
+  # tool, like the tracking currency change it is the manual half of.
+  def force_generate_tracking_numbers?
+    generate_tracking_numbers? && support?
+  end
+
+  # Changing the tracking currency once a fund exists rewrites every stored tracking amount at
+  # historical rates (ChangeTrackingCurrencyJob), needs a complete rate history for the new pair,
+  # and restates figures investors may already have been sent in the old currency - so only
+  # support may do it, and only through that job. The fund edit form's field is locked for
+  # everyone after creation, support included (FundsController#update refuses the change).
+  def change_tracking_currency?
     update? && support?
+  end
+
+  def retry_tracking_currency_change?
+    change_tracking_currency?
   end
 
   def generate_fund_ratios?

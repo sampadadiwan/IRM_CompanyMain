@@ -8,6 +8,7 @@ class CapitalDistribution < ApplicationRecord
   include ForInvestor
   include WithCustomNotifications
   include CapitalDistributionShared
+  include BlocksDestroyWithFundUnits
 
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze
 
@@ -112,5 +113,10 @@ class CapitalDistribution < ApplicationRecord
 
   def distribution_on_upload?
     distribution_on == "Upload"
+  end
+
+  # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
+  def allocated_fund_units
+    FundUnit.where(owner_type: "CapitalDistributionPayment", owner_id: capital_distribution_payments.select(:id))
   end
 end

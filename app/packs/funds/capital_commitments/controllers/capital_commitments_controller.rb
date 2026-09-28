@@ -211,11 +211,14 @@ class CapitalCommitmentsController < ApplicationController
 
   # DELETE /capital_commitments/1 or /capital_commitments/1.json
   def destroy
-    @capital_commitment.destroy
-
     respond_to do |format|
-      format.html { redirect_to fund_path(@capital_commitment.fund), notice: "Capital commitment was successfully destroyed." }
-      format.json { head :no_content }
+      if @capital_commitment.destroy
+        format.html { redirect_to fund_path(@capital_commitment.fund), notice: "Capital commitment was successfully destroyed." }
+        format.json { head :no_content }
+      else
+        format.html { redirect_to capital_commitment_url(@capital_commitment), alert: @capital_commitment.errors.full_messages.join(", ") }
+        format.json { render json: @capital_commitment.errors, status: :unprocessable_entity }
+      end
     end
   end
 

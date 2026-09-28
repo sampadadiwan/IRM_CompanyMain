@@ -1,37 +1,102 @@
 <% if @html_body %>
-  <table role="presentation" class="main">
-    <tr>
-      <td class="wrapper">
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0">
-          <tr>
-            <td class="content-block">
-              <p><strong>To:</strong> <%= @investor_access.email %></p>
-              <p><strong>Subject:</strong> <%= @subject %></p>
-            </td>
-          </tr>
-          <tr>
-            <td class="content-block">
-              <%= raw @html_body %>
-            </td>
-          </tr>
-          <% if @attachments.any? %>
-            <tr>
-              <td class="content-block">
-                <h6>Attachments:</h6>
-                <ul>
-                  <% @attachments.each_with_index do |attachment, index| %>
-                    <li>
-                      <%= attachment.filename %>
-                    </li>
-                  <% end %>
-                </ul>
-              </td>
-            </tr>
+  <%# Rendered with layout: false (the preview opens in its own tab), so NOTHING from the
+      application stylesheet reaches this page - a Bootstrap `alert alert-danger` renders as
+      plain black text, which is how the oversize warning below came to be invisible. The page
+      therefore links its own sheet, the way layouts/outlook_addin links mail_addin.
+
+      That isolation is deliberate, not a workaround: the email body inlined below has to look
+      the way the recipient will see it, and the app's CSS cascading into it would make the
+      preview lie. app/assets/stylesheets/email_preview.css says what the rules assume. %>
+  <%= stylesheet_link_tag "email_preview", media: "all" %>
+
+  <div class="email-preview">
+    <div class="email-preview__panel">
+      <div class="email-preview__badge">Preview &mdash; this email has not been sent</div>
+      <div class="email-preview__meta">
+        <div class="email-preview__row">
+          <span class="email-preview__label">To</span>
+          <span class="email-preview__value"><%= @investor_access.email %></span>
+        </div>
+        <div class="email-preview__row">
+          <span class="email-preview__label">Subject</span>
+          <span class="email-preview__value"><%= @subject %></span>
+        </div>
+      </div>
+    </div>
+
+    <%# Above the body, not below it: an oversized document is REFUSED at attach time, so it is
+        simply missing from the list further down - indistinguishable from an attachment_names
+        pattern that matched nothing. Saying so, in red, before the admin starts reading the body
+        is the whole point of previewing before a send. %>
+    <% if @oversized_attachments.present? %>
+      <div class="email-preview__alert" role="alert">
+        <p class="email-preview__alert-title">
+          Not attached &mdash; over the <%= number_to_human_size(NotificationAttachmentPreflight::MAX_ATTACHMENT_BYTES) %> limit
+        </p>
+        <ul class="email-preview__alert-list">
+          <% @oversized_attachments.each do |problem| %>
+            <%# The document name links to the file: this is the one document in the preview the
+                attachment list cannot reach, since it was refused at attach time. The sentence
+                reads identically either way - only the name becomes a link. %>
+            <% url = problem[:document] && document_file_url(problem[:document]) %>
+            <li>
+              <% if url %>
+                <%= link_to problem[:name], url, target: "_blank", rel: "noopener",
+                            class: "email-preview__alert-link" %><%= problem[:rest] %>
+              <% else %>
+                <%= problem[:message] %>
+              <% end %>
+            </li>
           <% end %>
-        </table>
-      </td>
-    </tr>
-  </table>
+        </ul>
+        <p class="email-preview__alert-note">
+          Sending this notification will be stopped for every recipient, not just this one.
+          Reduce the file size, or share it from the portal instead of attaching it.
+        </p>
+      </div>
+    <% end %>
+
+    <div class="email-preview__panel">
+      <div class="email-preview__body">
+        <%= raw @html_body %>
+      </div>
+    </div>
+
+    <%# The heading text and the <h6> + sibling <ul><li> shape are asserted by the @attachment
+        scenarios in features/fund/fund_commitment_adhoc_notification.feature - the absence of
+        the heading is what "no attachments listed" means there. %>
+    <% if @attachments.any? %>
+      <div class="email-preview__panel">
+        <div class="email-preview__attachments">
+          <h6>Attachments: <%= @attachments.count %></h6>
+          <ul>
+            <% @attachments.each do |attachment| %>
+              <%# Linked so the admin can open what would actually be sent. Unlinked - plain
+                  text - when no Document of that filename could be resolved (a generated part,
+                  or a file the current user may not open), because a dead link would be worse
+                  than a name. %>
+              <% document = @attachment_documents[attachment.filename.to_s] %>
+              <% url = document && document_file_url(document) %>
+              <li>
+                <% if url %>
+                  <%= link_to attachment.filename, url, target: "_blank", rel: "noopener",
+                              class: "email-preview__file" %>
+                <% else %>
+                  <%= attachment.filename %>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    <% elsif @oversized_attachments.blank? %>
+      <div class="email-preview__panel">
+        <div class="email-preview__attachments">
+          <p class="email-preview__empty">No attachments.</p>
+        </div>
+      </div>
+    <% end %>
+  </div>
 <% else %>
   <div class="alert alert-warning">
     <%= @error_message %>

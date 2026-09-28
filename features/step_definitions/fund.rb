@@ -849,6 +849,106 @@ And('the first commitment has document {string} with file {string}') do |doc_nam
   )
 end
 
+# Creates a document with a fabricated file_data size and NO bytes in storage, so the
+# attachment size limit can be exercised without committing a large fixture.
+#
+# The absence of a real file is deliberate and load-bearing: ApplicationMailer#attach_doc /
+# #pw_protect_attach_file would raise on `file.read` if they ever got that far, so these
+# scenarios passing is itself the proof that attachment_allowed? short-circuits before the
+# read rather than downloading a document only to discard it.
+And('the first commitment has an oversized document {string} of {int} MB') do |doc_name, megabytes|
+  cc = @fund.capital_commitments.order(:id).first
+  doc = Document.new(entity: cc.entity, name: doc_name, owner: cc, folder: cc.document_folder, user: @user)
+  doc.file_data = {
+    "id" => "size-guard/#{doc_name.parameterize}.pdf",
+    "storage" => "store",
+    "metadata" => { "filename" => "#{doc_name}.pdf", "size" => megabytes * 1024 * 1024, "mime_type" => "application/pdf" }
+  }.to_json
+  doc.save!(validate: false)
+end
+
+And('the second commitment has an oversized document {string} of {int} MB') do |doc_name, megabytes|
+  cc = @fund.capital_commitments.order(:id).second
+  doc = Document.new(entity: cc.entity, name: doc_name, owner: cc, folder: cc.document_folder, user: @user)
+  doc.file_data = {
+    "id" => "size-guard/#{doc_name.parameterize}.pdf",
+    "storage" => "store",
+    "metadata" => { "filename" => "#{doc_name}.pdf", "size" => megabytes * 1024 * 1024, "mime_type" => "application/pdf" }
+  }.to_json
+  doc.save!(validate: false)
+end
+
+# Several documents that are each individually within the limit but together exceed it —
+# covers the running-total half of the guard, which a per-document check alone would miss.
+# Same as the second-commitment step below, on the FIRST commitment - the preview action always
+# previews the first one, and the running-total rule has to be visible there too.
+And('the first commitment has {int} documents of {int} MB each named {string}') do |count, megabytes, doc_name|
+  cc = @fund.capital_commitments.order(:id).first
+  count.times do |i|
+    doc = Document.create!(
+      entity: cc.entity, name: "#{doc_name} #{i + 1}", owner: cc, folder: cc.document_folder,
+      user: @user, file: File.new("public/sample_uploads/sample_kyc1.pdf", "r")
+    )
+    data = JSON.parse(doc.file_data)
+    data["metadata"]["size"] = megabytes * 1024 * 1024
+    doc.update_column(:file_data, data.to_json)
+  end
+end
+
+And('the second commitment has {int} documents of {int} MB each named {string}') do |count, megabytes, doc_name|
+  cc = @fund.capital_commitments.order(:id).second
+  count.times do |i|
+    # Distinct names on purpose. attachments[] is keyed by filename, so same-named documents
+    # collapse into ONE MIME part - three of those would be one attachment on the wire, not
+    # three, and the running total would be measuring a message that never existed.
+    doc = Document.create!(
+      entity: cc.entity, name: "#{doc_name} #{i + 1}", owner: cc, folder: cc.document_folder,
+      user: @user, file: File.new("public/sample_uploads/sample_kyc1.pdf", "r")
+    )
+    # Real bytes are kept here, unlike the single-document step above: the earlier documents
+    # in this set are under the limit and must genuinely attach, so that the guard is proven
+    # to fire on the accumulated total rather than on any one file. Only the reported size is
+    # inflated, which is what attachment_allowed? reads.
+    data = JSON.parse(doc.file_data)
+    data["metadata"]["size"] = megabytes * 1024 * 1024
+    doc.update_column(:file_data, data.to_json)
+  end
+end
+
+# A document attached directly to the notification template, oversized. These go to EVERY
+# recipient identically, which is why the controller can refuse the send synchronously.
+And('the custom notification has an oversized document {string} of {int} MB') do |doc_name, megabytes|
+  doc = Document.new(entity: @custom_notification.entity, name: doc_name,
+                     owner: @custom_notification, folder: @custom_notification.document_folder,
+                     user: @user)
+  doc.file_data = {
+    "id" => "size-guard/#{doc_name.parameterize}.pdf",
+    "storage" => "store",
+    "metadata" => { "filename" => "#{doc_name}.pdf", "size" => megabytes * 1024 * 1024, "mime_type" => "application/pdf" }
+  }.to_json
+  doc.save!(validate: false)
+end
+
+# The first commitment's investor must genuinely receive the email. Distinct from
+# "all commitment investors receive..." which iterates every commitment and asserts nothing
+# for one whose notification_users is empty - vacuously passing exactly where this matters.
+Then('the first commitment investor receives the notification email') do
+  first_cc = @fund.capital_commitments.order(:id).first
+  recipients = first_cc.investor.notification_users(first_cc)
+  expect(recipients).not_to be_empty, "notification_users is empty for the first commitment"
+  recipients.each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil, "No email delivered to #{user.email}"
+    expect(current_email.subject).to include @custom_notification.subject
+  end
+end
+
+Then('the second commitment has no notification recipients') do
+  second_cc = @fund.capital_commitments.order(:id).second
+  msg = "expected the second commitment to have no recipients - otherwise this scenario does not test what it claims"
+  expect(second_cc.investor.notification_users(second_cc)).to be_empty, msg
+end
+
 # Same as "the first commitment has document ..." but marks the document as generated
 # (owner_tag: "Generated") and approved — proves an approved generated document still attaches
 # normally, unlike its unapproved counterpart below. See Document#exclude_generated_unapproved.
@@ -926,6 +1026,11 @@ And('the notification email does not have the document {string} attached') do |d
 end
 
 # Trigger with no commitment_ids → nil → FundNotificationJob sends to all commitments
+# Deliberately WITHOUT triggered_by_user_id. "Skipped notification report falls back to the
+# entity's company admins when no admin triggered the send" depends on that absence, and because
+# @user is itself a company_admin the report reaches the same address either way - so passing a
+# user here makes that scenario pass while testing nothing. Scenarios that need a trigger use
+# "triggered by the admin for all commitments" below.
 When('the adhoc notification is triggered for all commitments') do
   @fund.adhoc_notification(@custom_notification.id)
 end
@@ -1058,6 +1163,56 @@ Then('the entity\'s company admins receive a skipped notification report mention
   expect(current_email).not_to be_nil, "No skipped-notification report delivered to company admin #{@user.email}"
   expect(current_email.body.to_s).to include(doc_name)
   expect(current_email.body.to_s).to include("skip_reason_not_null")
+end
+
+# In-app alerts for a blocked send are broadcast from an UNSAVED UserAlert (the message is
+# longer than the 255-char user_alerts.message column, so it is never persisted). That makes
+# them invisible to a table query, which is how the capital-call paths went live with no
+# on-screen alert at all: they simply never passed a user_id, and nothing failed. Capturing the
+# broadcast is the only way to assert it.
+Given('in-app alerts are captured') do
+  @captured_alerts = []
+  captured = @captured_alerts
+  allow_any_instance_of(UserAlert).to receive(:broadcast) do |alert|
+    captured << { user_id: alert.user_id, level: alert.level, message: alert.message.to_s }
+    true
+  end
+end
+
+Then('the triggering user gets a danger in-app alert mentioning {string}') do |text|
+  expect(@captured_alerts).not_to be_nil, "Add 'Given in-app alerts are captured' before the send"
+  missing = "No in-app alert was broadcast, so a blocked send leaves nothing on screen - the " \
+            "operator would only ever learn about it by email."
+  expect(@captured_alerts).not_to be_empty, missing
+
+  alert = @captured_alerts.last
+  expect(alert[:level]).to eq("danger")
+  wrong_user = "Alert went to user #{alert[:user_id].inspect}, not the triggering admin #{@user.id}."
+  expect(alert[:user_id]).to eq(@user.id), wrong_user
+  expect(alert[:message]).to include(text)
+end
+
+# The blocked-send email must identify WHOSE document is oversized, not just the document.
+#
+# CapitalCommitment#to_s is what the message interpolates ("Delta Ventures, Folio: TEST-68484C"),
+# so this asserts against the same string an operator would use to find the commitment in the
+# app. A message that names only the file is unactionable on a real send: a fund with 137
+# investors all holding a document called "Annual Report" gives the operator nowhere to start.
+Then('the blocked-send email names the second commitment investor') do
+  second_cc = @fund.capital_commitments.order(:id).second
+  expect(current_email).not_to be_nil, "No blocked-send email to assert against — open_email must run first"
+  # Unescaped before comparing: the body is HTML, so a factory-generated investor name like
+  # "D'Amore LLC" is rendered as "D&#39;Amore LLC". Comparing raw passes or fails depending on
+  # which names Faker happened to produce, which is how this assertion looked green on a
+  # four-scenario run and red on the full suite.
+  body = CGI.unescapeHTML(current_email.body.to_s)
+  message = "Blocked-send email does not name #{second_cc} — the operator cannot tell which " \
+            "investor's document is oversized. Body was: #{body}"
+  expect(body).to include(second_cc.to_s), message
+end
+
+Then('the email body should not contain {string}') do |body_content|
+  expect(current_email.body.to_s).not_to include(body_content)
 end
 
 # The email to each commitment investor should have the named document attached
@@ -1216,6 +1371,39 @@ end
 Then('I see {string} listed as an attachment in the preview') do |doc_name|
   expect(page).to have_css("h6", text: "Attachments:")
   expect(page).to have_content(doc_name)
+end
+
+# The counterpart to the step above. An oversized document is refused by attachment_allowed?,
+# so it never reaches mail.attachments - without the warning block the preview looks exactly
+# like an attachment_names pattern that matched nothing, which is the opposite conclusion.
+Then('I see {string} reported in the preview as over the size limit') do |doc_name|
+  expect(page).to have_content("over the 7 MB limit"),
+                  "Preview does not report the size problem, so an oversized document is " \
+                  "indistinguishable from one that simply did not match."
+  expect(page).to have_content(doc_name)
+end
+
+# Name-free on purpose: the three documents are created in the same second, so the
+# created_at DESC order the resolver uses - and therefore WHICH of them tips the total - is
+# not stable. What must be stable is that the preview says something at all.
+Then('I see the preview report something over the size limit') do
+  expect(page).to have_content("over the 7 MB limit"),
+                  "Preview reports nothing, so a document dropped for the accumulated total is invisible."
+end
+
+Then('I see {int} attachments listed in the preview') do |count|
+  expect(page).to have_css("h6", text: "Attachments:")
+  within(:xpath, "//h6[contains(., 'Attachments:')]/following-sibling::ul[1]") do
+    expect(page).to have_css("li", count: count)
+  end
+end
+
+Then('I see no attachments listed in the preview') do
+  expect(page).not_to have_css("h6", text: "Attachments:")
+end
+
+Then('the preview does not report anything over the size limit') do
+  expect(page).not_to have_content("over the 7 MB limit")
 end
 
 # Placeholder substitution is verified per-commitment against CapitalCommitmentMailer::PLACEHOLDERS:

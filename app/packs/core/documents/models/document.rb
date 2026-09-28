@@ -274,17 +274,90 @@ class Document < ApplicationRecord
   end
 
   def send_notification_for_owner
-    notification_users.each do |user|
-      DocumentNotifier.with(record: self, entity_id:).deliver_later(user)
+    recipients = notification_recipients
+    log_commitments_without_access(recipients.map { |_user, investor| investor&.id })
+
+    recipients.each do |user, investor|
+      # investor_id is what unlocks the cc addresses on the receiving side - see
+      # DocumentNotifier#email_data. Without it a data room document emails the contact with
+      # only the entity-wide cc, silently dropping their advisor.
+      DocumentNotifier.with(record: self, entity_id:, investor_id: investor&.id).deliver_later(user)
     end
   end
 
+  # The access right - not the person - is the unit of delivery.
+  #
+  # One contact can reach the same document through several access rights: a fund's data room
+  # is shared with three stakeholders, and the same person is a named contact for all three.
+  # Each of those stakeholders carries its own cc addresses (InvestorAccess#cc, and the cc on
+  # their commitments in this fund), so collapsing them into one recipient would force us to
+  # pick one stakeholder's cc list and drop the rest. Instead the contact gets one email per
+  # stakeholder, each cc'd correctly - the same way they already receive one email per
+  # commitment for commitment-filed documents.
+  #
+  # Returns [user, investor] pairs deduped on [user_id, investor_id], so several rights
+  # pointing at the SAME stakeholder still produce a single email. `investor` is nil for a
+  # right granted directly to a named user (usually an employee).
+  #
+  # See docs/modules/notifications/document_notification_cc_resolution.md.
   # TODO: This is really inefficient
-  def notification_users
-    users = access_rights.map(&:users).flatten
-    users += owner.access_rights.map(&:users).flatten if %w[Fund Deal SecondarySale InvestmentOpportunity].include? owner_type
+  def notification_recipients
+    rights = access_rights.to_a
+    rights += owner.access_rights.to_a if %w[Fund Deal SecondarySale InvestmentOpportunity].include? owner_type
 
-    users.uniq
+    rights.flat_map(&:notification_recipients)
+          .uniq { |user, investor| [user&.id, investor&.id] }
+          .select(&:first)
+  end
+
+  # Cap on the stakeholder names in the log line below, so a fund with hundreds of uncovered
+  # stakeholders cannot emit a giant entry. Mirrors ImportCapitalCommitment::MAX_NAMES_IN_ALERT.
+  MAX_UNCOVERED_NAMES_LOGGED = 10
+
+  # Visibility for the commitment-vs-access-right gap.
+  #
+  # A commitment grants fund access when it is created (CapitalCommitment#grant_access_to_fund,
+  # called from CapitalCommitmentCreate and ImportCapitalCommitment), which cascades onto the
+  # Data Room folder via Fund#access_rights_changed and then onto every document uploaded there.
+  # So an LP holding a commitment in this fund normally has an access right that delivers this
+  # document.
+  #
+  # When they don't - the right was revoked, or the commitment predates the grant - they are
+  # left out of the notification with nothing to show it happened. Log it so the gap is visible.
+  #
+  # Called from the senders (send_notification_for_owner, DocumentSender), not from
+  # notification_recipients: the "who gets emailed" preview resolves the same recipients without
+  # sending anything, and a warning saying people "were not notified" would be untrue there.
+  #
+  # Deliberately only logs: it does NOT add them as recipients. The access right is also what
+  # makes the link in the email work, so notifying without one would send mail that 403s on
+  # click. The fix for a real gap is to restore the access right. Reviewed alternatives are in
+  # docs/modules/notifications/document_notification_cc_resolution.md.
+  def log_commitments_without_access(notified_investor_ids)
+    return unless owner_type == "Fund"
+
+    # where.not(investor_id: []) is a no-op filter in Rails, so an empty notified list
+    # correctly reports every committed stakeholder as uncovered.
+    uncovered = CapitalCommitment.where(fund_id: owner_id)
+                                 .where.not(investor_id: notified_investor_ids.compact)
+                                 .distinct
+                                 .pluck(:investor_id)
+    return if uncovered.empty?
+
+    names = Investor.where(id: uncovered).distinct.limit(MAX_UNCOVERED_NAMES_LOGGED).pluck(:investor_name)
+    more = uncovered.size - names.size
+    Rails.logger.warn(
+      "Document #{id} (#{name}) in Fund #{owner_id} data room: #{uncovered.size} stakeholder(s) " \
+      "hold a commitment in this fund but no access right delivers this document, so they were " \
+      "not notified - #{names.join(', ')}#{" and #{more} more" if more.positive?}"
+    )
+  end
+
+  # The distinct people notification_recipients would email - for callers that only need
+  # "will anyone receive this?" or a list of names. Per-stakeholder cc resolution needs the
+  # pairs, so senders use notification_recipients instead.
+  def notification_users
+    notification_recipients.map(&:first).uniq
   end
 
   def setup_access_rights

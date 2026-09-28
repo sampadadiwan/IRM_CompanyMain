@@ -317,6 +317,20 @@
                 </ul>
                 <div class="text-muted"><i class="ti ti-arrow-down me-1"></i>As soon as you type something here, two more options appear below to fine-tune which matching documents get attached.</div>
               </div>
+
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3 mt-3 bg-warning-subtle">
+                <span class="rounded-circle d-flex align-items-center justify-content-center kpi-info-icon bg-white"><i class="ti ti-alert-triangle fs-5 text-warning-emphasis"></i></span>
+                <div>
+                  <div class="fw-semibold text-dark">Attachments must stay under <%= number_to_human_size(NotificationAttachmentPreflight::MAX_ATTACHMENT_BYTES) %></div>
+                  <div class="text-muted mt-1">
+                    That applies to each document <em>and</em> to their combined size in one email. Files grow by
+                    about a third when emailed, so a larger attachment is rejected by many corporate mail servers.
+                    <strong>If any recipient's attachment is over the limit, the entire send is stopped</strong> &mdash;
+                    nobody receives it, not just that recipient &mdash; and whoever triggered it is emailed the reason.
+                    For anything bigger, share it from the portal instead of attaching it.
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div data-conditional-visibility-target="conditional" class="mt-3 ps-3 border-start border-3 border-primary-subtle">

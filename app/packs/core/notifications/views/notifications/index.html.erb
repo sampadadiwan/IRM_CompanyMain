@@ -27,6 +27,11 @@
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
           <%= link_to "View Sent", notifications_path(all: true, entity_id: current_user.entity_id), class: "dropdown-item" %>
           <%= link_to "Filter Sent", notifications_path(filter: true, all: true, entity_id: current_user.entity_id), class: "dropdown-item" %>
+          <%# Notifications that were deliberately NOT sent - a missing mandatory attachment, or one over
+              the size limit. Until now the only way in was a link inside the summary email, so a blocked
+              send was invisible to anyone who had not received (or had deleted) that mail. Same ransack
+              predicate the report uses - see SkippedNotificationReportJob#skipped_notifications_url. %>
+          <%= link_to "View Skipped", notifications_path(all: true, entity_id: current_user.entity_id, q: { skip_reason_not_null: 1 }), class: "dropdown-item" %>
         </div>
       </div>
     </div>

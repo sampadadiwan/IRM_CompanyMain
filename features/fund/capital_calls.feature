@@ -319,3 +319,175 @@ Scenario Outline: Capital call creation is restricted to permissioned employees
     | entity_type=Investment Fund;enable_funds=true        | company_admin | true       |
     | entity_type=Investment Fund;enable_funds=true        | employee      | false      |
     | entity_type=Investment Fund;enable_funds=true        | investor      | false      |
+
+  # Capital call notices attach the remittance's own documents (CapitalRemittanceMailer#
+  # attach_all_files), so the same size limit applies - and the same all-or-nothing rule:
+  # an oversized notice on one remittance stops the notices for the whole call.
+  @doc_gen @notification @import @attachment
+  Scenario: An oversized document on a remittance stops every call notice
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is a fund "name=SAAS Fund" for the entity
+    And Given I upload an investors file for the fund
+    Given the investors have approved investor access
+    Given the fund has capital call template
+    Given the investors are added to the fund
+    And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
+    And Given import file "account_entries.xlsx" for "AccountEntry"
+    When I create a new capital call "name=Call 1"
+    Then the corresponding remittances should be created
+    Given the remittance have a document "Sample" from "public/sample_uploads/sample_kyc1.pdf" attached
+    Given there is a custom notification for the capital call with subject "Call Notice" with email_method "notify_capital_remittance"
+    Given each investor has a "verified" kyc linked to the commitment
+    And when the capital call docs are generated
+    Given the generated call notices are approved
+    Then when the capital call is approved
+    Given one remittance has an oversized document "Sample" of 20 MB
+    And the notification deliveries are cleared
+    And in-app alerts are captured
+    And the capital call notifications are sent
+    Then no call notice reaches an investor, only the blocked-send report
+    # An email alone is a poor place to learn that the button you just pressed did nothing.
+    # This path shipped without it: it never passed a user_id to report_blocked_send, so the
+    # alert was skipped and nothing failed.
+    And the triggering user gets a danger in-app alert mentioning "over the 7 MB limit"
+
+  # The counterpart to the rule above. A remittance that has ALREADY been notified is not part
+  # of this run, so an oversized document sitting on it must not stop the notices for the
+  # remittances that have never been sent one.
+  @doc_gen @notification @import @attachment
+  Scenario: An oversized document on an already-notified remittance does not block the rest
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is a fund "name=SAAS Fund" for the entity
+    And Given I upload an investors file for the fund
+    Given the investors have approved investor access
+    Given the fund has capital call template
+    Given the investors are added to the fund
+    And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
+    And Given import file "account_entries.xlsx" for "AccountEntry"
+    When I create a new capital call "name=Call 1"
+    Then the corresponding remittances should be created
+    Given the remittance have a document "Sample" from "public/sample_uploads/sample_kyc1.pdf" attached
+    Given there is a custom notification for the capital call with subject "Call Notice" with email_method "notify_capital_remittance"
+    Given each investor has a "verified" kyc linked to the commitment
+    And when the capital call docs are generated
+    Given the generated call notices are approved
+    Then when the capital call is approved
+    Given one remittance has an oversized document "Sample" of 20 MB
+    And the remittance with the oversized document is already notified
+    And the notification deliveries are cleared
+    And the capital call notifications are sent
+    Then the remittances that were not yet notified still receive their notices
+
+  # The REMINDER button is a separate send path with its own copy of the preflight wiring -
+  # CapitalCall#reminder_capital_call, not CapitalCallJob#notify - and the code comment on
+  # #blocked_by_attachment_size? says outright that the two have to be kept in step by hand.
+  # Nothing tested it, so the two could drift and only the initial notice would fail.
+  #
+  # It also runs inside the request rather than in a job, which is why it returns the block
+  # instead of only broadcasting: the controller has to replace "Reminder sent for capital call."
+  # with the real reason before redirecting.
+  @doc_gen @notification @import @attachment
+  Scenario: An oversized document stops the whole capital call reminder run
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is a fund "name=SAAS Fund" for the entity
+    And Given I upload an investors file for the fund
+    Given the investors have approved investor access
+    Given the fund has capital call template
+    Given the investors are added to the fund
+    And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
+    And Given import file "account_entries.xlsx" for "AccountEntry"
+    When I create a new capital call "name=Call 1"
+    Then the corresponding remittances should be created
+    Given the remittance have a document "Sample" from "public/sample_uploads/sample_kyc1.pdf" attached
+    Given there is a custom notification for the capital call with subject "Call Reminder" with email_method "reminder_capital_remittance"
+    Given each investor has a "verified" kyc linked to the commitment
+    And when the capital call docs are generated
+    Given the generated call notices are approved
+    Then when the capital call is approved
+    Given one remittance has an oversized document "Sample" of 20 MB
+    And the notification deliveries are cleared
+    And in-app alerts are captured
+    When the capital call reminders are sent
+    Then the reminder run is blocked, naming the oversized document
+    And the triggering user gets a danger in-app alert mentioning "over the 7 MB limit"
+
+  # Regression guard on the reminder path: within the limit it must be untouched.
+  @doc_gen @notification @import @attachment
+  Scenario: Capital call reminders under the size limit are unaffected
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is a fund "name=SAAS Fund" for the entity
+    And Given I upload an investors file for the fund
+    Given the investors have approved investor access
+    Given the fund has capital call template
+    Given the investors are added to the fund
+    And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
+    And Given import file "account_entries.xlsx" for "AccountEntry"
+    When I create a new capital call "name=Call 1"
+    Then the corresponding remittances should be created
+    Given the remittance have a document "Sample" from "public/sample_uploads/sample_kyc1.pdf" attached
+    Given there is a custom notification for the capital call with subject "Call Reminder" with email_method "reminder_capital_remittance"
+    Given each investor has a "verified" kyc linked to the commitment
+    And when the capital call docs are generated
+    Given the generated call notices are approved
+    Then when the capital call is approved
+    And the notification deliveries are cleared
+    When the capital call reminders are sent
+    Then the reminder run goes ahead
+
+  # skip_doc_gen? is the only filter the preflight applies in Ruby (it reads a json_fields key,
+  # so it cannot be scoped into the relation). A remittance that would never be emailed must not
+  # block the call for everyone else - the equivalent adhoc case is the one that actually bit us
+  # in practice, where a dormant commitment silenced a whole fund.
+  @doc_gen @notification @import @attachment
+  Scenario: An oversized document on a skip_doc_gen remittance does not block the call
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is a fund "name=SAAS Fund" for the entity
+    And Given I upload an investors file for the fund
+    Given the investors have approved investor access
+    Given the fund has capital call template
+    Given the investors are added to the fund
+    And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
+    And Given import file "account_entries.xlsx" for "AccountEntry"
+    When I create a new capital call "name=Call 1"
+    Then the corresponding remittances should be created
+    Given the remittance have a document "Sample" from "public/sample_uploads/sample_kyc1.pdf" attached
+    Given there is a custom notification for the capital call with subject "Call Notice" with email_method "notify_capital_remittance"
+    Given each investor has a "verified" kyc linked to the commitment
+    And when the capital call docs are generated
+    Given the generated call notices are approved
+    Then when the capital call is approved
+    Given one remittance has an oversized document "Sample" of 20 MB
+    And the commitment with the oversized document has skip_doc_gen enabled
+    And the notification deliveries are cleared
+    And the capital call notifications are sent
+    Then the remittances that were not yet notified still receive their notices
+
+  # Regression guard: normal-sized notices are completely unaffected.
+  @doc_gen @notification @import @attachment
+  Scenario: Call notices under the size limit send exactly as before
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is a fund "name=SAAS Fund" for the entity
+    And Given I upload an investors file for the fund
+    Given the investors have approved investor access
+    Given the fund has capital call template
+    Given the investors are added to the fund
+    And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
+    And Given import file "account_entries.xlsx" for "AccountEntry"
+    When I create a new capital call "name=Call 1"
+    Then the corresponding remittances should be created
+    Given the remittance have a document "Sample" from "public/sample_uploads/sample_kyc1.pdf" attached
+    Given there is a custom notification for the capital call with subject "Call Notice" with email_method "notify_capital_remittance"
+    Given each investor has a "verified" kyc linked to the commitment
+    And when the capital call docs are generated
+    Given the generated call notices are approved
+    Then when the capital call is approved
+    And the notification deliveries are cleared
+    And the capital call notifications are sent
+    Then some capital call notification emails should have been sent
+    And the investors must receive email with subject "Call Notice" with the document "Sample.pdf" attached

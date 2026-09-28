@@ -1,0 +1,47 @@
+<%#
+  Tabular form of an error report, used when the caller passes `error_table` to
+  EntityMailer#notify_errors. Replaces the numbered list for reports about many
+  recipients, where "which investor, which email, why" is the information the reader
+  actually needs and a paragraph buries it.
+
+  Everything is styled inline and laid out with table attributes on purpose: Gmail and
+  Outlook strip <style> blocks, so a class-based table renders unbordered and unreadable.
+%>
+<% if table[:title].present? %>
+  <p style="margin: 0 0 8px; font-weight: bold;"><%= table[:title] %></p>
+<% end %>
+
+<% if table[:summary].present? %>
+  <p style="margin: 0 0 12px; color: #b71c1c; font-weight: bold;"><%= table[:summary] %></p>
+<% end %>
+
+<table cellpadding="8" cellspacing="0" border="0"
+       style="border-collapse: collapse; width: 100%; font-family: Arial, Helvetica, sans-serif; font-size: 13px;">
+  <thead>
+    <tr>
+      <% table[:headers].each do |header| %>
+        <th align="left"
+            style="border: 1px solid #d0d0d0; background-color: #f5f5f5; text-align: left; font-weight: bold;">
+          <%= header %>
+        </th>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% table[:rows].each do |row| %>
+      <tr>
+        <% row.each do |cell| %>
+          <td style="border: 1px solid #d0d0d0; vertical-align: top;"><%= cell %></td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if table[:footnote].present? %>
+  <p style="margin: 8px 0 0; color: #666;"><%= table[:footnote] %></p>
+<% end %>
+
+<% if table[:guidance].present? %>
+  <p style="margin: 16px 0 0;"><%= table[:guidance] %></p>
+<% end %>

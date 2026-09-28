@@ -2,9 +2,6 @@ class WorkflowMailer < ApplicationMailer
   # params: user_id, entity_id, instance_id, step_position
   # setup_defaults (from ApplicationMailer before_action) sets @user, @entity, @to, @from
 
-  # Skip files larger than this threshold — too large to email safely
-  MAX_ATTACHMENT_BYTES = 10.megabytes
-
   # Sent when a step becomes the active step — either on launch or after the prior step passes.
   def step_activation
     load_step_context
@@ -33,21 +30,29 @@ class WorkflowMailer < ApplicationMailer
     @instance_url = workflow_instance_url(@instance)
 
     # Build the personalised magic link for this actor + step
-    token        = WorkflowMagicLinkGenerate.call(
-      actor_id:      @user.id,
-      instance_id:   @instance.id,
+    token = WorkflowMagicLinkGenerate.call(
+      actor_id: @user.id,
+      instance_id: @instance.id,
       step_position: step_position
     )[:token]
-    @magic_link  = workflow_magic_link_url(token)
+    @magic_link = workflow_magic_link_url(token)
 
     # Optionally attach the workflowable's associated files to the email.
     # If any file is over the size threshold, skip all attachments and flag for
     # the template to show a fallback link instead.
     if @instance.template_snapshot.with_indifferent_access[:attach_document_in_email]
       files = @workflowable.workflow_attachable_files
-      oversized = files.any? { |doc| attachment_byte_size(doc) > MAX_ATTACHMENT_BYTES }
+      # Must use the same rule as ApplicationMailer#attachment_allowed?, not a looser local
+      # one. This mailer is invoked directly (WorkflowStepActorNotifier, WorkflowAutoReminderJob,
+      # WorkflowInstancesController#send_reminders) with no notification_id, so @notification is
+      # nil and send_mail's oversize bail — which is guarded on @notification to keep previews
+      # rendering — does not apply here. If the shared guard refused a file that this check had
+      # waved through, the step email would go out silently missing its document, with no
+      # fallback link and no skip recorded. Checking the whole set here means @attachments_skipped
+      # is set instead and the template shows the link.
+      oversized = NotificationAttachmentPreflight.violations(files).any?
       if oversized
-        @attachments_skipped = true   # template displays a note + link instead of files
+        @attachments_skipped = true # template displays a note + link instead of files
       else
         files.each { |doc| attach_doc(doc) }
       end
@@ -61,16 +66,5 @@ class WorkflowMailer < ApplicationMailer
     public_send(helper, workflowable)
   rescue NoMethodError
     nil
-  end
-
-  # Returns the byte size of a document's attached file without downloading it.
-  # Supports ActiveStorage blobs (byte_size on the blob) and File objects (size).
-  def attachment_byte_size(doc)
-    file = doc.try(:file)
-    return 0 unless file
-    # ActiveStorage: file.blob.byte_size; plain File: file.size
-    file.respond_to?(:blob) ? file.blob.byte_size : file.size.to_i
-  rescue StandardError
-    0 # treat unknown size as small to avoid skipping silently
   end
 end

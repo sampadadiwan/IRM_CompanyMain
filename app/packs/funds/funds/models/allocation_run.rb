@@ -21,6 +21,10 @@ class AllocationRun < ApplicationRecord
 
   validates :template_name, length: { maximum: 50 }, allow_blank: true
   validate :fund_not_busy_with_another_group_run, on: :create, unless: :skip_fund_busy_check
+  # Allocation writes tracking amounts as it creates account entries. While ChangeTrackingCurrencyJob
+  # is rebuilding them (or a failed change awaits a retry) those would be written in whichever
+  # currency happens to be saved. Model-level so group runs and rake tasks are covered too.
+  validate :fund_not_changing_tracking_currency, on: :create
 
   scope :locked, -> { where(locked: true) }
   scope :successful, -> { where(status: "Success") }
@@ -58,6 +62,7 @@ class AllocationRun < ApplicationRecord
     raise ArgumentError, "The period overlaps locked allocation run #{blocking.id} (#{blocking.start_date} to #{blocking.end_date}), which still owns entries." if blocking
     raise ArgumentError, "An allocation run group is currently running on this fund." if AllocationGroupRun.fund_busy?(fund_id)
     raise ArgumentError, "The fund's formulas are being changed. Wait for that to finish." if FundAllocationActivity.formula_operation_applying?(fund)
+    raise ArgumentError, "The fund's tracking currency is being changed. Wait for that to finish." if fund.tracking_currency_change_pending?
 
     template_id = statement_template_id
     # Unlocked, and the status cleared so the run reads as in progress as a newly created run does,
@@ -90,5 +95,11 @@ class AllocationRun < ApplicationRecord
     return if fund_id.blank? || !AllocationGroupRun.fund_busy?(fund_id)
 
     errors.add(:base, "An allocation run group is currently running on this fund. Wait for it to finish before starting a manual run.")
+  end
+
+  def fund_not_changing_tracking_currency
+    return unless fund&.tracking_currency_change_pending?
+
+    errors.add(:base, "The fund's tracking currency is being changed. Wait for that to finish before starting a run.")
   end
 end

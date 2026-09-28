@@ -98,11 +98,14 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # DELETE /capital_distribution_payments/1 or /capital_distribution_payments/1.json
   def destroy
-    @capital_distribution_payment.destroy
-
     respond_to do |format|
-      format.html { redirect_to capital_distribution_payments_url, notice: "Capital distribution payment was successfully destroyed." }
-      format.json { head :no_content }
+      if @capital_distribution_payment.destroy
+        format.html { redirect_to capital_distribution_payments_url, notice: "Capital distribution payment was successfully destroyed." }
+        format.json { head :no_content }
+      else
+        format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), alert: @capital_distribution_payment.errors.full_messages.join(", ") }
+        format.json { render json: @capital_distribution_payment.errors, status: :unprocessable_entity }
+      end
     end
   end
 

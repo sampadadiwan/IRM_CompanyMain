@@ -245,6 +245,49 @@
                 </div>
               </div>
 
+              <%# Static documents attached to the notification itself. Unlike attachment_names
+                  (which resolves per recipient) these are identical for everyone, so their size
+                  is known here and the send can be judged BEFORE it is queued. %>
+              <% static_docs = @custom_notification.documents.to_a %>
+              <% blocking = NotificationAttachmentPreflight.violations(static_docs) %>
+
+              <% if blocking.any? %>
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fef2f2;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#fee2e2;">
+                  <i class="ti ti-alert-triangle fs-5" style="color:#dc2626;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">This notification cannot be sent</div>
+                  <div class="text-muted small mt-1">
+                    <% blocking.each do |problem| %>
+                      <div><%= problem %></div>
+                    <% end %>
+                    <div class="mt-1">
+                      Nobody receives it, not just one recipient. Replace the attachment with a file under
+                      <strong><%= number_to_human_size(NotificationAttachmentPreflight::MAX_ATTACHMENT_BYTES) %></strong>,
+                      or share it from the portal instead of attaching it.
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <% elsif static_docs.any? %>
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#dcfce7;">
+                  <i class="ti ti-paperclip fs-5" style="color:#16a34a;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Attached to every email</div>
+                  <div class="text-muted small mt-1">
+                    <%= static_docs.map { |d| "#{d.name} (#{number_to_human_size(NotificationAttachmentPreflight.document_byte_size(d))})" }.to_sentence %>
+                    &mdash; total <strong><%= number_to_human_size(static_docs.sum { |d| NotificationAttachmentPreflight.document_byte_size(d) }) %></strong>
+                    of the <%= number_to_human_size(NotificationAttachmentPreflight::MAX_ATTACHMENT_BYTES) %> limit.
+                  </div>
+                </div>
+              </div>
+              <% end %>
+
               <% if @custom_notification.attachment_names.present? %>
               <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
                 <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
@@ -263,6 +306,12 @@
                       Documents named <strong><%= @custom_notification.attachment_names %></strong> will be fetched from each commitment and attached to that investor's email.
                     </div>
                   <% end %>
+                  <div class="text-muted small mt-2">
+                    <i class="ti ti-alert-triangle me-1 text-warning-emphasis"></i>Each attachment must be under
+                    <strong><%= number_to_human_size(NotificationAttachmentPreflight::MAX_ATTACHMENT_BYTES) %></strong>,
+                    and under that combined. If any recipient's is larger the whole send is stopped &mdash;
+                    nobody receives it, not just that recipient &mdash; and you are emailed the reason.
+                  </div>
                 </div>
               </div>
               <% end %>
@@ -314,7 +363,14 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
-            <%= f.submit "Send Notification", class: "btn btn-primary", data: { disable_with: "Sending..." } %>
+            <%# Disabled rather than left clickable: the preflight would stop this send anyway, and
+                learning that from an email minutes later is exactly the experience this is meant to
+                replace. Reuses `blocking` from the attachments card above - the same value, so the
+                button and the warning cannot disagree about whether this is sendable. %>
+            <% send_blocked = blocking.any? %>
+            <%= f.submit "Send Notification", class: "btn btn-primary", disabled: send_blocked,
+                         title: (send_blocked ? "An attachment is over the #{number_to_human_size(NotificationAttachmentPreflight::MAX_ATTACHMENT_BYTES)} limit" : nil),
+                         data: { disable_with: "Sending..." } %>
           </div>
         <% end %>
 

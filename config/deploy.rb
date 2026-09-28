@@ -159,6 +159,42 @@ namespace :deploy do
   after  'deploy:finished', :ensure_permissions
 end
 
+# User guide FAQs. The Markdown under docs/user_guides ships with the release, but the guide
+# page, /faqs and the Customer Support chatbot read published FaqEntry rows, not the Markdown —
+# so without this the guides go out and the FAQs people actually search stay on the old text.
+#
+# REFRESH=1 also archives entries whose questions were removed from the Markdown. Entries edited
+# in FAQ Manager (updated_by set) are never overwritten either way, so support's own wording
+# survives a deploy.
+namespace :guides do
+  desc 'Import user guide FAQ sections into FAQ Manager and reindex them for search'
+  task :import_faqs do
+    # :primary, not :app — the import and the reindex are global, and running them once per
+    # app server would repeat the same work (and the same Elasticsearch rebuild) N times.
+    on roles(:primary), in: :sequence do
+      within release_path do
+        execute :rake, "guide_faqs:import_markdown REFRESH=1 RAILS_ENV=#{fetch(:stage)}"
+
+        # Deliberately non-fatal. This hangs off deploy:published, so the release is already
+        # live by the time it runs: a stale or half-built search index is a degraded chatbot
+        # answer, not a broken app, and it must not be able to redden a healthy deploy.
+        # Elasticsearch being unreachable is the expected failure here. Re-run by hand with
+        # `bundle exec rake guide_search:reindex` once it is back.
+        begin
+          execute :rake, "guide_search:reindex RAILS_ENV=#{fetch(:stage)}"
+        rescue SSHKit::Command::Failed => e
+          warn "guides: FAQ reindex failed, continuing — search may serve stale FAQs until " \
+               "`rake guide_search:reindex` is run. (#{e.message})"
+        end
+      end
+    end
+  end
+end
+
+# After deploy:published, so the import runs against the release the `current` symlink now
+# points at, matching the sidekiq wiring above.
+after 'deploy:published', 'guides:import_faqs'
+
 namespace :puma do
   desc 'Create Directories for Puma Pids and Socket'
   task :make_dirs do

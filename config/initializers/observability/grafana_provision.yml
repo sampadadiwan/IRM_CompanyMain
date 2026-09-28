@@ -15,15 +15,22 @@ contact_points:
     disableResolveMessage: false
 
   # WhatsApp via WATI — fires only for critical alerts.
-  # Set GRAFANA_WEBHOOK_TOKEN env var before running rake grafana:provision.
-  # The same token must be saved in Rails credentials[:grafana_webhook_token].
+  # Each Grafana posts to its OWN region's app — IN and US are independent environments:
+  #   graphana.caphive.com -> https://app.caphive.com/grafana/alert (production.in token)
+  #   graphana.caphive.us  -> https://app.caphive.us/grafana/alert  (production.us token)
+  # ${GRAFANA_WEBHOOK_URL} and ${GRAFANA_WEBHOOK_TOKEN} are resolved at provision time from
+  # the target Grafana's region (GrafanaProvisioner::REGION_TARGETS and that region's
+  # credentials[:grafana_webhook_token]) — never from ENV, so a token left exported from
+  # one region's run cannot reach the other; provisioning aborts if either is missing. Sent as `Authorization: Bearer <token>`: Grafana 9.3's webhook has no
+  # custom-header setting, so the old `httpHeaders: {"X-Webhook-Token": ...}` was silently
+  # ignored. authorization_credentials is a secure field — stored encrypted, never returned.
   - name: Caphive WhatsApp
     type: webhook
     settings:
-      url: https://app.caphive.com/grafana/alert
+      url: ${GRAFANA_WEBHOOK_URL}
       httpMethod: POST
-      # ${GRAFANA_WEBHOOK_TOKEN} is expanded from ENV at provision time (not stored in git)
-      httpHeaders: '{"X-Webhook-Token":"${GRAFANA_WEBHOOK_TOKEN}"}'
+      authorization_scheme: Bearer
+      authorization_credentials: ${GRAFANA_WEBHOOK_TOKEN}
     disableResolveMessage: false
 
 # Root policy: all alerts → whole team; critical alerts also fire to WhatsApp

@@ -295,3 +295,87 @@ Scenario: Send a document owned by a capital commitment is cc'd to the commitmen
   Given there is a Custom Notification with commitment placeholders for the entity
   When the commitment document is sent using that Custom Notification
   Then the commitment document notification email is cc'd to "advisor@gmail.com"
+
+# A fund data room document is owned by the Fund, not by a commitment, so neither cc source
+# used to reach it: DocumentNotifier handed the mailer investor_id: nil (killing the
+# InvestorAccess#cc lookup in ApplicationMailer#setup_cc) and additional_ccs: nil (gated on
+# owner_type == "CapitalCommitment"). Only entity_setting.cc survived, silently.
+# See docs/modules/notifications/document_notification_cc_resolution.md.
+@notification
+Scenario: A document in a fund data room is cc'd to both the stakeholder and commitment cc addresses
+  Given there is a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "name=Test fund" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  And the investor contact has cc "family.office@gmail.com"
+  When a document "Fund Update Q3" is uploaded to the fund data room
+  Then the data room document notification email is cc'd to "advisor@gmail.com"
+  And the data room document notification email is cc'd to "family.office@gmail.com"
+
+# Backward-compatibility guard for the per-access-right fan-out. Recipients are now resolved as
+# [user, investor] pairs so each email can carry its own cc list; the set of PEOPLE notified must
+# not change. A stakeholder reachable through both the document's own access right and the fund's
+# must still collapse to one email.
+@notification
+Scenario: Resolving data room recipients per access right does not change who is notified
+  Given there is a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "name=Test fund" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  When a document "Fund Update Q3" is uploaded to the fund data room
+  Then the data room document notifies the same people the access rights resolve to
+  And each data room notification recipient carries the stakeholder its access right names
+  And duplicate access rights for one stakeholder produce a single notification
+
+# The commitment-vs-access-right gap is logged rather than silently skipped: a stakeholder
+# holding a commitment in this fund but with no access right delivering the document is named in
+# the log. Deliberately NOT notified - the access right is also what makes the link in the email
+# work, so the fix for a real gap is to restore the right.
+@notification
+Scenario: A committed stakeholder with no access right to a data room document is logged
+  Given there is a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "name=Test fund" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And every access right for the stakeholder is revoked
+  Then uploading a document to the fund data room logs the stakeholder as committed but without access
+
+# Investor#notification_users handed a nil user to Pundit when a contact's login row had been
+# deleted, and ApplicationPolicy#initialize raises "Must be logged in" - so ONE dead login stopped
+# the document notifying anyone, healthy contacts included. Found on the production dump: 3 such
+# rows, and 2 documents that consequently notified nobody at all.
+@notification
+Scenario: A stakeholder contact whose login was deleted does not block the other contacts
+  Given there is a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "2" users
+  Given there is a fund "name=Test fund" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And one stakeholder contact's login row has been deleted
+  When a document "Fund Update Q5" is uploaded to the fund data room
+  Then the remaining stakeholder contact still receives the data room notification
+
+# setup_cc concatenates entity_setting.cc, the contact's InvestorAccess#cc and additional_ccs, and
+# those overlap routinely - a stakeholder's advisor is frequently also named on the commitment cc.
+# Without a dedupe the same address appeared twice on one email (seen on document 73989 in the dump).
+@notification
+Scenario: An address named on both the commitment and the contact is cc'd once
+  Given there is a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "name=Test fund" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  And the investor contact has cc "advisor@gmail.com,family.office@gmail.com"
+  When a document "Fund Update Q6" is uploaded to the fund data room
+  Then the data room document notification email cc's "advisor@gmail.com" exactly once
+  And the data room document notification email is cc'd to "family.office@gmail.com"

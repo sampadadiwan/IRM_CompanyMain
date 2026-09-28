@@ -4,7 +4,8 @@ class CapitalCallJob < ApplicationJob
   attr_accessor :remittances, :payments
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCall
-  def perform(capital_call_id, type)
+  # triggered_by_user_id is optional so a job enqueued before this argument existed still runs.
+  def perform(capital_call_id, type, triggered_by_user_id = nil)
     @remittances = []
     @payments = []
     Chewy.strategy(:sidekiq) do
@@ -12,7 +13,7 @@ class CapitalCallJob < ApplicationJob
       when "Generate"
         generate(capital_call_id)
       when "Notify"
-        notify(capital_call_id)
+        notify(capital_call_id, triggered_by_user_id)
       end
     end
   end
@@ -79,11 +80,48 @@ class CapitalCallJob < ApplicationJob
     end
   end
 
-  def notify(capital_call_id)
+  def notify(capital_call_id, triggered_by_user_id = nil)
     @capital_call = CapitalCall.find(capital_call_id)
+
+    # Nothing would be sent at all in these cases, so there is nothing to preflight and
+    # nothing to alert about — checked before the guard so a disabled or unapproved call
+    # never emails "notices not sent" to the admins.
+    return unless @capital_call.approved && @capital_call.send_call_notice_flag
+
     # Preload all associations accessed by send_notification and skip_call_notice? to avoid N+1
-    @capital_call.capital_remittances.includes(:capital_commitment, :capital_call, { investor: :approved_users }, :fund).find_each do |cr|
-      cr.send_notification if @capital_call.approved && @capital_call.send_call_notice_flag && !cr.capital_commitment.skip_doc_gen? && !cr.notification_sent
+    remittances = @capital_call.capital_remittances.includes(:capital_commitment, :capital_call, { investor: :approved_users }, :fund)
+
+    # Size-check before sending any of them, so an oversized attachment stops the whole run
+    # instead of bouncing investor by investor at the receiving mail servers. Scoped to the
+    # remittances this run would actually email — an oversized document on one already
+    # notified must not block first-time notices for the rest of the call. Returns rather than
+    # raises: a raise here would just have Sidekiq retry the same doomed batch.
+    return if blocked_by_attachment_size?(remittances.where(notification_sent: [false, nil]),
+                                          @capital_call.custom_notification(:notify_capital_remittance),
+                                          "Cannot send call notices for #{@capital_call.name}", @capital_call.entity_id,
+                                          user_id: triggered_by_user_id)
+
+    remittances.find_each do |cr|
+      cr.send_notification unless cr.capital_commitment.skip_doc_gen? || cr.notification_sent
     end
+  end
+
+  # true when the batch must not go out. CapitalCall#reminder_capital_call performs the same
+  # check inline rather than calling this — it lives on the model, not the job — so the two
+  # must be kept in step by hand. The part that actually matters (the rule, the message and
+  # the reporting) is shared via NotificationAttachmentPreflight; only the wiring is duplicated.
+  def blocked_by_attachment_size?(records, custom_notification, context, entity_id, user_id: nil)
+    # skip_doc_gen? is not expressible in SQL — it reads a json_fields key — so it is filtered
+    # here rather than scoped into the relation.
+    skip_doc_gen = ->(cr) { cr.capital_commitment.skip_doc_gen? }
+
+    message = NotificationAttachmentPreflight.batch_error_message(
+      records, custom_notification, context:, skip_if: skip_doc_gen
+    ) { |record| NotificationAttachmentPreflight.auto_attached_documents(record) }
+    return false if message.blank?
+
+    NotificationAttachmentPreflight.report_blocked_send(message, entity_id:, user_id:,
+                                                                 subject: "Capital call notices not sent")
+    true
   end
 end

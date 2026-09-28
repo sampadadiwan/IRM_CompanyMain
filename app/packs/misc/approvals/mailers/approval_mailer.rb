@@ -26,9 +26,13 @@ class ApprovalMailer < ApplicationMailer
     if @approval_response.status == "Pending"
 
       if @to.present?
-        # Mark notification_sent as true
-        @approval_response.update_column(:notification_sent, true) if @notification
-        send_mail(subject:)
+        # Mark notification_sent only once the mail has actually been built. send_mail returns
+        # nil without sending when a required attachment is missing or one breached the size
+        # limit (ApplicationMailer#send_mail), and ApprovalResponse re-enqueues the notifier
+        # only `unless notification_sent` — so setting the flag first would leave the approver
+        # never emailed, and never retried, until somebody ran a reminder.
+        sent = send_mail(subject:)
+        @approval_response.update_column(:notification_sent, true) if @notification && sent
       end
     else
       logger.debug "Not sending approval mail as approval is not yet approved."

@@ -10,6 +10,7 @@ class Investor < ApplicationRecord
   include ForInvestor
   include WithSupportAgent
   include InvestorShared
+  include BlocksDestroyWithFundUnits
   # Lets an Investor have a WorkflowTemplate assigned/launched against it —
   # used for both LP onboarding and portfolio-company KPI report review.
   include Workflowable
@@ -354,7 +355,25 @@ class Investor < ApplicationRecord
       )
     end
 
-    users = accesses.map(&:user)
+    # filter_map, not map: an InvestorAccess whose user row has been deleted yields nil, and one
+    # nil takes down the entire notification rather than just that contact - Pundit.policy(nil,
+    # model) below raises "Must be logged in" from ApplicationPolicy#initialize, so the caller
+    # never gets a recipient list at all. A fund data room document whose access rights included a
+    # single orphaned contact therefore notified NOBODY, healthy contacts included, with only an
+    # exception to show for it. Callers that pass no model were equally exposed: a bare nil in the
+    # returned array breaks anything doing pluck(:email) on it.
+    #
+    # Skipping the orphan notifies everyone else. Logged because the row is bad data that wants
+    # cleaning up, and a silently skipped contact is how this stayed invisible in the first place.
+    users = accesses.filter_map do |access|
+      next access.user if access.user
+
+      Rails.logger.warn(
+        "InvestorAccess #{access.id} (#{access.email}) on investor #{id} has no usable login " \
+        "(user_id: #{access.user_id.inspect}) - skipping this contact so the others are still notified"
+      )
+      nil
+    end
 
     if model
       users.select do |user|
@@ -430,5 +449,14 @@ class Investor < ApplicationRecord
 
   def logo_doc
     documents.where(name: "Logo").first
+  end
+
+  # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
+  def allocated_fund_units
+    fund_units
+  end
+
+  def fund_units_block_label
+    "stakeholder"
   end
 end
