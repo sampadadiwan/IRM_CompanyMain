@@ -326,9 +326,9 @@ module KpiCumulative
       quarter_end = Date.new(year, ((quarter - 1) * 3) + 1, 1).end_of_quarter
       existing = Kpi.approved.joins(:kpi_report).where(name: name, entity_id: entity_id, kpi_reports: { period: 'Quarter', as_of: quarter_end }).last
 
-      # If the quarter end is in the future and the source monthly KPIs are tagged as 'Actual',
-      # skip creating/updating the Quarterly forward_fill to avoid generating future-dated Actual records.
-      next if quarter_end > Date.current
+      # Skip future-dated quarterly forward fill only for Actual KPIs.
+      # Budget and IC reports are intentionally future-dated.
+      next if quarter_end > Date.current && kpi_report.tag_list == 'Actual'
 
       if existing.nil? || existing.value.nil? || force
         last_val = kpis_in_quarter.last.value.to_f
@@ -337,17 +337,16 @@ module KpiCumulative
     end
   end
 
-  # Takes the last monthly value available in the fiscal year and applies it as the YTD KPI value.
+  # Creates a YTD record for each month in the fiscal year, carrying that month's value forward.
+  # Mirrors process_yearly_cumulatives but uses last-value semantics instead of progressive sum.
   def process_yearly_forward_fill(related_kpis, force: false)
     kpis_by_year = related_kpis.group_by { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
     kpis_by_year.each_value do |kpis_in_year|
-      last_date = kpis_in_year.last.kpi_report.as_of
-      existing = Kpi.approved.joins(:kpi_report).where(name: name, entity_id: entity_id, kpi_reports: { period: 'YTD', as_of: last_date }).last
-
-      if existing.nil? || existing.value.nil? || force
-        last_val = kpis_in_year.last.value.to_f
-        process_cumulative_kpi(nil, last_val, 'YTD', nil, last_date, note: "Auto-generated Forward Fill", force: force)
+      kpis_in_year.each do |kpi|
+        as_of = kpi.kpi_report.as_of
+        last_val = kpi.value.to_f
+        process_cumulative_kpi(nil, last_val, 'YTD', nil, as_of, note: "Auto-generated Forward Fill", force: force)
       end
     end
   end
