@@ -51,17 +51,19 @@
     already communicates the parent-child relationship. The full prefixed name is retained
     in the database (standard_kpi_name) for uniqueness, search, exports, and chart labels. %>
             <% display_name = ikm.parent_id.present? ? ikm.reported_kpi_name : ikm.standard_kpi_name %>
-            <% if ikm.json_fields&.[](InvestorKpiMapping::HIGHLIGHT_KPI_CF).to_s == "1" %>
-              <%# used weight 1000 instead of bold as it was not noticable for kedaara %>
-              <span style="font-weight: 1000;"><%= display_name %></span>
-            <% else %>
-            <%= display_name %>
-            <% end %>
+            <span class="d-inline-flex align-items-center">
+              <% if ikm.json_fields&.[](InvestorKpiMapping::HIGHLIGHT_KPI_CF).to_s == "1" %>
+                <%# used weight 1000 instead of bold as it was not noticable for kedaara %>
+                <span style="font-weight: 1000;"><%= display_name %></span>
+              <% else %>
+              <%= display_name %>
+              <% end %>
 
-            <%# .to_i handles nil child_count for ad-hoc InvestorKpiMapping.new objects (non-fund entities) %>
-            <% if ikm.child_count.to_i > 0 %>
-              <span class="expand">></span>
-            <% end %>
+              <%# .to_i handles nil child_count for ad-hoc InvestorKpiMapping.new objects (non-fund entities) %>
+              <% if ikm.child_count.to_i > 0 %>
+                <span class="expand">+</span>
+              <% end %>
+            </span>
           </td>
           <% kpi_reports.each do |kpi_report| %>
             <!-- Find the kpi with the name or an alias for the name and show its value-->

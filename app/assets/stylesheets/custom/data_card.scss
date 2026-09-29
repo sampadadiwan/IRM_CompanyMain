@@ -42,9 +42,11 @@
     border-bottom: 1px solid #DFE5EF;
     padding-bottom: 9px;
     padding-top: 9px;
-    align-items: center;
+    // flex-start (not center) so the label stays anchored to the first line of
+    // the value instead of drifting down when the value wraps to two lines.
+    align-items: flex-start;
     justify-content: start;
-    gap: 10px;
+    gap: 6px;
 
 
     // Remove bottom border/padding from the last row.
@@ -67,7 +69,9 @@
       font-weight: 300;
       line-height: 20px;
       font-size: 15px;
-      width: 200px;
+      // smaller width to fix data card alignment
+      width: 130px;
+      flex-shrink: 0;
     }
 
     span {
@@ -75,6 +79,7 @@
       font-weight: 400;
       line-height: 24px;
       font-size: 15px;
+      min-width: 0;
     }
   }
 }

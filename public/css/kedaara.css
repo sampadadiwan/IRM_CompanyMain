@@ -1607,7 +1607,10 @@ ul.pagination {
 }
 
 [id^="portfolio_stats_"] .card-body  .col-md-6 .card.p-2.m-2.border.shadow-sm.rounded-3 {
-    margin: 20px 0px 0px !important;
+    /* Row spacing is now handled by the .gy-3 gutter on the stats row itself;
+       this hardcoded top margin used to be the only source of it and, stacked
+       with .gy-3, doubled up the gap between rows. */
+    margin: 0px !important;
 }
 
 [id^="portfolio_stats_"] .card-body .col-md-6 .card-body{

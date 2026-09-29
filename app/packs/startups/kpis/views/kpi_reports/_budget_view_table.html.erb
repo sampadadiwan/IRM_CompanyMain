@@ -41,7 +41,14 @@
 
     <%= render "/kpi_reports/budget_filter", entity: @entity %>
 
-    <div class="table-responsive" data-controller="datatable">
+    <div class="table-scroll-wrapper" data-controller="table-scroll">
+        <button type="button" class="table-scroll-btn table-scroll-btn-left" data-table-scroll-target="left" data-action="table-scroll#scrollLeft" aria-label="Scroll table left" hidden>
+            <i class="ti ti-chevron-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="table-scroll-btn table-scroll-btn-right" data-table-scroll-target="right" data-action="table-scroll#scrollRight" aria-label="Scroll table right" hidden>
+            <i class="ti ti-chevron-right" aria-hidden="true"></i>
+        </button>
+        <div class="table-responsive" data-controller="datatable" data-table-scroll-target="scrollArea">
         <table id="kpi_reports_budget_grid" class="table table-bordered table-striped dataTable table-grey numberTable">
             <thead>
                 <tr>
@@ -177,5 +184,6 @@
                 <% end %>
             </tbody>
         </table>
+        </div>
     </div>
 <% end %>

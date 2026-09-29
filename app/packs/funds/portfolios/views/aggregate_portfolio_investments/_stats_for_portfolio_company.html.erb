@@ -106,19 +106,38 @@
         <% end %>
         <%
           per_row ||= nil
+          card_row_styles = cards_data.map { "" }
           if per_row.present? && per_row.to_i > 0
-            card_col_class = "col-md-#{12 / per_row.to_i}"
+            # Chunk into rows of `per_row` and size each row's columns off its own
+            # card count, so a trailing row with fewer cards than `per_row` stretches
+            # to fill the full row width instead of leaving blank space.
+            # Bootstrap's col-md-N classes only express widths that are exact
+            # divisors of 12, so a `per_row` like 5 or 7 would leave each row's
+            # columns short of summing to 100%; use a precise percentage via
+            # the stat-card-col class's --stat-card-width custom property instead.
+            per_row_i = [per_row.to_i, 12].min
+            card_row_classes = []
+            card_row_styles = []
+            cards_data.each_slice(per_row_i) do |row_cards|
+              width_percent = (100.0 / row_cards.length).round(4)
+              row_cards.each do
+                card_row_classes << "stat-card-col"
+                card_row_styles << "--stat-card-width: #{width_percent}%;"
+              end
+            end
           else
-          card_col_class = case cards_data.length
-                           when 1 then "col-md-12"
-                           when 2 then "col-md-6"
-                           when 3 then "col-md-4"
-                           when 4 then "col-md-6"
-                           else ""
-                           end
+            card_col_class = case cards_data.length
+                             when 1 then "col-md-12"
+                             when 2 then "col-md-6"
+                             when 3 then "col-md-4"
+                             when 4 then "col-md-6"
+                             else ""
+                             end
+            card_row_classes = cards_data.map { card_col_class }
           end
         %>
-        <div id="stats_cards_<%= portfolio_company.id %>" class="row" <%= 'data-portfolio-stats-currency-target="stats"'.html_safe if show_currency_filter %>>
+        <div id="stats_cards_<%= portfolio_company.id %>" class="row gy-3 single-portfolio-stats-row" <%= 'data-portfolio-stats-currency-target="stats"'.html_safe if show_currency_filter %>>
+
           <% cards_data.each_with_index do |card_data, index| %>
             <% subtitle = card_data[:subtitle] %>
             <% subtitle = field_names[index] if field_names[index].present? %>
@@ -129,7 +148,8 @@
                         fs_size: "5 font-weight-bold",
                         progress_bar_color: card_data[:progress_bar_color],
                         text_info: card_data[:text_info],
-                        css_class: card_col_class
+                        css_class: card_row_classes[index],
+                        css_style: card_row_styles[index]
             )) %>
           <% end %>
         </div>

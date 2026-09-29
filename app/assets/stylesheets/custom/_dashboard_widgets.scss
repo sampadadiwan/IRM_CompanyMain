@@ -51,6 +51,15 @@
       .nav-link {
         font-size: 0.85rem; /* Smaller font size for nav links */
         min-width: 110px !important;
+        border-radius: 0; // square corners so the hover underline/focus outline isn't rounded by the default nav-pills shape
+        border-bottom: 2px solid transparent; // reserve space so hover underline doesn't shift height
+
+        &:hover,
+        &:focus {
+          color: var(--bs-primary);
+          background-color: transparent; // override the generic .nav-link:hover light-primary fill
+          border-bottom: 2px solid var(--bs-primary) !important;
+        }
       }
     }
   }
@@ -59,5 +68,80 @@
     .dropdown-item {
       font-size: 0.85rem; /* Smaller font size for dropdown items */
     }
+  }
+}
+
+// Portfolio report widget tabs: replace the default nav-pills solid-fill active
+// state with an underline + primary-blue text, and show the underline on hover
+// instead of a background change.
+.portfolio-report-tabs {
+  .nav-link {
+    border-radius: 0 !important;
+    border-bottom: 2px solid transparent;
+    background-color: transparent !important;
+    font-weight: 400;
+
+    &.active {
+      color: var(--bs-primary) !important;
+      background-color: transparent !important;
+      border-bottom: 2px solid var(--bs-primary);
+      font-weight: 700;
+    }
+
+    &:hover:not(.active),
+    &:focus:not(.active) {
+      color: var(--bs-primary);
+      border-bottom: 2px solid var(--bs-primary);
+    }
+  }
+}
+
+// Portfolio stats cards (single-company and multi-company aggregate views):
+// subtitles like "Total Bought Amount" / "Cost Of Remaining" wrap to two lines
+// on some cards but not others, so without an explicit height the cards in a
+// row end up mismatched. Scoped here (not on the shared NumberStatsComponent)
+// since other consumers of that component render single cards outside a
+// matched row and don't need this.
+.multi-portfolio-stats-row,
+.single-portfolio-stats-row {
+  .card {
+    // !important: the kedaara tenant stylesheet has a `.card .card { height: unset; }`
+    // reset (for a different nested-card use case) that incidentally matches these
+    // stat cards too and, loading after this stylesheet, would otherwise cancel the
+    // equal-height fix — causing mismatched card sizes and stray gaps on kedaara pages.
+    height: 100% !important;
+
+    // Card body isn't a flex column by default, so the progress-bar "underline"
+    // sits right after the (variably-wrapping) subtitle text instead of aligning
+    // across cards. Push it to the bottom of the now-equal-height card.
+    .card-body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .progress-bar {
+      margin-top: auto;
+    }
+  }
+}
+
+// Precise per-row card width for the `per_row`-driven stats grid (see
+// _stats_for_portfolio_company.html.erb and _stats_for_multiple_portfolio_companies.html.erb).
+// Bootstrap's col-md-N classes can only express widths that are exact
+// divisors of 12, so a `per_row` of 5, 7, 8, 9, 10 or 11 would leave a row's
+// columns short of summing to 100%; the view instead sets --stat-card-width
+// to an exact percentage per row. Applied standalone (no col-N class
+// alongside it): a plain col-N's own `width` rule loads after this
+// stylesheet and would otherwise win over the flex-basis override below.
+// Full-width below md, same as col-md-N used to behave on small screens.
+.stat-card-col {
+  flex: 0 0 100% !important;
+  max-width: 100% !important;
+  padding-right: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+  padding-left: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+
+  @media (min-width: 768px) {
+    flex: 0 0 var(--stat-card-width, 100%) !important;
+    max-width: var(--stat-card-width, 100%) !important;
   }
 }

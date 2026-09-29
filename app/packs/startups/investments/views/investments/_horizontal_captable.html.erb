@@ -165,8 +165,10 @@
                     %>
           <tr class="bg-light parent cursor-pointer" data-action="click->row-toggle#toggle" data-row-toggle-target="control" aria-expanded="false">
             <td class="text-right" style="text-align: right !important;">
-              <strong><%= category_name %></strong>
-              <span class="expand ml-2">></span>
+              <span class="d-inline-flex align-items-center">
+                <strong><%= category_name %></strong>
+                <span class="expand ml-2">></span>
+              </span>
             </td>
             <td class="text-center text-muted">-</td>
             <% funding_rounds.each do |round| %>
@@ -205,8 +207,10 @@
                       %>
             <tr class="child bg-light parent-sub cursor-pointer" data-action="click->row-toggle#toggleSub" data-row-toggle-target="control" aria-expanded="false">
               <td class="text-right" style="text-align: right !important;">
-                <strong><%= subgroup_name %></strong>
-                <span class="expand ml-2">></span>
+                <span class="d-inline-flex align-items-center">
+                  <strong><%= subgroup_name %></strong>
+                  <span class="expand ml-2">></span>
+                </span>
               </td>
               <td class="text-center text-muted">-</td>
               <% funding_rounds.each do |round| %>
