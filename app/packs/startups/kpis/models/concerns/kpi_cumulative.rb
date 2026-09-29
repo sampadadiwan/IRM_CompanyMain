@@ -170,7 +170,7 @@ module KpiCumulative
       # Basic safety check: allow only numbers and math operators
       if %r{\A[\d\s+\-*/.()]+\z}.match?(clean_formula)
         computed_val = eval(clean_formula) # rubocop:disable Security/Eval
-        process_cumulative_kpi(nil, computed_val, report.period, nil, report.as_of, note: "Auto-generated Computed", user_id: report.user_id, force: force)
+        process_cumulative_kpi(nil, computed_val, report.period, nil, report.as_of, note: "Auto-generated Computed", user_id: report.user_id, force: force, tag_list: report.tag_list)
       else
         error_msg = "Invalid formula after replacement for report #{report.id} (#{report.period} #{report.as_of}): #{clean_formula}"
         Rails.logger.error "--- [#{name}] #{error_msg}"
@@ -403,16 +403,17 @@ module KpiCumulative
   # @param note [String, nil] Optional note to attach to the KPI.
   # @param user_id [Integer, nil] The user to associate with the report if it needs to be created.
   # @param force [Boolean] If true, updates the value even if it matches the current value.
-  def process_cumulative_kpi(_curr_kpi, cumulative_sum, period, _start_date, end_date, note: nil, user_id: nil, force: false)
+  # @param tag_list [String, nil] report tag (Actual/Budget/IC) to scope the target report lookup.
+  #   Callers in the cumulation/forward_fill path pass nil (falls back to self.kpi_report.tag_list);
+  #   the compute path passes the report's tag explicitly because the in-memory Kpi has no kpi_report.
+  def process_cumulative_kpi(_curr_kpi, cumulative_sum, period, _start_date, end_date, note: nil, user_id: nil, force: false, tag_list: nil)
     note ||= "Auto-generated #{period} cumulative"
-    Rails.logger.debug { "Kpi:  [#{name}] Processing #{period} KPI for #{end_date}, value: #{cumulative_sum}" }
+    tag_list ||= kpi_report&.tag_list
+    Rails.logger.debug { "Kpi:  [#{name}] Processing #{period} KPI for #{end_date}, value: #{cumulative_sum}, tag: #{tag_list}" }
 
-    report_for_period = KpiReport.find_by(
-      period: period,
-      as_of: end_date,
-      entity_id: entity_id,
-      portfolio_company_id: portfolio_company_id
-    )
+    find_conditions = { period: period, as_of: end_date, entity_id: entity_id, portfolio_company_id: portfolio_company_id }
+    find_conditions[:tag_list] = tag_list if tag_list.present?
+    report_for_period = KpiReport.find_by(find_conditions)
 
     cumulative_kpi = report_for_period&.kpis&.approved&.find_by(
       entity_id: entity_id,
@@ -445,13 +446,9 @@ module KpiCumulative
     # Assuming user might be optional or handled elsewhere if nil.
     # But usually report belongs to user.
 
-    report_for_period ||= KpiReport.find_or_create_by(
-      period: period,
-      as_of: end_date,
-      entity_id: entity_id,
-      portfolio_company_id: portfolio_company_id,
-      user_id: user_id
-    )
+    create_conditions = { period: period, as_of: end_date, entity_id: entity_id, portfolio_company_id: portfolio_company_id, user_id: user_id }
+    create_conditions[:tag_list] = tag_list if tag_list.present?
+    report_for_period ||= KpiReport.find_or_create_by(create_conditions)
 
     kpi = Kpi.approved.find_or_initialize_by(
       entity_id: entity_id,
