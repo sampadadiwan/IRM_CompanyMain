@@ -182,8 +182,10 @@ module KpiCumulative
     end
   end
 
-  # Fetches all monthly KPIs with the 'Actual' tag for this specific KPI name and portfolio company.
-  # Results are ordered chronologically by the report's as_of date.
+  # Fetches all monthly KPIs matching this KPI's report tag (Actual/Budget/IC) for the same
+  # name and portfolio company. Results are ordered chronologically by the report's as_of date.
+  # Uses kpi_report.tag_list so cumulation stays within the same tag family — Budget monthly
+  # KPIs cumulate into Budget quarterly/YTD, IC into IC, etc.
   #
   # entity_id/portfolio_company_id/status/name here are covered by a single composite index
   # (see 20260924160000_add_sort_memory_fix_indexes.rb) so MySQL can satisfy this WHERE with one
@@ -208,7 +210,7 @@ module KpiCumulative
   def fetch_related_monthly_kpis
     entity.kpis.approved.joins(:kpi_report).preload(:kpi_report)
           .where(name: name, portfolio_company_id: portfolio_company_id)
-          .where(kpi_reports: { tag_list: 'Actual', period: 'Month' })
+          .where(kpi_reports: { tag_list: kpi_report.tag_list, period: 'Month' })
           .order("kpi_reports.as_of ASC")
   end
 
@@ -222,17 +224,18 @@ module KpiCumulative
       quarterly_sum = kpis_in_quarter.sum { |kpi| kpi.value.to_f }
       quarter_end = Date.new(year, ((quarter - 1) * 3) + 1, 1).end_of_quarter
 
-      # If the quarter end is in the future and the source monthly KPIs are tagged as 'Actual',
-      # skip creating/updating the Quarterly cumulative to avoid generating future-dated Actual records.
-      next if quarter_end > Date.current
+      # Skip future-dated quarterly cumulation only for Actual KPIs to avoid generating
+      # future-dated Actual records. Budget and IC reports are intentionally future-dated.
+      next if quarter_end > Date.current && kpi_report.tag_list == 'Actual'
 
       process_cumulative_kpi(nil, quarterly_sum, 'Quarter', nil, quarter_end, force: force)
     end
   end
 
-  # Fetches all quarterly KPIs with the 'Actual' tag for this specific KPI name and portfolio
-  # company. These are directly-reported Quarter figures (not auto-generated cumulative ones,
-  # which never carry the 'Actual' tag), so this only matches genuine quarterly source data.
+  # Fetches all quarterly KPIs matching this KPI's report tag (Actual/Budget/IC) for the same
+  # name and portfolio company. These are directly-reported Quarter figures (not auto-generated
+  # cumulative ones), so this only matches genuine quarterly source data. Uses kpi_report.tag_list
+  # so the quarterly fallback respects the same tag family as the source KPI.
   #
   # Same index_merge/sort-memory concern, same composite index, and same eager_load-vs-preload
   # fix as fetch_related_monthly_kpis above.
@@ -241,7 +244,7 @@ module KpiCumulative
   def fetch_related_quarterly_kpis
     entity.kpis.approved.joins(:kpi_report).preload(:kpi_report)
           .where(name: name, portfolio_company_id: portfolio_company_id)
-          .where(kpi_reports: { tag_list: 'Actual', period: 'Quarter' })
+          .where(kpi_reports: { tag_list: kpi_report.tag_list, period: 'Quarter' })
           .order("kpi_reports.as_of ASC")
   end
 
