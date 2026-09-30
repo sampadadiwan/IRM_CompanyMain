@@ -1,234 +1,185 @@
 # Xero integration — use cases
 
-Research note, 2026-09-21. Written in response to customers asking for a Xero integration.
-This is a scoping document, not a design: it separates the three things customers mean by
-"Xero", sizes each one against what CapHive already stores, and lists the platform
-constraints that shape any build. A change proposal belongs in `openspec/changes/`.
+Research note, first written 2026-09-21, pruned 2026-09-30. This is a scoping document, not a
+design; a change proposal belongs in `openspec/changes/`.
 
-## Summary
+## Scope
 
-There are **three different integrations** behind the request. They have different buyers,
-different data flows and very different build cost, so they should be scoped separately.
+Two use cases, both **pull only** in Phase I:
 
-| # | Direction | Buyer | Value | Cost |
-|---|---|---|---|---|
-| 1 | Portco's Xero → CapHive KPIs | VC / growth investor | High — differentiating | Medium (mapping + app certification) |
-| 2 | Fund/SPV books ↔ Xero | Fund admin, small GP | High — bank rec especially | Medium–high |
-| 3 | ManCo / GP entity ↔ Xero | GP finance | Low–medium | Low |
+| # | Source | Lands in CapHive as | Buyer |
+|---|---|---|---|
+| A | Fund's own Xero org (one per fund / SPV) | fund-level `account_entries` | Fund admin, small GP |
+| B | Portfolio company's Xero org (one per company) | `kpis` on a `kpi_report` | VC / growth investor |
 
-Recommended sequencing: **1**, then the bank-reconciliation slice of **2**, then **3**.
+Out of scope: pushing anything into Xero (Phase II, see the end), bank reconciliation of
+capital calls, investment / valuation journals, and the ManCo / GP entity's books.
 
 ```mermaid
 flowchart LR
-    subgraph PC["Portfolio companies"]
-        PCX["Portco Xero org<br/>one per company"]
-    end
-
-    subgraph GP["GP / fund manager"]
-        FX["Fund / SPV Xero org<br/>one per fund"]
-        MX["ManCo Xero org"]
+    subgraph X["Xero"]
+        FX["Fund Xero org<br/>one per fund"]
+        PX["Portco Xero org<br/>one per company"]
     end
 
     subgraph CH["CapHive"]
-        KPI["kpi_reports / kpis"]
-        LED["account_entries<br/>capital_remittances<br/>capital_distribution_payments"]
-        FEE["fees / call_fee / distribution_fee"]
-        LP["Investor capital accounts<br/>allocation runs, waterfall"]
+        AEM["Xero account → entry_type<br/>mapping (new)"]
+        AE["account_entries<br/>fund level, no folio"]
+        AR["allocation runs"]
+        FOL["folio-level account_entries"]
+        IKM["investor_kpi_mappings<br/>reported_kpi_name → standard_kpi_name"]
+        KU["kpis, status unapproved<br/>source xero"]
+        KA["KpiApproveService"]
+        KP["kpis, status approved"]
     end
 
-    PCX -->|"1 . pull P and L, BS, TB"| KPI
-    FX -->|"2b . pull fund expenses"| LED
-    LED -->|"2a . push calls, distributions, fees"| FX
-    FEE -->|"3 . push fee invoices"| MX
-    MX -->|"3 . pull ManCo expenses to allocate"| LED
-    LED --> LP
-    KPI --> LP
+    FX -->|"A . Reports by account, per period"| AEM --> AE --> AR --> FOL
+    PX -->|"B . P and L, Balance Sheet"| IKM --> KU --> KA --> KP
 
     classDef xero fill:#13b5ea,stroke:#0a7ea4,color:#fff
     classDef caphive fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b
-    class PCX,FX,MX xero
-    class KPI,LED,FEE,LP caphive
+    classDef new fill:#fff7ed,stroke:#c2410c,color:#7c2d12
+    class FX,PX xero
+    class AE,AR,FOL,IKM,KU,KA,KP caphive
+    class AEM new
 ```
 
-Xero never holds investor-level capital accounts in any of the three: that stays in CapHive.
+Xero never holds investor-level capital accounts in either flow. That stays in CapHive.
 
-Before scoping further, one question needs answering per customer: are they asking about
-**their own fund/ManCo books** in Xero, or about **their portfolio companies'** Xero?
-Those are almost entirely separate builds.
+## A. Fund Xero → fund-level account entries
 
-## 1. Portfolio-company financials → CapHive KPIs
+Many smaller GPs and SPV managers keep the fund's statutory books in Xero, one org per fund.
+Fund-level expenses and income (audit, legal, admin, bank interest) are posted there and
+then typed into CapHive a second time so they reach NAV and allocation runs. The sync
+removes that second entry.
 
-The pattern Standard Metrics, Visible, Archstone and Allvue all built. It removes work from
-the KPI cycle rather than adding a sync to maintain.
+**Where it fits.** `ImportAccountEntry` already treats a row with no folio as a fund-level
+entry (`app/packs/funds/capital_commitments/services/import_account_entry.rb:26`). Xero has
+no idea who the LPs are, so every synced row is fund-level (`capital_commitment_id` nil), and
+the existing allocation runs spread it across folios. The sync is another way to feed the
+import, not a new ledger path.
 
-- Portco founder connects their own Xero org once (OAuth); CapHive pulls P&L, Balance Sheet
-  and Trial Balance on a schedule — no quarterly KPI chase email.
-- Auto-populates `kpi_reports` instead of the manual / `import_upload` path: revenue, gross
-  margin, opex, EBITDA, cash balance, net burn — and runway as a derived KPI.
-- Turns the KPI cycle into review-and-confirm: pre-filled report, founder approves,
-  `submitted_at` / `validated_at` set automatically.
-- Monthly cadence instead of quarterly at no extra founder cost — much better early warning
-  on burn and runway.
-- Feeds the existing `PortfolioCompanyAgent` compliance checks: "KPI not submitted" becomes
-  rare, and the agent can instead flag *divergence* between submitted numbers and Xero
-  actuals.
-- The real work is chart-of-accounts mapping per portco (their account names → the CapHive
-  KPI taxonomy). `investor_kpi_mapping` is the natural home; account-name→KPI mapping is a
-  good LLM-assisted-then-human-confirmed task.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant J as Scheduled sync job
+    participant X as Fund Xero org
+    participant M as Account → entry_type mapping
+    participant AE as account_entries
+    participant OPS as Fund admin
+    participant AR as Allocation run
+
+    J->>X: GET Reports (ProfitAndLoss / TrialBalance) for the period
+    X-->>J: one figure per Xero account
+    J->>M: map each Xero account
+    alt account mapped
+        M-->>J: entry_type, name, cumulative flag
+        J->>AE: upsert fund-level entry<br/>keyed by fund_id + reporting_date + external_sync_id
+    else unmapped account
+        J->>OPS: queue for mapping, nothing written
+    end
+    OPS->>AR: run allocation for the period as today
+    AR->>AE: folio-level entries (generated)
+```
+
+**Decisions**
+
+- **Granularity: one row per account per period, not per transaction.** Pull report totals
+  (about 20–60 accounts per fund per period), not `/Journals` lines, which would add
+  hundreds to thousands of rows per period to `account_entries`, the largest table in the
+  system. Balance-sheet accounts map to `cumulative: true`; P&L accounts are period
+  movements. (Phase II may need line-level reads; see below.)
+- **Re-sync upserts on a new external reference column on `account_entries`.**
+  `AccountEntry` checks uniqueness on `name + entry_type + reporting_date + amount_cents +
+  …`, which includes the amount. Without a stable key, if an accountant corrects a Xero
+  posting from 10,000 to 12,000 and the sync runs again, it inserts a second row instead
+  of updating the first, and the fund's NAV counts the expense twice.
+  The existing `ref_id` can't do this job. It is an integer (default 0) that the importer
+  fills from the sheet's "Ref Id" column, and it sits inside the uniqueness check next to
+  `amount_cents` so that two otherwise identical rows can both exist. It tells duplicates
+  apart; it doesn't identify an entry, and Xero account ids are GUIDs anyway. So a new
+  column is needed: `external_sync_id`, a nullable string wide enough for a GUID
+  (36 characters), holding the Xero `AccountID` as-is. The period and the Xero org are
+  already on the row, so they aren't encoded into the column: the period is
+  `reporting_date`, and the org is implied by `fund_id`, since each fund connects to one
+  Xero org. The sync looks up by `fund_id + reporting_date + external_sync_id`, updates
+  the amount when the row exists, and inserts otherwise. That combination is also the
+  index. Rows entered by hand or uploaded leave it null and behave as they do today. `account_entries` is very large, so the migration needs care: a nullable column
+  can be added instantly in MySQL 8, but building the index cannot.
+- **Account mapping: a per-fund table, new.** It maps each Xero account to an
+  `entry_type` / `name` / `cumulative` flag, is set up once per fund, and is extended when
+  the accountant adds accounts. An unmapped account is held back and shown to the fund
+  admin, never dropped silently.
+- **Periods already allocated are flagged, not overwritten.** Once CapHive has run an
+  allocation for a period, a later change in Xero for that period is held for review.
+  It does not quietly change the fund-level entry under a finished run.
+- **Structure constraint:** Xero allows only 2 tracking categories × ~100 options per org,
+  so "one Xero org per fund" is the pattern that works, not "one org, funds as tracking
+  codes". A multi-fund manager has one connection per fund.
+- **What to tell customers plainly:** Xero is not a fund accounting system. CapHive stays
+  the investor and allocation layer; Xero stays the statutory ledger.
+
+## B. Portfolio-company Xero → KPIs
+
+The pattern Standard Metrics, Visible and Allvue built. The founder connects the company's
+Xero org once; after that CapHive pulls actuals every period with no KPI chase email.
+
+**Where it fits.** It is one more importer beside `ImportKpiWorkbookJob`, using the
+staging workflow that already exists:
+
+- Imported values land as `kpis` with `status: unapproved`, and `KpiApproveService` promotes
+  them to `approved` (see `app/packs/startups/kpis/jobs/kpi_import_process.md`). An
+  unapproved KPI never reaches reports or RAG rules.
+- `investor_kpi_mappings.reported_kpi_name` → `standard_kpi_name` is already how an
+  external label maps to a standard KPI. A Xero account name (or a sum of accounts) is
+  just another reported name.
+- `kpis.source` records `"xero"`, so reviewers can tell pulled values from uploaded ones.
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant F as Founder
     participant CH as CapHive
     participant X as Portco Xero org
+    participant AP as Approver
     participant AG as PortfolioCompanyAgent
 
     F->>CH: connect Xero org, one-off OAuth consent
-    CH->>CH: store tenant id + refresh token
-    Note over CH,X: thereafter, no founder involvement per period
+    Note over CH,X: no founder involvement per period after this
 
     loop each reporting period
-        CH->>X: GET ProfitAndLoss / BalanceSheet / TrialBalance
+        CH->>X: GET ProfitAndLoss / BalanceSheet
         X-->>CH: account-level figures
-        CH->>CH: map accounts to KPI taxonomy<br/>via investor_kpi_mapping
-        CH->>CH: create kpi_report, status shell_created<br/>+ kpis rows, source = "xero"
-        CH->>F: "your numbers are ready, confirm"
-        F->>CH: review and approve
-        CH->>CH: set submitted_at / validated_at
+        CH->>CH: map accounts via investor_kpi_mappings
+        CH->>CH: kpi_report + kpis, status unapproved, source xero
+        AP->>CH: review and approve (KpiApproveService)
+        CH->>CH: kpis approved, RAG + dashboards update
         AG->>CH: compliance check
-        Note right of AG: flags divergence, not absence
     end
 ```
 
-- Caveat: only covers portcos small enough to be on Xero (typically pre-Series B, and
-  AU/NZ/UK-weighted), and accrual quality varies. Surface "unreconciled" / "draft" state
-  rather than trusting the numbers blindly.
+**Benefits**
 
-## 2. Fund / SPV books ↔ Xero
+- Revenue, gross margin, opex, EBITDA, cash balance, net burn and runway (derived)
+  populate themselves, so reporting can be monthly instead of quarterly at no extra cost
+  to the founder.
+- `PortfolioCompanyAgent`'s "KPI not submitted" check fires far less often for connected
+  companies. It could later compare figures a founder uploads with the Xero actuals.
 
-Many smaller GPs and SPV managers genuinely keep fund books in Xero, one Xero org per
-fund or SPV.
+**Caveats**
 
-- **Push CapHive → Xero**: capital call receipts (`capital_remittances`), distributions
-  (`capital_distribution_payments`), management fees and other `fees` / `call_fee` /
-  `distribution_fee` posted as invoices, bills or manual journals — so the accountant stops
-  rekeying what CapHive already computed.
-- **Pull Xero → CapHive**: fund-level expenses (audit, legal, admin) posted in Xero,
-  imported as `account_entries` so they flow into NAV and allocation runs without being
-  typed twice.
-- **Bank reconciliation of capital calls**: read Xero bank transactions and auto-match
-  incoming wires to outstanding `capital_remittances`. The most repetitive task in a call
-  cycle and the strongest demo in this group.
-```mermaid
-sequenceDiagram
-    autonumber
-    participant CH as CapHive
-    participant X as Fund Xero org
-    participant B as Fund bank account
-    participant OPS as Fund admin
+- Only reaches companies small enough to run on Xero (typically pre-Series B; strongest in
+  AU / NZ / UK). Accrual quality varies, so reports should flag draft or unreconciled
+  periods rather than trust them blindly.
+- The real work is mapping each company's chart of accounts to CapHive's KPI list, which
+  differs per company. An LLM can suggest the mapping and a person confirms it; after
+  that it is reused every period.
 
-    CH->>CH: issue capital call<br/>capital_remittances, status outstanding
-    CH->>X: POST invoices, one per LP remittance
-    B-->>X: bank feed, incoming wires
-    CH->>X: GET BankTransactions since last sync
-    X-->>CH: wires with amount, date, reference
-    CH->>CH: auto-match wire to capital_remittance<br/>on amount + folio_id + reference
-    alt confident match
-        CH->>CH: set collected_amount_cents, payment_date, status paid
-    else ambiguous
-        CH->>OPS: queue for manual match
-        OPS->>CH: confirm or reassign
-    end
-    CH->>X: GET TrialBalance at period end
-    CH->>CH: tie_out_figure, ledger vs Xero TB diff
-```
+## Platform constraints (both use cases)
 
-- **Tie-out**: reconcile the CapHive ledger against Xero's trial balance at period close and
-  show the difference — `tie_out_figure` already exists to hang this on.
-- **Investment and valuation postings**: push cost of `portfolio_investments` and fair-value
-  adjustments from `valuations` into Xero as journals so the fund's balance sheet matches
-  the portfolio.
-- Caveat to state plainly to customers: Xero is not a fund accounting system. No
-  investor-level capital accounts, no waterfall, no commitment tracking. The integration
-  positions CapHive as the investor and allocation layer and Xero as the statutory GL — it
-  replaces neither.
-- Structural constraint: Xero allows only **2 tracking categories × ~100 options** per org,
-  so "one Xero org per fund" is the workable pattern, not "one org, funds as tracking
-  codes". Multi-fund managers then need per-tenant connection management.
-
-## 3. Management company / GP entity
-
-- Push management-fee and carry invoices raised in CapHive into the ManCo's Xero as sales
-  invoices, and read paid/unpaid status back.
-- Pull ManCo expenses that get allocated across funds, so the allocation lives in CapHive
-  but the source of truth stays in the accountant's system.
-- Fund-expense allocation both ways: one bill in Xero → split across funds by commitment
-  percentage in CapHive → journals back.
-
-## Object mapping
-
-Which Xero object each CapHive concept lands on, and in which direction. Anything Xero has
-no home for stays CapHive-only — that column is the argument for why the integration is not
-a migration.
-
-```mermaid
-flowchart LR
-    subgraph CHM["CapHive"]
-        direction TB
-        cr["capital_remittances"]
-        cdp["capital_distribution_payments"]
-        fe["fees / call_fee / distribution_fee"]
-        pi["portfolio_investments"]
-        va["valuations"]
-        ae["account_entries"]
-        kp["kpi_reports / kpis"]
-        cc["capital_commitments<br/>LP capital accounts"]
-        al["allocation runs / waterfall"]
-    end
-
-    subgraph XO["Xero"]
-        direction TB
-        inv["Invoices — ACCREC"]
-        bill["Invoices — ACCPAY / Bills"]
-        mj["ManualJournals"]
-        bt["BankTransactions"]
-        rep["Reports<br/>ProfitAndLoss, BalanceSheet, TrialBalance"]
-        none["no equivalent"]
-    end
-
-    cr -->|push| inv
-    bt -->|"pull, match"| cr
-    cdp -->|push| bill
-    fe -->|push| inv
-    pi -->|push| mj
-    va -->|push| mj
-    rep -->|"pull, fund expenses"| ae
-    rep -->|"pull, portco actuals"| kp
-    cc -.-> none
-    al -.-> none
-
-    classDef gap fill:#fff7ed,stroke:#c2410c,color:#7c2d12
-    class none gap
-```
-
-## Cross-cutting benefits
-
-- Kills double entry between the GP's accountant and the platform — the reason named first
-  in every Xero integration pitch.
-- Audit season: auditors get a CapHive-to-Xero reconciliation instead of a spreadsheet.
-- Accountant-led distribution: Xero's app marketplace and its accountant/bookkeeper channel
-  are a real inbound source in AU/NZ/UK, where Xero holds roughly 70–80% of the Australian
-  cloud accounting market and ~4.2M subscribers, against QuickBooks' North American
-  dominance (~7M). If these customers are AU/NZ/UK, Xero first and QuickBooks second; if
-  US, reverse it.
-- The same connector shape works for QuickBooks and NetSuite later — build the mapping and
-  sync layer once and treat Xero as the first adapter.
-
-## Platform constraints to plan around
-
-A connection is a per-org OAuth grant, and the failure mode that matters is a *silent* one:
-a portco connection that lapses looks identical to a portco with nothing to report until
-someone checks. Any build needs the reconnect path in scope from day one.
+A connection is an OAuth grant per Xero org, and it fails silently: a lapsed connection
+looks exactly like "nothing new this period" until someone checks. The reconnect path has
+to be in scope from day one.
 
 ```mermaid
 stateDiagram-v2
@@ -244,7 +195,7 @@ stateDiagram-v2
     Connected --> Revoked: org disconnects app
     Expired --> Invited: reconnect nudge
     Revoked --> Invited: reconnect nudge
-    Connected --> [*]: portco exits
+    Connected --> [*]: portco exits / fund wound up
 
     note right of Expired
         the silent failure:
@@ -253,20 +204,27 @@ stateDiagram-v2
     end note
 ```
 
-
-- OAuth 2.0 per Xero org ("tenant"); 30-minute access tokens with 60-day refresh. Needs
-  token storage and reconnect nudges — a dormant portco connection expires silently.
-- Rate limits: 60 calls/minute and 5,000 calls/day **per org**, so per-tenant limits do not
-  collide. But 100+ portco orgs on a nightly sync needs a queued, staggered job.
-- Uncertified apps are capped at 25 connected orgs. App certification is a prerequisite for
-  the portco use case at any real scale.
-- `/Journals` is read-only (no POST). Writes go through Invoices, BankTransactions and
-  ManualJournals, batched up to 50 per request.
-- Webhooks cover only a narrow set (contacts, invoices), so most syncing is polled with
-  `If-Modified-Since`, not pushed.
-- No existing OAuth-client integration pattern in the codebase to copy wholesale: DocuSign
+- OAuth 2.0 per Xero org ("tenant"). Access tokens last 30 minutes; refresh tokens lapse
+  after 60 days unused. Needs token storage, refresh, and reconnect nudges.
+- Rate limits are per org: 60 calls/minute and 5,000 calls/day, so orgs don't compete for
+  the same limit. A nightly sync of 100+ orgs still needs a queued, staggered job.
+- An uncertified app can connect at most 25 orgs. For use case B at any real scale, app
+  certification must happen first.
+- Webhooks cover only a narrow set of objects (contacts, invoices), so syncing is a
+  scheduled poll.
+- There is no OAuth-client integration in the codebase to copy. DocuSign
   (`app/packs/core/investor_kycs/services/docusign/`) uses JWT service-account auth, not
-  per-tenant user consent. Token storage and refresh would be new.
+  per-org user consent, so token storage and refresh are new work.
+
+## Phase II — push (not scoped)
+
+Pushing CapHive entries to Xero (for example, allocation-run output summed to fund level
+and posted as ManualJournals) is deferred to Phase II. The one thing that must carry into
+Phase I's design: once CapHive writes into Xero, the pull will see those postings on its
+next run and import them back, double counting them. Phase II has to separate what CapHive
+pushed from what the accountant posted, most likely by reading `/Journals` lines instead of
+report totals, or by using accounts only CapHive writes to. Keep the Phase I external-key
+design general enough to record pushed objects too.
 
 ## Sources
 
@@ -278,7 +236,3 @@ stateDiagram-v2
 - [Standard Metrics — portfolio monitoring software](https://standardmetrics.io/library/portfolio-monitoring-software-an-investors-guide/)
 - [Visible.vc — VC reporting software](https://visible.vc/blog/venture-capital-reporting-software/)
 - [Allvue — portfolio monitoring](https://www.allvuesystems.com/solutions/portfolio-monitoring/)
-- [Carta — fund accounting](https://carta.com/learn/private-funds/management/fund-administration/fund-accounting/)
-- [Allocations — what SPV administration includes](https://www.allocations.com/insights/what-spv-administration-includes)
-- [Xero market share in Australia](https://www.scalesuite.com.au/resources/xero-market-share-australian-businesses)
-- [QuickBooks market share](https://www.acecloudhosting.com/blog/quickbooks-market-share/)

@@ -1,0 +1,403 @@
+name: spec-driven
+version: 1
+description: IRM workflow (project override) - proposal → specs → design → tasks
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Business-facing proposal document outlining the change
+    template: proposal.md
+    instruction: |
+      Create the proposal document that establishes WHY this change is needed. It is a
+      non-technical, business-facing document - written for product, QA and support, not for
+      engineers. Nothing here should require the reader to know the codebase.
+
+      **Planning only: do not make any code changes while writing this document.**
+
+      Sections (follow the template's structure and order):
+      - **Why**: 1-2 sentences on the problem or opportunity. What problem does this solve? Why
+        now? How does it work today, if at all?
+      - **What Changes**: What changes for the user/business, in plain language, with a mermaid
+        flowchart pair (before/after, never ASCII art) for each existing flow the change alters. Mark breaking changes with
+        **BREAKING**.
+      - **User Stories**, **UI Behavior**, **What This Feature Does NOT Cover**, **Validation
+        Rules**, **Behavior Rules**, **Resolved Design Decisions**: fill these in with concrete,
+        testable detail - specific UI elements, messages, and scenarios, not code. These sections
+        are what QA and support will use to verify the feature by hand.
+      - **Capabilities**: Identify which specs will be created or modified:
+        - **New Capabilities**: List capabilities being introduced. Each becomes a new `specs/<capability-path>/spec.md`. Use kebab-case for path segments you introduce (e.g., `user-auth` or `identity/user-auth`) and follow the project's existing spec organization.
+        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Only include if spec-level behavior changes (not just implementation details). Each needs a delta spec file. Use the exact existing path under `openspec/specs/`. Leave empty if no requirement changes.
+      - **Impact**: Affected code, APIs, dependencies, or systems - named at a level a
+        non-technical reader can still follow (e.g. "the fund formulas page", not a class name).
+      - **Benefits**: Concrete benefits for the end user.
+      - **FAQ**: Anticipate the questions business/product/QA/support will actually ask (access,
+        data migration, notifications, pricing/billing, rollout). Keep answers non-technical and
+        link to design.md for "how" rather than explaining implementation here.
+      - **Design Principle for the Next Phase**: flag anything in this proposal that risks a
+        complex design, so the design phase deals with it explicitly. The design must come out
+        DRY and simple - prefer reusing existing services/components over new abstractions.
+
+      IMPORTANT: The Capabilities section is critical. It creates the contract between
+      proposal and specs phases. Research existing specs before filling this in:
+      run `openspec list --specs` for the project's capability inventory, then
+      `openspec show "<spec-id>" --type spec --json --no-scenarios` for any that
+      look related - that returns a capability's purpose and requirement texts
+      without pulling whole spec files into context. Append `--store "<id>"` to
+      both commands only for a registered standalone store, and keep `--type
+      spec`: a change and a spec sharing a name is otherwise an ambiguous-item
+      error. `openspec list` without `--specs` lists in-flight changes, not
+      specs - it never shows what the project already covers. Reuse an existing
+      capability's exact path instead of introducing a near-duplicate name.
+      The filtered read is only an overview. Before deciding what is already
+      covered or what should change, read each relevant spec in full, including
+      scenarios, with `openspec show "<spec-id>" --type spec` (same `--store` rule).
+      Each capability listed here will need a corresponding spec file.
+
+      Every change must either declare at least one capability (new or
+      modified) or explicitly opt out of specs: `openspec validate` rejects a
+      change with zero deltas unless the change's `.openspec.yaml` sets
+      `skip_specs: true`. Use `skip_specs: true` only when no spec-level
+      behavior changes (pure refactor, tooling, docs) - specs describe
+      behavior, so if behavior does not change, no spec should change either.
+      Do not invent a requirement just to satisfy validation.
+
+      Keep it concise. Focus on the "why" and the business behavior, not the "how" -
+      implementation details belong in design.md.
+
+      This is the foundation - specs, design, and tasks all build on this.
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Detailed specifications for the change
+    template: spec.md
+    instruction: |
+      Create specification files that define WHAT the system should do.
+
+      A spec is a behavior contract, not an implementation plan.
+
+      Good spec content:
+      - Observable behavior users or downstream systems rely on
+      - Inputs, outputs, and error conditions
+      - External constraints (security, privacy, reliability, compatibility)
+      - Scenarios that can be tested or explicitly validated
+
+      Avoid in specs:
+      - Internal class/function names
+      - Library or framework choices
+      - Step-by-step implementation details
+      - Detailed execution plans (those belong in design.md or tasks.md)
+
+      Quick test: if the implementation can change without changing externally
+      visible behavior, it likely does not belong in the spec.
+
+      Create one spec file per capability listed in the proposal's Capabilities section.
+      `<capability-path>` is the spec directory relative to `specs/` (for example,
+      `user-auth` or `identity/user-auth`). Preserve the full path:
+      - New capabilities: use the exact path from the proposal at `specs/<capability-path>/spec.md`. Any path segment newly introduced in the proposal must be kebab-case. Follow the project's existing organization; do not add a new domain level when the project uses a flat layout.
+      - Modified capabilities: use the exact existing path from `openspec/specs/<capability-path>/` when creating the delta at `specs/<capability-path>/spec.md`. Run `openspec list --specs` to confirm that path before writing the delta, appending `--store "<id>"` only for a registered standalone store - a mistyped or invented path targets a capability that does not exist rather than the one you meant. Do not move or rename the capability.
+
+      There must be at least one spec file unless the change's `.openspec.yaml`
+      sets `skip_specs: true` (no spec-level behavior change) - `openspec validate`
+      rejects a zero-delta change without that marker. If the proposal lists no
+      capabilities and `skip_specs` is not set, revisit the proposal first.
+
+      Delta operations (use ## headers):
+      - **ADDED Requirements**: New capabilities
+      - **MODIFIED Requirements**: Changed behavior - MUST include full updated content
+      - **REMOVED Requirements**: Deprecated features - MUST include **Reason** and **Migration**
+      - **RENAMED Requirements**: Name changes only - use FROM:/TO: format
+
+      Format requirements:
+      - Each requirement: `### Requirement: <name>` followed by description
+      - Use SHALL/MUST for normative requirements (avoid should/may)
+      - Each scenario: `#### Scenario: <name>` with WHEN/THEN format
+      - **CRITICAL**: Scenarios MUST use exactly 4 hashtags (`####`). Using 3 hashtags or bullets will fail silently.
+      - Every requirement MUST have at least one scenario.
+
+      New capabilities only: the delta spec's first section is `## Purpose` -
+      one or two sentences (50+ characters, or `openspec validate --strict`
+      reports it as too brief) describing what the capability is for. Archive
+      copies it into the main spec it creates; without it the new main spec is
+      left with a `TBD ... Update Purpose after archive` placeholder to fill in
+      by hand. Do NOT add `## Purpose` to a delta for an existing capability -
+      that spec already has one and the delta's is ignored. To change an
+      existing capability's Purpose - including a leftover `TBD` placeholder -
+      edit `<planningHome.root>/openspec/specs/<capability-path>/spec.md`
+      directly. `planningHome.root` comes from the `openspec instructions ...
+      --json` response. Always use it rather than a repo-relative path: it
+      resolves to the store whenever the change lives in one - whether that
+      came from `--store`, a project `store:` pointer, or a global default
+      store - and to the current repository otherwise. Do not try to work out
+      which case applies; the field already has.
+
+      MODIFIED requirements workflow:
+      1. Locate the existing requirement in `<planningHome.root>/openspec/specs/<capability-path>/spec.md` (the same store-aware root as above)
+      2. Copy the ENTIRE requirement block (from `### Requirement:` through all scenarios)
+      3. Paste under `## MODIFIED Requirements` and edit to reflect new behavior
+      4. Ensure header text matches exactly (whitespace-insensitive)
+
+      Common pitfall: Using MODIFIED with partial content loses detail at archive time.
+      If adding new concerns without changing existing behavior, use ADDED instead.
+
+      Example (a new capability, so its first section is `## Purpose`):
+      ```
+      # Spec Delta
+
+      ## Purpose
+
+      Lets users take their data out of the product in a portable format.
+
+      ## ADDED Requirements
+
+      ### Requirement: User can export data
+      The system SHALL allow users to export their data in CSV format.
+
+      #### Scenario: Successful export
+      - **WHEN** user clicks "Export" button
+      - **THEN** system downloads a CSV file with all user data
+
+      ## REMOVED Requirements
+
+      ### Requirement: Legacy export
+      **Reason**: Replaced by new export system
+      **Migration**: Use new export endpoint at /api/v2/export
+      ```
+
+      Specs should be testable - each scenario is a potential test case, and should map onto a
+      Cucumber scenario written in the tasks phase.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical design document with implementation details
+    template: design.md
+    instruction: |
+      Create the design document that explains HOW to implement the change, for an engineering
+      audience. design.md is always created, since tasks depend on it. Its size scales with the
+      change.
+
+      **Planning only: do not make any code changes while writing this document.**
+
+      Rules that apply to every section:
+      - **Design, not code.** Tell the design through mermaid diagrams and tables. Do NOT paste
+        Ruby/JS class bodies, migrations, route blocks, policy code or Stimulus code. Put real
+        class, method, table and path names inside the diagrams and tables instead.
+      - **CORE vs CONDITIONAL.** Every CORE section is filled in. A CONDITIONAL section is filled
+        in only when its "include when" rule applies. Otherwise keep the heading with a single
+        line `N/A — <reason>`. Do not pad a small change to fill the template.
+      - **No repetition.** Each fact lives in exactly one section. The proposal owns user-facing
+        behaviour and mockups, the spec owns requirements, design owns how. Link instead of
+        restating.
+      - **FAQ tables are optional.** Add one only where a reader will ask a non-obvious "why" or
+        "why not X".
+      - **Diagrams must render.** Before finishing, lint every mermaid block and fix failures
+        until it exits 0:
+        `d=$(mktemp -d); echo '{"args":["--no-sandbox"]}' > $d/p.json; npx -y @mermaid-js/mermaid-cli -q -p $d/p.json -i <changeRoot>/design.md -o $d/out.md; echo exit=$?`
+        (known gotcha: `Note` is reserved in sequence diagrams, so never use it as a participant id).
+
+      Sections, in the template's order:
+      - **Contents** (CORE): a table of contents at the top linking every ## and ### heading
+        (GitHub anchors). Regenerate it after the document is finished so no heading is missing.
+      - **Overview** (CORE): 2-3 sentences, naming the existing pattern it follows.
+      - **Architecture** (CORE):
+        - **Component Boundaries**: flowchart subgraphs (UI, scheduling, domain, integration,
+          existing CapHive modules, notifications, external systems) with every boundary-crossing
+          arrow labelled, plus a From → To | Contract | Direction rule table.
+        - **Class Diagram**: `classDiagram` of every new or changed class, enclosed in
+          `namespace` blocks that match the boundaries, with stereotypes, public methods and the
+          edges between namespaces.
+        - **Change Footprint**: the only list of new (green), modified (amber) and reused (grey)
+          parts, as one flowchart. Exact file paths belong in tasks.md.
+      - **Data Model and States**:
+        - **Data Model** (CONDITIONAL, when tables or columns change): an `erDiagram`, indexes on
+          one line, rationale for non-obvious columns only, and changes to existing models as
+          bullets.
+        - **State Transitions** (CORE if any stored or derived status/lifecycle exists): a
+          `stateDiagram-v2` per lifecycle with every transition's trigger labelled.
+      - **Behaviour**:
+        - **Pipeline / Flow** (CONDITIONAL, only for multi-branch processing): a flowchart.
+        - **Sequence Diagrams** (CORE): the happy path plus each error/edge flow worth explaining,
+          with real participants and alt/else/loop.
+        - **Worked Examples** (CORE, placed right after the sequences): Happy Path (H1..), Edge
+          Cases (E1..) and Error Cases (X1.., X for eXception) tables with columns # | Scenario | Given | When |
+          Then | Spec scenario | Feature, using real-ish data from a shared-setup table. Every
+          spec scenario must appear in the Spec scenario column of at least one row. Check this
+          before finishing and add rows for any gaps. Each row becomes exactly one Cucumber
+          scenario. Prose Given/When/Then bullets are not acceptable.
+      - **Key Components** (CONDITIONAL, when there are services/jobs): a responsibility table,
+        plus a decision flowchart for every non-trivial decision (matching, routing,
+        eligibility, fallbacks).
+      - **Controllers and Routes** (CONDITIONAL): one table row per route.
+      - **Policy** (CORE): a role → access table, a decision flowchart when access has more than
+        one condition, and how entity_id scoping is enforced. No policy code.
+      - **UI Changes** (CONDITIONAL, whenever a screen, email or alert changes): written for a
+        reader who has never seen the feature, as user journeys rather than widget states. An
+        "At a glance" before/after table of where the feature shows up, plus a flowchart of the
+        journeys. Then one subsection per journey, with a small ASCII wireframe carrying
+        numbered callouts (①②③) and a step table (Step | The user… | They see) that cites the
+        callouts. Add a stateDiagram-v2 with plain-English state names only for components with
+        several visual states. Implementation terms (Turbo, Stimulus, controllers, no-reload
+        behaviour) go only in a closing "Build notes" subsection. User-facing messages and
+        validation rules stay in the proposal.
+      - **Cross-cutting Concerns**: Transactions and Queries (CONDITIONAL, in plain language: every
+        read with its N+1 risk, every multi-table write with its transaction boundary);
+        Exception Handling and Monitoring (CONDITIONAL, one table row per failure mode with who
+        is alerted and how, tied to `Noticed` notifications; the X-rows give the concrete
+        cases); Performance and Security (CORE, a bullet or two each).
+      - **Design Decisions** (CORE): choice, alternative, why rejected. Favour the simpler/DRYer
+        option, and say why when you don't.
+      - **Testing** (CORE, 2-4 lines): Cucumber only, since there is no RSpec tier. Shared setup
+        (stubs, tags, factories) and reused vs new step files. The Feature column in Worked
+        Examples is the mapping, so don't repeat it.
+      - **Risks and Open Questions** (CORE): risk → mitigation bullets. Open questions are for
+        genuinely deferrable unknowns only. If a question would change the specs, approach or
+        task breakdown, resolve it with the user now instead of guessing.
+    requires:
+      - proposal
+
+  - id: lld
+    generates: lld.md
+    description: Low-level design - the implementation decisions a developer reviews and signs off
+    template: lld.md
+    instruction: |
+      Create the low-level design (LLD): the implementation-level decisions a reviewing developer
+      must check and sign off before coding starts. It is ADDITIVE to design.md. Do not change
+      design.md, and do not restate it. Link to design.md sections (boundaries, class diagram,
+      sequences, worked examples) and go one level deeper.
+
+      **Planning only: do not make any code changes while writing this document.**
+
+      Rules:
+      - Write for a developer reviewer. Every section must make a reviewable decision explicit
+        (a type, a limit, an index, a lock, a retry count, an error mapping), not describe the
+        feature again.
+      - Tables first. Short snippets (a method signature, a query shape, a config line) are
+        allowed where they are clearer than prose. Full class bodies and full migrations are not.
+      - Sections follow the template's CORE / CONDITIONAL rules. A section that doesn't apply keeps
+        its heading with `N/A — <reason>`.
+      - Every section ends with a **Reviewer checks** list of `- [ ]` items the developer ticks
+        during review. These are concrete, falsifiable checks, not "looks good".
+      - The closing **Project rules checklist** is CORE. It carries this repo's standing rules
+        (large-table hygiene, date formatting, tenant scoping, MCP ontology, IRM cops) marked
+        Applies / N/A, and it is how the reviewer confirms the CLAUDE.md rules were considered.
+      - **Sign-off** table at the end: reviewer, date, decision (approved / changes requested).
+      - A **Contents** TOC at the top linking every ## and ### heading.
+      - Where the LLD resolves a design Open Question, say so and link to it.
+    requires:
+      - design
+
+  - id: qa-checklist
+    generates: qa-checklist.md
+    description: Manual QA checklist for testers, run by hand after implementation
+    template: qa-checklist.md
+    instruction: |
+      Create the manual QA checklist that a tester (not a developer) runs by hand against a
+      deployed build after implementation. Plain language, no code, no class names. Write it for
+      someone who knows CapHive's screens but not this feature's internals.
+
+      Sources, with nothing new invented:
+      - Every worked example in design.md (H/E/X IDs) becomes one checklist row with the SAME ID,
+        so a failed row maps straight to its Cucumber scenario.
+      - Every step of every UI journey in design.md "UI Changes" becomes a row, with IDs J1.1,
+        J1.2, ... (journey.step).
+      - Every user-facing message in the proposal's Behavior Rules / Validation Rules is checked
+        verbatim in at least one row's Expected result.
+      - The role → access table from design.md Policy becomes the Role sweep matrix.
+
+      Rules:
+      - Each row: ☐ box, ID, what to check, preconditions, steps (numbered, clicks and inputs),
+        expected result (exact on-screen text where there is one), Pass/Fail, notes/defect link.
+      - Say how to trigger background work by hand when a row depends on it (e.g. "click Sync now"
+        or "ask a developer to run the job").
+      - Cross-cutting checks are CORE: emails/alerts received and dated in the email format;
+        screen dates in the locale format; narrow/mobile width; tenant isolation (a second
+        entity's user cannot see the data); a regression spot-check of every modified screen.
+      - A **Contents** TOC at the top, the ID legend (H/E/X/J/R/C), and a Sign-off table at the
+        end (tester, build/commit, environment, date, result, open defects).
+    requires:
+      - specs
+      - design
+
+  - id: tasks
+    generates: tasks.md
+    description: Phase-gated implementation checklist with trackable tasks
+    template: tasks.md
+    instruction: |
+      Create the task list that breaks down the implementation work into phases. A phase is a
+      numbered task group in the template.
+
+      **IMPORTANT: Follow the template below exactly.** The apply phase parses
+      checkbox format to track progress. A box holding only `x` counts as done,
+      upper or lower case and with any spacing, so `- [ x]` is done too. Every
+      other marker, including `- [~]`, `- [-]` and an empty `- []`, reads as
+      unfinished. A line with no checkbox is not tracked at all.
+
+      Before writing tasks, check design.md for Open Questions. If any of them
+      would change what gets built, resolve them with the user first - do not
+      bake an unstated assumption into the task list.
+
+      **Phase gate - this is the key rule for this project:** every numbered phase's LAST task is
+      to write a Cucumber `.feature` file exercising that phase's worked examples from design.md
+      (happy path + its edge/error cases) and run it with
+      `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/<path>/<feature>.feature` until it is
+      green. Do not add tasks for the next phase that assume the previous phase's feature already
+      passes - the task list itself should make it clear that phase N+1 only starts once phase N's
+      feature run is green. This project has no RSpec tier; every phase's verification is a
+      Cucumber feature, not a unit spec.
+
+      Guidelines:
+      - Group related tasks under ## numbered headings (phases)
+      - Each task MUST be a checkbox: `- [ ] X.Y Task description`
+      - Tasks should be small enough to complete in one session
+      - Order tasks by dependency (what must be done first?)
+      - Each non-final task in a phase MUST state how to verify completion (a command, observable
+        behavior, or delivered artifact) in its own checkbox description
+      - Each phase MUST land the tests and documentation its own work calls for, in the feature
+        file that closes the phase - do NOT collect testing into a final phase, since a late
+        phase's failures then cascade back through every phase in between and force rework
+      - A phase whose work calls for neither tests nor docs (scaffolding, dependency setup) still
+        needs some way to verify it worked, but does not need a full feature file - use judgment
+      - `TEST_ENV_NUMBER` must be set to a fresh random value on every cucumber run (unset, runs
+        share one sqlite db and corrupt each other); Redis must be up on 6379
+
+      Example:
+      ```
+      # Tasks
+
+      ## 1. Setup
+
+      - [ ] 1.1 Create new module structure and verify expected files are present
+      - [ ] 1.2 Add dependencies and verify installation succeeds
+      - [ ] 1.3 Write features/export/setup.feature covering the happy-path scaffolding and run
+            `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/export/setup.feature` until green
+
+      ## 2. Core Implementation
+
+      - [ ] 2.1 Implement data export function
+      - [ ] 2.2 Add CSV formatting utilities
+      - [ ] 2.3 Write features/export/csv_export.feature covering the happy path, an edge case
+            (empty dataset) and an error case (unsupported format), and run
+            `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/export/csv_export.feature`
+            until green before starting phase 3
+      ```
+
+      Reference specs for what needs to be built, design for how to build it, and lld.md for the
+      exact files, method contracts, schema detail and config each task touches. Each task should
+      name the LLD section it implements. The last phase ends with a task to run qa-checklist.md
+      on a deployed build and record the sign-off (that task is for QA, not for the apply agent).
+      Each phase's closing feature task names the worked-example IDs it covers (H = happy path, E = edge case,
+      X = error case), taken from the Feature column of design.md's Worked Examples tables.
+    requires:
+      - specs
+      - design
+      - lld
+      - qa-checklist
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Read context files, work through pending tasks phase by phase. Do not start a phase's
+    implementation tasks until the previous phase's Cucumber feature is green. Pause if you hit
+    blockers or need clarification.
