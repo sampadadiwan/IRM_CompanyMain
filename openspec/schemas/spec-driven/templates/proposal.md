@@ -21,14 +21,17 @@
 
 ### Flow Diagram
 
-<!-- Show current flow ("Before") and new flow ("After") using ASCII art.
+<!-- Show the current flow ("Before") and the new flow ("After") as mermaid flowcharts, not
+     ASCII art. One Before + After pair per flow the change alters, each with a one-line caption.
+     Use plain-English node labels (no class names), a diamond for each decision, and colour the
+     manual steps being removed (red) and the new steps (green) so the difference is visible at a
+     glance. Lint with the mermaid command from the design instruction.
      Example:
-     ```
-     Current flow:
-       User → Action → Result
-
-     New flow:
-       User → Action → New Step → Result
+     ```mermaid
+     flowchart LR
+         A["User does X"] --> B["Retypes it by hand"] --> C["Result"]
+         classDef manual fill:#fdecea,stroke:#c62828,color:#000
+         class B manual
      ```
 -->
 
