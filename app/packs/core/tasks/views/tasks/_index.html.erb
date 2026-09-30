@@ -22,7 +22,6 @@
 
   search ||= false
   embedded_task_context = params[:embedded_task_context].presence
-  restricted_embedded_task_context = embedded_task_context.in?(%w[deal_tab deal_investor_tab])
 
   # Side letter covenant tasks: scopes the Board/Show All/Incomplete links to one
   # side letter's obligations (multi-owner, so owner_id alone can't express it).
@@ -32,13 +31,6 @@
   # Deal here, and owner_type=Deal ANDed with the deal scope hides every
   # DealInvestor task the scope exists to include.
   deal_board = params[:deal_id].presence
-
-  investor = local_assigns[:investor]
-  task_owner = owner || investor
-  task_owner_id = task_owner&.id || params[:owner_id]
-  task_owner_type = task_owner&.class&.name || params[:owner_type]
-  new_task_record = Task.new(owner_id: task_owner_id, owner_type: task_owner_type, entity_id: current_user.entity_id, for_entity_id: current_user.entity_id)
-  can_create_task = !restricted_embedded_task_context || (task_owner_id.present? && policy(new_task_record).create?)
 %>
 <%= turbo_frame_tag "task_list", target: "_top" do %>
 
@@ -92,105 +84,16 @@
       <% end %>
     <% end %>
 
-    <% investor ||= nil %>
-
-    <% if investor && can_create_task %>
-      <%# LP CRM: carry the touch-point filter into the form so the new task is
-          pre-linked to that person (TasksController#new builds from task[...] params) %>
-      <%= link_to new_task_path("task[owner_id]": investor.id, "task[owner_type]": "Investor", "task[touch_point_id]": params[:touch_point_id].presence, list_touch_point_id: params[:touch_point_id].presence, "task[category]": base_query["category_eq"], show_owner: show_owner, embedded_task_context: embedded_task_context),
-                  class: "btn btn-outline-primary d-inline-flex align-items-center",
-                  data: { turbo: false } do %>
-        <i class="ti ti-plus"></i> New Task
-      <% end %>
-    <% end %>
-
-    <% unless search %>
-      <% show_for = belongs_to_entity_id?(current_user, for_entity&.id) ? nil : for_entity %>
-
-      <% if for_entity || owner || side_letter_id %>
-        <%# On a deal the owner params are dropped: `owner` is the Deal here, and
-            owner_type=Deal ANDed with the deal scope hides every DealInvestor
-            task (the tab then looks empty). deal_id alone is the right scope. %>
-        <%= link_to tasks_path(
-                      assigned_to_id: params[:assigned_to_id],
-                      investor_id: params[:investor_id],
-                      deal_investor_id: params[:deal_investor_id],
-                      touch_point_id: params[:touch_point_id],
-                      due_filter: params[:due_filter],
-                      owner_id: (owner&.id unless deal_board),
-                      owner_type: (owner&.class&.name unless deal_board),
-                      deal_id: params[:deal_id],
-                      side_letter_id: side_letter_id,
-                      embedded_task_context: embedded_task_context,
-                      completed: :all,
-                      q: base_query),
-                    class: "btn btn-sm btn-outline-success d-inline-flex align-items-center",
-                    data: { turbo_frame: 'task_list' } do %>
-          <i class="ti ti-list-check"></i> Show All
-        <% end %>
-
-        <%# Same as Show All above: no owner params when the scope is a deal %>
-        <%= link_to tasks_path(
-                      assigned_to_id: params[:assigned_to_id],
-                      investor_id: params[:investor_id],
-                      deal_investor_id: params[:deal_investor_id],
-                      touch_point_id: params[:touch_point_id],
-                      due_filter: params[:due_filter],
-                      owner_id: (owner&.id unless deal_board),
-                      owner_type: (owner&.class&.name unless deal_board),
-                      deal_id: params[:deal_id],
-                      side_letter_id: side_letter_id,
-                      embedded_task_context: embedded_task_context,
-                      q: base_query),
-                    class: "btn btn-sm btn-outline-warning d-inline-flex align-items-center",
-                    data: { turbo_frame: 'task_list' } do %>
-          <i class="ti ti-alert-triangle"></i> Incomplete
-        <% end %>
-
-        <%# New/Import need a concrete owner — a side-letter-scoped grid spans
-            multiple obligation owners, so free-floating creation is suppressed %>
-        <% if can_create_task && (for_entity || owner) %>
-          <% if embedded_task_context == "deal_tab" %>
-            <%= link_to new_task_path(
-                          "task[owner_type]": "DealInvestor",
-                          deal_id: params[:deal_id],
-                          "task[category]": base_query["category_eq"],
-                          show_owner: show_owner,
-                          embedded_task_context: embedded_task_context),
-                        class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
-                        data: { turbo_frame: 'new_task' } do %>
-              <i class="ti ti-plus"></i> New Task
-            <% end %>
-          <% else %>
-            <%# list_touch_point_id is this list's own filter, carried through the
-                form so the create response can tell whether the saved task
-                belongs here — unlike task[touch_point_id], which the user can
-                change before saving. %>
-            <%= link_to new_task_path(
-                          "task[owner_id]": owner&.id || params[:owner_id],
-                          "task[owner_type]": owner&.class&.name || params[:owner_type],
-                          "task[touch_point_id]": params[:touch_point_id].presence,
-                          list_touch_point_id: params[:touch_point_id].presence,
-                          "task[category]": base_query["category_eq"],
-                          show_owner: show_owner,
-                          embedded_task_context: embedded_task_context),
-                        class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
-                        data: { turbo_frame: 'new_task' } do %>
-              <i class="ti ti-plus"></i> New Task
-            <% end %>
-          <% end %>
-
-          <%= link_to new_import_upload_path("import_upload[import_type]": "Task",
-                                             "import_upload[owner_id]": owner&.id || params[:owner_id],
-                                             "import_upload[owner_type]": owner&.class&.name || params[:owner_type],
-                                             "sample_upload": "TASK_SAMPLE"),
-                      class: "btn btn-sm btn-outline-info d-inline-flex align-items-center",
-                      data: { turbo: false } do %>
-            <i class="ti ti-upload"></i> Import Tasks
-          <% end %>
-        <% end %>
-      <% end %>
-    <% end %>
+    <%# New Task / Actions — shared with the board so both views offer the same
+        set (tasks/_header_actions). The Board toggle above stays here: it is the
+        one control that differs between the two. %>
+    <%= render "/tasks/header_actions",
+               owner: owner,
+               for_entity: for_entity,
+               investor: local_assigns[:investor],
+               side_letter_id: side_letter_id,
+               search: search,
+               board: false %>
   </div>
 
 </div>
