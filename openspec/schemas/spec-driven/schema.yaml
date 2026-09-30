@@ -256,6 +256,69 @@ artifacts:
     requires:
       - proposal
 
+  - id: lld
+    generates: lld.md
+    description: Low-level design - the implementation decisions a developer reviews and signs off
+    template: lld.md
+    instruction: |
+      Create the low-level design (LLD): the implementation-level decisions a reviewing developer
+      must check and sign off before coding starts. It is ADDITIVE to design.md. Do not change
+      design.md, and do not restate it. Link to design.md sections (boundaries, class diagram,
+      sequences, worked examples) and go one level deeper.
+
+      **Planning only: do not make any code changes while writing this document.**
+
+      Rules:
+      - Write for a developer reviewer. Every section must make a reviewable decision explicit
+        (a type, a limit, an index, a lock, a retry count, an error mapping), not describe the
+        feature again.
+      - Tables first. Short snippets (a method signature, a query shape, a config line) are
+        allowed where they are clearer than prose. Full class bodies and full migrations are not.
+      - Sections follow the template's CORE / CONDITIONAL rules. A section that doesn't apply keeps
+        its heading with `N/A — <reason>`.
+      - Every section ends with a **Reviewer checks** list of `- [ ]` items the developer ticks
+        during review. These are concrete, falsifiable checks, not "looks good".
+      - The closing **Project rules checklist** is CORE. It carries this repo's standing rules
+        (large-table hygiene, date formatting, tenant scoping, MCP ontology, IRM cops) marked
+        Applies / N/A, and it is how the reviewer confirms the CLAUDE.md rules were considered.
+      - **Sign-off** table at the end: reviewer, date, decision (approved / changes requested).
+      - A **Contents** TOC at the top linking every ## and ### heading.
+      - Where the LLD resolves a design Open Question, say so and link to it.
+    requires:
+      - design
+
+  - id: qa-checklist
+    generates: qa-checklist.md
+    description: Manual QA checklist for testers, run by hand after implementation
+    template: qa-checklist.md
+    instruction: |
+      Create the manual QA checklist that a tester (not a developer) runs by hand against a
+      deployed build after implementation. Plain language, no code, no class names. Write it for
+      someone who knows CapHive's screens but not this feature's internals.
+
+      Sources, with nothing new invented:
+      - Every worked example in design.md (H/E/X IDs) becomes one checklist row with the SAME ID,
+        so a failed row maps straight to its Cucumber scenario.
+      - Every step of every UI journey in design.md "UI Changes" becomes a row, with IDs J1.1,
+        J1.2, ... (journey.step).
+      - Every user-facing message in the proposal's Behavior Rules / Validation Rules is checked
+        verbatim in at least one row's Expected result.
+      - The role → access table from design.md Policy becomes the Role sweep matrix.
+
+      Rules:
+      - Each row: ☐ box, ID, what to check, preconditions, steps (numbered, clicks and inputs),
+        expected result (exact on-screen text where there is one), Pass/Fail, notes/defect link.
+      - Say how to trigger background work by hand when a row depends on it (e.g. "click Sync now"
+        or "ask a developer to run the job").
+      - Cross-cutting checks are CORE: emails/alerts received and dated in the email format;
+        screen dates in the locale format; narrow/mobile width; tenant isolation (a second
+        entity's user cannot see the data); a regression spot-check of every modified screen.
+      - A **Contents** TOC at the top, the ID legend (H/E/X/J/R/C), and a Sign-off table at the
+        end (tester, build/commit, environment, date, result, open defects).
+    requires:
+      - specs
+      - design
+
   - id: tasks
     generates: tasks.md
     description: Phase-gated implementation checklist with trackable tasks
@@ -319,12 +382,17 @@ artifacts:
             until green before starting phase 3
       ```
 
-      Reference specs for what needs to be built, design for how to build it. Each phase's closing
-      feature task names the worked-example IDs it covers (H = happy path, E = edge case,
+      Reference specs for what needs to be built, design for how to build it, and lld.md for the
+      exact files, method contracts, schema detail and config each task touches. Each task should
+      name the LLD section it implements. The last phase ends with a task to run qa-checklist.md
+      on a deployed build and record the sign-off (that task is for QA, not for the apply agent).
+      Each phase's closing feature task names the worked-example IDs it covers (H = happy path, E = edge case,
       X = error case), taken from the Feature column of design.md's Worked Examples tables.
     requires:
       - specs
       - design
+      - lld
+      - qa-checklist
 
 apply:
   requires: [tasks]

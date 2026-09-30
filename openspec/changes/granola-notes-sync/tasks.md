@@ -4,6 +4,11 @@
 > Cucumber feature and get it green. Do not start the next phase until that happens — if it fails,
 > fix the phase you're on rather than moving forward and coming back later.
 
+> **Implementation detail:** files, method contracts, schema detail and config for every task are
+> in [lld.md](lld.md). Phase 1 → File Map, Schema Detail, External Integrations, Security Review.
+> Phase 2 → Method Contracts, Queries and Indexes, Transactions, Background Jobs. Phase 3 →
+> Controllers, Params and Responses. Phase 4 → Error Mapping and Logging, Configuration and Rollout.
+
 > **Migrations:** the local dev DB lags `schema.rb`. After each `db:migrate`, restore
 > `db/schema.rb` / `db/schema_test.rb`, hand-insert only this change's additions, and run
 > `db:clean_schema`.
@@ -48,3 +53,5 @@
 - [ ] 4.3 Create `GranolaConnectionFailedNotifier < BaseNotifier` and `GranolaMailer#connection_failed` (+ view), following `KpiReportImportFailedNotifier`; verify with a mailer preview or `rails runner` that the email renders dates via bare `l(...)` (email format) and the in-app message links to the profile or entity settings
 - [ ] 4.4 Add the "When Granola changes a meeting" and "Troubleshooting a connection" sections to the user guide; verify with `UserGuideLint`
 - [ ] 4.5 Write `features/core/granola/granola_updates.feature` (`@sync-http`) covering worked examples H6, E6, E7, X4, X5. Run `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/core/granola/granola_updates.feature` and confirm it passes
+- [ ] 4.6 (QA, not the apply agent) Run [qa-checklist.md](qa-checklist.md) on a staging build and record the
+      Sign-off row. Every H/E/X/J/R/C row is Pass, or has a linked defect.
