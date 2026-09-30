@@ -59,3 +59,11 @@ th .sort-icons .arrow {
   margin-right: -7px;
 }
 
+
+/* Keep the row action buttons (Show / Edit / ...) on one line. Without this, if the
+   DataTable measures column widths before layout has settled (e.g. first load on Windows
+   at 90% zoom), the action column is sized too narrow and the buttons stack on top of
+   each other until a reload. nowrap makes the column's min-width fit all its buttons. */
+td.action-col {
+    white-space: nowrap;
+}
