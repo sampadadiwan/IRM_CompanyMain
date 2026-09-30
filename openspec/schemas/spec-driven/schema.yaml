@@ -174,63 +174,85 @@ artifacts:
     template: design.md
     instruction: |
       Create the design document that explains HOW to implement the change, for an engineering
-      audience.
+      audience. design.md is always created, since tasks depend on it. Its size scales with the
+      change.
 
       **Planning only: do not make any code changes while writing this document.**
 
-      **Keep the design DRY and simple.** Prefer reusing existing services, components, packs and
-      patterns over introducing new abstractions. Where a section would just restate the proposal,
-      link to it (e.g. "See proposal.md - Why") instead of repeating it.
+      Rules that apply to every section:
+      - **Design, not code.** Tell the design through mermaid diagrams and tables. Do NOT paste
+        Ruby/JS class bodies, migrations, route blocks, policy code or Stimulus code. Put real
+        class, method, table and path names inside the diagrams and tables instead.
+      - **CORE vs CONDITIONAL.** Every CORE section is filled in. A CONDITIONAL section is filled
+        in only when its "include when" rule applies. Otherwise keep the heading with a single
+        line `N/A — <reason>`. Do not pad a small change to fill the template.
+      - **No repetition.** Each fact lives in exactly one section. The proposal owns user-facing
+        behaviour and mockups, the spec owns requirements, design owns how. Link instead of
+        restating.
+      - **FAQ tables are optional.** Add one only where a reader will ask a non-obvious "why" or
+        "why not X".
+      - **Diagrams must render.** Before finishing, lint every mermaid block and fix failures
+        until it exits 0:
+        `d=$(mktemp -d); echo '{"args":["--no-sandbox"]}' > $d/p.json; npx -y @mermaid-js/mermaid-cli -q -p $d/p.json -i <changeRoot>/design.md -o $d/out.md; echo exit=$?`
+        (known gotcha: `Note` is reserved in sequence diagrams, so never use it as a participant id).
 
-      When to include design.md at all (create only if any apply):
-      - Cross-cutting change (multiple packs/modules) or new architectural pattern
-      - New external dependency or significant data model changes
-      - Security, performance, or migration complexity
-      - Ambiguity that benefits from technical decisions before coding
-
-      Sections (follow the template's structure and order):
-      - **Overview / Architecture**: pipeline/flow and pack location, with REAL class and method
-        names once they're decided.
-      - **Sequence Diagrams**: at least one mermaid sequence diagram for the happy path, and at
-        least one more for the primary error/edge flow. Use real participant names (Controller,
-        Service, Model, Job, external API), not generic actors.
-      - **Data Model Changes**, **Key Components**, **Controller**, **Routing**, **Views**: real
-        migrations, models, services, jobs, controllers, routes, partials and Stimulus controllers
-        following this project's pack layout (`app/packs/<domain>/<sub_domain>/...`).
-      - **Policy**: state in plain terms who can access this feature (role → access table) before
-        the Pundit policy code. Cover multi-tenancy (`entity_id` scoping).
-      - **Transactions and Queries**: every query this feature adds or touches, with an explicit
-        N+1 check (favor `includes`/`preload` over ad hoc loops) and transaction boundaries for
-        multi-table writes. This is where N+1s get caught before they ship, not after.
-      - **Exception Handling and Monitoring**: for every failure mode, state who is alerted (User,
-        Support, or Both) and how (email, WhatsApp, in-app alert) - use the table format in the
-        template. Tie this to `Noticed` notifications where applicable.
-      - **Existing Infrastructure Reused**, **Files Changed Summary**, **Design Decisions**: as in
-        the template, favoring the simpler/DRYer option and stating explicitly why when it isn't
-        chosen.
-      - **Worked Examples**: 1-2 concrete examples each for Happy Path, Edge Cases and Error Cases,
-        with Given/When/Then and real-ish data. These are the source material for the Cucumber
-        scenarios written in the tasks phase - do not skip this section.
-      - **Testing Strategy**: Cucumber only - this project has no RSpec tier. List the feature
-        file path and the scenarios it needs (one per worked example above), reusing existing step
-        definitions where possible.
-      - **Performance Considerations**, **Security Considerations**, **Risks / Trade-offs**,
-        **Open Technical Questions**: as in the template.
-      - **FAQ**: every major section above ends with a small FAQ table anticipating what another
-        engineer will ask when reading it cold (why this approach, why not X, what happens if Y).
-        Don't defer all FAQs to one section at the end - keep each one next to the section it
-        answers questions about.
-
-      Open questions are for genuinely deferrable unknowns, not decisions you
-      skipped. If a question would change the specs, the chosen approach, or
-      the task breakdown, resolve it now - ask the user instead of guessing.
-
-      Focus on architecture and approach, not line-by-line implementation.
-      The proposal covers why and what; design covers how. Reference the
-      proposal for motivation and, once written, the specs for requirements -
-      if a section would only restate them, point to them instead.
-
-      Good design docs explain the "why" behind technical decisions.
+      Sections, in the template's order:
+      - **Contents** (CORE): a table of contents at the top linking every ## and ### heading
+        (GitHub anchors). Regenerate it after the document is finished so no heading is missing.
+      - **Overview** (CORE): 2-3 sentences, naming the existing pattern it follows.
+      - **Architecture** (CORE):
+        - **Component Boundaries**: flowchart subgraphs (UI, scheduling, domain, integration,
+          existing CapHive modules, notifications, external systems) with every boundary-crossing
+          arrow labelled, plus a From → To | Contract | Direction rule table.
+        - **Class Diagram**: `classDiagram` of every new or changed class, enclosed in
+          `namespace` blocks that match the boundaries, with stereotypes, public methods and the
+          edges between namespaces.
+        - **Change Footprint**: the only list of new (green), modified (amber) and reused (grey)
+          parts, as one flowchart. Exact file paths belong in tasks.md.
+      - **Data Model and States**:
+        - **Data Model** (CONDITIONAL, when tables or columns change): an `erDiagram`, indexes on
+          one line, rationale for non-obvious columns only, and changes to existing models as
+          bullets.
+        - **State Transitions** (CORE if any stored or derived status/lifecycle exists): a
+          `stateDiagram-v2` per lifecycle with every transition's trigger labelled.
+      - **Behaviour**:
+        - **Pipeline / Flow** (CONDITIONAL, only for multi-branch processing): a flowchart.
+        - **Sequence Diagrams** (CORE): the happy path plus each error/edge flow worth explaining,
+          with real participants and alt/else/loop.
+        - **Worked Examples** (CORE, placed right after the sequences): Happy Path (H1..), Edge
+          Cases (E1..) and Error Cases (X1.., X for eXception) tables with columns # | Scenario | Given | When |
+          Then | Spec scenario | Feature, using real-ish data from a shared-setup table. Every
+          spec scenario must appear in the Spec scenario column of at least one row. Check this
+          before finishing and add rows for any gaps. Each row becomes exactly one Cucumber
+          scenario. Prose Given/When/Then bullets are not acceptable.
+      - **Key Components** (CONDITIONAL, when there are services/jobs): a responsibility table,
+        plus a decision flowchart for every non-trivial decision (matching, routing,
+        eligibility, fallbacks).
+      - **Controllers and Routes** (CONDITIONAL): one table row per route.
+      - **Policy** (CORE): a role → access table, a decision flowchart when access has more than
+        one condition, and how entity_id scoping is enforced. No policy code.
+      - **UI Changes** (CONDITIONAL, whenever a screen, email or alert changes): written for a
+        reader who has never seen the feature, as user journeys rather than widget states. An
+        "At a glance" before/after table of where the feature shows up, plus a flowchart of the
+        journeys. Then one subsection per journey, with a small ASCII wireframe carrying
+        numbered callouts (①②③) and a step table (Step | The user… | They see) that cites the
+        callouts. Add a stateDiagram-v2 with plain-English state names only for components with
+        several visual states. Implementation terms (Turbo, Stimulus, controllers, no-reload
+        behaviour) go only in a closing "Build notes" subsection. User-facing messages and
+        validation rules stay in the proposal.
+      - **Cross-cutting Concerns**: Transactions and Queries (CONDITIONAL, in plain language: every
+        read with its N+1 risk, every multi-table write with its transaction boundary);
+        Exception Handling and Monitoring (CONDITIONAL, one table row per failure mode with who
+        is alerted and how, tied to `Noticed` notifications; the X-rows give the concrete
+        cases); Performance and Security (CORE, a bullet or two each).
+      - **Design Decisions** (CORE): choice, alternative, why rejected. Favour the simpler/DRYer
+        option, and say why when you don't.
+      - **Testing** (CORE, 2-4 lines): Cucumber only, since there is no RSpec tier. Shared setup
+        (stubs, tags, factories) and reused vs new step files. The Feature column in Worked
+        Examples is the mapping, so don't repeat it.
+      - **Risks and Open Questions** (CORE): risk → mitigation bullets. Open questions are for
+        genuinely deferrable unknowns only. If a question would change the specs, approach or
+        task breakdown, resolve it with the user now instead of guessing.
     requires:
       - proposal
 
@@ -297,8 +319,9 @@ artifacts:
             until green before starting phase 3
       ```
 
-      Reference specs for what needs to be built, design for how to build it (including the
-      Worked Examples section, which maps directly onto the scenarios each phase's feature needs).
+      Reference specs for what needs to be built, design for how to build it. Each phase's closing
+      feature task names the worked-example IDs it covers (H = happy path, E = edge case,
+      X = error case), taken from the Feature column of design.md's Worked Examples tables.
     requires:
       - specs
       - design

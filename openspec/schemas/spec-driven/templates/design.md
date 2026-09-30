@@ -1,43 +1,220 @@
 # [Feature Name] — Design
 
 > **Audience:** Engineering team.
-> **Companion document:** [Proposal](proposal.md)
+> **Companion documents:** [Proposal](proposal.md) · [Spec](specs/)
 
 > **Planning phase — no code changes.** This document explains HOW the proposal will be built.
 > Do not edit application code while writing it; implementation happens later, in the tasks phase.
 
-> **Keep it DRY and simple.** Prefer reusing existing services, components, and patterns over
-> introducing new abstractions. If a section would just restate the proposal, link to it instead
-> of repeating it.
+> **Design, not code.** Explain the design with mermaid diagrams and tables. Do NOT paste Ruby/JS
+> class bodies, migrations, route blocks or policy code. Put real class, method, table and path
+> names inside the diagrams and tables instead.
+
+> **Scale to the change.** Sections marked **CORE** are always present. Sections marked
+> **CONDITIONAL** say when they apply. When one doesn't apply, keep the heading and write a single
+> line: `N/A — <reason>`. A small change should produce a short document.
+
+> **No repetition.** Each fact lives in one section. The proposal owns *what users see and the
+> business rules*, the spec owns *requirements*, and this document owns *how*. Link instead of
+> restating.
+
+> **FAQ tables are optional.** Add one under a section only when there is a non-obvious "why" or
+> "why not X" a reader will ask. Don't add empty FAQ slots.
+
+---
+
+## Contents
+
+<!-- CORE. Links to every ## and ### heading in this document, in order (GitHub anchors:
+     lowercase, punctuation dropped, spaces → hyphens). Keep N/A sections listed. Rename the
+     Journey entries to match your journeys. Update it whenever headings change. -->
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+  - [Component Boundaries](#component-boundaries)
+  - [Class Diagram](#class-diagram)
+  - [Change Footprint](#change-footprint)
+- [Data Model and States](#data-model-and-states)
+  - [Data Model](#data-model)
+  - [State Transitions](#state-transitions)
+- [Behaviour](#behaviour)
+  - [Pipeline / Flow](#pipeline--flow)
+  - [Sequence Diagrams](#sequence-diagrams)
+  - [Worked Examples](#worked-examples)
+- [Key Components](#key-components)
+  - [Decision Flows](#decision-flows)
+- [Controllers and Routes](#controllers-and-routes)
+- [Policy](#policy)
+- [UI Changes](#ui-changes)
+  - [At a glance](#at-a-glance)
+  - [Journey 1: Who does what](#journey-1-who-does-what) <!-- one entry per journey -->
+  - [Build notes (for implementers)](#build-notes-for-implementers)
+- [Cross-cutting Concerns](#cross-cutting-concerns)
+  - [Transactions and Queries](#transactions-and-queries)
+  - [Exception Handling and Monitoring](#exception-handling-and-monitoring)
+  - [Performance and Security](#performance-and-security)
+- [Design Decisions](#design-decisions)
+- [Testing](#testing)
+- [Risks and Open Questions](#risks-and-open-questions)
 
 ---
 
 ## Overview
 
-<!-- 2-3 sentence summary of what this adds technically. -->
+<!-- CORE. 2-3 sentences: what this adds technically and which existing pattern it follows. -->
+
+---
 
 ## Architecture
 
+### Component Boundaries
+
+<!-- CORE. Group the feature into boundaries/components (e.g. UI, Scheduling, Domain/Service,
+     Integration, existing CapHive modules it touches, Notifications, External systems) as
+     mermaid flowchart subgraphs. Label every arrow that crosses a boundary with what flows
+     across it. Then list each crossing in the contract table. -->
+
+```mermaid
+flowchart LR
+    subgraph EXT["External"]
+        API[["Third-party API"]]
+    end
+    subgraph UI["UI boundary"]
+        Screen["Screen / panel"]
+    end
+    subgraph DOMAIN["Domain boundary (new pack)"]
+        Svc["Orchestration service"]
+    end
+    subgraph INTEG["Integration boundary"]
+        Client["API client"]
+    end
+    subgraph CORE["Existing CapHive boundary"]
+        Rec[("Existing records")]
+    end
+    Screen -- "user action" --> Svc
+    Svc -- "fetch" --> Client
+    Client -- "HTTPS" --> API
+    Svc -- "create / update" --> Rec
+```
+
+| From → To | Contract | Direction rule |
+|---|---|---|
+| <!-- UI → Domain --> | <!-- what is asked / passed --> | <!-- e.g. UI never writes records directly --> |
+
+### Class Diagram
+
+<!-- CORE. A mermaid classDiagram of every NEW class and every EXISTING class that changes,
+     enclosed in `namespace` blocks matching the Component Boundaries above. Show the stereotype
+     (<<Model>>, <<Service>>, <<Job>>, <<Controller>>, <<Policy>>, <<Notifier>>), the public
+     methods other classes call, and enum-like attributes. Edges between namespaces are the
+     boundary contracts (--> calls, ..> enqueues/notifies, o-- owns). -->
+
+```mermaid
+classDiagram
+    direction LR
+    namespace UI_Boundary {
+        class ThingsController {
+            <<Controller>>
+            +create()
+        }
+    }
+    namespace Domain_Boundary {
+        class ThingCreator {
+            <<Service>>
+            +call(params) Result
+        }
+        class Thing {
+            <<Model>>
+            status
+            +activate()
+        }
+    }
+    ThingsController --> ThingCreator : create
+    ThingCreator --> Thing : create
+```
+
+### Change Footprint
+
+<!-- CORE. One sentence naming the pack(s) new code lives in, then one mermaid flowchart of new
+     (green), modified (amber) and reused-unchanged (grey) parts, with edges for dependencies.
+     This is the only place that lists what is new, changed or reused. Exact file paths belong in
+     tasks.md. -->
+
+```mermaid
+flowchart LR
+    classDef new fill:#d4edda,stroke:#2e7d32,color:#000
+    classDef mod fill:#fff3cd,stroke:#b8860b,color:#000
+    classDef reuse fill:#eceff1,stroke:#90a4ae,color:#000
+    NewPack["core/things pack<br/>models, services, controllers"]:::new --> Existing["Parent model"]:::mod
+    NewPack --> Reused["Existing notifier"]:::reuse
+```
+
+---
+
+## Data Model and States
+
+### Data Model
+
+<!-- CONDITIONAL: include when tables or columns are added or changed. Tables as a mermaid
+     erDiagram, not migration code. Show new tables with every column (a short comment for
+     enums, nullability and encryption), columns added to existing tables marked NEW, and
+     existing tables only with the columns this feature reads. Mark PK/FK/UK. Indexes go on one
+     line below. Follow with a column-rationale table for non-obvious columns only. -->
+
+```mermaid
+erDiagram
+    parent_table ||--o{ new_table : "has"
+    new_table {
+        bigint id PK
+        bigint parent_table_id FK
+        string status "draft | active"
+    }
+    parent_table {
+        bigint id PK
+        string new_column "NEW"
+    }
+```
+
+**Indexes:** <!-- e.g. unique `new_table[parent_table_id, status]` -->
+
+| Column | Why |
+|---|---|
+| <!-- non-obvious column only --> | <!-- rationale --> |
+
+**Changes to existing models:** <!-- bullets: new associations, new methods (name + one-line
+behaviour), changed callbacks, and what stays unchanged -->
+
+### State Transitions
+
+<!-- CORE if the feature has any status, lifecycle or derived state (e.g. "edited since sync");
+     otherwise N/A. One mermaid stateDiagram-v2 per lifecycle. Label every transition with its
+     trigger (user action, job, callback, external event). Say below the diagram whether a state
+     is stored or derived. Worked examples below refer to these state names. -->
+
+```mermaid
+stateDiagram-v2
+    [*] --> draft: created
+    draft --> active: activate (user)
+    active --> archived: archive job
+    archived --> [*]
+```
+
+---
+
+## Behaviour
+
 ### Pipeline / Flow
 
-<!-- ASCII diagram showing the call chain with REAL class names and method names.
-     Example:
-     ```
-     User Action
-         └─> Controller#action
-                 ├─> ServiceObject.call(args)
-                 │       ├─> Check: condition?
-                 │       ├─> Model.create!(attributes)
-                 │       └─> Job.perform_later(args)
-                 └─> redirect / Turbo Stream response
-     ```
--->
+<!-- CONDITIONAL: include only when the processing has several branches or stages that the
+     sequence diagrams would split up (e.g. a sync that files, parks or ignores). A mermaid
+     flowchart with real class/method names and a diamond per branch. Otherwise N/A. -->
 
 ### Sequence Diagrams
 
-<!-- One sequence diagram per major flow — happy path plus at least one error/edge flow. Use
-     mermaid so they render in GitHub/most viewers. Name real participants (Controller, Service,
-     Model, Job, external API) rather than generic actors. -->
+<!-- CORE. A mermaid sequenceDiagram for the happy path and one for each error/edge flow worth
+     explaining (failure, retry, review, concurrent update). Real participant names; alt/else
+     for branches, loop for iteration, `Note over` for invariants. Mermaid gotcha: `Note` is
+     reserved, so never use it as a participant id (use `participant NoteRec as Note (model)`). -->
 
 ```mermaid
 sequenceDiagram
@@ -45,349 +222,216 @@ sequenceDiagram
     participant Controller
     participant Service
     participant Model
-    participant Job
 
     User->>Controller: Action
     Controller->>Service: call(args)
-    Service->>Model: create!(attributes)
-    Service->>Job: perform_later(args)
-    Service-->>Controller: result
-    Controller-->>User: response
-```
-
-<!-- Add a second diagram for the primary error/edge path, e.g. validation failure, a background
-     job retry, or a third-party API timeout. -->
-
-### Pack Location
-
-<!-- File tree showing where new files go under app/packs/.
-     Example:
-     ```
-     app/packs/core/folders/
-       ├── models/
-       │   └── folder_nda_config.rb          ← NEW
-       ├── controllers/
-       │   └── folder_nda_configs_controller.rb  ← NEW
-       └── policies/
-           └── folder_nda_config_policy.rb   ← NEW
-     ```
--->
-
-**FAQ**
-
-| Question | Answer |
-|---|---|
-| <!-- e.g. Why this pack and not an existing one? --> | <!-- answer --> |
-
----
-
-## Data Model Changes
-
-### Migration: `table_name`
-
-```ruby
-# db/migrate/YYYYMMDD_create_table_name.rb
-class CreateTableName < ActiveRecord::Migration[8.1]
-  def change
-    create_table :table_name do |t|
-      # columns here
-      t.timestamps
+    alt invalid
+        Service-->>Controller: errors
+        Controller-->>User: inline error
+    else valid
+        Service->>Model: create!(attributes)
+        Controller-->>User: response
     end
-  end
-end
 ```
 
-**Column rationale:**
+### Worked Examples
 
-| Column | Why |
-|---|---|
-| <!-- column --> | <!-- rationale --> |
+<!-- CORE. Three tables, not prose. One row per example, IDs H1.., E1.., X1.. Each row becomes
+     exactly one Cucumber scenario in the named feature file. The Spec scenario column names the
+     spec scenario(s) the row proves. Every spec scenario must appear in at least one row, so a
+     reviewer can spot gaps by scanning that column. Use real-ish data from the shared setup. -->
 
-### Model: `ModelName`
+**ID legend:** **H** = Happy path · **E** = Edge case · **X** = Error (exception) case. IDs are
+referenced from tasks.md and Cucumber scenario names.
 
-```ruby
-# app/packs/<pack>/<domain>/models/model_name.rb
-# frozen_string_literal: true
+**Shared setup:**
 
-# YARD comment explaining the model purpose.
-class ModelName < ApplicationRecord
-  # associations, validations, callbacks, methods
-end
-```
+| Record | Name | Key data |
+|---|---|---|
+| <!-- e.g. Entity --> | <!-- Alpha Capital --> | <!-- … --> |
 
-### Model Changes: `ExistingModel` (existing — add association)
+#### Happy Path
 
-```ruby
-# app/packs/<pack>/<domain>/models/existing_model.rb
-# Add inside the class body:
-has_one :new_association, class_name: "NewModel", dependent: :destroy
-```
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| H1 | <!-- short title --> | <!-- starting state --> | <!-- action --> | <!-- observable result --> | <!-- spec scenario name --> | <!-- feature file --> |
 
-**FAQ**
+#### Edge Cases
 
-| Question | Answer |
-|---|---|
-| <!-- e.g. Why a new table instead of a column on an existing one? --> | <!-- answer --> |
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| E1 | <!-- boundary / duplicate / concurrency / empty --> | | | | | |
+
+#### Error Cases
+
+| # | Scenario | Given | When | Then (what the user sees, who is alerted) | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| X1 | <!-- invalid input / unauthorized / external failure --> | | | | | |
 
 ---
 
 ## Key Components
 
-### ServiceName (New Service)
+<!-- CONDITIONAL: include when there are services or jobs. One row per component: its
+     responsibility, and what an implementer must know (queue, retries, idempotency,
+     transaction). No code. Add a mermaid decision flowchart under "Decision Flows" for every
+     non-trivial decision (matching, routing, eligibility, fallbacks). -->
 
-**Path:** `app/packs/<pack>/<domain>/services/service_name.rb`
+| Component | Responsibility | Notes |
+|---|---|---|
+| <!-- `ServiceName` --> | <!-- what it owns --> | <!-- queue, retries, idempotency --> |
 
-**Key methods:**
-- `method_name(args)` — description
+### Decision Flows
 
-```ruby
-# Key logic snippet
+```mermaid
+flowchart TD
+    In(["input"]) --> Q{"rule 1?"}
+    Q -->|yes| A(["outcome A"])
+    Q -->|no| B(["outcome B"])
 ```
-
-### JobName (New Job)
-
-**Path:** `app/packs/<pack>/<domain>/jobs/job_name.rb`
-
-- Description of what the job does
-- Queue, retry behavior
-- Integration with existing jobs
-
-**FAQ**
-
-| Question | Answer |
-|---|---|
-| <!-- e.g. Why a background job instead of inline? --> | <!-- answer --> |
 
 ---
 
-## Controller
+## Controllers and Routes
 
-```ruby
-# app/packs/<pack>/<domain>/controllers/controller_name.rb
-# frozen_string_literal: true
+<!-- CONDITIONAL: include when routes or controller actions are added. One row per route. -->
 
-# YARD comment.
-class ControllerName < ApplicationController
-  # actions, strong params, authorization
-end
-```
-
-## Routing
-
-```ruby
-# config/routes/<domain>.rb
-resources :parent do
-  resource :child, controller: "controller_name", only: %i[new create edit update]
-end
-```
-
-**Resulting paths:**
-- `GET    /parent/:parent_id/child/new`
-- `POST   /parent/:parent_id/child`
-
-**FAQ**
-
-| Question | Answer |
-|---|---|
-| <!-- e.g. Why nested under parent instead of top-level? --> | <!-- answer --> |
+| Verb and path | Action | Does | Responds with |
+|---|---|---|---|
+| <!-- `POST /things` --> | <!-- `create` --> | <!-- authorize, call service --> | <!-- redirect / turbo_stream --> |
 
 ---
 
 ## Policy
 
-<!-- Who can access this feature. State it in plain terms before the code — this is what
-     support/QA will ask first. -->
-
-**Access control:**
+<!-- CORE. Who can do what, in plain terms. Add a mermaid decision flowchart when access depends
+     on more than one condition. State how entity_id scoping is enforced. No policy code. -->
 
 | Role | Access |
 |---|---|
 | <!-- e.g. Fund Admin --> | <!-- e.g. full access --> |
-| <!-- e.g. Investor --> | <!-- e.g. read-only, own records only --> |
-| <!-- e.g. Support --> | <!-- e.g. full access, all entities --> |
+| <!-- e.g. Investor --> | <!-- e.g. none --> |
 
-```ruby
-# app/packs/<pack>/<domain>/policies/policy_name.rb
-# frozen_string_literal: true
-
-# YARD comment.
-class PolicyName < ApplicationPolicy
-  # authorization methods
-end
-```
-
-**Multi-tenancy:** <!-- how entity_id scoping is enforced for this feature -->
-
-**FAQ**
-
-| Question | Answer |
-|---|---|
-| <!-- e.g. Can an investor see another investor's data? --> | <!-- answer, should be No, and why --> |
+**Multi-tenancy:** <!-- how entity_id scoping is enforced -->
 
 ---
 
-## Views
+## UI Changes
 
-### Partial: `_partial_name.html.erb`
+<!-- CONDITIONAL: include whenever a screen, email or alert changes. Write it for someone who has
+     never seen the feature: walk through the UI the way users will use it. Implementation terms
+     (Turbo, Stimulus, controllers) go ONLY in "Build notes" at the end. User-facing messages and
+     validation rules stay in the proposal, so link to them. -->
 
-**Path:** `app/packs/<pack>/<domain>/views/<controller>/_partial_name.html.erb`
+### At a glance
 
-- What it renders
-- Turbo Frame / Turbo Stream behavior
-- Stimulus controller connections
+<!-- Where the feature shows up, as a before/after table, then a tiny flowchart of the journeys
+     below in the order users meet them. -->
 
-### Stimulus Controller
-
-```javascript
-// app/javascript/controllers/controller_name_controller.js
-import { Controller } from "@hotwired/stimulus"
-
-// YARD-style comment.
-export default class extends Controller {
-  static targets = ["target1", "target2"]
-
-  // methods
-}
-```
-
-**FAQ**
-
-| Question | Answer |
-|---|---|
-| <!-- e.g. Does this require a page reload? --> | <!-- answer --> |
-
----
-
-## Transactions and Queries
-
-<!-- Every query and transaction this feature adds or touches. The goal is to catch N+1s and
-     unbounded loops before they ship, not after. -->
-
-**Queries added/changed:**
-
-| Query | Triggered by | N+1 risk | Mitigation |
+| Where in CapHive | Today | After this change | Who sees it |
 |---|---|---|---|
-| <!-- e.g. Model.where(entity_id:).includes(:assoc) --> | <!-- e.g. index action, per row --> | <!-- Yes/No --> | <!-- e.g. `includes`/`preload`, counter cache, batch load --> |
+| <!-- e.g. Investor → Notes tab --> | <!-- current --> | <!-- new behaviour --> | <!-- roles --> |
 
-**Transaction boundaries:**
+```mermaid
+flowchart LR
+    J1["Journey 1<br/>set up"] --> J2["Journey 2<br/>everyday use"]
+    J2 -.-> J3["Journey 3<br/>when something fails"]
+```
 
-| Operation | Wrapped in transaction? | Why |
+### Journey 1: Who does what
+
+<!-- Rename the heading, e.g. "Journey 1: A partner connects Granola". -->
+
+<!-- One subsection per journey. Each has:
+     1. A small ASCII wireframe of the screen involved, with numbered callouts ① ② ③ on the
+        elements that matter. Show each distinct look of the screen (e.g. before/after connect).
+     2. A step table whose "They see" column refers to those callouts.
+     For a journey with no screen of its own (e.g. background work surfacing later), skip the
+     wireframe. For a component with several visual states (connected / error / disabled), add a
+     stateDiagram-v2 with plain-English state names and transitions labelled with what the user
+     does or what happens. -->
+
+```
+Screen name
+┌──────────────────────────────────────────┐
+│  ① Status:  ○ Not set up                  │
+│  ② [ field                          ]     │
+│  ③ [ Save ]                               │
+└──────────────────────────────────────────┘
+```
+
+| Step | The user… | They see |
 |---|---|---|
-| <!-- e.g. Service#call --> | <!-- Yes/No --> | <!-- e.g. writes to 2 tables that must stay consistent --> |
+| 1 | <!-- action --> | <!-- result, citing ①②③ --> |
 
-**FAQ**
+### Build notes (for implementers)
 
-| Question | Answer |
+<!-- The only place for Turbo Frames/Streams, reused pickers, Stimulus, and what updates without a
+     reload. -->
+
+| Interaction | Screen update |
 |---|---|
-| <!-- e.g. Does this add a query per row in a list view? --> | <!-- answer --> |
+| <!-- e.g. Save --> | <!-- e.g. row replaced in place, no reload --> |
 
 ---
 
-## Exception Handling and Monitoring
+## Cross-cutting Concerns
 
-<!-- For every failure mode this feature can hit: who finds out, and how. -->
+### Transactions and Queries
+
+<!-- CONDITIONAL: include when the feature reads or writes the database. Plain language, no query
+     code. List every read with its N+1 risk, and every multi-table write with its transaction
+     boundary. -->
+
+| What is read | When | N+1 risk | How it stays cheap |
+|---|---|---|---|
+| <!-- e.g. contacts matching attendee emails --> | <!-- each meeting --> | <!-- Yes/No --> | <!-- one indexed lookup --> |
+
+| Operation | In a transaction? | Why |
+|---|---|---|
+| <!-- plain language --> | <!-- Yes/No --> | <!-- --> |
+
+### Exception Handling and Monitoring
+
+<!-- CONDITIONAL: include when anything can fail at runtime (jobs, external calls, user input).
+     One row per failure mode. The X-rows in Worked Examples give the concrete cases, so don't
+     repeat them here. -->
 
 | Failure scenario | Who is alerted | Channel | Detail |
 |---|---|---|---|
-| <!-- e.g. Job fails after retries --> | <!-- User / Support / Both --> | <!-- Email / WhatsApp / In-app alert --> | <!-- e.g. Sidekiq retry exhausted → Noticed notification to support --> |
-| <!-- e.g. External API timeout --> | <!-- User / Support / Both --> | <!-- Email / WhatsApp / In-app alert --> | <!-- answer --> |
-| <!-- e.g. Validation failure on user input --> | <!-- User --> | <!-- In-app alert --> | <!-- inline form error, no notification needed --> |
+| <!-- e.g. Job fails after retries --> | <!-- User / Support / Both --> | <!-- Email / WhatsApp / In-app --> | <!-- --> |
 
-**FAQ**
+### Performance and Security
 
-| Question | Answer |
-|---|---|
-| <!-- e.g. What happens if the job silently fails? --> | <!-- answer --> |
+<!-- CORE, one or two bullets each: expected volume, background vs inline work, tenant isolation,
+     secrets, input sanitisation. -->
 
 ---
-
-## Existing Infrastructure Reused
-
-| Component | Path | Purpose |
-|---|---|---|
-| <!-- component --> | <!-- path --> | <!-- what we use it for --> |
-
-## Files Changed Summary
-
-### New Files
-- `path/to/new/file.rb` — description
-
-### Modified Files
-- `path/to/existing/file.rb` — what changed
 
 ## Design Decisions
 
+<!-- CORE. Numbered: choice, alternative considered, why rejected. Favour the simpler/DRYer option,
+     and state the reason when you don't. -->
+
 1. **Decision title** — Choice made. Alternative considered: X. Rejected because: Y.
 
-<!-- Every decision should favor the simpler, DRYer option unless there's a concrete reason not
-     to — state that reason here rather than leaving it implicit. -->
+---
+
+## Testing
+
+<!-- CORE, 2-4 lines. Cucumber only, since this project has no RSpec tier. The Feature column in
+     Worked Examples is the scenario-to-file mapping, so don't repeat it. State only: shared test
+     setup (stubs, tags such as @sync-http, factories), and reused vs new step files. -->
 
 ---
 
-## Worked Examples
+## Risks and Open Questions
 
-<!-- 1-2 concrete examples per case, with real-ish data. These double as the source material for
-     Cucumber scenarios in the tasks phase. -->
+<!-- CORE. Risks as "risk → mitigation" bullets. Open questions only if genuinely deferrable; a
+     question that changes specs, approach or tasks must be resolved with the user now. -->
 
-### Happy Path
+- [Risk] → Mitigation
 
-**Example 1: <!-- short title -->**
-- **Given:** <!-- starting state -->
-- **When:** <!-- action taken -->
-- **Then:** <!-- observable result -->
-
-### Edge Cases
-
-**Example 1: <!-- e.g. empty/boundary input -->**
-- **Given:** <!-- starting state -->
-- **When:** <!-- action taken -->
-- **Then:** <!-- observable result -->
-
-### Error Cases
-
-**Example 1: <!-- e.g. invalid input, race condition, external failure -->**
-- **Given:** <!-- starting state -->
-- **When:** <!-- action taken -->
-- **Then:** <!-- observable result, including what the user sees and who gets alerted -->
-
-**FAQ**
-
-| Question | Answer |
-|---|---|
-| <!-- e.g. What's the retry behavior for the error case above? --> | <!-- answer --> |
-
----
-
-## Testing Strategy
-
-<!-- Cucumber is the only test framework in this codebase — do not plan RSpec specs. -->
-
-### Cucumber
-
-**Feature file(s):** `features/<domain>/<feature_name>.feature`
-
-- <!-- Scenario covering the happy path worked example above -->
-- <!-- Scenario covering each edge case worked example above -->
-- <!-- Scenario covering each error case worked example above, including the alert/notification -->
-
-Reuse existing step definitions where possible; add new ones under `features/step_definitions/`.
-Use `FactoryBot` (`spec/factories/`) for setup.
-
-## Performance Considerations
-
-- <!-- Anything beyond the Transactions and Queries section above: caching, background vs. inline
-     work, expected data volume -->
-
-## Security Considerations
-
-- <!-- Tenant isolation, authorization (see Policy above), input validation, file upload safety -->
-
-## Risks / Trade-offs
-
-- [Risk/Trade-off] → Mitigation
-
-## Open Technical Questions
-
-| # | Question | Current Thinking | Status |
+| # | Open question | Current thinking | Status |
 |---|---|---|---|
-| 1 | <!-- question --> | <!-- thinking --> | <!-- Deferred / Check before implementation --> |
+| 1 | <!-- --> | <!-- --> | <!-- Deferred / Check before implementation --> |
