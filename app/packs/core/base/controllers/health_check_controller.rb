@@ -11,7 +11,7 @@ class HealthCheckController < ApplicationController
   # liveness probe, and a non-200 here would take the box out of the load balancer.
   def cross_site_trust
     render json: {
-      region: SiteRegistry.current_code,
+      region: SiteRegistry.current_code_or_nil,
       configured: CrossSiteTrust.configured?,
       fingerprint: CrossSiteTrust.fingerprint
     }, status: :ok

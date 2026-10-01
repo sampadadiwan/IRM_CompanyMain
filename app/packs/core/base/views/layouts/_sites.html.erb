@@ -19,7 +19,7 @@
     <div class="form-group" data-controller="persona">
       <%= form.select :site,
                       codes.map { |code| [t("cross_region.regions.#{code}", default: code), code] },
-                      { selected: SiteRegistry.current_code },
+                      { selected: SiteRegistry.current_code_or_nil },
                       { id: "site",
                         class: "form-control",
                         name: "site",

@@ -68,3 +68,21 @@ Feature: Site registry configuration guard
     And the active region is set to "IN"
     When the site registry is validated
     Then the base URL for region "IN" should be "https://app.caphive.com"
+
+  # features/support/twilio_stub.rb sets CURRENT_SITE="LOCAL" for the SMS country logic, which
+  # is not a key in SITES. The boot check makes that impossible in a deployed app, but a render
+  # path must still degrade rather than 500 the whole page over it.
+  @site-registry
+  Scenario: A render path survives an active region that is not a deployed region
+    Given the region list is set to '{"IN":"https://app.caphive.com","US":"https://app.caphive.us"}'
+    And the active region is set to "LOCAL"
+    When the site registry is validated
+    Then validation should fail naming "CURRENT_SITE"
+    But the safe active region code should be empty
+    And asking for the safe active region code should not raise
+
+  @site-registry
+  Scenario: The safe active region code is the real one when configuration is sound
+    Given the region list is set to '{"IN":"https://app.caphive.com","US":"https://app.caphive.us"}'
+    And the active region is set to "US"
+    Then the safe active region code should be "US"

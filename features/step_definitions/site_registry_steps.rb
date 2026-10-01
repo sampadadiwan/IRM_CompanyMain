@@ -79,3 +79,15 @@ end
 Then("the peer regions should be {string}") do |codes|
   expect(SiteRegistry.peers).to eq(codes.split(",").map(&:strip))
 end
+
+Then("the safe active region code should be empty") do
+  expect(SiteRegistry.current_code_or_nil).to be_nil
+end
+
+Then("the safe active region code should be {string}") do |code|
+  expect(SiteRegistry.current_code_or_nil).to eq(code)
+end
+
+Then("asking for the safe active region code should not raise") do
+  expect { SiteRegistry.current_code_or_nil }.not_to raise_error
+end

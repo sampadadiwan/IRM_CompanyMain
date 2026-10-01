@@ -96,8 +96,6 @@ class CrossSiteRejection
 
   # A rejection must still render even if the registry is what is broken.
   def safe_current_code
-    SiteRegistry.current_code
-  rescue SiteRegistry::ConfigurationError
-    nil
+    SiteRegistry.current_code_or_nil
   end
 end

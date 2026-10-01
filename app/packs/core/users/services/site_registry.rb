@@ -47,6 +47,18 @@ class SiteRegistry
       end
     end
 
+    # current_code for render paths, which must never 500 over a configuration problem.
+    #
+    # The boot check makes an invalid CURRENT_SITE impossible in a deployed app, but a test that
+    # stubs the variable (features/support/twilio_stub.rb sets it to "LOCAL" for the SMS country
+    # logic) can still land here mid-render. A page that merely shows a region selector should
+    # degrade to "no region selected", not take the whole screen down.
+    def current_code_or_nil
+      current_code
+    rescue ConfigurationError
+      nil
+    end
+
     # The other regions a user can be handed off to from here.
     def peers
       codes - [current_code]
