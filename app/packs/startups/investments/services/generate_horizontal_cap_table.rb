@@ -14,7 +14,7 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
     investments = Investment.where(portfolio_company_id: portfolio_company_id)
     options[:all_investments] = investments.to_a # Fetch everything once to avoid N+1
     options[:all_funding_rounds] = investments.order(investment_date: :asc).pluck(:funding_round).uniq
-    options[:all_investors] = investments.select(:investor_name, :category).distinct.to_a
+    options[:all_investors] = investments.select(:investor_name, :category, :subgroup, :investment_type, :instrument_name).distinct.to_a
 
     portfolio_company = Investor.find(portfolio_company_id)
     options[:portfolio_company] = portfolio_company
@@ -22,26 +22,52 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
   end
 
   def initialize_table_data(options, all_investors:, portfolio_company_name:, **)
-    # Replace investor_name with portfolio_company_name for "Self" records in the grouping
-    investors = all_investors.map do |i|
-      name = i.category == "Self" ? portfolio_company_name : i.investor_name
-      OpenStruct.new(investor_name: name, display_name: name, category: i.category)
+    # Replace investor_name with portfolio_company_name for "Self" records in the grouping.
+    # An investor can have more than one Investment row (one per funding round) - these may
+    # not all carry the same subgroup (e.g. only their earliest round was tagged), so collapse
+    # to a single row per investor+category+instrument, keeping the first non-blank subgroup
+    # found. The same investor with Investments under two different categories (e.g. a Founder
+    # equity stake and an Other convertible) stays as two separate rows, one under each category.
+    grouped = all_investors.group_by do |i|
+      [i.category == "Self" ? portfolio_company_name : i.investor_name, i.category, GenerateCapTable.investment_instrument_label(i)]
     end
 
+    # An investor holding more than one distinct instrument within a category (e.g. Equity plus
+    # a CCPS and a CCPS Series A) gets a separate row - and its own fully diluted % - per
+    # instrument, rather than one blended row listing all of them. Mirroring
+    # merge_shareholder_positions, the "(Instrument)" suffix is only the internal table_data key
+    # for those investors so the rows don't collide; the Particulars column shows the plain
+    # display_name, with the instrument in its own column. Single-instrument investors keep
+    # their plain key.
+    instrument_counts = grouped.keys.group_by { |name, category, _| [name, category] }.transform_values(&:size)
+    row_keys = {}
+
+    investors = grouped.map do |(name, category, instrument), rows|
+      key = instrument_counts[[name, category]] > 1 ? "#{name} (#{instrument || '-'})" : name
+      row_keys[[name, category, instrument]] = key
+      subgroup = rows.filter_map { |r| r.subgroup.to_s.strip.presence }.first
+      OpenStruct.new(investor_name: key, display_name: name, category: category, subgroup: subgroup)
+    end
+
+    options[:investment_row_keys] = row_keys
     options[:investors_by_category] = investors.group_by(&:category)
     options[:table_data] = {}
     options[:round_data] = {}
   end
 
-  def process_rounds(options, all_funding_rounds:, portfolio_company_id:, all_investors:, table_data:, round_data:, **)
+  def process_rounds(options, all_funding_rounds:, portfolio_company_id:, investment_row_keys:, table_data:, round_data:, **)
     cumulative_rounds = []
 
     all_funding_rounds.each do |round|
       cumulative_rounds << round
 
+      # Grouped by investor, category AND instrument, so an investor holding Investments under
+      # two different categories or instruments gets a separate row (and quantity/fully diluted
+      # %) for each, instead of one blended row.
       result = GenerateCapTable.call(params: {
                                        funding_rounds: cumulative_rounds,
-                                       portfolio_company_id: portfolio_company_id
+                                       portfolio_company_id: portfolio_company_id,
+                                       group_by_field: %i[investor_name category instrument]
                                      })
 
       cap_round = result[:model]
@@ -60,28 +86,51 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
       cap_round.each do |row|
         next if row[:grouping_field] == "Total"
 
+        # format_result renders a group with no instrument as "-"
+        instrument = row[:instrument] == "-" ? nil : row[:instrument]
+
         # Special handling for "Self"
         if row[:is_self] || row[:grouping_field] == options[:portfolio_company_name]
           category = "Self"
-          investor_name = options[:portfolio_company_name]
+          investor_name = investment_row_keys[[options[:portfolio_company_name], category, instrument]] || options[:portfolio_company_name]
         else
-          # Find investor to get category
-          investor = all_investors.find { |i| i.investor_name == row[:grouping_field] }
-          if investor
-            category = investor.category
-            investor_name = investor.investor_name
-          else
-            next
-          end
+          # Only investor+category+instrument combinations that exist as Investments get a row
+          # here - ShareholderPosition-only groups are added by merge_shareholder_positions below.
+          category = row[:category]
+          investor_name = investment_row_keys[[row[:grouping_field], category, instrument]]
+          next if investor_name.nil?
         end
 
         table_data[category] ||= {}
         table_data[category][investor_name] ||= {}
-        table_data[category][investor_name][round] = {
-          fully_diluted_percentage: row[:fully_diluted_percentage],
-          quantity: row[:quantity],
-          fully_diluted: row[:fully_diluted]
-        }
+        existing = table_data[category][investor_name][round]
+
+        # Several different investors can collapse into the single "Self" row (it is keyed by
+        # the portfolio company's own name), so add their holdings together rather than letting
+        # the last one overwrite the rest.
+        #
+        # The running total is kept as an unrounded :fully_diluted_percentage_value and only
+        # formatted into the display string once per merge - adding the *previous* merge's
+        # already-rounded "12.35%".to_f back in would compound rounding error with every
+        # additional investor folded into this row.
+        table_data[category][investor_name][round] = if existing
+                                                       fully_diluted_percentage_value = existing[:fully_diluted_percentage_value].to_f + row[:fully_diluted_percentage_value].to_f
+                                                       {
+                                                         fully_diluted_percentage: "#{fully_diluted_percentage_value.round(2)}%",
+                                                         fully_diluted_percentage_value: fully_diluted_percentage_value,
+                                                         quantity: existing[:quantity].to_f + row[:quantity].to_f,
+                                                         fully_diluted: existing[:fully_diluted].to_f + row[:fully_diluted].to_f,
+                                                         instrument: [existing[:instrument], row[:instrument]].flat_map { |v| v.to_s.split(", ") }.reject { |v| v.blank? || v == "-" }.uniq.sort.join(", ").presence || "-"
+                                                       }
+                                                     else
+                                                       {
+                                                         fully_diluted_percentage: row[:fully_diluted_percentage],
+                                                         fully_diluted_percentage_value: row[:fully_diluted_percentage_value],
+                                                         quantity: row[:quantity],
+                                                         fully_diluted: row[:fully_diluted],
+                                                         instrument: row[:instrument]
+                                                       }
+                                                     end
       end
     end
   end
@@ -227,7 +276,6 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
           import_upload_id: import_upload_id
         )
       end
-
 
       snapshot_quantity_actual_total = deduped_snapshot.sum { |sp| sp.quantity_actual.to_f }
       round_data[round_label] ||= {

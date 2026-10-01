@@ -185,7 +185,10 @@ Given('there are the following investments for {string}:') do |portfolio_company
       quantity: row['quantity'],
       price: row['price'],
       investment_date: row['investment_date'],
-      currency: entity.currency || 'USD'
+      currency: entity.currency || 'USD',
+      subgroup: row['subgroup'].presence,
+      instrument_name: row['instrument_name'].presence,
+      instrument_quantity: row['instrument_quantity'].presence
     )
     investment.save!
   end

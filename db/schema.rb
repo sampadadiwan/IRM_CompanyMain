@@ -2561,10 +2561,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
     t.string "investor_name"
     t.json "json_fields"
     t.text "notes"
+    t.string "subgroup", limit: 100
     t.bigint "portfolio_company_id", null: false
     t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 10
     t.datetime "updated_at", null: false
+    t.index ["subgroup"], name: "index_investments_on_subgroup"
     t.index ["entity_id"], name: "index_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_investments_on_form_type_id"
     t.index ["portfolio_company_id"], name: "index_investments_on_portfolio_company_id"

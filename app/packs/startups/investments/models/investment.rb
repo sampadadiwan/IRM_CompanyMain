@@ -15,6 +15,7 @@ class Investment < ApplicationRecord
   validates :instrument_name, length: { maximum: 50 }, allow_blank: true
   validates :funding_round, length: { maximum: 40 }
   validates :currency, length: { maximum: 3 }
+  validates :subgroup, length: { maximum: 100 }, allow_nil: true
 
   STANDARD_COLUMNS = { "Portfolio Company; text-col" => "portfolio_company_name; text-col",
                        "Category; text-col" => "category; text-col",
@@ -40,8 +41,16 @@ class Investment < ApplicationRecord
     self.amount_cents = price_cents * quantity
   end
 
+  before_save :clear_instrument_name_for_equity
+  def clear_instrument_name_for_equity
+    return unless investment_type == "Equity"
+
+    self.instrument_name = nil
+    self.instrument_quantity = nil
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
-    %w[category currency funding_round investment_date investment_type investor_name quantity]
+    %w[category currency funding_round investment_date investment_type investor_name quantity subgroup]
   end
 
   def self.ransackable_associations(_auth_object = nil)

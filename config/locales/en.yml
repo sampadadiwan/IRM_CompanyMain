@@ -168,6 +168,9 @@ en:
     create: Investment was created
     destroy: Investment was deleted
     update: Investment was updated
+    upload_investments: Upload Investments
+    download_investments: Download Investments
+    download_shareholding_patterns: Download Shareholding Patterns
   investor:
     create: Investor was created
     destroy: Investor was deleted

@@ -161,6 +161,9 @@ ja:
     create: 投資が作成されました
     destroy: 投資が削除されました
     update: 投資が更新されました
+    upload_investments: 投資をアップロード
+    download_investments: 投資をダウンロード
+    download_shareholding_patterns: 株主持分をダウンロード
   investor:
     create: 投資家が作成されました
     destroy: 投資家が削除されました

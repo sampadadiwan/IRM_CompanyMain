@@ -12,7 +12,7 @@ class ImportInvestment < ImportUtil
     "Notes"
   ].freeze
 
-  IGNORE_CF_HEADERS = ["Id"].freeze
+  IGNORE_CF_HEADERS = ["Id", "Subgroup", "Sub Group", "Instrument Name", "Instrument Quantity"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -23,7 +23,7 @@ class ImportInvestment < ImportUtil
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
-    portfolio_company_name, category, currency, investor_name, investment_type, funding_round, quantity, price, investment_date, notes = inputs(user_data)
+    portfolio_company_name, category, currency, investor_name, investment_type, funding_round, quantity, price, investment_date, notes, subgroup, instrument_name, instrument_quantity = inputs(user_data)
 
     portfolio_company = find_portfolio_company(import_upload, portfolio_company_name)
     entity_id = import_upload.entity_id
@@ -40,7 +40,10 @@ class ImportInvestment < ImportUtil
       investment_date: investment_date,
       quantity: quantity,
       price: price,
-      notes: notes
+      notes: notes,
+      subgroup: subgroup,
+      instrument_name: instrument_name,
+      instrument_quantity: instrument_quantity
     }
 
     if update_only
@@ -66,7 +69,7 @@ class ImportInvestment < ImportUtil
     raise "No Investment found for update with ID #{user_data['Id']}" if investment.nil?
 
     Rails.logger.debug { "Updating Investment with ID '#{investment.id}'" }
-    investment.assign_attributes(
+    update_attrs = {
       portfolio_company_id: attrs[:portfolio_company].id,
       category: attrs[:category],
       currency: attrs[:currency],
@@ -78,7 +81,17 @@ class ImportInvestment < ImportUtil
       price: attrs[:price],
       notes: attrs[:notes],
       import_upload_id: import_upload.id
-    )
+    }
+
+    # Subgroup/Instrument Name/Instrument Quantity are optional columns - an "Update Only"
+    # re-upload that omits one of them entirely (e.g. an older template) must leave the
+    # existing value alone rather than blanking it. Only overwrite when the column was
+    # actually present in this sheet - a present-but-empty cell still clears it.
+    update_attrs[:subgroup] = attrs[:subgroup] if column_present?(user_data, "Subgroup", "Sub Group")
+    update_attrs[:instrument_name] = attrs[:instrument_name] if column_present?(user_data, "Instrument Name")
+    update_attrs[:instrument_quantity] = attrs[:instrument_quantity] if column_present?(user_data, "Instrument Quantity")
+
+    investment.assign_attributes(update_attrs)
 
     setup_custom_fields(user_data, investment, custom_field_headers - IGNORE_CF_HEADERS)
     investment.save!
@@ -100,6 +113,9 @@ class ImportInvestment < ImportUtil
     investment.quantity = attrs[:quantity]
     investment.price = attrs[:price]
     investment.notes = attrs[:notes]
+    investment.subgroup = attrs[:subgroup]
+    investment.instrument_name = attrs[:instrument_name]
+    investment.instrument_quantity = attrs[:instrument_quantity]
     investment.import_upload_id = import_upload.id
     investment.portfolio_company = attrs[:portfolio_company]
     Rails.logger.debug { "Saving Investment with ID '#{investment.id}'" }
@@ -118,8 +134,23 @@ class ImportInvestment < ImportUtil
     price = user_data['Price'].to_d
     investment_date = parse_date_cell(user_data, 'Investment Date', required: true)
     notes = user_data['Notes'].presence
+    subgroup = pick_value(user_data, 'Subgroup', 'Sub Group').to_s.strip.presence
+    instrument_name = pick_value(user_data, 'Instrument Name').to_s.strip.presence
+    instrument_quantity = pick_value(user_data, 'Instrument Quantity').presence&.to_d
 
-    [portfolio_company_name, category, currency, investor_name, investment_type, funding_round, quantity, price, investment_date, notes]
+    [portfolio_company_name, category, currency, investor_name, investment_type, funding_round, quantity, price, investment_date, notes, subgroup, instrument_name, instrument_quantity]
+  end
+
+  def pick_value(row_hash, *keys)
+    keys.each do |key|
+      value = row_hash[key]
+      return value if value.present?
+    end
+    nil
+  end
+
+  def column_present?(row_hash, *keys)
+    keys.any? { |key| row_hash.key?(key) }
   end
 
   def defer_counter_culture_updates
