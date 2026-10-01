@@ -75,10 +75,12 @@ Feature: Multi-site user sync fanout
     When I request redirect_to_subdomain on host "app.example.com"
     Then I should be redirected to "app.example.com" for cross-site login
 
+  # Was a 401 rendering the bare string "Invalid or expired link". A failed hand-off now lands
+  # on this region's own sign-in screen with a banner saying what went wrong.
   @cross-site-redirect
-  Scenario: redirect_to_subdomain returns 401 for an invalid token
+  Scenario: redirect_to_subdomain sends an invalid token to the sign-in screen
     When I request redirect_to_subdomain with invalid token on host "app.example.com"
-    Then the response status should be 401
+    Then I should land on the sign-in screen with a cross-region banner
 
   # This exercises all 3 hops (cross_site_link -> redirect_to_subdomain -> cross_site_login)
   # in a single test process/database, so it proves the routing/token/subdomain logic is
@@ -89,8 +91,9 @@ Feature: Multi-site user sync fanout
   Scenario: A US-side user crosses to the IN site and lands signed in on the correct subdomain
     Given a user "neha@siliconroad.com" exists in region "US" with regions "IN,US"
     And the user's entity has sub_domain "srv"
-    And site "US" is served at "http://app.caphive.us"
-    And site "IN" is served at "http://app.caphive.com"
+    And site "US" is served at "https://app.caphive.us"
+    And site "IN" is served at "https://app.caphive.com"
+    And the current site is "US"
     And I am signed in as "neha@siliconroad.com" on host "siliconroad.caphive.us"
     When I click the cross-site link targeting site "IN"
     Then I should be redirected to "app.caphive.com" to resolve the subdomain

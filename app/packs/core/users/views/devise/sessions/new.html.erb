@@ -13,6 +13,9 @@
     <div class="login-body">
         <%= render "/layouts/display_status" if (notice || alert) && params[:display_status].present? %>
 
+        <%# A failed region switch lands here; the banner is a Hash flash, so the loop below skips it. %>
+        <%= render "devise/sessions/cross_region_alert" %>
+
         <%- flash.each do |name, msg| -%>
             <%= content_tag :div, msg, :id => "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
         <%- end -%>

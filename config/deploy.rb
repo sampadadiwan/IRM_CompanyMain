@@ -721,6 +721,31 @@ namespace :IRM do
   end
 
 
+  # The cross-region hand-off credential carries an ABSOLUTE expiry stamped by the issuing
+  # region and checked against the verifying region's own clock, so an app server whose clock
+  # has drifted rejects perfectly good region switches - silently, and in one direction only.
+  # Nothing in this deploy used to assert that a time daemon was even running.
+  #
+  # Reports rather than aborts: a drifted clock is worth shouting about at deploy time, but it
+  # is not a reason to refuse to ship the rest of the release.
+  #
+  #   bundle exec cap production_in IRM:check_clock_sync
+  desc 'Assert clock synchronisation is running on every app server (cross-region login depends on it)'
+  task :check_clock_sync do
+    on roles(:app) do |host|
+      synced = capture("timedatectl show -p NTPSynchronized --value 2>/dev/null || echo unknown").strip
+      daemon = capture("systemctl is-active chrony 2>/dev/null || systemctl is-active systemd-timesyncd 2>/dev/null || echo inactive").strip
+
+      if synced == "yes" && daemon == "active"
+        info "[clock] #{host}: synchronised (#{daemon})"
+      else
+        warn "[clock] #{host}: FAILED - NTPSynchronized=#{synced} daemon=#{daemon}. " \
+             "Cross-region logins will start failing once the offset passes a few minutes. " \
+             "Fix with: sudo apt-get install -y chrony && sudo systemctl enable --now chrony"
+      end
+    end
+  end
+
   def configure_logrotate
     logrotate_config_path = "/home/ubuntu/IRM/shared/log/logrotate.conf"
     upload! StringIO.new(File.read('./config/deploy/logrotate.conf')), logrotate_config_path

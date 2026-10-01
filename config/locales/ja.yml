@@ -1,5 +1,19 @@
 ---
 ja:
+  cross_region:
+    unavailable: "That region is not available right now."
+    regions:
+      IN: "India"
+      US: "US"
+    rejection:
+      return_to: "Return to %{region}"
+      expired: "We couldn't complete your switch to the %{region} site because the hand-off link had expired. Return to the site you came from and try again, or sign in below."
+      already_used: "We couldn't complete your switch to the %{region} site because that hand-off link had already been used. Return to the site you came from and try again, or sign in below."
+      invalid: "We couldn't complete your switch to the %{region} site because the hand-off link was not valid. Please sign in below."
+      missing: "We couldn't complete your switch to the %{region} site. Please sign in below."
+      wrong_region: "We couldn't complete your switch to the %{region} site because that link was meant for a different region. Return to the site you came from and try again, or sign in below."
+      secret_mismatch: "We couldn't complete your switch to the %{region} site because of a configuration problem on our side. Please sign in below."
+      no_account: "We couldn't find an account for you on the %{region} site."
   # Shown inside a turbo-frame when its content fails to load (see layouts/_frame_error)
   turbo_frame_error:
     message: このセクションを読み込めませんでした。

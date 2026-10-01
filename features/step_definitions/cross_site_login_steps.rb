@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Given(/^the user's entity has sub_domain "([^"]+)"$/) do |sub|
   @user.entity.update!(sub_domain: sub)
   @sub_domain = sub
@@ -10,7 +12,11 @@ Given(/^the user's entity has no sub_domain$/) do
 end
 
 Given(/^a cross-site login token is generated for "([^"]+)" targeting site "([^"]+)"$/) do |email, site|
-  @cross_site_token = CrossSiteLink.new.generate(email, purpose: :login, site: site.to_sym, expires_in: 30.seconds)
+  # `from` is required now: the hand-off carries where it came from so a failure can offer a
+  # way back. Any deployed region other than the destination will do here.
+  origin = (SiteRegistry.codes - [SiteRegistry.normalize(site)]).first || SiteRegistry.current_code
+  @cross_site_token = CrossSiteLink.new.generate(email, purpose: CrossSiteLink::PURPOSE,
+                                                        site: site, from: origin)
 end
 
 When(/^I request redirect_to_subdomain on host "([^"]+)"$/) do |host|
@@ -30,16 +36,21 @@ end
 # where domain is derived by stripping the first label off the request host.
 Then(/^I should be redirected to "([^"]+)" for cross-site login$/) do |expected_host|
   expect(@last_response.status).to eq(302)
-  location = @last_response.headers["Location"]
-  expect(location).to start_with("http://#{expected_host}/users/cross_site_login?token=")
+  uri = URI(@last_response.headers["Location"])
+  expect(uri.host).to eq(expected_host)
+  expect(uri.path).to eq("/users/cross_site_login")
+  # Query values are escaped and ordered by to_query now, so assert on the parsed params
+  # rather than on a literal prefix.
+  expect(Rack::Utils.parse_nested_query(uri.query)["token"]).to be_present
 end
 
 Given(/^site "([^"]+)" is served at "([^"]+)"$/) do |site, base_url|
   @site_map ||= {}
   @site_map[site] = base_url
-  # ENV["SITES"] is a stringified ruby hash literal, eval'd by the controller -
-  # quoted keys like 'US': become symbol keys (:US), matching params[:site].to_sym
-  ENV["SITES"] = "{#{@site_map.map { |site_key, url| "'#{site_key}': '#{url}'" }.join(', ')}}"
+  # ENV["SITES"] is JSON now, parsed by SiteRegistry. It used to be a Ruby hash literal that
+  # the controller ran through `eval` at request time.
+  ENV["SITES"] = @site_map.to_json
+  SiteRegistry.reset!
 end
 
 # Uses a dedicated integration session (rather than the bare Rack::Test DSL used
@@ -56,9 +67,26 @@ When(/^I click the cross-site link targeting site "([^"]+)"$/) do |site|
   @last_response = @cross_site_session.response
 end
 
+# The origin region the hand-off is minted FROM. Previously implicit in whatever CURRENT_SITE
+# happened to be, which made the one end-to-end scenario a degenerate self-switch.
+Given(/^the current site is "([^"]+)"$/) do |code|
+  ENV["CURRENT_SITE"] = code
+  SiteRegistry.reset!
+end
+
+Then(/^I should land on the sign-in screen with a cross-region banner$/) do
+  expect(@last_response.status).to eq(302)
+  expect(URI(@last_response.headers["Location"]).path).to eq("/users/sign_in")
+end
+
 Then(/^I should be redirected to "([^"]+)" to resolve the subdomain$/) do |expected_host|
   expect(@last_response.status).to eq(302)
-  expect(@last_response.headers["Location"]).to start_with("http://#{expected_host}/users/redirect_to_subdomain?token=")
+  uri = URI(@last_response.headers["Location"])
+  expect(uri.host).to eq(expected_host)
+  expect(uri.path).to eq("/users/redirect_to_subdomain")
+  params = Rack::Utils.parse_nested_query(uri.query)
+  expect(params["token"]).to be_present
+  expect(params["from"]).to be_present
 end
 
 When(/^I follow that redirect$/) do
@@ -72,6 +100,9 @@ end
 # since cross_site_login checks the token's embedded site against ENV["CURRENT_SITE"].
 When(/^I follow that redirect as site "([^"]+)"$/) do |current_site|
   ENV["CURRENT_SITE"] = current_site
+  # SiteRegistry memoises the active region, so swapping the env var is not enough to make the
+  # next hop believe it is running on the other region.
+  SiteRegistry.reset!
   location = URI(@last_response.headers["Location"])
   header "Host", location.host
   get location.request_uri

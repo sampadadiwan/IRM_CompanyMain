@@ -181,7 +181,14 @@ ENV['HOST'] = "localhost:#{port}"
 ENV['DOMAIN'] = "localhost:#{port}"
 ENV['BASE_URL'] = "http://localhost:#{port}"
 ENV['BASE_DOMAIN'] = "localhost:#{port}"
-ENV['SITES'] = "{'local': 'http://localhost:#{port}', 'in': 'http://localhost:#{port}'}"
+# Both regions point at the same Capybara port: the suite emulates a two-region deployment in
+# one process by swapping CURRENT_SITE between hops (see cross_site_login_steps.rb). SITES is
+# JSON - SiteRegistry parses it, it is never eval'd.
+ENV['SITES'] = %({"IN":"http://localhost:#{port}","US":"http://localhost:#{port}"})
+ENV['CURRENT_SITE'] ||= 'IN'
+# The boot initializer already memoised SITES from .env.test (port 3000); clear it so the
+# Capybara port above is what SiteRegistry hands out.
+SiteRegistry.reset!
 
 # Update Rails default url options
 Rails.application.routes.default_url_options[:host] = ENV['HOST']

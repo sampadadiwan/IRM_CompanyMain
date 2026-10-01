@@ -125,6 +125,27 @@ class User < ApplicationRecord
     end
   end
 
+  # The regions this user may actually be handed off to: what their profile says, canonicalised,
+  # intersected with what is actually deployed.
+  #
+  # Both halves matter. `regions` is a free-text string edited through the Administrate user
+  # dashboard, so it arrives as "IN,US", " in ,US, us" or even the JSON array '["US","IN"]' that
+  # the multi-region sync writes - CanonicalFingerprint#normalize_regions_array already knows all
+  # three shapes, so we reuse it rather than splitting on "," again here (splitting was how the
+  # selector produced option values like `"US"]`). The intersection with SiteRegistry.codes keeps
+  # a stale or misspelled code - "SG" on a deployment that has no SG - out of the selector
+  # WITHOUT deleting it from the user's profile.
+  #
+  # This is both what the selector renders and what UserPolicy#cross_site_link? authorises
+  # against, so the two can no longer disagree about which regions a user has.
+  def switchable_region_codes
+    normalize_regions_array(regions).select { |code| SiteRegistry.known?(code) }.sort
+  rescue SiteRegistry::ConfigurationError
+    # A misconfigured registry must not take out every page that renders the top bar; the boot
+    # check is what is responsible for shouting about it.
+    []
+  end
+
   has_many :faq_threads, dependent: :destroy
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy

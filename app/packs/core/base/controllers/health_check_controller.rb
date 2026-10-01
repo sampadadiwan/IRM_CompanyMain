@@ -1,6 +1,21 @@
 class HealthCheckController < ApplicationController
-  before_action :authenticate_user!, except: %i[redis_check db_check elastic_check xirr_check replication_check disk_check]
-  skip_after_action :verify_authorized, only: %i[redis_check db_check elastic_check xirr_check replication_check disk_check]
+  before_action :authenticate_user!, except: %i[redis_check db_check elastic_check xirr_check replication_check disk_check cross_site_trust]
+  skip_after_action :verify_authorized, only: %i[redis_check db_check elastic_check xirr_check replication_check disk_check cross_site_trust]
+
+  # Publishes a non-reversible fingerprint of this region's inter-region shared secret so the
+  # peer region (and an operator with curl) can confirm the two still match, without either
+  # side disclosing the secret. Unauthenticated like the other health checks - the response
+  # carries no secret material.
+  #
+  # Always 200, including when the secret is missing: this is a configuration report, not a
+  # liveness probe, and a non-200 here would take the box out of the load balancer.
+  def cross_site_trust
+    render json: {
+      region: SiteRegistry.current_code,
+      configured: CrossSiteTrust.configured?,
+      fingerprint: CrossSiteTrust.fingerprint
+    }, status: :ok
+  end
 
   def redis_check
     now = Time.zone.now.to_s

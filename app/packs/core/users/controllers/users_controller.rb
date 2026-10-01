@@ -77,58 +77,104 @@ class UsersController < ApplicationController
                 notice: "If that address is registered, a login link is on its way."
   end
 
-  # Generates a cross-site login link for the user and redirects to the target site
-  # rubocop:disable Security/Eval
+  # ---------------------------------------------------------------------------------------
+  # Cross-region hand-off. Three hops, in order:
+  #   cross_site_link        (origin region)      mint a credential, redirect to the peer
+  #   redirect_to_subdomain  (destination region) work out the user's company site there
+  #   cross_site_login       (company site)       validate, claim, sign in
+  # See openspec/changes/fix-cross-site-login-expiry/design.md for the full flow.
+  # ---------------------------------------------------------------------------------------
+
+  # Mints a hand-off credential for the requested region and sends the browser there.
   def cross_site_link
-    authorize current_user
-    # Generate a short-lived token for the user's email, purpose: login
-    site = params[:site].to_sym
-    token = CrossSiteLink.new.generate(current_user.email, purpose: :login, expires_in: 30.seconds, site: site)
+    code = SiteRegistry.normalize(params[:site])
 
-    # Route through redirect_to_subdomain so the target site can resolve the user's subdomain
-    url = eval(ENV.fetch("SITES", nil))[site] + "/users/redirect_to_subdomain?token=#{token}"
-
-    # Redirect the user to the cross-site login URL
-    redirect_to url, allow_other_host: true
-  end
-  # rubocop:enable Security/Eval
-
-  # Handles login via a cross-site link
-  def cross_site_login
-    # The request comes in as a GET request, but the sign_in method modifies state, so we need the writing role
-    ActiveRecord::Base.connected_to(role: :writing) do
-      # Verify the token and extract the payload (user email)
-      site = ENV.fetch("CURRENT_SITE", nil).to_sym
-      payload = CrossSiteLink.new.verify(params[:token], purpose: :login, site: site)
-      # Find the user by email
-      user = User.find_by!(email: payload[:email])
-      # Sign in the user
-      sign_in(user)
+    # Without the shared secret there is nothing to sign with, and CrossSiteLink.new would raise
+    # ArgumentError into a 500. The peer region cannot verify anything we mint anyway, so refuse
+    # here with the same message an undeployed region gets.
+    unless CrossSiteTrust.configured?
+      Rails.logger.error("[cross_region] CROSS_INSTANCE_SECRET is not configured on #{SiteRegistry.current_code}")
+      return redirect_back_or_to(root_path, alert: t("cross_region.unavailable"))
     end
-    # Redirect to the root path after successful login
-    redirect_to root_path
-  rescue CrossSiteLink::VerificationError
-    # Handle invalid or expired token
-    render plain: "Invalid or expired link", status: :unauthorized
+
+    # SiteRegistry, not eval(ENV["SITES"]): the old line evaluated an environment variable as
+    # Ruby at request time, and resolved an unknown region to nil - so a bad code produced
+    # `nil + "/users/..."`, a 500, rather than a refusal.
+    return redirect_back_or_to(root_path, alert: t("cross_region.unavailable")) unless SiteRegistry.known?(code)
+
+    # Pundit's `authorize` cannot pass the requested destination, and the destination IS the
+    # thing being authorised here, so the policy is invoked directly. skip_authorization tells
+    # verify_authorized this action has been authorised - by the line below it, not instead of
+    # it.
+    skip_authorization
+    unless policy(current_user).cross_site_link?(site: code)
+      raise Pundit::NotAuthorizedError.new(query: :cross_site_link?, record: current_user,
+                                           policy: policy(current_user))
+    end
+
+    token = CrossSiteLink.new.generate(current_user.email, purpose: CrossSiteLink::PURPOSE,
+                                                           site: code, from: SiteRegistry.current_code)
+
+    # Route through redirect_to_subdomain so the destination region can resolve the user's
+    # company site from ITS own database. `from` rides along unsigned so a failed hand-off can
+    # still offer a way back - see CrossSiteRejection#origin_url.
+    redirect_to handoff_url(SiteRegistry.url_for(code), "redirect_to_subdomain", token, SiteRegistry.current_code),
+                allow_other_host: true
   end
 
-  # Resolves the user's entity subdomain and redirects to the correct subdomain for cross-site login.
-  # Falls back to "app" if the entity has no sub_domain set.
+  # Resolves which company site in THIS region the user belongs to, and forwards there.
+  # Reads the credential without consuming it: the browser has not yet reached the host that
+  # will establish the session, so claiming it here would break every switch.
   def redirect_to_subdomain
-    payload = CrossSiteLink.new.peek(params[:token])
-    render(plain: "Invalid or expired link", status: :unauthorized) and return if payload.nil?
+    return reject_handoff(:secret_mismatch) unless CrossSiteTrust.configured?
 
-    user = User.find_by(email: payload[:email])
-    render(plain: "User not found", status: :not_found) and return if user.nil?
+    result = CrossSiteLink.new.peek(params[:token])
+    return reject_handoff(result.reason) unless result.ok?
 
-    # Use the entity's sub_domain or fall back to "app"
+    user = User.find_by(email: result.email)
+    return reject_handoff(:no_account, email: result.email) if user.nil?
+
+    # The entity's sub_domain in THIS region, falling back to the region's default site.
     sub = user.entity&.sub_domain.presence || "app"
-
-    # Replace whatever subdomain is in the current host with the user's subdomain
     host = request.host.sub(/\A[^.]+\./, "#{sub}.")
-    url  = "#{request.protocol}#{host}/users/cross_site_login?token=#{params[:token]}"
 
-    redirect_to url, allow_other_host: true
+    redirect_to handoff_url("#{request.protocol}#{host}", "cross_site_login", params[:token], params[:from]),
+                allow_other_host: true
+  end
+
+  # Validates the credential, claims it exactly once, and signs the user in.
+  def cross_site_login
+    # An unconfigured secret cannot verify anything, so it is a configuration problem rather
+    # than a bad link - and the banner must not invite a retry that cannot work.
+    return reject_handoff(:secret_mismatch) unless CrossSiteTrust.configured?
+
+    # GET, but sign_in writes, so pin to the primary - and the nonce claim must be on the
+    # primary too, or the DatabaseSelector middleware could read the claim from a lagging
+    # replica and let a used credential through.
+    outcome = ActiveRecord::Base.connected_to(role: :writing) do
+      result = CrossSiteLink.new.verify(params[:token], purpose: CrossSiteLink::PURPOSE,
+                                                        site: SiteRegistry.current_code)
+      next result.reason unless result.ok?
+
+      user = User.find_by(email: result.email)
+      next :no_account if user.nil?
+
+      # Claimed LAST, after every other check, so a credential rejected for any other reason is
+      # not also burned - and BEFORE sign_in, so the worst case is a burned credential with no
+      # session (the user retries) rather than a session from a credential someone else can
+      # still redeem.
+      next :already_used unless CrossSiteLink::Nonce.claim(params[:token])
+
+      sign_in(user)
+      Rails.logger.info("cross_region_handoff ok from=#{result.origin_code} " \
+                        "to=#{SiteRegistry.current_code} email=#{user.email}")
+      CrossSiteMetrics.handoff(result: :ok, region: SiteRegistry.current_code)
+      nil
+    end
+
+    return reject_handoff(outcome) if outcome
+
+    redirect_to root_path
   end
 
   def no_password_login
@@ -369,6 +415,27 @@ class UsersController < ApplicationController
   # Policy checks use live DB queries; manual cache invalidation is not needed.
 
   private
+
+  # Builds a hand-off URL. Everything in it is either a SiteRegistry lookup or a value we just
+  # minted - nothing is interpolated from request input - which is what keeps
+  # `allow_other_host: true` constrained to the configured regions. Query values are escaped
+  # rather than concatenated.
+  def handoff_url(base, action, token, from)
+    query = { token: token, from: SiteRegistry.normalize(from) }.compact
+    "#{base}/users/#{action}?#{query.to_query}"
+  end
+
+  # The single place a failed hand-off becomes an outcome. Sends the user to this region's own
+  # sign-in screen with an explanatory banner and, where retrying can help, a link back to the
+  # region they came from - instead of the bare `render plain: "Invalid or expired link"` that
+  # used to dead-end here with no log line and nothing to click.
+  def reject_handoff(reason, email: nil)
+    rejection = CrossSiteRejection.for(reason: reason, from: params[:from], email: email)
+    Rails.logger.warn(rejection.to_log_line)
+    CrossSiteMetrics.handoff(result: :rejected, reason: rejection.reason, region: rejection.region)
+    flash[:cross_region] = rejection.flash_payload
+    redirect_to new_session_path(User)
+  end
 
   # A caller-supplied destination is honoured only when it is a path on this host: it
   # must start with a single "/" (so "//evil.example" and "/\\evil.example", which

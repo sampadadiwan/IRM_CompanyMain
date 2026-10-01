@@ -159,6 +159,10 @@ Sidekiq.configure_server do |config|
     # entity_setting.weekly_task_digest_enabled.
     Sidekiq::Cron::Job.create(name: 'WeeklyTaskDigestJob', cron: ENV.fetch('WEEKLY_TASK_DIGEST_CRON', '30 11 * * 5'), class: 'WeeklyTaskDigestJob')
     Sidekiq::Cron::Job.create(name: 'MultiSiteUserSyncAllJob', cron: multi_site_sync_cron, class: 'MultiSiteUserSyncAllJob')
+    # Confirms both regions still share CROSS_INSTANCE_SECRET. Hourly and always-on rather
+    # than in the off-peak block above: a divergence breaks EVERY region switch, and the
+    # 90-minute cache TTL on the result assumes an hourly cadence.
+    Sidekiq::Cron::Job.create(name: 'CrossSiteTrustCheckJob', cron: ENV.fetch('CROSS_SITE_TRUST_CRON', 'every 1 hour'), class: 'CrossSiteTrustCheckJob')
     Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: tracking_currency_cron, class: 'TrackingCurrencyJob')
 
     # Used to cleanup various models in the DB

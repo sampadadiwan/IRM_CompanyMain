@@ -1,0 +1,206 @@
+name: bugfix
+version: 1
+description: IRM bug-fix workflow - report → qa-checklist → tasks. Three artifacts, for fixing broken behaviour rather than building new behaviour.
+artifacts:
+  - id: report
+    generates: report.md
+    description: One-page diagnosis and fix plan - symptom, root cause with evidence, blast radius, fix, verification table
+    template: report.md
+    instruction: |
+      Write the bug report: the diagnosis AND the fix plan, in one page. This replaces the
+      proposal + design + lld trio of the spec-driven schema, so it must carry the parts of
+      those that actually earn their place on a bug fix - the evidence, the blast radius and
+      the verification table - and none of the parts that do not.
+
+      **Planning only: do not make any code changes while writing this document.**
+
+      **Read the code before writing a word of this.** A bug report whose root cause is a guess
+      is worse than no report: it sends the fix at the wrong line. Every claim in Root Cause
+      carries a `path/to/file.rb:LINE` reference that you have actually opened. If you cannot
+      find the defect, say so in Root Cause and stop - do not invent a plausible one.
+
+      **Pin those line numbers to a revision.** They describe code that the fix is about to
+      delete, so they go stale the moment it lands. Put the short SHA of the pre-fix HEAD in the
+      header (`git rev-parse --short HEAD`) and say the references are read with
+      `git show <sha>:<path>`. A reviewer six months later needs that.
+
+      Sections, in the template's order:
+
+      - **Summary** (CORE): two sentences. What breaks, and why. A reader who stops here should
+        be able to repeat the cause correctly.
+      - **The Feature - how it is meant to work** (CORE): the core idea of the thing being
+        fixed, explained in detail, BEFORE any mention of the defect. What is this feature for,
+        what are its moving parts, how do they talk to each other, and what guarantees does it
+        rest on? Include the mechanism at the level someone would need to rebuild it: the shape
+        of the data, who holds what, what is checked where, and WHY it is built that way rather
+        than an obvious alternative. Add a mermaid diagram of the normal, intended flow.
+        Nothing in this section describes the bug - it is what SHOULD happen.
+        This is the section that makes the report worth reading six months later. A reader who
+        has never seen the feature must be able to follow Root Cause after reading it, and
+        should come away understanding the DESIGN, not just the defect. Treat a bug as the
+        occasion to document the thing properly; if the feature already has a design doc, go
+        deep enough here to stand alone and link to it for the byte-level detail rather than
+        pointing at it and moving on.
+      - **Symptom** (CORE): what the user sees, verbatim where there is a message; how to
+        reproduce; who is affected and how often; when it started if known. Say explicitly
+        whether it is intermittent, and if so what varies - that is usually the whole clue.
+      - **Root Cause** (CORE): the actual defect, with file:line evidence for each claim.
+        Include **why it was hard to see** - a swallowed exception, a silent fallback, a missing
+        log line. That sentence is often the second bug, and the fix should close it too.
+      - **Blast Radius** (CORE): a table of every other caller, job, screen or deployment that
+        touches the same code, and whether this fix changes it. This is the section that stops a
+        one-line fix from breaking three other things.
+      - **Fix** (CORE): two required parts.
+        1. **A before/after mermaid `sequenceDiagram` pair - ALWAYS, no exceptions.** "How it
+           works today" shows the broken exchange with the failing step marked; "How it works
+           after the fix" shows the same exchange repaired. A sequence diagram, not a flowchart:
+           a bug lives in an *interaction* - who called whom, with what, and at which step it
+           went wrong - and that is exactly what a flowchart hides. Even a one-line fix has a
+           caller and a callee; draw them. Use real participant names (classes, services, the
+           browser, the other region) and mark the failing step with `rect rgb(253,236,234)`
+           in the "today" diagram.
+        2. A Before → After table, one row per change, naming real classes, methods and files.
+           Do not paste class bodies.
+        Keep each diagram under ~1400px wide or a Markdown preview scales it down until the
+        labels are unreadable: prefer short participant aliases
+        (`participant L as CrossSiteLink`) and short messages, and split one very wide diagram
+        into two rather than letting it sprawl.
+      - **Verification** (CORE): the H / E / X worked-example table - Happy path, Edge cases,
+        Error cases - with columns # | Scenario | Given | When | Then | Feature. Each row becomes
+        exactly one Cucumber scenario, and the Feature column names the file it lands in. This
+        is the single most valuable thing carried over from the full pipeline: it is what turns
+        "fixed it" into something a reviewer can check. A fix with no X rows is usually a fix
+        that has not considered how it fails.
+        **At least one row must fail against the CURRENT code** - name which in a line under the
+        table. A bug fix whose tests all pass before the fix has not reproduced the bug.
+      - **Risks and Rollout** (CORE): risk → mitigation bullets. Say whether the fix is safe to
+        deploy alone, whether it needs a data backfill, whether two environments must ship
+        together, and how to roll back.
+      - **Spec Impact** (CORE): one of exactly two answers.
+        - *"None"* - the specs already describe the correct behaviour and the code simply did
+          not match them. This is the normal case for a bug fix. Then set `skip_specs: true` in
+          the change's `.openspec.yaml`, or `openspec validate` rejects the change for having
+          zero spec deltas.
+        - *"Escalate"* - the fix changes the externally visible contract, adds a capability, or
+          turns out to be a feature wearing a bug's clothes. Then STOP, tell the user this
+          belongs in the `spec-driven` schema, and offer to re-create it with
+          `/openspec-propose`. Do not half-write specs in this schema.
+
+      **Diagrams must render.** Before finishing, lint every mermaid block and fix failures
+      until it exits 0:
+      `d=$(mktemp -d); echo '{"args":["--no-sandbox"]}' > $d/p.json; npx -y @mermaid-js/mermaid-cli -q -p $d/p.json -i <changeRoot>/report.md -o $d/out.md; echo exit=$?`
+      (known gotcha: `Note` is reserved in sequence diagrams, so never use it as a participant
+      id - use `participant NoteRec as Note (model)`).
+
+      Keep it to roughly one page plus the two sequence diagrams and the verification table. If
+      it is growing past that, that is the signal the work is not a bug fix - re-read Spec
+      Impact.
+    requires: []
+
+  - id: qa-checklist
+    generates: qa-checklist.md
+    description: Manual QA checklist for testers, run by hand on a deployed build after the fix
+    template: qa-checklist.md
+    instruction: |
+      Create the manual QA checklist a tester (not a developer) runs by hand against a deployed
+      build. Plain language, no code, no class names. Write it for someone who knows CapHive's
+      screens but not this bug's internals.
+
+      Every bug fix gets one. An automated suite proves the fix works in the shape the developer
+      imagined; this proves it works on a real deployment, and it is the only artifact that
+      catches "fixed, but now the screen next to it looks wrong".
+
+      Sources, with nothing new invented:
+      - Every row of report.md's Verification table (H/E/X) becomes one checklist row with the
+        SAME ID, so a failed row maps straight back to its Cucumber scenario.
+      - Every row of report.md's Blast Radius marked as needing checking becomes a regression
+        row (IDs R1, R2, ...).
+      - The original Symptom's reproduce steps become the FIRST row - the tester confirms the
+        reported bug is actually gone, in the way it was originally reported.
+
+      Rules:
+      - Each row: a checkbox, ID, what to check, preconditions, numbered steps (clicks and
+        inputs), expected result (exact on-screen text where there is one), Pass/Fail, notes.
+      - Say how to trigger background work by hand when a row needs it ("click Sync now", or
+        "ask a developer to run the job"). Mark rows that need a developer or a config change
+        with **(dev)**.
+      - Cross-cutting checks are CORE, and each is kept or marked N/A with a reason: dates in
+        the locale format on screens and `Mon dd, yyyy` in emails; narrow/mobile width; tenant
+        isolation (another entity's user cannot reach the data); a regression spot-check of
+        every screen the fix touched.
+      - A Contents TOC at the top, the ID legend, and a Sign-off table at the end (tester,
+        build/commit, environment, date, result, open defects).
+
+      Scale it to the bug. A one-line fix does not need forty rows - it needs the reproduce row,
+      its H/E/X rows, its regression rows and the cross-cutting ones.
+    requires:
+      - report
+
+  - id: tasks
+    generates: tasks.md
+    description: Phase-gated implementation checklist with trackable tasks
+    template: tasks.md
+    instruction: |
+      Create the task list that turns report.md into work.
+
+      **IMPORTANT: Follow the template below exactly.** The apply phase parses checkbox format
+      to track progress. A box holding only `x` counts as done, upper or lower case and with any
+      spacing, so `- [ x]` is done too. Every other marker, including `- [~]`, `- [-]` and an
+      empty `- []`, reads as unfinished. A line with no checkbox is not tracked at all.
+
+      **Reproduce first.** Phase 1 is always: write the failing Cucumber scenario(s) from the
+      report's Verification table that fail against the CURRENT code, and run them to watch them
+      fail. A bug fix that was never seen failing is a bug fix that might be fixing nothing.
+      Only then does a later phase make them pass.
+
+      **Phase gate:** every numbered phase's LAST task is to run its Cucumber feature with
+      `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/<path>/<feature>.feature` until it
+      is green, and phase N+1 does not start until that happens. This project has no RSpec tier;
+      every phase's verification is a Cucumber feature.
+
+      Guidelines:
+      - Group related tasks under ## numbered headings (phases). A bug fix usually needs two to
+        four phases; do not manufacture more.
+      - Each task MUST be a checkbox: `- [ ] X.Y Task description`
+      - Each non-final task in a phase MUST state how to verify completion (a command, an
+        observable behaviour, or a delivered artifact) in its own checkbox description
+      - Name the report section each task implements
+      - Each phase's closing feature task names the H/E/X IDs it covers, from the report's
+        Verification table
+      - The final phase MUST include: a regression run over the feature directory the fix
+        touches, and `bundle exec rubocop` on the changed files
+      - If the report's Blast Radius lists other callers, the final phase MUST include a task
+        that runs their features too
+      - `TEST_ENV_NUMBER` must be set to a fresh random value on every cucumber run (unset, runs
+        share one sqlite db and corrupt each other); Redis must be up on 6379
+
+      Example:
+      ```
+      # Tasks
+
+      ## 1. Reproduce
+
+      - [ ] 1.1 Write features/login/token_expiry.feature covering X1 and X2 from the report's
+            Verification table, and run
+            `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/login/token_expiry.feature`
+            to confirm BOTH fail against current code. Record the failure output.
+
+      ## 2. Fix
+
+      - [ ] 2.1 Widen the token lifetime in CrossSiteLink (report: Fix, row 1)
+      - [ ] 2.2 Run `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/login/token_expiry.feature`
+            and confirm X1 and X2 now pass before starting phase 3
+      ```
+    requires:
+      - report
+      - qa-checklist
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Read report.md, then work through pending tasks phase by phase. Phase 1 reproduces the bug
+    with a failing Cucumber scenario - do not skip it, and do not start the fix until you have
+    seen it fail. Do not start a later phase until the previous phase's feature is green. Pause
+    if the root cause in the report turns out to be wrong: say so and correct the report rather
+    than quietly fixing something else.
