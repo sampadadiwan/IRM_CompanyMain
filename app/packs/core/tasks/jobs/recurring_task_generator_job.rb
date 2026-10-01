@@ -4,8 +4,13 @@ class RecurringTaskGeneratorJob < ApplicationJob
   def perform
     rules = TaskRecurrenceRule.where("end_date IS NULL OR end_date >= ?", Time.current.beginning_of_day)
     Rails.logger.info "[RecurringTaskGeneratorJob] Found #{rules.count} active rules. Time: #{Time.current}"
-    rules.find_each do |rule|
-      generate_instances_for(rule)
+    # Task is indexed by Chewy, and background jobs have no default update strategy,
+    # so Task.create! raises Chewy::UndefinedUpdateStrategy. The :sidekiq strategy
+    # queues the index update instead of hitting Elasticsearch inline.
+    Chewy.strategy(:sidekiq) do
+      rules.find_each do |rule|
+        generate_instances_for(rule)
+      end
     end
   end
 
