@@ -19,15 +19,11 @@ class KpiPercentageChangeJob < ApplicationJob
       # group_by doesn't care about input order, and Kpi.recompute_percentage_change re-sorts each
       # group by kpi_report.as_of itself.
       #
-      # .joins stays: it is what applies KpiReport's paranoia scope to the join
-      # (INNER JOIN kpi_reports ON kpi_reports.deleted_at IS NULL AND ...), so a kpi
-      # whose report was soft-deleted without cascading - KpiReport#delete / .delete_all skip the
-      # dependent: :destroy callback - stays excluded. Without it x.kpi_report is nil under the
-      # same paranoia scope and the group_by key below raises NoMethodError. The join itself costs
-      # nothing here; only the ORDER BY did. .preload (not .includes) then loads kpi_report via a
-      # separate narrow query, avoiding an N+1 on the period/tag_list calls in the group_by key
-      # without turning the join into a wide eager_load - same reasoning as
-      # KpiCumulative#fetch_related_monthly_kpis.
+      # .joins stays: it drops any kpi whose report is missing, which would otherwise make
+      # x.kpi_report nil and raise NoMethodError in the group_by key below. .preload (not
+      # .includes) then loads kpi_report via a separate narrow query, avoiding an N+1 on the
+      # period/tag_list calls in the group_by key without turning the join into a wide
+      # eager_load - same reasoning as KpiCumulative#fetch_related_monthly_kpis.
       Kpi.where(entity_id: port_co.entity_id, portfolio_company_id: port_co.id).approved.joins(:kpi_report).preload(:kpi_report).group_by { |x| [x.name, x.kpi_report.period, x.owner_id, x.kpi_report.tag_list] }.each do |key, kpis|
         msg = "Recomputing percentage change for #{key} for #{port_co.name} : #{kpis.length} kpis"
         Rails.logger.debug msg

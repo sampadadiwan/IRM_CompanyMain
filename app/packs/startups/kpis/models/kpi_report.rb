@@ -2,7 +2,6 @@ class KpiReport < ApplicationRecord
   include WithCustomField
   include ForInvestor
   include WithFolder
-  include Trackable.new
 
   attr_accessor :delete_kpis, :upload_new_kpis, :update_existing_kpis
 

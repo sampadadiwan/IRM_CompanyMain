@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2892,7 +2892,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
     t.date "as_of"
     t.boolean "autofill_completed", default: false, null: false
     t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.boolean "enable_portco_upload", default: false, null: false
     t.bigint "entity_id", null: false
@@ -2914,7 +2913,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
     t.datetime "validated_at"
     t.json "validation_result"
     t.index ["as_of"], name: "index_kpi_reports_on_as_of"
-    t.index ["deleted_at"], name: "index_kpi_reports_on_deleted_at"
     t.index ["document_folder_id"], name: "index_kpi_reports_on_document_folder_id"
     t.index ["entity_id", "as_of"], name: "index_kpi_reports_on_entity_id_and_as_of"
     t.index ["entity_id"], name: "index_kpi_reports_on_entity_id"
@@ -2932,7 +2930,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
     t.bigint "approved_by_user_id"
     t.decimal "common_size_value", precision: 6, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
-    t.datetime "deleted_at"
     t.string "display_value", limit: 30
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
@@ -2952,7 +2949,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_120000) do
     t.string "status", default: "approved"
     t.datetime "updated_at", null: false
     t.decimal "value", precision: 20, scale: 6
-    t.index ["deleted_at"], name: "index_kpis_on_deleted_at"
     t.index ["entity_id", "portfolio_company_id", "status", "name"], name: "index_kpis_on_entity_pc_status_name"
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
