@@ -25,7 +25,10 @@ module CapHive
       path_str.match?(%r{/(controllers|channels|dashboards|policies)/[^/]+}) ||
         path_str.match?(%r{/(delivery_methods|account_entry_allocation)/?$}) ||
         # nested namespaces inside the allocation engine, e.g. IncrementalMigration::Plan
-        path_str.include?("/account_entry_allocation/")
+        path_str.include?("/account_entry_allocation/") ||
+        # workflow_checks/ is a namespace (WorkflowChecks::Registry, WorkflowChecks::CapitalCall::*)
+        # spread across packs, not a root of flat constants
+        path_str.match?(%r{/workflow_checks(/|$)})
     end
     config.autoload_paths += Rails.root.glob('app/packs/**/controllers/concerns/')
     config.autoload_paths << Rails.root.join('lib')

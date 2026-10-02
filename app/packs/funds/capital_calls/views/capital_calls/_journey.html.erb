@@ -1,0 +1,11 @@
+<%# Capital call journey: the shared journey card (workflow_instances/_journey_panel) with the call's
+    frame id and readiness warnings. Kept as this file because WorkflowInstancesController#render_journey_frame
+    and CapitalCallsController#journey render "capital_calls/journey" by convention.
+    Locals: record (the capital call), journey (WorkflowEvaluator results, or nil), instance (or nil).
+    Worked examples H3, E6, E27 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+    Shared partial: capital-distribution-journey design Decision 2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#design-decisions %>
+<%= render "workflow_instances/journey_panel",
+           record:, journey:, instance: local_assigns[:instance], frame_id: "capital_call_journey", noun: "call",
+           # Readiness warnings, only worked out when the card shows (they hold until notices are sent)
+           warnings: -> { WorkflowChecks::CapitalCallWarnings.new(record).to_a },
+           warning_tip: "These investors will not receive the call notice email" %>

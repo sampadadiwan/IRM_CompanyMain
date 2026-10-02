@@ -1,6 +1,6 @@
 <%# Workflow tab panel — usable inside any Workflowable object's details view.
     Requires a `workflowable:` local (the object itself, e.g. a Folder, InvestorKyc,
-    CapitalCommitment, CapitalCall, Approval, or Investor). %>
+    CapitalCommitment, CapitalCall, CapitalDistribution, Approval, or Investor). %>
 <% active_instance = workflowable.workflow_instances.instance_active.first %>
 <%# Only offer templates scoped to this object's type (or unscoped), and further only those
     eligible_for? this exact record — matters when one workflowable_type covers more than one

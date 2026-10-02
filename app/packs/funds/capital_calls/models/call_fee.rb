@@ -25,6 +25,11 @@ class CallFee < ApplicationRecord
     self.fund_id = capital_call.fund_id
   end
 
+  # Raised when a fee formula blows up while being evaluated for a remittance. Wraps the
+  # original error (kept as #cause) with the fee and folio, so whoever runs the call knows
+  # which record to fix, e.g. a commitment with no unit type hitting fund_unit_setting.setup_fee.
+  class FormulaError < StandardError; end
+
   # This is used to calculate the fee based on the formula in the notes
   # Should return the amount in cents
   def calculate_formula(capital_remittance)
@@ -33,6 +38,15 @@ class CallFee < ApplicationRecord
     # Guard at the eval boundary so bypasses of the notes_kosher? validation (update_column,
     # imports, seeds) still cannot execute arbitrary code.
     eval(ApplicationRecord.safe_eval!(notes, context: "CallFee##{id} notes"), binding)
+  rescue ApplicationRecord::UnsafeEvalError
+    # A blocked formula is a security refusal, not a data problem - let it through unchanged
+    raise
+  rescue StandardError, SyntaxError => e
+    # SyntaxError is not a StandardError, so list it explicitly to cover a mistyped formula.
+    # Re-raising inside rescue sets the original error as #cause, keeping the eval backtrace.
+    raise FormulaError, "Fee formula '#{name}' (CallFee##{id}) failed for commitment " \
+                        "#{capital_commitment&.id} (#{capital_commitment&.investor_name}, folio " \
+                        "#{capital_commitment&.folio_id}): #{e.class}: #{e.message}"
   end
 
   def label

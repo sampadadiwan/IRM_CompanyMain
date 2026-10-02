@@ -22,6 +22,44 @@
       <%= form.text_field :capital_remittance_id, class: "form-control", hidden: true  %>
       <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 
+      <%# What the operator is expected to enter, in the same folio currency as the Amount field
+          below. Without it the amount is typed blind off the bank advice and a wrong figure only
+          surfaces later - at Verify, as the "collected amount is less/more than the call amount"
+          warning, or silently as an Overpaid remittance (CapitalRemittance#set_status). %>
+      <%
+        remittance = capital_remittance_payment.capital_remittance
+        folio_currency = remittance.capital_commitment.folio_currency
+        # Total callable on this remittance, fees included - the first two terms of
+        # CapitalRemittance#folio_due_amount.
+        folio_called = remittance.folio_call_amount + remittance.folio_other_fee
+        # folio_collected_amount is a counter_culture column, so on an edit it already includes
+        # this payment's last SAVED value. Take that back out: "already received" means every
+        # payment except the one being recorded here. _in_database (not folio_amount) so that a
+        # re-render after a validation error shows the saved figure, not the rejected input.
+        own_saved_cents = capital_remittance_payment.persisted? ? capital_remittance_payment.folio_amount_cents_in_database : 0
+        folio_received = remittance.folio_collected_amount - Money.new(own_saved_cents, folio_currency)
+        folio_to_receive = folio_called - folio_received
+      %>
+      <ul class="list-group list-group-flush border rounded mb-3">
+        <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+          <span class="text-muted">Call Amount (incl. fees)</span>
+          <span><%= money_to_currency folio_called, params %></span>
+        </li>
+
+        <%# Only worth a line when some other payment has already been recorded against this remittance %>
+        <% unless folio_received.zero? %>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+            <span class="text-muted">Already Received</span>
+            <span><%= money_to_currency folio_received, params %></span>
+          </li>
+        <% end %>
+
+        <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+          <span class="text-muted">To Be Received</span>
+          <span class="fw-bold"><%= money_to_currency folio_to_receive, params %></span>
+        </li>
+      </ul>
+
       <% disabled = !capital_remittance_payment.convert_to_fund_currency %>
       <div class="form-group" data-controller="currencyformat">
         <%= form.label :folio_amount, "Amount in #{capital_remittance_payment.capital_remittance.capital_commitment.folio_currency}" %> <span class="formatted_currency"></span>

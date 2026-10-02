@@ -16,6 +16,8 @@ class CapitalCallJob < ApplicationJob
         notify(capital_call_id, triggered_by_user_id)
       end
     end
+    # Real-time journey progress (no-op without a journey). Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+    CapitalCall.find_by(id: capital_call_id)&.journey_progress!(actor: User.find_by(id: triggered_by_user_id))
   end
 
   def generate(capital_call_id)

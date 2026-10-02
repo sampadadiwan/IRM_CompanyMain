@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -4436,11 +4436,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
   end
 
   create_table "workflow_instances", force: :cascade do |t|
+    t.datetime "completed_at", comment: "When the instance last completed; it can reopen, and the tick stops 30 days after this"
     t.datetime "created_at", null: false
     t.integer "current_step_position", default: 1, null: false
+    t.datetime "current_step_since", comment: "When the current step became current, stamped from the data; reminder intervals run from here"
     t.bigint "entity_id", null: false
+    t.boolean "evaluated", default: false, null: false, comment: "True when the snapshot has a non-human step; only these are evaluated from data and ticked"
     t.bigint "launched_by_id"
     t.integer "status", default: 0, null: false
+    t.json "step_results", comment: "Cache of the last evaluation per step position (status, message, link, times); never the source of truth"
     t.json "template_snapshot", null: false
     t.datetime "updated_at", null: false
     t.bigint "workflow_assignment_id"
@@ -4448,6 +4452,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
     t.bigint "workflowable_id", null: false
     t.string "workflowable_type", null: false
     t.index ["entity_id"], name: "index_workflow_instances_on_entity_id"
+    t.index ["evaluated", "status"], name: "index_workflow_instances_on_evaluated_and_status"
     t.index ["launched_by_id"], name: "index_workflow_instances_on_launched_by_id"
     t.index ["workflow_assignment_id"], name: "index_workflow_instances_on_workflow_assignment_id"
     t.index ["workflow_template_id"], name: "index_workflow_instances_on_workflow_template_id"
@@ -4465,6 +4470,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
     t.datetime "updated_at", null: false
     t.bigint "workflow_instance_id", null: false
     t.index ["actor_id"], name: "index_workflow_state_changes_on_actor_id"
+    t.index ["workflow_instance_id", "step_position", "to_state", "created_at"], name: "index_workflow_state_changes_on_instance_position_state_time"
     t.index ["workflow_instance_id", "step_position"], name: "index_wf_state_changes_on_instance_and_step"
     t.index ["workflow_instance_id"], name: "index_workflow_state_changes_on_workflow_instance_id"
   end
@@ -4480,18 +4486,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
   end
 
   create_table "workflow_steps", force: :cascade do |t|
+    t.string "check_key", limit: 100, comment: "Registered check deciding a system/acknowledge step, e.g. capital_call.approve_notices"
     t.datetime "created_at", null: false
     t.text "description"
+    t.boolean "keep_on_regress", default: false, null: false, comment: "Keep this step's sign-offs when an undoing action moves the workflow back before it"
+    t.integer "kind", default: 0, null: false, comment: "How the step completes: 0=human (votes), 1=system (data check), 2=acknowledge (one confirmation)"
     t.string "name", null: false
     t.boolean "notify_on_activation", default: true, null: false
     t.integer "on_reject_rule", default: 0, null: false
     t.integer "on_reject_target_step"
+    t.bigint "owner_user_id", comment: "User reminded when a system/acknowledge step stalls; NULL = the record's default owner (e.g. the call's creator)"
     t.integer "position", null: false
     t.integer "quorum_rule", default: 0, null: false
     t.integer "reminder_interval_days"
+    t.string "skip_key", limit: 100, comment: "Registered check that makes the step not applicable when true"
     t.string "states", default: "Approved,Rejected,Needs Info", null: false
+    t.string "unlocks", comment: "CSV of button labels this step unlocks once passed or not applicable"
     t.datetime "updated_at", null: false
     t.bigint "workflow_template_id", null: false
+    t.index ["owner_user_id"], name: "index_workflow_steps_on_owner_user_id"
     t.index ["workflow_template_id", "position"], name: "index_workflow_steps_on_template_and_position", unique: true
     t.index ["workflow_template_id"], name: "index_workflow_steps_on_workflow_template_id"
   end
@@ -4504,8 +4517,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
     t.string "gated_button_labels"
     t.string "name", null: false
     t.integer "reminder_interval_days"
+    t.string "system_key", limit: 50, comment: "Identity of a seeded template (capital_call_full, capital_call_light) so re-seeding finds it after a rename"
     t.datetime "updated_at", null: false
     t.string "workflowable_type"
+    t.index ["entity_id", "system_key"], name: "index_workflow_templates_on_entity_id_and_system_key", unique: true
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
 
@@ -4977,6 +4992,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
   add_foreign_key "workflow_state_changes", "workflow_instances"
   add_foreign_key "workflow_step_actors", "users"
   add_foreign_key "workflow_step_actors", "workflow_steps"
+  add_foreign_key "workflow_steps", "users", column: "owner_user_id"
   add_foreign_key "workflow_steps", "workflow_templates"
   add_foreign_key "workflow_templates", "entities"
 end

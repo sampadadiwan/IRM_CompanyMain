@@ -36,6 +36,13 @@ class WorkflowTemplatePolicy < ApplicationPolicy
     create?
   end
 
+  # Seeding the standard journeys (capital calls, distributions): a company admin of an Investment
+  # Fund entity (the same entities the rollout tasks and SetupCompany seed)
+  # Worked examples X3 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def setup_journeys?
+    create? && user.entity&.entity_type == "Investment Fund"
+  end
+
   private
 
   def workflow_templates_enabled?

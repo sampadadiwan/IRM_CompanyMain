@@ -97,6 +97,28 @@ Each step in the template represents a sequential gate. Steps run in position or
 | **Email actors when this step becomes active** | Untick to skip the "Action Required" email when the step starts. |
 | **Actors (entity employees)** | Internal users assigned to this step. Select from your organisation's employees. |
 
+### Step kinds (journeys)
+
+A step can be completed in one of three ways, chosen with **Kind** at the top of the step form:
+
+| Kind | Completed when | Fields used |
+|---|---|---|
+| **Human** | the actors vote, as described above (the default; every existing step is human) | allowable states, quorum, on reject, actors |
+| **System** | its **Check** finds the data in place, e.g. "every call notice is approved". Nobody votes | Check, Skip when, Owner |
+| **Acknowledge** | one person with edit rights on the record clicks **Mark reviewed** | Check, Skip when, Owner |
+
+A template that contains a system or acknowledge step is a **journey**: CapHive works out which step it is on from the record's data every time the record is opened, every 15 minutes, and when someone undoes earlier work, so it can move forwards and backwards on its own. The two capital call journeys are seeded for fund managers; see the [Capital Calls guide](capital_calls_user_guide).
+
+| Field | Description |
+|---|---|
+| **Check** | The question that decides a system or acknowledge step. Only checks for the template's record type are offered. |
+| **Skip when** | A check that makes the step "not applicable" for a particular record, e.g. notices on an imported call. |
+| **Owner** | Who is reminded when a system or acknowledge step has waited longer than its reminder interval. Blank means the person who created the record. |
+| **Unlocks buttons** | Button labels this step unlocks once done. In this release that only adds a warning to those buttons' confirmations. |
+| **Keep sign-off when moved back** | When earlier work is undone, votes and confirmations on later steps are reset unless this is ticked. |
+
+In a journey, rejecting a human step does not end the workflow: the step stays current with the rejection note and the actors can vote again.
+
 ---
 
 ## Managing Templates
@@ -499,6 +521,12 @@ sequenceDiagram
 ---
 
 ## Frequently Asked Questions
+
+**What is the difference between a human, system and acknowledge step?**
+A human step is completed by its actors voting. A system step completes on its own when its check finds the data in place, and an acknowledge step when one person clicks **Mark reviewed**. A template with system or acknowledge steps is a journey that CapHive keeps up to date from the record's data. See [Step kinds (journeys)](#step-kinds-journeys).
+
+**Why did a journey step's votes disappear?**
+Someone undid earlier work on the record, so sign-offs on later steps given before the change were reset, and their approvers were emailed. Tick **Keep sign-off when moved back** on a step to keep its votes in that case.
 
 ### Navigation and getting there
 

@@ -307,6 +307,16 @@ class CapitalCommitment < ApplicationRecord
     json_fields["skip_doc_gen"].to_s.strip.downcase == "yes"
   end
 
+  # Ids of the commitments in scope that are set to skip document generation (and so get no
+  # notice or email). skip_doc_gen lives in json_fields, so it is filtered in Ruby over two narrow
+  # columns using the same rule as skip_doc_gen? — portable to SQLite, unlike JSON SQL.
+  def self.skip_doc_gen_ids(scope)
+    scope.pluck(:id, :json_fields).filter_map do |id, fields|
+      fields = JSON.parse(fields) if fields.is_a?(String)
+      id if fields.to_h["skip_doc_gen"].to_s.strip.casecmp?("yes")
+    end
+  end
+
   # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
   def allocated_fund_units
     fund_units

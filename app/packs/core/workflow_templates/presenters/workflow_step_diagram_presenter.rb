@@ -18,7 +18,10 @@ class WorkflowStepDiagramPresenter
 
   def self.for_snapshot_step(snap, instance:, actor_users_by_id:, resolved_state_change:, actor_responses:)
     pos = snap[:position].to_i
-    status = if pos == instance.current_step_position && instance.instance_active?
+    status = if instance.evaluated
+               # Journeys: the evaluator's last result says what each step is, not the pointer alone
+               journey_status(instance.step_result(pos))
+             elsif pos == instance.current_step_position && instance.instance_active?
                :current
              elsif pos < instance.current_step_position || instance.instance_complete? ||
                    (instance.instance_rejected? && pos <= instance.current_step_position)
@@ -39,6 +42,15 @@ class WorkflowStepDiagramPresenter
         actor_users: actor_ids.filter_map { |id| actor_users_by_id[id] },
         status: status, resolved_state_change: resolved_state_change,
         actor_responses: actor_responses)
+  end
+
+  # Maps an evaluated step's stored status to the diagram's three states
+  def self.journey_status(result)
+    case result&.dig("status")
+    when "passed", "na" then :done
+    when "current", "error" then :current
+    else :pending
+    end
   end
 
   def template_mode?

@@ -1,4 +1,6 @@
 class InvestorKycPolicy < ApplicationPolicy
+  include WorkflowablePolicyMethods # journey?, assign_workflow?
+
   class Scope < Scope
     def resolve
       if user.investor_advisor? && user.curr_role == "investor"
@@ -176,12 +178,6 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def permissioned_employee?(perm = nil)
     extended_permissioned_employee?(perm)
-  end
-
-  # Only company_admin can assign / remove a workflow template on a KYC record,
-  # and only when the entity has workflow_templates enabled.
-  def assign_workflow?
-    user.entity&.permissions&.enable_workflow_templates? && user.company_admin? && belongs_to_entity?(user, record)
   end
 
   private

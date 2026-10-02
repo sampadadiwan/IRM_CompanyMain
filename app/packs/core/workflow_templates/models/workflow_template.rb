@@ -13,9 +13,18 @@ class WorkflowTemplate < ApplicationRecord
   # "Investor" covers both regular investors (onboarding) and portfolio companies
   # (KPI report review) — the two use cases are distinguished by `category` in the
   # auto-assignment rule's conditions, not by a separate workflowable_type.
-  WORKFLOWABLE_TYPE_OPTIONS = %w[Folder InvestorKyc CapitalCommitment CapitalCall Approval Investor].freeze
+  # CapitalDistribution: capital-distribution-journey (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples)
+  WORKFLOWABLE_TYPE_OPTIONS = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor].freeze
+
+  # How far saved step positions are moved aside while they are being resequenced (see
+  # park_step_positions) — comfortably beyond any real template's step count
+  POSITION_PARK_OFFSET = 1000
 
   before_validation { self.workflowable_type = nil if workflowable_type.blank? }
+
+  # Steps are ordered by the number typed into each row of the template form
+  before_validation :renumber_workflow_steps
+  before_save :park_step_positions
 
   validates :name, presence: true
   validates :name, uniqueness: { scope: :entity_id, message: "must be unique within your organisation" }
@@ -27,6 +36,12 @@ class WorkflowTemplate < ApplicationRecord
 
   def to_s
     name
+  end
+
+  # True for a seeded journey template (e.g. capital_call_full) — templates that track a process
+  # from data rather than a pure approval chain
+  def journey?
+    system_key.present?
   end
 
   # Number of objects currently assigned to this template across all workflowable types
@@ -53,6 +68,47 @@ class WorkflowTemplate < ApplicationRecord
   end
 
   private
+
+  # Turn the step numbers typed into the form into a clean 1..n sequence.
+  # An admin reorders by typing a new number on one row only — e.g. typing "2" on what was step 4
+  # moves it up and the rest close ranks, so no other row has to be retyped. The row the admin
+  # actually typed into wins a tie, so it takes the slot it asked for and pushes the incumbent
+  # down; untouched rows keep their order, and a row just added (no number yet) lands last.
+  def renumber_workflow_steps
+    # Rows the admin deleted keep their old numbers — they are about to be destroyed anyway
+    surviving = workflow_steps.reject(&:marked_for_destruction?)
+    return if surviving.empty?
+
+    ordered = surviving.each_with_index.sort_by do |step, index|
+      [step.position || Float::INFINITY, step.position_changed? ? 0 : 1, index]
+    end
+    slots = ordered.each_with_index.map { |(step, _index), slot| [step, slot + 1] }
+
+    # When nothing actually moves, leave the records alone so an ordinary save (a renamed template,
+    # an edited step description) doesn't park and rewrite every step for no reason
+    @steps_resequenced = slots.any? { |step, slot| step.new_record? || step.position_in_database != slot }
+    return unless @steps_resequenced
+
+    slots.each do |step, slot|
+      step.position = slot
+      # park_step_positions moves the saved rows aside, so every step has to be written back even
+      # when its number is unchanged — otherwise it would be left behind in the parked range
+      step.position_will_change!
+    end
+  end
+
+  # Move the saved rows out of the 1..n range before autosave writes the new numbers.
+  # workflow_steps has a UNIQUE index on [workflow_template_id, position] and Rails updates the
+  # children one row at a time, so swapping steps 1 and 2 would otherwise collide on the first
+  # write. A constant offset keeps the parked rows unique among themselves, and no real template
+  # has 1000 steps, so a parked row can never collide with an unparked one either. Both the
+  # parking and the rewrite run inside the save's transaction, so a failure rolls both back.
+  def park_step_positions
+    return unless persisted? && @steps_resequenced
+
+    WorkflowStep.where(workflow_template_id: id)
+                .update_all("position = position + #{POSITION_PARK_OFFSET}")
+  end
 
   def workflowable_type_immutable
     return unless workflowable_type_changed? && workflowable_type_was.present?

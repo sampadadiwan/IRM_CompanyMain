@@ -5,9 +5,10 @@ class WorkflowInstancesController < ApplicationController
   # Kept in sync with WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS by convention —
   # this list is deliberately separate (not a reference to the constant) so a
   # security review of this controller doesn't need to trust another file's contents.
-  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall Approval Investor].freeze
+  # CapitalDistribution: capital-distribution-journey (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples)
+  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor].freeze
 
-  before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail]
+  before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail acknowledge]
 
   # GET /workflow_instances
   # Lists all workflow instances visible to the current user's entity.
@@ -121,10 +122,32 @@ class WorkflowInstancesController < ApplicationController
   def reset
     authorize @instance
     result = WorkflowInstanceReset.call(instance: @instance)
+    # Journeys: after a reset the data decides where the instance really is
+    WorkflowEvaluator.call(instance: @instance.reload, actor: current_user) if result.success? && @instance.evaluated
     if result.success?
       redirect_to workflow_instance_path(@instance), notice: "Workflow reset to step 1."
     else
       redirect_to workflow_instance_path(@instance), alert: result[:errors]
+    end
+  end
+
+  # Worked examples H4, X3 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  # POST /workflow_instances/:id/acknowledge
+  # "Mark reviewed" on the current acknowledge step of a journey. Needs view rights on the
+  # instance and update rights on the record (e.g. the capital call) itself.
+  def acknowledge
+    authorize @instance, :show?
+    authorize @instance.workflowable, :update?
+
+    result = WorkflowAcknowledge.call(instance: @instance, step_position: params[:step_position].to_i,
+                                      user: current_user)
+    respond_to do |format|
+      # The panel re-renders either way: on failure it shows the step's current state
+      format.turbo_stream { render_journey_frame }
+      format.html do
+        flash_key, flash_message = result.success? ? [:notice, "Marked as reviewed."] : [:alert, result[:errors]]
+        redirect_back_or_to workflow_instance_path(@instance), flash_key => flash_message
+      end
     end
   end
 
@@ -224,6 +247,15 @@ class WorkflowInstancesController < ApplicationController
   end
 
   private
+
+  # Re-renders the record's journey panel in place (capital calls today)
+  def render_journey_frame
+    record = @instance.workflowable
+    journey = WorkflowEvaluator.for(record, cause: :progress)
+    render turbo_stream: turbo_stream.replace(record.journey_frame_id,
+                                              partial: "#{record.class.name.underscore.pluralize}/journey",
+                                              locals: { record:, journey: journey&.[](:results), instance: @instance.reload })
+  end
 
   # Safely resolve the workflowable from params, rejecting unknown types
   def find_workflowable!

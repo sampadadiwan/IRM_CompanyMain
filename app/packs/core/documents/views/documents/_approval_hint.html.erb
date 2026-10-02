@@ -1,0 +1,29 @@
+<%# Contextual banner for people sent to this filtered list by another page specifically to
+    approve something - the capital call's and the capital distribution's "View Generated Notices To
+    Approve" (capital-distribution-journey, Worked examples E22 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples).
+
+    params[:hint] is matched against known keys and every word of the message is hard-coded here:
+    nothing from the URL is rendered, so a crafted link cannot plant a message on this page.
+
+    The hint is deliberately not carried in layouts/filter's hidden fields. Re-running the filter
+    changes which documents are listed, at which point the banner no longer describes them, so it
+    drops away on its own. %>
+<% if params[:hint] == "approve_notices" %>
+  <div class="alert alert-info d-flex align-items-start" role="alert">
+    <i class="ti ti-info-circle fs-5 flex-shrink-0 me-2"></i>
+    <div>
+      <% if current_user.has_cached_role?(:approver) %>
+        <strong>These notices still need approval.</strong>
+        Use <strong>Actions &rarr; Approve</strong> to approve the whole list in one step. It covers
+        every notice matching this filter, including any on later pages - not only the rows on
+        screen. To approve them one at a time instead, open a notice and use its own Approve button.
+      <% else %>
+        <%# bulk_actions only renders Approve for the :approver role, so pointing a non-approver
+            at Actions -> Approve would send them looking for a menu item that is not there. %>
+        <strong>These notices still need approval.</strong>
+        Approving requires the Approver role, which your account does not have - ask an approver at
+        your firm to review this list.
+      <% end %>
+    </div>
+  </div>
+<% end %>

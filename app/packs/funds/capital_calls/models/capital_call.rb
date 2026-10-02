@@ -205,6 +205,12 @@ class CapitalCall < ApplicationRecord
   #   workflow_url          → capital_call_path(self)
   #   workflow_attachable_files → []
 
+  # The journey panel on the call page: real-time refresh, creator as default owner and
+  # journey_progress_for all come from Workflowable. The panel is the only journey state on the page —
+  # the Approve / Send confirmations deliberately don't repeat it — so its frame is all that can go stale.
+  # Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  has_journey
+
   # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
   def allocated_fund_units
     FundUnit.where(owner_type: "CapitalRemittance", owner_id: capital_remittances.select(:id))

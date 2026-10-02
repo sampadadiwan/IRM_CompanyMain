@@ -852,10 +852,11 @@ end
 Then('when the capital call docs are generated') do
   CapitalCall.find_each do |cc|
     visit(capital_call_path(cc))
+    # Both inside the Actions menu: the journey panel has its own "Generate Documents" button too
     within "#capital_call_#{cc.id}_actions" do
       click_on("Actions")
+      click_on("Generate Documents")
     end
-    click_on("Generate Documents")
     click_on("Proceed")
     # sleep(1)
     cc.capital_remittances.each_with_index do |cr, _count|

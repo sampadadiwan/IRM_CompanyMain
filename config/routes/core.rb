@@ -4,9 +4,10 @@ end
 
 # Workflow templates (company_admin only for mutations; all employees read-only)
 resources :workflow_templates do
-  resources :workflow_steps, except: %i[index show] do
-    post :reorder, on: :collection
-  end
+  # Seeds a kind's standard journeys, params[:kind] in JourneySetup::KINDS (same service as the
+  # rollout rake tasks). Worked examples H10 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  post :setup_journeys, on: :collection
+  resources :workflow_steps, except: %i[index show]
   # Auto-assignment rules are nested under their template
   resources :workflow_auto_assignment_rules, except: %i[show]
 end
@@ -218,6 +219,7 @@ resources :workflow_instances, only: %i[index create show] do
     post :archive             # admin archives a stalled instance
     post :send_reminder       # admin triggers immediate reminder to pending actors
     get  :export_audit_trail  # download full state-change history as CSV
+    post :acknowledge         # "Mark reviewed" on a journey's current acknowledge step
   end
 
   # Actor responses nested under their instance (no folder nesting)

@@ -162,6 +162,19 @@ class Document < ApplicationRecord
     SQL
   end
 
+  # Find the documents for capital_distribution_payments (distribution notices) for a given
+  # capital_distribution_id — the distribution page's "View Generated Notices To Approve" filter.
+  # Worked examples H3, E22 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  ransacker :capital_distribution_id do
+    Arel.sql <<~SQL.squish
+      (SELECT capital_distribution_payments.capital_distribution_id
+      FROM capital_distribution_payments
+      WHERE capital_distribution_payments.id = documents.owner_id
+        AND documents.owner_type = 'CapitalDistributionPayment'
+      LIMIT 1)
+    SQL
+  end
+
   # Find the documents whose owner is a CapitalCommitment, and that commitment belongs to a given fund_id
   ransacker :commitments_fund_id do
     Arel.sql(<<~SQL.squish)
@@ -455,6 +468,46 @@ class Document < ApplicationRecord
     approved && !template && !sent_for_esign && SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status&.downcase) && e_signatures.any?
   end
 
+  # Distinct capital call ids for the call notices (generated, remittance-owned) in `documents`.
+  # Plucked in SQL (a handful of ids) so the documents table is never loaded; plucked rather than
+  # kept as a subquery because callers approve the documents, which takes them out of the scope.
+  def self.call_ids_for_notices(documents)
+    CapitalRemittance.where(id: documents.where(owner_type: "CapitalRemittance", owner_tag: "Generated").select(:owner_id))
+                     .distinct.pluck(:capital_call_id)
+  end
+
+  # Distinct capital distribution ids for the distribution notices (generated, payment-owned) in
+  # `documents` — the distribution counterpart of call_ids_for_notices, plucked the same way.
+  # Worked examples E18 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def self.distribution_ids_for_notices(documents)
+    CapitalDistributionPayment.where(id: documents.where(owner_type: "CapitalDistributionPayment", owner_tag: "Generated").select(:owner_id))
+                              .distinct.pluck(:capital_distribution_id)
+  end
+
+  # { journey record class => ids } for the notices in `documents` — read BEFORE approving them,
+  # then handed to notices_journey_progress! once the approval is done.
+  def self.notice_journey_ids(documents)
+    { CapitalCall => call_ids_for_notices(documents), CapitalDistribution => distribution_ids_for_notices(documents) }
+  end
+
+  # Re-checks, once each, the journeys of the calls and distributions whose notices were approved
+  # (bulk approve, approve by date range). No-op for records without a journey.
+  # Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  # Worked examples E18 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def self.notices_journey_progress!(journey_ids, actor:)
+    journey_ids.each { |klass, ids| klass.journey_progress_for(ids, actor:) if ids.any? }
+  end
+
+  # The call or distribution whose journey this generated notice counts towards, or nil
+  def notice_journey_record
+    return unless owner_tag == "Generated"
+
+    case owner_type
+    when "CapitalRemittance" then owner&.capital_call
+    when "CapitalDistributionPayment" then owner&.capital_distribution
+    end
+  end
+
   def to_be_approved?
     subject_to_approval? && !approved
   end
@@ -470,7 +523,7 @@ class Document < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved created_at download esign_status impressions_count locked name orignal owner_tag owner_type tag_list capital_call_id commitments_fund_id as_of template].sort
+    %w[approved created_at download esign_status impressions_count locked name orignal owner_tag owner_type tag_list capital_call_id capital_distribution_id commitments_fund_id as_of template].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

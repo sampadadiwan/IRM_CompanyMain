@@ -15,11 +15,30 @@ class WorkflowAutoReminderJob < ApplicationJob
     end
   end
 
+  # The owner to remind for a step, or nil when there is none or they are no longer active.
+  # Read from the live template step first, so fixing an owner in the template fixes in-flight
+  # journeys (design Decision 18).
+  def self.owner_for(instance, step_data)
+    live_step = instance.workflow_template&.workflow_steps&.find_by(position: step_data[:position].to_i)
+    owner_id = live_step ? live_step.owner_user_id : step_data[:owner_user_id]
+    owner = owner_id ? User.find_by(id: owner_id) : instance.workflowable.workflow_default_owner
+    owner if owner&.active
+  end
+
   private
 
   def send_reminders_for(instance)
+    # Journeys: bring the instance up to date from the data first, so nobody is reminded about a
+    # step that is already done, then remind the right person for the step's kind
+    if instance.evaluated
+      WorkflowEvaluator.call(instance:, cause: :progress)
+      instance.reload
+      return unless instance.instance_active?
+    end
+
     step_data = instance.current_step_data
     return unless step_data
+    return send_owner_reminder(instance, step_data) if instance.evaluated && step_data[:kind].to_s.in?(%w[system acknowledge])
 
     interval = effective_interval(instance, step_data)
     return unless interval
@@ -30,7 +49,13 @@ class WorkflowAutoReminderJob < ApplicationJob
                                 .where(step_position: instance.current_step_position,
                                        channel: :auto_reminder)
                                 .maximum(:created_at)
-    reference_time = last_reminder_at || instance.updated_at
+    # Journeys time reminders from when the step became current (stamped from the data);
+    # instance.updated_at moves on every evaluation so it can't be used for them
+    reference_time = if instance.evaluated
+                       [last_reminder_at, instance.current_step_since].compact.max || instance.updated_at
+                     else
+                       last_reminder_at || instance.updated_at
+                     end
     return unless reference_time < interval.days.ago
 
     # Actors who still haven't submitted a response for this step
@@ -63,6 +88,27 @@ class WorkflowAutoReminderJob < ApplicationJob
         channel:           :auto_reminder
       )
     end
+  end
+
+  # Worked examples H9, H15, E16, X4 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  def send_owner_reminder(instance, step_data)
+    interval = effective_interval(instance, step_data)
+    return unless interval
+
+    position = instance.current_step_position
+    last_reminder_at = instance.workflow_state_changes.where(step_position: position, to_state: "owner_reminded")
+                               .maximum(:created_at)
+    reference_time = [last_reminder_at, instance.current_step_since].compact.max || instance.updated_at
+    return unless reference_time < interval.days.ago
+
+    owner = self.class.owner_for(instance, step_data)
+    return unless owner # the panel shows "Owner unavailable — update the journey template"
+
+    message = instance.step_result(position)&.dig("message")
+    WorkflowMailer.with(user_id: owner.id, entity_id: instance.entity_id, instance_id: instance.id,
+                        step_position: position, message:).owner_reminder.deliver_later
+    WorkflowStateChange.create!(workflow_instance: instance, step_position: position, actor: owner,
+                                to_state: "owner_reminded", note: message, channel: :auto_reminder)
   end
 
   # Returns the effective reminder interval for this step in days, or nil to skip.

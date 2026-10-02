@@ -1,0 +1,194 @@
+<%# Journey card shared by every record type with a journey: step rail, "What's needed now" callout,
+    moved-back banner and readiness warnings. Each type renders it from its own <plural>/_journey
+    wrapper (WorkflowInstancesController#render_journey_frame finds the wrapper by that convention).
+    Locals:
+      record      — the workflowable (a capital call, a capital distribution)
+      journey     — WorkflowEvaluator results, or nil
+      instance    — the evaluated WorkflowInstance, or nil (looked up here)
+      frame_id    — turbo frame id, "<record type>_journey"; the card is "<frame_id>_card"
+      noun        — what the record is called in tooltips ("call", "distribution")
+      warnings    — callable returning readiness warning strings; only called when a journey shows
+      warning_tip — tooltip on each warning (who it affects)
+    Presentation (icons, tooltips, progress) lives in JourneyHelper.
+    Tooltips are initialised by the page-level `tooltip` Stimulus controller on the modernize <body>,
+    which re-scans on turbo:frame-load — i.e. after this frame is replaced below.
+    Moved here from capital_calls/_journey (capital-distribution-journey design Decision 2).
+    Worked examples H3, E6, E27, J2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+    Worked examples H3, H4, E6 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+    UI journey J2.1–J2.6 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#what-users-see
+    Replaced in place by WorkflowInstancesController#acknowledge (Turbo Stream on frame_id).
+    A journey complete for a day or more renders hidden (d-none, with data-journey-complete="true")
+    so the record's page is not taken up by a finished checklist; the breadcrumb's journey icon
+    (layouts/_breadcrumbs, journey_reveal_controller.js) shows and hides it. %>
+<% instance ||= record.workflow_instances.evaluated.where.not(status: :archived).order(created_at: :desc).first %>
+<%= turbo_frame_tag frame_id do %>
+  <% if journey.present? && instance %>
+    <% steps = journey.map(&:with_indifferent_access) %>
+    <% current = steps.find { |s| s[:status].in?(%w[current error]) } %>
+    <% done_count, applicable_count, percent = journey_progress(steps) %>
+    <%# Nothing is left to do. A journey that finished a day or more ago folds itself away (it is
+        rendered but hidden) and the breadcrumb's journey icon brings it back on demand; one that
+        has just finished stays on the page so whoever ticked off the last task sees it finish.
+        Rendered rather than skipped so revealing it is instant and needs no second request — and
+        so the icon can appear the moment a Turbo frame update completes the journey in place. %>
+    <% complete = instance.instance_complete? || current.nil? %>
+    <% hidden = complete && journey_hide_completed?(instance) %>
+
+    <div class="card cc-journey mb-3 <%= "d-none" if hidden %>" id="<%= frame_id %>_card"
+         data-journey-complete="<%= complete %>">
+      <%# Moved-back banner: the current task was done before and something undid it %>
+      <% if current && current[:regressed] %>
+        <% by = current[:regressed_by] && User.find_by(id: current[:regressed_by]) %>
+        <div class="cc-moved" id="journey_moved_back">
+          <i class="ti ti-rotate-2" aria-hidden="true"></i>
+          <span>
+            Moved back to "<%= current[:name] %>" — <%= current[:regressed_reason] %><%= " by #{by.full_name}" if by %>
+            <% if current[:since] %> on <%= l(Time.zone.parse(current[:since]), format: :abbr_date_time) %><% end %>.
+          </span>
+        </div>
+      <% end %>
+
+      <%# Header: which journey this is, and how far it has got %>
+      <div class="cc-journey-head">
+        <div class="cc-journey-badge"><i class="ti ti-route" aria-hidden="true"></i></div>
+        <div>
+          <div class="cc-journey-eyebrow">Journey</div>
+          <h6 class="cc-journey-title"><%= instance.template_name %></h6>
+        </div>
+        <div class="cc-journey-progress"
+             data-bs-toggle="tooltip"
+             data-bs-title="<%= "#{done_count} of #{applicable_count} applicable tasks done" %>">
+          <div class="cc-journey-count">
+            <span><%= done_count %> of <%= applicable_count %> done</span>
+            <span><%= percent %>%</span>
+          </div>
+          <div class="progress" role="progressbar" aria-label="Journey progress"
+               aria-valuenow="<%= percent %>" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar bg-success" style="width: <%= percent %>%"></div>
+          </div>
+        </div>
+        <%# Opens the full workflow in a new tab so the record's page stays where it is %>
+        <%= link_to workflow_instance_path(instance), class: "btn btn-sm btn-outline-primary",
+                    target: "_blank", rel: "noopener", data: { turbo: false } do %>
+          <i class="ti ti-external-link" aria-hidden="true"></i> View
+        <% end %>
+      </div>
+
+      <%# Step rail: every task by name with its state; the current one stands out %>
+      <div class="cc-rail" id="journey_step_bar">
+        <% steps.each_with_index do |s, idx| %>
+          <% view = journey_step_view(s) %>
+          <%# The connector into this pill is coloured only when the task before it is done,
+              so the rail shows how far progress actually got %>
+          <% linked = idx.positive? && steps[idx - 1][:status] == "passed" %>
+          <span class="cc-step journey-step journey-step-<%= s[:status] %> <%= view[:modifier] %> <%= "cc-step--linked" if linked %>"
+                data-journey-status="<%= s[:status] %>"
+                data-journey-regressed="<%= s[:regressed] ? "true" : "false" %>"
+                data-bs-toggle="tooltip" data-bs-html="true"
+                data-bs-title="<%= journey_step_tooltip(s) %>"
+                aria-label="<%= journey_step_aria(s) %>">
+            <span class="cc-step-dot"><i class="ti <%= view[:icon] %>" aria-hidden="true"></i></span>
+            <span class="cc-step-label"><%= s[:name] %></span>
+          </span>
+        <% end %>
+      </div>
+
+      <% if complete %>
+        <div class="cc-now cc-now--done" id="journey_panel">
+          <div class="cc-now-icon"><i class="ti ti-circle-check" aria-hidden="true"></i></div>
+          <div class="flex-grow-1 align-self-center">
+            <div class="cc-now-msg mb-0">
+              <strong>Journey complete</strong><% if instance.completed_at %> — all tasks done on <%= l(instance.completed_at.to_date) %><% end %>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <% position = steps.index(current) + 1 %>
+        <% step_data = instance.snapshot_steps.find { |st| st[:position].to_i == current[:position].to_i } || {} %>
+        <% owner = step_data[:kind].to_s != "human" ? WorkflowAutoReminderJob.owner_for(instance, step_data) : nil %>
+        <% days = instance.current_step_since ? (Date.current - instance.current_step_since.to_date).to_i : nil %>
+        <% now_view = journey_now_view(current) %>
+
+        <div class="cc-now <%= now_view[:modifier] %>" id="journey_panel">
+          <div class="cc-now-icon"><i class="ti <%= now_view[:icon] %>" aria-hidden="true"></i></div>
+
+          <div class="flex-grow-1">
+            <div class="cc-now-eyebrow">What's needed now</div>
+            <div class="cc-now-msg" id="journey_message">
+              <strong><%= current[:name] %>:</strong> <%= current[:message] %>
+            </div>
+
+            <%# Meta chips: where in the journey this is, who is chased about it, how long it has sat %>
+            <div class="cc-meta">
+              <span class="cc-chip" data-bs-toggle="tooltip"
+                    data-bs-title="<%= "Task #{position} of #{steps.size} in this journey" %>">
+                <i class="ti ti-route" aria-hidden="true"></i> Step <%= position %> of <%= steps.size %>
+              </span>
+
+              <% if owner %>
+                <span class="cc-chip" data-bs-toggle="tooltip"
+                      data-bs-title="Owner — reminders about this task go to them">
+                  <i class="ti ti-user" aria-hidden="true"></i> <%= owner.full_name %>
+                </span>
+              <% elsif step_data[:kind].to_s != "human" %>
+                <%# No owner means nobody is being reminded: the template needs fixing %>
+                <span class="cc-chip cc-chip--danger" data-bs-toggle="tooltip"
+                      data-bs-title="Nobody is being reminded about this task — set an owner on the journey template">
+                  <i class="ti ti-user-off" aria-hidden="true"></i> Owner unavailable
+                </span>
+              <% end %>
+
+              <% if days %>
+                <% overdue = journey_step_overdue?(step_data, days) %>
+                <span class="cc-chip <%= "cc-chip--warn" if overdue %>" data-bs-toggle="tooltip"
+                      data-bs-title="<%= overdue ? "Overdue — reminders are going out about this task" : "How long this #{noun} has been on this task" %>">
+                  <i class="ti ti-clock" aria-hidden="true"></i> <%= pluralize(days, "day") %> here
+                </span>
+              <% end %>
+            </div>
+          </div>
+
+          <%# The action that moves this task on. An errored step has none — the evaluator returns
+              no action_path for it, there is nothing for the user to click. %>
+          <div class="align-self-center">
+            <% if current[:kind] == "acknowledge" && policy(record).update? %>
+              <%= button_to acknowledge_workflow_instance_path(instance, step_position: current[:position]),
+                    method: :post, class: "btn btn-sm btn-primary px-3", id: "journey_mark_reviewed",
+                    form: { data: { turbo_frame: frame_id } } do %>
+                <i class="ti ti-check" aria-hidden="true"></i> Mark reviewed
+              <% end %>
+            <% elsif current[:action_path].present? %>
+              <%# When the task's real control is on this page (Approve, Send Notification, a tab),
+                  action_target names it and the journey-action controller clicks it instead of
+                  navigating — following action_path would just reload the page we are on. The
+                  href stays as the fallback for when that control isn't rendered. %>
+              <%= link_to current[:action_path], class: "btn btn-sm btn-primary px-3",
+                    id: "journey_action", data: { turbo_frame: "_top",
+                                                  controller: ("journey-action" if current[:action_target].present?),
+                                                  journey_action_control_value: current[:action_target],
+                                                  action: ("click->journey-action#run" if current[:action_target].present?) }.compact do %>
+                <%= current[:action_label] %> <i class="ti ti-arrow-right" aria-hidden="true"></i>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Readiness warnings (each type decides until when; calls and distributions: until investors are emailed).
+          Not worked out at all once the journey is complete: there is nothing left to act on by then
+          (both warning classes already return [] past that point), and the card is on its way out. %>
+      <% warning_list = complete ? [] : warnings.call %>
+      <% if warning_list.any? %>
+        <div class="cc-warnings">
+          <% warning_list.each do |warning| %>
+            <div class="journey-warning" data-bs-toggle="tooltip"
+                 data-bs-title="<%= warning_tip %>">
+              <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+              <span><%= warning %></span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

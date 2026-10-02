@@ -15,6 +15,9 @@ class DocumentApprovalJob < ApplicationJob
 
     Chewy.strategy(:sidekiq) do
       documents = documents_to_approve(entity_id, parent_folder_id, start_date, end_date, owner_type)
+      # Calls and distributions whose notices are among them — read now, since approving takes
+      # them out of this scope (capital-distribution-journey E18)
+      journey_ids = Document.notice_journey_ids(documents)
 
       documents.find_each do |document|
         Rails.logger.debug { "Approving document #{document.name}, #{document.id}" }
@@ -31,6 +34,9 @@ class DocumentApprovalJob < ApplicationJob
         Rails.logger.error(e.backtrace.join("\n"))
         send_notification("Document approval for #{doc.name}, #{doc.id} failed: #{e.message}", user_id, "danger")
       end
+
+      # Real-time journey progress (no-op without a journey). Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+      Document.notices_journey_progress!(journey_ids, actor: User.find_by(id: user_id))
     end
 
     send_notification("Document approval completed, please refresh the page.", user_id, "info")

@@ -131,7 +131,8 @@
               <%
                 rs = step.resolved_state_change.to_state.downcase
                 pill = case rs
-                       when /approv/    then "wf-state-approved"
+                       # "passed" is what evaluated (system-checked) steps resolve to
+                       when /approv|pass/ then "wf-state-approved"
                        when /reject/    then "wf-state-rejected"
                        when /tentative/ then "wf-state-tentative"
                        else "wf-state-default"
@@ -150,7 +151,7 @@
                 <i class="ti ti-loader"></i> In progress
               </span>
             <% else %>
-              <span class="wf-rule-badge wffd-step-rule">
+              <span class="wf-rule-badge wf-rule-warning wffd-step-rule">
                 <i class="ti ti-clock"></i> Pending
               </span>
             <% end %>

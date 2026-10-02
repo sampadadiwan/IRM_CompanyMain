@@ -31,6 +31,7 @@ Given("there is a workflow template {string}") do |params_str|
     name: attrs["name"],
     description: attrs["description"],
     reminder_interval_days: attrs["reminder_interval_days"]&.to_i,
+    workflowable_type: attrs["workflowable_type"],
     entity: @entity
   )
 end

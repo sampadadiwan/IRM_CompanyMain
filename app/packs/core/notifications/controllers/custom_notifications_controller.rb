@@ -1,5 +1,8 @@
 class CustomNotificationsController < ApplicationController
   before_action :set_custom_notification, only: %i[show edit update destroy]
+  # Editing an investor email invalidates the journey's review tasks (capital call and distribution journeys)
+  before_action -> { @journey_started_at = Time.current }, only: %i[create update destroy]
+  after_action :invalidate_journey_reviews, only: %i[create update destroy]
 
   # GET /custom_notifications or /custom_notifications.json
   def index
@@ -78,5 +81,14 @@ class CustomNotificationsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def custom_notification_params
     params.require(:custom_notification).permit(:subject, :body, :whatsapp, :for_type, :show_details, :entity_id, :owner_id, :owner_type, :attachment_password, :password_protect_attachment, :show_details_link, :email_method, :enabled, :is_erb, :to, :attachment_names, :tag, :latest_doc_only, :attachment_mandatory)
+  end
+
+  # Only after a successful change (the actions redirect on success)
+  # Worked examples E12, E24 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  # Worked examples E14 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def invalidate_journey_reviews
+    return unless response.redirect? && @custom_notification
+
+    JourneyEmailEdit.call(notification: @custom_notification, actor: current_user, started_at: @journey_started_at)
   end
 end

@@ -2,6 +2,47 @@
   <h1 class="h3 mb-0 text-gray-800">Workflow Templates</h1>
   <div class="d-flex align-items-center gap-2">
     <%= user_guide_info_icon %>
+    <%# "Set up journeys" menu: one item per journey kind (JourneySetup::KINDS), shown to admins who may run
+        the setup (WorkflowTemplatesController#journey_setup_plans). A kind's item is active while anything
+        is missing and confirms what it adds; once its journeys and rules exist it is a disabled "✓ … set up".
+        A menu rather than a button per kind so later journey types fit. Item ids: setup_<kind>_journeys_btn.
+        Worked examples H1, E14 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+        Worked examples H10, E20, E25, X3 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples %>
+    <% if @journey_setup_plans.any? %>
+      <% pending = @journey_setup_plans.count { |_kind, plan| plan[:templates].any? || plan[:rules].any? || plan[:cfo] } %>
+      <div class="dropdown" id="setup_journeys_menu">
+        <button type="button" id="setup_journeys_menu_btn" class="btn btn-outline-primary dropdown-toggle"
+                data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-route"></i> Set up journeys
+          <% if pending.positive? %><span class="badge bg-primary ms-1"><%= pending %></span><% end %>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end">
+          <% @journey_setup_plans.each do |kind, plan| %>
+            <% setup = JourneySetup.for_kind(kind) %>
+            <% records = setup::RECORD.pluralize %>
+            <% if plan[:templates].any? || plan[:rules].any? || plan[:cfo] %>
+              <%# The Full journey's CFO sign-off has no approver yet: pick one by editing that step (E24, E25) %>
+              <% msg = "This adds the standard #{setup::LABEL} for this company: " \
+                       "#{plan[:templates].any? ? "the Full (#{setup::FULL_STEPS.size} tasks) and Light (#{setup::LIGHT_STEP_NAMES.size} tasks) journey templates" : 'no templates (they exist)'}" \
+                       "#{plan[:rules].any? ? ", and rules giving imported #{records} Light and every other #{setup::RECORD} Full" : ''}" \
+                       "#{plan[:cfo] ? ", and a #{JourneySetup::CFO_STEP_NAME} step in the Full journey" : ''}. " \
+                       "The #{JourneySetup::CFO_STEP_NAME} step has no approver: edit it to pick one (until then it is skipped). " \
+                       "Only #{records} created from now on get a journey. Anything already set up is kept." %>
+              <%= button_to setup_journeys_workflow_templates_path(kind:), id: "setup_#{kind}_journeys_btn",
+                    class: "dropdown-item", form_class: "deleteButton",
+                    data: { action: "click->confirm#popup", method: :post, title: "Set up #{setup::LABEL}", msg: } do %>
+                <i class="ti ti-route me-1"></i> Set up <%= setup::LABEL %>
+              <% end %>
+            <% else %>
+              <button type="button" id="setup_<%= kind %>_journeys_btn" class="dropdown-item text-success" disabled
+                      title="The Full and Light journeys and their rules already exist. Edit the <%= setup::WORKFLOWABLE_TYPE.titleize %> templates below to change them.">
+                <i class="ti ti-check me-1"></i> <%= setup::LABEL.upcase_first %> set up
+              </button>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
     <% if policy(WorkflowTemplate.new(entity_id: current_user.entity_id)).new? %>
       <%= link_to new_workflow_template_path, class: "btn btn-outline-primary" do %>
         <i class="ti ti-playlist-add"></i> New Template

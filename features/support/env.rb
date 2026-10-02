@@ -252,7 +252,11 @@ module IRMUtils
 
   def key_values(model, args)
     puts "Setting #{args} on #{model.class} #{model.id}"
-    key_val = args.split(";").map { |kv| kv.split("=") }.to_h
+    # Limit the split to 2 so an intentionally empty value survives: "unit_type=" has to
+    # parse as {"unit_type" => ""} (a commitment with no unit type), but a plain
+    # split("=") drops the trailing empty field and to_h then raises ArgumentError.
+    # It also lets a value contain "=" instead of blowing up on the extra field.
+    key_val = args.split(";").map { |kv| kv.split("=", 2) }.to_h
     key_val.each do |k, v|
       # model[k] = v
       puts "Setting #{k} to #{v} on #{model.class} #{model.id}"

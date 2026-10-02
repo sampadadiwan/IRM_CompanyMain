@@ -14,7 +14,34 @@ class WorkflowMailer < ApplicationMailer
     send_mail(subject: "Reminder: #{@instance.template_name} – #{@step[:name]}")
   end
 
+  # Sent daily to the owner of a journey step (system / acknowledge) that has stalled.
+  # params: user_id, entity_id, instance_id, step_position, message
+  def owner_reminder
+    load_journey_context
+    @message = params[:message]
+    send_mail(subject: "Needs attention: #{@step[:name]} – #{@workflowable_name}")
+  end
+
+  # Sent to an approver whose sign-off on a journey step was reset because earlier work was undone.
+  # params: user_id, entity_id, instance_id, step_position, reason
+  def sign_off_reset
+    load_journey_context
+    @reason = params[:reason]
+    send_mail(subject: "Your sign-off was reset: #{@step[:name]} – #{@workflowable_name}")
+  end
+
   private
+
+  # Journey emails go to owners and approvers who act on the record itself, so they carry links
+  # to the record and the instance page but no magic link
+  def load_journey_context
+    @instance          = WorkflowInstance.find(params[:instance_id])
+    @workflowable      = @instance.workflowable
+    @step              = @instance.snapshot_steps.find { |s| s[:position].to_i == params[:step_position].to_i }
+    @workflowable_name = @workflowable.workflow_display_name
+    @workflowable_url  = workflowable_full_url(@workflowable)
+    @instance_url      = workflow_instance_url(@instance)
+  end
 
   def load_step_context
     @instance      = WorkflowInstance.find(params[:instance_id])

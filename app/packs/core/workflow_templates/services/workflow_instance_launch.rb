@@ -12,9 +12,14 @@ class WorkflowInstanceLaunch < Trailblazer::Operation
   end
 
   def create_instance(ctx, workflowable:, launched_by:, **)
-    # Lock the workflowable row to serialise concurrent launches — prevents two active instances
+    # Worked examples H2 (launch never evaluates; lock without reloading the record) — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+    # Lock the workflowable row to serialise concurrent launches — prevents two active instances.
+    # Lock a separate copy rather than calling workflowable.lock!: lock! reloads the caller's object,
+    # which wipes its saved_changes. Auto-launch runs inside the record's own create callbacks, so a
+    # reload there broke callers that check saved_change_to_*? afterwards (e.g. CapitalCall's
+    # remittance generation silently did nothing).
     ActiveRecord::Base.transaction do
-      workflowable.lock!
+      workflowable.class.lock.find(workflowable.id)
       if workflowable.workflow_instances.instance_active.exists?
         ctx[:errors] = "A workflow is already in progress for this object. Complete or archive it first."
         raise ActiveRecord::Rollback
@@ -22,15 +27,20 @@ class WorkflowInstanceLaunch < Trailblazer::Operation
 
       assignment = workflowable.workflow_assignment
       template   = assignment.workflow_template
+      snapshot   = build_snapshot(template)
       ctx[:instance] = WorkflowInstance.create!(
         workflowable:          workflowable,
         workflow_assignment:   assignment,
         workflow_template:     template,
         entity_id:             workflowable.entity_id,
         launched_by:           launched_by,
-        template_snapshot:     build_snapshot(template),
+        template_snapshot:     snapshot,
         current_step_position: first_step_position(template),
-        status:                :active
+        status:                :active,
+        # Evaluated from data when any step is system/acknowledge. Launch itself never evaluates:
+        # auto-launch runs inside the record's create transaction, and the first evaluation is
+        # the next page view or 15-minute tick.
+        evaluated:             snapshot[:steps].any? { |step| step[:kind].to_s != "human" }
       )
     end
     ctx[:instance].present?
@@ -39,7 +49,12 @@ class WorkflowInstanceLaunch < Trailblazer::Operation
   # Notify first-step actors after create_instance's transaction commits so a mailer
   # failure does not roll back the newly created instance.
   def notify_first_step_actors(ctx, **)
-    WorkflowStepActorNotifier.call(instance: ctx[:instance], step_position: ctx[:instance].current_step_position)
+    instance = ctx[:instance]
+    # A system/acknowledge first step has no actors to email; the evaluator emails approvers when
+    # a human step later becomes current
+    return true unless instance.current_step_data.to_h[:kind].to_s.in?(["", "human"])
+
+    WorkflowStepActorNotifier.call(instance:, step_position: instance.current_step_position)
     true
   end
 
@@ -69,7 +84,15 @@ class WorkflowInstanceLaunch < Trailblazer::Operation
           on_reject_target_step:  step.on_reject_target_step,
           reminder_interval_days: step.effective_reminder_interval,
           notify_on_activation:   step.notify_on_activation,
-          actor_ids:              step.workflow_step_actors.map(&:user_id)
+          actor_ids:              step.workflow_step_actors.map(&:user_id),
+          # Journey fields (capital-call-journey). Check keys are snapshotted, their logic is not:
+          # a key's meaning never changes (WorkflowChecks::Registry), so this stays stable.
+          kind:                   step.kind,
+          check_key:              step.check_key,
+          skip_key:               step.skip_key,
+          owner_user_id:          step.owner_user_id,
+          unlocks:                step.unlocks,
+          keep_on_regress:        step.keep_on_regress
         }
       }
     }

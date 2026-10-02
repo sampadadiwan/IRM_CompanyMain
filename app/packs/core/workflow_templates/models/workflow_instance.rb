@@ -19,6 +19,14 @@ class WorkflowInstance < ApplicationRecord
   # Ordered history of all instances for a given workflowable object
   scope :for_workflowable, ->(obj) { where(workflowable: obj).order(created_at: :desc) }
 
+  # Journeys: instances whose snapshot has a system/acknowledge step (set at launch)
+  scope :evaluated, -> { where(evaluated: true) }
+
+  # The last evaluation's result for one step position, e.g. { "status" => "passed", ... }
+  def step_result(position)
+    (step_results || {})[position.to_s]
+  end
+
   # Returns the current step's data from the frozen snapshot
   def current_step_data
     steps = template_snapshot.with_indifferent_access[:steps] || []
