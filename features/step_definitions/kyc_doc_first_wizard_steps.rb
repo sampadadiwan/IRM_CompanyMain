@@ -152,3 +152,15 @@ After('@doc_wizard_magic_link') do
   Capybara.session_name = :default
   Capybara.reset_sessions!
 end
+
+# ── Empty submission ──────────────────────────────────────────────────────────
+
+# Had extraction run, the flow would have ended on the job's redirect URL (edit?doc_first_done=1)
+# via the processing page. Landing on a URL without doc_first_done, with no documents saved,
+# shows the controller short-circuited before enqueuing KycDocExtractorJob.
+Then('no KYC document extraction should have been started') do
+  expect(page.current_url).not_to include("doc_first_done")
+  expect(page.current_url).not_to include("/processing")
+  kyc = @investor_kyc || InvestorKyc.order(:id).last
+  expect(kyc.documents.exists?).to be(false)
+end

@@ -726,6 +726,14 @@ class InvestorKycsController < ApplicationController
   # runs, nothing ever marks extraction done, and the spinner would wait forever.
   def doc_first_next_url(investor_kyc, signed_id: nil)
     signed_id = signed_id.presence
+
+    # Submitted with no files: there is nothing to extract, so skip the job and the spinner and
+    # return to the upload form. exists? queries the DB, so blank entries never saved don't count.
+    unless investor_kyc.documents.exists?
+      flash[:alert] = "Upload at least one document, or choose Fill Form Manually."
+      return edit_investor_kyc_url(investor_kyc, signed_id:)
+    end
+
     if enqueue_doc_extraction_for(investor_kyc, signed_id:)
       processing_investor_kyc_url(investor_kyc, signed_id:)
     else
@@ -750,6 +758,8 @@ class InvestorKycsController < ApplicationController
   # Returns true when the doc-first upload form should be shown instead of the regular KYC edit form.
   def doc_first_wizard_for_edit?
     return false if params[:skip_doc_first].present?
+    # Extraction has already run for this upload; going back to the upload form would loop.
+    return false if params[:doc_first_done].present?
     return false if @investor_kyc.submission_completed? || @investor_kyc.submission_verified?
     return false unless @investor_kyc.entity.entity_setting.kyc_doc_first_wizard?
     return false unless @investor_kyc.entity.support_agents.kyc_doc_extractor_agent?
