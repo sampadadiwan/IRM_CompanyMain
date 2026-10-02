@@ -148,11 +148,17 @@ class InvestorKycsController < ApplicationController
   # The job broadcasts a Turbo Stream that triggers client-side redirect to edit.
   def processing
     authorize @investor_kyc
-    # Check the in-process store first (works when Rails.cache is :null_store in test env).
+    # Read (and clear) the marker KycDocExtractorJob writes to Redis when it finishes.
     redirect_url = KycDocExtractorJob.consume_redirect(@investor_kyc.id)
-    # Fall back to Rails.cache for production environments with a real cache backend.
-    redirect_url ||= Rails.cache.read("kyc_extraction_done_#{@investor_kyc.id}")
-    redirect_to redirect_url if redirect_url.present?
+
+    respond_to do |format|
+      # First load: if the job already finished (always so with the inline adapter in test),
+      # skip the spinner entirely.
+      format.html { redirect_to redirect_url if redirect_url.present? }
+      # Polled by the spinner page (processing_poll_controller.js) as a fallback for a
+      # missed Turbo Stream broadcast; redirect_url stays null until the job is done.
+      format.json { render json: { redirect_url: redirect_url } }
+    end
   end
 
   # PATCH /investor_kycs/:id/doc_first_upload
@@ -169,8 +175,7 @@ class InvestorKycsController < ApplicationController
       doc.folder    ||= kyc_folder if doc.new_record?
     end
     @investor_kyc.save(validate: false)
-    enqueue_doc_extraction_for(@investor_kyc, signed_id: params[:signed_id])
-    redirect_to processing_investor_kyc_url(@investor_kyc, signed_id: params[:signed_id])
+    redirect_to doc_first_next_url(@investor_kyc, signed_id: params[:signed_id])
   end
 
   # GET /investor_kycs/1/edit
@@ -226,8 +231,7 @@ class InvestorKycsController < ApplicationController
     respond_to do |format|
       if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:, validate:, owner_id: params[:owner_id], owner_type: params[:owner_type]).success?
         if doc_first
-          enqueue_doc_extraction_for(@investor_kyc)
-          format.html { redirect_to processing_investor_kyc_url(@investor_kyc) }
+          format.html { redirect_to doc_first_next_url(@investor_kyc) }
         else
           format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
           format.json { render :show, status: :created, location: @investor_kyc }
@@ -680,12 +684,30 @@ class InvestorKycsController < ApplicationController
     @signed_id_user || current_user
   end
 
+  # Where to send the user after a doc-first upload. Only go through the processing spinner
+  # when an extraction job was actually enqueued: with no enabled KycDocExtractorAgent no job
+  # runs, nothing ever marks extraction done, and the spinner would wait forever.
+  def doc_first_next_url(investor_kyc, signed_id: nil)
+    signed_id = signed_id.presence
+    if enqueue_doc_extraction_for(investor_kyc, signed_id:)
+      processing_investor_kyc_url(investor_kyc, signed_id:)
+    else
+      # skip_doc_first stops the edit page from showing the upload wizard again.
+      edit_investor_kyc_url(investor_kyc, skip_doc_first: 1, signed_id:)
+    end
+  end
+
+  # Enqueues KycDocExtractorJob; returns false (and enqueues nothing) when the entity has
+  # no enabled KycDocExtractorAgent.
   def enqueue_doc_extraction_for(investor_kyc, signed_id: nil)
     agent = investor_kyc.entity.agents.find_by(agent_type: "KycDocExtractorAgent", enabled: true)
-    return unless agent
+    return false unless agent
 
     redirect_url = edit_investor_kyc_url(investor_kyc, doc_first_done: 1, signed_id: signed_id.presence)
+    # Clear any unconsumed marker from an earlier run before this run can write its own.
+    KycDocExtractorJob.clear_redirect(investor_kyc.id)
     KycDocExtractorJob.perform_later(investor_kyc.id, agent.id, redirect_url)
+    true
   end
 
   # Returns true when the doc-first upload form should be shown instead of the regular KYC edit form.

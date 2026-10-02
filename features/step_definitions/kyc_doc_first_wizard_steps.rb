@@ -120,9 +120,9 @@ end
 
 # Clicks the submit button on the doc-first upload form.
 # With the inline job adapter in test env, the extraction job runs synchronously:
-#   1. KycDocExtractorJob executes → writes redirect URL to Rails.cache
+#   1. KycDocExtractorJob executes → writes redirect URL to Redis (KycDocExtractorJob.redirect_key)
 #   2. Controller redirects to processing_investor_kyc_path
-#   3. Processing action reads cache → redirects immediately to edit page with doc_first_done=1
+#   3. Processing action consumes the marker → redirects immediately to edit page with doc_first_done=1
 # The final page shows "Fields pre-filled from your documents".
 When('I submit the doc-first upload form') do
   click_on 'Continue to Fill Form →'
