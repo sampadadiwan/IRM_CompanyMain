@@ -17,6 +17,9 @@ class DocLlmValidationJob < ApplicationJob
         model.reload
         send_notification("Document #{document.name} validation completed for #{model}", user_id, "success")
       end
+      # The AI answers may complete (or not) a journey's "Validate documents" — tell open pages now.
+      # A no-op for records without a journey. Worked examples H5, E3 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+      model.journey_progress! if docs.present? && model.respond_to?(:journey_progress!)
       if docs.present?
         send_notification("Document validation completed for #{model}.", user_id, "success")
       else

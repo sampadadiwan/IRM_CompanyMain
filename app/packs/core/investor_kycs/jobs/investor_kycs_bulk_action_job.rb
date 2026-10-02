@@ -13,8 +13,15 @@ class InvestorKycsBulkActionJob < BulkActionJob
     when "bankverification"
       VerifyBankJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(obj_class: investor_kyc.class.to_s, obj_id: investor_kyc.id)
     when "unverify"
+      # Back to "completed", exactly like the KYC page's UnVerify; Request Updates is what reopens a KYC
+      # for the investor. InvestorKycUpdate's journey hook moves the journey back ("Unverified").
+      # Only verified KYCs: an unsubmitted one must not be marked submitted by unverifying it.
+      # Worked examples E17 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+      return unless investor_kyc.submission_verified?
+
       investor_kyc.verified = false
-      investor_kyc.submission_status = "link_sent"
+      investor_kyc.verified_by_id = nil
+      investor_kyc.submission_status = "completed"
       InvestorKycUpdate.call(investor_kyc:, investor_user: false)
     when "sendkyclink"
       send_kyc_link(investor_kyc, user_id, custom_notification_id: params[:custom_notification_id])

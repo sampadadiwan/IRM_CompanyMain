@@ -34,11 +34,28 @@
       <%= f.label :auto_launch, "Automatically launch a workflow instance after assigning the template" %>
     </div>
 
+    <%# KYC rules: pick a KYC form type instead of typing its id — this rule then applies only to KYCs of
+        that form type; every other form type keeps the default (catch-all) journey.
+        Worked examples E25, E27 — openspec/changes/investor-kyc-journey/design.md#worked-examples %>
+    <% kyc_rule = rule.workflowable_type == "InvestorKyc" %>
+    <% if kyc_rule %>
+      <div class="form-group">
+        <%= f.label :kyc_form_type_id, "KYC form type" %>
+        <%= f.select :kyc_form_type_id,
+              kyc_form_types.order(:name, :tag).map { |ft| ["#{ft.name.delete_suffix('Kyc').titleize.sub('Investor', 'Any type')} — #{ft.tag}", ft.id] },
+              { include_blank: "Any form type", selected: rule.kyc_form_type_id },
+              class: "form-select", id: "workflow_auto_assignment_rule_kyc_form_type_id" %>
+        <small class="text-muted">
+          Only KYCs with this form type get this rule's journey. Leave blank for every KYC.
+        </small>
+      </div>
+    <% end %>
+
     <%# Conditions — JSON array, edited via a simple textarea for now %>
     <div class="form-group">
-      <%= f.label :conditions_json, "Conditions (JSON)" %>
+      <%= f.label :conditions_json, kyc_rule ? "Other conditions (JSON)" : "Conditions (JSON)" %>
       <%= f.text_area :conditions_json,
-            value: JSON.pretty_generate(Array(rule.conditions)),
+            value: JSON.pretty_generate(Array(rule.conditions).reject { |c| kyc_rule && c.is_a?(Hash) && c["attribute"].to_s == "form_type_id" }),
             class: "form-control font-monospace",
             rows: 6,
             placeholder: '[{"attribute":"kyc_type","operator":"eq","value":"Individual"}]' %>

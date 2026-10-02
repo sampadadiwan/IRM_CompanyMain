@@ -1,5 +1,9 @@
 class InvestorKyc < ApplicationRecord
   include Workflowable
+
+  # The KYC page shows a journey panel (investor-kyc-journey): open pages update live, and stalled
+  # tasks remind the KYC's creator when that creator works for the fund (workflow_default_owner).
+  has_journey
   STANDARD_COLUMNS = { "Investor; text-col" => "investor_name; text-col",
                        "Investing Entity; text-col" => "full_name; text-col",
                        "Type; text-col" => "kyc_type; text-col",
@@ -244,6 +248,10 @@ class InvestorKyc < ApplicationRecord
         update_column(:send_kyc_form_to_user, false)
       end
       # rubocop:enable Rails/SkipsModelValidations
+
+      # update_columns skips callbacks, so tell the journey ("Send KYC form" is done) explicitly
+      # Worked examples H3 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+      journey_progress!
     end
   end
 
@@ -347,6 +355,15 @@ class InvestorKyc < ApplicationRecord
   # Override workflow_attachable_files: documents are polymorphically linked, not a direct association.
   def workflow_attachable_files
     Document.where(owner: self).to_a
+  end
+
+  # Who is reminded about a stalled journey task when the step names no owner: the creator, but only
+  # when they work for the fund — an investor who created their own KYC must never get reminders
+  # about the fund's tasks (design Decision 10).
+  # Worked examples E23 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def workflow_default_owner
+    creator = super
+    creator if creator && creator.entity_id == entity_id
   end
 
   def enable_kyc

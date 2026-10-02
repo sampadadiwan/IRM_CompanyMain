@@ -2,6 +2,7 @@ class SetupCompany < Trailblazer::Operation
   step :setup_folders
   step :setup_capital_call_journeys
   step :setup_capital_distribution_journeys
+  step :setup_investor_kyc_journeys
 
   def setup_folders(_ctx, entity:, **)
     if entity.root_folder.blank?
@@ -23,6 +24,13 @@ class SetupCompany < Trailblazer::Operation
   # Worked examples H1 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
   def setup_capital_distribution_journeys(_ctx, entity:, **)
     CapitalDistributionJourneySetup.call(entity:) if entity.entity_type == "Investment Fund"
+    true
+  end
+
+  # And the investor KYC journey, for Investment and Angel Funds (investor-kyc-journey).
+  # Worked examples H1 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def setup_investor_kyc_journeys(_ctx, entity:, **)
+    InvestorKycJourneySetup.call(entity:) if InvestorKycJourneySetup.available_for?(entity)
     true
   end
   # rubocop:enable Rails/SkipsModelValidations

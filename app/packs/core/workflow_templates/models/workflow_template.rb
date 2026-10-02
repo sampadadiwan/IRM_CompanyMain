@@ -38,6 +38,24 @@ class WorkflowTemplate < ApplicationRecord
     name
   end
 
+  # A copy of this template with the same steps (kind, checks, skips, owners, approvers, settings) and
+  # no rules, named "Copy of <name>" (numbered if taken). The copy has no system_key, so journey setup
+  # never treats it as the seeded template. Used to give one KYC form type its own journey.
+  # Worked examples E25, E26 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def duplicate!
+    copy = nil
+    transaction do
+      copy = WorkflowTemplate.create!(attributes.except("id", "name", "system_key", "created_at", "updated_at")
+                                                .merge("name" => copy_name))
+      # A template has a handful of steps, kept in position order (find_each would drop the order)
+      workflow_steps.includes(:workflow_step_actors).each do |step| # rubocop:disable Rails/FindEach
+        new_step = copy.workflow_steps.create!(step.attributes.except("id", "workflow_template_id", "created_at", "updated_at"))
+        step.workflow_step_actors.each { |actor| new_step.workflow_step_actors.create!(user_id: actor.user_id) }
+      end
+    end
+    copy
+  end
+
   # True for a seeded journey template (e.g. capital_call_full) — templates that track a process
   # from data rather than a pure approval chain
   def journey?
@@ -62,12 +80,21 @@ class WorkflowTemplate < ApplicationRecord
   # a template whose rules ALL evaluate false against this exact record could never have been
   # auto-assigned to it, which is a strong signal it's scoped to a different sub-audience.
   def eligible_for?(workflowable)
-    rules = workflow_auto_assignment_rules.where(workflowable_type: workflowable.class.name)
+    rules = workflow_auto_assignment_rules.where(workflowable_type: workflowable.workflowable_type_name)
     return true if rules.none?
     rules.any? { |rule| rule.matches?(workflowable) }
   end
 
   private
+
+  # "Copy of X", or "Copy of X (2)", "(3)"… when that name is taken in the entity
+  def copy_name
+    base = "Copy of #{name}"
+    taken = WorkflowTemplate.where(entity_id:).where("name LIKE ?", "#{WorkflowTemplate.sanitize_sql_like(base)}%").pluck(:name)
+    return base unless taken.include?(base)
+
+    (2..).each { |n| return "#{base} (#{n})" unless taken.include?("#{base} (#{n})") }
+  end
 
   # Turn the step numbers typed into the form into a clean 1..n sequence.
   # An admin reorders by typing a new number on one row only — e.g. typing "2" on what was step 4

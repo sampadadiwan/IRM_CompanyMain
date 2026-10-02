@@ -13,6 +13,13 @@
 <%= render "/investor_kycs/kyc_onboarding_agent", investor_kyc: @investor_kyc if show_onboarding_agent %>
 
 <div class="container-fluid p-3">
+  <%# KYC journey (step bar + what's needed now) for fund users; nothing renders without one or for investors.
+      Worked examples H2, X1 — openspec/changes/investor-kyc-journey/design.md#worked-examples %>
+  <% if @journey.present? %>
+    <%= render "/investor_kycs/journey", record: @investor_kyc, journey: @journey, instance: nil %>
+    <%# Real-time: an evaluation that changes this KYC's journey reloads the panel above in place (E15) %>
+    <%= turbo_stream_from @investor_kyc, :journey %>
+  <% end %>
   <!-- Show the main KYC details -->
   <%= render "investor_kycs/show", investor_kyc: @investor_kyc, ckyc_data: ckyc_data, kra_data: kra_data %>
 

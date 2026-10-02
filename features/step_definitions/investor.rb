@@ -1679,7 +1679,8 @@ Then('when I Send KYC reminder for the kyc') do
   # clear_emails
   visit(investor_kyc_path(@investor_kyc))
   click_on("KYC Actions")
-  click_on("Send KYC Reminder")
+  # Scoped to the menu: the KYC journey panel can show a "Send KYC Reminder" button too
+  within("#kyc_actions + .dropdown-menu") { click_on("Send KYC Reminder") }
   click_on("Proceed")
 end
 
@@ -1692,6 +1693,11 @@ end
 
 Then('the kycs should be unverified') do
   InvestorKyc.where(verified: true).count.should == 0
+end
+
+# Bulk Unverify matches the single UnVerify: back to "completed", not reopened for the investor
+Then('the unverified kycs should be completed') do
+  InvestorKyc.where(submission_status: "completed").count.should == InvestorKyc.count
 end
 
 Then('the kycs users should receive the kyc reminder email') do

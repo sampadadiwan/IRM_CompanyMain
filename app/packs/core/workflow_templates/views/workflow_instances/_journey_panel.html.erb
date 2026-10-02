@@ -157,7 +157,21 @@
                     form: { data: { turbo_frame: frame_id } } do %>
                 <i class="ti ti-check" aria-hidden="true"></i> Mark reviewed
               <% end %>
-            <% elsif current[:action_path].present? %>
+            <% end %>
+            <%# An acknowledge check that asked for review (WorkflowChecks::Result.review) offers its own
+                button beside Mark reviewed, e.g. KYC "Open validation" / "Validate Document Data". Only
+                set by such checks, so calls' and distributions' review steps render exactly as before.
+                Worked examples E3 — openspec/changes/investor-kyc-journey/design.md#worked-examples %>
+            <% if current[:kind] == "acknowledge" && current[:review_action_path].present? %>
+              <%= link_to current[:review_action_path], class: "btn btn-sm btn-outline-primary px-3 ms-1",
+                    id: "journey_review_action", data: { turbo_frame: "_top",
+                                                         controller: ("journey-action" if current[:review_action_target].present?),
+                                                         journey_action_control_value: current[:review_action_target],
+                                                         action: ("click->journey-action#run" if current[:review_action_target].present?) }.compact do %>
+                <%= current[:review_action_label] %> <i class="ti ti-arrow-right" aria-hidden="true"></i>
+              <% end %>
+            <% end %>
+            <% if current[:kind] != "acknowledge" && current[:action_path].present? %>
               <%# When the task's real control is on this page (Approve, Send Notification, a tab),
                   action_target names it and the journey-action controller clicks it instead of
                   navigating — following action_path would just reload the page we are on. The

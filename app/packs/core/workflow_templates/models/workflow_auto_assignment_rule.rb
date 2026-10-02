@@ -7,6 +7,14 @@ class WorkflowAutoAssignmentRule < ApplicationRecord
   # DB columns only are allowed as attribute names to prevent arbitrary method calls.
   OPERATORS = %w[eq not_eq gt lt gte lte in not_in present blank].freeze
 
+  # Form type names of KYCs, for the rule form's "KYC form type" picker (investor-kyc-journey E27)
+  KYC_FORM_TYPE_NAMES = %w[IndividualKyc NonIndividualKyc InvestorKyc].freeze
+
+  # The form type a KYC rule picks (its form_type_id eq condition), or nil
+  def kyc_form_type_id
+    Array(conditions).find { |c| c.is_a?(Hash) && c["attribute"].to_s == "form_type_id" && c["operator"] == "eq" }&.dig("value")
+  end
+
   validates :workflowable_type, presence: true,
                                 inclusion: { in: WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS }
   validates :priority,          presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }

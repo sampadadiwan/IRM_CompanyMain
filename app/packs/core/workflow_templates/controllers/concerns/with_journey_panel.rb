@@ -32,7 +32,7 @@ module WithJourneyPanel
   # Just the panel (<plural>/_journey). By now nothing has changed, so evaluating again here never
   # triggers another broadcast.
   def render_journey_panel(record)
-    render partial: "#{record.class.name.underscore.pluralize}/journey",
+    render partial: "#{record.workflowable_type_name.underscore.pluralize}/journey",
            locals: { record:, journey: evaluate_journey(record), instance: nil }
   end
 end

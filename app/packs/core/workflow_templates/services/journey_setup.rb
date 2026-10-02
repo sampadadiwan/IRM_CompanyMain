@@ -10,7 +10,13 @@
 #   FULL_STEPS         [[name, kind, check, skip, unlocks, description], ...]
 #   LIGHT_STEP_NAMES   the Full steps the Light journey keeps
 #   LIGHT_CONDITIONS   the rule conditions that pick Light (imported records)
-#   APPROVE_STEP_NAME  the Full step the CFO sign-off goes before ("Approve call")
+#   APPROVE_STEP_NAME  the Full step the sign-off goes before ("Approve call", "Verify KYC")
+#
+# Optional (defaults below keep calls and distributions as they were):
+#   LIGHT_KEY          nil → a single template and one catch-all rule (investor KYC)
+#   ENTITY_TYPES       which entity types get this kind (default ["Investment Fund"])
+#   SIGN_OFF_NAME / SIGN_OFF_DESCRIPTION   the seeded approval step (default the CFO sign-off)
+#   FULL_LABEL         what messages call the Full template ("Full"; "KYC" for the single KYC journey)
 #
 # The Full journey includes a "CFO sign-off" approval step with NO approvers: the admin picks them
 # by editing that step in the journey template. Until then it shows as n/a (WorkflowEvaluator), so
@@ -31,13 +37,59 @@ class JourneySetup < Trailblazer::Operation
   # constantized only from this hash, never from a request parameter.
   KINDS = {
     "capital_call" => "CapitalCallJourneySetup",
-    "capital_distribution" => "CapitalDistributionJourneySetup"
+    "capital_distribution" => "CapitalDistributionJourneySetup",
+    "investor_kyc" => "InvestorKycJourneySetup"
   }.freeze
 
   # The seeded approval step (a human step: approvers vote; any one approval passes it)
   CFO_STEP_NAME = "CFO sign-off".freeze
   CFO_STEP_DESCRIPTION = "The CFO signs off before approval. Pick the approver(s) by editing this step; " \
                          "until someone is picked it shows as not applicable.".freeze
+
+  # Per-kind overrides (investor-kyc-journey design Decision 3); a subclass redefines the constant
+  LIGHT_KEY = nil
+  LIGHT_NAME = nil
+  LIGHT_STEP_NAMES = [].freeze
+  ENTITY_TYPES = ["Investment Fund"].freeze
+  SIGN_OFF_NAME = CFO_STEP_NAME
+  SIGN_OFF_DESCRIPTION = CFO_STEP_DESCRIPTION
+  FULL_LABEL = "Full".freeze
+
+  # Whether this kind seeds a Light template next to the Full one
+  def self.light?
+    self::LIGHT_KEY.present?
+  end
+
+  # Whether this kind is offered to the entity (rollout, SetupCompany, the Set up journeys menu)
+  # Worked examples X4 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def self.available_for?(entity)
+    entity.present? && self::ENTITY_TYPES.include?(entity.entity_type)
+  end
+
+  # Every entity type some kind is offered to
+  def self.entity_types
+    KINDS.keys.flat_map { |kind| for_kind(kind)::ENTITY_TYPES }.uniq
+  end
+
+  # The Set up journeys menu's confirmation for this kind, from its dry-run report
+  def self.confirm_message(plan)
+    records = self::RECORD.pluralize
+    templates = if plan[:templates].none?
+                  "no templates (they exist)"
+                elsif light?
+                  "the #{self::FULL_LABEL} (#{self::FULL_STEPS.size} tasks) and Light (#{self::LIGHT_STEP_NAMES.size} tasks) journey templates"
+                else
+                  "the #{self::FULL_NAME} journey template (#{self::FULL_STEPS.size} tasks)"
+                end
+    rules = if plan[:rules].none? then ""
+            elsif light? then ", and rules giving imported #{records} Light and every other #{self::RECORD} Full"
+            else ", and a rule giving every new #{self::RECORD} this journey"
+            end
+    sign_off = plan[:cfo] ? ", and a #{self::SIGN_OFF_NAME} step in the #{self::FULL_LABEL} journey" : ""
+    "This adds the standard #{self::LABEL} for this company: #{templates}#{rules}#{sign_off}. " \
+      "The #{self::SIGN_OFF_NAME} step has no approver: edit it to pick one (until then it is skipped). " \
+      "Only #{records} created from now on get a journey. Anything already set up is kept."
+  end
 
   step :plan
   step :apply
@@ -51,7 +103,7 @@ class JourneySetup < Trailblazer::Operation
   # what was, or would be, added. One entity's failure is reported and the rest carry on.
   def self.rollout(kind, execute:, entity_id: nil, io: $stdout)
     setup = for_kind(kind)
-    entities = Entity.where(entity_type: "Investment Fund")
+    entities = Entity.where(entity_type: setup::ENTITY_TYPES)
     entities = entities.where(id: entity_id) if entity_id.present?
 
     io.puts(execute ? "Seeding #{setup::LABEL}" : "DRY RUN — nothing will be written (set EXECUTE=1 to apply)")
@@ -63,7 +115,7 @@ class JourneySetup < Trailblazer::Operation
       planned = []
       planned << "templates: #{report[:templates].join(', ')}" if report[:templates].any?
       planned << "rules: #{report[:rules].join(', ')}" if report[:rules].any?
-      planned << "add #{CFO_STEP_NAME} to the Full journey" if report[:cfo]
+      planned << "add #{setup::SIGN_OFF_NAME} to the #{setup::FULL_LABEL} journey" if report[:cfo]
       planned << "enable workflow templates" if report[:flag]
       io.puts "  #{entity.name} (id=#{entity.id}): #{planned.any? ? planned.join('; ') : 'already set up'}"
     rescue StandardError => e
@@ -76,16 +128,20 @@ class JourneySetup < Trailblazer::Operation
 
   # Works out what is missing for this entity
   def plan(ctx, entity:, **)
-    keys = [self.class::FULL_KEY, self.class::LIGHT_KEY]
+    keys = [self.class::FULL_KEY, self.class::LIGHT_KEY].compact
     templates = WorkflowTemplate.where(entity:, system_key: keys).index_by(&:system_key)
     ctx[:report] = {
       entity: entity.name,
       templates: keys.reject { |key| templates.key?(key) },
       # The admin may have set up their own rules: never add ours next to them
-      rules: WorkflowAutoAssignmentRule.exists?(entity:, workflowable_type: self.class::WORKFLOWABLE_TYPE) ? [] : %w[imported_to_light all_to_full],
+      rules: if WorkflowAutoAssignmentRule.exists?(entity:, workflowable_type: self.class::WORKFLOWABLE_TYPE)
+               []
+             else
+               self.class.light? ? %w[imported_to_light all_to_full] : %w[all_to_full]
+             end,
       flag: !entity.permissions.enable_workflow_templates?,
       # A Full template seeded before the CFO sign-off step existed (a new template gets it seeded)
-      cfo: templates[self.class::FULL_KEY].present? && !templates[self.class::FULL_KEY].workflow_steps.exists?(name: CFO_STEP_NAME)
+      cfo: templates[self.class::FULL_KEY].present? && !templates[self.class::FULL_KEY].workflow_steps.exists?(name: self.class::SIGN_OFF_NAME)
     }
     true
   end
@@ -99,12 +155,17 @@ class JourneySetup < Trailblazer::Operation
     ActiveRecord::Base.transaction do
       full = find_or_seed(entity, setup::FULL_KEY, setup::FULL_NAME, setup::FULL_STEPS)
       add_cfo_step(full) if report[:cfo]
-      light = find_or_seed(entity, setup::LIGHT_KEY, setup::LIGHT_NAME,
-                           setup::FULL_STEPS.select { |row| setup::LIGHT_STEP_NAMES.include?(row[0]) })
+      if setup.light?
+        light = find_or_seed(entity, setup::LIGHT_KEY, setup::LIGHT_NAME,
+                             setup::FULL_STEPS.select { |row| setup::LIGHT_STEP_NAMES.include?(row[0]) })
+      end
       if report[:rules].any?
-        # Imported records → Light (checked first), everything else → Full
-        WorkflowAutoAssignmentRule.create!(entity:, workflow_template: light, workflowable_type: setup::WORKFLOWABLE_TYPE,
-                                           priority: 10, auto_launch: true, conditions: setup::LIGHT_CONDITIONS)
+        # Imported records → Light (checked first), everything else → Full. A kind with no Light
+        # (investor KYC) gets only the catch-all, so it is the default an admin's form-type rule overrides.
+        if light
+          WorkflowAutoAssignmentRule.create!(entity:, workflow_template: light, workflowable_type: setup::WORKFLOWABLE_TYPE,
+                                             priority: 10, auto_launch: true, conditions: setup::LIGHT_CONDITIONS)
+        end
         WorkflowAutoAssignmentRule.create!(entity:, workflow_template: full, workflowable_type: setup::WORKFLOWABLE_TYPE,
                                            priority: 100, auto_launch: true, conditions: [])
       end
@@ -147,7 +208,7 @@ class JourneySetup < Trailblazer::Operation
   # The CFO sign-off: no approvers yet (picked on the template), any one approval passes, a rejection
   # sends the journey back a step
   def create_cfo_step(template, position)
-    template.workflow_steps.create!(position:, name: CFO_STEP_NAME, kind: "human", description: CFO_STEP_DESCRIPTION,
+    template.workflow_steps.create!(position:, name: self.class::SIGN_OFF_NAME, kind: "human", description: self.class::SIGN_OFF_DESCRIPTION,
                                     states: "Approved,Rejected", quorum_rule: "any_one", on_reject_rule: "previous_step")
   end
 

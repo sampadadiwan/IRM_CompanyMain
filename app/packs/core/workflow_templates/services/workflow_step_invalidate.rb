@@ -22,9 +22,14 @@ class WorkflowStepInvalidate < Trailblazer::Operation
 
   # only_if_not_passed: a check key; skip the whole record when the step with that key has passed
   # (e.g. a fund-level email edit must not reopen calls whose notices were already sent)
-  def invalidate(ctx, instance:, check_keys:, reason:, actor: nil, only_if_not_passed: nil, **)
+  # only_if_passed: the mirror — skip unless that step has passed, so a change made before the step
+  # was ever reached (a KYC document uploaded while the investor is still filling in the form) is
+  # not recorded as a move back.
+  # Worked examples E13 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def invalidate(ctx, instance:, check_keys:, reason:, actor: nil, only_if_not_passed: nil, only_if_passed: nil, **)
     return true unless instance
     return true if only_if_not_passed && step_passed?(instance, only_if_not_passed)
+    return true if only_if_passed && !step_passed?(instance, only_if_passed)
 
     keys = Array(check_keys).map(&:to_s)
     instance.snapshot_steps.each do |step|

@@ -33,7 +33,7 @@ module Workflowable
     # only records that have a journey — every other one, including all records created before the
     # rollout, is skipped in SQL. ids may be an array or a select-relation.
     def journey_progress_for(ids, actor: nil)
-      with_journey = WorkflowInstance.evaluated.where(workflowable_type: name).where.not(status: :archived)
+      with_journey = WorkflowInstance.evaluated.where(workflowable_type: base_class.name).where.not(status: :archived)
       where(id: ids).where(id: with_journey.select(:workflowable_id)).find_each { |record| record.journey_progress!(actor:) }
     end
   end
@@ -41,6 +41,14 @@ module Workflowable
   # The template currently assigned to this object, resolved through WorkflowAssignment.
   def workflow_template
     workflow_assignment&.workflow_template
+  end
+
+  # The type workflow templates, rules and instances are stored under: the STI base class, so an
+  # IndividualKyc / NonIndividualKyc is matched as "InvestorKyc" (what polymorphic workflowable_type
+  # already stores). For every non-STI type this is just the class name.
+  # Worked examples E25 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def workflowable_type_name
+    self.class.base_class.name
   end
 
   # Human-readable name shown in emails and the instance page.
@@ -140,8 +148,10 @@ module Workflowable
   # Marks journey steps stale (WorkflowStepInvalidate) from an action's hook. Never raises: a failure
   # is reported and the action that called it stands, like journey_undo_evaluate.
   # Worked examples E8, E9 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
-  def journey_invalidate(check_keys:, reason:, actor: nil)
-    WorkflowStepInvalidate.call(record: self, check_keys:, actor:, reason:)
+  # only_if_passed / only_if_not_passed: see WorkflowStepInvalidate (e.g. a KYC document changed only
+  # moves "Validate documents" back once that step had passed — investor-kyc-journey E13).
+  def journey_invalidate(check_keys:, reason:, actor: nil, **guards)
+    WorkflowStepInvalidate.call(record: self, check_keys:, actor:, reason:, **guards.slice(:only_if_passed, :only_if_not_passed))
   rescue StandardError => e
     Rails.logger.error("[journey_invalidate] #{self.class.name}##{id}: #{e.class}: #{e.message}")
     ExceptionNotifier.notify_exception(e, data: { record: "#{self.class.name}##{id}", check_keys: })
@@ -161,7 +171,7 @@ module Workflowable
 
   # Turbo frame id of this record's journey panel, e.g. "capital_call_journey"
   def journey_frame_id
-    "#{self.class.name.underscore}_journey"
+    "#{workflowable_type_name.underscore}_journey"
   end
 
   # Called by WorkflowEvaluator after an evaluation changed this record's journey. Replaces the panel
@@ -174,7 +184,8 @@ module Workflowable
   def broadcast_journey_change
     return unless journey_panel
 
-    src = Rails.application.routes.url_helpers.polymorphic_path(self, action: :journey)
+    # Built from the base class so STI records (IndividualKyc) use the base route (/investor_kycs/:id/journey)
+    src = Rails.application.routes.url_helpers.polymorphic_path(becomes(self.class.base_class), action: :journey)
     frame = %(<turbo-frame id="#{journey_frame_id}" src="#{src}"></turbo-frame>)
     Turbo::StreamsChannel.broadcast_replace_to(self, :journey, target: journey_frame_id, html: frame)
   end
@@ -223,7 +234,7 @@ module Workflowable
   def apply_workflow_auto_assignment_on_update
     return unless respond_to?(:entity) && entity.present?
     return if workflow_assignment.present?
-    return unless WorkflowAutoAssignmentRule.where(entity: entity, workflowable_type: self.class.name).exists?
+    return unless WorkflowAutoAssignmentRule.where(entity: entity, workflowable_type: workflowable_type_name).exists?
     WorkflowAutoAssignmentService.call(workflowable: self)
   rescue StandardError => e
     Rails.logger.warn("[Workflowable#apply_workflow_auto_assignment_on_update] #{self.class.name}##{id}: #{e.message}")

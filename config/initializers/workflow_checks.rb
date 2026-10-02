@@ -5,6 +5,8 @@
 # Capital call checks: app/packs/funds/capital_calls/workflow_checks/capital_call/.
 # Capital distribution checks: app/packs/funds/capital_distributions/workflow_checks/capital_distribution/
 # (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples).
+# Investor KYC checks: app/packs/core/investor_kycs/workflow_checks/investor_kyc/
+# (Worked examples H2 — openspec/changes/investor-kyc-journey/design.md#worked-examples).
 Rails.application.config.to_prepare do
   WorkflowChecks::Registry.reset!
 
@@ -39,6 +41,18 @@ Rails.application.config.to_prepare do
     WorkflowChecks::CapitalDistribution::ReviewNotNeeded
     WorkflowChecks::CapitalDistribution::Imported
     WorkflowChecks::CapitalDistribution::NoUnitPrices
+    WorkflowChecks::InvestorKyc::SendForm
+    WorkflowChecks::InvestorKyc::Submit
+    WorkflowChecks::InvestorKyc::UploadDocuments
+    WorkflowChecks::InvestorKyc::ValidateDocuments
+    WorkflowChecks::InvestorKyc::RunAml
+    WorkflowChecks::InvestorKyc::ClearAmlMatch
+    WorkflowChecks::InvestorKyc::ReviewKyc
+    WorkflowChecks::InvestorKyc::Verify
+    WorkflowChecks::InvestorKyc::FilledByFund
+    WorkflowChecks::InvestorKyc::NoRequiredDocuments
+    WorkflowChecks::InvestorKyc::AmlOff
+    WorkflowChecks::InvestorKyc::NoAmlMatch
   ]
   check_classes.each { |name| WorkflowChecks::Registry.register(name.constantize) }
 end

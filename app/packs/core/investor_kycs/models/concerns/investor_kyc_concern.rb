@@ -40,10 +40,34 @@ module InvestorKycConcern
 
   # Ovveride the include with_folder method
   def document_changed(document)
+    started_at = Time.current
     grant_access_rights_to_investor(document)
     # Check if all the required docs have been uploaded
     local_docs_completed = docs_completed?
     update_column(:docs_completed, local_docs_completed) if local_docs_completed != docs_completed
+    journey_document_changed(document, started_at)
+  end
+
+  # The KYC's journey after one of its documents is added, replaced or deleted: documents that were
+  # validated are no longer the ones on file, so "Validate documents" goes back — but only once it had
+  # passed (an upload while the investor is still filling the form is not a move back). Deleting a
+  # document may also undo "Upload required documents". No-op without a journey; never raises.
+  # Worked examples E5, E13 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def journey_document_changed(document, started_at)
+    return unless respond_to?(:journey_progress!)
+    # Documents CapHive generates for the KYC are not what was validated
+    return if document.owner_tag == "Generated"
+
+    # A deleted document leaves the remaining ones validated; a missing required one shows on
+    # "Upload required documents" by itself
+    # (Documents are soft-deleted, and destroyed? is not yet true inside the owner callback: ask the table)
+    if document.destroyed? || !::Document.exists?(document.id)
+      journey_undo_evaluate(note: "Document deleted", started_at:)
+    else
+      journey_invalidate(check_keys: "investor_kyc.validate_documents", reason: "Documents changed after validation",
+                         only_if_passed: "investor_kyc.validate_documents")
+      journey_undo_evaluate(note: "Documents changed after validation", started_at:)
+    end
   end
   # rubocop:enable Rails/SkipsModelValidations
 

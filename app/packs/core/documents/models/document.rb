@@ -120,6 +120,14 @@ class Document < ApplicationRecord
   end
 
   after_destroy :update_owner
+  # A KYC document's file replaced: the KYC's journey must re-validate (create/destroy already reach the
+  # owner via update_owner). Only KYC documents, only a real file change.
+  # Worked examples E5 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  after_update_commit :kyc_document_replaced, if: -> { owner_type == "InvestorKyc" && saved_change_to_file_data? }
+
+  def kyc_document_replaced
+    owner&.journey_document_changed(self, Time.current)
+  end
   after_initialize :init
 
   include FileUploader::Attachment(:file)

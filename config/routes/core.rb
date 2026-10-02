@@ -7,6 +7,8 @@ resources :workflow_templates do
   # Seeds a kind's standard journeys, params[:kind] in JourneySetup::KINDS (same service as the
   # rollout rake tasks). Worked examples H10 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
   post :setup_journeys, on: :collection
+  # Copy a template with its steps (investor-kyc-journey E26)
+  post :duplicate, on: :member
   resources :workflow_steps, except: %i[index show]
   # Auto-assignment rules are nested under their template
   resources :workflow_auto_assignment_rules, except: %i[show]
@@ -132,6 +134,7 @@ resources :individual_kycs, controller: "investor_kycs", type: "IndividualKyc"
 resources :non_individual_kycs, controller: "investor_kycs", type: "NonIndividualKyc"
 resources :investor_kycs do
   get 'analytics', on: :collection
+  get 'journey', on: :member
   get 'preview', on: :member
   get 'search', on: :collection
   put 'toggle_verified', on: :member

@@ -6,7 +6,7 @@
     eligible_for? this exact record — matters when one workflowable_type covers more than one
     sub-audience (e.g. Investor: regular investors vs. portfolio companies), so the wrong
     sub-audience's template cannot be launched here even though the type matches. %>
-<% available_templates = WorkflowTemplate.for_workflowable_type(workflowable.class.name)
+<% available_templates = WorkflowTemplate.for_workflowable_type(workflowable.workflowable_type_name)
                                           .where(entity_id: workflowable.entity_id)
                                           .order(:name)
                                           .select { |t| t.eligible_for?(workflowable) } %>
@@ -137,7 +137,7 @@
         </div>
         <%# POST to standalone /workflow_instances; workflowable identified by type+id params %>
         <%= form_with url: workflow_instances_path, method: :post, local: true do |f| %>
-          <%= f.hidden_field :workflowable_type, value: workflowable.class.name %>
+          <%= f.hidden_field :workflowable_type, value: workflowable.workflowable_type_name %>
           <%= f.hidden_field :workflowable_id,   value: workflowable.id %>
           <div class="modal-body">
 

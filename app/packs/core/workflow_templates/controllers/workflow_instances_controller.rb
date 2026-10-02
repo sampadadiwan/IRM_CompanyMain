@@ -30,7 +30,7 @@ class WorkflowInstancesController < ApplicationController
     # Guard: ensure the template's type scope (if set) matches the workflowable's type.
     if params[:workflow_template_id].present?
       template = WorkflowTemplate.find(params[:workflow_template_id])
-      if template.workflowable_type.present? && template.workflowable_type != workflowable.class.name
+      if template.workflowable_type.present? && template.workflowable_type != workflowable.workflowable_type_name
         redirect_to back_url(workflowable),
                     alert: "Template '#{template.name}' can only be used with #{template.workflowable_type} objects."
         return
@@ -253,7 +253,7 @@ class WorkflowInstancesController < ApplicationController
     record = @instance.workflowable
     journey = WorkflowEvaluator.for(record, cause: :progress)
     render turbo_stream: turbo_stream.replace(record.journey_frame_id,
-                                              partial: "#{record.class.name.underscore.pluralize}/journey",
+                                              partial: "#{record.workflowable_type_name.underscore.pluralize}/journey",
                                               locals: { record:, journey: journey&.[](:results), instance: @instance.reload })
   end
 

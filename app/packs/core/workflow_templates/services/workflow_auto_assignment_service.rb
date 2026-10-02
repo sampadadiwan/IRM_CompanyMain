@@ -13,7 +13,7 @@ class WorkflowAutoAssignmentService < Trailblazer::Operation
   # Returns the highest-priority (lowest priority integer) rule whose conditions match.
   def find_matching_rule(ctx, workflowable:, **)
     ctx[:rule] = WorkflowAutoAssignmentRule
-      .where(entity: workflowable.entity, workflowable_type: workflowable.class.name)
+      .where(entity: workflowable.entity, workflowable_type: workflowable.workflowable_type_name)
       .order(:priority)
       .includes(:workflow_template)
       .find { |rule| rule.matches?(workflowable) }

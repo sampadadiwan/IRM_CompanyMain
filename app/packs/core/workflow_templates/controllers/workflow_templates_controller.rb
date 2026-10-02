@@ -1,5 +1,5 @@
 class WorkflowTemplatesController < ApplicationController
-  before_action :set_workflow_template, only: %i[show edit update destroy]
+  before_action :set_workflow_template, only: %i[show edit update destroy duplicate]
 
   def index
     @bread_crumbs = { "Workflow Templates": workflow_templates_path }
@@ -25,6 +25,9 @@ class WorkflowTemplatesController < ApplicationController
     # Only kinds listed in JourneySetup::KINDS; nothing is constantized from the parameter
     setup = JourneySetup::KINDS.key?(params[:kind].to_s) && JourneySetup.for_kind(params[:kind])
     return redirect_to(workflow_templates_path, alert: "Unknown journey type.") unless setup
+    # Each kind is offered to its own entity types only (KYC: Angel Funds too; calls: Investment Funds)
+    # Worked examples X4 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+    raise Pundit::NotAuthorizedError unless setup.available_for?(current_user.entity)
 
     title = setup::LABEL.upcase_first
     result = setup.call(entity: current_user.entity)
@@ -75,6 +78,14 @@ class WorkflowTemplatesController < ApplicationController
     end
   end
 
+  # POST /workflow_templates/:id/duplicate — copy the template and its steps, then edit the copy
+  # (e.g. a journey for one KYC form type, routed by a form-type rule). Authorized as duplicate? (= create?).
+  # Worked examples E25, E26 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def duplicate
+    copy = @workflow_template.duplicate!
+    redirect_to workflow_template_path(copy), notice: "Template duplicated as \"#{copy.name}\". Add an auto-assignment rule to use it."
+  end
+
   def destroy
     count = @workflow_template.active_workflowable_count
     if count.positive?
@@ -101,16 +112,17 @@ class WorkflowTemplatesController < ApplicationController
   def journey_setup_plans
     return {} unless policy(WorkflowTemplate.new(entity_id: current_user.entity_id)).setup_journeys?
 
-    JourneySetup::KINDS.keys.index_with { |kind| JourneySetup.for_kind(kind).call(entity: current_user.entity, execute: false)[:report] }
+    kinds = JourneySetup::KINDS.keys.select { |kind| JourneySetup.for_kind(kind).available_for?(current_user.entity) }
+    kinds.index_with { |kind| JourneySetup.for_kind(kind).call(entity: current_user.entity, execute: false)[:report] }
   end
 
   # "Full and Light journeys, auto-assignment rules" from the setup report; nil when nothing was missing
   def journey_setup_summary(report, setup)
     parts = []
-    names = { setup::FULL_KEY => "Full", setup::LIGHT_KEY => "Light" }
+    names = { setup::FULL_KEY => setup::FULL_LABEL, setup::LIGHT_KEY => "Light" }
     parts << "#{report[:templates].map { |key| names[key] }.to_sentence} journey#{'s' if report[:templates].size > 1}" if report[:templates].any?
-    parts << "auto-assignment rules" if report[:rules].any?
-    parts << "a #{JourneySetup::CFO_STEP_NAME} step (edit it to pick the approver)" if report[:cfo]
+    parts << "auto-assignment rule#{'s' if report[:rules].size > 1}" if report[:rules].any?
+    parts << "a #{setup::SIGN_OFF_NAME} step (edit it to pick the approver)" if report[:cfo]
     parts.join(", ").presence
   end
 

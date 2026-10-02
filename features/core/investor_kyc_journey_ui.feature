@@ -1,0 +1,133 @@
+Feature: Investor KYC journey — the KYC page
+  A KYC with a journey shows fund users the step bar (every task by name with its mark), a "What's
+  needed now" panel whose button runs the real control on the page, a second button beside Mark
+  reviewed when a review task offers one, and warnings until the KYC is verified. Investors never see
+  it. The bar updates without a reload when the investor submits, a job finishes or a colleague acts.
+  Worked examples H3, H4, H6, H8, E3, E15, E22, X1, X2, X5 in
+  openspec/changes/investor-kyc-journey/design.md#worked-examples
+  UI journey J2.1–J2.6 in openspec/changes/investor-kyc-journey/design.md#what-users-see
+
+  Background:
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_kycs=true"
+    And the user has role "company_admin"
+    And there is an existing investor "" with "1" users
+    And the entity's investor KYC journeys are removed
+    And the entity's investor KYC journeys are seeded
+    And the entity requires the individual KYC documents "PAN Card, Address Proof, Photo"
+    And AML is enabled for the entity
+    And there is an individual KYC for the investor
+
+  # H3, J2.1 — the panel's button sends the form through the KYC Actions item
+  Scenario: The panel sends the KYC form
+    When I open the KYC page
+    Then the KYC journey panel should be shown
+    And the panel should say "The KYC form has not been sent — send it, or fill it in and tick complete"
+    And the panel action "Send KYC Required Notification" should click "investor_kyc_notify_kyc_required_default_btn"
+    When I click the KYC panel action and proceed
+    Then the step bar should show:
+      | task          | mark |
+      | Send KYC form | ✓    |
+      | Submit KYC    | ●    |
+    And the panel should say "Waiting for the investor — form sent on"
+
+  # H4, J2.2 — the investor submits while the fund user has the page open
+  Scenario: The step bar moves on when the investor submits
+    Given the KYC's form link was sent
+    And the KYC has the documents "PAN Card, Address Proof, Photo"
+    When I open the KYC page
+    And the investor submits the KYC while the page is open
+    Then without reloading, the step bar should show:
+      | task                      | mark |
+      | Submit KYC                | ✓    |
+      | Upload required documents | ✓    |
+      | Validate documents        | ●    |
+
+  # E3, J2.3, J2.4 — AI could not validate: the second button opens the Validation tab, Mark reviewed passes it
+  Scenario: AI could not validate an answer — check it and mark reviewed
+    Given the entity has 8 KYC document questions on "PAN Card"
+    And the KYC's form link was sent
+    And the KYC is submitted
+    And the KYC has the documents "PAN Card, Address Proof, Photo"
+    When I open the KYC page
+    And the KYC's AI validation finishes with 1 of 8 answers failing while the page is open
+    Then without reloading, the step bar should show:
+      | task               | mark |
+      | Validate documents | ●    |
+    And the panel should say "AI could not validate 1 of 8 answers — check them and mark reviewed"
+    And the panel review action "Open validation" should click "#docs-validation-tab"
+    When I click Mark reviewed in the journey panel
+    Then the step bar should show:
+      | task               | mark |
+      | Validate documents | ✓    |
+      | Run AML screening  | ●    |
+
+  # H6 — the AML result arrives while the page is open
+  Scenario: The step bar moves on when the AML result arrives
+    Given the KYC's form link was sent
+    And the KYC is submitted
+    And the KYC has the documents "PAN Card, Address Proof, Photo"
+    And the KYC's AI validation found 0 of 8 answers failing
+    When I open the KYC page
+    Then the panel action "Generate AML Report" should click "investor_kyc_generate_new_aml_report_btn"
+    When the KYC's AML result arrives as "no_match" while the page is open
+    Then without reloading, the step bar should show:
+      | task              | mark |
+      | Run AML screening | ✓    |
+      | Clear AML match   | n/a  |
+      | Review KYC        | ●    |
+
+  # H8 — Verify from the panel completes the journey
+  Scenario: Verify from the panel completes the journey
+    Given the KYC's form link was sent
+    And the KYC is submitted
+    And the KYC has the documents "PAN Card, Address Proof, Photo"
+    And the KYC's AML result is "no_match"
+    And the KYC's journey is evaluated
+    And I mark "Validate documents" reviewed on the KYC
+    And I mark "Review KYC" reviewed on the KYC
+    When I open the KYC page
+    Then the panel action "Verify" should click "investor_kyc_toggle_verified_btn"
+    When I click the KYC panel action
+    Then the KYC should be verified
+    And the KYC's journey should be complete
+
+  # E15 — a colleague bulk-verifies while the page is open
+  Scenario: A colleague's bulk Verify updates the open page
+    Given the KYC's form link was sent
+    And the KYC is submitted
+    And the KYC has the documents "PAN Card, Address Proof, Photo"
+    When I open the KYC page
+    And a colleague bulk-verifies the KYC while the page is open
+    Then without reloading, the step bar should show:
+      | task       | mark |
+      | Verify KYC | ✓    |
+
+  # E22, J2.6 — warnings until verified
+  Scenario: A failed bank verification is shown as a warning
+    Given the KYC's bank verification failed
+    When I open the KYC page
+    Then the panel should warn "Bank account verification failed"
+
+  # X1 — investors never see the journey
+  Scenario: The investor does not see the journey
+    When I open the KYC page as the investor
+    Then the KYC journey panel should not be shown
+
+  # X2 — without permission to verify, the panel's Verify is a plain link
+  Scenario: The panel's Verify falls back to a link when the user may not verify
+    Given I may not verify KYCs
+    And the KYC's form link was sent
+    And the KYC is submitted
+    And the KYC has the documents "PAN Card, Address Proof, Photo"
+    And the KYC's AML result is "no_match"
+    And the KYC's journey is evaluated
+    And I mark "Validate documents" reviewed on the KYC
+    And I mark "Review KYC" reviewed on the KYC
+    When I open the KYC page
+    Then the Verify control should not be on the page
+    And the panel action should be a plain link to the KYC
+
+  # X5 — another entity's user cannot load the panel
+  Scenario: A user of another entity cannot load the journey panel
+    When a user of another entity requests the KYC's journey panel
+    Then the journey panel request should be refused

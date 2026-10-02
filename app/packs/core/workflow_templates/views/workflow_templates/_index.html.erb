@@ -21,13 +21,8 @@
             <% setup = JourneySetup.for_kind(kind) %>
             <% records = setup::RECORD.pluralize %>
             <% if plan[:templates].any? || plan[:rules].any? || plan[:cfo] %>
-              <%# The Full journey's CFO sign-off has no approver yet: pick one by editing that step (E24, E25) %>
-              <% msg = "This adds the standard #{setup::LABEL} for this company: " \
-                       "#{plan[:templates].any? ? "the Full (#{setup::FULL_STEPS.size} tasks) and Light (#{setup::LIGHT_STEP_NAMES.size} tasks) journey templates" : 'no templates (they exist)'}" \
-                       "#{plan[:rules].any? ? ", and rules giving imported #{records} Light and every other #{setup::RECORD} Full" : ''}" \
-                       "#{plan[:cfo] ? ", and a #{JourneySetup::CFO_STEP_NAME} step in the Full journey" : ''}. " \
-                       "The #{JourneySetup::CFO_STEP_NAME} step has no approver: edit it to pick one (until then it is skipped). " \
-                       "Only #{records} created from now on get a journey. Anything already set up is kept." %>
+              <%# The Full journey's sign-off has no approver yet: pick one by editing that step (E24, E25); text per kind in JourneySetup.confirm_message %>
+              <% msg = setup.confirm_message(plan) %>
               <%= button_to setup_journeys_workflow_templates_path(kind:), id: "setup_#{kind}_journeys_btn",
                     class: "dropdown-item", form_class: "deleteButton",
                     data: { action: "click->confirm#popup", method: :post, title: "Set up #{setup::LABEL}", msg: } do %>
@@ -35,7 +30,7 @@
               <% end %>
             <% else %>
               <button type="button" id="setup_<%= kind %>_journeys_btn" class="dropdown-item text-success" disabled
-                      title="The Full and Light journeys and their rules already exist. Edit the <%= setup::WORKFLOWABLE_TYPE.titleize %> templates below to change them.">
+                      title="<%= setup.light? ? "The Full and Light journeys and their rules" : "The journey and its rule" %> already exist. Edit the <%= setup::WORKFLOWABLE_TYPE.titleize %> templates below to change them.">
                 <i class="ti ti-check me-1"></i> <%= setup::LABEL.upcase_first %> set up
               </button>
             <% end %>

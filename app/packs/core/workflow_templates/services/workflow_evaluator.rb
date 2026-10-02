@@ -94,6 +94,8 @@ class WorkflowEvaluator < Trailblazer::Operation
     evidence = {}
     current = nil
     previous_passed_at = instance.created_at
+    # A passing closing check (KYC "Verify KYC") closes every unfinished step before it
+    closing = closing_step(steps, record)
 
     steps.each do |step|
       pos = step[:position].to_i
@@ -116,6 +118,8 @@ class WorkflowEvaluator < Trailblazer::Operation
       end
 
       outcome = judge(step, record, instance, history)
+      # Worked examples E6 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+      outcome = { status: "na", message: closing[:note] } if closing && pos < closing[:position] && outcome[:status] == "current"
 
       case outcome[:status]
       when "na"
@@ -133,9 +137,13 @@ class WorkflowEvaluator < Trailblazer::Operation
         results << base_result(step).merge(status: "passed", message: outcome[:message], passed_at: passed_at.iso8601)
       else # "current" or "error"
         current = step
-        results << base_result(step).merge(status: outcome[:status], message: outcome[:message],
-                                           action_label: outcome[:action_label], action_path: outcome[:action_path],
-                                           action_target: outcome[:action_target])
+        row = base_result(step).merge(status: outcome[:status], message: outcome[:message],
+                                      action_label: outcome[:action_label], action_path: outcome[:action_path],
+                                      action_target: outcome[:action_target])
+        # An acknowledge check's own button beside "Mark reviewed" — only when it asked for one, so
+        # other journeys' stored results stay byte-identical (no new nil keys)
+        row.merge!(outcome.slice(:review_action_label, :review_action_path, :review_action_target).compact)
+        results << row
       end
     end
 
@@ -257,17 +265,48 @@ class WorkflowEvaluator < Trailblazer::Operation
 
   # Worked examples H4, E12 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
   def judge_acknowledge(step, record, instance, history)
+    result = nil
     if step[:check_key].present?
       result = WorkflowChecks::Registry.fetch(step[:check_key]).call(record)
       return current_from(result) unless result.passed?
     end
 
+    invalidated_at = history.last_at(step[:position], "invalidated")
+    # Worked examples H5, E5 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+    # The data confirms it (an AI pass): done with no click, unless that evidence predates an invalidation
+    confirmed = result&.review == :confirmed && (invalidated_at.nil? || (result.fresh_since && result.fresh_since > invalidated_at))
+    return { status: "passed", message: result.message, passed_since: result.passed_since } if confirmed
+
     response = acknowledgement(step, instance, history)
     return reviewed(response) if response
 
-    invalidated_at = history.last_at(step[:position], "invalidated")
+    # Worked examples E3, E4 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+    # A check that asked for review supplies the message and a second button; the invalidation reason still wins
+    if result&.review == :requested
+      return { status: "current", message: invalidated_at ? history.last_note(step[:position], "invalidated") : result.message,
+               action_label: "Mark reviewed", review_action_label: result.action_label,
+               review_action_path: result.action_path, review_action_target: result.action_target }
+    end
+
     message = invalidated_at ? history.last_note(step[:position], "invalidated") : "Not confirmed yet"
     { status: "current", message: message, action_label: "Mark reviewed" }
+  end
+
+  # The last step whose check is a closing check and passes ({position:, note:}), or nil. A failing
+  # or raising closing check closes nothing (the walk is then the normal one).
+  # Worked examples E6, E11 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def closing_step(steps, record)
+    steps.reverse_each do |step|
+      next unless step[:kind].to_s == "system" && step[:check_key].present?
+
+      check = WorkflowChecks::Registry.fetch(step[:check_key])
+      next unless check.class.closes_journey
+
+      return { position: step[:position].to_i, note: check.class.closing_note } if check.call(record).passed?
+    rescue StandardError
+      next
+    end
+    nil
   end
 
   # The latest "Mark reviewed" on an acknowledge step that still counts: active, and given after the

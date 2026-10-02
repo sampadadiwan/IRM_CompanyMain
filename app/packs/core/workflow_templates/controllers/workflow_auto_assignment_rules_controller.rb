@@ -80,14 +80,34 @@ class WorkflowAutoAssignmentRulesController < ApplicationController
     params.require(:workflow_auto_assignment_rule).permit(
       :workflowable_type, :priority, :auto_launch,
       # conditions come in as a JSON string from a hidden textarea, parsed to an array
-      :conditions_json
+      :conditions_json,
+      # KYC rules: the "KYC form type" picker (blank = any form type)
+      :kyc_form_type_id
     ).tap do |p|
-      # Parse the conditions_json string into the conditions array attribute
-      if p[:conditions_json].present?
-        p[:conditions] = JSON.parse(p.delete(:conditions_json))
-      else
-        p.delete(:conditions_json)
-      end
+      # Parse the conditions_json string into a plain array, kept in a local: reading it back out of
+      # the params would turn each hash into unpermitted Parameters, which then fail on save
+      json = p.delete(:conditions_json)
+      conditions = JSON.parse(json) if json.present?
+      conditions = with_kyc_form_type(conditions || Array(@rule&.conditions), p.delete(:kyc_form_type_id).presence) if p.key?(:kyc_form_type_id)
+      p[:conditions] = conditions unless conditions.nil?
     end
   end
+
+  # The picker writes the form-type condition so admins never type a form_type_id: it replaces any
+  # form_type_id condition already in the JSON. Only this entity's KYC form types are accepted.
+  # Worked examples E25, E27 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def with_kyc_form_type(conditions, form_type_id)
+    conditions = Array(conditions).reject { |c| c.is_a?(Hash) && c["attribute"].to_s == "form_type_id" }
+    if form_type_id
+      form_type = kyc_form_types.find(form_type_id) # raises RecordNotFound for another entity's form type
+      conditions << { "attribute" => "form_type_id", "operator" => "eq", "value" => form_type.id.to_s }
+    end
+    conditions
+  end
+
+  # This entity's KYC form types (individual / non-individual, any tag), for the picker
+  def kyc_form_types
+    current_user.entity.form_types.where(name: WorkflowAutoAssignmentRule::KYC_FORM_TYPE_NAMES)
+  end
+  helper_method :kyc_form_types
 end

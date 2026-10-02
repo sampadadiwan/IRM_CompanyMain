@@ -8,6 +8,13 @@ module WorkflowChecks
   class Base
     class_attribute :key, :label, :workflowable_type, instance_writer: false
 
+    # A closing check: when it passes, every earlier step not yet done (or n/a) is shown as n/a with
+    # closing_note, so the journey can complete (e.g. a KYC verified before every task was done).
+    # Steps already passed keep their ✓; no sign-off is cleared. Off by default.
+    # Worked examples E6, E11 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+    class_attribute :closes_journey, instance_writer: false, default: false
+    class_attribute :closing_note, instance_writer: false, default: "Done without this step"
+
     # Returns a WorkflowChecks::Result for the record
     def call(_record)
       raise NotImplementedError, "#{self.class.name} must implement #call(record)"

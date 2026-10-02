@@ -28,6 +28,11 @@ class WorkflowTemplatePolicy < ApplicationPolicy
     create?
   end
 
+  # Copying a template creates one
+  def duplicate?
+    create?
+  end
+
   def edit?
     update?
   end
@@ -39,8 +44,11 @@ class WorkflowTemplatePolicy < ApplicationPolicy
   # Seeding the standard journeys (capital calls, distributions): a company admin of an Investment
   # Fund entity (the same entities the rollout tasks and SetupCompany seed)
   # Worked examples X3 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  # Investor KYC journeys are also offered to Angel Funds (JourneySetup::ENTITY_TYPES per kind); the
+  # controller checks the chosen kind against the entity.
+  # Worked examples X3, X4 — openspec/changes/investor-kyc-journey/design.md#worked-examples
   def setup_journeys?
-    create? && user.entity&.entity_type == "Investment Fund"
+    create? && JourneySetup.entity_types.include?(user.entity&.entity_type)
   end
 
   private
