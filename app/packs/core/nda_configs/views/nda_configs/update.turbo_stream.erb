@@ -10,6 +10,15 @@
 <%= turbo_stream.replace "folder_caret_#{@folder.id}",
     partial: "folders/tree_caret", locals: { folder: @folder } %>
 
+<%# Changed: Added descendant cascade — replaces caret span for each inheriting child folder.
+    Why: When a folder's NDA config is toggled (enabled/disabled) or changed, its descendants
+    with mode "inherit" resolve to the same config. Their lock icons must reflect the new
+    state without a full page reload. %>
+<% @folder.descendants.select(&:nda_inheriting?).each do |child| %>
+  <%= turbo_stream.replace "folder_caret_#{child.id}",
+      partial: "folders/tree_caret", locals: { folder: child } %>
+<% end %>
+
 <%# 3. Show success message %>
 <%= turbo_stream.update "user_alert", partial: "layouts/alerts",
     locals: { notice: "NDA settings updated successfully." } %>

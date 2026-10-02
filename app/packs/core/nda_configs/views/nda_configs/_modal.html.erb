@@ -1,10 +1,13 @@
 <%# NDA Settings modal content. Shared by new.html.erb, edit.html.erb, and turbo_stream responses.
      Rendered inside turbo_frame_tag "nda_settings_modal".
-     Changed: Moved from folder_nda_configs/ to nda_configs/, render path updated.
-     Why: NdaConfig is now polymorphic — views live in the nda_configs pack. %>
+     Changed: Added inheritance_state branching to render three modal variants.
+     Why: Module 5 introduces inherit/opt_out modes alongside the original "own" (full form).
+     Inherited folders show an info panel with override/opt-out actions. Opted-out folders
+     show a different info panel with a revert action. Only "own" mode shows the NDA config form. %>
 <%
   nda_config ||= @nda_config
   folder ||= @folder
+  inheritance_state ||= @inheritance_state || folder.nda_inheritance_mode
 %>
 <%= turbo_frame_tag "nda_settings_modal" do %>
   <div class="modal fade" id="ndaSettingsModal" data-controller="modal" tabindex="-1"
@@ -39,9 +42,20 @@
         <div class="tab-content">
           <div class="tab-pane fade show active p-3" id="nda-settings-pane" role="tabpanel"
                aria-labelledby="nda-settings-tab">
-            <%# Changed: Render path from "folder_nda_configs/form" to "nda_configs/form".
-                Why: Views moved to nda_configs pack. %>
-            <%= render "nda_configs/form", folder: folder, nda_config: nda_config %>
+            <% if inheritance_state == "own" %>
+              <%# Full NDA config form — folder has its own config (create or edit) %>
+              <%= render "nda_configs/form", folder: folder, nda_config: nda_config %>
+            <% elsif inheritance_state == "inherit" %>
+              <%# Changed: Added inherited_info partial rendering for "inherit" mode.
+                   Why: Folders inheriting a parent's NDA show the parent's NDA details
+                   and offer "Set Own NDA" / "Opt Out" actions instead of the full form. %>
+              <%= render "nda_configs/inherited_info", folder: folder %>
+            <% elsif inheritance_state == "opt_out" %>
+              <%# Changed: Added opted_out_info partial rendering for "opt_out" mode.
+                   Why: Opted-out folders show an info panel explaining the state
+                   with a "Revert to Inherit" action. %>
+              <%= render "nda_configs/opted_out_info", folder: folder %>
+            <% end %>
           </div>
         </div>
       </div>

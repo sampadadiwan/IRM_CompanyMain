@@ -1,0 +1,71 @@
+<%# Module 5: Informational panel shown when a folder inherits its NDA from a parent.
+     Displays the source folder name, NDA document, and offers Override / Opt Out actions.
+     Rendered by _modal.html.erb when inheritance_state == "inherit". %>
+<%
+  source_folder = folder.nda_source_folder
+  source_config = folder.effective_nda_config
+%>
+
+<div class="p-3">
+  <% if source_folder && source_config&.enabled? %>
+    <%# Folder inherits an active NDA from an ancestor %>
+    <div class="alert alert-info d-flex align-items-start mb-3">
+      <i class="ti ti-info-circle me-2 mt-1" style="font-size: 1.2rem;"></i>
+      <div>
+        <strong>This folder inherits its NDA from: <%= source_folder.name %></strong>
+        <p class="mb-0 mt-1 text-muted">
+          LPs must accept the NDA configured on "<%= source_folder.name %>" before accessing
+          this folder's contents. Any changes to the NDA should be made on that folder.
+        </p>
+      </div>
+    </div>
+
+    <%# Show inherited NDA document name if available %>
+    <% if source_config.nda_document.present? %>
+      <div class="mb-3">
+        <label class="form-label text-muted">NDA Document</label>
+        <div>
+          <i class="ti ti-file-text me-1"></i>
+          <%= source_config.nda_document.original_filename %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Show inherited validity setting %>
+    <div class="mb-4">
+      <label class="form-label text-muted">Validity</label>
+      <div><%= source_config.validity_type.humanize %></div>
+    </div>
+  <% else %>
+    <%# Folder is set to inherit but no ancestor has an NDA — effectively no NDA %>
+    <div class="alert alert-secondary d-flex align-items-start mb-3">
+      <i class="ti ti-info-circle me-2 mt-1" style="font-size: 1.2rem;"></i>
+      <div>
+        <strong>No NDA inherited</strong>
+        <p class="mb-0 mt-1 text-muted">
+          This folder is set to inherit, but no parent folder has an NDA configured.
+          You can set up an NDA specifically for this folder.
+        </p>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Action buttons: Override (set own NDA) or Opt Out %>
+  <hr>
+  <div class="d-flex gap-2">
+    <%# "Set Own NDA" — opens the new NDA config form for this folder %>
+    <%= link_to new_folder_nda_config_path(folder, override: true),
+        data: { turbo_frame: "nda_settings_modal" },
+        class: "btn btn-primary btn-sm" do %>
+      <i class="ti ti-edit me-1"></i> Set Own NDA
+    <% end %>
+
+    <%# "Opt Out" — updates folder's nda_inheritance_mode to "opt_out" via controller %>
+    <%= button_to folder_path(folder, folder: { nda_inheritance_mode: "opt_out" }),
+        method: :patch,
+        data: { turbo_confirm: "This folder will not require NDA acceptance, even if the parent folder has an NDA. Continue?" },
+        class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="ti ti-lock-open me-1"></i> Opt Out of NDA
+    <% end %>
+  </div>
+</div>
