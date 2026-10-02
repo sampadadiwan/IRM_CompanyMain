@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3018,6 +3018,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
     t.index ["family"], name: "index_models_on_family"
     t.index ["provider", "model_id"], name: "index_models_on_provider_and_model_id", unique: true
     t.index ["provider"], name: "index_models_on_provider"
+  end
+
+  create_table "nda_configs", force: :cascade do |t|
+    t.string "acceptance_method", limit: 20, default: "click_through", null: false
+    t.string "contact_email"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.datetime "deleted_at"
+    t.boolean "enabled", default: true, null: false
+    t.bigint "entity_id", null: false
+    t.text "nda_document_data"
+    t.text "notification_emails"
+    t.bigint "owner_id", null: false
+    t.string "owner_type", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "updated_by_id"
+    t.date "validity_date"
+    t.integer "validity_days"
+    t.string "validity_type", limit: 20, default: "until_revoked", null: false
+    t.integer "version", default: 1, null: false
+    t.index ["created_by_id"], name: "index_nda_configs_on_created_by_id"
+    t.index ["deleted_at"], name: "idx_nda_configs_deleted_at"
+    t.index ["entity_id"], name: "index_nda_configs_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "idx_nda_configs_owner_uniq", unique: true
+    t.index ["updated_by_id"], name: "index_nda_configs_on_updated_by_id"
   end
 
   create_table "notes", force: :cascade do |t|
