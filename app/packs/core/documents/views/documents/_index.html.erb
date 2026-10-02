@@ -119,6 +119,21 @@
                   <% end %>
                 <% end %>
               <% end %>
+              <%# Changed: Added "NDA Settings" dropdown item to the Actions menu.
+                  Why: GPs need to configure NDA requirements on Data Room folders. Gated by
+                  in_data_room? (non-DR folders don't get NDA) + curr_role_employee? (LPs cannot
+                  configure). Opens as a Turbo Frame modal via turbo_frame_tag at page bottom. %>
+              <% if @folder&.in_data_room? && current_user.curr_role_employee? %>
+                <div class="dropdown-divider"></div>
+                <%
+                  nda_config = @folder.nda_config
+                  nda_path = nda_config.present? ? edit_folder_nda_config_path(@folder) : new_folder_nda_config_path(@folder)
+                %>
+                <%= link_to nda_path, class: "dropdown-item d-flex align-items-center",
+                    data: { turbo_frame: "nda_settings_modal" } do %>
+                  <i class="ti ti-shield-lock"></i> NDA Settings
+                <% end %>
+              <% end %>
               <!-- Future (Send for eSignatures) link is disabled for now -->
             <% else %>
               <% if document && policy(document).create? %>
@@ -210,3 +225,8 @@ if false && msg.present?
     <span class="alert alert-info"><%= msg %></span>
   </div>
 <% end %>
+
+<%# Changed: Added empty Turbo Frame placeholder for the NDA Settings modal.
+    Why: The "NDA Settings" link above targets this frame — clicking it loads the modal
+    content from NdaConfigsController#new/edit into this frame without full page reload. %>
+<%= turbo_frame_tag "nda_settings_modal" %>

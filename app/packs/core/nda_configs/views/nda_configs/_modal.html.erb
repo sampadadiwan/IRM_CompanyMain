@@ -1,0 +1,50 @@
+<%# NDA Settings modal content. Shared by new.html.erb, edit.html.erb, and turbo_stream responses.
+     Rendered inside turbo_frame_tag "nda_settings_modal".
+     Changed: Moved from folder_nda_configs/ to nda_configs/, render path updated.
+     Why: NdaConfig is now polymorphic — views live in the nda_configs pack. %>
+<%
+  nda_config ||= @nda_config
+  folder ||= @folder
+%>
+<%= turbo_frame_tag "nda_settings_modal" do %>
+  <div class="modal fade" id="ndaSettingsModal" data-controller="modal" tabindex="-1"
+       aria-labelledby="ndaSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ndaSettingsModalLabel">
+            <i class="ti ti-shield-lock me-1"></i> NDA Settings &mdash; <%= folder.name %>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <%# Tabs: Settings (active) and Status (placeholder for Module 3) %>
+        <ul class="nav nav-tabs px-3 pt-2" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="nda-settings-tab" data-bs-toggle="tab"
+                    data-bs-target="#nda-settings-pane" type="button" role="tab"
+                    aria-controls="nda-settings-pane" aria-selected="true">
+              Settings
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link disabled" id="nda-status-tab" type="button" role="tab"
+                    aria-disabled="true" tabindex="-1"
+                    data-bs-toggle="tooltip" title="Coming soon — NDA acceptance status">
+              Status
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <div class="tab-pane fade show active p-3" id="nda-settings-pane" role="tabpanel"
+               aria-labelledby="nda-settings-tab">
+            <%# Changed: Render path from "folder_nda_configs/form" to "nda_configs/form".
+                Why: Views moved to nda_configs pack. %>
+            <%= render "nda_configs/form", folder: folder, nda_config: nda_config %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
