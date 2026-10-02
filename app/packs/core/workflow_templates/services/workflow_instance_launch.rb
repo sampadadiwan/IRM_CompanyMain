@@ -4,11 +4,23 @@ class WorkflowInstanceLaunch < Trailblazer::Operation
   step :create_instance,         Output(:failure) => End(:already_active)
   step :notify_first_step_actors
 
+  # The backstop for every launch path (the launch modal, a rule's auto_launch, KpiReport's
+  # per-period launch): a disabled template never starts a new workflow, however the launch was
+  # triggered. Checked here as well as at each caller so a new caller cannot miss it.
   def check_template_assigned(ctx, workflowable:, **)
-    return true if workflowable.workflow_template
+    template = workflowable.workflow_template
 
-    ctx[:errors] = "This object has no workflow template assigned."
-    false
+    if template.nil?
+      ctx[:errors] = "This object has no workflow template assigned."
+      return false
+    end
+
+    unless template.enabled?
+      ctx[:errors] = "The template assigned to this object (\"#{template.name}\") is disabled, so no workflow was started."
+      return false
+    end
+
+    true
   end
 
   def create_instance(ctx, workflowable:, launched_by:, **)

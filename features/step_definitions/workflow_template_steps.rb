@@ -148,6 +148,63 @@ end
 
 # ── Add / Remove step rows (Stimulus nested-form controller, requires @javascript) ──
 
+# ── Enable / disable ──────────────────────────────────────────────────────────
+
+# Works as a Given (setup) and as a When (the admin retires it mid-scenario)
+Given("the workflow template {string} is disabled") do |name|
+  WorkflowTemplate.find_by!(name: name, entity: @entity).update!(enabled: false)
+end
+
+When("I visit the workflow template page for {string}") do |name|
+  visit workflow_template_path(WorkflowTemplate.find_by!(name: name, entity: @entity))
+end
+
+# Enable/Disable goes through the shared confirm modal, so the popup has to be accepted. The page
+# comes back with the button flipped — waiting for that is how we know the redirect has landed.
+When("I press {string} on the workflow template page") do |label|
+  click_button(label)
+  within("#confirmModal") { click_on("Proceed") }
+  expect(page).to have_button(label == "Disable" ? "Enable" : "Disable", wait: 10)
+end
+
+Then("the workflow template {string} should be disabled") do |name|
+  WorkflowTemplate.find_by!(name: name, entity: @entity).reload.enabled.should == false
+end
+
+Then("the workflow template {string} should be enabled") do |name|
+  WorkflowTemplate.find_by!(name: name, entity: @entity).reload.enabled.should == true
+end
+
+Then("the workflow template page should warn that the template is disabled") do
+  expect(page).to have_css("#template_disabled_banner", text: /disabled/i)
+end
+
+# The launch picker is the select inside the Workflow tab's Launch Workflow modal. The modal is in
+# the DOM but closed, so the options are matched with visible: :all — and compared by value (the
+# template id), because a real browser reports no text for an element inside a hidden modal.
+def launch_picker_template_ids(page)
+  expect(page).to have_css("#launch_workflow_template_id", visible: :all)
+  page.all("#launch_workflow_template_id option", visible: :all).map(&:value)
+end
+
+Then("the launch template picker should offer {string}") do |template_name|
+  template = WorkflowTemplate.find_by!(name: template_name, entity: @entity)
+  launch_picker_template_ids(page).should include(template.id.to_s)
+end
+
+Then("the launch template picker should not offer {string}") do |template_name|
+  template = WorkflowTemplate.find_by!(name: template_name, entity: @entity)
+  launch_picker_template_ids(page).should_not include(template.id.to_s)
+end
+
+# Counterpart of "should have an active workflow instance" (workflow_instance_steps.rb). Spelled out
+# for folders rather than taking a {word} type: investor_workflow_auto_assignment_steps.rb already
+# defines the investor wording, and a generic version would make that step ambiguous.
+Then("the folder {string} should not have an active workflow instance") do |folder_name|
+  folder = Folder.find_by!(name: folder_name, entity: @entity)
+  expect(folder.workflow_instances.instance_active).not_to exist
+end
+
 When("I visit the edit page for the workflow template {string}") do |name|
   template = WorkflowTemplate.find_by!(name: name, entity: @entity)
   visit edit_workflow_template_path(template)

@@ -40,6 +40,13 @@ class WorkflowInstancesController < ApplicationController
                     alert: "Template '#{template.name}' is not applicable to this record."
         return
       end
+      # The launch picker already hides disabled templates, but the id arrives as a request
+      # parameter — check it here too, before the existing assignment is thrown away below
+      unless template.enabled?
+        redirect_to back_url(workflowable),
+                    alert: "Template '#{template.name}' is disabled and cannot be launched. Enable it first."
+        return
+      end
       workflowable.workflow_assignment&.destroy
       workflowable.create_workflow_assignment!(workflow_template: template, created_by: current_user)
     end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_140000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -4513,6 +4513,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
     t.boolean "attach_document_in_email", default: false, null: false
     t.datetime "created_at", null: false
     t.text "description"
+    t.boolean "enabled", default: true, null: false, comment: "False stops the template being assigned or launched on new records; workflows already running keep going"
     t.bigint "entity_id", null: false
     t.string "gated_button_labels"
     t.string "name", null: false

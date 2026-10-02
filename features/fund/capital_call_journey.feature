@@ -181,6 +181,15 @@ Feature: Capital call journey — checks, seeded journeys and launch
     When there is a capital call "percentage_called=10"
     Then the call has no journey
 
+  # Disabled journey templates: the seeded templates and rules are all still there, but the admin
+  # has retired them, so a new call gets nothing — no instance, so no step bar and no reminders.
+  Scenario: A call created while the journey templates are disabled gets no journey
+    Given the entity's capital call journeys are seeded
+    And the entity's capital call journey templates are disabled
+    When there is a capital call "percentage_called=10"
+    Then the call has no journey
+    And the call should have no workflow template
+
   # J2.2 — work that moves a call forward re-checks its journey at once, so open pages update
   # without waiting for the 15-minute tick
   Scenario Outline: Notice generation and approval update open call pages at once

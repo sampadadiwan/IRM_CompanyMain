@@ -121,6 +121,17 @@ Given("the entity's capital distribution journeys are seeded") do
   CapitalDistributionJourneySetup.call(entity: @entity)
 end
 
+# Retires both seeded templates, leaving them and their auto-assignment rules in place — the rules
+# then match a new distribution but can hand it nothing (WorkflowAutoAssignmentService)
+Given("the entity's capital distribution journey templates are disabled") do
+  WorkflowTemplate.where(entity: @entity, system_key: DISTRIBUTION_JOURNEY_KEYS)
+                  .find_each { |template| template.update!(enabled: false) }
+end
+
+Then("the distribution should have no workflow template") do
+  expect(@capital_distribution.reload.workflow_assignment).to be_nil
+end
+
 # Entities are set up with the journeys on create (SetupCompany); this takes them away again
 Given("the entity's capital distribution journeys are removed") do
   WorkflowAutoAssignmentRule.where(entity: @entity, workflowable_type: "CapitalDistribution").destroy_all

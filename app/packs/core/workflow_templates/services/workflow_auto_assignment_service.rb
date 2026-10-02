@@ -1,8 +1,14 @@
 # Evaluates auto-assignment rules for a newly-created workflowable and, when a matching
 # rule is found, assigns the template and optionally launches an instance immediately.
+#
+# This is where a capital call's or distribution's journey gets attached: JourneySetup's rules are
+# created with auto_launch: true, so a matching rule here both assigns the template and launches the
+# evaluated instance the step bar is drawn from. A disabled template therefore means no journey at
+# all on new records — nothing to render, nothing to remind about.
 class WorkflowAutoAssignmentService < Trailblazer::Operation
   step :check_not_already_assigned, Output(:failure) => End(:already_assigned)
   step :find_matching_rule,          Output(:failure) => End(:no_matching_rule)
+  step :check_template_enabled,      Output(:failure) => End(:template_disabled)
   step :assign_template,             Output(:failure) => End(:assignment_failed)
   step :launch_if_auto_launch
 
@@ -18,6 +24,24 @@ class WorkflowAutoAssignmentService < Trailblazer::Operation
       .includes(:workflow_template)
       .find { |rule| rule.matches?(workflowable) }
     ctx[:rule].present?
+  end
+
+  # Stop here when the winning rule points at a disabled template: the record gets no template and
+  # no journey.
+  #
+  # Deliberately checked AFTER the match rather than filtering disabled templates out of the query:
+  # filtering would let the next-priority rule take over, so disabling the Light journey would
+  # silently move imported capital calls onto the Full one. "Disabled" means not used, not
+  # "substitute a different workflow" — the rule that matched is the rule that applies, and if its
+  # template is off, nothing is assigned.
+  def check_template_enabled(ctx, workflowable:, **)
+    return true if ctx[:rule].workflow_template&.enabled?
+
+    Rails.logger.info(
+      "[WorkflowAutoAssignmentService] Rule #{ctx[:rule].id} skipped for " \
+      "#{workflowable.class.name}##{workflowable.id}: template \"#{ctx[:rule].workflow_template}\" is disabled"
+    )
+    false
   end
 
   def assign_template(ctx, workflowable:, **)

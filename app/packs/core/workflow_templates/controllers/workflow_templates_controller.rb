@@ -1,5 +1,5 @@
 class WorkflowTemplatesController < ApplicationController
-  before_action :set_workflow_template, only: %i[show edit update destroy duplicate]
+  before_action :set_workflow_template, only: %i[show edit update destroy duplicate toggle_enabled]
 
   def index
     @bread_crumbs = { "Workflow Templates": workflow_templates_path }
@@ -78,6 +78,27 @@ class WorkflowTemplatesController < ApplicationController
     end
   end
 
+  # PATCH /workflow_templates/:id/toggle_enabled
+  # Retires a template, or brings it back. Disabling stops it being auto-assigned or launched on any
+  # record created from now on (WorkflowAutoAssignmentService, WorkflowInstanceLaunch) — for a
+  # journey template that means new capital calls, distributions and KYCs get no journey at all —
+  # while every workflow already running keeps evaluating from the snapshot taken at its launch.
+  def toggle_enabled
+    # One flag, flipped from whatever it is now: the button's label says which way it will go
+    was_enabled = @workflow_template.enabled
+
+    # Back to wherever the button was pressed — the list or the template's own page
+    if @workflow_template.update(enabled: !was_enabled)
+      redirect_back_or_to workflow_template_path(@workflow_template),
+                          notice: toggle_enabled_notice(was_enabled)
+    else
+      # A pre-existing validation failure (e.g. a duplicate name) — say so rather than 500
+      redirect_back_or_to workflow_template_path(@workflow_template),
+                          alert: "Could not #{was_enabled ? 'disable' : 'enable'} this template: " \
+                                 "#{@workflow_template.errors.full_messages.to_sentence}"
+    end
+  end
+
   # POST /workflow_templates/:id/duplicate — copy the template and its steps, then edit the copy
   # (e.g. a journey for one KYC form type, routed by a form-type rule). Authorized as duplicate? (= create?).
   # Worked examples E25, E26 — openspec/changes/investor-kyc-journey/design.md#worked-examples
@@ -89,8 +110,10 @@ class WorkflowTemplatesController < ApplicationController
   def destroy
     count = @workflow_template.active_workflowable_count
     if count.positive?
+      # Disabling is the way out of an undeletable template: it stops being used without losing history
       redirect_to workflow_templates_path,
-                  alert: "Cannot delete a template assigned to #{count} object(s). Remove the assignment first."
+                  alert: "Cannot delete a template assigned to #{count} object(s). Remove the assignment first, " \
+                         "or disable the template to stop it being used."
       return
     end
 
@@ -98,7 +121,8 @@ class WorkflowTemplatesController < ApplicationController
     # Destroying the template while instances exist causes a DB FK violation.
     if WorkflowInstance.where(workflow_template_id: @workflow_template.id).exists?
       redirect_to workflow_templates_path,
-                  alert: "Cannot delete a template that has associated workflow history. Archive all instances first."
+                  alert: "Cannot delete a template that has associated workflow history. Archive all instances first, " \
+                         "or disable the template to stop it being used."
       return
     end
 
@@ -107,6 +131,17 @@ class WorkflowTemplatesController < ApplicationController
   end
 
   private
+
+  # What the admin is told after a toggle. Disabling names the consequence that is easy to miss:
+  # the template's auto-assignment rules stay on the page but can no longer give a record anything.
+  def toggle_enabled_notice(was_enabled)
+    return "\"#{@workflow_template.name}\" is enabled again. New records can be assigned and launched on it." unless was_enabled
+
+    rule_count = @workflow_template.workflow_auto_assignment_rules.count
+    rules = rule_count.positive? ? " Its #{helpers.pluralize(rule_count, 'auto-assignment rule')} will no longer assign it." : ""
+    "\"#{@workflow_template.name}\" is disabled. New records will not be assigned or launched on it; " \
+      "workflows already running are unaffected.#{rules}"
+  end
 
   # { kind => the setup's dry-run report } for every journey kind, when the user may run setup
   def journey_setup_plans

@@ -10,6 +10,17 @@ Given("the entity's capital call journeys are seeded") do
   CapitalCallJourneySetup.call(entity: @entity)
 end
 
+# Retires both seeded journey templates, leaving them and their auto-assignment rules in place —
+# the rules then match a new call but can hand it nothing (WorkflowAutoAssignmentService)
+Given("the entity's capital call journey templates are disabled") do
+  WorkflowTemplate.where(entity: @entity, system_key: [CapitalCallJourneySetup::FULL_KEY, CapitalCallJourneySetup::LIGHT_KEY])
+                  .find_each { |template| template.update!(enabled: false) }
+end
+
+Then("the call should have no workflow template") do
+  expect(@capital_call.reload.workflow_assignment).to be_nil
+end
+
 Given("the entity's capital call journeys are removed") do
   WorkflowAutoAssignmentRule.where(entity: @entity, workflowable_type: "CapitalCall").destroy_all
   WorkflowTemplate.where(entity: @entity, system_key: [CapitalCallJourneySetup::FULL_KEY, CapitalCallJourneySetup::LIGHT_KEY])

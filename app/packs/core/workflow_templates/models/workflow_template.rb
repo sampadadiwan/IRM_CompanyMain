@@ -34,6 +34,15 @@ class WorkflowTemplate < ApplicationRecord
   # workflowable_type is immutable once set — changing it would orphan existing assignments
   validate :workflowable_type_immutable, on: :update
 
+  # Templates that may still be used for new work. A disabled template is never auto-assigned
+  # (WorkflowAutoAssignmentService), never launched (WorkflowInstanceLaunch) and never offered in
+  # the launch picker (workflow_templates/_workflow_tab) — but workflows already running on it are
+  # untouched, because an instance evaluates from the snapshot taken at launch, not from here.
+  # Disabling is also the answer to a template that can no longer be deleted (it has assignments or
+  # history), which is why there is no `enabled` field on the template form: the only way to flip it
+  # is the confirmed Enable/Disable button (WorkflowTemplatesController#toggle_enabled).
+  scope :enabled, -> { where(enabled: true) }
+
   def to_s
     name
   end

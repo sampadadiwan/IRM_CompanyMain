@@ -125,7 +125,7 @@ In a journey, rejecting a human step does not end the workflow: the step stays c
 
 ### Template list
 
-The **Workflow Templates** list shows each template's name, the object type it applies to, a numbered list of its steps, how many objects it is currently assigned to, and whether it attaches documents to emails.
+The **Workflow Templates** list shows each template's name, its status (**Enabled** or **Disabled**), the object type it applies to, a numbered list of its steps, how many auto-assignment rules it has, and whether it attaches documents to emails. Each row has an edit (pencil), enable/disable (pause or play) and delete (bin) button. A disabled template's name is greyed out.
 
 ### Editing a template
 
@@ -133,13 +133,42 @@ Open [**Workflow Templates**](/workflow_templates), click the template name, the
 
 Note that the **Applies to** type cannot be changed once the template has been saved.
 
+### Enabling and disabling a template
+
+Disabling retires a template without losing it or its history. Use the **Disable** button on the template's page, or the pause button on its row in the list; both ask you to confirm first, and the page then shows a **Disabled** banner.
+
+While a template is disabled:
+
+- **No new object is assigned to it.** Its auto-assignment rules stay exactly as they are, and still match, but hand the record nothing — and no other rule steps in. A record that would have matched simply gets no template.
+- **For a journey template (capital calls, capital distributions, investor KYC) that means new records get no journey at all** — no step bar, no "What's needed now" panel and no task reminders.
+- **It is not offered in the Launch Workflow dialog**, and a workflow cannot be launched on it even if an object was assigned to it earlier.
+- **Workflows already running carry on unchanged.** A running workflow follows the snapshot taken when it launched, so its steps, actors, reminders and timeline are unaffected, and it can still be completed, reset or archived.
+- **Nothing is deleted.** The template, its steps, its rules and every past run stay on the page, and **Enable** puts it straight back into use.
+
+Enabling again applies to records created from then on; records created while the template was disabled are not given a workflow retrospectively.
+
+```mermaid
+flowchart TD
+  A[New object created] --> B{Auto-assignment rule matches?}
+  B -- No --> Z[No template assigned]
+  B -- Yes --> C{Is the matched rule's template enabled?}
+  C -- No --> Z2[No template assigned<br/>no journey, no next rule tried]
+  C -- Yes --> D[Template assigned]
+  D --> E{Rule set to auto-launch?}
+  E -- Yes --> F[Workflow launched]
+  E -- No --> G[Waits for Launch Workflow]
+  H[Workflow already running] --> I[Unaffected by disabling<br/>runs from its launch snapshot]
+```
+
+On [**Workflow Templates**](/workflow_templates), the **Set up journeys** menu shows a journey kind as *disabled* rather than *set up* when its seeded templates have been disabled, because new records are getting no journey. Running the setup again never re-enables them — that stays your decision.
+
 ### Deleting a template
 
 A template can only be deleted if:
 - It is not currently assigned to any object.
 - It has no workflow runs at all (active, complete, rejected, or archived).
 
-If either condition is not met, you will see an error. Archiving runs does not remove them, and there is no button to remove a template assignment from an object, so in practice a template that has ever been assigned or launched cannot be deleted from the UI — rename it or stop using it instead.
+If either condition is not met, you will see an error telling you to disable it instead. Archiving runs does not remove them, and there is no button to remove a template assignment from an object, so in practice a template that has ever been assigned or launched cannot be deleted from the UI — **disable** it, which stops it being used while keeping its history.
 
 ---
 
@@ -559,8 +588,14 @@ Steps can be added on the template form, or from the template page with **Add St
 **How do I edit a template?**
 Open it from [**Workflow Templates**](/workflow_templates) and click **Edit Template**. Everything can change except **Applies to** once it has been set. Running workflows keep the steps, actors and rules they were launched with. See [Editing a template](#editing-a-template).
 
+**How do I stop a template being used without deleting it?**
+Disable it: open it from [**Workflow Templates**](/workflow_templates) and click **Disable**, or press the pause button on its row in the list, then confirm. It keeps its steps, rules and history, stops being assigned or launched on anything new, and **Enable** brings it back. See [Enabling and disabling a template](#enabling-and-disabling-a-template).
+
 **How do I delete a template?**
-Open it and click **Delete**. It is refused while the template is assigned to any object or has any workflow run (active, complete, rejected or archived). See [Deleting a template](#deleting-a-template).
+Open it and click **Delete**. It is refused while the template is assigned to any object or has any workflow run (active, complete, rejected or archived) — disable it instead. See [Deleting a template](#deleting-a-template).
+
+**Why disable a template rather than delete it or empty its steps?**
+Deleting is refused once a template has ever been assigned or launched, because its runs are part of the audit trail. Disabling is the supported way to retire one: nothing new starts on it, everything it has already done stays readable, and you can reverse it with one click. Deleting its rules instead would lose how it was targeted, and emptying its steps would leave live workflows pointing at a template that no longer makes sense.
 
 **How do I launch a workflow on an object?**
 Open the object → **Workflow** tab → **Launch Workflow**, choose a template in **Select Review Template** and click **Launch Workflow**. The chosen template becomes the object's assigned template. See [Launching a Workflow](#launching-a-workflow).
@@ -595,6 +630,12 @@ Nothing is blocked: objects work as normal, locked buttons never apply to an obj
 
 **What happens when I save a template?**
 The template and its steps are stored for your company and appear on [**Workflow Templates**](/workflow_templates) and in the Launch dialog of matching objects. Nothing is launched and no one is notified. Its auto-assignment rules start applying to objects created or updated afterwards.
+
+**What happens when I disable a template?**
+Nothing new is assigned to it or launched on it: its auto-assignment rules still match records but hand them no template, and no other rule takes over, so a matching record gets nothing — for a journey template, that means new capital calls, distributions or KYCs get no journey, step bar or task reminders. It disappears from the **Launch Workflow** dialog, and a workflow cannot be launched on it even where an object was assigned to it earlier. Workflows already running are untouched and can still be completed, reset or archived, and nothing is deleted. See [Enabling and disabling a template](#enabling-and-disabling-a-template).
+
+**What happens when I enable a template again?**
+It is available immediately: its rules start assigning it to records created or updated from then on, and it is offered in the **Launch Workflow** dialog again. Records created while it was disabled are not given a workflow retrospectively — launch one on them from their **Workflow** tab if you want one.
 
 **What happens when I launch a workflow?**
 The template is assigned to the object, a copy of its steps, actors and rules is stored with the run, and the run starts as **Active** at the first step. Each actor on that step gets an "Action Required" email with a personal response link (if **Email actors when this step becomes active** is on), with the object's files attached for folders and KYCs when the template says so.
@@ -641,7 +682,13 @@ Yes. The magic link page includes a **View** button next to the object's name. C
 Only if the template's "Applies to" field is left blank (untyped). Once a type is set on a template, it can only be assigned to objects of that type.
 
 **Can I remove a template assignment from an object?**
-There is no remove button. Launching a different template on the object replaces the assignment. Because assignments stay in place, a template that has ever been assigned cannot be deleted from the UI; rename it or stop using it instead.
+There is no remove button. Launching a different template on the object replaces the assignment. Because assignments stay in place, a template that has ever been assigned cannot be deleted from the UI; disable it instead.
+
+**A new capital call, distribution or KYC got no journey. Why?**
+Either the company's journeys were never set up (use **Set up journeys** on [**Workflow Templates**](/workflow_templates)), or the journey template the record matched is **disabled** — a disabled template is never assigned, and no other rule takes its place. Check the status column in the template list: the **Set up journeys** menu also shows the kind as *disabled* in that case. Enabling the template gives journeys to records created from then on, not to the ones created while it was off.
+
+**A template is disabled but its workflows are still running and sending reminders. Is that expected?**
+Yes. Disabling only stops new work: a run already under way follows the snapshot taken when it launched, so it keeps advancing, reminding and completing. Archive the run if you want it to stop.
 
 **Will auto-assignment trigger again on an object that already has a template?**
 No. Rules only run for objects with no assigned template, so once a template is assigned (manually or by a rule) further updates never re-assign or re-launch.

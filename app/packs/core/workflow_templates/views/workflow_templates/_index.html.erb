@@ -28,6 +28,13 @@
                     data: { action: "click->confirm#popup", method: :post, title: "Set up #{setup::LABEL}", msg: } do %>
                 <i class="ti ti-route me-1"></i> Set up <%= setup::LABEL %>
               <% end %>
+            <% elsif plan[:disabled].any? %>
+              <%# Everything is seeded but the admin has disabled some or all of it, so new records get
+                  no journey from those templates. Say that instead of a green "set up" tick. %>
+              <button type="button" id="setup_<%= kind %>_journeys_btn" class="dropdown-item text-warning" disabled
+                      title="<%= plan[:disabled].to_sentence %> <%= plan[:disabled].one? ? 'is' : 'are' %> disabled, so new <%= records %> get no journey from <%= plan[:disabled].one? ? 'it' : 'them' %>. Enable the template below to start using it again.">
+                <i class="ti ti-player-pause me-1"></i> <%= setup::LABEL.upcase_first %> disabled
+              </button>
             <% else %>
               <button type="button" id="setup_<%= kind %>_journeys_btn" class="dropdown-item text-success" disabled
                       title="<%= setup.light? ? "The Full and Light journeys and their rules" : "The journey and its rule" %> already exist. Edit the <%= setup::WORKFLOWABLE_TYPE.titleize %> templates below to change them.">
@@ -51,6 +58,7 @@
     <thead>
       <tr>
         <th>Name</th>
+        <th>Status</th>
         <th>Type</th>
         <th>Steps</th>
         <th>Auto Assignment Rules</th>

@@ -7,6 +7,8 @@ resources :workflow_templates do
   # Seeds a kind's standard journeys, params[:kind] in JourneySetup::KINDS (same service as the
   # rollout rake tasks). Worked examples H10 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
   post :setup_journeys, on: :collection
+  # Retire a template (or bring it back) without deleting it — see WorkflowTemplate.enabled
+  patch :toggle_enabled, on: :member
   # Copy a template with its steps (investor-kyc-journey E26)
   post :duplicate, on: :member
   resources :workflow_steps, except: %i[index show]

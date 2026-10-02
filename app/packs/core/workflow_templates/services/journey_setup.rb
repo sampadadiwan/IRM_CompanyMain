@@ -24,7 +24,9 @@
 #
 # Idempotent: templates are found by system_key (so an admin's rename or added steps are kept),
 # and no rule is created while the entity already has a rule for the type. It never launches a
-# journey on an existing record — only records created afterwards get one.
+# journey on an existing record — only records created afterwards get one. A template the admin has
+# disabled stays disabled: setup never re-enables one behind their back, it only reports it
+# (report[:disabled]) so the "Set up journeys" menu can show the kind as disabled rather than done.
 #
 # execute: false reports what it would do and writes nothing (rollout dry run).
 #
@@ -141,7 +143,11 @@ class JourneySetup < Trailblazer::Operation
              end,
       flag: !entity.permissions.enable_workflow_templates?,
       # A Full template seeded before the CFO sign-off step existed (a new template gets it seeded)
-      cfo: templates[self.class::FULL_KEY].present? && !templates[self.class::FULL_KEY].workflow_steps.exists?(name: self.class::SIGN_OFF_NAME)
+      cfo: templates[self.class::FULL_KEY].present? && !templates[self.class::FULL_KEY].workflow_steps.exists?(name: self.class::SIGN_OFF_NAME),
+      # Seeded templates the admin has since disabled. Setup leaves them disabled — re-enabling is
+      # the admin's call — but the menu has to say so, otherwise a kind whose templates are all off
+      # reads as "set up" while new records quietly get no journey.
+      disabled: templates.values.reject(&:enabled).map(&:name)
     }
     true
   end

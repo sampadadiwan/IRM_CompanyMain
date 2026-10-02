@@ -5,8 +5,10 @@
 <%# Only offer templates scoped to this object's type (or unscoped), and further only those
     eligible_for? this exact record — matters when one workflowable_type covers more than one
     sub-audience (e.g. Investor: regular investors vs. portfolio companies), so the wrong
-    sub-audience's template cannot be launched here even though the type matches. %>
-<% available_templates = WorkflowTemplate.for_workflowable_type(workflowable.workflowable_type_name)
+    sub-audience's template cannot be launched here even though the type matches.
+    Disabled templates are left out entirely: they are retired, so nothing new starts on them. %>
+<% available_templates = WorkflowTemplate.enabled
+                                          .for_workflowable_type(workflowable.workflowable_type_name)
                                           .where(entity_id: workflowable.entity_id)
                                           .order(:name)
                                           .select { |t| t.eligible_for?(workflowable) } %>
@@ -114,6 +116,11 @@
     <p class="text-muted small mb-0">
       <% if available_templates.any? %>
         No workflows have been run for this object yet. Click <strong>Launch Workflow</strong> to start one.
+      <% elsif WorkflowTemplate.for_workflowable_type(workflowable.workflowable_type_name).where(entity_id: workflowable.entity_id).exists? %>
+        <%# Templates exist for this type but every one of them is disabled (or scoped to another
+            sub-audience) — don't tell the admin to create one they already have %>
+        No template is available for this object.
+        <%= link_to "Review your templates", workflow_templates_path %> — the ones that apply here may be disabled.
       <% else %>
         No review templates exist yet.
         <%= link_to "Create a template", new_workflow_template_path %> to enable workflows for this object.

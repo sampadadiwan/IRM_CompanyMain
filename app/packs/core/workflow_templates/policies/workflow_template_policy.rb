@@ -41,6 +41,12 @@ class WorkflowTemplatePolicy < ApplicationPolicy
     create?
   end
 
+  # Enabling/disabling a template changes what happens to every future record it would be
+  # assigned to, so it needs the same rights as editing it
+  def toggle_enabled?
+    update?
+  end
+
   # Seeding the standard journeys (capital calls, distributions): a company admin of an Investment
   # Fund entity (the same entities the rollout tasks and SetupCompany seed)
   # Worked examples X3 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples

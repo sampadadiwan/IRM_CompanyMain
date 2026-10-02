@@ -114,3 +114,38 @@ Feature: Workflow Auto-Assignment Rules
     Examples:
       | user | entity              |
       |      | entity_type=Company |
+
+  # ── Disabled templates ────────────────────────────────────────────────────────
+  # A disabled template is never handed to a new record. The check runs after the rule has been
+  # matched, deliberately: the rule that matched is the rule that applies, so its template being
+  # disabled means "no template", not "whatever the next rule says".
+
+  Scenario Outline: A rule whose template is disabled assigns nothing
+    Given there is a workflow template "name=Disabled Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Disabled Template" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Disabled Template" type "Folder" with conditions "[]" auto_launch true priority 0
+    And the workflow template "Disabled Template" is disabled
+    When a new folder "name=Unassigned Folder" is created for the entity
+    Then the folder "Unassigned Folder" should not have a workflow template
+    And the folder "Unassigned Folder" should not have an active workflow instance
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: A disabled template's rule does not fall through to the next rule
+    Given there is a workflow template "name=Disabled Specific" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Disabled Specific" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Disabled Specific" type "Folder" with conditions '[{"attribute":"name","operator":"eq","value":"Target Folder"}]' auto_launch false priority 10
+    And there is a workflow template "name=Catch All Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Catch All Template" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Catch All Template" type "Folder" with conditions "[]" auto_launch false priority 100
+    And the workflow template "Disabled Specific" is disabled
+    When a new folder "name=Target Folder" is created for the entity
+    Then the folder "Target Folder" should not have a workflow template
+    When a new folder "name=Other Folder" is created for the entity
+    Then the folder "Other Folder" should have workflow template "Catch All Template"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |

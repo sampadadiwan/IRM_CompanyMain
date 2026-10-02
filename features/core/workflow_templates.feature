@@ -56,6 +56,69 @@ Feature: Workflow Templates
       | user | entity              |
       |      | entity_type=Company |
 
+  # ── Enable / disable ──────────────────────────────────────────────────────────
+  # Disabling retires a template without deleting it (a template with assignments or history cannot
+  # be deleted at all): nothing new is assigned to it or launched on it, while workflows already
+  # running carry on from the snapshot taken at their launch.
+
+  Scenario Outline: Admin disables a template from its page
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Retired Review"
+    When I visit the workflow template page for "Retired Review"
+    And I press "Disable" on the workflow template page
+    Then the workflow template "Retired Review" should be disabled
+    And the workflow template page should warn that the template is disabled
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: Admin enables a disabled template again
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Retired Review"
+    And the workflow template "Retired Review" is disabled
+    When I visit the workflow template page for "Retired Review"
+    And I press "Enable" on the workflow template page
+    Then the workflow template "Retired Review" should be enabled
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: A disabled template is not offered when launching a workflow
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Live Review" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Live Review" has workflowable_type "Folder"
+    And there is a workflow template "name=Retired Review" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Retired Review" has workflowable_type "Folder"
+    And the workflow template "Retired Review" is disabled
+    And the entity has a folder "name=Picker Folder"
+    When I visit the folder show page for "Picker Folder"
+    Then the launch template picker should offer "Live Review"
+    And the launch template picker should not offer "Retired Review"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: A workflow cannot be launched on a disabled template
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Retired Review" with 1 step "name=Sign-off;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the entity has a folder "name=Launch Folder"
+    And the folder "Launch Folder" has workflow template "Retired Review"
+    And the workflow template "Retired Review" is disabled
+    When I launch the workflow for folder "Launch Folder"
+    Then I should see a workflow launch error
+    And the folder "Launch Folder" should not have an active workflow instance
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
   # ── Access control ────────────────────────────────────────────────────────────
 
   Scenario Outline: Non-admin cannot create a workflow template

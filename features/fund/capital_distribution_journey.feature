@@ -124,6 +124,16 @@ Feature: Capital distribution journey — tasks, launch and not-applicable rules
     When I open the capital distribution page
     Then the page should not show a journey
 
+  # Disabled journey templates: everything is still seeded, but the admin has retired it, so a new
+  # distribution gets no instance — and with no instance its page shows no journey card
+  Scenario: A distribution created while the journey templates are disabled gets no journey
+    Given the entity's capital distribution journey templates are disabled
+    And there is a capital distribution "title=Q4 2026 Exit Proceeds;income_cents=300000000;approved=false"
+    Then the distribution has no journey
+    And the distribution should have no workflow template
+    When I open the capital distribution page
+    Then the page should not show a journey
+
   # ── Progress hooks: the journey moves on as soon as the work is done (phase 5) ─────────────
 
   # H6 — Approve and Mark Payments Completed move the journey on at once
