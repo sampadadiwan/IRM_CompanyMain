@@ -187,7 +187,7 @@ class WorkflowTemplatesController < ApplicationController
   def workflow_template_params
     params.require(:workflow_template).permit(
       :name, :description, :reminder_interval_days, :attach_document_in_email, :workflowable_type,
-      :gated_button_labels,
+      :gated_button_labels, :notify_by_email, :notify_by_whatsapp,
       workflow_steps_attributes: [
         :id, :position, :name, :description, :states,
         :quorum_rule, :on_reject_rule, :on_reject_target_step,

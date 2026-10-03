@@ -308,3 +308,27 @@ When("I save the workflow template edit form") do
   # Wait for Turbo to complete navigation before subsequent DB assertions run
   expect(page).to have_text("successfully updated")
 end
+
+# ── Channel switches (Send email / Send WhatsApp) ───────────────────────────
+# Existing templates email by default and only send WhatsApp once an admin ticks it
+
+Then("the Send email box should be ticked and the Send WhatsApp box unticked") do
+  expect(page).to have_checked_field("workflow_template_notify_by_email")
+  expect(page).to have_unchecked_field("workflow_template_notify_by_whatsapp")
+end
+
+When("I untick Send email and tick Send WhatsApp") do
+  uncheck "workflow_template_notify_by_email"
+  check "workflow_template_notify_by_whatsapp"
+end
+
+Then("the workflow template {string} should notify by email {string} and WhatsApp {string}") do |name, email, whatsapp|
+  template = WorkflowTemplate.find_by!(name: name, entity: @entity).reload
+  expect(template.notify_by_email.to_s).to eq(email)
+  expect(template.notify_by_whatsapp.to_s).to eq(whatsapp)
+end
+
+Then("the workflow template show page should say it notifies by {string}") do |channels|
+  expect(page).to have_css(".wf-meta-label", text: /notify by/i)
+  expect(page).to have_css(".wf-meta-value", text: channels)
+end

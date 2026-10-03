@@ -3,7 +3,8 @@ class WorkflowStepDiagramPresenter
               :quorum_rule, :on_reject_rule, :on_reject_target_step,
               :reminder_interval_days, :reminder_active, :notify_on_activation,
               :actor_users, :workflow_step,
-              :status, :resolved_state_change, :actor_responses
+              :status, :resolved_state_change, :actor_responses,
+              :kind, :owner_user
 
   def self.for_template_step(step)
     new(mode: :template, workflow_step: step,
@@ -13,10 +14,14 @@ class WorkflowStepDiagramPresenter
         reminder_interval_days: step.effective_reminder_interval,
         reminder_active: step.reminder_interval_days_before_type_cast.present?,
         notify_on_activation: step.notify_on_activation,
-        actor_users: step.actor_users.to_a)
+        actor_users: step.actor_users.to_a,
+        # Journey steps show their owner instead of approvers; nil = falls back to the record's creator
+        kind: step.kind, owner_user: step.owner_user)
   end
 
-  def self.for_snapshot_step(snap, instance:, actor_users_by_id:, resolved_state_change:, actor_responses:)
+  # owner_user: who WorkflowAutoReminderJob.owner_for would remind for this step (nil = nobody)
+  def self.for_snapshot_step(snap, instance:, actor_users_by_id:, resolved_state_change:, actor_responses:,
+                             owner_user: nil)
     pos = snap[:position].to_i
     status = if instance.evaluated
                # Journeys: the evaluator's last result says what each step is, not the pointer alone
@@ -41,7 +46,9 @@ class WorkflowStepDiagramPresenter
         notify_on_activation: snap[:notify_on_activation],
         actor_users: actor_ids.filter_map { |id| actor_users_by_id[id] },
         status: status, resolved_state_change: resolved_state_change,
-        actor_responses: actor_responses)
+        actor_responses: actor_responses,
+        # Snapshots taken before journeys existed have no kind — they are human steps
+        kind: snap[:kind].presence || "human", owner_user: owner_user)
   end
 
   # Maps an evaluated step's stored status to the diagram's three states
@@ -77,6 +84,12 @@ class WorkflowStepDiagramPresenter
     resolved_state_change.present?
   end
 
+  # System (data check) and acknowledge ("Mark reviewed") steps aren't voted on: quorum, actors,
+  # activation email and the reject rule don't apply — the diagram shows the kind and owner instead
+  def evaluated?
+    kind.to_s != "human"
+  end
+
   def silent?
     !notify_on_activation
   end
@@ -90,7 +103,7 @@ class WorkflowStepDiagramPresenter
   def initialize(mode:, position:, name:, description:, state_list:, quorum_rule:,
                  on_reject_rule:, on_reject_target_step:, reminder_interval_days:,
                  reminder_active:, notify_on_activation:, actor_users:, workflow_step: nil,
-                 status: nil, resolved_state_change: nil, actor_responses: [])
+                 status: nil, resolved_state_change: nil, actor_responses: [], kind: "human", owner_user: nil)
     @mode = mode
     @position = position
     @name = name
@@ -107,5 +120,7 @@ class WorkflowStepDiagramPresenter
     @status = status
     @resolved_state_change = resolved_state_change
     @actor_responses = actor_responses
+    @kind = kind
+    @owner_user = owner_user
   end
 end

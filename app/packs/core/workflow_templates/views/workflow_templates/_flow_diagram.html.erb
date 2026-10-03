@@ -1,6 +1,9 @@
-<%# ── Shared vertical spine diagram — used by both workflow_templates/show     %>
-<%#    (template definition, editable) and workflow_instances/show (a live run,  %>
-<%#    read-only, with instance status overlaid onto the same visual structure). %>
+<%# ── Shared flow diagram (vertical spine or wrapping graph) — used by both   %>
+<%#    workflow_templates/show (template definition, editable) and             %>
+<%#    workflow_instances/show (a live run, read-only, with instance status    %>
+<%#    overlaid onto the same visual structure).                               %>
+<%#    A List | Graph switch (workflow_flow_view_controller) restyles the same  %>
+<%#    markup as a wrapping left-to-right graph via the `wffd-graph` modifier.   %>
 <%#    Locals: steps (Array<WorkflowStepDiagramPresenter>), workflow_template     %>
 <%#    (nil in instance mode), editable (bool).                                  %>
 
@@ -10,7 +13,24 @@
     <p class="mt-2 mb-0">No steps defined yet.</p>
   </div>
 <% else %>
-  <div class="wffd">
+  <div data-controller="workflow-flow-view">
+  <%# ── List / Graph switch — same markup, the graph is the `wffd-graph` modifier ── %>
+  <div class="d-flex justify-content-end mb-2">
+    <div class="btn-group btn-group-sm" role="group" aria-label="Diagram layout">
+      <button type="button" class="btn btn-outline-primary active" aria-pressed="true"
+              data-view="list" data-workflow-flow-view-target="button"
+              data-action="workflow-flow-view#switch" title="Vertical list">
+        <i class="ti ti-list me-1"></i>List
+      </button>
+      <button type="button" class="btn btn-outline-primary" aria-pressed="false"
+              data-view="graph" data-workflow-flow-view-target="button"
+              data-action="workflow-flow-view#switch" title="Wrapping graph — whole flow on one screen">
+        <i class="ti ti-hierarchy-3 me-1"></i>Graph
+      </button>
+    </div>
+  </div>
+
+  <div class="wffd" data-workflow-flow-view-target="diagram">
 
     <%# ════════════════════════════════════════════════════════════════════ %>
     <%#  START terminus                                                     %>
@@ -177,6 +197,47 @@
 
         <%# ── Sidebar (quorum badge + actor chips) ── %>
         <div class="wffd-sidebar">
+          <% if step.evaluated? %>
+            <%# ── Journey step (system / acknowledge): nobody votes, so quorum, actors and the     %>
+            <%#    activation email don't apply. Show what completes it and who is reminded.      %>
+            <div class="wffd-quorum-row">
+              <% if step.kind.to_s == "acknowledge" %>
+                <span class="wf-rule-badge wf-rule-warning wffd-quorum-badge" data-bs-toggle="tooltip"
+                      data-bs-title="Someone with edit rights on the record clicks Mark reviewed">
+                  <i class="ti ti-eye-check"></i>Needs review
+                </span>
+              <% else %>
+                <span class="wf-rule-badge wf-rule-info wffd-quorum-badge" data-bs-toggle="tooltip"
+                      data-bs-title="Passes by itself once the record's data meets the check">
+                  <i class="ti ti-settings-automation"></i>Checked automatically
+                </span>
+              <% end %>
+            </div>
+
+            <div class="wffd-actors">
+              <% if step.owner_user %>
+                <div class="wf-actor-chip" data-bs-toggle="tooltip"
+                     data-bs-title="Owner — reminded when this step stalls<%= "; emailed when it needs review" if step.kind.to_s == "acknowledge" %>">
+                  <span class="wf-actor-avatar">
+                    <%= step.owner_user.first_name.to_s.first.upcase %><%= step.owner_user.last_name.to_s.first.upcase %>
+                  </span>
+                  <span class="wf-actor-name"><%= step.owner_user.full_name %></span>
+                </div>
+              <% elsif step.template_mode? %>
+                <%# No owner on the template: the reminder job falls back to the record's creator %>
+                <span class="text-muted small d-flex align-items-center gap-1" data-bs-toggle="tooltip"
+                      data-bs-title="No owner set — reminders go to whoever created the record">
+                  <i class="ti ti-user"></i>Record creator (default)
+                </span>
+              <% else %>
+                <%# Live run and nobody resolves: no one is being reminded, the template needs fixing %>
+                <span class="text-danger small d-flex align-items-center gap-1" data-bs-toggle="tooltip"
+                      data-bs-title="Nobody is being reminded about this step — set an owner on the journey template">
+                  <i class="ti ti-user-off"></i>Owner unavailable
+                </span>
+              <% end %>
+            </div>
+          <% else %>
           <div class="wffd-quorum-row">
             <span class="wf-rule-badge <%= q_class %> wffd-quorum-badge">
               <i class="ti <%= q_icon %>"></i><%= q_label %>
@@ -239,15 +300,18 @@
               </span>
             <% end %>
           </div>
+          <% end %>
         </div>
 
-        <%# ── Reject rule (spans below the card) ── %>
-        <div class="wffd-reject-rule">
-          <span class="wffd-reject-label">If rejected</span>
-          <span class="wf-rule-badge wf-rule-<%= r_color %>">
-            <i class="ti <%= r_icon %>"></i><%= r_label %>
-          </span>
-        </div>
+        <%# ── Reject rule (spans below the card) — only votes can reject, so not on journey steps ── %>
+        <% unless step.evaluated? %>
+          <div class="wffd-reject-rule">
+            <span class="wffd-reject-label">If rejected</span>
+            <span class="wf-rule-badge wf-rule-<%= r_color %>">
+              <i class="ti <%= r_icon %>"></i><%= r_label %>
+            </span>
+          </div>
+        <% end %>
 
       </div>
     <% end %>
@@ -261,5 +325,6 @@
       <span class="wffd-terminus-label wffd-terminus-done">Complete</span>
     </div>
 
+  </div>
   </div>
 <% end %>

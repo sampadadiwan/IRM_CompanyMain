@@ -100,7 +100,10 @@ class WorkflowInstancesController < ApplicationController
       WorkflowStepDiagramPresenter.for_snapshot_step(
         snap, instance: @instance, actor_users_by_id: @actor_users,
         resolved_state_change: resolved_per_step[snap[:position].to_i],
-        actor_responses: @all_responses_by_step[snap[:position].to_i] || []
+        actor_responses: @all_responses_by_step[snap[:position].to_i] || [],
+        # Journey steps show who stalled-step reminders go to — the job's own lookup, so the
+        # diagram can't disagree with who actually gets emailed
+        owner_user: (WorkflowAutoReminderJob.owner_for(@instance, snap) if snap[:kind].present? && snap[:kind].to_s != "human")
       )
     end
   end
@@ -202,12 +205,8 @@ class WorkflowInstancesController < ApplicationController
       actor = User.find_by(id: actor_id)
       next unless actor
 
-      WorkflowMailer.with(
-        user_id:       actor.id,
-        entity_id:     @instance.entity_id,   # denormalized; no folder join needed
-        instance_id:   @instance.id,
-        step_position: @instance.current_step_position
-      ).reminder.deliver_later
+      WorkflowNotifier.with(record: @instance, entity_id: @instance.entity_id, # denormalized; no folder join needed
+                            email_method: :reminder, step_position: @instance.current_step_position).deliver_later(actor)
 
       WorkflowStateChange.create!(
         workflow_instance: @instance,

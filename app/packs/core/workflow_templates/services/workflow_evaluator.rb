@@ -68,15 +68,32 @@ class WorkflowEvaluator < Trailblazer::Operation
       case mail[:type]
       when :activation
         WorkflowStepActorNotifier.call(instance:, step_position: mail[:position])
+      when :review_needed, :journey_complete
+        owner_mail(instance, mail)
       when :sign_off_reset
-        WorkflowMailer.with(user_id: mail[:user_id], entity_id: instance.entity_id, instance_id: instance.id,
-                            step_position: mail[:position], reason: mail[:reason]).sign_off_reset.deliver_later
+        user = User.find_by(id: mail[:user_id])
+        next unless user
+
+        WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method: :sign_off_reset,
+                              step_position: mail[:position], reason: mail[:reason]).deliver_later(user)
       end
     end
     true
   end
 
   private
+
+  # Emails the step's owner — the same person the stalled-step reminder goes to. Nobody resolves
+  # (no owner set and no creator on record, or an inactive owner) → no email; the diagram and the
+  # journey panel already show "Owner unavailable" for that case.
+  def owner_mail(instance, mail)
+    step = instance.snapshot_steps.find { |s| s[:position].to_i == mail[:position] }
+    owner = step && WorkflowAutoReminderJob.owner_for(instance, step)
+    return unless owner
+
+    WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method: mail[:type],
+                          step_position: mail[:position]).deliver_later(owner)
+  end
 
   # Worked examples H2, H8 (walk), E3, E4, E22, E23 (n/a), X6 (errors) — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
   # ── The walk ────────────────────────────────────────────────────────────────
@@ -206,6 +223,18 @@ class WorkflowEvaluator < Trailblazer::Operation
     # Worked examples H16 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
     # A human step that just became current: tell its approvers
     ctx[:mails] << { type: :activation, position: new_position } if current && current[:kind].to_s == "human" && (new_position != old_position || moved_back)
+
+    # An acknowledge step that just became current: tell its owner now rather than leaving it to the
+    # stalled-step reminder days later. Never on a record's first evaluation (launch / rollout onto
+    # existing records), and not when the step is set to stay silent on activation.
+    first_evaluation = old_results.empty?
+    became_current = current && (new_position != old_position || moved_back)
+    review_now = became_current && !first_evaluation && current[:kind].to_s == "acknowledge" && current[:notify_on_activation]
+    ctx[:mails] << { type: :review_needed, position: new_position } if review_now
+
+    # The journey just finished: tell the owner of the last step (or the record's creator). Not on a
+    # first evaluation, so launching journeys on already-finished records emails nobody.
+    ctx[:mails] << { type: :journey_complete, position: steps.last[:position].to_i } if complete && !instance.instance_complete? && !first_evaluation
 
     attrs = {
       current_step_position: new_position,

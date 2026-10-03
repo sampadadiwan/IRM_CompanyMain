@@ -681,3 +681,50 @@ Then("the KYC form's Save button should be disabled and show {string}") do |text
   expect(button.disabled?).to be(true)
   expect(button.text(:all).strip).to eq(text)
 end
+
+# ── The journey run page's flow diagram (workflow_templates/_flow_diagram) ──
+
+# Owner on the template's step: the run page resolves owners from the live template, so this
+# works after the KYC's journey has launched
+Given("I own the {string} step of the KYC journey") do |step_name|
+  template = WorkflowTemplate.find_by!(entity: @entity, system_key: InvestorKycJourneySetup::FULL_KEY)
+  template.workflow_steps.find_by!(name: step_name).update!(owner_user: @user)
+end
+
+When("I open the KYC's journey run page") do
+  instance = @investor_kyc.reload.workflow_instances.where(evaluated: true).order(:created_at).last!
+  visit workflow_instance_path(instance)
+  expect(page).to have_css(".wffd")
+end
+
+# Case-insensitive: some labels (e.g. "If rejected") are uppercased by CSS, and Capybara matches
+# the rendered text
+Then("the run diagram step {string} should show {string}") do |step_name, text|
+  expect(run_diagram_step(step_name)).to have_text(/#{Regexp.escape(text)}/i)
+end
+
+Then("the run diagram step {string} should not show {string}") do |step_name, text|
+  expect(run_diagram_step(step_name)).to have_no_text(/#{Regexp.escape(text)}/i)
+end
+
+Then("the run diagram step {string} should show my name as owner") do |step_name|
+  within(run_diagram_step(step_name)) { expect(page).to have_css(".wf-actor-chip", text: @user.full_name) }
+end
+
+When("I switch the run diagram to {string}") do |label|
+  click_button(label)
+end
+
+Then("the run diagram should be laid out as a graph") do
+  expect(page).to have_css(".wffd.wffd-graph")
+end
+
+Then("the run diagram should be laid out as a list") do
+  expect(page).to have_css(".wffd")
+  expect(page).to have_no_css(".wffd.wffd-graph")
+end
+
+# One step of the diagram: its whole node (card, sidebar and reject rule), found by the card title
+def run_diagram_step(step_name)
+  find(:xpath, "//div[contains(@class,'wffd-step-wrap')][.//div[contains(@class,'wffd-card-title')][normalize-space()='#{step_name}']]")
+end

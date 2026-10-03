@@ -131,3 +131,23 @@ Feature: Investor KYC journey — the KYC page
   Scenario: A user of another entity cannot load the journey panel
     When a user of another entity requests the KYC's journey panel
     Then the journey panel request should be refused
+
+  # The run page's flow diagram: journey steps say what completes them and who owns them instead of
+  # the approver panel (quorum, actors, "If rejected"), which only applies to sign-off steps
+  Scenario: The run diagram shows what completes each step and who owns it
+    Given I own the "Send KYC form" step of the KYC journey
+    When I open the KYC's journey run page
+    Then the run diagram step "Send KYC form" should show "Checked automatically"
+    And the run diagram step "Send KYC form" should show my name as owner
+    And the run diagram step "Validate documents" should show "Needs review"
+    And the run diagram step "Send KYC form" should not show "None assigned"
+    And the run diagram step "Send KYC form" should not show "If rejected"
+    And the run diagram step "Compliance sign-off" should show "If rejected"
+
+  # The List | Graph switch restyles the same diagram (workflow_flow_view_controller)
+  Scenario: The run diagram switches between list and graph
+    When I open the KYC's journey run page
+    And I switch the run diagram to "Graph"
+    Then the run diagram should be laid out as a graph
+    When I switch the run diagram to "List"
+    Then the run diagram should be laid out as a list

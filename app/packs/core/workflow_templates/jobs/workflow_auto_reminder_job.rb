@@ -70,12 +70,8 @@ class WorkflowAutoReminderJob < ApplicationJob
       actor = User.find_by(id: actor_id)
       next unless actor
 
-      WorkflowMailer.with(
-        user_id:       actor.id,
-        entity_id:     instance.entity_id,  # denormalized — no folder join needed
-        instance_id:   instance.id,
-        step_position: instance.current_step_position
-      ).reminder.deliver_later
+      WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, # denormalized — no folder join needed
+                            email_method: :reminder, step_position: instance.current_step_position).deliver_later(actor)
 
       # Record the dispatch so the next job run can calculate from this timestamp
       WorkflowStateChange.create!(
@@ -105,8 +101,8 @@ class WorkflowAutoReminderJob < ApplicationJob
     return unless owner # the panel shows "Owner unavailable — update the journey template"
 
     message = instance.step_result(position)&.dig("message")
-    WorkflowMailer.with(user_id: owner.id, entity_id: instance.entity_id, instance_id: instance.id,
-                        step_position: position, message:).owner_reminder.deliver_later
+    WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method: :owner_reminder,
+                          step_position: position, message:).deliver_later(owner)
     WorkflowStateChange.create!(workflow_instance: instance, step_position: position, actor: owner,
                                 to_state: "owner_reminded", note: message, channel: :auto_reminder)
   end

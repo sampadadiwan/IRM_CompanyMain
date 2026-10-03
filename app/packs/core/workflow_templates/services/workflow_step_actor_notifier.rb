@@ -14,12 +14,9 @@ class WorkflowStepActorNotifier < Trailblazer::Operation
       actor = User.find_by(id: actor_id)
       next unless actor
 
-      WorkflowMailer.with(
-        user_id:       actor.id,
-        entity_id:     instance.entity_id,
-        instance_id:   instance.id,
-        step_position: step_position
-      ).step_activation.deliver_later
+      # Through the notifier: logged, honours the template's email/WhatsApp switches
+      WorkflowNotifier.with(record: instance, entity_id: instance.entity_id,
+                            email_method: :step_activation, step_position:).deliver_later(actor)
     end
     true
   end

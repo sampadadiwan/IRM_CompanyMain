@@ -3,7 +3,8 @@
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 
-# Table columns: name | kind | check | skip | actors | keep_on_regress | unlocks
+# Table columns: name | kind | check | skip | actors | keep_on_regress | unlocks | owner | reminder_days | notify
+# (notify "false" = the step stays silent when it becomes current)
 Given("there is a journey template {string} with steps:") do |name, table|
   @workflow_template = WorkflowTemplate.create!(name:, entity: @entity)
   table.hashes.each_with_index do |row, idx|
@@ -16,7 +17,8 @@ Given("there is a journey template {string} with steps:") do |name, table|
       keep_on_regress: row["keep_on_regress"].to_s == "true",
       unlocks: row["unlocks"].presence,
       owner_user_id: row["owner"].present? ? resolve_actor_list(row["owner"]).first&.id : nil,
-      reminder_interval_days: row["reminder_days"].presence&.to_i
+      reminder_interval_days: row["reminder_days"].presence&.to_i,
+      notify_on_activation: row["notify"].to_s != "false"
     )
     resolve_actor_list(row["actors"]).each { |u| step.workflow_step_actors.create!(user: u) } if row["actors"].present?
   end
@@ -269,4 +271,88 @@ end
 # completed journey card is there to toggle
 Then("the breadcrumb should not offer the journey icon") do
   expect(page).to have_no_css("#show-completed-journey-button", visible: :visible)
+end
+
+# ── Workflow notifications: review needed, journey complete, channels ────────
+# (workflow_ticks_and_reminders.feature). Every workflow message goes through WorkflowNotifier.
+
+# A later evaluation, with the mailbox emptied first so only what this evaluation sends is checked
+When("the journey for {word} {string} is evaluated again") do |type, obj_name|
+  ActionMailer::Base.deliveries.clear
+  @journey_record = find_workflowable!(type, obj_name)
+  WorkflowEvaluator.for(@journey_record, cause: :progress)
+end
+
+# The template's channel switches (workflow_templates.notify_by_email / notify_by_whatsapp)
+Given("the workflow template {string} has {string} turned {word}") do |name, switch, state|
+  column = { "Send email" => :notify_by_email, "Send WhatsApp" => :notify_by_whatsapp }.fetch(switch)
+  WorkflowTemplate.find_by!(name:, entity: @entity).update!(column => state == "on")
+end
+
+Then("the user should receive a workflow email starting {string}") do |prefix|
+  mails = ActionMailer::Base.deliveries.select { |m| m.to.include?(@user.email) && m.subject.to_s.start_with?(prefix) }
+  expect(mails).not_to be_empty, ActionMailer::Base.deliveries.map(&:subject).inspect
+end
+
+Then("no workflow email starting {string} should have been sent") do |prefix|
+  mails = ActionMailer::Base.deliveries.select { |m| m.subject.to_s.start_with?(prefix) }
+  expect(mails).to be_empty, mails.map(&:subject).inspect
+end
+
+# The send is logged as a WorkflowNotifier notification for the recipient — even when the
+# template's Send email switch stops the email itself
+Then("the user should have a workflow notification for {string}") do |email_method|
+  sent = workflow_notifications_for(@user).map { |n| n.event.params[:email_method].to_s }
+  expect(sent).to include(email_method)
+end
+
+Given("WhatsApp is enabled for the entity and the user") do
+  @entity.permissions.set(:enable_whatsapp)
+  @entity.save!
+  @user.update!(whatsapp_enabled: true, phone: "1234567890", call_code: "91")
+end
+
+# Someone outside the entity, with WhatsApp fully on, so only the employee check can stop them
+Given("a WhatsApp-enabled user of another organisation is sent the {string} workflow message for {word} {string}") do |email_method, type, obj_name|
+  @outsider = FactoryBot.create(:user, entity: FactoryBot.create(:entity))
+  @outsider.update!(whatsapp_enabled: true, phone: "1234567891", call_code: "91")
+  instance = journey_instance(find_workflowable!(type, obj_name))
+  WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method:,
+                        step_position: instance.current_step_position).deliver(@outsider)
+end
+
+# Runs DeliveryMethods::EmployeeWhatsApp the way Noticed would, with the sender captured. Only the
+# test-env kill switch in WorkflowNotifier's config.if is replaced; the template's Send WhatsApp
+# switch (notify_by_whatsapp?) is still what decides whether it runs.
+When("the employee WhatsApp delivery runs for the user's {string} workflow notification") do |email_method|
+  run_employee_whatsapp(@user, email_method)
+end
+
+When("the employee WhatsApp delivery runs for that user's {string} workflow notification") do |email_method|
+  run_employee_whatsapp(@outsider, email_method)
+end
+
+def run_employee_whatsapp(recipient, email_method)
+  notification = workflow_notifications_for(recipient).rfind { |n| n.event.params[:email_method].to_s == email_method }
+  expect(notification).to be_present, "no #{email_method} workflow notification for #{recipient.email}"
+
+  @whatsapp_calls = []
+  allow_any_instance_of(WhatsappGeneralNotification).to receive(:perform) do |_instance, _entity_name, message, sent_for, *_rest|
+    @whatsapp_calls << { message:, recipient_id: sent_for.recipient_id }
+  end
+  DeliveryMethods::EmployeeWhatsApp.new.perform(:employee_whats_app, notification,
+                                                overrides: { if: -> { notify_by_whatsapp? } })
+end
+
+Then("a WhatsApp starting {string} should have been sent to the user") do |prefix|
+  sent = @whatsapp_calls.select { |c| c[:recipient_id] == @user.id && c[:message].start_with?(prefix) }
+  expect(sent).not_to be_empty, @whatsapp_calls.inspect
+end
+
+Then("no WhatsApp should have been sent") do
+  expect(@whatsapp_calls).to be_empty
+end
+
+def workflow_notifications_for(user)
+  Noticed::Notification.where(type: "WorkflowNotifier::Notification", recipient: user).order(:id).to_a
 end

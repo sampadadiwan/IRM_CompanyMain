@@ -178,6 +178,67 @@
 //     └────┘ └────┘  └───────────┘
 //       ↑ reject rule full-width below
 
+// Graph layout column count + the connectors that depend on it.
+// Step k is grid child k+1 (the Start terminus is child 1), so with $cols columns:
+//   row-end steps   (k = $cols·m, m ≥ 1)     → child $cols·m + 1 → nth-child($cols·n + $cols + 1)
+//   row-start steps (k = $cols·m + 1, m ≥ 1) → child $cols·m + 2 → nth-child($cols·n + $cols + 2)
+@mixin wffd-graph-columns($cols) {
+  --wffd-graph-cols: #{$cols};
+
+  // Last step has nowhere to go
+  .wffd-step-wrap:nth-last-child(2) .wffd-card-connector {
+    display: none;
+  }
+
+  @if $cols > 1 {
+    // Row end: no rail off the right edge; instead an elbow from the node's
+    // bottom-centre across the row gap to column 1's dot line
+    .wffd-step-wrap:nth-child(#{$cols}n + #{$cols + 1}) {
+      .wffd-card-connector {
+        display: none;
+      }
+
+      &:not(:nth-last-child(2))::before {
+        content: "";
+        position: absolute;
+        top: 100%;
+        right: 50%;
+        left: calc(#{1 - $cols} * (100% + var(--wffd-graph-gap-x)) + var(--wffd-dot-size) / 2 - 1px);
+        height: calc(var(--wffd-graph-gap-y) / 2);
+        border-right: 2px solid var(--wffd-spine-color);
+        border-bottom: 2px solid var(--wffd-spine-color);
+        border-bottom-right-radius: 12px;
+      }
+    }
+
+    // Row start (not the first row): drop from the elbow into the dot
+    .wffd-step-wrap:nth-child(#{$cols}n + #{$cols + 2})::after {
+      content: "";
+      position: absolute;
+      top: calc(-1 * var(--wffd-graph-gap-y) / 2);
+      left: calc(var(--wffd-dot-size) / 2 - 1px);
+      height: calc(var(--wffd-graph-gap-y) / 2);
+      border-left: 2px solid var(--wffd-spine-color);
+    }
+  } @else {
+    // Single column: no rail, a straight line from each node down to the next dot
+    .wffd-step-wrap {
+      .wffd-card-connector {
+        display: none;
+      }
+    }
+
+    .wffd-step-wrap + .wffd-step-wrap::after {
+      content: "";
+      position: absolute;
+      top: calc(-1 * var(--wffd-graph-gap-y));
+      left: calc(var(--wffd-dot-size) / 2 - 1px);
+      height: var(--wffd-graph-gap-y);
+      border-left: 2px solid var(--wffd-spine-color);
+    }
+  }
+}
+
 .wffd {
   --wffd-spine-color: #cbd5e1;
   --wffd-spine-width: 3px;
@@ -693,6 +754,138 @@
 
     .wffd-terminus-label {
       font-size: 0.72rem;
+    }
+  }
+
+
+  // =====================================================================
+  //  GRAPH LAYOUT — `.wffd.wffd-graph` (toggled by workflow_flow_view_controller)
+  // =====================================================================
+  //  Same markup as the list, restyled as nodes that run left → right and
+  //  wrap, so a long template fits on one screen:
+  //
+  //    ▶ START
+  //    ①──────▶ ②──────▶ ③──────▶ ④
+  //    [card]   [card]   [card]   [card]
+  //    quorum   quorum   quorum   quorum
+  //    reject   reject   reject   reject  │
+  //    ┌──────────────────────────────────┘
+  //    ⑤──────▶ ⑥ …
+  //
+  //  Each grid child order is: Start terminus, step 1 … step N, Complete
+  //  terminus — so step k is child k+1. The row-end / row-start selectors in
+  //  wffd-graph-columns() rely on that offset (libsass can't do `nth-child(… of …)`).
+  //  The otherwise-unused list elements are recycled as connectors:
+  //    .wffd-card-connector → the rail + arrowhead from one dot to the next
+  //    wrap ::before        → elbow from a row-end node back to column 1
+  //    wrap ::after         → drop from the elbow into a row-start dot
+  &.wffd-graph {
+    --wffd-graph-cols:  4;
+    --wffd-graph-gap-x: 48px;
+    --wffd-graph-gap-y: 56px;
+
+    display: grid;
+    grid-template-columns: repeat(var(--wffd-graph-cols), minmax(0, 1fr));
+    column-gap: var(--wffd-graph-gap-x);
+    row-gap: var(--wffd-graph-gap-y);
+
+    // No vertical spine in graph mode
+    &::before {
+      display: none;
+    }
+
+    // Start / Complete take a whole row each, top and bottom
+    .wffd-terminus {
+      grid-column: 1 / -1;
+      padding: 0;
+    }
+
+    // ── Node: dot on top, then card, quorum/actors, reject rule ─────────
+    .wffd-step-wrap {
+      display: flex;
+      flex-direction: column;
+      margin-top: 0;
+      min-width: 0;
+    }
+
+    .wffd-step-dot {
+      align-self: flex-start;
+      margin: 0 0 10px;
+    }
+
+    // Card grows so every node in a row ends at the same line
+    .wffd-card {
+      flex: 1 1 auto;
+    }
+
+    // ── Rail: dot → next node's dot, with an arrowhead ──────────────────
+    .wffd-card-connector {
+      position: absolute;
+      top: calc(var(--wffd-dot-size) / 2 - 1px);
+      left: calc(var(--wffd-dot-size) + 8px);
+      right: calc(-1 * var(--wffd-graph-gap-x) + 8px);
+      height: 2px;
+      margin: 0;
+      background: var(--wffd-spine-color);
+
+      &::before {
+        left: auto;
+        right: -1px;
+        top: -4px;
+        width: 0;
+        height: 0;
+        background: none;
+        border-top: 5px solid transparent;
+        border-bottom: 5px solid transparent;
+        border-left: 7px solid var(--wffd-spine-color);
+      }
+    }
+
+    // ── Quorum + actors sit under the card ──────────────────────────────
+    .wffd-quorum-line-col {
+      display: none;
+    }
+
+    .wffd-sidebar {
+      padding: 10px 0 0;
+      border-left: 0;
+      gap: 6px;
+    }
+
+    .wffd-actors-inner {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    // Reject rule is the node's last line — no back-arrow to a spine
+    .wffd-reject-rule {
+      margin-left: 0;
+      padding: 8px 0 0;
+      flex-wrap: wrap;
+
+      &::before,
+      &::after {
+        display: none;
+      }
+    }
+
+    // ── Column count per width; row-wrap connectors follow it ───────────
+    //    Ranges are exclusive: the :nth-child connector rules out-specify any
+    //    reset, so a narrower breakpoint must never inherit a wider one's.
+    @media (min-width: 1400px) {
+      @include wffd-graph-columns(4);
+    }
+
+    @media (min-width: 992px) and (max-width: 1399.98px) {
+      @include wffd-graph-columns(3);
+    }
+
+    @media (min-width: 768px) and (max-width: 991.98px) {
+      @include wffd-graph-columns(2);
+    }
+
+    @media (max-width: 767.98px) {
+      @include wffd-graph-columns(1);
     }
   }
 }

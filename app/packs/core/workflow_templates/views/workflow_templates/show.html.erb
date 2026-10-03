@@ -78,6 +78,23 @@
         <div class="wf-meta-value"><%= pluralize(@workflow_template.active_workflowable_count, "object") %></div>
       </div>
     </div>
+    <%# ── Which channels workflow messages go out on ── %>
+    <div class="wf-meta-tile">
+      <div class="wf-meta-icon bg-primary bg-opacity-10 text-primary">
+        <i class="ti ti-send"></i>
+      </div>
+      <div>
+        <div class="wf-meta-label">Notify by</div>
+        <div class="wf-meta-value">
+          <% channels = [("Email" if @workflow_template.notify_by_email), ("WhatsApp" if @workflow_template.notify_by_whatsapp)].compact %>
+          <% if channels.any? %>
+            <%= channels.join(" + ") %>
+          <% else %>
+            <span class="text-muted fw-normal">Off</span>
+          <% end %>
+        </div>
+      </div>
+    </div>
     <% if @workflow_template.attach_document_in_email %>
       <div class="wf-meta-tile">
         <div class="wf-meta-icon bg-warning bg-opacity-10 text-warning">
@@ -104,7 +121,7 @@
 
   <%# ── Flow diagram ─────────────────────────────────────────────────────── %>
   <%
-    steps = @workflow_template.workflow_steps.includes(:workflow_step_actors => :user)
+    steps = @workflow_template.workflow_steps.includes(:owner_user, :workflow_step_actors => :user)
     step_presenters = steps.map { |s| WorkflowStepDiagramPresenter.for_template_step(s) }
   %>
 

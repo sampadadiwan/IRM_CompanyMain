@@ -162,9 +162,11 @@ module Workflowable
   # type with a journey panel, the user who created the record (from the audit trail); otherwise
   # nobody. Records may override it.
   def workflow_default_owner
-    return unless journey_panel && respond_to?(:audits)
+    # Memoized (nil included): the flow diagram asks once per journey step of the same record
+    return @workflow_default_owner if defined?(@workflow_default_owner)
+    return @workflow_default_owner = nil unless journey_panel && respond_to?(:audits)
 
-    audits.where(action: "create").order(:created_at).first&.user
+    @workflow_default_owner = audits.where(action: "create").order(:created_at).first&.user
   end
 
   # Wraps an undoing action (Unapprove, a figures edit, Recompute…). The start time is taken before

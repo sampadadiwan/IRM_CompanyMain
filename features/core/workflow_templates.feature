@@ -45,6 +45,21 @@ Feature: Workflow Templates
       | user | entity              |
       |      | entity_type=Company |
 
+  Scenario Outline: Admin chooses which channels a template's messages go out on
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Channel Template"
+    When I visit the edit page for the workflow template "Channel Template"
+    Then the Send email box should be ticked and the Send WhatsApp box unticked
+    When I untick Send email and tick Send WhatsApp
+    And I save the workflow template edit form
+    Then the workflow template "Channel Template" should notify by email "false" and WhatsApp "true"
+    And the workflow template show page should say it notifies by "WhatsApp"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
   Scenario Outline: Admin deletes a template that is not in use
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"

@@ -102,3 +102,140 @@ Feature: Journey ticks and reminders
     And the actor submits "Approved" on the current step of the investor_kyc "Asha"
     When an undoing action clears flag "flag_1" on the investor_kyc "Asha" with note "Documents withdrawn"
     Then the user should receive a sign-off reset email mentioning "Documents withdrawn"
+
+  # ── Review needed / journey complete emails, Send email / Send WhatsApp switches ──
+  # Every workflow message goes through WorkflowNotifier: logged as a notification, gated by the
+  # template's Send email / Send WhatsApp switches, WhatsApp only ever to employees.
+
+  Scenario: The owner is emailed as soon as an acknowledge step needs review
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind        | check       | owner |
+      | Documents | system      | test.flag_1 |       |
+      | Review    | acknowledge | test.always | admin |
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And the journey for investor_kyc "Asha" is evaluated
+    And the investor_kyc "Asha" has flag "flag_1" set
+    When the journey for investor_kyc "Asha" is evaluated again
+    Then the journey current step should be "Review"
+    And the user should receive a workflow email starting "Needs your review: Review"
+    And the user should have a workflow notification for "review_needed"
+
+  Scenario: A review step set not to notify on activation sends no review email
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind        | check       | owner | notify |
+      | Documents | system      | test.flag_1 |       |        |
+      | Review    | acknowledge | test.always | admin | false  |
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And the journey for investor_kyc "Asha" is evaluated
+    And the investor_kyc "Asha" has flag "flag_1" set
+    When the journey for investor_kyc "Asha" is evaluated again
+    Then the journey current step should be "Review"
+    And no workflow email starting "Needs your review" should have been sent
+
+  Scenario: A journey that lands on a review step at launch emails nobody
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind        | check       | owner |
+      | Documents | system      | test.flag_1 |       |
+      | Review    | acknowledge | test.always | admin |
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And the investor_kyc "Asha" has flag "flag_1" set
+    When the journey for investor_kyc "Asha" is evaluated again
+    Then the journey current step should be "Review"
+    And no workflow email starting "Needs your review" should have been sent
+
+  Scenario: The owner of the last step is told when the journey completes
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind   | check       | owner |
+      | Documents | system | test.flag_1 | admin |
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And the journey for investor_kyc "Asha" is evaluated
+    And the investor_kyc "Asha" has flag "flag_1" set
+    When the journey for investor_kyc "Asha" is evaluated again
+    Then the journey should be complete
+    And the user should receive a workflow email starting "Complete: KYC Journey"
+    And the user should have a workflow notification for "journey_complete"
+
+  Scenario: A journey already finished when it is launched sends no completion email
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind   | check       | owner |
+      | Documents | system | test.flag_1 | admin |
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And the investor_kyc "Asha" has flag "flag_1" set
+    When the journey for investor_kyc "Asha" is evaluated again
+    Then the journey should be complete
+    And no workflow email starting "Complete:" should have been sent
+
+  Scenario: With Send email off, an approver reached by the tick is not emailed
+    Given there is a journey template "KYC Journey" with steps:
+      | name         | kind   | check       | actors |
+      | Documents    | system | test.flag_1 |        |
+      | CFO sign-off | human  |             | admin  |
+    And the workflow template "KYC Journey" has "Send email" turned off
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And the journey for investor_kyc "Asha" is evaluated
+    And the investor_kyc "Asha" has flag "flag_1" set
+    When the 15-minute tick runs
+    Then the journey current step should be "CFO sign-off"
+    And no step-activation email should have been sent
+    But the user should have a workflow notification for "step_activation"
+
+  Scenario: With Send email off, a stalled step's owner is not emailed
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind   | check       | owner | reminder_days |
+      | Documents | system | test.flag_1 | admin | 2             |
+    And the workflow template "KYC Journey" has "Send email" turned off
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And the journey for investor_kyc "Asha" is evaluated
+    When 3 days pass
+    And the daily reminder job runs
+    Then no owner reminder should have been sent
+
+  # The WhatsApp send is hard-off in test (a real WATI call), so these run the employee WhatsApp
+  # delivery directly with the sender captured — they prove who would be messaged, not WATI itself
+  Scenario: With Send WhatsApp on, the owner also gets the review on WhatsApp
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind        | check       | owner |
+      | Documents | system      | test.flag_1 |       |
+      | Review    | acknowledge | test.always | admin |
+    And the workflow template "KYC Journey" has "Send WhatsApp" turned on
+    And WhatsApp is enabled for the entity and the user
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And the journey for investor_kyc "Asha" is evaluated
+    And the investor_kyc "Asha" has flag "flag_1" set
+    And the journey for investor_kyc "Asha" is evaluated again
+    When the employee WhatsApp delivery runs for the user's "review_needed" workflow notification
+    Then a WhatsApp starting "Needs your review: Review" should have been sent to the user
+
+  Scenario: With Send WhatsApp off, nobody gets a WhatsApp
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind        | check       | owner |
+      | Documents | system      | test.flag_1 |       |
+      | Review    | acknowledge | test.always | admin |
+    And WhatsApp is enabled for the entity and the user
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And the journey for investor_kyc "Asha" is evaluated
+    And the investor_kyc "Asha" has flag "flag_1" set
+    And the journey for investor_kyc "Asha" is evaluated again
+    When the employee WhatsApp delivery runs for the user's "review_needed" workflow notification
+    Then no WhatsApp should have been sent
+
+  Scenario: A workflow message to someone outside the organisation never goes on WhatsApp
+    Given there is a journey template "KYC Journey" with steps:
+      | name      | kind        | check       | owner |
+      | Review    | acknowledge | test.always | admin |
+    And the workflow template "KYC Journey" has "Send WhatsApp" turned on
+    And WhatsApp is enabled for the entity and the user
+    And the investor_kyc "Asha" has workflow template "KYC Journey"
+    And I launch the workflow for investor_kyc "Asha"
+    And a WhatsApp-enabled user of another organisation is sent the "review_needed" workflow message for investor_kyc "Asha"
+    When the employee WhatsApp delivery runs for that user's "review_needed" workflow notification
+    Then no WhatsApp should have been sent
