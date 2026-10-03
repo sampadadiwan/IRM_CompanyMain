@@ -155,6 +155,29 @@ Given("the workflow template {string} is disabled") do |name|
   WorkflowTemplate.find_by!(name: name, entity: @entity).update!(enabled: false)
 end
 
+# The other direction, for scenarios that retire a template and then bring it back
+Given("the workflow template {string} is enabled") do |name|
+  WorkflowTemplate.find_by!(name: name, entity: @entity).update!(enabled: true)
+end
+
+# Disabling must leave the rules alone — they are dormant configuration, not deleted
+Then("the template {string} should still have {int} auto-assignment rule(s)") do |name, count|
+  template = WorkflowTemplate.find_by!(name: name, entity: @entity)
+  expect(template.workflow_auto_assignment_rules.count).to eq(count)
+end
+
+# A rule left behind by a template row deleted straight in the database. delete_all skips the
+# dependent: :destroy that would take the rule with it, and referential integrity has to be lifted
+# for the orphan to exist at all — which is the point: the service must survive data the schema
+# would normally prevent.
+Given("the auto-assignment rule for template {string} points at a missing template") do |name|
+  template = WorkflowTemplate.find_by!(name: name, entity: @entity)
+  ActiveRecord::Base.connection.disable_referential_integrity do
+    WorkflowTemplate.where(id: template.id).delete_all
+  end
+  expect(WorkflowAutoAssignmentRule.find_by!(workflow_template_id: template.id).workflow_template).to be_nil
+end
+
 When("I visit the workflow template page for {string}") do |name|
   visit workflow_template_path(WorkflowTemplate.find_by!(name: name, entity: @entity))
 end
@@ -173,6 +196,41 @@ end
 
 Then("the workflow template {string} should be enabled") do |name|
   WorkflowTemplate.find_by!(name: name, entity: @entity).reload.enabled.should == true
+end
+
+When("I visit the workflow templates page") do
+  visit workflow_templates_path
+end
+
+# The confirm modal is filled from the button's data-msg by the shared confirm controller, so the
+# attribute is the text itself — asserting on it keeps the scenario out of a JS driver.
+Then("the disable confirmation should say that records will fall through to {string}") do |template_name|
+  msg = page.find("#toggle_enabled_btn")["data-msg"]
+  expect(msg).to include(%(fall through to "#{template_name}"))
+end
+
+Then("the rules note should say the rules are dormant") do
+  expect(page).to have_css("#rules_inert_note", text: /dormant/i)
+  expect(page).to have_css("#rules_inert_note", text: /resume/i)
+end
+
+# The rules table has one row per rule in these scenarios, so the first Status cell is the one
+Then("the rule status should be {string}") do |status|
+  expect(page).to have_css("#auto-assignment-rules-tab tbody tr:first-child td:nth-child(2)", text: status)
+end
+
+Then("the shadowed rule should name {string} as the blocker") do |template_name|
+  cell = page.find("#auto-assignment-rules-tab tbody tr:first-child td:nth-child(2)")
+  expect(cell).to have_link(template_name)
+  expect(cell.text).to match(/priority \d+/)
+end
+
+Then("the page should warn that new {word} get no workflow") do |records|
+  expect(page).to have_css("div.alert-warning", text: /New #{records} get no workflow/i)
+end
+
+Then("the page should not warn that new {word} get no workflow") do |records|
+  expect(page).to have_no_css("div.alert-warning", text: /New #{records} get no workflow/i)
 end
 
 Then("the workflow template page should warn that the template is disabled") do

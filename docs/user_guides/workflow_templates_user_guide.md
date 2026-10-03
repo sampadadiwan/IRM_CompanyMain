@@ -139,7 +139,7 @@ Disabling retires a template without losing it or its history. Use the **Disable
 
 While a template is disabled:
 
-- **No new object is assigned to it.** Its auto-assignment rules stay exactly as they are, and still match, but hand the record nothing — and no other rule steps in. A record that would have matched simply gets no template.
+- **No new object is assigned to it, but its rules step aside rather than block.** Its auto-assignment rules stay exactly as they are and go **dormant**: a record they would have matched is passed down the chain, so the next matching rule for that record type applies instead. A record gets no template only when no enabled template's rule matches it. The rules resume their place the moment you enable the template again — nothing is edited or deleted.
 - **For a journey template (capital calls, capital distributions, investor KYC) that means new records get no journey at all** — no step bar, no "What's needed now" panel and no task reminders.
 - **It is not offered in the Launch Workflow dialog**, and a workflow cannot be launched on it even if an object was assigned to it earlier.
 - **Workflows already running carry on unchanged.** A running workflow follows the snapshot taken when it launched, so its steps, actors, reminders and timeline are unaffected, and it can still be completed, reset or archived.
@@ -149,11 +149,12 @@ Enabling again applies to records created from then on; records created while th
 
 ```mermaid
 flowchart TD
-  A[New object created] --> B{Auto-assignment rule matches?}
-  B -- No --> Z[No template assigned]
-  B -- Yes --> C{Is the matched rule's template enabled?}
-  C -- No --> Z2[No template assigned<br/>no journey, no next rule tried]
-  C -- Yes --> D[Template assigned]
+  A[New object created] --> B[Walk the rules for this type<br/>priority order, then oldest first]
+  B --> C{Next rule in the chain}
+  C -- Template disabled --> B2[Skip it — the rule is dormant<br/>carry on down the chain]
+  B2 --> C
+  C -- Template enabled, conditions match --> D[Template assigned]
+  C -- No rules left --> Z[No template assigned<br/>no journey]
   D --> E{Rule set to auto-launch?}
   E -- Yes --> F[Workflow launched]
   E -- No --> G[Waits for Launch Workflow]
@@ -303,19 +304,19 @@ Magic links never expire by time; once the step is no longer current (or the wor
 
 ```mermaid
 sequenceDiagram
-  participant Actor
+  participant R as Reviewer
   participant Email
   participant MagicLinkPage
   participant System
 
   System->>Email: Step-activation email with magic link
-  Email->>Actor: Delivered
-  Actor->>MagicLinkPage: Click magic link
-  MagicLinkPage->>Actor: Show object name + View button + step description + state options
-  Actor->>MagicLinkPage: Optionally click View to open the object in a new tab
-  Actor->>MagicLinkPage: Select state + optional note → Submit
+  Email->>R: Delivered
+  R->>MagicLinkPage: Click magic link
+  MagicLinkPage->>R: Show object name + View button + step description + state options
+  R->>MagicLinkPage: Optionally click View to open the object in a new tab
+  R->>MagicLinkPage: Select state + optional note → Submit
   MagicLinkPage->>System: Record response
-  System->>System: Evaluate quorum; advance if met
+  System->>System: Evaluate quorum, then advance if met
 ```
 
 ---
@@ -396,6 +397,21 @@ Auto-assignment rules let you automatically assign a workflow template to an obj
 | **Automatically launch a workflow instance after assigning the template** | When ticked, a workflow instance is launched immediately after the template is assigned — no admin action required. |
 
 A template with rules for a type also appears in the **Launch Workflow** dialog only for records that match at least one of its rules.
+
+### Rule status — can this rule ever win?
+
+Rules for one record type form a single chain across **every** template: they are walked in priority order (lowest number first, and oldest first where two share a priority), and the first rule that applies assigns its template. Nothing else is tried after that. Because the rules live on separate template pages, a rule that can never be reached looks exactly like one that fires every day — so each row in the **Auto-assignment Rules** table carries a **Status**:
+
+| Status | Meaning | What to do |
+|--------|---------|-----------|
+| **Active** | The rule can win for some record. | Nothing. |
+| **Dormant** | Its template is disabled, so the rule is skipped and the next matching rule for the type applies. | Nothing, unless you want the template back — **Enable** restores the rule's place in the chain untouched. |
+| **Shadowed** | An earlier rule always matches first, so no record ever reaches this one. The badge names and links the rule that blocks it. | Open the blocking rule and either give it conditions, raise its priority number, or delete it. You cannot out-prioritise it from this side: the lowest priority number allowed is 0. |
+| **No template** | The rule points at a template that no longer exists. | Delete the rule. |
+
+A rule is called **Shadowed** only when an earlier rule is a catch-all (no conditions), or asks for exactly the same conditions. Two rules with different conditions both stay **Active**, even if one is in practice narrower than the other.
+
+On [**Workflow Templates**](/workflow_templates), a warning appears above the list for any record type where **every** rule is dormant: *"New folders get no workflow"*. That is the one case where records match a rule and still end up with nothing, and it cannot be seen from any single template's page.
 
 ### How conditions work
 
@@ -632,7 +648,7 @@ Nothing is blocked: objects work as normal, locked buttons never apply to an obj
 The template and its steps are stored for your company and appear on [**Workflow Templates**](/workflow_templates) and in the Launch dialog of matching objects. Nothing is launched and no one is notified. Its auto-assignment rules start applying to objects created or updated afterwards.
 
 **What happens when I disable a template?**
-Nothing new is assigned to it or launched on it: its auto-assignment rules still match records but hand them no template, and no other rule takes over, so a matching record gets nothing — for a journey template, that means new capital calls, distributions or KYCs get no journey, step bar or task reminders. It disappears from the **Launch Workflow** dialog, and a workflow cannot be launched on it even where an object was assigned to it earlier. Workflows already running are untouched and can still be completed, reset or archived, and nothing is deleted. See [Enabling and disabling a template](#enabling-and-disabling-a-template).
+Nothing new is assigned to it or launched on it, and its auto-assignment rules go dormant: a record they would have matched falls through to the next matching rule for that type instead, and gets nothing only when no enabled template's rule matches it. The confirmation dialog names the template that will take over before you confirm. Where no rule takes over on a journey type, new capital calls, distributions or KYCs get no journey, step bar or task reminders. It disappears from the **Launch Workflow** dialog, and a workflow cannot be launched on it even where an object was assigned to it earlier. Workflows already running are untouched and can still be completed, reset or archived, and nothing is deleted. See [Enabling and disabling a template](#enabling-and-disabling-a-template).
 
 **What happens when I enable a template again?**
 It is available immediately: its rules start assigning it to records created or updated from then on, and it is offered in the **Launch Workflow** dialog again. Records created while it was disabled are not given a workflow retrospectively — launch one on them from their **Workflow** tab if you want one.
@@ -685,10 +701,13 @@ Only if the template's "Applies to" field is left blank (untyped). Once a type i
 There is no remove button. Launching a different template on the object replaces the assignment. Because assignments stay in place, a template that has ever been assigned cannot be deleted from the UI; disable it instead.
 
 **A new capital call, distribution or KYC got no journey. Why?**
-Either the company's journeys were never set up (use **Set up journeys** on [**Workflow Templates**](/workflow_templates)), or the journey template the record matched is **disabled** — a disabled template is never assigned, and no other rule takes its place. Check the status column in the template list: the **Set up journeys** menu also shows the kind as *disabled* in that case. Enabling the template gives journeys to records created from then on, not to the ones created while it was off.
+One of three things. The company's journeys were never set up — use **Set up journeys** on [**Workflow Templates**](/workflow_templates). Or every auto-assignment rule for that record type belongs to a **disabled** template, in which case each rule is skipped and nothing is left to assign; the template list shows a warning saying exactly that, the **Status** column shows which templates are off, and the **Set up journeys** menu shows the kind as *disabled*. Or the journey template has no rule of its own, so nothing points at it — check its **Auto-assignment Rules** tab, and whether the rule you added shows as **Shadowed**. Enabling a template, or fixing a rule, gives journeys to records created from then on; a record created while nothing matched picks one up the next time it is saved.
 
 **A template is disabled but its workflows are still running and sending reminders. Is that expected?**
 Yes. Disabling only stops new work: a run already under way follows the snapshot taken when it launched, so it keeps advancing, reminding and completing. Archive the run if you want it to stop.
+
+**My new rule shows as Shadowed. Why, and how do I fix it?**
+Because an earlier rule in the chain always matches first, so no record ever reaches yours. Rules for a record type are walked across all templates in priority order, lowest number first, and where two rules share a priority the older one wins — so a catch-all rule created before yours at the same priority takes every record. The badge names the blocking rule and links its template. Fix it from that side: give the blocking rule conditions so it stops matching everything, raise its priority number so it runs later, or delete it. Lowering your own rule's priority cannot help, because 0 is the lowest number allowed. Nothing is assigned differently until you change one of the two rules.
 
 **Will auto-assignment trigger again on an object that already has a template?**
 No. Rules only run for objects with no assigned template, so once a template is assigned (manually or by a rule) further updates never re-assign or re-launch.

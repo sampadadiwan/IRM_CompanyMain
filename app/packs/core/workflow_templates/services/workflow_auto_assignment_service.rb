@@ -3,12 +3,15 @@
 #
 # This is where a capital call's or distribution's journey gets attached: JourneySetup's rules are
 # created with auto_launch: true, so a matching rule here both assigns the template and launches the
-# evaluated instance the step bar is drawn from. A disabled template therefore means no journey at
-# all on new records — nothing to render, nothing to remind about.
+# evaluated instance the step bar is drawn from.
+#
+# A disabled template's rules are dormant, not blocking: the walk skips them and carries on down the
+# chain, so a retired template cannot deny a record the workflow a live rule would have given it.
+# The rules are never touched — they resume their place the moment the template is enabled again.
+# A record gets no workflow only when no live template's rule matches it.
 class WorkflowAutoAssignmentService < Trailblazer::Operation
   step :check_not_already_assigned, Output(:failure) => End(:already_assigned)
   step :find_matching_rule,          Output(:failure) => End(:no_matching_rule)
-  step :check_template_enabled,      Output(:failure) => End(:template_disabled)
   step :assign_template,             Output(:failure) => End(:assignment_failed)
   step :launch_if_auto_launch
 
@@ -16,32 +19,27 @@ class WorkflowAutoAssignmentService < Trailblazer::Operation
     workflowable.workflow_assignment.blank? # already has a template — nothing to do
   end
 
-  # Returns the highest-priority (lowest priority integer) rule whose conditions match.
+  # Returns the highest-priority (lowest priority integer) live rule whose conditions match.
+  #
+  # "Live" is part of the match, not a test applied afterwards: a rule exists to hand over one
+  # template (belongs_to :workflow_template), so when that template is disabled the rule has nothing
+  # to give and stands aside rather than consuming the record. Checking it after the match instead
+  # would let one catch-all rule on a retired template deny every record of the type a workflow,
+  # with no later rule — at any priority, on any live template — ever reachable.
+  #
+  # Ordered by (priority, id): priority decides precedence, and id breaks a tie by creation order so
+  # two rules sharing a priority resolve the same way on every run. Ordering by priority alone left
+  # the winner to whatever the database happened to return.
+  #
+  # workflow_template may be nil for a rule whose template row was deleted straight in the database;
+  # such a rule is skipped like any dormant one rather than raising into record creation.
   def find_matching_rule(ctx, workflowable:, **)
     ctx[:rule] = WorkflowAutoAssignmentRule
       .where(entity: workflowable.entity, workflowable_type: workflowable.workflowable_type_name)
-      .order(:priority)
+      .order(:priority, :id)
       .includes(:workflow_template)
-      .find { |rule| rule.matches?(workflowable) }
+      .find { |rule| rule.workflow_template&.enabled? && rule.matches?(workflowable) }
     ctx[:rule].present?
-  end
-
-  # Stop here when the winning rule points at a disabled template: the record gets no template and
-  # no journey.
-  #
-  # Deliberately checked AFTER the match rather than filtering disabled templates out of the query:
-  # filtering would let the next-priority rule take over, so disabling the Light journey would
-  # silently move imported capital calls onto the Full one. "Disabled" means not used, not
-  # "substitute a different workflow" — the rule that matched is the rule that applies, and if its
-  # template is off, nothing is assigned.
-  def check_template_enabled(ctx, workflowable:, **)
-    return true if ctx[:rule].workflow_template&.enabled?
-
-    Rails.logger.info(
-      "[WorkflowAutoAssignmentService] Rule #{ctx[:rule].id} skipped for " \
-      "#{workflowable.class.name}##{workflowable.id}: template \"#{ctx[:rule].workflow_template}\" is disabled"
-    )
-    false
   end
 
   def assign_template(ctx, workflowable:, **)

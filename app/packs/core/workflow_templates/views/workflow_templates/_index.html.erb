@@ -53,6 +53,22 @@
   </div>
 </div>
 
+<%# ── Dead rule chains ──────────────────────────────────────────────────────────
+    A record type whose every rule belongs to a disabled template: the rules still match, but each one
+    stands aside, so new records of that type get no workflow. Said here because the rules themselves
+    live on individual template pages, where a chain-wide problem cannot be seen. %>
+<% Array(@dormant_rule_chains).each do |chain| %>
+  <div class="alert alert-warning d-flex align-items-start gap-2" id="dormant_chain_<%= chain[:type].underscore %>">
+    <i class="ti ti-alert-triangle mt-1"></i>
+    <div>
+      <strong>New <%= chain[:type].underscore.humanize.downcase.pluralize %> get no workflow.</strong>
+      Every auto-assignment rule for this type belongs to a disabled template
+      (<%= chain[:templates].to_sentence %>), so each rule is skipped and nothing is assigned.
+      Enable one of those templates, or add a rule on a template that is enabled.
+    </div>
+  </div>
+<% end %>
+
 <div class="table-responsive" data-controller="datatable">
   <table class="table table-bordered dataTable jqDataTable">
     <thead>

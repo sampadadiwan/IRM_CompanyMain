@@ -192,14 +192,18 @@
             <% end %>
           </div>
 
-          <% rules = @workflow_template.workflow_auto_assignment_rules.order(:priority) %>
-          <%# A disabled template's rules still match records — they just can no longer hand one over.
+          <% rules = @workflow_template.workflow_auto_assignment_rules.order(:priority, :id) %>
+          <%# The chain each rule sits in, across every template for the same record type — what decides
+              whether a rule can ever win. Without it a shadowed rule looks as live as any other.
+              Keyed by type because nothing stops a template's rules covering more than one. %>
+          <% chains = WorkflowRuleChain.for_template(@workflow_template).index_by(&:workflowable_type) %>
+          <%# A disabled template's rules are dormant, not dead: they stand aside and resume on enable.
               Said here because the rows below otherwise look live. %>
           <% if rules.any? && !@workflow_template.enabled %>
             <p class="text-muted small" id="rules_inert_note">
               <i class="ti ti-info-circle me-1"></i>
-              These rules are inactive while the template is disabled: a record they match is given no
-              template, and no other rule takes over.
+              These rules are dormant while the template is disabled: they are skipped, so the next matching
+              rule for this type applies instead, and they resume exactly as they are when you enable it.
             </p>
           <% end %>
           <% if rules.any? %>
@@ -207,6 +211,7 @@
               <thead class="table-light">
                 <tr>
                   <th>Priority</th>
+                  <th>Status</th>
                   <th>Conditions</th>
                   <th>Auto-launch?</th>
                   <th></th>
@@ -216,6 +221,9 @@
                 <% rules.each do |rule| %>
                   <tr>
                     <td class="align-middle"><%= rule.priority %></td>
+                    <td class="align-middle">
+                      <%= workflow_rule_status_badge(chains[rule.workflowable_type]&.finding_for(rule)) %>
+                    </td>
                     <td class="align-middle">
                       <% if Array(rule.conditions).empty? %>
                         <span class="text-muted">Always (catch-all)</span>

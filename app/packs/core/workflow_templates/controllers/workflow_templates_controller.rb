@@ -11,6 +11,9 @@ class WorkflowTemplatesController < ApplicationController
     # Per journey kind, what its "Set up … journeys" button would add (a dry run, writes nothing);
     # empty when the user may not run setup (no buttons), an empty plan shows that kind as done
     @journey_setup_plans = journey_setup_plans
+    # Record types whose whole rule chain is dormant — nothing on this page would otherwise say that
+    # new records of that type are getting no workflow at all
+    @dormant_rule_chains = dormant_rule_chains
   end
 
   # POST /workflow_templates/setup_journeys?kind=capital_call
@@ -132,15 +135,28 @@ class WorkflowTemplatesController < ApplicationController
 
   private
 
-  # What the admin is told after a toggle. Disabling names the consequence that is easy to miss:
-  # the template's auto-assignment rules stay on the page but can no longer give a record anything.
+  # What the admin is told after a toggle. Disabling names the consequence that is easy to miss: the
+  # rules stay on the page, dormant, and the records they matched move on to whatever follows them.
   def toggle_enabled_notice(was_enabled)
     return "\"#{@workflow_template.name}\" is enabled again. New records can be assigned and launched on it." unless was_enabled
 
     rule_count = @workflow_template.workflow_auto_assignment_rules.count
-    rules = rule_count.positive? ? " Its #{helpers.pluralize(rule_count, 'auto-assignment rule')} will no longer assign it." : ""
+    verb  = rule_count == 1 ? "is" : "are"
+    rules = rule_count.positive? ? " Its #{helpers.pluralize(rule_count, 'auto-assignment rule')} #{verb} kept but dormant." : ""
     "\"#{@workflow_template.name}\" is disabled. New records will not be assigned or launched on it; " \
       "workflows already running are unaffected.#{rules}"
+  end
+
+  # One entry per workflowable_type where every auto-assignment rule belongs to a disabled template,
+  # so a record of that type matches a rule and still ends up with nothing. Narrow on purpose: a
+  # chain whose live rules merely have conditions is selective, not broken (see WorkflowRuleChain).
+  def dormant_rule_chains
+    types = WorkflowAutoAssignmentRule.where(entity_id: current_user.entity_id).distinct.pluck(:workflowable_type)
+    types.filter_map do |type|
+      chain = WorkflowRuleChain.new(entity: current_user.entity, workflowable_type: type)
+      verdict = chain.verdict
+      { type: type, templates: verdict[:templates] } if verdict
+    end
   end
 
   # { kind => the setup's dry-run report } for every journey kind, when the user may run setup
