@@ -16,6 +16,36 @@ module Workflowable
 
     # Set by has_journey: the record type shows a journey panel on its page
     class_attribute :journey_panel, instance_writer: false, default: false
+
+    # Set by workflow_rule_fields: what an auto-assignment rule may test beyond list search.
+    # extra    — columns rules need that search does not expose (e.g. form_type_id)
+    # excluded — searchable fields a rule should not offer (identifiers, unbounded references)
+    # form_type_names — FormType names whose custom fields apply (nil = the base class name)
+    class_attribute :workflow_rule_extra, instance_writer: false, default: []
+    class_attribute :workflow_rule_excluded, instance_writer: false, default: []
+    class_attribute :workflow_rule_form_type_names_override, instance_writer: false, default: nil
+
+    # Ransack asks the model for its allowlist with the search's auth object. A rule's search
+    # (WorkflowRuleMatcher) passes :workflow_rule, and gets the extras on top of the normal list;
+    # list pages never pass it, so nothing new becomes searchable there.
+    # Worked examples H1, H4, E7 — openspec/changes/workflow-rule-condition-builder/design.md#worked-examples
+    singleton_class.prepend(WorkflowRuleRansack)
+  end
+
+  # Prepended onto the model's singleton class so it wraps the model's own ransackable_attributes,
+  # whichever order the two are defined in
+  module WorkflowRuleRansack
+    # Ransacker names that read custom fields out of json_fields (see WithCustomField)
+    JSON_RANSACKERS = %w[json_fields json_field_number].freeze
+
+    def ransackable_attributes(auth_object = nil)
+      base = super
+      return base unless auth_object == :workflow_rule
+
+      # Custom-field ransackers only exist on models with custom fields
+      json = include?(WithCustomField) ? JSON_RANSACKERS : []
+      (base + workflow_rule_extra + json).uniq
+    end
   end
 
   # Shared by every record type with a journey (capital calls, capital distributions), so a new type
@@ -27,6 +57,21 @@ module Workflowable
     # the record's creator.
     def has_journey
       self.journey_panel = true
+    end
+
+    # Declares what auto-assignment rules may test on this type, on top of its ransackable_attributes
+    # and its forms' custom fields (WorkflowRuleFields builds the list from these).
+    # Worked examples H1, E1 — openspec/changes/workflow-rule-condition-builder/design.md#worked-examples
+    def workflow_rule_fields(extra: [], except: [], form_type_names: nil)
+      self.workflow_rule_extra = extra.map(&:to_s).freeze
+      self.workflow_rule_excluded = except.map(&:to_s).freeze
+      self.workflow_rule_form_type_names_override = form_type_names&.map(&:to_s)&.freeze
+    end
+
+    # The FormType names whose custom fields a rule on this type may use: declared, or the base
+    # class name (KYCs declare all three of their STI names)
+    def workflow_rule_form_type_names
+      workflow_rule_form_type_names_override || [base_class.name]
     end
 
     # journey_progress! for many records at once (bulk jobs, imports, document approvals), touching

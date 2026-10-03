@@ -1,25 +1,49 @@
 module WithCustomField
   extend ActiveSupport::Concern
 
+  # Custom field types whose values are compared as numbers (filters, auto-assignment rules)
+  NUMERIC_FIELD_TYPES = %w[NumberField Money].freeze
+
+  # Serialises list-filter registration (register_cf_ransackers): Puma threads share the model class,
+  # and an unguarded read-merge-write could drop another company's concurrent entry or ransacker —
+  # silently unfiltering that company's search for the request
+  CF_FILTER_LOCK = Mutex.new
+
+  # The SQL for one custom field's value: json_fields ->> '$.key', fully qualified with the model's
+  # table (so JOINs to other tables with a json_fields column stay unambiguous). ->> yields text, so
+  # numeric: true casts it — otherwise gt/lt compare strings and "9" > "10". The cast differs by
+  # adapter: MySQL in production, SQLite in tests.
+  def self.json_value_node(table, key, numeric: false)
+    value = Arel::Nodes::InfixOperation.new('->>', table[:json_fields], Arel::Nodes.build_quoted("$.#{key}"))
+    return value unless numeric
+
+    cast_type = ActiveRecord::Base.lease_connection.adapter_name.match?(/sqlite/i) ? "REAL" : "DECIMAL(20,4)"
+    Arel::Nodes::NamedFunction.new("CAST", [value.as(Arel.sql(cast_type))])
+  end
+
   included do
     attr_accessor :cached_custom_fields
     # This is used to skip the before_save callback, used when we are generating thousands of account_entries as this slows it down considerably
     attr_accessor :skip_cf_before_save
 
-    # Tracks ransacker names dynamically registered for filterable custom fields.
-    # class_attribute ensures each model class gets its own mutable copy.
-    class_attribute :_cf_ransacker_names, default: []
-    class_attribute :_cf_ransacker_labels, default: {}
+    # Filterable custom fields registered for list filters, PER COMPANY:
+    #   { entity_id => { "field_name" => { label:, field_type: } } }
+    # The model class is shared by every request in the process, so a flat list here would show one
+    # company's fields to every other company. Each request reads only its own company's entry
+    # (Current.user's entity), and registering a company replaces its entry, so a field un-ticked
+    # in "Show in Filter" drops out on the next filter request.
+    # Worked examples E1–E3, X1 — openspec/changes/fix-custom-field-filter-scoping/report.md
+    class_attribute :_cf_filter_fields, default: {}
 
-    # Prepend a singleton wrapper so ransackable_attributes and human_attribute_name
-    # automatically include any dynamically registered CF ransackers.
+    # Prepend a singleton wrapper so ransackable_attributes and human_attribute_name include the
+    # current company's registered filter fields, and nobody else's.
     singleton_class.prepend(Module.new do
       def ransackable_attributes(auth_object = nil)
-        (defined?(super) ? super : []) + Array(_cf_ransacker_names)
+        (defined?(super) ? super : []) + cf_filter_names
       end
 
       def human_attribute_name(attribute, options = {})
-        _cf_ransacker_labels[attribute.to_s] || super
+        cf_filter_field(attribute)&.dig(:label) || super
       end
     end)
 
@@ -55,13 +79,23 @@ module WithCustomField
       }
     end
 
-    # This is search for Json Fields via ransack
-    # Useage:  InvestorKyc.ransack(InvestorKyc.json_fields_query("json_fields.nationality_cont" => "India")).result
+    # A custom field's value by name, via a Ransack condition grouping (WorkflowRuleMatcher):
+    #   { "a" => { "0" => { "name" => "json_fields", "ransacker_args" => "nationality" } }, "p" => "eq", ... }
+    # Only allowlisted for auto-assignment rules (Workflowable::WorkflowRuleRansack, auth :workflow_rule).
     ransacker :json_fields, args: %i[parent ransacker_args] do |parent, args|
       Rails.logger.debug { "parent: #{parent} args: #{args}" }
       key = args
       Arel::Nodes::InfixOperation.new('->>', parent.table[:json_fields],
                                       Arel::Nodes.build_quoted("$.#{key}"))
+    end
+
+    # The json_fields ransacker above yields text, so gt/lt on a number custom field compare as
+    # strings ("9" > "10"). This one casts the value to a number first. Same args shape as
+    # json_fields (ransacker_args = the field name), so the same condition grouping works with the
+    # attribute name swapped (WorkflowRuleMatcher).
+    # Worked example E2 — openspec/changes/workflow-rule-condition-builder/design.md#worked-examples
+    ransacker :json_field_number, type: :decimal, args: %i[parent ransacker_args] do |parent, args|
+      WithCustomField.json_value_node(parent.table, args, numeric: true)
     end
 
     # Custom ransacker for searching JSON fields
@@ -99,49 +133,44 @@ module WithCustomField
       @cached_custom_fields = nil
     end
 
-    # Registers a named ransacker for a filterable custom field so it appears in
-    # the Ransack attribute dropdown alongside standard attributes.
-    # Idempotent — calling twice with the same name is a no-op.
-    def self.register_cf_ransacker(field_name, label: nil)
-      name = field_name.to_s
-      unless _ransackers.key?(name)
-        # Use parent.table[:json_fields] so the column is fully qualified with the
-        # model's table name — prevents "ambiguous column" errors when the query
-        # JOINs other tables that also have a json_fields column (e.g. investor_kycs).
-        ransacker(name.to_sym) do |parent|
-          Arel::Nodes::InfixOperation.new('->>', parent.table[:json_fields], Arel::Nodes.build_quoted("$.#{name}"))
-        end
+    # Registers the list filters' custom fields for one company: a named ransacker per field (so it
+    # appears in the Ransack attribute dropdown beside the standard attributes), and that company's
+    # names, labels and field types — replacing whatever it had before.
+    # fields: FormCustomFields (name, human_label, field_type), already deduped by name.
+    # Worked examples H1, E1–E3 — openspec/changes/fix-custom-field-filter-scoping/report.md
+    def self.register_cf_ransackers(entity_id, fields)
+      entry = fields.to_h { |fcf| [fcf.name.to_s, { label: fcf.human_label, field_type: fcf.field_type }] }
+      # Both registries (Ransack's _ransackers and ours) are read-merge-write on a class shared by
+      # every Puma thread, so the whole registration is one critical section
+      WithCustomField::CF_FILTER_LOCK.synchronize do
+        entry.each_key { |name| define_cf_ransacker(name) }
+        # A new hash, never an in-place edit: class_attribute values are shared with subclasses
+        self._cf_filter_fields = _cf_filter_fields.merge(entity_id => entry)
       end
-      self._cf_ransacker_names = (_cf_ransacker_names + [name]).uniq
-      self._cf_ransacker_labels = _cf_ransacker_labels.merge(name => label) if label
     end
 
-    # This is used to create the query for json fields, used in the above ransacker
-    def self.json_fields_query(query)
-      return unless query
+    # One ransacker per name, shared by every company. It decides at query time whether to compare
+    # as a number, from the CURRENT company's field type — the same name can be a number for one
+    # company and text for another. A name that is already a real ransacker (e.g. an amount) is
+    # left alone.
+    def self.define_cf_ransacker(name)
+      return if _ransackers.key?(name)
 
-      query = query.try(:permit!).try(:to_h) unless query.is_a?(Hash)
-      query.each_with_object({}) do |(k, v), obj|
-        if k.starts_with?('json_fields.')
-          field = k.split('json_fields.').last
-          operation = Ransack::Predicate.detect_and_strip_from_string!(field)
-
-          raise ArgumentError, "No valid predicate for #{field}" unless operation
-
-          (obj["c"] ||= []) << {
-            "a" => {
-              "0" => {
-                "name" => "json_fields",
-                "ransacker_args" => field
-              }
-            },
-            "p" => operation,
-            "v" => { "0" => { "value" => v } }
-          }
-        else
-          obj[k] = v
-        end
+      model = self
+      ransacker(name.to_sym) do |parent|
+        numeric = NUMERIC_FIELD_TYPES.include?(model.cf_filter_field(name)&.dig(:field_type))
+        WithCustomField.json_value_node(parent.table, name, numeric:)
       end
+    end
+
+    # The current company's registered filter field names; none without a signed-in user (jobs,
+    # MCP, console), which keeps one company's fields out of everyone else's searches
+    def self.cf_filter_names
+      _cf_filter_fields.fetch(Current.user&.entity_id, {}).keys
+    end
+
+    def self.cf_filter_field(name)
+      _cf_filter_fields.dig(Current.user&.entity_id, name.to_s)
     end
   end
 

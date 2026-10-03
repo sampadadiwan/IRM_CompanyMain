@@ -107,6 +107,7 @@ Feature: Capital distribution journey — the distribution page
   # journey icon (next to Favourites and User Guide) brings it back for anyone who wants to look at it
   Scenario: A journey complete since yesterday is hidden until the breadcrumb's journey icon is clicked
     Given there is a capital distribution "title=Q4 2026 Exit Proceeds;income_cents=300000000;cost_of_investment_cents=150000000;approved=true"
+    And the distribution's notices are generated and 3 of them is approved
     And both distribution review tasks are marked reviewed
     And the distribution's payments are marked completed and emailed
     And the distribution's units are redeemed by the units job
@@ -125,6 +126,7 @@ Feature: Capital distribution journey — the distribution page
   # The moment it finishes, the journey is still there to be seen — only the icon is new
   Scenario: A journey that has just completed stays on the page and can be put away
     Given there is a capital distribution "title=Q4 2026 Exit Proceeds;income_cents=300000000;cost_of_investment_cents=150000000;approved=true"
+    And the distribution's notices are generated and 3 of them is approved
     And both distribution review tasks are marked reviewed
     And the distribution's payments are marked completed and emailed
     And the distribution's units are redeemed by the units job

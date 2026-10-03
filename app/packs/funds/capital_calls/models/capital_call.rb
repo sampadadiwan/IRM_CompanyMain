@@ -1,5 +1,11 @@
 class CapitalCall < ApplicationRecord
   include Workflowable
+
+  # Auto-assignment rules may also test "Imported" — the seeded Light journey rule routes on it.
+  # The amounts are rolled up from remittances after commit, so they are always 0 when the call is
+  # created — the only time a rule is checked — and are left out
+  workflow_rule_fields extra: %w[manual_generation],
+                       except: %w[call_amount collected_amount capital_fee other_fee]
   include WithCustomField
   include WithFolder
   include WithNextSteps

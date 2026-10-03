@@ -197,6 +197,8 @@
               whether a rule can ever win. Without it a shadowed rule looks as live as any other.
               Keyed by type because nothing stops a template's rules covering more than one. %>
           <% chains = WorkflowRuleChain.for_template(@workflow_template).index_by(&:workflowable_type) %>
+          <%# One field list per record type, shared by every rule row (not one per rule) %>
+          <% rule_describer = Hash.new { |h, type| h[type] = WorkflowRuleFields.for(type, @workflow_template.entity) } %>
           <%# A disabled template's rules are dormant, not dead: they stand aside and resume on enable.
               Said here because the rows below otherwise look live. %>
           <% if rules.any? && !@workflow_template.enabled %>
@@ -228,9 +230,11 @@
                       <% if Array(rule.conditions).empty? %>
                         <span class="text-muted">Always (catch-all)</span>
                       <% else %>
-                        <% Array(rule.conditions).each do |c| %>
-                          <code class="d-block"><%= c["attribute"] %> <%= c["operator"] %> <%= c["value"] %></code>
-                        <% end %>
+                        <%# In words, from the same field list the rule form uses
+                            (workflow-rule-condition-builder card 8) %>
+                        <span class="rule-conditions-text" id="rule_conditions_<%= rule.id %>">
+                          <%= Array(rule.conditions).map { |c| rule_describer[rule.workflowable_type].describe(c) }.join(" and ") %>
+                        </span>
                       <% end %>
                     </td>
                     <td class="align-middle">

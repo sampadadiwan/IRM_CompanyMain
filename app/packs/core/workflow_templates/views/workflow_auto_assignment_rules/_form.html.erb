@@ -34,37 +34,59 @@
       <%= f.label :auto_launch, "Automatically launch a workflow instance after assigning the template" %>
     </div>
 
-    <%# KYC rules: pick a KYC form type instead of typing its id — this rule then applies only to KYCs of
-        that form type; every other form type keeps the default (catch-all) journey.
-        Worked examples E25, E27 — openspec/changes/investor-kyc-journey/design.md#worked-examples %>
-    <% kyc_rule = rule.workflowable_type == "InvestorKyc" %>
-    <% if kyc_rule %>
-      <div class="form-group">
-        <%= f.label :kyc_form_type_id, "KYC form type" %>
-        <%= f.select :kyc_form_type_id,
-              kyc_form_types.order(:name, :tag).map { |ft| ["#{ft.name.delete_suffix('Kyc').titleize.sub('Investor', 'Any type')} — #{ft.tag}", ft.id] },
-              { include_blank: "Any form type", selected: rule.kyc_form_type_id },
-              class: "form-select", id: "workflow_auto_assignment_rule_kyc_form_type_id" %>
-        <small class="text-muted">
-          Only KYCs with this form type get this rule's journey. Leave blank for every KYC.
-        </small>
-      </div>
-    <% end %>
+    <%# Conditions — a row builder over WorkflowRuleFields (fields, operators and values this record
+        type and company allow). The textarea is what is submitted: the builder writes the rows into it,
+        "View as JSON" shows it, and without JS it is simply visible.
+        Design: openspec/changes/workflow-rule-condition-builder/design.md#-rule-form %>
+    <% fields = rule_fields %>
+    <%# A refused submission is shown back as submitted: unparseable text as-is, any other shape as JSON %>
+    <% conditions_text = case rule.conditions
+                         when String then rule.conditions
+                         when Array, nil then JSON.pretty_generate(Array(rule.conditions))
+                         else JSON.pretty_generate(rule.conditions)
+                         end %>
+    <div class="form-group" id="rule_conditions"
+         <% if fields %>
+           data-controller="workflow-rule-conditions"
+           data-workflow-rule-conditions-fields-value="<%= fields.to_builder_json.to_json %>"
+         <% end %>>
+      <label class="form-label">
+        Conditions — a new <%= fields&.type_label || "record" %> gets this template when ALL of these match
+      </label>
 
-    <%# Conditions — JSON array, edited via a simple textarea for now %>
-    <div class="form-group">
-      <%= f.label :conditions_json, kyc_rule ? "Other conditions (JSON)" : "Conditions (JSON)" %>
-      <%= f.text_area :conditions_json,
-            value: JSON.pretty_generate(Array(rule.conditions).reject { |c| kyc_rule && c.is_a?(Hash) && c["attribute"].to_s == "form_type_id" }),
-            class: "form-control font-monospace",
-            rows: 6,
-            placeholder: '[{"attribute":"kyc_type","operator":"eq","value":"Individual"}]' %>
-      <small class="text-muted">
-        An empty array <code>[]</code> matches every new record (catch-all).
-        Each condition: <code>{"attribute": "column_name", "operator": "eq|in|present|blank|…", "value": "…"}</code>.
-        Operators: eq, not_eq, gt, lt, gte, lte, in, not_in, present, blank.
-        Only DB column names are permitted as attributes.
-      </small>
+      <% if fields %>
+        <div data-workflow-rule-conditions-target="rowsPanel" class="d-none">
+          <div data-workflow-rule-conditions-target="rows"></div>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="add_rule_condition"
+                  data-action="click->workflow-rule-conditions#add">
+            <i class="ti ti-plus"></i> Add condition
+          </button>
+        </div>
+        <%# One locale date input, cloned by the builder for date conditions (never submitted itself) %>
+        <template data-workflow-rule-conditions-target="dateTemplate">
+          <%= date_field_tag "rule_condition_date", nil, class: "form-control" %>
+        </template>
+      <% end %>
+
+      <div data-workflow-rule-conditions-target="jsonPanel">
+        <div class="alert alert-danger py-1 px-2 d-none" data-workflow-rule-conditions-target="jsonError">
+          <%= WorkflowRuleFields::INVALID_SHAPE %>
+        </div>
+        <%= f.text_area :conditions_json, value: conditions_text,
+              class: "form-control font-monospace", rows: 6,
+              data: { "workflow-rule-conditions-target": "json" },
+              placeholder: '[{"attribute":"kyc_type","operator":"eq","value":"individual"}]' %>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <small class="text-muted">
+          No conditions = applies to every new <%= fields&.type_label || "record" %> (catch-all).
+        </small>
+        <% if fields %>
+          <a href="#" id="toggle_rule_conditions_json" data-workflow-rule-conditions-target="toggle"
+             data-action="click->workflow-rule-conditions#toggle">View as JSON</a>
+        <% end %>
+      </div>
     </div>
 
     <div class="form-group mt-3">

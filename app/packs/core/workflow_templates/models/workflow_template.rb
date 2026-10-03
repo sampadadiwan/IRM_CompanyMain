@@ -91,7 +91,10 @@ class WorkflowTemplate < ApplicationRecord
   def eligible_for?(workflowable)
     rules = workflow_auto_assignment_rules.where(workflowable_type: workflowable.workflowable_type_name)
     return true if rules.none?
-    rules.any? { |rule| rule.matches?(workflowable) }
+
+    # One field list for every rule checked against this record
+    fields = WorkflowRuleFields.for(workflowable.workflowable_type_name, entity)
+    rules.any? { |rule| rule.matches?(workflowable, fields:) }
   end
 
   private

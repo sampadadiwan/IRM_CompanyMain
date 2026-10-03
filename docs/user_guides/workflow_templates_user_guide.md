@@ -393,7 +393,7 @@ Auto-assignment rules let you automatically assign a workflow template to an obj
 |-------|-------------|
 | **Applies to** | Inherited from the template's type. Read-only. |
 | **Priority (lower number runs first)** | When multiple rules match, the one with the lowest priority number wins. |
-| **Conditions (JSON)** | An optional list of attribute/operator/value checks. If left empty, the rule matches every object of the correct type (catch-all). |
+| **Conditions** | Rows of **field / operator / value**, all of which must match. Add one with **Add condition**; remove one with its **✕**. With no rows the rule matches every object of the correct type (catch-all). See [How conditions work](#how-conditions-work). |
 | **Automatically launch a workflow instance after assigning the template** | When ticked, a workflow instance is launched immediately after the template is assigned — no admin action required. |
 
 A template with rules for a type also appears in the **Launch Workflow** dialog only for records that match at least one of its rules.
@@ -415,18 +415,31 @@ On [**Workflow Templates**](/workflow_templates), a warning appears above the li
 
 ### How conditions work
 
-Each condition checks a single field on the object:
+Each condition is one row: pick a **field**, an **operator** and a **value**. Every row must match (AND); to match one thing *or* another, add two rules. A rule with no rows matches every new object of its type.
 
-| Operator | Matches when… |
-|----------|--------------|
-| `eq` | The field equals the value. |
-| `not_eq` | The field does not equal the value. |
-| `gt` / `lt` / `gte` / `lte` | The field is greater/less than the value (numeric). |
-| `in` / `not_in` | The field is (or isn't) one of a list of values. |
-| `present` | The field has any non-blank value. |
-| `blank` | The field is empty or null. |
+**Which fields you can pick.** The field list depends on the record type and your company:
 
-All conditions in a rule must match simultaneously (AND logic). An empty conditions list always matches.
+- the fields you can search on for that record type, for example **Verified** and **Expiry date** on a KYC, **Imported** and **Percentage called** on a capital call, **Name** on a folder;
+- **Form type** on KYCs and capital commitments, and **Fund** where the record has one, picked from your own company's form types and funds;
+- every **custom field** on your company's forms for that record type, listed under **Custom fields** by its label. File, Header, Grid columns, Calculation and Check box custom fields are not offered.
+
+Totals that CapHive adds up from other records after the record is created are not offered, because they are always 0 when the rule is checked: a capital call's call amount, fees and collected amount; a KYC's committed, called, collected and distributed amounts; a commitment's called, collected and distributed amounts; a distribution's distribution and gross amounts. A commitment's **Committed amount** is entered when it is created, so it is offered.
+
+**Operators and values.** The value box matches the field: a dropdown for form types, funds, yes/no fields and custom fields with fixed options; a number box for numbers and amounts; the date picker for dates; a text box otherwise.
+
+| Operator | Matches when… | Offered for |
+|----------|--------------|-------------|
+| **is** / **is not** | The field equals / does not equal the value. | All fields (yes/no fields offer **is** only) |
+| **is one of** / **is not one of** | The field is / isn't one of several values. | Text, dropdowns |
+| **contains** | The text contains the value. | Text; multi-select custom fields |
+| **greater than** / **at least** / **less than** / **at most** | The number, amount or date compares as stated. | Numbers, amounts, dates |
+| **is blank** / **is present** | The field is empty / has any value. No value is needed. | Text and custom dropdowns |
+
+Amounts are in the fund's currency units, not cents: **at least 5000000** means five million. A record with no value for a field never matches **is**, **is not** or a comparison on that field; use **is blank** to catch it.
+
+**View as JSON.** The **View as JSON** link under the rows shows the same conditions as text, for copying or bulk edits; **View as rows** goes back. The JSON is checked exactly like the rows.
+
+**Checked on save.** **Save** refuses a condition that could never match, and says which row and why, for example *Condition 1: Unknown field "nationalty".*, *Condition 1: "greater than" can't be used with Form type.*, *Condition 1: Form type 999 is not one of this company's form types.*, *Condition 1: Ticket size needs a number.* or *The JSON is not a valid list of conditions.*
 
 ### When rules are evaluated
 
@@ -435,7 +448,7 @@ Rules are evaluated in two situations:
 1. **When a new object is created** — immediately after it is saved for the first time.
 2. **When an existing object is updated** — while rules exist for its type and the object does not already have a template assigned.
 
-This means you can configure a rule like "assign the AML Remediation Review to any Investor KYC where `verified` equals `true`" and it will trigger both when a KYC is created already-verified and when an existing KYC is later marked as verified.
+This means you can configure a rule like "assign the AML Remediation Review to any Investor KYC where **Verified** is **Yes**" and it will trigger both when a KYC is created already-verified and when an existing KYC is later marked as verified.
 
 Once a template is assigned, the rule will not re-trigger on further updates — the object already has an assignment.
 
@@ -470,9 +483,10 @@ sequenceDiagram
 
 | Use case | Type | Condition | Auto-launch |
 |----------|------|-----------|-------------|
-| Assign AML review to all verified KYCs | Investor KYC | `verified eq true` | No |
+| Assign AML review to all verified KYCs | Investor KYC | **Verified** is **Yes** | No |
 | Auto-launch IC vote on every new Approval | Approval | *(none — catch-all)* | Yes |
-| Assign LP data room review to folders named "Q3 2026" | Folder | `name eq Q3 2026` | No |
+| Assign LP data room review to folders named "Q3 2026" | Folder | **Name** is **Q3 2026** | No |
+| Give Fund IV KYCs of Indian nationals their own journey | Investor KYC | **Form type** is **Individual — Fund IV** and **Nationality** (custom field) is **India** | Yes |
 
 ---
 
@@ -538,7 +552,7 @@ Click **Export CSV** in the audit trail card header to download the full history
 
 **Setup:**
 1. Create a template "AML Remediation Review" with `Applies to = Investor KYC` and two steps: "AML Report Review" (states `Cleared, Escalate`, any one actor) and "Compliance Head Sign-off" (states `Approved, Rejected`, any one actor).
-2. On the template's show page, add an auto-assignment rule: condition `verified eq true`, auto-launch off, priority 0.
+2. On the template's show page, add an auto-assignment rule with the condition **Verified** is **Yes**, auto-launch off, priority 0.
 
 **What happens when a KYC is marked verified:**
 
@@ -620,7 +634,19 @@ Open the object → **Workflow** tab → **Launch Workflow**, choose a template 
 Click the link in the step email, pick a state on the card buttons, optionally add a note and click **Submit Response**; or, logged in, use **Your Response** on the timeline or the step button in the object's breadcrumb bar. See [How Actors Respond](#how-actors-respond).
 
 **How do I set up auto-assignment rules?**
-Open the template and, in **Auto-assignment Rules**, click **Add Rule**. Set **Priority (lower number runs first)**, the **Conditions (JSON)** list of attribute/operator/value checks, and tick **Automatically launch a workflow instance after assigning the template** if it should start on its own. See [Auto-Assignment Rules](#auto-assignment-rules).
+Open the template and, in **Auto-assignment Rules**, click **Add Rule**. Set **Priority (lower number runs first)**, add conditions with **Add condition** (field, operator, value), and tick **Automatically launch a workflow instance after assigning the template** if it should start on its own. With no conditions the rule applies to every new record of the type. See [Auto-Assignment Rules](#auto-assignment-rules).
+
+**How do I add a condition to an auto-assignment rule?**
+On the rule form click **Add condition**, then pick the **field**, the **operator** (for example **is**, **at least**, **is one of**) and the **value**; the value box becomes a dropdown, number box or date picker to suit the field. Add more rows for more conditions: all of them must match. Remove a row with its **✕**, then **Save**.
+
+**Which fields can an auto-assignment rule's conditions use?**
+The fields you can search on for that record type, **Form type** (KYCs and commitments) and **Fund**, plus every custom field on your company's forms for that type, listed under **Custom fields**. File, Header, Grid columns, Calculation and Check box custom fields, and totals that are added up after the record is created, are not offered. See [How conditions work](#how-conditions-work).
+
+**Can a workflow rule use a custom field, like Nationality on a KYC?**
+Yes. Custom fields from your company's forms for the record type appear under **Custom fields** in the field list, by their label. Fields with fixed options offer those options as values, and number fields compare as numbers. A record whose form has no such field, or which left it empty, matches only **is blank**.
+
+**How do I edit a rule's conditions as JSON?**
+Click **View as JSON** under the condition rows to see and edit the same conditions as text; **View as rows** switches back and redraws the rows from your edits. **Save** checks the JSON the same way as rows, and refuses text that is not a list of conditions.
 
 **How do I remind, reset or archive a running workflow?**
 Open the timeline page and click **Remind**, **Reset** or **Archive** in the header; **Reset to Step 1** and **Archive** are also on the object's **Workflow** tab. They appear only while the workflow is active and only for company admins. See [Manual Controls — Reset, Archive, Remind](#manual-controls--reset-archive-remind).
@@ -680,6 +706,12 @@ A job at 06:00 each day checks every active run. When the current step's interva
 **What happens when an auto-assignment rule matches?**
 When an object without an assigned template is created, or updated while rules exist for its type, the lowest-priority-number matching rule assigns its template. With auto-launch on, the workflow launches immediately and step 1 actors are emailed; otherwise the template just becomes the default choice in **Launch Workflow**.
 
+**What happens when I save an auto-assignment rule with a condition that can't work?**
+**Save** refuses it and the form stays open with what you entered, naming the row and the problem, for example *Condition 2: Unknown field "nationalty".* or *Condition 1: Ticket size needs a number.* This covers a misspelt field, an operator the field doesn't support, another company's form type or fund, a missing value and JSON that isn't a list of conditions. Nothing is saved until every row is valid.
+
+**What happens to a workflow rule when a custom field it uses is deleted?**
+The rule stops matching: new records skip it and the next matching rule applies, so it never assigns its template to more records than before. When you edit the rule, that row shows in red as **Unknown field: <name>**, and **Save** is refused until you remove or change it.
+
 ### Troubleshooting and edge cases
 
 **Can I edit a template while a workflow is running?**
@@ -738,6 +770,18 @@ Only buttons the page has marked as lockable. On a capital call: **Edit**, **Del
 
 **The actors of a step were not emailed. Why?**
 Either **Email actors when this step becomes active** is unticked on that step, or the actor list was empty or changed after launch (runs use the actors captured at launch). Use **Remind** to email pending actors, or share the timeline link with them.
+
+**Why can't I pick Call amount, or a KYC's Committed amount, in a rule's conditions?**
+Those totals are added up from remittances, commitments or payments after the record is created, so they are always 0 at the moment the rule is checked and a rule on them would never fire. The same applies to a call's fees and collected amount and a distribution's distribution and gross amounts. A commitment's **Committed amount** is entered when it is created, so commitment rules offer it.
+
+**Is an amount in a workflow rule condition in cents?**
+No. Amounts are compared in the fund's currency units, the same as search: **Committed amount** **at least** **5000000** means five million.
+
+**My rule uses "is not", but a record with no value didn't match. Why?**
+A record with no value for a field never matches **is**, **is not** or a comparison on that field, because there is nothing to compare. Add a separate rule using **is blank** for records that left the field empty.
+
+**Can a rule match one condition or another (OR)?**
+No. All conditions in one rule must match. To route records that meet either of two conditions to the same template, add two rules to that template, one per condition.
 
 ## Related Guides
 

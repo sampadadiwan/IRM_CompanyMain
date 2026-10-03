@@ -125,13 +125,13 @@ Feature: Investor KYC journey — rollout
     And another entity has its own KYC form type "Other Co"
     Then the KYC form type list on a new rule for "Investor KYC" should be exactly "Any type — Default, Individual — Default, Individual — Fund IV, Non Individual — Default, Non Individual — Fund IV"
 
-  # Review fix — the picker and typed JSON conditions together save, and a typed form_type_id is replaced
-  Scenario: A KYC rule with other JSON conditions and a form type saves both
+  # Review fix — conditions typed as JSON (View as JSON in the condition builder) save as typed
+  Scenario: A KYC rule with JSON conditions including a form type saves them
     Given the entity's investor KYC journeys are seeded
     And the entity has the KYC form types "Individual — Fund IV"
-    When I add an auto-assignment rule to "Investor KYC" for the KYC form type "Individual — Fund IV" with other conditions:
+    When I add an auto-assignment rule to "Investor KYC" with the conditions JSON:
       """
-      [{"attribute":"kyc_type","operator":"eq","value":"Individual"},{"attribute":"form_type_id","operator":"eq","value":"999"}]
+      [{"attribute":"kyc_type","operator":"eq","value":"Individual"},{"attribute":"form_type_id","operator":"eq","value":"<form type id>"}]
       """
     Then the rule for "Investor KYC" should have the conditions:
       """

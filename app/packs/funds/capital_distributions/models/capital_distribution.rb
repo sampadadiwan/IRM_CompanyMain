@@ -2,6 +2,12 @@ class CapitalDistribution < ApplicationRecord
   # Journeys (capital-distribution-journey): auto-assigned on create, evaluated from the data.
   # Worked examples H2, H9 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
   include Workflowable
+
+  # Auto-assignment rules may also test "Imported" — the seeded Light journey rule routes on it.
+  # distribution_amount / gross_amount are rolled up from payments after commit (always 0 when the
+  # distribution is created, the only time a rule is checked), so they are left out
+  workflow_rule_fields extra: %w[manual_generation],
+                       except: %w[updated_at distribution_amount gross_amount]
   include WithCustomField
   include Trackable.new
 

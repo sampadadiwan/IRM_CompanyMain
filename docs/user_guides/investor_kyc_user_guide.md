@@ -124,7 +124,7 @@ Until the KYC is verified the panel also warns about a failed PAN or bank accoun
 
 ### One journey for every KYC, or one per form type
 
-Setup gives your company one journey, **Investor KYC**, used by every KYC: individual and non-individual, whatever its form type. If one KYC form type (for example "Individual — Fund IV") needs different tasks, a company admin opens **Investor KYC** under the [workflow templates](/workflow_templates), clicks **Duplicate**, edits the copy, then adds an auto-assignment rule to the copy and picks that type in **KYC form type** with a priority below 100 (lower numbers are checked first). KYCs of that form type then get the copy; every other form type keeps **Investor KYC**.
+Setup gives your company one journey, **Investor KYC**, used by every KYC: individual and non-individual, whatever its form type. If one KYC form type (for example "Individual — Fund IV") needs different tasks, a company admin opens **Investor KYC** under the [workflow templates](/workflow_templates), clicks **Duplicate**, edits the copy, then adds an auto-assignment rule to the copy with the condition **Form type** is that form type and a priority below 100 (lower numbers are checked first). KYCs of that form type then get the copy; every other form type keeps **Investor KYC**. A rule can also use the KYC's custom fields, for example **Nationality** is **India**; see [How conditions work](workflow_templates_user_guide#how-conditions-work).
 
 ### When work is undone
 
@@ -978,7 +978,7 @@ Your user needs the *KYCs* feature. Company admins can do everything; other empl
 As a company admin of an Investment Fund or Angel Fund company, open the [workflow templates](/workflow_templates) page and choose **Set up journeys → Set up investor KYC journeys**. It adds the **Investor KYC** journey and a rule giving it to every new KYC. New fund companies get it automatically.
 
 **How do I give one KYC form type a different journey (workflow)?**
-Open **Investor KYC** under the [workflow templates](/workflow_templates), click **Duplicate** and edit the copy. On the copy, add an auto-assignment rule, pick the type in **KYC form type** (for example "Individual — Fund IV") and use a priority below 100. New KYCs of that form type get the copy; all other KYCs keep **Investor KYC**.
+Open **Investor KYC** under the [workflow templates](/workflow_templates), click **Duplicate** and edit the copy. On the copy, add an auto-assignment rule with **Add condition** → **Form type** **is** the type (for example "Individual — Fund IV") and use a priority below 100. New KYCs of that form type get the copy; all other KYCs keep **Investor KYC**.
 
 **Can I use one journey for both individual and non-individual KYCs?**
 Yes — that is the default. **Investor KYC** applies to every KYC whatever its type or form type, until you add a rule for a specific KYC form type.

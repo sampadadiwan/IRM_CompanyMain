@@ -1,6 +1,15 @@
 class InvestorKyc < ApplicationRecord
   include Workflowable
 
+  # Auto-assignment rules may also test the form type, and offer every KYC form's custom fields.
+  # Left out: identifiers (routing mistakes, not routing data), and the amounts rolled up from
+  # commitments and remittances — always 0 when a KYC is created, the only time a rule is checked
+  # (workflow-rule-condition-builder card 1)
+  workflow_rule_fields extra: %w[form_type_id],
+                       except: %w[PAN bank_account_number ifsc_code address
+                                  committed_amount call_amount collected_amount distribution_amount],
+                       form_type_names: %w[IndividualKyc NonIndividualKyc InvestorKyc]
+
   # The KYC page shows a journey panel (investor-kyc-journey): open pages update live, and stalled
   # tasks remind the KYC's creator when that creator works for the fund (workflow_default_owner).
   has_journey

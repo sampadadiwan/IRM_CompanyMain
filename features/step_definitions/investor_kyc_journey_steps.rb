@@ -602,9 +602,9 @@ Given("the template {string} is renamed {string}") do |from, to|
 end
 
 When("I add an auto-assignment rule to {string} for the KYC form type {string} with priority {int}") do |template_name, label, priority|
-  template = WorkflowTemplate.find_by!(entity: @entity, name: template_name)
-  visit new_workflow_template_workflow_auto_assignment_rule_path(template)
-  select label, from: "workflow_auto_assignment_rule_kyc_form_type_id"
+  # Built with the condition builder: Form type is <label> (workflow-rule-condition-builder)
+  step %(I open a new rule for "#{template_name}")
+  step %(I add the condition "Form type" "is" "#{label}")
   fill_in "workflow_auto_assignment_rule_priority", with: priority
   check "workflow_auto_assignment_rule_auto_launch"
   click_on "Save"
@@ -618,10 +618,8 @@ Then("the rule for {string} should match only the form type {string}") do |templ
 end
 
 Then("the KYC form type list on a new rule for {string} should be exactly {string}") do |template_name, labels|
-  template = WorkflowTemplate.find_by!(entity: @entity, name: template_name)
-  visit new_workflow_template_workflow_auto_assignment_rule_path(template)
-  options = all("#workflow_auto_assignment_rule_kyc_form_type_id option").map(&:text).reject { |t| t == "Any form type" }
-  expect(options.sort).to eq(labels.split(",").map(&:strip).sort)
+  step %(I open a new rule for "#{template_name}")
+  step %(the KYC form type list on the rule form should be exactly "#{labels}")
 end
 
 Given("another entity has its own KYC form type {string}") do |tag|
@@ -629,13 +627,12 @@ Given("another entity has its own KYC form type {string}") do |tag|
   FormType.find_or_create_by!(entity: other, name: "IndividualKyc", tag:)
 end
 
-# Review fix — "Other conditions (JSON)" alongside the form type picker must save (no 500)
-When("I add an auto-assignment rule to {string} for the KYC form type {string} with other conditions:") do |template_name, label, json|
-  template = WorkflowTemplate.find_by!(entity: @entity, name: template_name)
-  visit new_workflow_template_workflow_auto_assignment_rule_path(template)
-  select label, from: "workflow_auto_assignment_rule_kyc_form_type_id"
+# Review fix, carried over to the builder — conditions typed through View as JSON save as typed
+When("I add an auto-assignment rule to {string} with the conditions JSON:") do |template_name, json|
+  step %(I open a new rule for "#{template_name}")
   fill_in "workflow_auto_assignment_rule_priority", with: 50
-  fill_in "workflow_auto_assignment_rule_conditions_json", with: json
+  find("#toggle_rule_conditions_json").click
+  fill_in "workflow_auto_assignment_rule_conditions_json", with: json.gsub("<form type id>", @kyc_form_types.values.last.id.to_s)
   click_on "Save"
   expect(page).to have_text("Auto-assignment rule created")
 end

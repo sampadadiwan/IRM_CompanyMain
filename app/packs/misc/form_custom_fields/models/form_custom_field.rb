@@ -96,7 +96,7 @@ class FormCustomField < ApplicationRecord
   # An option field keeps its whole choice list in one comma-separated meta_data string, and
   # admins naturally type "Individual, HUF, LLP". Without this, " HUF" becomes the option's
   # value as well as its label, so the space is saved into json_fields and every exact-match
-  # consumer (the register_cf_ransacker filters, search_custom_fields, satisfies_condition?
+  # consumer (the register_cf_ransackers filters, search_custom_fields, satisfies_condition?
   # and its JS twin) stops matching the row.
   #
   # Blank entries are kept. A leading "," or " ," is the idiom for "start this dropdown

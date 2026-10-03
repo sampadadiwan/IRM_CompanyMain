@@ -15,6 +15,9 @@ class Investor < ApplicationRecord
   # used for both LP onboarding and portfolio-company KPI report review.
   include Workflowable
 
+  # Auto-assignment rules: access counters change constantly and are not routing data
+  workflow_rule_fields except: %w[investor_access_count unapproved_investor_access_count]
+
   update_index('investor') { self if index_record? }
 
   # This is to be set if we want the investor name to be different from the investor_entity name

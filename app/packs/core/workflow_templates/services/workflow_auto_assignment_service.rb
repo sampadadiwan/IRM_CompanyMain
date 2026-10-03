@@ -34,11 +34,13 @@ class WorkflowAutoAssignmentService < Trailblazer::Operation
   # workflow_template may be nil for a rule whose template row was deleted straight in the database;
   # such a rule is skipped like any dormant one rather than raising into record creation.
   def find_matching_rule(ctx, workflowable:, **)
+    # One field list for the whole walk: each rule's match re-checks its conditions against it
+    fields = WorkflowRuleFields.for(workflowable.workflowable_type_name, workflowable.entity)
     ctx[:rule] = WorkflowAutoAssignmentRule
       .where(entity: workflowable.entity, workflowable_type: workflowable.workflowable_type_name)
       .order(:priority, :id)
       .includes(:workflow_template)
-      .find { |rule| rule.workflow_template&.enabled? && rule.matches?(workflowable) }
+      .find { |rule| rule.workflow_template&.enabled? && rule.matches?(workflowable, fields:) }
     ctx[:rule].present?
   end
 
