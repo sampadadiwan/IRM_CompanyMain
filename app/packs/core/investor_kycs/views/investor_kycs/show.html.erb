@@ -96,15 +96,12 @@
               <% end %>
             <% end %>
 
-            <% if policy(@investor_kyc).validate_docs_with_ai? %>
-              <%= button_to validate_docs_with_ai_investor_kyc_path(@investor_kyc),
+            <%# Document Checks: the id stays — it is the journey's "Check documents" action target %>
+            <% if policy(@investor_kyc).validate_docs_with_ai? && DocChecks::Kyc.can_edit?(current_user, @investor_kyc) %>
+              <%= button_to doc_check_runs_path(record_type: "InvestorKyc", record_id: @investor_kyc.id),
                   id: "investor_kyc_validate_docs_with_ai_btn", method: :post, class: "dropdown-item", form_class: "deleteButton",
-                  data: {
-                    action: "click->confirm#popup", turbo: false, method: :post,
-                    msg: "This will try and validate the data in the documents and KYC. It will take a few minutes. Proceed?",
-                    workflow_gate_label: "Validate Document Data"
-                  } do %>
-                <i class="ti brand-github-copilot"></i>Validate Document Data
+                  data: { turbo: false, workflow_gate_label: "Check documents" } do %>
+                <i class="ti ti-file-search"></i><%= t("doc_checks.panel.check_documents") %>
               <% end %>
             <% end %>
 

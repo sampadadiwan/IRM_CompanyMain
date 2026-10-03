@@ -1,0 +1,52 @@
+<%# One item: ✓ / ⚠, its sentence, both values for a mismatch, and the actions that settle it on the spot.
+    locals: result (DocCheckResult), record, can_edit, entry, error (Mark as OK refusal, optional).
+    openspec/changes/document-checks/design.md (card ⑦ Results — Resolutions). Worked examples H5, H6, E18, E19, X8. %>
+<% ok, sentence = doc_check_result_sentence(result, record_label: entry.record_label)
+   frame = doc_check_panel_frame_id(record) %>
+<div class="py-1 border-top doc-check-row" data-item="<%= result.look_for %>" data-outcome="<%= result.outcome %>"
+     data-resolution="<%= result.resolution %>" id="doc_check_result_<%= result.id %>">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span class="<%= ok ? '' : 'fw-semibold' %>">
+      <%= ok ? "✓" : "⚠" %> <span class="doc-check-sentence"><%= sentence %></span>
+    </span>
+    <span class="d-flex gap-1">
+      <% if can_edit && result.can_use_document_value? %>
+        <%= button_to t("doc_checks.panel.use_document_value"), use_document_value_doc_check_result_path(result),
+              method: :patch, class: "btn btn-sm btn-outline-primary",
+              form: { data: { turbo_frame: frame,
+                              turbo_confirm: t("doc_checks.panel.confirm_use_value", field: result.look_for,
+                                               from: result.record_value.presence || "(empty)", to: result.doc_value) } } %>
+      <% end %>
+      <% if can_edit && result.can_undo? %>
+        <%= button_to t("doc_checks.panel.undo"), undo_doc_check_result_path(result), method: :patch,
+              class: "btn btn-sm btn-link", form: { data: { turbo_frame: frame } } %>
+      <% end %>
+    </span>
+  </div>
+
+  <% if !ok && result.outcome.in?(%w[mismatch]) %>
+    <div class="small text-muted ms-3 doc-check-values">
+      <%= t("doc_checks.panel.both_values", doc: result.doc_value, record: result.record_value, record_label: entry.record_label) %>
+    </div>
+  <% end %>
+  <% if !ok && result.explanation.present? && result.outcome == "unexpected_answer" %>
+    <div class="small text-muted ms-3">“<%= result.explanation %>”</div>
+  <% end %>
+
+  <%# Mark as OK: a reason is required. Worked examples H6, X8. %>
+  <% if can_edit && result.can_mark_ok? %>
+    <details class="ms-3 mt-1" <%= 'open' if error %>>
+      <summary class="small text-primary"><%= t("doc_checks.panel.mark_ok") %></summary>
+      <%= form_with url: mark_ok_doc_check_result_path(result), method: :patch, data: { turbo_frame: frame },
+                    class: "d-flex flex-wrap gap-2 align-items-start mt-1" do %>
+        <div>
+          <%= text_field_tag :reason, nil, maxlength: 255, placeholder: t("doc_checks.panel.why_ok_placeholder"),
+                aria: { label: t("doc_checks.panel.why_ok") }, class: "form-control form-control-sm #{'is-invalid' if error}",
+                style: "min-width: 18rem" %>
+          <% if error %><div class="invalid-feedback d-block"><%= error %></div><% end %>
+        </div>
+        <%= submit_tag t("doc_checks.panel.save"), class: "btn btn-sm btn-primary", name: nil %>
+      <% end %>
+    </details>
+  <% end %>
+</div>

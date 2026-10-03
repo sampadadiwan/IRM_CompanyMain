@@ -1,0 +1,71 @@
+<%# A record's Document checks tab: progress, the last check's time and counts, then each document as
+    ✓ All OK / ⚠ n need attention / ⟳ changed, with the actions that resolve an item on the spot.
+    Wrapped in the frame Broadcast replaces, so each browser re-fetches it as its own user.
+    locals: record, assessment (DocChecks::Assessment), message (optional), errors ({result_id => text})
+    openspec/changes/document-checks/design.md (card ⑧ Screens). Worked examples H3, H5, H6, H12, E13, E19, E20, X3, X10. %>
+<% message ||= nil
+   errors ||= {}
+   entry = DocChecks::Registry.for(record)
+   can_edit = entry.can_edit?(current_user, record)
+   active = assessment.active_run
+   record_type = DocChecks::Registry.record_type_of(record) %>
+<%= turbo_frame_tag doc_check_panel_frame_id(record) do %>
+  <div id="doc_checks_panel" class="doc-checks-panel" data-attention-count="<%= assessment.attention_count %>">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+      <div>
+        <h5 class="mb-1"><%= t("doc_checks.panel.title") %></h5>
+        <div class="text-muted" id="doc_checks_header"><%= doc_check_header(assessment) %></div>
+      </div>
+      <% if can_edit && assessment.checks? %>
+        <%= button_to t("doc_checks.panel.check_documents"), doc_check_runs_path(record_type:, record_id: record.id),
+              method: :post, class: "btn btn-sm btn-primary", id: "doc_checks_check_btn", disabled: active.present?,
+              form: { data: { turbo_frame: doc_check_panel_frame_id(record) } } %>
+      <% end %>
+    </div>
+
+    <% if message.present? %>
+      <div class="alert alert-info py-2" id="doc_checks_message"><%= message %></div>
+    <% end %>
+
+    <%# A newer attempt that couldn't run: say so, keep the earlier results. Worked example X3. %>
+    <% if (failed = assessment.could_not_run) %>
+      <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" id="doc_checks_could_not_run">
+        <span><%= t("doc_checks.panel.could_not_run", time: l(failed.finished_at || failed.updated_at, format: :abbr_date_time), reason: failed.error_message) %></span>
+        <% if can_edit %>
+          <%= button_to t("doc_checks.panel.try_again"), doc_check_runs_path(record_type:, record_id: record.id, trigger: "again"),
+                method: :post, class: "btn btn-sm btn-outline-danger", disabled: active.present?,
+                form: { data: { turbo_frame: doc_check_panel_frame_id(record) } } %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if !assessment.checks? && !assessment.checked? %>
+      <p class="text-muted" id="doc_checks_none">
+        <%= t("doc_checks.panel.no_checks") %>
+        <% if policy(DocCheck).index? %>
+          — <%= link_to t("doc_checks.panel.set_up"), doc_checks_path, data: { turbo_frame: "_top" } %>
+        <% end %>
+      </p>
+    <% elsif !assessment.checked? %>
+      <p class="text-muted" id="doc_checks_not_checked"><%= t("doc_checks.panel.not_checked") %></p>
+    <% end %>
+
+    <div class="<%= 'opacity-50' if active %>" id="doc_checks_groups">
+      <% assessment.groups.each do |group| %>
+        <%= render "doc_check_runs/group", group:, record:, record_type:, can_edit:, entry:, errors: %>
+      <% end %>
+    </div>
+
+    <%# Doc Questions answers from before Document Checks, read-only. Worked example E20. %>
+    <% if record.respond_to?(:doc_question_answers) && record.doc_question_answers.is_a?(Hash) && record.doc_question_answers.any? %>
+      <details class="mt-3" id="doc_checks_earlier_answers">
+        <summary class="text-muted"><%= t("doc_checks.panel.earlier_answers") %></summary>
+        <div class="mt-2 associated_entity">
+          <%# The AI's old answers are untrusted text: allow only the table markup Json2table emits %>
+          <%= sanitize(Json2table.get_html_table(record.doc_question_answers, JsonTable::TABLE_OPTIONS),
+                       tags: %w[table thead tbody tr th td div span b strong], attributes: %w[class]) %>
+        </div>
+      </details>
+    <% end %>
+  </div>
+<% end %>

@@ -33,10 +33,11 @@ Given("AML is not enabled for the entity") do
   @entity.entity_setting.update!(aml_enabled: false)
 end
 
-Given("the entity has {int} KYC document questions on {string}") do |count, document_name|
+# Yes-no Document Checks on one document (openspec/changes/document-checks)
+Given("the entity has {int} document checks on {string}") do |count, document_name|
   count.times do |i|
-    DocQuestion.create!(entity: @entity, owner: @entity, for_class: "InvestorKyc", document_name:,
-                        question: "Question #{i + 1}?", qtype: "Validation", tags: "KYC")
+    DocCheck.create!(entity: @entity, record_type: "InvestorKyc", document_name:, action: "question",
+                     look_for: "Question #{i + 1}?", position: i)
   end
 end
 
@@ -172,13 +173,25 @@ Then("the KYC's required documents should not be complete") do
   expect(@investor_kyc.reload.docs_completed?).to be(false)
 end
 
-# AI validation results as DocLlmValidator stores them: { document => { question => {answer:} } }
-Given("the KYC's AI validation found {int} of {int} answers failing") do |failing, total|
-  answers = (1..total).to_h { |i| ["Question #{i}?", { "answer" => i <= failing ? "No" : "Yes", "explanation" => "-" }] }
+# A finished Document Checks run as DocChecks::RunJob stores it: one result per check of the entity, the
+# first <failing> answered "No" (needing attention), on the KYC's own documents as they are now.
+# Worked examples H7, E22 — openspec/changes/document-checks/design.md#worked-examples
+Given("the KYC's documents were checked with {int} of {int} items needing attention") do |failing, total|
   @investor_kyc.reload
-  @investor_kyc.doc_question_answers = { "PAN Card" => answers }
-  @investor_kyc.all_docs_valid = failing.zero?
-  @investor_kyc.save!(validate: false)
+  checks = DocCheck.for_record(@investor_kyc).to_a
+  expect(checks.size).to eq(total), "the entity has #{checks.size} document checks for this KYC, not #{total}"
+  DocCheckRun.for_record(@investor_kyc).update_all(current: false)
+  run = DocCheckRun.create!(entity: @investor_kyc.entity, record: @investor_kyc, user: @user, status: "done", current: true,
+                            started_at: Time.current, finished_at: Time.current,
+                            counts: { "ok" => total - failing, "attention" => failing })
+  checks.each_with_index do |check, index|
+    document = DocChecks::Kyc.find_document(@investor_kyc, check.document_name)
+    run.doc_check_results.create!(entity: @investor_kyc.entity, doc_check: check, document_name: check.document_name,
+                                  look_for: check.look_for, action: check.action, document_id: document&.id,
+                                  document_file_id: document&.file&.id, outcome: index < failing ? "unexpected_answer" : "ok",
+                                  note: index < failing ? nil : "yes", doc_value: index < failing ? "No" : "Yes")
+  end
+  DocChecks::Kyc.on_assessed(@investor_kyc, DocChecks::Assessment.new(@investor_kyc).settled?)
 end
 
 Given("the KYC's AML result is {string}") do |status|
@@ -480,10 +493,10 @@ When("the KYC's AML result arrives as {string} while the page is open") do |stat
   kyc.journey_progress!
 end
 
-# What DocLlmValidationJob does: store the answers, then tell the journey
-When("the KYC's AI validation finishes with {int} of {int} answers failing while the page is open") do |failing, total|
+# What DocChecks::RunJob does at the end: store the results, then tell the journey
+When("the KYC's documents finish checking with {int} of {int} items needing attention while the page is open") do |failing, total|
   mark_page_for_reload_check
-  step %(the KYC's AI validation found #{failing} of #{total} answers failing)
+  step %(the KYC's documents were checked with #{failing} of #{total} items needing attention)
   InvestorKyc.find(@investor_kyc.id).journey_progress!
 end
 

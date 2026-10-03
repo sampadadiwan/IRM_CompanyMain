@@ -1,0 +1,39 @@
+<%# One document of the record's Document checks tab. OK documents start collapsed; documents needing
+    attention start open — and stay open while any item carries a resolution, so the item a person just
+    settled doesn't vanish from view (and its Undo stays at hand).
+    locals: group (Assessment::Group), record, record_type, can_edit, entry, errors.
+    openspec/changes/document-checks/design.md (card ⑧ Screens). Worked examples E12, E13, X1, H5, H6. %>
+<% problem = group.document_problem
+   open = !group.ok? || group.results.any?(&:resolution) %>
+<details class="border rounded mb-2 doc-check-group" <%= 'open' if open %>
+         data-document-name="<%= group.name %>" id="doc_check_group_<%= group.name.parameterize(separator: '_') %>">
+  <summary class="px-3 py-2 d-flex justify-content-between align-items-center">
+    <strong><%= group.name %></strong>
+    <span class="doc-check-group-status <%= group.ok? ? 'text-success' : 'text-warning' %>">
+      <% if group.changed %>
+        ⟳ <%= t("doc_checks.panel.changed") %>
+      <% elsif group.ok? %>
+        ✓ <%= t("doc_checks.panel.group_ok") %>
+      <% else %>
+        ⚠ <%= t("doc_checks.panel.group_attention", count: group.attention_count) %>
+      <% end %>
+    </span>
+  </summary>
+  <div class="px-3 pb-2">
+    <% if group.changed || problem %>
+      <%# One line for the whole document: replaced after the check, not uploaded, or unreadable %>
+      <div class="d-flex justify-content-between align-items-center py-1 doc-check-row" data-outcome="<%= group.changed ? 'changed' : problem.outcome %>">
+        <span>⚠ <%= group.changed ? t("doc_checks.panel.changed") : doc_check_result_sentence(problem, record_label: entry.record_label).last %></span>
+        <% if can_edit && (group.changed || problem.outcome != "not_uploaded") %>
+          <%= button_to t("doc_checks.panel.check_again"), doc_check_runs_path(record_type:, record_id: record.id, trigger: "again"),
+                method: :post, class: "btn btn-sm btn-outline-primary",
+                form: { data: { turbo_frame: doc_check_panel_frame_id(record) } } %>
+        <% end %>
+      </div>
+    <% else %>
+      <% group.results.each do |result| %>
+        <%= render "doc_check_runs/result", result:, record:, can_edit:, entry:, error: errors[result.id] %>
+      <% end %>
+    <% end %>
+  </div>
+</details>

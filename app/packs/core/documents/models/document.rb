@@ -1,4 +1,8 @@
 class Document < ApplicationRecord
+  # qna was written only by the retired DocLlmQnaJob (empty in production); ignored now so the column
+  # can be dropped in the Doc Questions retirement deploy. openspec/changes/document-checks (Retirement)
+  self.ignored_columns += ["qna"]
+
   include WithCustomField
   include InvestorsGrantedAccess
   include WithESignatures

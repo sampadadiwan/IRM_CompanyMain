@@ -54,6 +54,7 @@ class Entity < ApplicationRecord
 
   has_many :documents, dependent: :destroy
   has_many :doc_questions, dependent: :destroy
+  has_many :doc_checks, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :form_types, dependent: :destroy
   has_many :approvals, dependent: :destroy

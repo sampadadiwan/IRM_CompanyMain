@@ -1,0 +1,44 @@
+<%# Settings → Document Checks: one card per document on the entity's KYC lists, checks first.
+    openspec/changes/document-checks/design.md (card ① Setup). Worked examples H1, H2, H4, E1, E2, E16. %>
+<div class="d-sm-flex align-items-start justify-content-between mb-3 gap-3">
+  <div>
+    <h1 class="h3 mb-1"><%= t("doc_checks.setup.title") %></h1>
+    <p class="text-muted mb-0"><%= t("doc_checks.setup.intro") %></p>
+  </div>
+  <%= form_with url: trial_doc_checks_path(record_type: @record_type), method: :post, class: "d-flex flex-wrap gap-2 align-items-center", id: "doc_check_try_form" do %>
+    <%= select_tag :record_id,
+          options_for_select(policy_scope(InvestorKyc).order(updated_at: :desc).limit(500).map { |k| [k.to_s.presence || "KYC ##{k.id}", k.id] }),
+          include_blank: t("doc_checks.setup.try_on"), class: "form-control select2", style: "min-width: 16rem", id: "doc_check_try_record" %>
+    <%= submit_tag t("doc_checks.setup.try_on"), class: "btn btn-outline-primary", id: "doc_check_try_btn" %>
+  <% end %>
+</div>
+
+<% if @missing_field_count.positive? %>
+  <div class="alert alert-warning d-flex justify-content-between align-items-center" id="doc_check_missing_fields">
+    <span><%= t("doc_checks.setup.missing_fields", count: @missing_field_count) %></span>
+    <a href="#doc_check_field_gone" class="alert-link"><%= t("doc_checks.setup.show_me") %></a>
+  </div>
+<% end %>
+
+<% if params[:trial_run_id].present? && (trial = policy_scope(DocCheckRun).find_by(id: params[:trial_run_id], trial: true)) %>
+  <div class="mb-4" id="doc_check_trial">
+    <%= turbo_stream_from trial, :trial %>
+    <%= turbo_frame_tag DocChecks::Broadcast.trial_frame_id(trial), src: doc_check_run_path(trial) %>
+  </div>
+<% end %>
+
+<% if @cards.empty? %>
+  <div class="alert alert-info" id="doc_check_no_documents"><%= t("doc_checks.setup.no_documents") %></div>
+<% end %>
+
+<% with_checks, without = @cards.partition { |card| card.rows.any? } %>
+<% with_checks.each do |card| %>
+  <%= render "doc_checks/card", card:, not_added: [], dirty: false %>
+<% end %>
+
+<% if without.any? %>
+  <h2 class="h5 mt-4 mb-3 text-muted"><%= t("doc_checks.setup.other_documents") %></h2>
+  <% without.each do |card| %>
+    <%= render "doc_checks/card", card:, not_added: [], dirty: false %>
+  <% end %>
+<% end %>

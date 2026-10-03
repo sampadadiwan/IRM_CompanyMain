@@ -48,6 +48,46 @@ module InvestorKycConcern
     journey_document_changed(document, started_at)
   end
 
+  # The KYC's details changed outside InvestorKycAction (a Document Checks fill-in or "Use document
+  # value"): reset "Review KYC" exactly as InvestorKycAction#journey_hook does for a fund user's edit.
+  # No-op without a journey; never raises.
+  # Worked examples H5 — openspec/changes/document-checks/design.md#worked-examples
+  def journey_details_changed!(actor: nil, started_at: Time.current)
+    return unless respond_to?(:journey_progress!)
+
+    journey_invalidate(check_keys: "investor_kyc.review_kyc", reason: "KYC details changed after review",
+                       actor:, only_if_passed: "investor_kyc.review_kyc")
+    journey_undo_evaluate(note: "KYC details changed after review", started_at:, actor:)
+  end
+
+  # The names of the documents this KYC must have: the entity's list for its KYC type (Settings →
+  # individual / non-individual KYC documents) plus the KYC form's required document fields. Order kept,
+  # duplicates removed. Shared by the journey's document tasks and Document Checks.
+  def required_document_names
+    setting = entity.entity_setting
+    list = individual? ? setting&.individual_kyc_doc_list : setting&.non_individual_kyc_doc_list
+    names = list.to_s.split(",").map(&:strip).compact_blank
+    if form_type_id
+      ::FormCustomField.where(form_type_id:, field_type: "File", required: true)
+                       .pluck(:label, :name).each { |label, name| names << (label.presence || name.to_s.humanize) }
+    end
+    names.uniq
+  end
+
+  # The newest uploaded (not generated) document that satisfies a required name, matched the same way as
+  # missing_required_document_names: by name or owner_tag, ignoring case and an "Upload "/"Attach your "
+  # prefix. Matches on plucked names (no wide rows loaded), then loads the one document found.
+  # Worked example E7 — openspec/changes/document-checks/design.md#worked-examples
+  def find_document_by_name(name)
+    wanted = normalize_required_doc_name(name)
+    # Newest first, so a re-upload wins over the document it replaced
+    # (Generated is filtered in Ruby: where.not(owner_tag:) would also drop the untagged NULL rows)
+    match = documents.not_generated.order(updated_at: :desc, id: :desc).pluck(:id, :name, :owner_tag).find do |_id, doc_name, owner_tag|
+      owner_tag != "Generated" && [doc_name, owner_tag].any? { |v| normalize_required_doc_name(v) == wanted }
+    end
+    ::Document.find(match.first) if match
+  end
+
   # The KYC's journey after one of its documents is added, replaced or deleted: documents that were
   # validated are no longer the ones on file, so "Validate documents" goes back — but only once it had
   # passed (an upload while the investor is still filling the form is not a move back). Deleting a
@@ -57,6 +97,12 @@ module InvestorKycConcern
     return unless respond_to?(:journey_progress!)
     # Documents CapHive generates for the KYC are not what was validated
     return if document.owner_tag == "Generated"
+
+    # An added, replaced or removed document makes its Document Checks results out of date, so the KYC is
+    # no longer "all documents valid" until it is checked again. Here (not in document_changed) because a
+    # file replacement reaches only this method (Document#kyc_document_replaced). Worked example E13 —
+    # openspec/changes/document-checks/design.md#worked-examples
+    DocChecks::Kyc.reassess(self)
 
     # A deleted document leaves the remaining ones validated; a missing required one shows on
     # "Upload required documents" by itself

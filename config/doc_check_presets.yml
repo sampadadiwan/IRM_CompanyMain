@@ -1,0 +1,36 @@
+# Ready-made Document Checks for common documents. A card whose document name matches a preset's
+# pattern offers "Use <name> preset". Each check lists candidate field names: the first one the record
+# type allows (DocChecks::Kyc.fields_for) is used, and a check with none is reported as "Not added".
+# See openspec/changes/document-checks/design.md (card ① Setup, Preset apply). Worked examples H1, E4, E5.
+cml:
+  name: CML
+  pattern: '\bcml\b|client master'
+  checks:
+    - { action: fill_in, look_for: DP ID, tip: "8 characters: starts with IN for NSDL, digits for CDSL", fields: [dp, dp_id, dpid] }
+    - { action: fill_in, look_for: Client ID, tip: 8 digits, fields: [client, client_id, clientid] }
+    - { action: fill_in, look_for: Address, tip: "The first holder's address", fields: [address] }
+    - { action: fill_in, look_for: Bank account number, fields: [bank_account_number] }
+    - { action: fill_in, look_for: IFSC code, fields: [ifsc_code] }
+    - { action: compare, look_for: PAN, tip: "The first holder's PAN", fields: [PAN] }
+    - { action: compare, look_for: First holder name, fields: [full_name] }
+    - { action: question, look_for: Is it signed by the holder? }
+    - { action: fill_in, look_for: Email, fields: [email, email_id, comm_email] }
+    - { action: fill_in, look_for: Mobile, fields: [mobile, mobile_no, phone, phone_number] }
+pan:
+  name: PAN card
+  pattern: '\bpan\b'
+  checks:
+    - { action: compare, look_for: PAN, tip: "10 characters: 5 letters, 4 digits, 1 letter", fields: [PAN] }
+    - { action: compare, look_for: Name, fields: [full_name] }
+aadhaar:
+  name: Aadhaar
+  pattern: '\baadh?aa?r\b'
+  checks:
+    - { action: compare, look_for: Name, fields: [full_name] }
+    - { action: fill_in, look_for: Address, fields: [address] }
+passport:
+  name: Passport
+  pattern: '\bpassport\b'
+  checks:
+    - { action: compare, look_for: Name, tip: "Given names and surname", fields: [full_name] }
+    - { action: fill_in, look_for: Expiry date, fields: [expiry_date] }

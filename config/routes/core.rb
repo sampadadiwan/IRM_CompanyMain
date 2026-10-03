@@ -154,7 +154,6 @@ resources :investor_kycs do
   get 'generate_all_docs', on: :collection
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
   post 'bulk_actions', on: :collection
-  post 'validate_docs_with_ai', on: :member
   post 'extract_docs_data', on: :member
   get  'processing', on: :member
   patch 'doc_first_upload', on: :member
@@ -351,4 +350,25 @@ end
 resources :doc_questions do
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
+end
+
+# Document Checks — openspec/changes/document-checks/design.md (cards ①, ③, ⑧)
+resources :doc_checks, only: %i[index] do
+  collection do
+    get :card
+    patch :card, action: :update_card
+    post :preset
+    post :trial
+  end
+end
+resources :doc_check_runs, only: %i[create show] do
+  get :panel, on: :collection
+end
+resources :doc_check_results, only: %i[index] do
+  member do
+    patch :use_document_value
+    patch :mark_ok
+    patch :undo
+  end
+  post :check_again, on: :collection
 end

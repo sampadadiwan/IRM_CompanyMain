@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_03_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_090000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1520,6 +1520,86 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_090000) do
     t.index ["capital_distribution_id"], name: "index_distribution_fees_on_capital_distribution_id"
     t.index ["entity_id"], name: "index_distribution_fees_on_entity_id"
     t.index ["fund_id"], name: "index_distribution_fees_on_fund_id"
+  end
+
+  create_table "doc_check_conversion_logs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "doc_question_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "reason", null: false
+    t.datetime "updated_at", null: false
+    t.index ["doc_question_id"], name: "index_doc_check_conversion_logs_on_doc_question_id", unique: true
+    t.index ["entity_id"], name: "index_doc_check_conversion_logs_on_entity_id"
+  end
+
+  create_table "doc_check_results", force: :cascade do |t|
+    t.string "action", limit: 12, null: false
+    t.datetime "created_at", null: false
+    t.bigint "doc_check_id"
+    t.bigint "doc_check_run_id", null: false
+    t.text "doc_value"
+    t.string "document_file_id", limit: 100
+    t.bigint "document_id"
+    t.string "document_name", limit: 100, null: false
+    t.bigint "entity_id", null: false
+    t.text "explanation"
+    t.string "field_name", limit: 100
+    t.string "look_for", limit: 100, null: false
+    t.string "note"
+    t.string "outcome", limit: 20, null: false, comment: "ok, or the reason it needs attention"
+    t.text "record_value"
+    t.string "resolution", limit: 20, comment: "marked_ok | used_document_value"
+    t.string "resolve_reason"
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_id"
+    t.datetime "updated_at", null: false
+    t.index ["doc_check_id"], name: "index_doc_check_results_on_doc_check_id"
+    t.index ["doc_check_run_id"], name: "index_doc_check_results_on_doc_check_run_id"
+    t.index ["entity_id", "outcome"], name: "index_doc_check_results_on_entity_id_and_outcome"
+    t.index ["resolved_by_id"], name: "index_doc_check_results_on_resolved_by_id"
+  end
+
+  create_table "doc_check_runs", force: :cascade do |t|
+    t.json "counts"
+    t.datetime "created_at", null: false
+    t.boolean "current", default: false, null: false
+    t.string "current_document", limit: 100
+    t.integer "documents_done", default: 0, null: false
+    t.integer "documents_total", default: 0, null: false
+    t.bigint "entity_id", null: false
+    t.string "error_message", limit: 255
+    t.datetime "finished_at"
+    t.bigint "record_id", null: false
+    t.string "record_type", limit: 40, null: false
+    t.datetime "started_at"
+    t.string "status", limit: 15, default: "queued", null: false, comment: "queued | running | done | could_not_run"
+    t.boolean "trial", default: false, null: false
+    t.string "trigger", limit: 10, default: "manual", null: false, comment: "manual | bulk | again | trial"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["entity_id", "current", "finished_at"], name: "index_doc_check_runs_on_entity_current"
+    t.index ["record_type", "record_id", "current"], name: "index_doc_check_runs_on_record_current"
+    t.index ["record_type", "record_id", "status"], name: "index_doc_check_runs_on_record_status"
+    t.index ["user_id"], name: "index_doc_check_runs_on_user_id"
+  end
+
+  create_table "doc_checks", force: :cascade do |t|
+    t.string "action", limit: 12, default: "fill_in", null: false, comment: "fill_in | compare | question"
+    t.datetime "created_at", null: false
+    t.string "document_name", limit: 100, null: false
+    t.bigint "entity_id", null: false
+    t.string "expected_answer", limit: 3, default: "yes", null: false
+    t.string "field_name", limit: 100
+    t.bigint "legacy_doc_question_id"
+    t.string "look_for", limit: 100, null: false, comment: "What the AI looks for, or the question"
+    t.integer "position", default: 0, null: false
+    t.string "record_type", limit: 40, default: "InvestorKyc", null: false
+    t.boolean "replace_existing", default: false, null: false, comment: "Fill in: overwrite a value already on the record"
+    t.string "tip", limit: 255, comment: "Optional guidance for the AI"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "record_type", "document_name", "field_name"], name: "index_doc_checks_on_card_field", unique: true
+    t.index ["entity_id", "record_type", "document_name", "look_for"], name: "index_doc_checks_on_card_look_for", unique: true
+    t.index ["legacy_doc_question_id"], name: "index_doc_checks_on_legacy_doc_question_id", unique: true
   end
 
   create_table "doc_questions", force: :cascade do |t|
@@ -4749,6 +4829,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_090000) do
   add_foreign_key "deals", "folders", column: "data_room_folder_id"
   add_foreign_key "deals", "folders", column: "document_folder_id"
   add_foreign_key "deals", "form_types"
+  add_foreign_key "doc_check_conversion_logs", "entities"
+  add_foreign_key "doc_check_results", "doc_check_runs", on_delete: :cascade
+  add_foreign_key "doc_check_results", "doc_checks", on_delete: :nullify
+  add_foreign_key "doc_check_results", "entities"
+  add_foreign_key "doc_check_results", "users", column: "resolved_by_id", on_delete: :nullify
+  add_foreign_key "doc_check_runs", "entities"
+  add_foreign_key "doc_check_runs", "users", on_delete: :nullify
+  add_foreign_key "doc_checks", "entities"
   add_foreign_key "doc_questions", "entities"
   add_foreign_key "doc_shares", "documents"
   add_foreign_key "documents", "folders"

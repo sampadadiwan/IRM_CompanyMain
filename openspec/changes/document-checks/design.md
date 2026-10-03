@@ -1,7 +1,7 @@
 # Document Checks — Design
 
 > **Audience:** Engineering team.
-> **Companion documents:** [Proposal](proposal.md) · [Spec](specs/documents/document-checks/spec.md) · [LLD](lld.md) · [QA checklist](qa-checklist.md)
+> **Companion documents:** [Proposal](proposal.md) · [Spec](specs/documents/document-checks/spec.md) · [Journey delta](specs/kyc/investor-kyc-journey/spec.md) · [LLD](lld.md) · [QA checklist](qa-checklist.md)
 
 > **Planning phase — no code changes.** This document explains HOW the proposal will be built.
 > Do not edit application code while writing it; implementation happens later, in the tasks phase.
@@ -45,7 +45,8 @@
   - [Worked examples](#worked-examples)
   - [Testing](#testing)
   - [Risks and open questions](#risks-and-open-questions)
-  - [Legacy removal and conversion](#legacy-removal-and-conversion)
+  - [Retirement: what will not exist afterwards](#retirement-what-will-not-exist-afterwards)
+  - [Converting the legacy questions](#converting-the-legacy-questions)
 
 ---
 
@@ -53,138 +54,144 @@
 
 ### What this adds
 
-Document Checks replace Doc Questions with four tables (sets, checks, runs, results) and a small
-engine. An admin configures **what to read** from each document. The AI **only reads**. CapHive
-**judges** each value (fill a field, compare with the record, or test a rule) and stores one result
-row per check.
+Document Checks replace Doc Questions with three tables (checks, runs, results) and a small engine.
+An admin picks, per document, which KYC field to **fill in** or **compare**, or asks a **yes-no
+question**. The AI **only reads** values. CapHive **judges** each one and stores one result per item:
+**OK** or **Needs attention**, with a reason code that the screens turn into one plain sentence and the
+action that resolves it. The old Doc Questions UI, code, table and dead columns are then
+[retired](#retirement-what-will-not-exist-afterwards).
 
 It follows two existing patterns:
 
 - the evaluated workflow's "checks are data, the engine decides" split
   (`workflows/evaluated-workflow-steps`);
-- the existing `DocLlmBase` plumbing for the provider and file-to-image conversion.
+- the existing `DocLlmBase` plumbing for provider selection and file-to-image conversion.
 
 ### The idea in one picture
 
 ```mermaid
 flowchart LR
-    S["① Setup<br/>which documents,<br/>what to read"]
+    S["① Setup<br/>a card per document,<br/>fields picked"]
     R["② Registry<br/>what a record type<br/>allows"]
-    T["③ Triggers<br/>button, bulk, test"]
-    N["④ Run<br/>one attempt<br/>for one record"]
+    T["③ Triggers<br/>button, bulk, trial"]
+    N["④ Run<br/>one check of one<br/>record's documents"]
     A["⑤ Reader<br/>AI reads values<br/>off each document"]
-    J["⑥ Judge<br/>fill, compare<br/>or rule"]
-    D["⑦ Results<br/>one row per check,<br/>current or stale"]
-    U["⑧ Screens and journey<br/>panel, list, accept,<br/>KYC step"]
+    J["⑥ Judge<br/>OK or needs<br/>attention + reason"]
+    D["⑦ Results<br/>current, changed,<br/>resolved"]
+    U["⑧ Screens and journey<br/>tab, attention list,<br/>KYC step"]
     R -- "docs + fields" --> S
     S -- "which checks" --> N
     T -- "start" --> N
-    N -- "doc + labels" --> A
+    N -- "doc + look-fors" --> A
     A -- "values read" --> J
     R -- "field get/set" --> J
-    J -- "result per check" --> D
+    J -- "item outcome" --> D
     D -- "current results" --> U
 ```
 
 ### Walkthrough: one example, start to finish
 
-**Setup.** Fireside Ventures uses KYCs. Its individual KYC document list is "CML, PAN Card,
-Passport", and its KYC form has custom fields `dp` and `client`. Priya Shah is the fund admin.
-Asha Rao is an individual investor whose KYC is on the journey step **Validate documents**. Data
-is from the [shared setup](#worked-examples).
+**Setup.** Fireside Ventures collects "CML, PAN Card, Passport" from individuals and "PAN Card, Board
+Resolution" from companies. Its KYC form has custom fields DP ID (`dp`) and Client ID (`client`). Priya
+Shah is the fund admin. Asha Rao is an individual investor whose KYC is on the journey task **Validate
+documents**. Data is from the [shared setup](#worked-examples).
 
-**Legend.** ✓ all checks passed or accepted · ✗ a check failed · ? needs review · ⚠ error ·
-— not uploaded · ⟳ out of date (document changed after the run). In journey rows, **● bold** means
-"we are here: waiting on this task, not done yet", and ✓ means done.
+**Legend.** ✓ OK · ⚠ needs attention · ⟳ document changed after the check. In journey lines,
+**● bold** means "we are here: waiting on this task, not done yet", and ✓ means done. A number in
+brackets after a document is the count of its items needing attention.
 
 ```mermaid
 timeline
     title Asha Rao's KYC, 1 to 3 Oct
-    1 Oct : Priya sets up checks from the CML preset : Test run on Asha changes nothing
-    2 Oct : First run - PAN Card unreadable, holder name needs review : Accept refused without reason, then accepted : PAN re-uploaded and re-run - Validated by AI
-    3 Oct : CML re-uploaded - step back to waiting : Re-run passes : AI outage on a bulk run - nothing changes
+    1 Oct : Priya sets up CML from the preset, PAN Card and Passport : Trial on Asha changes nothing
+    2 Oct : First check - PAN Card unreadable, holder name differs : Marks OK, undoes, marks OK again : PAN re-uploaded and checked again - Validated by AI
+    3 Oct : CML replaced - task back to waiting : Checked again - all OK : AI outage on a bulk check - nothing changes
 ```
 
 **Phase A: setup**
 
 | # | When | What happens | Behind the scenes | Result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
-| 1 | 1 Oct 10:00 | Priya creates "Investor KYC — Individual", adds CML and applies the CML preset | Setup (①) asks the registry (②) for the document list and fields. The preset maps DP ID → `dp`, Client ID → `client`, PAN → `PAN`. Email and Mobile get no field | CML:&nbsp;9&nbsp;checks,&nbsp;2&nbsp;without&nbsp;a&nbsp;field |
-| 2 | 10:05 | She deletes Email and Mobile, adds the rule "Signed by holder?", then adds PAN Card (Match Name) and Passport (Match Name, Extract Expiry date) | Setup (①) validates each field against the registry (②) | CML:&nbsp;8&nbsp;checks<br>PAN&nbsp;Card:&nbsp;1&nbsp;check<br>Passport:&nbsp;2&nbsp;checks |
-| 3 | 10:10 | *Test on a KYC* → Asha Rao | A trigger (③) starts a test run (④). The reader (⑤) and judge (⑥) run, but nothing is written to the KYC, and the results (⑦) are not current | Panel with "Test run — nothing was saved to this KYC"; "Filled DP ID" shown, Asha's `dp` still empty |
+| 1 | 1 Oct 10:00 | Priya opens Settings → Document Checks → Investor KYC | Setup (①) asks the registry (②) for the document names: both lists merged, PAN Card once | Cards:&nbsp;CML,&nbsp;PAN&nbsp;Card,&nbsp;Passport,&nbsp;Board&nbsp;Resolution,&nbsp;all&nbsp;"No&nbsp;checks&nbsp;yet" |
+| 2 | 10:02 | On CML she clicks Use CML preset, then Save | The preset (①) maps entries to fields from the registry (②) and adds 8 unsaved rows. Email and Mobile have no field, so they're listed as not added | CML&nbsp;·&nbsp;8&nbsp;checks<br>"Not&nbsp;added:&nbsp;Email,&nbsp;Mobile&nbsp;—&nbsp;…" |
+| 3 | 10:05 | On PAN Card: Add a check → Compare → Full name; she edits Look for to "Name". Passport: Use Passport preset. Save each | Setup (①) fills Look for from the field label and validates each card on its own | CML&nbsp;·&nbsp;8&nbsp;checks<br>PAN&nbsp;Card&nbsp;·&nbsp;1&nbsp;check<br>Passport&nbsp;·&nbsp;2&nbsp;checks |
+| 4 | 10:10 | Try on a KYC → Asha Rao | A trigger (③) starts a trial run (④). The reader (⑤) and judge (⑥) run, nothing is written, and the results (⑦) are not current | "Trial&nbsp;run&nbsp;—&nbsp;nothing&nbsp;on&nbsp;this&nbsp;KYC&nbsp;was&nbsp;changed";&nbsp;"DP&nbsp;ID&nbsp;—&nbsp;filled&nbsp;in:&nbsp;IN303622"&nbsp;shown;&nbsp;Asha's&nbsp;DP&nbsp;ID&nbsp;still&nbsp;empty |
 
-**Phase B: first real run, with a failure**
-
-| # | When | What happens | Behind the scenes | Result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
-|---|---|---|---|---|
-| 4 | 2 Oct 14:09 | Priya clicks *Run Document Checks* on Asha's KYC | The trigger (③) creates a queued run (④) and the panel shows "Running…" | Panel:&nbsp;Running…<br>**●&nbsp;Validate&nbsp;documents** |
-| 5 | 14:10 | The AI reads CML and Passport. The PAN Card is a `.doc` | The reader (⑤) makes 2 AI calls. The PAN Card fails conversion and is recorded as an error. The judge (⑥) fills `dp` and `client`; First holder "A. Rao" vs "Asha Rao" → needs review | CML:&nbsp;?&nbsp;7&nbsp;/&nbsp;8<br>PAN&nbsp;Card:&nbsp;⚠&nbsp;error<br>Passport:&nbsp;✓&nbsp;2&nbsp;/&nbsp;2<br>**●&nbsp;Validate&nbsp;documents**&nbsp;—&nbsp;"found&nbsp;2&nbsp;problems" |
-| 6 | 14:10 | Priya gets "Document Checks finished for Asha Rao: 9 passed, 1 needs review, 1 error" | The run (④) finishes as `done_with_errors`, becomes current (⑦), and the journey is re-evaluated (⑧) | Same as row 5 |
-
-**Phase C: a mistake, then the fix**
+**Phase B: first real check, with problems**
 
 | # | When | What happens | Behind the scenes | Result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
-| 7 | 14:15 | Priya clicks Accept on First holder without typing a reason | Screens (⑧) refuse it with "Give a reason for accepting" | Same as row 5 |
-| 8 | 14:16 | She accepts with "Initial matches passport" | The result (⑦) is stamped accepted. Its assessment is re-run, and the journey (⑧) re-evaluated | CML:&nbsp;✓&nbsp;8&nbsp;/&nbsp;8<br>PAN&nbsp;Card:&nbsp;⚠&nbsp;error<br>Passport:&nbsp;✓&nbsp;2&nbsp;/&nbsp;2<br>**●&nbsp;Validate&nbsp;documents**&nbsp;—&nbsp;"found&nbsp;1&nbsp;problem" |
-| 9 | 15:00 | Asha re-uploads her PAN as a PDF | The existing document hook invalidates the step. The results (⑦) see a new file for PAN Card | CML:&nbsp;✓&nbsp;8&nbsp;/&nbsp;8<br>PAN&nbsp;Card:&nbsp;⟳&nbsp;out&nbsp;of&nbsp;date<br>Passport:&nbsp;✓&nbsp;2&nbsp;/&nbsp;2<br>**●&nbsp;Validate&nbsp;documents** |
-| 10 | 15:05 | Priya re-runs | A new run (④) replaces the current results (⑦). The accepted First holder is passed again only if its values are unchanged (see card ⑦) | CML:&nbsp;✓&nbsp;8&nbsp;/&nbsp;8<br>PAN&nbsp;Card:&nbsp;✓&nbsp;1&nbsp;/&nbsp;1<br>Passport:&nbsp;✓&nbsp;2&nbsp;/&nbsp;2<br>✓&nbsp;Validate&nbsp;documents&nbsp;—&nbsp;"Validated&nbsp;by&nbsp;AI"<br>**●&nbsp;Run&nbsp;AML&nbsp;screening** |
+| 5 | 2 Oct 14:09 | Priya clicks Check documents on Asha's KYC | A trigger (③) queues a run (④). After each document, the run updates its progress and the tab refreshes | Tab:&nbsp;"Checking&nbsp;CML&nbsp;(1&nbsp;of&nbsp;3)…"<br>**●&nbsp;Validate&nbsp;documents** |
+| 6 | 14:10 | The PAN Card is a `.doc`. The CML says the holder is "A. RAO" | The reader (⑤) makes 2 AI calls (PAN Card fails conversion first). The judge (⑥) fills DP ID, Client ID, IFSC and Bank account; holder name → `mismatch`. The run (④) becomes current (⑦), and the journey is re-evaluated (⑧) | CML&nbsp;(1)<br>PAN&nbsp;Card&nbsp;(1)<br>Passport&nbsp;✓<br>Toast&nbsp;"Documents&nbsp;checked&nbsp;for&nbsp;Asha&nbsp;Rao&nbsp;—&nbsp;2&nbsp;need&nbsp;attention"<br>**●&nbsp;Validate&nbsp;documents**&nbsp;—&nbsp;"2&nbsp;document&nbsp;items&nbsp;need&nbsp;attention" |
 
-**Phase D: undo by a re-upload**
+**Phase C: resolving, a mistake, and undo**
 
 | # | When | What happens | Behind the scenes | Result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
-| 11 | 3 Oct 09:00 | Asha replaces her CML | The document hook resets the step. The results (⑦) mark CML out of date, and `all_docs_valid` is re-assessed to false | CML:&nbsp;⟳&nbsp;out&nbsp;of&nbsp;date<br>PAN&nbsp;Card:&nbsp;✓&nbsp;1&nbsp;/&nbsp;1<br>Passport:&nbsp;✓&nbsp;2&nbsp;/&nbsp;2<br>**●&nbsp;Validate&nbsp;documents** |
-| 12 | 09:30 | Priya re-runs; everything passes | Same path as row 10 | Same as row 10 |
+| 7 | 14:12 | Priya clicks Mark as OK on the holder name and saves with no reason | Screens (⑧) refuse it: "Say why this is OK" | Same as row 6 |
+| 8 | 14:13 | She types "Initial matches passport" and saves, then realises she hasn't opened the passport yet and clicks Undo | The result (⑦) is stamped, then the stamp is cleared. Each time the record is re-assessed | Same as row 6 |
+| 9 | 14:15 | She opens the Passport group (✓ name matches "ASHA RAO") and marks the CML holder name OK with the same reason | The result (⑦) is stamped `marked_ok`, and the journey (⑧) is re-evaluated | CML&nbsp;✓<br>PAN&nbsp;Card&nbsp;(1)<br>Passport&nbsp;✓<br>**●&nbsp;Validate&nbsp;documents**&nbsp;—&nbsp;"1&nbsp;document&nbsp;item&nbsp;needs&nbsp;attention" |
+| 10 | 15:00 | Asha re-uploads her PAN as a PDF | The existing document hook invalidates the task. The results (⑦) see a new file for PAN Card | CML&nbsp;✓<br>PAN&nbsp;Card&nbsp;⟳&nbsp;changed<br>Passport&nbsp;✓<br>**●&nbsp;Validate&nbsp;documents** |
+| 11 | 15:05 | Priya clicks Check again | A new run (④) replaces the current results (⑦). The holder name still differs with the same two values, so the mark-OK carries over (card ⑦) | CML&nbsp;✓<br>PAN&nbsp;Card&nbsp;✓<br>Passport&nbsp;✓<br>✓&nbsp;Validate&nbsp;documents&nbsp;—&nbsp;"Validated&nbsp;by&nbsp;AI"<br>**●&nbsp;Run&nbsp;AML&nbsp;screening** |
+
+**Phase D: undo by a replaced document**
+
+| # | When | What happens | Behind the scenes | Result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+|---|---|---|---|---|
+| 12 | 3 Oct 09:00 | Asha replaces her CML with a clearer scan | The document hook moves the journey back. The results (⑦) mark CML changed, and `all_docs_valid` is re-assessed to false | CML&nbsp;⟳&nbsp;changed<br>PAN&nbsp;Card&nbsp;✓<br>Passport&nbsp;✓<br>**●&nbsp;Validate&nbsp;documents** |
+| 13 | 09:30 | Priya clicks Check again. The new scan reads "ASHA RAO" | The judge (⑥) finds the name matches (word order and case ignored); nothing needs attention | Same as row 11 |
 
 **Phase E: stall**
 
 | # | When | What happens | Behind the scenes | Result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
-| 13 | 10:02 | Priya bulk-runs 3 KYCs while the AI provider is down | Each run (④) fails on the first reader (⑤) call. No field is written, and the previous runs stay current (⑦) | Asha's&nbsp;panel&nbsp;header:&nbsp;"Last&nbsp;attempt&nbsp;failed&nbsp;3&nbsp;Oct&nbsp;10:02:&nbsp;the&nbsp;AI&nbsp;service&nbsp;is&nbsp;unavailable"<br>Results&nbsp;below:&nbsp;same&nbsp;as&nbsp;row&nbsp;12 |
+| 14 | 10:02 | Priya bulk-checks 3 KYCs while the AI provider is down | Each run (④) fails on the first reader (⑤) call. Nothing is written, and the previous runs stay current (⑦) | Asha's&nbsp;tab:&nbsp;"Couldn't&nbsp;check&nbsp;documents&nbsp;on&nbsp;3&nbsp;Oct,&nbsp;10:02&nbsp;—&nbsp;the&nbsp;AI&nbsp;service&nbsp;is&nbsp;unavailable.&nbsp;Your&nbsp;earlier&nbsp;results&nbsp;are&nbsp;below."<br>Results:&nbsp;same&nbsp;as&nbsp;row&nbsp;13 |
 
-**The key moment (row 5):**
+**The key moment (row 6):**
 
 ```
-┌ Document Checks   Last run 2 Oct 2026 14:10 · 9 passed · 1 needs review · 1 error ┐
-│ CML                                                        ? 7 / 8              │
-│   ✓ DP ID          IN303622                     Filled DP ID                    │
-│   ? First holder   Document A. Rao · KYC Asha Rao          [Accept] [Fix]       │
-│ PAN Card                                                   ⚠ error              │
-│   Can't read this file type — upload a PDF or image        [Retry]              │
-│ Passport                                                   ✓ 2 / 2              │
-└──────────────────────────────────────────────────────────────────────────────────┘
+┌ Document checks (2) ─────────────────────────────────────────────────────────────┐
+│ Checked 2 Oct 2026, 14:10 — 2 need attention                   [Check documents]  │
+│ ▾ CML · ⚠ 1 needs attention                                                       │
+│   ✓ DP ID — filled in: IN303622                                                   │
+│   ⚠ Full name — doesn't match                                                     │
+│       Document: A. RAO · KYC: Asha Rao        [Use document value] [Mark as OK]   │
+│ ▾ PAN Card · ⚠ 1 needs attention                                                  │
+│   ⚠ Couldn't read this file — upload it as a PDF or image       [Check again]     │
+│ ▸ Passport · ✓ All OK                                                             │
+└───────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 **What to notice**
 
-- The AI never saw "Asha Rao" or her PAN. It read values, and the judge (⑥) compared them. That
-  is why the panel can show both sides.
-- The unreadable PAN Card became an *error row*, not a missing answer. The run said "1 error",
-  not "completed".
-- A re-upload makes results out of date without anyone deleting anything (rows 9 and 11), and a
-  new run replaces them wholesale.
-- A failed run (row 13) never replaces good results and never writes a field.
-- Accept is a stamp on a result, so it is visible, attributed, and re-assessed.
+- The AI never saw "Asha Rao". It read "A. RAO", and the judge (⑥) compared it. That is why the row
+  can show both sides and offer *Use document value*.
+- There are only two outcomes. The `.doc` and the name difference are both "needs attention", each
+  with its own sentence and its own action.
+- A mistake is cheap: Undo (row 8) puts the item straight back.
+- A replaced document is flagged without anyone deleting anything (rows 10 and 12), and the next
+  check replaces the results wholesale.
+- A run that couldn't run (row 14) never replaces good results and never writes a field.
 
 ### Key ideas
 
 | # | Idea | In one line | Card |
 |---|---|---|---|
 | 1 | Read, don't ask | The AI returns values keyed by check id; it never sees record values or picks field names | [⑤](#⑤-reader) |
-| 2 | CapHive judges | Fill / compare / rule is Ruby, with two comparison modes only | [⑥](#⑥-judge) |
-| 3 | Allowlisted fields | Every field read or written goes through the record type's registry entry | [②](#②-registry) |
-| 4 | Runs replace, results remember | The latest finished non-test run is *current*; each result holds the document file id it read, so staleness is derived | [⑦](#⑦-results) |
-| 5 | Errors are rows | Missing, unreadable and unparseable documents produce result rows; a run that can't start is `failed` and changes nothing | [④](#④-run) |
-| 6 | One settled rule | "All documents valid" = current results exist, all passed or accepted, none stale. The KYC column and the journey step both use it | [⑦](#⑦-results) |
+| 2 | Two outcomes, one reason code | The judge returns `ok` or an attention reason; screens map each code to one sentence and one action | [⑥](#⑥-judge) |
+| 3 | The record's own list decides | Checks hang off document names. A record sees only the documents on *its* list, so there are no variants or sets | [②](#②-registry) |
+| 4 | Runs replace, results remember | The latest completed non-trial run is current; each result holds the file id it read, so "changed" is derived | [⑦](#⑦-results) |
+| 5 | Resolve where you look | Use document value and Mark as OK (with Undo) are stamps on the result, carried to the next run when the values are unchanged | [⑦](#⑦-results) |
+| 6 | One settled rule | "All documents valid" = current results exist and nothing needs attention. The KYC column and the journey task both use it | [⑦](#⑦-results) |
+| 7 | Leave nothing behind | Every Doc Questions screen, class, route, table and dead column is listed with how and when it goes | [Retirement](#retirement-what-will-not-exist-afterwards) |
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why not keep asking the AI "Is the PAN X?" like Doc Questions did? | That needs record values in the prompt (the `$var` mechanism and its `send` hole), and the answer is a bare yes/no that can't be explained. Reading the value and comparing it ourselves is safer, deterministic, and shows both sides. |
-| Does anything block users? | No. Results feed the journey's acknowledge step, which a person can still mark reviewed. |
-| Why is Extract "kept existing value" a pass? | Extract's job is to fill blanks. Comparing against an existing value is what Match is for, and an admin who wants both adds both. |
+| Why not keep asking the AI "Is the PAN X?" like Doc Questions did? | That needs record values in the prompt (the `$var` mechanism and its `send` hole), and the answer is a bare yes/no that can't be explained or fixed in one click. |
+| Why no "fail" vs "review"? | Users act the same way on both: look, then fix or accept. Two outcomes are easier to learn, and the reason sentence carries the detail. |
+| Why no per-KYC-type sets? | The type-specific document lists already say which documents a KYC has. A check on "Passport" only ever appears where Passport is collected. |
 | Is this KYC-only? | The engine is record-type neutral. Only the registry entry (②) is KYC-specific, and it's the only one in phase 1. |
 
 ---
@@ -198,21 +205,21 @@ flowchart LR
     classDef new fill:#d4edda,stroke:#2e7d32,color:#000
     classDef mod fill:#fff3cd,stroke:#b8860b,color:#000
     classDef reuse fill:#eceff1,stroke:#90a4ae,color:#000
-    S["① DocCheckSet + DocCheck<br/>DocCheckSetsController<br/>DocChecks::Presets<br/><i>stores what to read</i>"]:::new
-    R["② DocChecks::Registry<br/>DocChecks::Kyc<br/><i>docs, fields, variants</i>"]:::new
+    S["① DocCheck<br/>DocChecksController<br/>DocChecks::CardForm, Presets<br/><i>a card per document</i>"]:::new
+    R["② DocChecks::Registry<br/>DocChecks::Kyc<br/><i>docs, fields, writes</i>"]:::new
     T["③ DocCheckRunsController<br/>InvestorKycsBulkActionJob<br/><i>starts runs</i>"]:::mod
-    N["④ DocChecks::StartRun<br/>DocChecks::RunJob<br/>DocCheckRun<br/><i>one attempt per record</i>"]:::new
+    N["④ DocChecks::StartRun<br/>DocChecks::RunJob<br/>DocCheckRun<br/><i>one check per record</i>"]:::new
     A["⑤ DocChecks::DocumentReader<br/>&lt; DocLlmBase<br/><i>one AI call per doc</i>"]:::new
-    J["⑥ DocChecks::Judge<br/><i>fill, compare, rule</i>"]:::new
-    D["⑦ DocCheckResult<br/>DocChecks::Assessment<br/><i>current, stale, settled</i>"]:::new
-    U["⑧ doc_check_runs/_panel<br/>DocCheckResultsController<br/>ValidateDocuments check<br/><i>shows and acts</i>"]:::mod
-    R -- "documents_for /<br/>fields_for" --> S
-    S -- "set_for(record)" --> N
+    J["⑥ DocChecks::Judge<br/><i>outcome + note</i>"]:::new
+    D["⑦ DocCheckResult<br/>DocChecks::Assessment<br/><i>current, changed, resolved</i>"]:::new
+    U["⑧ doc_check_runs/_panel<br/>DocCheckResultsController<br/>ValidateDocuments check<br/><i>shows and resolves</i>"]:::mod
+    R -- "document_names /<br/>fields_for" --> S
+    S -- "for_record" --> N
     T -- "StartRun.call" --> N
     N -- "document,<br/>checks" --> A
-    A -- "{check_id:<br/>value}" --> J
+    A -- "{c_id:<br/>value}" --> J
     R -- "read / write<br/>field" --> J
-    J -- "result attrs" --> D
+    J -- "outcome,<br/>note" --> D
     D -- "Assessment" --> U
     click S "#①-setup" "Open card ①"
     click R "#②-registry" "Open card ②"
@@ -225,21 +232,22 @@ flowchart LR
 ```
 
 Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged. Reused, unchanged
-parts (`DocLlmBase`, `DocUtils.convert_file_to_image`, `InvestorKycConcern#missing_required_document_names`
-matching, the journey hooks) are named in the cards.
+parts (`DocLlmBase`, `DocUtils.convert_file_to_image`, the required-document name matching, and the
+journey hooks) are named in the cards. What is *removed* is in
+[Retirement](#retirement-what-will-not-exist-afterwards).
 
 ### What each box does
 
 | # | Box | Real parts | What it does | When it runs | What it decides | Details |
 |---|---|---|---|---|---|---|
-| ① | Setup | `DocCheckSet`, `DocCheck`, `DocCheckSetsController`, `DocChecks::Presets` (`config/doc_check_presets.yml`) | CRUD for sets and checks, preset apply, test-run entry | Request | Valid document, kind, field; set for a record's variant | [card ① →](#①-setup) |
-| ② | Registry | `DocChecks::Registry`, `DocChecks::Kyc` | Per record type: variants, document names, allowed fields, field read/write, assessment hook | Called by ①, ⑥, ⑦ | Which fields exist and may be written | [card ② →](#②-registry) |
-| ③ | Triggers | `DocCheckRunsController#create`, `InvestorKycsBulkActionJob#validate_docs_with_ai`, `DocCheckSetsController#test_run`, `DocCheckResultsController#rerun` | Starts a run for a record | Request / bulk job | Authorisation; verified KYC refused in bulk | [card ③ →](#③-triggers) |
-| ④ | Run | `DocChecks::StartRun`, `DocChecks::RunJob`, `DocCheckRun` | Guards one active run, finds documents, loops per document, writes once, finishes | Job (`:default` queue) | Run status and counts | [card ④ →](#④-run) |
-| ⑤ | Reader | `DocChecks::DocumentReader < DocLlmBase` | Image + labels/hints → JSON keyed by check id | Inside ④, once per document | Nothing: it only reads | [card ⑤ →](#⑤-reader) |
-| ⑥ | Judge | `DocChecks::Judge` | Turns a read value into a result: fill, compare, rule | Inside ④ | pass / fail / review; whether to write | [card ⑥ →](#⑥-judge) |
-| ⑦ | Results | `DocCheckResult`, `DocChecks::Assessment` | Stores results; derives current, stale, settled, counts | Read on every display; assessment after run/accept | `all_docs_valid`, problem count | [card ⑦ →](#⑦-results) |
-| ⑧ | Screens and journey | `doc_check_runs/_panel`, `DocCheckResultsController` (index, accept, rerun), `WorkflowChecks::InvestorKyc::ValidateDocuments` | Panel on the KYC, entity list, Accept, journey step | Request / Turbo broadcast / evaluator | Journey result for Validate documents | [card ⑧ →](#⑧-screens-and-journey) |
+| ① | Setup | `DocCheck`, `DocChecksController`, `DocChecks::CardForm`, `DocChecks::Presets` (`config/doc_check_presets.yml`) | The cards page, per-card save, presets, the trial entry point | Request | Valid rows; what a preset can add | [card ① →](#①-setup) |
+| ② | Registry | `DocChecks::Registry`, `DocChecks::Kyc` | Per record type: all document names, a record's own names, allowed fields, field read/write, details-changed hook, assessment hook | Called by ①, ④, ⑥, ⑦ | Which fields exist and may be written; which documents a record has | [card ② →](#②-registry) |
+| ③ | Triggers | `DocCheckRunsController#create`, `InvestorKycsBulkActionJob#validate_docs_with_ai`, `DocChecksController#try`, `DocCheckResultsController#check_again` | Starts a run for a record | Request / bulk job | Authorisation; verified KYC refused in bulk | [card ③ →](#③-triggers) |
+| ④ | Run | `DocChecks::StartRun`, `DocChecks::RunJob`, `DocCheckRun` | Guards one active run, reads each document, records progress, writes once, finishes | Job (`:default`) | Run status; progress | [card ④ →](#④-run) |
+| ⑤ | Reader | `DocChecks::DocumentReader < DocLlmBase` | Image + look-fors/tips → JSON keyed by check id | Inside ④, once per document; also called by `AiDataManager#validate_document` | Nothing: it only reads | [card ⑤ →](#⑤-reader) |
+| ⑥ | Judge | `DocChecks::Judge` | Turns a read value into an outcome code, a note and an optional write | Inside ④ | `ok` or the attention reason | [card ⑥ →](#⑥-judge) |
+| ⑦ | Results | `DocCheckResult`, `DocChecks::Assessment` | Stores results and resolutions; derives current, changed, attention count, settled | On every display; after run/resolve | `all_docs_valid`, attention count | [card ⑦ →](#⑦-results) |
+| ⑧ | Screens and journey | `doc_check_runs/_panel`, `DocCheckResultsController` (index, use_document_value, mark_ok, undo, check_again), `WorkflowChecks::InvestorKyc::ValidateDocuments` | KYC tab, attention list, resolve actions, journey task | Request / Turbo broadcast / evaluator | Journey result for Validate documents | [card ⑧ →](#⑧-screens-and-journey) |
 
 ### One run, end to end
 
@@ -253,25 +261,25 @@ sequenceDiagram
     participant Rd as DocumentReader
     participant Jd as Judge
     participant DB as doc_check_runs/results
-    participant Jr as Journey (journey_progress!)
+    participant Jr as Journey
     Priya->>Ctl: POST /doc_check_runs (InvestorKyc 812)
     Ctl->>Start: call(record, user, trigger: manual)
     Start->>DB: lock KYC row, no active run → insert run(queued)
     Start->>Job: perform_later(run.id)
-    Ctl-->>Priya: turbo_stream panel "Running…"
-    Job->>DB: run.running!
-    Job->>Reg: set_for(kyc), documents matching each document_name
-    loop each document in the set
+    Ctl-->>Priya: turbo_stream tab "Checking documents…"
+    Job->>DB: run.running!, documents_total = 3
+    Job->>Reg: document_names_for(kyc), checks per name
+    loop each document name on the KYC's list
         Job->>Rd: call(document, checks)
         Rd-->>Job: {"c41": {value, found, explanation}, …}
-        Job->>Jd: judge(check, read, record)
-        Jd->>Reg: read_field / pending write
-        Jd-->>Job: result attrs
+        Job->>Jd: call(check, reading, kyc)
+        Jd-->>Job: outcome, note, write?
+        Job->>DB: progress (n of 3) + broadcast header
     end
-    Job->>DB: transaction: insert results, record.save (writes), mark run current, finish
-    Job->>Reg: on_assessed(kyc, Assessment.settled?) → all_docs_valid
+    Job->>DB: transaction: results, field writes + save, current flip, finish
+    Job->>Reg: details_changed if writes, then on_assessed
     Job->>Jr: journey_progress!
-    Job-->>Priya: notification + broadcast panel
+    Job-->>Priya: toast + broadcast tab
 ```
 
 ### Lifecycles
@@ -282,39 +290,33 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> queued: StartRun
     queued --> running: RunJob starts
-    running --> done: all results<br/>settled or not
-    running --> done_with_errors: any error row
-    running --> failed: can't start /<br/>provider down
-    queued --> failed: record gone
+    running --> done: all documents<br/>read
+    running --> could_not_run: provider error /<br/>no checks
+    queued --> could_not_run: expired or<br/>record gone
     done --> [*]
-    done_with_errors --> [*]
-    failed --> [*]
+    could_not_run --> [*]
 ```
 
-`done` and `done_with_errors` runs become **current** (stored flag `current`), unless they're test
-runs. A `failed` run is never current.
+A `done` non-trial run becomes **current** (stored flag `current`). A `could_not_run` run is never
+current. The tab shows it as the "Couldn't check documents…" banner when it's newer than the current
+run.
 
-**Result display state** (derived from the stored `status` plus stamps):
+**Result, as the user sees it** (derived from the stored `outcome` and resolution stamps):
 
 ```mermaid
 stateDiagram-v2
-    [*] --> pass: judge
-    [*] --> fail: judge
-    [*] --> review: judge
-    [*] --> error: reader/convert
-    [*] --> skipped: not uploaded
-    fail --> accepted: Accept + reason
-    review --> accepted: Accept + reason
-    pass --> out_of_date: file changed
-    fail --> out_of_date: file changed
-    review --> out_of_date: file changed
-    error --> out_of_date: file changed
-    skipped --> out_of_date: doc uploaded
-    accepted --> out_of_date: file changed
+    [*] --> OK: outcome ok
+    [*] --> NeedsAttention: outcome is a<br/>reason code
+    NeedsAttention --> OK: Use document<br/>value / Mark OK
+    OK --> NeedsAttention: Undo<br/>(marked OK only)
+    OK --> Changed: file replaced
+    NeedsAttention --> Changed: file replaced<br/>or uploaded
+    Changed --> [*]: next run<br/>replaces it
 ```
 
-`status` is stored (pass / fail / review / error / skipped). `accepted` is stored as stamps
-(`accepted_by_id`, `accepted_at`, `accept_reason`). `out_of_date` is derived, never stored.
+Stored: `outcome` (`ok` or one reason code) and `resolution` (`nil`, `marked_ok` or
+`used_document_value`, with who, when and why). Derived: `ok?` = `outcome == ok` or resolution
+present; `changed?` = the document's current file differs from the one read.
 
 ### What users see
 
@@ -322,79 +324,89 @@ stateDiagram-v2
 
 | Where in CapHive | Today | After this change | Who sees it |
 |---|---|---|---|
-| Settings → Doc Questions | Free-text questions, Excel import | Removed | — |
-| Settings → Document Checks | — | Sets per record type/variant; checks with dropdowns; presets; Test on a KYC | Fund users with "Doc LLM validation" |
-| KYC → Docs Validation tab | Raw JSON table | **Document Checks** tab: grouped results panel, Accept/Fix/Retry, "Earlier AI answers" | Fund users who can view the KYC |
-| KYC → Validate Document Data button | Starts `DocLlmValidationJob` | "Run Document Checks" starts a run (same button id) | Same as today |
-| KYC list → bulk Validate Document Data | Runs old job per KYC | "Run Document Checks" per KYC | Same as today |
-| Document Check results | — | Entity-wide list with filters and Re-run selected | Fund users with "Doc LLM validation" |
-| KYC journey → Validate documents | Reads `doc_question_answers` | Reads Document Checks assessment | Fund users |
+| Settings → Doc Questions (list, new, edit, show, Excel export) | Free-text questions | **Gone** (route returns 404) | — |
+| Import uploads → "DocQuestion" import type and sample file | Excel import of questions | **Gone** from the type list | — |
+| Settings → Document Checks → Investor KYC | — | A card per KYC document; rows with dropdowns; presets; Try on a KYC | Fund users with "Doc LLM validation" |
+| KYC → Docs Validation tab | Raw JSON table | **Document checks (n)** tab: progress, OK / Needs attention per document, Use document value / Mark as OK / Undo / Check again, Earlier AI answers | Fund users who can view the KYC |
+| KYC → Validate Document Data button | Starts `DocLlmValidationJob` | **Check documents** (same button id) | Same as today |
+| KYC list → bulk Validate Document Data | Runs the old job per KYC | **Check documents** per KYC | Same as today |
+| KYC menu → Documents needing attention | — | Entity-wide attention list with filters and Check again | Fund users with "Doc LLM validation" |
+| KYC journey → Validate documents | Reads `doc_question_answers` | Reads the Document Checks assessment | Fund users |
+| Document page → "QnA" tab | Shown only when `documents.qna` is set (never, in prod) | **Gone** | — |
 
-**Main journey: reviewing a KYC's results**
+**Main journey: resolving a KYC's items**
 
 ```
-┌ KYC: Asha Rao ── [Details] [Documents] [Document Checks ①] ─────────────────────┐
-│ Document Checks  Last run 2 Oct 14:10 · 9 passed · 1 review · 1 error  [Run ②]  │
-│ CML                                                        ? 7 / 8   ③         │
-│   ? First holder   Document A. Rao · KYC Asha Rao     [Accept ④] [Fix ⑤]       │
-│ PAN Card                                                   ⚠ error             │
-│   Can't read this file type — upload a PDF or image   [Retry ⑥]               │
-│ ▸ Earlier AI answers ⑦                                                          │
-└─────────────────────────────────────────────────────────────────────────────────┘
+┌ KYC: Asha Rao ── [Details] [Documents] [Document checks (2) ①] ──────────────────┐
+│ Checked 2 Oct 2026, 14:10 — 2 need attention            [Check documents ②]      │
+│ ▾ CML · ⚠ 1 needs attention ③                                                    │
+│   ⚠ Full name — doesn't match                                                    │
+│       Document: A. RAO · KYC: Asha Rao   [Use document value ④] [Mark as OK ⑤]   │
+│ ▾ PAN Card · ⚠ 1 needs attention                                                 │
+│   ⚠ Couldn't read this file — upload it as a PDF or image    [Check again ⑥]     │
+│ ▸ Earlier AI answers ⑦                                                            │
+└──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 | Step | The user… | They see |
 |---|---|---|
-| ① | opens the Document Checks tab | The panel for the current run, or "Not checked yet" with the Run button |
-| ② | clicks Run Document Checks | Header "Running… started 14:09", button disabled; panel replaced in place when done |
-| ③ | scans group headers | ✓ N / M, ✗, ?, ⚠, —, ⟳ per document |
-| ④ | clicks Accept, types a reason, confirms | Row shows "Accepted by Priya Shah — 'Initial matches passport'"; header counts update |
-| ⑤ | clicks Fix | The KYC edit form |
-| ⑥ | clicks Retry | Same as ②: a full new run |
+| ① | opens the Document checks tab | Attention documents open, OK documents collapsed; or "These documents haven't been checked yet." with Check documents |
+| ② | clicks Check documents | "Checking CML (1 of 3)…", then the next document, then the new results in place; earlier results dimmed meanwhile |
+| ③ | scans the group headers | "✓ All OK", "⚠ n needs attention" or "⟳ Document changed after this check" |
+| ④ | clicks Use document value and confirms "Change Full name from Asha Rao to A. RAO?" | Row "✓ Full name — updated from the document by Priya Shah"; count drops |
+| ⑤ | clicks Mark as OK, types a reason, saves | Row "✓ Marked OK by Priya Shah: Initial matches passport" with Undo; count drops |
+| ⑥ | clicks Check again | Same as ② |
 | ⑦ | expands Earlier AI answers | The legacy `doc_question_answers` table, read-only |
 
-Settings and entity-list journeys are in [card ①](#①-setup) and [card ⑧](#⑧-screens-and-journey).
+The setup journey is in [card ①](#①-setup) and the attention list in [card ⑧](#⑧-screens-and-journey).
 
 ### Design decisions
 
 1. **The AI reads and CapHive compares.** Alternative considered: keep yes/no questions with
-   interpolated values. Rejected: it needs record values in the prompt (and an evaluator for them),
-   and it can't show why something failed.
-2. **Reply keyed by check id (`c<id>`).** Alternative considered: key by label or "the key from the
-   response hint". Rejected: the old code parameterised the AI's own key into a field name, which
-   is how values went missing or landed in the wrong place.
-3. **Allowlist registry per record type.** Alternative considered: any column or custom field.
-   Rejected: `verified`, `entity_id` and other control columns must never be AI-writable.
-4. **Runs replace results; staleness is derived from the Shrine file id.** Alternative
-   considered: update results in place per document. Rejected: that's the old "never cleared"
-   bug. A stored `stale` flag was also rejected, because it would need an upload hook just to
-   flip it.
-5. **Two comparison modes, chosen by the field.** The registry marks fields exact (identifiers)
-   or loose (names, addresses). Alternative considered: a similarity score with a threshold.
-   Rejected: hard to explain and tune. Loose mismatches go to review, so a person decides.
-6. **One set per record type and variant, with "All" as fallback.** Alternative considered:
-   arbitrary conditions (fund, form type). Rejected for phase 1. KYC variants cover today's
-   split, and the conversion needs only "All".
-7. **Reuse `DocLlmBase`** for provider/model selection (`DOCUMENT_VALIDATION_PROVIDER` /
-   `_MODEL`), conversion and cleanup. Alternative considered: a new LLM client. Rejected as not
-   DRY.
-8. **Reuse the existing permission `enable_doc_llm_validation`.** Alternative considered: a new
-   flag. Rejected: the same customers, and one less switch.
-9. **Bulk keeps the existing bulk job and its pacing.** It calls `DocChecks::RunJob.perform_now`
-   per KYC, as the old code did. Alternative considered: fan out jobs with delays. Rejected: it
-   changes rate-limit behaviour for no gain.
-10. **Writes happen once per run, at the end, in one transaction with the results.** Alternative
+   interpolated values. Rejected: it needs record values in the prompt, it can't show why something
+   failed, and it can't offer *Use document value*.
+2. **Reply keyed by check id (`c<id>`).** Alternative considered: key by label. Rejected: the old code
+   parameterised the AI's own key into a field name, which is how values went missing.
+3. **No sets or variants: checks hang off (entity, record type, document name).** A record's own
+   document list decides which apply. Alternative considered: Individual / Non-individual / All sets
+   with a fallback rule. Rejected: an extra concept, an extra screen and a "which set wins" rule, for
+   a need (different checks on the same document per KYC type) nobody has today.
+4. **Two user-facing outcomes with one reason code.** Alternative considered: pass / fail / review /
+   error / skipped. Rejected: users act the same on all non-OK states. The reason code keeps the
+   precision for filters and messages.
+5. **Resolutions are stamps on the result, not new statuses.** Undo is just clearing the stamp, and
+   carry-over copies it when the values are unchanged. Alternative considered: a separate
+   overrides table. Rejected: more joins for no gain.
+6. **Allowlist registry per record type.** Alternative considered: any column or custom field.
+   Rejected: `verified`, `entity_id` and other control columns must never be AI- or click-writable.
+7. **Runs replace results; "changed" is derived from the Shrine file id.** Alternative considered:
+   update results in place, or store a stale flag. Rejected: that's the old "never cleared" bug, and a
+   flag would need an upload hook just to flip it.
+8. **Per-card save.** Alternative considered: one big form for the page. Rejected: one bad row would
+   block every card. Small saves keep errors local and give a clear "Unsaved changes" state.
+9. **Presets add only what they can map.** Alternative considered: add every preset entry, leaving a
+   blank field. Rejected: it creates an error state the user didn't cause.
+10. **Reuse `DocLlmBase`, the `enable_doc_llm_validation` permission and the bulk job's pacing.**
+    Alternative considered: new client, new flag, fan-out with delays. Rejected as not DRY and as
+    changing rate behaviour.
+11. **Field writes from a run or from Use document value go through the KYC's details-changed hook.**
+    So the journey's "KYC details changed after review" behaves exactly as for a manual edit.
+    Alternative considered: silent `save`. Rejected: it would bypass the review reset.
+12. **Writes happen once per run, at the end, in one transaction with the results.** Alternative
     considered: write per document. Rejected: a crash midway would leave fields written with no
     results to explain them.
+13. **Retire in two deploys: build, convert, then remove.** Alternative considered: one deploy that
+    adds and removes together. Rejected: Support must run and review the conversion against
+    production `doc_questions` before the screens and the table go.
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why a `current` flag instead of "latest run" queries? | The entity-wide list needs "current results across all records" in one indexed query. Without a stored flag that's a groupwise-max over runs. |
-| Why not store `out_of_date`? | It changes when a document changes, not when we run. Deriving it from `document_file_id` vs the document's current file id costs one small query per panel and can't drift. |
-| Why does a failed run not become current? | It has no trustworthy results. Showing nothing would hide the last good state. |
-| Why one transaction for writes and results? | So a reader never sees a field the AI filled without the result that explains it. |
+| Why a `current` flag instead of "latest run" queries? | The attention list needs "current results across all records" in one indexed query. Without a stored flag that's a groupwise-max over runs. |
+| Why not store "changed"? | It changes when a document changes, not when we run. Deriving it from `document_file_id` vs the document's current file id is one small query per tab and can't drift. |
+| Why does a run that couldn't run not become current? | It has no trustworthy results. Showing nothing would hide the last good state. |
+| What if two KYC types need different checks on the same document later? | Add an optional "only for" (individual / non-individual) column on `doc_checks`. The model allows it without a redesign. |
 
 ---
 
@@ -404,153 +416,163 @@ Settings and entity-list journeys are in [card ①](#①-setup) and [card ⑧](#
 
 ### ① Setup
 
-A check set belongs to an entity, a record type and a variant, and holds ordered checks grouped by
-document name. Presets are app-level YAML applied into a set.
+A check is one row: entity, record type, document name, action, field or question, tip and options.
+The page shows one card per document name from the registry. Presets are app-level YAML.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| `doc_check_sets`, `doc_checks`, `config/doc_check_presets.yml` | Registry document names and fields (②) | `DocCheckSet.set_for(record)` for the run (④) |
+| `doc_checks`, `config/doc_check_presets.yml`, `DocChecks::CardForm` | `registry.document_names(entity)`, `registry.fields_for(entity)` (②) | `DocCheck.for_record(record)` for the run (④) |
 
-**Set resolution**
+**Card save** (`DocChecks::CardForm`): the card's rows are posted together. Rows with an id are
+updated, rows without one are created, and saved rows missing from the post are deleted, all in one
+transaction for that card only. Validation runs per row, and row errors are rendered on the row. The
+card isn't saved if any row is invalid.
+
+**Row validation** (messages in the [proposal](proposal.md#validation-rules)):
+
+| Rule | Error on the row |
+|---|---|
+| Fill in / Compare need a field in `fields_for` | "Pick a KYC field" |
+| A field at most once per card | "Already used on this card" |
+| `look_for` present, ≤ 100 | "Say what to look for" |
+| `tip` ≤ 255 | "Keep the tip under 255 characters" |
+| Saved check whose field disappeared | Not a save error. The page banner and the row say "This field no longer exists — pick another" (E16) |
+
+**Preset apply** (`POST /doc_checks/preset`, `document_name`, `preset`):
+`DocChecks::Presets.rows_for(entity, document_name, key)` returns `{rows:, not_added:}`. For each YAML
+entry, it takes the first field candidate present in `fields_for` and not already on the card. Entries
+with no available field go into `not_added`. The response replaces the card's form (unsaved rows added,
+with "Unsaved changes") and shows the not-added note. The preset offered is chosen by
+`Presets.key_for(document_name)`, a case-insensitive "contains" on `cml`, `pan`, `aadhaar`, `passport`.
 
 ```mermaid
 flowchart TD
-    A["record"] --> B["registry.variant_for(record)<br/>e.g. individual"]
-    B --> C{"set for<br/>(entity, type, variant)?"}
-    C -- "yes" --> D["use it"]
-    C -- "no" --> E{"set for<br/>(entity, type, all)?"}
-    E -- "yes" --> D
-    E -- "no" --> F["no set → run failed<br/>'No checks set up'"]
+    A["Use CML preset"] --> B["for each preset entry"]
+    B --> C{"a candidate field<br/>in fields_for?"}
+    C -- "no" --> N["not_added"]
+    C -- "yes" --> D{"already on<br/>this card?"}
+    D -- "yes" --> S["skip"]
+    D -- "no" --> R["unsaved row"]
 ```
-
-**Validation** (model level, messages in the [proposal](proposal.md#validation-rules)):
-
-- `document_name` must be in `registry.documents_for(entity, variant)`. For "all", that's the
-  union of both lists.
-- `field_name` must be in `registry.fields_for(entity, variant)` for Extract/Match.
-- An existing check whose field has disappeared is *not* invalid on load. The edit page flags it,
-  and the judge errors it at run time (E12).
-
-**Preset apply.** `DocChecks::Presets.apply(set, document_name, key)` reads the YAML entries
-(label, hint, kind, field candidates). For each entry it picks the first candidate present in
-`fields_for`, otherwise leaves it nil, and skips labels already on that document.
 
 **Routes**
 
 | Verb and path | Action | Does | Responds with |
 |---|---|---|---|
-| GET `/doc_check_sets` | index | Sets for the entity, plus "Add set" per missing variant | HTML |
-| GET/POST `/doc_check_sets/new`, `/doc_check_sets` | new/create | Create a set (record type + variant) | redirect to edit |
-| GET/PATCH `/doc_check_sets/:id/edit`, `/doc_check_sets/:id` | edit/update | Nested checks (`accepts_nested_attributes_for :doc_checks, allow_destroy: true`) | redirect / 422 |
-| DELETE `/doc_check_sets/:id` | destroy | Deletes set and checks; runs/results keep snapshots | redirect |
-| POST `/doc_check_sets/:id/apply_preset` | apply_preset | `document_name`, `preset` | turbo_stream: document group |
-| POST `/doc_check_sets/:id/test_run` | test_run | `record_id` → `StartRun` with `test_run: true` | turbo_stream: panel placeholder |
+| GET `/doc_checks?record_type=InvestorKyc` | index | Cards page | HTML |
+| GET `/doc_checks/card?document_name=…` | card | One card's form (frame) | HTML frame |
+| PATCH `/doc_checks/card` | update_card | `document_name`, `rows[]` → `CardForm#save` | turbo_stream card / 422 card with row errors |
+| POST `/doc_checks/preset` | preset | `document_name`, `preset` | turbo_stream card with unsaved rows + not-added note |
+| POST `/doc_checks/try` | try | `record_id` → `StartRun(trial: true)` | turbo_stream: trial frame "Checking…" |
 
-**Build notes.** Use a nested form with a small Stimulus controller, `doc-check-row`, that only
-shows or hides Field / Fill / Expect by Kind. The field dropdown is server-rendered from
-`fields_for` (label → name). The KYC picker for test run reuses the existing investor KYC search
-select.
+**Build notes.** Each card is a `turbo_frame_tag` with its own form. A small Stimulus controller,
+`doc-check-row`, swaps the field/expected inputs by action, fills `look_for` from the selected field's
+label when the input is empty or still holds the previous label, greys out fields already used on the
+card, and shows "Unsaved changes". A `beforeunload` guard is active while any card is dirty. The KYC
+picker for Try reuses the existing investor KYC search select. The Settings menu entry that pointed to
+`doc_questions_path` now points to `doc_checks_path`.
 
 **Access**
 
-| Role | index/edit/apply/test | Notes |
+| Role | View/edit/preset/try | Notes |
 |---|---|---|
-| Fund user, entity has `enable_doc_llm_validation` | ✓ | `belongs_to_entity?(user, set)` |
+| Fund user, entity has `enable_doc_llm_validation` | ✓ | `belongs_to_entity?`; Try also needs registry `can_view?` on the KYC |
 | Fund user, permission off | ✗ | |
-| Investor / advisor user | ✗ | `user.entity_id != set.entity_id` |
+| Investor / advisor user | ✗ | `user.entity_id` differs |
 | Other entity | ✗ | `policy_scope` = `where(entity_id: user.entity_id)` |
 
-**Worked examples:** H1, H10, E11, E12, X4, X10
+**Worked examples:** H1, H2, E1, E2, E3, E4, E5, E16, X4
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why YAML presets, not DB rows? | Presets are product content shared by all entities and change with releases. A DB copy per entity would drift. |
-| What if two documents in the set both have a "Name" check? | Labels are unique per document, not per set, and the reply is keyed by check id, so there's no clash. |
-| Can an admin set checks for a document not on the list? | No. The list is the single source. Add the name to Settings → KYC documents first. |
-| What does deleting a set do to history? | Results keep snapshots (`document_name`, `check_label`, `kind`), so past runs still render. |
+| Why YAML presets, not DB rows? | Presets are product content shared by all entities and change with releases. Copies per entity would drift. |
+| Why can't a card have the same field twice? | Two Fill-ins would race and two Compares are redundant. One field per card also makes the reply and the result unambiguous to read. |
+| Can an admin add a document that isn't on the lists? | No. The lists are the single source; add the name in Settings → KYC documents. |
+| What happens to results when a check is deleted? | Results keep snapshots (`document_name`, `look_for`, `action`), so past runs still render. |
 
 ### ② Registry
 
-A plain Ruby lookup: one entry per record type, describing what Document Checks may touch on it.
-It has no table.
+A plain Ruby lookup: one entry per record type, describing what Document Checks may touch. It has no
+table.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| `DocChecks::Registry` (map `"InvestorKyc" → DocChecks::Kyc`) | Entity settings (doc lists), `FormCustomField` for the KYC's form | variants, documents, fields, `read`/`write`, `on_assessed` |
+| `DocChecks::Registry` (map `"InvestorKyc" → DocChecks::Kyc`) | Entity settings (doc lists), `FormCustomField` for the entity's KYC forms | names, fields, reads/writes, hooks |
 
 **`DocChecks::Kyc` entry**
 
 | Member | KYC behaviour |
 |---|---|
-| `variants` | `individual`, `non_individual`, `all` |
-| `variant_for(kyc)` | `kyc.individual? ? "individual" : "non_individual"` |
-| `documents_for(entity, variant)` | `individual_kyc_doc_list` / `non_individual_kyc_doc_list` split on commas, plus required File custom-field labels (as `Support#required_document_names`, extracted to share) |
-| `fields_for(entity, variant)` | Allowlisted columns: `full_name`, `PAN`, `address`, `corr_address`, `birth_date`, `expiry_date`, `bank_name`, `bank_branch`, `bank_account_number`, `bank_account_type`, `ifsc_code`, `esign_emails`, `residency`. Plus non-File, non-calculated `FormCustomField`s of the entity's KYC form types. Each field carries `label`, `storage` (column/json), `compare` (exact/loose) |
-| `compare` | loose: `full_name`, `address`, `corr_address`, and custom fields whose name contains `name` or `address`. Exact: everything else |
-| `read(kyc, field)` / `write(kyc, field, value)` | Column → attribute; custom → `json_fields[name]`. Dates parsed with `Date.parse` and errored if unparseable |
-| `record_documents(kyc)` | `kyc.documents.not_generated` |
-| `on_assessed(kyc, settled)` | Sets `all_docs_valid = settled` and saves with `save(validate: false)` (audited, so the change is traceable), only when the value changes |
-| `can_view?(user, kyc)` / `can_update?` | Delegate to `InvestorKycPolicy#show?` / `update?`, plus `user.entity_id == kyc.entity_id` (no investors) |
+| `document_names(entity)` | Union, in order, of `individual_kyc_doc_list`, `non_individual_kyc_doc_list` and the required File custom-field labels of the entity's KYC forms, de-duplicated case-insensitively (setup page) |
+| `document_names_for(kyc)` | The KYC's own list: the list for its type plus its form's required file fields. This is the existing `required_document_names`, extracted to share with `WorkflowChecks::InvestorKyc::Support` |
+| `fields_for(entity)` | Allowlisted columns: `full_name`, `PAN`, `address`, `corr_address`, `birth_date`, `expiry_date`, `bank_name`, `bank_branch`, `bank_account_number`, `bank_account_type`, `ifsc_code`, `esign_emails`, `residency`. Plus non-File, non-calculated `FormCustomField`s of the entity's KYC forms. Each is a `Field(name, label, storage :column/:json, loose?, date?)` |
+| `loose?` | `full_name`, `address`, `corr_address`, and custom fields whose name contains `name` or `address` |
+| `find_document(kyc, name)` | Newest of `kyc.documents.not_generated` whose name or owner tag matches (existing matcher) |
+| `read(kyc, field)` / `write(kyc, field, value)` | Column → attribute; custom → `json_fields[name]`. Dates parsed with `Date.parse`; failure raises `DocChecks::BadValue` |
+| `details_changed!(kyc, user:)` | Saves with `save(validate: false)` (audited, comment "Document checks"), then `kyc.journey_details_changed!(actor: user)`, the same journey hook `InvestorKycAction` runs for a details change |
+| `on_assessed(kyc, settled)` | Sets `all_docs_valid` when it changes |
+| `can_view?(user, kyc)` / `can_edit?(user, kyc)` | `InvestorKycPolicy#show?` / `update?`, plus `user.entity_id == kyc.entity_id` |
 
-**Worked examples:** H1, E12, X4, X5
+**Worked examples:** E1, E6, E7, E16, X4, X5
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why a hand-written column allowlist? | Columns like `verified`, `submission_status` and `entity_id` must never be AI-writable. An explicit list fails safe when columns are added. |
-| Why not reuse the MCP ontology YAML? | It describes queryable attributes for read tools (there is no `investor_kyc.yml`), not writable fields. Mixing the two would couple unrelated contracts. |
+| Why a hand-written column allowlist? | Columns like `verified`, `submission_status` and `entity_id` must never be writable here. An explicit list fails safe when columns are added. |
+| Why not reuse the MCP ontology YAML? | It describes queryable attributes for read tools (there's no `investor_kyc.yml`), not writable fields. |
 | How does phase 3 add Investors? | One new entry class plus a line in the registry map. No engine change. |
 
 ### ③ Triggers
 
-Every entry point calls `DocChecks::StartRun.call(record:, user:, trigger:, test_run:)`.
+Every entry point calls `DocChecks::StartRun.call(record:, user:, trigger:, trial: false)`.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| Buttons and actions that start runs | User, record, trigger | A queued `DocCheckRun` or a refusal message |
+| Buttons and actions that start runs | User, record, trigger | A queued `DocCheckRun` or a refusal |
 
 | Trigger | Where | Authorisation | Notes |
 |---|---|---|---|
-| `manual` | `DocCheckRunsController#create` (`record_type`, `record_id`) | `DocCheckRunPolicy#create?` → registry `can_update?` + permission | Button keeps id `investor_kyc_validate_docs_with_ai_btn` so the journey's action target still works |
-| `bulk` | `InvestorKycsBulkActionJob#validate_docs_with_ai` | Existing `InvestorKycPolicy#validate_docs_with_ai?`; verified KYCs refused as today | Calls `StartRun` then `RunJob.perform_now`, keeping `sleep(2)` pacing |
-| `rerun` | `DocCheckResultsController#rerun` (selected record ids) | Same as manual, per record | Enqueues `RunJob` per record |
-| `test` | `DocCheckSetsController#test_run` | `DocCheckSetPolicy#test_run?` | `test_run: true`; uses the given set, not `set_for` |
+| `manual` | `DocCheckRunsController#create` (`record_type`, `record_id`) | registry `can_edit?` + permission | Button "Check documents" keeps id `investor_kyc_validate_docs_with_ai_btn` for the journey's action target |
+| `bulk` | `InvestorKycsBulkActionJob#validate_docs_with_ai` | Existing `ApplicationPolicy#validate_docs_with_ai?`; verified KYCs refused as today | `StartRun(enqueue: false)` then `RunJob.perform_now`, keeping `sleep(2)` |
+| `again` | `DocCheckResultsController#check_again` (selected record ids), and the tab's Check again / Try again | Per record `can_edit?`; unauthorised ones skipped | Enqueues per record |
+| `trial` | `DocChecksController#try` | Setup policy + registry `can_view?` | `trial: true` |
 
-`InvestorKycsController#validate_docs_with_ai` is removed. Its route is replaced by the generic
-`POST /doc_check_runs`.
+`InvestorKycsController#validate_docs_with_ai` and its member route are removed, replaced by the
+generic `POST /doc_check_runs`. The policy predicate `validate_docs_with_ai?` stays as the
+authorisation for both. It's an internal name, so renaming it would only churn the policies.
 
-**Worked examples:** H2, H3, H6, H7, E10
+**Worked examples:** H3, H4, H8, H9, E14
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why a generic runs controller instead of one per record type? | Phase 3 record types get the button for free. Authorisation goes through the registry. |
-| Why keep `perform_now` in bulk? | The bulk job is already a background job with pacing and error collection, and this matches today's rate behaviour. |
+| Why a generic runs controller? | Phase 3 record types get the button for free, with authorisation through the registry. |
+| Why keep `perform_now` in bulk? | The bulk job is already a background job with pacing and error collection, so today's rate behaviour is kept. |
 
 ### ④ Run
 
-`StartRun` guards and enqueues. `RunJob` does the work and is the only writer of results and
-fields.
+`StartRun` guards and enqueues. `RunJob` does the work and is the only writer of results, and of
+fields during a run.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| `doc_check_runs`, `DocChecks::StartRun`, `DocChecks::RunJob` | Set (①), documents (②), reader (⑤), judge (⑥) | Results (⑦), field writes, notifications, broadcast |
-
-**Responsibilities**
+| `doc_check_runs`, `DocChecks::StartRun`, `DocChecks::RunJob` | Checks (①), names/documents (②), reader (⑤), judge (⑥) | Results (⑦), field writes, progress, toasts, broadcasts |
 
 | Concern | Decision |
 |---|---|
-| One active run per record | `StartRun` takes `record.with_lock`, then refuses if a non-test run for the record is `queued`/`running` ("already running"). Test runs don't block and aren't blocked |
-| Queue / retry | `RunJob` on `:default`, `sidekiq_options retry: 0`. LLM retries would re-bill, and the user can Retry |
-| Stuck runs | A run `running` for more than 30 min is treated as not active by `StartRun`, and marked `failed` "Timed out" when found |
-| Per-document isolation | Each document's convert/read/judge sits in its own rescue. Failures become error rows for that document's checks |
-| Run-level failure | No set, no LLM client, or a provider connection/auth error (`Faraday::Error`, `Langchain` errors, `OpenAI::Error`) → `failed` with message, no writes, previous current run untouched |
-| Finish | One transaction: insert results, apply pending writes via registry and `record.save(validate: false)` (skipped for test runs), clear `current` on the previous run, set `current` and status/counts/`finished_at` |
-| After commit | `registry.on_assessed(record, Assessment.new(record).settled?)`, then `journey_progress!` if the record responds to it, then a notification and a Turbo broadcast of the panel |
+| Which checks | `DocCheck.for_record(record)`: entity, record type and `registry.document_names_for(record)`, matched case-insensitively. None → `could_not_run` "No document checks are set up for this KYC's documents" |
+| One active run per record | `StartRun` locks the record row and refuses if a non-trial run for it is `queued`/`running`: `AlreadyRunning`. Trials neither block nor are blocked |
+| Progress | `documents_total` is set at start; `documents_done` and `current_document` are updated after each document, then the tab header is broadcast |
+| Queue / retry | `:default`, `retry: 0`. Retries would re-bill, and the user has Check again |
+| Expiry | A run `queued`/`running` for more than 30 min is set `could_not_run` "Timed out" when `StartRun` or `Assessment` sees it |
+| Per-document isolation | Each document's find/convert/read/judge sits in its own rescue for document-level failures (card ⑤) |
+| Run-level failure | No checks, no LLM client, or `DocChecks::ProviderError` → `could_not_run` with the reason, no writes, previous current run untouched |
+| Finish | One transaction: insert results, apply pending writes via `registry.write`, then `details_changed!` if any write (skipped for trials), flip `current`, set status `done` and counts |
+| After commit | `on_assessed(record, Assessment.new(record).settled?)`, `journey_progress!`, a toast to the starter, and a broadcast of the tab |
 
 ```mermaid
 sequenceDiagram
@@ -558,206 +580,232 @@ sequenceDiagram
     participant Rd as DocumentReader
     participant DB as DB
     Job->>Rd: call(CML, 8 checks)
-    Rd-->>Job: ok
+    Rd-->>Job: readings
     Job->>Rd: call(PAN Card .doc, 1 check)
-    Rd-->>Job: Result failure :unsupported_file
-    Job->>Job: 1 error row "Can't read this file type…"
+    Rd-->>Job: failure :unreadable_file
+    Job->>Job: 1 result "Couldn't read this file…"
     Job->>Rd: call(Passport, 2 checks)
-    Rd--xJob: Faraday::ConnectionFailed
-    Job->>DB: run failed "AI service unavailable", no results, no writes
+    Rd--xJob: ProviderError
+    Job->>DB: could_not_run "AI service unavailable", no results, no writes
 ```
 
-A provider error *mid-run* fails the whole run. Partial results from a run that lost the provider
-would look current but be incomplete (X3).
+A provider error mid-run stops the whole run: partial results would look current but be incomplete
+(X3).
 
-**Worked examples:** H2, E1, E2, E8, E10, E13, X1, X2, X3
+**Worked examples:** H3, E6, E12, E14, E15, X1, X2, X3
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why fail the whole run on a mid-run provider error but not on a bad file? | A bad file is a property of that document and the result is true ("can't read it"). An outage says nothing about the document, so storing it as a result would be false. |
-| Why `retry: 0`? | Retries would repeat AI calls and costs. A visible failed run with Retry is clearer. |
-| What does the record's journey see during a run? | Nothing changes until finish. The step reflects the previous current run. |
+| Why stop on a provider error but not on a bad file? | A bad file is a fact about that document ("can't read it"). An outage says nothing about the document, so storing it as a result would be false. |
+| What does the journey see during a run? | Nothing changes until finish. The task reflects the previous current run. |
+| Why `details_changed!` for run writes? | So a Fill in after review resets "Review KYC" exactly as a manual edit would. |
 
 ### ⑤ Reader
 
-A Trailblazer operation subclassing `DocLlmBase`. It turns one document plus its checks into a map
-keyed by check id. It knows nothing about the record.
+A Trailblazer operation subclassing `DocLlmBase`. It turns one document plus its checks into a map keyed
+by check id, and knows nothing about the record. It replaces `DocLlmValidator` everywhere, including
+the AI rules tool `AiDataManager#validate_document`, which now passes one unsaved question check.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| Prompt and reply parsing | Document (via `DocUtils.convert_file_to_image`), checks' `id`, `kind`, `label`, `hint` | `{ "c41" => { "value" => "IN303622", "found" => true, "explanation" => "…" } }` or a failure reason |
+| Prompt and reply parsing | Document image (via `DocUtils.convert_file_to_image`), checks' `id` (or a temporary key for unsaved checks), `action`, `look_for`, `tip` | `{ "c41" => { "value" => "IN303622", "found" => true, "explanation" => "…" } }` or a failure |
 
 | Step | Decision |
 |---|---|
-| `init` | `super(provider: ENV DOCUMENT_VALIDATION_PROVIDER, llm_model: ENV DOCUMENT_VALIDATION_MODEL, temperature: 0.1)`; no client → failure `:no_llm` (run-level) |
-| `convert_file_to_image` | Reused. A false result or nil (the `.doc` branch) → failure `:unsupported_file` (document-level) |
-| `read_with_llm` | Prompt: fixed instructions + one line per check, `c<id> (<Extract/Match: "read the value of"; Rule: "answer yes or no">): <label>. <hint>`, then the image. Ask for a JSON object with exactly those keys. OpenAI gets `response_format: { type: "json_object" }`; Gemini keeps `response_mime_type` |
-| `parse` | `JSON.parse`, after stripping a ```` ```json ```` fence. Keep only known `c<id>` keys; a missing key → `found: false`. A parse error → failure `:unreadable_reply` (document-level) |
+| `init` | `super(provider: ENV DOCUMENT_VALIDATION_PROVIDER, llm_model: ENV DOCUMENT_VALIDATION_MODEL, temperature: 0.1)`; no client → run-level `:no_llm` |
+| `convert_file_to_image` | Reused; false or nil (the `.doc` branch) → document-level `:unreadable_file` |
+| `read_with_llm` | Fixed instructions + one line per check: `c<id>: read the value of "<look_for>". <tip>` or `c<id>: answer yes or no: "<look_for>". <tip>`, then the image. JSON object with exactly those keys. OpenAI `response_format: { type: "json_object" }`; Gemini `response_mime_type` |
+| `parse` | `JSON.parse` after stripping a ```` ```json ```` fence. Keep only known keys; a missing key → `found: false`. A parse error → document-level `:unreadable_reply` |
 | `cleanup` | Reused |
 
-Labels and hints are inserted as text only. No `$` processing exists (X5).
+Look-fors and tips are inserted as text only. There is no `$` processing (X5).
 
-**Worked examples:** H2, X1, X2, X5
+**Worked examples:** H3, X1, X2, X5
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why one call per document, not per check? | It costs the same as today and is faster. Check ids keep answers separate. |
+| Why one call per document? | Same cost as today, faster, and check ids keep the answers separate. |
 | Multi-page PDFs? | Unchanged from today: `ImageService.pdf_to_image` decides the pages. See Risks. |
-| Why not send record values to help the AI find the right field? | That brings back the injection and bias problems. Hints say what to look for. |
+| Why port `AiDataManager` instead of keeping `DocLlmValidator` for it? | Keeping the old validator alive for one caller would keep the `$var` interpolation alive too. The AI rules tool only needs "answer this question about this document", which is a question check. |
 
 ### ⑥ Judge
 
-Pure function: (check, read value, record via registry) → result attributes plus an optional pending
-write.
+A pure function: (check, reading, record via registry) → `{outcome, note, doc_value, record_value,
+explanation, write}`.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| Outcome rules and normalisation | Check, reader entry, `registry.read`, field meta (`compare`) | `{status, doc_value, record_value, outcome_note, write: [field, value] or nil}` |
+| Outcome codes and normalisation | Check, reading, `registry.read`, `Field#loose?` / `#date?` | Result attributes and an optional pending write |
 
 ```mermaid
 flowchart TD
-    A["check + read entry"] --> F{"field still<br/>in fields_for?"}
-    F -- "no" --> X["error 'Field no<br/>longer exists'"]
-    F -- "yes / rule" --> K{"kind"}
-    K -- "extract" --> E1{"found?"}
-    E1 -- "no" --> R1["review 'Not found<br/>on the document'"]
-    E1 -- "yes" --> E2{"blank_only and<br/>record has value?"}
-    E2 -- "yes" --> P1["pass 'Kept existing<br/>value V'"]
-    E2 -- "no" --> P2["pass 'Filled LABEL'<br/>+ pending write"]
-    K -- "match" --> M1{"found?"}
-    M1 -- "no" --> R1
-    M1 -- "yes" --> M2{"normalise(doc)<br/>== normalise(rec)?"}
-    M2 -- "yes" --> P3["pass"]
-    M2 -- "no" --> M3{"field compare"}
-    M3 -- "exact" --> F1["fail"]
-    M3 -- "loose" --> R2["review"]
-    K -- "rule" --> U1{"answer ==<br/>expected?"}
-    U1 -- "yes" --> P4["pass"]
-    U1 -- "no / unclear" --> F2["fail"]
+    A["check + reading"] --> F{"field still<br/>allowed?"}
+    F -- "no" --> X["field_missing"]
+    F -- "yes / question" --> K{"action"}
+    K -- "fill in" --> E1{"found?"}
+    E1 -- "no" --> NF["not_found"]
+    E1 -- "yes" --> D1{"date field and<br/>unparseable?"}
+    D1 -- "yes" --> BD["bad_date"]
+    D1 -- "no" --> E2{"record blank or<br/>replace on?"}
+    E2 -- "yes" --> P2["ok: filled in /<br/>replaced + write"]
+    E2 -- "no" --> P1["ok: kept your value"]
+    K -- "compare" --> M1{"found?"}
+    M1 -- "no" --> NF
+    M1 -- "yes" --> MB{"record blank?"}
+    MB -- "yes" --> KB["kyc_blank"]
+    MB -- "no" --> M2{"normalised<br/>equal?"}
+    M2 -- "yes" --> P3["ok: matches"]
+    M2 -- "no" --> MM["mismatch"]
+    K -- "question" --> U1{"answer ==<br/>expected?"}
+    U1 -- "yes" --> P4["ok"]
+    U1 -- "no / unclear" --> UA["unexpected_answer"]
 ```
 
-**Normalise:** downcase, then strip whitespace and `. , - / ( ) '`. For loose fields, also sort
-the tokens (so "Rao Asha" equals "Asha Rao"). Dates are compared as `Date`, after parsing both
-sides.
+**Normalise:** downcase, strip whitespace and `. , - / ( ) '`, and for `loose?` fields sort the tokens
+first ("RAO ASHA" = "Asha Rao"). Dates are compared as `Date` after parsing both sides. A question's
+answer is "yes" if it's one of `yes`/`true`; anything else counts as no, so an unclear answer needs
+attention with the explanation.
 
-A Rule answer is "yes" if it's one of `yes`/`true`; anything else is "no", so an unclear answer
-fails, with the explanation.
+**Outcome codes → sentence → actions** (sentences live in `config/locales/doc_checks.en.yml`; the
+proposal's Behavior Rules are the source):
 
-**Worked examples:** H2, E4, E5, E6, E7, E12, E17, E18
+| `outcome` | Shown as | Actions |
+|---|---|---|
+| `ok` (note: filled / kept / replaced / matches / yes) | ✓ "<field> — filled in: V" etc. | — |
+| `mismatch` | ⚠ "doesn't match" + both values | Use document value, Mark as OK |
+| `kyc_blank` | ⚠ "the KYC has no value (document says V)" | Use document value, Mark as OK |
+| `not_found` | ⚠ "not found on this document" | Mark as OK |
+| `bad_date` | ⚠ "couldn't read a date from 'V'" | Mark as OK |
+| `unexpected_answer` | ⚠ "answered No: '<reason>'" | Mark as OK |
+| `not_uploaded` | ⚠ "Not uploaded yet" (one line per document) | — |
+| `unreadable_file` | ⚠ "Couldn't read this file — upload it as a PDF or image" | Check again |
+| `unreadable_reply` | ⚠ "Couldn't read the AI's answer for this document" | Check again |
+| `field_missing` | ⚠ "this check's KYC field no longer exists" | (fix in settings) |
+
+**Worked examples:** H3, E8, E9, E10, E11, E16, E17, E18
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why does a loose mismatch go to review, not fail? | "A. Rao" vs "Asha Rao" is often legitimate. A person decides with Accept. This is open question 1. |
-| Why sort tokens only for loose fields? | Order matters for identifiers (an account number with swapped groups is a different number). |
+| Why does a name in a different order match? | Documents often print SURNAME GIVEN. Order-free comparison is only for name and address fields; identifiers keep strict order. |
+| Why can't "not uploaded" be marked OK? | The fix is to upload, and the journey's own Mark reviewed covers the "we don't need it" case. |
 | Does the judge write anything? | No. It returns a pending write, and the run (④) applies all writes at the end. |
 
 ### ⑦ Results
 
-Stored rows plus a read-model, `DocChecks::Assessment`, that answers everything the screens and
-journey need.
+Stored rows plus `DocChecks::Assessment`, a read-model answering everything the screens and journey
+need.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| `doc_check_results`, `DocChecks::Assessment` | Current run, its results, record's current documents | `groups`, `counts`, `problems`, `stale?(group)`, `settled?`, `last_failed_attempt` |
+| `doc_check_results`, `DocChecks::Assessment` | Current run, its results, the record's document names and current documents | `groups`, `attention_count`, `changed?(name)`, `settled?`, `could_not_run`, `fresh_at` |
 
 | Assessment member | Rule |
 |---|---|
-| `current_run` | `DocCheckRun.where(record:, current: true).first` |
-| `groups` | Results grouped by `document_name`, in the set's order |
-| `stale?(group)` | The document now matched for that name (via `missing_required_document_names`-style matching) has a different `file.id` from the result's `document_file_id`. Or it was skipped and a matching document now exists. Or it had a document that's now gone |
-| `problems` | Results that are fail/review/error/skipped and not accepted, plus every result in stale groups |
-| `settled?` | `current_run` present and `problems` empty |
-| `last_failed_attempt` | Newest `failed` non-test run newer than `current_run` (for the header) |
+| `current_run` | `DocCheckRun.find_by(record:, current: true)` |
+| `groups` | Results grouped by `document_name`, limited to `registry.document_names_for(record)`, in the setup order; each group `ok` / `attention n` / `changed` |
+| `changed?(name)` | The document now matched for the name has a different `file.id` from the result's `document_file_id`, or a `not_uploaded` name now has a document, or a read document is gone |
+| `attention_count` | Items where `outcome != ok` and there's no resolution, plus every item in changed groups |
+| `settled?` | `current_run` present and `attention_count == 0` |
+| `could_not_run` | The newest `could_not_run` non-trial run newer than `current_run` (for the banner) |
+| `fresh_at` | max(`current_run.finished_at`, newest `resolved_at`) — journey freshness |
 
-**Accept.** `DocCheckResultsController#accept` requires a reason and stamps
-`accepted_by_id`/`accepted_at`/`accept_reason` on a fail/review result of the current run. It then
-calls `registry.on_assessed` and `journey_progress!`, and broadcasts the panel.
+**Resolutions** (`DocCheckResultsController`). Each one locks the result, writes, re-assesses
+(`on_assessed`, `journey_progress!`) and broadcasts the tab:
 
-**Accept across re-runs.** A new run copies acceptance onto the new result *only if* the same check
-yields the same `doc_value` and `record_value` as the accepted one. Otherwise the person must look
-again (walkthrough row 10).
+| Action | Allowed when | Writes |
+|---|---|---|
+| `use_document_value` | current run; `outcome` ∈ `mismatch`, `kyc_blank`; `can_edit?` | `registry.write(record, field, doc_value)` + `details_changed!`; result `resolution: used_document_value`, by/at |
+| `mark_ok` | current run; `outcome` ∈ `mismatch`, `kyc_blank`, `not_found`, `bad_date`, `unexpected_answer`; reason present | `resolution: marked_ok`, by/at/reason |
+| `undo` | `resolution == marked_ok` | Clears the stamps |
 
-**Worked examples:** H4, E8, E9, E13, E14
+**Carry-over:** a new run copies a `marked_ok` resolution to the new result for the same check *only
+if* `outcome`, `doc_value` and `record_value` are unchanged. `used_document_value` needs no carry-over:
+the next run compares equal and is `ok`.
+
+**Worked examples:** H5, H6, E12, E13, E15, E19
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Why carry acceptance forward at all? | Without it, every re-run (e.g. after an unrelated re-upload) would re-open problems someone already resolved. Matching on both values keeps it honest. |
-| How big does this get? | About 10 results per run and a few runs per KYC. Old runs are kept for history (see Performance). |
-| Why is skipped a problem? | A document the set expects is missing, and "all documents valid" must not be true without it. |
+| Why carry Mark as OK forward at all? | Otherwise every re-check (e.g. after an unrelated re-upload) would re-open things someone already settled. Matching all three values keeps it honest. |
+| Why can't Use document value be undone? | It's an ordinary audited field edit. The previous value is in the audit and in the confirmation the user saw. Editing the KYC reverses it. |
+| Why are changed documents counted as needing attention? | Their results no longer describe the document on file. |
 
 ### ⑧ Screens and journey
 
-The panel partial, the entity-wide list, and the KYC journey check.
-
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| `doc_check_runs/_panel`, `doc_check_results/index`, `ValidateDocuments` (rewritten), `investor_kycs/_details` tab | `DocChecks::Assessment` | HTML/Turbo streams; `WorkflowChecks::Result` |
+| `doc_check_runs/_panel` (tab), `doc_check_results/index` (attention list), resolve actions, `ValidateDocuments` | `DocChecks::Assessment` | HTML / Turbo streams; `WorkflowChecks::Result` |
 
-**Panel.** It's rendered in the KYC `_details` tab `#docs-validation-tab`. The id is kept so
-`Support::VALIDATION_TAB` still works, and the tab title becomes "Document Checks". It subscribes
-with `turbo_stream_from [record, :doc_checks]`. `RunJob` and accept broadcast
-`replace` of `dom_id(record, :doc_checks)`. "Earlier AI answers" renders the old
-`Json2table` output collapsed, when `doc_question_answers` has content.
+**Tab.** It's rendered in the KYC `_details` tab `#docs-validation-tab`. The id is kept, so
+`Support::VALIDATION_TAB` still works. The title is "Document checks (n)". It subscribes with
+`turbo_stream_from [record, :doc_checks]`, and `RunJob` / resolutions broadcast `replace` of
+`dom_id(record, :doc_checks)`, plus `update` of the header during progress. Investor users don't get
+the tab. "Earlier AI answers" renders the old `Json2table` output collapsed when
+`doc_question_answers` has content. Sentences come from `config/locales/doc_checks.en.yml`.
 
-**Journey check** (`WorkflowChecks::InvestorKyc::ValidateDocuments`, replacing its body):
+**Journey task** (`WorkflowChecks::InvestorKyc::ValidateDocuments`, new body; messages are in the
+[journey delta spec](specs/kyc/investor-kyc-journey/spec.md)):
 
 | Condition | Result |
 |---|---|
-| `settled?` | `Result.confirmed("Validated by AI", passed_since: fresh_at, fresh_since: fresh_at)`, with `fresh_at` = max(`current_run.finished_at`, newest `accepted_at`) |
-| current run with problems | `review("Document Checks found N problems — check them and mark reviewed", action → VALIDATION_TAB)` |
-| a set applies, no current run | `review("Documents not checked yet — run Document Checks or check them and mark reviewed", action → VALIDATE_AI_BTN)` |
-| no set applies | `review("Check the documents and mark reviewed", action → DOCS_TAB)` (unchanged) |
+| `settled?` | `confirmed("Validated by AI", passed_since: fresh_at, fresh_since: fresh_at)` |
+| current run, `attention_count > 0` | `review("<n> document items need attention — resolve them or mark reviewed", "Open document checks" → VALIDATION_TAB)` |
+| checks exist for the KYC's documents, no current run | `review("Documents not checked yet — check documents or mark reviewed", "Check documents" → VALIDATE_AI_BTN)` |
+| no checks for the KYC's documents | `review("Check the documents and mark reviewed", "Open documents" → DOCS_TAB)` |
 
-`Support#ai_answer_counts` and `#ai_validated_at` are deleted. The existing document-upload
-invalidation (`journey_invalidate(validate_documents, only_if_passed:)`) is unchanged, and it is
-what resets the step on a re-upload (E9).
+`Support#ai_answer_counts` and `#ai_validated_at` are deleted. The existing document-change
+invalidation is unchanged, and it is what moves the task back on a replace (E13).
 
-**Entity list** (`GET /doc_check_results`): current results joined to current runs for the
-entity. Ransack on `status`, `document_name`, `doc_check_runs.doc_check_set_id` and
-`doc_check_runs.finished_at`. "Out of date" is a filter applied after the query, and only when it
-is selected (see LLD Queries). Pagy pagination. `POST /doc_check_results/rerun` with
-`record_ids[]`.
+**Attention list** (`GET /doc_check_results`): results of current runs for the entity where there's no
+resolution and `outcome != ok`, plus a "Document changed" filter derived per page. Filters: reason
+(maps to outcome codes: Doesn't match = `mismatch`/`kyc_blank`; Not found = `not_found`/`bad_date`;
+Unexpected answer; Couldn't read = `unreadable_*`/`field_missing`; Not uploaded; Document changed),
+document, and checked date. Pagy. Each row links to the KYC's tab. `POST /doc_check_results/check_again`
+takes `record_ids[]`.
 
 | Verb and path | Action | Does | Responds with |
 |---|---|---|---|
-| GET `/doc_check_runs/:id` | show | A test run's panel (for the test-run frame) | HTML frame |
-| GET `/doc_check_results` | index | Entity list with filters | HTML |
-| PATCH `/doc_check_results/:id/accept` | accept | `accept_reason` | turbo_stream panel / 422 |
-| POST `/doc_check_results/rerun` | rerun | `record_type`, `record_ids[]` | redirect with notice "Document Checks queued for 3 KYCs" |
+| GET `/doc_check_runs/:id` | show | Trial run panel (frame) | HTML frame |
+| GET `/doc_check_results` | index | Attention list | HTML |
+| PATCH `/doc_check_results/:id/use_document_value` | use_document_value | — | turbo_stream tab / flash |
+| PATCH `/doc_check_results/:id/mark_ok` | mark_ok | `reason` | turbo_stream tab / 422 row "Say why this is OK" |
+| PATCH `/doc_check_results/:id/undo` | undo | — | turbo_stream tab |
+| POST `/doc_check_results/check_again` | check_again | `record_type`, `record_ids[]` | redirect "Checking documents for 3 KYCs" |
 
 **Access**
 
-| Role | Panel | Accept | Entity list / rerun |
+| Role | Tab | Resolve / Check | Attention list |
 |---|---|---|---|
 | Fund user who can view the KYC | ✓ | if `InvestorKycPolicy#update?` | ✓ with permission |
-| Investor user (own KYC) | ✗ (tab not rendered) | ✗ | ✗ |
+| Investor user (own KYC) | ✗ (not rendered) | ✗ | ✗ |
 | Other entity | ✗ | ✗ | ✗ (scope `entity_id: user.entity_id`) |
 
-**Secondary journey: entity list**
+**Secondary journey: attention list**
 
 | Step | The user… | They see |
 |---|---|---|
-| 1 | opens Document Check results from the KYC menu | Problems (failed, review, error, skipped, out of date) for current runs, newest first |
-| 2 | filters Document = CML | Only CML rows |
-| 3 | selects 3 rows, clicks Re-run selected | "Document Checks queued for 3 KYCs"; each KYC's panel updates when done |
+| 1 | opens Documents needing attention from the KYC menu | Items needing attention, newest first; or "Nothing needs attention." |
+| 2 | picks Reason = Doesn't match | Only mismatch rows |
+| 3 | ticks 3 rows | "Check again (3)" enabled |
+| 4 | clicks Check again | "Checking documents for 3 KYCs"; each KYC's tab updates when done |
 
-**Worked examples:** H3, H4, H5, H6, H7, E9, E14, E15, E19, X6, X7, X8
+**Worked examples:** H4, H5, H6, H7, H9, H12, E13, E19, E20, E21, E22, E23, X6, X7, X8, X10
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
 | Why keep the old tab id? | The journey's action target and any bookmarks keep working. |
-| Why does "found N problems" count out-of-date results? | They no longer describe the document on file, so a person must re-run or review. |
-| Does the journey move on its own after Accept? | Yes. Accept calls `journey_progress!`, and if the assessment is now settled the step is confirmed. |
+| Does the journey move on its own after a resolution? | Yes. Resolutions call `journey_progress!`, and if the assessment is now settled the task is confirmed. |
+| Why one locale file for the sentences? | One place to tune wording, and the QA checklist checks them verbatim. |
 
 ---
 
@@ -769,28 +817,29 @@ is selected (see LLD Queries). Pagy pagination. `POST /doc_check_results/rerun` 
 
 ```mermaid
 classDiagram
-    namespace Setup {
-        class DocCheckSet {
-            <<Model>>
-            +set_for(record) DocCheckSet$
-            +checks_for(document_name)
-        }
+    namespace SetupNs {
         class DocCheck {
             <<Model>>
-            +kind
+            +for_record(record) Relation$
             +reply_key() String
+        }
+        class CardForm {
+            <<Service>>
+            +save() bool
+            +rows()
         }
         class Presets {
             <<Service>>
-            +apply(set, document_name, key)$
-            +keys()$
+            +key_for(document_name)$
+            +rows_for(entity, document_name, key)$
         }
-        class DocCheckSetsController {
+        class DocChecksController {
             <<Controller>>
-            +edit()
-            +update()
-            +apply_preset()
-            +test_run()
+            +index()
+            +card()
+            +update_card()
+            +preset()
+            +try()
         }
     }
     namespace RegistryNs {
@@ -800,19 +849,20 @@ classDiagram
         }
         class Kyc {
             <<Service>>
-            +variant_for(kyc)
-            +documents_for(entity, variant)
-            +fields_for(entity, variant)
+            +document_names(entity)
+            +document_names_for(kyc)
+            +fields_for(entity)
+            +find_document(kyc, name)
             +read(kyc, field)
             +write(kyc, field, value)
-            +record_documents(kyc)
+            +details_changed(kyc, user)
             +on_assessed(kyc, settled)
         }
     }
     namespace RunNs {
         class StartRun {
             <<Service>>
-            +call(record, user, trigger, test_run, set) DocCheckRun$
+            +call(record, user, trigger, trial) DocCheckRun$
         }
         class RunJob {
             <<Job>>
@@ -821,7 +871,7 @@ classDiagram
         class DocCheckRun {
             <<Model>>
             +active() bool
-            +finish(results, writes)
+            +progress()
         }
         class DocCheckRunsController {
             <<Controller>>
@@ -841,77 +891,78 @@ classDiagram
         }
         class Judge {
             <<Service>>
-            +call(check, entry, record, registry) Hash$
+            +call(check, reading, record, entry) Hash$
+        }
+        class AiDataManager {
+            <<Service>>
+            +validate_document(question)
         }
     }
     namespace ResultsNs {
         class DocCheckResult {
             <<Model>>
-            +accept(user, reason)
-            +accepted() bool
+            +ok() bool
+            +mark_ok(user, reason)
+            +use_document_value(user)
+            +undo()
         }
         class Assessment {
             <<Service>>
             +groups()
-            +counts()
-            +problems()
+            +attention_count()
+            +changed(name) bool
             +settled() bool
-            +stale(group) bool
         }
         class DocCheckResultsController {
             <<Controller>>
             +index()
-            +accept()
-            +rerun()
+            +use_document_value()
+            +mark_ok()
+            +undo()
+            +check_again()
         }
         class ValidateDocuments {
             <<WorkflowCheck>>
             +call(kyc)
         }
     }
-    DocCheckSet "1" --> "*" DocCheck
     DocCheckRun "1" --> "*" DocCheckResult
     DocCheckResult --> DocCheck : snapshot
+    CardForm --> DocCheck
     DocumentReader --|> DocLlmBase
+    AiDataManager --> DocumentReader
     RunJob --> DocumentReader
     RunJob --> Judge
     RunJob --> Registry
-    StartRun --> DocCheckSet
+    StartRun --> DocCheck
     Judge --> Kyc
     Assessment --> DocCheckResult
     ValidateDocuments --> Assessment
     DocCheckResultsController --> Assessment
 ```
 
-Method names drop Ruby's `?`/`!` suffixes for mermaid (`settled` is `settled?`, `accept` is `accept!`).
+Method names drop Ruby's `?`/`!` suffixes for mermaid (`settled` is `settled?`, `mark_ok` is
+`mark_ok!`). `AiDataManager` is modified: it now calls `DocumentReader` instead of `DocLlmValidator`.
 
 ### Data model and schema changes
 
 ```mermaid
 erDiagram
-    entities ||--o{ doc_check_sets : "has"
-    doc_check_sets ||--o{ doc_checks : "has"
-    doc_check_sets ||--o{ doc_check_runs : "used by"
+    entities ||--o{ doc_checks : "has"
+    entities ||--o{ doc_check_runs : "has"
     doc_check_runs ||--o{ doc_check_results : "has"
     doc_checks ||--o{ doc_check_results : "produces"
     documents ||--o{ doc_check_results : "read in"
-    doc_check_sets {
-        bigint id PK
-        bigint entity_id FK
-        string record_type "InvestorKyc"
-        string variant "individual | non_individual | all"
-        string name
-    }
     doc_checks {
         bigint id PK
         bigint entity_id FK
-        bigint doc_check_set_id FK
+        string record_type "InvestorKyc"
         string document_name
-        string kind "extract | match | rule"
-        string label
-        string hint
+        string action "fill_in | compare | question"
         string field_name
-        string fill_mode "blank_only | always"
+        string look_for
+        string tip
+        boolean replace_existing
         string expected_answer "yes | no"
         int position
         bigint legacy_doc_question_id UK
@@ -921,12 +972,14 @@ erDiagram
         bigint entity_id FK
         string record_type
         bigint record_id
-        bigint doc_check_set_id FK
         bigint user_id FK
-        string trigger "manual | bulk | rerun | test"
-        boolean test_run
+        string trigger "manual | bulk | again | trial"
+        boolean trial
         boolean current
-        string status
+        string status "queued | running | done | could_not_run"
+        int documents_total
+        int documents_done
+        string current_document
         datetime started_at
         datetime finished_at
         string error_message
@@ -938,286 +991,364 @@ erDiagram
         bigint doc_check_run_id FK
         bigint doc_check_id FK
         string document_name
-        string check_label
-        string kind
-        bigint document_id FK
+        string look_for
+        string action
+        string field_name
+        bigint document_id
         string document_file_id
-        string status "pass | fail | review | error | skipped"
+        string outcome "ok | mismatch | …"
+        string note
         text doc_value
         text record_value
         text explanation
-        string outcome_note
-        bigint accepted_by_id FK
-        datetime accepted_at
-        string accept_reason
+        string resolution "marked_ok | used_document_value"
+        bigint resolved_by_id FK
+        datetime resolved_at
+        string resolve_reason
     }
     investor_kycs {
         bigint id PK
         boolean all_docs_valid "now set from Assessment"
-        json doc_question_answers "legacy, read-only"
+        json doc_question_answers "kept, read-only (Earlier AI answers)"
     }
 ```
 
-**Indexes:** `doc_check_sets [entity_id, record_type, variant]` UK ·
-`doc_checks [doc_check_set_id, document_name, label]` UK · `doc_checks [legacy_doc_question_id]` UK ·
+**Indexes:** `doc_checks [entity_id, record_type, document_name, field_name]` UK ·
+`doc_checks [entity_id, record_type, document_name, look_for]` UK · `doc_checks [legacy_doc_question_id]` UK ·
 `doc_check_runs [record_type, record_id, current]` · `doc_check_runs [record_type, record_id, status]` ·
 `doc_check_runs [entity_id, current, finished_at]` · `doc_check_results [doc_check_run_id]` ·
-`doc_check_results [entity_id, status]` · `doc_check_results [doc_check_id]`
+`doc_check_results [entity_id, outcome]` · `doc_check_results [doc_check_id]`
 
 **Schema changes**
 
-**`doc_check_sets`** (new): one row per entity, record type and variant, so set resolution is a
-unique lookup.
+**`doc_checks`** (new): one row per thing to read from one document, for one record type.
 
 | Column / index | What changed | Why it's needed |
 |---|---|---|
 | `entity_id` | Added, FK | Tenant scope |
-| `record_type` | Added | Registry key. The engine is record-type neutral |
-| `variant` | Added, not null, default "all" | KYC Individual / Non-individual split. "all" is a real value, because MySQL unique indexes allow repeated NULLs |
-| `name` | Added | Display name ("Investor KYC — Individual"), editable |
-| UK `[entity_id, record_type, variant]` | New | At most one set per variant (spec: Duplicate set refused) |
-
-**`doc_checks`** (new): what to read from one document.
-
-| Column / index | What changed | Why it's needed |
-|---|---|---|
-| `entity_id` | Added | Scoping without a join |
-| `doc_check_set_id` | Added, FK | Parent set |
-| `document_name` | Added | Which document, from the registry list |
-| `kind` | Added | extract / match / rule decide the judge path |
-| `label` | Added | What to read, shown in results |
-| `hint` | Added, nullable | Extra guidance for the AI |
-| `field_name` | Added, nullable | Target/compare field (null for rule) |
-| `fill_mode` | Added, default "blank_only" | Extract overwrite behaviour |
-| `expected_answer` | Added, default "yes" | Rule expectation |
-| `position` | Added | Display and prompt order |
-| `legacy_doc_question_id` | Added, nullable | Conversion idempotency |
-| UK `[doc_check_set_id, document_name, label]` | New | Labels unique per document; presets skip existing |
+| `record_type` | Added | Registry key; the engine is record-type neutral |
+| `document_name` | Added | Which card/document, from the registry's names |
+| `action` | Added | fill_in / compare / question decide the judge path |
+| `field_name` | Added, nullable | Target or compare field (null for question) |
+| `look_for` | Added | What the AI looks for (or the question); shown in results |
+| `tip` | Added, nullable | Optional extra guidance for the AI |
+| `replace_existing` | Added, default false | Fill in overwrite option |
+| `expected_answer` | Added, default "yes" | Question expectation |
+| `position` | Added | Card and prompt order |
+| `legacy_doc_question_id` | Added, nullable, no FK | Conversion idempotency. No FK, because `doc_questions` is dropped in the retirement deploy |
+| UK `[entity_id, record_type, document_name, field_name]` | New | A field once per card (questions have NULL field and are exempt) |
+| UK `[entity_id, record_type, document_name, look_for]` | New | No two identical items on a card; presets skip existing |
 | UK `[legacy_doc_question_id]` | New | Re-running the conversion doesn't duplicate |
 
-**`doc_check_runs`** (new): one attempt for one record.
+**`doc_check_runs`** (new): one check of one record's documents.
 
 | Column / index | What changed | Why it's needed |
 |---|---|---|
 | `entity_id` | Added | Scoping for the list and policies |
 | `record_type`, `record_id` | Added (polymorphic) | Any registered record type |
-| `doc_check_set_id` | Added, nullable | The set used. Null when failed before a set was found |
-| `user_id` | Added | Who started it (notifications) |
-| `trigger` | Added | Audit and "test run" banner |
-| `test_run` | Added, default false | Excludes from current and journey |
+| `user_id` | Added | Who started it (toasts) |
+| `trigger` | Added | manual / bulk / again / trial |
+| `trial` | Added, default false | Excluded from current, journey and the list |
 | `current` | Added, default false | The one run whose results are the record's current results |
 | `status` | Added | Lifecycle (Part 2) |
-| `started_at`, `finished_at` | Added | Header "Last run …"; journey freshness; stuck-run detection |
-| `error_message` | Added | Run-level failure reason |
-| `counts` | Added, json | Header counts without counting rows |
-| idx `[record_type, record_id, current]` | New | Panel lookup |
+| `documents_total`, `documents_done`, `current_document` | Added | Progress "Checking PAN Card (2 of 3)…" |
+| `started_at`, `finished_at` | Added | Header "Checked …"; journey freshness; expiry |
+| `error_message` | Added | Reason shown when it couldn't run |
+| `counts` | Added, json | Header and toast counts without counting rows |
+| idx `[record_type, record_id, current]` | New | Tab lookup |
 | idx `[record_type, record_id, status]` | New | Active-run guard |
-| idx `[entity_id, current, finished_at]` | New | Entity list |
+| idx `[entity_id, current, finished_at]` | New | Attention list |
 
 **`doc_check_results`** (new): one per check per run.
 
 | Column / index | What changed | Why it's needed |
 |---|---|---|
-| `entity_id` | Added | List filter without join; scoping |
+| `entity_id` | Added | List filter without a join; scoping |
 | `doc_check_run_id` | Added, FK | Parent run |
-| `doc_check_id` | Added, FK nullable (nullify) | Link to live check, for acceptance carry-over |
-| `document_name`, `check_label`, `kind` | Added (snapshot) | History renders after a check is edited or deleted |
-| `document_id` | Added, nullable | Which document was read (null when skipped) |
-| `document_file_id` | Added, nullable | Shrine file id read, for staleness |
-| `status` | Added | pass / fail / review / error / skipped |
+| `doc_check_id` | Added, FK nullable (nullify) | Carry-over of Mark as OK; settings link |
+| `document_name`, `look_for`, `action`, `field_name` | Added (snapshot) | History renders after a check is edited or deleted; Use document value knows the field |
+| `document_id` | Added, nullable | Which document was read (null when not uploaded) |
+| `document_file_id` | Added, nullable | Shrine file id read, for "changed" |
+| `outcome` | Added | `ok` or reason code |
+| `note` | Added | OK sub-kind (filled / kept / replaced / matches / yes) or detail |
 | `doc_value`, `record_value` | Added, text | Both sides shown; addresses can be long |
-| `explanation` | Added, text | AI's reason |
-| `outcome_note` | Added | "Filled DP ID", "Kept existing value …", error text |
-| `accepted_by_id`, `accepted_at`, `accept_reason` | Added | Accept stamp |
-| idx `[doc_check_run_id]`, `[entity_id, status]`, `[doc_check_id]` | New | Panel, list, carry-over |
+| `explanation` | Added, text | The AI's reason |
+| `resolution`, `resolved_by_id`, `resolved_at`, `resolve_reason` | Added | Use document value / Mark as OK stamp |
+| idx `[doc_check_run_id]`, `[entity_id, outcome]`, `[doc_check_id]` | New | Tab, list, carry-over |
+
+**Removed tables and columns** are listed in [Retirement](#retirement-what-will-not-exist-afterwards).
 
 **Changes to existing models**
 
 - `InvestorKyc`: `has_many :doc_check_runs, as: :record`. Remove `include WithDocQuestions` and
-  `#doc_questions`. Keep the `doc_question_answers` json attribute (legacy display).
-  `all_docs_valid` is now written only by `DocChecks::Kyc#on_assessed`.
+  `#doc_questions`. Keep `attribute :doc_question_answers, :json` (legacy display). `all_docs_valid` is
+  now written only by `DocChecks::Kyc#on_assessed`.
+- `InvestorKycConcern` / `Support`: `required_document_names` moves to the concern, so the registry and
+  the journey share it.
+- `InvestorKycAction`: the details-changed journey hook is exposed as
+  `InvestorKyc#journey_details_changed!(actor:)` (no behaviour change), so the registry can call it.
 - `Investor`, `AggregatePortfolioInvestment`: remove `include WithDocQuestions`.
-- `Entity`: `has_many :doc_check_sets, dependent: :destroy`. Keep `has_many :doc_questions` until
-  phase 2 cleanup.
+- `Entity`: `has_many :doc_checks, dependent: :destroy`, replacing `has_many :doc_questions` and its
+  `really_destroy!` loop in the retirement deploy.
+- `Document`: `self.ignored_columns += ["qna"]` from the first deploy, so dropping the column later is
+  safe.
 
 ### Component contracts
 
 | From → To | Contract | Direction rule |
 |---|---|---|
-| ② → ① | `documents_for(entity, variant) → [String]`, `fields_for(entity, variant) → [Field(name,label,storage,compare)]` | Setup never reads columns directly |
-| ① → ④ | `DocCheckSet.set_for(record) → DocCheckSet or nil`, `set.doc_checks.order(:position)` | Run never queries checks of another entity |
-| ③ → ④ | `StartRun.call(record:, user:, trigger:, test_run: false, set: nil) → DocCheckRun` or raises `DocChecks::AlreadyRunning` | Triggers never create runs directly |
-| ④ → ⑤ | `DocumentReader.call(document:, checks:) → ctx[:readings]` or `ctx[:failure] ∈ {:unsupported_file, :unreadable_reply, :no_llm}`; provider errors raise | Reader never sees the record |
+| ② → ① | `document_names(entity) → [String]`, `fields_for(entity) → [Field]` | Setup never reads columns directly |
+| ① → ④ | `DocCheck.for_record(record)` (entity, record type, the record's names) ordered by `position` | Run never sees another entity's checks |
+| ③ → ④ | `StartRun.call(record:, user:, trigger:, trial: false, enqueue: true) → DocCheckRun` or raises `DocChecks::AlreadyRunning` | Triggers never create runs directly |
+| ④ → ⑤ | `DocumentReader.call(document:, checks:) → ctx[:readings]` or `ctx[:failure] ∈ {:unreadable_file, :unreadable_reply, :no_llm}`; provider errors raise `DocChecks::ProviderError` | Reader never sees the record |
 | ⑤ → ⑥ | `{ "c<id>" => {value, found, explanation} }` | Judge looks up by `check.reply_key` only |
-| ② → ⑥ | `read(record, field)`, `field_meta(field).compare` | Judge returns writes, never performs them |
-| ⑥ → ⑦ | `{status, doc_value, record_value, outcome_note, explanation, write}` | Only `RunJob` persists |
+| ② → ⑥ | `read(record, field)`, `Field#loose?`, `Field#date?` | Judge returns writes, never performs them |
+| ⑥ → ⑦ | `{outcome, note, doc_value, record_value, explanation, write}` | Only `RunJob` persists results |
 | ⑦ → ⑧ | `DocChecks::Assessment.new(record)` | Screens and journey never query results directly |
 
 ### Cross-cutting concerns
 
 #### Transactions and queries
 
-- **Run finish:** one transaction covers the results insert (`insert_all`), the record save with
-  writes, flipping `current` on the old run off and this one on, and the status update. The AI
-  calls happen *before* it, never inside.
-- **Accept:** a single-row update, then the assessment and journey run outside a transaction.
-- **Panel:** one query for the current run plus results, and one for the record's documents
-  (`select(:id, :name, :owner_tag, :file_data)`). No N+1, because results carry snapshots.
-- **Entity list:** the query is scoped to the entity and to `current = true`, paginated. Out of date
-  is a filter applied after the query, page by page (LLD).
+- **Run finish:** one transaction covers the results insert, the record writes and save, the `current`
+  flip and the status. The AI calls happen before it, never inside. Progress updates are single-row
+  `update_columns`, outside it.
+- **Resolutions:** the result row is locked; Use document value saves the record in the same
+  transaction. Re-assessment and journey run after commit.
+- **Tab:** one query for the current run plus its results, and one for the record's documents
+  (selected columns). No N+1, because results carry snapshots.
+- **Attention list:** scoped to the entity and to `current = true`, paginated. "Document changed" is
+  derived per page (LLD).
 
 #### Exception handling and monitoring
 
 | Failure | Who is alerted | Channel | Detail |
 |---|---|---|---|
-| Run failed (no set / no LLM / provider error / timeout) | Starting user | `ApplicationJob#send_notification` → `UserAlert#broadcast` (toast), danger | "Document Checks could not run for <record>: <reason>"; `Rails.logger.error` with run id |
-| Document error rows | Starting user | Warning notification with counts | Error rows visible on the panel |
-| Unexpected exception in `RunJob` | Starting user + logs | Danger notification; run marked failed in `ensure` | Re-raised after marking, so Sentry/logs capture it |
+| Couldn't run (no checks / no LLM / provider error / timeout) | Starting user | `ApplicationJob#send_notification` → `UserAlert#broadcast` (toast), danger | "Couldn't check documents for <record> — <reason>. Try again later."; `Rails.logger.error` with run id |
+| Items needing attention | Starting user | Warning toast with count | Items visible on the tab and the list |
+| Unexpected exception in `RunJob` | Starting user + logs | Danger toast; run set `could_not_run` "Something went wrong" in `ensure` | Re-raised after marking, so the error tracker captures it |
 
 #### Performance and security
 
-- **Volume:** about 10 results per run. KYCs in prod are in the low thousands per entity, with
-  2–3 AI calls per run (same as today). Runs are kept; LLD sets an index plan and a phase-2
-  retention option.
-- **Background:** all AI work happens in `RunJob`. Requests only create runs or stamp acceptances.
-- **Tenant isolation:** every model has `entity_id`, and policies use `belongs_to_entity?`.
-  `StartRun` asserts `set.entity_id == record.entity_id`.
-- **Injection:** no interpolation or `send` on user-authored text. Field writes go only through
-  the registry allowlist. The AI's reply keys are filtered to known check ids.
-- **Output:** values and explanations are rendered escaped (no `html_safe`).
+- **Volume:** about 10 results per run. KYCs per entity are in the low thousands, with 2–3 AI calls per
+  run (same as today). Runs are kept; the LLD sets the index plan and a phase-2 retention option.
+- **Background:** all AI work happens in `RunJob`. Requests only queue runs, save cards or stamp
+  results.
+- **Tenant isolation:** every table has `entity_id`, and policies use `belongs_to_entity?`. `StartRun`
+  only loads checks for `record.entity_id`.
+- **Injection:** no interpolation or `send` on user- or AI-authored text. Field writes go only through
+  the registry allowlist, re-checked at write time. The AI's reply keys are filtered to known check
+  ids. Retiring `VariableInterpolation` removes the last `send` on user text.
+- **Output:** values, explanations and reasons are rendered escaped (no `html_safe`).
 
 ### Worked examples
 
-**ID legend:** **H** = Happy path · **E** = Edge case · **X** = Error (exception) case.
+**ID legend:** **H** = Happy path · **E** = Edge case · **X** = Error (exception) case · **R** =
+Retirement.
 
 **Shared setup:**
 
 | Record | Name | Key data |
 |---|---|---|
-| Entity | Fireside Ventures | `enable_doc_llm_validation` on; individual KYC docs "CML, PAN Card, Passport" |
+| Entity | Fireside Ventures | `enable_doc_llm_validation` on; individual list "CML, PAN Card, Passport"; non-individual list "PAN Card, Board Resolution"; no required file custom fields |
 | KYC form | IndividualKyc | custom fields `dp` (DP ID), `client` (Client ID) |
 | User | Priya Shah | fund admin, Fireside |
-| User | Olu Bello | fund user, Northwind Capital (other entity) |
+| User | Ken Mori | fund user, Fireside, can view but not edit KYCs |
+| User | Olu Bello | fund admin, Northwind Capital (other entity) |
 | Investor user | Asha Rao | owns the KYC |
-| KYC | Asha Rao (individual) | full_name "Asha Rao", PAN "ABCPK1234F", address "D109, MW", ifsc_code / bank_account_number / expiry_date empty, dp/client empty; journey at Validate documents |
-| Set | Investor KYC — Individual | CML: DP ID (E→dp), Client ID (E→client), Address (E→address), IFSC (E→ifsc_code), Bank account no (E→bank_account_number), PAN (M→PAN), First holder (M→full_name), Signed by holder? (R, Yes). PAN Card: Name (M→full_name). Passport: Name (M→full_name), Expiry date (E→expiry_date). 11 checks |
-| Documents | CML.pdf, PAN Card.png, Passport.pdf | as uploaded by Asha |
-| AI (stubbed) | default readings | CML: DP ID IN303622, Client 86478611, Address "D109, MW", IFSC HDFC0000123, account 50100012345678, PAN ABCPK1234F, First holder "ASHA RAO", Signed yes. PAN Card: Name "Asha Rao". Passport: Name "ASHA RAO", Expiry 2031-05-14 |
+| KYC | Asha Rao (individual) | full_name "Asha Rao", PAN "ABCPK1234F", address "D109, MW"; ifsc_code, bank_account_number, expiry_date, dp, client empty; journey at Validate documents |
+| KYC | Rao Holdings (non-individual) | PAN "AAACR1234K"; PAN Card uploaded |
+| Checks | Investor KYC | CML: Fill in DP ID→dp, Fill in Client ID→client, Fill in Address→address, Fill in Bank account number→bank_account_number, Fill in IFSC code→ifsc_code, Compare PAN→PAN, Compare First holder name→full_name, Question "Is it signed by the holder?" (Yes). PAN Card: Compare Name→full_name. Passport: Compare Name→full_name, Fill in Expiry date→expiry_date. 11 checks |
+| Documents | CML.pdf, PAN Card.png, Passport.pdf | on Asha's KYC |
+| AI (stubbed) | default readings | CML: DP ID IN303622, Client ID 86478611, Address "D109, MW", Bank account 50100012345678, IFSC HDFC0000123, PAN ABCPK1234F, First holder "ASHA RAO", signed yes. PAN Card: Name "Asha Rao". Passport: Name "ASHA RAO", Expiry 2031-05-14 |
 
 #### Happy Path
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| H1 | Apply CML preset | Empty Individual set, form has `dp`, `client` | Priya adds CML and applies preset CML | 9 checks; DP ID→dp, Client ID→client, PAN→PAN, First holder→full_name; Email and Mobile show "Pick a field before saving" | CML preset applied | doc_check_setup |
-| H2 | Run, everything passes | Shared setup | Priya clicks Run Document Checks | Run `done`; 11 pass; dp "IN303622", client "86478611", ifsc_code "HDFC0000123" filled; address kept; exactly 3 AI calls; notified "Document Checks finished for Asha Rao: 11 passed" | Extract fills an empty field; One AI call per document | doc_check_runs |
-| H3 | Test run changes nothing | Shared setup | Priya tests the set on Asha's KYC | Banner "Test run — nothing was saved to this KYC"; "Filled DP ID" shown; Asha's dp empty; KYC has no current run; journey unchanged | Test run on a KYC | doc_check_results |
-| H4 | Accept a review result | First holder reads "A. Rao" → review; journey shows "found 1 problem" | Priya accepts with "Initial matches passport" | Row "Accepted by Priya Shah — 'Initial matches passport'"; `all_docs_valid` true; step "Validated by AI" | Accept a mismatch; Accepted result counts; Problems ask for review | doc_check_results |
-| H5 | Journey completes from data | KYC at Validate documents | Run finishes with 11 pass | Step done "Validated by AI" with no click; next step current | All passed completes the step | kyc_doc_checks_journey |
-| H6 | Bulk run from KYC list | 2 unverified KYCs + 1 verified | Bulk "Run Document Checks" | 2 runs done; verified KYC: "Cannot modify verified KYC" | Bulk re-run | doc_check_results |
-| H7 | Entity list filter and re-run | 3 KYCs: one failed, one error, one pass | Filter Failed + Error, select both, Re-run selected | List shows 2 rows; "Document Checks queued for 2 KYCs"; 2 new runs | Filter to problems; Bulk re-run | doc_check_results |
-| H8 | Conversion dry run | Pravega has 12 CML extraction questions | Support runs conversion without EXECUTE | Report lists each with field or reason; no checks created | Dry run report | doc_checks_conversion |
-| H9 | Conversion execute, twice | As H8 | Run with EXECUTE=1 twice | Checks exist once in "Investor KYC — All" | Execute converts once | doc_checks_conversion |
-| H10 | Add document from list | Set has CML | Priya opens Add document | Choices PAN Card, Passport only | Document picked from list | doc_check_setup |
+| H1 | CML preset | No checks; form has `dp`, `client`, no email/mobile field | Priya clicks Use CML preset on CML | 8 unsaved rows (DP ID, Client ID, Address, Bank account number, IFSC code, PAN, Full name, signed question); "Not added: Email, Mobile — your KYC form has no matching field…" | CML preset with missing fields | doc_check_setup |
+| H2 | Add a check, look-for fills | PAN Card card empty | Add a check → Compare → Full name; Save | Look for shows "Full name"; saved; card header "PAN Card · 1 check" | Look for fills itself | doc_check_setup |
+| H3 | Check, all OK | Shared setup | Priya clicks Check documents | Run `done`; 11 OK; DP ID "IN303622", Client ID "86478611", IFSC, bank account, expiry date filled; Address "kept your value"; exactly 3 AI calls; toast "Documents checked for Asha Rao — all OK" | Fill in an empty field; One AI call per document | doc_check_runs |
+| H4 | Trial changes nothing | Shared setup | Try on a KYC → Asha | Banner "Trial run — nothing on this KYC was changed"; "DP ID — filled in: IN303622"; Asha's DP ID empty; no current run; journey unchanged | Trial run on a KYC | doc_check_results |
+| H5 | Use document value | KYC PAN "ABCPK1243F" → mismatch | Use document value, confirm "Change PAN from ABCPK1243F to ABCPK1234F?" | KYC PAN "ABCPK1234F"; row "✓ PAN — updated from the document by Priya Shah"; audit records the change | Use document value | doc_check_results |
+| H6 | Mark as OK | CML holder "A. RAO" → mismatch (only attention item) | Mark as OK "Initial matches passport" | Row "✓ Marked OK by Priya Shah: Initial matches passport" + Undo; `all_docs_valid` true; journey "Validated by AI" | Mark as OK; Resolved items count as OK; Resolving the last item completes the task | doc_check_results |
+| H7 | Journey completes by itself | KYC at Validate documents | Run ends all OK | Task ✓ "Validated by AI", no click; next task current | AI full pass | kyc_doc_checks_journey |
+| H8 | Bulk check | Asha, Rao Holdings (unverified), Kiran Iyer (verified) | Bulk Check documents | 2 runs done; Kiran: "Cannot modify verified KYC" | — (bulk trigger) | doc_check_results |
+| H9 | Attention list | 3 KYCs: mismatch, unreadable file, all OK | Reason = Doesn't match; tick the row; Check again | One row; "Checking documents for 1 KYC"; a new run for that KYC | Filter by reason; Check again in bulk | doc_check_results |
+| H10 | Conversion dry run | Pravega has 12 CML questions | Dry run | Report per question (field or reason); no checks created | Dry run report | doc_checks_conversion |
+| H11 | Conversion execute twice | As H10 | EXECUTE=1 twice | Checks exist once | Execute converts once | doc_checks_conversion |
+| H12 | Progress | 3 documents; reader slowed in test | Check documents | Tab shows "Checking CML (1 of 3)…", then "Checking PAN Card (2 of 3)…" | Progress shown | doc_check_results |
+| H13 | AI rules tool still answers | An AI rule calls `validate_document(question: "Is the PAN visible?")` on a KYC document | The rule runs | Returns the reader's answer for that question; no `DocQuestion` or `DocLlmValidator` involved | — (retirement, AI rules port) | doc_check_runs |
 
 #### Edge Cases
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| E1 | Variant set wins | Individual set and All set exist | Run on Asha (individual) | Only Individual set's checks have results | Variant-specific set wins | doc_check_runs |
-| E2 | Fallback to All | Only All set; non-individual KYC "Rao Holdings" | Run | All set's checks ran | Fallback to All | doc_check_runs |
-| E3 | Name differs in case/prefix | PAN document named "Upload pan card" | Run | PAN Card check has a result from that document | Uploaded name differs in case and prefix | doc_check_runs |
-| E4 | PAN normalised | CML PAN reads "abcpk 1234-f" | Run | PAN result pass | Identifier matches after normalising | doc_check_runs |
-| E5 | Loose mismatch | First holder reads "A. Rao" | Run | First holder review "Document A. Rao · KYC Asha Rao" | Name mismatch needs review | doc_check_runs |
-| E6 | Keep existing | KYC client "86478612", fill Only if empty | Run | Client pass "Kept existing value 86478612"; client unchanged | Extract keeps an existing value | doc_check_runs |
-| E7 | Not found | AI reports DP ID not found | Run | DP ID review "Not found on the document" | Extract value not found | doc_check_runs |
-| E8 | Not uploaded | No passport | Run | Passport group "not uploaded", 2 skipped; `all_docs_valid` false | Document not uploaded; Skipped document blocks validation | doc_check_runs |
-| E9 | Re-upload makes out of date | Step "Validated by AI" (H5) | Asha replaces CML | CML group "Out of date — document changed after this run"; others not; step back to review | Re-uploaded document is out of date; Re-upload resets the step | kyc_doc_checks_journey |
-| E10 | Second run refused | A run is running | Priya clicks Run again | "Document Checks are already running for Asha Rao"; one run | Second run refused | doc_check_runs |
-| E11 | Preset twice | H1 done | Apply CML again | Still 9 checks | Preset applied twice | doc_check_setup |
-| E12 | Field removed | DP ID → dp; `dp` custom field deleted | Open set edit; then run | Edit row "This field no longer exists — pick another"; run: DP ID error "Field no longer exists" | Field removed after setup | doc_check_setup |
-| E13 | Removed document leaves no result | Last run had Passport; passport deleted | Run | Current results have no Passport results except "not uploaded" skips | New run replaces old results | doc_check_runs |
-| E14 | Legacy answers shown | KYC has `doc_question_answers` for CML | Open Document Checks tab | "Earlier AI answers" collapsed section with the old table | — (proposal UI) | kyc_doc_checks_journey |
-| E15 | Not checked yet | Set exists, no run | Open journey | "Documents not checked yet — run Document Checks or check them and mark reviewed" | — (journey requirement) | kyc_doc_checks_journey |
-| E17 | Rule fails | AI answers "no" to Signed by holder? | Run | Rule fail with explanation | Rule failed | doc_check_runs |
-| E18 | Identifier mismatch | KYC PAN "ABCPK1243F" | Run | PAN fail "Document ABCPK1234F · KYC ABCPK1243F" | Identifier mismatch fails | doc_check_runs |
-| E19 | Problems count in journey | Run with 1 fail and 1 error | Open journey | "Document Checks found 2 problems — check them and mark reviewed" | Problems ask for review | kyc_doc_checks_journey |
+| E1 | Cards from both lists | Shared lists | Open the setup page | Cards CML, PAN Card, Passport, Board Resolution; PAN Card once | Cards from the KYC lists | doc_check_setup |
+| E2 | No documents | Entity with empty lists | Open the setup page | "Add the documents you collect in Settings → KYC documents. They'll appear here." | No documents yet | doc_check_setup |
+| E3 | Same field twice | CML has PAN | Add Compare PAN again; Save | Not saved; row "Already used on this card" | Same field twice refused | doc_check_setup |
+| E4 | Preset twice | CML saved from preset | Use CML preset again | No rows added; not-added note lists only Email, Mobile | Preset used twice | doc_check_setup |
+| E5 | No preset | — | Look at Board Resolution | No preset button | No preset for other documents | doc_check_setup |
+| E6 | Company ignores individual docs | Rao Holdings | Check documents | Only PAN Card items; no CML or Passport | Company KYC ignores individual-only documents | doc_check_runs |
+| E7 | Name with prefix | PAN document named "Upload pan card" | Check | PAN Card items read from it | Uploaded name differs in case and prefix | doc_check_runs |
+| E8 | PAN punctuation | CML PAN reads "abcpk 1234-f" | Check | PAN ✓ matches | Compare ignores case and punctuation | doc_check_runs |
+| E9 | Name order | Passport name "RAO ASHA" | Check | Name ✓ matches | Compare ignores word order for names | doc_check_runs |
+| E10 | Keep existing | KYC Client ID "86478612", Replace off | Check | "kept your value 86478612 (document says 86478611)"; unchanged | Fill in keeps an existing value | doc_check_runs |
+| E11 | Not found | AI reports no DP ID | Check | DP ID ⚠ "not found on this document" + Mark as OK | Value not found | doc_check_runs |
+| E12 | Not uploaded | No passport | Check | Passport ⚠ "Not uploaded yet"; `all_docs_valid` false | Not uploaded; Not uploaded blocks validity | doc_check_runs |
+| E13 | Replaced document | H7 done | Asha replaces CML | CML "Document changed after this check" + Check again; others unaffected; task back to waiting | Replaced document flagged; Document replaced after validation | kyc_doc_checks_journey |
+| E14 | Second check refused | A run is running | Check documents again | "Documents are already being checked for Asha Rao"; one run | Second check refused | doc_check_runs |
+| E15 | Removed from list | Last run had Passport; Passport removed from the individual list | Check | No Passport items | New check replaces old results | doc_check_runs |
+| E16 | Field removed | DP ID → dp; `dp` deleted from the form | Open settings; then check | Banner "1 check uses a field that no longer exists — Show me"; row "This field no longer exists — pick another"; run item ⚠ "this check's KYC field no longer exists" | Field removed after setup | doc_check_setup |
+| E17 | Yes-no unexpected | AI answers no to the signed question | Check | ⚠ "answered No" with the reason + Mark as OK | Yes-no not as expected | doc_check_runs |
+| E18 | Mismatch shown | KYC PAN "ABCPK1243F" | Check | ⚠ "doesn't match" "Document: ABCPK1234F · KYC: ABCPK1243F" + both actions | Compare mismatch | doc_check_runs |
+| E19 | Undo | H6 done | Undo | Row back to ⚠ "doesn't match"; `all_docs_valid` false; journey "1 document item needs attention" | Undo | doc_check_results |
+| E20 | Earlier AI answers | KYC with `doc_question_answers` | Open tab | Collapsed "Earlier AI answers (before Document Checks)" | Earlier AI answers shown | kyc_doc_checks_journey |
+| E21 | Not checked yet | Checks exist; KYC never checked | Journey | "Documents not checked yet — check documents or mark reviewed" | Not checked yet | kyc_doc_checks_journey |
+| E22 | Attention in journey | Run with 2 items needing attention | Journey | "2 document items need attention — resolve them or mark reviewed"; Mark reviewed → "Reviewed by Priya Shah" | AI could not validate; Summary toast | kyc_doc_checks_journey |
+| E23 | No checks for the KYC's docs | Entity with no checks | Journey | "Check the documents and mark reviewed" | No document questions | kyc_doc_checks_journey |
 
 #### Error Cases
 
 | # | Scenario | Given | When | Then (what the user sees, who is alerted) | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| X1 | Unsupported file, other docs continue | PAN Card is a .doc; CML PAN reads "ABCPK1243F"… KYC PAN "ABCPK1234F" | Run | PAN Card error "Can't read this file type — upload a PDF or image"; CML and Passport checked; run `done_with_errors`; Priya notified "Document Checks finished for Asha Rao: 9 passed, 1 failed, 1 error" | Unsupported file; Run summary notification | doc_check_runs |
-| X2 | Unreadable reply | AI returns "Sorry, I can't" for CML | Run | CML checks error "The AI's reply couldn't be read — try again"; others checked | — (errors requirement) | doc_check_runs |
-| X3 | AI unavailable | Reader raises `Faraday::ConnectionFailed` | Run | Run `failed`; panel header "Last attempt failed …: the AI service is unavailable"; previous results still current; no field changed; Priya notified (danger) | AI unavailable | doc_check_runs |
-| X4 | Disallowed field | — | Priya saves an Extract check with field "verified" (crafted param) | "Choose a field from the list"; not saved | Field outside the allowed list refused | doc_check_setup |
-| X5 | Inert placeholder | DP ID hint "$destroy the record" | Run | Hint sent verbatim; KYC still exists; DP ID result normal | Placeholder text is inert | doc_check_runs |
-| X6 | Other entity | Olu (Northwind) | Opens Fireside's set edit URL and a run URL | Access denied for both | Other entity blocked | doc_check_results |
-| X7 | Investor view | Asha signs in | Opens her KYC | No Document Checks tab, no results | Investor never sees results | doc_check_results |
-| X8 | Accept without reason | Review result | Priya clicks Accept with empty reason | "Give a reason for accepting"; not accepted | Accept without reason | doc_check_results |
-| X9 | Unresolvable field in conversion | 6051 hint "Extract to field mobil_contact" | Dry run | Listed unconverted "Field mobil_contact not found" | Unresolvable field reported | doc_checks_conversion |
-| X10 | Duplicate set | Individual set exists | Priya creates another Individual set | Refused "Investor KYC — Individual already exists" | Duplicate set refused | doc_check_setup |
+| X1 | Unreadable file, others continue | PAN Card is a .doc; KYC PAN "ABCPK1243F" | Check | PAN Card ⚠ "Couldn't read this file — upload it as a PDF or image" + Check again; CML and Passport read; warning toast "Documents checked for Asha Rao — 2 need attention" | Unsupported file | doc_check_runs |
+| X2 | Unreadable reply | AI returns "Sorry, I can't" for CML | Check | CML items ⚠ "Couldn't read the AI's answer for this document"; others read | — (problems requirement) | doc_check_runs |
+| X3 | AI unavailable | Reader raises a connection error | Check | Run `could_not_run`; banner "Couldn't check documents on … — the AI service is unavailable. Your earlier results are below."; earlier results current; no field changed; danger toast to Priya | AI unavailable | doc_check_runs |
+| X4 | Disallowed field | — | Crafted save of Fill in → "verified" | "Pick a KYC field"; not saved | Field outside the allowed list refused | doc_check_setup |
+| X5 | Inert placeholder | DP ID tip "$destroy the record" | Check | Tip sent verbatim; KYC exists; DP ID outcome normal | Placeholder text is inert | doc_check_runs |
+| X6 | Other entity | Olu (Northwind) | Opens Fireside's setup page and a result's mark_ok URL | Access denied for both | Other entity blocked | doc_check_results |
+| X7 | Investor | Asha signs in | Opens her KYC | No Document checks tab | Investor never sees results | doc_check_results |
+| X8 | Mark OK without reason | An attention row | Mark as OK with an empty reason | "Say why this is OK"; not resolved | Mark as OK needs a reason | doc_check_results |
+| X9 | Unresolvable field (conversion) | 6051 hint "Extract to field mobil_contact" | Dry run | Not converted: "Field mobil_contact not found" | Unresolvable field reported | doc_checks_conversion |
+| X10 | View-only user can't resolve | Ken Mori | Opens Asha's tab | Sees results; no Use document value / Mark as OK / Check documents buttons; a direct PATCH is denied | — (access requirement) | doc_check_results |
+
+#### Retirement
+
+| # | Scenario | Given | When | Then | Spec scenario | Feature |
+|---|---|---|---|---|---|---|
+| R1 | Old screens gone | Retirement deployed | Priya opens `/doc_questions` and `/doc_questions/new` | 404 for both; no "Doc Questions" menu entry; Settings shows "Document Checks" | Old settings pages gone | doc_checks_retirement |
+| R2 | Old import type gone | Retirement deployed | Priya opens Import uploads → New | "DocQuestion" isn't an import type; old DocQuestion upload records still open read-only | Old import type gone | doc_checks_retirement |
+| R3 | Old KYC action gone | Retirement deployed | POST `/investor_kycs/:id/validate_docs_with_ai` | 404; the KYC page button posts to Document Checks instead | Old KYC action gone | doc_checks_retirement |
+| R4 | Old data gone, history kept | Retirement migration ran | Inspect the DB | No `doc_questions` table and no `documents.qna` column; `investor_kycs.doc_question_answers` still present and shown under Earlier AI answers | Data removed, history kept | doc_checks_retirement |
+| R5 | Retirement refuses to drop unconverted questions | `doc_questions` has rows with no matching `doc_checks.legacy_doc_question_id` | The drop migration runs | The migration aborts with "N Doc Questions are not converted — run doc_checks:convert_doc_questions first" | Unconverted questions block removal | doc_checks_retirement |
 
 ### Testing
 
-Cucumber only. A `@doc_checks_fake_ai` tag swaps the reader's LLM call for
-`DocChecks::FakeReader`, whose readings are set by a step ("the AI reads from "CML": DP ID=IN303622;
-…") and which records the call count. It can also be told to raise or return garbage (X2, X3). It
-reuses the existing KYC, entity, document and journey steps (`investor_kyc_journey_steps.rb`). New
-steps go in `features/step_definitions/doc_checks_steps.rb`. The features `kyc_validation.feature`
-and `doc_question_import.feature` are deleted with the legacy code.
+Cucumber only. A `@doc_checks_fake_ai` tag swaps the reader's LLM call for `DocChecks::FakeReader`.
+Its readings are set per document by a step ("the AI reads from "CML": DP ID=IN303622; …"). It records
+the call count, and it can raise a provider error, return garbage, or wait per document (H12). It reuses
+the existing KYC, entity, document and journey steps (`investor_kyc_journey_steps.rb`, whose
+`DocQuestion`-creating steps are rewritten to create `DocCheck`s). New steps go in
+`features/step_definitions/doc_checks_steps.rb`. R4 and R5 check the schema and the migration guard
+from a step, using the migration's guard method directly.
 
 ### Risks and open questions
 
-- Multi-page PDFs: today only the pages `ImageService.pdf_to_image` renders are seen, so a CML
-  value on page 2 may be "not found" → it shows as review, not silent. Measure in QA, and widen in
-  phase 2 if needed.
-- The AI reads the wrong value for a label (e.g. the second holder's PAN) → Match shows both
-  sides. Hints and presets are written to disambiguate.
-- Run history grows without bound → indexes keep it cheap. A phase-2 retention option (keep the
-  last 10 runs per record) is noted in the LLD.
-- The AI filling fields bypasses the KYC journey's "details changed after review" invalidation
-  (that lives in `InvestorKycAction`) → Extract defaults to filling blanks only. Runs normally
-  happen before review, and the audit records each write with a "Document Checks run #id" comment.
-- Removing Doc Questions screens surprises the 6 entities → conversion runs before deploy of the
-  removal, and Support tells them (task in phase 7).
+- Multi-page PDFs: only the pages `ImageService.pdf_to_image` renders are seen, so a value on page 2
+  shows as "not found" (visible, never silent). Measure in QA, and widen in phase 2 if needed.
+- The AI reads the wrong value (e.g. the second holder's PAN) → Compare shows both sides. Presets
+  carry disambiguating tips.
+- Use document value with a bad AI read overwrites a correct KYC value → it always asks for
+  confirmation, showing both values, and the change is audited.
+- Run history grows → indexes keep it cheap. A phase-2 retention option (keep the last 10 runs per
+  record) is noted in the LLD.
+- Dropping data that hasn't been converted → the drop migration refuses while any `doc_questions` row
+  lacks a converted check or an explicit "skipped" mark in the conversion log (R5). The US environment
+  is converted and checked separately from IN.
+- Dropping `documents.qna` on a large table → `ignored_columns` ships in deploy 1, and the drop uses
+  `ALGORITHM=INSTANT` (MySQL ≥ 8.0.29; the LLD records the check), so there's no table rebuild.
+- Removing the Doc Questions screens surprises the 6 entities → the conversion runs before the
+  removal deploys, and Support tells them (task in phase 6).
 
-| # | Open question | Current thinking | Status |
+No open questions remain. Name/address differences are "needs attention" like any other mismatch
+(proposal decision 5).
+
+### Retirement: what will not exist afterwards
+
+The retirement happens in **two deploys**, so nothing is removed before its data has been carried
+over:
+
+```mermaid
+flowchart LR
+    A["Deploy 1<br/>Document Checks live<br/>old screens still there"] --> B["Support runs conversion<br/>dry run, review,<br/>EXECUTE=1 (IN, then US)"]
+    B --> C["Deploy 2<br/>remove UI, code,<br/>routes; drop table<br/>and dead column"]
+    C --> D["After: only<br/>Document Checks"]
+```
+
+**UI: gone after deploy 2**
+
+| What | Where today | After | How |
 |---|---|---|---|
-| 1 | Names/addresses that differ: fail or needs review? | Needs review (person decides with Accept); identifiers fail | **Open — default chosen, confirm with product** |
+| Doc Questions list / new / edit / show / delete / Excel export | Settings → Doc Questions (`/doc_questions*`) | Gone; URLs 404 | Delete `DocQuestionsController`, its 11 views and the `resources :doc_questions` route; the menu entry now points to Document Checks (deploy 1) |
+| Doc Questions Excel import | Import uploads → type "DocQuestion", sample `doc_questions.xlsx` | Gone from the type list; old upload records still viewable | Remove from `ImportUpload::TYPES` and the sample map; delete `public/sample_uploads/doc_questions.xlsx`; keep the `import_uploads` rows (history) |
+| "Docs Validation" tab with raw JSON | KYC page | Replaced in deploy 1 by "Document checks (n)", which keeps "Earlier AI answers" | `_details.html.erb` |
+| "Validate Document Data" (single, bulk) | KYC page, KYC list | Renamed "Check documents" in deploy 1, posting to `/doc_check_runs` | `show.html.erb`, `_show.html.erb`, `_bulk_actions.html.erb` |
+| QnA tab on a document | Document page (only when `qna` set; 0 such documents in prod) | Gone | Remove the tab from `documents/_document_details.html.erb` (deploy 1) |
+| Help link for `doc_questions` | `UserGuideHelper` map | Points to the Document Checks guide | Replace the key in deploy 1 |
 
-### Legacy removal and conversion
+**Code: gone after deploy 2**
+
+| What | Why it can go | How |
+|---|---|---|
+| `DocLlmValidator` | Replaced by `DocumentReader` + `Judge` | Delete; port its one other caller, `AiDataManager#validate_document`, to `DocumentReader` (deploy 1) |
+| `DocLlmValidationJob` | Replaced by `DocChecks::RunJob` | Delete |
+| `DocLlmQnaJob` | Never called (dead code that shells out to `fabric`) | Delete |
+| `VariableInterpolation` | Only `DocLlmValidator` used it; it is the `send`-on-user-text hole | Delete |
+| `WithDocQuestions` | Replaced by the registry | Delete; remove the include from `InvestorKyc`, `Investor` and `AggregatePortfolioInvestment` |
+| `DocQuestion` model, `DocQuestionPolicy` | Table dropped | Delete in deploy 2, with the table |
+| `ImportDocQuestion`, `ImportDocQuestionService` | Import retired | Delete |
+| `InvestorKyc#doc_questions`, `InvestorKycsController#validate_docs_with_ai`, member route `validate_docs_with_ai` | Replaced by the registry and `/doc_check_runs` | Delete (deploy 1, together with the button change) |
+| `WorkflowChecks::InvestorKyc::Support#ai_answer_counts`, `#ai_validated_at` | The journey reads `Assessment` | Delete (deploy 1) |
+| `Entity has_many :doc_questions` and the `doc_questions.each(&:really_destroy!)` loop | Table dropped | Replace with `has_many :doc_checks, dependent: :destroy` |
+| `AiDataManager#extract_info`'s unused `DocQuestion.new(question:)` line | Dead | Delete |
+| Features `ai/kyc_validation.feature`, `core/doc_question_import.feature`; steps `kyc_validation.rb`, `doc_question_import_steps.rb`; fixture `public/sample_uploads/kyc_validation_rules.xlsx`; the `DocQuestion` / `doc_question_answers` steps in `investor_kyc_journey_steps.rb` | Legacy tests | Delete, and rewrite the journey steps onto `DocCheck` |
+| Documentation: the Doc Questions sections of `document_management_user_guide.md`, `ai_features_user_guide.md`, `investor_kyc_user_guide.md` and `documents_module_prd.md` | Feature gone | Rewrite to point to `document_checks_user_guide.md`. GTM decks under `docs/gtm` are left to marketing |
+
+**DB: gone after deploy 2**
+
+| What | Rows in prod (IN dump) | After | How |
+|---|---|---|---|
+| Table `doc_questions` | 72 | **Dropped** | Migration `drop_table :doc_questions`, guarded: it aborts unless every row has a `doc_checks.legacy_doc_question_id` or a "not converted" entry in `doc_check_conversion_log` (R5). Reversible by re-creating the table from `schema.rb` (data comes back from backup only) |
+| Column `documents.qna` | 0 | **Dropped** | `ignored_columns` in deploy 1; `remove_column … algorithm: :instant` in deploy 2 |
+| Column `investor_kycs.doc_question_answers` | 172 with content | **Kept**, read-only | Shown under "Earlier AI answers". Nothing writes it any more. Dropping it is a later, separate decision |
+| Column `investor_kycs.all_docs_valid` | — | **Kept** | Now written only by `DocChecks::Kyc#on_assessed` |
+| `import_uploads` rows of type DocQuestion | historical | **Kept** | History; the type can no longer be chosen |
+| Entity permission `enable_doc_llm_validation` | — | **Kept** | Reused as the Document Checks switch; the label reads "Document checks (AI)" |
+| Env `DOCUMENT_VALIDATION_PROVIDER`, `DOCUMENT_VALIDATION_MODEL` | — | **Kept** | Read by `DocumentReader` |
+
+**What still references the old names, on purpose:** the policy predicate `validate_docs_with_ai?`
+(internal; renaming churns every policy), the KYC button DOM id `investor_kyc_validate_docs_with_ai_btn`
+(the journey's action target), the bulk action key `ValidateDocsWithAi` (saved in bulk-action URLs),
+and the `doc_question_answers` column (history). The check task 6.x lists these as the only allowed
+grep hits.
+
+### Converting the legacy questions
 
 **Conversion** (`rake doc_checks:convert_doc_questions [ENTITY_ID=] [EXECUTE=1]`,
 `DocChecks::LegacyConverter`):
 
 | Old | New |
 |---|---|
-| Entity's `doc_questions` with `for_class = InvestorKyc` | Checks in that entity's "Investor KYC — All" set (created if missing) |
-| `document_name` | `document_name` if in `documents_for(entity, "all")` (case-insensitive), else unconverted "Document X is not on the KYC document list" |
-| `qtype` extraction; validation/general whose question starts with "Extract" | `kind: extract`; other validation → `kind: rule` |
-| `question` | `label` = question with a leading "Extract (the) (field)" removed, truncated to 100; `hint` = full question (255) |
-| `response_hint` "…field X…" (regex `/field\s+([\w ]+)/i`) or the label | `field_name` resolved by `parameterize.underscore` (the old rule) case-insensitively against `fields_for`; unresolved → unconverted "Field X not found" |
+| Entity's `doc_questions` with `for_class = InvestorKyc` | `doc_checks` with `record_type: "InvestorKyc"` |
+| `document_name` | Same, if in `document_names(entity)` (case-insensitive); else not converted "Document X is not on the KYC document lists" |
+| `qtype` extraction; validation/general starting "Extract" | `action: fill_in`; other validation → `action: question` |
+| Question text with a `$placeholder` (e.g. "Is $full_name present") | Not converted: "Uses a $placeholder — set it up as a Compare check instead" (none in production; found in dev data) |
+| `question` | `look_for` = question minus a leading "Extract (the) (field)", ≤ 100; `tip` = full question, ≤ 255 |
+| "…field X…" in `response_hint` (`/field\s+([\w ]+)/i`) or else the look-for | `field_name` resolved by `parameterize.underscore` (the old rule), case-insensitively, against `fields_for`; unresolved → "Field X not found"; already used on the card → "Field X is already used on this document" |
 | `id` | `legacy_doc_question_id` (idempotent) |
 
-The output is a table per entity on stdout: converted (label → field), unconverted (question →
-reason). Nothing is written without `EXECUTE=1`.
-
-**Removed:**
-
-- `DocQuestionsController` and its views and routes;
-- `DocLlmValidationJob`, `DocLlmValidator`, `DocLlmQnaJob`, `VariableInterpolation`;
-- `ImportDocQuestion` / `ImportDocQuestionService`, and the import-upload type;
-- `WithDocQuestions`;
-- the menu link;
-- `features/ai/kyc_validation.feature`, `features/core/doc_question_import.feature` and their steps.
-
-The `DocQuestion` model and table stay until phase 2, for conversion and audit.
+The output is a table per entity on stdout, converted (look-for → field) and not converted (question →
+reason). With `EXECUTE=1` the not-converted rows are also written to `doc_check_conversion_log`
+(question id, entity, reason, timestamp, a small table created in deploy 1 and dropped with
+`doc_questions` in deploy 2). That way the drop guard can tell "reviewed and skipped" from "never
+looked at". Nothing is written without `EXECUTE=1`.
 
 **FAQ**
 
 | Question | Answer |
 |---|---|
-| Where do I start reviewing? | The Part 2 picture, then card ④ (run guarantees) and card ⑥ (outcomes), then [lld.md Review Summary](lld.md#review-summary). |
-| Why convert into "All" rather than by KYC type? | Old questions had no KYC type, so "All" preserves today's behaviour exactly. |
-| What if conversion runs after the removal deploys? | It only needs the `DocQuestion` model and table, which stay. Order is still conversion first, so Support can show the report. |
-| Is phase 2 (extractor agent) blocked by anything here? | No. Extract checks already write through the registry. Phase 2 adds an `upload` trigger and maps the agent's rules to checks. |
+| Where do I start reviewing? | The Part 2 picture, then card ⑥ (outcomes), card ⑦ (resolutions) and card ④ (run guarantees), then [Retirement](#retirement-what-will-not-exist-afterwards) and [lld.md Review Summary](lld.md#review-summary). |
+| Why keep `doc_question_answers` but drop `doc_questions`? | The answers are per-KYC history users may need to see. The questions are configuration, fully represented by the converted checks plus the conversion log. |
+| What if the conversion was never run on US? | The deploy-2 migration's guard refuses to drop the table on that environment until it is. |
+| Is phase 2 (extractor agent, auto-check on upload) blocked by anything here? | No. It adds an `upload` trigger and maps the agent's rules to Fill in checks. |

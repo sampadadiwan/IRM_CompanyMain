@@ -51,9 +51,8 @@ class InvestorKycAction < Trailblazer::Operation
     elsif %w[completed verified].include?(from_status) && %w[draft_saved link_sent not_sent].include?(to_status)
       investor_kyc.journey_undo_evaluate(note: "Marked incomplete", started_at:, actor:)
     elsif (changes.keys - JOURNEY_BOOKKEEPING_COLUMNS).any? && !investor_kyc.previously_new_record?
-      investor_kyc.journey_invalidate(check_keys: "investor_kyc.review_kyc", reason: "KYC details changed after review",
-                                      actor:, only_if_passed: "investor_kyc.review_kyc")
-      investor_kyc.journey_undo_evaluate(note: "KYC details changed after review", started_at:, actor:)
+      # Shared with Document Checks' field writes (InvestorKycConcern#journey_details_changed!)
+      investor_kyc.journey_details_changed!(actor:, started_at:)
     else
       investor_kyc.journey_progress!(actor:)
     end

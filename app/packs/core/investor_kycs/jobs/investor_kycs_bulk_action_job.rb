@@ -49,10 +49,19 @@ class InvestorKycsBulkActionJob < BulkActionJob
     [:document_folder, :form_type, { investor: [:approved_users, { investor_entity: :entity_setting }] }]
   end
 
+  # Bulk "Check documents": a Document Checks run per KYC, performed here (not queued) so the 2s pacing
+  # below still protects the AI provider. Worked example H8 —
+  # openspec/changes/document-checks/design.md#worked-examples
   def validate_docs_with_ai(investor_kyc, user_id)
-    if InvestorKycPolicy.new(User.find(user_id), investor_kyc).validate_docs_with_ai? && !investor_kyc.verified
-      error_msgs = DocLlmValidationJob.perform_now("InvestorKyc", investor_kyc.id, user_id)
-      @error_msg += error_msgs if error_msgs.present?
+    user = User.find(user_id)
+    if InvestorKycPolicy.new(user, investor_kyc).validate_docs_with_ai? && !investor_kyc.verified
+      begin
+        run = DocChecks::StartRun.call(record: investor_kyc, user:, trigger: "bulk", enqueue: false)
+        error_msgs = DocChecks::RunJob.perform_now(run.id)
+        @error_msg += error_msgs if error_msgs.present?
+      rescue DocChecks::Error::AlreadyRunning => e
+        send_notification(e.message, user_id, "warning")
+      end
     else
       msg = investor_kyc.verified ? "Cannot modify verified KYC" : "User not authorized to validate docs with AI for #{investor_kyc}"
       send_notification(msg, user_id, "danger")

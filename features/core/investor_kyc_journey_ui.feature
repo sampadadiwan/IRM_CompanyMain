@@ -72,17 +72,17 @@ Feature: Investor KYC journey — the KYC page
 
   # E3, J2.3, J2.4 — AI could not validate: the second button opens the Validation tab, Mark reviewed passes it
   Scenario: AI could not validate an answer — check it and mark reviewed
-    Given the entity has 8 KYC document questions on "PAN Card"
+    Given the entity has 8 document checks on "PAN Card"
     And the KYC's form link was sent
     And the KYC is submitted
     And the KYC has the documents "PAN Card, Address Proof, Photo"
     When I open the KYC page
-    And the KYC's AI validation finishes with 1 of 8 answers failing while the page is open
+    And the KYC's documents finish checking with 1 of 8 items needing attention while the page is open
     Then without reloading, the step bar should show:
       | task               | mark |
       | Validate documents | ●    |
-    And the panel should say "AI could not validate 1 of 8 answers — check them and mark reviewed"
-    And the panel review action "Open validation" should click "#docs-validation-tab"
+    And the panel should say "1 document item needs attention — resolve it or mark reviewed"
+    And the panel review action "Open document checks" should click "#docs-validation-tab"
     When I click Mark reviewed in the journey panel
     Then the step bar should show:
       | task               | mark |
@@ -91,10 +91,11 @@ Feature: Investor KYC journey — the KYC page
 
   # H6 — the AML result arrives while the page is open
   Scenario: The step bar moves on when the AML result arrives
-    Given the KYC's form link was sent
+    Given the entity has 8 document checks on "PAN Card"
+    And the KYC's form link was sent
     And the KYC is submitted
     And the KYC has the documents "PAN Card, Address Proof, Photo"
-    And the KYC's AI validation found 0 of 8 answers failing
+    And the KYC's documents were checked with 0 of 8 items needing attention
     When I open the KYC page
     Then the panel action "Generate AML Report" should click "investor_kyc_generate_new_aml_report_btn"
     When the KYC's AML result arrives as "no_match" while the page is open

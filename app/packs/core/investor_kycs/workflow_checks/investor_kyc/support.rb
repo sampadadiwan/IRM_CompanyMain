@@ -89,43 +89,16 @@ module WorkflowChecks
         SUBMITTED.include?(kyc.submission_status)
       end
 
-      # The names of the documents this KYC must have: the entity's list for its KYC type (Settings →
-      # individual / non-individual KYC documents, as InvestorKycConcern#docs_completed? reads it) plus
-      # the KYC form's required document fields (as InvestorKyc#check_required_file_type_custom_fields
-      # names them). Order kept, duplicates removed.
+      # The names of the documents this KYC must have (InvestorKycConcern#required_document_names, shared
+      # with Document Checks so both agree on which documents a KYC has)
       def required_document_names(kyc)
-        setting = kyc.entity.entity_setting
-        list = kyc.individual? ? setting&.individual_kyc_doc_list : setting&.non_individual_kyc_doc_list
-        names = list.to_s.split(",").map(&:strip).compact_blank
-        if kyc.form_type_id
-          ::FormCustomField.where(form_type_id: kyc.form_type_id, field_type: "File", required: true)
-                           .pluck(:label, :name).each { |label, name| names << (label.presence || name.to_s.humanize) }
-        end
-        names.uniq
+        kyc.required_document_names
       end
 
       # Required names no document on the KYC satisfies — matched by name or owner_tag, ignoring case and
       # an "Upload "/"Attach your " prefix (InvestorKycConcern#missing_required_document_names)
       def missing_document_names(kyc)
         kyc.missing_required_document_names(required_document_names(kyc))
-      end
-
-      # [failed, total] answers in the stored AI validation results; nil when AI validation has not run.
-      # "Failed" is the validator's own rule (DocLlmValidator::NO_LIST), so it agrees with all_docs_valid.
-      def ai_answer_counts(kyc)
-        answers = kyc.doc_question_answers
-        return nil unless answers.is_a?(Hash) && answers.any?
-
-        responses = answers.values.grep(Hash).flat_map(&:values)
-        failed = responses.count { |r| !r.is_a?(Hash) || DocLlmValidator::NO_LIST.include?(r["answer"].to_s.downcase) }
-        [failed, responses.size]
-      end
-
-      # When AI validation last wrote its results (the newest audit touching them): the evidence time
-      # for "Validated by AI", compared with any invalidation (a document changed afterwards)
-      def ai_validated_at(kyc)
-        kyc.audits.where("audited_changes LIKE ? OR audited_changes LIKE ?", "%all_docs_valid%", "%doc_question_answers%")
-           .maximum(:created_at)
       end
 
       # When the KYC was last set to verified (the audit of the submission_status change), or nil

@@ -4,11 +4,11 @@
 > **Companion documents:** [Proposal](proposal.md) · [Design](design.md)
 
 > **How to use:** work top to bottom. Tick ☐ → ☑ and write Pass or Fail for each row. For a Fail,
-> put the defect link in Notes. Row IDs match the design's worked examples (H/E/X) and UI journeys
+> put the defect link in Notes. Row IDs match the design's worked examples (H/E/X/R) and UI journeys
 > (J), so a failure maps straight to the automated test that should have caught it.
 
-**ID legend:** **H** = Happy path · **E** = Edge case · **X** = Error case · **J** = UI journey
-step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting check
+**ID legend:** **H** = Happy path · **E** = Edge case · **X** = Error case · **R** = Retirement
+(after release 2) · **J** = UI journey step · **RS** = Role sweep · **C** = Cross-cutting check
 
 ---
 
@@ -18,6 +18,7 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 - [Happy Path](#happy-path)
 - [Edge Cases](#edge-cases)
 - [Error Cases](#error-cases)
+- [Retirement (release 2)](#retirement-release-2)
 - [UI Journeys](#ui-journeys)
 - [Role Sweep](#role-sweep)
 - [Cross-cutting Checks](#cross-cutting-checks)
@@ -29,14 +30,14 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 
 | Item | Detail |
 |---|---|
-| Environment | Staging (IN). The AI provider must be configured (ask a developer to confirm `DOCUMENT_VALIDATION_PROVIDER`) |
-| Accounts | **Priya Shah**: fund admin at "Fireside Ventures (QA)". **Ken Mori**: fund employee at Fireside without KYC edit rights. **Asha Rao**: investor user owning a KYC at Fireside |
+| Environment | Staging (IN). The AI provider must be configured (ask a developer to confirm) |
+| Accounts | **Priya Shah**: fund admin at "Fireside Ventures (QA)". **Ken Mori**: Fireside fund user who can view but not edit KYCs. **Asha Rao**: investor user owning a KYC at Fireside |
 | Second entity | **Olu Bello**: fund admin at "Northwind Capital (QA)" |
-| Entity settings | Fireside: "Doc LLM validation" permission on. Individual KYC documents = "CML, PAN Card, Passport". KYC form (Individual) has custom fields **DP ID** (`dp`) and **Client ID** (`client`) |
-| Seed data | Individual KYC **Asha Rao**: full name "Asha Rao", PAN "ABCPK1234F", address "D109, MW", other bank fields empty. Upload a real sample CML PDF, a PAN card image and a passport PDF whose values you know. Second KYC **Rao Holdings** (non-individual). Third KYC **Kiran Iyer** (individual, verified) |
-| Prepared files | `pan_card.doc` (a Word file), a CML whose holder is printed as "A. Rao", a CML with PAN "ABCPK1243F" |
-| Legacy data | Ask a developer to copy one Doc Questions answer set onto a KYC (or use an entity converted from production data) for E14 |
-| Background work | Runs happen in the background and the panel updates by itself within about a minute. If it doesn't, refresh. To simulate an AI outage (X3), ask a developer to point the provider at an invalid key on staging for the duration of the test |
+| Entity settings | Fireside: "Document checks (AI)" permission on. Individual KYC documents "CML, PAN Card, Passport"; non-individual "PAN Card, Board Resolution". KYC form has custom fields **DP ID** and **Client ID** |
+| Seed data | Individual KYC **Asha Rao**: full name "Asha Rao", PAN "ABCPK1234F", address "D109, MW". Upload a real CML PDF, a PAN card image and a passport PDF whose values you know. Non-individual KYC **Rao Holdings** with a PAN card. Verified KYC **Kiran Iyer** |
+| Prepared files | `pan_card.doc` (Word), a CML printing the holder as "A. RAO", a CML with PAN "ABCPK1243F", a CML without a signature |
+| Legacy data | An entity with Doc Questions and a KYC with earlier AI answers (staging copy of production) |
+| Background work | Checks run in the background; the tab updates itself. For X3, ask a developer to break the AI key on staging for the test |
 
 ---
 
@@ -44,54 +45,74 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
-| ☐ | H1 | Applying the CML preset | Logged in as Priya; no sets yet | 1. Settings → Document Checks. 2. Add set "Investor KYC — Individual". 3. Add document → CML. 4. Apply preset → CML | 9 checks appear. DP ID → DP ID, Client ID → Client ID, PAN → PAN, First holder name → Full name. Email and Mobile rows show "Pick a field before saving" | | |
-| ☐ | H10 | Document list | H1 done | 1. Click Add document | Only PAN Card and Passport are offered | | |
-| ☐ | H2 | Full pass run | Set as in the design's shared setup (delete Email/Mobile, add rule "Signed by holder?", PAN Card Name, Passport Name + Expiry date); Asha's documents are good | 1. Open Asha's KYC → Document Checks tab. 2. Click Run Document Checks | "Running…" then, without reload: all groups ✓. DP ID and Client ID show "Filled DP ID" / "Filled Client ID". Address shows "Kept existing value D109, MW". Toast "Document Checks finished for Asha Rao: 11 passed". Edit KYC: DP ID and Client ID filled | | |
-| ☐ | H3 | Test run saves nothing | Fresh KYC with empty DP ID | 1. Settings → set → Test on a KYC → pick the KYC | Panel with banner "Test run — nothing was saved to this KYC"; DP ID "Filled DP ID". Open the KYC: DP ID still empty, Document Checks tab says not checked yet, journey unchanged | | |
-| ☐ | H4 | Accept a review | Upload the "A. Rao" CML; run | 1. On First holder row click Accept. 2. Reason "Initial matches passport". 3. Confirm | Row "Accepted by Priya Shah — 'Initial matches passport'". Header counts update. If nothing else is open, journey Validate documents shows "Validated by AI" | | |
-| ☐ | H5 | Journey completes by itself | Asha's KYC on Validate documents; all good documents | 1. Run Document Checks. 2. Look at the journey bar | Validate documents ✓ "Validated by AI" with no click; next step is current | | |
-| ☐ | H6 | Bulk run | Asha (unverified), Rao Holdings (unverified), Kiran Iyer (verified) | 1. KYC list → select all three → Run Document Checks | Asha and Rao Holdings get runs; Kiran gets "Cannot modify verified KYC" | | |
-| ☐ | H7 | Results list and re-run | One KYC failed, one error, one passing | 1. KYC menu → Document Check results. 2. Status = Failed, Error. 3. Select both rows → Re-run selected | Only the 2 rows listed; notice "Document Checks queued for 2 KYCs"; both KYCs show new runs | | |
-| ☐ | H8 | Conversion report (support) | An entity with Doc Questions (staging copy) | 1. Ask a developer to run the conversion **dry run** for that entity | Report lists each question with its field, or a reason. Settings → Document Checks shows no new checks | | |
-| ☐ | H9 | Conversion execute | H8 reviewed | 1. Developer runs with execute, twice | "Investor KYC — All" set has the converted checks, once each | | |
+| ☐ | H1 | CML preset | No checks yet | 1. Settings → Document Checks → Investor KYC. 2. On CML click Use CML preset | 8 rows added, marked "Unsaved changes"; note "Not added: Email, Mobile — your KYC form has no matching field. Add a custom field to the KYC form, then use the preset again." | | |
+| ☐ | H2 | Add a check | — | 1. PAN Card → Add a check. 2. What to do = Compare. 3. KYC field = Full name. 4. Save | Look for fills "Full name"; header "PAN Card · 1 check" | | |
+| ☐ | H3 | All OK | Checks as in the design's shared setup; good documents | Asha's KYC → Document checks → Check documents | Progress, then all ✓; "DP ID — filled in: IN303622"; Address "kept your value"; toast "Documents checked for Asha Rao — all OK"; Edit KYC shows DP ID, Client ID filled | | |
+| ☐ | H4 | Trial | Fresh KYC with empty DP ID | Settings → Try on a KYC → pick it | Banner "Trial run — nothing on this KYC was changed"; KYC's DP ID still empty; its tab says "These documents haven't been checked yet." | | |
+| ☐ | H5 | Use document value | KYC PAN "ABCPK1243F" | Check → PAN row → Use document value → confirm | Confirm text "Change PAN from ABCPK1243F to ABCPK1234F?"; row "✓ PAN — updated from the document by Priya Shah"; KYC PAN updated; KYC audit shows the change | | |
+| ☐ | H6 | Mark as OK | "A. RAO" CML, only mismatch | Mark as OK → "Initial matches passport" → Save | "✓ Marked OK by Priya Shah: Initial matches passport" with Undo; tab count drops; journey "Validated by AI" | | |
+| ☐ | H7 | Journey completes | KYC on Validate documents | Check documents with good documents | Validate documents ✓ "Validated by AI" with no click | | |
+| ☐ | H8 | Bulk | Asha, Rao Holdings, Kiran Iyer (verified) | KYC list → select all three → Check documents | Two checked; Kiran "Cannot modify verified KYC" | | |
+| ☐ | H9 | Attention list | One mismatch KYC, one unreadable, one OK | KYC menu → Documents needing attention → Reason = Doesn't match → tick → Check again (1) | One row; "Checking documents for 1 KYC" | | |
+| ☐ | H10 | Conversion report | Legacy entity | Developer runs the dry run | Report lists each question with a field or a reason; no checks appear | | |
+| ☐ | H11 | Conversion | H10 reviewed | Developer runs with execute, twice | Checks appear once on that entity's Document Checks page | | |
+| ☐ | H12 | Progress | 3 documents | Check documents and watch | "Checking CML (1 of 3)…", "Checking PAN Card (2 of 3)…", … | | |
+| ☐ | H13 | AI rules still work | An AI rule that validates a document | Run that rule | It returns an answer as before | | |
 
 ## Edge Cases
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
-| ☐ | E1 | Individual set wins | Individual and All sets both exist, different checks | Run on Asha | Only the Individual set's checks appear | | |
-| ☐ | E2 | Fallback to All | Only an All set | Run on Rao Holdings | All set's checks appear | | |
-| ☐ | E3 | Name with prefix/case | Rename Asha's PAN document to "Upload pan card" | Run | PAN Card group has results (not "not uploaded") | | |
-| ☐ | E4 | PAN spacing ignored | CML shows PAN with a space/hyphen | Run | PAN ✓ | | |
-| ☐ | E5 | Name differs → review | "A. Rao" CML | Run | First holder "? Document A. Rao · KYC Asha Rao" with Accept and Fix | | |
-| ☐ | E6 | Keep existing value | Set Asha's Client ID to "86478612" | Run | Client ID ✓ "Kept existing value 86478612"; field unchanged | | |
-| ☐ | E7 | Not found | Add an Extract check "Nominee name" to CML (a CML without one) | Run | "? Not found on the document" | | |
-| ☐ | E8 | Not uploaded | Delete Asha's passport | Run | Passport group "— not uploaded"; journey Validate documents not done | | |
-| ☐ | E9 | Re-upload makes out of date | H5 done | Replace Asha's CML | CML group "⟳ Out of date — document changed after this run"; PAN Card and Passport not; journey back to waiting on Validate documents | | |
-| ☐ | E10 | No double run | — | Click Run Document Checks twice quickly (second tab) | "Document Checks are already running for Asha Rao"; one run | | |
-| ☐ | E11 | Preset twice | H1 done | Apply CML preset again | Still 9 checks | | |
-| ☐ | E12 | Deleted custom field | Delete the DP ID custom field from the KYC form | 1. Open the set. 2. Run on Asha | Row shows "This field no longer exists — pick another"; in the run, DP ID "⚠ Field no longer exists" | | |
-| ☐ | E13 | Removed document leaves no stale result | Last run included Passport results; delete passport | Run | Passport shows only "— not uploaded" | | |
-| ☐ | E14 | Earlier AI answers | KYC with legacy answers | Open Document Checks tab | Collapsed "Earlier AI answers (before Document Checks)"; expanding shows the old table | | |
-| ☐ | E15 | Not checked yet | Set exists, KYC never run | Look at the journey | "Documents not checked yet — run Document Checks or check them and mark reviewed" | | |
-| ☐ | E17 | Rule fails | A CML with no signature | Run | "Signed by holder?" ✗ with the AI's reason | | |
-| ☐ | E18 | PAN mismatch | Upload the CML with PAN "ABCPK1243F" | Run | PAN ✗ "Document ABCPK1243F · KYC ABCPK1234F" | | |
-| ☐ | E19 | Problem count | 1 failed + 1 error | Look at the journey | "Document Checks found 2 problems — check them and mark reviewed" | | |
+| ☐ | E1 | Cards | Setup lists | Open setup page | CML, PAN Card, Passport, Board Resolution; PAN Card once | | |
+| ☐ | E2 | No documents | Entity with empty lists | Open setup page | "Add the documents you collect in Settings → KYC documents. They'll appear here." | | |
+| ☐ | E3 | Same field twice | CML has PAN | Add Compare PAN; Save | Not saved; "Already used on this card" | | |
+| ☐ | E4 | Preset twice | CML saved | Use CML preset again | No duplicates | | |
+| ☐ | E5 | No preset | — | Look at Board Resolution | No preset button | | |
+| ☐ | E6 | Company KYC | Rao Holdings | Check documents | Only PAN Card shown | | |
+| ☐ | E7 | Name prefix | Rename PAN doc "Upload pan card" | Check | PAN Card read | | |
+| ☐ | E8 | PAN spacing | CML PAN with spaces/hyphen | Check | ✓ matches | | |
+| ☐ | E9 | Name order | Passport "RAO ASHA" | Check | ✓ matches | | |
+| ☐ | E10 | Keep value | Client ID "86478612" | Check | "kept your value 86478612 (document says 86478611)" | | |
+| ☐ | E11 | Not found | Add Fill in "Nominee" (not on the CML) | Check | ⚠ "not found on this document" + Mark as OK | | |
+| ☐ | E12 | Not uploaded | Delete passport | Check | ⚠ "Not uploaded yet"; journey not done | | |
+| ☐ | E13 | Replaced | H7 done | Replace CML | "⚠ Document changed after this check" + Check again; journey back to waiting | | |
+| ☐ | E14 | Double click | — | Check documents twice quickly | "Documents are already being checked for Asha Rao" | | |
+| ☐ | E15 | Removed from list | Remove Passport from the individual list | Check | No Passport items | | |
+| ☐ | E16 | Deleted field | Delete DP ID custom field | Open settings; check | Banner "1 check uses a field that no longer exists — Show me"; row "This field no longer exists — pick another"; tab ⚠ "this check's KYC field no longer exists" | | |
+| ☐ | E17 | Yes-no | CML without signature | Check | ⚠ "answered No" with reason | | |
+| ☐ | E18 | Mismatch | KYC PAN "ABCPK1243F" | Check | "Document: ABCPK1234F · KYC: ABCPK1243F" with both buttons | | |
+| ☐ | E19 | Undo | H6 done | Undo | Back to ⚠; journey "1 document item needs attention" | | |
+| ☐ | E20 | Earlier answers | KYC with legacy answers | Open tab | Collapsed "Earlier AI answers (before Document Checks)" | | |
+| ☐ | E21 | Not checked | Never checked | Journey | "Documents not checked yet — check documents or mark reviewed" | | |
+| ☐ | E22 | Attention count | 2 items need attention | Journey | "2 document items need attention — resolve them or mark reviewed" | | |
+| ☐ | E23 | No checks | Entity with no checks | Journey | "Check the documents and mark reviewed" | | |
 
 ## Error Cases
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result (message, who is alerted) | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
-| ☐ | X1 | Word file | Replace PAN card with `pan_card.doc`; CML with PAN mismatch | Run | PAN Card "⚠ Can't read this file type — upload a PDF or image" with Retry; CML and Passport checked; toast (warning) "Document Checks finished for Asha Rao: 9 passed, 1 failed, 1 error" | | |
-| ☐ | X2 | AI reply unreadable | Ask a developer to make the AI return text for CML on staging (or use a blank image as CML) | Run | CML "⚠ The AI's reply couldn't be read — try again"; other documents checked | | |
-| ☐ | X3 | AI outage | Developer breaks the provider key | Run | Toast (danger) "Document Checks could not run for Asha Rao: the AI service is unavailable. Try again later."; panel header "Last attempt failed …"; earlier results still shown; no KYC field changed | | |
-| ☐ | X4 | Field not on list | — | Ask a developer to submit a check with field "verified" (crafted request) | "Choose a field from the list"; not saved | | |
-| ☐ | X5 | Hint text is harmless | Set DP ID hint to "$destroy the record" | Run | KYC still exists; DP ID result normal | | |
-| ☐ | X6 | Other entity | Logged in as Olu | Paste Fireside's set edit URL and a run URL | Access denied for both | | |
-| ☐ | X7 | Investor view | Logged in as Asha | Open her KYC | No Document Checks tab, no results | | |
-| ☐ | X8 | Accept without reason | A review row | Click Accept, leave reason empty, confirm | "Give a reason for accepting"; not accepted | | |
-| ☐ | X9 | Conversion leftovers | Entity with "Extract to field mobil_contact" | Developer runs dry run | Listed as unconverted "Field mobil_contact not found" | | |
-| ☐ | X10 | Duplicate set | Individual set exists | Add set → Investor KYC — Individual | Refused "Investor KYC — Individual already exists" | | |
+| ☐ | X1 | Word file | PAN card `.doc`; KYC PAN mismatch | Check | PAN Card "⚠ Couldn't read this file — upload it as a PDF or image" + Check again; others read; warning toast "Documents checked for Asha Rao — 2 need attention" | | |
+| ☐ | X2 | Unreadable answer | Developer forces a garbage reply | Check | "⚠ Couldn't read the AI's answer for this document" | | |
+| ☐ | X3 | AI down | Developer breaks the key | Check | Error toast "Couldn't check documents for Asha Rao — the AI service is unavailable. Try again later."; banner with Try again; earlier results still shown; KYC unchanged | | |
+| ☐ | X4 | Disallowed field | — | Developer submits field "verified" | "Pick a KYC field" | | |
+| ☐ | X5 | Tip text | Tip "$destroy the record" | Check | KYC still exists; normal result | | |
+| ☐ | X6 | Other entity | Olu | Open Fireside setup URL, a mark_ok URL | Denied | | |
+| ☐ | X7 | Investor | Asha | Open her KYC | No Document checks tab | | |
+| ☐ | X8 | No reason | Attention row | Mark as OK, empty reason | "Say why this is OK" | | |
+| ☐ | X9 | Unconvertible | Legacy hint "Extract to field mobil_contact" | Dry run | "Field mobil_contact not found" | | |
+| ☐ | X10 | View-only | Ken | Open Asha's tab | Results visible; no resolve or check buttons | | |
+
+---
+
+## Retirement (release 2)
+
+| ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
+|---|---|---|---|---|---|---|---|
+| ☐ | R1 | Old screens gone | Release 2 deployed | Open `/doc_questions` and `/doc_questions/new`; look at Settings | Page not found for both; Settings shows Document Checks, no Doc Questions | | |
+| ☐ | R2 | Old import gone | — | Import uploads → New; open an old DocQuestion import | "DocQuestion" not offered; old import record still opens | | |
+| ☐ | R3 | Old KYC action gone | — | Developer posts to the old validate URL | Not found; the KYC button runs Document Checks | | |
+| ☐ | R4 | Data gone, history kept | — | Developer confirms no `doc_questions` table / `documents.qna` column; open a KYC with earlier answers | Gone in DB; "Earlier AI answers" still shown | | |
+| ☐ | R5 | Guard | Staging copy with an unconverted question | Developer runs the release-2 migration | It stops with "1 Doc Questions are not converted — run doc_checks:convert_doc_questions first" | | |
 
 ---
 
@@ -99,19 +120,21 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 
 | ☐ | ID | Screen | Do | Expect to see | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|
-| ☐ | J1.1 | KYC → Document Checks tab | Open it | ① the panel for the last run, or "Not checked yet" with the Run button | | |
-| ☐ | J1.2 | Same | Click Run Document Checks | ② "Running… started HH:MM", button disabled; panel refreshes in place when done | | |
-| ☐ | J1.3 | Same | Read the group headers | ③ ✓ N / M, ✗, ?, ⚠, —, ⟳ per document | | |
-| ☐ | J1.4 | Same | Accept a row with a reason | ④ "Accepted by <name> — '<reason>'"; counts update | | |
-| ☐ | J1.5 | Same | Click Fix | ⑤ the KYC edit form opens | | |
-| ☐ | J1.6 | Same | Click Retry on an error group | ⑥ a new run starts (as J1.2) | | |
-| ☐ | J1.7 | Same | Expand Earlier AI answers | ⑦ old answers table, read-only | | |
-| ☐ | J2.1 | Document Check results | Open from the KYC menu | Problems for current runs, newest first | | |
-| ☐ | J2.2 | Same | Filter Document = CML | Only CML rows | | |
-| ☐ | J2.3 | Same | Select 3 rows, Re-run selected | "Document Checks queued for 3 KYCs" | | |
-| ☐ | J3.1 | Settings → Document Checks | Change a row's Kind to Rule | Field and Fill hide, Expect appears | | |
-| ☐ | J3.2 | Same | Change Kind to Match | Fill hides, Field stays | | |
-| ☐ | J3.3 | Same | Save with an Extract row without a field | "Choose a field from the list" on that row | | |
+| ☐ | J1.1 | KYC → Document checks | Open | ① attention documents open, OK collapsed; tab title count | | |
+| ☐ | J1.2 | Same | Check documents | ② progress per document; earlier results dimmed | | |
+| ☐ | J1.3 | Same | Read headers | ③ "✓ All OK" / "⚠ n needs attention" / "⟳ Document changed after this check" | | |
+| ☐ | J1.4 | Same | Use document value | ④ confirm, then "updated from the document by …" | | |
+| ☐ | J1.5 | Same | Mark as OK | ⑤ reason box, then "Marked OK by …" + Undo | | |
+| ☐ | J1.6 | Same | Check again | ⑥ same as J1.2 | | |
+| ☐ | J1.7 | Same | Expand Earlier AI answers | ⑦ old table, read-only | | |
+| ☐ | J2.1 | Documents needing attention | Open | Newest first, or "Nothing needs attention." | | |
+| ☐ | J2.2 | Same | Reason = Doesn't match | Only mismatch rows | | |
+| ☐ | J2.3 | Same | Tick 3 | "Check again (3)" enabled | | |
+| ☐ | J2.4 | Same | Check again | "Checking documents for 3 KYCs" | | |
+| ☐ | J3.1 | Setup | What to do → Yes-no | Field replaced by Expected; Look for becomes Question | | |
+| ☐ | J3.2 | Setup | What to do → Compare | "Replace existing values" hidden | | |
+| ☐ | J3.3 | Setup | Pick a field already used on the card | It's greyed out "already used on this card" | | |
+| ☐ | J3.4 | Setup | Change a row, try to leave the page | "Unsaved changes" shown; leaving asks for confirmation | | |
 
 ---
 
@@ -119,15 +142,15 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 
 ✓ = allowed and works · ✗ = correctly blocked · ! = wrong
 
-| ID | Screen / action | Fund admin (Priya) | Fund employee, no KYC edit (Ken) | Investor (Asha) | Other-entity user (Olu) |
+| ID | Screen / action | Fund admin (Priya) | View-only fund user (Ken) | Investor (Asha) | Other entity (Olu) |
 |---|---|---|---|---|---|
-| R1 | Settings → Document Checks (view/edit/test) | ✓ | ✓ if the permission is on for the entity | ✗ | ✗ |
-| R2 | Run Document Checks on a KYC | ✓ | ✗ (needs KYC update) | ✗ | ✗ |
-| R3 | See the Document Checks tab | ✓ | ✓ if he can view the KYC | ✗ | ✗ |
-| R4 | Accept a result | ✓ | ✗ | ✗ | ✗ |
-| R5 | Document Check results list | ✓ | ✓ | ✗ | ✗ |
-| R6 | Re-run selected | ✓ | ✗ (rows skipped) | ✗ | ✗ |
-| R7 | Entity with the permission off: any of the above | ✗ | ✗ | ✗ | ✗ |
+| RS1 | Setup page (view / save / preset / try) | ✓ | ✓ if the permission is on | ✗ | ✗ |
+| RS2 | Check documents on a KYC | ✓ | ✗ | ✗ | ✗ |
+| RS3 | See the Document checks tab | ✓ | ✓ | ✗ | ✗ |
+| RS4 | Use document value / Mark as OK / Undo | ✓ | ✗ | ✗ | ✗ |
+| RS5 | Documents needing attention list | ✓ | ✓ | ✗ | ✗ |
+| RS6 | Check again (bulk) | ✓ | ✗ (skipped) | ✗ | ✗ |
+| RS7 | Any of the above with the permission off | ✗ | ✗ | ✗ | ✗ |
 
 ---
 
@@ -135,12 +158,12 @@ step (J2.3 = journey 2, step 3) · **R** = Role sweep · **C** = Cross-cutting c
 
 | ☐ | ID | Check | Expected | Pass / Fail | Notes |
 |---|---|---|---|---|---|
-| ☐ | C1 | Emails / alerts | No emails are sent. Toasts appear for start/finish/failure with the texts above | | |
-| ☐ | C2 | Dates on changed screens | "Last run" and the results list dates follow the user's locale (e.g. `02/10/2026` for en) | | |
-| ☐ | C3 | Narrow / mobile width | Panel, settings rows and results list have no horizontal page scroll; buttons reachable | | |
-| ☐ | C4 | Tenant isolation | Olu cannot see or reach any Fireside set, run or result, even by direct URL | | |
-| ☐ | C5 | Regression on modified screens | KYC page tabs, KYC bulk actions, journey bar, documents tab all still work; Doc Questions menu item is gone | | |
-| ☐ | C6 | Empty states | No sets: "No Document Checks set up yet — Add set". KYC never run: "Not checked yet". Results list with no problems: "No problems found" | | |
+| ☐ | C1 | Emails / alerts | No emails sent. Toasts for start / finish / couldn't run use the texts above | | |
+| ☐ | C2 | Dates | "Checked …" and list dates follow the user's locale | | |
+| ☐ | C3 | Narrow width | No horizontal page scroll on the setup page, tab or list; buttons reachable | | |
+| ☐ | C4 | Tenant isolation | Olu can't reach any Fireside check, result or run by URL | | |
+| ☐ | C5 | Regression | KYC tabs, bulk actions, journey bar, documents tab, document page all still work | | |
+| ☐ | C6 | Empty states | "No document checks are set up — Set up checks"; "These documents haven't been checked yet."; "Nothing needs attention." | | |
 
 ---
 

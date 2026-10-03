@@ -28,7 +28,10 @@ module CapHive
         path_str.include?("/account_entry_allocation/") ||
         # workflow_checks/ is a namespace (WorkflowChecks::Registry, WorkflowChecks::CapitalCall::*)
         # spread across packs, not a root of flat constants
-        path_str.match?(%r{/workflow_checks(/|$)})
+        path_str.match?(%r{/workflow_checks(/|$)}) ||
+        # doc_checks/ folders are the DocChecks:: namespace (DocChecks::Registry, DocChecks::Kyc,
+        # DocChecks::RunJob), spread across the documents and investor_kycs packs
+        path_str.match?(%r{/doc_checks(/|$)})
     end
     config.autoload_paths += Rails.root.glob('app/packs/**/controllers/concerns/')
     config.autoload_paths << Rails.root.join('lib')

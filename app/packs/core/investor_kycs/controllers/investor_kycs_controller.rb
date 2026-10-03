@@ -9,7 +9,7 @@ class InvestorKycsController < ApplicationController
   # Allow unauthenticated investors to access their KYC via a signed magic link.
   skip_before_action :authenticate_user!, only: %i[show edit update extract_docs_data doc_first_upload processing], if: -> { params[:signed_id].present? }
 
-  before_action :set_investor_kyc, only: %i[show journey edit update destroy toggle_verified generate_docs generate_new_aml_report override_aml_status send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
+  before_action :set_investor_kyc, only: %i[show journey edit update destroy toggle_verified generate_docs generate_new_aml_report override_aml_status send_kyc_reminder notify_kyc_required send_notification extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
   before_action :set_workflowable, only: [:show] # runs after set_investor_kyc so @investor_kyc is available
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc investor_pending]
 
@@ -73,13 +73,6 @@ class InvestorKycsController < ApplicationController
     @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
     authorize(@investor_kyc)
     @esign_emails = params[:esign_emails].presence || @investor_kyc.esign_emails
-  end
-
-  # This can be triggered for any resource which implements with_doc_questions concern
-  def validate_docs_with_ai
-    authorize(@investor_kyc)
-    DocLlmValidationJob.perform_later("InvestorKyc", @investor_kyc.id, current_user.id)
-    redirect_to investor_kyc_url(@investor_kyc), notice: "Document validation in progress. Please check back in a few minutes."
   end
 
   # POST /investor_kycs/:id/extract_docs_data

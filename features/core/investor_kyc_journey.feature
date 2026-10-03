@@ -1,6 +1,6 @@
 Feature: Investor KYC journey
   Every new KYC in a set-up entity gets the "Investor KYC" journey. Each task's status is worked out
-  from the KYC's own data — status, documents, AI validation answers, AML result — so the step bar
+  from the KYC's own data — status, documents, Document Checks results, AML result — so the step bar
   can't drift from reality. Verifying closes the journey: any task not done by then shows
   "Verified without this step".
   Worked examples H2, H5, H7, H10, E1, E2, E4–E14, E18, E21, E23, X6 in
@@ -145,12 +145,12 @@ Feature: Investor KYC journey
 
   # H5 — a full AI pass completes Validate documents with no click
   Scenario: AI validation passing every answer validates the documents
-    Given the entity has 8 KYC document questions on "PAN Card"
+    Given the entity has 8 document checks on "PAN Card"
     And there is an individual KYC for the investor
     And the KYC's form link was sent
     And the KYC is submitted
     And the KYC has the documents "PAN Card, Address Proof, Photo"
-    And the KYC's AI validation found 0 of 8 answers failing
+    And the KYC's documents were checked with 0 of 8 items needing attention
     When the KYC's journey is evaluated
     Then the KYC's journey should show:
       | task                | status  | message          |
@@ -159,16 +159,16 @@ Feature: Investor KYC journey
 
   # E3 (data part) — AI could not validate some answers: a person checks and marks reviewed
   Scenario: AI validation with failing answers asks for a manual check
-    Given the entity has 8 KYC document questions on "PAN Card"
+    Given the entity has 8 document checks on "PAN Card"
     And there is an individual KYC for the investor
     And the KYC's form link was sent
     And the KYC is submitted
     And the KYC has the documents "PAN Card, Address Proof, Photo"
-    And the KYC's AI validation found 1 of 8 answers failing
+    And the KYC's documents were checked with 1 of 8 items needing attention
     When the KYC's journey is evaluated
     Then the KYC's journey should show:
       | task               | status  | message                                                             |
-      | Validate documents | current | AI could not validate 1 of 8 answers — check them and mark reviewed |
+      | Validate documents | current | 1 document item needs attention — resolve it or mark reviewed |
     When I mark "Validate documents" reviewed on the KYC
     Then the KYC's journey current task should be "Run AML screening"
 
@@ -412,12 +412,12 @@ Feature: Investor KYC journey
 
   # E5 — a document replaced after the AI pass
   Scenario: Replacing a document after the AI pass moves the journey back to Validate documents
-    Given the entity has 8 KYC document questions on "PAN Card"
+    Given the entity has 8 document checks on "PAN Card"
     And there is an individual KYC for the investor
     And the KYC's form link was sent
     And the KYC is submitted
     And the KYC has the documents "PAN Card, Address Proof, Photo"
-    And the KYC's AI validation found 0 of 8 answers failing
+    And the KYC's documents were checked with 0 of 8 items needing attention
     And the KYC's journey is evaluated
     And the KYC's journey current task should be "Run AML screening"
     When the KYC's "PAN Card" document is replaced

@@ -2,285 +2,335 @@
 
 ## Purpose
 
-Lets a fund configure AI checks that read values from a record's uploaded documents and fill fields,
-compare them with the record, or test yes/no rules. Every outcome, including errors, is stored and
-shown per check, so the results can be trusted and acted on.
+Lets a fund configure AI checks that read values from a record's uploaded documents and fill in fields,
+compare them with the record, or answer yes-no questions. Each item ends as OK or Needs attention, with
+a plain reason and an on-the-spot way to resolve it.
 
 ## ADDED Requirements
 
-### Requirement: Check sets per record type and variant
-The system SHALL let an entity define at most one check set per record type and variant. For Investor
-KYC the variants are Individual, Non-individual and All. When a record is checked, the system SHALL
-use the set for the record's own variant if one exists, and otherwise the All set.
+### Requirement: One checks page per record type, a card per document
+The system SHALL give each entity one Document Checks page per record type. For Investor KYC it SHALL
+show one card per distinct document name taken from the entity's individual KYC document list, its
+non-individual KYC document list and the KYC form's required file fields. Cards with checks SHALL come
+first. Cards without checks SHALL be listed under "Other documents" with "No checks yet". With no
+document names, the page SHALL say "Add the documents you collect in Settings → KYC documents.
+They'll appear here."
 
-#### Scenario: Variant-specific set wins
-- **WHEN** an entity has both an "Investor KYC — Individual" set and an "Investor KYC — All" set, and an individual KYC is checked
-- **THEN** only the checks in the Individual set run
+#### Scenario: Cards from the KYC lists
+- **WHEN** the individual list is "CML, PAN Card", the non-individual list is "PAN Card, Board Resolution" and the KYC forms have no required file fields
+- **THEN** the page shows exactly three cards, CML, PAN Card and Board Resolution, with PAN Card once
 
-#### Scenario: Fallback to All
-- **WHEN** an entity has only an "Investor KYC — All" set and a non-individual KYC is checked
-- **THEN** the checks in the All set run
+#### Scenario: No documents yet
+- **WHEN** the entity has no KYC document names
+- **THEN** the page shows "Add the documents you collect in Settings → KYC documents. They'll appear here."
 
-#### Scenario: Duplicate set refused
-- **WHEN** a user tries to create a second "Investor KYC — Individual" set in the same entity
-- **THEN** the save is refused with an error that the set already exists
+### Requirement: Checks are picked, not typed
+A check SHALL be one of *Fill in*, *Compare* or *Yes-no question*. Fill in and Compare SHALL name a KYC
+field picked from the record type's allowed fields: for KYC, a fixed list of standard fields plus the
+non-file custom fields of the entity's KYC forms. A field SHALL be used at most once per document card.
+*Look for* (at most 100 characters) SHALL default to the picked field's label. *Tip for the AI* SHALL be
+optional (at most 255 characters). Fill in SHALL have *Replace existing values*, off by default.
+Yes-no SHALL have an expected answer, Yes by default. Each card SHALL save on its own. A row that is
+incomplete or invalid SHALL block that card's save and be marked on the row: "Pick a KYC field",
+"Already used on this card" or "Say what to look for". A field outside the allowed list SHALL be refused
+with "Pick a KYC field".
 
-### Requirement: Documents are chosen from the record's document list
-The system SHALL offer, as documents to check, only the names on the entity's document list for that
-record type: for KYC, the individual / non-individual KYC document lists and the KYC form's required
-file fields. A check SHALL apply to a record's uploaded document when the names match ignoring case
-and an "Upload " / "Attach your " prefix, by document name or owner tag, the same way required
-documents are matched. When several uploaded documents match, the most recently updated one SHALL be
-used.
+#### Scenario: Look for fills itself
+- **WHEN** the admin adds a check on CML and picks the KYC field "DP ID"
+- **THEN** Look for shows "DP ID"
 
-#### Scenario: Document picked from list
-- **WHEN** the entity's individual KYC document list is "CML, PAN Card, Passport" and the admin clicks Add document
-- **THEN** the choices are CML, PAN Card and Passport, minus those already in the set
+#### Scenario: Same field twice refused
+- **WHEN** the admin adds a second CML check for the field "PAN" and saves
+- **THEN** the card is not saved and the row says "Already used on this card"
+
+#### Scenario: Field outside the allowed list refused
+- **WHEN** a request tries to save a Fill in check whose field is "verified"
+- **THEN** the save is refused with "Pick a KYC field"
+
+#### Scenario: Field removed after setup
+- **WHEN** a check uses the custom field "dp" and that custom field is deleted from the KYC form
+- **THEN** the page shows the banner "1 check uses a field that no longer exists — Show me" and the row "This field no longer exists — pick another"
+
+### Requirement: Presets add only what they can map
+A card whose document name contains "CML", "PAN", "Aadhaar" or "Passport" (any case) SHALL offer that
+preset. Applying it SHALL add, as unsaved rows, only the preset's checks whose field exists on the KYC
+and isn't already on the card. It SHALL list the rest under the card as "Not added: <labels> — your KYC
+form has no matching field. Add a custom field to the KYC form, then use the preset again."
+
+#### Scenario: CML preset with missing fields
+- **WHEN** the admin uses the CML preset and the KYC form has custom fields "dp" and "client" but no email or mobile field
+- **THEN** rows for DP ID, Client ID, Address, Bank account number, IFSC code, PAN, Full name and "Is it signed by the holder?" are added, and "Not added: Email, Mobile — …" is shown
+
+#### Scenario: Preset used twice
+- **WHEN** the CML preset is used again on a saved CML card
+- **THEN** no row is added for checks already on the card
+
+#### Scenario: No preset for other documents
+- **WHEN** a card is named "Board Resolution"
+- **THEN** it offers no preset button
+
+### Requirement: A KYC's documents are those on its own list
+A record's checks SHALL be those for the document names on that record's own document list. For KYC that
+is the list for its type (individual or non-individual) plus its form's required file fields. A check
+SHALL read the record's uploaded document whose name or owner tag matches, ignoring case and an "Upload
+" / "Attach your " prefix, the same way required documents are matched, taking the most recently updated
+one when several match.
+
+#### Scenario: Company KYC ignores individual-only documents
+- **WHEN** Passport is only on the individual list and a non-individual KYC is checked
+- **THEN** no Passport items appear for that KYC
 
 #### Scenario: Uploaded name differs in case and prefix
 - **WHEN** a check is for "PAN Card" and the KYC has a document named "Upload pan card"
-- **THEN** that document is checked
-
-### Requirement: Three kinds of check with picked fields
-Each check SHALL be one of Extract, Match or Rule, with a label (required, at most 100 characters,
-unique within its document) and an optional hint (at most 255 characters). Extract and Match checks
-SHALL name a field chosen from the record type's allowed fields: for KYC, a fixed list of standard
-KYC fields plus the non-file custom fields of the KYC's form. Extract checks SHALL have a fill mode
-of "Only if empty" (default) or "Always". Rule checks SHALL have an expected answer, Yes (default)
-or No. A field outside the allowed list SHALL be refused with "Choose a field from the list".
-
-#### Scenario: Field outside the allowed list refused
-- **WHEN** an admin saves an Extract check whose field is "verified"
-- **THEN** the save is refused with "Choose a field from the list"
-
-#### Scenario: Field removed after setup
-- **WHEN** a check names the custom field "dp" and that custom field is later deleted from the KYC form
-- **THEN** the settings page shows "This field no longer exists — pick another" on that check
-
-### Requirement: Presets add standard checks
-The system SHALL provide presets for CML, PAN card, Aadhaar and Passport. Applying a preset SHALL add
-its checks to the matching document in the set. Each check SHALL be mapped to the allowed field whose
-name or label matches. A check with no matching field SHALL be added with an empty field and the
-message "Pick a field before saving". A check whose label already exists for that document SHALL not
-be added again.
-
-#### Scenario: CML preset applied
-- **WHEN** the admin applies the CML preset to a set where the KYC form has custom fields "dp" and "client"
-- **THEN** checks for DP ID → dp, Client ID → client, PAN → PAN, First holder name → Full name and the other CML checks are added
-
-#### Scenario: Preset applied twice
-- **WHEN** the CML preset is applied a second time
-- **THEN** no duplicate checks are added
+- **THEN** that document is read
 
 ### Requirement: The AI only reads values from documents
-For each document, the system SHALL send the AI the document's image and each check's label and hint,
-and SHALL NOT send any of the record's own values. The text of labels and hints SHALL be treated
-only as text: no part of it is evaluated against the record. The AI's reply SHALL be matched to
-checks by the check's identifier, never by a name chosen by the AI.
+For each document, the system SHALL send the AI the document's image and each check's look-for text and
+tip, and SHALL NOT send any of the record's values. Look-for text and tips SHALL be treated only as
+text: no part of them is evaluated against the record. The AI's reply SHALL be matched to checks by the
+check's identifier, never by a name chosen by the AI. Exactly one AI call SHALL be made per document
+read.
 
 #### Scenario: Placeholder text is inert
-- **WHEN** a check's hint contains "$destroy" and the checks are run
-- **THEN** the hint is sent to the AI as plain text and the record is unchanged apart from the check's outcome
+- **WHEN** a tip contains "$destroy" and the documents are checked
+- **THEN** the tip is sent as plain text and the record is unchanged apart from the check's outcome
 
 #### Scenario: One AI call per document
 - **WHEN** a KYC has CML and PAN Card uploaded and both have checks
-- **THEN** exactly two AI calls are made in the run
+- **THEN** exactly two AI calls are made
 
-### Requirement: Outcomes are decided by the system
-The system SHALL decide each check's result:
-- **Extract**: a value found → pass, and the field is filled if the fill mode allows ("Filled <field>"),
-  otherwise it is left ("Kept existing value <value>"). No value found → needs review ("Not found on
-  the document").
-- **Match**: both values normalised (case, spaces and punctuation ignored). Equal → pass. Different →
-  fail for identifier fields, needs review for name and address fields.
-- **Rule**: the answer equals the expected answer → pass, else fail.
+### Requirement: Every item ends OK or Needs attention, with a reason
+The system SHALL give every check on every listed document one outcome, either OK or Needs attention,
+with a reason shown in plain words:
+- **Fill in**: value found and field empty → OK "filled in: V", and the field is set. Value found, field
+  set, Replace off → OK "kept your value X (document says V)", unchanged. Replace on → OK "replaced X
+  with V". Value not found → Needs attention "not found on this document". A date value that can't be
+  read → Needs attention "couldn't read a date from 'V'".
+- **Compare**: both values normalised by ignoring case, spaces and punctuation, and word order for
+  name and address fields. Equal → OK "matches". KYC empty → Needs attention "the KYC has no value
+  (document says V)". Different → Needs attention "doesn't match", showing both values. Not found →
+  Needs attention "not found on this document".
+- **Yes-no**: the answer equals the expected one → OK. Otherwise → Needs attention "answered <answer>",
+  with the AI's reason.
 
-The AI's explanation SHALL be stored with each result.
+#### Scenario: Fill in an empty field
+- **WHEN** the CML's DP ID reads "IN303622" and the KYC's DP ID is empty
+- **THEN** the item is OK "filled in: IN303622" and the KYC's DP ID is "IN303622"
 
-#### Scenario: Extract fills an empty field
-- **WHEN** the CML's DP ID reads "IN303622" and the KYC's dp is empty
-- **THEN** the result passes with "Filled DP ID" and the KYC's dp is "IN303622"
+#### Scenario: Fill in keeps an existing value
+- **WHEN** the CML's Client ID reads "86478611", the KYC's Client ID is "86478612" and Replace is off
+- **THEN** the item is OK "kept your value 86478612 (document says 86478611)" and the KYC is unchanged
 
-#### Scenario: Extract keeps an existing value
-- **WHEN** the CML's Client ID reads "86478611", the KYC's client is "86478612" and the fill mode is Only if empty
-- **THEN** the result passes with "Kept existing value 86478612" and the KYC is unchanged
+#### Scenario: Value not found
+- **WHEN** the AI finds no DP ID on the CML
+- **THEN** the item needs attention "not found on this document"
 
-#### Scenario: Extract value not found
-- **WHEN** the AI reports no DP ID on the CML
-- **THEN** the result is needs review with "Not found on the document"
-
-#### Scenario: Identifier matches after normalising
+#### Scenario: Compare ignores case and punctuation
 - **WHEN** the document's PAN reads "abcpk 1234-f" and the KYC's PAN is "ABCPK1234F"
-- **THEN** the result passes
+- **THEN** the item is OK "matches"
 
-#### Scenario: Identifier mismatch fails
+#### Scenario: Compare ignores word order for names
+- **WHEN** the document's holder name reads "RAO ASHA" and the KYC's full name is "Asha Rao"
+- **THEN** the item is OK "matches"
+
+#### Scenario: Compare mismatch
 - **WHEN** the document's PAN reads "ABCPK1234F" and the KYC's PAN is "ABCPK1243F"
-- **THEN** the result fails showing both values
+- **THEN** the item needs attention "doesn't match" with "Document: ABCPK1234F · KYC: ABCPK1243F"
 
-#### Scenario: Name mismatch needs review
-- **WHEN** the document's first holder name reads "R. Kumar" and the KYC's full name is "Ravi Kumar"
-- **THEN** the result is needs review showing both values
+#### Scenario: Yes-no not as expected
+- **WHEN** "Is it signed by the holder?" expects Yes and the AI answers No
+- **THEN** the item needs attention "answered No" with the AI's reason
 
-#### Scenario: Rule failed
-- **WHEN** a Rule "Signed by holder?" expects Yes and the AI answers No
-- **THEN** the result fails with the AI's explanation
-
-### Requirement: Errors and missing documents are results, not silence
-The system SHALL record, per document, a result for every check even when the document cannot be
-checked:
-- document not uploaded → skipped ("not uploaded");
-- unsupported file type → error ("Can't read this file type — upload a PDF or image");
-- unreadable AI reply → error ("The AI's reply couldn't be read — try again");
-- the check's field no longer exists → error ("Field no longer exists").
-
-A failure on one document SHALL NOT stop the other documents being checked. If the run cannot start
-at all (no AI service configured or reachable, or no check set), the run SHALL be marked failed with
-the reason and no record field SHALL change.
+### Requirement: Problems reading a document are items, not silence
+When a listed document can't be read, each of its checks SHALL still have an outcome of Needs attention:
+not uploaded → "Not uploaded yet"; unsupported file type → "Couldn't read this file — upload it as a PDF
+or image"; the AI's reply can't be understood → "Couldn't read the AI's answer for this document"; the
+check's field no longer exists → "this check's KYC field no longer exists". A problem with one document
+SHALL NOT stop the others being read. If the check can't run at all (AI service not configured or not
+reachable, or no checks for the record's documents), the attempt SHALL be recorded as couldn't run, with
+the reason, no record field SHALL change, and the earlier results SHALL stay as the current results.
 
 #### Scenario: Unsupported file
 - **WHEN** the KYC's PAN Card is a .doc file
-- **THEN** the PAN Card checks are errors with "Can't read this file type — upload a PDF or image" and the CML checks still run
+- **THEN** its items need attention "Couldn't read this file — upload it as a PDF or image" and the CML is still read
 
-#### Scenario: Document not uploaded
-- **WHEN** the set has Passport checks and the KYC has no passport
-- **THEN** the Passport checks are skipped and the group shows "not uploaded"
+#### Scenario: Not uploaded
+- **WHEN** Passport is on the KYC's list and has checks but isn't uploaded
+- **THEN** the Passport items need attention "Not uploaded yet"
 
 #### Scenario: AI unavailable
-- **WHEN** the AI service raises a connection error
-- **THEN** the run is failed with "the AI service is unavailable", the user is notified, and no KYC field changes
+- **WHEN** the AI service fails with a connection error during a check
+- **THEN** the attempt couldn't run with "the AI service is unavailable", no KYC field changes, and the earlier results are still shown
 
-### Requirement: Runs, status and notifications
-Each run SHALL record the record, the check set, who started it, how it was started (manual, bulk,
-test), its status (queued, running, done, done with errors, failed), its times and counts. Only one
-run per record SHALL be queued or running at a time: a second request SHALL be refused with "Document
-Checks are already running for <record>". The starting user SHALL be notified on start and finish,
-with counts, as a warning when anything failed, errored or needs review.
+### Requirement: Progress, one check at a time, and toasts
+While a record's documents are being checked, the system SHALL show which document is being read, as
+"Checking <document> (<n> of <m>)…", and SHALL update the view without a page reload. Only one check
+per record SHALL be queued or running at a time. A second request SHALL be refused with "Documents are
+already being checked for <record>". The user who started it SHALL get a toast when it starts and when
+it ends: "Documents checked for <record> — all OK", "— <n> need attention" (as a warning), or
+"Couldn't check documents for <record> — <reason>. Try again later." (as an error).
 
-#### Scenario: Run summary notification
-- **WHEN** a run finishes with 9 passed, 1 failed and 1 error
-- **THEN** the run is "done with errors" and the user is notified "Document Checks finished for Asha Rao: 9 passed, 1 failed, 1 error"
+#### Scenario: Summary toast
+- **WHEN** a check ends with 2 items needing attention
+- **THEN** the user gets a warning toast "Documents checked for Asha Rao — 2 need attention"
 
-#### Scenario: Second run refused
-- **WHEN** a run is running for a KYC and the user clicks Run Document Checks again
-- **THEN** no second run is created and the user sees "Document Checks are already running for Asha Rao"
+#### Scenario: Second check refused
+- **WHEN** a check is running for a KYC and the user clicks Check documents again
+- **THEN** no second check starts and the user sees "Documents are already being checked for Asha Rao"
 
-### Requirement: Current results and staleness
-A record's current results SHALL be those of its latest finished, non-test run. Each result SHALL
-remember which version of the document file it read. When the document's file is replaced after the
-run, its results SHALL show as out of date ("Out of date — document changed after this run").
+#### Scenario: Progress shown
+- **WHEN** the second of three documents is being read
+- **THEN** the KYC's tab shows "Checking PAN Card (2 of 3)…"
 
-#### Scenario: Re-uploaded document is out of date
-- **WHEN** a KYC's CML is re-uploaded after its last run
-- **THEN** the CML group shows "Out of date — document changed after this run" and the other groups do not
+### Requirement: Current results and changed documents
+A record's current results SHALL be those of its latest completed, non-trial check. Each result SHALL
+remember which version of the document file it read. When that document is replaced or removed after
+the check, or a not-uploaded document is uploaded, that document's items SHALL show "Document changed
+after this check" with Check again, and SHALL count as needing attention.
 
-#### Scenario: New run replaces old results
-- **WHEN** a document is removed from a KYC and the checks are run again
-- **THEN** the current results contain no results for the removed document
+#### Scenario: Replaced document flagged
+- **WHEN** a KYC's CML is replaced after its last check
+- **THEN** CML shows "Document changed after this check" with Check again, and the other documents are unaffected
 
-### Requirement: Test run changes nothing
-A test run SHALL run the checks against one chosen record and show the results with the banner "Test
-run — nothing was saved to this KYC". It SHALL NOT write any field on the record, SHALL NOT become the
-record's current results, and SHALL NOT affect the record's journey.
+#### Scenario: New check replaces old results
+- **WHEN** a document is removed from the KYC's list and the documents are checked again
+- **THEN** no item for the removed document appears
 
-#### Scenario: Test run on a KYC
-- **WHEN** an admin tests the Individual set on Asha Rao's KYC and DP ID would be filled
-- **THEN** the result shows "Filled DP ID" with the test banner, and Asha Rao's dp is still empty
+### Requirement: Trial run changes nothing
+*Try on a KYC* SHALL check the chosen KYC with the entity's current checks and show the results under the
+banner "Trial run — nothing on this KYC was changed". It SHALL NOT write any field, SHALL NOT become the
+KYC's current results, and SHALL NOT affect the KYC's journey or the attention list.
 
-### Requirement: Accepting a result
-A user who can update the record SHALL be able to accept a failed or needs-review result with a
-required reason (at most 255 characters; error "Give a reason for accepting"). The system SHALL store
-who accepted, when and why, show it on the result, and re-assess the record.
+#### Scenario: Trial run on a KYC
+- **WHEN** an admin tries the checks on Asha Rao's KYC and DP ID would be filled in
+- **THEN** the trial shows "filled in: IN303622" under the banner, and Asha Rao's DP ID is still empty
 
-#### Scenario: Accept a mismatch
-- **WHEN** Priya accepts the "First holder" needs-review result with reason "Initial matches passport"
-- **THEN** the row shows "Accepted by Priya Shah — 'Initial matches passport'" and the record is re-assessed
+### Requirement: Resolving an item on the spot
+A user who can edit the record SHALL be able to resolve a Needs attention item of the current results:
+- **Use document value** (Compare items with a document value): after confirming "Change <field> from X
+  to Y?", the field is set to the document's value and the item becomes OK "updated from the document by
+  <user>".
+- **Mark as OK** (any item except "Not uploaded yet", "Document changed after this check" and couldn't-read
+  items): requires a reason of at most 255 characters ("Say why this is OK") and makes the item OK
+  "Marked OK by <user>: <reason>" with **Undo**.
+- **Undo** returns a marked-OK item to Needs attention with its original reason.
 
-#### Scenario: Accept without reason
-- **WHEN** Priya clicks Accept without a reason
-- **THEN** the acceptance is refused with "Give a reason for accepting"
+Each resolution SHALL record who and when, and SHALL re-assess the record.
 
-### Requirement: Record is validated only when every current result is settled
-A record SHALL be treated as having all documents valid exactly when its current results exist and
-every result is passed or accepted, with none out of date. For KYC this SHALL set `all_docs_valid`.
+#### Scenario: Use document value
+- **WHEN** Priya clicks Use document value on the PAN mismatch and confirms
+- **THEN** the KYC's PAN is "ABCPK1234F" and the item reads "✓ PAN — updated from the document by Priya Shah"
 
-#### Scenario: Skipped document blocks validation
-- **WHEN** every result passes except the Passport checks, which are skipped as not uploaded
+#### Scenario: Mark as OK
+- **WHEN** Priya marks the holder-name mismatch OK with "Initial matches passport"
+- **THEN** the item reads "✓ Marked OK by Priya Shah: Initial matches passport" with Undo
+
+#### Scenario: Mark as OK needs a reason
+- **WHEN** Priya marks an item OK with no reason
+- **THEN** it is refused with "Say why this is OK"
+
+#### Scenario: Undo
+- **WHEN** Priya clicks Undo on a marked-OK item
+- **THEN** the item needs attention again with its original reason
+
+### Requirement: All documents valid only when nothing needs attention
+A record SHALL be treated as having all documents valid exactly when it has current results and none of
+its items needs attention, counting changed documents as needing attention. For KYC this SHALL set
+`all_docs_valid`.
+
+#### Scenario: Not uploaded blocks validity
+- **WHEN** every item is OK except the Passport items, which are "Not uploaded yet"
 - **THEN** the KYC is not treated as having all documents valid
 
-#### Scenario: Accepted result counts
-- **WHEN** the only non-passing result is accepted
+#### Scenario: Resolved items count as OK
+- **WHEN** the only item needing attention is marked OK
 - **THEN** the KYC is treated as having all documents valid
 
-### Requirement: KYC journey Validate documents step uses Document Checks
-The KYC journey's *Validate documents* step SHALL be done ("Validated by AI") when the KYC's current
-results settle it as above and the run finished after the step was last reset. It SHALL ask for review
-with "Document Checks found N problems — check them and mark reviewed" when current results have any
-failed, needs-review, error, skipped or out-of-date result. It SHALL show "Documents not checked yet —
-run Document Checks or check them and mark reviewed" when a check set applies but no run exists. It
-SHALL show "Check the documents and mark reviewed" when no check set applies. Accepting a result or
-finishing a run SHALL re-evaluate the journey.
+### Requirement: Documents needing attention across the entity
+The system SHALL list every item needing attention in the current results of the entity's records, newest
+first, filterable by reason (Doesn't match, Not found, Unexpected answer, Couldn't read, Not uploaded,
+Document changed), document and checked date. Selecting rows and clicking Check again SHALL queue a check
+for each selected record. With nothing to list it SHALL say "Nothing needs attention."
 
-#### Scenario: All passed completes the step
-- **WHEN** a KYC at Validate documents has a finished run where every result passed
-- **THEN** the step is done with "Validated by AI" without anyone clicking
+#### Scenario: Filter by reason
+- **WHEN** the user filters to Doesn't match
+- **THEN** only items with that reason are listed
 
-#### Scenario: Problems ask for review
-- **WHEN** the latest run has 1 failed and 1 error result
-- **THEN** the step asks "Document Checks found 2 problems — check them and mark reviewed"
-
-#### Scenario: Re-upload resets the step
-- **WHEN** a KYC's step was done "Validated by AI" and its CML is then re-uploaded
-- **THEN** the step goes back to asking for review
-
-### Requirement: Entity-wide results list
-The system SHALL provide a list of current results across the entity's records, filterable by status
-(passed, failed, needs review, error, skipped, out of date), document, check set and run date. Users
-SHALL be able to select rows and re-run checks for their records.
-
-#### Scenario: Filter to problems
-- **WHEN** the user filters to Failed and Error
-- **THEN** only current results with those statuses are listed
-
-#### Scenario: Bulk re-run
-- **WHEN** the user selects three KYCs and clicks Re-run selected
-- **THEN** a run is queued for each of the three KYCs
+#### Scenario: Check again in bulk
+- **WHEN** the user selects rows for three KYCs and clicks Check again
+- **THEN** a check is queued for each of the three KYCs
 
 ### Requirement: Access and isolation
-Setup pages SHALL be available only to users of an entity with the "Doc LLM validation" permission.
-Results SHALL be visible only to users of the record's own entity who can view the record, and never to
-investor users. No user SHALL see or act on another entity's check sets, runs or results.
+The setup page and the attention list SHALL be available only to users of an entity with the "Doc LLM
+validation" permission. Results SHALL be visible only to users of the record's own entity who can view the
+record, and never to investor users. Resolving and checking SHALL need permission to edit the record. No
+user SHALL see or act on another entity's checks, results or attempts.
 
 #### Scenario: Other entity blocked
-- **WHEN** a user from another entity opens a check set or run URL directly
+- **WHEN** a user from another entity opens the setup page or a result URL directly
 - **THEN** access is denied
 
 #### Scenario: Investor never sees results
 - **WHEN** an investor user opens their KYC
-- **THEN** no Document Checks tab or result is shown
+- **THEN** no Document checks tab or result is shown
 
 ### Requirement: Converting legacy Doc Questions
-The system SHALL provide a support-run conversion, a dry run by default, that for each entity turns
-its Investor KYC Doc Questions into checks in the entity's "Investor KYC — All" set:
-- Extraction questions, and Validation questions whose text asks to extract, become Extract checks.
-  The label is taken from the question, and the full question is kept as the hint.
-- The field is taken from "field <name>" in the response hint, or from the label, resolved against the
-  allowed fields by the same normalisation the old feature used.
-- A question whose document is not on the entity's list, or whose field cannot be resolved, is not
-  converted and is listed in the report.
+The system SHALL provide a support-run conversion, a dry run by default, that for each entity turns its
+Investor KYC Doc Questions into Document Checks:
+- Extraction questions, and Validation questions whose text starts with "Extract", become Fill in checks;
+  other Validation questions become Yes-no questions.
+- The field is taken from "field <name>" in the response hint, or else from the question, resolved against
+  the allowed fields by the same normalisation the old feature used.
+- The full question text is kept as the tip.
 
-The report SHALL list per entity: converted checks with their fields, and unconverted questions with
-the reason. Running it again SHALL NOT duplicate checks. Legacy answers SHALL remain viewable on each
-KYC under "Earlier AI answers".
+A question whose document isn't on the entity's KYC lists, whose field can't be resolved, or whose field is
+already used on that document SHALL NOT be converted, and SHALL be listed with the reason. Running it again
+SHALL NOT duplicate checks. Legacy answers SHALL remain viewable on each KYC under "Earlier AI answers".
 
 #### Scenario: Dry run report
 - **WHEN** support runs the conversion without the execute flag for Pravega Ventures
-- **THEN** a report lists each question with its target field or the reason it can't convert, and no check is created
+- **THEN** a report lists each question with its field or the reason it can't convert, and no check is created
 
 #### Scenario: Unresolvable field reported
 - **WHEN** a question's hint says "Extract to field mobil_contact" and no such field exists
-- **THEN** the question is listed as unconverted with "Field mobil_contact not found"
+- **THEN** it is listed as not converted with "Field mobil_contact not found"
 
 #### Scenario: Execute converts once
 - **WHEN** support runs the conversion with the execute flag twice
 - **THEN** the checks exist once
 
+#### Scenario: Earlier AI answers shown
+- **WHEN** a KYC has legacy Doc Questions answers and a user opens its Document checks tab
+- **THEN** a collapsed "Earlier AI answers (before Document Checks)" section shows them
+
+### Requirement: Doc Questions screens are gone
+After the retirement deploy, the system SHALL NOT offer Doc Questions anywhere: the Doc Questions settings
+pages and their URLs, the "DocQuestion" import type and its sample file, the KYC "validate docs with AI"
+action URL, and the document page's QnA tab SHALL no longer exist (their URLs respond as not found). The KYC
+page's Check documents button and bulk action SHALL start Document Checks. Earlier "DocQuestion" import
+records SHALL remain viewable.
+
+#### Scenario: Old settings pages gone
+- **WHEN** a fund admin opens the old Doc Questions list or new-question URL
+- **THEN** the page is not found and the Settings menu shows "Document Checks" instead
+
+#### Scenario: Old import type gone
+- **WHEN** a fund admin starts a new import
+- **THEN** "DocQuestion" is not offered, while an earlier DocQuestion import record still opens
+
+#### Scenario: Old KYC action gone
+- **WHEN** a request posts to the old "validate docs with AI" KYC URL
+- **THEN** it is not found
+
+### Requirement: Legacy data is removed, answers kept
+The retirement SHALL remove the stored Doc Questions and the unused document QnA data, and SHALL keep each
+KYC's earlier AI answers for display. It SHALL refuse to remove the stored Doc Questions in an environment
+where any question has neither been converted nor recorded as reviewed-and-not-converted by the conversion.
+
+#### Scenario: Data removed, history kept
+- **WHEN** the retirement has run
+- **THEN** stored Doc Questions and document QnA data no longer exist, and a KYC's earlier AI answers still show under "Earlier AI answers"
+
+#### Scenario: Unconverted questions block removal
+- **WHEN** the retirement runs while 3 questions were never converted or reviewed
+- **THEN** it stops with "3 Doc Questions are not converted — run doc_checks:convert_doc_questions first" and removes nothing

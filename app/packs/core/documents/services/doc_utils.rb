@@ -1,6 +1,8 @@
 class DocUtils
-  def self.convert_file_to_image(ctx, document:, **)
-    folder_path = "tmp/#{document.owner.class.name}/#{document.id}"
+  # folder_path: callers that may convert the same document at the same time (a Document Checks trial
+  # and a real check of one KYC) pass their own folder, since cleanup deletes the whole folder.
+  def self.convert_file_to_image(ctx, document:, folder_path: nil, **)
+    folder_path ||= "tmp/#{document.owner.class.name}/#{document.id}"
     # make the directory if it does not exist
     FileUtils.mkdir_p(folder_path) unless File.directory?(folder_path)
     # setup the image path

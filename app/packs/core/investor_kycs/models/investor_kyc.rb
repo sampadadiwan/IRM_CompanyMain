@@ -97,6 +97,8 @@ class InvestorKyc < ApplicationRecord
 
   has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
+  # Document Checks runs of this KYC (results go with them)
+  has_many :doc_check_runs, as: :record, dependent: :destroy
 
   scope :uncalled, -> { where('committed_amount_cents > call_amount_cents') }
   scope :due, -> { where('committed_amount_cents > collected_amount_cents') }
