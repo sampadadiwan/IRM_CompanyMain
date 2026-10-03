@@ -6,7 +6,6 @@ class Investor < ApplicationRecord
   include WithFriendlyId
   include WithIncomingEmail
   include Pundit::Authorization
-  include WithDocQuestions
   include ForInvestor
   include WithSupportAgent
   include InvestorShared

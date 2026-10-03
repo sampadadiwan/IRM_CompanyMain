@@ -75,7 +75,6 @@ class InvestorKyc < ApplicationRecord
   include WithFriendlyId
   include WithIncomingEmail
   include InvestorKycConcern
-  include WithDocQuestions
   include WithSupportAgent
 
   belongs_to :investor
@@ -470,10 +469,6 @@ class InvestorKyc < ApplicationRecord
   # And we need the corresponding fund unit setting (for document generation), from any fund in the entity. This is for Angel Funds only. For other funds, the agreement_unit_type is not used.
   def agreement_unit_setting
     entity.funds.first.fund_unit_settings.where(name: agreement_unit_type).first
-  end
-
-  def doc_questions
-    entity.doc_questions.where(owner: entity, for_class: "InvestorKyc")
   end
 
   def ckyc_data

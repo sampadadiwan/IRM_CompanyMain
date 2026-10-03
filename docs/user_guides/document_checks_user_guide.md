@@ -142,7 +142,7 @@ The journey's **Validate documents** task passes by itself ("Validated by AI") o
 
 ## What replaced Doc Questions
 
-Document Checks replace **Doc Questions**. Support converts each fund's existing questions (a report first, then the conversion); items that can't be converted are listed for you. Earlier AI answers stay visible on each KYC under **Earlier AI answers**. The Doc Questions screens and their Excel import are removed in a later release.
+Document Checks replaced **Doc Questions**. Each fund's questions were converted into Document Checks, and Support listed anything that couldn't be converted. The Doc Questions screens and their Excel import are gone — use **Export** and **Import** on the [Document Checks](/doc_checks) page instead. Earlier AI answers stay visible on each KYC under **Earlier AI answers**.
 
 ---
 
@@ -191,7 +191,7 @@ Not yet. The document shows "Document changed after this check"; click **Check a
 Your company's users who can view the KYC. Investors never see the Document checks tab.
 
 **What happened to our Doc Questions?**
-Support converts them into Document Checks and gives you a list of anything that couldn't be converted. Earlier answers stay on each KYC under Earlier AI answers.
+They were converted into Document Checks, and Support gave you a list of anything that couldn't be converted — set those up on the Document Checks page. Earlier answers stay on each KYC under Earlier AI answers.
 
 ---
 

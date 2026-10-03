@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_090000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1523,16 +1523,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_100000) do
     t.index ["fund_id"], name: "index_distribution_fees_on_fund_id"
   end
 
-  create_table "doc_check_conversion_logs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "doc_question_id", null: false
-    t.bigint "entity_id", null: false
-    t.string "reason", null: false
-    t.datetime "updated_at", null: false
-    t.index ["doc_question_id"], name: "index_doc_check_conversion_logs_on_doc_question_id", unique: true
-    t.index ["entity_id"], name: "index_doc_check_conversion_logs_on_entity_id"
-  end
-
   create_table "doc_check_results", force: :cascade do |t|
     t.string "action", limit: 12, null: false
     t.datetime "created_at", null: false
@@ -1605,23 +1595,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_100000) do
     t.index ["legacy_doc_question_id"], name: "index_doc_checks_on_legacy_doc_question_id", unique: true
   end
 
-  create_table "doc_questions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "document_name"
-    t.bigint "entity_id", null: false
-    t.string "for_class", limit: 25
-    t.integer "import_upload_id"
-    t.bigint "owner_id", null: false
-    t.string "owner_type", null: false
-    t.string "qtype", limit: 10
-    t.text "question"
-    t.string "response_hint"
-    t.string "tags", limit: 100
-    t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_doc_questions_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_doc_questions_on_owner"
-  end
-
   create_table "doc_shares", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "document_id", null: false
@@ -1667,7 +1640,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_100000) do
     t.boolean "printing"
     t.string "provider_doc_id"
     t.boolean "public_visibility", default: false
-    t.text "qna"
     t.boolean "send_email", null: false
     t.boolean "sent_for_esign", default: false, null: false
     t.datetime "sent_for_esign_date"
@@ -4832,7 +4804,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_100000) do
   add_foreign_key "deals", "folders", column: "data_room_folder_id"
   add_foreign_key "deals", "folders", column: "document_folder_id"
   add_foreign_key "deals", "form_types"
-  add_foreign_key "doc_check_conversion_logs", "entities"
   add_foreign_key "doc_check_results", "doc_check_runs", on_delete: :cascade
   add_foreign_key "doc_check_results", "doc_checks", on_delete: :nullify
   add_foreign_key "doc_check_results", "entities"
@@ -4840,7 +4811,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_100000) do
   add_foreign_key "doc_check_runs", "entities"
   add_foreign_key "doc_check_runs", "users", on_delete: :nullify
   add_foreign_key "doc_checks", "entities"
-  add_foreign_key "doc_questions", "entities"
   add_foreign_key "doc_shares", "documents"
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"

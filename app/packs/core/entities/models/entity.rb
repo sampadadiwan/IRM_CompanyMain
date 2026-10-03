@@ -53,7 +53,6 @@ class Entity < ApplicationRecord
   has_many :investor_notices, dependent: :destroy
 
   has_many :documents, dependent: :destroy
-  has_many :doc_questions, dependent: :destroy
   has_many :doc_checks, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :form_types, dependent: :destroy
@@ -302,7 +301,6 @@ class Entity < ApplicationRecord
     valuations.each(&:really_destroy!)
     investor_notices.each(&:really_destroy!)
     documents.find_each(&:really_destroy!)
-    doc_questions.each(&:really_destroy!)
     # messages.each(&:really_destroy!)
     tasks.each(&:really_destroy!)
     form_types.each(&:really_destroy!)

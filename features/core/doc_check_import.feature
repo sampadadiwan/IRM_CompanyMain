@@ -37,6 +37,7 @@ Feature: Document Checks — export to xlsx and import with ImportUpload
     And the check "PAN" on "PAN Card" should "compare" the field "PAN"
     And the check "PAN" on "PAN Card" should have been created by the import
     And the check "DP ID" on "CML" should not have been created by the import
+    And the import's upload page should open and link to Document Checks
 
   # The sample upload file linked from the import page
   Scenario: The sample upload file creates its checks

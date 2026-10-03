@@ -83,7 +83,9 @@ Then("the document check import results should say {string}") do |text|
   expect(doc_check_import_results(@doc_check_import)).to include(text)
 end
 
-# "the entity should have {int} document checks" is in doc_checks_conversion_steps.rb
+Then("the entity should have {int} document checks") do |count|
+  expect(DocCheck.where(entity: @entity).count).to eq(count)
+end
 
 Then("the check {string} on {string} should have the tip {string}") do |look_for, document, tip|
   expect(DocCheck.find_by!(entity: @entity, document_name: document, look_for:).tip).to eq(tip)
@@ -106,6 +108,12 @@ end
 
 Then("the other entity's document check should be unchanged") do
   expect(@other_doc_check.reload.attributes.except("updated_at")).to eq(@other_doc_check.attributes.except("updated_at"))
+end
+
+# The ImportUpload page has no list of Document Checks rows: it links to the setup page instead
+Then("the import's upload page should open and link to Document Checks") do
+  visit import_upload_path(@doc_check_import)
+  expect(find("#import_upload_doc_checks_link")[:href]).to end_with("/doc_checks")
 end
 
 Then("the setup page should offer Export and Import") do

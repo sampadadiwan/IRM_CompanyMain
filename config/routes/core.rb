@@ -347,10 +347,6 @@ resources :dashboard_widgets do
   get 'dashboard', on: :collection
   get 'metadata_help', on: :collection
 end
-resources :doc_questions do
-  put :restore_deleted, on: :member
-  get :show_deleted, on: :collection
-end
 
 # Document Checks — openspec/changes/document-checks/design.md (cards ①, ③, ⑧)
 resources :doc_checks, only: %i[index] do

@@ -1350,6 +1350,8 @@ flowchart LR
 | `WorkflowChecks::InvestorKyc::Support#ai_answer_counts`, `#ai_validated_at` | The journey reads `Assessment` | Delete (deploy 1) |
 | `Entity has_many :doc_questions` and the `doc_questions.each(&:really_destroy!)` loop | Table dropped | Replace with `has_many :doc_checks, dependent: :destroy` |
 | `AiDataManager#extract_info`'s unused `DocQuestion.new(question:)` line | Dead | Delete |
+| `DocChecks::LegacyConverter`, `DocCheckConversionLog`, `lib/tasks/doc_checks.rake`, `features/core/doc_checks_conversion.feature` + steps | The conversion has run; with `doc_questions` and `doc_check_conversion_logs` dropped they have nothing to read | Delete. `doc_checks.legacy_doc_question_id` stays (which checks came from a converted question) |
+| `ImportUpload#model_class` / `#headers` (`constantize`) and `import_uploads/show.html.erb` | An old DocQuestion upload would raise on open once the class is gone; a DocCheck upload has no row list to render | `safe_constantize`; a type with no model shows only the upload's summary; a DocCheck upload links to the setup page |
 | Features `ai/kyc_validation.feature`, `core/doc_question_import.feature`; steps `kyc_validation.rb`, `doc_question_import_steps.rb`; fixture `public/sample_uploads/kyc_validation_rules.xlsx`; the `DocQuestion` / `doc_question_answers` steps in `investor_kyc_journey_steps.rb` | Legacy tests | Delete, and rewrite the journey steps onto `DocCheck` |
 | Documentation: the Doc Questions sections of `document_management_user_guide.md`, `ai_features_user_guide.md`, `investor_kyc_user_guide.md` and `documents_module_prd.md` | Feature gone | Rewrite to point to `document_checks_user_guide.md`. GTM decks under `docs/gtm` are left to marketing |
 

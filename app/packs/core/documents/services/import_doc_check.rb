@@ -59,7 +59,7 @@ class ImportDocCheck < ImportUtil
     raise "No check found with Id #{id}. Leave Id blank to create a new check." if check.nil?
 
     # import_upload_id is left alone: Delete Imported Data destroys what an upload created, so an upload
-    # that only edited a check must not take it over (as ImportDocQuestion)
+    # that only edited a check must not take it over
     check.assign_attributes(attributes)
     save!(check)
   end
