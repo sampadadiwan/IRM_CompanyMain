@@ -45,3 +45,12 @@ Feature: Investor KYC fixes that ship with the KYC journey
     Given there is an individual KYC for the investor that was never submitted
     When I bulk "unverify" the KYCs
     Then the KYC's status should be "not_sent"
+
+  # Save submits with form.submit() (skipping Turbo's own button disabling), so a second click used to
+  # save the form — and every attached file — again. The first click now locks the wizard's buttons.
+  Scenario: Clicking Save twice on the KYC form submits it once
+    Given there is an individual KYC for the investor
+    When I open the KYC edit form with submits counted
+    And I click the KYC form's Save button twice
+    Then the KYC form should have been submitted 1 time
+    And the KYC form's Save button should be disabled and show "Saving..."

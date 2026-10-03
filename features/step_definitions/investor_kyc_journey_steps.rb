@@ -72,6 +72,22 @@ Given("the KYC has the documents {string}") do |names|
   end
 end
 
+# A document as the KYC form's file field saves it: named after the field label, with the field's
+# meta_data as owner_tag (e.g. "Upload Tax ID" tagged "PAN")
+Given("the KYC has the document {string} tagged {string}") do |name, owner_tag|
+  Document.create!(entity_id: @investor_kyc.entity_id, name:, owner_tag:, owner: @investor_kyc, user: @user,
+                   file: File.new(KYC_SAMPLE_FILE, "r"))
+end
+
+# InvestorKycConcern#docs_completed? must agree with the journey's "Upload required documents"
+Then("the KYC's required documents should be complete") do
+  expect(@investor_kyc.reload.docs_completed?).to be(true)
+end
+
+Then("the KYC's required documents should not be complete") do
+  expect(@investor_kyc.reload.docs_completed?).to be(false)
+end
+
 # AI validation results as DocLlmValidator stores them: { document => { question => {answer:} } }
 Given("the KYC's AI validation found {int} of {int} answers failing") do |failing, total|
   answers = (1..total).to_h { |i| ["Question #{i}?", { "answer" => i <= failing ? "No" : "Yes", "explanation" => "-" }] }
@@ -635,4 +651,36 @@ end
 Given("there is an individual KYC for the investor that was never submitted") do
   @kycs = [create_journey_kyc]
   @investor_kyc = @kycs.first
+end
+
+# ── KYC form Save guard (investor_kyc_fixes.feature) ──────────────────────────
+
+KYC_FORM_SAVE_BTN = '[data-action="click->interim-save#submit"]'.freeze
+
+# interim-save submits with form.submit(); replace it with a counter so the page stays put and the
+# scenario can count how many submits the clicks produced
+When("I open the KYC edit form with submits counted") do
+  visit edit_investor_kyc_path(@investor_kyc)
+  expect(page).to have_css("form.wizard_form", visible: :all)
+  page.execute_script(<<~JS)
+    window.kycFormSubmits = 0
+    document.querySelector("form.wizard_form").submit = () => { window.kycFormSubmits += 1 }
+  JS
+end
+
+# Both clicks in one script, the way a fast double-click lands before the page navigates away.
+# The Save buttons sit on the wizard's last step (hidden until reached); a DOM click still runs the action.
+When("I click the KYC form's Save button twice") do
+  page.execute_script("const b = document.querySelector('#{KYC_FORM_SAVE_BTN}'); b.click(); b.click()")
+end
+
+Then("the KYC form should have been submitted {int} time(s)") do |count|
+  expect(page.evaluate_script("window.kycFormSubmits")).to eq(count)
+end
+
+Then("the KYC form's Save button should be disabled and show {string}") do |text|
+  # The same (first) Save button the click step used
+  button = page.first(KYC_FORM_SAVE_BTN, visible: :all)
+  expect(button.disabled?).to be(true)
+  expect(button.text(:all).strip).to eq(text)
 end

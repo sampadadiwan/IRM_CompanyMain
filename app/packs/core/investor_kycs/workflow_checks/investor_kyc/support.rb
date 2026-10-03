@@ -68,13 +68,10 @@ module WorkflowChecks
         names.uniq
       end
 
-      # Required names with no document of that name on the KYC (one distinct-names query)
+      # Required names no document on the KYC satisfies — matched by name or owner_tag, ignoring case and
+      # an "Upload "/"Attach your " prefix (InvestorKycConcern#missing_required_document_names)
       def missing_document_names(kyc)
-        required = required_document_names(kyc)
-        return [] if required.empty?
-
-        present = ::Document.where(owner_type: "InvestorKyc", owner_id: kyc.id).distinct.pluck(:name)
-        required - present
+        kyc.missing_required_document_names(required_document_names(kyc))
       end
 
       # [failed, total] answers in the stored AI validation results; nil when AI validation has not run.

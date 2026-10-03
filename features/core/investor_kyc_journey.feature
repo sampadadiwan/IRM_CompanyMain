@@ -39,6 +39,32 @@ Feature: Investor KYC journey
       | Submit KYC                | passed  |                                                        |
       | Upload required documents | current | 2 required documents missing: PAN Card, Address Proof |
 
+  # The KYC form names uploads after the field ("Upload Address Proof") and tags the PAN field's file
+  # with owner_tag "PAN Card"-style meta_data: both satisfy the required names, ignoring case
+  Scenario: Documents uploaded through the KYC form satisfy the required names
+    Given there is an individual KYC for the investor
+    And the KYC's form link was sent
+    And the KYC is submitted
+    And the KYC has the document "Upload Tax ID" tagged "PAN Card"
+    And the KYC has the documents "Upload Address Proof, photo"
+    When the KYC's journey is evaluated
+    Then the KYC's journey should show:
+      | task                      | status | message                     |
+      | Upload required documents | passed | Required documents uploaded |
+    And the KYC's required documents should be complete
+
+  # A correspondence address proof is a different document from the address proof
+  Scenario: A correspondence address proof does not count as the address proof
+    Given there is an individual KYC for the investor
+    And the KYC's form link was sent
+    And the KYC is submitted
+    And the KYC has the documents "PAN Card, Upload Correspondence Address Proof, Photo"
+    When the KYC's journey is evaluated
+    Then the KYC's journey should show:
+      | task                      | status  | message                                    |
+      | Upload required documents | current | 1 required document missing: Address Proof |
+    And the KYC's required documents should not be complete
+
   # E2 — nothing required: the task is not applicable
   Scenario: No required documents
     Given the entity requires no KYC documents

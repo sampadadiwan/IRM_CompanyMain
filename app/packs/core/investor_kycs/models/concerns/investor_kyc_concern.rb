@@ -71,18 +71,31 @@ module InvestorKycConcern
   end
   # rubocop:enable Rails/SkipsModelValidations
 
+  # Leading words the upload forms put in front of a document's name ("Upload Tax ID",
+  # "Attach your CML") — stripped before comparing with the required names
+  REQUIRED_DOC_NAME_PREFIX = /\A(upload|attach your|attach)\s+/i
+
   # Check if all the required docs have been uploaded
   def docs_completed?
     # The required_docs depend on the kyc_type
     required_docs = individual? ? entity.entity_setting.individual_kyc_doc_list : entity.entity_setting.non_individual_kyc_doc_list
-    if required_docs.present?
-      required_docs = Set.new(required_docs.split(",").map(&:strip))
-      uploaded_docs = Set.new(documents.pluck(:name))
-      # Sometimes other docs are also uploaded - so we check for subset
-      required_docs.present? && required_docs.subset?(uploaded_docs)
-    else
-      false
-    end
+    required_docs = required_docs.to_s.split(",").map(&:strip).compact_blank
+    # No list configured means nothing can be "complete"; otherwise every required name must be matched
+    # (other, unrequired docs may also be uploaded)
+    required_docs.present? && missing_required_document_names(required_docs).empty?
+  end
+
+  # The names in required_names that no document on this KYC satisfies. A document satisfies a name when
+  # its name or its owner_tag matches it after normalising - so "Upload Address Proof" counts as
+  # "Address Proof", and "Upload Tax ID" (owner_tag "PAN", set by the form field's meta_data) counts as "PAN".
+  # "Upload Correspondence Address Proof" does NOT count as "Address Proof": it is a different document.
+  def missing_required_document_names(required_names)
+    return [] if required_names.empty?
+
+    # Every normalised name and tag on the KYC's documents, from one distinct query
+    present = documents.distinct.pluck(:name, :owner_tag).flatten.filter_map { |v| normalize_required_doc_name(v).presence }.to_set
+    # Keep the required names (as written in settings) that nothing matched
+    required_names.reject { |name| present.include?(normalize_required_doc_name(name)) }
   end
 
   def docs_for_investor
@@ -91,5 +104,12 @@ module InvestorKycConcern
       .or(documents.where.not(owner_tag: "Generated"))
       .or(documents.where(owner_tag: nil))
       .not_template
+  end
+
+  private
+
+  # "  Upload  Address Proof " -> "address proof": lowercase, collapse whitespace, drop an upload/attach prefix
+  def normalize_required_doc_name(value)
+    value.to_s.squish.downcase.sub(REQUIRED_DOC_NAME_PREFIX, "")
   end
 end
