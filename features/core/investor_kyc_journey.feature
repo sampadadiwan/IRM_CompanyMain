@@ -15,16 +15,83 @@ Feature: Investor KYC journey
     And the entity requires the individual KYC documents "PAN Card, Address Proof, Photo"
     And AML is enabled for the entity
 
-  # H2 — a new KYC gets the journey, waiting on the form
-  Scenario: A new KYC gets the journey and waits for the form to be sent
+  # H2 — a new KYC gets the journey, waiting at the email gate before the form can be sent
+  # H2 (investor-kyc-email-review-steps) — no company KYC email: the default text is what would go out
+  Scenario: A new KYC gets the journey and waits at the email tasks
     Given there is an individual KYC for the investor
     When the KYC's journey is evaluated
     Then the KYC has the "Investor KYC" journey
-    And the KYC's journey current task should be "Send KYC form"
+    And the KYC's journey current task should be "Set up KYC email"
     And the KYC's journey should show:
-      | task                | status  | message                                                                  |
-      | Send KYC form       | current | The KYC form has not been sent — send it, or fill it in and tick complete |
-      | Compliance sign-off | na      | No approver set — pick one on this step in the journey template          |
+      | task                | status  | message                                                                                                         |
+      | Set up KYC email    | current | No KYC email is set up — CapHive's default text will be sent. Set one up, or mark reviewed to use the default |
+      | Send KYC form       | not_yet |                                                                                                                 |
+      | Compliance sign-off | na      | No approver set — pick one on this step in the journey template                                                 |
+
+  # H1 — with a company KYC email, the task names the email that will really be sent
+  Scenario: The email task names the company's KYC email
+    Given the entity has a KYC email "Complete your KYC for Urban Fund"
+    And there is an individual KYC for the investor
+    When the KYC's journey is evaluated
+    Then the KYC's journey should show:
+      | task             | status  | message                                                                               |
+      | Set up KYC email | current | Your KYC email "Complete your KYC for Urban Fund" will be sent — check it and mark reviewed |
+
+  # E14 — a disabled KYC email is not the one that would be sent, so it reads as none set up
+  Scenario: A disabled company KYC email reads as no email set up
+    Given the entity has a KYC email "Complete your KYC for Urban Fund"
+    And the entity's KYC email is disabled
+    And there is an individual KYC for the investor
+    When the KYC's journey is evaluated
+    Then the KYC's journey message for "Set up KYC email" should include "No KYC email is set up"
+
+  # H3 — confirming both email tasks hands over to "Send KYC form"
+  Scenario: Confirming both email tasks reaches the send task
+    Given the entity has a KYC email "Complete your KYC for Urban Fund"
+    And there is an individual KYC for the investor
+    When the KYC's journey is evaluated
+    And I mark "Set up KYC email" reviewed on the KYC
+    Then the KYC's journey current task should be "Preview the email"
+    And the KYC's journey message for "Preview the email" should include "Preview the email as"
+    When I mark "Preview the email" reviewed on the KYC
+    Then the KYC's journey current task should be "Send KYC form"
+    And the KYC's journey should show:
+      | task              | status  | message                                                                  |
+      | Set up KYC email  | passed  |                                                                          |
+      | Preview the email | passed  |                                                                          |
+      | Send KYC form     | current | The KYC form has not been sent — send it, or fill it in and tick complete |
+
+  # E1, E8 — once the form is out, reviewing cannot change what the investor received
+  Scenario: The email tasks are not applicable once the form has been sent
+    Given there is an individual KYC for the investor
+    And the KYC's form link was sent
+    When the KYC's journey is evaluated
+    Then the KYC's journey current task should be "Submit KYC"
+    And the KYC's journey should show:
+      | task              | status | message                            |
+      | Set up KYC email  | na     | The KYC form has already been sent |
+      | Preview the email | na     | The KYC form has already been sent |
+      | Send KYC form     | passed |                                    |
+
+  # E1 — the investor started the form without a link ever being emailed (documents-first)
+  Scenario: The email tasks are not applicable once the investor has started the form
+    Given there is an individual KYC for the investor "submission_status=draft_saved"
+    When the KYC's journey is evaluated
+    Then the KYC's journey should show:
+      | task              | status | message                            |
+      | Set up KYC email  | na     | The KYC form has already been sent |
+      | Preview the email | na     | The KYC form has already been sent |
+
+  # E2 — the fund filled the KYC in itself: no email is going anywhere
+  Scenario: The email tasks are not applicable when the fund filled the KYC in
+    Given there is an individual KYC for the investor
+    And the KYC is submitted
+    When the KYC's journey is evaluated
+    And the KYC's journey should show:
+      | task              | status | message               |
+      | Set up KYC email  | na     | Filled in by the fund |
+      | Preview the email | na     | Filled in by the fund |
+      | Send KYC form     | na     | Filled in by the fund |
 
   # E1 — missing required documents are named
   Scenario: Missing required documents are listed
@@ -196,6 +263,8 @@ Feature: Investor KYC journey
     Then the KYC's journey should be complete
     And the KYC's journey should show:
       | task                      | status | message                    |
+      | Set up KYC email          | na     | Filled in by the fund      |
+      | Preview the email         | na     | Filled in by the fund      |
       | Send KYC form             | na     | Filled in by the fund      |
       | Submit KYC                | passed |                            |
       | Upload required documents | na     | Verified without this step |
@@ -258,6 +327,75 @@ Feature: Investor KYC journey
     And the KYC's journey is evaluated
     When I unverify the KYC from its page
     Then the KYC's journey should have moved back to "Upload required documents" with "Unverified"
+
+  # E4 (investor-kyc-email-review-steps) — the email changed, so the review of the old text is void
+  Scenario: Editing the company's KYC email withdraws both confirmations
+    Given the entity has a KYC email "Complete your KYC"
+    And there is an individual KYC for the investor
+    When the KYC's journey is evaluated
+    And I mark "Set up KYC email" reviewed on the KYC
+    And I mark "Preview the email" reviewed on the KYC
+    Then the KYC's journey current task should be "Send KYC form"
+    When I edit the entity's KYC email
+    Then the KYC's journey current task should be "Set up KYC email"
+    And the KYC's journey message for "Set up KYC email" should include "Email template changed after review"
+
+  # E6 — the company's first KYC email arriving after someone accepted the default
+  Scenario: Creating the company's first KYC email withdraws the confirmations
+    Given there is an individual KYC for the investor
+    When the KYC's journey is evaluated
+    And I mark "Set up KYC email" reviewed on the KYC
+    And I mark "Preview the email" reviewed on the KYC
+    And I create the entity's KYC email "Complete your KYC for Urban Fund"
+    Then the KYC's journey current task should be "Set up KYC email"
+    And the KYC's journey message for "Set up KYC email" should include "Email template changed after review"
+
+  # E4 — deleting the company's KYC email changes what goes out, so it withdraws them too
+  Scenario: Deleting the company's KYC email withdraws the confirmations
+    Given the entity has a KYC email "Complete your KYC"
+    And there is an individual KYC for the investor
+    When the KYC's journey is evaluated
+    And I mark "Set up KYC email" reviewed on the KYC
+    And I mark "Preview the email" reviewed on the KYC
+    And I delete the entity's KYC email
+    Then the KYC's journey current task should be "Set up KYC email"
+
+  # E5, X2 — the investor already has the old email: that KYC must not reopen
+  Scenario: Editing the company's KYC email reopens only the KYCs not yet sent
+    Given the entity has a KYC email "Complete your KYC"
+    And there is an individual KYC for the investor
+    And the KYC's form link was sent
+    When the KYC's journey is evaluated
+    And I remember this KYC as "sent"
+    Given there is an individual KYC for the investor
+    When the KYC's journey is evaluated
+    And I mark "Set up KYC email" reviewed on the KYC
+    And I mark "Preview the email" reviewed on the KYC
+    And I remember this KYC as "unsent"
+    When I edit the entity's KYC email
+    Then the journey of KYC "unsent" should be at "Set up KYC email"
+    And the journey of KYC "sent" should not have moved back
+
+  # E7 — only the email the form link is sent with drives these tasks
+  Scenario: Editing the company's KYC reminder email leaves the journey alone
+    Given the entity has a KYC email "Complete your KYC"
+    And the entity has a KYC reminder email "Reminder to complete your KYC"
+    And there is an individual KYC for the investor
+    When the KYC's journey is evaluated
+    And I mark "Set up KYC email" reviewed on the KYC
+    And I mark "Preview the email" reviewed on the KYC
+    And I edit the entity's KYC reminder email
+    Then the KYC's journey current task should be "Send KYC form"
+
+  # X1 — the undo failing never takes the notification save down with it
+  Scenario: A failure while withdrawing the confirmations still saves the email
+    Given the entity has a KYC email "Complete your KYC"
+    And there is an individual KYC for the investor
+    When the KYC's journey is evaluated
+    And I mark "Set up KYC email" reviewed on the KYC
+    And resetting the email reviews raises an error
+    And I edit the entity's KYC email
+    Then the entity's KYC email subject should be "Complete your KYC — revised"
 
   # E12 — editing the details after the review
   Scenario: Editing the KYC after it was reviewed moves the journey back to Review KYC

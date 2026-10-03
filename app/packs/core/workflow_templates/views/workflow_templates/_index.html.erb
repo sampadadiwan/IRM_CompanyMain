@@ -9,7 +9,9 @@
         Worked examples H1, E14 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
         Worked examples H10, E20, E25, X3 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples %>
     <% if @journey_setup_plans.any? %>
-      <% pending = @journey_setup_plans.count { |_kind, plan| plan[:templates].any? || plan[:rules].any? || plan[:cfo] } %>
+      <%# plan[:steps]: seeded tasks this company's existing template predates, so a kind with
+          nothing else missing still reads as pending (investor-kyc-email-review-steps H7) %>
+      <% pending = @journey_setup_plans.count { |_kind, plan| plan[:templates].any? || plan[:rules].any? || plan[:cfo] || plan[:steps].any? } %>
       <div class="dropdown" id="setup_journeys_menu">
         <button type="button" id="setup_journeys_menu_btn" class="btn btn-outline-primary dropdown-toggle"
                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -20,7 +22,7 @@
           <% @journey_setup_plans.each do |kind, plan| %>
             <% setup = JourneySetup.for_kind(kind) %>
             <% records = setup::RECORD.pluralize %>
-            <% if plan[:templates].any? || plan[:rules].any? || plan[:cfo] %>
+            <% if plan[:templates].any? || plan[:rules].any? || plan[:cfo] || plan[:steps].any? %>
               <%# The Full journey's sign-off has no approver yet: pick one by editing that step (E24, E25); text per kind in JourneySetup.confirm_message %>
               <% msg = setup.confirm_message(plan) %>
               <%= button_to setup_journeys_workflow_templates_path(kind:), id: "setup_#{kind}_journeys_btn",

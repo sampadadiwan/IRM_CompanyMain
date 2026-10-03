@@ -46,6 +46,90 @@ Given("I am the approver on the Compliance sign-off") do
   template.workflow_steps.find_by!(name: "Compliance sign-off").workflow_step_actors.create!(user: @user)
 end
 
+# ── The company's KYC emails (the "Set up KYC email" / "Preview the email" tasks) ─────────────────
+# KYC emails are owned by the ENTITY with for_type "InvestorKyc" (unlike a call's, owned by its fund),
+# which is why one edit reaches every KYC of the company that has not emailed its investor yet.
+# Worked examples H1, E4–E7, E14 — openspec/changes/investor-kyc-email-review-steps/design.md#worked-examples
+
+Given("the entity has a KYC email {string}") do |subject|
+  @kyc_email = CustomNotification.create!(entity: @entity, owner: @entity, for_type: "InvestorKyc", subject:,
+                                          body: "Please complete your KYC", email_method: "notify_kyc_required")
+end
+
+Given("the entity's KYC email is disabled") do
+  @kyc_email.update!(enabled: false)
+end
+
+Given("the entity has a KYC reminder email {string}") do |subject|
+  @kyc_reminder_email = CustomNotification.create!(entity: @entity, owner: @entity, for_type: "InvestorKyc", subject:,
+                                                   body: "A gentle reminder", email_method: "kyc_required_reminder")
+end
+
+# Through the controller, so the after_action that runs JourneyEmailEdit fires as it does in the app.
+# travel 1.second so the invalidation is newer than the confirmation it withdraws.
+When("I edit the entity's KYC email") do
+  travel 1.second
+  as_user_request(@user, :patch, Rails.application.routes.url_helpers.custom_notification_path(@kyc_email),
+                  custom_notification: { subject: "Complete your KYC — revised" })
+end
+
+When("I edit the entity's KYC reminder email") do
+  travel 1.second
+  as_user_request(@user, :patch, Rails.application.routes.url_helpers.custom_notification_path(@kyc_reminder_email),
+                  custom_notification: { subject: "A reminder — revised" })
+end
+
+When("I delete the entity's KYC email") do
+  travel 1.second
+  as_user_request(@user, :delete, Rails.application.routes.url_helpers.custom_notification_path(@kyc_email), {})
+end
+
+# One company email edit reaches many KYCs, so these scenarios juggle more than one (X2)
+Given("I remember this KYC as {string}") do |label|
+  @remembered_kycs ||= {}
+  @remembered_kycs[label] = @investor_kyc
+end
+
+Then("the journey of KYC {string} should be at {string}") do |label, task|
+  instance = journey_instance(InvestorKyc.find(@remembered_kycs.fetch(label).id))
+  expect(instance.current_step_position).to eq(journey_position(instance, task)), instance.step_results.inspect
+end
+
+Then("the entity's KYC email subject should be {string}") do |subject|
+  expect(@kyc_email.reload.subject).to eq(subject)
+end
+
+Then("the journey of KYC {string} should not have moved back") do |label|
+  instance = journey_instance(InvestorKyc.find(@remembered_kycs.fetch(label).id))
+  expect(instance.workflow_state_changes.where(to_state: %w[regressed invalidated])).not_to exist
+end
+
+# X1 — the undo failing must never take the notification save down with it
+Given("resetting the email reviews raises an error") do
+  WorkflowStepInvalidate.singleton_class.class_eval do
+    alias_method :__original_call, :call
+    define_method(:call) { |**_args| raise "Journey undo exploded" }
+  end
+end
+
+After do
+  klass = WorkflowStepInvalidate.singleton_class
+  if klass.method_defined?(:__original_call)
+    klass.class_eval do
+      alias_method :call, :__original_call
+      remove_method :__original_call
+    end
+  end
+end
+
+When("I create the entity's KYC email {string}") do |subject|
+  travel 1.second
+  as_user_request(@user, :post, Rails.application.routes.url_helpers.custom_notifications_path,
+                  custom_notification: { subject:, body: "Please complete your KYC", for_type: "InvestorKyc",
+                                         email_method: "notify_kyc_required", entity_id: @entity.id,
+                                         owner_id: @entity.id, owner_type: "Entity" })
+end
+
 # ── KYCs ──────────────────────────────────────────────────────────────────────
 
 # Built as the subclass, the way InvestorKycsController#new builds it (so the STI type-name fix is exercised)
@@ -246,6 +330,28 @@ Then("the entity should have exactly {int} investor KYC journey and {int} KYC au
   expect(WorkflowAutoAssignmentRule.where(entity: @entity, workflowable_type: "InvestorKyc").count).to eq(rules)
 end
 
+# A company set up before the two email tasks existed: the seeded template without them, renumbered
+# from 1 as it was then. What the backfill has to repair (H7, E9, E11).
+Given("the investor KYC journey template predates the email tasks") do
+  template = WorkflowTemplate.find_by!(entity: @entity, system_key: InvestorKycJourneySetup::FULL_KEY)
+  template.workflow_steps.where(name: ["Set up KYC email", "Preview the email"]).destroy_all
+  # Ascending: positions 1 and 2 are free now, so no collision with the unique position index
+  template.workflow_steps.order(:position).each_with_index { |step, idx| step.update!(position: idx + 1) }
+end
+
+# Single-column table (header "task"): the template's tasks, in position order
+Then("the investor KYC journey tasks should be:") do |table|
+  template = WorkflowTemplate.find_by!(entity: @entity, system_key: InvestorKycJourneySetup::FULL_KEY)
+  expect(template.workflow_steps.order(:position).pluck(:name)).to eq(table.hashes.map { |row| row["task"].strip })
+end
+
+Then("the {string} task should be an acknowledge task checking {string} skipped by {string}") do |name, check, skip|
+  template = WorkflowTemplate.find_by!(entity: @entity, system_key: InvestorKycJourneySetup::FULL_KEY)
+  step = template.workflow_steps.find_by!(name:)
+  expect([step.kind, step.check_key, step.skip_key]).to eq(["acknowledge", check, skip])
+  expect(step.states).to eq(WorkflowStep::ACKNOWLEDGE_STATES)
+end
+
 Given("the investor KYC journey's {string} task is removed") do |name|
   template = WorkflowTemplate.find_by!(entity: @entity, system_key: InvestorKycJourneySetup::FULL_KEY)
   template.workflow_steps.find_by!(name:).destroy!
@@ -324,6 +430,34 @@ end
 
 When("I click the panel review action") do
   find("#journey_review_action").click
+end
+
+# The email tasks' second buttons go to other screens, so they navigate (no action_target to click)
+Then("the panel review action {string} should link to the entity's KYC emails") do |label|
+  link = find("#journey_review_action", text: label)
+  expect(link["data-controller"]).to be_blank
+  expect(link["href"]).to include("/custom_notifications").and include("InvestorKyc")
+end
+
+Then("the panel review action {string} should link to the new KYC email form") do |label|
+  link = find("#journey_review_action", text: label)
+  expect(link["href"]).to include("/custom_notifications/new").and include("InvestorKyc")
+end
+
+# Back to the fund user after the investor acted: the magic-link steps switch Capybara to their own
+# session (:kyc_magic_link), and the fund user's cookies are still on the default one
+When("I switch back to the fund user's session") do
+  Capybara.session_name = :default
+end
+
+# Both email tasks already confirmed, for the scenarios that are about a later task
+Given("the KYC's email tasks are confirmed") do
+  kyc = InvestorKyc.find(@investor_kyc.id)
+  WorkflowEvaluator.for(kyc, cause: :progress)
+  instance = journey_instance(kyc)
+  ["Set up KYC email", "Preview the email"].each do |task|
+    WorkflowAcknowledge.call(instance: instance.reload, step_position: journey_position(instance, task), user: @user)
+  end
 end
 
 Then("the KYC's tab {string} should be open") do |tab_id|

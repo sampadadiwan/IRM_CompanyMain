@@ -17,8 +17,36 @@ Feature: Investor KYC journey — the KYC page
     And AML is enabled for the entity
     And there is an individual KYC for the investor
 
-  # H3, J2.1 — the panel's button sends the form through the KYC Actions item
+  # H1, H4, J1.1–J1.5 (investor-kyc-email-review-steps) — the email gate: each task's own second
+  # button beside Mark reviewed, then the hand-over to "Send KYC form"
+  Scenario: The panel walks through the two email tasks
+    Given the entity has a KYC email "Complete your KYC for Urban Fund"
+    When I open the KYC page
+    Then the KYC journey panel should be shown
+    And the panel should say "Your KYC email \"Complete your KYC for Urban Fund\" will be sent — check it and mark reviewed"
+    And the panel review action "Open KYC emails" should link to the entity's KYC emails
+    When I click Mark reviewed in the journey panel
+    Then the step bar should show:
+      | task              | mark |
+      | Set up KYC email  | ✓    |
+      | Preview the email | ●    |
+    And the panel should say "Preview the email as"
+    And the panel review action "Preview KYC Required Notification" should click "investor_kyc_preview_notify_kyc_required_custom_0_btn"
+    When I click Mark reviewed in the journey panel
+    Then the step bar should show:
+      | task              | mark |
+      | Preview the email | ✓    |
+      | Send KYC form     | ●    |
+
+  # H2 — no company email: the panel offers the form that creates one
+  Scenario: The panel offers to create a KYC email when the company has none
+    When I open the KYC page
+    Then the panel should say "No KYC email is set up — CapHive's default text will be sent. Set one up, or mark reviewed to use the default"
+    And the panel review action "Custom KYC Notification" should link to the new KYC email form
+
+  # H3, J2.1 — the panel's button sends the form through the KYC Actions item, once the gate is passed
   Scenario: The panel sends the KYC form
+    Given the KYC's email tasks are confirmed
     When I open the KYC page
     Then the KYC journey panel should be shown
     And the panel should say "The KYC form has not been sent — send it, or fill it in and tick complete"

@@ -1,7 +1,7 @@
 # The investor KYC journey: what JourneySetup seeds for KYCs (the seeding itself, idempotency and the
 # dry run live in JourneySetup).
 #
-#   One template — "Investor KYC" (9 tasks, including a Compliance sign-off with no approvers yet)
+#   One template — "Investor KYC" (11 tasks, including a Compliance sign-off with no approvers yet)
 #   One rule     — every new KYC → "Investor KYC", priority 100 (the default)
 #
 # No Light journey: a KYC the fund fills in itself skips "Send KYC form" (n/a), and an imported, already
@@ -30,8 +30,20 @@ class InvestorKycJourneySetup < JourneySetup
   # The step the sign-off goes before when it is added to an older template
   APPROVE_STEP_NAME = "Verify KYC".freeze
 
+  # The two email tasks are inserted before "Send KYC form" on a template that predates them, so a
+  # company already using this journey gets the gate too (JourneySetup::BACKFILL_STEPS). A template
+  # whose admin removed "Send KYC form" emails nobody and gets neither task.
+  # Worked examples H7, E10 — openspec/changes/investor-kyc-email-review-steps/design.md#worked-examples
+  BACKFILL_STEPS = { "Send KYC form" => ["Set up KYC email", "Preview the email"].freeze }.freeze
+
   # [name, kind, check, skip, unlocks, description]
   FULL_STEPS = [
+    ["Set up KYC email", "acknowledge", "review_email", "review_not_needed", nil,
+     "The email the investor will receive has been checked — the company's own KYC email, or CapHive's " \
+     "default text when none is set up. Not applicable once the form has been sent."],
+    ["Preview the email", "acknowledge", "check_preview", "review_not_needed", nil,
+     "Someone previewed the KYC email as this investor will receive it, with their name and link filled " \
+     "in. Not applicable once the form has been sent."],
     ["Send KYC form", "system", "send_form", "filled_by_fund", nil,
      "The KYC form link has been emailed to the investor. Not applicable when the fund filled the KYC in itself."],
     ["Submit KYC", "system", "submit", nil, nil,

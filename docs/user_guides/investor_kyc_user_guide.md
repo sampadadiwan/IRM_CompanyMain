@@ -100,12 +100,17 @@ The panel's button runs the real control on the page: for example it opens **KYC
 
 ```mermaid
 flowchart LR
-    A["Send KYC form"] --> B["Submit KYC"] --> C["Upload required documents"] --> D["Validate documents"]
-    D --> E["Run AML screening"] --> F["Clear AML match"] --> G["Review KYC"] --> H["Compliance sign-off"] --> I["Verify KYC"]
+    S1["Set up KYC email"] --> S2["Preview the email"] --> A["Send KYC form"] --> B["Submit KYC"]
+    B --> C["Upload required documents"] --> D["Validate documents"] --> E["Run AML screening"]
+    E --> F["Clear AML match"] --> G["Review KYC"] --> H["Compliance sign-off"] --> I["Verify KYC"]
+    classDef email fill:#e8f5e9,stroke:#2e7d32,color:#000
+    class S1,S2 email
 ```
 
 | Task | Done when | Not applicable when | Moves back when |
 |---|---|---|---|
+| Set up KYC email | someone clicked **Mark reviewed** on it | the form has already been sent, or the fund filled the KYC in itself | your company's KYC email is created, edited or deleted before the form goes out |
+| Preview the email | someone clicked **Mark reviewed** on it | the form has already been sent, or the fund filled the KYC in itself | as above |
 | Send KYC form | the KYC form link has been emailed to the investor (or the investor has started it) | the fund filled the KYC in itself: it was submitted or verified without a form ever being sent | — |
 | Submit KYC | the investor clicked **Submit KYC**, or a fund user ticked **I confirm all details provided are complete…** and saved | — | **Request Updates**, or a fund user unticks the complete box |
 | Upload required documents | a document exists for every required name: your company's required KYC document list for the KYC's type plus the KYC form's required document fields | nothing is required | a document is deleted |
@@ -115,6 +120,8 @@ flowchart LR
 | Review KYC | someone checked the details and clicked **Mark reviewed** | — | the KYC's details are edited after the review |
 | Compliance sign-off | an approver on the step approves (any one of them) | no approver has been picked on the step yet | earlier work is undone after the sign-off (the sign-off is reset) |
 | Verify KYC | the KYC is verified | — | **UnVerify** (on the KYC or in bulk) |
+
+**Checking the email before the investor gets it.** The journey starts with the email, not the send. **Set up KYC email** names the email that will actually go out — `Your KYC email "Complete your KYC for Urban Fund" will be sent` — with **Open KYC emails** beside **Mark reviewed**. If your company has not set one up, it says CapHive's default text will be sent and offers **Custom KYC Notification** to write your own; marking it reviewed accepts the default. **Preview the email** then offers **Preview KYC Required Notification**, which opens the email as *this* investor will receive it, with their name, your company and their link filled in, so a wrong placeholder is caught before anyone sends. Neither task blocks anything: **Send KYC Required Notification** works whenever you want it. If you change your company's KYC email afterwards, both confirmations are withdrawn on every KYC whose form has not gone out yet and the journey returns to **Set up KYC email** saying "Email template changed after review" — a KYC already sent is left alone, because the investor has the old email either way.
 
 **Validate documents with or without AI.** If your company has document questions set up, the panel offers **Validate Document Data**; when every answer passes, the task ticks itself ("Validated by AI"). The AI sometimes can't read a document or flags a mismatch — then the panel says how many answers failed, offers **Open validation** to look at them, and a person decides and clicks **Mark reviewed**. Without document questions the task is always a manual check.
 
@@ -133,6 +140,8 @@ If someone undoes earlier work (**Request Updates**, **UnVerify** on the KYC or 
 ### Setting it up
 
 A company admin of an Investment Fund or Angel Fund company opens the [workflow templates](/workflow_templates) page and chooses **Set up journeys → Set up investor KYC journeys**; once done that item shows **✓ Investor KYC journeys set up**. New fund companies get the journey automatically. Only KYCs created afterwards get a journey. If your company already has its own auto-assignment rule for KYCs, setup adds the **Investor KYC** template but no rule, so your rule keeps deciding.
+
+Setup also fills gaps in a journey you already have: when CapHive adds a task to the standard journey — as it did with **Set up KYC email** and **Preview the email** — running setup again inserts it in the right place and keeps everything you changed, including renamed tasks, tasks you removed and the approver on **Compliance sign-off**. It never adds the same task twice, and if you removed **Send KYC form** (so the journey never emails the investor) it adds neither email task. KYCs that were waiting at **Send KYC form** move back to **Set up KYC email**, since they have emailed nobody yet; KYCs already with their investor are untouched.
 
 ---
 
@@ -914,6 +923,21 @@ At the top of the KYC's page, above its details, for your team only — investor
 
 **Why doesn't my KYC show a step bar?**
 Either the KYC was created before your company's KYC journey was set up, or the journey was never set up. A company admin sets it up on the [workflow templates](/workflow_templates) page with **Set up journeys → Set up investor KYC journeys**; only KYCs created afterwards get a journey.
+
+**Why does the KYC journey start with the email instead of Send KYC form?**
+Because the KYC request is usually the first email an investor gets from you, and the text comes from one company-level template — so a wrong subject or an unfilled placeholder reaches every investor at once. **Set up KYC email** names the email that will actually be sent (or warns that CapHive's default text will be used), and **Preview the email** shows that investor's own copy. Neither blocks anything: you can still send at any time, and both tasks then show n/a.
+
+**What should I do on "Set up KYC email" if we have no KYC email of our own?**
+Either click **Custom KYC Notification** in the panel and write one, or click **Mark reviewed** to accept CapHive's default text. The panel tells you which of the two will happen, so nothing goes out unseen.
+
+**Why did my KYC journey move back to "Set up KYC email" saying "Email template changed after review"?**
+Someone created, edited or deleted your company's KYC email after the two tasks were confirmed, so those confirmations no longer describe what the investor would receive. Re-read it, preview it and mark both reviewed again. Only KYCs whose form has not gone out are reopened; editing the KYC *reminder* email changes nothing, because these tasks are about the email the form link is sent with.
+
+**Why do the email tasks show n/a on some KYCs?**
+Either the form has already been sent (or the investor has started it) — the investor has the email, so a review cannot change it — or the fund filled the KYC in itself, when no email is sent at all. A task someone had already confirmed keeps its ✓ instead.
+
+**Our KYC journey was set up months ago — do we get the two email tasks?**
+Yes, the next time a company admin runs **Set up journeys → Set up investor KYC journeys**. They are inserted before **Send KYC form**, everything you have changed on the template is kept, and nothing is added twice. KYCs that were waiting at **Send KYC form** move back one step to **Set up KYC email**.
 
 ### Creating, updating and managing KYCs
 

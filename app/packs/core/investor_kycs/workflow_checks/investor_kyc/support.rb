@@ -22,6 +22,10 @@ module WorkflowChecks
       # submission_status values meaning the investor (or the fund) has submitted
       SUBMITTED = %w[completed verified].freeze
 
+      # The email the KYC form link is sent with — the one "Set up KYC email" and "Preview the email"
+      # are about. The reminder (kyc_required_reminder) repeats it and has no review of its own.
+      KYC_REQUIRED_METHOD = "notify_kyc_required".freeze
+
       private
 
       def routes
@@ -41,6 +45,38 @@ module WorkflowChecks
       def email_button_id(kyc, email_method)
         custom = kyc.entity.custom_notifications.for_type("InvestorKyc").exists?(email_method:)
         "investor_kyc_#{email_method}_#{custom ? 'custom_0' : 'default'}_btn"
+      end
+
+      # The KYC Actions item that PREVIEWS this email, the mirror of email_button_id: with the
+      # entity's own template the item is "..._custom_0_btn", otherwise "..._default_btn"
+      # (investor_kycs/_preview_notifications.html.erb builds both the same way).
+      # Worked examples H4 — openspec/changes/investor-kyc-email-review-steps/design.md#worked-examples
+      def preview_button_id(kyc, email_method)
+        custom = kyc.entity.custom_notifications.for_type("InvestorKyc").exists?(email_method:)
+        "investor_kyc_preview_#{email_method}_#{custom ? 'custom_0' : 'default'}_btn"
+      end
+
+      # The KYC-required email this investor will actually receive, or nil when the company has set
+      # none up. Resolved through Entity#custom_notification — the very call InvestorKycMailer#set_kyc
+      # makes (enabled, last one wins) — so the journey can never name an email the send would not
+      # use. A disabled template therefore reads as "none set up", exactly as it behaves on a send.
+      # Worked examples H1, H2, E14 — openspec/changes/investor-kyc-email-review-steps/design.md#worked-examples
+      def kyc_required_notification(kyc)
+        kyc.entity.custom_notification(KYC_REQUIRED_METHOD, for_type: "InvestorKyc")
+      end
+
+      # The entity's KYC emails, filtered — the same list the KYC index's "View All Custom
+      # Notifications" item opens. RansackQueryBuilder.single is idx-keyed and so deterministic;
+      # .multiple generates random group keys per call, which would make this link (and so
+      # step_results) differ on every evaluation, turning each page view into a write.
+      def kyc_notifications_path(_kyc)
+        routes.custom_notifications_path(q: RansackQueryBuilder.single("for_type", :eq, "InvestorKyc"))
+      end
+
+      # The new-email form, pre-filled for KYC emails, as the KYC index's "Custom KYC Notification" item
+      def new_kyc_notification_path(kyc)
+        routes.new_custom_notification_path('custom_notification[for_type]': "InvestorKyc",
+                                            'custom_notification[entity_id]': kyc.entity_id)
       end
 
       # The KYC's AML result as "no_match" / "potential_match" / nil. Overrides store the snake_case

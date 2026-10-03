@@ -24,16 +24,16 @@ Feature: Investor KYC journey — rollout
   # H1 — seeding through the rake task
   Scenario: Running the rollout seeds the journey, the rule and the permission
     When I run the KYC journey rollout for the entity with EXECUTE
-    Then the entity should have the investor KYC journey with 9 tasks
+    Then the entity should have the investor KYC journey with 11 tasks
     And every new KYC should go to the investor KYC journey
     And the entity should have workflow templates enabled
 
   # H1 — new fund and angel fund companies get it (SetupCompany)
   Scenario: New fund and angel fund companies are set up with the KYC journey
     When a new fund company is created
-    Then the new company should have the investor KYC journey with 9 tasks
+    Then the new company should have the investor KYC journey with 11 tasks
     When a new angel fund company is created
-    Then the new company should have the investor KYC journey with 9 tasks
+    Then the new company should have the investor KYC journey with 11 tasks
 
   # E18 — a KYC that existed before the rollout gets no journey
   Scenario: A KYC that existed before the rollout gets no journey
@@ -51,6 +51,56 @@ Feature: Investor KYC journey — rollout
     And the investor KYC journey should have no "Run AML screening" task
     And the Compliance sign-off should still have me as approver
 
+  # H8 (investor-kyc-email-review-steps) — the dry run names the tasks it would add to an existing template
+  Scenario: The dry run reports the email tasks a company's existing journey is missing
+    Given I run the KYC journey rollout for the entity with EXECUTE
+    And the investor KYC journey template predates the email tasks
+    When I run the KYC journey rollout for the entity
+    Then the rollout output should mention "add tasks: Set up KYC email, Preview the email"
+    And the entity should have the investor KYC journey with 9 tasks
+
+  # H7 — the backfill inserts both tasks before "Send KYC form" and leaves everything else alone
+  Scenario: The rollout adds the email tasks to a journey that predates them
+    Given I run the KYC journey rollout for the entity with EXECUTE
+    And I am the approver on the Compliance sign-off
+    And the investor KYC journey template predates the email tasks
+    When I run the KYC journey rollout for the entity with EXECUTE
+    Then the investor KYC journey tasks should be:
+      | task                      |
+      | Set up KYC email          |
+      | Preview the email         |
+      | Send KYC form             |
+      | Submit KYC                |
+      | Upload required documents |
+      | Validate documents        |
+      | Run AML screening         |
+      | Clear AML match           |
+      | Review KYC                |
+      | Compliance sign-off       |
+      | Verify KYC                |
+    And the "Set up KYC email" task should be an acknowledge task checking "investor_kyc.review_email" skipped by "investor_kyc.review_not_needed"
+    And the "Preview the email" task should be an acknowledge task checking "investor_kyc.check_preview" skipped by "investor_kyc.review_not_needed"
+    And the Compliance sign-off should still have me as approver
+
+  # E9 — running it again adds nothing
+  Scenario: Re-running the rollout does not add the email tasks twice
+    Given I run the KYC journey rollout for the entity with EXECUTE
+    And the investor KYC journey template predates the email tasks
+    And I run the KYC journey rollout for the entity with EXECUTE
+    When I run the KYC journey rollout for the entity
+    Then the rollout output should not mention "add tasks:"
+    And the entity should have the investor KYC journey with 11 tasks
+
+  # E10 — a template whose admin removed "Send KYC form" emails nobody, so it gets neither task
+  Scenario: A journey without the send task gets no email tasks
+    Given I run the KYC journey rollout for the entity with EXECUTE
+    And the investor KYC journey template predates the email tasks
+    And the investor KYC journey's "Send KYC form" task is removed
+    When I run the KYC journey rollout for the entity with EXECUTE
+    Then the investor KYC journey should have no "Set up KYC email" task
+    And the investor KYC journey should have no "Preview the email" task
+    And the entity should have the investor KYC journey with 8 tasks
+
   # E20 — an entity with its own KYC rule keeps it; the journey template is added without a rule
   Scenario: An entity that already routes KYCs gets the template but no rule
     Given the entity has its own human approval workflow for KYCs
@@ -65,7 +115,7 @@ Feature: Investor KYC journey — rollout
     When I open the Workflow Templates page
     And I choose "Set up investor KYC journeys" from the Set up journeys menu and proceed
     Then I should see "Investor KYC journeys set up: KYC journey, auto-assignment rule. New KYCs will get a journey." on the page
-    And the entity should have the investor KYC journey with 9 tasks
+    And the entity should have the investor KYC journey with 11 tasks
     And the Set up journeys menu should show "Investor KYC journeys set up" as done
 
   # X3 — not offered to a user who is not a company admin, and a direct request is refused
@@ -113,10 +163,10 @@ Feature: Investor KYC journey — rollout
   Scenario: Duplicating the KYC journey copies its tasks and setup leaves the copy alone
     Given the entity's investor KYC journeys are seeded
     When I open the "Investor KYC" workflow template and click Duplicate
-    Then the template "Copy of Investor KYC" should have the same 9 tasks as "Investor KYC"
+    Then the template "Copy of Investor KYC" should have the same 11 tasks as "Investor KYC"
     When I run the KYC journey rollout for the entity
     Then the rollout output should mention "already set up"
-    And the template "Copy of Investor KYC" should have the same 9 tasks as "Investor KYC"
+    And the template "Copy of Investor KYC" should have the same 11 tasks as "Investor KYC"
 
   # E27 — the rule form lists only this entity's KYC form types
   Scenario: The rule form lists this entity's KYC form types

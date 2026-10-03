@@ -57,6 +57,14 @@ class JourneySetup < Trailblazer::Operation
   SIGN_OFF_DESCRIPTION = CFO_STEP_DESCRIPTION
   FULL_LABEL = "Full".freeze
 
+  # Seeded tasks to add to a Full template that ALREADY exists, as
+  # { anchor task name => [seeded task names, in order] }: they are inserted immediately before the
+  # anchor, because find_or_seed only writes steps for a template it creates, so a kind that gains a
+  # task would otherwise leave every set-up company behind. The generalisation of add_cfo_step.
+  # {} (the default) means this kind never backfills.
+  # Worked examples H7, E9, E10 — openspec/changes/investor-kyc-email-review-steps/design.md#worked-examples
+  BACKFILL_STEPS = {}.freeze
+
   # Whether this kind seeds a Light template next to the Full one
   def self.light?
     self::LIGHT_KEY.present?
@@ -88,7 +96,14 @@ class JourneySetup < Trailblazer::Operation
             else ", and a rule giving every new #{self::RECORD} this journey"
             end
     sign_off = plan[:cfo] ? ", and a #{self::SIGN_OFF_NAME} step in the #{self::FULL_LABEL} journey" : ""
-    "This adds the standard #{self::LABEL} for this company: #{templates}#{rules}#{sign_off}. " \
+    # Seeded tasks the company's existing template predates (BACKFILL_STEPS): name them, so the
+    # admin knows their journey grows two tasks rather than finding out from the step bar
+    steps = if plan[:steps].blank?
+              ""
+            else
+              ", and the #{plan[:steps].to_sentence} #{'task'.pluralize(plan[:steps].size)} in the #{self::FULL_LABEL} journey"
+            end
+    "This adds the standard #{self::LABEL} for this company: #{templates}#{rules}#{sign_off}#{steps}. " \
       "The #{self::SIGN_OFF_NAME} step has no approver: edit it to pick one (until then it is skipped). " \
       "Only #{records} created from now on get a journey. Anything already set up is kept."
   end
@@ -118,6 +133,7 @@ class JourneySetup < Trailblazer::Operation
       planned << "templates: #{report[:templates].join(', ')}" if report[:templates].any?
       planned << "rules: #{report[:rules].join(', ')}" if report[:rules].any?
       planned << "add #{setup::SIGN_OFF_NAME} to the #{setup::FULL_LABEL} journey" if report[:cfo]
+      planned << "add tasks: #{report[:steps].join(', ')}" if report[:steps].present?
       planned << "enable workflow templates" if report[:flag]
       io.puts "  #{entity.name} (id=#{entity.id}): #{planned.any? ? planned.join('; ') : 'already set up'}"
     rescue StandardError => e
@@ -144,6 +160,9 @@ class JourneySetup < Trailblazer::Operation
       flag: !entity.permissions.enable_workflow_templates?,
       # A Full template seeded before the CFO sign-off step existed (a new template gets it seeded)
       cfo: templates[self.class::FULL_KEY].present? && !templates[self.class::FULL_KEY].workflow_steps.exists?(name: self.class::SIGN_OFF_NAME),
+      # Seeded tasks an existing Full template predates, in BACKFILL_STEPS order. [] for a template
+      # about to be seeded whole, for a kind that declares no backfill, and once they are all there.
+      steps: missing_backfill_steps(templates[self.class::FULL_KEY]),
       # Seeded templates the admin has since disabled. Setup leaves them disabled — re-enabling is
       # the admin's call — but the menu has to say so, otherwise a kind whose templates are all off
       # reads as "set up" while new records quietly get no journey.
@@ -161,6 +180,7 @@ class JourneySetup < Trailblazer::Operation
     ActiveRecord::Base.transaction do
       full = find_or_seed(entity, setup::FULL_KEY, setup::FULL_NAME, setup::FULL_STEPS)
       add_cfo_step(full) if report[:cfo]
+      insert_missing_steps(full, report[:steps]) if report[:steps].present?
       if setup.light?
         light = find_or_seed(entity, setup::LIGHT_KEY, setup::LIGHT_NAME,
                              setup::FULL_STEPS.select { |row| setup::LIGHT_STEP_NAMES.include?(row[0]) })
@@ -196,19 +216,23 @@ class JourneySetup < Trailblazer::Operation
       entity:, system_key:, name:, workflowable_type: setup::WORKFLOWABLE_TYPE, reminder_interval_days: 2,
       description: setup::DESCRIPTION
     )
-    rows.each_with_index do |(step_name, kind, check, skip, unlocks, description), idx|
-      if kind == "human"
-        create_cfo_step(template, idx + 1)
-        next
-      end
-
-      template.workflow_steps.create!(
-        position: idx + 1, name: step_name, kind:, description:, unlocks:,
-        check_key: "#{setup::KEY_PREFIX}#{check}", skip_key: skip && "#{setup::KEY_PREFIX}#{skip}",
-        states: kind == "acknowledge" ? WorkflowStep::ACKNOWLEDGE_STATES : WorkflowStep::SYSTEM_STATES
-      )
-    end
+    rows.each_with_index { |row, idx| create_step(template, row, idx + 1) }
     template
+  end
+
+  # One step from a FULL_STEPS row at the given position. Shared by seeding and by the backfill, so
+  # a task added to an existing template is identical to the same task on a freshly seeded one.
+  def create_step(template, row, position)
+    step_name, kind, check, skip, unlocks, description = row
+    # A "human" row is the sign-off: approvers, states and reject rule come from create_cfo_step
+    return create_cfo_step(template, position) if kind == "human"
+
+    setup = self.class
+    template.workflow_steps.create!(
+      position:, name: step_name, kind:, description:, unlocks:,
+      check_key: "#{setup::KEY_PREFIX}#{check}", skip_key: skip && "#{setup::KEY_PREFIX}#{skip}",
+      states: kind == "acknowledge" ? WorkflowStep::ACKNOWLEDGE_STATES : WorkflowStep::SYSTEM_STATES
+    )
   end
 
   # The CFO sign-off: no approvers yet (picked on the template), any one approval passes, a rejection
@@ -224,7 +248,77 @@ class JourneySetup < Trailblazer::Operation
   def add_cfo_step(template)
     steps = template.workflow_steps
     target = steps.find_by(name: self.class::APPROVE_STEP_NAME)&.position || (steps.maximum(:position).to_i + 1)
-    steps.where(position: target..).reorder(position: :desc).each { |s| s.update!(position: s.position + 1) }
+    shift_positions_from(template, target)
     create_cfo_step(template, target)
+  end
+
+  # Makes room at `position` by moving that step and everything after it down by `by`. Bottom-up, so
+  # the unique (workflow_template_id, position) index never collides part-way through the renumber.
+  def shift_positions_from(template, position, by = 1)
+    template.workflow_steps.where(position: position..).reorder(position: :desc)
+            .each { |step| step.update!(position: step.position + by) }
+  end
+
+  # The seeded tasks in BACKFILL_STEPS this existing template does not have yet. Nothing for a
+  # template that is about to be seeded whole (nil), and nothing for an anchor the admin has removed:
+  # a template with no "Send KYC form" never emails the investor, so a review of that email is noise.
+  def missing_backfill_steps(template)
+    setup = self.class
+    return [] if template.nil? || setup::BACKFILL_STEPS.empty?
+
+    # Two narrow columns, so a 20-step template costs one small query
+    rows = template.workflow_steps.pluck(:name, :check_key)
+    names = rows.map(&:first)
+    keys = rows.map(&:last)
+
+    setup::BACKFILL_STEPS.flat_map do |anchor_name, step_names|
+      next [] unless step_present?(anchor_name, names, keys)
+
+      step_names.reject { |step_name| step_present?(step_name, names, keys) }
+    end
+  end
+
+  # Inserts the given seeded tasks before their anchor, in BACKFILL_STEPS order
+  def insert_missing_steps(template, step_names)
+    self.class::BACKFILL_STEPS.each do |anchor_name, candidates|
+      rows = candidates.filter_map { |name| seeded_row(name) if step_names.include?(name) }
+      next if rows.empty?
+
+      # The anchor was there when plan ran; re-read its position now, after any CFO shift
+      target = step_position(template, anchor_name)
+      next unless target
+
+      shift_positions_from(template, target, rows.size)
+      rows.each_with_index { |row, idx| create_step(template, row, target + idx) }
+    end
+  end
+
+  # A seeded task counts as present under its seeded name OR its check key, so a template whose
+  # admin renamed the task does not collect a duplicate
+  def step_present?(step_name, names, keys)
+    return true if names.include?(step_name)
+
+    key = seeded_check_key(step_name)
+    key.present? && keys.include?(key)
+  end
+
+  # The position of a seeded task on this template, by name or by its check key; nil when it is gone
+  def step_position(template, step_name)
+    steps = template.workflow_steps
+    by_name = steps.find_by(name: step_name)
+    return by_name.position if by_name
+
+    key = seeded_check_key(step_name)
+    key && steps.find_by(check_key: key)&.position
+  end
+
+  def seeded_row(step_name)
+    self.class::FULL_STEPS.find { |row| row[0] == step_name }
+  end
+
+  # The check key seeding gives this task, or nil for a task with no check (the sign-off)
+  def seeded_check_key(step_name)
+    check = seeded_row(step_name)&.at(2)
+    check && "#{self.class::KEY_PREFIX}#{check}"
   end
 end

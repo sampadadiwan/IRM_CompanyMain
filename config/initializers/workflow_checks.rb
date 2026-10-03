@@ -41,6 +41,8 @@ Rails.application.config.to_prepare do
     WorkflowChecks::CapitalDistribution::ReviewNotNeeded
     WorkflowChecks::CapitalDistribution::Imported
     WorkflowChecks::CapitalDistribution::NoUnitPrices
+    WorkflowChecks::InvestorKyc::ReviewEmail
+    WorkflowChecks::InvestorKyc::CheckPreview
     WorkflowChecks::InvestorKyc::SendForm
     WorkflowChecks::InvestorKyc::Submit
     WorkflowChecks::InvestorKyc::UploadDocuments
@@ -49,6 +51,7 @@ Rails.application.config.to_prepare do
     WorkflowChecks::InvestorKyc::ClearAmlMatch
     WorkflowChecks::InvestorKyc::ReviewKyc
     WorkflowChecks::InvestorKyc::Verify
+    WorkflowChecks::InvestorKyc::ReviewNotNeeded
     WorkflowChecks::InvestorKyc::FilledByFund
     WorkflowChecks::InvestorKyc::NoRequiredDocuments
     WorkflowChecks::InvestorKyc::AmlOff

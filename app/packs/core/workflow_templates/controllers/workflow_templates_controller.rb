@@ -174,6 +174,8 @@ class WorkflowTemplatesController < ApplicationController
     parts << "#{report[:templates].map { |key| names[key] }.to_sentence} journey#{'s' if report[:templates].size > 1}" if report[:templates].any?
     parts << "auto-assignment rule#{'s' if report[:rules].size > 1}" if report[:rules].any?
     parts << "a #{setup::SIGN_OFF_NAME} step (edit it to pick the approver)" if report[:cfo]
+    # Seeded tasks added to a template that predates them (JourneySetup::BACKFILL_STEPS)
+    parts << "the #{report[:steps].to_sentence} #{'task'.pluralize(report[:steps].size)}" if report[:steps].present?
     parts.join(", ").presence
   end
 
