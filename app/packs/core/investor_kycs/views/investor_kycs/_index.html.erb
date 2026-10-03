@@ -29,7 +29,7 @@
           </button>
           <div class="dropdown-menu" aria-labelledby="doc_checks_menu">
             <%= link_to t("doc_checks.attention.title"), doc_check_results_path, class: "dropdown-item" %>
-            <%= link_to t("doc_checks.panel.set_up"), doc_checks_path, class: "dropdown-item" %>
+            <%= link_to t("doc_checks.panel.set_up"), doc_checks_path, class: "dropdown-item", target: "_blank", rel: "noopener" %>
           </div>
         </div>
       <% end %>

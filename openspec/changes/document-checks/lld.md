@@ -120,6 +120,7 @@ Boundaries follow the design's boxes. **D1** = deploy 1 (feature live), **D2** =
 | `expected_answer` | Added | string | 3 | no | "yes" | — | Question |
 | `position` | Added | integer | — | no | 0 | — | Order |
 | `legacy_doc_question_id` | Added | bigint | — | yes | — | UNIQUE, no FK | Idempotent conversion; survives the D2 drop |
+| `import_upload_id` | Added | bigint | — | yes | — | index, no FK | The ImportUpload that created the check (ImportUpload#imported_data, Delete Imported Data); migration `20261004100000` |
 | `[entity_id, record_type, document_name, field_name]` | New index | | | | | UNIQUE | Field once per card |
 | `[entity_id, record_type, document_name, look_for]` | New index | | | | | UNIQUE | No duplicate items |
 
@@ -152,7 +153,7 @@ Boundaries follow the design's boxes. **D1** = deploy 1 (feature live), **D2** =
 | `action` | Added | string | 12 | no | — | — | Snapshot |
 | `field_name` | Added | string | 100 | yes | — | — | Snapshot; Use document value |
 | `document_id` | Added | bigint | — | yes | — | — (no FK: documents soft-delete) | Read document |
-| `document_file_id` | Added | string | 100 | yes | — | — | Shrine `file.id` |
+| `document_file_id` | Added | string | 255 | yes | — | — | Shrine `file.id` |
 | `outcome` | Added | string | 20 | no | — | idx | `unexpected_answer` is 17 |
 | `note` | Added | string | 255 | yes | — | — | OK kind / detail |
 | `doc_value` / `record_value` / `explanation` | Added | text | — | yes | — | — | Long values |
@@ -314,7 +315,7 @@ in validation". The signature is unchanged.
 | Finish | results insert + writes + `details_changed!` save + current flip + status | `record.lock!`, reload previous current | Two finishers both current; write vs user edit |
 | Use document value | write + save + stamp | `result.lock!` then `record.lock!` (same order everywhere) | Double click; concurrent run finish |
 | Mark OK / Undo | single update | `result.lock!` | Double click |
-| Card save | that card's upserts/deletes | none (UKs catch races → row error "Already used on this card") | Two tabs saving |
+| Card save | that card's upserts/deletes | none (UKs catch races → row error "Already used on this document") | Two tabs saving |
 
 No HTTP, toast or broadcast happens inside a transaction.
 

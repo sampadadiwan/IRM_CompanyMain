@@ -20,45 +20,71 @@ Then("the Document checks header should say {string}") do |text|
   expect(page).to have_css("#doc_checks_header", text:)
 end
 
-# | document | status | — the group headers
+# | document | status | — each document's status where it is shown (needs your decision / missing / all good)
 Then("the Document checks tab should show the documents:") do |table|
   table.hashes.each do |row|
-    group = find("#doc_checks_panel .doc-check-group[data-document-name='#{row['document']}']")
+    selector = "#doc_checks_panel [data-doc-check-document][data-document-name='#{row['document']}'] .doc-check-group-status"
     outcomes = -> { DocChecks::Assessment.new(@investor_kyc.reload).results.map { |r| [r.document_name, r.look_for, r.outcome, r.doc_value, r.record_value] } }
-    expect(group).to have_css(".doc-check-group-status", text: row["status"]), -> { outcomes.call.inspect }
+    expect(page).to have_css(selector, text: row["status"], visible: :all), -> { outcomes.call.inspect }
   end
 end
 
-# Page-level matchers re-query after the tab's frame is replaced (no stale element)
+# Page-level matchers re-query after the tab's frame is replaced (no stale element). Settled items may sit in
+# the collapsed "All good" section, so hidden ones count too.
 Then("the {string} item should say {string}") do |item, text|
-  expect(page).to have_css("#doc_checks_panel .doc-check-row[data-item='#{item}'] .doc-check-sentence", text:)
+  expect(page).to have_css("#doc_checks_panel .doc-check-row[data-item='#{item}'] .doc-check-sentence", text:, visible: :all)
 end
 
 Then("the {string} item should show {string}") do |item, text|
-  expect(page).to have_css("#doc_checks_panel .doc-check-row[data-item='#{item}']", text:)
+  expect(page).to have_css("#doc_checks_panel .doc-check-row[data-item='#{item}']", text:, visible: :all)
 end
 
 When("I use the document value for the {string} item, confirming {string}") do |item, confirm_text|
-  message = accept_confirm { doc_check_item(item).click_on("Use document value") }
-  expect(message).to eq(confirm_text)
-  expect(page).to have_css("#doc_checks_panel .doc-check-row[data-item='#{item}'][data-resolution='used_document_value']")
+  # The app's Bootstrap confirm modal, not a browser dialog
+  doc_check_item(item).find("button", text: "Use the document's").click
+  within("#confirmModal") do
+    expect(page).to have_css("#msg .action-summary__title", text: confirm_text)
+    click_on("Proceed")
+  end
+  expect(page).to have_css("#doc_checks_panel .doc-check-row[data-item='#{item}'][data-resolution='used_document_value']", visible: :all)
 end
 
+# "Keep the KYC's …" (a mismatch) or "Mark as OK…" (anything else) opens the reason box
 When("I mark the {string} item OK with {string}") do |item, reason|
   row = doc_check_item(item)
-  row.find("summary", text: "Mark as OK").click
+  row.find("details.doc-check-mark-ok summary").click
   row.fill_in("reason", with: reason)
-  row.click_on("Save")
+  row.click_on("Mark as OK")
 end
 
 When("I undo the {string} item") do |item|
-  doc_check_item(item).click_on("Undo")
+  find("#doc_checks_panel .doc-check-row[data-item='#{item}']", visible: :all).click_on("Undo")
 end
 
 Then("the {string} item should not offer to resolve it") do |item|
   row = doc_check_item(item)
-  expect(row).to have_no_button("Use document value")
-  expect(row).to have_no_css("summary", text: "Mark as OK")
+  expect(row).to have_no_button(text: "Use the document's")
+  expect(row).to have_no_css("details.doc-check-mark-ok")
+end
+
+# The shared Bootstrap confirm modal (#confirmModal) that Check documents opens
+When("I click Check documents") do
+  find("#doc_checks_check_btn").click
+  expect(page).to have_css("#confirmModal.show")
+end
+
+Then("the confirmation should say {string}") do |text|
+  expect(page).to have_css("#confirmModal #msg", text:)
+end
+
+When("I proceed") do
+  within("#confirmModal") { click_on("Proceed") }
+end
+
+Then("a document check should have started for the KYC") do
+  expect(page).to have_no_css("#confirmModal.show")
+  # The tab is replaced once the run is queued; the run itself is on the record
+  page.document.synchronize { raise Capybara::ExpectationNotMet, "no run yet" unless DocCheckRun.real.for_record(@investor_kyc).exists? }
 end
 
 Then("I should not be able to check documents") do
@@ -133,10 +159,14 @@ When("I filter the attention list by reason {string}") do |reason|
   end
 end
 
+# Retried until it matches, so a list still reloading after a filter isn't read half-way
 Then("the attention list should show the KYCs {string}") do |names|
+  expected = names.split(",").map(&:strip)
   expect(page).to have_css("#doc_check_results_table")
-  shown = all("#doc_check_results_table tbody tr td:nth-child(2)").map(&:text).uniq
-  expect(shown).to eq(names.split(",").map(&:strip))
+  page.document.synchronize do
+    shown = all("#doc_check_results_table tbody tr td:nth-child(2)").map(&:text).uniq
+    raise Capybara::ExpectationNotMet, "attention list shows #{shown.inspect}, expected #{expected.inspect}" unless shown == expected
+  end
 end
 
 When("I tick {string} and click Check again") do |name|

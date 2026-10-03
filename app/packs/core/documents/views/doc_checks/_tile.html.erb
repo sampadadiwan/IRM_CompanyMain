@@ -1,0 +1,77 @@
+<%# A document's tile: icon, name, a badge with its number of checks, and what they do in plain words. A
+    document without checks offers its own suggestions ("Add 2 suggested") first, and "Add your own" second.
+    locals: card (DocChecks::CardForm), fields, suggestion (DocChecks::Presets::Recommendation or nil).
+    openspec/changes/document-checks/design.md (card ① Setup). Worked examples E1, H1. %>
+<% card_key = doc_check_card_dom_id(card.document_name)
+   count = card.rows.size
+   lines = doc_check_summary_lines(card.rows, fields)
+   gone = card.rows.count(&:field_missing?)
+   suggested = suggestion&.rows || [] %>
+<div class="col">
+  <div class="card h-100 shadow-sm border-0 doc-check-tile <%= 'doc-check-tile-empty' if count.zero? %>"
+       data-doc-check-tile data-document-name="<%= card.document_name %>">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="doc-check-doc-icon rounded-3 d-inline-flex align-items-center justify-content-center <%= count.positive? ? 'bg-primary-subtle text-primary' : 'bg-body-tertiary text-muted' %>">
+            <i class="ti <%= doc_check_document_icon(card.document_name) %>"></i>
+          </span>
+          <h3 class="h6 mb-0"><%= card.document_name %></h3>
+        </div>
+        <% if count.positive? %>
+          <span class="badge rounded-pill text-bg-success doc-check-tile-count"><i class="ti ti-check"></i> <%= t("doc_checks.setup.checks_count", count:) %></span>
+        <% else %>
+          <span class="badge rounded-pill bg-body-tertiary text-muted doc-check-tile-count"><%= t("doc_checks.setup.no_checks_yet") %></span>
+        <% end %>
+      </div>
+
+      <% if lines.any? %>
+        <ul class="list-unstyled small mb-3 flex-grow-1">
+          <% lines.each do |icon, text| %>
+            <li class="mb-1"><i class="ti <%= icon %> me-1 text-primary"></i><%= text %></li>
+          <% end %>
+        </ul>
+      <% elsif suggested.any? %>
+        <%# What the suggestions would do, before adding them %>
+        <div class="small mb-3 flex-grow-1">
+          <div class="text-primary fw-semibold mb-1"><i class="ti ti-bulb"></i> <%= t("doc_checks.setup.tile_suggested") %></div>
+          <ul class="list-unstyled text-muted mb-0">
+            <% doc_check_summary_lines(suggested, fields).each do |icon, text| %>
+              <li class="mb-1"><i class="ti <%= icon %> me-1"></i><%= text %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% else %>
+        <p class="small text-muted mb-3 flex-grow-1"><%= t("doc_checks.setup.tile_empty") %></p>
+      <% end %>
+
+      <% if gone.positive? %>
+        <div class="small text-danger mb-2"><i class="ti ti-alert-triangle"></i> <%= t("doc_checks.setup.missing_fields", count: gone) %></div>
+      <% end %>
+
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <% if count.zero? && suggested.any? %>
+          <%= form_with url: add_recommended_doc_checks_path(record_type: card.record_type), method: :post, data: { turbo: false } do %>
+            <% suggested.each do |row| %>
+              <%= hidden_field_tag "picks[]", suggestion.pick_key(row), id: nil %>
+            <% end %>
+            <button type="submit" class="btn btn-sm btn-primary" data-role="add-suggested">
+              <i class="ti ti-plus"></i> <%= t("doc_checks.setup.add_suggested", count: suggested.size) %>
+            </button>
+          <% end %>
+          <button type="button" class="btn btn-sm btn-link px-1" data-bs-toggle="offcanvas" data-bs-target="#<%= card_key %>" aria-controls="<%= card_key %>">
+            <%= t("doc_checks.setup.add_your_own") %>
+          </button>
+        <% elsif count.zero? %>
+          <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#<%= card_key %>" aria-controls="<%= card_key %>">
+            <i class="ti ti-plus"></i> <%= t("doc_checks.setup.add_check") %>
+          </button>
+        <% else %>
+          <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#<%= card_key %>" aria-controls="<%= card_key %>">
+            <i class="ti ti-edit"></i> <%= t("doc_checks.setup.edit") %>
+          </button>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

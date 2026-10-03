@@ -68,7 +68,7 @@ class CreateDocChecks < ActiveRecord::Migration[8.1]
       # The document read and the Shrine file id it had, so a replaced document shows as changed.
       # No FK: documents are soft-deleted.
       t.bigint :document_id
-      t.string :document_file_id, limit: 100
+      t.string :document_file_id, limit: 255 # Shrine ids carry the storage path (over 200 chars seen)
       t.string :outcome, limit: 20, null: false, comment: "ok, or the reason it needs attention"
       t.string :note, limit: 255
       t.text :doc_value

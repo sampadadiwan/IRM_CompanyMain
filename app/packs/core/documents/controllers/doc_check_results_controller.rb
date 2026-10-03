@@ -80,13 +80,16 @@ class DocCheckResultsController < ApplicationController
   # The record's journey and tab follow every resolution
   def after_resolution(errors: {}, status: :ok)
     record = @result.doc_check_run.record.reload
-    entry = DocChecks::Registry.for(record)
     assessment = DocChecks::Assessment.new(record)
-    entry.on_assessed(record, assessment.settled?)
-    record.journey_progress!(actor: current_user) if record.respond_to?(:journey_progress!)
-    DocChecks::Broadcast.record(record)
+    # A refused resolution changed nothing: no journey move, and no broadcast — the broadcast would reload
+    # this user's own tab and morph away the error shown below (Worked example X8)
+    if errors.empty?
+      DocChecks::Registry.for(record).on_assessed(record, assessment.settled?)
+      record.journey_progress!(actor: current_user) if record.respond_to?(:journey_progress!)
+      DocChecks::Broadcast.record(record)
+    end
     render turbo_stream: turbo_stream.replace(DocChecks::Broadcast.panel_frame_id(record), partial: "doc_check_runs/panel",
-                                                                                           locals: { record:, assessment: DocChecks::Assessment.new(record), errors: }),
+                                                                                           locals: { record:, assessment:, errors: }),
            status:
   end
 

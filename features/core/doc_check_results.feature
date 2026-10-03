@@ -1,6 +1,6 @@
-@doc_checks_fake_ai
+@doc_checks @doc_checks_fake_ai
 Feature: Document Checks — the KYC tab, resolving items and the attention list
-  Each document of the KYC's own list shows ✓ All OK or ⚠ n need attention, and an item is settled where it
+  Each document of the KYC's own list is shown under Needs your decision, Missing documents or All good, and an item is settled where it
   is shown: Use document value, or Mark as OK with a reason (and Undo). Trial runs change nothing, and the
   attention list gathers every item across the entity's KYCs.
   Worked examples H4, H5, H6, H8, H9, H12, E19, X6, X7, X8, X10 in
@@ -33,10 +33,11 @@ Feature: Document Checks — the KYC tab, resolving items and the attention list
     And documents are checked for the KYC
     When I open the KYC's Document checks tab
     Then the Document checks tab title should be "Document checks (1)"
-    And the "PAN" item should say "PAN — doesn't match"
-    And the "PAN" item should show "Document: ABCPK1234F · KYC: ABCPK1243F"
-    When I use the document value for the "PAN" item, confirming "Change PAN from ABCPK1243F to ABCPK1234F?"
-    Then the "PAN" item should say "PAN — updated from the document by"
+    And the "PAN" item should say "PAN doesn't match"
+    And the "PAN" item should show "ABCPK1234F"
+    And the "PAN" item should show "ABCPK1243F"
+    When I use the document value for the "PAN" item, confirming "PAN becomes ABCPK1234F"
+    Then the "PAN" item should say "Updated from the document"
     And the KYC's "PAN" should be "ABCPK1234F"
     And the KYC's documents should be all valid
 
@@ -51,14 +52,14 @@ Feature: Document Checks — the KYC tab, resolving items and the attention list
     When I open the KYC's Document checks tab
     Then the Document checks tab should show the documents:
       | document | status              |
-      | CML      | 1 needs attention   |
-      | PAN Card | All OK              |
+      | CML      | 1 needs your decision |
+      | PAN Card | All OK                |
     When I mark the "First holder name" item OK with "Initial matches passport"
     Then the "First holder name" item should say "Marked OK by"
     And the "First holder name" item should say "Initial matches passport"
     And the KYC's documents should be all valid
     When I undo the "First holder name" item
-    Then the "First holder name" item should say "First holder name — doesn't match"
+    Then the "First holder name" item should say "First holder name doesn't match"
     And the KYC's documents should not be all valid
 
   # X8 — a reason is required
@@ -77,6 +78,19 @@ Feature: Document Checks — the KYC tab, resolving items and the attention list
     And the KYC has the documents "CML, PAN Card, Passport"
     When documents are checked for the KYC
     Then the documents should have been checked in the order "CML, PAN Card, Passport"
+
+  # H3, E12 — Check documents says what it will do before it starts: what it reads, skips and fills in
+  Scenario: Check documents explains what will happen before it runs
+    Given there is an individual KYC for the investor "full_name=Asha Rao;PAN=ABCPK1234F"
+    And the KYC has the documents "CML, PAN Card"
+    When I open the KYC's Document checks tab
+    And I click Check documents
+    Then the confirmation should say "Reads 2 documents"
+    And the confirmation should say "Passport not uploaded — skipped"
+    And the confirmation should say "Fills in empty KYC fields"
+    And the confirmation should say "Takes a minute or two"
+    When I proceed
+    Then a document check should have started for the KYC
 
   # H8 — bulk Check documents: every KYC but the verified one
   Scenario: Checking documents in bulk skips verified KYCs
@@ -109,7 +123,7 @@ Feature: Document Checks — the KYC tab, resolving items and the attention list
     And documents are checked for the KYC
     And I can view but not edit the KYC
     When I open the KYC's Document checks tab
-    Then the "PAN" item should say "PAN — doesn't match"
+    Then the "PAN" item should say "PAN doesn't match"
     And the "PAN" item should not offer to resolve it
     And I should not be able to check documents
 

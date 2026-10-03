@@ -2,7 +2,7 @@
     results are not its current ones. locals: run (DocCheckRun, trial).
     openspec/changes/document-checks/design.md (card ① Setup — Try on a KYC). Worked example H4. %>
 <% entry = DocChecks::Registry.for(run.record) %>
-<%= turbo_frame_tag DocChecks::Broadcast.trial_frame_id(run) do %>
+<%= turbo_frame_tag DocChecks::Broadcast.trial_frame_id(run), refresh: "morph" do %>
   <div class="card border-info" id="doc_check_trial_panel">
     <div class="card-header bg-info-subtle d-flex justify-content-between">
       <strong><%= t("doc_checks.setup.trial_banner") %></strong>

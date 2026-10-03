@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1539,7 +1539,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_090000) do
     t.bigint "doc_check_id"
     t.bigint "doc_check_run_id", null: false
     t.text "doc_value"
-    t.string "document_file_id", limit: 100
+    t.string "document_file_id"
     t.bigint "document_id"
     t.string "document_name", limit: 100, null: false
     t.bigint "entity_id", null: false
@@ -1568,7 +1568,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_090000) do
     t.integer "documents_done", default: 0, null: false
     t.integer "documents_total", default: 0, null: false
     t.bigint "entity_id", null: false
-    t.string "error_message", limit: 255
+    t.string "error_message"
     t.datetime "finished_at"
     t.bigint "record_id", null: false
     t.string "record_type", limit: 40, null: false
@@ -1591,15 +1591,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_090000) do
     t.bigint "entity_id", null: false
     t.string "expected_answer", limit: 3, default: "yes", null: false
     t.string "field_name", limit: 100
+    t.bigint "import_upload_id", comment: "The ImportUpload that created this check, if any"
     t.bigint "legacy_doc_question_id"
     t.string "look_for", limit: 100, null: false, comment: "What the AI looks for, or the question"
     t.integer "position", default: 0, null: false
     t.string "record_type", limit: 40, default: "InvestorKyc", null: false
     t.boolean "replace_existing", default: false, null: false, comment: "Fill in: overwrite a value already on the record"
-    t.string "tip", limit: 255, comment: "Optional guidance for the AI"
+    t.string "tip", comment: "Optional guidance for the AI"
     t.datetime "updated_at", null: false
     t.index ["entity_id", "record_type", "document_name", "field_name"], name: "index_doc_checks_on_card_field", unique: true
     t.index ["entity_id", "record_type", "document_name", "look_for"], name: "index_doc_checks_on_card_look_for", unique: true
+    t.index ["import_upload_id"], name: "index_doc_checks_on_import_upload_id"
     t.index ["legacy_doc_question_id"], name: "index_doc_checks_on_legacy_doc_question_id", unique: true
   end
 

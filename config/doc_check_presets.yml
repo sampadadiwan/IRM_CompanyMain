@@ -34,3 +34,21 @@ passport:
   checks:
     - { action: compare, look_for: Name, tip: "Given names and surname", fields: [full_name] }
     - { action: fill_in, look_for: Expiry date, fields: [expiry_date] }
+address_proof:
+  name: Address proof
+  pattern: 'address proof|proof of address|\bpoa\b|utility bill'
+  checks:
+    - { action: compare, look_for: Name, tip: "The name the address is registered to", fields: [full_name] }
+    - { action: fill_in, look_for: Address, fields: [address] }
+id_proof:
+  name: ID proof
+  pattern: '\bid proof|identity proof|proof of identity|\bpoi\b'
+  checks:
+    - { action: compare, look_for: Name, fields: [full_name] }
+    - { action: fill_in, look_for: Date of birth, fields: [birth_date] }
+incorporation:
+  name: Incorporation certificate
+  pattern: 'incorporation|\bcoi\b'
+  checks:
+    - { action: compare, look_for: Company name, tip: "The registered name of the company", fields: [full_name] }
+    - { action: fill_in, look_for: Date of incorporation, tip: "Stored in the KYC's date of birth field", fields: [birth_date] }

@@ -52,9 +52,10 @@ CapHive fills the field, or compares it with what the KYC says. Each item ends u
 **Changes**
 
 - **New:** Settings → *Document Checks* → *Investor KYC*. Every document on the entity's KYC
-  document lists (individual, non-individual, and the KYC form's required file fields) is shown as
-  a card. Each card has its checks, or "No checks yet" with **Use <preset> preset** (CML, PAN
-  card, Aadhaar, Passport) and **Add a check**.
+  document lists (individual, non-individual, and the KYC form's required file fields) is listed.
+  **Recommended checks** offers the standard checks for every recognised document (CML, PAN card,
+  Aadhaar, Passport, Address proof, ID proof, Incorporation certificate) at once, ticked, saved with
+  one click; below, every document's checks are edited together and saved with one **Save all**.
 - **New:** a check is one row:
   - **What to do**: *Fill in* / *Compare* / *Yes-no question*.
   - **KYC field**: picked from the KYC's fields and custom fields.
@@ -96,11 +97,11 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A["Admin opens<br/>Document Checks"] --> B["Sees a card per<br/>KYC document"]
-    B --> C["Clicks Use CML preset<br/>or Add a check"]
-    C --> D["Picks KYC field"]
+    A["Admin opens<br/>Document Checks"] --> B["Recommended checks<br/>for every document"]
+    B --> C["Unticks what<br/>isn't wanted"]
+    C --> D["Add N checks<br/>in one click"]
     D --> E["Try on a KYC"]
-    E --> F["Saves"]
+    E --> F["Tweaks a row,<br/>Save all"]
     classDef new fill:#e6f4ea,stroke:#2e7d32,color:#000
     class B,C,D,E new
 ```
@@ -160,36 +161,38 @@ feature removed.
 **So that** I don't have to know field names or write prompts.
 
 **Acceptance criteria:**
-- Settings → *Document Checks* → *Investor KYC* shows one card per document on the entity's
-  individual and non-individual KYC document lists and the KYC form's required file fields. Each
-  name appears once.
-- Cards with checks come first, with the number of checks in the header. Cards without checks are
-  listed below under "Other documents" with "No checks yet".
+- Settings → *Document Checks* → *Investor KYC* lists every document on the entity's individual and
+  non-individual KYC document lists and the KYC form's required file fields, each name once.
+- Documents with checks are shown as cards (title and number of checks, then compact rows, column
+  labels once at the top of the page). Documents without checks sit in one line under "Other
+  documents"; clicking one opens its card with an empty row.
 - *Add a check* adds a row: What to do = Fill in, with KYC field empty and focused.
 - Picking a KYC field fills *Look for* with the field's on-screen label, e.g. "DP ID". Changing it
   is allowed.
-- Choosing *Yes-no question* replaces the KYC field with *Expected answer* (Yes / No, default Yes),
+- Choosing *Yes-no question* replaces the KYC field with *Expect Yes / Expect No* (default Yes),
   and *Look for* becomes *Question*.
 - *Replace existing values* is shown only for Fill in, and is off by default.
-- Each card has its own **Save**. Incomplete rows are marked on the row and the card isn't saved
-  until they're fixed.
+- One **Save all** saves every document's checks together. If any row is wrong nothing is saved and
+  the row says why. A row that was added but never filled in is ignored.
 
-### US-2: Start from a preset
+### US-2: Recommended checks in one click
 
 **As a** fund admin,
-**I want** one click to add the standard checks for a CML,
-**So that** I don't have to set them up one by one.
+**I want** the standard checks for all my KYC documents offered at once,
+**So that** I don't have to set them up document by document.
 
 **Acceptance criteria:**
-- A card whose document name contains "CML", "PAN", "Aadhaar" or "Passport" (any case) offers
-  **Use <name> preset**. Other cards don't show the button.
-- The CML preset adds Fill in rows for DP ID, Client ID, Address, Bank account number and IFSC code,
-  Compare rows for PAN and Full name, and the question "Is it signed by the holder?". It only adds
-  the ones whose field exists on the KYC.
-- Items it could not add are listed under the card: "Not added: Email, Mobile — your KYC form has
-  no matching field. Add a custom field to the KYC form, then use the preset again."
-- Items already on the card aren't added again.
-- The added rows are unsaved until *Save*. Cancel removes them.
+- **Recommended checks**, at the top of the page, lists for every document CapHive recognises (CML,
+  PAN card, Aadhaar, Passport, Address proof, ID proof, Incorporation certificate) the standard
+  checks whose KYC field exists on the entity's form, all ticked.
+- A document's own tick toggles all its rows. **Add N checks** counts what is ticked and saves it all
+  in one go ("Added 11 checks").
+- Checks already set up are never recommended again; a document with nothing left to add isn't
+  listed.
+- Standard checks the KYC form has no field for are listed: "Not available on your KYC form: CML ·
+  Email, CML · Mobile. Add a custom field to the KYC form to use them."
+- Documents with no recommendation are named: "No recommended checks for Board Resolution — add your
+  own below."
 
 ### US-3: Try before using
 
@@ -272,34 +275,37 @@ feature removed.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────┐
-│ Document Checks · Investor KYC                                    [Try on a KYC]  │
+│ Document Checks · Investor KYC                    [Pick a KYC… ▾] [Try on a KYC]  │
 │ The AI reads these from each KYC's documents. You decide what happens.            │
 │                                                                                   │
-│ ┌ CML · 8 checks ──────────────────────────────────────────────────────────────┐ │
-│ │ What to do      KYC field          Look for            Tip for the AI         │ │
-│ │ [Fill in    ▾]  [DP ID          ▾] [DP ID            ] [8 chars, starts IN ]  │ │
-│ │                 ☐ Replace existing values                                 [✕] │ │
-│ │ [Fill in    ▾]  [Client ID      ▾] [Client ID        ] [8 digits           ]  │ │
-│ │ [Compare    ▾]  [PAN            ▾] [PAN              ] [                   ]  │ │
-│ │ [Compare    ▾]  [Full name      ▾] [First holder name] [                   ]  │ │
-│ │ [Yes-no     ▾]  Expected [Yes ▾]   [Is it signed by the holder?            ]  │ │
-│ │ [+ Add a check]                                          [Cancel]  [Save]     │ │
-│ └──────────────────────────────────────────────────────────────────────────────┘ │
+│ ┌ Recommended checks ────────────────────────────────────────── [Add 11 checks] ┐ │
+│ │ ☑ PAN            ☑ Compare  PAN        ← PAN                                  │ │
+│ │                  ☑ Compare  Full name  ← Name                                 │ │
+│ │ ☑ Address Proof  ☑ Compare  Full name  ← Name                                 │ │
+│ │                  ☑ Fill in  Address    ← Address                              │ │
+│ │ ☑ Passport       ☑ Compare  Full name  ← Name                                 │ │
+│ │                  ☐ Fill in  Expiry date ← Expiry date                         │ │
+│ │ No recommended checks for Authorised Signatory — add your own below.          │ │
+│ │ Not available on your KYC form: CML · Email, CML · Mobile                     │ │
+│ └───────────────────────────────────────────────────────────────────────────────┘ │
 │                                                                                   │
-│ Other documents                                                                   │
-│ ┌ PAN Card · No checks yet ──────────── [Use PAN card preset] [+ Add a check] ──┐ │
-│ ┌ Passport · No checks yet ──────────── [Use Passport preset] [+ Add a check] ──┐ │
-│ ┌ Address Proof · No checks yet ───────────────────────────── [+ Add a check] ──┐ │
+│ Your checks       What to do   KYC field      Look for          Tip for the AI    │
+│ CML · 8 checks                                            [+ Add a check]         │
+│   [Fill in ▾]  [DP ID ▾]       [DP ID          ] [8 chars, starts IN]  ✕          │
+│   [Compare ▾]  [PAN ▾]         [PAN            ] [                  ]  ✕          │
+│ Other documents: [+ Board Resolution] [+ Incorporation]                           │
+│ ─────────────────────────────────────── Unsaved changes  [Cancel] [Save all] ──── │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 **Behavior notes:**
-- Changing *What to do* changes the row in place. Yes-no shows Expected + Question. Compare hides
-  *Replace existing values*.
+- Changing *What to do* changes the row in place. Yes-no shows Expect Yes / No + Question. Compare
+  hides *Replace existing values*.
 - The KYC field dropdown lists fields by their on-screen label, standard fields first, then custom
-  fields. A field already used on this card is greyed out ("already used on this card").
-- Each card saves on its own, with no page reload. Unsaved changes show "Unsaved changes" next to
-  Save, and leaving the page asks for confirmation.
+  fields. A field already used on this document is greyed out ("already used on this document").
+- Any change shows the sticky "Unsaved changes" bar with **Save all**; leaving the page asks for
+  confirmation.
+- **Try on a KYC** stays disabled until a KYC is picked.
 - If a check uses a field that was later removed from the KYC form, a banner at the top says "1
   check uses a field that no longer exists — Show me". The row itself is outlined with "This field
   no longer exists — pick another".
@@ -376,7 +382,7 @@ the number selected and is disabled at 0.
 | Field | Rule | Default |
 |---|---|---|
 | What to do | Fill in, Compare or Yes-no question | Fill in |
-| KYC field | Required for Fill in and Compare; one of the listed fields; once per document card. Errors: "Pick a KYC field", "Already used on this card" | — |
+| KYC field | Required for Fill in and Compare; one of the listed fields; once per document card. Errors: "Pick a KYC field", "Already used on this document" | — |
 | Look for / Question | Required, up to 100 characters. Error: "Say what to look for" | Field's label |
 | Tip for the AI | Optional, up to 255 characters | empty |
 | Replace existing values | Fill in only | Off |
@@ -417,7 +423,9 @@ the number selected and is disabled at 0.
 | KYC never checked | "These documents haven't been checked yet." + Check documents |
 | No checks set up (KYC tab) | "No document checks are set up — Set up checks" |
 | Attention list empty | "Nothing needs attention." |
-| Preset items without a field | "Not added: Email, Mobile — your KYC form has no matching field. Add a custom field to the KYC form, then use the preset again." |
+| Recommended checks without a field | "Not available on your KYC form: CML · Email, CML · Mobile. Add a custom field to the KYC form to use them." |
+| Recommended checks added | "Added 11 checks" |
+| Save all | "Document checks saved"; a refused save: "Some checks need fixing — see the rows marked below" |
 
 ---
 

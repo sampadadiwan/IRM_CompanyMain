@@ -3,7 +3,7 @@
     openspec/changes/document-checks/design.md (card ⑧ — attention list). Worked example H9, journey J2. %>
 <div class="d-sm-flex align-items-center justify-content-between mb-3">
   <h1 class="h3 mb-0"><%= t("doc_checks.attention.title") %></h1>
-  <%= link_to t("doc_checks.panel.set_up"), doc_checks_path, class: "btn btn-outline-secondary btn-sm" %>
+  <%= link_to t("doc_checks.panel.set_up"), doc_checks_path, class: "btn btn-outline-secondary btn-sm", target: "_blank", rel: "noopener" %>
 </div>
 
 <%= form_with url: doc_check_results_path, method: :get, class: "d-flex flex-wrap gap-2 align-items-end mb-3", id: "doc_check_results_filter" do %>

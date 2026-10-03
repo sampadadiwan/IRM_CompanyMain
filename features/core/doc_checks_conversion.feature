@@ -1,3 +1,4 @@
+@doc_checks
 Feature: Document Checks — converting legacy Doc Questions
   Support converts each fund's Doc Questions into Document Checks. A dry run reports what converts and
   what doesn't; nothing is guessed, and running it again changes nothing.

@@ -100,7 +100,7 @@
             <% if policy(@investor_kyc).validate_docs_with_ai? && DocChecks::Kyc.can_edit?(current_user, @investor_kyc) %>
               <%= button_to doc_check_runs_path(record_type: "InvestorKyc", record_id: @investor_kyc.id),
                   id: "investor_kyc_validate_docs_with_ai_btn", method: :post, class: "dropdown-item", form_class: "deleteButton",
-                  data: { turbo: false, workflow_gate_label: "Check documents" } do %>
+                  data: { turbo: false, workflow_gate_label: "Check documents" }.merge(doc_check_run_confirm_data(@investor_kyc)) do %>
                 <i class="ti ti-file-search"></i><%= t("doc_checks.panel.check_documents") %>
               <% end %>
             <% end %>

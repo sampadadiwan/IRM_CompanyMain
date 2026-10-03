@@ -103,7 +103,7 @@ brackets after a document is the count of its items needing attention.
 ```mermaid
 timeline
     title Asha Rao's KYC, 1 to 3 Oct
-    1 Oct : Priya sets up CML from the preset, PAN Card and Passport : Trial on Asha changes nothing
+    1 Oct : Priya adds the recommended checks in one click and trims one : Trial on Asha changes nothing
     2 Oct : First check - PAN Card unreadable, holder name differs : Marks OK, undoes, marks OK again : PAN re-uploaded and checked again - Validated by AI
     3 Oct : CML replaced - task back to waiting : Checked again - all OK : AI outage on a bulk check - nothing changes
 ```
@@ -113,8 +113,8 @@ timeline
 | # | When | What happens | Behind the scenes | Result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
 | 1 | 1 Oct 10:00 | Priya opens Settings → Document Checks → Investor KYC | Setup (①) asks the registry (②) for the document names: both lists merged, PAN Card once | Cards:&nbsp;CML,&nbsp;PAN&nbsp;Card,&nbsp;Passport,&nbsp;Board&nbsp;Resolution,&nbsp;all&nbsp;"No&nbsp;checks&nbsp;yet" |
-| 2 | 10:02 | On CML she clicks Use CML preset, then Save | The preset (①) maps entries to fields from the registry (②) and adds 8 unsaved rows. Email and Mobile have no field, so they're listed as not added | CML&nbsp;·&nbsp;8&nbsp;checks<br>"Not&nbsp;added:&nbsp;Email,&nbsp;Mobile&nbsp;—&nbsp;…" |
-| 3 | 10:05 | On PAN Card: Add a check → Compare → Full name; she edits Look for to "Name". Passport: Use Passport preset. Save each | Setup (①) fills Look for from the field label and validates each card on its own | CML&nbsp;·&nbsp;8&nbsp;checks<br>PAN&nbsp;Card&nbsp;·&nbsp;1&nbsp;check<br>Passport&nbsp;·&nbsp;2&nbsp;checks |
+| 2 | 10:02 | Under Recommended checks she leaves everything ticked and clicks Add 12 checks | Setup (①) matches presets to every document and maps entries to fields from the registry (②); all picked rows are saved in one go. Email and Mobile have no field, so they're listed as not available | CML&nbsp;·&nbsp;8&nbsp;checks<br>PAN&nbsp;Card&nbsp;·&nbsp;2&nbsp;checks<br>Passport&nbsp;·&nbsp;2&nbsp;checks<br>"Not&nbsp;available:&nbsp;CML&nbsp;·&nbsp;Email,&nbsp;CML&nbsp;·&nbsp;Mobile" |
+| 3 | 10:05 | Under Your checks she removes PAN Card's "PAN" row (the CML already compares the PAN) and clicks Save all | Setup (①) validates every card, then saves them all in one transaction | CML&nbsp;·&nbsp;8&nbsp;checks<br>PAN&nbsp;Card&nbsp;·&nbsp;1&nbsp;check<br>Passport&nbsp;·&nbsp;2&nbsp;checks |
 | 4 | 10:10 | Try on a KYC → Asha Rao | A trigger (③) starts a trial run (④). The reader (⑤) and judge (⑥) run, nothing is written, and the results (⑦) are not current | "Trial&nbsp;run&nbsp;—&nbsp;nothing&nbsp;on&nbsp;this&nbsp;KYC&nbsp;was&nbsp;changed";&nbsp;"DP&nbsp;ID&nbsp;—&nbsp;filled&nbsp;in:&nbsp;IN303622"&nbsp;shown;&nbsp;Asha's&nbsp;DP&nbsp;ID&nbsp;still&nbsp;empty |
 
 **Phase B: first real check, with problems**
@@ -417,60 +417,66 @@ The setup journey is in [card ①](#①-setup) and the attention list in [card �
 ### ① Setup
 
 A check is one row: entity, record type, document name, action, field or question, tip and options.
-The page shows one card per document name from the registry. Presets are app-level YAML.
+The page lists every document name from the registry: **Recommended checks** at the top (presets for
+all recognised documents, added in one click) and **Your checks** below (every document's rows, saved
+together with one **Save all**). Presets are app-level YAML.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| `doc_checks`, `config/doc_check_presets.yml`, `DocChecks::CardForm` | `registry.document_names(entity)`, `registry.fields_for(entity)` (②) | `DocCheck.for_record(record)` for the run (④) |
+| `doc_checks`, `config/doc_check_presets.yml`, `DocChecks::SetupForm`, `DocChecks::CardForm`, `DocChecks::Presets` | `registry.document_names(entity)`, `registry.fields_for(entity)` (②) | `DocCheck.for_record(record)` for the run (④) |
 
-**Card save** (`DocChecks::CardForm`): the card's rows are posted together. Rows with an id are
-updated, rows without one are created, and saved rows missing from the post are deleted, all in one
-transaction for that card only. Validation runs per row, and row errors are rendered on the row. The
-card isn't saved if any row is invalid.
+**Save all** (`DocChecks::SetupForm` → one `DocChecks::CardForm` per document): every card's rows are
+posted together. Within a card, rows with an id are updated, rows without one are created, and saved
+rows missing from the post are deleted. Every card is validated first, so all errors show at once;
+then every card is written in one transaction. A new row nobody filled in (no field, no look-for,
+still Fill in) is ignored rather than refused.
 
 **Row validation** (messages in the [proposal](proposal.md#validation-rules)):
 
 | Rule | Error on the row |
 |---|---|
 | Fill in / Compare need a field in `fields_for` | "Pick a KYC field" |
-| A field at most once per card | "Already used on this card" |
+| A field at most once per card | "Already used on this document" |
 | `look_for` present, ≤ 100 | "Say what to look for" |
 | `tip` ≤ 255 | "Keep the tip under 255 characters" |
 | Saved check whose field disappeared | Not a save error. The page banner and the row say "This field no longer exists — pick another" (E16) |
 
-**Preset apply** (`POST /doc_checks/preset`, `document_name`, `preset`):
-`DocChecks::Presets.rows_for(entity, document_name, key)` returns `{rows:, not_added:}`. For each YAML
-entry, it takes the first field candidate present in `fields_for` and not already on the card. Entries
-with no available field go into `not_added`. The response replaces the card's form (unsaved rows added,
-with "Unsaved changes") and shows the not-added note. The preset offered is chosen by
-`Presets.key_for(document_name)`, a case-insensitive "contains" on `cml`, `pan`, `aadhaar`, `passport`.
+**Recommended checks** (`DocChecks::Presets.recommendations` / `.add_recommended`): for each document
+name, `Presets.key_for` picks a preset by pattern (CML, PAN, Aadhaar, Passport, Address proof, ID proof,
+Incorporation). `rows_for` takes, per YAML entry, the first field candidate in `fields_for` not
+already used on that document, skips entries whose look-for is already there, and reports the rest
+as not available. The page shows the rows ticked; the post carries only "pick keys"
+(`document|look_for`), and the server recomputes the rows from them, so only genuine preset checks
+can be saved. All picked rows are saved in one transaction.
 
 ```mermaid
 flowchart TD
-    A["Use CML preset"] --> B["for each preset entry"]
-    B --> C{"a candidate field<br/>in fields_for?"}
-    C -- "no" --> N["not_added"]
-    C -- "yes" --> D{"already on<br/>this card?"}
-    D -- "yes" --> S["skip"]
-    D -- "no" --> R["unsaved row"]
+    A["each document<br/>on the lists"] --> P{"a preset<br/>matches?"}
+    P -- "no" --> X["no recommendation"]
+    P -- "yes" --> B["for each preset entry"]
+    B --> L{"look-for already<br/>on the document?"}
+    L -- "yes" --> S["skip"]
+    L -- "no" --> C{"a free field<br/>in fields_for?"}
+    C -- "no" --> N["not available"]
+    C -- "yes" --> R["recommended, ticked"]
 ```
 
 **Routes**
 
 | Verb and path | Action | Does | Responds with |
 |---|---|---|---|
-| GET `/doc_checks?record_type=InvestorKyc` | index | Cards page | HTML |
-| GET `/doc_checks/card?document_name=…` | card | One card's form (frame) | HTML frame |
-| PATCH `/doc_checks/card` | update_card | `document_name`, `rows[]` → `CardForm#save` | turbo_stream card / 422 card with row errors |
-| POST `/doc_checks/preset` | preset | `document_name`, `preset` | turbo_stream card with unsaved rows + not-added note |
-| POST `/doc_checks/try` | try | `record_id` → `StartRun(trial: true)` | turbo_stream: trial frame "Checking…" |
+| GET `/doc_checks?record_type=InvestorKyc` | index | Recommended checks + every document's rows | HTML |
+| PATCH `/doc_checks/save_all` | save_all | `cards[<key>][document_name]`, `cards[<key>][rows][<row>][…]` → `SetupForm#save` | redirect "Document checks saved" / 422 page with row errors |
+| POST `/doc_checks/add_recommended` | add_recommended | `picks[]` → `Presets.add_recommended` | redirect "Added 11 checks" |
+| POST `/doc_checks/trial` | trial | `record_id` → `StartRun(trial: true)` | redirect to the page with the trial frame |
 
-**Build notes.** Each card is a `turbo_frame_tag` with its own form. A small Stimulus controller,
-`doc-check-row`, swaps the field/expected inputs by action, fills `look_for` from the selected field's
-label when the input is empty or still holds the previous label, greys out fields already used on the
-card, and shows "Unsaved changes". A `beforeunload` guard is active while any card is dirty. The KYC
-picker for Try reuses the existing investor KYC search select. The Settings menu entry that pointed to
-`doc_questions_path` now points to `doc_checks_path`.
+**Build notes.** One Stimulus controller, `doc-check-page`, covers the page: recommendation ticks (a
+document's tick toggles its rows, the Add button counts), row behaviour (swap inputs by action, fill
+`look_for` from the field's label unless typed, grey out fields used elsewhere on the same card),
+opening a document from the "Other documents" line, the sticky "Unsaved changes / Save all" bar with
+a `beforeunload` guard, and keeping **Try on a KYC** disabled until a KYC is picked (the picker is a
+select2, so it also listens to jQuery `change`). Column labels are shown once, above the cards. The
+KYC list header has a **Document checks** menu (Documents needing attention, Set up checks).
 
 **Access**
 
@@ -482,6 +488,33 @@ picker for Try reuses the existing investor KYC search select. The Settings menu
 | Other entity | ✗ | `policy_scope` = `where(entity_id: user.entity_id)` |
 
 **Worked examples:** H1, H2, E1, E2, E3, E4, E5, E16, X4
+
+**Export and import**
+
+```mermaid
+flowchart LR
+  A[Setup page · Export] -->|doc_checks.xlsx| B[Edit in Excel]
+  B --> C[Import · ImportUpload type DocCheck]
+  C --> D{Row has an Id?}
+  D -->|yes| E[Update that check]
+  D -->|no| F[Create a check]
+  E --> G{Valid?}
+  F --> G
+  G -->|yes| H[Saved · Success]
+  G -->|no| I[Results file: Error and the reason]
+```
+
+| Piece | What it is | Why |
+|---|---|---|
+| Export | `DocChecksController#index` as `.xlsx` → `doc_checks/index.xlsx.axlsx`; columns Id, Document, What To Do, Look For, KYC Field (the label), Tip, Replace Existing, Expected Answer | The export *is* the upload format, so a downloaded sheet can be edited and sent back |
+| Import | `ImportUpload` type `DocCheck` → `ImportDocCheckService` → `ImportDocCheck < ImportUtil`; sample `public/sample_uploads/doc_checks.xlsx` | Uses the platform's import page, results file and Delete Imported Data instead of a second upload flow |
+| Id | Present → update that check (scoped to the user's entity); blank → create | An edited row updates instead of duplicating; another entity's Id is refused |
+| Validation | `DocCheck` validations (field allowed, one field / look-for per document) plus: the document is on the KYC list; "What To Do" is Fill in / Compare / Question; KYC Field matches a field's name or label (a shared label must be given by name) | The same rules as a save on the setup page; errors name the column ("KYC Field: Already used on this document") |
+| `doc_checks.import_upload_id` | Set on checks an upload created; left alone on checks it updated | `ImportUpload#imported_data` and Delete Imported Data act on what an upload *created*, never on edited rows |
+| Nothing deleted | Checks missing from the file stay | An import is additive; removing checks stays an explicit action on the setup page |
+
+**Worked examples:** H14, H15, E24, E25, X11, X12
+
 
 **FAQ**
 
@@ -826,20 +859,27 @@ classDiagram
         class CardForm {
             <<Service>>
             +save() bool
+            +persist()
             +rows()
+        }
+        class SetupForm {
+            <<Service>>
+            +save() bool
+            +cards()
         }
         class Presets {
             <<Service>>
             +key_for(document_name)$
             +rows_for(entity, document_name, key)$
+            +recommendations(entity)$
+            +add_recommended(entity, picks)$
         }
         class DocChecksController {
             <<Controller>>
             +index()
-            +card()
-            +update_card()
-            +preset()
-            +try()
+            +save_all()
+            +add_recommended()
+            +trial()
         }
     }
     namespace RegistryNs {
@@ -966,6 +1006,7 @@ erDiagram
         string expected_answer "yes | no"
         int position
         bigint legacy_doc_question_id UK
+        bigint import_upload_id
     }
     doc_check_runs {
         bigint id PK
@@ -1036,6 +1077,7 @@ erDiagram
 | `expected_answer` | Added, default "yes" | Question expectation |
 | `position` | Added | Card and prompt order |
 | `legacy_doc_question_id` | Added, nullable, no FK | Conversion idempotency. No FK, because `doc_questions` is dropped in the retirement deploy |
+| `import_upload_id` | Added, nullable, indexed, no FK | Which ImportUpload created the check — what Delete Imported Data removes. Separate migration `20261004100000_add_import_upload_to_doc_checks` |
 | UK `[entity_id, record_type, document_name, field_name]` | New | A field once per card (questions have NULL field and are exempt) |
 | UK `[entity_id, record_type, document_name, look_for]` | New | No two identical items on a card; presets skip existing |
 | UK `[legacy_doc_question_id]` | New | Re-running the conversion doesn't duplicate |
@@ -1166,7 +1208,7 @@ Retirement.
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| H1 | CML preset | No checks; form has `dp`, `client`, no email/mobile field | Priya clicks Use CML preset on CML | 8 unsaved rows (DP ID, Client ID, Address, Bank account number, IFSC code, PAN, Full name, signed question); "Not added: Email, Mobile — your KYC form has no matching field…" | CML preset with missing fields | doc_check_setup |
+| H1 | Recommended checks in one click | No checks; form has `dp`, `client`, no email/mobile field | Priya unticks Passport · Expiry date and clicks Add 11 checks | "Added 11 checks": CML 8 (DP ID, Client ID, Address, Bank account number, IFSC code, PAN, Full name, signed question), PAN Card 2, Passport 1; "Not available on your KYC form: CML · Email, CML · Mobile"; "No recommended checks for Board Resolution" | CML preset with missing fields | doc_check_setup |
 | H2 | Add a check, look-for fills | PAN Card card empty | Add a check → Compare → Full name; Save | Look for shows "Full name"; saved; card header "PAN Card · 1 check" | Look for fills itself | doc_check_setup |
 | H3 | Check, all OK | Shared setup | Priya clicks Check documents | Run `done`; 11 OK; DP ID "IN303622", Client ID "86478611", IFSC, bank account, expiry date filled; Address "kept your value"; exactly 3 AI calls; toast "Documents checked for Asha Rao — all OK" | Fill in an empty field; One AI call per document | doc_check_runs |
 | H4 | Trial changes nothing | Shared setup | Try on a KYC → Asha | Banner "Trial run — nothing on this KYC was changed"; "DP ID — filled in: IN303622"; Asha's DP ID empty; no current run; journey unchanged | Trial run on a KYC | doc_check_results |
@@ -1179,6 +1221,8 @@ Retirement.
 | H11 | Conversion execute twice | As H10 | EXECUTE=1 twice | Checks exist once | Execute converts once | doc_checks_conversion |
 | H12 | Progress | 3 documents; reader slowed in test | Check documents | Tab shows "Checking CML (1 of 3)…", then "Checking PAN Card (2 of 3)…" | Progress shown | doc_check_results |
 | H13 | AI rules tool still answers | An AI rule calls `validate_document(question: "Is the PAN visible?")` on a KYC document | The rule runs | Returns the reader's answer for that question; no `DocQuestion` or `DocLlmValidator` involved | — (retirement, AI rules port) | doc_check_runs |
+| H14 | Export | The 11 sample checks | Export on the setup page | `doc_checks.xlsx`: header Id, Document, What To Do, Look For, KYC Field, Tip, Replace Existing, Expected Answer; 11 rows, e.g. "CML · Fill in · DP ID · DP ID · 8 chars, starts with IN · No" | Round trip | doc_check_import |
+| H15 | Round trip | As H14 | Change DP ID's tip, add "PAN Card · Compare · PAN · PAN", import | 12 saved, 0 failed; DP ID has the new tip; the PAN Card check is new and carries the upload's id; DP ID's `import_upload_id` stays empty | Round trip | doc_check_import |
 
 #### Edge Cases
 
@@ -1186,8 +1230,8 @@ Retirement.
 |---|---|---|---|---|---|---|
 | E1 | Cards from both lists | Shared lists | Open the setup page | Cards CML, PAN Card, Passport, Board Resolution; PAN Card once | Cards from the KYC lists | doc_check_setup |
 | E2 | No documents | Entity with empty lists | Open the setup page | "Add the documents you collect in Settings → KYC documents. They'll appear here." | No documents yet | doc_check_setup |
-| E3 | Same field twice | CML has PAN | Add Compare PAN again; Save | Not saved; row "Already used on this card" | Same field twice refused | doc_check_setup |
-| E4 | Preset twice | CML saved from preset | Use CML preset again | No rows added; not-added note lists only Email, Mobile | Preset used twice | doc_check_setup |
+| E3 | Same field twice | CML has PAN | Add Compare PAN again; Save | Not saved; row "Already used on this document" | Same field twice refused | doc_check_setup |
+| E4 | Nothing recommended twice | The sample checks are saved | Open the page | CML and Passport aren't recommended; only PAN Card · Compare PAN is | Preset used twice | doc_check_setup |
 | E5 | No preset | — | Look at Board Resolution | No preset button | No preset for other documents | doc_check_setup |
 | E6 | Company ignores individual docs | Rao Holdings | Check documents | Only PAN Card items; no CML or Passport | Company KYC ignores individual-only documents | doc_check_runs |
 | E7 | Name with prefix | PAN document named "Upload pan card" | Check | PAN Card items read from it | Uploaded name differs in case and prefix | doc_check_runs |
@@ -1207,6 +1251,8 @@ Retirement.
 | E21 | Not checked yet | Checks exist; KYC never checked | Journey | "Documents not checked yet — check documents or mark reviewed" | Not checked yet | kyc_doc_checks_journey |
 | E22 | Attention in journey | Run with 2 items needing attention | Journey | "2 document items need attention — resolve them or mark reviewed"; Mark reviewed → "Reviewed by Priya Shah" | AI could not validate; Summary toast | kyc_doc_checks_journey |
 | E23 | No checks for the KYC's docs | Entity with no checks | Journey | "Check the documents and mark reviewed" | No document questions | kyc_doc_checks_journey |
+| E24 | Import duplicate without an Id | CML already has DP ID | Import "CML · Fill in · DP ID · DP ID" with no Id | Row fails: "KYC Field: Already used on this document. Look For: Already on this document. Include its Id to update it instead" | Duplicate without an Id | doc_check_import |
+| E25 | Import document not on the list | List is CML, PAN Card, Passport | Import a "Board Resolution" row | Row fails: "Document 'Board Resolution' is not on your KYC document list. Use one of: CML, PAN Card, Passport"; a "passport" row in the same file saves as "Passport" | Document not on the list | doc_check_import |
 
 #### Error Cases
 
@@ -1222,6 +1268,8 @@ Retirement.
 | X8 | Mark OK without reason | An attention row | Mark as OK with an empty reason | "Say why this is OK"; not resolved | Mark as OK needs a reason | doc_check_results |
 | X9 | Unresolvable field (conversion) | 6051 hint "Extract to field mobil_contact" | Dry run | Not converted: "Field mobil_contact not found" | Unresolvable field reported | doc_checks_conversion |
 | X10 | View-only user can't resolve | Ken Mori | Opens Asha's tab | Sees results; no Use document value / Mark as OK / Check documents buttons; a direct PATCH is denied | — (access requirement) | doc_check_results |
+| X11 | Import another entity's Id | Northwind has check 9001 | Import a row with Id 9001 | Row fails: "No check found with Id 9001. Leave Id blank to create a new check."; Northwind's check unchanged | Another entity's Id | doc_check_import |
+| X12 | Import unknown field | No Aadhaar field on the KYC form | Import "Passport · Compare · Aadhaar · Aadhaar" | Row fails: "KYC Field 'Aadhaar' is not on your KYC form"; the file's other rows still save | Unknown field | doc_check_import |
 
 #### Retirement
 

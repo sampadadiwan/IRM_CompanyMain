@@ -41,7 +41,7 @@
             <%= button_to t("doc_checks.panel.check_documents"),
             bulk_actions_investor_kycs_path("bulk_action": "ValidateDocsWithAi", q: params.to_unsafe_h[:q], all: true),
             class: "dropdown-item", form_class: "w-100", id: "bulk_check_documents_btn",
-            data: {msg: "This will check the documents of each KYC in the search results (including results on other pages) against your Document Checks. Proceed?", action: "click->confirm#popup", method: :post, turbo: false} if current_user.entity.enable_doc_llm_validation %>
+            data: {title: t("doc_checks.run_confirm.title"), msg: doc_check_bulk_confirm_msg, action: "click->confirm#popup", method: :post, turbo: false} if current_user.entity.enable_doc_llm_validation %>
 
 
             <% custom_notifications = current_user.entity.custom_notifications

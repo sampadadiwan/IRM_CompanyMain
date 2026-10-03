@@ -10,7 +10,7 @@ Document Checks let the AI read the documents investors upload with their KYC (C
 
 1. [How it works](#how-it-works)
 2. [Setting up checks](#setting-up-checks)
-3. [Presets](#presets)
+3. [Exporting and importing checks](#exporting-and-importing-checks)
 4. [Trying checks on a KYC](#trying-checks-on-a-kyc)
 5. [Checking a KYC's documents](#checking-a-kycs-documents)
 6. [Reading the results](#reading-the-results)
@@ -44,30 +44,55 @@ flowchart LR
 
 ## Setting up checks
 
-The setup page shows one **card per document** on your KYC document lists. Cards with checks come first; the rest are under **Other documents** with "No checks yet".
+The [**Document Checks**](/doc_checks) page shows one **tile per document** on your KYC lists, saying in plain words what its checks do ("Fills DP ID, Client ID +3", "Compares PAN"). Documents with checks come first.
 
-| Column | What it means |
+The quickest start is **Suggested** checks: the standard checks for every document CapHive recognises (CML, PAN card, Aadhaar, Passport, Address proof, ID proof, Incorporation certificate), matched to your KYC form's fields. Click **Review & add** on the banner, untick anything you don't want and click **Add N checks**, or click **Add N suggested** on one tile. Checks you already have are never suggested again; items your KYC form has no field for are listed as not available.
+
+Click **Edit** on a tile to open that document's side panel. Add a check with one of the three buttons, then **Save <document>**:
+
+| Kind | What it does |
 |---|---|
-| **What to do** | **Fill in** a KYC field from the document, **Compare** the document with a KYC field, or ask a **Yes-no question** |
-| **KYC field** | Picked from the KYC's fields and your KYC form's custom fields. A field can be used once per card |
-| **Look for** | What the AI should read. Fills itself with the field's label; change it if the document calls it something else (e.g. "First holder name") |
-| **Tip for the AI** | Optional, e.g. "8 digits" or "the first holder's PAN" |
-| **Replace existing values** | Fill in only. Off: a value already on the KYC is kept. On: the document's value replaces it |
-| **Expected** | Yes-no only: the answer that counts as OK |
+| **Fill in a KYC field** | Copies what the document says into the KYC field — only when the field is empty, unless **Replace a value that's already there** is on |
+| **Compare with a KYC field** | Checks the document says the same as the KYC (case, spaces and punctuation don't matter) |
+| **Ask a yes-no question** | Asks the AI something about the document, e.g. whether it is signed; pick the answer that counts as OK |
 
-Each card saves on its own with **Save**. If a row is incomplete, the card isn't saved and the row says why ("Pick a KYC field", "Already used on this card", "Say what to look for").
+Each check says what to **look for** on the document (it starts as the field's label — change it if the document calls it something else, e.g. "First holder name") and can carry an optional **tip for the AI** ("8 digits"). A field can be used once per document. If a check is wrong nothing on that document is saved, and the check says why ("Pick a KYC field", "Already used on this document", "Say what to look for"). A check you added but never filled in is simply ignored.
 
 ---
 
-## Presets
+## Exporting and importing checks
 
-Cards for **CML**, **PAN card**, **Aadhaar** and **Passport** offer **Use … preset**, which adds the standard checks for that document — but only those whose KYC field exists on your form. Anything it couldn't add is listed: "Not added: Email, Mobile — your KYC form has no matching field." Add a custom field to the KYC form and use the preset again; checks already on the card are never duplicated.
+**Export** on the setup page downloads `doc_checks.xlsx`: one row per check. **Import** opens the upload page for that same file, so you can copy checks to another entity, keep a backup, or edit many checks in Excel.
+
+```mermaid
+flowchart LR
+  A[Export] -->|doc_checks.xlsx| B[Edit in Excel]
+  B --> C[Import]
+  C --> D{Row has an Id?}
+  D -->|yes| E[Updates that check]
+  D -->|no| F[Adds a check]
+  E --> G[Results file: Success or Error and why]
+  F --> G
+```
+
+| Column | What to put |
+|---|---|
+| **Id** | Leave as exported to update that check; blank to add a new one |
+| **Document** | A document on your KYC lists (any case) |
+| **What To Do** | Fill in, Compare or Question |
+| **Look For** | What the AI reads, or the question |
+| **KYC Field** | The field's label as the setup page shows it (or its name); blank for a Question |
+| **Tip** | Optional guidance for the AI |
+| **Replace Existing** | Fill in only: Yes or No |
+| **Expected Answer** | Question only: Yes or No |
+
+Every row is checked exactly as a save on the setup page. A row that can't be saved is marked **Error** with the reason in the import's results file, and the other rows are still saved. An import never deletes checks — remove those on the setup page.
 
 ---
 
 ## Trying checks on a KYC
 
-**Try on a KYC** (top of the setup page) runs your checks against one KYC and shows the results under "Trial run — nothing on this KYC was changed". No field changes, and the KYC's own tab and journey are unaffected.
+**Try on a KYC** (top of the setup page — pick a KYC first) runs your checks against one KYC and shows the results under "Trial run — nothing on this KYC was changed". No field changes, and the KYC's own tab and journey are unaffected.
 
 ---
 
@@ -127,7 +152,16 @@ Document Checks replace **Doc Questions**. Support converts each fund's existing
 The AI reads the values off the document and fills empty KYC fields, and flags where the KYC and the document disagree — so you only look at what needs a person.
 
 **How do I set up checks for a document?**
-Open [**Document Checks**](/doc_checks), find the document's card, click **Use … preset** or **Add a check**, pick the KYC field, then **Save** the card.
+Open [**Document Checks**](/doc_checks) and add the **Suggested** checks, or click **Edit** on the document's tile, add a check, pick the KYC field and click **Save <document>**.
+
+**How do I copy my checks to another entity?**
+Click **Export** on the setup page, then sign in to the other entity and **Import** the same file with the **Id** column cleared — rows without an Id are added as new checks. Documents and fields must exist there too; rows that don't fit are reported in the results file.
+
+**What happens if I import a file with a check I already have?**
+With its Id, the row updates that check. Without an Id, the row is refused with "Include its Id to update it instead", so a check is never duplicated.
+
+**Does importing delete checks that aren't in the file?**
+No. An import only adds and updates; delete checks from the document's side panel on the setup page.
 
 **Why can't I add a document that isn't shown?**
 Cards come from your KYC document lists in Settings. Add the document name there and it appears as a card.

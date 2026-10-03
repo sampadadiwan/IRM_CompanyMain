@@ -12,8 +12,12 @@ module DocChecks
     # One document's results. changed: the document was replaced, removed or (when it was missing)
     # uploaded after the run, so its results no longer describe the document on file.
     Group = Struct.new(:name, :results, :document, :changed, keyword_init: true) do
+      # A whole-document problem (changed, not uploaded, unreadable) is one thing for a person to do, so it
+      # counts once — not once per check on that document
       def attention_count
-        changed ? results.size : results.count(&:needs_attention?)
+        return 1 if changed || document_problem
+
+        results.count(&:needs_attention?)
       end
 
       def ok?

@@ -45,12 +45,12 @@
 
 | ☐ | ID | What to check | Preconditions | Steps | Expected result | Pass / Fail | Notes |
 |---|---|---|---|---|---|---|---|
-| ☐ | H1 | CML preset | No checks yet | 1. Settings → Document Checks → Investor KYC. 2. On CML click Use CML preset | 8 rows added, marked "Unsaved changes"; note "Not added: Email, Mobile — your KYC form has no matching field. Add a custom field to the KYC form, then use the preset again." | | |
-| ☐ | H2 | Add a check | — | 1. PAN Card → Add a check. 2. What to do = Compare. 3. KYC field = Full name. 4. Save | Look for fills "Full name"; header "PAN Card · 1 check" | | |
+| ☐ | H1 | Suggested checks | No checks yet | 1. Settings → Document Checks. 2. On the CML tile click Add N suggested | CML's tile lists what it fills, compares and asks; items with no KYC field are listed as not available on your KYC form (e.g. Email, Mobile) | | |
+| ☐ | H2 | Add a check | — | 1. PAN Card tile → Edit. 2. Compare with a KYC field. 3. KYC field = Full name. 4. Save PAN Card | Look for fills "Full name"; the tile says "Compares Full name" | | |
 | ☐ | H3 | All OK | Checks as in the design's shared setup; good documents | Asha's KYC → Document checks → Check documents | Progress, then all ✓; "DP ID — filled in: IN303622"; Address "kept your value"; toast "Documents checked for Asha Rao — all OK"; Edit KYC shows DP ID, Client ID filled | | |
 | ☐ | H4 | Trial | Fresh KYC with empty DP ID | Settings → Try on a KYC → pick it | Banner "Trial run — nothing on this KYC was changed"; KYC's DP ID still empty; its tab says "These documents haven't been checked yet." | | |
-| ☐ | H5 | Use document value | KYC PAN "ABCPK1243F" | Check → PAN row → Use document value → confirm | Confirm text "Change PAN from ABCPK1243F to ABCPK1234F?"; row "✓ PAN — updated from the document by Priya Shah"; KYC PAN updated; KYC audit shows the change | | |
-| ☐ | H6 | Mark as OK | "A. RAO" CML, only mismatch | Mark as OK → "Initial matches passport" → Save | "✓ Marked OK by Priya Shah: Initial matches passport" with Undo; tab count drops; journey "Validated by AI" | | |
+| ☐ | H5 | Use document value | KYC PAN "ABCPK1243F" | Check → PAN card → Use the document's PAN → Proceed | The popup's first card says "PAN becomes ABCPK1234F" (was ABCPK1243F); the row moves to the settled list as "Updated from the document by Priya Shah"; KYC PAN updated; KYC audit shows the change | | |
+| ☐ | H6 | Mark as OK | "A. RAO" CML, only mismatch | Keep the KYC's First holder name… → "Initial matches passport" → Mark as OK | The row reads "Marked OK by Priya Shah — Initial matches passport" with Undo; tab count drops; journey "Validated by AI" | | |
 | ☐ | H7 | Journey completes | KYC on Validate documents | Check documents with good documents | Validate documents ✓ "Validated by AI" with no click | | |
 | ☐ | H8 | Bulk | Asha, Rao Holdings, Kiran Iyer (verified) | KYC list → select all three → Check documents | Two checked; Kiran "Cannot modify verified KYC" | | |
 | ☐ | H9 | Attention list | One mismatch KYC, one unreadable, one OK | KYC menu → Documents needing attention → Reason = Doesn't match → tick → Check again (1) | One row; "Checking documents for 1 KYC" | | |
@@ -58,6 +58,8 @@
 | ☐ | H11 | Conversion | H10 reviewed | Developer runs with execute, twice | Checks appear once on that entity's Document Checks page | | |
 | ☐ | H12 | Progress | 3 documents | Check documents and watch | "Checking CML (1 of 3)…", "Checking PAN Card (2 of 3)…", … | | |
 | ☐ | H13 | AI rules still work | An AI rule that validates a document | Run that rule | It returns an answer as before | | |
+| ☐ | H14 | Export | Checks set up | Settings → Document Checks → Export | `doc_checks.xlsx` opens: columns Id, Document, What To Do, Look For, KYC Field, Tip, Replace Existing, Expected Answer; one row per check | | |
+| ☐ | H15 | Import round trip | The H14 file | 1. Change one row's Tip. 2. Add a row with no Id (PAN Card · Compare · PAN · PAN). 3. Import → upload the file | Results: every row Success; the tip is changed on the setup page; PAN Card has the new check; no check is duplicated | | |
 
 ## Edge Cases
 
@@ -65,7 +67,7 @@
 |---|---|---|---|---|---|---|---|
 | ☐ | E1 | Cards | Setup lists | Open setup page | CML, PAN Card, Passport, Board Resolution; PAN Card once | | |
 | ☐ | E2 | No documents | Entity with empty lists | Open setup page | "Add the documents you collect in Settings → KYC documents. They'll appear here." | | |
-| ☐ | E3 | Same field twice | CML has PAN | Add Compare PAN; Save | Not saved; "Already used on this card" | | |
+| ☐ | E3 | Same field twice | CML has PAN | Add Compare PAN; Save | Not saved; "Already used on this document" | | |
 | ☐ | E4 | Preset twice | CML saved | Use CML preset again | No duplicates | | |
 | ☐ | E5 | No preset | — | Look at Board Resolution | No preset button | | |
 | ☐ | E6 | Company KYC | Rao Holdings | Check documents | Only PAN Card shown | | |
@@ -86,6 +88,8 @@
 | ☐ | E21 | Not checked | Never checked | Journey | "Documents not checked yet — check documents or mark reviewed" | | |
 | ☐ | E22 | Attention count | 2 items need attention | Journey | "2 document items need attention — resolve them or mark reviewed" | | |
 | ☐ | E23 | No checks | Entity with no checks | Journey | "Check the documents and mark reviewed" | | |
+| ☐ | E24 | Import duplicate | The H14 file | Clear one row's Id and import it | That row: "Error … Include its Id to update it instead"; nothing duplicated | | |
+| ☐ | E25 | Import unknown document | — | Import a row for "Board Resolution" (not on the individual list) | Row error "Document 'Board Resolution' is not on your KYC document list" | | |
 
 ## Error Cases
 
@@ -101,6 +105,8 @@
 | ☐ | X8 | No reason | Attention row | Mark as OK, empty reason | "Say why this is OK" | | |
 | ☐ | X9 | Unconvertible | Legacy hint "Extract to field mobil_contact" | Dry run | "Field mobil_contact not found" | | |
 | ☐ | X10 | View-only | Ken | Open Asha's tab | Results visible; no resolve or check buttons | | |
+| ☐ | X11 | Import another entity's Id | Olu's export from Northwind | Priya imports it unchanged | Every row "No check found with Id …"; Northwind's checks unchanged | | |
+| ☐ | X12 | Import unknown field | — | Import "Passport · Compare · Aadhaar · Aadhaar" | Row error "KYC Field 'Aadhaar' is not on your KYC form"; other rows saved | | |
 
 ---
 
@@ -133,7 +139,7 @@
 | ☐ | J2.4 | Same | Check again | "Checking documents for 3 KYCs" | | |
 | ☐ | J3.1 | Setup | What to do → Yes-no | Field replaced by Expected; Look for becomes Question | | |
 | ☐ | J3.2 | Setup | What to do → Compare | "Replace existing values" hidden | | |
-| ☐ | J3.3 | Setup | Pick a field already used on the card | It's greyed out "already used on this card" | | |
+| ☐ | J3.3 | Setup | Pick a field already used on the card | It's greyed out "already used on this document" | | |
 | ☐ | J3.4 | Setup | Change a row, try to leave the page | "Unsaved changes" shown; leaving asks for confirmation | | |
 
 ---

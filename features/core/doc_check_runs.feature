@@ -1,4 +1,4 @@
-@doc_checks_fake_ai
+@doc_checks @doc_checks_fake_ai
 Feature: Document Checks — checking a KYC's documents
   The AI reads values off each document on the KYC's own list; CapHive fills in fields, compares them
   with the KYC and answers yes-no questions. Every item ends OK or needing attention, with a reason, and a

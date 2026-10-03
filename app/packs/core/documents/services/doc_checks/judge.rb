@@ -107,8 +107,13 @@ module DocChecks
       :bad_date
     end
 
+    # Dates are stored as ISO dates; a timestamp column (a KYC's birth_date) is stored as its date, not as
+    # "2002-03-23 18:30:00 +0530", so it reads and compares as the same day the document shows
     def display(value)
-      value.is_a?(Date) ? value.iso8601 : value.to_s
+      return value.iso8601 if value.is_a?(Date)
+      return value.to_date.iso8601 if value.is_a?(Time) || value.is_a?(ActiveSupport::TimeWithZone) || value.is_a?(DateTime)
+
+      value.to_s
     end
 
     def result(outcome, note: nil, doc_value: self.doc_value, record_value: nil, write: nil)

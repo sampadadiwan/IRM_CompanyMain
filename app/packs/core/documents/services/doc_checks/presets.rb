@@ -6,6 +6,45 @@ module DocChecks
   class Presets
     Applied = Struct.new(:rows, :not_added, keyword_init: true)
 
+    # One document's line in "Recommended checks": the preset's checks it can still add (unsaved), what
+    # its form has no field for, and how many checks the document already has
+    Recommendation = Struct.new(:document_name, :preset_name, :rows, :not_added, :existing_count, keyword_init: true) do
+      def self.pick_key(document_name, look_for) = "#{document_name.downcase}|#{look_for.downcase}"
+      def pick_key(row) = self.class.pick_key(document_name, row.look_for)
+    end
+
+    # "Recommended checks" for every document on the entity's lists, in list order. Documents without a
+    # preset come back with no rows (shown as "no recommended checks"). Nothing is saved.
+    # Worked example H1 — openspec/changes/document-checks/design.md#worked-examples
+    def self.recommendations(entity:, record_type: "InvestorKyc")
+      saved = DocCheck.where(entity:, record_type:).to_a.group_by { |c| c.document_name.downcase }
+      Registry.for(record_type).document_names(entity).map do |name|
+        key = key_for(name)
+        existing = saved[name.downcase] || []
+        applied = key ? rows_for(entity:, document_name: name, key:, existing:, record_type:) : Applied.new(rows: [], not_added: [])
+        Recommendation.new(document_name: name, preset_name: key && name_for(key), rows: applied.rows,
+                           not_added: applied.not_added, existing_count: existing.size)
+      end
+    end
+
+    # Save the picked recommendations ("pick keys") in one transaction; returns the number added. Rows are
+    # recomputed here, never taken from the browser, so only real preset checks can be saved.
+    def self.add_recommended(entity:, picks:, record_type: "InvestorKyc")
+      picks = Array(picks).to_set
+      added = 0
+      DocCheck.transaction do
+        recommendations(entity:, record_type:).each do |rec|
+          rows = rec.rows.select { |row| picks.include?(rec.pick_key(row)) }
+          rows.each_with_index do |row, index|
+            row.position = rec.existing_count + index
+            row.save!
+            added += 1
+          end
+        end
+      end
+      added
+    end
+
     def self.all
       @all ||= YAML.load_file(Rails.root.join("config/doc_check_presets.yml")).deep_symbolize_keys.freeze
     end

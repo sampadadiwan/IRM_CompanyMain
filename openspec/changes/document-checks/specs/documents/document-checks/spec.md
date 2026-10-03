@@ -30,9 +30,10 @@ field picked from the record type's allowed fields: for KYC, a fixed list of sta
 non-file custom fields of the entity's KYC forms. A field SHALL be used at most once per document card.
 *Look for* (at most 100 characters) SHALL default to the picked field's label. *Tip for the AI* SHALL be
 optional (at most 255 characters). Fill in SHALL have *Replace existing values*, off by default.
-Yes-no SHALL have an expected answer, Yes by default. Each card SHALL save on its own. A row that is
-incomplete or invalid SHALL block that card's save and be marked on the row: "Pick a KYC field",
-"Already used on this card" or "Say what to look for". A field outside the allowed list SHALL be refused
+Yes-no SHALL have an expected answer, Yes by default. All documents' checks SHALL be saved together with
+one "Save all"; a row that is incomplete or invalid SHALL block the save (nothing is saved) and be marked
+on the row: "Pick a KYC field", "Already used on this document" or "Say what to look for". A new row
+nobody filled in SHALL be ignored. A field outside the allowed list SHALL be refused
 with "Pick a KYC field".
 
 #### Scenario: Look for fills itself
@@ -41,7 +42,7 @@ with "Pick a KYC field".
 
 #### Scenario: Same field twice refused
 - **WHEN** the admin adds a second CML check for the field "PAN" and saves
-- **THEN** the card is not saved and the row says "Already used on this card"
+- **THEN** the card is not saved and the row says "Already used on this document"
 
 #### Scenario: Field outside the allowed list refused
 - **WHEN** a request tries to save a Fill in check whose field is "verified"
@@ -52,22 +53,53 @@ with "Pick a KYC field".
 - **THEN** the page shows the banner "1 check uses a field that no longer exists — Show me" and the row "This field no longer exists — pick another"
 
 ### Requirement: Presets add only what they can map
-A card whose document name contains "CML", "PAN", "Aadhaar" or "Passport" (any case) SHALL offer that
-preset. Applying it SHALL add, as unsaved rows, only the preset's checks whose field exists on the KYC
-and isn't already on the card. It SHALL list the rest under the card as "Not added: <labels> — your KYC
-form has no matching field. Add a custom field to the KYC form, then use the preset again."
+The page SHALL offer "Recommended checks": for every document whose name matches a preset (CML, PAN,
+Aadhaar, Passport, Address proof, ID proof, Incorporation; any case), the preset's checks whose field
+exists on the KYC and that aren't already set up for that document, all ticked. "Add N checks" SHALL
+save every ticked check in one go. The rest SHALL be listed as "Not available on your KYC form:
+<document> · <label>, …", and documents with no preset as "No recommended checks for <documents> — add
+your own below."
 
 #### Scenario: CML preset with missing fields
-- **WHEN** the admin uses the CML preset and the KYC form has custom fields "dp" and "client" but no email or mobile field
-- **THEN** rows for DP ID, Client ID, Address, Bank account number, IFSC code, PAN, Full name and "Is it signed by the holder?" are added, and "Not added: Email, Mobile — …" is shown
+- **WHEN** the KYC form has custom fields "dp" and "client" but no email or mobile field, and the admin adds the recommended checks
+- **THEN** CML gets DP ID, Client ID, Address, Bank account number, IFSC code, PAN, Full name and "Is it signed by the holder?", and "Not available on your KYC form: CML · Email, CML · Mobile" is shown
 
 #### Scenario: Preset used twice
-- **WHEN** the CML preset is used again on a saved CML card
-- **THEN** no row is added for checks already on the card
+- **WHEN** a document's recommended checks are already set up
+- **THEN** they are not recommended again
 
 #### Scenario: No preset for other documents
-- **WHEN** a card is named "Board Resolution"
-- **THEN** it offers no preset button
+- **WHEN** a document is named "Board Resolution"
+- **THEN** it has no recommended checks and the page says "No recommended checks for Board Resolution — add your own below."
+
+### Requirement: Checks export to xlsx and import with ImportUpload
+The setup page SHALL offer Export, a `doc_checks.xlsx` with one row per check in the columns Id, Document,
+What To Do, Look For, KYC Field, Tip, Replace Existing and Expected Answer, and Import, the ImportUpload page
+for type DocCheck, which SHALL read the same columns. A row with an Id SHALL update that check of the user's
+entity; a row without one SHALL create a check. Each row SHALL pass the same validation as a save on the
+setup page, and its document SHALL be on the entity's KYC document list. A row that fails SHALL be reported
+with its reason in the import's results file while the other rows are saved. The import SHALL never delete
+a check.
+
+#### Scenario: Round trip
+- **WHEN** the admin exports, changes one row's tip, adds a row without an Id and uploads the sheet
+- **THEN** the changed check gets the new tip, the new row becomes a check, and no check is duplicated
+
+#### Scenario: Duplicate without an Id
+- **WHEN** a row without an Id names a document and look-for that already have a check
+- **THEN** the row fails with "… Include its Id to update it instead" and nothing changes
+
+#### Scenario: Document not on the list
+- **WHEN** a row names "Board Resolution", which is not on the KYC document list
+- **THEN** the row fails with "Document 'Board Resolution' is not on your KYC document list"
+
+#### Scenario: Another entity's Id
+- **WHEN** a row carries the Id of another entity's check
+- **THEN** the row fails with "No check found with Id …" and the other entity's check is unchanged
+
+#### Scenario: Unknown field
+- **WHEN** a row's KYC Field is "Aadhaar" and the KYC form has no such field
+- **THEN** the row fails with "KYC Field 'Aadhaar' is not on your KYC form"
 
 ### Requirement: A KYC's documents are those on its own list
 A record's checks SHALL be those for the document names on that record's own document list. For KYC that

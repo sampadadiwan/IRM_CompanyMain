@@ -23,9 +23,9 @@ class DocCheck < ApplicationRecord
   attr_accessor :card_checked
 
   # One field per card; a question has no field and is exempt. Worked example E3.
-  validates :field_name, uniqueness: { scope: %i[entity_id record_type document_name], message: "Already used on this card" },
+  validates :field_name, uniqueness: { scope: %i[entity_id record_type document_name], message: "Already used on this document" },
                          allow_nil: true, unless: :card_checked
-  validates :look_for, uniqueness: { scope: %i[entity_id record_type document_name], message: "Already on this card" },
+  validates :look_for, uniqueness: { scope: %i[entity_id record_type document_name], message: "Already on this document" },
                        unless: :card_checked
 
   scope :ordered, -> { order(:position, :id) }

@@ -1,4 +1,4 @@
-@doc_checks_fake_ai
+@doc_checks @doc_checks_fake_ai
 Feature: Document Checks — the KYC journey's "Validate documents"
   The journey task passes by itself when the KYC's documents have been checked and nothing needs attention;
   otherwise it says what's left. A replaced document moves it back. Earlier Doc Questions answers stay
@@ -44,8 +44,8 @@ Feature: Document Checks — the KYC journey's "Validate documents"
     When I open the KYC's Document checks tab
     Then the Document checks tab should show the documents:
       | document | status                            |
-      | CML      | Document changed after this check |
-      | PAN Card | All OK                            |
+      | CML      | This document changed after the check |
+      | PAN Card | All OK                                |
 
   # E21 — checks are set up but the documents haven't been checked
   Scenario: Not checked yet

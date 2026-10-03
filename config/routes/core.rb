@@ -355,9 +355,8 @@ end
 # Document Checks — openspec/changes/document-checks/design.md (cards ①, ③, ⑧)
 resources :doc_checks, only: %i[index] do
   collection do
-    get :card
-    patch :card, action: :update_card
-    post :preset
+    patch :save_document
+    post :add_recommended
     post :trial
   end
 end

@@ -152,9 +152,11 @@ module DocChecks
       end
     end
 
+    # A document that isn't uploaded or can't be read is one item needing attention, not one per check
     def counts(results)
-      attention = results.count { |r| r[:outcome] != "ok" && r[:resolution].blank? }
-      { "ok" => results.size - attention, "attention" => attention }
+      document_level, items = results.partition { |r| DocCheckResult::DOCUMENT_OUTCOMES.include?(r[:outcome]) }
+      attention = items.count { |r| r[:outcome] != "ok" && r[:resolution].blank? } + document_level.pluck(:document_name).uniq.size
+      { "ok" => items.count { |r| r[:outcome] == "ok" || r[:resolution].present? }, "attention" => attention }
     end
 
     def after_finish(wrote)

@@ -23,33 +23,36 @@ module DocChecks
     def save
       return false unless valid?
 
-      DocCheck.transaction do
-        # Saved rows no longer on the card are deleted first, so a field they held is free again
-        removed = @existing.keys - @rows.filter_map(&:id)
-        DocCheck.where(id: removed).find_each(&:destroy!)
-        # Rows whose field or look-for changed are parked first, so two rows can swap fields without
-        # tripping the unique indexes mid-way
-        @rows.select { |row| row.persisted? && (row.field_name_changed? || row.look_for_changed?) }.each do |row|
-          row.class.where(id: row.id).update_all(field_name: nil, look_for: "__moving_#{row.id}")
-          # Both parked columns must be written back by save! — it only writes attributes marked changed
-          row.field_name_will_change!
-          row.look_for_will_change!
-        end
-        @rows.each_with_index do |row, index|
-          row.position = index
-          row.save!
-        end
-      end
+      DocCheck.transaction { persist! }
       true
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
       false
     end
 
+    # Writes the card; save wraps it in a transaction. Raises on a database refusal; call valid? first.
+    def persist!
+      # Saved rows no longer on the card are deleted first, so a field they held is free again
+      removed = @existing.keys - @rows.filter_map(&:id)
+      DocCheck.where(id: removed).find_each(&:destroy!)
+      # Rows whose field or look-for changed are parked first, so two rows can swap fields without
+      # tripping the unique indexes mid-way
+      @rows.select { |row| row.persisted? && (row.field_name_changed? || row.look_for_changed?) }.each do |row|
+        row.class.where(id: row.id).update_all(field_name: nil, look_for: "__moving_#{row.id}")
+        # Both parked columns must be written back by save! — it only writes attributes marked changed
+        row.field_name_will_change!
+        row.look_for_will_change!
+      end
+      @rows.each_with_index do |row, index|
+        row.position = index
+        row.save!
+      end
+    end
+
     # Every row valid, and no field or look-for twice on the card (siblings the database can't see yet)
     def valid?
       @rows.each(&:valid?)
-      flag_duplicates(:field_name, "Already used on this card") { |row| row.field_name&.downcase }
-      flag_duplicates(:look_for, "Already on this card") { |row| row.look_for.to_s.downcase }
+      flag_duplicates(:field_name, "Already used on this document") { |row| row.field_name&.downcase }
+      flag_duplicates(:look_for, "Already on this document") { |row| row.look_for.to_s.downcase }
       @rows.all? { |row| row.errors.empty? }
     end
 
@@ -67,8 +70,12 @@ module DocChecks
     end
 
     def build_rows(raw_rows)
-      raw_rows.map do |raw|
+      raw_rows.filter_map do |raw|
         attrs = (raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h).stringify_keys
+        # A new Fill in / Compare row nobody touched (added, then nothing picked) is left out, not an error.
+        # A yes-no question has no field to pick, so an empty one still says "Say what to look for"
+        next if attrs["id"].blank? && attrs["field_name"].blank? && attrs["look_for"].blank? && attrs["action"] != "question"
+
         row = @existing[attrs["id"].to_i] || DocCheck.new(entity:, record_type:, document_name:)
         row.assign_attributes(attrs.slice(*ROW_ATTRIBUTES).merge("replace_existing" => attrs["replace_existing"].in?([true, "1", "true"])))
         row.card_checked = true

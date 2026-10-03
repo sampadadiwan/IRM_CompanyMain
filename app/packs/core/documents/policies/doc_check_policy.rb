@@ -18,10 +18,11 @@ class DocCheckPolicy < ApplicationPolicy
     index? && (record.is_a?(Class) || belongs_to_entity?(user, record))
   end
 
-  def card? = index?
-  def update_card? = update?
-  def preset? = update?
+  def save_document? = update?
+  def add_recommended? = update?
   def trial? = update?
+  # The setup page's Import button (ImportUpload type DocCheck); Export is the index as xlsx
+  def import? = update?
 
   private
 

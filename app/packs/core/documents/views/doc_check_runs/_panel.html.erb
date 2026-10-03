@@ -1,65 +1,159 @@
-<%# A record's Document checks tab: progress, the last check's time and counts, then each document as
-    ✓ All OK / ⚠ n need attention / ⟳ changed, with the actions that resolve an item on the spot.
-    Wrapped in the frame Broadcast replaces, so each browser re-fetches it as its own user.
+<%# A record's Document checks tab, sorted by what needs doing: a summary bar (need you / OK / missing),
+    then "Needs your decision" (comparison cards with the buttons that settle them), "Missing documents" (one
+    grouped card) and "All good" (always shown, one aligned row per item). Wrapped in the frame Broadcast reloads
+    (reload_frame), so each browser re-fetches it as its own user.
     locals: record, assessment (DocChecks::Assessment), message (optional), errors ({result_id => text})
-    openspec/changes/document-checks/design.md (card ⑧ Screens). Worked examples H3, H5, H6, H12, E13, E19, E20, X3, X10. %>
+    openspec/changes/document-checks/design.md (card ⑧ Screens). Worked examples H3, H5, H6, H12, E12, E13, E19, E20, X1, X3, X10. %>
 <% message ||= nil
    errors ||= {}
    entry = DocChecks::Registry.for(record)
    can_edit = entry.can_edit?(current_user, record)
    active = assessment.active_run
-   record_type = DocChecks::Registry.record_type_of(record) %>
-<%= turbo_frame_tag doc_check_panel_frame_id(record) do %>
+   record_type = DocChecks::Registry.record_type_of(record)
+   frame = doc_check_panel_frame_id(record)
+   groups = assessment.groups
+   missing = groups.select { |g| !g.changed && g.document_problem&.outcome == "not_uploaded" }
+   decisions = groups.select { |g| !missing.include?(g) && !g.ok? }
+   good = groups.select(&:ok?)
+   need_you = decisions.sum(&:attention_count)
+   ok_count = (groups - missing).reject(&:changed).sum { |g| g.results.count { |r| r.ok? && !r.document_level? } } %>
+<%# refresh="morph": a broadcast reload patches only what changed (no blank, no scroll jump) —
+    custom/turbo_stream_actions.js %>
+<%= turbo_frame_tag frame, refresh: "morph" do %>
   <div id="doc_checks_panel" class="doc-checks-panel" data-attention-count="<%= assessment.attention_count %>">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+
+    <%# Summary bar %>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 p-3 mb-3 rounded-3 bg-body-tertiary">
       <div>
-        <h5 class="mb-1"><%= t("doc_checks.panel.title") %></h5>
-        <div class="text-muted" id="doc_checks_header"><%= doc_check_header(assessment) %></div>
+        <% if assessment.checked? %>
+          <div class="d-flex flex-wrap gap-3 mb-1" id="doc_checks_counts">
+            <span class="<%= need_you.positive? ? 'text-warning-emphasis' : 'text-muted' %>"><i class="ti ti-alert-triangle"></i> <%= t("doc_checks.panel.counts.need_you", count: need_you) %></span>
+            <span class="text-success"><i class="ti ti-circle-check"></i> <%= t("doc_checks.panel.counts.ok", count: ok_count) %></span>
+            <% if missing.any? %>
+              <span class="text-muted"><i class="ti ti-file-off"></i> <%= t("doc_checks.panel.counts.missing", count: missing.size) %></span>
+            <% end %>
+          </div>
+        <% end %>
+        <div class="text-body-secondary" id="doc_checks_header"><%= doc_check_header(assessment) %></div>
       </div>
-      <% if can_edit && assessment.checks? %>
-        <%= button_to t("doc_checks.panel.check_documents"), doc_check_runs_path(record_type:, record_id: record.id),
-              method: :post, class: "btn btn-sm btn-primary", id: "doc_checks_check_btn", disabled: active.present?,
-              form: { data: { turbo_frame: doc_check_panel_frame_id(record) } } %>
-      <% end %>
+      <div class="d-flex gap-2">
+        <% if can_edit && assessment.checks? %>
+          <%= button_to doc_check_runs_path(record_type:, record_id: record.id), method: :post, class: "btn btn-sm btn-primary",
+                id: "doc_checks_check_btn", disabled: active.present?, data: doc_check_run_confirm_data(record),
+                form: { data: { turbo_frame: frame } } do %>
+            <%# Confirmed in the shared modal, which says what the run will do (doc_check_run_confirm_data) %>
+            <i class="ti ti-refresh"></i> <%= t("doc_checks.panel.check_documents") %>
+          <% end %>
+        <% end %>
+        <% if policy(DocCheck).index? %>
+          <%= link_to doc_checks_path, class: "btn btn-sm btn-outline-secondary", target: "_blank", rel: "noopener" do %>
+            <i class="ti ti-settings"></i> <%= t("doc_checks.panel.setup") %>
+          <% end %>
+        <% end %>
+      </div>
     </div>
 
     <% if message.present? %>
-      <div class="alert alert-info py-2" id="doc_checks_message"><%= message %></div>
+      <div class="alert alert-info py-2" id="doc_checks_message"><i class="ti ti-info-circle"></i> <%= message %></div>
     <% end %>
 
     <%# A newer attempt that couldn't run: say so, keep the earlier results. Worked example X3. %>
     <% if (failed = assessment.could_not_run) %>
-      <div class="alert alert-danger d-flex justify-content-between align-items-center py-2" id="doc_checks_could_not_run">
-        <span><%= t("doc_checks.panel.could_not_run", time: l(failed.finished_at || failed.updated_at, format: :abbr_date_time), reason: failed.error_message) %></span>
+      <div class="alert alert-danger d-flex flex-wrap justify-content-between align-items-center gap-2 py-2" id="doc_checks_could_not_run">
+        <span><i class="ti ti-plug-connected-x"></i> <%= t("doc_checks.panel.could_not_run", time: l(failed.finished_at || failed.updated_at, format: :abbr_date_time), reason: failed.error_message) %></span>
         <% if can_edit %>
           <%= button_to t("doc_checks.panel.try_again"), doc_check_runs_path(record_type:, record_id: record.id, trigger: "again"),
-                method: :post, class: "btn btn-sm btn-outline-danger", disabled: active.present?,
-                form: { data: { turbo_frame: doc_check_panel_frame_id(record) } } %>
+                method: :post, class: "btn btn-sm btn-outline-danger", disabled: active.present?, form: { data: { turbo_frame: frame } } %>
         <% end %>
       </div>
     <% end %>
 
     <% if !assessment.checks? && !assessment.checked? %>
-      <p class="text-muted" id="doc_checks_none">
-        <%= t("doc_checks.panel.no_checks") %>
+      <div class="text-center p-4 rounded-3 bg-body-tertiary" id="doc_checks_none">
+        <i class="ti ti-settings fs-1 text-primary"></i>
+        <div class="mt-2"><%= t("doc_checks.panel.no_checks") %></div>
         <% if policy(DocCheck).index? %>
-          — <%= link_to t("doc_checks.panel.set_up"), doc_checks_path, data: { turbo_frame: "_top" } %>
+          <%= link_to t("doc_checks.panel.set_up"), doc_checks_path, class: "btn btn-sm btn-primary mt-2", target: "_blank", rel: "noopener" %>
         <% end %>
-      </p>
+      </div>
     <% elsif !assessment.checked? %>
-      <p class="text-muted" id="doc_checks_not_checked"><%= t("doc_checks.panel.not_checked") %></p>
+      <%# The header already says "not checked yet": the body says what to do about it %>
+      <div class="text-center p-4 rounded-3 bg-body-tertiary" id="doc_checks_not_checked">
+        <i class="ti ti-file-search fs-1 text-primary"></i>
+        <div class="mt-2"><%= t("doc_checks.panel.not_checked_help") %></div>
+      </div>
     <% end %>
 
     <div class="<%= 'opacity-50' if active %>" id="doc_checks_groups">
-      <% assessment.groups.each do |group| %>
-        <%= render "doc_check_runs/group", group:, record:, record_type:, can_edit:, entry:, errors: %>
+      <%# Needs your decision %>
+      <% if decisions.any? %>
+        <div class="doc-check-section mt-2"><%= t("doc_checks.panel.sections.decisions") %></div>
+        <% decisions.each do |group| %>
+          <%= render "doc_check_runs/decision_document", group:, record:, record_type:, can_edit:, entry:, errors:, frame: %>
+        <% end %>
+      <% end %>
+
+      <%# Missing documents, as one card %>
+      <% if missing.any? %>
+        <div class="doc-check-section"><%= t("doc_checks.panel.sections.missing") %></div>
+        <div class="card border-0 shadow-sm border-start border-4 border-secondary mb-3" id="doc_checks_missing">
+          <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <span class="fw-semibold"><i class="ti ti-file-off text-muted"></i> <%= t("doc_checks.panel.missing_title", count: missing.size) %></span>
+              <%# Switches to the KYC page's own Documents tab %>
+              <button type="button" class="btn btn-sm btn-outline-primary"
+                      onclick="document.querySelector('a[href=&quot;#docs-tab&quot;]')?.click()">
+                <i class="ti ti-upload"></i> <%= t("doc_checks.panel.go_documents") %>
+              </button>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <% missing.each do |group| %>
+                <span class="d-inline-flex align-items-center gap-1 rounded-pill border px-3 py-1 doc-check-row"
+                      data-doc-check-document data-document-name="<%= group.name %>" data-outcome="not_uploaded">
+                  <i class="ti <%= doc_check_document_icon(group.name) %> text-muted"></i> <%= group.name %>
+                  <span class="doc-check-group-status d-none"><%= t("doc_checks.result.not_uploaded") %></span>
+                </span>
+              <% end %>
+            </div>
+            <div class="text-body-secondary"><%= t("doc_checks.panel.missing_help") %></div>
+          </div>
+        </div>
+      <% end %>
+
+      <%# All good: always shown, same card as a decision but with the green success edge %>
+      <% if good.any? %>
+        <div id="doc_checks_all_good">
+          <div class="doc-check-section">
+            <i class="ti ti-circle-check text-success"></i> <%= t("doc_checks.panel.sections.all_good") %> (<%= good.size %>)
+          </div>
+          <% good.each do |group| %>
+            <div class="card border-0 shadow-sm border-start border-4 border-success mb-3"
+                 data-doc-check-document data-document-name="<%= group.name %>">
+              <div class="card-body">
+                <%# Header: icon + name on the left, status on the right (as on a decision card) %>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="doc-check-doc-icon rounded-3 d-inline-flex align-items-center justify-content-center bg-success-subtle text-success">
+                      <i class="ti <%= doc_check_document_icon(group.name) %>"></i>
+                    </span>
+                    <span class="fw-semibold"><%= group.name %></span>
+                  </div>
+                  <span class="text-success doc-check-group-status"><i class="ti ti-circle-check"></i> <%= t("doc_checks.panel.group_ok") %></span>
+                </div>
+                <% group.results.each do |result| %>
+                  <%= render "doc_check_runs/ok_line", result:, entry:, can_edit:, frame: %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
       <% end %>
     </div>
 
     <%# Doc Questions answers from before Document Checks, read-only. Worked example E20. %>
     <% if record.respond_to?(:doc_question_answers) && record.doc_question_answers.is_a?(Hash) && record.doc_question_answers.any? %>
-      <details class="mt-3" id="doc_checks_earlier_answers">
-        <summary class="text-muted"><%= t("doc_checks.panel.earlier_answers") %></summary>
+      <details class="mt-4" id="doc_checks_earlier_answers">
+        <summary class="text-body-secondary"><i class="ti ti-history"></i> <%= t("doc_checks.panel.earlier_answers") %></summary>
         <div class="mt-2 associated_entity">
           <%# The AI's old answers are untrusted text: allow only the table markup Json2table emits %>
           <%= sanitize(Json2table.get_html_table(record.doc_question_answers, JsonTable::TABLE_OPTIONS),
