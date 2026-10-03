@@ -98,6 +98,15 @@ badge and the index banner.
 
 ## 6. Regression and cleanup
 
+> **Archived with 6.1-6.4 open.** Phases 1-5 ran green: `workflow_auto_assignment.feature` and
+> `workflow_templates.feature` 18/18 each on a clean `537fef155` base, `user_guide_lint.feature` 5/5,
+> rubocop clean on the new and rewritten files, every guide diagram rendering. The wider runs below
+> were stopped by the user before finishing. The journey and KYC features did complete — 79 scenarios,
+> 3 failed (`capital_distribution_journey.feature:172`, `investor_kyc_journey.feature:136` and `:211`),
+> all human sign-off scenarios unrelated to rule ordering, and never confirmed as pre-existing because
+> the run's assertion text was lost to a grep filter. Worth re-checking against the base commit.
+
+
 - [ ] 6.1 Run the feature directory the fix touches:
       `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/core` and confirm it is green.
 - [ ] 6.2 Run the Blast Radius callers marked as needing checking:
