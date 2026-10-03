@@ -39,7 +39,7 @@ Feature: Document Checks — Doc Questions retired (deploy 2)
   Scenario: The drop refuses to remove unconverted questions
     Given an environment still has 2 Doc Questions, 1 of them converted
     When the retirement migration runs
-    Then it should stop with "1 Doc Questions are not converted — run doc_checks:convert_doc_questions first"
+    Then it should stop with "1 Doc Questions are not converted — 20261005080000_convert_doc_questions should have converted or logged them; see its output"
     And the Doc Questions table should still be there
     When the other Doc Question is converted and the retirement migration runs
     Then the database should have no table "doc_questions"

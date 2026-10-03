@@ -63,19 +63,39 @@ end
 
 # ── R5 ── the legacy tables as an environment that hasn't converted still has them (the test schema is
 # already past the drop); the migration then runs against them for real
-Given("an environment still has {int} Doc Questions, {int} of them converted") do |total, converted|
+# The legacy tables as an environment before deploy 2 still has them (the test schema is past the drop),
+# with the columns the converter reads
+def create_legacy_doc_question_tables
   connection = ActiveRecord::Base.connection
   connection.create_table(:doc_questions) do |t|
-    t.bigint :entity_id
+    t.bigint :entity_id, null: false
     t.text :question
+    t.string :document_name
+    t.string :for_class, limit: 25
+    t.string :qtype, limit: 10
+    t.string :response_hint
+    t.string :tags, limit: 100
+    t.bigint :owner_id
+    t.string :owner_type
+    t.timestamps
   end
   connection.create_table(:doc_check_conversion_logs) do |t|
-    t.bigint :doc_question_id
-    t.string :reason
+    t.bigint :entity_id, null: false
+    t.bigint :doc_question_id, null: false
+    t.string :reason, null: false
+    t.timestamps
   end
-  @legacy_question_ids = Array.new(total) do |i|
-    connection.insert("INSERT INTO doc_questions (entity_id, question) VALUES (#{@entity.id}, 'Question #{i + 1}?')")
-  end
+  DocChecks::LegacyConverter::Question.reset_column_information
+  DocChecks::LegacyConverter::ConversionLog.reset_column_information
+end
+
+def insert_legacy_doc_question(attrs)
+  DocChecks::LegacyConverter::Question.create!({ entity_id: @entity.id, for_class: "InvestorKyc" }.merge(attrs)).id
+end
+
+Given("an environment still has {int} Doc Questions, {int} of them converted") do |total, converted|
+  create_legacy_doc_question_tables
+  @legacy_question_ids = Array.new(total) { |i| insert_legacy_doc_question(question: "Question #{i + 1}?", document_name: "CML") }
   @legacy_question_ids.first(converted).each do |id|
     DocCheck.create!(entity: @entity, document_name: "CML", action: "question", look_for: "Converted #{id}?",
                      legacy_doc_question_id: id)

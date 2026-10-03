@@ -3,9 +3,9 @@
 # "Earlier AI answers").
 #
 # Guarded: it refuses to run while any Doc Question has neither been converted into a check
-# (doc_checks.legacy_doc_question_id) nor logged as "not converted" (doc_check_conversion_logs) — run
-# `doc_checks:convert_doc_questions` with EXECUTE=1 on the previous release first. The guard reads with raw
-# SQL: the models are gone in this release.
+# (doc_checks.legacy_doc_question_id) nor logged as "not converted" (doc_check_conversion_logs). The
+# migration before it, 20261005080000_convert_doc_questions, does both in the same deploy; the guard is the
+# safety net. It reads with raw SQL: the models are gone in this release.
 # Reversible as structure only: down re-creates the empty tables and column; data comes back from backup.
 # See openspec/changes/document-checks/design.md (Retirement) and lld.md. Worked examples R4, R5.
 class RetireDocQuestions < ActiveRecord::Migration[8.1]
@@ -28,7 +28,7 @@ class RetireDocQuestions < ActiveRecord::Migration[8.1]
   def up
     # Step 1: nothing unconverted may be dropped (Worked example R5)
     unconverted = self.class.unconverted_count(connection)
-    raise "#{unconverted} Doc Questions are not converted — run doc_checks:convert_doc_questions first" if unconverted.positive?
+    raise "#{unconverted} Doc Questions are not converted — 20261005080000_convert_doc_questions should have converted or logged them; see its output" if unconverted.positive?
 
     # Step 2: the legacy tables and the dead column (Worked example R4)
     drop_table :doc_check_conversion_logs, if_exists: true

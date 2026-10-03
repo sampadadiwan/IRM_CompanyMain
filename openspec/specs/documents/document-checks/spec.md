@@ -306,8 +306,8 @@ user SHALL see or act on another entity's checks, results or attempts.
 - **THEN** no Document checks tab or result is shown
 
 ### Requirement: Converting legacy Doc Questions
-The system SHALL provide a support-run conversion, a dry run by default, that for each entity turns its
-Investor KYC Doc Questions into Document Checks:
+The retirement deploy SHALL convert, in a migration that runs before the legacy tables are dropped, each
+entity's Investor KYC Doc Questions into Document Checks, with no manual step:
 - Extraction questions, and Validation questions whose text starts with "Extract", become Fill in checks;
   other Validation questions become Yes-no questions.
 - The field is taken from "field <name>" in the response hint, or else from the question, resolved against
@@ -315,19 +315,20 @@ Investor KYC Doc Questions into Document Checks:
 - The full question text is kept as the tip.
 
 A question whose document isn't on the entity's KYC lists, whose field can't be resolved, or whose field is
-already used on that document SHALL NOT be converted, and SHALL be listed with the reason. Running it again
-SHALL NOT duplicate checks. Legacy answers SHALL remain viewable on each KYC under "Earlier AI answers".
+already used on that document SHALL NOT be converted, and SHALL be listed with the reason in the deploy
+output; questions for other record types SHALL be listed as not converted. Running it again SHALL NOT
+duplicate checks. Legacy answers SHALL remain viewable on each KYC under "Earlier AI answers".
 
-#### Scenario: Dry run report
-- **WHEN** support runs the conversion without the execute flag for Pravega Ventures
-- **THEN** a report lists each question with its field or the reason it can't convert, and no check is created
+#### Scenario: The deploy converts, then removes
+- **WHEN** the retirement deploy migrates an environment that still has Doc Questions
+- **THEN** each KYC question becomes a check or is reported with its reason, the deploy output lists them per entity, and the legacy tables are then dropped
 
 #### Scenario: Unresolvable field reported
 - **WHEN** a question's hint says "Extract to field mobil_contact" and no such field exists
 - **THEN** it is listed as not converted with "Field mobil_contact not found"
 
-#### Scenario: Execute converts once
-- **WHEN** support runs the conversion with the execute flag twice
+#### Scenario: Converts once
+- **WHEN** the conversion runs twice
 - **THEN** the checks exist once
 
 #### Scenario: Earlier AI answers shown
