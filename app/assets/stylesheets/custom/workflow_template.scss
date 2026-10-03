@@ -782,7 +782,7 @@
   &.wffd-graph {
     --wffd-graph-cols:  4;
     --wffd-graph-gap-x: 48px;
-    --wffd-graph-gap-y: 56px;
+    --wffd-graph-gap-y: 88px;
 
     display: grid;
     grid-template-columns: repeat(var(--wffd-graph-cols), minmax(0, 1fr));
