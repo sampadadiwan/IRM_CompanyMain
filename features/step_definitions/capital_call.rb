@@ -1167,6 +1167,9 @@ Given('I approve the capital call') do
   end
   click_on("Approve")
   click_on("Confirm & Save")
+  # Wait for the redirect back to the approved call. Without this the next step can open the Actions
+  # menu on the old page, which the redirect then replaces — so its links vanish under parallel load.
+  expect(page).to have_content("Capital call was successfully approved.")
 end
 
 Then('I send the capital call notification') do
