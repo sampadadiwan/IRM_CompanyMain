@@ -27,6 +27,10 @@ class NdaConfig < ApplicationRecord
   belongs_to :created_by, class_name: "User", optional: true
   belongs_to :updated_by, class_name: "User", optional: true
 
+  # Changed: Added has_many :nda_acceptances association.
+  # Why: Module 2 LP Acceptance — tracks accept/decline records per NdaConfig.
+  has_many :nda_acceptances, dependent: :destroy
+
   validates :validity_type, inclusion: { in: VALIDITY_TYPES }
   validates :acceptance_method, inclusion: { in: ACCEPTANCE_METHODS }
   validates :validity_days, inclusion: { in: VALIDITY_DAY_OPTIONS }, if: -> { validity_type == "fixed_period" }

@@ -1,0 +1,31 @@
+<%# Minimal layout for NDA acceptance screens (Module 2). %>
+<%# Excludes sidebar, topbar, preloader, searchbar, command palette, %>
+<%# DataTables, AG Grid, PDFTron, Select2, and x-spreadsheet. %>
+<%# Why: NDA acceptance is a standalone screen — LPs see only the NDA document %>
+<%# and accept/decline buttons. No app chrome needed. %>
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-bs-theme="" data-color-theme="Blue_Theme">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= javascript_importmap_tags %>
+
+  <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+  <link rel="stylesheet" href="/modernize/css/styles.css" />
+
+  <title>NDA Acceptance</title>
+</head>
+
+<body>
+  <div class="container py-4">
+    <%= yield %>
+  </div>
+</body>
+
+</html>

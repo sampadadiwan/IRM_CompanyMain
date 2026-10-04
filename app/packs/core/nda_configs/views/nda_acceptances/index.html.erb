@@ -1,0 +1,73 @@
+<%# NDA Acceptance Screen (Module 2) — shown to LPs when accessing an NDA-protected folder. %>
+<%# Renders the NDA PDF in an iframe with accept/decline buttons. %>
+<%# Uses nda_minimal layout (no sidebar, topbar, or heavy JS). %>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
+
+    <%# ① Logo and ② Back to Data Rooms %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <% logo = @nda_config.entity&.logo&.url || "/img/logo_big.png" %>
+        <%= image_tag(logo, class: "img-fluid", style: "max-height: 48px;", alt: @nda_config.entity&.name) %>
+      </div>
+      <%= link_to "Back to Data Rooms", data_rooms_folders_path, class: "btn btn-outline-secondary btn-sm" %>
+    </div>
+
+    <%# ③ Title %>
+    <h3 class="mb-2">Non-Disclosure Agreement</h3>
+
+    <%# ④ Entity and folder context %>
+    <p class="text-muted mb-4">
+      <strong><%= @nda_config.entity&.name %></strong>
+      <% if @folder %>
+        &nbsp;|&nbsp; Folder: <strong><%= @folder.name %></strong>
+      <% end %>
+    </p>
+
+    <%# ⑤ NDA PDF iframe %>
+    <% if @nda_config.nda_document_url %>
+      <div class="border rounded mb-4" style="height: 75vh;">
+        <iframe src="<%= @nda_config.nda_document_url %>" width="100%" height="100%" frameborder="0"
+                title="NDA Document"></iframe>
+      </div>
+    <% end %>
+
+    <%# Accept/Decline form %>
+    <%= form_with url: nda_acceptances_path, method: :post,
+                  data: { controller: "nda-acceptance", turbo: false } do |f| %>
+      <%= hidden_field_tag :nda_config_id, @nda_config.id %>
+      <%= hidden_field_tag :folder_id, @folder&.id %>
+      <%= hidden_field_tag :return_to, @return_to %>
+
+      <%# ⑥ Confirmation checkbox %>
+      <div class="form-check mb-4">
+        <input type="checkbox" class="form-check-input" id="nda_confirm_checkbox"
+               data-nda-acceptance-target="checkbox"
+               data-action="change->nda-acceptance#toggleAccept">
+        <label class="form-check-label" for="nda_confirm_checkbox">
+          I have read and agree to the terms of this Non-Disclosure Agreement
+        </label>
+      </div>
+
+      <%# ⑦ Accept and ⑧ Decline buttons %>
+      <div class="d-flex gap-3 mb-4">
+        <button type="submit" class="btn btn-primary"
+                data-nda-acceptance-target="acceptButton" disabled>
+          Accept
+        </button>
+        <button type="submit" formaction="<%= decline_nda_acceptances_path %>" class="btn btn-outline-danger">
+          Decline
+        </button>
+      </div>
+    <% end %>
+
+    <%# ⑨ Contact email %>
+    <% if @nda_config.contact_email.present? %>
+      <p class="text-muted small">
+        Questions? Contact: <%= mail_to @nda_config.contact_email %>
+      </p>
+    <% end %>
+
+  </div>
+</div>

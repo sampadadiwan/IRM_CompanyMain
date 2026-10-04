@@ -4,6 +4,9 @@ class DocumentsController < ApplicationController
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
   before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list verify_accessibility run_fix]
+  # Changed: Added NDA gate for LP folder access.
+  # Why: Module 2 — LPs must accept an NDA before viewing NDA-protected folder contents.
+  before_action :ensure_nda_accepted, only: [:folder]
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download show_email_list]
   after_action :verify_policy_scoped, only: []
 
@@ -490,6 +493,64 @@ class DocumentsController < ApplicationController
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page, :embed,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag, :approved, :approved_by_id,
                                      :tag_list, :folder_id, :file, :force_esign_order, :as_of, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy], emails: [])
+  end
+
+  # @return [void] NDA gate — redirects LP to acceptance screen if folder has an active NDA
+  #   that the user has not yet accepted at the current version. GP employees are bypassed.
+  # Changed: Added for Module 2 LP Acceptance Flow.
+  # Why: LPs must accept an NDA before viewing NDA-protected folder contents.
+  def ensure_nda_accepted
+    return if params[:folder_id].blank?
+
+    @folder ||= Folder.find(params[:folder_id])
+
+    return unless @folder.in_data_room?
+    return if @folder.entity_id == current_user.entity_id
+
+    nda_config = @folder.effective_nda_config
+    return if nda_config.nil?
+    return unless nda_config.enabled?
+
+    latest = NdaAcceptance
+             .where(nda_config_id: nda_config.id, user_id: current_user.id)
+             .order(created_at: :desc)
+             .limit(1)
+             .first
+
+    return if latest&.accepted?
+
+    nda_url = nda_acceptances_path(
+      nda_config_id: nda_config.id,
+      folder_id: @folder.id,
+      return_to: request.fullpath
+    )
+
+    # Changed: Turbo Frame requests get a Turbo.visit() to break out to full-page navigation.
+    # Why: The folder tree loads documents via Turbo Frame (treeview_controller.js sets
+    #   frame.src). A standard redirect stays inside the frame. Turbo.visit() does a proper
+    #   full-page navigation that preserves session/CSRF state.
+    if request.headers["Turbo-Frame"].present?
+      frame_id = ERB::Util.html_escape(request.headers["Turbo-Frame"])
+      js_url = ERB::Util.json_escape(nda_url)
+      render inline: "<turbo-frame id='#{frame_id}'>" \
+                     "<script>Turbo.visit(\"#{js_url}\", { action: 'advance' });</script>" \
+                     "</turbo-frame>",
+             layout: false
+    else
+      redirect_to nda_url
+    end
+  end
+
+  # @param path [String, nil] The return_to path from params.
+  # @return [String] A validated relative path, or the data rooms fallback.
+  #   Rejects nil, empty, external URLs, and protocol-relative URLs to prevent open redirects.
+  def safe_return_to(path)
+    return data_rooms_folders_path if path.blank?
+    return data_rooms_folders_path unless path.start_with?("/")
+    return data_rooms_folders_path if path.start_with?("//")
+    return data_rooms_folders_path if path.include?("://")
+
+    path
   end
 end
 # rubocop:enable Metrics/ClassLength

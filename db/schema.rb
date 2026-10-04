@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_03_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -41,7 +41,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
-  create_table "account_entries", force: :cascade do |t|
+  create_table "account_entries", primary_key: ["id", "reporting_date"], force: :cascade do |t|
     t.bigint "allocation_run_id"
     t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
     t.bigint "capital_commitment_id"
@@ -59,7 +59,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.bigint "fund_formula_id"
     t.bigint "fund_id", null: false
     t.boolean "generated", default: false
-    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')", stored: false
+    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
+    t.bigint "id", null: false
     t.bigint "import_upload_id"
     t.bigint "investor_id"
     t.json "json_fields"
@@ -639,7 +640,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.decimal "avail_interest_quantity", precision: 10, scale: 2, default: "0.0"
     t.decimal "avail_offer_quantity", precision: 10, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
-    t.datetime "deleted_at"
+    t.timestamp "deleted_at"
     t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
@@ -685,7 +686,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   create_table "approval_responses", force: :cascade do |t|
     t.bigint "approval_id", null: false
     t.datetime "created_at", null: false
-    t.datetime "deleted_at"
+    t.timestamp "deleted_at"
     t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
@@ -922,7 +923,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.bigint "form_type_id"
     t.string "fund_close"
     t.bigint "fund_id", null: false
-    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')", stored: false
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
     t.bigint "import_upload_id"
     t.bigint "investor_id", null: false
     t.bigint "investor_kyc_id"
@@ -1409,7 +1410,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.bigint "entity_id", null: false
     t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "form_type_id"
-    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')", stored: false
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
     t.bigint "import_upload_id"
     t.integer "impressions_count"
     t.string "investor_advisor", limit: 100
@@ -1951,31 +1952,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.index ["owner_type", "owner_id"], name: "index_fees_on_owner"
   end
 
-  create_table "folder_nda_configs", force: :cascade do |t|
-    t.string "acceptance_method", limit: 20, default: "click_through", null: false
-    t.string "contact_email"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.datetime "deleted_at"
-    t.boolean "enabled", default: true, null: false
-    t.bigint "entity_id", null: false
-    t.bigint "folder_id", null: false
-    t.text "nda_document_data"
-    t.text "notification_emails"
-    t.datetime "updated_at", null: false
-    t.bigint "updated_by_id"
-    t.date "validity_date"
-    t.integer "validity_days"
-    t.string "validity_type", limit: 20, default: "until_revoked", null: false
-    t.integer "version", default: 1, null: false
-    t.index ["created_by_id"], name: "index_folder_nda_configs_on_created_by_id"
-    t.index ["deleted_at"], name: "idx_folder_nda_configs_deleted_at"
-    t.index ["entity_id"], name: "index_folder_nda_configs_on_entity_id"
-    t.index ["folder_id"], name: "idx_folder_nda_configs_folder_uniq", unique: true
-    t.index ["folder_id"], name: "index_folder_nda_configs_on_folder_id"
-    t.index ["updated_by_id"], name: "index_folder_nda_configs_on_updated_by_id"
-  end
-
   create_table "folders", force: :cascade do |t|
     t.string "ancestry"
     t.datetime "created_at", null: false
@@ -2014,7 +1990,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.bigint "form_type_id", null: false
     t.boolean "has_attachment", default: false
     t.text "help_text"
-    t.integer "import_upload_id"
+    t.integer "import_upload_id", comment: "ID of the import upload that created or updated this form custom field"
     t.boolean "internal", default: false
     t.string "js_events"
     t.string "label"
@@ -2049,8 +2025,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.string "slug", null: false
     t.integer "sluggable_id", null: false
     t.string "sluggable_type", limit: 50
-    t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true
-    t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type"
+    t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true, length: { slug: 70, scope: 70 }
+    t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type", length: { slug: 140 }
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
   end
 
@@ -2432,7 +2408,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.text "to"
     t.datetime "updated_at", null: false
     t.index ["document_folder_id"], name: "index_incoming_emails_on_document_folder_id"
-    t.index ["entity_id", "internet_message_id", "owner_type", "owner_id"], name: "idx_incoming_emails_dedup", unique: true
+    t.index ["entity_id", "internet_message_id", "owner_type", "owner_id"], name: "idx_incoming_emails_dedup", unique: true, length: { owner_type: 40 }
     t.index ["entity_id"], name: "index_incoming_emails_on_entity_id"
     t.index ["filed_by_user_id"], name: "index_incoming_emails_on_filed_by_user_id"
     t.index ["owner_type", "owner_id"], name: "index_incoming_emails_on_owner"
@@ -3117,6 +3093,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.index ["provider"], name: "index_models_on_provider"
   end
 
+  create_table "nda_acceptances", force: :cascade do |t|
+    t.datetime "accepted_at"
+    t.datetime "created_at", null: false
+    t.datetime "declined_at"
+    t.bigint "entity_id", null: false
+    t.string "ip_address", limit: 45
+    t.bigint "nda_config_id", null: false
+    t.integer "nda_version", default: 1, null: false
+    t.string "status", limit: 20, null: false
+    t.string "user_agent", limit: 500
+    t.bigint "user_id", null: false
+    t.index ["entity_id"], name: "idx_nda_acceptances_entity"
+    t.index ["nda_config_id", "user_id", "created_at"], name: "idx_nda_acceptances_gate_lookup"
+    t.index ["user_id"], name: "idx_nda_acceptances_user"
+  end
+
   create_table "nda_configs", force: :cascade do |t|
     t.string "acceptance_method", limit: 20, default: "click_through", null: false
     t.string "contact_email"
@@ -3165,7 +3157,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
 
   create_table "noticed_events", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.virtual "entity_id", type: :bigint, as: "json_extract(`params`,'$.entity_id')", stored: false
+    t.virtual "entity_id", type: :bigint, as: "json_extract(`params`,'$.entity_id')"
     t.integer "notifications_count"
     t.json "params"
     t.bigint "record_id"
@@ -3957,7 +3949,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
     t.bigint "entity_id", null: false
     t.string "extracted_by", limit: 10, default: "manual", null: false
     t.string "frequency_rrule", limit: 100
-    t.integer "legal_category", default: 2
+    t.integer "legal_category", default: 2, comment: "0=condition_precedent, 1=condition_subsequent, 2=side_letter_obligation"
     t.boolean "mfn_relevant", default: false, null: false
     t.string "mfn_review_status", limit: 25, default: "not_reviewed", null: false
     t.date "next_due_date"
@@ -4325,7 +4317,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
 
   create_table "users", force: :cascade do |t|
     t.boolean "accept_terms", default: false
-    t.datetime "accepted_terms_on"
+    t.timestamp "accepted_terms_on"
     t.boolean "active", default: true
     t.bigint "advisor_entity_id"
     t.string "advisor_entity_roles", limit: 100
@@ -4851,10 +4843,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   add_foreign_key "faq_threads", "users"
   add_foreign_key "favorites", "users"
   add_foreign_key "fees", "entities"
-  add_foreign_key "folder_nda_configs", "entities"
-  add_foreign_key "folder_nda_configs", "folders"
-  add_foreign_key "folder_nda_configs", "users", column: "created_by_id"
-  add_foreign_key "folder_nda_configs", "users", column: "updated_by_id"
   add_foreign_key "folders", "entities"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"
@@ -4977,6 +4965,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
+  add_foreign_key "nda_acceptances", "entities"
+  add_foreign_key "nda_acceptances", "nda_configs"
+  add_foreign_key "nda_acceptances", "users"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
