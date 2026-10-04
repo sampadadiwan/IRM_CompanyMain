@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "capital_distribution.complete_payments"
       self.label = "Mark payments completed"
       self.workflowable_type = "CapitalDistribution"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Mark Payments Completed once the money has been paid out."
+      self.why = "Records that each investor was actually paid; units are redeemed only for completed payments."
+      self.effects = "Payments are marked paid. If the distribution notifies on completion, each investor is emailed their payment notice."
 
       def call(dist)
         total = payments(dist).count

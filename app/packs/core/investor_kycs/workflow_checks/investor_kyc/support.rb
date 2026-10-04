@@ -65,14 +65,6 @@ module WorkflowChecks
         kyc.entity.custom_notification(KYC_REQUIRED_METHOD, for_type: "InvestorKyc")
       end
 
-      # The entity's KYC emails, filtered — the same list the KYC index's "View All Custom
-      # Notifications" item opens. RansackQueryBuilder.single is idx-keyed and so deterministic;
-      # .multiple generates random group keys per call, which would make this link (and so
-      # step_results) differ on every evaluation, turning each page view into a write.
-      def kyc_notifications_path(_kyc)
-        routes.custom_notifications_path(q: RansackQueryBuilder.single("for_type", :eq, "InvestorKyc"))
-      end
-
       # The new-email form, pre-filled for KYC emails, as the KYC index's "Custom KYC Notification" item
       def new_kyc_notification_path(kyc)
         routes.new_custom_notification_path('custom_notification[for_type]': "InvestorKyc",

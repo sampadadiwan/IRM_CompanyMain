@@ -11,6 +11,11 @@ module WorkflowChecks
       self.key = "capital_distribution.generate_notices"
       self.label = "Generate notices"
       self.workflowable_type = "CapitalDistribution"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Generate Documents. Investors whose KYC is not verified are skipped until it is."
+      self.why = "Each notice carries that investor's own amounts, and is the attachment on their email."
+      self.effects = "A PDF notice per investor is saved to the distribution's documents, waiting for approval. No emails are sent."
 
       def call(dist)
         emailable = emailable_payments(dist)

@@ -10,6 +10,11 @@ module WorkflowChecks
       self.key = "capital_distribution.redeem_units"
       self.label = "Redeem units"
       self.workflowable_type = "CapitalDistribution"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Redeem Units."
+      self.why = "Reduces each investor's fund units by the face value redeemed, keeping their holding correct."
+      self.effects = "Units are redeemed from each investor's holding. No emails are sent."
 
       def call(dist)
         redeemable = payments(dist).where(completed: true).where("capital_distribution_payments.cost_of_investment_with_fees_cents > 0")

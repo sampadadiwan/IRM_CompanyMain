@@ -10,6 +10,11 @@ module WorkflowChecks
       self.key = "investor_kyc.clear_aml_match"
       self.label = "Clear AML match"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Review the AML report; if the match is a false positive, override it to No Match."
+      self.why = "A KYC must not be verified while a potential AML match is open."
+      self.effects = "The match is overridden to No Match, recorded against your name. No emails are sent."
 
       def call(kyc)
         return pass(message: "No AML match") if aml_result(kyc) == "no_match" && !kyc.aml_manual_override

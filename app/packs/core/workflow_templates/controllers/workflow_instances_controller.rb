@@ -8,7 +8,7 @@ class WorkflowInstancesController < ApplicationController
   # CapitalDistribution: capital-distribution-journey (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples)
   ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor].freeze
 
-  before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail acknowledge]
+  before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail acknowledge step_info]
 
   # GET /workflow_instances
   # Lists all workflow instances visible to the current user's entity.
@@ -139,6 +139,24 @@ class WorkflowInstancesController < ApplicationController
     else
       redirect_to workflow_instance_path(@instance), alert: result[:errors]
     end
+  end
+
+  # GET /workflow_instances/:id/step_info?position=N
+  # The popup a journey step opens when clicked: what to do, what completing it changes, why it
+  # exists and who on the team is reminded. Read-only — it shows the step's stored result (what the panel shows), it never
+  # re-evaluates. Fetched on click by journey_step_info_controller.js and appended to <body>, outside
+  # the journey frame, so the record's page carries none of this and a live update replacing the
+  # panel can't strand an open modal.
+  def step_info
+    # Same gate as the panel: the journey is visible to whoever can see the record
+    authorize @instance, :show?
+    authorize @instance.workflowable, :show?
+
+    position = params[:position].to_i
+    step = @instance.snapshot_steps.find { |s| s[:position].to_i == position }
+    return head(:not_found) unless step
+
+    render partial: "workflow_instances/step_info", locals: { instance: @instance, record: @instance.workflowable, step: }
   end
 
   # Worked examples H4, X3 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples

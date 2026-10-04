@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "investor_kyc.submit"
       self.label = "Submit KYC"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Wait for the investor, or nudge them with Send KYC Reminder."
+      self.why = "Nothing can be checked until the details are in."
+      self.effects = "When the investor submits, your team is notified. Send KYC Reminder emails the investor again."
 
       def call(kyc)
         return pass(message: "KYC submitted", passed_since: kyc.submitted_at) if submitted?(kyc)

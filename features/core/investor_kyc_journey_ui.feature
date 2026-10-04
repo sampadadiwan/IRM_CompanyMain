@@ -24,7 +24,7 @@ Feature: Investor KYC journey — the KYC page
     When I open the KYC page
     Then the KYC journey panel should be shown
     And the panel should say "Your KYC email \"Complete your KYC for Urban Fund\" will be sent — check it and mark reviewed"
-    And the panel review action "Open KYC emails" should link to the entity's KYC emails
+    And the panel review action "View notification" should open the entity's KYC email in a new tab
     When I click Mark reviewed in the journey panel
     Then the step bar should show:
       | task              | mark |

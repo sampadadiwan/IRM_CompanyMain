@@ -10,6 +10,11 @@ module WorkflowChecks
       self.key = "investor_kyc.verify"
       self.label = "Verify KYC"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Verify."
+      self.why = "Only verified KYCs get call and distribution notices, so this unblocks the investor everywhere."
+      self.effects = "The KYC is verified, so this investor's call and distribution notices are no longer blocked. The investor is not emailed."
       self.closes_journey = true
       self.closing_note = "Verified without this step"
 

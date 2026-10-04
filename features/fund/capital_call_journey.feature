@@ -52,7 +52,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
       | Approve notices  | current | 3 of 3 call notices await approval |
     When the generated call notices are approved
     And the call's journey is evaluated
-    Then the call's journey current task should be "Review email"
+    Then the call's journey current task should be "Review custom notification"
 
   # H5, E28 — approval and sending are picked up without hooks (page view / tick)
   Scenario: Approving and sending the call are picked up by the next evaluation
@@ -84,12 +84,12 @@ Feature: Capital call journey — checks, seeded journeys and launch
     And the call's journey is evaluated
     Then the call's journey should show:
       | task          | status |
-      | Review email  | passed |
+      | Review custom notification | passed |
       | Check preview | passed |
       | Send notices  | passed |
-    And the "Review email" history should record "passed" from "current" by me via "ui"
+    And the "Review custom notification" history should record "passed" from "current" by me via "ui"
     And the "Check preview" history should record "passed" from "current" by me via "ui"
-    And the "Review email" history should have no "skipped" event
+    And the "Review custom notification" history should have no "skipped" event
 
   # H6, H7, E4 — payments, verification, completion without unit prices
   Scenario: Paying and verifying the call completes the journey when there are no unit prices
@@ -144,7 +144,7 @@ Feature: Capital call journey — checks, seeded journeys and launch
     Then the call's journey should show:
       | task             | status | message                                  |
       | Generate notices | na     | This call is set to not notify investors |
-      | Review email     | na     | This call is set to not notify investors |
+      | Review custom notification | na     | This call is set to not notify investors |
       | Send notices     | na     | This call is set to not notify investors |
 
   # E5 — Missing template

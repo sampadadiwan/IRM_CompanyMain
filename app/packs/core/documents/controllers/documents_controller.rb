@@ -380,6 +380,14 @@ class DocumentsController < ApplicationController
     @notification_recipients = @document.notification_recipients
   end
 
+  # WithBulkActions#bulk_actions, plus a marker for the page it redirects back to: an approver sent
+  # here by a journey's "Approve notices" step sees "approval started — close this tab" instead of
+  # the "these still need approval" banner while the job runs (documents/_approval_hint).
+  def bulk_actions
+    super
+    flash[:bulk_approve_started] = true if params[:bulk_action].to_s.casecmp?("approve")
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.

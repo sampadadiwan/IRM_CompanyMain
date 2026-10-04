@@ -14,6 +14,11 @@ module WorkflowChecks
       self.key = "capital_call.create_remittances"
       self.label = "Create remittances"
       self.workflowable_type = "CapitalCall"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Generated calls: Recompute Call creates any missing remittances. Upload calls: upload the remittance sheet from the Remittances tab."
+      self.why = "Everything after this (notices, emails, payments) runs per remittance, so a missing one means an investor is never called."
+      self.effects = "Each investor's remittance (amount and fees) appears on the Remittances tab. No emails are sent."
 
       def call(call)
         call.call_basis == "Upload" ? uploaded(call) : generated(call)
@@ -35,10 +40,12 @@ module WorkflowChecks
         done(call, "#{remittances(call).count} remittances created")
       end
 
+      # Upload calls have no generator, so the way forward is the import page itself — the button goes
+      # straight there rather than to the Remittances tab's Upload / Download menu
       def uploaded(call)
         unless remittances(call).exists?
-          return fail_with(message: "No remittances uploaded yet", action_label: "View remittances",
-                           action_path: call_path(call), action_target: REMITTANCES_TAB)
+          return fail_with(message: "No remittances uploaded yet", action_label: "Upload Remittances",
+                           action_path: upload_remittances_path(call))
         end
 
         uploads = ::ImportUpload.where(id: remittances(call).where.not(import_upload_id: nil).select(:import_upload_id))
@@ -46,8 +53,9 @@ module WorkflowChecks
         # A failed row only counts in failed_row_count — the upload still ends "Completed"
         # (capital-distribution-journey code review)
         if uploads.where.not(status: [nil, "", "Completed"]).or(uploads.where(failed_row_count: 1..)).exists?
-          return fail_with(message: "Remittance upload failed — fix and re-import", action_label: "View remittances",
-                           action_path: call_path(call), action_target: REMITTANCES_TAB)
+          # Re-importing is the fix; the import page lists the earlier upload's errors
+          return fail_with(message: "Remittance upload failed — fix and re-import", action_label: "Upload Remittances",
+                           action_path: upload_remittances_path(call))
         end
 
         done(call, "#{remittances(call).count} remittances uploaded")

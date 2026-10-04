@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "capital_call.add_call_notice_template"
       self.label = "Add call notice template"
       self.workflowable_type = "CapitalCall"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Add a Call Notice template on the fund's page."
+      self.why = "Each investor's notice is generated from this template; without one there is nothing to attach to the email."
+      self.effects = "Nothing changes on the call; the template is used when notices are generated. No emails are sent."
 
       def call(call)
         templates = call.fund.documents.templates.where(owner_tag: "Call Template")

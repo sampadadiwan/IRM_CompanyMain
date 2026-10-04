@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "capital_distribution.email_investors"
       self.label = "Email investors"
       self.workflowable_type = "CapitalDistribution"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Send Payment Notifications."
+      self.why = "Investors learn what they were paid and how it was worked out, with their notice attached."
+      self.effects = "Every subscribed investor is emailed their payment notice. Emails can't be recalled."
 
       def call(dist)
         emailable = emailable_payments(dist)

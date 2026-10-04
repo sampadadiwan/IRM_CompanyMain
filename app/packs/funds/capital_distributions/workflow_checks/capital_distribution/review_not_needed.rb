@@ -1,4 +1,4 @@
-# Skip for Review email / Check preview: no email goes out, or investors have already been emailed
+# Skip for Review custom notification / Check preview: no email goes out, or investors have already been emailed
 # (a review after sending can't change anything).
 # Worked examples E2, E14 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
 module WorkflowChecks

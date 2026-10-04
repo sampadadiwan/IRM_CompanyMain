@@ -8,6 +8,11 @@ module WorkflowChecks
       self.key = "capital_call.approve_call"
       self.label = "Approve call"
       self.workflowable_type = "CapitalCall"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Approve (needs the Approver role)."
+      self.why = "Approval locks the call's figures; notices can only be sent after it."
+      self.effects = "The call is approved and Send Notification is unlocked. No emails are sent; notices go out only on Send."
 
       def call(call)
         unless call.approved

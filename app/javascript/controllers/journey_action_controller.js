@@ -50,6 +50,14 @@ export default class extends Controller {
   // Bring the control into view: open the dropdown holding it (a click on a hidden button still
   // submits, but the user should see what they just set off), then scroll and flash it.
   reveal(control) {
+    // A button on a tab that isn't showing (e.g. Remittances' "Verify Pending Remittances" while
+    // the Notification tab is open): switch to that tab first so the user sees where it is
+    const pane = control.closest(".tab-pane")
+    if (pane && !pane.classList.contains("active") && pane.id) {
+      const tabLink = document.querySelector(`[href="#${pane.id}"], [data-bs-target="#${pane.id}"]`)
+      if (tabLink) window.bootstrap?.Tab?.getOrCreateInstance(tabLink)?.show()
+    }
+
     const menu = control.closest(".dropdown-menu")
     const toggle = menu?.parentElement?.querySelector("[data-bs-toggle='dropdown']")
     if (toggle && !menu.classList.contains("show")) {

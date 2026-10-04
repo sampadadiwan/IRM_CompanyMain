@@ -55,6 +55,21 @@ module WorkflowChecks
         routes.capital_distribution_path(dist)
       end
 
+      # The import page the Payments tab's Upload button opens — keep the params in step with
+      # capital_distribution_payments/_index.html.erb
+      def upload_payments_path(dist)
+        routes.new_import_upload_path('import_upload[owner_id]': dist.id, 'import_upload[owner_type]': "CapitalDistribution",
+                                      'import_upload[import_type]': "CapitalDistributionPayment",
+                                      sample_upload: "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE")
+      end
+
+      # The distribution's own "New Distribution Notification" form (Notification tab → New
+      # Notification) — an override of the payment email for this distribution only
+      def new_distribution_notification_path(dist)
+        routes.new_custom_notification_path('custom_notification[entity_id]': dist.entity_id, 'custom_notification[owner_id]': dist.id,
+                                            'custom_notification[owner_type]': "CapitalDistribution")
+      end
+
       # This distribution's generated notices still awaiting approval, with the Documents screen's
       # approval banner. Plain ransack params, so step_results stay identical between evaluations.
       def pending_notices_path(dist)

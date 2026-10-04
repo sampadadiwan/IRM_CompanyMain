@@ -121,7 +121,7 @@ end
 
 Given("both review tasks are marked reviewed") do
   @journey_record = @capital_call.reload
-  ["Review email", "Check preview"].each do |task|
+  ["Review custom notification", "Check preview"].each do |task|
     instance = journey_instance(@capital_call)
     result = WorkflowAcknowledge.call(instance:, step_position: journey_position(instance, task), user: @user)
     expect(result.success?).to be(true), "#{task}: #{result[:errors]} #{instance.step_results.inspect}"
@@ -253,6 +253,27 @@ Then("the panel should say {string}") do |text|
   expect(page).to have_css("#journey_message", text:)
 end
 
+# The acknowledge step's second button, beside Mark reviewed (#journey_review_action)
+Then("the panel review action {string} should go to {string} in this tab") do |label, path|
+  link = find("#journey_review_action", text: label)
+  expect(URI(link[:href]).path).to eq(path)
+  expect(link[:target]).to be_blank
+  # The record's own override form (the call's or the distribution's), not the fund's
+  query = Rack::Utils.parse_nested_query(URI(link[:href]).query)["custom_notification"]
+  record = instance_variable_get("@#{query['owner_type'].underscore}")
+  expect(query["owner_id"]).to eq(record.id.to_s)
+end
+
+Then("the panel review action {string} should go to the custom notification in a new tab") do |label|
+  link = find("#journey_review_action", text: label)
+  expect(URI(link[:href]).path).to eq(custom_notification_path(@custom_notification))
+  expect(link[:target]).to eq("_blank")
+end
+
+Then("I should see the Mark reviewed button in the journey panel") do
+  expect(page).to have_css("#journey_mark_reviewed")
+end
+
 When("I click Mark reviewed in the journey panel") do
   find("#journey_mark_reviewed").click
 end
@@ -267,7 +288,7 @@ end
 Then("the confirmation should not mention journey steps") do
   within("#ruleValidationModal") do
     expect(page).to have_text("This will approve the capital call")
-    ["Review email", "Check preview", "CFO sign-off"].each { |task| expect(page).not_to have_text(task) }
+    ["Review custom notification", "Check preview", "CFO sign-off"].each { |task| expect(page).not_to have_text(task) }
   end
 end
 

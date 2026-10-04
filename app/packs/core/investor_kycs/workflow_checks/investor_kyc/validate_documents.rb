@@ -10,6 +10,11 @@ module WorkflowChecks
       self.key = "investor_kyc.validate_documents"
       self.label = "Validate documents (AI or Mark reviewed)"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Run the document checks, or check the documents yourself and click Mark reviewed."
+      self.why = "Confirms the documents match what the investor typed in (name, PAN, address)."
+      self.effects = "Records the result of the check. No emails are sent."
 
       def call(kyc)
         assessment = DocChecks::Assessment.new(kyc)

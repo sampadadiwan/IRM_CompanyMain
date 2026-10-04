@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "investor_kyc.upload_documents"
       self.label = "Upload required documents"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Upload the missing documents, or ask the investor to."
+      self.why = "Every document the company requires for this KYC type is needed before it can be verified."
+      self.effects = "The documents are stored on the KYC. No emails are sent."
 
       def call(kyc)
         missing = missing_document_names(kyc)

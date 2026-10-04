@@ -15,6 +15,14 @@ module WorkflowChecks
     class_attribute :closes_journey, instance_writer: false, default: false
     class_attribute :closing_note, instance_writer: false, default: "Done without this step"
 
+    # The step popup's copy (JourneyHelper#journey_step_info), one sentence each:
+    #   how     — what the user does to complete the step
+    #   why     — why the step exists
+    #   effects — what completing it changes, and whether investors are emailed (say so either way)
+    # Fixed text, so it never describes live data — the popup's status and team notifications come
+    # from the step itself. Only checks that decide a step need them; skip checks leave them nil.
+    class_attribute :how, :why, :effects, instance_writer: false
+
     # Returns a WorkflowChecks::Result for the record
     def call(_record)
       raise NotImplementedError, "#{self.class.name} must implement #call(record)"

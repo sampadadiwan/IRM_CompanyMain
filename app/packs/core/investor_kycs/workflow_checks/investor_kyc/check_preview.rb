@@ -14,6 +14,11 @@ module WorkflowChecks
       self.key = "investor_kyc.check_preview"
       self.label = "Preview the email (acknowledge)"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Preview KYC Required Notification, then Mark reviewed."
+      self.why = "Shows the email with this investor's name and link filled in, so a broken link is caught before it is sent."
+      self.effects = "Records who previewed it. No emails are sent."
 
       def call(kyc)
         # full_name is what InvestorKycMailer's "investor_name" placeholder renders, so the panel

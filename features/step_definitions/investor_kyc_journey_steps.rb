@@ -446,10 +446,12 @@ When("I click the panel review action") do
 end
 
 # The email tasks' second buttons go to other screens, so they navigate (no action_target to click)
-Then("the panel review action {string} should link to the entity's KYC emails") do |label|
+# The KYC email itself (not the list of them), opened in a new tab so the journey stays put
+Then("the panel review action {string} should open the entity's KYC email in a new tab") do |label|
   link = find("#journey_review_action", text: label)
   expect(link["data-controller"]).to be_blank
-  expect(link["href"]).to include("/custom_notifications").and include("InvestorKyc")
+  expect(URI(link["href"]).path).to eq(custom_notification_path(@kyc_email))
+  expect(link["target"]).to eq("_blank")
 end
 
 Then("the panel review action {string} should link to the new KYC email form") do |label|

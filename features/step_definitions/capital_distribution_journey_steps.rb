@@ -347,7 +347,7 @@ end
 Given("both distribution review tasks are marked reviewed") do
   @journey_record = @capital_distribution.reload # read by the engine's history / vote steps
   WorkflowEvaluator.for(@journey_record, cause: :progress)
-  ["Review email", "Check preview"].each do |task|
+  ["Review custom notification", "Check preview"].each do |task|
     instance = journey_instance(@capital_distribution)
     result = WorkflowAcknowledge.call(instance:, step_position: journey_position(instance, task), user: @user)
     expect(result.success?).to be(true), "#{task}: #{result[:errors]} #{instance.step_results.inspect}"

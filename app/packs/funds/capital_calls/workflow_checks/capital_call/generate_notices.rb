@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "capital_call.generate_notices"
       self.label = "Generate notices"
       self.workflowable_type = "CapitalCall"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Generate Documents. Investors whose KYC is not verified are skipped until it is."
+      self.why = "Each notice carries that investor's own amount and bank details, and is the attachment on their email."
+      self.effects = "A PDF notice per investor is saved to the call's documents, waiting for approval. No emails are sent."
 
       def call(call)
         notifiable = notifiable_remittances(call)

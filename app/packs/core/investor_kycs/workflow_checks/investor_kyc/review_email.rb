@@ -14,6 +14,11 @@ module WorkflowChecks
       self.key = "investor_kyc.review_email"
       self.label = "Set up KYC email (acknowledge)"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Check the KYC email the investor will receive, then click Mark reviewed."
+      self.why = "It's the investor's first contact about KYC; the company's own email is used, or CapHive's default when there is none."
+      self.effects = "Records who reviewed it. No emails are sent."
 
       def call(kyc)
         notification = kyc_required_notification(kyc)
@@ -23,7 +28,9 @@ module WorkflowChecks
         if notification
           return WorkflowChecks::Result.review(
             message: "Your KYC email \"#{notification.subject}\" will be sent — check it and mark reviewed",
-            action_label: "Open KYC emails", action_path: kyc_notifications_path(kyc)
+            # The notification itself, in a new tab so the journey stays put while it is read
+            # (same as the call's and distribution's "Review custom notification")
+            action_label: "View notification", action_path: routes.custom_notification_path(notification), new_tab: true
           )
         end
 

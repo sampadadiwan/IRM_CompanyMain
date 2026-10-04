@@ -74,8 +74,10 @@
         <% end %>
       </div>
 
-      <%# Step rail: every task by name with its state; the current one stands out %>
-      <div class="cc-rail" id="journey_step_bar">
+      <%# Step rail: every task by name with its state; the current one stands out. Clicking a pill
+          opens its popup (what to do, what happens, why) — fetched on demand, so the page itself
+          carries only each pill's URL (journey_step_info_controller.js). %>
+      <div class="cc-rail" id="journey_step_bar" data-controller="journey-step-info">
         <% steps.each_with_index do |s, idx| %>
           <% view = journey_step_view(s) %>
           <%# The connector into this pill is coloured only when the task before it is done,
@@ -86,7 +88,10 @@
                 data-journey-regressed="<%= s[:regressed] ? "true" : "false" %>"
                 data-bs-toggle="tooltip" data-bs-html="true"
                 data-bs-title="<%= journey_step_tooltip(s) %>"
-                aria-label="<%= journey_step_aria(s) %>">
+                role="button" tabindex="0"
+                data-action="click->journey-step-info#open keydown.enter->journey-step-info#open"
+                data-journey-step-info-url-param="<%= step_info_workflow_instance_path(instance, position: s[:position]) %>"
+                aria-label="<%= journey_step_aria(s) %> — show details">
             <span class="cc-step-dot"><i class="ti <%= view[:icon] %>" aria-hidden="true"></i></span>
             <span class="cc-step-label"><%= s[:name] %></span>
           </span>
@@ -163,7 +168,11 @@
                 set by such checks, so calls' and distributions' review steps render exactly as before.
                 Worked examples E3 — openspec/changes/investor-kyc-journey/design.md#worked-examples %>
             <% if current[:kind] == "acknowledge" && current[:review_action_path].present? %>
+              <%# review_action_new_tab: a page to read and come back from (e.g. the call's custom
+                  notification), so the journey stays open in this tab %>
               <%= link_to current[:review_action_path], class: "btn btn-sm btn-outline-primary px-3 ms-1",
+                    target: ("_blank" if current[:review_action_new_tab]),
+                    rel: ("noopener" if current[:review_action_new_tab]),
                     id: "journey_review_action", data: { turbo_frame: "_top",
                                                          controller: ("journey-action" if current[:review_action_target].present?),
                                                          journey_action_control_value: current[:review_action_target],

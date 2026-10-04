@@ -56,16 +56,16 @@ module JourneyHelper
     JOURNEY_STEP_VIEWS.fetch(step[:status].to_s, JOURNEY_STEP_VIEWS["not_yet"])
   end
 
-  # Tooltip body for one step: its name, what state it is in, and what kind of step it is.
+  # Tooltip body for one step: what state it is in, and what kind of step it is. The step's name is
+  # left out — it is already printed under the pill the tooltip hangs off.
   #
-  # Returns a PLAIN String (never html_safe) whose own markup is literal `<b>`/`<br>` but whose
+  # Returns a PLAIN String (never html_safe) whose own markup is literal `<br>` but whose
   # step-supplied text is already escaped. The view prints it into data-bs-title, so ERB escapes
   # the whole thing once: the browser then hands Bootstrap (data-bs-html="true") our tags as
   # markup and anything that came from the step as text. Marking it html_safe here would let a
   # step name or message inject HTML into the tooltip.
   def journey_step_tooltip(step)
     [
-      "<b>#{h(step[:name])}</b>",
       journey_step_state_line(step),
       JOURNEY_KIND_LABELS[step[:kind].to_s]
     ].compact_blank.join("<br>")
@@ -111,14 +111,92 @@ module JourneyHelper
     interval.positive? && days > interval
   end
 
+  # Sign-off (human) steps have no check, so their popup copy is shared; "why" prefers the step's
+  # own description, which names who signs off and when (e.g. "The CFO signs off before…")
+  JOURNEY_HUMAN_HOW = "The assigned approvers sign off from their email or from the workflow page.".freeze
+  JOURNEY_HUMAN_WHY = "A named person accepts the work so far before the record moves on.".freeze
+  JOURNEY_HUMAN_EFFECTS = "Records the approval and moves the journey on. If earlier work is undone later, sign-offs " \
+                          "are reset and the approvers emailed. Investors are not emailed.".freeze
+
+  # Everything the step popup (workflow_instances/_step_info) shows for one step:
+  #   result  — the step's stored result (what the panel shows; never re-evaluated here)
+  #   status  — "passed" / "current" / "error" / "not_yet" / "na"
+  #   how/why/effects — the check's fixed copy (WorkflowChecks::Base), or the sign-off defaults
+  #   notify  — [[icon, text], ...] built from the step's real settings, so it never promises an
+  #             email the system doesn't send (WorkflowEvaluator#mails, WorkflowAutoReminderJob)
+  def journey_step_info(instance, step)
+    result = (instance.step_result(step[:position]) || {}).with_indifferent_access
+    kind = step[:kind].to_s.presence || "human"
+    check = WorkflowChecks::Registry.fetch(step[:check_key]) if step[:check_key].present? && WorkflowChecks::Registry.registered?(step[:check_key])
+    steps = instance.snapshot_steps
+
+    {
+      name: step[:name], kind:, result:,
+      status: result[:status].presence || "not_yet",
+      how: check&.how || (JOURNEY_HUMAN_HOW if kind == "human"),
+      why: check&.why || journey_step_first_sentence(step[:description]) || (JOURNEY_HUMAN_WHY if kind == "human"),
+      effects: check&.effects || (JOURNEY_HUMAN_EFFECTS if kind == "human"),
+      notify: journey_step_notify_lines(instance, step, kind, steps)
+    }
+  end
+
   private
+
+  # A sign-off step's description opens with who signs off and when ("The CFO signs off before the
+  # call is approved."); what follows is setup advice for admins, which doesn't belong in the popup
+  def journey_step_first_sentence(text)
+    text.to_s.split(/(?<=\.)\s+/).first.presence
+  end
+
+  # "Who's notified" for a step: at most three short lines — when it starts, if it stalls, when done
+  def journey_step_notify_lines(instance, step, kind, steps)
+    lines = []
+    interval = step[:reminder_interval_days].to_i
+    owner = WorkflowAutoReminderJob.owner_for(instance, step) unless kind == "human"
+
+    # When it starts: approvers of a sign-off are emailed; a review step's owner is emailed
+    case kind
+    when "human"
+      approvers = User.where(id: Array(step[:actor_ids])).map(&:full_name)
+      if step[:notify_on_activation] && approvers.any?
+        lines << ["ti-mail", "When it starts: #{approvers.to_sentence} #{approvers.one? ? 'is' : 'are'} emailed to sign off"]
+      elsif approvers.empty?
+        lines << ["ti-user-off", "No approvers yet: edit this step on the journey template to pick them"]
+      end
+    when "acknowledge"
+      lines << ["ti-mail", "When it starts: #{owner.full_name} is emailed to review"] if step[:notify_on_activation] && owner
+    end
+
+    # If it stalls: sign-offs chase the approvers who haven't answered; other steps chase the owner
+    if interval.positive?
+      who = if kind == "human"
+              "approvers who haven't signed off are"
+            else
+              (owner ? "#{owner.full_name} is" : nil)
+            end
+      lines << ["ti-clock", "If it stalls: #{who} reminded every #{pluralize(interval, 'day')}"] if who
+    end
+    lines << ["ti-user-off", "Nobody is reminded: set an owner on the journey template"] if kind != "human" && owner.nil?
+
+    # When done: the next step starts, or the owner hears the journey is complete
+    # (skipping steps that don't apply to this record — they never start)
+    following = steps.find { |s| s[:position].to_i > step[:position].to_i && instance.step_result(s[:position])&.dig("status") != "na" }
+    if following
+      lines << ["ti-arrow-right", "When done: \"#{following[:name]}\" starts"]
+    else
+      last_owner = WorkflowAutoReminderJob.owner_for(instance, step)
+      lines << ["ti-flag", "When done: #{last_owner ? last_owner.full_name : 'the owner'} is emailed that the journey is complete"]
+    end
+    lines
+  end
 
   # The middle tooltip line: what state the step is in, with the pass time when there is one
   def journey_step_state_line(step)
     message = h(step[:message]) if step[:message].present?
 
     case step[:status].to_s
-    when "passed" then [journey_passed_label(step), message].compact.join(" — ")
+    # Done date on its own line, the step's message underneath
+    when "passed" then [journey_passed_label(step), message].compact.join("<br>")
     when "na" then "Not applicable — #{message}"
     when "error" then "Could not be checked — #{message}"
     when "current" then "#{step[:regressed] ? 'Moved back' : 'In progress'} — #{message}"

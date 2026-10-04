@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "capital_distribution.approve_distribution"
       self.label = "Approve distribution"
       self.workflowable_type = "CapitalDistribution"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Approve (needs the Approver role)."
+      self.why = "Approval locks the distribution's figures before money and emails go out."
+      self.effects = "The distribution is approved, so payments can be completed and investors emailed. No emails are sent."
 
       def call(dist)
         unless dist.approved

@@ -8,6 +8,11 @@ module WorkflowChecks
       self.key = "capital_call.approve_notices"
       self.label = "Approve notices"
       self.workflowable_type = "CapitalCall"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Approve them on the Documents screen; Actions → Approve covers the whole list in one go."
+      self.why = "Unapproved notices are never emailed, so this is the last human check on the figures."
+      self.effects = "The notices are marked approved and can be sent. No emails are sent yet."
 
       def call(call)
         notices = generated_notices(call)

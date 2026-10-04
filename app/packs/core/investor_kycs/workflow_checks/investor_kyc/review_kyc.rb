@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "investor_kyc.review_kyc"
       self.label = "Review KYC (acknowledge)"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Check the KYC details and documents, then click Mark reviewed."
+      self.why = "A person looks over the whole KYC before it goes for sign-off."
+      self.effects = "Records who reviewed it. No emails are sent."
 
       def call(kyc)
         WorkflowChecks::Result.review(message: "Check the KYC details and mark reviewed",

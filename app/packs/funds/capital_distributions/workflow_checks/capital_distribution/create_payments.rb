@@ -12,6 +12,11 @@ module WorkflowChecks
       self.key = "capital_distribution.create_payments"
       self.label = "Create payments"
       self.workflowable_type = "CapitalDistribution"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Generated distributions create payments automatically; for uploads, upload the payment sheet from the Payments tab."
+      self.why = "Everything after this (notices, emails, units) runs per payment, so a missing one means an investor is never paid."
+      self.effects = "Each investor's payment appears on the Payments tab. No emails are sent."
 
       def call(dist)
         generated?(dist) ? generated(dist) : uploaded(dist)
@@ -36,10 +41,12 @@ module WorkflowChecks
         done(dist, "#{payment_count(dist)} created")
       end
 
+      # Upload distributions have no generator, so the way forward is the import page itself — the
+      # button goes straight there rather than to the Payments tab's Upload button
       def uploaded(dist)
         unless payments(dist).exists?
-          return fail_with(message: "No payments uploaded yet", action_label: "View payments",
-                           action_path: distribution_path(dist), action_target: PAYMENTS_TAB)
+          return fail_with(message: "No payments uploaded yet", action_label: "Upload Payments",
+                           action_path: upload_payments_path(dist))
         end
 
         uploads = ::ImportUpload.where(id: payments(dist).where.not(import_upload_id: nil).select(:import_upload_id))
@@ -47,8 +54,9 @@ module WorkflowChecks
         # A failed row only counts in failed_row_count: the upload still ends "Completed" (and the
         # journey may be re-checked before the status is saved), so both are checked
         if uploads.where.not(status: [nil, "", "Completed"]).or(uploads.where(failed_row_count: 1..)).exists?
-          return fail_with(message: "Payment upload failed — fix and re-import", action_label: "View payments",
-                           action_path: distribution_path(dist), action_target: PAYMENTS_TAB)
+          # Re-importing is the fix; the import page lists the earlier upload's errors
+          return fail_with(message: "Payment upload failed — fix and re-import", action_label: "Upload Payments",
+                           action_path: upload_payments_path(dist))
         end
 
         done(dist, "#{payment_count(dist)} uploaded")

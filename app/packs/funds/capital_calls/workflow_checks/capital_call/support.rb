@@ -26,6 +26,8 @@ module WorkflowChecks
       ALLOCATE_UNITS_BTN = "capital_call_allocate_units_btn".freeze
       RECOMPUTE_BTN = "capital_call_recompute_fees_btn".freeze
       REMITTANCES_TAB = "#remittances-tab".freeze
+      # The Remittances tab's "Verify Pending Remittances" (capital_remittances/_bulk_actions)
+      BULK_VERIFY_BTN = "capital_remittances_bulk_verify_btn".freeze
       # The Actions menu's "View Generated Notices To Approve" link (opens in a new window)
       VIEW_NOTICES_TO_APPROVE_BTN = "capital_call_view_notices_to_approve_btn".freeze
 
@@ -52,6 +54,20 @@ module WorkflowChecks
 
       def call_path(call)
         routes.capital_call_path(call)
+      end
+
+      # The call's own "New Call Notification" form (Notification tab → New Notification) — an override
+      # of the call notice, reminder and payment emails for this call only
+      def new_call_notification_path(call)
+        routes.new_custom_notification_path('custom_notification[entity_id]': call.entity_id, 'custom_notification[owner_id]': call.id,
+                                            'custom_notification[owner_type]': "CapitalCall")
+      end
+
+      # The import page the Remittances tab's "Upload Remittances" menu item opens — keep the params in
+      # step with capital_remittances/_index.html.erb
+      def upload_remittances_path(call)
+        routes.new_import_upload_path('import_upload[owner_id]': call.id, 'import_upload[owner_type]': "CapitalCall",
+                                      'import_upload[import_type]': "CapitalRemittance", sample_upload: "CAPITAL_REMITTANCE_SAMPLE")
       end
 
       # The same filtered Documents list the call page's "View Generated Documents" opens

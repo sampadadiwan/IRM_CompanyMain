@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "capital_call.send_notices"
       self.label = "Send notices"
       self.workflowable_type = "CapitalCall"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Send Notification."
+      self.why = "The notice is the investor's formal demand for the money; investors with nobody subscribed are flagged on the panel."
+      self.effects = "Every subscribed investor is emailed their notice (and WhatsApp, if enabled). Emails can't be recalled."
 
       def call(call)
         notifiable = notifiable_remittances(call)

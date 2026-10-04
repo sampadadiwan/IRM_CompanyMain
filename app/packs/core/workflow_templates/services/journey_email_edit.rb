@@ -1,4 +1,4 @@
-# An investor email (custom notification) was created, edited or deleted: the journey's "Review email"
+# An investor email (custom notification) was created, edited or deleted: the journey's "Review custom notification"
 # and "Check preview" confirmations no longer cover what investors will receive, so they are reset
 # and the journey re-checked as an undo.
 #

@@ -159,7 +159,7 @@ class WorkflowEvaluator < Trailblazer::Operation
                                       action_target: outcome[:action_target])
         # An acknowledge check's own button beside "Mark reviewed" — only when it asked for one, so
         # other journeys' stored results stay byte-identical (no new nil keys)
-        row.merge!(outcome.slice(:review_action_label, :review_action_path, :review_action_target).compact)
+        row.merge!(outcome.slice(:review_action_label, :review_action_path, :review_action_target, :review_action_new_tab).compact)
         results << row
       end
     end
@@ -314,7 +314,8 @@ class WorkflowEvaluator < Trailblazer::Operation
     if result&.review == :requested
       return { status: "current", message: invalidated_at ? history.last_note(step[:position], "invalidated") : result.message,
                action_label: "Mark reviewed", review_action_label: result.action_label,
-               review_action_path: result.action_path, review_action_target: result.action_target }
+               review_action_path: result.action_path, review_action_target: result.action_target,
+               review_action_new_tab: (true if result.new_tab) }
     end
 
     message = invalidated_at ? history.last_note(step[:position], "invalidated") : "Not confirmed yet"

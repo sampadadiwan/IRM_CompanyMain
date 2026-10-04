@@ -28,7 +28,7 @@ Feature: Capital call journey — the call page
       | Create remittances | ✓    |
       | Generate notices   | ✓    |
       | Approve notices    | ●    |
-      | Review email       | ○    |
+      | Review custom notification | ○    |
     And the panel should say "Approve notices: 2 of 3 call notices await approval"
     And the panel action "View notices to approve" should click "capital_call_view_notices_to_approve_btn"
 
@@ -37,7 +37,30 @@ Feature: Capital call journey — the call page
     Given the call's notices are generated and approved
     When I open the capital call page
     And I click Mark reviewed in the journey panel
-    Then the panel should say "Check preview: Not confirmed yet"
+    Then the panel should say "Check preview: On the Remittances tab, open a remittance's Actions menu and choose Preview Notification"
+
+  # Review custom notification names the call email that will go out and links to it (new tab), or
+  # offers the call's New Call Notification form when there is none; Mark reviewed stays beside it
+  Scenario: Review custom notification with no custom notification offers to create one
+    Given the call's notices are generated and approved
+    When I open the capital call page
+    Then the panel should say "Review custom notification: No custom notification is set up"
+    And the panel review action "New Call Notification" should go to "/custom_notifications/new" in this tab
+    And I should see the Mark reviewed button in the journey panel
+
+  Scenario: Review custom notification shows the call's own notification in a new tab
+    Given the call's notices are generated and approved
+    And there is a custom notification for the capital call with subject "Your capital call" with email_method "notify_capital_remittance"
+    When I open the capital call page
+    Then the panel should say "Call email \"Your capital call\" (set on this call) will be sent"
+    And the panel review action "View notification" should go to the custom notification in a new tab
+
+  # Check preview says where the per-remittance preview is and opens the Remittances tab
+  Scenario: Check preview points at each remittance's Preview Notification
+    Given the call's notices are generated and approved
+    When I open the capital call page
+    And I click Mark reviewed in the journey panel
+    Then the panel review action "Open remittances" should click "#remittances-tab"
 
   # H12 — Advisory only: Approve proceeds with earlier tasks outstanding, and its confirmation
   # doesn't repeat them (the step bar on the page already shows them)
@@ -46,7 +69,7 @@ Feature: Capital call journey — the call page
     When I open the capital call page
     Then the step bar should show:
       | task         | mark |
-      | Review email | ●    |
+      | Review custom notification | ●    |
     When I click Approve in the call's Actions menu
     Then the confirmation should not mention journey steps
     When I confirm the dialog

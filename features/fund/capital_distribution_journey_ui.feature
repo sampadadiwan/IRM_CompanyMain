@@ -30,7 +30,7 @@ Feature: Capital distribution journey — the distribution page
       | Create payments  | ✓    |
       | Generate notices | ✓    |
       | Approve notices  | ●    |
-      | Review email     | ○    |
+      | Review custom notification | ○    |
     And the panel should say "Approve notices: 2 of 3 notices await approval"
     And the panel action "View notices to approve" should click "capital_distribution_view_notices_to_approve_btn"
 
@@ -38,9 +38,19 @@ Feature: Capital distribution journey — the distribution page
   Scenario: Mark reviewed on the page moves the journey on
     Given the distribution's notices are generated and 3 of them is approved
     When I open the distribution's journey page
-    Then the panel should say "Review email"
+    Then the panel should say "Review custom notification: No custom notification is set up"
+    And the panel review action "New Distribution Notification" should go to "/custom_notifications/new" in this tab
     When I click Mark reviewed in the journey panel
-    Then the panel should say "Check preview: Not confirmed yet"
+    Then the panel should say "Check preview: On the Payments tab, open a payment and choose Preview Notification"
+    And the panel review action "Open payments" should click "#payments-tab"
+
+  # Review custom notification names the distribution's own notification and opens it in a new tab
+  Scenario: Review custom notification shows the distribution's own notification in a new tab
+    Given the distribution's notices are generated and 3 of them is approved
+    And there is a custom notification for the capital distribution with subject "Your distribution" with email_method "send_notification"
+    When I open the distribution's journey page
+    Then the panel should say "Distribution email \"Your distribution\" (set on this distribution) will be sent"
+    And the panel review action "View notification" should go to the custom notification in a new tab
 
   # H5 — the panel's Approve runs the Actions menu's Approve and its confirmation (J2.5)
   Scenario: The panel action runs the distribution's own Approve button

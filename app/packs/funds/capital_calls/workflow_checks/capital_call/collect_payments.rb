@@ -13,6 +13,11 @@ module WorkflowChecks
       self.key = "capital_call.collect_payments"
       self.label = "Collect payments"
       self.workflowable_type = "CapitalCall"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Record payments on each remittance, or upload them in bulk from the Remittances tab."
+      self.why = "Tracks what each investor has actually paid against what was called."
+      self.effects = "Each payment updates the remittance's collected amount. Investors aren't emailed until the remittance is verified."
 
       def call(call)
         due = remittances(call).sum("call_amount_cents + other_fee_cents")

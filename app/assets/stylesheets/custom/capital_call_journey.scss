@@ -131,6 +131,14 @@
   &.cc-step--linked::before { background: var(--bs-success, #13deb9); }
 
   &:hover .cc-step-dot { transform: scale(1.12); }
+
+  // Clickable: opens the step's popup (journey_step_info_controller.js)
+  &[role="button"] {
+    cursor: pointer;
+
+    &:hover .cc-step-label { text-decoration: underline; }
+    &:focus-visible { outline: 2px solid var(--bs-primary, #2563eb); outline-offset: 4px; border-radius: 6px; }
+  }
 }
 
 .cc-step-dot {

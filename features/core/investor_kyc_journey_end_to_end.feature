@@ -27,7 +27,7 @@ Feature: Investor KYC journey — end to end, fund user and investor
     When I open the KYC page
     Then the KYC journey panel should be shown
     And the panel should say "Your KYC email \"Complete your KYC for Urban Fund\" will be sent — check it and mark reviewed"
-    And the panel review action "Open KYC emails" should link to the entity's KYC emails
+    And the panel review action "View notification" should open the entity's KYC email in a new tab
     When I click Mark reviewed in the journey panel
     Then the panel should say "Preview the email as"
     And the panel review action "Preview KYC Required Notification" should click "investor_kyc_preview_notify_kyc_required_custom_0_btn"

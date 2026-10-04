@@ -8,6 +8,11 @@ module WorkflowChecks
       self.key = "capital_call.allocate_units"
       self.label = "Allocate units"
       self.workflowable_type = "CapitalCall"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Allocate Units."
+      self.why = "Issues fund units at the call's unit prices: the investor's holding in the fund."
+      self.effects = "Fund units are issued to each investor and show in their holdings. No emails are sent."
 
       def call(call)
         verified = remittances(call).where(verified: true)

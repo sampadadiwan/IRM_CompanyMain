@@ -8,6 +8,11 @@ module WorkflowChecks
       self.key = "investor_kyc.run_aml"
       self.label = "Run AML screening"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Click Generate AML Report."
+      self.why = "Screens the investor against sanctions and watch lists before they are accepted."
+      self.effects = "An AML report is generated and attached to the KYC. The investor is not emailed."
 
       def call(kyc)
         latest = kyc.aml_reports.maximum(:created_at)

@@ -9,6 +9,11 @@ module WorkflowChecks
       self.key = "investor_kyc.send_form"
       self.label = "Send KYC form"
       self.workflowable_type = "InvestorKyc"
+      # What the step popup says (journey_step_info): what to do, why the step exists, and what
+      # completing it changes — including whether anyone outside the team is emailed
+      self.how = "Send the KYC form from the KYC's page, or fill it in yourself and tick complete."
+      self.why = "The investor can't start until they have the link."
+      self.effects = "The investor is emailed a link to fill in the KYC form."
 
       def call(kyc)
         return pass(message: "KYC form sent", passed_since: kyc.link_sent_at) if kyc.link_sent_at.present? || kyc.submission_status != "not_sent"

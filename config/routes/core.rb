@@ -224,6 +224,7 @@ resources :workflow_instances, only: %i[index create show] do
     post :send_reminder       # admin triggers immediate reminder to pending actors
     get  :export_audit_trail  # download full state-change history as CSV
     post :acknowledge         # "Mark reviewed" on a journey's current acknowledge step
+    get  :step_info           # a journey step's popup (what to do, what happens, why)
   end
 
   # Actor responses nested under their instance (no folder nesting)
