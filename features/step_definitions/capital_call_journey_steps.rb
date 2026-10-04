@@ -358,11 +358,14 @@ When("the CFO signs off on the call while the page is open") do
   cfo_sign_off
 end
 
-When("I change the call's percentage called to {string}") do |value|
+# "a colleague": someone other than the user (the CFO here) edits, so the CFO is still emailed about
+# the reset sign-off — WorkflowEvaluator#notify never emails the person who did the undo
+When(/^(I|a colleague) changes? the call's percentage called to "([^"]*)"$/) do |who, value|
   @capital_call.reload.percentage_called = value.to_f
   # A moment later than the sign-off, so "given before the undo started" is unambiguous
   travel 1.second
-  result = CapitalCallUpdate.call(capital_call: @capital_call, current_user: @user)
+  editor = who == "I" ? @user : FactoryBot.create(:user, entity: @entity)
+  result = CapitalCallUpdate.call(capital_call: @capital_call, current_user: editor)
   expect(result.success?).to be(true), @capital_call.errors.full_messages.inspect
 end
 

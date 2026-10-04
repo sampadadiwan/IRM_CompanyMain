@@ -43,9 +43,12 @@ When("the journey for {word} {string} is evaluated") do |type, obj_name|
   WorkflowEvaluator.for(@journey_record, cause: :progress)
 end
 
-When("an undoing action clears flag {string} on the {word} {string} with note {string}") do |flag, type, obj_name, note|
+# "by a colleague": someone other than the user undoes it — the user, not being the one who acted,
+# is still emailed about their own reset sign-off (WorkflowEvaluator#notify skips only the actor)
+When(/^an undoing action( by a colleague)? clears flag "([^"]*)" on the (\w+) "([^"]*)" with note "([^"]*)"$/) do |colleague, flag, type, obj_name, note|
   @journey_record = find_workflowable!(type, obj_name)
-  @journey_record.journey_undo(note:, actor: @user) do
+  actor = colleague ? FactoryBot.create(:user, entity: @entity) : @user
+  @journey_record.journey_undo(note:, actor:) do
     set_journey_flags(@journey_record, [flag], "no")
   end
 end

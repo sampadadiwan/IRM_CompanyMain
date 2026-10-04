@@ -59,7 +59,7 @@ class WorkflowEvaluator < Trailblazer::Operation
   end
 
   # Emails are sent only after the transaction has committed
-  def notify(ctx, instance:, **)
+  def notify(ctx, instance:, actor: nil, **)
     # Open pages showing this record's journey update themselves (e.g. the capital call page's
     # step bar ticks over when notice generation finishes) — only when something actually changed
     broadcast_change(instance) if ctx[:changed]
@@ -67,10 +67,14 @@ class WorkflowEvaluator < Trailblazer::Operation
     ctx[:mails].each do |mail|
       case mail[:type]
       when :activation
-        WorkflowStepActorNotifier.call(instance:, step_position: mail[:position])
+        # The person whose action moved the journey on is already on the page — don't email them
+        WorkflowStepActorNotifier.call(instance:, step_position: mail[:position], except_user_id: actor&.id)
       when :review_needed, :journey_complete
-        owner_mail(instance, mail)
+        owner_mail(instance, mail, actor)
       when :sign_off_reset
+        # Someone who undid work themselves isn't told their own sign-off was reset
+        next if actor && mail[:user_id].to_i == actor.id
+
         user = User.find_by(id: mail[:user_id])
         next unless user
 
@@ -85,11 +89,14 @@ class WorkflowEvaluator < Trailblazer::Operation
 
   # Emails the step's owner — the same person the stalled-step reminder goes to. Nobody resolves
   # (no owner set and no creator on record, or an inactive owner) → no email; the diagram and the
-  # journey panel already show "Owner unavailable" for that case.
-  def owner_mail(instance, mail)
+  # journey panel already show "Owner unavailable" for that case. Nor when the owner is the person
+  # whose action just moved the journey on (e.g. Mark reviewed on one review step making the next
+  # one current) — they are already looking at it.
+  def owner_mail(instance, mail, actor)
     step = instance.snapshot_steps.find { |s| s[:position].to_i == mail[:position] }
     owner = step && WorkflowAutoReminderJob.owner_for(instance, step)
     return unless owner
+    return if actor && owner.id == actor.id
 
     WorkflowNotifier.with(record: instance, entity_id: instance.entity_id, email_method: mail[:type],
                           step_position: mail[:position]).deliver_later(owner)

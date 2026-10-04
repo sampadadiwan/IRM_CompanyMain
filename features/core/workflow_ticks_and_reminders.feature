@@ -100,18 +100,22 @@ Feature: Journey ticks and reminders
     And the investor_kyc "Asha" has flag "flag_1" set
     And the journey for investor_kyc "Asha" is evaluated
     And the actor submits "Approved" on the current step of the investor_kyc "Asha"
-    When an undoing action clears flag "flag_1" on the investor_kyc "Asha" with note "Documents withdrawn"
+    When an undoing action by a colleague clears flag "flag_1" on the investor_kyc "Asha" with note "Documents withdrawn"
     Then the user should receive a sign-off reset email mentioning "Documents withdrawn"
 
   # ── Review needed / journey complete emails, Send email / Send WhatsApp switches ──
   # Every workflow message goes through WorkflowNotifier: logged as a notification, gated by the
   # template's Send email / Send WhatsApp switches, WhatsApp only ever to employees.
 
-  Scenario: The owner is emailed as soon as an acknowledge step needs review
+  # The person whose own click moved the journey on is already on the page, so the next step's
+  # review / sign-off email skips them (WorkflowEvaluator#notify passes the actor through)
+  Scenario: The owner is emailed as soon as an acknowledge step needs review, unless they moved it there
     Given there is a journey template "KYC Journey" with steps:
-      | name      | kind        | check       | owner |
-      | Documents | system      | test.flag_1 |       |
-      | Review    | acknowledge | test.always | admin |
+      | name          | kind        | check       | owner | actors |
+      | Documents     | system      | test.flag_1 |       |        |
+      | Review        | acknowledge | test.always | admin |        |
+      | Second review | acknowledge | test.always | admin |        |
+      | CFO sign-off  | human       |             |       | admin  |
     And the investor_kyc "Asha" has workflow template "KYC Journey"
     And I launch the workflow for investor_kyc "Asha"
     And the journey for investor_kyc "Asha" is evaluated
@@ -120,6 +124,12 @@ Feature: Journey ticks and reminders
     Then the journey current step should be "Review"
     And the user should receive a workflow email starting "Needs your review: Review"
     And the user should have a workflow notification for "review_needed"
+    When I mark step "Review" reviewed on the investor_kyc "Asha"
+    Then the journey current step should be "Second review"
+    And no workflow email starting "Needs your review: Second review" should have been sent
+    When I mark step "Second review" reviewed on the investor_kyc "Asha"
+    Then the journey current step should be "CFO sign-off"
+    And no workflow email starting "Action Required" should have been sent
 
   Scenario: A review step set not to notify on activation sends no review email
     Given there is a journey template "KYC Journey" with steps:

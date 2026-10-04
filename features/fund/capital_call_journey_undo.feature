@@ -23,7 +23,7 @@ Feature: Capital call journey — undoing actions
     Given the Full journey has a "CFO sign-off" approval step before "Approve call"
     And there is a capital call "percentage_called=10"
     And the call is ready for sign-off and the CFO has signed off
-    When I change the call's percentage called to "12"
+    When a colleague changes the call's percentage called to "12"
     Then the call's journey current task should be "Create remittances"
     And the call's journey message for "Create remittances" should be "Remittances were calculated before the call figures changed — recompute"
     And the CFO vote on step "CFO sign-off" should be archived
