@@ -13,6 +13,11 @@ class CapitalCallPolicy < FundBasePolicy
     permissioned_employee?
   end
 
+  # The stats cards frame is part of the show page, so the same people can load it
+  def stats?
+    show?
+  end
+
   def new?
     create?
   end

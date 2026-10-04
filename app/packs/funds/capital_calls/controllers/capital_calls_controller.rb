@@ -3,7 +3,7 @@ class CapitalCallsController < ApplicationController
   include WithJourneyPanel # show's journey evaluation and the journey action
   include ActionView::Helpers::TextHelper # pluralize, for the bulk-confirm flash
 
-  before_action :set_capital_call, only: %i[show journey edit update destroy reminder approve unapprove notify generate_docs allocate_units recompute_fees
+  before_action :set_capital_call, only: %i[show journey stats edit update destroy reminder approve unapprove notify generate_docs allocate_units recompute_fees
                                             confirm_reconciliation_deposit reassign_reconciliation_deposit undo_reconciliation_deposit
                                             confirm_all_exact_reconciliation_deposits]
   before_action :set_workflowable, only: [:show] # runs after set_capital_call so @capital_call is available
@@ -47,6 +47,12 @@ class CapitalCallsController < ApplicationController
   # Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
   def journey
     render_journey_panel(@capital_call)
+  end
+
+  # GET /capital_calls/:id/stats — just the stats cards frame, fetched by the reload_frame broadcast
+  # CapitalRemittancesCountersJob sends once the call's totals are fixed (CapitalCall#broadcast_stats_change)
+  def stats
+    render partial: "capital_calls/stats_frame", locals: { capital_call: @capital_call }
   end
 
   def generate_docs

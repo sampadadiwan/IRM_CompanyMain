@@ -171,6 +171,7 @@ resources :capital_calls do
   patch 'allocate_units', on: :member
   patch 'recompute_fees', on: :member
   get 'journey', on: :member # journey panel only, reloaded in place by real-time updates
+  get 'stats', on: :member # stats cards only, reloaded in place once CapitalRemittancesCountersJob fixes the totals
   post 'confirm_reconciliation_deposit', on: :member
   post 'reassign_reconciliation_deposit', on: :member
   post 'undo_reconciliation_deposit', on: :member

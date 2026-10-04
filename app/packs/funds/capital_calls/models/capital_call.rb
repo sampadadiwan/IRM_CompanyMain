@@ -217,8 +217,83 @@ class CapitalCall < ApplicationRecord
   # Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
   has_journey
 
+  # ── Live refresh of the call page's remittances list and stats cards ──────────────────────────
+  # Remittances are created by CapitalCallJob in the background, and the stats cards read counter
+  # caches that only CapitalRemittancesCountersJob fixes afterwards — so without these broadcasts the
+  # page shows an empty list / old totals until the user reloads it. Both go out on one stream,
+  # [call, :remittances], which show.html.erb subscribes to.
+  #
+  # Like DocChecks::Broadcast, they send a reload_frame action (app/javascript/custom/turbo_stream_actions.js)
+  # rather than rendered HTML: each browser re-fetches the frame as its own user, so Pundit scoping and
+  # the viewer's buttons stay right. Never raises — a cable/Redis hiccup must not fail the job.
+
+  # The lazy remittances frame on the Remittances tab (capital_calls/_details)
+  REMITTANCES_FRAME_ID = "capital_remittances_frame".freeze
+
+  # The frame wrapping the stats cards at the top of the page (capital_calls/_stats_frame)
+  def stats_frame_id
+    "capital_call_#{id}_stats"
+  end
+
+  # Remittances were created or changed. No src: the browser reloads whatever the frame currently
+  # shows, so a status/verified filter the user picked (remittances_controller.js) is kept.
+  def broadcast_remittances_change
+    broadcast_reload_frame(REMITTANCES_FRAME_ID)
+  end
+
+  # The call's rolled-up amounts changed (counters fixed). The stats frame renders without a src on
+  # first load, so the src here is what makes the browser fetch GET /capital_calls/:id/stats.
+  def broadcast_stats_change
+    broadcast_reload_frame(stats_frame_id, src: Rails.application.routes.url_helpers.stats_capital_call_path(self))
+  end
+
+  # ── "Generating remittances… 1,240 of 5,000" while CapitalCallJob runs ──────────────────────
+  # The text is the same for every viewer and has no buttons, so it is broadcast as rendered HTML
+  # (unlike the frames above). It is also kept in the cache so a page opened mid-run shows it
+  # straight away; the expiry clears a line the job never got to clear (a killed worker).
+
+  def remittance_progress_target_id
+    "capital_call_#{id}_remittance_progress"
+  end
+
+  def remittance_progress_cache_key
+    "capital_call:#{id}:remittance_progress"
+  end
+
+  # { done:, total: } while a generation run is going, else nil
+  def remittance_progress
+    Rails.cache.read(remittance_progress_cache_key)
+  end
+
+  def broadcast_remittance_progress(done:, total:)
+    Rails.cache.write(remittance_progress_cache_key, { done:, total: }, expires_in: 1.hour)
+    Turbo::StreamsChannel.broadcast_update_to(self, :remittances, target: remittance_progress_target_id,
+                                                                  partial: "capital_calls/remittance_progress", locals: { done:, total: })
+  rescue StandardError => e
+    Rails.logger.error("CapitalCall##{id} progress broadcast failed: #{e.class} #{e.message}")
+  end
+
+  # The run ended: forget the progress and empty the line on open pages
+  def clear_remittance_progress
+    Rails.cache.delete(remittance_progress_cache_key)
+    Turbo::StreamsChannel.broadcast_update_to(self, :remittances, target: remittance_progress_target_id, html: "")
+  rescue StandardError => e
+    Rails.logger.error("CapitalCall##{id} progress clear failed: #{e.class} #{e.message}")
+  end
+
   # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)
   def allocated_fund_units
     FundUnit.where(owner_type: "CapitalRemittance", owner_id: capital_remittances.select(:id))
+  end
+
+  private
+
+  # Sends the reload_frame stream action to every page showing this call. src is optional:
+  # without one the browser reloads the frame from its current src.
+  def broadcast_reload_frame(target, src: nil)
+    attributes = src ? { src: } : {}
+    Turbo::StreamsChannel.broadcast_action_to(self, :remittances, action: :reload_frame, target:, attributes:)
+  rescue StandardError => e
+    Rails.logger.error("CapitalCall##{id} broadcast to #{target} failed: #{e.class} #{e.message}")
   end
 end

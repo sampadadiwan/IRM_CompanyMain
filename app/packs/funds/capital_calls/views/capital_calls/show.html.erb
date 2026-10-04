@@ -1,5 +1,15 @@
 
-<%= render "/capital_calls/capital_call_stats", capital_call: @capital_call %>
+<%= render "/capital_calls/stats_frame", capital_call: @capital_call %>
+<%# Real-time: CapitalCallJob / CapitalRemittancesCountersJob reload the stats cards above and the
+    Remittances tab when remittances are generated in the background (CapitalCall#broadcast_remittances_change) %>
+<%= turbo_stream_from @capital_call, :remittances %>
+<%# Progress of a remittance generation run: always present so broadcasts have a target; filled
+    from the cache when the page is opened mid-run, emptied by the job when it ends %>
+<div id="<%= @capital_call.remittance_progress_target_id %>" class="px-3">
+  <% if (progress = @capital_call.remittance_progress) %>
+    <%= render "/capital_calls/remittance_progress", done: progress[:done], total: progress[:total] %>
+  <% end %>
+</div>
 
 <div class="container-fluid p-3">
 <%# Capital call journey (step bar + what's needed now); nothing renders for calls without one %>

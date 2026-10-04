@@ -3,7 +3,8 @@ import { Turbo } from "@hotwired/turbo-rails"
 /**
  * <turbo-stream action="reload_frame" target="frame_id" src="/path"></turbo-stream>
  *
- * Reloads a turbo-frame in place from `src`, as its own user. Broadcast instead of replacing the frame
+ * Reloads a turbo-frame in place from `src`, as its own user. `src` is optional: without it the frame
+ * reloads from its current src (so a filter the user applied to it survives). Broadcast instead of replacing the frame
  * with an empty <turbo-frame src>: that blanked the frame until the fetch returned, so the page lost its
  * height and jumped (the Document checks tab did this after every document checked).
  *
@@ -17,7 +18,14 @@ Turbo.StreamActions.reload_frame = function () {
   // Each step: find the frame on this page, if it is showing
   const frame = document.getElementById(this.target)
   const src = this.getAttribute("src")
-  if (!frame || !src) return
+  if (!frame) return
+
+  // No src: reload whatever the frame is showing now, keeping any filter the user applied to it
+  // (the capital call's remittances list — CapitalCall#broadcast_remittances_change)
+  if (!src) {
+    if (frame.getAttribute("src")) frame.reload()
+    return
+  }
 
   // Same source: reload (morphs when refresh="morph"). New source: setting it loads it once.
   if (frame.getAttribute("src") === src) {
