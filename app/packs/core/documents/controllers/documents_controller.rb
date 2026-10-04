@@ -497,8 +497,10 @@ class DocumentsController < ApplicationController
 
   # @return [void] NDA gate — redirects LP to acceptance screen if folder has an active NDA
   #   that the user has not yet accepted at the current version. GP employees are bypassed.
-  # Changed: Added for Module 2 LP Acceptance Flow.
-  # Why: LPs must accept an NDA before viewing NDA-protected folder contents.
+  # Changed: Stakeholder-level gate — resolves investor via InvestorAccess, checks acceptance
+  #   by investor_id instead of user_id. One user's acceptance unlocks all users of that investor.
+  # Why: NDAs are signed between companies. The gate must check whether the user's stakeholder
+  #   (investor) has accepted, not just the individual user.
   def ensure_nda_accepted
     return if params[:folder_id].blank?
 
@@ -511,8 +513,14 @@ class DocumentsController < ApplicationController
     return if nda_config.nil?
     return unless nda_config.enabled?
 
+    investor_ids = InvestorAccess
+                   .where(user_id: current_user.id, entity_id: nda_config.entity_id, approved: true)
+                   .pluck(:investor_id)
+
+    return if investor_ids.empty?
+
     latest = NdaAcceptance
-             .where(nda_config_id: nda_config.id, user_id: current_user.id)
+             .where(nda_config_id: nda_config.id, investor_id: investor_ids)
              .order(created_at: :desc)
              .limit(1)
              .first
@@ -525,20 +533,11 @@ class DocumentsController < ApplicationController
       return_to: request.fullpath
     )
 
-    # Changed: Turbo Frame requests get a Turbo.visit() to break out to full-page navigation.
-    # Why: The folder tree loads documents via Turbo Frame (treeview_controller.js sets
-    #   frame.src). A standard redirect stays inside the frame. Turbo.visit() does a proper
-    #   full-page navigation that preserves session/CSRF state.
-    if request.headers["Turbo-Frame"].present?
-      frame_id = ERB::Util.html_escape(request.headers["Turbo-Frame"])
-      js_url = ERB::Util.json_escape(nda_url)
-      render inline: "<turbo-frame id='#{frame_id}'>" \
-                     "<script>Turbo.visit(\"#{js_url}\", { action: 'advance' });</script>" \
-                     "</turbo-frame>",
-             layout: false
-    else
-      redirect_to nda_url
-    end
+    # Changed: Simple redirect for both regular and Turbo Frame requests.
+    # Why: The NDA acceptance views wrap content in a turbo_frame_tag "documents_frame",
+    #   so Turbo Frame requests render the acceptance screen inside the right pane naturally.
+    #   No need for inline JS breakout — the frame stays intact with sidebar/topbar visible.
+    redirect_to nda_url
   end
 
   # @param path [String, nil] The return_to path from params.

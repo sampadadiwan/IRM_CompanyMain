@@ -3098,6 +3098,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_100000) do
     t.datetime "created_at", null: false
     t.datetime "declined_at"
     t.bigint "entity_id", null: false
+    t.bigint "investor_id", null: false
     t.string "ip_address", limit: 45
     t.bigint "nda_config_id", null: false
     t.integer "nda_version", default: 1, null: false
@@ -3105,7 +3106,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_100000) do
     t.string "user_agent", limit: 500
     t.bigint "user_id", null: false
     t.index ["entity_id"], name: "idx_nda_acceptances_entity"
-    t.index ["nda_config_id", "user_id", "created_at"], name: "idx_nda_acceptances_gate_lookup"
+    t.index ["investor_id"], name: "idx_nda_acceptances_investor"
+    t.index ["nda_config_id", "investor_id", "created_at"], name: "idx_nda_acceptances_gate_lookup"
     t.index ["user_id"], name: "idx_nda_acceptances_user"
   end
 
@@ -4966,6 +4968,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_100000) do
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
   add_foreign_key "nda_acceptances", "entities"
+  add_foreign_key "nda_acceptances", "investors"
   add_foreign_key "nda_acceptances", "nda_configs"
   add_foreign_key "nda_acceptances", "users"
   add_foreign_key "nudges", "entities"
