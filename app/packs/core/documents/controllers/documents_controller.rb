@@ -508,10 +508,10 @@ class DocumentsController < ApplicationController
 
   # @return [void] NDA gate — redirects LP to acceptance screen if folder has an active NDA
   #   that the user has not yet accepted at the current version. GP employees are bypassed.
-  # Changed: Added user-level exemption check before stakeholder acceptance check.
-  # Why: Module 3 GP Dashboard — exempt users bypass the NDA gate entirely, even if their
-  #   stakeholder has not accepted. Gate order: GP bypass → exemption → stakeholder → redirect.
-  # @see NdaExemption
+  # Changed: Stakeholder-level exemption check replaces user-level NdaExemption query.
+  # Why: Per product decision (2026-10-05) — exemption is on InvestorAccess (exempt_from_nda boolean).
+  #   Gate order: GP bypass → stakeholder exemption → stakeholder acceptance → redirect.
+  # @see InvestorAccess#exempt_from_nda
   def ensure_nda_accepted
     return if params[:folder_id].blank?
 
@@ -524,9 +524,9 @@ class DocumentsController < ApplicationController
     return if nda_config.nil?
     return unless nda_config.enabled?
 
-    # Changed: User-level exemption check — exempt users bypass the NDA gate entirely.
-    # Why: GP can exempt specific users (legal counsel, advisors) from the NDA requirement.
-    return if NdaExemption.exists?(nda_config_id: nda_config.id, user_id: current_user.id)
+    # Changed: Stakeholder-level exemption — exempt investors bypass the NDA gate entirely.
+    # Why: Exemption applies to the investor relationship, not individual users.
+    return if InvestorAccess.exists?(user_id: current_user.id, entity_id: nda_config.entity_id, approved: true, exempt_from_nda: true)
 
     investor_ids = InvestorAccess
                    .where(user_id: current_user.id, entity_id: nda_config.entity_id, approved: true)

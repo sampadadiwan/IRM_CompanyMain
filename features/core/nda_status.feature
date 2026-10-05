@@ -91,6 +91,8 @@ Feature: NDA Status Dashboard (Module 3)
     And the NDA status policy should allow index for the GP user
     And the NDA status policy should allow create_exemption for the GP user
     And the NDA status policy should allow destroy_exemption for the GP user
+    And the NDA status policy should allow create_signatory for the GP user
+    And the NDA status policy should allow destroy_signatory for the GP user
 
   # LP users are denied access to the dashboard.
   Scenario: LP user is denied NDA status actions
@@ -102,3 +104,38 @@ Feature: NDA Status Dashboard (Module 3)
   Scenario: Other-entity GP is denied NDA status actions
     Given there is a GP user from a different entity
     Then the NDA status policy should deny summary for the other GP user
+
+  # ── Phase 5: NdaSignatory ──────────────────────────────────────────────────
+
+  # An NdaSignatory record can be created linking a user to an NDA config.
+  Scenario: NdaSignatory stores user and tagged_by
+    Given there is an LP user for the GP entity
+    When the GP tags the LP user as an NDA signatory
+    Then an NDA signatory record should exist for the LP user
+    And the NDA signatory tagged_by should be the GP user
+
+  # Duplicate signatories are prevented by the unique constraint.
+  Scenario: Duplicate NdaSignatory is rejected
+    Given there is an LP user for the GP entity
+    When the GP tags the LP user as an NDA signatory
+    Then creating a duplicate NDA signatory for the LP user should raise an error
+
+  # Deleting an NDA config cascades to its signatories.
+  Scenario: NdaSignatory is destroyed when NdaConfig is destroyed
+    Given there is an LP user for the GP entity
+    When the GP tags the LP user as an NDA signatory
+    And the NDA config is destroyed
+    Then there should be 0 NDA signatories for the LP user
+
+  # Resolver shows nda_tagged true for a signatory user.
+  Scenario: Resolver shows signatory user as nda_tagged
+    Given there is an LP investor "Acme Capital" with approved access to the GP entity
+    And the LP user is tagged as a signatory for the NDA
+    When the resolver resolves NDA status for the folder
+    Then the LP user should be marked as nda_tagged in the resolver result
+
+  # Resolver shows nda_tagged false for a non-signatory user.
+  Scenario: Resolver shows non-signatory user as not nda_tagged
+    Given there is an LP investor "Acme Capital" with approved access to the GP entity
+    When the resolver resolves NDA status for the folder
+    Then the LP user should not be marked as nda_tagged in the resolver result

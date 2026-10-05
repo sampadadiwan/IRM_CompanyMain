@@ -1,8 +1,7 @@
 // NDA Status dashboard Stimulus controller.
-// Handles client-side status filtering, text search, and exemption grant/revoke actions.
-// Changed: New controller for Module 3 GP Dashboard.
-// Why: The dashboard uses a server-rendered HTML table; filtering and search
-//   are client-side to avoid round-trips, while exemption actions hit the server.
+// Handles client-side status filtering, text search, and signatory tag/untag actions.
+// Changed: Removed exemption actions — exemption is now on InvestorAccess (stakeholder-level).
+// Why: Per product decision (2026-10-05) — exemption managed from InvestorAccess form.
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
@@ -40,40 +39,6 @@ export default class extends Controller {
 
   search() {
     this.filterRows()
-  }
-
-  // Grants an NDA exemption for a user. Reloads page on success.
-  async grantExemption(event) {
-    const button = event.currentTarget
-    const userId = button.dataset.userId
-    const userName = button.dataset.userName
-    const reason = prompt(`Reason for exempting ${userName} (optional):`)
-
-    if (reason === null) return
-
-    try {
-      const response = await fetch("/nda_status/exemptions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']").content
-        },
-        body: JSON.stringify({
-          nda_config_id: this.ndaConfigIdValue,
-          user_id: userId,
-          reason: reason
-        })
-      })
-
-      if (response.ok) {
-        window.location.reload()
-      } else {
-        const data = await response.json()
-        alert(data.error || "Failed to create exemption")
-      }
-    } catch (e) {
-      alert("Network error — please try again")
-    }
   }
 
   // Changed: Added tagSignatory action for per-NDA signatory designation.
@@ -139,32 +104,4 @@ export default class extends Controller {
     }
   }
 
-  // Revokes an NDA exemption. Reloads page on success.
-  async revokeExemption(event) {
-    const button = event.currentTarget
-    const exemptionId = button.dataset.exemptionId
-    const userName = button.dataset.userName
-
-    if (!confirm(`Revoke NDA exemption for ${userName}?`)) return
-
-    try {
-      const response = await fetch(`/nda_status/exemptions/${exemptionId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']").content
-        },
-        body: JSON.stringify({ nda_config_id: this.ndaConfigIdValue })
-      })
-
-      if (response.ok) {
-        window.location.reload()
-      } else {
-        const data = await response.json()
-        alert(data.error || "Failed to revoke exemption")
-      }
-    } catch (e) {
-      alert("Network error — please try again")
-    }
-  }
 }

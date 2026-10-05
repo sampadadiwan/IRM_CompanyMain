@@ -1,14 +1,17 @@
 # frozen_string_literal: true
 
 # GP-facing NDA status dashboard controller.
-# Provides a modal summary tab (Turbo Frame), a dedicated AG Grid dashboard page
-# with XLSX export, user-level exemption management, and signatory tagging.
+# Provides a modal summary tab (Turbo Frame), a dedicated dashboard page
+# with XLSX export, and signatory tagging.
+#
+# Changed: Removed exemption actions — exemption is now a boolean on InvestorAccess.
+# Why: Per product decision (2026-10-05) — exemption is stakeholder-level, managed
+#   from InvestorAccess form, not from the NDA dashboard.
 #
 # All actions are restricted to GP employees of the same entity via NdaStatusPolicy.
 #
 # @see NdaStatusPolicy
 # @see NdaStatusResolver
-# @see NdaExemption
 # @see NdaSignatory
 class NdaStatusController < ApplicationController
   before_action :set_nda_config
@@ -49,44 +52,6 @@ class NdaStatusController < ApplicationController
       format.json { render "index" }
       format.xlsx
     end
-  end
-
-  # POST /nda_status/exemptions?nda_config_id=X&user_id=Y&reason=Z
-  # Creates a user-level NDA exemption. Returns JSON for AG Grid row update.
-  # exempted_by_id is set server-side from current_user, never from params.
-  #
-  # @return [void]
-  def create_exemption
-    authorize @nda_config, policy_class: NdaStatusPolicy
-
-    # Changed: exempted_by_id set server-side, not from params.
-    # Why: Security — GP identity must come from session, not user input.
-    exemption = NdaExemption.create!(
-      nda_config_id: @nda_config.id,
-      user_id: params[:user_id],
-      exempted_by_id: current_user.id,
-      reason: params[:reason]
-    )
-
-    render json: { status: "ok", user_id: exemption.user_id, exempt: true }
-  rescue ActiveRecord::RecordInvalid => e
-    render json: { error: e.message }, status: :unprocessable_entity
-  rescue ActiveRecord::RecordNotUnique
-    render json: { error: "User already exempt from this NDA" }, status: :conflict
-  end
-
-  # DELETE /nda_status/exemptions/:id
-  # Revokes a user-level NDA exemption. Returns JSON for AG Grid row update.
-  #
-  # @return [void]
-  def destroy_exemption
-    authorize @nda_config, policy_class: NdaStatusPolicy
-
-    exemption = NdaExemption.find(params[:id])
-    user_id = exemption.user_id
-    exemption.destroy!
-
-    render json: { status: "ok", user_id: user_id, exempt: false }
   end
 
   # POST /nda_status/signatories?nda_config_id=X&user_id=Y

@@ -17,7 +17,6 @@ json.array! @status_data[:investor_rows] do |row|
     json.user_id user_row[:user].id
     json.user_status user_row[:status]
     json.nda_tagged user_row[:nda_tagged]
-    json.exempt user_row[:exempt]
     json.signer user_row[:signer]
 
     # Changed: Added signatory_id for untag action.
@@ -25,12 +24,6 @@ json.array! @status_data[:investor_rows] do |row|
     if user_row[:nda_tagged]
       signatory = NdaSignatory.find_by(nda_config_id: @nda_config.id, user_id: user_row[:user].id)
       json.signatory_id signatory&.id
-    end
-
-    if user_row[:exempt]
-      exemption = NdaExemption.find_by(nda_config_id: @nda_config.id, user_id: user_row[:user].id)
-      json.exemption_id exemption&.id
-      json.exemption_reason exemption&.reason
     end
   end
 end

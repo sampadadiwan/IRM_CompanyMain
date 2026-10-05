@@ -248,6 +248,77 @@ Then("the resolver counters should show exempt {int}") do |count|
   expect(@resolver_result[:counters][:exempt]).to eq(count)
 end
 
+# ── Action steps — NdaSignatory ──────────────────────────────────────────────
+
+# GP tags the LP user as an NDA signatory for the current NDA config.
+# Changed: Added signatory step definitions for Phase 5 scenarios.
+# Why: NDA signatories are now per-NDA (nda_signatories table), need test coverage.
+When("the GP tags the LP user as an NDA signatory") do
+  @nda_signatory = NdaSignatory.create!(
+    nda_config: @nda_config,
+    user: @lp_user,
+    tagged_by: @user
+  )
+end
+
+# Tags the LP user as a signatory — used by resolver scenarios where the investor
+# setup step already created the LP user and investor access.
+Given("the LP user is tagged as a signatory for the NDA") do
+  NdaSignatory.create!(
+    nda_config: @nda_config,
+    user: @lp_user,
+    tagged_by: @user
+  )
+end
+
+# ── Assertion steps — NdaSignatory ──────────────────────────────────────────
+
+# Verifies an NdaSignatory record exists for the LP user.
+Then("an NDA signatory record should exist for the LP user") do
+  record = NdaSignatory.find_by(nda_config: @nda_config, user: @lp_user)
+  expect(record).to be_present
+end
+
+# Verifies the tagged_by is the GP user.
+Then("the NDA signatory tagged_by should be the GP user") do
+  expect(@nda_signatory.tagged_by).to eq(@user)
+end
+
+# Attempts to create a duplicate signatory; expects validation error.
+Then("creating a duplicate NDA signatory for the LP user should raise an error") do
+  expect do
+    NdaSignatory.create!(
+      nda_config: @nda_config,
+      user: @lp_user,
+      tagged_by: @user
+    )
+  end.to raise_error(ActiveRecord::RecordInvalid)
+end
+
+# Verifies signatory count for the LP user.
+Then("there should be {int} NDA signatories for the LP user") do |count|
+  records = NdaSignatory.where(user: @lp_user)
+  expect(records.count).to eq(count)
+end
+
+# Verifies the LP user is marked as nda_tagged in the resolver user rows.
+Then("the LP user should be marked as nda_tagged in the resolver result") do
+  user_row = @resolver_result[:investor_rows]
+    .flat_map { |r| r[:users] }
+    .find { |u| u[:user].id == @lp_user.id }
+  expect(user_row).to be_present, "LP user not found in resolver result"
+  expect(user_row[:nda_tagged]).to be true
+end
+
+# Verifies the LP user is NOT marked as nda_tagged in the resolver user rows.
+Then("the LP user should not be marked as nda_tagged in the resolver result") do
+  user_row = @resolver_result[:investor_rows]
+    .flat_map { |r| r[:users] }
+    .find { |u| u[:user].id == @lp_user.id }
+  expect(user_row).to be_present, "LP user not found in resolver result"
+  expect(user_row[:nda_tagged]).to be false
+end
+
 # ── Assertion steps — Gate exemption check ───────────────────────────────────
 
 # Verifies the NDA exemption check passes for the LP user.

@@ -39,12 +39,11 @@
 
 ## Review Summary
 
-- **Unique index `[nda_config_id, user_id]` on `nda_exemptions`** enforces one-exemption-per-user at the DB level; model validation mirrors it — see [Schema Detail](#schema-detail)
-- **NdaStatusResolver batches four read queries** (AccessRight → investors, InvestorAccess → users, NdaAcceptance → latest per investor, NdaExemption → exempt set) using `pluck` + `where(id: [...])` to avoid N+1 — see [Queries and Indexes](#queries-and-indexes)
-- **AG Grid row grouping vs Turbo Stream conflict**: exemption toggle reloads grid JSON via `fetch` + `gridApi.setRowData()` rather than Turbo Stream DOM replacement, because AG Grid manages its own DOM — see [Controllers, Params and Responses](#controllers-params-and-responses)
-- **NdaReminderJob fires one `NdaReminderNotifier.deliver_later` per user** (not a batch mailer) to match the BaseNotifier pattern — see [Background Jobs](#background-jobs)
-- **Gate exemption check** is a single `NdaExemption.exists?` call inserted before the stakeholder-level check in `DocumentsController#ensure_nda_accepted` — see [Queries and Indexes](#queries-and-indexes)
-- **`exempted_by_id` is set server-side** from `current_user.id`, never from params — see [Security Review](#security-review)
+- **Boolean `exempt_from_nda` on `investor_accesses`** — single `add_column` migration, default false — see [Schema Detail](#schema-detail)
+- **NdaStatusResolver batches three read queries** (InvestorAccess → investors + users + exempt_from_nda, NdaAcceptance → latest per investor, NdaSignatory → signatory user_ids) using `pluck` + `where(id: [...])` to avoid N+1 — see [Queries and Indexes](#queries-and-indexes)
+- **AG Grid row grouping vs Turbo Stream conflict**: signatory toggle reloads grid JSON via `fetch` + `gridApi.setRowData()` rather than Turbo Stream DOM replacement, because AG Grid manages its own DOM — see [Controllers, Params and Responses](#controllers-params-and-responses)
+- **Gate exemption check** is `InvestorAccess.exists?(user_id:, entity_id:, approved: true, exempt_from_nda: true)` inserted before the stakeholder-level check in `DocumentsController#ensure_nda_accepted` — see [Queries and Indexes](#queries-and-indexes)
+- **`tagged_by_id` (for signatories) is set server-side** from `current_user.id`, never from params — see [Security Review](#security-review)
 
 ---
 
@@ -52,46 +51,53 @@
 
 | Boundary | File | New / Modified | Responsibility |
 |---|---|---|---|
-| **Migration** | `db/migrate/YYYYMMDD_create_nda_exemptions.rb` | New | Create `nda_exemptions` table |
-| **Model** | `app/packs/core/nda_configs/models/nda_exemption.rb` | New | NdaExemption AR model, validations, associations |
-| **Model** | `app/packs/core/nda_configs/models/nda_config.rb` | Modified | Add `has_many :nda_exemptions, dependent: :destroy` |
+| **Migration** | `db/migrate/YYYYMMDD_add_exempt_from_nda_to_investor_accesses.rb` | New | Add boolean `exempt_from_nda` column to `investor_accesses` |
+| **Migration** | `db/migrate/YYYYMMDD_create_nda_signatories.rb` | New | Create `nda_signatories` table |
+| **Model** | `app/packs/core/nda_configs/models/nda_signatory.rb` | New | NdaSignatory AR model, validations, associations |
+| **Model** | `app/packs/core/nda_configs/models/nda_config.rb` | Modified | Add `has_many :nda_signatories, dependent: :destroy` |
 | **Service** | `app/packs/core/nda_configs/services/nda_status_resolver.rb` | New | Resolves investor/user status data for a given NDA config + folder |
-| **Controller** | `app/packs/core/nda_configs/controllers/nda_status_controller.rb` | New | `summary`, `index`, `create_exemption`, `destroy_exemption`, `send_reminders` |
+| **Controller** | `app/packs/core/nda_configs/controllers/nda_status_controller.rb` | New | `summary`, `index`, `create_signatory`, `destroy_signatory` |
 | **Policy** | `app/packs/core/nda_configs/policies/nda_status_policy.rb` | New | GP-only, same-entity authorization |
-| **Job** | `app/packs/core/nda_configs/jobs/nda_reminder_job.rb` | New | Dispatches NdaReminderNotifier per user |
-| **Notifier** | `app/packs/core/nda_configs/mailers/nda_reminder_notifier.rb` | New | BaseNotifier subclass for NDA reminders |
-| **Mailer** | `app/packs/core/nda_configs/mailers/nda_reminder_mailer.rb` | New | `send_reminder` email method |
-| **Mailer view** | `app/packs/core/nda_configs/views/nda_reminder_mailer/send_reminder.html.erb` | New | Reminder email template |
 | **View** | `app/packs/core/nda_configs/views/nda_status/_summary.html.erb` | New | Modal Status tab partial (Turbo Frame) |
 | **View** | `app/packs/core/nda_configs/views/nda_status/index.html.erb` | New | Dedicated dashboard page |
 | **View** | `app/packs/core/nda_configs/views/nda_status/index.json.jbuilder` | New | AG Grid JSON data |
 | **View** | `app/packs/core/nda_configs/views/nda_status/index.xlsx.axlsx` | New | XLSX export template |
 | **View** | `app/packs/core/nda_configs/views/nda_configs/_modal.html.erb` | Modified | Enable Status tab, add Turbo Frame lazy-load |
+| **View** | `app/packs/core/documents/views/documents/_index.html.erb` | Modified | Hide NDA Settings on Data Room root (`!@folder.data_room_root?`) |
 | **Gate** | `app/packs/core/documents/controllers/documents_controller.rb` | Modified | Add exemption check before stakeholder check in `ensure_nda_accepted` |
+| **Controller** | `app/packs/core/investor_accesses/controllers/investor_accesses_controller.rb` | Modified | Add `exempt_from_nda` to permitted params |
+| **View** | `app/packs/core/investor_accesses/views/investor_accesses/_form.html.erb` | Modified | Add `exempt_from_nda` checkbox to InvestorAccess form |
 | **Routes** | `config/routes/core.rb` | Modified | Add `nda_status` routes |
 | **Schema** | `db/schema.rb` | Modified | Auto-updated by migration |
 | **Schema** | `db/schema_test.rb` | Modified | Manual sync with schema.rb |
-| **Cucumber** | `features/core/nda_status.feature` | New | Feature file for dashboard, exemptions, reminders, export |
+| **Cucumber** | `features/core/nda_status.feature` | New | Feature file for dashboard, signatories, export |
 | **Steps** | `features/step_definitions/nda_status_steps.rb` | New | Step definitions for nda_status.feature |
 
 **Reviewer checks**
 - [ ] Every class in the design's class diagram has a file here, and nothing here is missing from it
 - [ ] Files follow the pack layout (`app/packs/core/nda_configs/...`) and Packwerk boundaries
-- [ ] Mailer views placed alongside mailer class under `views/nda_reminder_mailer/`
+- [ ] InvestorAccess controller/form changes follow existing `investor_accesses` pack layout
 
 ---
 
 ## Schema Detail
 
-**`nda_exemptions`** (new)
+**`investor_accesses`** (modified — add column)
+
+| Column | Type | Limit | Null | Default | Index / FK | Notes |
+|---|---|---|---|---|---|---|
+| `exempt_from_nda` | boolean | — | no | false | — | Stakeholder-level NDA exemption |
+
+No new indexes needed — the gate exemption check uses the existing composite index on `[entity_id, user_id]` (or equivalent) already present on `investor_accesses`.
+
+**`nda_signatories`** (new)
 
 | Column | Type | Limit | Null | Default | Index / FK | Notes |
 |---|---|---|---|---|---|---|
 | `id` | bigint | — | no | auto | PK | — |
 | `nda_config_id` | bigint | — | no | — | FK → `nda_configs(id)`, part of unique composite | — |
-| `user_id` | bigint | — | no | — | FK → `users(id)`, part of unique composite + standalone idx | The exempted user |
-| `exempted_by_id` | bigint | — | no | — | FK → `users(id)` | GP who granted exemption |
-| `reason` | string | 500 | yes | nil | — | Free-text justification |
+| `user_id` | bigint | — | no | — | FK → `users(id)`, part of unique composite + standalone idx | The designated signatory |
+| `tagged_by_id` | bigint | — | no | — | FK → `users(id)` | GP who designated signatory |
 | `created_at` | datetime(6) | — | no | auto | — | — |
 | `updated_at` | datetime(6) | — | no | auto | — | — |
 
@@ -99,8 +105,8 @@
 
 | Name | Columns | Unique | Purpose |
 |---|---|---|---|
-| `idx_nda_exemptions_config_user` | `[nda_config_id, user_id]` | Yes | Enforces one exemption per user per NDA config; also serves the gate query `exists?(nda_config_id:, user_id:)` |
-| `idx_nda_exemptions_user` | `[user_id]` | No | Audit: "which NDAs is this user exempt from?" |
+| `idx_nda_signatories_config_user` | `[nda_config_id, user_id]` | Yes | Enforces one signatory designation per user per NDA config |
+| `idx_nda_signatories_user` | `[user_id]` | No | Lookup: "which NDAs is this user designated signatory for?" |
 
 **Foreign keys:**
 
@@ -108,27 +114,27 @@
 |---|---|---|
 | `nda_config_id` | `nda_configs(id)` | — (default restrict) |
 | `user_id` | `users(id)` | — (default restrict) |
-| `exempted_by_id` | `users(id)` | — (default restrict) |
+| `tagged_by_id` | `users(id)` | — (default restrict) |
 
-**Migration safety:** New table with zero rows. No lock concerns. Reversible via `drop_table`. Both `schema.rb` and `schema_test.rb` must be updated after migration.
+**Migration safety:** `add_column` on `investor_accesses` is a metadata-only change in MySQL (boolean with default, NOT NULL) — safe on large tables. `nda_signatories` is a new table with zero rows. Both reversible. Both `schema.rb` and `schema_test.rb` must be updated after migration.
 
 **Reviewer checks**
 - [ ] Every foreign key has an index, and every uniqueness rule is enforced by a unique index
-- [ ] Column limits match validation limits (`reason` limit 500 matches model `length: { maximum: 500 }`)
+- [ ] `add_column :investor_accesses, :exempt_from_nda` uses `default: false, null: false`
 - [ ] Migration is reversible and safe on the production table size
-- [ ] `exempted_by_id` FK references `users(id)` not `nda_configs(id)`
+- [ ] `tagged_by_id` FK references `users(id)` not `nda_configs(id)`
 
 ---
 
 ## Method Contracts
 
-**`NdaExemption`** (Model)
+**`NdaSignatory`** (Model)
 
 | Method | Arguments | Returns | Raises | Side effects | Idempotent? |
 |---|---|---|---|---|---|
 | Standard AR (`create!`, `destroy`) | — | record / true | `ActiveRecord::RecordInvalid`, `RecordNotUnique` | DB write | No (create), Yes (destroy) |
 
-Validations: `belongs_to :nda_config`, `belongs_to :user`, `belongs_to :exempted_by, class_name: "User"`. `validates :user_id, uniqueness: { scope: :nda_config_id }`. `validates :reason, length: { maximum: 500 }`.
+Validations: `belongs_to :nda_config`, `belongs_to :user`, `belongs_to :tagged_by, class_name: "User"`. `validates :user_id, uniqueness: { scope: :nda_config_id }`.
 
 **`NdaStatusResolver`** (Service)
 
@@ -138,23 +144,9 @@ Validations: `belongs_to :nda_config`, `belongs_to :user`, `belongs_to :exempted
 
 `StatusData` is an `OpenStruct` or data object with:
 - `counters` → `{ accepted: Integer, pending: Integer, declined: Integer, exempt: Integer }`
-- `investor_rows` → Array of hashes: `{ investor:, status:, signed_by:, signed_at:, users: [{ user:, status:, nda_tagged:, exempt:, signer: }] }`
+- `investor_rows` → Array of hashes: `{ investor:, status:, signed_by:, signed_at:, users: [{ user:, status:, nda_tagged:, signer: }] }`
 
-**`NdaReminderJob`** (Job)
-
-| Method | Arguments | Returns | Raises | Side effects | Idempotent? |
-|---|---|---|---|---|---|
-| `#perform(nda_config_id, user_ids)` | Integer, Array[Integer] | nil | `ActiveRecord::RecordNotFound` (if nda_config deleted) | Enqueues N notifier deliveries | Yes — delivering the same reminder twice is harmless (email, not state change) |
-
-**`NdaReminderNotifier`** (Notifier)
-
-| Method | Arguments | Returns | Raises | Side effects | Idempotent? |
-|---|---|---|---|---|---|
-| `#mailer_name` | — | `NdaReminderMailer` | — | — | — |
-| `#email_method` | — | `:send_reminder` | — | — | — |
-| `#email_data(notification)` | `Noticed::Notification` | Hash with `notification_id`, `user_id`, `entity_id`, `nda_config_id`, `folder_name` | — | — | — |
-
-Follows `BaseNotifier` pattern: `deliver_by :email` with `config.mailer`, `config.method`, `config.params`. `required_param :entity_id`.
+Exempt status is derived at the investor level from `InvestorAccess.exempt_from_nda`, not carried on individual user rows.
 
 **Reviewer checks**
 - [ ] Every raised error is handled by a caller or listed in Error Mapping
@@ -169,11 +161,10 @@ Follows `BaseNotifier` pattern: `deliver_by :email` with `config.mailer`, `confi
 |---|---|---|---|---|
 | `NdaStatusController#summary` | `nda_config_id`, `folder_id` (query) | `summary?` on NdaStatusPolicy | Turbo Frame HTML partial | 403 (policy) / 404 (record not found) |
 | `NdaStatusController#index` | `nda_config_id`, `folder_id` (query) | `index?` on NdaStatusPolicy | HTML / JSON / XLSX via `respond_to` | 403 / 404 |
-| `NdaStatusController#create_exemption` | `nda_config_id`, `user_id`, `reason` | `create_exemption?` on NdaStatusPolicy | JSON `{ status: "ok", user_id:, exempt: true }` | 422 (validation) / 409 (duplicate — unique constraint) |
-| `NdaStatusController#destroy_exemption` | `id` (route) | `destroy_exemption?` on NdaStatusPolicy | JSON `{ status: "ok", user_id:, exempt: false }` | 404 (exemption not found) |
-| `NdaStatusController#send_reminders` | `nda_config_id`, `folder_id` | `send_reminders?` on NdaStatusPolicy | JSON `{ status: "ok", count: N }` | 403 / 422 (no pending investors) |
+| `NdaStatusController#create_signatory` | `nda_config_id`, `user_id` | `create_signatory?` on NdaStatusPolicy | JSON `{ status: "ok", user_id:, signatory: true }` | 422 (validation) / 409 (duplicate — unique constraint) |
+| `NdaStatusController#destroy_signatory` | `id` (route), `nda_config_id` | `destroy_signatory?` on NdaStatusPolicy | JSON `{ status: "ok", user_id:, signatory: false }` | 404 (signatory not found) |
 
-**Exemption toggle uses JSON, not Turbo Stream:** Because AG Grid manages its own DOM, Turbo Stream `replace` cannot target rows inside the grid. Instead, the Exempt/Revoke buttons fire a `fetch` POST/DELETE from a Stimulus controller, receive JSON, and call `gridApi.applyTransaction()` or re-fetch the full JSON + `gridApi.setRowData()` to update the row. This resolves the design's Risk #1 (AG Grid + Turbo Stream conflict).
+**Signatory toggle uses JSON, not Turbo Stream:** Because AG Grid manages its own DOM, Turbo Stream `replace` cannot target rows inside the grid. Instead, the Tag/Untag buttons fire a `fetch` POST/DELETE from a Stimulus controller, receive JSON, and call `gridApi.applyTransaction()` or re-fetch the full JSON + `gridApi.setRowData()` to update the row. This resolves the design's Risk #1 (AG Grid + Turbo Stream conflict).
 
 **`respond_to` in `#index`:**
 ```ruby
@@ -188,12 +179,12 @@ end
 1. `authenticate_user!` (Devise, inherited)
 2. `set_nda_config` — `NdaConfig.find(params[:nda_config_id])`
 3. `authorize @nda_config, policy_class: NdaStatusPolicy` (per-action)
-4. `set_folder` — `Folder.find(params[:folder_id])` (only for `summary`, `index`, `send_reminders`)
+4. `set_folder` — `Folder.find(params[:folder_id])` (only for `summary`, `index`)
 
 **Reviewer checks**
 - [ ] No action without `authorize` / `policy_scope`
-- [ ] Permitted params can't set `entity_id`, `user_id` or other ownership fields (exempted_by_id set server-side)
-- [ ] Exemption create/destroy returns JSON for AG Grid Stimulus controller, not Turbo Stream
+- [ ] Permitted params can't set `entity_id` or other ownership fields (`tagged_by_id` set server-side)
+- [ ] Signatory create/destroy returns JSON for AG Grid Stimulus controller, not Turbo Stream
 - [ ] XLSX format skips pagination
 
 ---
@@ -202,15 +193,13 @@ end
 
 | Where | Query shape | Index used | Rows expected | Preload / batching |
 |---|---|---|---|---|
-| `NdaStatusResolver` — investor universe | `AccessRight.where(owner: folder).flat_map(&:investors)` | `idx_access_rights_owner` (polymorphic) | ≤ 50 per folder | `investors` method on AccessRight handles expansion |
-| `NdaStatusResolver` — users per investor | `InvestorAccess.where(entity_id:, investor_id: investor_ids, approved: true).includes(:user)` | `idx_investor_accesses_entity_investor` | ≤ 500 (all users across all investors) | Single query with `includes(:user)` |
+| `NdaStatusResolver` — investor universe | `InvestorAccess.where(entity_id:, approved: true).includes(:user, :investor)` | `idx_investor_accesses_entity` | ≤ 500 (entity-level) | Single query with `includes(:user, :investor)` |
+| `NdaStatusResolver` — exempt_from_nda | Read from InvestorAccess records already loaded (`exempt_from_nda` boolean) | — (in-memory) | Subset of above | No separate query |
 | `NdaStatusResolver` — NDA tags | From InvestorAccess records above, filter `tag_list.include?("NDA")` | (in-memory filter on loaded records) | Subset of above | No extra query |
 | `NdaStatusResolver` — latest acceptance | `NdaAcceptance.where(nda_config_id:, investor_id: investor_ids).select("DISTINCT ON (investor_id) *").order(:investor_id, created_at: :desc)` | `idx_nda_acceptances_config_investor_created` `[nda_config_id, investor_id, created_at]` | ≤ 50 (one per investor) | Single query. MySQL note: use `GROUP BY investor_id` + `MAX(created_at)` subquery instead of `DISTINCT ON` |
-| `NdaStatusResolver` — exempt users | `NdaExemption.where(nda_config_id:).pluck(:user_id)` | `idx_nda_exemptions_config_user` (leading column) | ≤ 20 | Single pluck |
-| Gate — exemption check | `NdaExemption.exists?(nda_config_id:, user_id:)` | `idx_nda_exemptions_config_user` (exact match on unique composite) | 0 or 1 | Single exists? |
-| `#create_exemption` | `NdaExemption.create!(nda_config_id:, user_id:, exempted_by_id:, reason:)` | Unique index catches duplicates | 1 INSERT | — |
-| `#send_reminders` — pending investors | Reuses resolver data (in-memory filter for `status == "pending"`) | — | — | — |
-| `#send_reminders` — NDA-tagged users | From resolver user data, filter `nda_tagged && !exempt` | — | — | — |
+| `NdaStatusResolver` — signatory user_ids | `NdaSignatory.where(nda_config_id:).pluck(:user_id)` | `idx_nda_signatories_config_user` (leading column) | ≤ 20 | Single pluck |
+| Gate — exemption check | `InvestorAccess.exists?(user_id:, entity_id:, approved: true, exempt_from_nda: true)` | Existing `investor_accesses` entity+user index | 0 or 1 | Single exists? |
+| `#create_signatory` | `NdaSignatory.create!(nda_config_id:, user_id:, tagged_by_id:)` | Unique index catches duplicates | 1 INSERT | — |
 
 **MySQL-specific: latest acceptance per investor**
 
@@ -240,9 +229,8 @@ This is served by the existing index `[nda_config_id, investor_id, created_at]` 
 
 | Operation | Transaction scope | Lock | Race it prevents | Idempotency key |
 |---|---|---|---|---|
-| Create exemption | Single INSERT (implicit AR transaction) | None (unique index) | Duplicate exemption | Unique index `[nda_config_id, user_id]` |
-| Destroy exemption | Single DELETE | None | Double-delete is no-op (`destroy` returns frozen record) | — |
-| Send reminders | Controller resolves users, enqueues one job | None | Double-click → two jobs; mitigated by button disable in Stimulus | — |
+| Create signatory | Single INSERT (implicit AR transaction) | None (unique index) | Duplicate signatory | Unique index `[nda_config_id, user_id]` |
+| Destroy signatory | Single DELETE | None | Double-delete is no-op (`destroy` returns frozen record) | — |
 
 No multi-row writes. No explicit transactions needed.
 
@@ -254,25 +242,16 @@ No multi-row writes. No explicit transactions needed.
 
 ## Background Jobs
 
-| Job | Queue | Trigger | Retry / backoff | Discard on | Concurrency guard | Timeout |
-|---|---|---|---|---|---|---|
-| `NdaReminderJob` | `:default` | `NdaStatusController#send_reminders` | 3, polynomial | `ActiveRecord::RecordNotFound` (NDA config deleted between enqueue and execution) | None (duplicate reminders are harmless emails) | Default (no custom timeout) |
-
-**Job contract:**
-- Receives `nda_config_id` (Integer) and `user_ids` (Array[Integer])
-- Loads `NdaConfig.find(nda_config_id)` → raises `RecordNotFound` if deleted (discarded)
-- Loops through `user_ids`, for each: `User.find(uid)` → `NdaReminderNotifier.with(record: nda_config, entity_id: nda_config.entity_id).deliver_later(user)`
-- Each `deliver_later` enqueues a separate Noticed delivery job (standard Noticed pattern)
+N/A — no background jobs in this module. Bulk reminders are descoped to a separate notifications module.
 
 **Reviewer checks**
-- [ ] A job that runs twice, or out of order, is harmless (yes — sends duplicate email, no state mutation)
-- [ ] Cron entries are registered where they actually run (N/A — not a cron job, triggered by GP action)
+- [ ] N/A
 
 ---
 
 ## External Integrations
 
-N/A — no third-party API calls. All data comes from internal database queries. Email delivery uses the existing Rails mailer infrastructure (ActionMailer + Sidekiq).
+N/A — no third-party API calls. All data comes from internal database queries. No email delivery in this module (reminders descoped).
 
 **Reviewer checks**
 - [ ] N/A
@@ -284,10 +263,9 @@ N/A — no third-party API calls. All data comes from internal database queries.
 | Exception | Raised in | Handled by | User sees | Logged / alerted |
 |---|---|---|---|---|
 | `ActiveRecord::RecordNotFound` | `set_nda_config`, `set_folder` | `ApplicationController` rescue_from | 404 page | Standard Rails 404 log |
-| `ActiveRecord::RecordInvalid` | `NdaExemption.create!` | `create_exemption` rescue block | JSON `{ error: "Validation failed: ..." }` 422 | Warn log with nda_config_id + user_id |
-| `ActiveRecord::RecordNotUnique` | `NdaExemption.create!` (race condition) | `create_exemption` rescue block | JSON `{ error: "User already exempt" }` 409 | Info log (expected race) |
+| `ActiveRecord::RecordInvalid` | `NdaSignatory.create!` | `create_signatory` rescue block | JSON `{ error: "Validation failed: ..." }` 422 | Warn log with nda_config_id + user_id |
+| `ActiveRecord::RecordNotUnique` | `NdaSignatory.create!` (race condition) | `create_signatory` rescue block | JSON `{ error: "User already designated" }` 409 | Info log (expected race) |
 | `Pundit::NotAuthorizedError` | `authorize` in any action | `ApplicationController` rescue_from | 403 page | Standard Pundit denial log |
-| `ActiveRecord::RecordNotFound` | `NdaReminderJob#perform` | `discard_on` | N/A (background) | Sidekiq discarded job log |
 
 **Reviewer checks**
 - [ ] No bare `rescue => e` that swallows errors silently
@@ -302,13 +280,13 @@ N/A — no third-party API calls. All data comes from internal database queries.
 | Authorization | `NdaStatusPolicy` on every action: `curr_role_employee? && nda_config.entity_id == user.entity_id`. Same pattern as `NdaConfigPolicy`. |
 | Tenant isolation | Every query is scoped through `nda_config` → `entity_id`. The resolver takes `nda_config` and `folder` as args (both entity-scoped). No cross-entity data exposure. |
 | Secrets | No secrets involved. No API keys. No file uploads. |
-| Input / output sanitisation | `reason` field is a plain string rendered in HTML via ERB `<%= %>` (auto-escaped). XLSX output uses `axlsx` which does not execute formulas. |
-| Mass assignment | `exempted_by_id` set to `current_user.id` server-side in controller, never from `params`. Only `user_id` and `reason` come from params. |
+| Input / output sanitisation | XLSX output uses `axlsx` which does not execute formulas. No free-text input fields on the dashboard. |
+| Mass assignment | `tagged_by_id` is set server-side from `current_user.id`, never from `params`. Only `user_id` comes from params for signatory actions. `exempt_from_nda` is managed via the InvestorAccess form (standard strong params). |
 | XLSX injection | Cell values are plain strings. No formulas. `axlsx` does not auto-execute. |
 
 **Reviewer checks**
-- [ ] A user from another entity cannot reach any record through any route, job or MCP tool
-- [ ] `exempted_by_id` is never assignable from params
+- [ ] A user from another entity cannot reach any record through any route or MCP tool
+- [ ] `tagged_by_id` is never assignable from params
 
 ---
 
@@ -319,12 +297,12 @@ N/A — no third-party API calls. All data comes from internal database queries.
 | Credentials / env vars | None required |
 | Feature flag | None — the Status tab becomes visible when NDA config exists (already gated by Module 1 rollout) |
 | Cron / schedules | None |
-| Deploy order | Migration (`create_nda_exemptions`) → code deploy → no post-deploy steps |
-| Rollback | Drop `nda_exemptions` table (no data loss concern — starts empty). Remove routes and controller. Re-disable Status tab in modal. Gate reverts to Module 2 behavior (no exemption check). |
+| Deploy order | Migration (`add_exempt_from_nda_to_investor_accesses` + `create_nda_signatories`) → code deploy → no post-deploy steps |
+| Rollback | Remove `exempt_from_nda` column from `investor_accesses`, drop `nda_signatories` table. Remove routes and controller. Re-disable Status tab in modal. Gate reverts to Module 2 behavior (no exemption check). |
 
 **Reviewer checks**
 - [ ] Safe to deploy with the feature unused (yes — Status tab only visible with active NDA config)
-- [ ] Safe to roll back (yes — drop table, revert code)
+- [ ] Safe to roll back (yes — remove column, drop table, revert code)
 
 ---
 
@@ -332,16 +310,16 @@ N/A — no third-party API calls. All data comes from internal database queries.
 
 | Feature file | Stubs / fixtures | Factories | New step definitions |
 |---|---|---|---|
-| `features/core/nda_status.feature` | None (no external services) | Entity, Folder, NdaConfig, Investor, User, InvestorAccess, AccessRight, NdaAcceptance, NdaExemption | `nda_status_steps.rb` — "I visit the NDA status dashboard", "I click the Status tab", "I exempt user {string}", "I revoke exemption for user {string}", "I send NDA reminders", "I should see {int} accepted investors", "the XLSX should contain {int} rows", "user {string} should receive a reminder email" |
-| (reuses) | — | — | Existing steps from `nda_config_steps.rb` (entity/folder/NDA setup), `nda_acceptance_steps.rb` (acceptance records), `investor_access_steps.rb` (InvestorAccess with NDA tag) |
+| `features/core/nda_status.feature` | None (no external services) | Entity, Folder, NdaConfig, Investor, User, InvestorAccess, AccessRight, NdaAcceptance, NdaSignatory | `nda_status_steps.rb` — "I visit the NDA status dashboard", "I click the Status tab", "I tag user {string} as signatory", "I remove signatory tag for user {string}", "I should see {int} accepted investors", "the XLSX should contain {int} rows" |
+| (reuses) | — | — | Existing steps from `nda_config_steps.rb` (entity/folder/NDA setup), `nda_acceptance_steps.rb` (acceptance records), `investor_access_steps.rb` (InvestorAccess with NDA tag and exempt_from_nda) |
 
 **Test data setup pattern** (matches design Worked Examples):
 - Entity "Alpha Ventures" with GP Admin
 - Folder "Fund Alpha Docs" with NDA-A (enabled, click_through, until_revoked)
 - 3 investors (Acme Capital, Beta Holdings, Gamma Fund) with AccessRight to folder
-- Users per investor with InvestorAccess (approved, NDA-tagged where specified)
+- Users per investor with InvestorAccess (approved, NDA-tagged where specified, exempt_from_nda where specified)
 - NdaAcceptance records for Acme (accepted) and Gamma (declined)
-- NdaExemption for Eve (Acme) in exemption test scenarios
+- NdaSignatory records for designated signatories in signatory test scenarios
 
 ---
 
@@ -349,10 +327,10 @@ N/A — no third-party API calls. All data comes from internal database queries.
 
 | Rule | Applies? | How it is met |
 |---|---|---|
-| No `blank?`/`present?` on relations; use `exists?`/`none?` | Applies | Gate uses `NdaExemption.exists?(...)`; resolver uses `any?` / `none?` on preloaded arrays, not relation checks |
-| Dedup in SQL (`distinct.pluck`), batch bulk operations (`find_each`/`in_batches`) | Applies | Latest acceptance uses `GROUP BY` + `MAX`; investor expansion already batched in `AccessRight#investors`; reminder job loops a bounded array (not find_each — user_ids already resolved) |
-| Select only needed columns when loading many records; no speculative `includes` | Applies | `InvestorAccess` query uses `includes(:user)` — needed for every row; `NdaExemption.pluck(:user_id)` selects only the needed column |
-| Screen dates via `l(...)`; emails render `Mon dd, yyyy` via `EmailDateLocalization` | Applies | Signed dates in HTML/JSON formatted via `l(date, format: :short)`; email template uses `EmailDateLocalization` for reminder date |
+| No `blank?`/`present?` on relations; use `exists?`/`none?` | Applies | Gate uses `InvestorAccess.exists?(...)`; resolver uses `any?` / `none?` on preloaded arrays, not relation checks |
+| Dedup in SQL (`distinct.pluck`), batch bulk operations (`find_each`/`in_batches`) | Applies | Latest acceptance uses `GROUP BY` + `MAX`; investor expansion already batched in InvestorAccess query |
+| Select only needed columns when loading many records; no speculative `includes` | Applies | `InvestorAccess` query uses `includes(:user, :investor)` — needed for every row; exempt_from_nda read from InvestorAccess records already loaded |
+| Screen dates via `l(...)`; emails render `Mon dd, yyyy` via `EmailDateLocalization` | Applies | Signed dates in HTML/JSON formatted via `l(date, format: :short)` |
 | Date inputs use `f.date_field` / `date_field_tag` | N/A | No date input fields in this feature |
 | Every query entity-scoped; Pundit `authorize`/`policy_scope` on every action | Applies | All queries scoped via `nda_config.entity_id`; `authorize` called in every controller action via `NdaStatusPolicy` |
 | MCP tool surfaces changed only via the ontology YAML | N/A | No MCP tools added in this module |

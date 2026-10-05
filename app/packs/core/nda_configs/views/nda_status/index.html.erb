@@ -119,15 +119,16 @@
           <%# Collapsible user detail rows %>
           <% if row[:users].present? %>
             <tr class="collapse" id="investor_users_<%= row[:investor].id %>">
-              <td colspan="6" class="p-0">
-                <table class="table table-sm mb-0 ms-4" style="width: calc(100% - 2rem);">
+              <%# Changed: Added bg-light background and left accent border to nested user table.
+                   Why: Without visual separation the user rows blended into investor rows. %>
+              <td colspan="6" class="p-0 bg-light" style="border-left: 3px solid #f0ad4e;">
+                <table class="table table-sm mb-0 ms-4 bg-light" style="width: calc(100% - 2rem);">
                   <thead class="table-light">
                     <tr>
                       <th>User Name</th>
                       <th>Email</th>
                       <th>User Status</th>
                       <th>Signatory</th>
-                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -136,20 +137,14 @@
                         <td><%= user_row[:user].full_name %></td>
                         <td><%= user_row[:user].email %></td>
                         <td>
-                          <% user_badge = case user_row[:status]
-                                          when "Signer" then "primary"
-                                          when "Exempt" then "info"
-                                          else nil
-                                          end %>
-                          <% if user_badge %>
-                            <span class="badge bg-<%= user_badge %>-subtle text-<%= user_badge %>"><%= user_row[:status] %></span>
+                          <% if user_row[:status] == "Signer" %>
+                            <span class="badge bg-primary-subtle text-primary"><%= user_row[:status] %></span>
                           <% else %>
                             <%= user_row[:status] %>
                           <% end %>
                         </td>
-                        <%# Changed: Signatory badge with Tag/Untag button replaces static NDA tag badge.
-                             Why: Per-NDA signatory designation (nda_signatories table) replaces
-                             entity-wide InvestorAccess tag_list. GP can tag/untag from dashboard. %>
+                        <%# Changed: Signatory badge with Tag/Untag button.
+                             Why: Per-NDA signatory designation (nda_signatories table). %>
                         <td>
                           <% if user_row[:nda_tagged] %>
                             <span class="badge bg-secondary-subtle text-secondary me-1">Signatory</span>
@@ -166,26 +161,6 @@
                                     data-user-id="<%= user_row[:user].id %>"
                                     data-user-name="<%= user_row[:user].full_name %>">
                               <i class="ti ti-tag me-1"></i> Tag
-                            </button>
-                          <% end %>
-                        </td>
-                        <td>
-                          <% if user_row[:exempt] %>
-                            <%# Revoke exemption button %>
-                            <% exemption = NdaExemption.find_by(nda_config_id: nda_config.id, user_id: user_row[:user].id) %>
-                            <button class="btn btn-outline-danger btn-sm"
-                                    data-action="click->nda-status#revokeExemption"
-                                    data-exemption-id="<%= exemption&.id %>"
-                                    data-user-name="<%= user_row[:user].full_name %>">
-                              <i class="ti ti-shield-off me-1"></i> Revoke Exempt
-                            </button>
-                          <% else %>
-                            <%# Grant exemption button %>
-                            <button class="btn btn-outline-info btn-sm"
-                                    data-action="click->nda-status#grantExemption"
-                                    data-user-id="<%= user_row[:user].id %>"
-                                    data-user-name="<%= user_row[:user].full_name %>">
-                              <i class="ti ti-shield-check me-1"></i> Exempt
                             </button>
                           <% end %>
                         </td>

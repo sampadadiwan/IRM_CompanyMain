@@ -226,13 +226,11 @@ resources :nda_acceptances, controller: "nda_acceptances", only: %i[index create
   post :decline, on: :collection
 end
 
-# Changed: Added NDA status dashboard routes for Module 3 GP Dashboard.
-# Why: GP-facing status view, exemption management, and export.
-#   Standalone routes — nda_config_id and folder_id passed as query params.
+# Changed: NDA status dashboard routes — removed exemption routes.
+# Why: Exemption is now a boolean on InvestorAccess (stakeholder-level),
+#   managed from InvestorAccess form, not from the NDA dashboard.
 get  "nda_status/summary",       controller: "nda_status", action: :summary, as: :nda_status_summary
 get  "nda_status",               controller: "nda_status", action: :index, as: :nda_status
-post "nda_status/exemptions",    controller: "nda_status", action: :create_exemption, as: :nda_status_exemptions
-delete "nda_status/exemptions/:id", controller: "nda_status", action: :destroy_exemption, as: :nda_status_exemption
 # Changed: Added signatory routes for tag/untag actions.
 # Why: Per-NDA signatory designation replaces entity-wide InvestorAccess tag_list.
 post   "nda_status/signatories",     controller: "nda_status", action: :create_signatory, as: :nda_status_signatories

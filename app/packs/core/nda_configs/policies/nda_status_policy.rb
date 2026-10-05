@@ -17,18 +17,8 @@ class NdaStatusPolicy < ApplicationPolicy
     gp_same_entity?
   end
 
-  # @return [Boolean] GP can mark a user as exempt from the NDA
-  def create_exemption?
-    gp_same_entity?
-  end
-
-  # @return [Boolean] GP can revoke a user's exemption
-  def destroy_exemption?
-    gp_same_entity?
-  end
-
-  # Changed: Added signatory policy methods.
-  # Why: GP can tag/untag users as NDA signatories from the dashboard.
+  # Changed: Removed exemption policy methods — exemption is now on InvestorAccess.
+  # Why: Per product decision (2026-10-05) — stakeholder-level exemption.
 
   # @return [Boolean] GP can tag a user as a designated NDA signatory
   def create_signatory?

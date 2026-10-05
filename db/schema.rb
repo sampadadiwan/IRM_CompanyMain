@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2636,6 +2636,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_100000) do
     t.string "email"
     t.boolean "email_enabled", default: true
     t.integer "entity_id"
+    t.boolean "exempt_from_nda", default: false, null: false
     t.string "first_name"
     t.bigint "form_type_id"
     t.integer "granted_by"
@@ -3200,6 +3201,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_100000) do
     t.index ["exempted_by_id"], name: "fk_rails_5f97b1d2e6"
     t.index ["nda_config_id", "user_id"], name: "idx_nda_exemptions_config_user", unique: true
     t.index ["user_id"], name: "idx_nda_exemptions_user"
+  end
+
+  create_table "nda_signatories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "nda_config_id", null: false
+    t.bigint "tagged_by_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["nda_config_id", "user_id"], name: "idx_nda_signatories_config_user", unique: true
+    t.index ["tagged_by_id"], name: "fk_rails_5f7e75e570"
+    t.index ["user_id"], name: "idx_nda_signatories_user"
   end
 
   create_table "notes", force: :cascade do |t|
@@ -4327,68 +4339,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_100000) do
     t.index ["portfolio_report_extract_id"], name: "index_tear_sheet_presentations_on_portfolio_report_extract_id", unique: true
   end
 
-  create_table "template_authoring_runs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.text "error"
-    t.integer "max_rounds", default: 5, null: false
-    t.bigint "primary_proof_document_id"
-    t.bigint "primary_sample_id", null: false
-    t.string "primary_sample_type", null: false
-    t.bigint "requested_by_id", null: false
-    t.bigint "result_document_id"
-    t.integer "round", default: 0, null: false
-    t.bigint "second_proof_document_id"
-    t.bigint "second_sample_id"
-    t.string "second_sample_type"
-    t.string "source_checksum", limit: 64
-    t.bigint "source_document_id", null: false
-    t.string "state", limit: 20, default: "analysing", null: false
-    t.bigint "support_agent_id", null: false
-    t.string "template_type", limit: 40, null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id", "state"], name: "index_template_authoring_runs_on_entity_id_and_state"
-    t.index ["entity_id"], name: "index_template_authoring_runs_on_entity_id"
-    t.index ["primary_proof_document_id"], name: "idx_tar_on_primary_proof"
-    t.index ["primary_sample_type", "primary_sample_id"], name: "idx_tar_on_primary_sample"
-    t.index ["requested_by_id"], name: "index_template_authoring_runs_on_requested_by_id"
-    t.index ["result_document_id"], name: "idx_tar_on_result_document"
-    t.index ["second_proof_document_id"], name: "idx_tar_on_second_proof"
-    t.index ["second_sample_type", "second_sample_id"], name: "idx_tar_on_second_sample"
-    t.index ["source_document_id"], name: "index_template_authoring_runs_on_source_document_id"
-    t.index ["support_agent_id"], name: "index_template_authoring_runs_on_support_agent_id"
-  end
-
-  create_table "template_brackets", force: :cascade do |t|
-    t.decimal "ai_confidence", precision: 5, scale: 4
-    t.datetime "answered_at"
-    t.bigint "answered_by_id"
-    t.string "consistency_verdict", limit: 20
-    t.text "context_sentence"
-    t.datetime "created_at", null: false
-    t.string "exercised_by", limit: 20
-    t.string "expected_meaning", limit: 500
-    t.string "expression"
-    t.string "kind", limit: 20
-    t.json "locations", null: false
-    t.string "normalised_text", null: false
-    t.integer "occurrence_count", default: 0, null: false
-    t.text "question"
-    t.string "raw_text", limit: 500, null: false
-    t.text "reason"
-    t.json "rejected_expressions"
-    t.text "rendered_value"
-    t.string "review_status", limit: 20, default: "proposed", null: false
-    t.text "second_rendered_value"
-    t.json "shown_values"
-    t.bigint "template_authoring_run_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["answered_by_id"], name: "idx_tb_on_answered_by"
-    t.index ["template_authoring_run_id", "normalised_text"], name: "idx_tb_unique_text_per_run", unique: true
-    t.index ["template_authoring_run_id", "review_status"], name: "idx_tb_on_run_and_review_status"
-    t.index ["template_authoring_run_id"], name: "idx_tb_on_run"
-  end
-
   create_table "ticker_feeds", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "currency", limit: 3
@@ -5126,6 +5076,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_100000) do
   add_foreign_key "nda_exemptions", "nda_configs"
   add_foreign_key "nda_exemptions", "users"
   add_foreign_key "nda_exemptions", "users", column: "exempted_by_id"
+  add_foreign_key "nda_signatories", "nda_configs"
+  add_foreign_key "nda_signatories", "users"
+  add_foreign_key "nda_signatories", "users", column: "tagged_by_id"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
@@ -5253,15 +5206,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_100000) do
   add_foreign_key "tasks", "users"
   add_foreign_key "tear_sheet_presentations", "entities"
   add_foreign_key "tear_sheet_presentations", "portfolio_report_extracts"
-  add_foreign_key "template_authoring_runs", "documents", column: "primary_proof_document_id"
-  add_foreign_key "template_authoring_runs", "documents", column: "result_document_id"
-  add_foreign_key "template_authoring_runs", "documents", column: "second_proof_document_id"
-  add_foreign_key "template_authoring_runs", "documents", column: "source_document_id"
-  add_foreign_key "template_authoring_runs", "entities"
-  add_foreign_key "template_authoring_runs", "support_agents"
-  add_foreign_key "template_authoring_runs", "users", column: "requested_by_id"
-  add_foreign_key "template_brackets", "template_authoring_runs"
-  add_foreign_key "template_brackets", "users", column: "answered_by_id"
   add_foreign_key "tie_out_figures", "capital_commitments"
   add_foreign_key "tie_out_figures", "entities"
   add_foreign_key "tie_out_figures", "funds"

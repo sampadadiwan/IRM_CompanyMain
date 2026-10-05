@@ -120,6 +120,15 @@
       <small class="text-muted">Leave unchecked to store this person as a contact only (no portal access).</small>
     </div>
 
+    <%# Changed: Added exempt_from_nda checkbox for stakeholder-level NDA exemption.
+         Why: Per product decision (2026-10-05) — GP can exempt an investor from NDA
+         at the time of granting access. All users under this investor bypass the NDA gate. %>
+    <div class="form-group">
+      <%= form.label :exempt_from_nda, "Exempt from NDA" %>
+      <%= form.check_box :exempt_from_nda, class: "form-check-input" %>
+      <small class="text-muted">If checked, this stakeholder's users bypass the NDA requirement for all Data Room folders.</small>
+    </div>
+
 
     <div class="form-group">
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>

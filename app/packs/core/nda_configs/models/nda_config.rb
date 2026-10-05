@@ -31,9 +31,8 @@ class NdaConfig < ApplicationRecord
   # Why: Module 2 LP Acceptance — tracks accept/decline records per NdaConfig.
   has_many :nda_acceptances, dependent: :destroy
 
-  # Changed: Added has_many :nda_exemptions association.
-  # Why: Module 3 GP Dashboard — tracks user-level NDA exemptions per NdaConfig.
-  has_many :nda_exemptions, dependent: :destroy
+  # Changed: Removed has_many :nda_exemptions — exemption is now on InvestorAccess.
+  # Why: Per product decision (2026-10-05) — stakeholder-level exemption via boolean.
 
   # Changed: Added has_many :nda_signatories association.
   # Why: Module 3 GP Dashboard — tracks per-NDA signatory designations (replaces entity-wide tag_list).

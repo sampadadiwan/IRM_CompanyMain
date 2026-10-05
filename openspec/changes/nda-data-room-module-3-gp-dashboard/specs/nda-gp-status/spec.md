@@ -2,7 +2,7 @@
 
 ## Purpose
 
-GP-facing NDA status dashboard providing visibility into investor NDA acceptance status, user-level exemption management, bulk reminder sending, and compliance export for NDA-protected Data Room folders.
+GP-facing NDA status dashboard providing visibility into investor NDA acceptance status, stakeholder-level exemption display, and compliance export for NDA-protected Data Room folders.
 
 ## ADDED Requirements
 
@@ -46,15 +46,14 @@ The system SHALL provide a full-page dashboard showing all investors with folder
 - **THEN** the status is "Accepted" if the latest NdaAcceptance for that investor has status "accepted"
 - **AND** the status is "Declined" if the latest NdaAcceptance has status "declined"
 - **AND** the status is "Pending" if no NdaAcceptance record exists for that investor and NDA config
-- **AND** the status is "Exempt" only if every user of that investor with folder access is individually exempted
+- **AND** the status is "Exempt" if any InvestorAccess for that investor has exempt_from_nda=true
 
 #### Scenario: User-level detail in expanded row
 
 - **WHEN** a GP expands an investor row
 - **THEN** each user under that investor with folder access is shown
 - **AND** the user who physically signed the NDA is marked as "Signer"
-- **AND** exempt users show status "Exempt"
-- **AND** users with the NDA tag on their InvestorAccess show "(NDA)" next to their name
+- **AND** users designated as NDA signatories on their InvestorAccess show a "Signatory" badge
 - **AND** other users show "—" for status
 
 #### Scenario: Dashboard filtered by status
@@ -86,61 +85,62 @@ The system SHALL derive the list of investors shown on the dashboard from the fo
 - **WHEN** an investor's access right to the folder is deleted
 - **THEN** that investor no longer appears on the dashboard (status is computed dynamically)
 
-### Requirement: GP can exempt individual users from NDA
+### Requirement: Stakeholder-level NDA exemption via InvestorAccess
 
-The system SHALL allow a GP to mark individual users as exempt from a specific NDA, and exempt users SHALL bypass the NDA gate entirely.
+The system SHALL allow a GP to mark an investor as exempt from NDA by checking `exempt_from_nda` on InvestorAccess when granting or editing access.
 
-#### Scenario: GP creates exemption for a user
+#### Scenario: GP creates InvestorAccess with exemption
 
-- **WHEN** a GP marks a user as exempt from the NDA on the dedicated dashboard
-- **THEN** an exemption record is created for that user and NDA config
-- **AND** the user's status on the dashboard changes to "Exempt"
-- **AND** the exemption records which GP created it
+- **WHEN** a GP creates or edits an InvestorAccess record and checks the `exempt_from_nda` checkbox
+- **THEN** the InvestorAccess is saved with `exempt_from_nda = true`
+- **AND** the investor's status on the NDA dashboard shows "Exempt"
 
-#### Scenario: GP provides exemption reason
+#### Scenario: GP removes exemption by re-adding InvestorAccess
 
-- **WHEN** a GP creates an exemption and provides a reason (e.g., "NDA signed offline")
-- **THEN** the reason is stored with the exemption record
+- **WHEN** a GP deletes an InvestorAccess that had `exempt_from_nda = true` and re-adds it without the exempt flag
+- **THEN** the investor's status on the dashboard reverts to their NDA acceptance status (Accepted, Pending, or Declined)
 
-#### Scenario: GP revokes exemption
+#### Scenario: Exemption is a simple boolean
 
-- **WHEN** a GP revokes a user's exemption on the dedicated dashboard
-- **THEN** the exemption record is removed
-- **AND** the user's status reverts to their stakeholder's status (Accepted, Pending, or Declined)
+- **WHEN** `exempt_from_nda` is set on InvestorAccess
+- **THEN** there is no reason field; it is a boolean flag only
 
-#### Scenario: Exemption uniqueness
+#### Scenario: Dashboard displays exemption read-only
 
-- **WHEN** a GP attempts to create a second exemption for the same user and NDA config
-- **THEN** the system does not create a duplicate (one exemption per user per NDA config)
+- **WHEN** a GP views the NDA status dashboard
+- **THEN** exempt investors are shown with status "Exempt"
+- **AND** there are no exempt/revoke action buttons on the dashboard itself
+- **AND** exemption is managed solely through the InvestorAccess form
 
-### Requirement: Exempt user bypasses NDA gate
+### Requirement: Exempt investor's users bypass NDA gate
 
-The system SHALL check for user-level exemptions before checking stakeholder-level acceptance in the NDA gate, so that exempt users always access the folder without an NDA screen.
+The system SHALL check for stakeholder-level exemption via InvestorAccess before checking stakeholder-level acceptance in the NDA gate, so that an exempt investor's users always access the folder without an NDA screen.
 
-#### Scenario: Exempt user accesses NDA-protected folder before stakeholder signs
+#### Scenario: Exempt investor's user accesses folder before stakeholder signs
 
-- **WHEN** an exempt user navigates to an NDA-protected folder
+- **WHEN** a user belonging to an exempt investor navigates to an NDA-protected folder
 - **AND** no one from their stakeholder has accepted the NDA
 - **THEN** the system shows the folder contents immediately (no NDA screen)
 
-#### Scenario: Exempt user accesses folder after stakeholder signs
+#### Scenario: Exempt investor's user accesses folder after stakeholder signs
 
-- **WHEN** an exempt user navigates to an NDA-protected folder
+- **WHEN** a user belonging to an exempt investor navigates to an NDA-protected folder
 - **AND** their stakeholder has already accepted the NDA
 - **THEN** the system shows the folder contents immediately (exemption takes precedence in display)
 
-#### Scenario: Exemption revoked, stakeholder not accepted
+#### Scenario: Exemption removed, stakeholder not accepted
 
-- **WHEN** a GP revokes a user's exemption
-- **AND** the user's stakeholder has not accepted the NDA
-- **AND** the user navigates to the NDA-protected folder
+- **WHEN** a GP removes exemption (deletes InvestorAccess and re-adds without exempt flag)
+- **AND** the investor's stakeholder has not accepted the NDA
+- **AND** a user of that investor navigates to the NDA-protected folder
 - **THEN** the system redirects the user to the NDA acceptance screen
 
 #### Scenario: Gate check order
 
 - **WHEN** a non-GP user navigates to an NDA-protected folder
-- **THEN** the system checks in order: (1) user exemption, (2) stakeholder acceptance
-- **AND** an exempted user passes at step 1 without reaching step 2
+- **THEN** the gate checks `InvestorAccess.exists?(user_id:, entity_id:, approved: true, exempt_from_nda: true)`
+- **AND** the system checks in order: (1) GP bypass, (2) stakeholder exemption (InvestorAccess.exempt_from_nda), (3) stakeholder acceptance, (4) redirect to NDA screen
+- **AND** an exempt investor's user passes at step 2 without reaching step 3
 
 ### Requirement: GP can export NDA status records
 
@@ -149,37 +149,19 @@ The system SHALL allow a GP to download NDA status records as an XLSX file from 
 #### Scenario: GP exports NDA status
 
 - **WHEN** a GP clicks "Export" on the dedicated dashboard
-- **THEN** the system generates an XLSX file containing all investors and users with columns: Investor Name, User Name, Email, Status, NDA Version, Signed Date, Valid Until, Exemption Reason
+- **THEN** the system generates an XLSX file containing all investors and users with columns: Investor Name, User Name, Email, Status, NDA Version, Signed Date, Valid Until
 - **AND** the file downloads to the GP's browser
 
-### Requirement: GP can send bulk NDA reminders to pending investors
+### Requirement: NDA Settings hidden on Data Room root
 
-The system SHALL allow a GP to send reminder notifications to NDA-tagged users of investors who have not yet accepted the NDA.
+The system SHALL hide the NDA Settings option on the Data Room root folder, since NDA is configured on sub-folders inside Data Room, not the root.
 
-#### Scenario: GP sends reminders to pending investors
+#### Scenario: NDA Settings not available on root folder
 
-- **WHEN** a GP clicks "Send Reminders" on the dedicated dashboard
-- **AND** confirms the action in the confirmation dialog
-- **THEN** the system sends reminder notifications to all NDA-tagged users of investors with "Pending" status
-- **AND** shows a success message with the count of users reminded
+- **WHEN** a GP navigates to the Data Room root folder
+- **THEN** the Actions dropdown does not include an "NDA Settings" option
 
-#### Scenario: Reminder targets only NDA-tagged users
+#### Scenario: NDA Settings available on sub-folders
 
-- **WHEN** a pending investor has three users: User A (NDA-tagged), User B (NDA-tagged), User C (not tagged)
-- **THEN** only User A and User B receive the reminder notification
-- **AND** User C does not receive a reminder
-
-#### Scenario: Reminder content directs user to Data Room
-
-- **WHEN** a user receives an NDA reminder notification
-- **THEN** the notification includes a link that takes the user to the Data Room where they can review and accept the NDA
-
-#### Scenario: No pending investors
-
-- **WHEN** a GP clicks "Send Reminders" and no investors have "Pending" status
-- **THEN** the button is disabled or a message indicates "No pending investors to remind"
-
-#### Scenario: Reminder not sent to exempt users
-
-- **WHEN** a user is exempt from the NDA
-- **THEN** the user does not receive a reminder notification, even if their InvestorAccess has the NDA tag
+- **WHEN** a GP navigates to a sub-folder inside Data Room
+- **THEN** the Actions dropdown includes an "NDA Settings" option
