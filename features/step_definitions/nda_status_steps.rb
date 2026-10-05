@@ -140,7 +140,10 @@ Given("there is a GP user from a different entity") do
     first_name: "Other",
     last_name: "GP"
   )
-  @other_gp_user.add_role(:company_admin, @other_gp_entity)
+  # Changed: Use unscoped add_role (no entity arg) to match app convention.
+  # Why: Rolify.resource_types is empty — passing an entity triggers a
+  # "Resource type is not included in the list" validation error.
+  @other_gp_user.add_role(:company_admin)
 end
 
 # ── Action steps — NdaExemption ──────────────────────────────────────────────
