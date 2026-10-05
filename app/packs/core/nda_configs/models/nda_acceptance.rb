@@ -28,4 +28,9 @@ class NdaAcceptance < ApplicationRecord
   def accepted?
     status == "accepted"
   end
+
+  # @return [Boolean] true if this record represents a declined NDA
+  def declined?
+    status == "declined"
+  end
 end

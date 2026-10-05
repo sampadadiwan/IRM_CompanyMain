@@ -16,12 +16,14 @@ Given("there is an LP investor {string} with approved access to the GP entity") 
   @lp_entity ||= Entity.create!(
     name: "LP Entity", entity_type: "Limited Partner", primary_email: "lp_entity@example.com"
   )
+  # Changed: Use @lp_entity's primary_email so the Investor#update_name callback
+  # finds the existing entity instead of creating a new one named after the investor.
   @lp_investor = Investor.create!(
     investor_name: investor_name,
     entity: @gp_entity,
     investor_entity: @lp_entity,
     category: "LP",
-    primary_email: "#{investor_name.parameterize}@example.com"
+    primary_email: @lp_entity.primary_email
   )
   @lp_user ||= User.create!(
     email: "lp_test_#{SecureRandom.hex(4)}@example.com",
@@ -48,12 +50,14 @@ Given("there is an LP investor {string} with unapproved access to the GP entity"
   @lp_entity ||= Entity.create!(
     name: "LP Entity", entity_type: "Limited Partner", primary_email: "lp_entity@example.com"
   )
+  # Changed: Use @lp_entity's primary_email so the Investor#update_name callback
+  # finds the existing entity instead of creating a new one named after the investor.
   @lp_investor = Investor.create!(
     investor_name: investor_name,
     entity: @gp_entity,
     investor_entity: @lp_entity,
     category: "LP",
-    primary_email: "#{investor_name.parameterize}@example.com"
+    primary_email: @lp_entity.primary_email
   )
   @lp_user ||= User.create!(
     email: "lp_test_#{SecureRandom.hex(4)}@example.com",
