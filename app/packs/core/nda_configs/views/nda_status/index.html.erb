@@ -1,0 +1,188 @@
+<%# NDA Status dedicated dashboard page — server-rendered HTML table with investor-level rows.
+     Provides status filtering, search, XLSX export, and user-level exemption management.
+     Changed: Switched from AG Grid to standard HTML table for visual consistency.
+     Why: The rest of the app uses Ransack-style HTML tables; AG Grid looked out of place. %>
+<%
+  status_data = @status_data
+  nda_config = @nda_config
+  folder = @folder
+  investor_rows = status_data[:investor_rows]
+  counters = status_data[:counters]
+%>
+
+<div class="container-fluid py-4" data-controller="nda-status"
+     data-nda-status-nda-config-id-value="<%= nda_config.id %>"
+     data-nda-status-folder-id-value="<%= folder.id %>">
+
+  <%# Page header with export button %>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">
+        <i class="ti ti-shield-lock me-1"></i> NDA Status &mdash; <%= folder.name %>
+      </h1>
+      <p class="text-muted mb-0 mt-1">
+        <%= nda_config.acceptance_method.titleize %> &middot; <%= nda_config.validity_type.titleize %>
+      </p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <%= link_to nda_status_path(nda_config_id: nda_config.id, folder_id: folder.id, format: :xlsx),
+          class: "btn btn-outline-primary ti ti-download", data: { turbo: false, bs_toggle: "tooltip", bs_title: "Download NDA status as Excel" } do %>
+        Export
+      <% end %>
+    </div>
+  </div>
+
+  <%# Status counters %>
+  <div class="d-flex gap-3 mb-3">
+    <span class="badge bg-success-subtle text-success px-3 py-2 fs-6">
+      Accepted: <%= counters[:accepted] %>
+    </span>
+    <span class="badge bg-warning-subtle text-warning px-3 py-2 fs-6">
+      Pending: <%= counters[:pending] %>
+    </span>
+    <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-6">
+      Declined: <%= counters[:declined] %>
+    </span>
+    <span class="badge bg-info-subtle text-info px-3 py-2 fs-6">
+      Exempt: <%= counters[:exempt] %>
+    </span>
+  </div>
+
+  <%# Toolbar: filter and search — matches SearchComponent layout %>
+  <div class="nested-fields">
+    <div class="search-form d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <select class="form-control" style="width: auto;"
+                data-action="change->nda-status#filterByStatus"
+                data-nda-status-target="statusFilter">
+          <option value="">All Statuses</option>
+          <option value="Accepted">Accepted</option>
+          <option value="Pending">Pending</option>
+          <option value="Declined">Declined</option>
+          <option value="Exempt">Exempt</option>
+        </select>
+      </div>
+      <div class="search-form-input">
+        <input type="text" class="form-control" placeholder="Search..."
+               data-action="input->nda-status#search"
+               data-nda-status-target="searchInput">
+      </div>
+    </div>
+  </div>
+
+  <%# Standard HTML table matching Ransack table CSS classes %>
+  <div class="table-responsive">
+    <table class="table table-bordered dataTable action_table hover">
+      <thead>
+        <tr>
+          <th>Investor Name</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Signed By</th>
+          <th>Signed Date</th>
+          <th class="action-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody data-nda-status-target="tableBody">
+        <% investor_rows.each do |row| %>
+          <tr data-nda-status-target="row"
+              data-status="<%= row[:status] %>"
+              data-investor-name="<%= row[:investor].investor_name.downcase %>"
+              data-investor-id="<%= row[:investor].id %>">
+            <td><%= row[:investor].investor_name %></td>
+            <td><%= row[:investor].category %></td>
+            <td>
+              <% status_class = case row[:status]
+                                when "Accepted" then "success"
+                                when "Pending" then "warning"
+                                when "Declined" then "danger"
+                                when "Exempt" then "info"
+                                end %>
+              <span class="badge bg-<%= status_class %>-subtle text-<%= status_class %>">
+                <%= row[:status] %>
+              </span>
+            </td>
+            <td><%= row[:signed_by]&.full_name || "—" %></td>
+            <td><%= row[:signed_at] ? l(row[:signed_at], format: :short) : "—" %></td>
+            <td>
+              <%# Expandable user detail — shows users under this investor %>
+              <% if row[:users].present? %>
+                <button class="btn btn-outline-secondary btn-sm"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#investor_users_<%= row[:investor].id %>"
+                        aria-expanded="false">
+                  <i class="ti ti-users me-1"></i> <%= row[:users].size %> users
+                </button>
+              <% end %>
+            </td>
+          </tr>
+          <%# Collapsible user detail rows %>
+          <% if row[:users].present? %>
+            <tr class="collapse" id="investor_users_<%= row[:investor].id %>">
+              <td colspan="6" class="p-0">
+                <table class="table table-sm mb-0 ms-4" style="width: calc(100% - 2rem);">
+                  <thead class="table-light">
+                    <tr>
+                      <th>User Name</th>
+                      <th>Email</th>
+                      <th>User Status</th>
+                      <th>NDA Tagged</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% row[:users].each do |user_row| %>
+                      <tr data-user-id="<%= user_row[:user].id %>">
+                        <td><%= user_row[:user].full_name %></td>
+                        <td><%= user_row[:user].email %></td>
+                        <td>
+                          <% user_badge = case user_row[:status]
+                                          when "Signer" then "primary"
+                                          when "Exempt" then "info"
+                                          else nil
+                                          end %>
+                          <% if user_badge %>
+                            <span class="badge bg-<%= user_badge %>-subtle text-<%= user_badge %>"><%= user_row[:status] %></span>
+                          <% else %>
+                            <%= user_row[:status] %>
+                          <% end %>
+                        </td>
+                        <td>
+                          <% if user_row[:nda_tagged] %>
+                            <span class="badge bg-secondary-subtle text-secondary">NDA</span>
+                          <% else %>
+                            —
+                          <% end %>
+                        </td>
+                        <td>
+                          <% if user_row[:exempt] %>
+                            <%# Revoke exemption button %>
+                            <% exemption = NdaExemption.find_by(nda_config_id: nda_config.id, user_id: user_row[:user].id) %>
+                            <button class="btn btn-outline-danger btn-sm"
+                                    data-action="click->nda-status#revokeExemption"
+                                    data-exemption-id="<%= exemption&.id %>"
+                                    data-user-name="<%= user_row[:user].full_name %>">
+                              <i class="ti ti-shield-off me-1"></i> Revoke Exempt
+                            </button>
+                          <% else %>
+                            <%# Grant exemption button %>
+                            <button class="btn btn-outline-info btn-sm"
+                                    data-action="click->nda-status#grantExemption"
+                                    data-user-id="<%= user_row[:user].id %>"
+                                    data-user-name="<%= user_row[:user].full_name %>">
+                              <i class="ti ti-shield-check me-1"></i> Exempt
+                            </button>
+                          <% end %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

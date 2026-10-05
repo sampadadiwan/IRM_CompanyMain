@@ -21,7 +21,9 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <%# Tabs: Settings (active) and Status (placeholder for Module 3) %>
+        <%# Tabs: Settings (active) and Status (enabled when NDA config exists and is active) %>
+        <%# Changed: Enabled Status tab with Turbo Frame lazy-load for Module 3 GP Dashboard.
+             Why: GPs need at-a-glance NDA compliance visibility from the modal. %>
         <ul class="nav nav-tabs px-3 pt-2" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="nda-settings-tab" data-bs-toggle="tab"
@@ -30,13 +32,15 @@
               Settings
             </button>
           </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link disabled" id="nda-status-tab" type="button" role="tab"
-                    aria-disabled="true" tabindex="-1"
-                    data-bs-toggle="tooltip" title="Coming soon — NDA acceptance status">
-              Status
-            </button>
-          </li>
+          <% if nda_config.persisted? && nda_config.enabled? %>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="nda-status-tab" data-bs-toggle="tab"
+                      data-bs-target="#nda-status-pane" type="button" role="tab"
+                      aria-controls="nda-status-pane" aria-selected="false">
+                Status
+              </button>
+            </li>
+          <% end %>
         </ul>
 
         <div class="tab-content">
@@ -57,6 +61,24 @@
               <%= render "nda_configs/opted_out_info", folder: folder %>
             <% end %>
           </div>
+
+          <%# Changed: Added Status tab pane with Turbo Frame lazy-load.
+               Why: Status data requires multiple queries; lazy-loading means the Settings tab
+               renders instantly and status loads only when the Status tab is clicked. %>
+          <% if nda_config.persisted? && nda_config.enabled? %>
+            <div class="tab-pane fade p-3" id="nda-status-pane" role="tabpanel"
+                 aria-labelledby="nda-status-tab">
+              <%= turbo_frame_tag "nda_status_summary", loading: :lazy,
+                  src: nda_status_summary_path(nda_config_id: nda_config.id, folder_id: folder.id) do %>
+                <div class="text-center py-4">
+                  <div class="spinner-border spinner-border-sm text-muted" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="text-muted mt-2 mb-0">Loading status...</p>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
         </div>
       </div>
     </div>

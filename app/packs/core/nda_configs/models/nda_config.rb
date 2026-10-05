@@ -31,6 +31,10 @@ class NdaConfig < ApplicationRecord
   # Why: Module 2 LP Acceptance — tracks accept/decline records per NdaConfig.
   has_many :nda_acceptances, dependent: :destroy
 
+  # Changed: Added has_many :nda_exemptions association.
+  # Why: Module 3 GP Dashboard — tracks user-level NDA exemptions per NdaConfig.
+  has_many :nda_exemptions, dependent: :destroy
+
   validates :validity_type, inclusion: { in: VALIDITY_TYPES }
   validates :acceptance_method, inclusion: { in: ACCEPTANCE_METHODS }
   validates :validity_days, inclusion: { in: VALIDITY_DAY_OPTIONS }, if: -> { validity_type == "fixed_period" }

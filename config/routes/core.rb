@@ -221,6 +221,14 @@ resources :nda_acceptances, controller: "nda_acceptances", only: %i[index create
   post :decline, on: :collection
 end
 
+# Changed: Added NDA status dashboard routes for Module 3 GP Dashboard.
+# Why: GP-facing status view, exemption management, and export.
+#   Standalone routes — nda_config_id and folder_id passed as query params.
+get  "nda_status/summary",       controller: "nda_status", action: :summary, as: :nda_status_summary
+get  "nda_status",               controller: "nda_status", action: :index, as: :nda_status
+post "nda_status/exemptions",    controller: "nda_status", action: :create_exemption, as: :nda_status_exemptions
+delete "nda_status/exemptions/:id", controller: "nda_status", action: :destroy_exemption, as: :nda_status_exemption
+
 # Workflow instances are standalone — not nested under any workflowable object.
 # workflowable_type and workflowable_id are passed as params on create.
 resources :workflow_instances, only: %i[index create show] do

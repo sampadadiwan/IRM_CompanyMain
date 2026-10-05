@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_03_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3136,6 +3136,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_100000) do
     t.index ["updated_by_id"], name: "index_nda_configs_on_updated_by_id"
   end
 
+  create_table "nda_exemptions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "exempted_by_id", null: false
+    t.bigint "nda_config_id", null: false
+    t.string "reason", limit: 500
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["exempted_by_id"], name: "fk_rails_5f97b1d2e6"
+    t.index ["nda_config_id", "user_id"], name: "idx_nda_exemptions_config_user", unique: true
+    t.index ["user_id"], name: "idx_nda_exemptions_user"
+  end
+
   create_table "notes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
@@ -4971,6 +4983,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_100000) do
   add_foreign_key "nda_acceptances", "investors"
   add_foreign_key "nda_acceptances", "nda_configs"
   add_foreign_key "nda_acceptances", "users"
+  add_foreign_key "nda_exemptions", "nda_configs"
+  add_foreign_key "nda_exemptions", "users"
+  add_foreign_key "nda_exemptions", "users", column: "exempted_by_id"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
