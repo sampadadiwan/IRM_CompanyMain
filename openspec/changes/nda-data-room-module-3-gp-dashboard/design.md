@@ -38,7 +38,7 @@
 
 ## Overview
 
-Adds a GP-facing NDA status dashboard following the existing AG Grid + jbuilder pattern (same as Investors, InvestorAccesses). Two views: a lightweight Status tab in the existing NDA Settings modal (simple HTML partial via Turbo Frame) and a dedicated full-page dashboard with AG Grid, export, exemption management, and bulk reminders. A new `nda_exemptions` table stores user-level NDA bypasses, and the existing NDA gate gains an exemption check.
+Adds a GP-facing NDA status dashboard using a server-rendered HTML table (matching the standard Ransack table style). Two views: a lightweight Status tab in the existing NDA Settings modal (simple HTML partial via Turbo Frame) and a dedicated full-page dashboard with HTML table, client-side filtering, export, and exemption management. A new `nda_exemptions` table stores user-level NDA bypasses, and the existing NDA gate gains an exemption check. Bulk reminders are descoped to a separate notifications module.
 
 ---
 
@@ -60,11 +60,9 @@ flowchart TD
         NdaConfig["NdaConfig model"]
         NdaAcceptance["NdaAcceptance model"]
         NdaStatusService["NdaStatusResolver service"]
-        NdaReminderJob["NdaReminderJob"]
     end
 
     subgraph ExistingModels["Existing Models"]
-        AccessRight["AccessRight model"]
         InvestorAccess["InvestorAccess model"]
         Investor["Investor model"]
         Folder["Folder model"]
@@ -74,23 +72,13 @@ flowchart TD
         DocsCtrl["DocumentsController#ensure_nda_accepted"]
     end
 
-    subgraph Notifications["Notifications"]
-        NdaReminderNotifier["NdaReminderNotifier"]
-        NdaReminderMailer["NdaReminderMailer"]
-    end
-
     Modal -->|"Turbo Frame load"| NdaStatusCtrl
-    DashPage -->|"HTML + JSON"| NdaStatusCtrl
-    AGGrid -->|"fetch JSON"| NdaStatusCtrl
-    NdaStatusCtrl -->|"resolve investors"| AccessRight
-    NdaStatusCtrl -->|"resolve users + NDA tags"| InvestorAccess
+    DashPage -->|"HTML"| NdaStatusCtrl
+    NdaStatusCtrl -->|"resolve investors + users"| InvestorAccess
     NdaStatusCtrl -->|"latest acceptance"| NdaAcceptance
     NdaStatusCtrl -->|"check exemptions"| NdaExemption
     NdaStatusCtrl -->|"folder context"| Folder
     NdaStatusCtrl -->|"NDA config"| NdaConfig
-    NdaStatusCtrl -->|"enqueue reminders"| NdaReminderJob
-    NdaReminderJob -->|"dispatch"| NdaReminderNotifier
-    NdaReminderNotifier -->|"email"| NdaReminderMailer
     DocsCtrl -->|"exemption check"| NdaExemption
 ```
 
@@ -99,14 +87,13 @@ flowchart TD
 | From | To | Contract | Direction |
 |---|---|---|---|
 | Modal Status Tab | NdaStatusController#summary | Turbo Frame request → HTML partial | Request |
-| Dashboard Page | NdaStatusController#index | HTML (page) + JSON (AG Grid data) | Request |
-| NdaStatusController | AccessRight | `AccessRight.where(owner: folder)` → investors | Query |
-| NdaStatusController | InvestorAccess | `.where(entity_id:, approved: true)` → users + tags | Query |
+| Dashboard Page | NdaStatusController#index | HTML (page) + XLSX (export) | Request |
+| NdaStatusController | InvestorAccess | `.where(entity_id:, approved: true)` → investor universe + users + tags | Query |
 | NdaStatusController | NdaAcceptance | `.where(nda_config_id:, investor_id:)` → latest status | Query |
 | NdaStatusController | NdaExemption | `.where(nda_config_id:)` → exempt user_ids | Query |
-| NdaStatusController | NdaReminderJob | `perform_later(nda_config_id, user_ids)` | Async |
-| NdaReminderJob | NdaReminderNotifier | `.with(record:, entity_id:).deliver_later(user)` | Async |
 | DocumentsController | NdaExemption | `.exists?(nda_config_id:, user_id:)` | Query |
+
+**Design decision — investor universe source:** The investor universe comes from `InvestorAccess` (entity-level), not `AccessRight` (folder-level). Data Room folder visibility for regular LP users is driven by InvestorAccess — the `!investor_advisor?` check in `DocumentsController#folder` bypasses folder-level AccessRight checks for all non-advisor users. The NDA gate also resolves investors via InvestorAccess, so the dashboard uses the same source for consistency.
 
 ### Class Diagram
 
@@ -136,32 +123,10 @@ classDiagram
             +index()
             +create_exemption()
             +destroy_exemption()
-            +send_reminders()
-            +export()
         }
         class NdaStatusResolver {
             <<new>>
             +resolve(nda_config, folder) StatusData
-        }
-        class NdaReminderJob {
-            <<new>>
-            +perform(nda_config_id, user_ids)
-        }
-        class NdaReminderNotifier {
-            <<new>>
-            +mailer_name()
-            +email_method()
-            +email_data()
-        }
-        class NdaReminderMailer {
-            <<new>>
-            +send_reminder()
-        }
-    }
-
-    namespace AccessRightsPack {
-        class AccessRight {
-            +investors() Investor[]
         }
     }
 
@@ -184,7 +149,6 @@ classDiagram
     NdaExemption "*" --> "1" NdaConfig
     NdaExemption "*" --> "1" User
     NdaStatusController --> NdaStatusResolver
-    NdaStatusResolver --> AccessRight
     NdaStatusResolver --> InvestorAccess
     NdaStatusResolver --> NdaAcceptance
     NdaStatusResolver --> NdaExemption
@@ -199,11 +163,9 @@ flowchart LR
         NE["NdaExemption model"]
         NSC["NdaStatusController"]
         NSR["NdaStatusResolver service"]
-        NRJ["NdaReminderJob"]
-        NRN["NdaReminderNotifier"]
-        NRM["NdaReminderMailer"]
+        STIM["nda_status_controller.js (Stimulus)"]
         MIG["create_nda_exemptions migration"]
-        VIEWS["Status tab partial + dashboard views + jbuilder + XLSX"]
+        VIEWS["Status tab partial + dashboard HTML + XLSX"]
     end
 
     subgraph Modified["Modified (amber)"]
@@ -214,19 +176,23 @@ flowchart LR
     end
 
     subgraph Reused["Reused (grey)"]
-        AR["AccessRight.investors"]
-        IA["InvestorAccess.with_tag"]
+        IA["InvestorAccess queries"]
         NA["NdaAcceptance queries"]
-        BN["BaseNotifier pattern"]
-        AGG["ag_controller.js + BaseAgGrid"]
+        LAYOUT["modernize layout + breadcrumbs"]
+    end
+
+    subgraph Descoped["Descoped (red)"]
+        REM["Bulk reminders — separate notifications module"]
     end
 
     classDef green fill:#e8f5e9,stroke:#2e7d32,color:#000
     classDef amber fill:#fff3e0,stroke:#ef6c00,color:#000
     classDef grey fill:#f5f5f5,stroke:#9e9e9e,color:#000
-    class NE,NSC,NSR,NRJ,NRN,NRM,MIG,VIEWS green
+    classDef red fill:#ffebee,stroke:#c62828,color:#000
+    class NE,NSC,NSR,STIM,MIG,VIEWS green
     class MODAL,GATE,NDACONF,ROUTES amber
-    class AR,IA,NA,BN,AGG grey
+    class IA,NA,LAYOUT grey
+    class REM red
 ```
 
 ---
@@ -297,7 +263,6 @@ sequenceDiagram
     participant Modal as NDA Modal
     participant Ctrl as NdaStatusController
     participant Resolver as NdaStatusResolver
-    participant AR as AccessRight
     participant IA as InvestorAccess
     participant NA as NdaAcceptance
     participant NE as NdaExemption
@@ -305,10 +270,9 @@ sequenceDiagram
     GP->>Modal: Click Status tab
     Modal->>Ctrl: GET /nda_status/summary?nda_config_id=X&folder_id=Y (Turbo Frame)
     Ctrl->>Resolver: resolve(nda_config, folder)
-    Resolver->>AR: AccessRight.where(owner: folder)
-    AR-->>Resolver: access_rights
-    Resolver->>Resolver: expand investors (direct + category)
-    Resolver->>IA: InvestorAccess.where(entity_id:, investor_id: [...], approved: true)
+    Resolver->>IA: InvestorAccess.where(entity_id:, approved: true).distinct.pluck(:investor_id)
+    IA-->>Resolver: investor universe
+    Resolver->>IA: InvestorAccess.where(entity_id:, investor_id: [...], approved: true).includes(:user)
     IA-->>Resolver: users per investor + NDA tags
     Resolver->>NA: NdaAcceptance.where(nda_config_id: X, investor_id: [...])
     NA-->>Resolver: latest acceptance per investor
@@ -333,31 +297,9 @@ sequenceDiagram
     Ctrl->>Ctrl: authorize (GP must be same entity)
     Ctrl->>NE: NdaExemption.create!(nda_config_id: X, user_id: 5, exempted_by: GP, reason: ...)
     NE-->>Ctrl: created
-    Ctrl-->>Page: Turbo Stream replace user row (status = Exempt)
+    Ctrl-->>Page: JSON response { status: "ok" }
+    Page->>Page: window.location.reload()
     Page-->>GP: User 5 now shows "Exempt"
-```
-
-**GP sends bulk reminders**
-
-```mermaid
-sequenceDiagram
-    actor GP
-    participant Page as Dashboard Page
-    participant Ctrl as NdaStatusController
-    participant Job as NdaReminderJob
-    participant Notifier as NdaReminderNotifier
-    participant Mailer as NdaReminderMailer
-
-    GP->>Page: Click "Send Reminders"
-    Page->>GP: Confirmation dialog ("Send to X users?")
-    GP->>Page: Confirm
-    Page->>Ctrl: POST /nda_status/send_reminders?nda_config_id=X&folder_id=Y
-    Ctrl->>Ctrl: resolve pending investors + NDA-tagged users (exclude exempt)
-    Ctrl->>Job: NdaReminderJob.perform_later(nda_config_id, user_ids)
-    Job->>Notifier: NdaReminderNotifier.with(record: nda_config, entity_id: ...).deliver_later(user) per user
-    Notifier->>Mailer: NdaReminderMailer#send_reminder
-    Ctrl-->>Page: Turbo Stream flash ("Reminders sent to X users")
-    Page-->>GP: Success message
 ```
 
 **Exempt user hits NDA gate**
@@ -385,15 +327,15 @@ sequenceDiagram
 |---|---|---|
 | Alpha Ventures | GP Admin | fm1@ian.com, company_admin |
 | Alpha Ventures | Folder "Fund Alpha Docs" | Data Room folder with NDA-A (enabled, click_through, until_revoked) |
-| Alpha Ventures | Investor "Acme Capital" | Category: LP. AccessRight to folder. |
+| Alpha Ventures | Investor "Acme Capital" | Category: LP. InvestorAccess approved. |
 | Acme Capital | User A (alice@acme.com) | InvestorAccess approved, NDA tag |
 | Acme Capital | User B (bob@acme.com) | InvestorAccess approved, NDA tag |
 | Acme Capital | User C (carol@acme.com) | InvestorAccess approved, no NDA tag |
 | Acme Capital | User D (dave@acme.com) | InvestorAccess approved, no NDA tag |
 | Acme Capital | User E (eve@acme.com) | InvestorAccess approved, no NDA tag, EXEMPT |
-| Alpha Ventures | Investor "Beta Holdings" | Category: LP. AccessRight to folder. No acceptance. |
+| Alpha Ventures | Investor "Beta Holdings" | Category: LP. InvestorAccess approved. No acceptance. |
 | Beta Holdings | User F (frank@beta.com) | InvestorAccess approved, NDA tag |
-| Alpha Ventures | Investor "Gamma Fund" | Category: LP. AccessRight to folder. Declined. |
+| Alpha Ventures | Investor "Gamma Fund" | Category: LP. InvestorAccess approved. Declined. |
 | Gamma Fund | User G (gina@gamma.com) | InvestorAccess approved, NDA tag |
 
 **Happy Path:**
@@ -401,11 +343,11 @@ sequenceDiagram
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
 | H1 | GP views status summary in modal | NDA-A active on folder, Acme accepted, Beta pending, Gamma declined, Eve exempt | GP opens NDA Settings modal, clicks Status tab | Counters: Accepted=1, Pending=1, Declined=1, Exempt=0. Table shows 3 investor rows with correct statuses. | GP views status summary for NDA-protected folder | nda_status.feature |
-| H2 | GP opens dedicated dashboard | Same as H1 | GP clicks "View Full Dashboard" | AG Grid with 3 investor rows. Acme expandable to 5 users (Alice=Signer, Eve=Exempt, rest=dash). | GP opens dedicated dashboard from modal | nda_status.feature |
+| H2 | GP opens dedicated dashboard | Same as H1 | GP clicks "View Full Dashboard" | HTML table with 3 investor rows. Acme expandable to 5 users (Alice=Signer, Eve=Exempt, rest=dash). | GP opens dedicated dashboard from modal | nda_status.feature |
 | H3 | GP marks user as exempt | Eve not yet exempt | GP clicks Exempt on Eve's row, enters reason "NDA signed offline" | Eve's status changes to Exempt. NdaExemption record created. | GP creates exemption for a user | nda_status.feature |
 | H4 | GP revokes exemption | Eve is exempt | GP clicks Revoke on Eve's row | Eve's status reverts to stakeholder status (Accepted). NdaExemption deleted. | GP revokes exemption | nda_status.feature |
 | H5 | GP exports status | Same as H1 | GP clicks Export | XLSX downloaded with all investors + users, statuses, dates | GP exports NDA status | nda_status.feature |
-| H6 | GP sends bulk reminders | Beta pending (Frank is NDA-tagged), Gamma declined | GP clicks Send Reminders, confirms | Reminder sent to Frank only (Beta is pending + NDA-tagged). Gamma is declined, not pending. | GP sends reminders to pending investors | nda_status.feature |
+| H6 | ~~GP sends bulk reminders~~ | ~~Descoped to separate notifications module~~ | — | — | — | — |
 
 **Edge Cases:**
 
@@ -413,14 +355,14 @@ sequenceDiagram
 |---|---|---|---|---|---|---|
 | E1 | Exempt user accesses folder before stakeholder signs | Eve exempt, Acme has NOT accepted NDA-A | Eve navigates to folder | Folder contents shown (no NDA screen) | Exempt user accesses NDA-protected folder before stakeholder signs | nda_status.feature |
 | E2 | Exemption revoked, stakeholder not accepted | Eve's exemption revoked, Acme has NOT accepted | Eve navigates to folder | NDA acceptance screen shown | Exemption revoked, stakeholder not accepted | nda_status.feature |
-| E3 | Category-based access right expands | AccessRight with access_to_category="LP" on folder | GP views dashboard | All LP-category investors in entity appear | Category-based access right | nda_status.feature |
-| E4 | Investor removed from access rights | Acme's AccessRight deleted | GP views dashboard | Acme no longer appears in dashboard | Investor removed from access rights | nda_status.feature |
-| E5 | No pending investors for reminders | All investors accepted or declined | GP clicks Send Reminders | Button disabled or "No pending investors to remind" | No pending investors | nda_status.feature |
+| E3 | All entity investors shown | All investors with approved InvestorAccess to entity | GP views dashboard | All approved investors appear regardless of folder | Entity-level investor universe | nda_status.feature |
+| E4 | Investor access revoked | Acme's InvestorAccess revoked (approved: false) | GP views dashboard | Acme no longer appears in dashboard | Investor access revoked | nda_status.feature |
+| E5 | ~~No pending investors for reminders~~ | ~~Descoped to separate notifications module~~ | — | — | — | — |
 | E6 | Duplicate exemption attempt | Eve already exempt | GP attempts to exempt Eve again | No duplicate created (unique constraint) | Exemption uniqueness | nda_status.feature |
-| E7 | Reminder skips exempt users | Frank (Beta, NDA-tagged) is exempt | GP sends reminders | Frank does NOT receive reminder | Reminder not sent to exempt users | nda_status.feature |
-| E8 | Reminder targets only NDA-tagged | Beta pending, Frank (NDA-tagged) + Hannah (not tagged) | GP sends reminders | Only Frank receives reminder | Reminder targets only NDA-tagged users | nda_status.feature |
+| E7 | ~~Reminder skips exempt users~~ | ~~Descoped to separate notifications module~~ | — | — | — | — |
+| E8 | ~~Reminder targets only NDA-tagged~~ | ~~Descoped to separate notifications module~~ | — | — | — | — |
 | E9 | Status tab hidden for folder without NDA | Folder has no NDA config | GP opens NDA Settings modal | Only Settings tab visible, no Status tab | Status tab hidden when no active NDA | nda_status.feature |
-| E10 | Inherited NDA status | Child folder inherits NDA-A from parent | GP opens Status tab on child | Shows statuses for NDA-A. Investor universe from child's access rights. | Status tab for inherited NDA | nda_status.feature |
+| E10 | Inherited NDA status | Child folder inherits NDA-A from parent | GP opens Status tab on child | Shows statuses for NDA-A. Investor universe from entity's InvestorAccess. | Status tab for inherited NDA | nda_status.feature |
 | E11 | Investor fully exempt | All users of Delta LP are individually exempt | GP views dashboard | Delta LP investor-level status = "Exempt" | Investor-level status derivation (all exempt) | nda_status.feature |
 
 **Error Cases:**
@@ -437,16 +379,14 @@ sequenceDiagram
 
 | Component | Responsibility |
 |---|---|
-| NdaStatusResolver | Resolves the full status picture for a given NDA config + folder: investor universe (from AccessRight), user details (from InvestorAccess), latest acceptance per investor (from NdaAcceptance), exempt users (from NdaExemption). Returns structured data for both the modal summary and the AG Grid JSON. |
-| NdaReminderJob | Background job that receives a list of user_ids and dispatches NdaReminderNotifier to each. Keeps the controller response fast. |
-| NdaReminderNotifier | Noticed-based notifier following BaseNotifier pattern. Delivers via email channel. |
-| NdaReminderMailer | Mailer with `send_reminder` method. Email body includes folder name, entity name, and a link to the Data Room. |
+| NdaStatusResolver | Resolves the full status picture for a given NDA config + folder: investor universe (from InvestorAccess), user details per investor (from InvestorAccess), latest acceptance per investor (from NdaAcceptance), exempt users (from NdaExemption). Returns structured data for both the modal summary and the HTML table. |
+| nda_status_controller.js | Stimulus controller for client-side status filtering, text search, and exemption grant/revoke actions via fetch API. |
 
 **Status derivation decision flow:**
 
 ```mermaid
 flowchart TD
-    A["For each investor with folder access"] --> B{"All users of investor exempt?"}
+    A["For each investor with InvestorAccess"] --> B{"All users of investor exempt?"}
     B -- Yes --> C["Status = Exempt"]
     B -- No --> D{"Latest NdaAcceptance exists?"}
     D -- No --> E["Status = Pending"]
@@ -463,11 +403,9 @@ flowchart TD
 |---|---|---|---|
 | GET | `/nda_status/summary` | NdaStatusController#summary | Turbo Frame HTML partial (counters + table) |
 | GET | `/nda_status` | NdaStatusController#index | HTML page (dashboard) |
-| GET | `/nda_status.json` | NdaStatusController#index | JSON (AG Grid data) |
 | GET | `/nda_status.xlsx` | NdaStatusController#index | XLSX download |
-| POST | `/nda_status/exemptions` | NdaStatusController#create_exemption | Turbo Stream (update user row) |
-| DELETE | `/nda_status/exemptions/:id` | NdaStatusController#destroy_exemption | Turbo Stream (update user row) |
-| POST | `/nda_status/send_reminders` | NdaStatusController#send_reminders | Turbo Stream (flash message) |
+| POST | `/nda_status/exemptions` | NdaStatusController#create_exemption | JSON (for Stimulus fetch) |
+| DELETE | `/nda_status/exemptions/:id` | NdaStatusController#destroy_exemption | JSON (for Stimulus fetch) |
 
 All routes scoped under the NDA configs pack. Query params: `nda_config_id`, `folder_id`.
 
@@ -477,12 +415,12 @@ All routes scoped under the NDA configs pack. Query params: `nda_config_id`, `fo
 
 **NdaStatusPolicy:**
 
-| Role | summary | index / export | create_exemption | destroy_exemption | send_reminders |
-|---|---|---|---|---|---|
-| GP Admin (same entity) | Allow | Allow | Allow | Allow | Allow |
-| GP Employee (same entity) | Allow | Allow | Allow | Allow | Allow |
-| LP / Investor user | Deny | Deny | Deny | Deny | Deny |
-| Other-entity GP | Deny | Deny | Deny | Deny | Deny |
+| Role | summary | index / export | create_exemption | destroy_exemption |
+|---|---|---|---|---|
+| GP Admin (same entity) | Allow | Allow | Allow | Allow |
+| GP Employee (same entity) | Allow | Allow | Allow | Allow |
+| LP / Investor user | Deny | Deny | Deny | Deny |
+| Other-entity GP | Deny | Deny | Deny | Deny |
 
 **Entity scoping:** Policy checks `nda_config.entity_id == current_user.entity_id` and `curr_role_employee?`. Same pattern as NdaConfigPolicy.
 
@@ -504,7 +442,7 @@ flowchart TD
 | Screen | Before | After |
 |---|---|---|
 | NDA Settings Modal | Status tab disabled ("Coming soon") | Status tab enabled with summary counters + investor table |
-| Dedicated dashboard page | Does not exist | New page: AG Grid, filters, export, exemptions, reminders |
+| Dedicated dashboard page | Does not exist | New page: HTML table, status filter, search, export, exemptions |
 | NDA gate (invisible to GP) | GP bypass → stakeholder check | GP bypass → **exemption check** → stakeholder check |
 
 ### Journey 1: GP views NDA status summary in modal
