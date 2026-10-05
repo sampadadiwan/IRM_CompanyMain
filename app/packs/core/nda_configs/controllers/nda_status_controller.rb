@@ -36,6 +36,13 @@ class NdaStatusController < ApplicationController
     authorize @nda_config, policy_class: NdaStatusPolicy
     @status_data = NdaStatusResolver.resolve(@nda_config, @folder)
 
+    # Changed: Set breadcrumbs for the standard layout breadcrumb partial.
+    # Why: Matches the app-wide breadcrumb style (Home • Documents • Folder — NDA Status).
+    @bread_crumbs = [
+      ["Documents", folder_documents_path(entity_id: @folder.entity_id, folder_id: @folder.id)],
+      ["#{@folder.name} — NDA Status", nil]
+    ]
+
     respond_to do |format|
       format.html { render layout: "modernize" }
       format.json { render "index" }
