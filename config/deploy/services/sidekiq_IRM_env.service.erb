@@ -44,8 +44,12 @@ Type=notify
 NotifyAccess=all
 # Sidekiq pings every WatchdogSec/2 from a dedicated thread, so this only fires
 # when the whole VM is wedged, not when a job is merely slow. Generous so a long
-# GC pause or a GVL-holding native call can't kill in-flight jobs.
-WatchdogSec=120
+# GC pause or a GVL-holding native call can't kill in-flight jobs. 120 was not
+# enough: on 2026-10-05 an allocation scan of a ~1M-row scratch SQLite DB held the
+# GVL for over 2 minutes and every in-flight job was lost (see
+# docs/operations/troubleshooting/05102026_sidekiq_watchdog_restart_allocation.md).
+# 600 means pings every 300s, and a truly wedged Sidekiq stays down up to 10 min.
+WatchdogSec=600
 
 User=ubuntu
 Group=ubuntu

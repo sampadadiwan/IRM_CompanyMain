@@ -194,9 +194,22 @@ module AccountEntryAllocation
       # no status recorded, which is what made this step look like it failed silently.
       begin
         with_scratch_sqlite(ctx[:sqlite_path]) do
-          AccountEntrySqlite.where(allocation_run_id: ctx[:allocation_run_id]).delete_all
-          # A reused copy still holds what earlier runs generated for this period. The primary DB
-          # lost those rows in delete_existing_entries; drop them here too or formulas double-count.
+          # Rows already tagged with this run id must not survive in the scratch copy: they would be
+          # migrated to the primary DB a second time. That happens in two cases only:
+          #   * a reused copy (development), which still holds what earlier runs generated;
+          #   * a re-run into an EXISTING allocation run (AllocationRun#rerun!, or the console
+          #     AccountEntryAllocationJob.perform_now ... allocation_run_id: 1500). delete_existing_primary_entries
+          #     only clears the formulas in scope, so live rows of a since-disabled or deleted formula keep
+          #     the run id, the load script copies them (it skips only soft-deleted rows) and the migration
+          #     step would insert them again.
+          # A fresh run has a brand-new id, so the cheap indexed check on the primary DB says no and we skip
+          # the scan. The delete used to run on every load: account_entries has no allocation_run_id index
+          # in the scratch DB, so on a large fund it scanned every row inside the Sidekiq process, holding
+          # the GVL long enough for the systemd watchdog to kill Sidekiq (2026-10-05, fund 320). See
+          # docs/operations/troubleshooting/05102026_sidekiq_watchdog_restart_allocation.md
+          AccountEntrySqlite.where(allocation_run_id: ctx[:allocation_run_id]).delete_all if reused || run_id_in_primary?(ctx)
+          # The primary DB lost the rows of earlier runs in delete_existing_entries; drop them from the
+          # reused copy too or formulas double-count.
           delete_existing_scratch_entries(ctx) if reused
           entry_count = AccountEntrySqlite.where(fund_id: fund.id).count
           commitment_count = CapitalCommitmentSqlite.where(fund_id: fund.id).count
@@ -238,6 +251,13 @@ module AccountEntryAllocation
     # rebuild it, or delete tmp/allocation/*_dev.sqlite3*.
     def reuse_scratch_db?
       Rails.env.development? && ENV["ALLOCATION_FRESH_SCRATCH_DB"].blank?
+    end
+
+    # True when live rows in the primary DB already carry this run's id, i.e. the run is a re-run into an
+    # existing AllocationRun. Uses index_account_entries_on_allocation_run_id, so it is cheap even on a
+    # huge table. Soft-deleted rows do not count: the load script never copies them.
+    def run_id_in_primary?(ctx)
+      AccountEntry.exists?(allocation_run_id: ctx[:allocation_run_id])
     end
 
     # Written once the load script finishes, so a half-built copy is never reused.
