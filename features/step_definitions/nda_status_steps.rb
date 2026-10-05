@@ -1,8 +1,12 @@
 # frozen_string_literal: true
 
 # Step definitions for features/core/nda_status.feature
-# Module 3 — NDA Status Dashboard: model-level tests for NdaExemption,
-# NdaStatusResolver, gate exemption check, and NdaStatusPolicy.
+# Module 3 — NDA Status Dashboard: model-level tests for stakeholder-level
+# exemption (InvestorAccess.exempt_from_nda), NdaSignatory, NdaStatusResolver,
+# gate exemption check, and NdaStatusPolicy.
+#
+# Changed: Replaced NdaExemption steps with InvestorAccess.exempt_from_nda steps.
+# Why: Per product decision (2026-10-05) — exemption is stakeholder-level, not user-level.
 #
 # @note Reuses setup steps from nda_config_steps.rb (entity, folder, NDA config)
 #   and nda_acceptance_steps.rb (LP user setup).
@@ -109,27 +113,10 @@ Given("the investor {string} has declined the NDA") do |_investor_name|
   )
 end
 
-# Exempts all users of the named investor from the NDA.
-Given("all users of investor {string} are exempt from the NDA") do |_investor_name|
-  accesses = InvestorAccess.where(entity: @gp_entity, investor: @lp_investor, approved: true)
-  accesses.each do |ia|
-    NdaExemption.create!(
-      nda_config: @nda_config,
-      user: ia.user,
-      exempted_by: @user,
-      reason: "All users exempt"
-    )
-  end
-end
-
-# Creates an NDA exemption for the LP user.
-Given("the LP user has an NDA exemption") do
-  NdaExemption.create!(
-    nda_config: @nda_config,
-    user: @lp_user,
-    exempted_by: @user,
-    reason: "Test exemption"
-  )
+# Changed: Sets exempt_from_nda on the LP investor access record.
+# Why: Stakeholder-level exemption replaces user-level NdaExemption table.
+Given("the investor access has exempt_from_nda set to true") do
+  @lp_investor_access.update!(exempt_from_nda: true)
 end
 
 # Creates a GP user from a different entity for cross-entity policy tests.
@@ -150,28 +137,11 @@ Given("there is a GP user from a different entity") do
   @other_gp_user.add_role(:company_admin)
 end
 
-# ── Action steps — NdaExemption ──────────────────────────────────────────────
+# ── Action steps — exempt_from_nda ──────────────────────────────────────────
 
-# GP creates an NDA exemption for the LP user with the given reason.
-When("the GP creates an NDA exemption for the LP user with reason {string}") do |reason|
-  @nda_exemption = NdaExemption.create!(
-    nda_config: @nda_config,
-    user: @lp_user,
-    exempted_by: @user,
-    reason: reason
-  )
-end
-
-# Attempts to create a duplicate exemption; stores the error.
-Then("creating a duplicate NDA exemption for the LP user should raise an error") do
-  expect do
-    NdaExemption.create!(
-      nda_config: @nda_config,
-      user: @lp_user,
-      exempted_by: @user,
-      reason: "Duplicate"
-    )
-  end.to raise_error(ActiveRecord::RecordInvalid)
+# GP sets exempt_from_nda to true on the investor access.
+When("the GP sets exempt_from_nda to true for the investor access") do
+  @lp_investor_access.update!(exempt_from_nda: true)
 end
 
 # Destroys the NDA config to test cascade behavior.
@@ -186,28 +156,16 @@ When("the resolver resolves NDA status for the folder") do
   @resolver_result = NdaStatusResolver.resolve(@nda_config, @data_room_folder)
 end
 
-# ── Assertion steps — NdaExemption ───────────────────────────────────────────
+# ── Assertion steps — exempt_from_nda ───────────────────────────────────────
 
-# Verifies an NdaExemption record exists for the LP user.
-Then("an NDA exemption record should exist for the LP user") do
-  record = NdaExemption.find_by(nda_config: @nda_config, user: @lp_user)
-  expect(record).to be_present
+# Verifies the investor access exempt_from_nda is false (default).
+Then("the investor access exempt_from_nda should be false") do
+  expect(@lp_investor_access.reload.exempt_from_nda).to be false
 end
 
-# Verifies the exemption reason.
-Then("the NDA exemption reason should be {string}") do |reason|
-  expect(@nda_exemption.reason).to eq(reason)
-end
-
-# Verifies the exempted_by is the GP user.
-Then("the NDA exemption exempted_by should be the GP user") do
-  expect(@nda_exemption.exempted_by).to eq(@user)
-end
-
-# Verifies exemption count for the LP user.
-Then("there should be {int} NDA exemptions for the LP user") do |count|
-  records = NdaExemption.where(user: @lp_user)
-  expect(records.count).to eq(count)
+# Verifies the investor access exempt_from_nda is true.
+Then("the investor access exempt_from_nda should be true") do
+  expect(@lp_investor_access.reload.exempt_from_nda).to be true
 end
 
 # ── Assertion steps — Resolver ───────────────────────────────────────────────
@@ -251,8 +209,6 @@ end
 # ── Action steps — NdaSignatory ──────────────────────────────────────────────
 
 # GP tags the LP user as an NDA signatory for the current NDA config.
-# Changed: Added signatory step definitions for Phase 5 scenarios.
-# Why: NDA signatories are now per-NDA (nda_signatories table), need test coverage.
 When("the GP tags the LP user as an NDA signatory") do
   @nda_signatory = NdaSignatory.create!(
     nda_config: @nda_config,
@@ -321,15 +277,28 @@ end
 
 # ── Assertion steps — Gate exemption check ───────────────────────────────────
 
-# Verifies the NDA exemption check passes for the LP user.
-Then("the NDA exemption check should pass for the LP user") do
-  result = NdaExemption.exists?(nda_config_id: @nda_config.id, user_id: @lp_user.id)
+# Changed: Gate checks InvestorAccess.exempt_from_nda instead of NdaExemption.
+# Why: Stakeholder-level exemption — matches ensure_nda_accepted in DocumentsController.
+
+# Verifies the NDA gate exemption check passes for the LP user.
+Then("the NDA gate exemption check should pass for the LP user") do
+  result = InvestorAccess.exists?(
+    user_id: @lp_user.id,
+    entity_id: @nda_config.entity_id,
+    approved: true,
+    exempt_from_nda: true
+  )
   expect(result).to be true
 end
 
-# Verifies the NDA exemption check does NOT pass for the LP user.
-Then("the NDA exemption check should not pass for the LP user") do
-  result = NdaExemption.exists?(nda_config_id: @nda_config.id, user_id: @lp_user.id)
+# Verifies the NDA gate exemption check does NOT pass for the LP user.
+Then("the NDA gate exemption check should not pass for the LP user") do
+  result = InvestorAccess.exists?(
+    user_id: @lp_user.id,
+    entity_id: @nda_config.entity_id,
+    approved: true,
+    exempt_from_nda: true
+  )
   expect(result).to be false
 end
 

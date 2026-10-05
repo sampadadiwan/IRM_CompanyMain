@@ -1,6 +1,6 @@
 Feature: NDA Status Dashboard (Module 3)
   As a GP I want to see which investors have accepted, declined, or are pending
-  NDA acceptance for my Data Room folders, and manage user-level exemptions.
+  NDA acceptance for my Data Room folders, and manage stakeholder-level exemptions and signatory tagging.
 
   Background:
     Given there is a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
@@ -8,28 +8,41 @@ Feature: NDA Status Dashboard (Module 3)
     Given the GP entity has a data room folder
     Given the data room folder has an enabled NDA config
 
-  # ── Phase 1: NdaExemption Model ────────────────────────────────────────────
+  # ── Phase 1: Data Layer — exempt_from_nda on InvestorAccess + NdaSignatory ──
 
-  # An NdaExemption record can be created linking a user to an NDA config.
-  Scenario: NdaExemption stores user, exempted_by, and reason
-    Given there is an LP user for the GP entity
-    When the GP creates an NDA exemption for the LP user with reason "Signed offline"
-    Then an NDA exemption record should exist for the LP user
-    And the NDA exemption reason should be "Signed offline"
-    And the NDA exemption exempted_by should be the GP user
+  # Changed: Replaced NdaExemption model tests with InvestorAccess.exempt_from_nda tests.
+  # Why: Per product decision (2026-10-05) — exemption is stakeholder-level, not user-level.
 
-  # Duplicate exemptions are prevented by the unique constraint.
-  Scenario: Duplicate NdaExemption is rejected
-    Given there is an LP user for the GP entity
-    When the GP creates an NDA exemption for the LP user with reason "First"
-    Then creating a duplicate NDA exemption for the LP user should raise an error
+  # New InvestorAccess records default to exempt_from_nda = false.
+  Scenario: InvestorAccess defaults exempt_from_nda to false
+    Given there is an LP investor "Acme Capital" with approved access to the GP entity
+    Then the investor access exempt_from_nda should be false
 
-  # Deleting an NDA config cascades to its exemptions.
-  Scenario: NdaExemption is destroyed when NdaConfig is destroyed
+  # GP can set exempt_from_nda to true on an InvestorAccess record.
+  Scenario: GP sets exempt_from_nda on InvestorAccess
+    Given there is an LP investor "Acme Capital" with approved access to the GP entity
+    When the GP sets exempt_from_nda to true for the investor access
+    Then the investor access exempt_from_nda should be true
+
+  # An NdaSignatory record can be created linking a user to an NDA config.
+  Scenario: NdaSignatory stores user and tagged_by
     Given there is an LP user for the GP entity
-    When the GP creates an NDA exemption for the LP user with reason "Temp"
+    When the GP tags the LP user as an NDA signatory
+    Then an NDA signatory record should exist for the LP user
+    And the NDA signatory tagged_by should be the GP user
+
+  # Duplicate signatories are prevented by the unique constraint.
+  Scenario: Duplicate NdaSignatory is rejected
+    Given there is an LP user for the GP entity
+    When the GP tags the LP user as an NDA signatory
+    Then creating a duplicate NDA signatory for the LP user should raise an error
+
+  # Deleting an NDA config cascades to its signatories.
+  Scenario: NdaSignatory is destroyed when NdaConfig is destroyed
+    Given there is an LP user for the GP entity
+    When the GP tags the LP user as an NDA signatory
     And the NDA config is destroyed
-    Then there should be 0 NDA exemptions for the LP user
+    Then there should be 0 NDA signatories for the LP user
 
   # ── Phase 2: NdaStatusResolver ──────────────────────────────────────────────
 
@@ -56,10 +69,11 @@ Feature: NDA Status Dashboard (Module 3)
     Then the investor "Acme Capital" status should be "Declined"
     And the resolver counters should show declined 1
 
-  # When all users of an investor are individually exempt, investor status is "Exempt".
-  Scenario: Investor status is Exempt when all users are exempt
+  # Changed: Investor status is Exempt when InvestorAccess has exempt_from_nda = true.
+  # Why: Exemption is now stakeholder-level on InvestorAccess, not user-level NdaExemption.
+  Scenario: Investor status is Exempt when investor access is exempt
     Given there is an LP investor "Acme Capital" with approved access to the GP entity
-    And all users of investor "Acme Capital" are exempt from the NDA
+    And the investor access has exempt_from_nda set to true
     When the resolver resolves NDA status for the folder
     Then the investor "Acme Capital" status should be "Exempt"
     And the resolver counters should show exempt 1
@@ -70,27 +84,31 @@ Feature: NDA Status Dashboard (Module 3)
     When the resolver resolves NDA status for the folder
     Then the resolver result should not include investor "Acme Capital"
 
-  # ── Phase 3: Gate Exemption Check ───────────────────────────────────────────
+  # ── Phase 3: Gate — Stakeholder Exemption Check ─────────────────────────────
 
-  # An exempt user bypasses the NDA gate even if their stakeholder has not accepted.
-  Scenario: Exempt user bypasses NDA gate
-    Given there is an LP user for the GP entity
-    And the LP user has an NDA exemption
-    Then the NDA exemption check should pass for the LP user
+  # Changed: Gate checks InvestorAccess.exempt_from_nda instead of NdaExemption.
+  # Why: Stakeholder-level exemption replaces user-level NdaExemption model.
 
-  # A non-exempt user whose stakeholder has not accepted is blocked by the gate.
-  Scenario: Non-exempt user with no stakeholder acceptance is blocked
-    Given there is an LP user for the GP entity
-    Then the NDA exemption check should not pass for the LP user
+  # An exempt stakeholder's user bypasses the NDA gate even if they have not accepted.
+  Scenario: Exempt stakeholder user bypasses NDA gate
+    Given there is an LP investor "Acme Capital" with approved access to the GP entity
+    And the investor access has exempt_from_nda set to true
+    Then the NDA gate exemption check should pass for the LP user
+
+  # A non-exempt stakeholder's user without acceptance is blocked by the gate.
+  Scenario: Non-exempt stakeholder user with no acceptance is blocked
+    Given there is an LP investor "Acme Capital" with approved access to the GP entity
+    Then the NDA gate exemption check should not pass for the LP user
 
   # ── Phase 4: NdaStatusPolicy ────────────────────────────────────────────────
+
+  # Changed: Removed create_exemption/destroy_exemption policy checks.
+  # Why: Exemption is managed from InvestorAccess form, not from the NDA dashboard.
 
   # GP employees of the same entity are allowed to view the dashboard.
   Scenario: GP employee is authorized for NDA status actions
     Then the NDA status policy should allow summary for the GP user
     And the NDA status policy should allow index for the GP user
-    And the NDA status policy should allow create_exemption for the GP user
-    And the NDA status policy should allow destroy_exemption for the GP user
     And the NDA status policy should allow create_signatory for the GP user
     And the NDA status policy should allow destroy_signatory for the GP user
 
@@ -105,27 +123,7 @@ Feature: NDA Status Dashboard (Module 3)
     Given there is a GP user from a different entity
     Then the NDA status policy should deny summary for the other GP user
 
-  # ── Phase 5: NdaSignatory ──────────────────────────────────────────────────
-
-  # An NdaSignatory record can be created linking a user to an NDA config.
-  Scenario: NdaSignatory stores user and tagged_by
-    Given there is an LP user for the GP entity
-    When the GP tags the LP user as an NDA signatory
-    Then an NDA signatory record should exist for the LP user
-    And the NDA signatory tagged_by should be the GP user
-
-  # Duplicate signatories are prevented by the unique constraint.
-  Scenario: Duplicate NdaSignatory is rejected
-    Given there is an LP user for the GP entity
-    When the GP tags the LP user as an NDA signatory
-    Then creating a duplicate NDA signatory for the LP user should raise an error
-
-  # Deleting an NDA config cascades to its signatories.
-  Scenario: NdaSignatory is destroyed when NdaConfig is destroyed
-    Given there is an LP user for the GP entity
-    When the GP tags the LP user as an NDA signatory
-    And the NDA config is destroyed
-    Then there should be 0 NDA signatories for the LP user
+  # ── Phase 5: Resolver Signatory Detection ──────────────────────────────────
 
   # Resolver shows nda_tagged true for a signatory user.
   Scenario: Resolver shows signatory user as nda_tagged
