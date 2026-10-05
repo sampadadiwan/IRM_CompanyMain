@@ -1,4 +1,6 @@
 class CapitalCallPolicy < FundBasePolicy
+  include WorkflowablePolicyMethods # journey?, assign_workflow?
+
   def index?
     user.enable_funds
   end
@@ -9,6 +11,11 @@ class CapitalCallPolicy < FundBasePolicy
 
   def show?
     permissioned_employee?
+  end
+
+  # The stats cards frame is part of the show page, so the same people can load it
+  def stats?
+    show?
   end
 
   def new?
@@ -77,11 +84,5 @@ class CapitalCallPolicy < FundBasePolicy
   # destroy permission the payment's own controller checks, not just run/update.
   def undo_reconciliation_deposit?
     run_agent? && permissioned_employee?(:destroy)
-  end
-
-  # Only company_admin can assign / remove a workflow template on a capital call,
-  # and only when the entity has workflow_templates enabled.
-  def assign_workflow?
-    user.entity&.permissions&.enable_workflow_templates? && user.company_admin? && belongs_to_entity?(user, record)
   end
 end

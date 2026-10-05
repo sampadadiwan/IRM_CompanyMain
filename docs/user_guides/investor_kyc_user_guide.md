@@ -11,31 +11,32 @@ This guide covers the full lifecycle of Know Your Customer (KYC) records in CapH
 1. [What is Investor KYC?](#what-is-investor-kyc)
 2. [KYC Types: Individual vs Non-Individual](#kyc-types-individual-vs-non-individual)
 3. [KYC Lifecycle](#kyc-lifecycle)
-4. [Creating a KYC Record](#creating-a-kyc-record)
-5. [Document-First KYC Wizard](#document-first-kyc-wizard)
-6. [Core Fields](#core-fields)
-7. [Custom Fields and Form Types](#custom-fields-and-form-types)
-8. [Dynamic Wizard Steps (Steps 4–9)](#dynamic-wizard-steps-steps-49)
-9. [Managing Form Types: Tabbed View and Inline Edit](#managing-form-types-tabbed-view-and-inline-edit)
-10. [Jurisdiction-Specific Forms: Tags (SEBI, GIFT, Default)](#jurisdiction-specific-forms-tags-sebi-gift-default)
-11. [Sending the KYC Form to the Investor](#sending-the-kyc-form-to-the-investor)
-12. [Investor Self-Completion](#investor-self-completion)
-13. [PAN Verification](#pan-verification)
-14. [Bank Account Verification](#bank-account-verification)
-15. [CKYC Integration](#ckyc-integration)
-16. [KRA Integration](#kra-integration)
-17. [Assigning KYC Data from CKYC or KRA](#assigning-kyc-data-from-ckyc-or-kra)
-18. [SEBI Investor Category and Sub-Category](#sebi-investor-category-and-sub-category)
-19. [Document Requirements and Upload](#document-requirements-and-upload)
-20. [Admin Verification](#admin-verification)
-21. [KYC Expiry](#kyc-expiry)
-22. [AML Reports](#aml-reports)
-23. [Notifications](#notifications)
-24. [Filtering and Finding KYC Records](#filtering-and-finding-kyc-records)
-25. [Importing KYC Records](#importing-kyc-records)
-26. [Worked Example](#worked-example)
-27. [Frequently Asked Questions](#frequently-asked-questions)
-28. [Related Guides](#related-guides)
+4. [Tracking a KYC: the Journey Step Bar](#tracking-a-kyc-the-journey-step-bar)
+5. [Creating a KYC Record](#creating-a-kyc-record)
+6. [Document-First KYC Wizard](#document-first-kyc-wizard)
+7. [Core Fields](#core-fields)
+8. [Custom Fields and Form Types](#custom-fields-and-form-types)
+9. [Dynamic Wizard Steps (Steps 4–9)](#dynamic-wizard-steps-steps-49)
+10. [Managing Form Types: Tabbed View and Inline Edit](#managing-form-types-tabbed-view-and-inline-edit)
+11. [Jurisdiction-Specific Forms: Tags (SEBI, GIFT, Default)](#jurisdiction-specific-forms-tags-sebi-gift-default)
+12. [Sending the KYC Form to the Investor](#sending-the-kyc-form-to-the-investor)
+13. [Investor Self-Completion](#investor-self-completion)
+14. [PAN Verification](#pan-verification)
+15. [Bank Account Verification](#bank-account-verification)
+16. [CKYC Integration](#ckyc-integration)
+17. [KRA Integration](#kra-integration)
+18. [Assigning KYC Data from CKYC or KRA](#assigning-kyc-data-from-ckyc-or-kra)
+19. [SEBI Investor Category and Sub-Category](#sebi-investor-category-and-sub-category)
+20. [Document Requirements and Upload](#document-requirements-and-upload)
+21. [Admin Verification](#admin-verification)
+22. [KYC Expiry](#kyc-expiry)
+23. [AML Reports](#aml-reports)
+24. [Notifications](#notifications)
+25. [Filtering and Finding KYC Records](#filtering-and-finding-kyc-records)
+26. [Importing KYC Records](#importing-kyc-records)
+27. [Worked Example](#worked-example)
+28. [Frequently Asked Questions](#frequently-asked-questions)
+29. [Related Guides](#related-guides)
 
 ---
 
@@ -76,6 +77,71 @@ Created
 ```
 
 Until the KYC is verified, the admin can request updates from the investor, which emails a fresh link and resets the status to **Link Sent** so the investor can edit again.
+
+---
+
+## Tracking a KYC: the Journey Step Bar
+
+Every KYC created after your company's KYC journey was set up shows your team a **step bar** at the top of its page, listing every task the KYC goes through, and a **What's needed now** panel with the next thing to do and a button that does it. CapHive works out which task the KYC is on from its own data: sending the form, the investor submitting it, uploading documents, AI document validation, the AML result and verification each move it on by themselves, and the page updates without a refresh, even when a colleague or the investor does the work. You only click **Mark reviewed** for the review tasks. Investors never see the step bar, and KYCs that existed before the journey was set up show none.
+
+Each task in the bar has a mark:
+
+| Mark | Means |
+|---|---|
+| ✓ | done |
+| **●** | **we are here**: the KYC is waiting on this task, it is not done yet |
+| ○ | later; not reached yet |
+| **↺** | **back here**: this task was done, but something was undone, so it must be done again |
+| n/a | this KYC doesn't need the task (hover to see why) |
+
+The panel's button runs the real control on the page: for example it opens **KYC Actions** and clicks **Send KYC Required Notification**, which asks you to confirm as usual, or clicks **Verify**. If you are not allowed to use that control it is not on the page, and the button just links to the KYC.
+
+### The tasks
+
+```mermaid
+flowchart LR
+    S1["Set up KYC email"] --> S2["Preview the email"] --> A["Send KYC form"] --> B["Submit KYC"]
+    B --> C["Upload required documents"] --> D["Validate documents"] --> E["Run AML screening"]
+    E --> F["Clear AML match"] --> G["Review KYC"] --> H["Compliance sign-off"] --> I["Verify KYC"]
+    classDef email fill:#e8f5e9,stroke:#2e7d32,color:#000
+    class S1,S2 email
+```
+
+| Task | Done when | Not applicable when | Moves back when |
+|---|---|---|---|
+| Set up KYC email | someone clicked **Mark reviewed** on it | the form has already been sent, or the fund filled the KYC in itself | your company's KYC email is created, edited or deleted before the form goes out |
+| Preview the email | someone clicked **Mark reviewed** on it | the form has already been sent, or the fund filled the KYC in itself | as above |
+| Send KYC form | the KYC form link has been emailed to the investor (or the investor has started it) | the fund filled the KYC in itself: it was submitted or verified without a form ever being sent | — |
+| Submit KYC | the investor clicked **Submit KYC**, or a fund user ticked **I confirm all details provided are complete…** and saved | — | **Request Updates**, or a fund user unticks the complete box |
+| Upload required documents | a document exists for every required name: your company's required KYC document list for the KYC's type plus the KYC form's required document fields | nothing is required | a document is deleted |
+| Validate documents | **Check documents** found nothing needing attention (or every item was resolved), or someone checked the documents and clicked **Mark reviewed** | — | a document is uploaded or replaced after the task was done |
+| Run AML screening | the KYC has an AML result | AML is not enabled for your company | — |
+| Clear AML match | a potential match was overridden to **No Match** (the panel names who and why) | AML found no match, or AML is not enabled | a new AML result is a potential match |
+| Review KYC | someone checked the details and clicked **Mark reviewed** | — | the KYC's details are edited after the review |
+| Compliance sign-off | an approver on the step approves (any one of them) | no approver has been picked on the step yet | earlier work is undone after the sign-off (the sign-off is reset) |
+| Verify KYC | the KYC is verified | — | **UnVerify** (on the KYC or in bulk) |
+
+**Checking the email before the investor gets it.** The journey starts with the email, not the send. **Set up KYC email** names the email that will actually go out — `Your KYC email "Complete your KYC for Urban Fund" will be sent` — with **Open KYC emails** beside **Mark reviewed**. If your company has not set one up, it says CapHive's default text will be sent and offers **Custom KYC Notification** to write your own; marking it reviewed accepts the default. **Preview the email** then offers **Preview KYC Required Notification**, which opens the email as *this* investor will receive it, with their name, your company and their link filled in, so a wrong placeholder is caught before anyone sends. Neither task blocks anything: **Send KYC Required Notification** works whenever you want it. If you change your company's KYC email afterwards, both confirmations are withdrawn on every KYC whose form has not gone out yet and the journey returns to **Set up KYC email** saying "Email template changed after review" — a KYC already sent is left alone, because the investor has the old email either way.
+
+**Validate documents with or without AI.** If your company has [Document Checks](document_checks_user_guide) set up for the KYC's documents, the panel offers **Check documents**; when nothing needs attention, the task ticks itself ("Validated by AI"). When items need attention the panel says how many, offers **Open document checks** to resolve them on the KYC's **Document checks** tab, and a person can still click **Mark reviewed**. Without Document Checks the task is always a manual check.
+
+**Verifying early.** Verify still works at any point — the journey only advises. When a KYC is verified, any earlier task that wasn't done shows n/a "Verified without this step", so an imported, already verified KYC has a complete journey straight away, and the gaps stay visible. **UnVerify** brings those tasks back.
+
+Until the KYC is verified the panel also warns about a failed PAN or bank account verification, a stakeholder with no users to email, and an expired KYC.
+
+### One journey for every KYC, or one per form type
+
+Setup gives your company one journey, **Investor KYC**, used by every KYC: individual and non-individual, whatever its form type. If one KYC form type (for example "Individual — Fund IV") needs different tasks, a company admin opens **Investor KYC** under the [workflow templates](/workflow_templates), clicks **Duplicate**, edits the copy, then adds an auto-assignment rule to the copy with the condition **Form type** is that form type and a priority below 100 (lower numbers are checked first). KYCs of that form type then get the copy; every other form type keeps **Investor KYC**. A rule can also use the KYC's custom fields, for example **Nationality** is **India**; see [How conditions work](workflow_templates_user_guide#how-conditions-work).
+
+### When work is undone
+
+If someone undoes earlier work (**Request Updates**, **UnVerify** on the KYC or **Bulk Actions → Unverify**, unticking the complete box, editing the KYC after it was reviewed, uploading, replacing or deleting a document, or a new AML result with a potential match) the journey moves back at once and shows ↺ with the reason. Reviews and sign-offs on **later** tasks that were given before the change are reset, because they no longer cover what is on the KYC; approvers whose sign-off was reset get an email.
+
+### Setting it up
+
+A company admin of an Investment Fund or Angel Fund company opens the [workflow templates](/workflow_templates) page and chooses **Set up journeys → Set up investor KYC journeys**; once done that item shows **✓ Investor KYC journeys set up**. New fund companies get the journey automatically. Only KYCs created afterwards get a journey. If your company already has its own auto-assignment rule for KYCs, setup adds the **Investor KYC** template but no rule, so your rule keeps deciding.
+
+Setup also fills gaps in a journey you already have: when CapHive adds a task to the standard journey — as it did with **Set up KYC email** and **Preview the email** — running setup again inserts it in the right place and keeps everything you changed, including renamed tasks, tasks you removed and the approver on **Compliance sign-off**. It never adds the same task twice, and if you removed **Send KYC form** (so the journey never emails the investor) it adds neither email task. KYCs that were waiting at **Send KYC form** move back to **Set up KYC email**, since they have emailed nobody yet; KYCs already with their investor are untouched.
 
 ---
 
@@ -220,7 +286,7 @@ These fields apply to all KYC records regardless of type:
 
 | Field | Description |
 |---|---|
-| **Completed by Investor** | Set when the investor clicks **Submit KYC** (status **Completed**) |
+| **Completed by Investor** | Set when the investor clicks **Submit KYC** (status **Completed**). A fund user who fills the KYC in can tick **I confirm all details provided are complete…** and save to mark it submitted the same way; unticking it puts the KYC back to **Draft Saved** |
 | **Verified** | Set by the **Verify** button after review; records who verified it |
 | **Expiry Date** | Date after which the KYC is considered expired |
 | **Send KYC Form to User** | Import-only trigger (**Send Kyc Form To User** column) that emails the form; it is reset after sending and the matching checkbox is not shown on the form |
@@ -746,9 +812,9 @@ Use **Bulk Actions** to act on many KYC records at once. Go to Sidebar → [**Fu
 |---|---|---|
 | **Send KYC Link** | Queues the first "KYC required" email for each KYC that is not yet **Completed** or **Verified** and whose stakeholder has approved users. It only emails KYCs still flagged to have the form sent (set by **Send KYC to Stakeholder** or an import with **Send Kyc Form To User** = `Yes`, and cleared once that email goes out), so for most existing KYCs it sends nothing — use **Send Reminder** instead. | Always |
 | **Verify** | Marks each KYC **Verified** (status **Verified**) without re-running form validation. Nobody is notified, and the **Verified By** user is not recorded. | Always |
-| **Unverify** | Marks each KYC unverified and sets the status to **Link Sent**, which also clears **Completed by Investor** so the investor can edit and resubmit the form. (The single-record **UnVerify** button sets **Completed** instead.) | Always |
+| **Unverify** | Marks each KYC unverified with status **Completed**, the same as the **UnVerify** button on a single KYC. The investor still cannot edit it; use **Request Updates** on the KYC to reopen the form for them. | Always |
 | **Generate AML Reports** | Queues an AML check for each KYC, the same as **KYC Actions → Generate AML Report**. KYCs with no full name are reported as errors. | AML is enabled for your organisation |
-| **Validate Document Data** | Runs AI document validation/extraction on each unverified KYC's documents whose names have document questions set up, updating the KYC and its **Doc Validations** tab. Verified KYCs, and KYCs with no matching documents, are reported as errors. KYCs are processed one at a time, so large selections take a while. The item is listed twice in the menu; both do the same thing. | AI document validation is enabled for your organisation |
+| **Check documents** | Runs [Document Checks](document_checks_user_guide) on each unverified KYC: fills empty fields from its documents and records what needs attention on its **Document checks** tab. Verified KYCs are skipped ("Cannot modify verified KYC"). KYCs are processed one at a time, so large selections take a while. | Doc LLM validation is enabled for your organisation |
 | **Send Reminder** | Emails the KYC reminder with a fresh 30-day link to each KYC that is not **Verified** or **Completed**, and sets it to **Link Sent**. KYCs whose stakeholder has no approved users are reported as errors. | Always. If your organisation has custom KYC reminder notifications, you instead see one **Send Reminder** item per custom notification, with the notification's tag after the label |
 | **Verify Bank Details** | Queues a bank account check against the bank API for each KYC (same as the automatic check); KYCs without an account number and IFSC code get the status "No Bank Account Number / IFSC Code Entered". | Bank verification is enabled for your organisation |
 
@@ -832,7 +898,7 @@ Sidebar → [**Funds → KYCs**](/investor_kycs) lists every KYC you are allowed
 Sidebar → [**Stakeholders → View Stakeholders**](/investors), open the stakeholder and click the **KYC** tab. The tab only appears when KYC is enabled for your entity; it lists that stakeholder's KYC records and has its own **New KYC** button.
 
 **How do I open a single KYC record?**
-Click the KYC's name in either list to open it. The KYC page shows the buttons **Edit**, **Delete**, **Verify** / **UnVerify** and **Request Updates**, a **KYC Actions** dropdown, and tabs for **Documents**, **Kyc Data**, **Audit Trail**, **Doc Validations** and **Workflow** (each shown when it applies to your entity and role).
+Click the KYC's name in either list to open it. The KYC page shows the buttons **Edit**, **Delete**, **Verify** / **UnVerify** and **Request Updates**, a **KYC Actions** dropdown, and tabs for **Documents**, **Kyc Data**, **Audit Trail**, **Document checks** and **Workflow** (each shown when it applies to your entity and role).
 
 **Where do investors fill in their KYC?**
 From the link in the KYC email (valid for 30 days, no password needed), or after logging in via Sidebar → [**Funds → KYCs**](/investor_kycs) and opening the KYC. A [list of only the KYCs still waiting for them](/investor_kycs/investor_pending) has no menu link. See [Investor Self-Completion](#investor-self-completion).
@@ -847,10 +913,31 @@ The form-type items (**Individual**, **Non Individual**, or one per tagged form 
 On Sidebar → [**Funds → KYCs**](/investor_kycs) click **New KYC** → **View All Custom Notifications**; it lists your company's KYC templates with their email, subject, **Enabled** and **Latest**. The list opens for Company Admins. Every template in the company, including agreement templates, is under Profile menu → **My Inbox** → **Custom Notifications**. See [Custom Notifications](custom_notifications_user_guide).
 
 **Where are the bulk actions for KYCs?**
-On Sidebar → [**Funds → KYCs**](/investor_kycs), apply a filter (a count tile such as **Unverified**, or a **Send Status** view from **New KYC**) and open the **Bulk Actions** dropdown next to **KYC Documents**. It offers **Send KYC Link**, **Verify**, **Unverify**, **Send Reminder** and, when enabled for your organisation, **Generate AML Reports**, **Validate Document Data** and **Verify Bank Details**. See [Bulk Actions on the KYC list](#bulk-actions-on-the-kyc-list).
+On Sidebar → [**Funds → KYCs**](/investor_kycs), apply a filter (a count tile such as **Unverified**, or a **Send Status** view from **New KYC**) and open the **Bulk Actions** dropdown next to **KYC Documents**. It offers **Send KYC Link**, **Verify**, **Unverify**, **Send Reminder** and, when enabled for your organisation, **Generate AML Reports**, **Check documents** and **Verify Bank Details**. See [Bulk Actions on the KYC list](#bulk-actions-on-the-kyc-list).
 
 **Why don't I see the Bulk Actions button on the KYCs list?**
-The button only appears while a filter is applied on **Funds → KYCs**; on the unfiltered list it is replaced by **Send KYC Reminders**. Typing in the search box does not count as a filter, so click a count tile or a **Send Status** view first. The **Generate AML Reports**, **Validate Document Data** and **Verify Bank Details** items also need AML, AI document validation or bank verification switched on for your organisation.
+The button only appears while a filter is applied on **Funds → KYCs**; on the unfiltered list it is replaced by **Send KYC Reminders**. Typing in the search box does not count as a filter, so click a count tile or a **Send Status** view first. The **Generate AML Reports**, **Check documents** and **Verify Bank Details** items also need AML, AI document validation or bank verification switched on for your organisation.
+
+**Where is the KYC step bar (journey) and who sees it?**
+At the top of the KYC's page, above its details, for your team only — investors never see it. It shows on KYCs created after your company's KYC journey was set up. See [Tracking a KYC: the Journey Step Bar](#tracking-a-kyc-the-journey-step-bar).
+
+**Why doesn't my KYC show a step bar?**
+Either the KYC was created before your company's KYC journey was set up, or the journey was never set up. A company admin sets it up on the [workflow templates](/workflow_templates) page with **Set up journeys → Set up investor KYC journeys**; only KYCs created afterwards get a journey.
+
+**Why does the KYC journey start with the email instead of Send KYC form?**
+Because the KYC request is usually the first email an investor gets from you, and the text comes from one company-level template — so a wrong subject or an unfilled placeholder reaches every investor at once. **Set up KYC email** names the email that will actually be sent (or warns that CapHive's default text will be used), and **Preview the email** shows that investor's own copy. Neither blocks anything: you can still send at any time, and both tasks then show n/a.
+
+**What should I do on "Set up KYC email" if we have no KYC email of our own?**
+Either click **Custom KYC Notification** in the panel and write one, or click **Mark reviewed** to accept CapHive's default text. The panel tells you which of the two will happen, so nothing goes out unseen.
+
+**Why did my KYC journey move back to "Set up KYC email" saying "Email template changed after review"?**
+Someone created, edited or deleted your company's KYC email after the two tasks were confirmed, so those confirmations no longer describe what the investor would receive. Re-read it, preview it and mark both reviewed again. Only KYCs whose form has not gone out are reopened; editing the KYC *reminder* email changes nothing, because these tasks are about the email the form link is sent with.
+
+**Why do the email tasks show n/a on some KYCs?**
+Either the form has already been sent (or the investor has started it) — the investor has the email, so a review cannot change it — or the fund filled the KYC in itself, when no email is sent at all. A task someone had already confirmed keeps its ✓ instead.
+
+**Our KYC journey was set up months ago — do we get the two email tasks?**
+Yes, the next time a company admin runs **Set up journeys → Set up investor KYC journeys**. They are inserted before **Send KYC form**, everything you have changed on the template is kept, and nothing is added twice. KYCs that were waiting at **Send KYC form** move back one step to **Set up KYC email**.
 
 ### Creating, updating and managing KYCs
 
@@ -888,7 +975,7 @@ Click **Request Updates** on an unverified KYC, add an optional message in **Req
 Open the KYC and click **Delete**, then confirm. It needs the *KYC Delete* permission, and verified KYCs cannot be deleted; **UnVerify** first if you really need to remove one.
 
 **How do I use bulk actions to work on many KYCs at once?**
-Filter the **Funds → KYCs** list (a count tile or **Send Status** view), then open **Bulk Actions**: **Send KYC Link**, **Verify**, **Unverify**, **Send Reminder**, **Verify Bank Details**, **Generate AML Reports** and **Validate Document Data**. Bulk actions run in the background on every matching KYC, including those on other pages. See [Bulk Actions on the KYC list](#bulk-actions-on-the-kyc-list).
+Filter the **Funds → KYCs** list (a count tile or **Send Status** view), then open **Bulk Actions**: **Send KYC Link**, **Verify**, **Unverify**, **Send Reminder**, **Verify Bank Details**, **Generate AML Reports** and **Check documents**. Bulk actions run in the background on every matching KYC, including those on other pages. See [Bulk Actions on the KYC list](#bulk-actions-on-the-kyc-list).
 
 **How do I bulk verify or unverify many KYCs at once?**
 Filter **Funds → KYCs** down to the KYCs you want (for example the **Completed** tile), then choose **Bulk Actions → Verify** or **Bulk Actions → Unverify** and confirm. Check the filtered list first: every matching KYC on every page is changed.
@@ -899,8 +986,8 @@ Filter **Funds → KYCs** (for example **Send Status: Link Sent**), then choose 
 **How do I generate AML reports for many KYCs at once with bulk actions?**
 With AML enabled for your organisation, filter **Funds → KYCs** and choose **Bulk Actions → Generate AML Reports**. Each KYC gets a background AML check, the same as **KYC Actions → Generate AML Report** on a single record.
 
-**How do I bulk validate document data or verify bank details for many KYCs at once?**
-Filter **Funds → KYCs**, then choose **Bulk Actions → Validate Document Data** (needs AI document validation enabled) or **Bulk Actions → Verify Bank Details** (needs bank verification enabled). Both run in the background on every matching KYC.
+**How do I check documents or verify bank details for many KYCs at once?**
+Filter **Funds → KYCs**, then choose **Bulk Actions → Check documents** (needs Doc LLM validation enabled) or **Bulk Actions → Verify Bank Details** (needs bank verification enabled). Both run in the background on every matching KYC.
 
 **How do I bulk-import KYC records?**
 On **Funds → KYCs** open **Upload/Download → Upload KYC Details**. Use **Upload KYC Documents** for files. See [Importing KYC Records](#importing-kyc-records).
@@ -910,6 +997,24 @@ On **Funds → KYCs** open **Upload/Download → Upload KYC Details**. Use **Upl
 
 **Which permissions do I need?**
 Your user needs the *KYCs* feature. Company admins can do everything; other employees need *KYC Read*, *KYC Create*, *KYC Update*, *KYC Delete* or *KYC Approve* on their user, and only see KYCs linked to commitments in funds they have access to. **Send KYC Reminders** and **Upload/Download** need the employee role.
+
+**How do I set up the KYC journey for my company?**
+As a company admin of an Investment Fund or Angel Fund company, open the [workflow templates](/workflow_templates) page and choose **Set up journeys → Set up investor KYC journeys**. It adds the **Investor KYC** journey and a rule giving it to every new KYC. New fund companies get it automatically.
+
+**How do I give one KYC form type a different journey (workflow)?**
+Open **Investor KYC** under the [workflow templates](/workflow_templates), click **Duplicate** and edit the copy. On the copy, add an auto-assignment rule with **Add condition** → **Form type** **is** the type (for example "Individual — Fund IV") and use a priority below 100. New KYCs of that form type get the copy; all other KYCs keep **Investor KYC**.
+
+**Can I use one journey for both individual and non-individual KYCs?**
+Yes — that is the default. **Investor KYC** applies to every KYC whatever its type or form type, until you add a rule for a specific KYC form type.
+
+**How do I pick who signs off the Compliance sign-off on the KYC journey?**
+Open **Investor KYC** under the [workflow templates](/workflow_templates), edit the **Compliance sign-off** step and pick the approver(s); any one approval passes it. Until someone is picked the step shows n/a, so no KYC waits on it. Approvers are fixed when a KYC's journey starts, so the change affects KYCs created afterwards.
+
+**How do I mark a KYC complete when we filled it in for the investor?**
+Edit the KYC, tick **I confirm all details provided are complete to the best of my knowledge.** at the bottom of the form and save. The KYC becomes **Completed**, the journey's **Send KYC form** task shows n/a "Filled in by the fund" and **Submit KYC** is done. Unticking it later puts the KYC back to **Draft Saved**.
+
+**How do I mark documents as checked when AI validation fails?**
+When **Validate documents** is current, open the documents (the panel's **Open validation** shows which answers failed), check them yourself and click **Mark reviewed** in the panel. The journey records who checked them and moves on.
 
 ### Why use Investor KYC
 
@@ -927,6 +1032,9 @@ Compliance or onboarding staff create KYCs, send forms, review documents and ver
 
 **Why use a Non-Individual KYC instead of Individual?**
 Non-Individual KYCs carry the fields and document checklist for companies, LLPs, trusts and other entities, which differ from those for a natural person. The type cannot be changed later, so pick it correctly at creation. See [KYC Types](#kyc-types-individual-vs-non-individual).
+
+**Why use the KYC journey?**
+It shows at a glance which step each new KYC is on — form, documents, validation, AML, review, sign-off, verification — and what to do next, with a button that does it. Manual document checks and AML overrides are recorded against a person, and the page updates live when the investor submits or a job finishes.
 
 ### What happens when I …
 
@@ -967,19 +1075,31 @@ For each matching KYC that is not **Completed** or **Verified** and whose stakeh
 Every matching KYC is set to **Verified** and marked completed, without re-running form validation, and is then locked against editing like a manually verified KYC. Nobody is notified and the **Verified By** user is not recorded. **Bulk Actions → Unverify** reverses it.
 
 **What happens when I use Bulk Actions → Unverify on the KYCs list?**
-Every matching KYC is set to unverified with status **Link Sent**, and **Completed by Investor** is cleared, so the investor can edit and resubmit the form. Nobody is emailed. This differs from the **UnVerify** button on a single KYC, which leaves the status at **Completed**; run **Bulk Actions → Verify** to verify them again.
+Every matching KYC is set to unverified with status **Completed**, exactly like the **UnVerify** button on a single KYC, and its journey moves back to **Verify KYC**. Nobody is emailed and the investor still cannot edit it; use **Request Updates** to reopen the form. Run **Bulk Actions → Verify** to verify them again.
 
 **What happens when I use Bulk Actions → Generate AML Reports on the KYCs list?**
 Each matching KYC gets a background AML check using its full name, exactly as **KYC Actions → Generate AML Report** does; the **AML Status** updates and the report appears under **KYC Actions → View AML Reports**. KYCs with no full name are listed as errors. Investors are not notified and reports are not deleted if you run it again.
 
-**What happens when I use Bulk Actions → Validate Document Data on the KYCs list?**
-For each matching unverified KYC, AI reads the documents that have document questions set up, fills KYC fields from the answers and records results on the **Doc Validations** tab. Verified KYCs ("Cannot modify verified KYC") and KYCs with no matching documents are listed as errors. KYCs are processed one after another, so a large list can take a long time; changed field values are not rolled back automatically.
+**What happens when I use Bulk Actions → Check documents on the KYCs list?**
+For each matching unverified KYC, the AI reads the documents on its list, empty KYC fields are filled in, and anything needing attention shows on its **Document checks** tab and in **Documents needing attention**. Verified KYCs are skipped ("Cannot modify verified KYC"). KYCs are processed one after another, so a large list can take a long time.
 
 **What happens when I use Bulk Actions → Send Reminder on the KYCs list?**
 Each matching KYC that is not **Verified** or **Completed** gets the KYC reminder email and in-app notification, with a 30-day link, sent to the stakeholder's approved users who have access and whose Notification Topics are blank or include `KYC`; its status becomes **Link Sent**. KYCs with no approved users are listed as errors. With custom reminder notifications, each tagged **Send Reminder** item uses that notification's content; emails go out over about three minutes and cannot be recalled.
 
 **What happens when I use Bulk Actions → Verify Bank Details on the KYCs list?**
 Each matching KYC is queued for a bank account check against the bank API (spread over about three minutes); the **Bank Verified** and **Bank Verification Status** fields update when it runs. KYCs with no account number or IFSC code get the status "No Bank Account Number / IFSC Code Entered". Nobody is notified.
+
+**What happens to the KYC journey when I click Request Updates?**
+The journey moves back to **Submit KYC** with "Updates requested", and the review and Compliance sign-off given before the request are reset, because the investor may change the details. Approvers whose sign-off was reset get an email.
+
+**What happens to the KYC journey when I verify a KYC before every task is done?**
+The KYC is verified as usual — the journey never blocks. Any earlier task not yet done shows n/a "Verified without this step" and the journey is complete. If you **UnVerify** it, those tasks come back.
+
+**What happens to the KYC journey when I replace or upload a document?**
+If **Validate documents** was already done, it moves back with "Documents changed after validation": click **Check again** on the **Document checks** tab, or check and **Mark reviewed**. An upload before that task is reached changes nothing.
+
+**What happens to the KYC journey when the investor uses the documents-first form?**
+Nothing changes until the investor submits: uploading documents first and letting the AI pre-fill the form does not complete **Submit KYC**, and pre-filling is not validation, so **Validate documents** is not ticked.
 
 ### Troubleshooting and edge cases
 
@@ -1047,7 +1167,7 @@ The **Funds → KYCs** link needs the *Funds* feature and the page needs the *KY
 A KYC with the same stakeholder, PAN and **Investing Entity** name is already in CapHive. Set **Update Only** to `Yes` on that row to update it instead of creating a duplicate.
 
 **A KYC bulk action finished but some KYCs did not change — why?**
-Each KYC is checked on its own: **Send Reminder** and **Send KYC Link** skip completed or verified KYCs and those whose stakeholder has no approved users, **Validate Document Data** skips verified KYCs and KYCs without matching documents, and **Generate AML Reports** skips KYCs with no full name. The final alert says how many errors there were and the list is emailed to you. Emails, AML and bank checks are also queued, so they can finish a few minutes after the "completed" alert.
+Each KYC is checked on its own: **Send Reminder** and **Send KYC Link** skip completed or verified KYCs and those whose stakeholder has no approved users, **Check documents** skips verified KYCs, and **Generate AML Reports** skips KYCs with no full name. The final alert says how many errors there were and the list is emailed to you. Emails, AML and bank checks are also queued, so they can finish a few minutes after the "completed" alert.
 
 **Does a bulk action on the KYCs list apply to KYCs on other pages?**
 Yes. A KYC bulk action applies to every KYC matching the current filter, including rows on other pages, not just the ones you can see. The text in the search box is not applied, so narrow the list with filters before you run it.
@@ -1055,11 +1175,20 @@ Yes. A KYC bulk action applies to every KYC matching the current filter, includi
 **Bulk Actions → Send KYC Link on the KYCs list sent no emails — why?**
 The bulk **Send KYC Link** only emails KYCs still flagged to have the form sent, and that flag is cleared once the first "KYC required" email goes out, so existing KYCs are normally skipped without an error. Use **Bulk Actions → Send Reminder**, or **KYC Actions → Send KYC Required Notification** on a single KYC.
 
-**Why is Validate Document Data listed twice in the KYC Bulk Actions menu?**
-Both **Validate Document Data** items in the KYC **Bulk Actions** menu run the same action; only their confirmation messages differ. Use either one.
-
 **Can I undo a bulk action on KYCs?**
-There is no undo for KYC bulk actions. **Bulk Actions → Verify** and **Bulk Actions → Unverify** reverse each other (bulk unverify leaves the status at **Link Sent**), but emails already sent, AML reports and data extracted from documents stay.
+There is no undo for KYC bulk actions. **Bulk Actions → Verify** and **Bulk Actions → Unverify** reverse each other (bulk unverify leaves the status at **Completed**), but emails already sent, AML reports and data extracted from documents stay.
+
+**Why did the KYC journey move back to Review KYC?**
+Someone edited the KYC's details after it was reviewed (or extracted data into it from its documents), so the review no longer covers what is on the KYC. Check the changes and click **Mark reviewed** again.
+
+**Why is Clear AML match still waiting after I overrode the AML status?**
+It is done only when the status is overridden to **No Match**. An override to **Potential Match** confirms the match, and the panel says "AML match confirmed — this KYC should not be verified".
+
+**Why do I get reminders about a KYC the investor created?**
+You don't: reminders about a stalled KYC journey task go to the KYC's creator only when that person works for your company. For KYCs the investor created, pick an owner on the journey's steps under the [workflow templates](/workflow_templates) if you want reminders.
+
+**Why did Bulk Actions → Unverify not let the investor edit the KYC again?**
+Bulk **Unverify** now sets the KYCs to **Completed**, the same as **UnVerify** on one KYC, so the form stays locked for the investor. Use **Request Updates** on the KYC to reopen it for them with a fresh link.
 
 ## Related Guides
 
@@ -1070,5 +1199,6 @@ There is no undo for KYC bulk actions. **Bulk Actions → Verify** and **Bulk Ac
 - [Workflow Templates](workflow_templates_user_guide) — review workflows that gate **Verify** and **Edit**.
 - [KYC Onboarding Agent](agents/kyc_onboarding_agent_user_guide) — automated chasing, checks and expiry alerts.
 - [KYC Document Extractor Agent](agents/kyc_doc_extractor_agent_user_guide) — the AI behind the document-first wizard.
+- [Document Checks](document_checks_user_guide) — the AI checks of KYC documents behind **Check documents**.
 - [e-Signing](esigning_user_guide) — signing KYC documents generated from the record.
 - [Custom Notifications](custom_notifications_user_guide) — your own wording for KYC emails and agreement emails.

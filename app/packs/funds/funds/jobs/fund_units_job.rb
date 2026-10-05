@@ -18,6 +18,11 @@ class FundUnitsJob < ApplicationJob
       end
     end
 
+    # Real-time journey progress for the call or distribution (no-op without a journey).
+    # Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+    # Worked examples H8 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+    owner.journey_progress!(actor: User.find_by(id: user_id))
+
     UserAlert.new(user_id:, message: "Units calculation is now complete.", level: "success").broadcast
   end
 end

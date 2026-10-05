@@ -638,8 +638,11 @@ Given('We Generate documents for the capital distribution') do
     end
   end
   visit(capital_distribution_path(@capital_distribution))
-  click_on("Actions")
-  click_on("Generate Documents")
+  # Both inside the Actions menu: the journey panel has its own "Generate Documents" button too
+  within "#capital_distribution_#{@capital_distribution.id}_actions" do
+    click_on("Actions")
+    click_on("Generate Documents")
+  end
   click_on("Proceed")
   sleep(5) # Wait for the job to complete
   # With :inline job adapter the job runs synchronously and the completion flash
@@ -793,10 +796,11 @@ end
 Given('dist notice is generated for the dist payments') do
   @capital_distribution = @fund.capital_distributions.first
   visit(capital_distribution_path(@capital_distribution))
+  # Both inside the Actions menu: the journey panel has its own "Generate Documents" button too
   within "#capital_distribution_#{@capital_distribution.id}_actions" do
     click_on("Actions")
+    click_on("Generate Documents")
   end
-  click_on("Generate Documents")
   click_on("Proceed")
   sleep(10) # Wait for the job to complete
   # With :inline job adapter the job runs synchronously and the completion flash
@@ -832,10 +836,11 @@ end
 Given('I trigger notification for the distribution') do
   @capital_distribution ||= @fund.capital_distributions.first
   visit(capital_distribution_path(@capital_distribution))
+  # Inside the Actions menu: the journey panel can show its own "Send Payment Notifications" button
   within "#capital_distribution_#{@capital_distribution.id}_actions" do
     click_on("Actions")
+    click_on("Send Payment Notifications")
   end
-  click_on("Send Payment Notifications")
   click_on("Proceed")
   sleep(5) # Wait for the job to complete
 end

@@ -422,6 +422,7 @@ It only shows for users whose entity is a fund and only after CapHive has config
 ## Related Guides
 
 - [Support Agents](support_agents_user_guide) — per-agent setup, schedules, execution logs and notifications.
+- [Document Checks](document_checks_user_guide) — the AI reads KYC documents to fill in or compare KYC fields.
 - [LLM Configuration Guide](llm_configuration_guide) — entering provider keys and choosing the default model.
 - [Customer Support Agent](customer_support_agent_user_guide) — the in-app chat assistant that answers from the user guides.
 - [Agent Charts](agent_charts_user_guide) — charts produced by chat-enabled agents and how to export them.

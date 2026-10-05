@@ -31,11 +31,6 @@
         Tasks
       </a>
 
-      <% if document.qna.present? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#qna-tab">
-        Q&A
-      </a>
-      <% end %>
 
 
     </nav>
@@ -95,12 +90,6 @@
         </div>
 
 
-        <div id="qna-tab" class="tab-pane fade">
-          <div id="qna" class="associated_entity markup">
-            <%#= Json2table.get_html_table(document.qna, JsonTable::TABLE_OPTIONS).html_safe if document.qna %>
-            <%= render_markdown(document.qna[1..-2].gsub('\\\\', '\\').gsub('\n', "\n").gsub('```markdown', '').gsub('```', '').gsub('\"', '')) if document.qna.present? %>
-          </div>
-        </div>
 
     </div>
 

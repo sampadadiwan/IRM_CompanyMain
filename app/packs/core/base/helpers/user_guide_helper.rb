@@ -83,7 +83,8 @@ module UserGuideHelper
     'documents' => 'document_management_user_guide.md',
     'folders' => 'document_management_user_guide.md',
     'doc_shares' => 'document_management_user_guide.md',
-    'doc_questions' => 'document_management_user_guide.md',
+    'doc_checks' => 'document_checks_user_guide.md',
+    'doc_check_results' => 'document_checks_user_guide.md',
 
     # Custom Fields
     'form_custom_fields' => 'custom_fields_user_guide.md',

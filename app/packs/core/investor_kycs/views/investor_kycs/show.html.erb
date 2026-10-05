@@ -13,6 +13,13 @@
 <%= render "/investor_kycs/kyc_onboarding_agent", investor_kyc: @investor_kyc if show_onboarding_agent %>
 
 <div class="container-fluid p-3">
+  <%# KYC journey (step bar + what's needed now) for fund users; nothing renders without one or for investors.
+      Worked examples H2, X1 — openspec/changes/investor-kyc-journey/design.md#worked-examples %>
+  <% if @journey.present? %>
+    <%= render "/investor_kycs/journey", record: @investor_kyc, journey: @journey, instance: nil %>
+    <%# Real-time: an evaluation that changes this KYC's journey reloads the panel above in place (E15) %>
+    <%= turbo_stream_from @investor_kyc, :journey %>
+  <% end %>
   <!-- Show the main KYC details -->
   <%= render "investor_kycs/show", investor_kyc: @investor_kyc, ckyc_data: ckyc_data, kra_data: kra_data %>
 
@@ -89,15 +96,12 @@
               <% end %>
             <% end %>
 
-            <% if policy(@investor_kyc).validate_docs_with_ai? %>
-              <%= button_to validate_docs_with_ai_investor_kyc_path(@investor_kyc),
+            <%# Document Checks: the id stays — it is the journey's "Check documents" action target %>
+            <% if policy(@investor_kyc).validate_docs_with_ai? && DocChecks::Kyc.can_edit?(current_user, @investor_kyc) %>
+              <%= button_to doc_check_runs_path(record_type: "InvestorKyc", record_id: @investor_kyc.id),
                   id: "investor_kyc_validate_docs_with_ai_btn", method: :post, class: "dropdown-item", form_class: "deleteButton",
-                  data: {
-                    action: "click->confirm#popup", turbo: false, method: :post,
-                    msg: "This will try and validate the data in the documents and KYC. It will take a few minutes. Proceed?",
-                    workflow_gate_label: "Validate Document Data"
-                  } do %>
-                <i class="ti brand-github-copilot"></i>Validate Document Data
+                  data: { turbo: false, workflow_gate_label: "Check documents" }.merge(doc_check_run_confirm_data(@investor_kyc)) do %>
+                <i class="ti ti-file-search"></i><%= t("doc_checks.panel.check_documents") %>
               <% end %>
             <% end %>
 

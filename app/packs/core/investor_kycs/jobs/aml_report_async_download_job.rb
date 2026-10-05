@@ -87,9 +87,17 @@ class AmlReportAsyncDownloadJob < ApplicationJob
       #   - Otherwise update only when this report found a potential match, or when the
       #     KYC has no status yet (first screening).
       if !kyc.aml_manual_override? && (aml_report.match_status == "potential_match" || kyc.aml_status.blank?)
+        started_at = Time.current
         kyc.assign_attributes(aml_status: aml_report.match_status)
         # validate: false — status sync must not be blocked by unrelated KYC validation errors.
         kyc.save(validate: false)
+        # A new potential match reopens "Clear AML match"; anything else moves the journey on.
+        # Worked examples H6, E7 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+        if kyc.aml_status.to_s.parameterize(separator: "_") == "potential_match"
+          kyc.journey_undo_evaluate(note: "New AML result", started_at:)
+        else
+          kyc.journey_progress!
+        end
       end
     elsif user_id.present?
       # Completed but no PDF URL in the payload — nothing to attach, report it as a failure.

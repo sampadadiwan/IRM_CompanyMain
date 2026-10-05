@@ -6,7 +6,6 @@ class Investor < ApplicationRecord
   include WithFriendlyId
   include WithIncomingEmail
   include Pundit::Authorization
-  include WithDocQuestions
   include ForInvestor
   include WithSupportAgent
   include InvestorShared
@@ -14,6 +13,9 @@ class Investor < ApplicationRecord
   # Lets an Investor have a WorkflowTemplate assigned/launched against it —
   # used for both LP onboarding and portfolio-company KPI report review.
   include Workflowable
+
+  # Auto-assignment rules: access counters change constantly and are not routing data
+  workflow_rule_fields except: %w[investor_access_count unapproved_investor_access_count]
 
   update_index('investor') { self if index_record? }
 

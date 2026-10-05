@@ -5,7 +5,7 @@ namespace :form_custom_fields do
   # partials used to split it with a bare split(","). An admin who typed "Individual, HUF, LLP"
   # therefore created an option whose label AND submitted value is " HUF" — so the value
   # stored in json_fields carries the space, and every exact-match consumer (the
-  # register_cf_ransacker filters, search_custom_fields, satisfies_condition? and its JS
+  # register_cf_ransackers filters, search_custom_fields, satisfies_condition? and its JS
   # twin in form_custom_fields_controller.js) stops matching it.
   #
   # This task strips each option in meta_data and rewrites the already-stored values to match.

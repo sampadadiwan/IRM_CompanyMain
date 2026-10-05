@@ -1,5 +1,7 @@
 class CapitalDistributionsController < ApplicationController
-  before_action :set_capital_distribution, only: %i[show edit update destroy approve redeem_units payments_completed generate_docs send_payment_notifications recompute_fees]
+  include WithJourneyPanel # show's journey evaluation and the journey action
+
+  before_action :set_capital_distribution, only: %i[show journey edit update destroy approve redeem_units payments_completed generate_docs send_payment_notifications recompute_fees]
 
   # GET /capital_distributions or /capital_distributions.json
   def index
@@ -23,7 +25,18 @@ class CapitalDistributionsController < ApplicationController
   end
 
   # GET /capital_distributions/1 or /capital_distributions/1.json
-  def show; end
+  # Evaluates the distribution's journey on every view so the step bar is always current (WithJourneyPanel).
+  # Worked examples H3 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  # UI journey J2.1 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#what-users-see
+  def show
+    @journey = evaluate_journey(@capital_distribution)
+  end
+
+  # GET /capital_distributions/:id/journey — just the journey panel, for the frame a real-time update inserts
+  # Worked examples E16, E17, X6 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def journey
+    render_journey_panel(@capital_distribution)
+  end
 
   def redeem_units
     FundUnitsJob.perform_later(@capital_distribution.id, "CapitalDistribution", @capital_distribution.title, current_user.id)
@@ -108,6 +121,9 @@ class CapitalDistributionsController < ApplicationController
 
     respond_to do |format|
       if @capital_distribution.save
+        # Real-time journey progress (no-op without a journey).
+        # Worked examples H5 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+        @capital_distribution.journey_progress!(actor: current_user)
         format.html { redirect_to capital_distribution_url(@capital_distribution), notice: "Capital distribution was successfully approved." }
         format.json { render :show, status: :created, location: @capital_distribution }
       else
@@ -120,10 +136,13 @@ class CapitalDistributionsController < ApplicationController
   def payments_completed
     payments = @capital_distribution.capital_distribution_payments
     count = 0
-    payments.each do |cdp|
+    # In batches: a distribution can have thousands of payments (CLAUDE.md large-table rules)
+    payments.find_each do |cdp|
       cdp.completed = true
       count += 1 if CapitalDistributionPaymentUpdate.call(capital_distribution_payment: cdp).success?
     end
+    # Real-time journey progress (no-op without a journey). Worked examples H6 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+    @capital_distribution.journey_progress!(actor: current_user)
 
     redirect_to capital_distribution_url(@capital_distribution), notice: "#{count} payments out of #{payments.count} marked as completed."
   end

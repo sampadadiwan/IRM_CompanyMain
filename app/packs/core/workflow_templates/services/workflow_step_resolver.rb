@@ -6,8 +6,11 @@ class WorkflowStepResolver < Trailblazer::Operation
   #   { tiebreaker: true }         — all responded but no consensus; admin must intervene
   step :resolve
 
-  def resolve(ctx, instance:, **)
-    step_data = instance.current_step_data
+  # step_position defaults to the current step; WorkflowEvaluator passes other positions to ask
+  # whether an earlier human step's votes have resolved
+  def resolve(ctx, instance:, step_position: nil, **)
+    position  = (step_position || instance.current_step_position).to_i
+    step_data = instance.snapshot_steps.find { |s| s[:position].to_i == position }
     unless step_data
       ctx[:resolution] = { pending: true }
       return true
@@ -19,7 +22,7 @@ class WorkflowStepResolver < Trailblazer::Operation
     # (injected directly or via future code paths) from affecting quorum counts
     responses = instance.workflow_actor_responses
                         .active
-                        .for_step(instance.current_step_position)
+                        .for_step(position)
                         .where(actor_id: actor_ids)
     responded_ids = responses.map(&:actor_id)
 

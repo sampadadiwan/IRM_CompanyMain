@@ -1,5 +1,13 @@
 class CapitalCommitment < ApplicationRecord
   include Workflowable
+
+  # Auto-assignment rules may test the form type. Left out: unbounded references, emails, computed
+  # ransackers, and the amounts rolled up from remittances and units — always 0 when a commitment is
+  # created, the only time a rule is checked (committed_amount is entered, so it stays)
+  workflow_rule_fields extra: %w[form_type_id],
+                       except: %w[investor_id investor_kyc_id folio_id esign_emails updated_at
+                                  units_amount_minus_collected foreign_currency_commitment
+                                  call_amount collected_amount distribution_amount total_units_amount]
   include WithFolder
   include WithExchangeRate
   include WithCustomField
@@ -305,6 +313,16 @@ class CapitalCommitment < ApplicationRecord
 
   def skip_doc_gen?
     json_fields["skip_doc_gen"].to_s.strip.downcase == "yes"
+  end
+
+  # Ids of the commitments in scope that are set to skip document generation (and so get no
+  # notice or email). skip_doc_gen lives in json_fields, so it is filtered in Ruby over two narrow
+  # columns using the same rule as skip_doc_gen? — portable to SQLite, unlike JSON SQL.
+  def self.skip_doc_gen_ids(scope)
+    scope.pluck(:id, :json_fields).filter_map do |id, fields|
+      fields = JSON.parse(fields) if fields.is_a?(String)
+      id if fields.to_h["skip_doc_gen"].to_s.strip.casecmp?("yes")
+    end
   end
 
   # Units that must be deleted before this record can be (see BlocksDestroyWithFundUnits)

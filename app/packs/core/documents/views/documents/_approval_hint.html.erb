@@ -1,0 +1,62 @@
+<%# Contextual banner for people sent to this filtered list by another page specifically to
+    approve something - the capital call's and the capital distribution's "View Generated Notices To
+    Approve" (capital-distribution-journey, Worked examples E22 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples).
+
+    params[:hint] is matched against known keys and every word of the message is hard-coded here:
+    nothing from the URL is rendered, so a crafted link cannot plant a message on this page. The
+    call / distribution is looked up from the list's own search and authorized (approval_hint_record).
+
+    Three states, so the approver knows when they are finished and can go back to the journey:
+      - approval just started (the bulk Approve's flash) - the journey moves on by itself in real
+        time once the job finishes, so this tab can be closed
+      - nothing left to approve - same, close this tab
+      - notices still waiting - how to approve them
+
+    The hint is deliberately not carried in layouts/filter's hidden fields. Re-running the filter
+    changes which documents are listed, at which point the banner no longer describes them, so it
+    drops away on its own. %>
+<% if params[:hint] == "approve_notices" %>
+  <% record = approval_hint_record(@q) %>
+  <% done = flash[:bulk_approve_started] || (record && !notices_awaiting_approval?(record)) %>
+  <% if done %>
+    <% what = record.is_a?(CapitalDistribution) ? "distribution" : "capital call" %>
+    <div class="alert alert-success d-flex align-items-start" role="alert" id="approval_hint_done">
+      <i class="ti ti-circle-check fs-5 flex-shrink-0 me-2"></i>
+      <div class="flex-grow-1">
+        <% if flash[:bulk_approve_started] %>
+          <strong>Approval started.</strong>
+          The <%= what %>'s journey moves on by itself once it finishes (usually within a minute) -
+          you do not need to refresh it. You can close this tab.
+        <% else %>
+          <strong>All notices are approved.</strong>
+          The <%= what %>'s journey has moved on. You can close this tab.
+        <% end %>
+      </div>
+      <%# The browser only lets a page close a tab script opened and that has not navigated since,
+          so after the approve redirect close-tab usually falls back to the record's own page %>
+      <button type="button" class="btn btn-sm btn-success ms-2 flex-shrink-0" id="approval_hint_close_btn"
+              data-controller="close-tab" data-action="close-tab#close"
+              data-close-tab-fallback-value="<%= record ? polymorphic_path(record) : '' %>">
+        <i class="ti ti-x"></i> Close this tab
+      </button>
+    </div>
+  <% else %>
+    <div class="alert alert-info d-flex align-items-start" role="alert">
+      <i class="ti ti-info-circle fs-5 flex-shrink-0 me-2"></i>
+      <div>
+        <% if current_user.has_cached_role?(:approver) %>
+          <strong>These notices still need approval.</strong>
+          Use <strong>Actions &rarr; Approve</strong> to approve the whole list in one step. It covers
+          every notice matching this filter, including any on later pages - not only the rows on
+          screen. To approve them one at a time instead, open a notice and use its own Approve button.
+        <% else %>
+          <%# bulk_actions only renders Approve for the :approver role, so pointing a non-approver
+              at Actions -> Approve would send them looking for a menu item that is not there. %>
+          <strong>These notices still need approval.</strong>
+          Approving requires the Approver role, which your account does not have - ask an approver at
+          your firm to review this list.
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+<% end %>

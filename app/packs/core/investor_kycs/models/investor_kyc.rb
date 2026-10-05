@@ -1,5 +1,18 @@
 class InvestorKyc < ApplicationRecord
   include Workflowable
+
+  # Auto-assignment rules may also test the form type, and offer every KYC form's custom fields.
+  # Left out: identifiers (routing mistakes, not routing data), and the amounts rolled up from
+  # commitments and remittances — always 0 when a KYC is created, the only time a rule is checked
+  # (workflow-rule-condition-builder card 1)
+  workflow_rule_fields extra: %w[form_type_id],
+                       except: %w[PAN bank_account_number ifsc_code address
+                                  committed_amount call_amount collected_amount distribution_amount],
+                       form_type_names: %w[IndividualKyc NonIndividualKyc InvestorKyc]
+
+  # The KYC page shows a journey panel (investor-kyc-journey): open pages update live, and stalled
+  # tasks remind the KYC's creator when that creator works for the fund (workflow_default_owner).
+  has_journey
   STANDARD_COLUMNS = { "Investor; text-col" => "investor_name; text-col",
                        "Investing Entity; text-col" => "full_name; text-col",
                        "Type; text-col" => "kyc_type; text-col",
@@ -62,7 +75,6 @@ class InvestorKyc < ApplicationRecord
   include WithFriendlyId
   include WithIncomingEmail
   include InvestorKycConcern
-  include WithDocQuestions
   include WithSupportAgent
 
   belongs_to :investor
@@ -84,6 +96,8 @@ class InvestorKyc < ApplicationRecord
 
   has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
+  # Document Checks runs of this KYC (results go with them)
+  has_many :doc_check_runs, as: :record, dependent: :destroy
 
   scope :uncalled, -> { where('committed_amount_cents > call_amount_cents') }
   scope :due, -> { where('committed_amount_cents > collected_amount_cents') }
@@ -244,6 +258,10 @@ class InvestorKyc < ApplicationRecord
         update_column(:send_kyc_form_to_user, false)
       end
       # rubocop:enable Rails/SkipsModelValidations
+
+      # update_columns skips callbacks, so tell the journey ("Send KYC form" is done) explicitly
+      # Worked examples H3 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+      journey_progress!
     end
   end
 
@@ -349,6 +367,15 @@ class InvestorKyc < ApplicationRecord
     Document.where(owner: self).to_a
   end
 
+  # Who is reminded about a stalled journey task when the step names no owner: the creator, but only
+  # when they work for the fund — an investor who created their own KYC must never get reminders
+  # about the fund's tasks (design Decision 10).
+  # Worked examples E23 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def workflow_default_owner
+    creator = super
+    creator if creator && creator.entity_id == entity_id
+  end
+
   def enable_kyc
     investor.investor_entity.permissions.set(:enable_kycs)
     investor.investor_entity.save
@@ -442,10 +469,6 @@ class InvestorKyc < ApplicationRecord
   # And we need the corresponding fund unit setting (for document generation), from any fund in the entity. This is for Angel Funds only. For other funds, the agreement_unit_type is not used.
   def agreement_unit_setting
     entity.funds.first.fund_unit_settings.where(name: agreement_unit_type).first
-  end
-
-  def doc_questions
-    entity.doc_questions.where(owner: entity, for_class: "InvestorKyc")
   end
 
   def ckyc_data

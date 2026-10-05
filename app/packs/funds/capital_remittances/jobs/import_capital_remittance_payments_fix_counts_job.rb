@@ -37,6 +37,10 @@ class ImportCapitalRemittancePaymentsFixCountsJob < BulkActionJob
       # We need to run the counter cache update for the capital_remittances
       # This usually takes a long time.
       CapitalRemittancesCountersJob.perform_now(fund_ids.to_a, import_upload.user_id)
+
+      # Real-time journey progress (no-op without a journey). Worked examples J2.2 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+      CapitalCall.journey_progress_for(CapitalRemittance.where(id: capital_remittance_ids.keys).select(:capital_call_id),
+                                       actor: User.find_by(id: import_upload.user_id))
     end
   end
 

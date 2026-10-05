@@ -1,4 +1,7 @@
 class CapitalDistributionPaymentsController < ApplicationController
+  # Figures a distribution notice prints: changing one makes the payment's notice out of date
+  NOTICE_FIGURES = %w[income_cents cost_of_investment_cents reinvestment_cents net_payable_cents payment_date].freeze
+
   before_action :set_capital_distribution_payment, only: %i[show edit update destroy preview generate_docs payments_completed send_notification]
 
   # GET /capital_distribution_payments or /capital_distribution_payments.json
@@ -41,6 +44,9 @@ class CapitalDistributionPaymentsController < ApplicationController
     result = CapitalDistributionPaymentCreate.call(capital_distribution_payment: @capital_distribution_payment)
     respond_to do |format|
       if result.success?
+        # A payment added by hand can complete Create payments (real time; no-op without a journey)
+        # Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+        @capital_distribution_payment.capital_distribution.journey_progress!(actor: current_user)
         format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: "Capital distribution payment was successfully created." }
         format.json { render :show, status: :created, location: @capital_distribution_payment }
       else
@@ -52,10 +58,12 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # PATCH/PUT /capital_distribution_payments/1 or /capital_distribution_payments/1.json
   def update
+    started_at = Time.current # before the change, so later sign-offs given before it are reset
     @capital_distribution_payment.assign_attributes(capital_distribution_payment_params)
     result = CapitalDistributionPaymentUpdate.call(capital_distribution_payment: @capital_distribution_payment)
     respond_to do |format|
       if result.success?
+        journey_undo(started_at, "Payment #{@capital_distribution_payment.folio_id} edited")
         format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: "Capital distribution payment was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_distribution_payment }
       else
@@ -84,6 +92,8 @@ class CapitalDistributionPaymentsController < ApplicationController
     else
       result = CapitalDistributionPaymentSendNotification.call(capital_distribution_payment: @capital_distribution_payment, force_notification: true)
       msg = result[:notification_message]
+      # Real-time journey progress (no-op without a journey). Worked examples H7 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+      @capital_distribution_payment.capital_distribution.journey_progress!(actor: current_user)
       respond_to do |format|
         if result.success?
           format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: msg }
@@ -98,8 +108,10 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # DELETE /capital_distribution_payments/1 or /capital_distribution_payments/1.json
   def destroy
+    started_at = Time.current
     respond_to do |format|
       if @capital_distribution_payment.destroy
+        journey_undo(started_at, "Payment #{@capital_distribution_payment.folio_id} deleted")
         format.html { redirect_to capital_distribution_payments_url, notice: "Capital distribution payment was successfully destroyed." }
         format.json { head :no_content }
       else
@@ -116,11 +128,28 @@ class CapitalDistributionPaymentsController < ApplicationController
              else
                "Capital distribution payment could not be updated. #{@capital_distribution_payment.errors.full_messages.join(', ')}"
              end
+    # Real-time journey progress (no-op without a journey). Worked examples H6 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+    @capital_distribution_payment.capital_distribution.journey_progress!(actor: current_user)
 
     redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: notice
   end
 
   private
+
+  # A payment was edited (e.g. Completed unticked, figures changed) or deleted: re-check the
+  # distribution's journey as an undo, so it moves back and later sign-offs given before the change
+  # are reset. Changed figures also invalidate Generate notices — the notices on file show the old
+  # figures, and only notices generated afterwards satisfy it again (design Decision 11).
+  # Worked examples E9, E10 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  def journey_undo(started_at, note)
+    distribution = @capital_distribution_payment.capital_distribution
+    if @capital_distribution_payment.saved_changes.keys.intersect?(NOTICE_FIGURES)
+      # The task passes again only when every notice is newer than this change, so all of them are regenerated
+      distribution.journey_invalidate(check_keys: %w[capital_distribution.generate_notices], actor: current_user,
+                                      reason: "A payment's figures changed after the notices were generated — unapprove all of this distribution's notices on the Documents screen, then click Generate Documents")
+    end
+    distribution.journey_undo_evaluate(note:, started_at:, actor: current_user)
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_capital_distribution_payment

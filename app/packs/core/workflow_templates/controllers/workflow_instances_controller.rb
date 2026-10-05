@@ -5,9 +5,10 @@ class WorkflowInstancesController < ApplicationController
   # Kept in sync with WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS by convention —
   # this list is deliberately separate (not a reference to the constant) so a
   # security review of this controller doesn't need to trust another file's contents.
-  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall Approval Investor].freeze
+  # CapitalDistribution: capital-distribution-journey (Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples)
+  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall CapitalDistribution Approval Investor].freeze
 
-  before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail]
+  before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail acknowledge step_info]
 
   # GET /workflow_instances
   # Lists all workflow instances visible to the current user's entity.
@@ -29,7 +30,7 @@ class WorkflowInstancesController < ApplicationController
     # Guard: ensure the template's type scope (if set) matches the workflowable's type.
     if params[:workflow_template_id].present?
       template = WorkflowTemplate.find(params[:workflow_template_id])
-      if template.workflowable_type.present? && template.workflowable_type != workflowable.class.name
+      if template.workflowable_type.present? && template.workflowable_type != workflowable.workflowable_type_name
         redirect_to back_url(workflowable),
                     alert: "Template '#{template.name}' can only be used with #{template.workflowable_type} objects."
         return
@@ -37,6 +38,13 @@ class WorkflowInstancesController < ApplicationController
       unless template.eligible_for?(workflowable)
         redirect_to back_url(workflowable),
                     alert: "Template '#{template.name}' is not applicable to this record."
+        return
+      end
+      # The launch picker already hides disabled templates, but the id arrives as a request
+      # parameter — check it here too, before the existing assignment is thrown away below
+      unless template.enabled?
+        redirect_to back_url(workflowable),
+                    alert: "Template '#{template.name}' is disabled and cannot be launched. Enable it first."
         return
       end
       workflowable.workflow_assignment&.destroy
@@ -92,7 +100,10 @@ class WorkflowInstancesController < ApplicationController
       WorkflowStepDiagramPresenter.for_snapshot_step(
         snap, instance: @instance, actor_users_by_id: @actor_users,
         resolved_state_change: resolved_per_step[snap[:position].to_i],
-        actor_responses: @all_responses_by_step[snap[:position].to_i] || []
+        actor_responses: @all_responses_by_step[snap[:position].to_i] || [],
+        # Journey steps show who stalled-step reminders go to — the job's own lookup, so the
+        # diagram can't disagree with who actually gets emailed
+        owner_user: (WorkflowAutoReminderJob.owner_for(@instance, snap) if snap[:kind].present? && snap[:kind].to_s != "human")
       )
     end
   end
@@ -121,10 +132,50 @@ class WorkflowInstancesController < ApplicationController
   def reset
     authorize @instance
     result = WorkflowInstanceReset.call(instance: @instance)
+    # Journeys: after a reset the data decides where the instance really is
+    WorkflowEvaluator.call(instance: @instance.reload, actor: current_user) if result.success? && @instance.evaluated
     if result.success?
       redirect_to workflow_instance_path(@instance), notice: "Workflow reset to step 1."
     else
       redirect_to workflow_instance_path(@instance), alert: result[:errors]
+    end
+  end
+
+  # GET /workflow_instances/:id/step_info?position=N
+  # The popup a journey step opens when clicked: what to do, what completing it changes, why it
+  # exists and who on the team is reminded. Read-only — it shows the step's stored result (what the panel shows), it never
+  # re-evaluates. Fetched on click by journey_step_info_controller.js and appended to <body>, outside
+  # the journey frame, so the record's page carries none of this and a live update replacing the
+  # panel can't strand an open modal.
+  def step_info
+    # Same gate as the panel: the journey is visible to whoever can see the record
+    authorize @instance, :show?
+    authorize @instance.workflowable, :show?
+
+    position = params[:position].to_i
+    step = @instance.snapshot_steps.find { |s| s[:position].to_i == position }
+    return head(:not_found) unless step
+
+    render partial: "workflow_instances/step_info", locals: { instance: @instance, record: @instance.workflowable, step: }
+  end
+
+  # Worked examples H4, X3 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  # POST /workflow_instances/:id/acknowledge
+  # "Mark reviewed" on the current acknowledge step of a journey. Needs view rights on the
+  # instance and update rights on the record (e.g. the capital call) itself.
+  def acknowledge
+    authorize @instance, :show?
+    authorize @instance.workflowable, :update?
+
+    result = WorkflowAcknowledge.call(instance: @instance, step_position: params[:step_position].to_i,
+                                      user: current_user)
+    respond_to do |format|
+      # The panel re-renders either way: on failure it shows the step's current state
+      format.turbo_stream { render_journey_frame }
+      format.html do
+        flash_key, flash_message = result.success? ? [:notice, "Marked as reviewed."] : [:alert, result[:errors]]
+        redirect_back_or_to workflow_instance_path(@instance), flash_key => flash_message
+      end
     end
   end
 
@@ -172,12 +223,8 @@ class WorkflowInstancesController < ApplicationController
       actor = User.find_by(id: actor_id)
       next unless actor
 
-      WorkflowMailer.with(
-        user_id:       actor.id,
-        entity_id:     @instance.entity_id,   # denormalized; no folder join needed
-        instance_id:   @instance.id,
-        step_position: @instance.current_step_position
-      ).reminder.deliver_later
+      WorkflowNotifier.with(record: @instance, entity_id: @instance.entity_id, # denormalized; no folder join needed
+                            email_method: :reminder, step_position: @instance.current_step_position).deliver_later(actor)
 
       WorkflowStateChange.create!(
         workflow_instance: @instance,
@@ -224,6 +271,15 @@ class WorkflowInstancesController < ApplicationController
   end
 
   private
+
+  # Re-renders the record's journey panel in place (capital calls today)
+  def render_journey_frame
+    record = @instance.workflowable
+    journey = WorkflowEvaluator.for(record, cause: :progress)
+    render turbo_stream: turbo_stream.replace(record.journey_frame_id,
+                                              partial: "#{record.workflowable_type_name.underscore.pluralize}/journey",
+                                              locals: { record:, journey: journey&.[](:results), instance: @instance.reload })
+  end
 
   # Safely resolve the workflowable from params, rejecting unknown types
   def find_workflowable!

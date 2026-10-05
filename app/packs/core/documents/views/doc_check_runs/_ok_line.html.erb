@@ -1,0 +1,24 @@
+<%# One settled item as an aligned row: ✓ item | status pill + value (cut short, full text on hover) | Undo.
+    The grid keeps the columns lined up however long a value is (an address no longer wraps the row).
+    locals: result (DocCheckResult), entry, can_edit, frame. Worked examples H3, H5, H6, E10, E19. %>
+<% status, detail, hint = doc_check_ok_parts(result) %>
+<div class="doc-check-ok-row doc-check-row" id="doc_check_result_<%= result.id %>"
+     data-item="<%= result.look_for %>" data-outcome="<%= result.outcome %>" data-resolution="<%= result.resolution %>">
+  <%# Item %>
+  <div class="text-truncate" title="<%= result.look_for %>">
+    <i class="ti ti-check text-success"></i> <%= result.look_for %>
+  </div>
+  <%# What happened, and the value %>
+  <div class="text-truncate doc-check-sentence" title="<%= [detail, hint].compact_blank.join(' · ') %>">
+    <span class="text-body-secondary doc-check-ok-status"><%= status %></span>
+    <span><%= detail %></span>
+    <% if hint %><i class="ti ti-info-circle text-muted" aria-label="<%= hint %>"></i><% end %>
+  </div>
+  <%# Undo a Mark as OK %>
+  <div class="text-end">
+    <% if can_edit && result.can_undo? %>
+      <%= button_to t("doc_checks.panel.undo"), undo_doc_check_result_path(result), method: :patch,
+            class: "btn btn-sm btn-link p-0", form: { data: { turbo_frame: frame }, class: "d-inline" } %>
+    <% end %>
+  </div>
+</div>

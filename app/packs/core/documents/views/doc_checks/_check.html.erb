@@ -1,0 +1,74 @@
+<%# One check in a document's side panel: a short title for its kind, then two labelled lines — what the AI
+    looks for on the document, and the KYC field it fills or compares (or, for a question, the answer that
+    counts as OK). The kind is chosen by the button that added it, so each kind shows only its own inputs.
+    Optional things (a tip, replacing a value) sit behind toggles.
+    locals: row (DocCheck), fields (registry fields), name (input prefix; "__KEY__" in templates).
+    openspec/changes/document-checks/design.md (card ① Setup). Worked examples H2, E3, E16, X4. %>
+<% action = row.action.presence || "fill_in"
+   question = action == "question"
+   gone = row.persisted? && !question && row.field_name.present? && fields.none? { |f| f.name == row.field_name }
+   field_error = row.errors[:field_name].first
+   look_for_error = row.errors[:look_for].first
+   tip_error = row.errors[:tip].first
+   flagged = gone || field_error || look_for_error || tip_error %>
+<div class="doc-check-item rounded-3 border p-3 mb-2 <%= flagged ? 'border-warning bg-warning-subtle' : 'bg-body' %>"
+     data-doc-check-page-target="row" data-action-type="<%= action %>" <%= 'id=doc_check_field_gone' if gone %>>
+  <%= hidden_field_tag "#{name}[id]", row.id, id: nil %>
+  <%= hidden_field_tag "#{name}[action]", action, id: nil, data: { role: "action" } %>
+
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="d-flex align-items-center gap-2 fw-semibold">
+      <span class="doc-check-action-icon rounded-circle d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary">
+        <i class="ti <%= doc_check_action_icon(action) %>"></i>
+      </span>
+      <%= t("doc_checks.setup.actions.#{action}") %>
+    </div>
+    <button type="button" class="btn btn-sm btn-link text-danger p-1" data-action="doc-check-page#removeRow"
+            title="<%= t('doc_checks.setup.remove') %>" aria-label="<%= t('doc_checks.setup.remove') %>">
+      <i class="ti ti-trash"></i>
+    </button>
+  </div>
+
+  <div class="row g-2">
+    <div class="col-12 col-sm-6">
+      <div class="doc-check-label"><%= t("doc_checks.setup.field_label.#{question ? 'question' : 'look_for'}") %></div>
+      <%= text_field_tag "#{name}[look_for]", row.look_for, id: nil, maxlength: 100,
+            placeholder: t("doc_checks.setup.placeholder.#{question ? 'question' : 'look_for'}"),
+            class: "form-control form-control-sm #{'is-invalid' if look_for_error}",
+            aria: { label: t("doc_checks.setup.field_label.#{question ? 'question' : 'look_for'}") }, data: { role: "look-for" } %>
+    </div>
+    <div class="col-12 col-sm-6">
+      <% if question %>
+        <div class="doc-check-label"><%= t("doc_checks.setup.field_label.expected") %></div>
+        <%= select_tag "#{name}[expected_answer]", options_for_select([%w[Yes yes], %w[No no]], row.expected_answer), id: nil,
+              class: "form-select form-select-sm", aria: { label: t("doc_checks.setup.field_label.expected") } %>
+      <% else %>
+        <div class="doc-check-label"><%= t("doc_checks.setup.field_label.#{action}") %></div>
+        <%= select_tag "#{name}[field_name]",
+              options_for_select([[t("doc_checks.setup.pick_field"), ""]] + doc_check_field_options(fields), row.field_name),
+              id: nil, class: "form-select form-select-sm #{'is-invalid' if field_error || gone}",
+              aria: { label: t("doc_checks.setup.field_label.#{action}") }, data: { action: "doc-check-page#fieldChanged", role: "field" } %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if gone %><div class="small text-danger mt-2"><i class="ti ti-alert-triangle"></i> <%= t("doc_checks.setup.field_gone") %></div><% end %>
+  <% [field_error, look_for_error, tip_error].compact.each do |error| %>
+    <div class="small text-danger mt-2"><i class="ti ti-alert-circle"></i> <%= error %></div>
+  <% end %>
+
+  <div class="d-flex flex-wrap align-items-center gap-3 mt-2 small">
+    <% if action == "fill_in" %>
+      <div class="form-check form-switch mb-0" title="<%= t('doc_checks.setup.replace_help') %>">
+        <%= hidden_field_tag "#{name}[replace_existing]", "0", id: nil %>
+        <%= check_box_tag "#{name}[replace_existing]", "1", row.replace_existing, id: nil, class: "form-check-input", role: "switch" %>
+        <label class="form-check-label text-muted"><%= t("doc_checks.setup.replace_existing") %></label>
+      </div>
+    <% end %>
+    <details <%= 'open' if row.tip.present? || tip_error %>>
+      <summary class="text-primary"><i class="ti ti-bulb"></i> <%= t("doc_checks.setup.add_tip") %></summary>
+      <%= text_field_tag "#{name}[tip]", row.tip, id: nil, maxlength: 255, class: "form-control form-control-sm mt-1",
+            placeholder: t("doc_checks.setup.tip_placeholder"), aria: { label: t("doc_checks.setup.columns.tip") } %>
+    </details>
+  </div>
+</div>

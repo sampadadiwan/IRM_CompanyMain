@@ -45,7 +45,12 @@ class WorkflowAdvancer < Trailblazer::Operation
         channel:           channel
       )
 
-      if passing_state?(step_data, resolved_state)
+      if instance.evaluated
+        # Evaluated workflows (journeys): the data decides the pointer, so record the vote only.
+        # A rejection keeps the step current so the approvers can vote again (design Decision 16);
+        # WorkflowEvaluator runs after this transaction (notify_if_moved).
+        reject_in_journey(instance, step_data, current_pos, actor, note) unless passing_state?(step_data, resolved_state)
+      elsif passing_state?(step_data, resolved_state)
         advance_to_next(instance, steps, current_pos)
       else
         handle_rejection(instance, step_data, steps, current_pos)
@@ -58,7 +63,13 @@ class WorkflowAdvancer < Trailblazer::Operation
 
   # Notification fires here — after advance_step's transaction commits — so jobs
   # are never orphaned by an uncommitted transaction.
-  def notify_if_moved(ctx, instance:, **)
+  def notify_if_moved(ctx, instance:, actor: nil, **)
+    # Journeys: the evaluator moves the pointer and sends any activation emails
+    if instance.reload.evaluated
+      WorkflowEvaluator.call(instance:, actor:)
+      return true
+    end
+
     instance.reload
     new_pos = instance.current_step_position
     if instance.instance_active? && new_pos != ctx[:current_pos]
@@ -120,6 +131,21 @@ class WorkflowAdvancer < Trailblazer::Operation
     else
       instance.update!(status: :rejected)
     end
+  end
+
+  # Worked examples E26 — openspec/changes/archive/2026-10-02-capital-call-journey/design.md#worked-examples
+  # Journey rejection: archive this step's votes so they can be cast again, and record who
+  # rejected and why; the step stays current and the instance stays active
+  def reject_in_journey(instance, step_data, step_position, actor, note)
+    rejection_note = note.presence ||
+                     instance.workflow_actor_responses.active.for_step(step_position).where.not(note: [nil, ""])
+                             .order(:responded_at).last&.note
+    archive_step_responses(instance, step_position)
+    WorkflowStateChange.create!(
+      workflow_instance: instance, step_position:, actor:, channel: :system, to_state: "rejected_step",
+      note: ["Rejected by #{actor&.full_name || 'an approver'}", rejection_note.presence].compact.join(": ")
+    )
+    step_data # keeps the signature symmetrical with handle_rejection
   end
 
   # Archives responses only for the given step (used on revert / go_to_step_n)

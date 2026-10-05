@@ -1,0 +1,49 @@
+<%# One document that needs a decision: a whole-document problem (changed after the check, unreadable) as one
+    card, or each item needing attention as a comparison card. Its settled items follow as short lines.
+    locals: group (Assessment::Group), record, record_type, can_edit, entry, errors, frame.
+    openspec/changes/document-checks/design.md (card ⑧ Screens). Worked examples H5, H6, E13, E18, X1, X2, X8. %>
+<% problem = group.document_problem
+   whole = group.changed || problem
+   kind = group.changed ? "changed" : problem&.outcome %>
+<div class="card border-0 shadow-sm border-start border-4 border-warning mb-3 doc-check-group"
+     data-doc-check-document data-document-name="<%= group.name %>">
+  <div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <div class="d-flex align-items-center gap-2">
+        <span class="doc-check-doc-icon rounded-3 d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning-emphasis">
+          <i class="ti <%= doc_check_document_icon(group.name) %>"></i>
+        </span>
+        <span class="fw-semibold"><%= group.name %></span>
+      </div>
+      <span class="text-warning-emphasis doc-check-group-status">
+        <%= group.changed ? t("doc_checks.panel.decision.changed") : t("doc_checks.panel.doc_status.decisions", count: group.attention_count) %>
+      </span>
+    </div>
+
+    <% if whole %>
+      <%# The whole document: changed after the check, or unreadable %>
+      <div class="doc-check-row" data-outcome="<%= kind %>" data-item="<%= problem&.look_for %>">
+        <div class="fw-semibold doc-check-sentence"><%= t("doc_checks.panel.decision.#{kind}", label: group.name) %></div>
+        <div class="text-body-secondary mb-2"><%= t("doc_checks.panel.decision_help.#{kind}") %></div>
+        <% if can_edit %>
+          <%= button_to doc_check_runs_path(record_type:, record_id: record.id, trigger: "again"), method: :post,
+                class: "btn btn-sm btn-primary", form: { data: { turbo_frame: frame } } do %>
+            <i class="ti ti-refresh"></i> <%= t("doc_checks.panel.check_again") %>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <% group.results.select(&:needs_attention?).each do |result| %>
+        <%= render "doc_check_runs/decision", result:, entry:, can_edit:, frame:, error: errors[result.id] %>
+      <% end %>
+      <% settled = group.results.select(&:ok?) %>
+      <% if settled.any? %>
+        <div class="mt-2 pt-2 border-top">
+          <% settled.each do |result| %>
+            <%= render "doc_check_runs/ok_line", result:, entry:, can_edit:, frame: %>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>

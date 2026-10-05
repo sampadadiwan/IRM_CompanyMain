@@ -1,6 +1,7 @@
 class InvestorKycsController < ApplicationController
   include WithCustomFieldFilter
   include HasWorkflowable
+  include WithJourneyPanel # show's journey evaluation and the journey action (investor-kyc-journey)
 
   helper InvestorKycAnalyticsHelper
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
@@ -8,7 +9,7 @@ class InvestorKycsController < ApplicationController
   # Allow unauthenticated investors to access their KYC via a signed magic link.
   skip_before_action :authenticate_user!, only: %i[show edit update extract_docs_data doc_first_upload processing], if: -> { params[:signed_id].present? }
 
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report override_aml_status send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
+  before_action :set_investor_kyc, only: %i[show journey edit update destroy toggle_verified generate_docs generate_new_aml_report override_aml_status send_kyc_reminder notify_kyc_required send_notification extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
   before_action :set_workflowable, only: [:show] # runs after set_investor_kyc so @investor_kyc is available
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc investor_pending]
 
@@ -52,19 +53,26 @@ class InvestorKycsController < ApplicationController
   end
 
   # GET /investor_kycs/1 or /investor_kycs/1.json
-  def show; end
+  # Fund users see the KYC journey (step bar + what's needed now), evaluated on every view so it is
+  # always current. Investors — logged in or on the emailed link (no current_user) — never do.
+  # Worked examples H2, X1 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def show
+    @journey = evaluate_journey(@investor_kyc) if current_user && !current_user.curr_role_investor?
+  end
+
+  # GET /investor_kycs/:id/journey — just the journey panel, for the frame a real-time update inserts.
+  # Authorized as journey? (= show?), entity-scoped by InvestorKycPolicy.
+  # Worked examples E15, X5 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+  def journey
+    return head(:forbidden) if current_user.curr_role_investor?
+
+    render_journey_panel(@investor_kyc)
+  end
 
   def esign_emails
     @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
     authorize(@investor_kyc)
     @esign_emails = params[:esign_emails].presence || @investor_kyc.esign_emails
-  end
-
-  # This can be triggered for any resource which implements with_doc_questions concern
-  def validate_docs_with_ai
-    authorize(@investor_kyc)
-    DocLlmValidationJob.perform_later("InvestorKyc", @investor_kyc.id, current_user.id)
-    redirect_to investor_kyc_url(@investor_kyc), notice: "Document validation in progress. Please check back in a few minutes."
   end
 
   # POST /investor_kycs/:id/extract_docs_data
@@ -80,10 +88,19 @@ class InvestorKycsController < ApplicationController
                          alert: "Document extractor agent is not configured for this entity."
     end
 
+    started_at = Time.current
     result = KycDocExtractorAgent.call(
       support_agent_id: agent.id,
       target: @investor_kyc
     )
+    # Extraction rewrites the KYC's details; after "Review KYC" that is an edit like any other.
+    # The investor's own documents-first path happens before submission, so there is nothing to undo.
+    # Worked examples E12, E14 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+    if current_user && !current_user.curr_role_investor?
+      @investor_kyc.journey_invalidate(check_keys: "investor_kyc.review_kyc", reason: "KYC details changed after review",
+                                       actor: current_user, only_if_passed: "investor_kyc.review_kyc")
+      @investor_kyc.journey_undo_evaluate(note: "KYC details changed after review", started_at:, actor: current_user)
+    end
 
     extracted = result[:results]&.count { |r| r[:status] == :extracted } || 0
     skipped   = result[:results]&.count { |r| r[:status] == :skipped }   || 0
@@ -148,11 +165,17 @@ class InvestorKycsController < ApplicationController
   # The job broadcasts a Turbo Stream that triggers client-side redirect to edit.
   def processing
     authorize @investor_kyc
-    # Check the in-process store first (works when Rails.cache is :null_store in test env).
+    # Read (and clear) the marker KycDocExtractorJob writes to Redis when it finishes.
     redirect_url = KycDocExtractorJob.consume_redirect(@investor_kyc.id)
-    # Fall back to Rails.cache for production environments with a real cache backend.
-    redirect_url ||= Rails.cache.read("kyc_extraction_done_#{@investor_kyc.id}")
-    redirect_to redirect_url if redirect_url.present?
+
+    respond_to do |format|
+      # First load: if the job already finished (always so with the inline adapter in test),
+      # skip the spinner entirely.
+      format.html { redirect_to redirect_url if redirect_url.present? }
+      # Polled by the spinner page (processing_poll_controller.js) as a fallback for a
+      # missed Turbo Stream broadcast; redirect_url stays null until the job is done.
+      format.json { render json: { redirect_url: redirect_url } }
+    end
   end
 
   # PATCH /investor_kycs/:id/doc_first_upload
@@ -169,8 +192,7 @@ class InvestorKycsController < ApplicationController
       doc.folder    ||= kyc_folder if doc.new_record?
     end
     @investor_kyc.save(validate: false)
-    enqueue_doc_extraction_for(@investor_kyc, signed_id: params[:signed_id])
-    redirect_to processing_investor_kyc_url(@investor_kyc, signed_id: params[:signed_id])
+    redirect_to doc_first_next_url(@investor_kyc, signed_id: params[:signed_id])
   end
 
   # GET /investor_kycs/1/edit
@@ -226,8 +248,7 @@ class InvestorKycsController < ApplicationController
     respond_to do |format|
       if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:, validate:, owner_id: params[:owner_id], owner_type: params[:owner_type]).success?
         if doc_first
-          enqueue_doc_extraction_for(@investor_kyc)
-          format.html { redirect_to processing_investor_kyc_url(@investor_kyc) }
+          format.html { redirect_to doc_first_next_url(@investor_kyc) }
         else
           format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
           format.json { render :show, status: :created, location: @investor_kyc }
@@ -508,6 +529,8 @@ class InvestorKycsController < ApplicationController
   # Fund admin requests investor to re-fill. Sends a fresh magic link with an optional message.
   def request_updates
     authorize(@investor_kyc)
+    # Taken before the KYC changes, so the review and sign-offs given before the request are reset
+    started_at = Time.current
     @investor_kyc.update_columns(
       submission_status: "link_sent",
       link_sent_at: Time.current,
@@ -515,6 +538,9 @@ class InvestorKycsController < ApplicationController
       submitted_at: nil
     )
     # rubocop:enable Rails/SkipsModelValidations
+    # update_columns skips callbacks: move the journey back to "Submit KYC" explicitly
+    # Worked examples E10 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+    @investor_kyc.journey_undo_evaluate(note: "Updates requested", started_at:, actor: current_user)
     msg = params[:message].presence
     @investor_kyc.investor.notification_users(with_tag: 'KYC').each do |user|
       InvestorKycNotifier.with(
@@ -634,7 +660,15 @@ class InvestorKycsController < ApplicationController
       return
     end
 
+    started_at = Time.current
     @investor_kyc.override_aml_status!(status: new_status, reason:)
+    # Cleared → "Clear AML match" done; confirmed as a match → it moves back there
+    # Worked examples H10 — openspec/changes/investor-kyc-journey/design.md#worked-examples
+    if new_status == "potential_match"
+      @investor_kyc.journey_undo_evaluate(note: "AML match confirmed", started_at:, actor: current_user)
+    else
+      @investor_kyc.journey_progress!(actor: current_user)
+    end
     redirect_to investor_kyc_url(@investor_kyc), notice: "AML status overridden."
   end
 
@@ -680,17 +714,45 @@ class InvestorKycsController < ApplicationController
     @signed_id_user || current_user
   end
 
+  # Where to send the user after a doc-first upload. Only go through the processing spinner
+  # when an extraction job was actually enqueued: with no enabled KycDocExtractorAgent no job
+  # runs, nothing ever marks extraction done, and the spinner would wait forever.
+  def doc_first_next_url(investor_kyc, signed_id: nil)
+    signed_id = signed_id.presence
+
+    # Submitted with no files: there is nothing to extract, so skip the job and the spinner and
+    # return to the upload form. exists? queries the DB, so blank entries never saved don't count.
+    unless investor_kyc.documents.exists?
+      flash[:alert] = "Upload at least one document, or choose Fill Form Manually."
+      return edit_investor_kyc_url(investor_kyc, signed_id:)
+    end
+
+    if enqueue_doc_extraction_for(investor_kyc, signed_id:)
+      processing_investor_kyc_url(investor_kyc, signed_id:)
+    else
+      # skip_doc_first stops the edit page from showing the upload wizard again.
+      edit_investor_kyc_url(investor_kyc, skip_doc_first: 1, signed_id:)
+    end
+  end
+
+  # Enqueues KycDocExtractorJob; returns false (and enqueues nothing) when the entity has
+  # no enabled KycDocExtractorAgent.
   def enqueue_doc_extraction_for(investor_kyc, signed_id: nil)
     agent = investor_kyc.entity.agents.find_by(agent_type: "KycDocExtractorAgent", enabled: true)
-    return unless agent
+    return false unless agent
 
     redirect_url = edit_investor_kyc_url(investor_kyc, doc_first_done: 1, signed_id: signed_id.presence)
+    # Clear any unconsumed marker from an earlier run before this run can write its own.
+    KycDocExtractorJob.clear_redirect(investor_kyc.id)
     KycDocExtractorJob.perform_later(investor_kyc.id, agent.id, redirect_url)
+    true
   end
 
   # Returns true when the doc-first upload form should be shown instead of the regular KYC edit form.
   def doc_first_wizard_for_edit?
     return false if params[:skip_doc_first].present?
+    # Extraction has already run for this upload; going back to the upload form would loop.
+    return false if params[:doc_first_done].present?
     return false if @investor_kyc.submission_completed? || @investor_kyc.submission_verified?
     return false unless @investor_kyc.entity.entity_setting.kyc_doc_first_wizard?
     return false unless @investor_kyc.entity.support_agents.kyc_doc_extractor_agent?

@@ -10,156 +10,233 @@
 > class bodies, migrations, route blocks or policy code. Put real class, method, table and path
 > names inside the diagrams and tables instead.
 
-> **Scale to the change.** Sections marked **CORE** are always present. Sections marked
-> **CONDITIONAL** say when they apply. When one doesn't apply, keep the heading and write a single
-> line: `N/A — <reason>`. A small change should produce a short document.
+> **Zoom one picture.** The whole design hangs off ONE numbered picture. Part 1 draws it in plain
+> words. Part 2 redraws the SAME picture, same shape and same numbers, with real names. Part 3 has
+> one card per box, in the same order. Part 4 is reference material that spans several boxes. The
+> numbers ①②③ mean the same box everywhere, so a reader always knows where they are.
 
-> **No repetition.** Each fact lives in one section. The proposal owns *what users see and the
-> business rules*, the spec owns *requirements*, and this document owns *how*. Link instead of
-> restating.
+> **FAQ per section.** Parts 1 and 2, every card in Part 3, and Part 4 each end with a FAQ table of
+> the real "why", "why not X" and "what if" questions a reviewer will ask about that section.
+> Answer from the design; no filler questions.
 
-> **FAQ tables are optional.** Add one under a section only when there is a non-obvious "why" or
-> "why not X" a reader will ask. Don't add empty FAQ slots.
+> **Scale to the change.** **CORE** sections are always present. **CONDITIONAL** sections say when
+> they apply; otherwise keep the heading with `N/A — <reason>`. A small change has fewer boxes and
+> shorter cards, not empty ones.
+
+> **No repetition.** Each fact lives in one place. The proposal owns *what users see and the business
+> rules*, the spec owns *requirements*, this document owns *how*. Cards link to Part 4 for shared
+> tables (schema, class diagram) instead of copying them.
 
 ---
 
 ## Contents
 
-<!-- CORE. Links to every ## and ### heading in this document, in order (GitHub anchors:
-     lowercase, punctuation dropped, spaces → hyphens). Keep N/A sections listed. Rename the
-     Journey entries to match your journeys. Update it whenever headings change. -->
-
-- [Overview](#overview)
-- [Architecture](#architecture)
-  - [Component Boundaries](#component-boundaries)
-  - [Class Diagram](#class-diagram)
-  - [Change Footprint](#change-footprint)
-- [Data Model and States](#data-model-and-states)
-  - [Data Model](#data-model)
-  - [State Transitions](#state-transitions)
-- [Behaviour](#behaviour)
-  - [Pipeline / Flow](#pipeline--flow)
-  - [Sequence Diagrams](#sequence-diagrams)
-  - [Worked Examples](#worked-examples)
-- [Key Components](#key-components)
-  - [Decision Flows](#decision-flows)
-- [Controllers and Routes](#controllers-and-routes)
-- [Policy](#policy)
-- [UI Changes](#ui-changes)
-  - [At a glance](#at-a-glance)
-  - [Journey 1: Who does what](#journey-1-who-does-what) <!-- one entry per journey -->
-  - [Build notes (for implementers)](#build-notes-for-implementers)
-- [Cross-cutting Concerns](#cross-cutting-concerns)
-  - [Transactions and Queries](#transactions-and-queries)
-  - [Exception Handling and Monitoring](#exception-handling-and-monitoring)
-  - [Performance and Security](#performance-and-security)
-- [Design Decisions](#design-decisions)
-- [Testing](#testing)
-- [Risks and Open Questions](#risks-and-open-questions)
+<!-- CORE. Links to every ## and ### heading (GitHub anchors keep the ①②③ characters). Regenerate
+     after the document is finished. -->
 
 ---
 
-## Overview
+## 1. The idea
+
+### What this adds
 
 <!-- CORE. 2-3 sentences: what this adds technically and which existing pattern it follows. -->
 
----
+### The idea in one picture
 
-## Architecture
-
-### Component Boundaries
-
-<!-- CORE. Group the feature into boundaries/components (e.g. UI, Scheduling, Domain/Service,
-     Integration, existing CapHive modules it touches, Notifications, External systems) as
-     mermaid flowchart subgraphs. Label every arrow that crosses a boundary with what flows
-     across it. Then list each crossing in the contract table. -->
+<!-- CORE. The whole feature as ONE flowchart that someone who reads nothing else can follow.
+     - 5-9 boxes, numbered ①②③… in reading order. Each box has a short plain-English name and a
+       one-line description. No class names here.
+     - The core of the idea (the engine, the record, the decision) in the middle; inputs left,
+       what people see or get on the right.
+     - Label every arrow with what flows or why.
+     - No subgraphs, colours or error paths: those belong in the cards.
+     Example (capital call journey): -->
 
 ```mermaid
 flowchart LR
-    subgraph EXT["External"]
-        API[["Third-party API"]]
-    end
-    subgraph UI["UI boundary"]
-        Screen["Screen / panel"]
-    end
-    subgraph DOMAIN["Domain boundary (new pack)"]
-        Svc["Orchestration service"]
-    end
-    subgraph INTEG["Integration boundary"]
-        Client["API client"]
-    end
-    subgraph CORE["Existing CapHive boundary"]
-        Rec[("Existing records")]
-    end
-    Screen -- "user action" --> Svc
-    Svc -- "fetch" --> Client
-    Client -- "HTTPS" --> API
-    Svc -- "create / update" --> Rec
+    T["① Template<br/>the steps a call goes through"]
+    D["② Data<br/>what has actually happened"]
+    C["③ Checks<br/>one question per step"]
+    E["④ Engine<br/>which step are we on?"]
+    U["⑤ Screen<br/>what's needed now"]
+    P["⑥ People<br/>vote or confirm"]
+    T -- "which steps" --> E
+    D --> C
+    C -- "pass or fail" --> E
+    P -- "decisions" --> E
+    E -- "status of every step" --> U
 ```
 
-| From → To | Contract | Direction rule |
-|---|---|---|
-| <!-- UI → Domain --> | <!-- what is asked / passed --> | <!-- e.g. UI never writes records directly --> |
+### Walkthrough: one example, start to finish
 
-### Class Diagram
+<!-- CORE. Right after the picture: one realistic example (use the shared-setup data from Part 4) told
+     as a story, detailed but easy to follow.
+     - A short setup paragraph and a legend for any notation. Name steps/stages as TASKS ("Create
+       remittances", "Approve notices"), never as outcomes ("Remittances ready"): next to a "current"
+       mark an outcome name reads as a claim that it is already true. The legend must say what the
+       current mark means in words ("● we are here: waiting on this, not done yet").
+     - Optional: a mermaid `timeline` of the whole story at a glance.
+     - Tables grouped by phase: # | When | What happens (plain words) | Behind the scenes (cite the
+       picture's ①②③ boxes) | Result (state after).
+       In "Behind the scenes" always write the box's name with its number in brackets, e.g. "the tick (⑨)
+       asks the evaluator (④)". Never bare numbers like "⑨ asks ④": readers can't decode them.
+       Spell the Result out in full: every step/state by name with its mark (✓ ● ○ ↺), one per line
+       (<br>), current one in bold. Never a compact symbol string like ✓✓●○○ (user found it confusing).
+       For a row that changes nothing, write "Same as row N".
+       Keep that column wide: join each step name with &nbsp; so it never wraps, and pad the header
+       with &nbsp; (markdown has no column-width setting).
+     - Include at least one mistake or undo, and one stall or failure, not only the happy path.
+     - One small ASCII snapshot of what the user sees at the most important moment.
+     - Close with "What to notice": 3-5 bullets naming the design ideas the story demonstrated. -->
 
-<!-- CORE. A mermaid classDiagram of every NEW class and every EXISTING class that changes,
-     enclosed in `namespace` blocks matching the Component Boundaries above. Show the stereotype
-     (<<Model>>, <<Service>>, <<Job>>, <<Controller>>, <<Policy>>, <<Notifier>>), the public
-     methods other classes call, and enum-like attributes. Edges between namespaces are the
-     boundary contracts (--> calls, ..> enqueues/notifies, o-- owns). -->
+### Key ideas
 
-```mermaid
-classDiagram
-    direction LR
-    namespace UI_Boundary {
-        class ThingsController {
-            <<Controller>>
-            +create()
-        }
-    }
-    namespace Domain_Boundary {
-        class ThingCreator {
-            <<Service>>
-            +call(params) Result
-        }
-        class Thing {
-            <<Model>>
-            status
-            +activate()
-        }
-    }
-    ThingsController --> ThingCreator : create
-    ThingCreator --> Thing : create
-```
+<!-- CORE. 3-7 rows: the ideas a reader must hold to follow the rest, each linking to its card. -->
 
-### Change Footprint
+| # | Idea | In one line | Card |
+|---|---|---|---|
+| 1 | <!-- --> | <!-- --> | <!-- [④](#④-engine) --> |
 
-<!-- CORE. One sentence naming the pack(s) new code lives in, then one mermaid flowchart of new
-     (green), modified (amber) and reused-unchanged (grey) parts, with edges for dependencies.
-     This is the only place that lists what is new, changed or reused. Exact file paths belong in
-     tasks.md. -->
+**FAQ**
+
+| Question | Answer |
+|---|---|
+| <!-- e.g. Does anything block users? --> | <!-- --> |
+
+---
+
+## 2. The same picture with real names
+
+### Picture
+
+<!-- CORE. The SAME flowchart as Part 1: same boxes, same numbers, same arrows, same layout. Each box
+     now holds the real classes/tables/partials, and each arrow the real thing that flows (a
+     method, a result object, a column). Under the class names, add ONE italic line saying what the box
+     does (<br/><i>works out which task the call is on</i>), and a `click X "#card-anchor"` line per
+     box linking to its Part 3 card. Colour each box by footprint, which makes this the only
+     new / changed / reused list: -->
 
 ```mermaid
 flowchart LR
     classDef new fill:#d4edda,stroke:#2e7d32,color:#000
     classDef mod fill:#fff3cd,stroke:#b8860b,color:#000
     classDef reuse fill:#eceff1,stroke:#90a4ae,color:#000
-    NewPack["core/things pack<br/>models, services, controllers"]:::new --> Existing["Parent model"]:::mod
-    NewPack --> Reused["Existing notifier"]:::reuse
+    T["① WorkflowTemplate + WorkflowStep<br/><i>lists the tasks</i>"]:::mod
+    E["④ WorkflowEvaluator<br/><i>works out the current task</i>"]:::new
+    T -- "template_snapshot" --> E
+    click T "#①-template" "Open card ①"
+    click E "#④-engine" "Open card ④"
 ```
+
+Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged. Exact files are in
+[lld.md File Map](lld.md#file-map).
+
+### What each box does
+
+<!-- CORE. One row per box, same numbers. This is the medium-level description. -->
+
+| # | Box | Real parts | What it does | When it runs | What it decides | Details |
+|---|---|---|---|---|---|---|
+| ① | <!-- --> | <!-- classes, tables, partials --> | <!-- --> | <!-- request / job / cron --> | <!-- --> | <!-- [card ① →](#①-…) --> |
+
+### One run, end to end
+
+<!-- CORE. ONE sequenceDiagram of the main happy path across the boxes, with real participants.
+     Edge and error flows go in the card of the box that owns them. Mermaid gotcha: `Note` is
+     reserved, so never use it as a participant id. -->
+
+### Lifecycles
+
+<!-- CORE if any stored or derived status exists, else N/A. One stateDiagram-v2 per lifecycle,
+     every transition's trigger labelled. Say whether each state is stored or derived. -->
+
+### What users see
+
+<!-- CONDITIONAL: whenever a screen, email or alert changes. Written for a reader who has never seen
+     the feature, as user journeys, not widget states:
+     - an "At a glance" table (Where in CapHive | Today | After this change | Who sees it);
+     - the main everyday journey here: a small ASCII wireframe with ①②③ callouts plus a
+       Step | The user… | They see table.
+     Other journeys go in the card of the box they belong to. User-facing messages stay in the
+     proposal. Turbo/Stimulus details go in the owning card's build notes. -->
+
+### Design decisions
+
+<!-- CORE. Numbered: choice, alternative considered, why rejected. Favour the simpler/DRYer option,
+     and say why when you don't. -->
+
+1. **Decision title** — Choice made. Alternative considered: X. Rejected because: Y.
+
+**FAQ**
+
+| Question | Answer |
+|---|---|
+| <!-- --> | <!-- --> |
 
 ---
 
-## Data Model and States
+## 3. One card per box
 
-### Data Model
+> Same order and numbers as the picture.
 
-<!-- CONDITIONAL: include when tables or columns are added or changed. Tables as a mermaid
-     erDiagram, not migration code. Show new tables with every column (a short comment for
-     enums, nullability and encryption), columns added to existing tables marked NEW, and
-     existing tables only with the columns this feature reads. Mark PK/FK/UK. Indexes go on one
-     line below. Follow with a column-rationale table for non-obvious columns only. -->
+<!-- CORE. One ### card per box (a trivial box may share a card with its neighbour, e.g.
+     "② Data and ③ Checks"). Every card has the same shape:
+     1. One or two sentences: what this box is.
+     2. A one-row table: Owns | Reads / receives | Produces.
+     3. Its own detail, only what applies:
+        - sequence diagrams for its edge/error flows;
+        - decision flowcharts for its non-trivial decisions (matching, routing, eligibility,
+          fallbacks);
+        - its rows of the component responsibility table (queue, retries, idempotency,
+          transaction);
+        - routes (Verb and path | Action | Does | Responds with) and build notes if it is UI;
+        - the role → access table and decision flowchart if it is where access is checked
+          (state how entity_id scoping is enforced; no policy code);
+        - its secondary user journeys.
+        Link to Part 4 for the schema and class diagram rather than copying them.
+     4. **Worked examples:** the H/E/X IDs from Part 4 that prove this box.
+     5. **FAQ** table. -->
+
+### ① [Box name]
+
+<!-- what it is -->
+
+| Owns | Reads / receives | Produces |
+|---|---|---|
+| <!-- --> | <!-- --> | <!-- --> |
+
+<!-- detail -->
+
+**Worked examples:** <!-- H1, E3, X2 -->
+
+**FAQ**
+
+| Question | Answer |
+|---|---|
+| <!-- --> | <!-- --> |
+
+---
+
+## 4. Reference
+
+> Whole-system material that spans several boxes.
+
+### Class diagram
+
+<!-- CORE. classDiagram of every new or changed class, in `namespace` blocks matching the boxes or
+     packs, with stereotypes (<<Model>>, <<Service>>, <<Job>>, <<Controller>>, <<Policy>>), public
+     methods and the edges between namespaces. -->
+
+### Data model and schema changes
+
+<!-- CONDITIONAL: when tables or columns change. An erDiagram (new tables with every column, columns
+     added to existing tables marked NEW, existing tables only with the columns read; PK/FK/UK).
+     Indexes on one line. Then "Schema changes": for EVERY new or changed table, one sentence on
+     why the table changes, followed by a row per new or changed column and index:
+     Column / index | What changed | Why it's needed. Not only the non-obvious ones; a reviewer
+     must be able to justify every column from this table alone. Then "Changes to existing
+     models" as bullets. -->
 
 ```mermaid
 erDiagram
@@ -169,263 +246,83 @@ erDiagram
         bigint parent_table_id FK
         string status "draft | active"
     }
-    parent_table {
-        bigint id PK
-        string new_column "NEW"
-    }
 ```
 
-**Indexes:** <!-- e.g. unique `new_table[parent_table_id, status]` -->
+**Indexes:** <!-- -->
 
-| Column | Why |
-|---|---|
-| <!-- non-obvious column only --> | <!-- rationale --> |
+**Schema changes**
 
-**Changes to existing models:** <!-- bullets: new associations, new methods (name + one-line
-behaviour), changed callbacks, and what stays unchanged -->
+**`new_table`** (new): <!-- why this table exists -->
 
-### State Transitions
+| Column / index | What changed | Why it's needed |
+|---|---|---|
+| <!-- `status` --> | <!-- Added: string, "draft" \| "active" --> | <!-- --> |
 
-<!-- CORE if the feature has any status, lifecycle or derived state (e.g. "edited since sync");
-     otherwise N/A. One mermaid stateDiagram-v2 per lifecycle. Label every transition with its
-     trigger (user action, job, callback, external event). Say below the diagram whether a state
-     is stored or derived. Worked examples below refer to these state names. -->
+**Changes to existing models:** <!-- bullets -->
 
-```mermaid
-stateDiagram-v2
-    [*] --> draft: created
-    draft --> active: activate (user)
-    active --> archived: archive job
-    archived --> [*]
-```
+### Component contracts
 
----
+<!-- CORE. From → To | Contract | Direction rule, one row per arrow in the Part 2 picture. -->
 
-## Behaviour
+| From → To | Contract | Direction rule |
+|---|---|---|
+| <!-- ③ → ④ --> | <!-- --> | <!-- --> |
 
-### Pipeline / Flow
+### Cross-cutting concerns
 
-<!-- CONDITIONAL: include only when the processing has several branches or stages that the
-     sequence diagrams would split up (e.g. a sync that files, parks or ignores). A mermaid
-     flowchart with real class/method names and a diamond per branch. Otherwise N/A. -->
+#### Transactions and queries
 
-### Sequence Diagrams
+<!-- CONDITIONAL. Plain language: every read with its N+1 risk, every multi-table write with its
+     transaction boundary. -->
 
-<!-- CORE. A mermaid sequenceDiagram for the happy path and one for each error/edge flow worth
-     explaining (failure, retry, review, concurrent update). Real participant names; alt/else
-     for branches, loop for iteration, `Note over` for invariants. Mermaid gotcha: `Note` is
-     reserved, so never use it as a participant id (use `participant NoteRec as Note (model)`). -->
+#### Exception handling and monitoring
 
-```mermaid
-sequenceDiagram
-    actor User
-    participant Controller
-    participant Service
-    participant Model
+<!-- CONDITIONAL. One row per failure mode: who is alerted, channel (tie to `Noticed`), detail. -->
 
-    User->>Controller: Action
-    Controller->>Service: call(args)
-    alt invalid
-        Service-->>Controller: errors
-        Controller-->>User: inline error
-    else valid
-        Service->>Model: create!(attributes)
-        Controller-->>User: response
-    end
-```
+#### Performance and security
 
-### Worked Examples
+<!-- CORE. A bullet or two each: volume, background vs inline, tenant isolation, sanitisation. -->
 
-<!-- CORE. Three tables, not prose. One row per example, IDs H1.., E1.., X1.. Each row becomes
-     exactly one Cucumber scenario in the named feature file. The Spec scenario column names the
-     spec scenario(s) the row proves. Every spec scenario must appear in at least one row, so a
-     reviewer can spot gaps by scanning that column. Use real-ish data from the shared setup. -->
+### Worked examples
 
-**ID legend:** **H** = Happy path · **E** = Edge case · **X** = Error (exception) case. IDs are
-referenced from tasks.md and Cucumber scenario names.
+<!-- CORE. Happy Path (H1..), Edge Cases (E1..) and Error Cases (X1.., X for eXception) tables with
+     columns # | Scenario | Given | When | Then | Spec scenario | Feature, using real-ish data from
+     a shared-setup table. Every spec scenario must appear in the Spec scenario column of at least
+     one row; check and add rows for gaps. Each row becomes exactly one Cucumber scenario. Prose
+     Given/When/Then bullets are not acceptable. -->
+
+**ID legend:** **H** = Happy path · **E** = Edge case · **X** = Error (exception) case.
 
 **Shared setup:**
 
 | Record | Name | Key data |
 |---|---|---|
-| <!-- e.g. Entity --> | <!-- Alpha Capital --> | <!-- … --> |
+| <!-- --> | <!-- --> | <!-- --> |
 
 #### Happy Path
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| H1 | <!-- short title --> | <!-- starting state --> | <!-- action --> | <!-- observable result --> | <!-- spec scenario name --> | <!-- feature file --> |
+| H1 | | | | | | |
 
 #### Edge Cases
 
 | # | Scenario | Given | When | Then | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| E1 | <!-- boundary / duplicate / concurrency / empty --> | | | | | |
+| E1 | | | | | | |
 
 #### Error Cases
 
 | # | Scenario | Given | When | Then (what the user sees, who is alerted) | Spec scenario | Feature |
 |---|---|---|---|---|---|---|
-| X1 | <!-- invalid input / unauthorized / external failure --> | | | | | |
+| X1 | | | | | | |
 
----
+### Testing
 
-## Key Components
+<!-- CORE, 2-4 lines. Cucumber only (no RSpec tier). Shared setup (stubs, tags, factories) and
+     reused vs new step files. The Feature column above is the mapping; don't repeat it. -->
 
-<!-- CONDITIONAL: include when there are services or jobs. One row per component: its
-     responsibility, and what an implementer must know (queue, retries, idempotency,
-     transaction). No code. Add a mermaid decision flowchart under "Decision Flows" for every
-     non-trivial decision (matching, routing, eligibility, fallbacks). -->
-
-| Component | Responsibility | Notes |
-|---|---|---|
-| <!-- `ServiceName` --> | <!-- what it owns --> | <!-- queue, retries, idempotency --> |
-
-### Decision Flows
-
-```mermaid
-flowchart TD
-    In(["input"]) --> Q{"rule 1?"}
-    Q -->|yes| A(["outcome A"])
-    Q -->|no| B(["outcome B"])
-```
-
----
-
-## Controllers and Routes
-
-<!-- CONDITIONAL: include when routes or controller actions are added. One row per route. -->
-
-| Verb and path | Action | Does | Responds with |
-|---|---|---|---|
-| <!-- `POST /things` --> | <!-- `create` --> | <!-- authorize, call service --> | <!-- redirect / turbo_stream --> |
-
----
-
-## Policy
-
-<!-- CORE. Who can do what, in plain terms. Add a mermaid decision flowchart when access depends
-     on more than one condition. State how entity_id scoping is enforced. No policy code. -->
-
-| Role | Access |
-|---|---|
-| <!-- e.g. Fund Admin --> | <!-- e.g. full access --> |
-| <!-- e.g. Investor --> | <!-- e.g. none --> |
-
-**Multi-tenancy:** <!-- how entity_id scoping is enforced -->
-
----
-
-## UI Changes
-
-<!-- CONDITIONAL: include whenever a screen, email or alert changes. Write it for someone who has
-     never seen the feature: walk through the UI the way users will use it. Implementation terms
-     (Turbo, Stimulus, controllers) go ONLY in "Build notes" at the end. User-facing messages and
-     validation rules stay in the proposal, so link to them. -->
-
-### At a glance
-
-<!-- Where the feature shows up, as a before/after table, then a tiny flowchart of the journeys
-     below in the order users meet them. -->
-
-| Where in CapHive | Today | After this change | Who sees it |
-|---|---|---|---|
-| <!-- e.g. Investor → Notes tab --> | <!-- current --> | <!-- new behaviour --> | <!-- roles --> |
-
-```mermaid
-flowchart LR
-    J1["Journey 1<br/>set up"] --> J2["Journey 2<br/>everyday use"]
-    J2 -.-> J3["Journey 3<br/>when something fails"]
-```
-
-### Journey 1: Who does what
-
-<!-- Rename the heading, e.g. "Journey 1: A partner connects Granola". -->
-
-<!-- One subsection per journey. Each has:
-     1. A small ASCII wireframe of the screen involved, with numbered callouts ① ② ③ on the
-        elements that matter. Show each distinct look of the screen (e.g. before/after connect).
-     2. A step table whose "They see" column refers to those callouts.
-     For a journey with no screen of its own (e.g. background work surfacing later), skip the
-     wireframe. For a component with several visual states (connected / error / disabled), add a
-     stateDiagram-v2 with plain-English state names and transitions labelled with what the user
-     does or what happens. -->
-
-```
-Screen name
-┌──────────────────────────────────────────┐
-│  ① Status:  ○ Not set up                  │
-│  ② [ field                          ]     │
-│  ③ [ Save ]                               │
-└──────────────────────────────────────────┘
-```
-
-| Step | The user… | They see |
-|---|---|---|
-| 1 | <!-- action --> | <!-- result, citing ①②③ --> |
-
-### Build notes (for implementers)
-
-<!-- The only place for Turbo Frames/Streams, reused pickers, Stimulus, and what updates without a
-     reload. -->
-
-| Interaction | Screen update |
-|---|---|
-| <!-- e.g. Save --> | <!-- e.g. row replaced in place, no reload --> |
-
----
-
-## Cross-cutting Concerns
-
-### Transactions and Queries
-
-<!-- CONDITIONAL: include when the feature reads or writes the database. Plain language, no query
-     code. List every read with its N+1 risk, and every multi-table write with its transaction
-     boundary. -->
-
-| What is read | When | N+1 risk | How it stays cheap |
-|---|---|---|---|
-| <!-- e.g. contacts matching attendee emails --> | <!-- each meeting --> | <!-- Yes/No --> | <!-- one indexed lookup --> |
-
-| Operation | In a transaction? | Why |
-|---|---|---|
-| <!-- plain language --> | <!-- Yes/No --> | <!-- --> |
-
-### Exception Handling and Monitoring
-
-<!-- CONDITIONAL: include when anything can fail at runtime (jobs, external calls, user input).
-     One row per failure mode. The X-rows in Worked Examples give the concrete cases, so don't
-     repeat them here. -->
-
-| Failure scenario | Who is alerted | Channel | Detail |
-|---|---|---|---|
-| <!-- e.g. Job fails after retries --> | <!-- User / Support / Both --> | <!-- Email / WhatsApp / In-app --> | <!-- --> |
-
-### Performance and Security
-
-<!-- CORE, one or two bullets each: expected volume, background vs inline work, tenant isolation,
-     secrets, input sanitisation. -->
-
----
-
-## Design Decisions
-
-<!-- CORE. Numbered: choice, alternative considered, why rejected. Favour the simpler/DRYer option,
-     and state the reason when you don't. -->
-
-1. **Decision title** — Choice made. Alternative considered: X. Rejected because: Y.
-
----
-
-## Testing
-
-<!-- CORE, 2-4 lines. Cucumber only, since this project has no RSpec tier. The Feature column in
-     Worked Examples is the scenario-to-file mapping, so don't repeat it. State only: shared test
-     setup (stubs, tags such as @sync-http, factories), and reused vs new step files. -->
-
----
-
-## Risks and Open Questions
+### Risks and open questions
 
 <!-- CORE. Risks as "risk → mitigation" bullets. Open questions only if genuinely deferrable; a
      question that changes specs, approach or tasks must be resolved with the user now. -->
@@ -434,4 +331,10 @@ Screen name
 
 | # | Open question | Current thinking | Status |
 |---|---|---|---|
-| 1 | <!-- --> | <!-- --> | <!-- Deferred / Check before implementation --> |
+| 1 | <!-- --> | <!-- --> | <!-- Deferred --> |
+
+**FAQ**
+
+| Question | Answer |
+|---|---|
+| <!-- e.g. Where do I start reviewing? --> | <!-- --> |

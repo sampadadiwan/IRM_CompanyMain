@@ -58,9 +58,13 @@ Given("the portfolio company agent has KPI reminders enabled for today") do
   # reminder fires deterministically regardless of when the test suite runs.
   today        = Time.zone.today
   days_elapsed = (today - today.beginning_of_quarter).to_i
+  # kpi_reminder_recipients is required: send_kpi_reminder skips (no email) when
+  # no explicit recipients are configured, rather than falling back to the
+  # fund's employees.
   @support_agent.update!(json_fields: (@support_agent.json_fields || {}).merge(
-    "send_kpi_reminder" => "true",
-    "reminder_days"     => days_elapsed.to_s
+    "send_kpi_reminder"       => "true",
+    "reminder_days"           => days_elapsed.to_s,
+    "kpi_reminder_recipients" => "cfo@testcorp.example.com"
   ))
   ActionMailer::Base.deliveries.clear
 end

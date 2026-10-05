@@ -4,9 +4,14 @@ end
 
 # Workflow templates (company_admin only for mutations; all employees read-only)
 resources :workflow_templates do
-  resources :workflow_steps, except: %i[index show] do
-    post :reorder, on: :collection
-  end
+  # Seeds a kind's standard journeys, params[:kind] in JourneySetup::KINDS (same service as the
+  # rollout rake tasks). Worked examples H10 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+  post :setup_journeys, on: :collection
+  # Retire a template (or bring it back) without deleting it — see WorkflowTemplate.enabled
+  patch :toggle_enabled, on: :member
+  # Copy a template with its steps (investor-kyc-journey E26)
+  post :duplicate, on: :member
+  resources :workflow_steps, except: %i[index show]
   # Auto-assignment rules are nested under their template
   resources :workflow_auto_assignment_rules, except: %i[show]
 end
@@ -131,6 +136,7 @@ resources :individual_kycs, controller: "investor_kycs", type: "IndividualKyc"
 resources :non_individual_kycs, controller: "investor_kycs", type: "NonIndividualKyc"
 resources :investor_kycs do
   get 'analytics', on: :collection
+  get 'journey', on: :member
   get 'preview', on: :member
   get 'search', on: :collection
   put 'toggle_verified', on: :member
@@ -148,7 +154,6 @@ resources :investor_kycs do
   get 'generate_all_docs', on: :collection
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
   post 'bulk_actions', on: :collection
-  post 'validate_docs_with_ai', on: :member
   post 'extract_docs_data', on: :member
   get  'processing', on: :member
   patch 'doc_first_upload', on: :member
@@ -238,6 +243,8 @@ resources :workflow_instances, only: %i[index create show] do
     post :archive             # admin archives a stalled instance
     post :send_reminder       # admin triggers immediate reminder to pending actors
     get  :export_audit_trail  # download full state-change history as CSV
+    post :acknowledge         # "Mark reviewed" on a journey's current acknowledge step
+    get  :step_info           # a journey step's popup (what to do, what happens, why)
   end
 
   # Actor responses nested under their instance (no folder nesting)
@@ -361,7 +368,23 @@ resources :dashboard_widgets do
   get 'dashboard', on: :collection
   get 'metadata_help', on: :collection
 end
-resources :doc_questions do
-  put :restore_deleted, on: :member
-  get :show_deleted, on: :collection
+
+# Document Checks — openspec/changes/document-checks/design.md (cards ①, ③, ⑧)
+resources :doc_checks, only: %i[index] do
+  collection do
+    patch :save_document
+    post :add_recommended
+    post :trial
+  end
+end
+resources :doc_check_runs, only: %i[create show] do
+  get :panel, on: :collection
+end
+resources :doc_check_results, only: %i[index] do
+  member do
+    patch :use_document_value
+    patch :mark_ok
+    patch :undo
+  end
+  post :check_again, on: :collection
 end

@@ -12,6 +12,9 @@ class CapitalDistributionJob < ApplicationJob
       # This is to ensure the gross_amount is computed correctly, after the payments have been computed
       @capital_distribution.reload.save
     end
+    # Real-time journey progress: Create payments can pass now (no-op without a journey)
+    # Worked examples H2 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+    @capital_distribution.journey_progress!(actor: User.find_by(id: user_id))
   end
 
   def generate_payments(user_id: nil)
@@ -66,7 +69,16 @@ class CapitalDistributionJob < ApplicationJob
     if @error_msg.present?
       msg = "Capital Distribution Payments creation completed with #{@error_msg.length} errors."
       send_notification("#{msg} Errors will be sent via email", user_id, :danger)
-      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg: @error_msg, subject: msg).doc_gen_errors.deliver_now
+      # Generation after a distribution is saved runs with no user (the model's after_create_commit),
+      # so there may be nobody to email: the errors are logged instead of failing a second time on
+      # User.find(nil) while reporting the first failure.
+      # Worked examples X4 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples
+      user = User.find_by(id: user_id)
+      if user
+        EntityMailer.with(entity_id: user.entity_id, user_id:, error_msg: @error_msg, subject: msg).doc_gen_errors.deliver_now
+      else
+        Rails.logger.error { "[CapitalDistributionJob] distribution #{@capital_distribution.id}: #{msg} #{@error_msg.map { |e| e[:msg] }.inspect}" }
+      end
     else
       msg = "Capital Distribution Payments created successfully"
       send_notification(msg, user_id, :success)

@@ -137,6 +137,8 @@ end
 
 resources :capital_distributions do
   post 'approve', on: :member
+  # The journey panel alone, for real-time refreshes (capital-distribution-journey E16, E17)
+  get 'journey', on: :member
   patch 'redeem_units', on: :member
   patch 'payments_completed', on: :member
   get 'add_pis_to_capital_distribution', on: :collection
@@ -168,6 +170,8 @@ resources :capital_calls do
   patch 'generate_docs', on: :member
   patch 'allocate_units', on: :member
   patch 'recompute_fees', on: :member
+  get 'journey', on: :member # journey panel only, reloaded in place by real-time updates
+  get 'stats', on: :member # stats cards only, reloaded in place once CapitalRemittancesCountersJob fixes the totals
   post 'confirm_reconciliation_deposit', on: :member
   post 'reassign_reconciliation_deposit', on: :member
   post 'undo_reconciliation_deposit', on: :member

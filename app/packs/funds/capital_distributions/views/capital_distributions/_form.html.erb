@@ -97,7 +97,9 @@
         <div class="form-group">
           <%= form.label :send_notification_on_complete, "Send Notification" %>
           <%= form.check_box :send_notification_on_complete, class: "form-check-input"  %>
-          <span class="small_text">Send notification to investors when distribution payment is marked completed</span>
+          <%# Nothing emails investors when a payment is completed: sending is always the explicit action.
+              Worked examples E23 — openspec/changes/archive/2026-10-02-capital-distribution-journey/design.md#worked-examples %>
+          <span class="small_text">Allow emailing investors about this distribution. Emails are sent from Actions → Send Payment Notifications.</span>
         </div>
 
 

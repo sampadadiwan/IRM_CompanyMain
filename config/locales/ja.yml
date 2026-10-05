@@ -390,11 +390,16 @@ ja:
     my_profile: マイプロフィール
     my_task: マイタスク
     notices: 通知
+    workflows: ワークフロー
+    manage_workflow_templates: ワークフローテンプレート管理
     personalize_investor_notices: 投資家通知のパーソナライズ
     provide_access: アクセスを提供する
     setup_compliance_rules: コンプライアンスルールの設定
     todo_daily_tasks: ToDoと日次タスク
     user_guides: ユーザーガイド
+    help: ヘルプ
+    faqs: よくある質問
+    frequently_asked_questions: よくある質問とその回答
     learn_how_to_use: IRMの使い方を学ぶ
     user: ユーザー
     user_profile: ユーザープロフィール

@@ -77,3 +77,26 @@ Feature: Doc-First KYC Wizard
     Then I click on "Next"
     Then I click on "Next"
     And I should see a "Submit KYC" button
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 6. Submitting the upload form with no files does not start extraction
+  #    (it used to bounce processing → edit → upload form forever)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  @doc_wizard
+  Scenario: Company admin submits the doc-first form without files and is sent back to upload
+    When I visit the new investor KYC page
+    And I select "DocWizardInvestor" as the investor for the KYC
+    And I click on "Continue to Fill Form →"
+    Then I should see "Upload at least one document, or choose Fill Form Manually."
+    And I should see "Upload KYC Documents"
+    And no KYC document extraction should have been started
+
+  @doc_wizard_magic_link
+  Scenario: Investor submits the doc-first form without files via magic link and is sent back to upload
+    Given there is a KYC for the investor with submission_status "link_sent"
+    When I open the KYC edit page as the investor via a valid signed link
+    And I click on "Continue to Fill Form →"
+    Then I should see "Upload at least one document, or choose Fill Form Manually."
+    And I should see "Upload KYC Documents"
+    And no KYC document extraction should have been started

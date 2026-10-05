@@ -5,6 +5,8 @@
         <%= turbo_frame_tag documents_frame_id, target: "_top" do %>
             <% @pagy, @documents = pagy(@documents) if params[:all].blank? %>
 
+            <%= render "documents/approval_hint" %>
+
             <%= render "layouts/filter", associations: [:folder], hidden_fields: {no_folders: true, folder_id: params[:folder_id], widget_id: params[:widget_id]} %>
 
             <%= render "/documents/index", documents: @documents, entity: @entity, owner: @owner %>
