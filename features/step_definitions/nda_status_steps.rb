@@ -30,10 +30,15 @@ Given("there is an LP investor {string} with approved access to the GP entity") 
     first_name: "LP",
     last_name: "User"
   )
+  # Changed: Supply email/name so the before_validation :update_user callback
+  # (which calls email.strip) doesn't raise NoMethodError on nil.
   @lp_investor_access = InvestorAccess.create!(
     entity: @gp_entity,
     investor: @lp_investor,
     user: @lp_user,
+    email: @lp_user.email,
+    first_name: @lp_user.first_name,
+    last_name: @lp_user.last_name,
     approved: true
   )
 end
@@ -57,10 +62,15 @@ Given("there is an LP investor {string} with unapproved access to the GP entity"
     first_name: "LP",
     last_name: "User"
   )
+  # Changed: Supply email/name so the before_validation :update_user callback
+  # (which calls email.strip) doesn't raise NoMethodError on nil.
   InvestorAccess.create!(
     entity: @gp_entity,
     investor: @lp_investor,
     user: @lp_user,
+    email: @lp_user.email,
+    first_name: @lp_user.first_name,
+    last_name: @lp_user.last_name,
     approved: false
   )
 end
