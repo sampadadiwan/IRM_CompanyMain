@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 # Resolves the full NDA status picture for a given NDA config and folder.
-# Batches four read queries to avoid N+1:
-#   1. AccessRight → investor universe for the folder
-#   2. InvestorAccess → users per investor + NDA tags
+# Batches five read queries to avoid N+1:
+#   1. InvestorAccess → investor universe for the entity
+#   2. InvestorAccess → users per investor (with user preloaded)
 #   3. NdaAcceptance → latest acceptance per investor (MySQL GROUP BY + MAX)
 #   4. NdaExemption → exempt user_ids
+#   5. NdaSignatory → signatory user_ids for this NDA config
 #
 # Returns structured data for both the modal summary and the AG Grid JSON endpoint.
 #
@@ -13,6 +14,7 @@
 # @see NdaConfig
 # @see NdaAcceptance
 # @see NdaExemption
+# @see NdaSignatory
 class NdaStatusResolver
   # @param nda_config [NdaConfig] the NDA config to resolve status for
   # @param folder [Folder] the folder whose access rights define the investor universe
@@ -37,8 +39,9 @@ class NdaStatusResolver
     users_by_investor = resolve_users(investor_ids)
     acceptances_by_investor = resolve_latest_acceptances(investor_ids)
     exempt_user_ids = resolve_exempt_user_ids
+    signatory_user_ids = resolve_signatory_user_ids
 
-    investor_rows = build_investor_rows(investors, users_by_investor, acceptances_by_investor, exempt_user_ids)
+    investor_rows = build_investor_rows(investors, users_by_investor, acceptances_by_investor, exempt_user_ids, signatory_user_ids)
     counters = compute_counters(investor_rows)
 
     { counters: counters, investor_rows: investor_rows }
@@ -96,12 +99,22 @@ class NdaStatusResolver
     NdaExemption.where(nda_config_id: @nda_config.id).pluck(:user_id).to_set
   end
 
+  # Changed: Added signatory batch query replacing per-row tag_list check.
+  # Why: Signatories are now stored in nda_signatories table (per-NDA scoped)
+  #   instead of the entity-wide InvestorAccess tag_list field.
+  #
+  # @return [Set<Integer>] user_ids designated as signatories for this NDA config
+  def resolve_signatory_user_ids
+    NdaSignatory.where(nda_config_id: @nda_config.id).pluck(:user_id).to_set
+  end
+
   # @param investors [Array<Investor>] the investor universe
   # @param users_by_investor [Hash{Integer => Array<InvestorAccess>}] investor_id → user records
   # @param acceptances_by_investor [Hash{Integer => NdaAcceptance}] investor_id → latest acceptance
   # @param exempt_user_ids [Set<Integer>] set of exempt user IDs
+  # @param signatory_user_ids [Set<Integer>] set of designated signatory user IDs
   # @return [Array<Hash>] investor rows with nested user detail
-  def build_investor_rows(investors, users_by_investor, acceptances_by_investor, exempt_user_ids)
+  def build_investor_rows(investors, users_by_investor, acceptances_by_investor, exempt_user_ids, signatory_user_ids)
     investors.map do |investor|
       investor_accesses = users_by_investor[investor.id] || []
       acceptance = acceptances_by_investor[investor.id]
@@ -110,7 +123,10 @@ class NdaStatusResolver
         user = ia.user
         is_signer = acceptance&.user_id == user.id && acceptance&.accepted?
         is_exempt = exempt_user_ids.include?(user.id)
-        nda_tagged = ia.tag_list.to_s.include?("NDA")
+        # Changed: Replaced ia.tag_list check with NdaSignatory lookup.
+        # Why: Signatory designation is now per-NDA (nda_signatories table),
+        #   not entity-wide (InvestorAccess tag_list).
+        nda_tagged = signatory_user_ids.include?(user.id)
 
         user_status = if is_exempt
                         "Exempt"

@@ -126,7 +126,7 @@
                       <th>User Name</th>
                       <th>Email</th>
                       <th>User Status</th>
-                      <th>NDA Tagged</th>
+                      <th>Signatory</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -147,11 +147,26 @@
                             <%= user_row[:status] %>
                           <% end %>
                         </td>
+                        <%# Changed: Signatory badge with Tag/Untag button replaces static NDA tag badge.
+                             Why: Per-NDA signatory designation (nda_signatories table) replaces
+                             entity-wide InvestorAccess tag_list. GP can tag/untag from dashboard. %>
                         <td>
                           <% if user_row[:nda_tagged] %>
-                            <span class="badge bg-secondary-subtle text-secondary">NDA</span>
+                            <span class="badge bg-secondary-subtle text-secondary me-1">Signatory</span>
+                            <% signatory = NdaSignatory.find_by(nda_config_id: nda_config.id, user_id: user_row[:user].id) %>
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    data-action="click->nda-status#untagSignatory"
+                                    data-signatory-id="<%= signatory&.id %>"
+                                    data-user-name="<%= user_row[:user].full_name %>">
+                              <i class="ti ti-tag-off me-1"></i> Untag
+                            </button>
                           <% else %>
-                            —
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    data-action="click->nda-status#tagSignatory"
+                                    data-user-id="<%= user_row[:user].id %>"
+                                    data-user-name="<%= user_row[:user].full_name %>">
+                              <i class="ti ti-tag me-1"></i> Tag
+                            </button>
                           <% end %>
                         </td>
                         <td>

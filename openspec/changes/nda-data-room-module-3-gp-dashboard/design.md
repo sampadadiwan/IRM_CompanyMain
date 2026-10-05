@@ -38,7 +38,7 @@
 
 ## Overview
 
-Adds a GP-facing NDA status dashboard using a server-rendered HTML table (matching the standard Ransack table style). Two views: a lightweight Status tab in the existing NDA Settings modal (simple HTML partial via Turbo Frame) and a dedicated full-page dashboard with HTML table, client-side filtering, export, and exemption management. A new `nda_exemptions` table stores user-level NDA bypasses, and the existing NDA gate gains an exemption check. Bulk reminders are descoped to a separate notifications module.
+Adds a GP-facing NDA status dashboard using a server-rendered HTML table (matching the standard Ransack table style). Two views: a lightweight Status tab in the existing NDA Settings modal (simple HTML partial via Turbo Frame) and a dedicated full-page dashboard with HTML table, client-side filtering, export, exemption management, and signatory tagging. A new `nda_exemptions` table stores user-level NDA bypasses, a new `nda_signatories` table stores per-NDA signatory designations, and the existing NDA gate gains an exemption check. Bulk reminders are descoped to a separate notifications module.
 
 ---
 
@@ -161,17 +161,19 @@ classDiagram
 flowchart LR
     subgraph New["New (green)"]
         NE["NdaExemption model"]
+        NS["NdaSignatory model"]
         NSC["NdaStatusController"]
         NSR["NdaStatusResolver service"]
         STIM["nda_status_controller.js (Stimulus)"]
-        MIG["create_nda_exemptions migration"]
+        MIG1["create_nda_exemptions migration"]
+        MIG2["create_nda_signatories migration"]
         VIEWS["Status tab partial + dashboard HTML + XLSX"]
     end
 
     subgraph Modified["Modified (amber)"]
         MODAL["NDA modal — enable Status tab"]
         GATE["DocumentsController#ensure_nda_accepted — add exemption check"]
-        NDACONF["NdaConfig — add has_many :nda_exemptions"]
+        NDACONF["NdaConfig — add has_many :nda_exemptions, :nda_signatories"]
         ROUTES["config/routes/core.rb — add nda_status routes"]
     end
 
@@ -189,7 +191,7 @@ flowchart LR
     classDef amber fill:#fff3e0,stroke:#ef6c00,color:#000
     classDef grey fill:#f5f5f5,stroke:#9e9e9e,color:#000
     classDef red fill:#ffebee,stroke:#c62828,color:#000
-    class NE,NSC,NSR,STIM,MIG,VIEWS green
+    class NE,NS,NSC,NSR,STIM,MIG1,MIG2,VIEWS green
     class MODAL,GATE,NDACONF,ROUTES amber
     class IA,NA,LAYOUT grey
     class REM red
@@ -216,14 +218,33 @@ erDiagram
         datetime created_at "NOT NULL"
         datetime updated_at "NOT NULL"
     }
+
+    nda_configs ||--o{ nda_signatories : "has_many"
+    users ||--o{ nda_signatories : "signatory user"
+    users ||--o{ nda_signatories : "tagged_by"
+
+    nda_signatories {
+        bigint id PK
+        bigint nda_config_id FK "NOT NULL"
+        bigint user_id FK "NOT NULL"
+        bigint tagged_by_id FK "NOT NULL"
+        datetime created_at "NOT NULL"
+        datetime updated_at "NOT NULL"
+    }
 ```
 
 **Indexes:**
 - `idx_nda_exemptions_config_user [nda_config_id, user_id]` UNIQUE — one exemption per user per NDA config
 - `idx_nda_exemptions_user [user_id]` — audit queries
+- `idx_nda_signatories_config_user [nda_config_id, user_id]` UNIQUE — one signatory tag per user per NDA config
+- `idx_nda_signatories_user [user_id]` — lookup queries
 
 **Changes to existing models:**
 - `NdaConfig`: add `has_many :nda_exemptions, dependent: :destroy`
+- `NdaConfig`: add `has_many :nda_signatories, dependent: :destroy`
+
+**Design decision — NDA signatory is per-NDA, not global:**
+NDA signatory tagging is scoped to a specific NDA config (folder), not stored globally on InvestorAccess. This allows a GP to designate different signatories for different folders' NDAs. Previously, the NDA tag was stored in the InvestorAccess `tag_list` field, but that is entity-wide and not configurable per folder. The `nda_signatories` table mirrors the `nda_exemptions` pattern for consistency. Management is done entirely from the NDA Status Dashboard — no need to navigate to Stakeholder pages.
 
 ### State Transitions
 
@@ -273,7 +294,7 @@ sequenceDiagram
     Resolver->>IA: InvestorAccess.where(entity_id:, approved: true).distinct.pluck(:investor_id)
     IA-->>Resolver: investor universe
     Resolver->>IA: InvestorAccess.where(entity_id:, investor_id: [...], approved: true).includes(:user)
-    IA-->>Resolver: users per investor + NDA tags
+    IA-->>Resolver: users per investor
     Resolver->>NA: NdaAcceptance.where(nda_config_id: X, investor_id: [...])
     NA-->>Resolver: latest acceptance per investor
     Resolver->>NE: NdaExemption.where(nda_config_id: X)
@@ -328,15 +349,15 @@ sequenceDiagram
 | Alpha Ventures | GP Admin | fm1@ian.com, company_admin |
 | Alpha Ventures | Folder "Fund Alpha Docs" | Data Room folder with NDA-A (enabled, click_through, until_revoked) |
 | Alpha Ventures | Investor "Acme Capital" | Category: LP. InvestorAccess approved. |
-| Acme Capital | User A (alice@acme.com) | InvestorAccess approved, NDA tag |
-| Acme Capital | User B (bob@acme.com) | InvestorAccess approved, NDA tag |
-| Acme Capital | User C (carol@acme.com) | InvestorAccess approved, no NDA tag |
-| Acme Capital | User D (dave@acme.com) | InvestorAccess approved, no NDA tag |
-| Acme Capital | User E (eve@acme.com) | InvestorAccess approved, no NDA tag, EXEMPT |
+| Acme Capital | User A (alice@acme.com) | InvestorAccess approved, NDA signatory (nda_signatories record) |
+| Acme Capital | User B (bob@acme.com) | InvestorAccess approved, NDA signatory (nda_signatories record) |
+| Acme Capital | User C (carol@acme.com) | InvestorAccess approved, not a signatory |
+| Acme Capital | User D (dave@acme.com) | InvestorAccess approved, not a signatory |
+| Acme Capital | User E (eve@acme.com) | InvestorAccess approved, not a signatory, EXEMPT |
 | Alpha Ventures | Investor "Beta Holdings" | Category: LP. InvestorAccess approved. No acceptance. |
-| Beta Holdings | User F (frank@beta.com) | InvestorAccess approved, NDA tag |
+| Beta Holdings | User F (frank@beta.com) | InvestorAccess approved, NDA signatory (nda_signatories record) |
 | Alpha Ventures | Investor "Gamma Fund" | Category: LP. InvestorAccess approved. Declined. |
-| Gamma Fund | User G (gina@gamma.com) | InvestorAccess approved, NDA tag |
+| Gamma Fund | User G (gina@gamma.com) | InvestorAccess approved, NDA signatory (nda_signatories record) |
 
 **Happy Path:**
 
@@ -379,7 +400,7 @@ sequenceDiagram
 
 | Component | Responsibility |
 |---|---|
-| NdaStatusResolver | Resolves the full status picture for a given NDA config + folder: investor universe (from InvestorAccess), user details per investor (from InvestorAccess), latest acceptance per investor (from NdaAcceptance), exempt users (from NdaExemption). Returns structured data for both the modal summary and the HTML table. |
+| NdaStatusResolver | Resolves the full status picture for a given NDA config + folder: investor universe (from InvestorAccess), user details per investor (from InvestorAccess), latest acceptance per investor (from NdaAcceptance), exempt users (from NdaExemption), signatory users (from NdaSignatory). Returns structured data for both the modal summary and the HTML table. |
 | nda_status_controller.js | Stimulus controller for client-side status filtering, text search, and exemption grant/revoke actions via fetch API. |
 
 **Status derivation decision flow:**
@@ -406,6 +427,8 @@ flowchart TD
 | GET | `/nda_status.xlsx` | NdaStatusController#index | XLSX download |
 | POST | `/nda_status/exemptions` | NdaStatusController#create_exemption | JSON (for Stimulus fetch) |
 | DELETE | `/nda_status/exemptions/:id` | NdaStatusController#destroy_exemption | JSON (for Stimulus fetch) |
+| POST | `/nda_status/signatories` | NdaStatusController#create_signatory | JSON (for Stimulus fetch) |
+| DELETE | `/nda_status/signatories/:id` | NdaStatusController#destroy_signatory | JSON (for Stimulus fetch) |
 
 All routes scoped under the NDA configs pack. Query params: `nda_config_id`, `folder_id`.
 
@@ -415,12 +438,12 @@ All routes scoped under the NDA configs pack. Query params: `nda_config_id`, `fo
 
 **NdaStatusPolicy:**
 
-| Role | summary | index / export | create_exemption | destroy_exemption |
-|---|---|---|---|---|
-| GP Admin (same entity) | Allow | Allow | Allow | Allow |
-| GP Employee (same entity) | Allow | Allow | Allow | Allow |
-| LP / Investor user | Deny | Deny | Deny | Deny |
-| Other-entity GP | Deny | Deny | Deny | Deny |
+| Role | summary | index / export | create_exemption | destroy_exemption | create_signatory | destroy_signatory |
+|---|---|---|---|---|---|---|
+| GP Admin (same entity) | Allow | Allow | Allow | Allow | Allow | Allow |
+| GP Employee (same entity) | Allow | Allow | Allow | Allow | Allow | Allow |
+| LP / Investor user | Deny | Deny | Deny | Deny | Deny | Deny |
+| Other-entity GP | Deny | Deny | Deny | Deny | Deny | Deny |
 
 **Entity scoping:** Policy checks `nda_config.entity_id == current_user.entity_id` and `curr_role_employee?`. Same pattern as NdaConfigPolicy.
 

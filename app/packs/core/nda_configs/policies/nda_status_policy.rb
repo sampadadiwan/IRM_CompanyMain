@@ -27,6 +27,19 @@ class NdaStatusPolicy < ApplicationPolicy
     gp_same_entity?
   end
 
+  # Changed: Added signatory policy methods.
+  # Why: GP can tag/untag users as NDA signatories from the dashboard.
+
+  # @return [Boolean] GP can tag a user as a designated NDA signatory
+  def create_signatory?
+    gp_same_entity?
+  end
+
+  # @return [Boolean] GP can remove a user's signatory designation
+  def destroy_signatory?
+    gp_same_entity?
+  end
+
   private
 
   # @return [Boolean] Whether the user is a GP employee of the same entity as the NDA config.

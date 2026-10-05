@@ -2,13 +2,14 @@
 
 # GP-facing NDA status dashboard controller.
 # Provides a modal summary tab (Turbo Frame), a dedicated AG Grid dashboard page
-# with XLSX export, and user-level exemption management.
+# with XLSX export, user-level exemption management, and signatory tagging.
 #
 # All actions are restricted to GP employees of the same entity via NdaStatusPolicy.
 #
 # @see NdaStatusPolicy
 # @see NdaStatusResolver
 # @see NdaExemption
+# @see NdaSignatory
 class NdaStatusController < ApplicationController
   before_action :set_nda_config
   before_action :set_folder, only: %i[summary index]
@@ -86,6 +87,47 @@ class NdaStatusController < ApplicationController
     exemption.destroy!
 
     render json: { status: "ok", user_id: user_id, exempt: false }
+  end
+
+  # POST /nda_status/signatories?nda_config_id=X&user_id=Y
+  # Tags a user as a designated NDA signatory for this NDA config.
+  # tagged_by_id is set server-side from current_user, never from params.
+  #
+  # Changed: Added signatory tagging action.
+  # Why: Replaces entity-wide InvestorAccess tag_list with per-NDA signatory designation.
+  #
+  # @return [void]
+  def create_signatory
+    authorize @nda_config, policy_class: NdaStatusPolicy
+
+    signatory = NdaSignatory.create!(
+      nda_config_id: @nda_config.id,
+      user_id: params[:user_id],
+      tagged_by_id: current_user.id
+    )
+
+    render json: { status: "ok", user_id: signatory.user_id, nda_tagged: true }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  rescue ActiveRecord::RecordNotUnique
+    render json: { error: "User is already a signatory for this NDA" }, status: :conflict
+  end
+
+  # DELETE /nda_status/signatories/:id
+  # Removes a user's signatory designation for this NDA config.
+  #
+  # Changed: Added signatory untagging action.
+  # Why: Replaces entity-wide InvestorAccess tag_list with per-NDA signatory designation.
+  #
+  # @return [void]
+  def destroy_signatory
+    authorize @nda_config, policy_class: NdaStatusPolicy
+
+    signatory = NdaSignatory.find(params[:id])
+    user_id = signatory.user_id
+    signatory.destroy!
+
+    render json: { status: "ok", user_id: user_id, nda_tagged: false }
   end
 
   private

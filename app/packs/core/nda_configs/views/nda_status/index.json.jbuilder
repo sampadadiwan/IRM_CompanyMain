@@ -20,6 +20,13 @@ json.array! @status_data[:investor_rows] do |row|
     json.exempt user_row[:exempt]
     json.signer user_row[:signer]
 
+    # Changed: Added signatory_id for untag action.
+    # Why: Client needs the record ID to call DELETE /nda_status/signatories/:id.
+    if user_row[:nda_tagged]
+      signatory = NdaSignatory.find_by(nda_config_id: @nda_config.id, user_id: user_row[:user].id)
+      json.signatory_id signatory&.id
+    end
+
     if user_row[:exempt]
       exemption = NdaExemption.find_by(nda_config_id: @nda_config.id, user_id: user_row[:user].id)
       json.exemption_id exemption&.id

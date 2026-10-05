@@ -35,6 +35,10 @@ class NdaConfig < ApplicationRecord
   # Why: Module 3 GP Dashboard — tracks user-level NDA exemptions per NdaConfig.
   has_many :nda_exemptions, dependent: :destroy
 
+  # Changed: Added has_many :nda_signatories association.
+  # Why: Module 3 GP Dashboard — tracks per-NDA signatory designations (replaces entity-wide tag_list).
+  has_many :nda_signatories, dependent: :destroy
+
   validates :validity_type, inclusion: { in: VALIDITY_TYPES }
   validates :acceptance_method, inclusion: { in: ACCEPTANCE_METHODS }
   validates :validity_days, inclusion: { in: VALIDITY_DAY_OPTIONS }, if: -> { validity_type == "fixed_period" }

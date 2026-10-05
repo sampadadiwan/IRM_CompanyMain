@@ -233,6 +233,10 @@ get  "nda_status/summary",       controller: "nda_status", action: :summary, as:
 get  "nda_status",               controller: "nda_status", action: :index, as: :nda_status
 post "nda_status/exemptions",    controller: "nda_status", action: :create_exemption, as: :nda_status_exemptions
 delete "nda_status/exemptions/:id", controller: "nda_status", action: :destroy_exemption, as: :nda_status_exemption
+# Changed: Added signatory routes for tag/untag actions.
+# Why: Per-NDA signatory designation replaces entity-wide InvestorAccess tag_list.
+post   "nda_status/signatories",     controller: "nda_status", action: :create_signatory, as: :nda_status_signatories
+delete "nda_status/signatories/:id", controller: "nda_status", action: :destroy_signatory, as: :nda_status_signatory
 
 # Workflow instances are standalone — not nested under any workflowable object.
 # workflowable_type and workflowable_id are passed as params on create.
