@@ -2,6 +2,9 @@
 <%# Renders the NDA PDF in an iframe with accept/decline buttons. %>
 <%# Wrapped in documents_frame turbo-frame so it renders inside the right pane %>
 <%# when navigated via the folder tree (Turbo Frame request). %>
+<%# Changed: Module 4 — added contextual re-acceptance note banner between title and PDF. %>
+<%# Why: Gate now redirects with reason param (version_mismatch or expired) so the LP %>
+<%#   understands why they must re-accept. No note shown on first-time acceptance. %>
 
 <%= turbo_frame_tag "documents_frame" do %>
 <div class="px-3">
@@ -25,6 +28,19 @@
         &nbsp;|&nbsp; Folder: <strong><%= @folder.name %></strong>
       <% end %>
     </p>
+
+    <%# ④b Module 4: Contextual re-acceptance note — shown when gate redirected with a reason. %>
+    <% if @reason == "version_mismatch" %>
+      <div class="alert alert-info mb-4">
+        <i class="ti ti-refresh me-1"></i>
+        The NDA has been updated since you last signed. Please review and accept the new version.
+      </div>
+    <% elsif @reason == "expired" %>
+      <div class="alert alert-info mb-4">
+        <i class="ti ti-clock me-1"></i>
+        Your NDA acceptance has expired. Please review and re-accept.
+      </div>
+    <% end %>
 
     <%# ⑤ NDA PDF iframe %>
     <% if @nda_config.nda_document_url %>

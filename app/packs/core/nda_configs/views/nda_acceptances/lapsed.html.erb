@@ -1,0 +1,49 @@
+<%# NDA Lapsed Page (Module 4) — dead-end page shown when a specific-date NDA's validity_date %>
+<%# has passed. No Accept or Decline buttons — the LP cannot re-sign because the config's %>
+<%# date hasn't changed, so any new acceptance would be immediately expired (infinite loop). %>
+<%# The GP must extend the validity_date before LPs can re-accept. %>
+<%# Wrapped in documents_frame turbo-frame so it renders inside the right pane. %>
+
+<%= turbo_frame_tag "documents_frame" do %>
+<div class="px-3">
+
+    <%# ① Logo and ② Back to Data Rooms %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <% logo = @nda_config.entity&.logo&.url || "/img/logo_big.png" %>
+        <%= image_tag(logo, class: "img-fluid", style: "max-height: 48px;", alt: @nda_config.entity&.name) %>
+      </div>
+      <%= link_to "Back to Data Rooms", data_rooms_folders_path, class: "btn btn-outline-secondary btn-sm" %>
+    </div>
+
+    <%# ③ NDA Expired heading %>
+    <h3 class="mb-3">NDA Expired</h3>
+
+    <%# ④ Explanation with folder context and expiry date %>
+    <p>
+      The Non-Disclosure Agreement
+      <% if @folder %>
+        for the folder "<strong><%= @folder.name %></strong>"
+      <% end %>
+      expired on <strong><%= l(@nda_config.validity_date, format: :long) %></strong>.
+    </p>
+
+    <%# ⑤ Contact message %>
+    <p class="text-muted">
+      Please contact the fund manager to request an updated NDA.
+    </p>
+
+    <%# ⑥ Contact email %>
+    <% if @nda_config.contact_email.present? %>
+      <p class="text-muted">
+        Questions? Contact: <%= mail_to @nda_config.contact_email %>
+      </p>
+    <% end %>
+
+    <%# ⑦ Back to Data Rooms %>
+    <div class="mt-4">
+      <%= link_to "Back to Data Rooms", data_rooms_folders_path, class: "btn btn-outline-secondary" %>
+    </div>
+
+</div>
+<% end %>
