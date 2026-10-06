@@ -56,9 +56,9 @@ class NdaStatusResolver
   # @return [Array<Investor>] all investors with approved InvestorAccess to this entity
   def resolve_investors
     investor_ids = InvestorAccess
-      .where(entity_id: @nda_config.entity_id, approved: true)
-      .distinct
-      .pluck(:investor_id)
+                   .where(entity_id: @nda_config.entity_id, approved: true)
+                   .distinct
+                   .pluck(:investor_id)
 
     Investor.where(id: investor_ids)
   end
@@ -81,9 +81,9 @@ class NdaStatusResolver
 
     # MySQL-compatible: subquery finds max created_at per investor, outer query fetches full records
     subquery = NdaAcceptance
-      .where(nda_config_id: @nda_config.id, investor_id: investor_ids)
-      .group(:investor_id)
-      .select("investor_id, MAX(created_at) AS max_created_at")
+               .where(nda_config_id: @nda_config.id, investor_id: investor_ids)
+               .group(:investor_id)
+               .select("investor_id, MAX(created_at) AS max_created_at")
 
     NdaAcceptance
       .joins("INNER JOIN (#{subquery.to_sql}) latest ON nda_acceptances.investor_id = latest.investor_id AND nda_acceptances.created_at = latest.max_created_at")
@@ -113,7 +113,7 @@ class NdaStatusResolver
 
       # Changed: Exemption read from InvestorAccess.exempt_from_nda boolean.
       # Why: Stakeholder-level exemption replaces user-level NdaExemption table.
-      any_exempt = investor_accesses.any? { |ia| ia.exempt_from_nda? }
+      any_exempt = investor_accesses.any?(&:exempt_from_nda?)
 
       user_rows = investor_accesses.map do |ia|
         user = ia.user
@@ -141,12 +141,17 @@ class NdaStatusResolver
                                          ["Exempt", nil]
                                        elsif acceptance&.accepted?
                                          if acceptance.nda_version != @nda_config.version
-                                           ["Expired", "version"]
+                                           %w[Expired version]
                                          elsif acceptance_expired?(acceptance)
-                                           ["Expired", "period"]
+                                           %w[Expired period]
                                          else
                                            ["Accepted", nil]
                                          end
+                                       elsif acceptance&.revoked?
+                                         # Changed: Module 8 — added Revoked status derivation.
+                                         # Why: GP can revoke an accepted NDA. Revoked investors
+                                         #   show distinctly from Pending (they had access, it was taken away).
+                                         ["Revoked", nil]
                                        elsif acceptance&.declined?
                                          ["Declined", nil]
                                        else
@@ -166,16 +171,18 @@ class NdaStatusResolver
 
   # @param investor_rows [Array<Hash>] investor rows with :status
   # @return [Hash{Symbol => Integer}] counts per status
-  # Changed: Module 4 — added :expired counter.
-  # Why: Dashboard summary and filter need to show Expired investor count.
+  # Changed: Module 8 — added :revoked counter.
+  # Why: Dashboard summary and filter need to show Revoked investor count alongside
+  #   Accepted, Pending, Declined, Expired, and Exempt.
   def compute_counters(investor_rows)
-    { accepted: 0, pending: 0, declined: 0, expired: 0, exempt: 0 }.tap do |c|
+    { accepted: 0, pending: 0, declined: 0, expired: 0, revoked: 0, exempt: 0 }.tap do |c|
       investor_rows.each do |row|
         case row[:status]
         when "Accepted" then c[:accepted] += 1
         when "Pending"  then c[:pending] += 1
         when "Declined" then c[:declined] += 1
         when "Expired"  then c[:expired] += 1
+        when "Revoked"  then c[:revoked] += 1
         when "Exempt"   then c[:exempt] += 1
         end
       end
@@ -194,14 +201,15 @@ class NdaStatusResolver
       acceptance.accepted_at + @nda_config.validity_days.days <= Time.current
     when "specific_date"
       @nda_config.validity_date < Date.current
-    else
+    else # rubocop:disable Lint/DuplicateBranch -- safe default mirrors until_revoked (no expiry)
       false
     end
   end
 
   # @return [Hash] empty result when no investors have folder access
-  # Changed: Module 4 — added :expired counter to empty result.
+  # Changed: Module 8 — added :revoked counter to empty result.
+  # Why: Counter hash must include all six statuses for consistent dashboard rendering.
   def empty_result
-    { counters: { accepted: 0, pending: 0, declined: 0, expired: 0, exempt: 0 }, investor_rows: [] }
+    { counters: { accepted: 0, pending: 0, declined: 0, expired: 0, revoked: 0, exempt: 0 }, investor_rows: [] }
   end
 end

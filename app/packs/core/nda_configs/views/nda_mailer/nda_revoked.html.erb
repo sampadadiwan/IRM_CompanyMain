@@ -1,0 +1,23 @@
+<%# LP notification: GP revoked the investor's NDA acceptance. %>
+<%# Sent to all InvestorAccess users of the revoked investor. %>
+
+<p>Your NDA access to a Data Room folder has been revoked.</p>
+
+<table style="border-collapse:collapse;width:100%">
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Folder</td>
+    <td style="padding:6px 12px"><%= @folder_name %></td>
+  </tr>
+  <% if @reason.present? %>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Reason</td>
+    <td style="padding:6px 12px"><%= @reason %></td>
+  </tr>
+  <% end %>
+</table>
+
+<p style="margin-top:16px">You will need to re-accept the NDA to regain access to this folder.</p>
+
+<% if @contact_email.present? %>
+  <p>If you have questions, please contact <a href="mailto:<%= @contact_email %>" style="color:#1a73e8;text-decoration:none"><%= @contact_email %></a>.</p>
+<% end %>
