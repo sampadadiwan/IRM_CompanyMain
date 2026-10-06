@@ -46,7 +46,10 @@ class NdaConfig < ApplicationRecord
   validates :contact_email, format: { with: EMAIL_FORMAT }, allow_blank: true
 
   validate :nda_document_must_be_pdf
-  validate :validity_date_must_be_future, if: -> { validity_type == "specific_date" && validity_date.present? }
+  # Changed: Relaxed condition — only validates future date on new records or when validity_date itself changes.
+  # Why: Module 4 — after a specific_date passes, GP must still be able to edit other fields
+  #   (contact_email, validity_days, etc.) without the past-date validation blocking the save.
+  validate :validity_date_must_be_future, if: -> { validity_type == "specific_date" && validity_date.present? && (new_record? || will_save_change_to_validity_date?) }
   validate :notification_emails_must_be_valid
 
   # Changed: set_entity_from_folder → set_entity_from_owner.
@@ -54,7 +57,34 @@ class NdaConfig < ApplicationRecord
   before_validation :set_entity_from_owner
   before_validation :normalize_notification_emails
 
+  # Changed: Added before_save callback to auto-increment version on NDA document replacement.
+  # Why: Module 4 — version tracks NDA content (what the LP signs). When the GP uploads a new
+  #   PDF, all existing acceptances become stale and LPs must re-accept.
+  before_save :increment_version_if_document_changed
+
   private
+
+  # @return [void] Auto-increments version when the NDA PDF document is replaced.
+  #   Uses Shrine's JSON-stored nda_document_data column to detect a genuine file change
+  #   by comparing the Shrine-generated file "id" key (unique per upload). This avoids
+  #   false positives from Shrine promotion (which changes storage/metadata but keeps
+  #   the same id). Only increments when the config is enabled — uploading a PDF on a
+  #   disabled config has no version semantics since the NDA gate is inactive.
+  # @see NdaAcceptance#nda_version — gate compares acceptance version against this
+  def increment_version_if_document_changed
+    return unless enabled?
+    return unless will_save_change_to_nda_document_data?
+
+    old_data = nda_document_data_was
+    new_data = nda_document_data
+
+    return if old_data.blank? || new_data.blank?
+
+    old_id = old_data.is_a?(String) ? JSON.parse(old_data).dig("id") : old_data.dig("id")
+    new_id = new_data.is_a?(String) ? JSON.parse(new_data).dig("id") : new_data.dig("id")
+
+    self.version += 1 if old_id.present? && new_id.present? && old_id != new_id
+  end
 
   # @return [void] Sets entity_id from the polymorphic owner's entity.
   def set_entity_from_owner
