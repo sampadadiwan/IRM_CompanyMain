@@ -303,6 +303,8 @@ resources :investors do
   get 'show_deleted', on: :collection
   get 'report_detail', on: :collection
   get 'multi_portfolio_stat_currency', on: :collection
+  # NDA Module 3 — investor-level exemption toggle (bulk-updates InvestorAccess records)
+  patch 'toggle_nda_exemption', on: :member
 end
 
 resources :investor_notice_entries

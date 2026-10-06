@@ -227,10 +227,10 @@ class InvestorAccessesController < ApplicationController
   def investor_access_params
     # form_type_id + properties: LP CRM — tenant-configured contact custom fields
     # (designation, POC role, intro, ...) via WithCustomField, same pattern as Task.
-    # Changed: Added :exempt_from_nda to permitted params.
-    # Why: Stakeholder-level NDA exemption checkbox on the InvestorAccess form.
+    # exempt_from_nda is NOT permitted here — it is managed at the investor level
+    # via InvestorsController#toggle_nda_exemption, not per-user.
     params.require(:investor_access).permit(:investor_id, :user_id, :email, :cc, :approved,
                                             :phone, :whatsapp_enabled, :granted_by, :entity_id, :first_name, :last_name, :call_code, :email_enabled, :tag_list,
-                                            :exempt_from_nda, :form_type_id, properties: {})
+                                            :form_type_id, properties: {})
   end
 end
