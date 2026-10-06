@@ -19,7 +19,7 @@
 class NdaEventNotifier < BaseNotifier
   # @return [Class] the mailer class used for email delivery
   def mailer_name(_notification = nil)
-    NdaMailer
+    ::NdaMailer
   end
 
   # @return [Symbol] the NdaMailer method to call, from params[:email_method]

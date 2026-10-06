@@ -16,7 +16,7 @@
 class NdaReminderNotifier < BaseNotifier
   # @return [Class] the mailer class used for email delivery
   def mailer_name(_notification = nil)
-    NdaMailer
+    ::NdaMailer
   end
 
   # @return [Symbol] always :nda_reminder — this notifier handles only reminders
