@@ -1,9 +1,12 @@
 module FormTypeHelper
   # model: the model that has the form_type
   # form: the form object
-  # step: the step of the form, usually CFs are added to the end of the form
+  # step: the step of the form; only multi-step/wizard forms should pass this to render one
+  #   page's worth of fields at a time. Single-page forms should leave this nil so that all
+  #   visible custom fields render regardless of which step they're tagged with, since there's
+  #   no separate page for any other step to appear on.
   # required: whether the CF is required or not, This is an ovverride when we want no validations for certain use cases like KYC form, which needs validations only from investor side, and no validations from fund side. This will override the defined custom form fields required attribute.
-  def custom_form_fields(model, form, step: "end", required: nil, custom_fields: [])
+  def custom_form_fields(model, form, step: nil, required: nil, custom_fields: [])
     return if model.form_type.blank?
 
     struct = CustomFieldsProxy.new(model.properties) # model.properties aliases json_fields; proxy avoids OpenStruct method churn in form rendering

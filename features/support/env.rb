@@ -223,7 +223,7 @@ Capybara.register_driver(:playwright) do |app|
                                    screen_size: { width: 1680, height: 1100 },
                                    viewport: { width: 1680, height: 1100 },
                                    default_wait_for_load_state: "domcontentloaded",
-                                   navigation_timeout: 60_000)
+                                   default_navigation_timeout: 60)
 end
 
 Capybara.default_max_wait_time = 15
