@@ -1,9 +1,9 @@
 <%# NDA Status summary partial — rendered inside the NDA Settings modal Status tab.
      Loaded via Turbo Frame lazy-load when the GP clicks the Status tab.
-     Shows status counters (Accepted, Pending, Declined, Exempt) and a simple HTML
+     Shows status counters (Accepted, Pending, Declined, Expired, Exempt) and a simple HTML
      table of investors with their current NDA status.
-     Changed: New partial for Module 3 GP Dashboard.
-     Why: GPs need at-a-glance NDA compliance visibility without leaving the modal. %>
+     Changed: Module 4 — added Expired counter badge and Expired status badge with reason tooltip.
+     Why: GPs need to see which investors have stale acceptances (version mismatch or time expiry). %>
 <%= turbo_frame_tag "nda_status_summary" do %>
   <% counters = status_data[:counters] %>
   <% investor_rows = status_data[:investor_rows] %>
@@ -18,6 +18,9 @@
     </span>
     <span class="badge bg-danger-subtle text-danger px-3 py-2">
       Declined: <%= counters[:declined] %>
+    </span>
+    <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
+      Expired: <%= counters[:expired] %>
     </span>
     <span class="badge bg-info-subtle text-info px-3 py-2">
       Exempt: <%= counters[:exempt] %>
@@ -47,6 +50,10 @@
                   <span class="badge bg-warning-subtle text-warning"><%= row[:status] %></span>
                 <% when "Declined" %>
                   <span class="badge bg-danger-subtle text-danger"><%= row[:status] %></span>
+                <% when "Expired" %>
+                  <span class="badge bg-secondary-subtle text-secondary" title="<%= row[:expiry_reason] == 'version' ? 'Version mismatch' : 'Period expired' %>">
+                    <%= row[:status] %>
+                  </span>
                 <% when "Exempt" %>
                   <span class="badge bg-info-subtle text-info"><%= row[:status] %></span>
                 <% end %>

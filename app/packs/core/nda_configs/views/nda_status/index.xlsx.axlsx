@@ -1,7 +1,7 @@
 # NDA Status XLSX export — flat rows with one row per user across all investors.
-# Columns: Investor Name, User Name, Email, Status, Signed By, Signed Date, Valid Until, Exemption Reason.
-# Changed: New XLSX template for Module 3 GP Dashboard.
-# Why: GPs need a downloadable compliance record for audit and legal purposes.
+# Columns: Investor Name, User Name, Email, Status, Expiry Reason, Signed By, Signed Date, Exemption Reason.
+# Changed: Module 4 — added Expiry Reason column for version mismatch / period expired.
+# Why: GPs need to see why an investor's acceptance is expired in the exported compliance record.
 
 wb = xlsx_package.workbook
 
@@ -11,6 +11,7 @@ wb.add_worksheet(name: "NDA Status") do |sheet|
     "User Name",
     "Email",
     "Investor Status",
+    "Expiry Reason",
     "User Status",
     "NDA Tagged",
     "Signed By",
@@ -24,11 +25,18 @@ wb.add_worksheet(name: "NDA Status") do |sheet|
                            NdaExemption.find_by(nda_config_id: @nda_config.id, user_id: user_row[:user].id)&.reason
                          end
 
+      expiry_label = case row[:expiry_reason]
+                     when "version" then "Version mismatch"
+                     when "period" then "Period expired"
+                     else ""
+                     end
+
       sheet.add_row [
         row[:investor].investor_name,
         user_row[:user].full_name,
         user_row[:user].email,
         row[:status],
+        expiry_label,
         user_row[:status],
         user_row[:nda_tagged] ? "Yes" : "No",
         row[:signed_by]&.full_name || "—",
