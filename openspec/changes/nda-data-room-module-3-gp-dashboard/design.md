@@ -38,7 +38,7 @@
 
 ## Overview
 
-Adds a GP-facing NDA status dashboard using a server-rendered HTML table (matching the standard Ransack table style). Two views: a lightweight Status tab in the existing NDA Settings modal (simple HTML partial via Turbo Frame) and a dedicated full-page dashboard with HTML table, client-side filtering, export, exemption management, and signatory tagging. Exemptions are stakeholder-level: a boolean `exempt_from_nda` on `InvestorAccess` (not a separate table). A new `nda_signatories` table stores per-NDA signatory designations, and the existing NDA gate gains an exemption check. Bulk reminders are descoped to a separate notifications module.
+Adds a GP-facing NDA status dashboard using a server-rendered HTML table (matching the standard Ransack table style). Two views: a lightweight Status tab in the existing NDA Settings modal (simple HTML partial via Turbo Frame) and a dedicated full-page dashboard with HTML table, client-side filtering, export, exemption management, and signatory tagging. Exemptions are stakeholder-level: a boolean `exempt_from_nda` on `InvestorAccess` (not a separate table), managed from the **Investor show page** via a toggle that bulk-updates all InvestorAccess records for that investor. The toggle does not appear on individual user InvestorAccess forms — it is an investor-level decision. A new `nda_signatories` table stores per-NDA signatory designations, and the existing NDA gate gains an exemption check. Bulk reminders are descoped to a separate notifications module.
 
 **NDA placement:** NDA is never configured on the Data Room root folder itself — the root is just a container whose visibility is gated by `enable_data_rooms` permission. NDA is configured on the folders **inside** the Data Room (e.g., "Financials", "Legal"). Sub-folders inherit from their parent via `effective_nda_config`. The "NDA Settings" option in the folder Actions dropdown is hidden on the Data Room root (`data_room_root?`) and only appears on sub-folders.
 
@@ -90,7 +90,8 @@ flowchart TD
 | Dashboard Page | NdaStatusController#index | HTML (page) + XLSX (export) | Request |
 | NdaStatusController | InvestorAccess | `.where(entity_id:, approved: true)` → investor universe + users + exempt_from_nda | Query |
 | NdaStatusController | NdaAcceptance | `.where(nda_config_id:, investor_id:)` → latest status | Query |
-| DocumentsController | InvestorAccess | `.exists?(entity_id:, user_id:, approved: true, exempt_from_nda: true)` | Query |
+| DocumentsController | InvestorAccess | investor_ids lookup → `.exists?(investor_id: investor_ids, entity_id:, approved: true, exempt_from_nda: true)` | Query |
+| Investor show page | InvestorsController#toggle_nda_exemption | PATCH → bulk `update_all(exempt_from_nda:)` on investor's InvestorAccess records | Request |
 
 **Design decision — investor universe source:** The investor universe comes from `InvestorAccess` (entity-level), not `AccessRight` (folder-level). Data Room folder visibility for regular LP users is driven by InvestorAccess — the `!investor_advisor?` check in `DocumentsController#folder` bypasses folder-level AccessRight checks for all non-advisor users. The NDA gate also resolves investors via InvestorAccess, so the dashboard uses the same source for consistency.
 
@@ -159,11 +160,13 @@ flowchart LR
 
     subgraph Modified["Modified (amber)"]
         MODAL["NDA modal — enable Status tab"]
-        GATE["DocumentsController#ensure_nda_accepted — add exemption check via InvestorAccess"]
+        GATE["DocumentsController#ensure_nda_accepted — add exemption check via investor_id"]
         DOCIDX["documents/_index.html.erb — hide NDA Settings on Data Room root"]
         NDACONF["NdaConfig — add has_many :nda_signatories"]
         IA_MODEL["InvestorAccess — add exempt_from_nda boolean"]
-        ROUTES["config/routes/core.rb — add nda_status routes"]
+        INV_SHOW["investors/_show.html.erb — add Exempt from NDA toggle"]
+        INV_CTRL["InvestorsController — add toggle_nda_exemption action"]
+        ROUTES["config/routes/core.rb — add nda_status + toggle_nda_exemption routes"]
     end
 
     subgraph Reused["Reused (grey)"]
@@ -181,7 +184,7 @@ flowchart LR
     classDef grey fill:#f5f5f5,stroke:#9e9e9e,color:#000
     classDef red fill:#ffebee,stroke:#c62828,color:#000
     class NS,NSC,NSR,STIM,MIG1,MIG2,VIEWS green
-    class MODAL,GATE,DOCIDX,NDACONF,IA_MODEL,ROUTES amber
+    class MODAL,GATE,DOCIDX,NDACONF,IA_MODEL,INV_SHOW,INV_CTRL,ROUTES amber
     class IA,NA,LAYOUT grey
     class REM red
 ```
@@ -226,7 +229,7 @@ erDiagram
 - `NdaConfig`: add `has_many :nda_signatories, dependent: :destroy`
 
 **Design decision — Exemption is stakeholder-level, not user-level:**
-NDA exemption is a boolean on InvestorAccess (`exempt_from_nda`). When a GP grants access to an investor stakeholder, they can check "Exempt from NDA". If the investor later declines, the GP deletes and re-adds the InvestorAccess with the exemption flag. This is stakeholder-level because the NDA acceptance itself is stakeholder-level — one user signs on behalf of the investor, and all users under that investor are unlocked. Per product decision (2026-10-05 call): user-level exemption was removed because exemption logically applies to the investor relationship, not individual users.
+NDA exemption is a boolean on InvestorAccess (`exempt_from_nda`), but managed at the **investor level**, not per-user. The GP toggles "Exempt from NDA" on the **Investor show page** (the stakeholder info card), and this bulk-updates all InvestorAccess records for that investor under the entity (`investor.investor_accesses.where(entity_id:).update_all(exempt_from_nda: value)`). The checkbox does **not** appear on individual user InvestorAccess forms — exemption is an investor-level decision, not a per-contact setting. To remove exemption, the GP toggles it off on the same Investor page. This is stakeholder-level because the NDA acceptance itself is stakeholder-level — one user signs on behalf of the investor, and all users under that investor are unlocked. Per product decision (2026-10-05 call): user-level exemption was removed because exemption logically applies to the investor relationship, not individual users.
 
 **Design decision — NDA signatory is per-NDA, not global:**
 NDA signatory tagging is scoped to a specific NDA config (folder), not stored globally on InvestorAccess. This allows a GP to designate different signatories for different folders' NDAs. Previously, the NDA tag was stored in the InvestorAccess `tag_list` field, but that is entity-wide and not configurable per folder. The `nda_signatories` table is per-NDA config. Management is done entirely from the NDA Status Dashboard — no need to navigate to Stakeholder pages.
@@ -242,8 +245,8 @@ stateDiagram-v2
     Pending --> Declined : any user of investor declines NDA
     Declined --> Accepted : any user of investor accepts NDA
     Accepted --> Declined : future revocation (not Module 3)
-    Pending --> Exempt : GP sets exempt_from_nda on InvestorAccess
-    Exempt --> Pending : GP removes exemption (delete + re-add InvestorAccess)
+    Pending --> Exempt : GP toggles Exempt from NDA on Investor page
+    Exempt --> Pending : GP toggles exemption off on Investor page
 ```
 
 Exemption is stakeholder-level: the `exempt_from_nda` boolean on InvestorAccess applies to all users under that investor. No user-level exemption exists.
@@ -280,7 +283,7 @@ sequenceDiagram
 
 **Exempt investor is shown on dashboard**
 
-Exemptions are managed from the InvestorAccess / Stakeholders page (checkbox at time of granting access), not from the NDA Status Dashboard. The dashboard reads and displays the `exempt_from_nda` flag but does not write it. When all InvestorAccess records for an investor have `exempt_from_nda: true`, the investor status is "Exempt".
+Exemptions are managed from the **Investor show page** (a toggle on the stakeholder info card that bulk-updates all InvestorAccess records for the investor), not from the NDA Status Dashboard. The dashboard reads and displays the `exempt_from_nda` flag but does not write it. When any InvestorAccess record for an investor has `exempt_from_nda: true`, the investor status is "Exempt".
 
 **Exempt investor user hits NDA gate**
 
@@ -293,8 +296,10 @@ sequenceDiagram
 
     User->>Docs: GET /documents/folder?folder_id=Y
     Docs->>Docs: GP bypass? No (different entity)
-    Docs->>IA: InvestorAccess.exists?(entity_id:, user_id:, approved: true, exempt_from_nda: true)
-    IA-->>Docs: true
+    Docs->>IA: investor_ids = InvestorAccess.where(user_id:, entity_id:, approved: true).pluck(:investor_id)
+    IA-->>Docs: [investor_id]
+    Docs->>IA: InvestorAccess.exists?(investor_id: investor_ids, entity_id:, approved: true, exempt_from_nda: true)
+    IA-->>Docs: true (any record for that investor is exempt)
     Docs->>Folder: render folder contents
     Folder-->>User: Documents visible (no NDA screen)
 ```
@@ -324,8 +329,8 @@ sequenceDiagram
 |---|---|---|---|---|---|---|
 | H1 | GP views status summary in modal | NDA-A active on folder, Acme accepted, Beta pending, Gamma declined | GP opens NDA Settings modal, clicks Status tab | Counters: Accepted=1, Pending=1, Declined=1, Exempt=0. Table shows 3 investor rows with correct statuses. | GP views status summary for NDA-protected folder | nda_status.feature |
 | H2 | GP opens dedicated dashboard | Same as H1 | GP clicks "View Full Dashboard" | HTML table with 3 investor rows. Acme expandable to 5 users (Alice=Signer, rest=dash). | GP opens dedicated dashboard from modal | nda_status.feature |
-| H3 | Investor exempted at access time | Beta Holdings granted access with exempt_from_nda=true | GP views dashboard | Beta Holdings status = "Exempt". All Beta users bypass NDA gate. | Stakeholder-level exemption via InvestorAccess | nda_status.feature |
-| H4 | GP removes exemption | Beta exempt, needs to sign now | GP deletes Beta's InvestorAccess and re-adds without exempt flag | Beta status reverts to "Pending" | Exemption removed via re-grant | nda_status.feature |
+| H3 | GP exempts investor from NDA | Beta Holdings has InvestorAccess records, not yet exempt | GP navigates to Beta Holdings' Investor page, toggles "Exempt from NDA" on | All Beta InvestorAccess records set to exempt_from_nda=true. Dashboard shows Beta Holdings status = "Exempt". All Beta users bypass NDA gate. | Stakeholder-level exemption via Investor page toggle | nda_status.feature |
+| H4 | GP removes exemption | Beta exempt via toggle | GP navigates to Beta Holdings' Investor page, toggles "Exempt from NDA" off | All Beta InvestorAccess records set to exempt_from_nda=false. Beta status reverts to "Pending". | Exemption removed via Investor page toggle | nda_status.feature |
 | H5 | GP exports status | Same as H1 | GP clicks Export | XLSX downloaded with all investors + users, statuses, dates | GP exports NDA status | nda_status.feature |
 | H6 | ~~GP sends bulk reminders~~ | ~~Descoped to separate notifications module~~ | — | — | — | — |
 
@@ -388,7 +393,7 @@ flowchart TD
 | POST | `/nda_status/signatories` | NdaStatusController#create_signatory | JSON (for Stimulus fetch) |
 | DELETE | `/nda_status/signatories/:id` | NdaStatusController#destroy_signatory | JSON (for Stimulus fetch) |
 
-Note: Exemption routes removed. Exemptions are managed from the InvestorAccess/Stakeholders page via `exempt_from_nda` boolean, not from the NDA Status Dashboard.
+Note: Exemptions are managed from the **Investor show page** via a toggle that calls `InvestorsController#toggle_nda_exemption` (PATCH `/investors/:id/toggle_nda_exemption`). The toggle bulk-updates all InvestorAccess records for that investor. No exemption controls exist on the NDA Status Dashboard or on individual InvestorAccess forms.
 
 All routes scoped under the NDA configs pack. Query params: `nda_config_id`, `folder_id`.
 
@@ -497,7 +502,7 @@ flowchart TD
 
 - **Modal Status tab**: Turbo Frame lazy-load. The Status tab content is loaded via `turbo_frame_tag "nda_status_summary"` with `src` pointing to `nda_status_summary_path(nda_config_id:, folder_id:)` and `loading: :lazy`. Content loads only when the tab is clicked.
 - **AG Grid**: Follow existing pattern — `data-controller="ag"`, `data-source` pointing to JSON endpoint, `data-custom-columns` from `STANDARD_COLUMNS`. Use `group_by_column` for investor-level grouping.
-- **Turbo Stream for exemptions**: POST/DELETE actions return Turbo Stream responses that replace the affected user row in the grid. Consider using `turbo_stream.replace` targeting the user row by DOM id.
+- **Exemption toggle on Investor page**: A PATCH request to `InvestorsController#toggle_nda_exemption` bulk-updates all InvestorAccess records for the investor. The toggle is on the Investor show page (`_show.html.erb`), not on the NDA Status Dashboard or individual InvestorAccess forms.
 - **Export**: Standard `.xlsx.axlsx` template. Skip pagination when `request.format.xlsx?`.
 - **Reminder job**: Enqueue `NdaReminderJob` from the controller to keep the response fast. The job loops through user_ids and dispatches `NdaReminderNotifier`.
 
@@ -534,7 +539,7 @@ flowchart TD
 
 | # | Decision | Alternative | Why rejected |
 |---|---|---|---|
-| 1 | Boolean `exempt_from_nda` on InvestorAccess | Separate NdaExemption table (user-level) | Exemption is a stakeholder-level decision, matching how NDA acceptance works (one user signs on behalf of the investor). Per product call (2026-10-05): GP sets exemption at time of granting access; to remove, they delete and re-add. A boolean on InvestorAccess is simpler and natural for this flow. |
+| 1 | Boolean `exempt_from_nda` on InvestorAccess, toggled from Investor page | Separate NdaExemption table (user-level) / Checkbox on per-user InvestorAccess form | Exemption is a stakeholder-level decision, matching how NDA acceptance works (one user signs on behalf of the investor). Per product call (2026-10-05): GP sets exemption at investor level, not per-user. The toggle on the Investor show page bulk-updates all InvestorAccess records for that investor. The checkbox does NOT appear on individual InvestorAccess forms — placing it there would make it a per-user setting, contradicting stakeholder-level semantics. Per correction (2026-10-06). |
 | 2 | NdaStatusResolver service object | Inline queries in controller | The resolver is reused by both the modal summary and the dashboard JSON endpoint. Extracting it avoids duplication. |
 | 3 | Background job for reminders | Inline notification dispatch in controller | Sending N emails synchronously would block the GP's request. Job keeps the response fast. |
 | 4 | Turbo Frame lazy-load for modal Status tab | Eager-load status data with the modal | Status data requires multiple queries. Lazy-loading means the Settings tab renders instantly and status loads only when clicked. |
@@ -558,5 +563,5 @@ The Feature column in Worked Examples maps each scenario to `nda_status.feature`
 ## Risks and Open Questions
 
 - **Large investor lists**: Entities with 500+ investors could make the modal summary slow. Mitigation: the Turbo Frame lazy-load keeps the modal responsive; if needed, limit the modal table to top N rows with a "View Full Dashboard" CTA.
-- **InvestorAccess cannot be edited after creation**: The app currently requires delete + re-add to change InvestorAccess attributes. The `exempt_from_nda` checkbox must be available at creation time. If edit functionality is added later, the checkbox should be editable too.
+- **New InvestorAccess records**: When a new InvestorAccess is created for an already-exempt investor, the new record's `exempt_from_nda` defaults to false. The toggle action must cover newly added users. Mitigation: the toggle always bulk-updates all current records; new records added after a toggle require the GP to re-toggle (or a callback could auto-set the flag on create if the investor is already exempt — deferred to implementation).
 - **Data Room root has no NDA**: NDA Settings is hidden on the Data Room root folder. If a GP accidentally configures NDA on the root before this change is deployed, the NDA would still be enforced (the gate walks the folder tree). After deploy, the Settings option disappears from the root but any existing NdaConfig remains in the DB. Cleanup is manual if needed.

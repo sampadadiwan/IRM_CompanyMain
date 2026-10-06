@@ -42,7 +42,8 @@
 - **Boolean `exempt_from_nda` on `investor_accesses`** — single `add_column` migration, default false — see [Schema Detail](#schema-detail)
 - **NdaStatusResolver batches three read queries** (InvestorAccess → investors + users + exempt_from_nda, NdaAcceptance → latest per investor, NdaSignatory → signatory user_ids) using `pluck` + `where(id: [...])` to avoid N+1 — see [Queries and Indexes](#queries-and-indexes)
 - **AG Grid row grouping vs Turbo Stream conflict**: signatory toggle reloads grid JSON via `fetch` + `gridApi.setRowData()` rather than Turbo Stream DOM replacement, because AG Grid manages its own DOM — see [Controllers, Params and Responses](#controllers-params-and-responses)
-- **Gate exemption check** is `InvestorAccess.exists?(user_id:, entity_id:, approved: true, exempt_from_nda: true)` inserted before the stakeholder-level check in `DocumentsController#ensure_nda_accepted` — see [Queries and Indexes](#queries-and-indexes)
+- **Gate exemption check** uses the investor_ids already resolved for the acceptance check: `InvestorAccess.exists?(investor_id: investor_ids, entity_id:, approved: true, exempt_from_nda: true)` inserted before the stakeholder-level acceptance check in `DocumentsController#ensure_nda_accepted` — see [Queries and Indexes](#queries-and-indexes)
+- **Exemption toggle** is on the Investor show page, not the per-user InvestorAccess form. `InvestorsController#toggle_nda_exemption` bulk-updates all InvestorAccess records for that investor — see [Controllers, Params and Responses](#controllers-params-and-responses)
 - **`tagged_by_id` (for signatories) is set server-side** from `current_user.id`, never from params — see [Security Review](#security-review)
 
 ---
@@ -65,8 +66,8 @@
 | **View** | `app/packs/core/nda_configs/views/nda_configs/_modal.html.erb` | Modified | Enable Status tab, add Turbo Frame lazy-load |
 | **View** | `app/packs/core/documents/views/documents/_index.html.erb` | Modified | Hide NDA Settings on Data Room root (`!@folder.data_room_root?`) |
 | **Gate** | `app/packs/core/documents/controllers/documents_controller.rb` | Modified | Add exemption check before stakeholder check in `ensure_nda_accepted` |
-| **Controller** | `app/packs/core/investor_accesses/controllers/investor_accesses_controller.rb` | Modified | Add `exempt_from_nda` to permitted params |
-| **View** | `app/packs/core/investor_accesses/views/investor_accesses/_form.html.erb` | Modified | Add `exempt_from_nda` checkbox to InvestorAccess form |
+| **Controller** | `app/packs/core/investors/controllers/investors_controller.rb` | Modified | Add `toggle_nda_exemption` action (PATCH) — bulk-updates all InvestorAccess records for investor |
+| **View** | `app/packs/core/investors/views/investors/_show.html.erb` | Modified | Add "Exempt from NDA" toggle on stakeholder info card |
 | **Routes** | `config/routes/core.rb` | Modified | Add `nda_status` routes |
 | **Schema** | `db/schema.rb` | Modified | Auto-updated by migration |
 | **Schema** | `db/schema_test.rb` | Modified | Manual sync with schema.rb |
@@ -76,7 +77,7 @@
 **Reviewer checks**
 - [ ] Every class in the design's class diagram has a file here, and nothing here is missing from it
 - [ ] Files follow the pack layout (`app/packs/core/nda_configs/...`) and Packwerk boundaries
-- [ ] InvestorAccess controller/form changes follow existing `investor_accesses` pack layout
+- [ ] Investor show page toggle and controller action follow existing `investors` pack layout
 
 ---
 
@@ -163,6 +164,9 @@ Exempt status is derived at the investor level from `InvestorAccess.exempt_from_
 | `NdaStatusController#index` | `nda_config_id`, `folder_id` (query) | `index?` on NdaStatusPolicy | HTML / JSON / XLSX via `respond_to` | 403 / 404 |
 | `NdaStatusController#create_signatory` | `nda_config_id`, `user_id` | `create_signatory?` on NdaStatusPolicy | JSON `{ status: "ok", user_id:, signatory: true }` | 422 (validation) / 409 (duplicate — unique constraint) |
 | `NdaStatusController#destroy_signatory` | `id` (route), `nda_config_id` | `destroy_signatory?` on NdaStatusPolicy | JSON `{ status: "ok", user_id:, signatory: false }` | 404 (signatory not found) |
+| `InvestorsController#toggle_nda_exemption` | `id` (route), `exempt_from_nda` (boolean) | `update?` on InvestorPolicy (existing) | Redirect back with flash / Turbo Stream | 403 (policy) / 404 (investor not found) |
+
+**Exemption toggle:** A PATCH to `/investors/:id/toggle_nda_exemption` calls `investor.investor_accesses.where(entity_id: current_user.entity_id).update_all(exempt_from_nda: params[:exempt_from_nda])`. This is a bulk write — no per-user form interaction. The toggle appears on the Investor show page (`_show.html.erb`) as a checkbox or switch.
 
 **Signatory toggle uses JSON, not Turbo Stream:** Because AG Grid manages its own DOM, Turbo Stream `replace` cannot target rows inside the grid. Instead, the Tag/Untag buttons fire a `fetch` POST/DELETE from a Stimulus controller, receive JSON, and call `gridApi.applyTransaction()` or re-fetch the full JSON + `gridApi.setRowData()` to update the row. This resolves the design's Risk #1 (AG Grid + Turbo Stream conflict).
 
@@ -184,6 +188,7 @@ end
 **Reviewer checks**
 - [ ] No action without `authorize` / `policy_scope`
 - [ ] Permitted params can't set `entity_id` or other ownership fields (`tagged_by_id` set server-side)
+- [ ] `toggle_nda_exemption` scopes `update_all` to `current_user.entity_id` — no cross-entity bulk update
 - [ ] Signatory create/destroy returns JSON for AG Grid Stimulus controller, not Turbo Stream
 - [ ] XLSX format skips pagination
 
@@ -198,7 +203,7 @@ end
 | `NdaStatusResolver` — NDA tags | From InvestorAccess records above, filter `tag_list.include?("NDA")` | (in-memory filter on loaded records) | Subset of above | No extra query |
 | `NdaStatusResolver` — latest acceptance | `NdaAcceptance.where(nda_config_id:, investor_id: investor_ids).select("DISTINCT ON (investor_id) *").order(:investor_id, created_at: :desc)` | `idx_nda_acceptances_config_investor_created` `[nda_config_id, investor_id, created_at]` | ≤ 50 (one per investor) | Single query. MySQL note: use `GROUP BY investor_id` + `MAX(created_at)` subquery instead of `DISTINCT ON` |
 | `NdaStatusResolver` — signatory user_ids | `NdaSignatory.where(nda_config_id:).pluck(:user_id)` | `idx_nda_signatories_config_user` (leading column) | ≤ 20 | Single pluck |
-| Gate — exemption check | `InvestorAccess.exists?(user_id:, entity_id:, approved: true, exempt_from_nda: true)` | Existing `investor_accesses` entity+user index | 0 or 1 | Single exists? |
+| Gate — exemption check | Step 1: `investor_ids = InvestorAccess.where(user_id:, entity_id:, approved: true).pluck(:investor_id)` (already done for acceptance check). Step 2: `InvestorAccess.exists?(investor_id: investor_ids, entity_id:, approved: true, exempt_from_nda: true)` | Existing `investor_accesses` entity+investor index | 0 or 1 | Reuses investor_ids from acceptance path + single exists? |
 | `#create_signatory` | `NdaSignatory.create!(nda_config_id:, user_id:, tagged_by_id:)` | Unique index catches duplicates | 1 INSERT | — |
 
 **MySQL-specific: latest acceptance per investor**
@@ -281,7 +286,7 @@ N/A — no third-party API calls. All data comes from internal database queries.
 | Tenant isolation | Every query is scoped through `nda_config` → `entity_id`. The resolver takes `nda_config` and `folder` as args (both entity-scoped). No cross-entity data exposure. |
 | Secrets | No secrets involved. No API keys. No file uploads. |
 | Input / output sanitisation | XLSX output uses `axlsx` which does not execute formulas. No free-text input fields on the dashboard. |
-| Mass assignment | `tagged_by_id` is set server-side from `current_user.id`, never from `params`. Only `user_id` comes from params for signatory actions. `exempt_from_nda` is managed via the InvestorAccess form (standard strong params). |
+| Mass assignment | `tagged_by_id` is set server-side from `current_user.id`, never from `params`. Only `user_id` comes from params for signatory actions. `exempt_from_nda` is managed via `InvestorsController#toggle_nda_exemption` (bulk `update_all`), not via the InvestorAccess form. The toggle is entity-scoped: `investor.investor_accesses.where(entity_id: current_user.entity_id)`. |
 | XLSX injection | Cell values are plain strings. No formulas. `axlsx` does not auto-execute. |
 
 **Reviewer checks**
@@ -310,8 +315,8 @@ N/A — no third-party API calls. All data comes from internal database queries.
 
 | Feature file | Stubs / fixtures | Factories | New step definitions |
 |---|---|---|---|
-| `features/core/nda_status.feature` | None (no external services) | Entity, Folder, NdaConfig, Investor, User, InvestorAccess, AccessRight, NdaAcceptance, NdaSignatory | `nda_status_steps.rb` — "I visit the NDA status dashboard", "I click the Status tab", "I tag user {string} as signatory", "I remove signatory tag for user {string}", "I should see {int} accepted investors", "the XLSX should contain {int} rows" |
-| (reuses) | — | — | Existing steps from `nda_config_steps.rb` (entity/folder/NDA setup), `nda_acceptance_steps.rb` (acceptance records), `investor_access_steps.rb` (InvestorAccess with NDA tag and exempt_from_nda) |
+| `features/core/nda_status.feature` | None (no external services) | Entity, Folder, NdaConfig, Investor, User, InvestorAccess, AccessRight, NdaAcceptance, NdaSignatory | `nda_status_steps.rb` — "I visit the NDA status dashboard", "I click the Status tab", "I tag user {string} as signatory", "I remove signatory tag for user {string}", "I should see {int} accepted investors", "the XLSX should contain {int} rows", "I toggle NDA exemption for investor {string}", "investor {string} should show status Exempt" |
+| (reuses) | — | — | Existing steps from `nda_config_steps.rb` (entity/folder/NDA setup), `nda_acceptance_steps.rb` (acceptance records), `investor_access_steps.rb` (InvestorAccess records) |
 
 **Test data setup pattern** (matches design Worked Examples):
 - Entity "Alpha Ventures" with GP Admin

@@ -16,13 +16,13 @@
 
 - [ ] 1.5 Add `has_many :nda_signatories, dependent: :destroy` to `app/packs/core/nda_configs/models/nda_config.rb`. Verify: `rails c` -> `NdaConfig.new.respond_to?(:nda_signatories)` returns true.
 
-- [ ] 1.6 Add `:exempt_from_nda` to permitted params in `investor_accesses_controller.rb`. Add the checkbox to `investor_accesses/_form.html.erb`.
+- [ ] 1.6 Add "Exempt from NDA" toggle to `investors/_show.html.erb` (stakeholder info card). Add `toggle_nda_exemption` action to `InvestorsController` — bulk-updates all InvestorAccess records for the investor: `investor.investor_accesses.where(entity_id: current_user.entity_id).update_all(exempt_from_nda: params[:exempt_from_nda])`. Add route `patch 'toggle_nda_exemption', on: :member` to investors in `config/routes/core.rb`. Remove the `exempt_from_nda` checkbox from `investor_accesses/_form.html.erb` and `:exempt_from_nda` from `investor_accesses_controller.rb` permitted params.
 
 - [ ] 1.7 Write Cucumber feature covering: creating a signatory record, uniqueness constraint, destroying NdaConfig cascades signatories, `exempt_from_nda` default is false on new InvestorAccess. Run `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber` on the feature and confirm it passes before starting phase 2.
 
 ## 2. NDA Gate — Stakeholder exemption check
 
-- [ ] 2.1 Modify `app/packs/core/documents/controllers/documents_controller.rb` method `ensure_nda_accepted`. Insert the exemption check AFTER the GP bypass and BEFORE the stakeholder acceptance check: `return if InvestorAccess.exists?(user_id: current_user.id, entity_id: nda_config.entity_id, approved: true, exempt_from_nda: true)`. Add a YARD comment explaining the gate order: GP bypass -> exemption check -> stakeholder acceptance -> redirect.
+- [ ] 2.1 Modify `app/packs/core/documents/controllers/documents_controller.rb` method `ensure_nda_accepted`. The exemption check must use the investor_ids already resolved for the acceptance check (avoid a separate user_id-only query that would only check the current user's own record). Move the `investor_ids` pluck before the exemption check, then: `return if InvestorAccess.exists?(investor_id: investor_ids, entity_id: nda_config.entity_id, approved: true, exempt_from_nda: true)`. This ensures that if ANY InvestorAccess record for the user's investor(s) is exempt, all users under that investor bypass the gate. Add a YARD comment explaining the gate order: GP bypass -> investor_ids lookup -> exemption check (by investor_id) -> stakeholder acceptance -> redirect.
 
 - [ ] 2.2 Write `features/core/nda_stakeholder_exemption_gate.feature` covering: exempt investor's user accesses folder (E1), exemption removed (delete+re-add InvestorAccess) then redirect to NDA screen (E2), gate check order. Run `TEST_ENV_NUMBER=$RANDOM bundle exec cucumber features/core/nda_stakeholder_exemption_gate.feature` and confirm it passes before starting phase 3.
 
