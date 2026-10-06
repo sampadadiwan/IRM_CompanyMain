@@ -17,7 +17,9 @@ class NdaAcceptancesController < ApplicationController
   # Changed: Added VALID_REASONS whitelist for Module 4 contextual re-acceptance notes.
   # Why: The gate passes a reason query param on redirect. Only whitelisted values are
   #   accepted — any other value is treated as nil (first-time acceptance, no note shown).
-  VALID_REASONS = %w[version_mismatch expired].freeze
+  # Changed: Added "revoked" to VALID_REASONS.
+  # Why: Revoked LPs need a contextual note explaining their access was revoked by the GP.
+  VALID_REASONS = %w[version_mismatch expired revoked].freeze
 
   # Changed: Skip CSRF verification for accept/decline actions.
   # Why: The Turbo Frame → Turbo.visit() redirect chain from DocumentsController#ensure_nda_accepted

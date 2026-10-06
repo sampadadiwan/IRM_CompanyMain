@@ -40,6 +40,12 @@
         <i class="ti ti-clock me-1"></i>
         Your NDA acceptance has expired. Please review and re-accept.
       </div>
+    <%# Module 8: Contextual note when LP's acceptance was revoked by the GP. %>
+    <% elsif @reason == "revoked" %>
+      <div class="alert alert-warning mb-4">
+        <i class="ti ti-lock me-1"></i>
+        Your NDA access has been revoked. Please review and re-accept to regain access.
+      </div>
     <% end %>
 
     <%# ⑤ NDA PDF iframe %>

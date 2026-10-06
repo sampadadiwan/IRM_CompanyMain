@@ -543,6 +543,15 @@ class DocumentsController < ApplicationController
              .limit(1)
              .first
 
+    # Changed: Module 8 — revoked acceptance check. LP sees a contextual note on the
+    # acceptance screen explaining their NDA was revoked and they must re-accept.
+    # Why: Without this, revoked LPs see a generic first-time acceptance screen with no
+    #   context about why they lost access.
+    if latest&.revoked?
+      redirect_to nda_acceptance_url(nda_config, @folder, reason: "revoked")
+      return
+    end
+
     # No accepted acceptance → redirect to acceptance screen (first-time or post-decline).
     unless latest&.accepted?
       redirect_to nda_acceptance_url(nda_config, @folder)
