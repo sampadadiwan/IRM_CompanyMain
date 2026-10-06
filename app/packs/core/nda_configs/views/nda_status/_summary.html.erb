@@ -20,7 +20,7 @@
     <span class="badge bg-danger-subtle text-danger px-3 py-2">
       Declined: <%= counters[:declined] %>
     </span>
-    <span class="badge bg-dark-subtle text-dark px-3 py-2">
+    <span class="badge px-3 py-2" style="background-color: #e8daef; color: #6c3483;">
       Revoked: <%= counters[:revoked] %>
     </span>
     <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
@@ -57,7 +57,7 @@
                 <% when "Declined" %>
                   <span class="badge bg-danger-subtle text-danger"><%= row[:status] %></span>
                 <% when "Revoked" %>
-                  <span class="badge bg-dark-subtle text-dark"><%= row[:status] %></span>
+                  <span class="badge" style="background-color: #e8daef; color: #6c3483;"><%= row[:status] %></span>
                 <% when "Expired" %>
                   <span class="badge bg-secondary-subtle text-secondary" title="<%= row[:expiry_reason] == 'version' ? 'Version mismatch' : 'Period expired' %>">
                     <%= row[:status] %>

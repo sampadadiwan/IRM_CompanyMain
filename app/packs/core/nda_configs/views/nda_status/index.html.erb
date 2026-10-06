@@ -53,7 +53,7 @@
     <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-6">
       Declined: <%= counters[:declined] %>
     </span>
-    <span class="badge bg-dark-subtle text-dark px-3 py-2 fs-6">
+    <span class="badge px-3 py-2 fs-6" style="background-color: #e8daef; color: #6c3483;">
       Revoked: <%= counters[:revoked] %>
     </span>
     <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-6">
@@ -111,23 +111,29 @@
             <td><%= row[:investor].investor_name %></td>
             <td><%= row[:investor].category %></td>
             <td>
-              <%# Changed: Module 8 — added Revoked status badge (dark theme).
-                   Why: Distinct from Pending (they had access, it was taken away). %>
-              <% status_class = case row[:status]
-                                when "Accepted" then "success"
-                                when "Pending" then "warning"
-                                when "Declined" then "danger"
-                                when "Revoked" then "dark"
-                                when "Expired" then "secondary"
-                                when "Exempt" then "info"
-                                end %>
-              <span class="badge bg-<%= status_class %>-subtle text-<%= status_class %>"
-                    <% if row[:status] == "Expired" && row[:expiry_reason] %>
-                      title="<%= row[:expiry_reason] == 'version' ? 'Version mismatch' : 'Period expired' %>"
-                      data-bs-toggle="tooltip"
-                    <% end %>>
-                <%= row[:status] %>
-              </span>
+              <%# Changed: Module 8 — added Revoked status badge (purple, inline-styled).
+                   Why: Distinct from Pending (they had access, it was taken away).
+                   Purple chosen because all Bootstrap contextual colors are already used. %>
+              <% if row[:status] == "Revoked" %>
+                <span class="badge" style="background-color: #e8daef; color: #6c3483;">
+                  <%= row[:status] %>
+                </span>
+              <% else %>
+                <% status_class = case row[:status]
+                                  when "Accepted" then "success"
+                                  when "Pending" then "warning"
+                                  when "Declined" then "danger"
+                                  when "Expired" then "secondary"
+                                  when "Exempt" then "info"
+                                  end %>
+                <span class="badge bg-<%= status_class %>-subtle text-<%= status_class %>"
+                      <% if row[:status] == "Expired" && row[:expiry_reason] %>
+                        title="<%= row[:expiry_reason] == 'version' ? 'Version mismatch' : 'Period expired' %>"
+                        data-bs-toggle="tooltip"
+                      <% end %>>
+                  <%= row[:status] %>
+                </span>
+              <% end %>
             </td>
             <td><%= row[:signed_by]&.full_name || "—" %></td>
             <td><%= row[:signed_at] ? l(row[:signed_at], format: :short) : "—" %></td>
