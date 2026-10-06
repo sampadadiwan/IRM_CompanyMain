@@ -126,7 +126,7 @@ class NdaExpiryCheckJob < ApplicationJob
     # Changed: Send directly to each GP notification email (not through Noticed).
     # Why: notification_emails are external addresses, not system Users.
     recipients[:gp_emails].each do |email|
-      NdaMailer.public_send(email_method, shared_params.merge(direct_to: email)).deliver_later
+      NdaMailer.with(shared_params.merge(direct_to: email)).public_send(email_method).deliver_later
     end
 
     # Changed: Send LP expiry notification via Noticed to signatories.

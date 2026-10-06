@@ -170,7 +170,7 @@ class NdaAcceptancesController < ApplicationController
     # Changed: Send directly to each GP notification email (not through Noticed).
     # Why: notification_emails are external addresses, not system Users.
     recipients[:gp_emails].each do |email|
-      NdaMailer.nda_accepted(gp_params.merge(direct_to: email)).deliver_later
+      NdaMailer.with(gp_params.merge(direct_to: email)).nda_accepted.deliver_later
     end
 
     # Changed: Send LP acceptance confirmation via Noticed (excludes signer).
@@ -217,7 +217,7 @@ class NdaAcceptancesController < ApplicationController
     }
 
     recipients[:gp_emails].each do |email|
-      NdaMailer.nda_declined(gp_params.merge(direct_to: email)).deliver_later
+      NdaMailer.with(gp_params.merge(direct_to: email)).nda_declined.deliver_later
     end
   rescue StandardError => e
     Rails.logger.error("[NdaNotification] Decline notification failed: #{e.message} (acceptance_id=#{acceptance.id})")

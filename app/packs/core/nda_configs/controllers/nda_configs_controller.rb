@@ -113,7 +113,7 @@ class NdaConfigsController < ApplicationController
     # Changed: Send directly to each GP notification email (not through Noticed).
     # Why: notification_emails are external addresses, not system Users.
     recipients[:gp_emails].each do |email|
-      NdaMailer.nda_new_version(gp_params.merge(direct_to: email)).deliver_later
+      NdaMailer.with(gp_params.merge(direct_to: email)).nda_new_version.deliver_later
     end
 
     # Changed: Send LP new-version notification via Noticed.
