@@ -103,9 +103,15 @@ class NdaConfigsController < ApplicationController
     recipients = NdaNotificationRecipients.resolve(:new_version, @nda_config)
     folder_name = @nda_config.owner&.name
 
+    # Changed: Extract previous version from ActiveModel dirty tracking.
+    # Why: saved_change_to_version returns [old, new] after a successful update.
+    #   old_version is passed to the email template so LPs see which version they had.
+    old_version = @nda_config.saved_change_to_version[0]
+
     gp_params = {
       entity_id: @nda_config.entity_id,
       folder_name: folder_name,
+      old_version: old_version,
       new_version: @nda_config.version,
       contact_email: @nda_config.contact_email
     }
@@ -125,6 +131,7 @@ class NdaConfigsController < ApplicationController
         email_method: :nda_new_version,
         record: @nda_config,
         folder_name: folder_name,
+        old_version: old_version,
         new_version: @nda_config.version,
         contact_email: @nda_config.contact_email
       ).deliver_later(user)
