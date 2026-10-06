@@ -25,8 +25,6 @@ wb.add_worksheet(name: "AccountEntries") do |sheet|
 
     values = [ae.id, ae.fund.name, ae.capital_commitment&.investor_name, ae.investor_kyc&.full_name || ae.capital_commitment&.investor_name, ae.capital_commitment&.folio_id, ae.reporting_date, ae.period, ae.entry_type, ae.name, ae.capital_commitment&.folio_currency, folio_amount, ae.fund.currency, amount, cumulative, ae.rule_for&.capitalize, ae.notes, ae.parent_name, ae.parent_type, ae.parent_id, ae.ref_id] + custom_field_values
 
-    values += ae.explanation if params[:explanation].present?
-
     # Add the tracking currency values only if required
     values << ae.tracking_amount.to_d if has_tracking_currency
 

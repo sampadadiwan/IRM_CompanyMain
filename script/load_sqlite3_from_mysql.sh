@@ -933,6 +933,9 @@ SCHEMA_aggregate_portfolio_investments="
 # Index Definitions
 INDEX_account_entries="
   CREATE INDEX idx_ae_cc_name_date ON account_entries(capital_commitment_id, name, reporting_date);
+  -- Covers since_inception / year_to_date / quarterly called with an entry_type and no name, which
+  -- otherwise read every row of the commitment (seconds each on a fund with ~45k rows per folio)
+  CREATE INDEX idx_ae_cc_type_cum_date ON account_entries(capital_commitment_id, entry_type, cumulative, reporting_date, amount_cents);
   CREATE INDEX index_account_entries_on_capital_commitment_id ON account_entries(capital_commitment_id);
   CREATE INDEX index_account_entries_on_fund_formula_id ON account_entries(fund_formula_id);
   CREATE INDEX idx_fund_id_and_entry_type_and_reporting_date ON account_entries(fund_id, entry_type, reporting_date);
@@ -1016,7 +1019,13 @@ for table in "${TABLES[@]}"; do
       if [[ "$c" == "$tc" ]]; then is_text=1; break; fi
     done
 
-    if [[ $is_text -eq 1 ]]; then
+    if [[ "$table" == "account_entries" && "$c" == "explanation" ]]; then
+      # explanation is never read during a run: formulas do not use it, every entry the run
+      # generates writes its own, and only those generated entries are migrated back. It is
+      # also the widest column (most of the table's bytes), so copy it empty — the scratch
+      # file, the export and the post-import rewrite all shrink with it.
+      SELECT_LIST+="'',"
+    elif [[ $is_text -eq 1 ]]; then
       # Escape newlines/tabs/etc as markers so TSV stays single-line per row.
       SELECT_LIST+="REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\`${c}\`,''), '\"', '###DQ###'), CHAR(10), '###NL###'), CHAR(13), '###CR###'), CHAR(9), '###TAB###'),"
     elif [[ "$table" == "account_entries" && "$c" == "migrated" ]]; then

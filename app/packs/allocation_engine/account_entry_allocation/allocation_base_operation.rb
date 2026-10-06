@@ -27,6 +27,49 @@ module AccountEntryAllocation
 
     delegate :to_varable_name, to: :FundFormula
 
+    # SQL that changes scratch data. Matched at the start of the statement only, so testing a
+    # multi-megabyte bulk INSERT costs nothing.
+    SCRATCH_WRITE_SQL = /\A\s*(INSERT|UPDATE|DELETE|REPLACE)\b/i
+
+    # Rails empties its query cache when a write goes through a connection it knows about. The scratch
+    # pool is hand-built (WithScratchSqlite) and Rails does not know about it, so a write would leave
+    # cached reads behind: a later formula would be handed sums that miss the entries just inserted.
+    # This subscriber tells the cache: after any write on the current thread's scratch connection, that
+    # thread's cache is emptied (clear_query_cache only touches the calling thread's store, so another
+    # thread's cache is never affected). A cached read can therefore never outlive a write, even if a
+    # write is added inside a cached block later.
+    def self.guard_scratch_query_cache_against_writes
+      @guard_scratch_query_cache_against_writes ||= ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+        connection = Thread.current[:sqlite_scratch_connection]
+        next unless connection && payload[:connection].equal?(connection)
+
+        connection.pool.clear_query_cache if payload[:sql].match?(SCRATCH_WRITE_SQL)
+      end
+    end
+    guard_scratch_query_cache_against_writes
+
+    # Runs the block with the query cache on for the scratch SQLite connection, when asked to and
+    # when one is active (it always is during a run). Reads elsewhere (MySQL) are unaffected.
+    #
+    # The cache is also emptied on the way in and out, so it never outlives the block, and any write
+    # on the scratch connection empties it at once (see the guard above). The two places that use it
+    # only read, so in practice the guard never fires.
+    #
+    # Inside an enclosing cached block the cache is already on and the outer block owns the
+    # clearing, so the inner one just runs.
+    def with_scratch_query_cache(enabled: true, &)
+      scratch_connection = Thread.current[:sqlite_scratch_connection]
+      return yield unless enabled && scratch_connection
+      return yield if scratch_connection.query_cache_enabled
+
+      scratch_connection.pool.clear_query_cache
+      begin
+        scratch_connection.cache(&)
+      ensure
+        scratch_connection.pool.clear_query_cache
+      end
+    end
+
     def notify(message, level, user_id)
       UserAlert.new(user_id:, message:, level:).broadcast if user_id.present?
     end
