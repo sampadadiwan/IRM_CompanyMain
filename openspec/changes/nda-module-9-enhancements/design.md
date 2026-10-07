@@ -47,7 +47,7 @@
   - [② Signatory check](#②-signatory-check)
   - [③ Blocked page](#③-blocked-page)
   - [④ Accept/Decline guard](#④-acceptdecline-guard)
-  - [⑤ First-creation redirect](#⑤-first-creation-redirect)
+  - [⑤ Auto-tag signatories](#⑤-auto-tag-signatories)
   - [⑥ Dashboard warnings](#⑥-dashboard-warnings)
 - [4. Reference](#4-reference)
   - [Class diagram](#class-diagram)
@@ -74,7 +74,7 @@ flowchart LR
     B["② Signatory check<br/>is this user a signatory?"]
     C["③ Blocked page<br/>tells non-signatory to wait"]
     D["④ Accept/Decline guard<br/>enforces signatory on submit"]
-    E["⑤ First-creation redirect<br/>sends GP to dashboard"]
+    E["⑤ Auto-tag signatories<br/>on NDA creation"]
     F["⑥ Dashboard warnings<br/>flags zero-signatory investors"]
 
     A -- "NDA needed,<br/>not yet accepted" --> B
@@ -92,8 +92,8 @@ flowchart LR
 
 | # | When | What happens | Behind the scenes | Result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |---|---|---|---|---|
-| 1 | Grace saves first NDA | Modal submits, GP lands on dashboard | The first-creation redirect (⑤) detects this is a `create` action and redirects to the NDA Status Dashboard with `first_creation=true` | ✓&nbsp;NDA&nbsp;config&nbsp;saved<br/>●&nbsp;**Tag&nbsp;signatories** |
-| 2 | Grace tags Alice | Grace clicks "Tag" next to Alice on the expanded investor row | Dashboard warnings (⑥) show ⚠ for LP Alpha until Alice is tagged. After tagging, the warning clears | ✓&nbsp;NDA&nbsp;config&nbsp;saved<br/>✓&nbsp;Alice&nbsp;tagged |
+| 1 | Grace saves first NDA | Modal submits, modal closes, tree updated | Auto-tag (⑤) runs after save: finds Alice as the oldest approved user for LP Alpha, creates NdaSignatory for Alice. Modal closes normally | ✓&nbsp;NDA&nbsp;config&nbsp;saved<br/>✓&nbsp;Alice&nbsp;auto-tagged |
+| 2 | Grace checks dashboard (optional) | Grace navigates to NDA Status Dashboard | Dashboard shows LP Alpha with Alice tagged as signatory. No ⚠ warning (Alice is tagged) | ✓&nbsp;Alice&nbsp;is&nbsp;signatory |
 | 3 | Bob opens "Deal Docs" | Bob navigates to the NDA-protected folder | The folder gate (①) detects NDA not accepted. The signatory check (②) finds Bob is NOT a signatory. The blocked page (③) renders | Bob&nbsp;sees&nbsp;blocked&nbsp;page |
 | 4 | Alice opens "Deal Docs" | Alice navigates to the same folder | The folder gate (①) detects NDA not accepted. The signatory check (②) finds Alice IS a signatory. Standard acceptance screen shown | Alice&nbsp;sees&nbsp;acceptance&nbsp;screen |
 | 5 | Alice accepts | Alice checks the checkbox and clicks Accept | The accept/decline guard (④) verifies Alice is a signatory, creates NdaAcceptance, redirects to folder | ✓&nbsp;NDA&nbsp;accepted&nbsp;for&nbsp;LP&nbsp;Alpha |
@@ -110,9 +110,9 @@ flowchart LR
 │  Acme Fund  |  Folder: Deal Docs                     │
 │                                                      │
 │  ┌─ alert-info ──────────────────────────────────┐   │
-│  │ 🔒 NDA acceptance is pending. A designated    │   │
-│  │    signatory for your organisation must accept │   │
-│  │    the NDA before you can access this folder.  │   │
+│  │ 🔒 Please ensure that the authorised          │   │
+│  │    signatory has signed the NDA to access      │   │
+│  │    the documents.                              │   │
 │  └───────────────────────────────────────────────┘   │
 │                                                      │
 │  Questions? Contact: nda@acmefund.com                │
@@ -125,9 +125,9 @@ _What Bob sees at step 3: the blocked page (③)._
 **What to notice:**
 - The signatory check (②) runs inside the existing folder gate (①) — no new before_action, just an additional branch
 - Non-signatories are blocked before they ever see the acceptance screen — they cannot view the PDF
-- First-creation redirect (⑤) is a one-time event on `create`, not on `update` — version bumps don't trigger it
+- Auto-tagging (⑤) runs after NDA config creation — oldest approved user per investor becomes default signatory
 - The same signatory check applies to re-acceptance scenarios (version mismatch, expiry, revocation)
-- Dashboard warnings (⑥) give the GP immediate feedback when an investor has no signatories
+- Dashboard warnings (⑥) are a safety net — with auto-tagging, zero-signatory state is rare
 
 ### Key ideas
 
@@ -136,7 +136,7 @@ _What Bob sees at step 3: the blocked page (③)._
 | 1 | Signatory check inside the gate | A branch in the existing `ensure_nda_accepted` method, not a separate filter | [②](#②-signatory-check) |
 | 2 | Controller-level guard on submit | `before_action` in `NdaAcceptancesController` prevents non-signatory form submission | [④](#④-acceptdecline-guard) |
 | 3 | Blocked page as a dead-end view | New template following the declined/lapsed pattern, no buttons | [③](#③-blocked-page) |
-| 4 | First-creation redirect | `NdaConfigsController#create` redirects to dashboard instead of turbo_stream on first save | [⑤](#⑤-first-creation-redirect) |
+| 4 | Auto-tag default signatories | `NdaConfigsController#create` auto-tags first user per investor after save | [⑤](#⑤-auto-tag-signatories) |
 | 5 | Zero-signatory warning | `NdaStatusResolver` already computes signatory data — dashboard view adds a warning badge | [⑥](#⑥-dashboard-warnings) |
 
 **FAQ**
@@ -162,14 +162,14 @@ flowchart LR
     B["② NdaSignatory query<br/><i>checks signatory status<br/>for this user + nda_config</i>"]:::new
     C["③ blocked.html.erb<br/><i>dead-end page for<br/>non-signatories</i>"]:::new
     D["④ NdaAcceptancesController<br/>#ensure_signatory<br/><i>before_action guard on<br/>create and decline</i>"]:::new
-    E["⑤ NdaConfigsController<br/>#create<br/><i>redirects to dashboard<br/>on first creation</i>"]:::mod
-    F["⑥ NdaStatus views<br/><i>zero-signatory warning<br/>+ first-creation banner</i>"]:::mod
+    E["⑤ NdaConfigsController<br/>#create<br/><i>auto-tags first user<br/>per investor</i>"]:::mod
+    F["⑥ NdaStatus views<br/><i>zero-signatory warning</i>"]:::mod
 
     A -- "NDA needed,<br/>not accepted →<br/>is_signatory?" --> B
     B -- "false →<br/>redirect" --> C
     B -- "true →<br/>show acceptance<br/>screen" --> D
     D -- "NdaAcceptance<br/>saved" --> A
-    E -- "redirect with<br/>first_creation=true" --> F
+    E -- "after save,<br/>auto-tag" --> F
 
     click A "#①-folder-gate"
     click B "#②-signatory-check"
@@ -190,8 +190,8 @@ Colour = footprint: **green** new, **amber** modified, **grey** reused unchanged
 | ② | Signatory check | `NdaSignatory.exists?(nda_config_id:, user_id:)` query | Determines if the current LP user is a designated signatory for this NDA config | Called from within ① when NDA is not yet accepted / needs re-acceptance | Whether user sees acceptance screen or blocked page | [card ② →](#②-signatory-check) |
 | ③ | Blocked page | `nda_acceptances/blocked.html.erb` | Dead-end view for non-signatories | When ② returns false | N/A — static view | [card ③ →](#③-blocked-page) |
 | ④ | Accept/Decline guard | `NdaAcceptancesController#ensure_signatory` before_action | Prevents non-signatories from submitting accept/decline forms | Before `create` and `decline` actions | Whether to allow the form submission or redirect to blocked | [card ④ →](#④-acceptdecline-guard) |
-| ⑤ | First-creation redirect | `NdaConfigsController#create` response branch | Redirects GP to NDA Status Dashboard after first NDA creation | After successful `NdaConfig.save` in `create` action only | Whether to respond with turbo_stream (update) or redirect (first create) | [card ⑤ →](#⑤-first-creation-redirect) |
-| ⑥ | Dashboard warnings | `nda_status/index.html.erb`, `nda_status_controller.js` | Shows zero-signatory ⚠ icons and first-creation banner | On dashboard render | N/A — view-level conditional rendering | [card ⑥ →](#⑥-dashboard-warnings) |
+| ⑤ | Auto-tag signatories | `NdaConfigsController#create` post-save logic | Auto-tags oldest approved user per investor as default signatory | After successful `NdaConfig.save` in `create` action only | Which user to tag per investor | [card ⑤ →](#⑤-auto-tag-signatories) |
+| ⑥ | Dashboard warnings | `nda_status/index.html.erb` | Shows zero-signatory ⚠ icons | On dashboard render | N/A — view-level conditional rendering | [card ⑥ →](#⑥-dashboard-warnings) |
 
 ### One run, end to end
 
@@ -243,8 +243,8 @@ N/A — no new stored or derived status. NDA acceptance lifecycle is unchanged f
 |---|---|---|---|
 | NDA acceptance screen (PDF + buttons) | Any LP user with InvestorAccess | Only designated signatories | LP signatories |
 | Blocked page | Does not exist | Non-signatories when NDA not accepted | LP non-signatories |
-| NDA Status Dashboard | Shows investor/user rows with Tag/Untag | Adds ⚠ for zero-signatory investors + first-creation banner | GP |
-| After first NDA creation | Modal closes, GP stays on Documents page | GP redirected to NDA Status Dashboard | GP |
+| NDA Status Dashboard | Shows investor/user rows with Tag/Untag | Adds ⚠ for zero-signatory investors (safety net) | GP |
+| After first NDA creation | Modal closes, GP stays on Documents page | Auto-tags default signatories, modal closes normally | GP |
 
 **Main LP journey — non-signatory blocked, signatory accepts:**
 
@@ -277,7 +277,7 @@ Step 4: Bob clicks folder again ◀──────────── folder o
 
 4. **First-creation detection by controller action, not model flag** — The `create` action fires once per NDA config lifetime (vs. `update` which fires on every edit). No migration needed. Alternative: add `first_created_at` column. Rejected because the controller action already distinguishes create from update.
 
-5. **Dashboard redirect via `redirect_to` with query param, not turbo_stream** — First creation is a one-time event where a full page load to the dashboard is appropriate. The banner and auto-expand are driven by the `first_creation=true` query param read by the Stimulus controller. Alternative: turbo_stream append a banner. Rejected because the GP needs to land on the full dashboard, not stay in the modal.
+5. **Auto-tag in controller, not model callback** — Auto-tagging runs in `NdaConfigsController#create` after save, not as an `after_create` callback on `NdaConfig`. This keeps the side effect visible and testable, avoids triggering on seed/import creates, and matches the existing pattern. Alternative: `after_create` callback. Rejected because model callbacks are implicit and hard to test in isolation.
 
 **FAQ**
 
@@ -408,20 +408,23 @@ A new `before_action :ensure_signatory` on `NdaAcceptancesController` that runs 
 | Does this before_action run before or after `resolve_investor`? | Before. `resolve_investor` only runs on `create` and `decline`, and `ensure_signatory` must also cover `index`. The signatory check only needs `@nda_config` (from `set_nda_config`, which runs first). |
 | What response does a non-signatory get if they POST to `/nda_acceptances`? | A redirect (302) to the blocked page. The redirect is safe because `skip_forgery_protection` is already set on these actions, so the redirect works cleanly. |
 
-### ⑤ First-creation redirect
+### ⑤ Auto-tag signatories
 
-Modified `NdaConfigsController#create` to redirect the GP to the NDA Status Dashboard after the first NDA config save, instead of responding with turbo_stream to update the modal.
+Modified `NdaConfigsController#create` to auto-tag the first (oldest) approved user per investor as the default NDA signatory after a successful NDA config save.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| The post-creation redirect decision | `NdaConfig.save` success in `create` action | `redirect_to nda_status_path(nda_config_id:, folder_id:, first_creation: true)` |
+| Auto-tagging default signatories on first NDA creation | `NdaConfig.save` success in `create` action, `InvestorAccess` universe | `NdaSignatory` records (one per investor) |
 
 **Detection:** This is the `create` action — it only runs when creating a new NdaConfig. The `update` action handles edits and version bumps. No model-level detection needed.
 
-**Response change:**
-- Current `create`: responds with `turbo_stream` (updates modal)
-- New `create`: responds with `redirect_to` (full page load to dashboard) using `format.html`
-- The turbo_stream format is removed from the `create` response — the modal is not updated, the GP leaves the Documents page entirely
+**Auto-tag logic:**
+1. After successful `NdaConfig.save`, query all approved `InvestorAccess` records for this entity
+2. Group by `investor_id`, for each investor select the oldest record (by `created_at`)
+3. Create `NdaSignatory` for each oldest user with `tagged_by_id: current_user.id`
+4. Rescue `RecordNotUnique` silently (idempotent — if already tagged, skip)
+
+**Response:** Standard turbo_stream response (modal close, tree icon update). No redirect.
 
 **Worked examples:** H3, E4
 
@@ -429,25 +432,21 @@ Modified `NdaConfigsController#create` to redirect the GP to the NDA Status Dash
 
 | Question | Answer |
 |---|---|
-| What about the folder tree lock icon update that the turbo_stream used to do? | The GP leaves the Documents page entirely on first creation. When they navigate back, the page loads fresh with the lock icon already reflecting the NDA config. No turbo_stream update needed. |
-| What if the GP navigates directly to `?first_creation=true` on subsequent visits? | The banner is cosmetic — a dismissible alert and auto-expanded rows. No security or data impact. |
+| What if an investor has no approved users? | No signatory is created. Dashboard shows ⚠ warning. GP can tag manually when a user is approved later. |
+| What if `InvestorAccess` records are created after the NDA? | The auto-tag only runs at NDA creation time. New investors added later start with zero signatories — the GP tags them from the dashboard. |
+| Why not an `after_create` callback on `NdaConfig`? | Controller-level keeps the side effect visible, avoids triggering on seed/import creates, and matches the existing pattern. |
 
 ### ⑥ Dashboard warnings
 
-Modified `nda_status/index.html.erb` and `nda_status_controller.js` to show:
-1. A zero-signatory ⚠ warning icon per investor row when no signatories are tagged
-2. A dismissible "Tag signatories" banner when `first_creation=true` is in the query params
-3. Auto-expanded investor rows when `first_creation=true`
+Modified `nda_status/index.html.erb` to show a zero-signatory ⚠ warning icon per investor row when no signatories are tagged. This is a safety net — with auto-tagging on creation, most investors will have a default signatory.
 
 | Owns | Reads / receives | Produces |
 |---|---|---|
-| Dashboard warning UI | `status_data[:investor_rows]` (each row's `users` array has `nda_tagged`), `params[:first_creation]` | ⚠ icons, banner HTML, auto-expand JS |
+| Dashboard warning UI | `status_data[:investor_rows]` (each row's `users` array has `nda_tagged`) | ⚠ icons with tooltip |
 
 **Zero-signatory detection:** The `NdaStatusResolver` already computes `nda_tagged` for each user row. The view checks: if no user in the investor's `users` array has `nda_tagged: true`, show the ⚠ icon.
 
-**Banner and auto-expand:** The Stimulus controller reads `data-nda-status-first-creation-value` and, if true, shows the banner (initially hidden) and triggers `collapse('show')` on all investor detail rows.
-
-**Worked examples:** H3, E4, E5
+**Worked examples:** E5
 
 **FAQ**
 
@@ -497,7 +496,7 @@ classDiagram
 
     DocumentsController ..> NdaSignatory : queries
     NdaAcceptancesController ..> NdaSignatory : queries
-    NdaConfigsController ..> NdaStatusController : redirects to
+    NdaConfigsController ..> NdaSignatory : auto-tags on create
 ```
 
 ### Data model and schema changes
@@ -512,7 +511,7 @@ N/A — no DB migration. The `nda_signatories` table and `NdaSignatory` model al
 | ① DocumentsController → ③ blocked.html.erb | Redirect to `blocked_nda_acceptances_path(nda_config_id:, folder_id:)` | Only when signatory check returns false |
 | ② NdaSignatory → ④ NdaAcceptancesController | `NdaSignatory.exists?(nda_config_id:, user_id:)` → Boolean | Guard calls signatory check before allowing index/create/decline |
 | ④ NdaAcceptancesController → ③ blocked.html.erb | Redirect to `blocked_nda_acceptances_path` | Only when guard finds non-signatory |
-| ⑤ NdaConfigsController → ⑥ NdaStatus views | `redirect_to nda_status_path(nda_config_id:, folder_id:, first_creation: true)` | Only on `create` action, not `update` |
+| ⑤ NdaConfigsController → NdaSignatory | `NdaSignatory.create!` for each investor's oldest approved user | Only on `create` action, not `update` |
 
 ### Cross-cutting concerns
 
@@ -522,12 +521,12 @@ N/A — no new multi-table writes. The signatory check is a single `EXISTS` quer
 
 #### Exception handling and monitoring
 
-N/A — no new failure modes. The signatory check is a simple boolean query. The blocked page is a static render. The first-creation redirect is a standard Rails redirect.
+N/A — no new failure modes. The signatory check is a simple boolean query. The blocked page is a static render. Auto-tagging uses `rescue RecordNotUnique` for idempotency.
 
 #### Performance and security
 
 - **Performance:** The `NdaSignatory.exists?` query uses the unique index `[nda_config_id, user_id]`. Single indexed lookup — negligible cost. It runs only when the NDA is not accepted and the user is not exempt, so the common case (folder access with accepted NDA) has zero additional cost.
-- **Security:** The `ensure_signatory` before_action on `NdaAcceptancesController` is server-side enforcement — URL-crafting cannot bypass it. The blocked page does not expose the NDA PDF. The `first_creation` query param is cosmetic (banner + auto-expand) with no security impact. Entity scoping is maintained through the existing `NdaConfig.entity_id` chain.
+- **Security:** The `ensure_signatory` before_action on `NdaAcceptancesController` is server-side enforcement — URL-crafting cannot bypass it. The blocked page does not expose the NDA PDF. Auto-tagging is scoped to the NDA config's entity via `InvestorAccess.entity_id`. Entity scoping is maintained through the existing `NdaConfig.entity_id` chain.
 
 ### Worked examples
 
@@ -556,7 +555,7 @@ N/A — no new failure modes. The signatory check is a simple boolean query. The
 |---|---|---|---|---|---|---|
 | H1 | Signatory accepts NDA | Alice is signatory for NdaConfig 100 | Alice visits Deal Docs folder | Alice sees acceptance screen, accepts, folder opens | Signatory accepts NDA successfully | nda_signatory_gating |
 | H2 | Non-signatory sees blocked page | Bob is NOT signatory for NdaConfig 100, NDA not accepted | Bob visits Deal Docs folder | Bob sees blocked page with "A designated signatory must accept" message | Non-signatory visits NDA-protected folder with pending NDA | nda_signatory_gating |
-| H3 | GP guided to tag after first creation | Grace is creating NDA on Deal Docs for the first time | Grace saves NDA settings | Grace redirected to dashboard with banner and auto-expanded rows | GP creates first NDA config on a folder | nda_signatory_gating |
+| H3 | Default signatories auto-tagged on creation | Grace is creating NDA on Deal Docs for the first time | Grace saves NDA settings | Alice auto-tagged as signatory for LP Alpha. Modal closes normally | GP creates first NDA config on a folder | nda_signatory_gating |
 
 #### Edge Cases
 
@@ -565,7 +564,7 @@ N/A — no new failure modes. The signatory check is a simple boolean query. The
 | E1 | Non-signatory POST attempt | Bob manually POSTs to /nda_acceptances | Bob submits accept form via URL crafting | Redirected to blocked page, no NdaAcceptance created | Non-signatory attempts to accept NDA | nda_signatory_gating |
 | E2 | Non-signatory after version bump | NDA version bumped to 2, Bob's investor had accepted v1, Bob is not signatory | Bob visits Deal Docs | Blocked page shown (not acceptance screen with version_mismatch note) | Non-signatory sees blocked page after version bump | nda_signatory_gating |
 | E3 | Exempt investor bypasses signatory gate | Eve's investor LP Beta is exempt_from_nda, Eve is not a signatory | Eve visits Deal Docs | Folder opens directly, no NDA screen or blocked page | Exempt investor user accesses NDA-protected folder | nda_signatory_gating |
-| E4 | GP updates existing NDA settings | Grace edits NdaConfig 100 (changes validity_type) | Grace saves | Modal updates via turbo_stream, no redirect to dashboard | GP updates existing NDA settings | nda_signatory_gating |
+| E4 | GP updates existing NDA settings | Grace edits NdaConfig 100 (changes validity_type) | Grace saves | Modal updates via turbo_stream, no auto-tagging | GP updates existing NDA settings | nda_signatory_gating |
 | E5 | Zero-signatory warning on dashboard | Investor LP Gamma has no signatory tags for NdaConfig 100 | Grace views NDA Status Dashboard | ⚠ icon shown next to LP Gamma with tooltip | Investor with zero signatories on dashboard | nda_signatory_gating |
 
 #### Error Cases
@@ -576,7 +575,7 @@ N/A — no new failure modes. The signatory check is a simple boolean query. The
 
 ### Testing
 
-Cucumber only. All scenarios share the setup defined above (Acme Fund entity, Deal Docs folder, NdaConfig, LP Alpha with Alice+Bob, NdaSignatory for Alice). Reuse existing step definitions from `features/step_definitions/nda_steps.rb` (folder access, NDA config creation, acceptance). New steps needed: signatory tagging, blocked page assertion, first-creation banner assertion, zero-signatory warning assertion. One feature file: `features/nda_signatory_gating.feature`.
+Cucumber only. All scenarios share the setup defined above (Acme Fund entity, Deal Docs folder, NdaConfig, LP Alpha with Alice+Bob, NdaSignatory for Alice). Reuse existing step definitions from `features/step_definitions/nda_steps.rb` (folder access, NDA config creation, acceptance). New steps needed: signatory tagging, blocked page assertion, auto-tag verification, zero-signatory warning assertion. One feature file: `features/nda_signatory_gating.feature`.
 
 ### Risks and open questions
 

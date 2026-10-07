@@ -41,7 +41,7 @@ The system SHALL display a blocked page to LP users who are not designated signa
 #### Scenario: Non-signatory visits NDA-protected folder with pending NDA
 
 - **WHEN** a non-signatory LP user navigates to a folder protected by an NDA that has not been accepted for their investor
-- **THEN** the system displays the blocked page with message "NDA acceptance is pending. A designated signatory for your organisation must accept the NDA before you can access this folder."
+- **THEN** the system displays the blocked page with message "Please ensure that the authorised signatory has signed the NDA to access the documents."
 
 #### Scenario: Non-signatory visits NDA-protected folder after signatory has accepted
 
@@ -71,19 +71,19 @@ The system SHALL show the standard NDA acceptance screen to designated signatori
 - **WHEN** a non-signatory LP user visits an NDA-protected folder and their investor's acceptance is at an older NDA version
 - **THEN** the system displays the blocked page, not the acceptance screen
 
-### Requirement: GP is guided to tag signatories after first NDA creation
+### Requirement: Default signatories are auto-tagged on first NDA creation
 
-The system SHALL redirect the GP to the NDA Status Dashboard after the first NDA config creation on a folder (not on updates or version bumps). The dashboard SHALL display a banner prompting the GP to tag signatories and SHALL auto-expand all investor rows to make the tagging interface immediately visible.
+The system SHALL automatically tag the first (oldest by `InvestorAccess.created_at`) approved user of each investor as the default NDA signatory when a new NDA config is created. Auto-tagging SHALL NOT occur on updates or version bumps. The GP SHALL be able to change or add signatories from the NDA Status Dashboard afterward.
 
 #### Scenario: GP creates first NDA config on a folder
 
 - **WHEN** a GP user saves NDA settings for the first time on a folder (creating a new NdaConfig)
-- **THEN** the system redirects to the NDA Status Dashboard with a banner: "NDA settings saved. Tag designated signatories for each investor below." and all investor rows expanded
+- **THEN** the system creates NdaSignatory records for the oldest approved user of each investor with InvestorAccess to this entity, and the modal closes normally with tree icon updated
 
 #### Scenario: GP updates existing NDA settings
 
 - **WHEN** a GP user updates an existing NDA config (edit, PDF replacement, setting changes)
-- **THEN** the system responds with the standard turbo stream modal update and does NOT redirect to the dashboard
+- **THEN** the system responds with the standard turbo stream modal update and does NOT auto-tag any signatories
 
 ### Requirement: Dashboard warns about investors with zero signatories
 
