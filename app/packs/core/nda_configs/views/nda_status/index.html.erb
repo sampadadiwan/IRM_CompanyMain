@@ -230,18 +230,50 @@
                   <i class="ti ti-users me-1"></i> <%= row[:users].size %> users
                 </button>
               <% end %>
-              <%# Changed: Module 8 — Revoke button on Accepted investor rows.
-                   Why: GP can revoke an accepted NDA. Shows confirmation dialog with optional reason. %>
-              <% if row[:status] == "Accepted" %>
-                <button class="btn btn-outline-danger btn-sm ms-1"
-                        data-action="click->nda-status#revokeAcceptance"
-                        data-investor-id="<%= row[:investor].id %>"
-                        data-investor-name="<%= row[:investor].investor_name %>"
-                        data-bs-toggle="tooltip"
-                        data-bs-title="Revoke this investor's NDA acceptance">
-                  <i class="ti ti-shield-x me-1"></i> Revoke
+              <%# Changed: Three-dot kebab menu — contextual actions per investor status.
+                   Why: Consolidates Revoke, Exempt, and Remove Exemption into a single
+                     dropdown. Keeps the table clean and scalable for future actions.
+                     Replaces the inline Revoke button and moves NDA exemption control
+                     from the investor show page to here (where the GP manages NDA). %>
+              <div class="dropdown d-inline-block ms-1">
+                <button class="btn btn-outline-secondary btn-sm" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="ti ti-dots-vertical"></i>
                 </button>
-              <% end %>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <% if row[:status] == "Accepted" %>
+                    <li>
+                      <a class="dropdown-item text-danger" href="#"
+                         data-action="click->nda-status#revokeAcceptance"
+                         data-investor-id="<%= row[:investor].id %>"
+                         data-investor-name="<%= row[:investor].investor_name %>">
+                        <i class="ti ti-shield-x me-1"></i> Revoke
+                      </a>
+                    </li>
+                  <% end %>
+                  <% if row[:status] == "Exempt" %>
+                    <li>
+                      <a class="dropdown-item" href="#"
+                         data-action="click->nda-status#toggleExemption"
+                         data-investor-id="<%= row[:investor].id %>"
+                         data-investor-name="<%= row[:investor].investor_name %>"
+                         data-exempt="false">
+                        <i class="ti ti-shield-check me-1"></i> Remove Exemption
+                      </a>
+                    </li>
+                  <% else %>
+                    <li>
+                      <a class="dropdown-item" href="#"
+                         data-action="click->nda-status#toggleExemption"
+                         data-investor-id="<%= row[:investor].id %>"
+                         data-investor-name="<%= row[:investor].investor_name %>"
+                         data-exempt="true">
+                        <i class="ti ti-shield-off me-1"></i> Exempt from NDA
+                      </a>
+                    </li>
+                  <% end %>
+                </ul>
+              </div>
             </td>
           </tr>
           <%# Collapsible user detail rows %>
