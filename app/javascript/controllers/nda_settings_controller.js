@@ -6,17 +6,12 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["fields", "fixedPeriod", "specificDate", "versionWarning"]
+  static targets = ["fields", "fixedPeriod", "specificDate", "versionWarning", "currentFile", "currentFileName"]
   static values = { enabled: Boolean }
 
-  connect() {
-    this.handleUploadComplete = this.showVersionWarning.bind(this)
-    this.element.addEventListener("upload:complete", this.handleUploadComplete)
-  }
-
-  disconnect() {
-    this.element.removeEventListener("upload:complete", this.handleUploadComplete)
-  }
+  // Changed: Module 9 — removed manual addEventListener for upload:complete.
+  // Why: Replaced with Stimulus data-action on the form element
+  //   (upload:complete->nda-settings#showVersionWarning) for reliable event binding.
 
   // Show/hide the config fields based on the Require NDA toggle.
   toggleEnabled(event) {
@@ -40,17 +35,25 @@ export default class extends Controller {
     }
   }
 
-  /**
-   * Shows the version bump warning banner when a new PDF is uploaded via Uppy.
-   * Listens for the bubbling upload:complete event dispatched by single_upload_controller.
-   * Only shows the banner when there are accepted investors who would be affected.
-   */
-  showVersionWarning() {
-    if (!this.hasVersionWarningTarget) return
+  // Changed: Module 4 — shows version bump warning when a new PDF is uploaded.
+  // Changed: Module 9 — also updates the "Current" filename display with the new file.
+  // Why: GP needs immediate feedback showing which file they just uploaded, without
+  //   waiting for the form to save. The filename link is replaced with plain text
+  //   (no download URL yet — file is only cached on S3, not persisted).
+  showVersionWarning(event) {
+    if (this.hasVersionWarningTarget) {
+      const count = parseInt(this.versionWarningTarget.dataset.acceptedCount, 10) || 0
+      if (count > 0) {
+        this.versionWarningTarget.classList.remove("d-none")
+      }
+    }
 
-    const count = parseInt(this.versionWarningTarget.dataset.acceptedCount, 10) || 0
-    if (count > 0) {
-      this.versionWarningTarget.classList.remove("d-none")
+    const file = event?.detail?.file
+    if (file && this.hasCurrentFileNameTarget) {
+      this.currentFileNameTarget.textContent = file.name
+      if (this.hasCurrentFileTarget) {
+        this.currentFileTarget.classList.remove("d-none")
+      }
     }
   }
 }
