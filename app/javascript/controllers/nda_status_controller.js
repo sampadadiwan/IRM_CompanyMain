@@ -3,11 +3,25 @@
 // revocation, and bulk reminder actions.
 // Changed: Module 8 — added revokeAcceptance and sendReminders actions.
 // Why: GP needs to revoke accepted NDAs and bulk-remind pending investors from the dashboard.
+// Changed: Module 9 — added firstCreation value, firstCreationBanner target,
+//   and connect() hook for auto-expanding rows and showing the banner.
+// Why: After first NDA creation, GP is redirected here to tag signatories.
+//   Auto-expanding rows makes the Tag buttons immediately visible.
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["statusFilter", "searchInput", "tableBody", "row"]
-  static values = { ndaConfigId: Number, folderId: Number }
+  static targets = ["statusFilter", "searchInput", "tableBody", "row", "firstCreationBanner"]
+  static values = { ndaConfigId: Number, folderId: Number, firstCreation: Boolean }
+
+  // Changed: Module 9 — on connect, show first-creation banner.
+  // Why: When firstCreation is true (GP just created first NDA), show the banner
+  //   prompting them to tag signatories. Warning icons on each investor row guide
+  //   the GP to expand and tag one investor at a time.
+  connect() {
+    if (this.firstCreationValue && this.hasFirstCreationBannerTarget) {
+      this.firstCreationBannerTarget.classList.remove("d-none")
+    }
+  }
 
   // Filters visible rows by status dropdown and search input combined.
   filterRows() {

@@ -538,6 +538,13 @@ class DocumentsController < ApplicationController
     # investor bypass the gate, even if the exempt flag is on a different user's record.
     return if InvestorAccess.exists?(investor_id: investor_ids, entity_id: nda_config.entity_id, approved: true, exempt_from_nda: true)
 
+    # Changed: Module 9 — resolve whether the current user is a designated NDA signatory.
+    # Why: Only signatories can accept/decline. Non-signatories must see the blocked page
+    #   instead of the acceptance screen. This flag is checked before every redirect below
+    #   (revoked, not-accepted, version mismatch, expired) so non-signatories never reach
+    #   the acceptance screen regardless of the re-acceptance reason.
+    is_signatory = NdaSignatory.exists?(nda_config_id: nda_config.id, user_id: current_user.id)
+
     latest = NdaAcceptance
              .where(nda_config_id: nda_config.id, investor_id: investor_ids)
              .order(created_at: :desc)
@@ -548,35 +555,43 @@ class DocumentsController < ApplicationController
     # acceptance screen explaining their NDA was revoked and they must re-accept.
     # Why: Without this, revoked LPs see a generic first-time acceptance screen with no
     #   context about why they lost access.
+    # Changed: Module 9 — non-signatories see the blocked page instead.
     if latest&.revoked?
-      redirect_to nda_acceptance_url(nda_config, @folder, reason: "revoked")
+      redirect_to is_signatory ? nda_acceptance_url(nda_config, @folder, reason: "revoked") : nda_blocked_url(nda_config, @folder)
       return
     end
 
     # No accepted acceptance → redirect to acceptance screen (first-time or post-decline).
+    # Changed: Module 9 — non-signatories see the blocked page instead.
     unless latest&.accepted?
-      redirect_to nda_acceptance_url(nda_config, @folder)
+      redirect_to is_signatory ? nda_acceptance_url(nda_config, @folder) : nda_blocked_url(nda_config, @folder)
       return
     end
 
     # Changed: Module 4 — version mismatch check. LP's acceptance is at an older NDA version.
     # Why: GP uploaded a new PDF, version incremented, LP must re-read and re-accept.
+    # Changed: Module 9 — non-signatories see the blocked page instead.
     unless acceptance_version_current?(latest, nda_config)
-      redirect_to nda_acceptance_url(nda_config, @folder, reason: "version_mismatch")
+      redirect_to is_signatory ? nda_acceptance_url(nda_config, @folder, reason: "version_mismatch") : nda_blocked_url(nda_config, @folder)
       return
     end
 
     # Changed: Module 4 — time-based expiry check. Specific-date lapsed = dead-end page.
     # Why: specific_date past means re-accepting would create an immediately-expired record
     #   (infinite loop), so redirect to the lapsed page instead of the acceptance screen.
+    # Changed: Module 9 — non-signatories see the blocked page instead of lapsed or expired.
     unless acceptance_time_valid?(latest, nda_config)
-      if nda_config.validity_type == "specific_date" && nda_config.validity_date < Date.current
-        redirect_to lapsed_nda_acceptances_path(
-          nda_config_id: nda_config.id,
-          folder_id: @folder.id
-        )
+      if is_signatory
+        if nda_config.validity_type == "specific_date" && nda_config.validity_date < Date.current
+          redirect_to lapsed_nda_acceptances_path(
+            nda_config_id: nda_config.id,
+            folder_id: @folder.id
+          )
+        else
+          redirect_to nda_acceptance_url(nda_config, @folder, reason: "expired")
+        end
       else
-        redirect_to nda_acceptance_url(nda_config, @folder, reason: "expired")
+        redirect_to nda_blocked_url(nda_config, @folder)
       end
       return
     end
@@ -590,6 +605,17 @@ class DocumentsController < ApplicationController
     params = { nda_config_id: nda_config.id, folder_id: folder.id, return_to: request.fullpath }
     params[:reason] = reason if reason.present?
     nda_acceptances_path(params)
+  end
+
+  # Changed: Module 9 — helper to build the blocked page URL for non-signatories.
+  # Why: Mirrors nda_acceptance_url but targets the blocked action instead of index.
+  #   No return_to param needed — the blocked page has no "try again" flow, only "Back to Data Rooms".
+  #
+  # @param nda_config [NdaConfig] the NDA config the blocked page relates to
+  # @param folder [Folder] the folder being accessed
+  # @return [String] the NDA blocked page URL with query params
+  def nda_blocked_url(nda_config, folder)
+    blocked_nda_acceptances_path(nda_config_id: nda_config.id, folder_id: folder.id)
   end
 
   # @param acceptance [NdaAcceptance] the LP's latest acceptance record

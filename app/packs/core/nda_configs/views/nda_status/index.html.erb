@@ -2,7 +2,11 @@
      Provides status filtering, search, XLSX export, and user-level exemption management.
      Changed: Module 8 — added Revoked counter/filter/badge, Revoke button on Accepted rows,
        and Send Reminders button in page header.
-     Why: GPs need to revoke accepted NDAs, see revoked investors, and bulk-remind pending ones. %>
+     Why: GPs need to revoke accepted NDAs, see revoked investors, and bulk-remind pending ones.
+     Changed: Module 9 — added first-creation banner, zero-signatory ⚠ warnings, and
+       first_creation Stimulus value for auto-expanding investor rows on first NDA creation.
+     Why: After first NDA creation, GP is redirected here to tag signatories. Banner prompts
+       tagging, rows auto-expand, and ⚠ icons flag investors with no signatories. %>
 <%
   status_data = @status_data
   nda_config = @nda_config
@@ -13,7 +17,8 @@
 
 <div class="container-fluid py-4" data-controller="nda-status"
      data-nda-status-nda-config-id-value="<%= nda_config.id %>"
-     data-nda-status-folder-id-value="<%= folder.id %>">
+     data-nda-status-folder-id-value="<%= folder.id %>"
+     data-nda-status-first-creation-value="<%= params[:first_creation].present? %>">
 
   <%# Page header with Send Reminders + Export buttons %>
   <div class="d-flex align-items-center justify-content-between mb-4">
@@ -39,6 +44,15 @@
         Export
       <% end %>
     </div>
+  </div>
+
+  <%# Module 9: First-creation banner — shown when GP is redirected here after first NDA save.
+       Why: Prompts GP to tag signatories immediately. Hidden by default; Stimulus controller
+         removes d-none when firstCreation value is true. Dismissible via Bootstrap close button. %>
+  <div class="alert alert-success alert-dismissible d-none mb-4" data-nda-status-target="firstCreationBanner">
+    <i class="ti ti-check me-1"></i>
+    NDA settings saved. Tag designated signatories for each investor below.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 
   <%# Status counters — Changed: Module 8 — added Revoked counter badge.
@@ -133,6 +147,14 @@
                       <% end %>>
                   <%= row[:status] %>
                 </span>
+              <% end %>
+              <%# Module 9: Zero-signatory warning — shown when a non-exempt investor has no
+                   tagged signatories. Why: No one can accept the NDA for this investor until
+                   the GP tags at least one signatory. %>
+              <% if row[:status] != "Exempt" && row[:users].present? && row[:users].none? { |u| u[:nda_tagged] } %>
+                <i class="ti ti-alert-triangle text-warning ms-1"
+                   data-bs-toggle="tooltip"
+                   data-bs-title="No signatories tagged — no one can accept the NDA for this investor"></i>
               <% end %>
             </td>
             <td><%= row[:signed_by]&.full_name || "—" %></td>

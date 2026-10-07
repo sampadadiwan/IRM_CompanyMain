@@ -36,6 +36,12 @@ class NdaAcceptancesController < ApplicationController
 
   before_action :set_nda_config
   before_action :set_folder
+  # Changed: Module 9 — signatory guard prevents non-signatories from viewing or submitting
+  #   the acceptance screen. Runs on index/create/decline but NOT on blocked/lapsed
+  #   (blocked exclusion prevents infinite redirect loop; lapsed is a dead-end for all users).
+  # Why: The folder gate redirects non-signatories to the blocked page, but a user could
+  #   manually craft the acceptance URL. This guard is the server-side enforcement.
+  before_action :ensure_signatory, only: %i[index create decline]
   before_action :resolve_investor, only: %i[create decline]
 
   # GET /nda_acceptances?nda_config_id=X&folder_id=Y&return_to=Z&reason=Y
@@ -124,7 +130,33 @@ class NdaAcceptancesController < ApplicationController
     authorize @nda_acceptance, :show?
   end
 
+  # GET /nda_acceptances/blocked?nda_config_id=X&folder_id=Y
+  # Changed: Module 9 — dead-end page for non-signatory LP users.
+  # Why: Only designated signatories can accept/decline the NDA. Non-signatories
+  #   are redirected here from the folder gate (DocumentsController#ensure_nda_accepted)
+  #   or from the ensure_signatory before_action. Shows a message explaining that a
+  #   designated signatory must accept on their behalf. No PDF, no accept/decline buttons.
+  # @return [void] Renders the blocked NDA page.
+  def blocked
+    @nda_acceptance = NdaAcceptance.new(nda_config: @nda_config)
+    authorize @nda_acceptance, :show?
+  end
+
   private
+
+  # Changed: Module 9 — redirects non-signatories to the blocked page.
+  # Why: Server-side enforcement that only designated signatories can view or submit
+  #   the acceptance screen. Without this, a non-signatory could bypass the folder gate
+  #   by manually navigating to /nda_acceptances?nda_config_id=X.
+  #   Scoped to index/create/decline only — must NOT run on blocked (redirect loop)
+  #   or lapsed (dead-end page shown to everyone).
+  #
+  # @return [void] Redirects to blocked page if current user is not a signatory.
+  def ensure_signatory
+    return if NdaSignatory.exists?(nda_config_id: @nda_config.id, user_id: current_user.id)
+
+    redirect_to blocked_nda_acceptances_path(nda_config_id: @nda_config.id, folder_id: params[:folder_id])
+  end
 
   # @return [void] Loads the NdaConfig from params. Raises RecordNotFound if missing/invalid.
   def set_nda_config

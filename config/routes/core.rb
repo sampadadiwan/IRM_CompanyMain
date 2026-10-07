@@ -227,6 +227,10 @@ resources :nda_acceptances, controller: "nda_acceptances", only: %i[index create
   # Changed: Added lapsed route for Module 4 dead-end page.
   # Why: When a specific_date NDA has expired, LPs see a dead-end page (no re-accept possible).
   get :lapsed, on: :collection
+  # Changed: Module 9 — blocked page route for non-signatories.
+  # Why: Non-signatory LPs are redirected here when the NDA is not yet accepted
+  #   and they are not a designated signatory. Dead-end page with no accept/decline buttons.
+  get :blocked, on: :collection
 end
 
 # Changed: NDA status dashboard routes — removed exemption routes.

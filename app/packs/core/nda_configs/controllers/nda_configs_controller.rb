@@ -45,8 +45,18 @@ class NdaConfigsController < ApplicationController
         # not inherit from a parent. This keeps mode and config in sync.
         @folder&.update!(nda_inheritance_mode: "own")
         flash.now[:notice] = "NDA settings saved successfully."
+        # Changed: Module 9 — turbo_stream response now also redirects to the NDA Status
+        #   Dashboard so the GP can tag signatories immediately after first creation.
+        # Why: The form submits via Turbo (inside a modal), so we must respond with
+        #   turbo_stream to clear the modal and update the tree, then navigate via JS.
         format.turbo_stream
-        format.html { redirect_to @owner, notice: "NDA settings saved successfully." }
+        format.html do
+          redirect_to nda_status_path(
+            nda_config_id: @nda_config.id,
+            folder_id: @folder&.id,
+            first_creation: true
+          ), notice: "NDA settings saved successfully."
+        end
       else
         format.turbo_stream { render :form_update, status: :unprocessable_entity }
         format.html { render :new, status: :unprocessable_entity }
