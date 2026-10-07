@@ -22,19 +22,3 @@
 <%# 3. Show success message %>
 <%= turbo_stream.update "user_alert", partial: "layouts/alerts",
     locals: { notice: "NDA settings saved successfully." } %>
-
-<%# 4. Module 9: Redirect GP to NDA Status Dashboard to tag signatories.
-     Why: After first NDA creation, the GP needs to tag signatories immediately.
-       Turbo.visit performs a full navigation after the modal is cleared and tree is updated.
-       The first_creation=true param triggers the banner and zero-signatory warning icons.
-     Changed: Used raw helper and setTimeout to prevent double-escaping and ensure DOM readiness.
-     Why: ERB inside turbo_stream blocks HTML-escapes output, turning & into &amp; in the URL
-       query string. The raw helper outputs the URL verbatim. setTimeout ensures the navigation
-       fires after turbo_stream DOM updates (modal clear, tree icon) are fully processed. %>
-<%= turbo_stream.append "nda_settings_modal" do %>
-  <script>
-    setTimeout(function() {
-      Turbo.visit("<%= raw nda_status_path(nda_config_id: @nda_config.id, folder_id: @folder&.id, first_creation: true) %>")
-    }, 300)
-  </script>
-<% end %>

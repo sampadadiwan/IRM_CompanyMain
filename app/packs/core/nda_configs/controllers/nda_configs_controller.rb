@@ -44,17 +44,20 @@ class NdaConfigsController < ApplicationController
         # Why: Creating an NDA config means this folder now has its own NDA — it should
         # not inherit from a parent. This keeps mode and config in sync.
         @folder&.update!(nda_inheritance_mode: "own")
+
+        # Changed: Module 9 — auto-tag the oldest approved user per investor as default signatory.
+        # Why: Every investor needs at least one signatory to accept the NDA. Auto-tagging the
+        #   first (oldest by InvestorAccess.created_at) approved user per investor ensures
+        #   signatories exist immediately, avoiding the zero-signatory dead-end. GPs can
+        #   adjust from the NDA Status Dashboard afterward.
+        auto_tag_default_signatories(@nda_config)
+
         flash.now[:notice] = "NDA settings saved successfully."
-        # Changed: Module 9 — turbo_stream response now also redirects to the NDA Status
-        #   Dashboard so the GP can tag signatories immediately after first creation.
-        # Why: The form submits via Turbo (inside a modal), so we must respond with
-        #   turbo_stream to clear the modal and update the tree, then navigate via JS.
         format.turbo_stream
         format.html do
           redirect_to nda_status_path(
             nda_config_id: @nda_config.id,
-            folder_id: @folder&.id,
-            first_creation: true
+            folder_id: @folder&.id
           ), notice: "NDA settings saved successfully."
         end
       else
@@ -150,6 +153,31 @@ class NdaConfigsController < ApplicationController
     # Changed: Rescue notification errors to never block the update flow.
     # Why: The NDA config update is already saved — notification failure is non-critical.
     Rails.logger.error("[NdaNotification] Version change notification failed: #{e.message} (nda_config_id=#{@nda_config.id})")
+  end
+
+  # Changed: Module 9 — auto-tags the oldest approved user per investor as default NDA signatory.
+  # Why: On first NDA creation, every investor needs at least one signatory so LPs are not
+  #   blocked with zero signatories. Selecting the oldest approved InvestorAccess (by created_at)
+  #   picks the user who has had access longest — a reasonable default. Rescue RecordNotUnique
+  #   silently for idempotency if a signatory already exists (e.g. race condition on double-submit).
+  #
+  # @param nda_config [NdaConfig] The newly created NDA config
+  # @return [void]
+  def auto_tag_default_signatories(nda_config)
+    InvestorAccess
+      .where(entity_id: nda_config.entity_id, approved: true)
+      .order(:created_at)
+      .group_by(&:investor_id)
+      .each_value do |accesses|
+        oldest = accesses.first
+        NdaSignatory.create!(
+          nda_config: nda_config,
+          user_id: oldest.user_id,
+          tagged_by: current_user
+        )
+      rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+        next
+      end
   end
 
   # @return [void] Resolves the polymorphic owner from route params and verifies entity scoping.
